@@ -1,10 +1,9 @@
+using System.Linq.Expressions;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using System.Security.Cryptography;
 using System.Text;
-using MongoDB.Driver;
 using Color = SixLabors.ImageSharp.Color;
 
 namespace Platform.ApiService.Services;
@@ -37,8 +36,8 @@ public interface IImageCaptchaService
 /// </summary>
 public class ImageCaptchaService : IImageCaptchaService
 {
-    private readonly IDatabaseOperationFactory<CaptchaImage> _captchaFactory;
-    
+    private readonly IDataFactory<CaptchaImage> _captchaFactory;
+
     // 常量配置
     private const int EXPIRATION_MINUTES = 5;
     private const int IMAGE_WIDTH = 120;
@@ -56,7 +55,7 @@ public class ImageCaptchaService : IImageCaptchaService
     /// 初始化图形验证码服务
     /// </summary>
     /// <param name="captchaFactory">图形验证码数据操作工厂</param>
-    public ImageCaptchaService(IDatabaseOperationFactory<CaptchaImage> captchaFactory)
+    public ImageCaptchaService(IDataFactory<CaptchaImage> captchaFactory)
     {
         _captchaFactory = captchaFactory;
     }
@@ -73,31 +72,41 @@ public class ImageCaptchaService : IImageCaptchaService
         var encryptedAnswer = EncryptAnswer(answer);
         var expiresAt = DateTime.UtcNow.AddMinutes(EXPIRATION_MINUTES);
 
-        var filterBuilder = _captchaFactory.CreateFilterBuilder()
-            .Equal(c => c.IsUsed, false)
-            .Equal(c => c.Type, type);
+        // Try to find existing captcha for this type and client IP
+        var existingCaptchas = await _captchaFactory.FindWithoutTenantFilterAsync(
+            c => c.IsUsed == false && c.Type == type && (string.IsNullOrEmpty(clientIp) || c.ClientIp == clientIp),
+            limit: 1);
 
-        if (!string.IsNullOrEmpty(clientIp))
+        CaptchaImage captcha;
+        if (existingCaptchas.Any())
         {
-            filterBuilder = filterBuilder.Equal(c => c.ClientIp, clientIp);
+            // Update existing captcha
+            captcha = existingCaptchas.First();
+            await _captchaFactory.UpdateAsync(captcha.Id, entity =>
+            {
+                entity.CaptchaId = captchaId;
+                entity.Answer = encryptedAnswer;
+                entity.ExpiresAt = expiresAt;
+                entity.Type = type;
+                entity.ClientIp = clientIp!;
+                entity.IsUsed = false;
+                entity.UpdatedAt = DateTime.UtcNow;
+            });
         }
-
-        var filter = filterBuilder.Build();
-        var update = _captchaFactory.CreateUpdateBuilder()
-            .Set(c => c.CaptchaId, captchaId)
-            .Set(c => c.Answer, encryptedAnswer)
-            .Set(c => c.ExpiresAt, expiresAt)
-            .Set(c => c.Type, type)
-            .Set(c => c.ClientIp, clientIp!)
-            .Set(c => c.IsUsed, false)
-            .SetCurrentTimestamp()
-            .Build();
-
-        await _captchaFactory.FindOneAndUpdateWithoutTenantFilterAsync(filter, update, new FindOneAndUpdateOptions<CaptchaImage>
+        else
         {
-            IsUpsert = true,
-            ReturnDocument = ReturnDocument.After
-        });
+            // Create new captcha
+            captcha = new CaptchaImage
+            {
+                CaptchaId = captchaId,
+                Answer = encryptedAnswer,
+                ExpiresAt = expiresAt,
+                Type = type,
+                ClientIp = clientIp!,
+                IsUsed = false
+            };
+            await _captchaFactory.CreateAsync(captcha);
+        }
 
         return new CaptchaImageResult
         {
@@ -117,27 +126,22 @@ public class ImageCaptchaService : IImageCaptchaService
             return false;
         }
 
-        var filter = _captchaFactory.CreateFilterBuilder()
-            .Equal(c => c.CaptchaId, captchaId)
-            .Equal(c => c.Type, type)
-            .Equal(c => c.IsUsed, false)
-            .GreaterThan(c => c.ExpiresAt, DateTime.UtcNow)
-            .Build();
+        var captchas = await _captchaFactory.FindWithoutTenantFilterAsync(
+            c => c.CaptchaId == captchaId && c.Type == type && c.IsUsed == false && c.ExpiresAt > DateTime.UtcNow,
+            limit: 1);
 
-        var update = _captchaFactory.CreateUpdateBuilder()
-            .Set(c => c.IsUsed, true)
-            .SetCurrentTimestamp()
-            .Build();
-
-        var result = await _captchaFactory.FindOneAndUpdateWithoutTenantFilterAsync(filter, update, new FindOneAndUpdateOptions<CaptchaImage>
-        {
-            ReturnDocument = ReturnDocument.Before
-        });
-
+        var result = captchas.FirstOrDefault();
         if (result == null)
         {
             return false;
         }
+
+        // Mark as used
+        await _captchaFactory.UpdateAsync(result.Id, entity =>
+        {
+            entity.IsUsed = true;
+            entity.UpdatedAt = DateTime.UtcNow;
+        });
 
         var decryptedAnswer = DecryptAnswer(result.Answer);
         return string.Equals(decryptedAnswer, answer.Trim(), StringComparison.OrdinalIgnoreCase);
@@ -188,13 +192,13 @@ public class ImageCaptchaService : IImageCaptchaService
             var y1 = random.Next(0, IMAGE_HEIGHT);
             var x2 = random.Next(0, IMAGE_WIDTH);
             var y2 = random.Next(0, IMAGE_HEIGHT);
-            
+
             var lineColor = Color.FromRgb(
                 (byte)random.Next(100, 255),
                 (byte)random.Next(100, 255),
                 (byte)random.Next(100, 255)
             );
-            
+
             DrawLine(image, x1, y1, x2, y2, lineColor);
         }
     }
@@ -208,13 +212,13 @@ public class ImageCaptchaService : IImageCaptchaService
         {
             var x = random.Next(0, IMAGE_WIDTH);
             var y = random.Next(0, IMAGE_HEIGHT);
-            
+
             var dotColor = Color.FromRgb(
                 (byte)random.Next(100, 255),
                 (byte)random.Next(100, 255),
                 (byte)random.Next(100, 255)
             );
-            
+
             image[x, y] = dotColor;
         }
     }
@@ -233,7 +237,7 @@ public class ImageCaptchaService : IImageCaptchaService
                 (byte)random.Next(0, 100),
                 (byte)random.Next(0, 100)
             );
-            
+
             DrawCharacter(image, answer[i], baseX, baseY, textColor, random);
         }
     }
@@ -482,12 +486,12 @@ public class ImageCaptchaService : IImageCaptchaService
     {
         var key = ENCRYPTION_KEY;
         var result = new StringBuilder(answer.Length);
-        
+
         for (int i = 0; i < answer.Length; i++)
         {
             result.Append((char)(answer[i] ^ key[i % key.Length]));
         }
-        
+
         return Convert.ToBase64String(Encoding.UTF8.GetBytes(result.ToString()));
     }
 
@@ -502,12 +506,12 @@ public class ImageCaptchaService : IImageCaptchaService
             var encrypted = Encoding.UTF8.GetString(encryptedBytes);
             var key = ENCRYPTION_KEY;
             var result = new StringBuilder(encrypted.Length);
-            
+
             for (int i = 0; i < encrypted.Length; i++)
             {
                 result.Append((char)(encrypted[i] ^ key[i % key.Length]));
             }
-            
+
             return result.ToString();
         }
         catch

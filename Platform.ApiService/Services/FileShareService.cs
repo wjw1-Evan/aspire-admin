@@ -1,8 +1,12 @@
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 using System.Text;
-using MongoDB.Driver;
 
 namespace Platform.ApiService.Services;
 
@@ -11,7 +15,7 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class FileShareService : IFileShareService
 {
-    private readonly IDatabaseOperationFactory<Models.FileShare> _shareFactory;
+    private readonly IDataFactory<Models.FileShare> _shareFactory;
     private readonly ICloudStorageService _cloudStorageService;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<FileShareService> _logger;
@@ -20,7 +24,7 @@ public class FileShareService : IFileShareService
     /// 初始化文件分享服务
     /// </summary>
     public FileShareService(
-        IDatabaseOperationFactory<Models.FileShare> shareFactory,
+        IDataFactory<Models.FileShare> shareFactory,
         ICloudStorageService cloudStorageService,
         ITenantContext tenantContext,
         ILogger<FileShareService> logger)
@@ -78,16 +82,9 @@ public class FileShareService : IFileShareService
         if (string.IsNullOrWhiteSpace(shareToken))
             return null;
 
-        var filterBuilder = _shareFactory.CreateFilterBuilder();
-        var filter = filterBuilder
-            .Equal(s => s.ShareToken, shareToken)
-            .Equal(s => s.IsActive, true)
-            .Build();
-
-        var shares = await _shareFactory.FindAsync(filter, limit: 1);
+        var shares = await _shareFactory.FindAsync(s => s.ShareToken == shareToken && s.IsActive, limit: 1);
         var share = shares.FirstOrDefault();
 
-        // 检查分享是否过期
         if (share != null && share.ExpiresAt.HasValue && share.ExpiresAt.Value <= DateTime.UtcNow)
         {
             _logger.LogWarning("Share {ShareId} with token {ShareToken} has expired", share.Id, shareToken);
@@ -105,10 +102,7 @@ public class FileShareService : IFileShareService
         if (string.IsNullOrWhiteSpace(id))
             return null;
 
-        var filterBuilder = _shareFactory.CreateFilterBuilder();
-        var filter = filterBuilder.Equal(s => s.Id, id).Build();
-
-        var shares = await _shareFactory.FindAsync(filter, limit: 1);
+        var shares = await _shareFactory.FindAsync(s => s.Id == id, limit: 1);
         return shares.FirstOrDefault();
     }
 
@@ -124,45 +118,25 @@ public class FileShareService : IFileShareService
         if (share == null)
             throw new ArgumentException("分享不存在", nameof(id));
 
-        // 验证当前用户是否有权限修改分享
         var currentUserId = _tenantContext.GetCurrentUserId();
         if (share.CreatedBy != currentUserId)
             throw new UnauthorizedAccessException("无权限修改此分享");
 
-        var updateBuilder = _shareFactory.CreateUpdateBuilder();
-        var update = updateBuilder;
-
-        if (request.Permission.HasValue)
-            update = update.Set(s => s.Permission, request.Permission.Value);
-
-        if (request.ExpiresAt.HasValue)
-            update = update.Set(s => s.ExpiresAt, request.ExpiresAt.Value);
-
-        if (request.Password != null)
+        await _shareFactory.UpdateAsync(id, entity =>
         {
-            var hashedPassword = !string.IsNullOrEmpty(request.Password) ? HashPassword(request.Password) : string.Empty;
-            update = update.Set(s => s.Password, hashedPassword);
-        }
-
-        if (request.IsActive.HasValue)
-            update = update.Set(s => s.IsActive, request.IsActive.Value);
-
-        if (request.AllowedUserIds != null)
-            update = update.Set(s => s.AllowedUserIds, request.AllowedUserIds);
-
-        if (request.Settings != null)
-            update = update.Set(s => s.Settings, request.Settings);
-
-        var filterBuilder = _shareFactory.CreateFilterBuilder();
-        var updatedShare = await _shareFactory.FindOneAndUpdateAsync(
-            filterBuilder.Equal(s => s.Id, id).Build(),
-            update.Build());
-
-        if (updatedShare == null)
-            throw new InvalidOperationException("更新分享失败");
+            if (request.Permission.HasValue) entity.Permission = request.Permission.Value;
+            if (request.ExpiresAt.HasValue) entity.ExpiresAt = request.ExpiresAt.Value;
+            if (request.Password != null)
+            {
+                entity.Password = !string.IsNullOrEmpty(request.Password) ? HashPassword(request.Password) : string.Empty;
+            }
+            if (request.IsActive.HasValue) entity.IsActive = request.IsActive.Value;
+            if (request.AllowedUserIds != null) entity.AllowedUserIds = request.AllowedUserIds;
+            if (request.Settings != null) entity.Settings = request.Settings;
+        });
 
         _logger.LogInformation("Updated share {ShareId}", id);
-        return updatedShare;
+        return await _shareFactory.GetByIdAsync(id) ?? throw new InvalidOperationException("更新分享失败");
     }
 
     /// <summary>
@@ -177,15 +151,11 @@ public class FileShareService : IFileShareService
         if (share == null)
             throw new ArgumentException("分享不存在", nameof(id));
 
-        // 验证当前用户是否有权限删除分享
         var currentUserId = _tenantContext.GetCurrentUserId();
         if (share.CreatedBy != currentUserId)
             throw new UnauthorizedAccessException("无权限删除此分享");
 
-        var filterBuilder = _shareFactory.CreateFilterBuilder();
-        await _shareFactory.FindOneAndSoftDeleteAsync(
-            filterBuilder.Equal(s => s.Id, id).Build());
-
+        await _shareFactory.SoftDeleteAsync(id);
         _logger.LogInformation("Deleted share {ShareId}", id);
     }
 
@@ -198,55 +168,48 @@ public class FileShareService : IFileShareService
         if (string.IsNullOrEmpty(currentUserId))
             throw new UnauthorizedAccessException("用户未登录");
 
-        var filterBuilder = _shareFactory.CreateFilterBuilder();
-        var filter = filterBuilder.Equal(s => s.CreatedBy, currentUserId);
+        Expression<Func<Models.FileShare, bool>> filter = s => s.CreatedBy == currentUserId;
 
-        // 应用筛选条件
         if (query.Type.HasValue)
-            filter = filter.Equal(s => s.Type, query.Type.Value);
+        {
+            var typeFilter = query.Type.Value;
+            filter = CombineFilters(filter, s => s.Type == typeFilter);
+        }
 
         if (query.Permission.HasValue)
-            filter = filter.Equal(s => s.Permission, query.Permission.Value);
+        {
+            var permissionFilter = query.Permission.Value;
+            filter = CombineFilters(filter, s => s.Permission == permissionFilter);
+        }
 
         if (query.IsActive.HasValue)
-            filter = filter.Equal(s => s.IsActive, query.IsActive.Value);
+        {
+            filter = CombineFilters(filter, s => s.IsActive == query.IsActive.Value);
+        }
 
         if (query.CreatedAfter.HasValue)
-            filter = filter.GreaterThanOrEqual(s => s.CreatedAt, query.CreatedAfter.Value);
+        {
+            filter = CombineFilters(filter, s => s.CreatedAt >= query.CreatedAfter.Value);
+        }
 
         if (query.CreatedBefore.HasValue)
-            filter = filter.LessThanOrEqual(s => s.CreatedAt, query.CreatedBefore.Value);
+        {
+            filter = CombineFilters(filter, s => s.CreatedAt <= query.CreatedBefore.Value);
+        }
 
         if (query.ExpiresAfter.HasValue)
-            filter = filter.GreaterThanOrEqual(s => s.ExpiresAt, query.ExpiresAfter.Value);
+        {
+            filter = CombineFilters(filter, s => s.ExpiresAt >= query.ExpiresAfter.Value);
+        }
 
         if (query.ExpiresBefore.HasValue)
-            filter = filter.LessThanOrEqual(s => s.ExpiresAt, query.ExpiresBefore.Value);
-
-        // 关键词搜索需要联合查询文件名，暂时跳过
-        // TODO: 实现文件名搜索
-
-        var sortBuilder = _shareFactory.CreateSortBuilder();
-        var sort = query.SortBy.ToLower() switch
         {
-            "createdat" => query.SortOrder.ToLower() == "desc"
-                ? sortBuilder.Descending(s => s.CreatedAt).Build()
-                : sortBuilder.Ascending(s => s.CreatedAt).Build(),
-            "updatedat" => query.SortOrder.ToLower() == "desc"
-                ? sortBuilder.Descending(s => s.UpdatedAt).Build()
-                : sortBuilder.Ascending(s => s.UpdatedAt).Build(),
-            "expiresat" => query.SortOrder.ToLower() == "desc"
-                ? sortBuilder.Descending(s => s.ExpiresAt).Build()
-                : sortBuilder.Ascending(s => s.ExpiresAt).Build(),
-            "accesscount" => query.SortOrder.ToLower() == "desc"
-                ? sortBuilder.Descending(s => s.AccessCount).Build()
-                : sortBuilder.Ascending(s => s.AccessCount).Build(),
-            _ => sortBuilder.Descending(s => s.CreatedAt).Build()
-        };
+            filter = CombineFilters(filter, s => s.ExpiresAt <= query.ExpiresBefore.Value);
+        }
 
         var (shares, total) = await _shareFactory.FindPagedAsync(
-            filter.Build(),
-            sort,
+            filter,
+            query => query.OrderByDescending(s => s.CreatedAt),
             query.Page,
             query.PageSize);
 
@@ -268,56 +231,47 @@ public class FileShareService : IFileShareService
         if (string.IsNullOrEmpty(currentUserId))
             throw new UnauthorizedAccessException("用户未登录");
 
-        var filterBuilder = _shareFactory.CreateFilterBuilder();
-        var filter = filterBuilder
-            .Equal(s => s.Type, ShareType.Internal)
-            .Equal(s => s.IsActive, true);
+        Expression<Func<Models.FileShare, bool>> filter = s => s.Type == ShareType.Internal && s.IsActive;
 
-        // Use custom filter for array membership check
-        var arrayFilter = Builders<Models.FileShare>.Filter.AnyEq(s => s.AllowedUserIds, currentUserId);
-        filter = filter.Custom(arrayFilter);
-
-        // 应用筛选条件
         if (query.Permission.HasValue)
-            filter = filter.Equal(s => s.Permission, query.Permission.Value);
+        {
+            var permissionFilter = query.Permission.Value;
+            filter = CombineFilters(filter, s => s.Permission == permissionFilter);
+        }
 
         if (query.CreatedAfter.HasValue)
-            filter = filter.GreaterThanOrEqual(s => s.CreatedAt, query.CreatedAfter.Value);
+        {
+            filter = CombineFilters(filter, s => s.CreatedAt >= query.CreatedAfter.Value);
+        }
 
         if (query.CreatedBefore.HasValue)
-            filter = filter.LessThanOrEqual(s => s.CreatedAt, query.CreatedBefore.Value);
+        {
+            filter = CombineFilters(filter, s => s.CreatedAt <= query.CreatedBefore.Value);
+        }
 
         if (query.ExpiresAfter.HasValue)
-            filter = filter.GreaterThanOrEqual(s => s.ExpiresAt, query.ExpiresAfter.Value);
+        {
+            filter = CombineFilters(filter, s => s.ExpiresAt >= query.ExpiresAfter.Value);
+        }
 
         if (query.ExpiresBefore.HasValue)
-            filter = filter.LessThanOrEqual(s => s.ExpiresAt, query.ExpiresBefore.Value);
-
-        var sortBuilder = _shareFactory.CreateSortBuilder();
-        var sort = query.SortBy.ToLower() switch
         {
-            "createdat" => query.SortOrder.ToLower() == "desc"
-                ? sortBuilder.Descending(s => s.CreatedAt).Build()
-                : sortBuilder.Ascending(s => s.CreatedAt).Build(),
-            "updatedat" => query.SortOrder.ToLower() == "desc"
-                ? sortBuilder.Descending(s => s.UpdatedAt).Build()
-                : sortBuilder.Ascending(s => s.UpdatedAt).Build(),
-            "expiresat" => query.SortOrder.ToLower() == "desc"
-                ? sortBuilder.Descending(s => s.ExpiresAt).Build()
-                : sortBuilder.Ascending(s => s.ExpiresAt).Build(),
-            _ => sortBuilder.Descending(s => s.CreatedAt).Build()
-        };
+            filter = CombineFilters(filter, s => s.ExpiresAt <= query.ExpiresBefore.Value);
+        }
 
         var (shares, total) = await _shareFactory.FindPagedAsync(
-            filter.Build(),
-            sort,
+            filter,
+            query => query.OrderByDescending(s => s.CreatedAt),
             query.Page,
             query.PageSize);
 
+        var filteredShares = shares.Where(s => s.AllowedUserIds.Contains(currentUserId)).ToList();
+        var filteredTotal = total;
+
         return new PagedResult<Models.FileShare>
         {
-            Data = shares,
-            Total = (int)total,
+            Data = filteredShares,
+            Total = (int)filteredTotal,
             Page = query.Page,
             PageSize = query.PageSize
         };
@@ -370,17 +324,11 @@ public class FileShareService : IFileShareService
         if (share == null)
             return;
 
-        // 更新访问次数和最后访问时间
-        var updateBuilder = _shareFactory.CreateUpdateBuilder();
-        var update = updateBuilder
-            .Inc(s => s.AccessCount, 1)
-            .Set(s => s.LastAccessedAt, DateTime.UtcNow)
-            .Build();
-
-        var filterBuilder = _shareFactory.CreateFilterBuilder();
-        await _shareFactory.FindOneAndUpdateAsync(
-            filterBuilder.Equal(s => s.Id, share.Id).Build(),
-            update);
+        await _shareFactory.UpdateAsync(share.Id, entity =>
+        {
+            entity.AccessCount++;
+            entity.LastAccessedAt = DateTime.UtcNow;
+        });
 
         _logger.LogInformation("Recorded access for share {ShareId} with token {ShareToken}, accessor: {AccessorInfo}",
             share.Id, shareToken, accessorInfo ?? "anonymous");
@@ -502,6 +450,15 @@ public class FileShareService : IFileShareService
     {
         var hashedInput = HashPassword(password);
         return hashedInput == hashedPassword;
+    }
+
+    private static Expression<Func<T, bool>> CombineFilters<T>(Expression<Func<T, bool>> filter1, Expression<Func<T, bool>> filter2)
+    {
+        var parameter = Expression.Parameter(typeof(T));
+        var body = Expression.AndAlso(
+            Expression.Invoke(filter1, parameter),
+            Expression.Invoke(filter2, parameter));
+        return Expression.Lambda<Func<T, bool>>(body, parameter);
     }
 
     #endregion

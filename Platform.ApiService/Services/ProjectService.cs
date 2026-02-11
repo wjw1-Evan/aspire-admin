@@ -1,11 +1,9 @@
-using MongoDB.Bson;
-using MongoDB.Driver;
+using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
+using System.Linq.Expressions;
 
 namespace Platform.ApiService.Services;
 
@@ -14,20 +12,20 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class ProjectService : IProjectService
 {
-    private readonly IDatabaseOperationFactory<Project> _projectFactory;
-    private readonly IDatabaseOperationFactory<ProjectMember> _projectMemberFactory;
-    private readonly IDatabaseOperationFactory<WorkTask> _taskFactory;
-    private readonly IDatabaseOperationFactory<Milestone> _milestoneFactory;
+    private readonly IDataFactory<Project> _projectFactory;
+    private readonly IDataFactory<ProjectMember> _projectMemberFactory;
+    private readonly IDataFactory<WorkTask> _taskFactory;
+    private readonly IDataFactory<Milestone> _milestoneFactory;
     private readonly IUserService _userService;
 
     /// <summary>
     /// 初始化 ProjectService 实例
     /// </summary>
     public ProjectService(
-        IDatabaseOperationFactory<Project> projectFactory,
-        IDatabaseOperationFactory<ProjectMember> projectMemberFactory,
-        IDatabaseOperationFactory<WorkTask> taskFactory,
-        IDatabaseOperationFactory<Milestone> milestoneFactory,
+        IDataFactory<Project> projectFactory,
+        IDataFactory<ProjectMember> projectMemberFactory,
+        IDataFactory<WorkTask> taskFactory,
+        IDataFactory<Milestone> milestoneFactory,
         IUserService userService)
     {
         _projectFactory = projectFactory;
@@ -80,44 +78,32 @@ public class ProjectService : IProjectService
     /// </summary>
     public async Task<ProjectDto> UpdateProjectAsync(UpdateProjectRequest request, string userId)
     {
-        var project = await _projectFactory.GetByIdAsync(request.ProjectId);
-        if (project == null)
-            throw new KeyNotFoundException($"项目 {request.ProjectId} 不存在");
+        var updatedProject = await _projectFactory.UpdateAsync(request.ProjectId, p =>
+        {
+            if (!string.IsNullOrEmpty(request.Name))
+                p.Name = request.Name;
 
-        var updateBuilder = _projectFactory.CreateUpdateBuilder();
+            if (request.Description != null)
+                p.Description = request.Description;
 
-        if (!string.IsNullOrEmpty(request.Name))
-            updateBuilder.Set(p => p.Name, request.Name);
+            if (request.Status.HasValue)
+                p.Status = (ProjectStatus)request.Status.Value;
 
-        if (request.Description != null)
-            updateBuilder.Set(p => p.Description, request.Description);
+            if (request.StartDate.HasValue)
+                p.StartDate = request.StartDate;
 
-        if (request.Status.HasValue)
-            updateBuilder.Set(p => p.Status, (ProjectStatus)request.Status.Value);
+            if (request.EndDate.HasValue)
+                p.EndDate = request.EndDate;
 
-        if (request.StartDate.HasValue)
-            updateBuilder.Set(p => p.StartDate, request.StartDate);
+            if (request.ManagerId != null)
+                p.ManagerId = request.ManagerId;
 
-        if (request.EndDate.HasValue)
-            updateBuilder.Set(p => p.EndDate, request.EndDate);
+            if (request.Budget.HasValue)
+                p.Budget = request.Budget;
 
-        if (request.ManagerId != null)
-            updateBuilder.Set(p => p.ManagerId, request.ManagerId);
-
-        if (request.Budget.HasValue)
-            updateBuilder.Set(p => p.Budget, request.Budget);
-
-        if (request.Priority.HasValue)
-            updateBuilder.Set(p => p.Priority, (ProjectPriority)request.Priority.Value);
-
-        var filter = _projectFactory.CreateFilterBuilder()
-            .Equal(p => p.Id, request.ProjectId)
-            .Build();
-
-        var updatedProject = await _projectFactory.FindOneAndUpdateAsync(
-            filter,
-            updateBuilder.Build(),
-            new FindOneAndUpdateOptions<Project> { ReturnDocument = ReturnDocument.After });
+            if (request.Priority.HasValue)
+                p.Priority = (ProjectPriority)request.Priority.Value;
+        });
 
         if (updatedProject == null)
             throw new KeyNotFoundException($"项目 {request.ProjectId} 不存在");
@@ -130,14 +116,8 @@ public class ProjectService : IProjectService
     /// </summary>
     public async Task<bool> DeleteProjectAsync(string projectId, string userId, string? reason = null)
     {
-        var project = await _projectFactory.GetByIdAsync(projectId);
-        if (project == null)
-            return false;
-
-        var result = await _projectFactory.FindOneAndSoftDeleteAsync(
-            _projectFactory.CreateFilterBuilder().Equal(p => p.Id, projectId).Build());
-
-        return result != null;
+        var updated = await _projectFactory.UpdateAsync(projectId, p => p.IsDeleted = true);
+        return updated != null;
     }
 
     /// <summary>
@@ -157,133 +137,71 @@ public class ProjectService : IProjectService
     /// </summary>
     public async Task<ProjectListResponse> GetProjectsListAsync(ProjectQueryRequest request, string companyId)
     {
-        var filterBuilder = _projectFactory.CreateFilterBuilder();
+        Expression<Func<Project, bool>> filter = p => p.CompanyId == companyId;
 
         // 搜索关键词
         if (!string.IsNullOrEmpty(request.Search))
         {
-            var pattern = $".*{System.Text.RegularExpressions.Regex.Escape(request.Search)}.*";
-            var regex = new BsonRegularExpression(pattern, "i");
-            var searchFilter = Builders<Project>.Filter.Or(
-                Builders<Project>.Filter.Regex("name", regex),
-                Builders<Project>.Filter.Regex("description", regex)
-            );
-            filterBuilder.Custom(searchFilter);
+            var search = request.Search.ToLower();
+            filter = filter.And(p => (p.Name != null && p.Name.ToLower().Contains(search)) || (p.Description != null && p.Description.ToLower().Contains(search)));
         }
 
         // 状态过滤
         if (request.Status.HasValue)
         {
-            filterBuilder.Equal(p => p.Status, (ProjectStatus)request.Status.Value);
+            var status = (ProjectStatus)request.Status.Value;
+            filter = filter.And(p => p.Status == status);
         }
 
         // 优先级过滤
         if (request.Priority.HasValue)
         {
-            filterBuilder.Equal(p => p.Priority, (ProjectPriority)request.Priority.Value);
+            var priority = (ProjectPriority)request.Priority.Value;
+            filter = filter.And(p => p.Priority == priority);
         }
 
         // 项目经理过滤
         if (!string.IsNullOrEmpty(request.ManagerId))
         {
-            // 验证 ManagerId 是否为有效的 ObjectId 格式
-            if (MongoDB.Bson.ObjectId.TryParse(request.ManagerId, out var managerObjectId))
-            {
-                filterBuilder.Equal(p => p.ManagerId, request.ManagerId);
-            }
-            else
-            {
-                // 如果 ManagerId 格式无效，记录警告但不抛出异常
-                Console.WriteLine($"警告: ManagerId 格式无效，将被忽略: {request.ManagerId}");
-            }
+            filter = filter.And(p => p.ManagerId == request.ManagerId);
         }
 
         // 日期范围过滤
         if (request.StartDate.HasValue || request.EndDate.HasValue)
         {
-            DateTime? startDate = null;
-            DateTime? endDate = null;
-
             if (request.StartDate.HasValue)
             {
-                // 确保日期是 UTC 时间
-                startDate = request.StartDate.Value.Kind == DateTimeKind.Unspecified 
-                    ? DateTime.SpecifyKind(request.StartDate.Value, DateTimeKind.Utc) 
-                    : request.StartDate.Value.ToUniversalTime();
+                var startDate = request.StartDate.Value.ToUniversalTime();
+                filter = filter.And(p => p.CreatedAt >= startDate);
             }
 
             if (request.EndDate.HasValue)
             {
-                // 确保日期是 UTC 时间，并设置为当天的结束时间
-                var endDateValue = request.EndDate.Value.Kind == DateTimeKind.Unspecified 
-                    ? DateTime.SpecifyKind(request.EndDate.Value, DateTimeKind.Utc) 
-                    : request.EndDate.Value.ToUniversalTime();
-                // 设置为当天的 23:59:59.999
-                endDate = endDateValue.Date.AddDays(1).AddMilliseconds(-1);
+                var endDate = request.EndDate.Value.ToUniversalTime().Date.AddDays(1).AddMilliseconds(-1);
+                filter = filter.And(p => p.CreatedAt <= endDate);
             }
-
-            // 使用 CreatedBetween 方法，它专门用于日期范围查询
-            filterBuilder.CreatedBetween(startDate, endDate);
         }
-
-        var filter = filterBuilder.Build();
 
         // 排序
-        var sortBuilder = _projectFactory.CreateSortBuilder();
-        var sortByLower = (request.SortBy ?? "CreatedAt").ToLower();
+        Func<IQueryable<Project>, IOrderedQueryable<Project>> sortAction;
         var isAscending = (request.SortOrder ?? "desc").ToLower() == "asc";
-        
-        switch (sortByLower)
+        var sortBy = (request.SortBy ?? "CreatedAt").ToLower();
+
+        sortAction = sortBy switch
         {
-            case "name":
-                if (isAscending)
-                    sortBuilder.Ascending(p => p.Name);
-                else
-                    sortBuilder.Descending(p => p.Name);
-                break;
-            case "status":
-                if (isAscending)
-                    sortBuilder.Ascending(p => p.Status);
-                else
-                    sortBuilder.Descending(p => p.Status);
-                break;
-            case "priority":
-                if (isAscending)
-                    sortBuilder.Ascending(p => p.Priority);
-                else
-                    sortBuilder.Descending(p => p.Priority);
-                break;
-            case "progress":
-                if (isAscending)
-                    sortBuilder.Ascending(p => p.Progress);
-                else
-                    sortBuilder.Descending(p => p.Progress);
-                break;
-            case "startdate":
-                if (isAscending)
-                    sortBuilder.Ascending(p => p.StartDate);
-                else
-                    sortBuilder.Descending(p => p.StartDate);
-                break;
-            case "enddate":
-                if (isAscending)
-                    sortBuilder.Ascending(p => p.EndDate);
-                else
-                    sortBuilder.Descending(p => p.EndDate);
-                break;
-            case "createdat":
-            default:
-                if (isAscending)
-                    sortBuilder.Ascending(p => p.CreatedAt);
-                else
-                    sortBuilder.Descending(p => p.CreatedAt);
-                break;
-        }
+            "name" => isAscending ? (q => q.OrderBy(p => p.Name)) : (q => q.OrderByDescending(p => p.Name)),
+            "status" => isAscending ? (q => q.OrderBy(p => p.Status)) : (q => q.OrderByDescending(p => p.Status)),
+            "priority" => isAscending ? (q => q.OrderBy(p => p.Priority)) : (q => q.OrderByDescending(p => p.Priority)),
+            "progress" => isAscending ? (q => q.OrderBy(p => p.Progress)) : (q => q.OrderByDescending(p => p.Progress)),
+            "startdate" => isAscending ? (q => q.OrderBy(p => p.StartDate)) : (q => q.OrderByDescending(p => p.StartDate)),
+            "enddate" => isAscending ? (q => q.OrderBy(p => p.EndDate)) : (q => q.OrderByDescending(p => p.EndDate)),
+            _ => isAscending ? (q => q.OrderBy(p => p.CreatedAt)) : (q => q.OrderByDescending(p => p.CreatedAt)),
+        };
 
         // 分页查询
         var (projects, total) = await _projectFactory.FindPagedAsync(
             filter,
-            sortBuilder.Build(),
+            sortAction,
             request.Page,
             request.PageSize);
 
@@ -307,17 +225,16 @@ public class ProjectService : IProjectService
     /// </summary>
     public async Task<ProjectStatistics> GetProjectStatisticsAsync(string companyId)
     {
-        var allProjects = await _projectFactory.FindAsync(
-            _projectFactory.CreateFilterBuilder().Build());
+        var allProjects = await _projectFactory.FindAsync(p => p.CompanyId == companyId);
 
         var statistics = new ProjectStatistics
         {
             TotalProjects = allProjects.Count,
             InProgressProjects = allProjects.Count(p => p.Status == ProjectStatus.InProgress),
             CompletedProjects = allProjects.Count(p => p.Status == ProjectStatus.Completed),
-            DelayedProjects = allProjects.Count(p => 
-                p.Status == ProjectStatus.InProgress && 
-                p.EndDate.HasValue && 
+            DelayedProjects = allProjects.Count(p =>
+                p.Status == ProjectStatus.InProgress &&
+                p.EndDate.HasValue &&
                 p.EndDate.Value < DateTime.UtcNow)
         };
 
@@ -355,13 +272,10 @@ public class ProjectService : IProjectService
             throw new KeyNotFoundException($"项目 {request.ProjectId} 不存在");
 
         // 检查成员是否已存在
-        var existingMember = await _projectMemberFactory.FindAsync(
-            _projectMemberFactory.CreateFilterBuilder()
-                .Equal(m => m.ProjectId, request.ProjectId)
-                .Equal(m => m.UserId, request.UserId)
-                .Build());
+        var exists = await _projectMemberFactory.ExistsAsync(m =>
+            m.ProjectId == request.ProjectId && m.UserId == request.UserId);
 
-        if (existingMember.Any())
+        if (exists)
             throw new InvalidOperationException("该用户已经是项目成员");
 
         var member = new ProjectMember
@@ -383,13 +297,10 @@ public class ProjectService : IProjectService
     /// </summary>
     public async Task<bool> RemoveProjectMemberAsync(string projectId, string memberUserId, string userId)
     {
-        var filter = _projectMemberFactory.CreateFilterBuilder()
-            .Equal(m => m.ProjectId, projectId)
-            .Equal(m => m.UserId, memberUserId)
-            .Build();
-
-        var member = await _projectMemberFactory.FindOneAndSoftDeleteAsync(filter);
-        return member != null;
+        var updated = await _projectMemberFactory.UpdateManyAsync(
+            m => m.ProjectId == projectId && m.UserId == memberUserId,
+            m => m.IsDeleted = true);
+        return updated > 0;
     }
 
     /// <summary>
@@ -397,10 +308,7 @@ public class ProjectService : IProjectService
     /// </summary>
     public async Task<List<ProjectMemberDto>> GetProjectMembersAsync(string projectId)
     {
-        var members = await _projectMemberFactory.FindAsync(
-            _projectMemberFactory.CreateFilterBuilder()
-                .Equal(m => m.ProjectId, projectId)
-                .Build());
+        var members = await _projectMemberFactory.FindAsync(m => m.ProjectId == projectId);
 
         var memberDtos = new List<ProjectMemberDto>();
         foreach (var member in members)
@@ -417,56 +325,32 @@ public class ProjectService : IProjectService
     public async Task<int> CalculateProjectProgressAsync(string projectId)
     {
         // 获取项目下的所有任务
-        var tasks = await _taskFactory.FindAsync(
-            _taskFactory.CreateFilterBuilder()
-                .Equal(t => t.ProjectId, projectId)
-                .Build());
+        var tasks = await _taskFactory.FindAsync(t => t.ProjectId == projectId);
 
         if (tasks.Count == 0)
             return 0;
 
         // 只计算根任务（没有父任务的任务）的进度，避免重复计算
         var rootTasks = tasks.Where(t => string.IsNullOrEmpty(t.ParentTaskId)).ToList();
-        
+
+        int averageProgress;
         if (rootTasks.Count == 0)
         {
             // 如果没有根任务，计算所有任务的平均进度
             var totalProgress = tasks.Sum(t => t.CompletionPercentage);
-            var averageProgress = totalProgress / tasks.Count;
-            
-            // 更新项目进度
-            var progressUpdateBuilder = _projectFactory.CreateUpdateBuilder()
-                .Set(p => p.Progress, averageProgress);
-
-            var progressFilter = _projectFactory.CreateFilterBuilder()
-                .Equal(p => p.Id, projectId)
-                .Build();
-
-            await _projectFactory.FindOneAndUpdateAsync(
-                progressFilter, 
-                progressUpdateBuilder.Build(),
-                new FindOneAndUpdateOptions<Project> { ReturnDocument = ReturnDocument.After });
-            return averageProgress;
+            averageProgress = totalProgress / tasks.Count;
+        }
+        else
+        {
+            // 计算根任务的平均进度
+            var rootTotalProgress = rootTasks.Sum(t => t.CompletionPercentage);
+            averageProgress = rootTotalProgress / rootTasks.Count;
         }
 
-        // 计算根任务的平均进度
-        var rootTotalProgress = rootTasks.Sum(t => t.CompletionPercentage);
-        var rootAverageProgress = rootTotalProgress / rootTasks.Count;
-
         // 更新项目进度
-        var updateBuilder = _projectFactory.CreateUpdateBuilder()
-            .Set(p => p.Progress, rootAverageProgress);
+        await _projectFactory.UpdateAsync(projectId, p => p.Progress = averageProgress);
 
-        var filter = _projectFactory.CreateFilterBuilder()
-            .Equal(p => p.Id, projectId)
-            .Build();
-
-        await _projectFactory.FindOneAndUpdateAsync(
-            filter, 
-            updateBuilder.Build(),
-            new FindOneAndUpdateOptions<Project> { ReturnDocument = ReturnDocument.After });
-
-        return rootAverageProgress;
+        return averageProgress;
     }
 
     /// <summary>
@@ -503,8 +387,8 @@ public class ProjectService : IProjectService
                 if (manager != null)
                 {
                     // 显示格式：用户名 (昵称)，如果昵称为空则只显示用户名
-                    dto.ManagerName = !string.IsNullOrWhiteSpace(manager.Name) 
-                        ? $"{manager.Username} ({manager.Name})" 
+                    dto.ManagerName = !string.IsNullOrWhiteSpace(manager.Name)
+                        ? $"{manager.Username} ({manager.Name})"
                         : manager.Username;
                 }
                 else
@@ -531,8 +415,8 @@ public class ProjectService : IProjectService
                 if (creator != null)
                 {
                     // 显示格式：用户名 (昵称)，如果昵称为空则只显示用户名
-                    dto.CreatedByName = !string.IsNullOrWhiteSpace(creator.Name) 
-                        ? $"{creator.Username} ({creator.Name})" 
+                    dto.CreatedByName = !string.IsNullOrWhiteSpace(creator.Name)
+                        ? $"{creator.Username} ({creator.Name})"
                         : creator.Username;
                 }
                 else

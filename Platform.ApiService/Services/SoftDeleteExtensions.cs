@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using MongoDB.Driver;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
@@ -30,7 +31,7 @@ public static class SoftDeleteExtensions
     /// 构建软删除更新定义
     /// </summary>
     public static UpdateDefinition<T> ApplySoftDelete<T>(
-        string? deletedBy = null, 
+        string? deletedBy = null,
         string? reason = null) where T : Platform.ServiceDefaults.Models.ISoftDeletable
     {
         var updateBuilder = Builders<T>.Update;

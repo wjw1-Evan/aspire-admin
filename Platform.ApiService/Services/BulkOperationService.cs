@@ -1,29 +1,20 @@
 using Microsoft.Extensions.Logging;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
+using System.Linq.Expressions;
 
 namespace Platform.ApiService.Services;
 
-/// <summary>
-/// 批量操作服务实现
-/// </summary>
 public class BulkOperationService : IBulkOperationService
 {
-    private readonly IDatabaseOperationFactory<BulkOperation> _bulkOperationFactory;
-    private readonly IDatabaseOperationFactory<WorkflowDefinition> _workflowFactory;
+    private readonly IDataFactory<BulkOperation> _bulkOperationFactory;
+    private readonly IDataFactory<WorkflowDefinition> _workflowFactory;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<BulkOperationService> _logger;
 
-    /// <summary>
-    /// 初始化批量操作服务
-    /// </summary>
-    /// <param name="bulkOperationFactory">批量操作数据工厂</param>
-    /// <param name="workflowFactory">工作流定义数据工厂</param>
-    /// <param name="tenantContext">租户上下文</param>
-    /// <param name="logger">日志记录器</param>
     public BulkOperationService(
-        IDatabaseOperationFactory<BulkOperation> bulkOperationFactory,
-        IDatabaseOperationFactory<WorkflowDefinition> workflowFactory,
+        IDataFactory<BulkOperation> bulkOperationFactory,
+        IDataFactory<WorkflowDefinition> workflowFactory,
         ITenantContext tenantContext,
         ILogger<BulkOperationService> logger)
     {
@@ -33,23 +24,18 @@ public class BulkOperationService : IBulkOperationService
         _logger = logger;
     }
 
-    /// <summary>
-    /// 创建批量操作
-    /// </summary>
     public async Task<BulkOperation> CreateBulkOperationAsync(BulkOperationType operationType, List<string> workflowIds, Dictionary<string, object>? parameters = null)
     {
         var userId = _bulkOperationFactory.GetRequiredUserId();
-        var companyId = await _bulkOperationFactory.GetRequiredCompanyIdAsync();
+        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? throw new UnauthorizedAccessException("未找到当前企业信息");
 
-        // 验证工作流ID是否存在且属于当前企业
-        var filter = _workflowFactory.CreateFilterBuilder()
-            .In(w => w.Id, workflowIds)
-            .Equal(w => w.IsDeleted, false)
-            .Build();
-
+        Expression<Func<WorkflowDefinition, bool>> filter = w => 
+            workflowIds.Contains(w.Id!) && 
+            w.IsDeleted == false;
+        
         var existingWorkflows = await _workflowFactory.FindAsync(filter);
         var existingWorkflowIds = existingWorkflows.Select(w => w.Id).ToList();
-        var invalidWorkflowIds = workflowIds.Except(existingWorkflowIds).ToList();
+        var invalidWorkflowIds = workflowIds.Except(existingWorkflowIds.Where(id => id != null).Select(id => id!)).ToList();
 
         if (invalidWorkflowIds.Any())
         {
@@ -74,9 +60,6 @@ public class BulkOperationService : IBulkOperationService
         return createdOperation;
     }
 
-    /// <summary>
-    /// 执行批量操作
-    /// </summary>
     public async Task<bool> ExecuteBulkOperationAsync(string operationId, CancellationToken cancellationToken = default)
     {
         var operation = await _bulkOperationFactory.GetByIdAsync(operationId);
@@ -92,7 +75,6 @@ public class BulkOperationService : IBulkOperationService
             return false;
         }
 
-        // 更新状态为进行中
         await UpdateOperationStatusAsync(operationId, BulkOperationStatus.InProgress, DateTime.UtcNow);
 
         try
@@ -117,7 +99,6 @@ public class BulkOperationService : IBulkOperationService
                     throw new NotSupportedException($"不支持的批量操作类型: {operation.OperationType}");
             }
 
-            // 更新状态为已完成
             await UpdateOperationStatusAsync(operationId, BulkOperationStatus.Completed, null, DateTime.UtcNow);
 
             _logger.LogInformation("批量操作执行完成: OperationId={OperationId}, Success={SuccessCount}, Failed={FailedCount}",
@@ -139,9 +120,6 @@ public class BulkOperationService : IBulkOperationService
         }
     }
 
-    /// <summary>
-    /// 取消批量操作
-    /// </summary>
     public async Task<bool> CancelBulkOperationAsync(string operationId)
     {
         var operation = await _bulkOperationFactory.GetByIdAsync(operationId);
@@ -160,88 +138,62 @@ public class BulkOperationService : IBulkOperationService
         return false;
     }
 
-    /// <summary>
-    /// 获取批量操作状态
-    /// </summary>
     public async Task<BulkOperation?> GetBulkOperationAsync(string operationId)
     {
         return await _bulkOperationFactory.GetByIdAsync(operationId);
     }
 
-    /// <summary>
-    /// 获取用户的批量操作列表
-    /// </summary>
     public async Task<List<BulkOperation>> GetUserBulkOperationsAsync(int page = 1, int pageSize = 20)
     {
         var userId = _bulkOperationFactory.GetRequiredUserId();
 
-        var filter = _bulkOperationFactory.CreateFilterBuilder()
-            .Equal(b => b.CreatedBy, userId)
-            .Equal(b => b.IsDeleted, false)
-            .Build();
+        Expression<Func<BulkOperation, bool>> filter = b => 
+            b.CreatedBy == userId && 
+            b.IsDeleted == false;
+        
+        var orderBy = (IQueryable<BulkOperation> query) => query.OrderByDescending(b => b.CreatedAt);
 
-        var sort = _bulkOperationFactory.CreateSortBuilder()
-            .Descending(b => b.CreatedAt)
-            .Build();
-
-        var (operations, _) = await _bulkOperationFactory.FindPagedAsync(filter, sort, page, pageSize);
+        var (operations, _) = await _bulkOperationFactory.FindPagedAsync(filter, orderBy, page, pageSize);
         return operations;
     }
 
-    /// <summary>
-    /// 清理已完成的批量操作
-    /// </summary>
     public async Task<int> CleanupCompletedOperationsAsync(TimeSpan olderThan)
     {
         var cutoffDate = DateTime.UtcNow.Subtract(olderThan);
 
-        var filter = _bulkOperationFactory.CreateFilterBuilder()
-            .In(b => b.Status, new[] { BulkOperationStatus.Completed, BulkOperationStatus.Cancelled, BulkOperationStatus.Failed })
-            .LessThan(b => b.CompletedAt, cutoffDate)
-            .Equal(b => b.IsDeleted, false)
-            .Build();
-
+        Expression<Func<BulkOperation, bool>> filter = b => 
+            (b.Status == BulkOperationStatus.Completed || 
+             b.Status == BulkOperationStatus.Cancelled || 
+             b.Status == BulkOperationStatus.Failed) &&
+            b.CompletedAt < cutoffDate &&
+            b.IsDeleted == false;
+        
         var operationsToDelete = await _bulkOperationFactory.FindAsync(filter);
         var deletedCount = 0;
 
         foreach (var operation in operationsToDelete)
         {
-            await _bulkOperationFactory.FindOneAndSoftDeleteAsync(
-                _bulkOperationFactory.CreateFilterBuilder().Equal(b => b.Id, operation.Id).Build()
-            );
-            deletedCount++;
+            if (operation.Id != null)
+            {
+                await _bulkOperationFactory.SoftDeleteAsync(operation.Id);
+                deletedCount++;
+            }
         }
 
         _logger.LogInformation("清理已完成的批量操作: 删除数量={DeletedCount}", deletedCount);
         return deletedCount;
     }
 
-    #region 私有方法
-
-    /// <summary>
-    /// 更新操作状态
-    /// </summary>
     private async Task UpdateOperationStatusAsync(string operationId, BulkOperationStatus status, DateTime? startedAt = null, DateTime? completedAt = null)
     {
-        var updateBuilder = _bulkOperationFactory.CreateUpdateBuilder()
-            .Set(b => b.Status, status);
-
-        if (startedAt.HasValue)
-            updateBuilder.Set(b => b.StartedAt, startedAt.Value);
-
-        if (completedAt.HasValue)
-            updateBuilder.Set(b => b.CompletedAt, completedAt.Value);
-
-        var filter = _bulkOperationFactory.CreateFilterBuilder()
-            .Equal(b => b.Id, operationId)
-            .Build();
-
-        await _bulkOperationFactory.FindOneAndUpdateAsync(filter, updateBuilder.Build());
+        await _bulkOperationFactory.UpdateAsync(operationId, b =>
+        {
+            b.Status = status;
+            if (startedAt.HasValue) b.StartedAt = startedAt.Value;
+            if (completedAt.HasValue) b.CompletedAt = completedAt.Value;
+        });
     }
 
-    /// <summary>
-    /// 执行激活操作
-    /// </summary>
     private async Task ExecuteActivateOperationAsync(BulkOperation operation, CancellationToken cancellationToken)
     {
         foreach (var workflowId in operation.TargetWorkflowIds)
@@ -250,30 +202,12 @@ public class BulkOperationService : IBulkOperationService
 
             try
             {
-                var filter = _workflowFactory.CreateFilterBuilder()
-                    .Equal(w => w.Id, workflowId)
-                    .Equal(w => w.IsDeleted, false)
-                    .Build();
-
-                var update = _workflowFactory.CreateUpdateBuilder()
-                    .Set(w => w.IsActive, true)
-                    .Build();
-
-                var result = await _workflowFactory.FindOneAndUpdateAsync(filter, update);
-                if (result != null)
+                await _workflowFactory.UpdateAsync(workflowId!, w =>
                 {
-                    operation.SuccessCount++;
-                    _logger.LogDebug("工作流激活成功: WorkflowId={WorkflowId}", workflowId);
-                }
-                else
-                {
-                    operation.FailureCount++;
-                    operation.Errors.Add(new BulkOperationError
-                    {
-                        WorkflowId = workflowId,
-                        ErrorMessage = "工作流不存在或已被删除"
-                    });
-                }
+                    w.IsActive = true;
+                });
+                operation.SuccessCount++;
+                _logger.LogDebug("工作流激活成功: WorkflowId={WorkflowId}", workflowId);
             }
             catch (Exception ex)
             {
@@ -291,9 +225,6 @@ public class BulkOperationService : IBulkOperationService
         }
     }
 
-    /// <summary>
-    /// 执行停用操作
-    /// </summary>
     private async Task ExecuteDeactivateOperationAsync(BulkOperation operation, CancellationToken cancellationToken)
     {
         foreach (var workflowId in operation.TargetWorkflowIds)
@@ -302,30 +233,12 @@ public class BulkOperationService : IBulkOperationService
 
             try
             {
-                var filter = _workflowFactory.CreateFilterBuilder()
-                    .Equal(w => w.Id, workflowId)
-                    .Equal(w => w.IsDeleted, false)
-                    .Build();
-
-                var update = _workflowFactory.CreateUpdateBuilder()
-                    .Set(w => w.IsActive, false)
-                    .Build();
-
-                var result = await _workflowFactory.FindOneAndUpdateAsync(filter, update);
-                if (result != null)
+                await _workflowFactory.UpdateAsync(workflowId!, w =>
                 {
-                    operation.SuccessCount++;
-                    _logger.LogDebug("工作流停用成功: WorkflowId={WorkflowId}", workflowId);
-                }
-                else
-                {
-                    operation.FailureCount++;
-                    operation.Errors.Add(new BulkOperationError
-                    {
-                        WorkflowId = workflowId,
-                        ErrorMessage = "工作流不存在或已被删除"
-                    });
-                }
+                    w.IsActive = false;
+                });
+                operation.SuccessCount++;
+                _logger.LogDebug("工作流停用成功: WorkflowId={WorkflowId}", workflowId);
             }
             catch (Exception ex)
             {
@@ -343,9 +256,6 @@ public class BulkOperationService : IBulkOperationService
         }
     }
 
-    /// <summary>
-    /// 执行删除操作
-    /// </summary>
     private async Task ExecuteDeleteOperationAsync(BulkOperation operation, CancellationToken cancellationToken)
     {
         foreach (var workflowId in operation.TargetWorkflowIds)
@@ -354,25 +264,23 @@ public class BulkOperationService : IBulkOperationService
 
             try
             {
-                var filter = _workflowFactory.CreateFilterBuilder()
-                    .Equal(w => w.Id, workflowId)
-                    .Equal(w => w.IsDeleted, false)
-                    .Build();
-
-                var result = await _workflowFactory.FindOneAndSoftDeleteAsync(filter);
-                if (result != null)
+                if (workflowId != null)
                 {
-                    operation.SuccessCount++;
-                    _logger.LogDebug("工作流删除成功: WorkflowId={WorkflowId}", workflowId);
-                }
-                else
-                {
-                    operation.FailureCount++;
-                    operation.Errors.Add(new BulkOperationError
+                    var result = await _workflowFactory.SoftDeleteAsync(workflowId);
+                    if (result)
                     {
-                        WorkflowId = workflowId,
-                        ErrorMessage = "工作流不存在或已被删除"
-                    });
+                        operation.SuccessCount++;
+                        _logger.LogDebug("工作流删除成功: WorkflowId={WorkflowId}", workflowId);
+                    }
+                    else
+                    {
+                        operation.FailureCount++;
+                        operation.Errors.Add(new BulkOperationError
+                        {
+                            WorkflowId = workflowId,
+                            ErrorMessage = "工作流不存在或已被删除"
+                        });
+                    }
                 }
             }
             catch (Exception ex)
@@ -391,9 +299,6 @@ public class BulkOperationService : IBulkOperationService
         }
     }
 
-    /// <summary>
-    /// 执行更新类别操作
-    /// </summary>
     private async Task ExecuteUpdateCategoryOperationAsync(BulkOperation operation, CancellationToken cancellationToken)
     {
         if (!operation.Parameters.TryGetValue("category", out var categoryObj) || categoryObj is not string category)
@@ -407,30 +312,12 @@ public class BulkOperationService : IBulkOperationService
 
             try
             {
-                var filter = _workflowFactory.CreateFilterBuilder()
-                    .Equal(w => w.Id, workflowId)
-                    .Equal(w => w.IsDeleted, false)
-                    .Build();
-
-                var update = _workflowFactory.CreateUpdateBuilder()
-                    .Set(w => w.Category, category)
-                    .Build();
-
-                var result = await _workflowFactory.FindOneAndUpdateAsync(filter, update);
-                if (result != null)
+                await _workflowFactory.UpdateAsync(workflowId!, w =>
                 {
-                    operation.SuccessCount++;
-                    _logger.LogDebug("工作流类别更新成功: WorkflowId={WorkflowId}, Category={Category}", workflowId, category);
-                }
-                else
-                {
-                    operation.FailureCount++;
-                    operation.Errors.Add(new BulkOperationError
-                    {
-                        WorkflowId = workflowId,
-                        ErrorMessage = "工作流不存在或已被删除"
-                    });
-                }
+                    w.Category = category;
+                });
+                operation.SuccessCount++;
+                _logger.LogDebug("工作流类别更新成功: WorkflowId={WorkflowId}, Category={Category}", workflowId, category);
             }
             catch (Exception ex)
             {
@@ -448,24 +335,16 @@ public class BulkOperationService : IBulkOperationService
         }
     }
 
-    /// <summary>
-    /// 更新进度
-    /// </summary>
     private async Task UpdateProgressAsync(BulkOperation operation)
     {
-        var filter = _bulkOperationFactory.CreateFilterBuilder()
-            .Equal(b => b.Id, operation.Id)
-            .Build();
+        if (operation.Id == null) return;
 
-        var update = _bulkOperationFactory.CreateUpdateBuilder()
-            .Set(b => b.ProcessedCount, operation.ProcessedCount)
-            .Set(b => b.SuccessCount, operation.SuccessCount)
-            .Set(b => b.FailureCount, operation.FailureCount)
-            .Set(b => b.Errors, operation.Errors)
-            .Build();
-
-        await _bulkOperationFactory.FindOneAndUpdateAsync(filter, update);
+        await _bulkOperationFactory.UpdateAsync(operation.Id, b =>
+        {
+            b.ProcessedCount = operation.ProcessedCount;
+            b.SuccessCount = operation.SuccessCount;
+            b.FailureCount = operation.FailureCount;
+            b.Errors = operation.Errors;
+        });
     }
-
-    #endregion
 }

@@ -1,7 +1,6 @@
+using System.Linq.Expressions;
 using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Models;
-using Platform.ApiService.Constants;
-using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 
 namespace Platform.ApiService.Services;
@@ -11,8 +10,8 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class MenuService : IMenuService
 {
-    private readonly IDatabaseOperationFactory<Menu> _menuFactory;
-    private readonly IDatabaseOperationFactory<Role> _roleFactory;
+    private readonly IDataFactory<Menu> _menuFactory;
+    private readonly IDataFactory<Role> _roleFactory;
 
     /// <summary>
     /// 初始化菜单服务
@@ -20,8 +19,8 @@ public class MenuService : IMenuService
     /// <param name="menuFactory">菜单数据操作工厂</param>
     /// <param name="roleFactory">角色数据操作工厂</param>
     public MenuService(
-        IDatabaseOperationFactory<Menu> menuFactory,
-        IDatabaseOperationFactory<Role> roleFactory)
+        IDataFactory<Menu> menuFactory,
+        IDataFactory<Role> roleFactory)
     {
         // 菜单是全局资源，不使用 BaseRepository（避免 CompanyId 过滤）
         _menuFactory = menuFactory;
@@ -33,9 +32,7 @@ public class MenuService : IMenuService
     /// </summary>
     public async Task<List<Menu>> GetAllMenusAsync()
     {
-        var sortBuilder = _menuFactory.CreateSortBuilder()
-            .Ascending(m => m.SortOrder);
-        return await _menuFactory.FindAsync(sort: sortBuilder.Build());
+        return await _menuFactory.FindAsync(m => true, query => query.OrderBy(m => m.SortOrder));
     }
 
     /// <summary>
@@ -43,13 +40,9 @@ public class MenuService : IMenuService
     /// </summary>
     public async Task<List<MenuTreeNode>> GetMenuTreeAsync()
     {
-        var filter = _menuFactory.CreateFilterBuilder()
-            .Equal(m => m.IsEnabled, true)
-            .ExcludeDeleted()
-            .Build();
-        var sortBuilder = _menuFactory.CreateSortBuilder()
-            .Ascending(m => m.SortOrder);
-        var allMenus = await _menuFactory.FindAsync(filter, sort: sortBuilder.Build());
+        var allMenus = await _menuFactory.FindAsync(
+            m => m.IsEnabled == true && m.IsDeleted == false,
+            query => query.OrderBy(m => m.SortOrder));
         return BuildMenuTree(allMenus, null);
     }
 
@@ -63,12 +56,8 @@ public class MenuService : IMenuService
         // 但由于 Role 实现了 IMultiTenant，自动过滤会使用 JWT token 中的企业ID
         // 为了保持一致性和避免切换企业后的问题，我们使用 FindWithoutTenantFilterAsync
         // 前提是：调用方必须确保 roleIds 都属于同一企业
-        var rolesFilter = _roleFactory.CreateFilterBuilder()
-            .In(r => r.Id, roleIds)
-            .Equal(r => r.IsDeleted, false)
-            .Equal(r => r.IsActive, true)
-            .Build();
-        var userRoles = await _roleFactory.FindWithoutTenantFilterAsync(rolesFilter);
+        var userRoles = await _roleFactory.FindWithoutTenantFilterAsync(
+            r => roleIds.Contains(r.Id) && r.IsDeleted == false && r.IsActive == true);
 
         // 收集所有角色可访问的菜单ID
         var accessibleMenuIds = userRoles
@@ -77,12 +66,9 @@ public class MenuService : IMenuService
             .ToList();
 
         // 获取这些菜单（未删除且已启用）
-        var menusFilter = _menuFactory.CreateFilterBuilder()
-            .In(m => m.Id, accessibleMenuIds)
-            .Equal(m => m.IsEnabled, true)
-            .Equal(m => m.IsDeleted, false)
-            .Build();
-        var accessibleMenus = await _menuFactory.FindAsync(menusFilter, sort: _menuFactory.CreateSortBuilder().Ascending(m => m.SortOrder).Build());
+        var accessibleMenus = await _menuFactory.FindAsync(
+            m => accessibleMenuIds.Contains(m.Id) && m.IsEnabled == true && m.IsDeleted == false,
+            query => query.OrderBy(m => m.SortOrder));
 
         // 构建菜单树（需要包含父菜单，即使父菜单不在权限列表中）
         var allMenuIds = new HashSet<string>(accessibleMenuIds);
@@ -91,12 +77,9 @@ public class MenuService : IMenuService
             await AddParentMenuIds(menu.ParentId!, allMenuIds);
         }
 
-        var allMenusFilter = _menuFactory.CreateFilterBuilder()
-            .In(m => m.Id, allMenuIds.ToList())
-            .Equal(m => m.IsEnabled, true)
-            .Equal(m => m.IsDeleted, false)
-            .Build();
-        var allAccessibleMenus = await _menuFactory.FindAsync(allMenusFilter, sort: _menuFactory.CreateSortBuilder().Ascending(m => m.SortOrder).Build());
+        var allAccessibleMenus = await _menuFactory.FindAsync(
+            m => allMenuIds.Contains(m.Id) && m.IsEnabled == true && m.IsDeleted == false,
+            query => query.OrderBy(m => m.SortOrder));
 
         return BuildMenuTree(allAccessibleMenus, null);
     }
@@ -109,10 +92,7 @@ public class MenuService : IMenuService
         if (menuIds.Contains(parentId))
             return;
 
-        var filter = _menuFactory.CreateFilterBuilder()
-            .Equal(m => m.Id, parentId)
-            .Build();
-        var parentMenus = await _menuFactory.FindAsync(filter);
+        var parentMenus = await _menuFactory.FindAsync(m => m.Id == parentId);
         var parentMenu = parentMenus.FirstOrDefault();
         if (parentMenu != null)
         {

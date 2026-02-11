@@ -1,7 +1,6 @@
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
-using MongoDB.Driver;
 
 namespace Platform.ApiService.Services;
 
@@ -10,15 +9,15 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class UnifiedNotificationService : IUnifiedNotificationService
 {
-    private readonly IDatabaseOperationFactory<NoticeIconItem> _noticeFactory;
-    private readonly IDatabaseOperationFactory<AppUser> _userFactory;
+    private readonly IDataFactory<NoticeIconItem> _noticeFactory;
+    private readonly IDataFactory<AppUser> _userFactory;
 
     /// <summary>
     /// 初始化统一通知服务
     /// </summary>
     public UnifiedNotificationService(
-        IDatabaseOperationFactory<NoticeIconItem> noticeFactory,
-        IDatabaseOperationFactory<AppUser> userFactory)
+        IDataFactory<NoticeIconItem> noticeFactory,
+        IDataFactory<AppUser> userFactory)
     {
         _noticeFactory = noticeFactory;
         _userFactory = userFactory;
@@ -33,76 +32,44 @@ public class UnifiedNotificationService : IUnifiedNotificationService
         string filterType = "all",
         string sortBy = "datetime")
     {
-        // 构建过滤器
-        var fb = _noticeFactory.CreateFilterBuilder();
-        switch (filterType)
-        {
-            case "notification":
-                fb.Equal(n => n.Type, NoticeIconItemType.Notification);
-                break;
-            case "message":
-                fb.Equal(n => n.Type, NoticeIconItemType.Message);
-                break;
-            case "todo":
-                fb.Equal(n => n.IsTodo, true);
-                break;
-            case "task":
-                fb.Equal(n => n.Type, NoticeIconItemType.Task);
-                break;
-            case "system":
-                fb.Equal(n => n.IsSystemMessage, true);
-                break;
-            case "unread":
-                fb.Equal(n => n.Read, false);
-                break;
-        }
-        var filter = fb.Build();
-
         var currentUserId = _noticeFactory.GetRequiredUserId();
-        // 确保“全部”列表不会显示其它人的任务通知：只显示与当前用户相关的任务通知
-        if (string.Equals(filterType, "all", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(filterType, "unread", StringComparison.OrdinalIgnoreCase))
+        var filterTypeLower = filterType?.ToLowerInvariant() ?? "all";
+        var applyTaskVisibility = filterTypeLower is "all" or "unread";
+        var onlyMyTasks = filterTypeLower == "task";
+
+        // 构建过滤器（LINQ）
+        System.Linq.Expressions.Expression<Func<NoticeIconItem, bool>> BuildFilter(bool unreadOnly)
         {
-            var builder = Builders<NoticeIconItem>.Filter;
-            var onlyMyTasksOrNonTask = builder.Or(
-                builder.Ne(n => n.Type, NoticeIconItemType.Task),
-                builder.And(
-                    builder.Eq(n => n.Type, NoticeIconItemType.Task),
-                    builder.AnyEq(n => n.RelatedUserIds, currentUserId)
-                )
-            );
-            filter = filter == Builders<NoticeIconItem>.Filter.Empty ? onlyMyTasksOrNonTask : builder.And(filter, onlyMyTasksOrNonTask);
+            return n =>
+                (filterTypeLower == "notification" ? n.Type == NoticeIconItemType.Notification :
+                 filterTypeLower == "message" ? n.Type == NoticeIconItemType.Message :
+                 filterTypeLower == "todo" ? n.IsTodo :
+                 filterTypeLower == "task" ? n.Type == NoticeIconItemType.Task :
+                 filterTypeLower == "system" ? n.IsSystemMessage :
+                 filterTypeLower == "unread" ? !n.Read :
+                 true) &&
+                (!applyTaskVisibility || n.Type != NoticeIconItemType.Task || n.RelatedUserIds.Contains(currentUserId)) &&
+                (!onlyMyTasks || (n.Type == NoticeIconItemType.Task && n.RelatedUserIds.Contains(currentUserId))) &&
+                (!unreadOnly || !n.Read);
         }
-        else if (string.Equals(filterType, "task", StringComparison.OrdinalIgnoreCase))
-        {
-            var builder = Builders<NoticeIconItem>.Filter;
-            var myTaskFilter = builder.And(
-                builder.Eq(n => n.Type, NoticeIconItemType.Task),
-                builder.AnyEq(n => n.RelatedUserIds, currentUserId)
-            );
-            filter = filter == Builders<NoticeIconItem>.Filter.Empty ? myTaskFilter : builder.And(filter, myTaskFilter);
-        }
+
+        var filter = BuildFilter(unreadOnly: false);
 
         // 构建排序条件
-        var sortBuilder = _noticeFactory.CreateSortBuilder();
-        var sort = sortBy switch
+        Func<IQueryable<NoticeIconItem>, IOrderedQueryable<NoticeIconItem>> sort = sortBy switch
         {
-            "priority" => sortBuilder.Descending(n => n.Datetime).Build(),
-            "dueDate" => sortBuilder.Ascending(n => n.TodoDueDate)
-                .Descending(n => n.Datetime)
-                .Build(),
-            _ => sortBuilder.Descending(n => n.Datetime).Build()
+            "priority" => query => query.OrderByDescending(n => n.Datetime),
+            "dueDate" => query => query
+                .OrderBy(n => n.TodoDueDate)
+                .ThenByDescending(n => n.Datetime),
+            _ => query => query.OrderByDescending(n => n.Datetime)
         };
 
         // 获取分页数据与总数
         var (items, total) = await _noticeFactory.FindPagedAsync(filter, sort, page, pageSize);
 
         // 获取未读数量（与列表相同的可见性规则）
-        var unreadFilter = Builders<NoticeIconItem>.Filter.And(
-            filter,
-            Builders<NoticeIconItem>.Filter.Eq(n => n.Read, false)
-        );
-        var unreadCount = await _noticeFactory.CountAsync(unreadFilter);
+        var unreadCount = await _noticeFactory.CountAsync(BuildFilter(unreadOnly: true));
 
         return new UnifiedNotificationListResponse
         {
@@ -123,21 +90,18 @@ public class UnifiedNotificationService : IUnifiedNotificationService
         int pageSize = 10,
         string sortBy = "dueDate")
     {
-        var fb = _noticeFactory.CreateFilterBuilder();
-        fb.Equal(n => n.IsTodo, true);
-        var filter = fb.Build();
+        System.Linq.Expressions.Expression<Func<NoticeIconItem, bool>> filter = n => n.IsTodo;
 
         // 构建排序条件
-        var sortBuilder = _noticeFactory.CreateSortBuilder();
-        var sort = sortBy switch
+        Func<IQueryable<NoticeIconItem>, IOrderedQueryable<NoticeIconItem>> sort = sortBy switch
         {
-            "priority" => sortBuilder.Descending(n => n.TodoPriority ?? 0)
-                .Ascending(n => n.TodoDueDate)
-                .Build(),
-            "datetime" => sortBuilder.Descending(n => n.Datetime).Build(),
-            _ => sortBuilder.Ascending(n => n.TodoDueDate)
-                .Descending(n => n.Datetime)
-                .Build()
+            "priority" => query => query
+                .OrderByDescending(n => n.TodoPriority ?? 0)
+                .ThenBy(n => n.TodoDueDate),
+            "datetime" => query => query.OrderByDescending(n => n.Datetime),
+            _ => query => query
+                .OrderBy(n => n.TodoDueDate)
+                .ThenByDescending(n => n.Datetime)
         };
 
         // 获取分页数据
@@ -160,13 +124,11 @@ public class UnifiedNotificationService : IUnifiedNotificationService
         int page = 1,
         int pageSize = 10)
     {
-        var fb = _noticeFactory.CreateFilterBuilder();
-        fb.Equal(n => n.IsSystemMessage, true);
-        var filter = fb.Build();
+        System.Linq.Expressions.Expression<Func<NoticeIconItem, bool>> filter = n => n.IsSystemMessage;
 
         // 按时间倒序
-        var sortBuilder = _noticeFactory.CreateSortBuilder();
-        var sort = sortBuilder.Descending(n => n.Datetime).Build();
+        Func<IQueryable<NoticeIconItem>, IOrderedQueryable<NoticeIconItem>> sort =
+            query => query.OrderByDescending(n => n.Datetime);
 
         // 获取分页数据
         var (messages, total) = await _noticeFactory.FindPagedAsync(filter, sort, page, pageSize);
@@ -189,14 +151,12 @@ public class UnifiedNotificationService : IUnifiedNotificationService
         int pageSize = 10)
     {
         var currentUserId = _noticeFactory.GetRequiredUserId();
-        var filter = Builders<NoticeIconItem>.Filter.And(
-            Builders<NoticeIconItem>.Filter.Eq(n => n.Type, NoticeIconItemType.Task),
-            Builders<NoticeIconItem>.Filter.AnyEq(n => n.RelatedUserIds, currentUserId)
-        );
+        System.Linq.Expressions.Expression<Func<NoticeIconItem, bool>> filter = n =>
+            n.Type == NoticeIconItemType.Task && n.RelatedUserIds.Contains(currentUserId);
 
         // 按时间倒序
-        var sortBuilder = _noticeFactory.CreateSortBuilder();
-        var sort = sortBuilder.Descending(n => n.Datetime).Build();
+        Func<IQueryable<NoticeIconItem>, IOrderedQueryable<NoticeIconItem>> sort =
+            query => query.OrderByDescending(n => n.Datetime);
 
         // 获取分页数据
         var (notifications, total) = await _noticeFactory.FindPagedAsync(filter, sort, page, pageSize);
@@ -246,42 +206,30 @@ public class UnifiedNotificationService : IUnifiedNotificationService
     /// </summary>
     public async Task<NoticeIconItem?> UpdateTodoAsync(string id, UpdateTodoRequest request)
     {
-        var filter = _noticeFactory.CreateFilterBuilder()
-            .Equal(n => n.Id, id)
-            .Build();
-
-        var updateBuilder = _noticeFactory.CreateUpdateBuilder();
-
-        if (!string.IsNullOrEmpty(request.Title))
-            updateBuilder.Set(n => n.Title, request.Title);
-
-        if (!string.IsNullOrEmpty(request.Description))
-            updateBuilder.Set(n => n.Description, request.Description);
-
-        if (request.Priority.HasValue)
-            updateBuilder.Set(n => n.TodoPriority, request.Priority);
-
-        if (request.DueDate.HasValue)
-            updateBuilder.Set(n => n.TodoDueDate, request.DueDate);
-
-        if (request.IsCompleted.HasValue)
-            updateBuilder.Set(n => n.Read, request.IsCompleted.Value);
-
-        if (request.Tags != null && request.Tags.Count > 0)
+        return await _noticeFactory.UpdateAsync(id, entity =>
         {
-            updateBuilder.Set(n => n.Extra, string.Join(",", request.Tags));
-        }
+            if (!string.IsNullOrEmpty(request.Title))
+                entity.Title = request.Title;
 
-        updateBuilder.Set(n => n.UpdatedAt, DateTime.UtcNow);
+            if (!string.IsNullOrEmpty(request.Description))
+                entity.Description = request.Description;
 
-        var update = updateBuilder.Build();
-        var options = new FindOneAndUpdateOptions<NoticeIconItem>
-        {
-            ReturnDocument = ReturnDocument.After,
-            IsUpsert = false
-        };
+            if (request.Priority.HasValue)
+                entity.TodoPriority = request.Priority;
 
-        return await _noticeFactory.FindOneAndUpdateAsync(filter, update, options);
+            if (request.DueDate.HasValue)
+                entity.TodoDueDate = request.DueDate;
+
+            if (request.IsCompleted.HasValue)
+                entity.Read = request.IsCompleted.Value;
+
+            if (request.Tags != null && request.Tags.Count > 0)
+            {
+                entity.Extra = string.Join(",", request.Tags);
+            }
+
+            entity.UpdatedAt = DateTime.UtcNow;
+        });
     }
 
     /// <summary>
@@ -289,22 +237,11 @@ public class UnifiedNotificationService : IUnifiedNotificationService
     /// </summary>
     public async Task<bool> CompleteTodoAsync(string id)
     {
-        var filter = _noticeFactory.CreateFilterBuilder()
-            .Equal(n => n.Id, id)
-            .Build();
-
-        var update = _noticeFactory.CreateUpdateBuilder()
-            .Set(n => n.Read, true)
-            .Set(n => n.UpdatedAt, DateTime.UtcNow)
-            .Build();
-
-        var options = new FindOneAndUpdateOptions<NoticeIconItem>
+        var result = await _noticeFactory.UpdateAsync(id, entity =>
         {
-            ReturnDocument = ReturnDocument.After,
-            IsUpsert = false
-        };
-
-        var result = await _noticeFactory.FindOneAndUpdateAsync(filter, update, options);
+            entity.Read = true;
+            entity.UpdatedAt = DateTime.UtcNow;
+        });
         return result != null;
     }
 
@@ -313,12 +250,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
     /// </summary>
     public async Task<bool> DeleteTodoAsync(string id)
     {
-        var filter = _noticeFactory.CreateFilterBuilder()
-            .Equal(n => n.Id, id)
-            .Build();
-
-        var result = await _noticeFactory.FindOneAndSoftDeleteAsync(filter);
-        return result != null;
+        return await _noticeFactory.SoftDeleteAsync(id);
     }
 
     /// <summary>
@@ -387,22 +319,11 @@ public class UnifiedNotificationService : IUnifiedNotificationService
     /// </summary>
     public async Task<bool> MarkAsReadAsync(string id)
     {
-        var filter = _noticeFactory.CreateFilterBuilder()
-            .Equal(n => n.Id, id)
-            .Build();
-
-        var update = _noticeFactory.CreateUpdateBuilder()
-            .Set(n => n.Read, true)
-            .Set(n => n.UpdatedAt, DateTime.UtcNow)
-            .Build();
-
-        var options = new FindOneAndUpdateOptions<NoticeIconItem>
+        var result = await _noticeFactory.UpdateAsync(id, entity =>
         {
-            ReturnDocument = ReturnDocument.After,
-            IsUpsert = false
-        };
-
-        var result = await _noticeFactory.FindOneAndUpdateAsync(filter, update, options);
+            entity.Read = true;
+            entity.UpdatedAt = DateTime.UtcNow;
+        });
         return result != null;
     }
 
@@ -423,9 +344,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
     /// </summary>
     public async Task<int> GetUnreadCountAsync()
     {
-        var fb = _noticeFactory.CreateFilterBuilder();
-        fb.Equal(n => n.Read, false);
-        return (int)await _noticeFactory.CountAsync(fb.Build());
+        return (int)await _noticeFactory.CountAsync(n => !n.Read);
     }
 
     /// <summary>
@@ -436,37 +355,20 @@ public class UnifiedNotificationService : IUnifiedNotificationService
         var uid = _noticeFactory.GetRequiredUserId();
 
         // 系统消息未读数（按租户/软删除自动过滤）
-        var systemMessagesCount = (int)await _noticeFactory.CountAsync(
-            Builders<NoticeIconItem>.Filter.And(
-                Builders<NoticeIconItem>.Filter.Eq(n => n.Read, false),
-                Builders<NoticeIconItem>.Filter.Eq(n => n.IsSystemMessage, true)
-            )
-        );
+        var systemMessagesCount = (int)await _noticeFactory.CountAsync(n =>
+            !n.Read && n.IsSystemMessage);
 
         // 普通通知未读数（非任务/消息/系统）
-        var notificationsCount = (int)await _noticeFactory.CountAsync(
-            Builders<NoticeIconItem>.Filter.And(
-                Builders<NoticeIconItem>.Filter.Eq(n => n.Read, false),
-                Builders<NoticeIconItem>.Filter.Eq(n => n.Type, NoticeIconItemType.Notification)
-            )
-        );
+        var notificationsCount = (int)await _noticeFactory.CountAsync(n =>
+            !n.Read && n.Type == NoticeIconItemType.Notification);
 
         // 消息未读数
-        var messagesCount = (int)await _noticeFactory.CountAsync(
-            Builders<NoticeIconItem>.Filter.And(
-                Builders<NoticeIconItem>.Filter.Eq(n => n.Read, false),
-                Builders<NoticeIconItem>.Filter.Eq(n => n.Type, NoticeIconItemType.Message)
-            )
-        );
+        var messagesCount = (int)await _noticeFactory.CountAsync(n =>
+            !n.Read && n.Type == NoticeIconItemType.Message);
 
         // 任务通知未读数（仅统计与当前用户相关的任务通知）
-        var taskNotificationsCount = (int)await _noticeFactory.CountAsync(
-            Builders<NoticeIconItem>.Filter.And(
-                Builders<NoticeIconItem>.Filter.Eq(n => n.Read, false),
-                Builders<NoticeIconItem>.Filter.Eq(n => n.Type, NoticeIconItemType.Task),
-                Builders<NoticeIconItem>.Filter.AnyEq(n => n.RelatedUserIds, uid)
-            )
-        );
+        var taskNotificationsCount = (int)await _noticeFactory.CountAsync(n =>
+            !n.Read && n.Type == NoticeIconItemType.Task && n.RelatedUserIds.Contains(uid));
 
         // 待办已下线：不计入统计
         var todosCount = 0;

@@ -10,20 +10,20 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class MenuAccessService : IMenuAccessService
 {
-    private readonly IDatabaseOperationFactory<AppUser> _userFactory;
-    private readonly IDatabaseOperationFactory<Role> _roleFactory;
-    private readonly IDatabaseOperationFactory<Menu> _menuFactory;
-    private readonly IDatabaseOperationFactory<UserCompany> _userCompanyFactory;
+    private readonly IDataFactory<AppUser> _userFactory;
+    private readonly IDataFactory<Role> _roleFactory;
+    private readonly IDataFactory<Menu> _menuFactory;
+    private readonly IDataFactory<UserCompany> _userCompanyFactory;
     private readonly ILogger<MenuAccessService> _logger;
 
     /// <summary>
     /// 初始化菜单访问权限服务
     /// </summary>
     public MenuAccessService(
-        IDatabaseOperationFactory<AppUser> userFactory,
-        IDatabaseOperationFactory<Role> roleFactory,
-        IDatabaseOperationFactory<Menu> menuFactory,
-        IDatabaseOperationFactory<UserCompany> userCompanyFactory,
+        IDataFactory<AppUser> userFactory,
+        IDataFactory<Role> roleFactory,
+        IDataFactory<Menu> menuFactory,
+        IDataFactory<UserCompany> userCompanyFactory,
         ILogger<MenuAccessService> logger)
     {
         _userFactory = userFactory;
@@ -90,13 +90,10 @@ public class MenuAccessService : IMenuAccessService
             _logger.LogDebug("获取用户 {UserId} 在企业 {CompanyId} 的菜单权限", userId, companyId);
 
             // 获取用户在企业中的关联关系
-            var userCompanyFilter = _userCompanyFactory.CreateFilterBuilder()
-                .Equal(uc => uc.UserId, userId)
-                .Equal(uc => uc.CompanyId, companyId)
-                .Equal(uc => uc.Status, "active")
-                .Build();
-
-            var userCompanies = await _userCompanyFactory.FindAsync(userCompanyFilter);
+            var userCompanies = await _userCompanyFactory.FindAsync(uc => 
+                uc.UserId == userId && 
+                uc.CompanyId == companyId && 
+                uc.Status == "active");
             var userCompany = userCompanies.FirstOrDefault();
 
             if (userCompany == null)
@@ -110,12 +107,10 @@ public class MenuAccessService : IMenuAccessService
             if (userCompany.RoleIds != null && userCompany.RoleIds.Any())
             {
                 // 获取用户的所有角色
-                var roleFilter = _roleFactory.CreateFilterBuilder()
-                    .In(r => r.Id, userCompany.RoleIds)
-                    .Equal(r => r.CompanyId, companyId)
-                    .Equal(r => r.IsActive, true)
-                    .Build();
-                var roles = await _roleFactory.FindWithoutTenantFilterAsync(roleFilter);
+                var roles = await _roleFactory.FindWithoutTenantFilterAsync(r => 
+                    userCompany.RoleIds.Contains(r.Id) && 
+                    r.CompanyId == companyId && 
+                    r.IsActive == true);
 
                 _logger.LogDebug("用户 {UserId} 在企业 {CompanyId} 拥有 {RoleCount} 个角色",
                     userId, companyId, roles.Count);
@@ -142,11 +137,9 @@ public class MenuAccessService : IMenuAccessService
             }
 
             // 获取菜单详情
-            var menuFilter = _menuFactory.CreateFilterBuilder()
-                .In(m => m.Id, uniqueMenuIds)
-                .Equal(m => m.IsEnabled, true)
-                .Build();
-            var menus = await _menuFactory.FindAsync(menuFilter);
+            var menus = await _menuFactory.FindAsync(m => 
+                uniqueMenuIds.Contains(m.Id) && 
+                m.IsEnabled == true);
 
             // 返回菜单名称列表（小写）
             var menuNames = menus.Select(m => m.Name.ToLower()).Distinct().ToList();

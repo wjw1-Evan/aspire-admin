@@ -72,7 +72,7 @@ public class JoinRequestController : BaseApiController
         if (string.IsNullOrEmpty(companyId))
         {
             var userId = GetRequiredUserId();
-            var userService = HttpContext.RequestServices.GetRequiredService<Platform.ServiceDefaults.Services.IDatabaseOperationFactory<AppUser>>();
+            var userService = HttpContext.RequestServices.GetRequiredService<Platform.ServiceDefaults.Services.IDataFactory<AppUser>>();
             var user = await userService.GetByIdAsync(userId);
             if (user == null || string.IsNullOrEmpty(user.CurrentCompanyId))
             {

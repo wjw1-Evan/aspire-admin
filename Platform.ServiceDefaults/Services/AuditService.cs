@@ -29,7 +29,7 @@ public interface IAuditService
 /// </summary>
 public class AuditService : IAuditService
 {
-    private readonly IMongoCollection<OperationAudit> _auditCollection;
+    private readonly PlatformDbContext _context;
     private readonly ILogger<AuditService> _logger;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private static readonly JsonSerializerOptions SerializerOptions = new()
@@ -38,9 +38,9 @@ public class AuditService : IAuditService
         WriteIndented = false
     };
 
-    public AuditService(IMongoDatabase database, ILogger<AuditService> logger, IHttpContextAccessor httpContextAccessor)
+    public AuditService(PlatformDbContext context, ILogger<AuditService> logger, IHttpContextAccessor httpContextAccessor)
     {
-        _auditCollection = database.GetCollection<OperationAudit>("operationAudits");
+        _context = context;
         _logger = logger;
         _httpContextAccessor = httpContextAccessor;
     }
@@ -83,16 +83,14 @@ public class AuditService : IAuditService
                 Username = username,
                 CompanyId = companyId,
                 Description = description ?? $"{operationType} {entityType}",
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
-                IsDeleted = false,
                 AfterData = SerializeResponseData(responseData, operationType, entityType, entityId),
                 RequestId = httpContext?.TraceIdentifier,
                 ClientIp = ResolveClientIp(httpContext),
                 UserAgent = httpContext?.Request.Headers["User-Agent"].ToString()
             };
 
-            await _auditCollection.InsertOneAsync(audit);
+            await _context.Set<OperationAudit>().AddAsync(audit);
+            await _context.SaveChangesAsync();
         }
         catch (Exception ex)
         {

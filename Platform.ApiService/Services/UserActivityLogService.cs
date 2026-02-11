@@ -1,9 +1,7 @@
-using Platform.ApiService.Extensions;
 using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Models;
-using MongoDB.Driver;
-using MongoDB.Bson;
+using System.Linq.Expressions;
 
 namespace Platform.ApiService.Services;
 
@@ -12,8 +10,8 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class UserActivityLogService : IUserActivityLogService
 {
-    private readonly IDatabaseOperationFactory<UserActivityLog> _activityLogFactory;
-    private readonly IDatabaseOperationFactory<AppUser> _userFactory;
+    private readonly IDataFactory<UserActivityLog> _activityLogFactory;
+    private readonly IDataFactory<AppUser> _userFactory;
 
     /// <summary>
     /// 初始化用户活动日志服务
@@ -21,8 +19,8 @@ public class UserActivityLogService : IUserActivityLogService
     /// <param name="activityLogFactory">活动日志数据操作工厂</param>
     /// <param name="userFactory">用户数据操作工厂</param>
     public UserActivityLogService(
-        IDatabaseOperationFactory<UserActivityLog> activityLogFactory,
-        IDatabaseOperationFactory<AppUser> userFactory)
+        IDataFactory<UserActivityLog> activityLogFactory,
+        IDataFactory<AppUser> userFactory)
     {
         _activityLogFactory = activityLogFactory;
         _userFactory = userFactory;
@@ -101,24 +99,23 @@ public class UserActivityLogService : IUserActivityLogService
     /// </summary>
     public async Task<UserActivityLogPagedResponse> GetActivityLogsAsync(GetUserActivityLogsRequest request)
     {
-        var filterBuilder = _activityLogFactory.CreateFilterBuilder();
+        var userId = request.UserId;
+        var action = request.Action;
+        var startDate = request.StartDate;
+        var endDate = request.EndDate;
 
-        if (!string.IsNullOrEmpty(request.UserId))
-            filterBuilder.Equal(log => log.UserId, request.UserId);
+        Expression<Func<UserActivityLog, bool>> filter = log =>
+            (string.IsNullOrEmpty(userId) || log.UserId == userId) &&
+            (string.IsNullOrEmpty(action) || log.Action == action) &&
+            (!startDate.HasValue || log.CreatedAt >= startDate.Value) &&
+            (!endDate.HasValue || log.CreatedAt <= endDate.Value);
 
-        if (!string.IsNullOrEmpty(request.Action))
-            filterBuilder.Equal(log => log.Action, request.Action);
-
-        if (request.StartDate.HasValue)
-            filterBuilder.GreaterThanOrEqual(log => log.CreatedAt, request.StartDate.Value);
-
-        if (request.EndDate.HasValue)
-            filterBuilder.LessThanOrEqual(log => log.CreatedAt, request.EndDate.Value);
-
-        var filter = filterBuilder.Build();
         var total = await _activityLogFactory.CountAsync(filter);
-        var sortBuilder = _activityLogFactory.CreateSortBuilder().Descending(log => log.CreatedAt);
-        var (logs, _) = await _activityLogFactory.FindPagedAsync(filter, sortBuilder.Build(), request.Page, request.PageSize);
+        var (logs, _) = await _activityLogFactory.FindPagedAsync(
+            filter,
+            query => query.OrderByDescending(log => log.CreatedAt),
+            request.Page,
+            request.PageSize);
         var totalPages = (int)Math.Ceiling(total / (double)request.PageSize);
 
         return new UserActivityLogPagedResponse
@@ -134,15 +131,12 @@ public class UserActivityLogService : IUserActivityLogService
     /// <inheritdoc/>
     public async Task<List<UserActivityLog>> GetUserActivityLogsAsync(string userId, int limit = 50)
     {
-        var filter = _activityLogFactory.CreateFilterBuilder()
-            .Equal(log => log.UserId, userId)
-            .Build();
+        Expression<Func<UserActivityLog, bool>> filter = log => log.UserId == userId;
 
-        var sort = _activityLogFactory.CreateSortBuilder()
-            .Descending(log => log.CreatedAt)
-            .Build();
-
-        return await _activityLogFactory.FindAsync(filter, sort: sort, limit: limit);
+        return await _activityLogFactory.FindAsync(
+            filter,
+            orderBy: query => query.OrderByDescending(log => log.CreatedAt),
+            limit: limit);
     }
 
     /// <inheritdoc/>
@@ -159,49 +153,46 @@ public class UserActivityLogService : IUserActivityLogService
         string? sortOrder = null)
     {
         var currentUserId = _userFactory.GetRequiredUserId();
-        var filterBuilder = _activityLogFactory.CreateFilterBuilder();
-        filterBuilder.Equal(log => log.UserId, currentUserId);
+        var actionLower = action?.ToLowerInvariant();
+        var ipLower = ipAddress?.ToLowerInvariant();
+        var httpMethodUpper = httpMethod?.ToUpperInvariant();
 
-        if (!string.IsNullOrEmpty(action)) filterBuilder.Regex(log => log.Action, action, "i");
-        if (!string.IsNullOrEmpty(httpMethod)) filterBuilder.Equal(log => log.HttpMethod, httpMethod.ToUpperInvariant());
-        if (statusCode.HasValue) filterBuilder.Equal(log => log.StatusCode, statusCode.Value);
-        if (!string.IsNullOrEmpty(ipAddress))
-        {
-            var ipFilter = Builders<UserActivityLog>.Filter.And(
-               Builders<UserActivityLog>.Filter.Ne(log => log.IpAddress, null),
-               Builders<UserActivityLog>.Filter.Regex(log => log.IpAddress!, new BsonRegularExpression(ipAddress, "i"))
-           );
-            filterBuilder.Custom(ipFilter);
-        }
-        if (startDate.HasValue) filterBuilder.GreaterThanOrEqual(log => log.CreatedAt, startDate.Value);
-        if (endDate.HasValue) filterBuilder.LessThanOrEqual(log => log.CreatedAt, endDate.Value);
-
-        var filter = filterBuilder.Build();
+        Expression<Func<UserActivityLog, bool>> filter = log =>
+            log.UserId == currentUserId &&
+            (string.IsNullOrEmpty(actionLower) || (log.Action != null && log.Action.ToLower().Contains(actionLower))) &&
+            (string.IsNullOrEmpty(httpMethodUpper) || log.HttpMethod == httpMethodUpper) &&
+            (!statusCode.HasValue || log.StatusCode == statusCode.Value) &&
+            (string.IsNullOrEmpty(ipLower) || (log.IpAddress != null && log.IpAddress.ToLower().Contains(ipLower))) &&
+            (!startDate.HasValue || log.CreatedAt >= startDate.Value) &&
+            (!endDate.HasValue || log.CreatedAt <= endDate.Value);
 
         // 核心：在后台线程中并行执行统计查询，提高响应速度
         var totalTask = _activityLogFactory.CountAsync(filter);
 
         // 成功记录统计 (2xx)
-        var successFilter = Builders<UserActivityLog>.Filter.And(filter,
-            Builders<UserActivityLog>.Filter.Gte(log => log.StatusCode, 200),
-            Builders<UserActivityLog>.Filter.Lt(log => log.StatusCode, 300));
-        var successTask = _activityLogFactory.CountAsync(successFilter);
+        var successTask = _activityLogFactory.CountAsync(log =>
+            log.UserId == currentUserId &&
+            (string.IsNullOrEmpty(actionLower) || (log.Action != null && log.Action.ToLower().Contains(actionLower))) &&
+            (string.IsNullOrEmpty(httpMethodUpper) || log.HttpMethod == httpMethodUpper) &&
+            (!statusCode.HasValue || log.StatusCode == statusCode.Value) &&
+            (string.IsNullOrEmpty(ipLower) || (log.IpAddress != null && log.IpAddress.ToLower().Contains(ipLower))) &&
+            (!startDate.HasValue || log.CreatedAt >= startDate.Value) &&
+            (!endDate.HasValue || log.CreatedAt <= endDate.Value) &&
+            log.StatusCode >= 200 && log.StatusCode < 300);
 
         // 错误记录统计 (>= 400)
-        var errorFilter = Builders<UserActivityLog>.Filter.And(filter,
-            Builders<UserActivityLog>.Filter.Gte(log => log.StatusCode, 400));
-        var errorTask = _activityLogFactory.CountAsync(errorFilter);
+        var errorTask = _activityLogFactory.CountAsync(log =>
+            log.UserId == currentUserId &&
+            (string.IsNullOrEmpty(actionLower) || (log.Action != null && log.Action.ToLower().Contains(actionLower))) &&
+            (string.IsNullOrEmpty(httpMethodUpper) || log.HttpMethod == httpMethodUpper) &&
+            (!statusCode.HasValue || log.StatusCode == statusCode.Value) &&
+            (string.IsNullOrEmpty(ipLower) || (log.IpAddress != null && log.IpAddress.ToLower().Contains(ipLower))) &&
+            (!startDate.HasValue || log.CreatedAt >= startDate.Value) &&
+            (!endDate.HasValue || log.CreatedAt <= endDate.Value) &&
+            log.StatusCode >= 400);
 
         // 操作类型总数统计 (使用聚合获取去重后的 Action 列表)
-        var actionTypesTask = _activityLogFactory.AggregateAsync<BsonDocument>(
-            PipelineDefinition<UserActivityLog, BsonDocument>.Create(
-                new IPipelineStageDefinition[]
-                {
-                    PipelineStageDefinitionBuilder.Match<UserActivityLog>(filter),
-                    PipelineStageDefinitionBuilder.Group<UserActivityLog, string, BsonDocument>(log => log.Action, g => new BsonDocument { { "_id", g.Key } })
-                }
-            )
-        );
+        var actionTypesTask = _activityLogFactory.FindAsync(filter);
 
         await Task.WhenAll(totalTask, successTask, errorTask, actionTypesTask);
 
@@ -209,44 +200,32 @@ public class UserActivityLogService : IUserActivityLogService
         var successCount = successTask.Result;
         var errorCount = errorTask.Result;
         var actionTypesResults = actionTypesTask.Result;
-        var actionTypesCount = actionTypesResults.Count;
+        var actionTypesCount = actionTypesResults
+            .Select(log => log.Action)
+            .Where(actionName => !string.IsNullOrEmpty(actionName))
+            .Distinct()
+            .Count();
 
-        var sortBuilder = _activityLogFactory.CreateSortBuilder();
-        if (string.IsNullOrEmpty(sortBy) || sortBy.Equals("createdAt", StringComparison.OrdinalIgnoreCase))
+        Func<IQueryable<UserActivityLog>, IOrderedQueryable<UserActivityLog>> orderBy = query =>
         {
-            if (string.IsNullOrEmpty(sortOrder) || sortOrder.Equals("desc", StringComparison.OrdinalIgnoreCase))
-                sortBuilder.Descending(log => log.CreatedAt);
-            else
-                sortBuilder.Ascending(log => log.CreatedAt);
-        }
-        else if (sortBy.Equals("action", StringComparison.OrdinalIgnoreCase))
-        {
-            if (string.IsNullOrEmpty(sortOrder) || sortOrder.Equals("desc", StringComparison.OrdinalIgnoreCase))
-                sortBuilder.Descending(log => log.Action);
-            else
-                sortBuilder.Ascending(log => log.Action);
-            sortBuilder.Descending(log => log.CreatedAt);
-        }
-        else
-        {
-            sortBuilder.Descending(log => log.CreatedAt);
-        }
+            if (string.IsNullOrEmpty(sortBy) || sortBy.Equals("createdAt", StringComparison.OrdinalIgnoreCase))
+            {
+                return string.IsNullOrEmpty(sortOrder) || sortOrder.Equals("desc", StringComparison.OrdinalIgnoreCase)
+                    ? query.OrderByDescending(log => log.CreatedAt)
+                    : query.OrderBy(log => log.CreatedAt);
+            }
 
-        var projection = _activityLogFactory.CreateProjectionBuilder()
-            .Include(log => log.Id)
-            .Include(log => log.UserId)
-            .Include(log => log.Username)
-            .Include(log => log.Action)
-            .Include(log => log.Description)
-            .Include(log => log.IpAddress)
-            .Include(log => log.HttpMethod)
-            .Include(log => log.Path)
-            .Include(log => log.StatusCode)
-            .Include(log => log.Duration)
-            .Include(log => log.CreatedAt)
-            .Build();
+            if (sortBy.Equals("action", StringComparison.OrdinalIgnoreCase))
+            {
+                return string.IsNullOrEmpty(sortOrder) || sortOrder.Equals("desc", StringComparison.OrdinalIgnoreCase)
+                    ? query.OrderByDescending(log => log.Action).ThenByDescending(log => log.CreatedAt)
+                    : query.OrderBy(log => log.Action).ThenByDescending(log => log.CreatedAt);
+            }
 
-        var (logs, _) = await _activityLogFactory.FindPagedAsync(filter, sortBuilder.Build(), page, pageSize, projection);
+            return query.OrderByDescending(log => log.CreatedAt);
+        };
+
+        var (logs, _) = await _activityLogFactory.FindPagedAsync(filter, orderBy, page, pageSize);
 
         return new UserActivityPagedWithStatsResponse
         {
@@ -310,20 +289,24 @@ public class UserActivityLogService : IUserActivityLogService
         DateTime? startDate = null,
         DateTime? endDate = null)
     {
-        var filterBuilder = _activityLogFactory.CreateFilterBuilder();
+        var actionLower = action?.ToLowerInvariant();
+        var ipLower = ipAddress?.ToLowerInvariant();
 
-        if (!string.IsNullOrEmpty(userId)) filterBuilder.Equal(log => log.UserId, userId);
-        if (!string.IsNullOrEmpty(action)) filterBuilder.Equal(log => log.Action, action);
-        if (!string.IsNullOrEmpty(httpMethod)) filterBuilder.Equal(log => log.HttpMethod, httpMethod);
-        if (statusCode.HasValue) filterBuilder.Equal(log => log.StatusCode, statusCode.Value);
-        if (!string.IsNullOrEmpty(ipAddress)) filterBuilder.Contains(log => log.IpAddress!, ipAddress);
-        if (startDate.HasValue) filterBuilder.GreaterThanOrEqual(log => log.CreatedAt, startDate.Value);
-        if (endDate.HasValue) filterBuilder.LessThanOrEqual(log => log.CreatedAt, endDate.Value);
+        Expression<Func<UserActivityLog, bool>> filter = log =>
+            (string.IsNullOrEmpty(userId) || log.UserId == userId) &&
+            (string.IsNullOrEmpty(actionLower) || (log.Action != null && log.Action.ToLower().Contains(actionLower))) &&
+            (string.IsNullOrEmpty(httpMethod) || log.HttpMethod == httpMethod) &&
+            (!statusCode.HasValue || log.StatusCode == statusCode.Value) &&
+            (string.IsNullOrEmpty(ipLower) || (log.IpAddress != null && log.IpAddress.ToLower().Contains(ipLower))) &&
+            (!startDate.HasValue || log.CreatedAt >= startDate.Value) &&
+            (!endDate.HasValue || log.CreatedAt <= endDate.Value);
 
-        var filter = filterBuilder.Build();
         var total = await _activityLogFactory.CountAsync(filter);
-        var sort = _activityLogFactory.CreateSortBuilder().Descending(log => log.CreatedAt).Build();
-        var logs = await _activityLogFactory.FindAsync(filter, sort, limit: pageSize);
+        var (logs, _) = await _activityLogFactory.FindPagedAsync(
+            filter,
+            query => query.OrderByDescending(log => log.CreatedAt),
+            page,
+            pageSize);
 
         var validUserIds = logs
             .Select(log => log.UserId)
@@ -334,8 +317,7 @@ public class UserActivityLogService : IUserActivityLogService
         var users = new List<AppUser>();
         if (validUserIds.Any())
         {
-            var userFilter = _userFactory.CreateFilterBuilder().In(u => u.Id, validUserIds).Build();
-            users = await _userFactory.FindAsync(userFilter);
+            users = await _userFactory.FindAsync(u => validUserIds.Contains(u.Id));
         }
 
         var userMap = users.ToDictionary(u => u.Id!, u => u.Username);
@@ -364,16 +346,14 @@ public class UserActivityLogService : IUserActivityLogService
     /// </summary>
     public async Task<long> DeleteOldLogsAsync(DateTime olderThan)
     {
-        var filter = _activityLogFactory.CreateFilterBuilder()
-            .LessThan(log => log.CreatedAt, olderThan)
-            .Build();
+        Expression<Func<UserActivityLog, bool>> filter = log => log.CreatedAt < olderThan;
 
         var logs = await _activityLogFactory.FindAsync(filter);
         var logIds = logs.Select(log => log.Id!).ToList();
 
         if (logIds.Any())
         {
-            await _activityLogFactory.SoftDeleteManyAsync(logIds);
+            await _activityLogFactory.SoftDeleteManyAsync(log => log.Id != null && logIds.Contains(log.Id));
         }
 
         return logIds.Count;
@@ -409,8 +389,7 @@ public class UserActivityLogService : IUserActivityLogService
             CompanyId = companyId
         };
 
-        // 使用重载方法，传入 userId 和 username
-        await _activityLogFactory.CreateAsync(log, log.UserId, log.Username);
+        await _activityLogFactory.CreateAsync(log);
     }
 
     private static bool IsValidObjectId(string? value)

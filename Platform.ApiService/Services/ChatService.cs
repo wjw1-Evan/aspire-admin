@@ -1,16 +1,15 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
-using MongoDB.Driver;
 using MongoDB.Driver.GridFS;
 using OpenAI;
 using OpenAI.Chat;
-using System.Collections;
 using Platform.ApiService.Constants;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using System.ClientModel;
 using System.Linq;
-using System.Runtime.CompilerServices;
+using System.Linq.Expressions;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -28,10 +27,10 @@ public class ChatService : IChatService
     private const int MaxPageSize = 200;
     private const int AssistantContextMessageLimit = 24;
 
-    private readonly IDatabaseOperationFactory<ChatSession> _sessionFactory;
-    private readonly IDatabaseOperationFactory<ChatMessage> _messageFactory;
-    private readonly IDatabaseOperationFactory<ChatAttachment> _attachmentFactory;
-    private readonly IDatabaseOperationFactory<AppUser> _userFactory;
+    private readonly IDataFactory<ChatSession> _sessionFactory;
+    private readonly IDataFactory<ChatMessage> _messageFactory;
+    private readonly IDataFactory<ChatAttachment> _attachmentFactory;
+    private readonly IDataFactory<AppUser> _userFactory;
     private readonly IUserService _userService;
     private readonly ILogger<ChatService> _logger;
     private readonly IChatBroadcaster _broadcaster;
@@ -47,10 +46,10 @@ public class ChatService : IChatService
     /// 初始化聊天服务。
     /// </summary>
     public ChatService(
-        IDatabaseOperationFactory<ChatSession> sessionFactory,
-        IDatabaseOperationFactory<ChatMessage> messageFactory,
-        IDatabaseOperationFactory<ChatAttachment> attachmentFactory,
-        IDatabaseOperationFactory<AppUser> userFactory,
+        IDataFactory<ChatSession> sessionFactory,
+        IDataFactory<ChatMessage> messageFactory,
+        IDataFactory<ChatAttachment> attachmentFactory,
+        IDataFactory<AppUser> userFactory,
         IUserService userService,
         Platform.ServiceDefaults.Services.IGridFSService gridFSService,
         IChatBroadcaster broadcaster,
@@ -87,25 +86,21 @@ public class ChatService : IChatService
 
         var currentUserId = _sessionFactory.GetRequiredUserId();
 
-        var filterBuilder = _sessionFactory.CreateFilterBuilder()
-            .Custom(Builders<ChatSession>.Filter.AnyEq(session => session.Participants, currentUserId));
+        Expression<Func<ChatSession, bool>> filter = session => session.Participants.Contains(currentUserId);
 
         if (!string.IsNullOrWhiteSpace(request.Keyword))
         {
-            filterBuilder = filterBuilder.Custom(
-                Builders<ChatSession>.Filter.Regex("topicTags", new MongoDB.Bson.BsonRegularExpression(request.Keyword, "i")));
+            filter = session => session.Participants.Contains(currentUserId) &&
+                              session.TopicTags != null &&
+                              session.TopicTags.Any(tag => tag.Contains(request.Keyword, StringComparison.OrdinalIgnoreCase));
         }
-
-        var filter = filterBuilder.Build();
-
-        var sort = _sessionFactory.CreateSortBuilder()
-            .Descending(session => session.UpdatedAt)
-            .Build();
 
         var page = Math.Max(1, request.Page);
         var pageSize = Math.Min(Math.Max(request.PageSize, 1), MaxPageSize);
 
-        var (sessions, total) = await _sessionFactory.FindPagedAsync(filter, sort, page, pageSize);
+        var paged = await _sessionFactory.FindPagedAsync(filter, query => query.OrderByDescending(s => s.UpdatedAt), page, pageSize);
+        var sessions = paged.items;
+        var total = paged.total;
         await EnrichParticipantMetadataAsync(sessions);
         return (sessions, total);
     }
@@ -120,16 +115,14 @@ public class ChatService : IChatService
 
         request ??= new ChatMessageListRequest();
 
-        if (!ObjectId.TryParse(sessionId, out _))
+        if (string.IsNullOrWhiteSpace(sessionId))
         {
             throw new ArgumentException("会话标识格式不正确", nameof(sessionId));
         }
 
-        // 确保会话存在且当前用户有权限
         var session = await EnsureSessionAccessibleAsync(sessionId);
 
-        var filterBuilder = _messageFactory.CreateFilterBuilder()
-            .Equal(message => message.SessionId, session.Id);
+        Expression<Func<ChatMessage, bool>> filter = message => message.SessionId == session.Id;
 
         DateTime? cursorCreatedAt = null;
         if (!string.IsNullOrWhiteSpace(request.Cursor))
@@ -141,18 +134,12 @@ public class ChatService : IChatService
             }
 
             cursorCreatedAt = cursorMessage.CreatedAt;
-            filterBuilder = filterBuilder.LessThan(message => message.CreatedAt, cursorMessage.CreatedAt);
+            filter = message => message.SessionId == session.Id && message.CreatedAt < cursorMessage.CreatedAt;
         }
-
-        var filter = filterBuilder.Build();
-
-        var sort = _messageFactory.CreateSortBuilder()
-            .Descending(message => message.CreatedAt)
-            .Build();
 
         var limit = Math.Min(Math.Max(request.Limit, 1), MaxPageSize);
 
-        var messages = await _messageFactory.FindAsync(filter, sort, limit + 1);
+        var messages = await _messageFactory.FindAsync(filter, query => query.OrderByDescending(m => m.CreatedAt), limit + 1);
 
         var hasMore = messages.Count > limit;
         if (hasMore)
@@ -168,27 +155,24 @@ public class ChatService : IChatService
         // 计算每条消息的已读状态并添加到 metadata
         var currentUserId = _sessionFactory.GetRequiredUserId();
         var lastReadMessageIds = session.LastReadMessageIds ?? new Dictionary<string, string>();
-        
+
         // 批量查询所有最后已读消息，避免在循环中逐个查询（性能优化）
         var lastReadMessages = new Dictionary<string, ChatMessage>();
         var uniqueLastReadIds = lastReadMessageIds.Values
             .Where(id => !string.IsNullOrWhiteSpace(id))
             .Distinct()
             .ToList();
-        
+
         if (uniqueLastReadIds.Count > 0)
         {
-            var lastReadFilter = _messageFactory.CreateFilterBuilder()
-                .In(message => message.Id, uniqueLastReadIds)
-                .Build();
-            
+            Expression<Func<ChatMessage, bool>> lastReadFilter = message => uniqueLastReadIds.Contains(message.Id);
             var lastReadMessagesList = await _messageFactory.FindAsync(lastReadFilter, null, uniqueLastReadIds.Count);
             foreach (var msg in lastReadMessagesList)
             {
                 lastReadMessages[msg.Id] = msg;
             }
         }
-        
+
         // 为每条消息添加已读状态信息
         foreach (var message in messages)
         {
@@ -198,7 +182,7 @@ public class ChatService : IChatService
                 // 检查每个参与者的已读状态
                 var readStatuses = new Dictionary<string, bool>();
                 var messageTimestamp = message.CreatedAt;
-                
+
                 foreach (var participant in session.Participants)
                 {
                     // 跳过发送者自己
@@ -206,9 +190,9 @@ public class ChatService : IChatService
                     {
                         continue;
                     }
-                    
+
                     // 检查该参与者是否已读此消息
-                    if (lastReadMessageIds.TryGetValue(participant, out var lastReadId) && 
+                    if (lastReadMessageIds.TryGetValue(participant, out var lastReadId) &&
                         lastReadMessages.TryGetValue(lastReadId, out var lastReadMessage))
                     {
                         // 如果消息时间戳小于等于最后已读消息的时间戳，则已读
@@ -220,13 +204,13 @@ public class ChatService : IChatService
                         readStatuses[participant] = false;
                     }
                 }
-                
+
                 // 将已读状态添加到消息的 metadata 中
                 if (!message.Metadata.ContainsKey("readStatuses"))
                 {
                     message.Metadata["readStatuses"] = readStatuses;
                 }
-                
+
                 // 计算是否所有参与者都已读（用于前端显示"对方已读"）
                 // 注意：群聊场景下，需要所有参与者都已读；私聊场景下，只需要对方已读
                 var allRead = readStatuses.Count > 0 && readStatuses.Values.All(r => r);
@@ -243,11 +227,11 @@ public class ChatService : IChatService
             try
             {
                 var lastMessage = messages[^1]; // 最后一条消息（最新的）
-                
+
                 // 检查会话的未读数量，如果已经有未读数，才标记为已读
                 var unreadCounts = session.UnreadCounts ?? new Dictionary<string, int>();
                 var currentUnreadCount = unreadCounts.GetValueOrDefault(currentUserId, 0);
-                
+
                 // 只有当有未读消息时才标记为已读（避免不必要的更新）
                 if (currentUnreadCount > 0)
                 {
@@ -274,7 +258,7 @@ public class ChatService : IChatService
             throw new ArgumentException("会话标识不能为空", nameof(request.SessionId));
         }
 
-        if (!ObjectId.TryParse(request.SessionId, out _))
+        if (string.IsNullOrWhiteSpace(request.SessionId))
         {
             throw new ArgumentException("会话标识格式不正确", nameof(request.SessionId));
         }
@@ -387,20 +371,15 @@ public class ChatService : IChatService
         {
             try
             {
-                var attachmentUpdate = _attachmentFactory.CreateUpdateBuilder()
-                    .Set(a => a.MessageId, message.Id)
-                    .SetCurrentTimestamp();
-
-                var attachmentFilter = _attachmentFactory.CreateFilterBuilder()
-                    .Equal(a => a.Id, attachment.Id)
-                    .Build();
-
-                await _attachmentFactory.FindOneAndUpdateAsync(attachmentFilter, attachmentUpdate.Build());
+                await _attachmentFactory.UpdateAsync(attachment.Id, a =>
+                {
+                    a.MessageId = message.Id;
+                    a.UpdatedAt = DateTime.UtcNow;
+                });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "更新附件关联失败: 附件 {AttachmentId} 消息 {MessageId}", attachment.Id, message.Id);
-                // 附件更新失败不影响消息发送成功，继续执行
             }
         }
 
@@ -470,19 +449,17 @@ public class ChatService : IChatService
         }
 
         ChatMessage savedMessage;
-        
+
         // 尝试查找已存在的消息（通过 ClientMessageId）
         if (!string.IsNullOrWhiteSpace(request.ClientMessageId))
         {
-            var filter = _messageFactory.CreateFilterBuilder()
-                .Equal(m => m.SessionId, request.SessionId)
-                .Equal(m => m.ClientMessageId, request.ClientMessageId)
-                .Equal(m => m.SenderId, currentUserId)
-                .Build();
-            
+            Expression<Func<ChatMessage, bool>> filter = m => m.SessionId == request.SessionId && 
+                                                            m.ClientMessageId == request.ClientMessageId && 
+                                                            m.SenderId == currentUserId;
+
             var existingMessages = await _messageFactory.FindAsync(filter, null, 1);
             var existingMessage = existingMessages.FirstOrDefault();
-            
+
             if (existingMessage != null)
             {
                 savedMessage = existingMessage;
@@ -563,20 +540,18 @@ public class ChatService : IChatService
         {
             // 检查是否已存在针对此触发消息的助手回复
             // 通过在助手消息的 metadata 中查找 triggerMessageId 来精确匹配
-            var existingAssistantFilter = _messageFactory.CreateFilterBuilder()
-                .Equal(m => m.SessionId, session.Id)
-                .Equal(m => m.SenderId, AiAssistantConstants.AssistantUserId)
-                .Build();
-            
+            Expression<Func<ChatMessage, bool>> existingAssistantFilter = m => m.SessionId == session.Id &&
+                                                                            m.SenderId == AiAssistantConstants.AssistantUserId;
+
             // 查找所有助手消息，然后检查 metadata 中的 triggerMessageId
             var existingAssistantMessages = await _messageFactory.FindAsync(existingAssistantFilter, null, 100);
             var existingAssistantMessage = existingAssistantMessages
-                .Where(m => m.Metadata != null && 
-                           m.Metadata.TryGetValue("triggerMessageId", out var triggerId) && 
+                .Where(m => m.Metadata != null &&
+                           m.Metadata.TryGetValue("triggerMessageId", out var triggerId) &&
                            triggerId?.ToString() == savedMessage.Id)
                 .OrderBy(m => m.CreatedAt) // 按创建时间升序，取最早的（最接近触发消息的）
                 .FirstOrDefault();
-            
+
             if (existingAssistantMessage != null)
             {
                 // 已存在助手回复，直接返回
@@ -586,10 +561,10 @@ public class ChatService : IChatService
             {
                 // 使用流式生成，传入回调函数
                 assistantMessage = await GenerateAssistantReplyStreamAsync(
-                    session, 
-                    savedMessage, 
-                    cancellationToken, 
-                    onChunk, 
+                    session,
+                    savedMessage,
+                    cancellationToken,
+                    onChunk,
                     onComplete);
             }
         }
@@ -605,7 +580,7 @@ public class ChatService : IChatService
             throw new ArgumentException("会话标识不能为空", nameof(sessionId));
         }
 
-        if (!ObjectId.TryParse(sessionId, out _))
+        if (string.IsNullOrWhiteSpace(sessionId))
         {
             throw new ArgumentException("会话标识格式不正确", nameof(sessionId));
         }
@@ -697,12 +672,12 @@ public class ChatService : IChatService
             throw new ArgumentException("附件标识不能为空", nameof(storageObjectId));
         }
 
-        if (!ObjectId.TryParse(sessionId, out _))
+        if (string.IsNullOrWhiteSpace(sessionId))
         {
             throw new ArgumentException("会话标识格式不正确", nameof(sessionId));
         }
 
-        if (!ObjectId.TryParse(storageObjectId, out var gridFsId))
+        if (string.IsNullOrWhiteSpace(storageObjectId))
         {
             throw new ArgumentException("附件标识格式不正确", nameof(storageObjectId));
         }
@@ -715,10 +690,8 @@ public class ChatService : IChatService
             throw new UnauthorizedAccessException("当前用户不属于该会话");
         }
 
-        var filter = _attachmentFactory.CreateFilterBuilder()
-            .Equal(attachment => attachment.SessionId, session.Id)
-            .Equal(attachment => attachment.StorageObjectId, storageObjectId)
-            .Build();
+        Expression<Func<ChatAttachment, bool>> filter = attachment => attachment.SessionId == session.Id && 
+                                                                 attachment.StorageObjectId == storageObjectId;
 
         var attachments = await _attachmentFactory.FindAsync(filter, null, 1);
         var attachment = attachments.FirstOrDefault();
@@ -729,6 +702,7 @@ public class ChatService : IChatService
 
         try
         {
+            var gridFsId = new ObjectId(attachment.StorageObjectId);
             var downloadStream = await _gridFsBucket.OpenDownloadStreamAsync(gridFsId);
             if (downloadStream.CanSeek)
             {
@@ -759,12 +733,12 @@ public class ChatService : IChatService
             throw new ArgumentException("会话标识不能为空", nameof(sessionId));
         }
 
-        if (!ObjectId.TryParse(sessionId, out _))
+        if (string.IsNullOrWhiteSpace(sessionId))
         {
             throw new ArgumentException("会话标识格式不正确", nameof(sessionId));
         }
 
-        if (string.IsNullOrWhiteSpace(lastMessageId) || !ObjectId.TryParse(lastMessageId, out _))
+        if (string.IsNullOrWhiteSpace(lastMessageId) || string.IsNullOrWhiteSpace(lastMessageId))
         {
             throw new ArgumentException("消息标识格式不正确", nameof(lastMessageId));
         }
@@ -789,16 +763,12 @@ public class ChatService : IChatService
         var lastReadMessageIds = session.LastReadMessageIds ?? new Dictionary<string, string>();
         lastReadMessageIds[currentUserId] = lastMessageId;
 
-        var update = _sessionFactory.CreateUpdateBuilder()
-            .Set(session => session.UnreadCounts, unreadCounts)
-            .Set(session => session.LastReadMessageIds, lastReadMessageIds)
-            .SetCurrentTimestamp();
-
-        var filter = _sessionFactory.CreateFilterBuilder()
-            .Equal(s => s.Id, session.Id)
-            .Build();
-
-        await _sessionFactory.FindOneAndUpdateAsync(filter, update.Build());
+        await _sessionFactory.UpdateAsync(session.Id, s =>
+        {
+            s.UnreadCounts = unreadCounts;
+            s.LastReadMessageIds = lastReadMessageIds;
+            s.UpdatedAt = DateTime.UtcNow;
+        });
 
         await NotifySessionReadAsync(session.Id, currentUserId, message.Id);
         await NotifySessionSummaryAsync(session.Id);
@@ -831,17 +801,13 @@ public class ChatService : IChatService
             throw new UnauthorizedAccessException("只能删除自己发送的消息");
         }
 
-        var filter = _messageFactory.CreateFilterBuilder()
-            .Equal(m => m.Id, message.Id)
-            .Build();
+        await _messageFactory.UpdateAsync(message.Id, m =>
+        {
+            m.IsRecalled = true;
+            m.UpdatedAt = DateTime.UtcNow;
+        });
 
-        var update = _messageFactory.CreateUpdateBuilder()
-            .Set(m => m.IsRecalled, true)
-            .SetCurrentTimestamp();
-
-        await _messageFactory.FindOneAndUpdateAsync(filter, update.Build());
-
-        await _messageFactory.FindOneAndSoftDeleteAsync(filter);
+        await _messageFactory.SoftDeleteAsync(message.Id);
 
         await NotifyMessageDeletedAsync(session.Id, message.Id);
     }
@@ -854,7 +820,7 @@ public class ChatService : IChatService
             throw new ArgumentException("参与者标识不能为空", nameof(participantUserId));
         }
 
-        if (!ObjectId.TryParse(participantUserId, out _))
+        if (string.IsNullOrWhiteSpace(participantUserId))
         {
             throw new ArgumentException("参与者标识格式不正确", nameof(participantUserId));
         }
@@ -869,10 +835,9 @@ public class ChatService : IChatService
 
         var participants = new[] { currentUserId, participantUserId };
 
-        var existingFilter = Builders<ChatSession>.Filter.And(
-            Builders<ChatSession>.Filter.Eq(s => s.CompanyId, companyId),
-            Builders<ChatSession>.Filter.Size(s => s.Participants, 2),
-            Builders<ChatSession>.Filter.All(s => s.Participants, participants));
+        Expression<Func<ChatSession, bool>> existingFilter = s => s.CompanyId == companyId && 
+                                                            s.Participants.Count == 2 && 
+                                                            participants.All(p => s.Participants.Contains(p));
 
         var existingSessions = await _sessionFactory.FindAsync(existingFilter, limit: 1);
         var existing = existingSessions.FirstOrDefault();
@@ -881,10 +846,8 @@ public class ChatService : IChatService
             return existing;
         }
 
-        var participantUsers = await _userFactory.FindAsync(
-            _userFactory.CreateFilterBuilder()
-                .In(u => u.Id, participants)
-                .Build());
+        Expression<Func<AppUser, bool>> participantFilter = u => participants.Contains(u.Id);
+        var participantUsers = await _userFactory.FindAsync(participantFilter);
 
         var participantNames = participants.ToDictionary(
             id => id,
@@ -965,18 +928,14 @@ public class ChatService : IChatService
             _ => "[消息]"
         };
 
-        var update = _sessionFactory.CreateUpdateBuilder()
-            .Set(s => s.LastMessageId, message.Id)
-            .Set(s => s.LastMessageExcerpt, excerpt.Length > 120 ? excerpt[..120] : excerpt)
-            .Set(s => s.LastMessageAt, message.CreatedAt)
-            .Set(s => s.UnreadCounts, unreadCounts)
-            .SetCurrentTimestamp();
-
-        var filter = _sessionFactory.CreateFilterBuilder()
-            .Equal(s => s.Id, session.Id)
-            .Build();
-
-        await _sessionFactory.FindOneAndUpdateAsync(filter, update.Build());
+        await _sessionFactory.UpdateAsync(session.Id, s =>
+        {
+            s.LastMessageId = message.Id;
+            s.LastMessageExcerpt = excerpt.Length > 120 ? excerpt[..120] : excerpt;
+            s.LastMessageAt = message.CreatedAt;
+            s.UnreadCounts = unreadCounts;
+            s.UpdatedAt = DateTime.UtcNow;
+        });
     }
 
     /// <summary>
@@ -993,17 +952,13 @@ public class ChatService : IChatService
             _ => "[消息]"
         };
 
-        var update = _sessionFactory.CreateUpdateBuilder()
-            .Set(s => s.LastMessageId, message.Id)
-            .Set(s => s.LastMessageExcerpt, excerpt.Length > 120 ? excerpt[..120] : excerpt)
-            .Set(s => s.LastMessageAt, message.CreatedAt)
-            .SetCurrentTimestamp();
-
-        var filter = _sessionFactory.CreateFilterBuilder()
-            .Equal(s => s.Id, session.Id)
-            .Build();
-
-        await _sessionFactory.FindOneAndUpdateAsync(filter, update.Build());
+        await _sessionFactory.UpdateAsync(session.Id, s =>
+        {
+            s.LastMessageId = message.Id;
+            s.LastMessageExcerpt = excerpt.Length > 120 ? excerpt[..120] : excerpt;
+            s.LastMessageAt = message.CreatedAt;
+            s.UpdatedAt = DateTime.UtcNow;
+        });
     }
 
     private async Task NotifyMessageCreatedAsync(ChatSession session, ChatMessage message)
@@ -1229,11 +1184,11 @@ public class ChatService : IChatService
         }
 
         assistantMessage = await _messageFactory.CreateAsync(assistantMessage);
-        
+
         // 通知消息已创建
         var refreshedSession = await _sessionFactory.GetByIdAsync(session.Id) ?? session;
         await UpdateSessionAfterMessageAsync(refreshedSession, assistantMessage, AiAssistantConstants.AssistantUserId);
-        
+
         // 立即广播初始消息，让前端知道有新消息开始流式传输
         var payload = new ChatMessageRealtimePayload
         {
@@ -1241,8 +1196,8 @@ public class ChatService : IChatService
             Message = assistantMessage,
             BroadcastAtUtc = DateTime.UtcNow
         };
-        
-        _logger.LogInformation("广播流式消息初始状态，会话：{SessionId}，消息ID：{MessageId}", 
+
+        _logger.LogInformation("广播流式消息初始状态，会话：{SessionId}，消息ID：{MessageId}",
             session.Id, assistantMessage.Id);
         await _broadcaster.BroadcastMessageAsync(session.Id, payload);
 
@@ -1256,16 +1211,11 @@ public class ChatService : IChatService
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var update = _messageFactory.CreateUpdateBuilder()
-            .Set(message => message.Content, newContent)
-            .Set(message => message.UpdatedAt, DateTime.UtcNow)
-            .Build();
-
-        await _messageFactory.FindOneAndUpdateAsync(
-            _messageFactory.CreateFilterBuilder()
-                .Equal(message => message.Id, messageId)
-                .Build(),
-            update);
+        await _messageFactory.UpdateAsync(messageId, message =>
+        {
+            message.Content = newContent;
+            message.UpdatedAt = DateTime.UtcNow;
+        });
     }
 
     /// <summary>
@@ -1281,27 +1231,21 @@ public class ChatService : IChatService
             return;
         }
 
-        // 创建新的 Metadata 副本，避免直接修改原对象
-        var metadata = message.Metadata != null 
-            ? new Dictionary<string, object>(message.Metadata) 
+        var metadata = message.Metadata != null
+            ? new Dictionary<string, object>(message.Metadata)
             : new Dictionary<string, object>();
-        
+
         if (metadata.ContainsKey("streaming"))
         {
             metadata.Remove("streaming");
         }
 
-        var update = _messageFactory.CreateUpdateBuilder()
-            .Set(message => message.Content, finalContent)
-            .Set(message => message.UpdatedAt, DateTime.UtcNow)
-            .Set(message => message.Metadata, metadata)
-            .Build();
-
-        await _messageFactory.FindOneAndUpdateAsync(
-            _messageFactory.CreateFilterBuilder()
-                .Equal(message => message.Id, messageId)
-                .Build(),
-            update);
+        await _messageFactory.UpdateAsync(messageId, message =>
+        {
+            message.Content = finalContent;
+            message.UpdatedAt = DateTime.UtcNow;
+            message.Metadata = metadata;
+        });
     }
 
     /// <summary>
@@ -1359,7 +1303,7 @@ public class ChatService : IChatService
         // 构建系统提示词
         string systemPrompt;
         const string defaultRoleDefinition = "你是小科，请使用简体中文提供简洁、专业且友好的回复。";
-        
+
         try
         {
             var userRoleDefinition = await _userService.GetAiRoleDefinitionAsync(currentUserId);
@@ -1408,7 +1352,7 @@ public class ChatService : IChatService
         instructionBuilder.AppendLine(systemPrompt.Trim());
         instructionBuilder.AppendLine($"当前用户语言标识：zh-CN");
         instructionBuilder.Append("请结合完整的历史聊天记录，使用自然、真诚且有温度的语气回复对方。");
-        
+
         // 如果启用了 MCP 服务，告知 AI 可以使用工具，并添加工具调用结果
         if (_mcpService != null && !string.IsNullOrWhiteSpace(toolResultContext))
         {
@@ -1474,7 +1418,7 @@ public class ChatService : IChatService
 
             // 流式生成 AI 回复：每个增量立即发送到前端
             var streamingResult = chatClient.CompleteChatStreamingAsync(messages, completionOptions, cancellationToken);
-            
+
             await foreach (var update in streamingResult)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -1493,7 +1437,7 @@ public class ChatService : IChatService
                         {
                             await onChunk(session.Id, assistantMessage.Id, delta);
                         }
-                        
+
                         // 后台更新数据库（每50字符，不阻塞流式输出）
                         if (accumulatedContent.Length % 50 == 0)
                         {
@@ -1518,10 +1462,10 @@ public class ChatService : IChatService
             {
                 // 确保最终内容已保存到数据库（即使长度不足50的倍数）
                 await UpdateStreamingMessageAsync(assistantMessage.Id, finalContent, cancellationToken);
-                
+
                 // 完成流式消息（移除流式标记）
                 await CompleteStreamingMessageAsync(assistantMessage.Id, finalContent, cancellationToken);
-                
+
                 // 获取更新后的消息并广播完成事件
                 var completedMessage = await _messageFactory.GetByIdAsync(assistantMessage.Id);
                 if (completedMessage != null)
@@ -1531,25 +1475,22 @@ public class ChatService : IChatService
                     {
                         await onComplete(completedMessage);
                     }
-                    
+
                     // 广播完成事件
                     await _broadcaster.BroadcastMessageCompleteAsync(session.Id, completedMessage);
                 }
-                
+
                 return completedMessage;
             }
             else if (assistantMessage != null)
             {
                 // 如果内容为空，删除消息
-                await _messageFactory.FindOneAndSoftDeleteAsync(
-                    _messageFactory.CreateFilterBuilder()
-                        .Equal(message => message.Id, assistantMessage.Id)
-                        .Build());
-                
-                _logger.LogWarning("AI 助手流式回复生成失败或返回空，会话：{SessionId}，触发消息：{MessageId}", 
+                await _messageFactory.SoftDeleteAsync(assistantMessage.Id);
+
+                _logger.LogWarning("AI 助手流式回复生成失败或返回空，会话：{SessionId}，触发消息：{MessageId}",
                     session.Id, triggerMessage.Id);
             }
-            
+
             return null;
         }
         catch (OperationCanceledException)
@@ -1557,10 +1498,7 @@ public class ChatService : IChatService
             // 流式生成被取消
             if (assistantMessage != null)
             {
-                await _messageFactory.FindOneAndSoftDeleteAsync(
-                    _messageFactory.CreateFilterBuilder()
-                        .Equal(message => message.Id, assistantMessage.Id)
-                        .Build());
+                await _messageFactory.SoftDeleteAsync(assistantMessage.Id);
             }
             return null;
         }
@@ -1572,13 +1510,10 @@ public class ChatService : IChatService
                 model,
                 session.Id,
                 ex.Message);
-            
+
             if (assistantMessage != null)
             {
-                await _messageFactory.FindOneAndSoftDeleteAsync(
-                    _messageFactory.CreateFilterBuilder()
-                        .Equal(message => message.Id, assistantMessage.Id)
-                        .Build());
+                await _messageFactory.SoftDeleteAsync(assistantMessage.Id);
             }
             return null;
         }
@@ -1589,13 +1524,10 @@ public class ChatService : IChatService
                 "调用 OpenAI Chat 流式接口时发生未预期的异常，模型：{Model}，会话：{SessionId}",
                 model,
                 session.Id);
-            
+
             if (assistantMessage != null)
             {
-                await _messageFactory.FindOneAndSoftDeleteAsync(
-                    _messageFactory.CreateFilterBuilder()
-                        .Equal(message => message.Id, assistantMessage.Id)
-                        .Build());
+                await _messageFactory.SoftDeleteAsync(assistantMessage.Id);
             }
             return null;
         }
@@ -1607,7 +1539,7 @@ public class ChatService : IChatService
         string? locale,
         CancellationToken cancellationToken = default)
     {
-        
+
         // 优先使用小科配置管理的配置
         XiaokeConfigDto? xiaokeConfig = null;
         if (_xiaokeConfigService != null)
@@ -1649,7 +1581,7 @@ public class ChatService : IChatService
         // 优先使用用户自定义的角色定义，其次使用小科配置的系统提示词，再次使用 _aiOptions，最后使用默认值
         string systemPrompt;
         const string defaultRoleDefinition = "你是小科，请使用简体中文提供简洁、专业且友好的回复。";
-        
+
         try
         {
             var userRoleDefinition = await _userService.GetAiRoleDefinitionAsync(currentUserId);
@@ -1715,7 +1647,7 @@ public class ChatService : IChatService
         instructionBuilder.AppendLine(systemPrompt.Trim());
         instructionBuilder.AppendLine($"当前用户语言标识：{effectiveLocale}");
         instructionBuilder.Append("请结合完整的历史聊天记录，使用自然、真诚且有温度的语气回复对方。");
-        
+
         // 如果启用了 MCP 服务，告知 AI 可以使用工具，并添加工具调用结果
         if (_mcpService != null)
         {
@@ -1737,19 +1669,19 @@ public class ChatService : IChatService
             instructionBuilder.AppendLine("【我的活动模块】");
             instructionBuilder.AppendLine("- get_my_activity_logs: 获取我的活动日志（支持按操作类型、时间范围筛选、分页）");
             instructionBuilder.AppendLine();
-                instructionBuilder.AppendLine("【聊天模块】");
-                instructionBuilder.AppendLine("- get_chat_sessions: 获取聊天会话列表");
-                instructionBuilder.AppendLine("- get_chat_messages: 获取聊天消息列表");
-                instructionBuilder.AppendLine();
-                instructionBuilder.AppendLine("【社交模块】");
-                instructionBuilder.AppendLine("- get_nearby_users: 获取附近的用户（基于地理位置）");
-                instructionBuilder.AppendLine();
-                instructionBuilder.AppendLine("【小科配置管理模块】");
-                instructionBuilder.AppendLine("- get_xiaoke_configs: 获取小科配置列表（支持按名称、启用状态筛选、分页）");
-                instructionBuilder.AppendLine("- get_xiaoke_config: 获取小科配置详情（通过配置ID查询）");
-                instructionBuilder.AppendLine("- get_default_xiaoke_config: 获取当前企业的默认小科配置");
-                instructionBuilder.AppendLine();
-            
+            instructionBuilder.AppendLine("【聊天模块】");
+            instructionBuilder.AppendLine("- get_chat_sessions: 获取聊天会话列表");
+            instructionBuilder.AppendLine("- get_chat_messages: 获取聊天消息列表");
+            instructionBuilder.AppendLine();
+            instructionBuilder.AppendLine("【社交模块】");
+            instructionBuilder.AppendLine("- get_nearby_users: 获取附近的用户（基于地理位置）");
+            instructionBuilder.AppendLine();
+            instructionBuilder.AppendLine("【小科配置管理模块】");
+            instructionBuilder.AppendLine("- get_xiaoke_configs: 获取小科配置列表（支持按名称、启用状态筛选、分页）");
+            instructionBuilder.AppendLine("- get_xiaoke_config: 获取小科配置详情（通过配置ID查询）");
+            instructionBuilder.AppendLine("- get_default_xiaoke_config: 获取当前企业的默认小科配置");
+            instructionBuilder.AppendLine();
+
             // 如果已经调用了工具，将结果添加到上下文中
             if (!string.IsNullOrWhiteSpace(toolResultContext))
             {
@@ -1825,7 +1757,7 @@ public class ChatService : IChatService
 
         try
         {
-            
+
             var completionResult = await chatClient.CompleteChatAsync(messages, completionOptions);
             var completion = completionResult.Value;
             if (completion == null || completion.Content == null || completion.Content.Count == 0)
@@ -1880,15 +1812,9 @@ public class ChatService : IChatService
 
         try
         {
-            var filter = _messageFactory.CreateFilterBuilder()
-                .Equal(message => message.SessionId, session.Id)
-                .Build();
+            Expression<Func<ChatMessage, bool>> filter = message => message.SessionId == session.Id;
 
-            var sort = _messageFactory.CreateSortBuilder()
-                .Descending(message => message.CreatedAt)
-                .Build();
-
-            var history = await _messageFactory.FindAsync(filter, sort, AssistantContextMessageLimit);
+            var history = await _messageFactory.FindAsync(filter, query => query.OrderByDescending(m => m.CreatedAt), AssistantContextMessageLimit);
             history.Reverse();
 
             foreach (var message in history)
@@ -1966,7 +1892,7 @@ public class ChatService : IChatService
             // 检测用户查询意图并调用相应的工具
             if (contentLower.Contains("用户") && (contentLower.Contains("admin") || contentLower.Contains("信息") || contentLower.Contains("查询") || contentLower.Contains("查")))
             {
-                
+
                 // 提取用户名（如果提到）
                 string? username = null;
                 if (contentLower.Contains("admin"))
@@ -2001,11 +1927,11 @@ public class ChatService : IChatService
 
 
                 var userInfoResponse = await _mcpService.CallToolAsync(userInfoRequest, currentUserId);
-                
+
                 if (userInfoResponse.IsError)
                 {
-                    var errorMessage = userInfoResponse.Content.Count > 0 
-                        ? userInfoResponse.Content[0].Text 
+                    var errorMessage = userInfoResponse.Content.Count > 0
+                        ? userInfoResponse.Content[0].Text
                         : "未知错误";
                     _logger.LogWarning("MCP 工具调用失败: {Error}", errorMessage);
                     toolResults.Add($"用户信息查询失败: {errorMessage}");
@@ -2056,7 +1982,7 @@ public class ChatService : IChatService
             }
             else if (contentLower.Contains("活动") || contentLower.Contains("日志") || contentLower.Contains("记录"))
             {
-                
+
                 var activityRequest = new McpCallToolRequest
                 {
                     Name = "get_my_activity_logs",
@@ -2069,11 +1995,11 @@ public class ChatService : IChatService
 
 
                 var activityResponse = await _mcpService.CallToolAsync(activityRequest, currentUserId);
-                
+
                 if (activityResponse.IsError)
                 {
-                    var errorMessage = activityResponse.Content.Count > 0 
-                        ? activityResponse.Content[0].Text 
+                    var errorMessage = activityResponse.Content.Count > 0
+                        ? activityResponse.Content[0].Text
                         : "未知错误";
                     _logger.LogWarning("MCP 工具调用失败: {Error}", errorMessage);
                     toolResults.Add($"活动日志查询失败: {errorMessage}");
@@ -2209,33 +2135,33 @@ public class ChatService : IChatService
                 case JsonValueKind.False:
                     return false;
                 case JsonValueKind.Array:
-                {
-                    var list = new List<object>();
-                    foreach (var item in element.EnumerateArray())
                     {
-                        var normalizedItem = NormalizeMetadataValue(item);
-                        if (normalizedItem is not null)
+                        var list = new List<object>();
+                        foreach (var item in element.EnumerateArray())
                         {
-                            list.Add(normalizedItem);
+                            var normalizedItem = NormalizeMetadataValue(item);
+                            if (normalizedItem is not null)
+                            {
+                                list.Add(normalizedItem);
+                            }
                         }
-                    }
 
-                    return list;
-                }
+                        return list;
+                    }
                 case JsonValueKind.Object:
-                {
-                    var dictionary = new Dictionary<string, object>();
-                    foreach (var property in element.EnumerateObject())
                     {
-                        var normalizedProperty = NormalizeMetadataValue(property.Value);
-                        if (normalizedProperty is not null)
+                        var dictionary = new Dictionary<string, object>();
+                        foreach (var property in element.EnumerateObject())
                         {
-                            dictionary[property.Name] = normalizedProperty;
+                            var normalizedProperty = NormalizeMetadataValue(property.Value);
+                            if (normalizedProperty is not null)
+                            {
+                                dictionary[property.Name] = normalizedProperty;
+                            }
                         }
-                    }
 
-                    return dictionary;
-                }
+                        return dictionary;
+                    }
                 case JsonValueKind.Null:
                 case JsonValueKind.Undefined:
                     return null;
@@ -2261,18 +2187,8 @@ public class ChatService : IChatService
         Dictionary<string, AppUser> participantMap = new();
         if (participantIds.Count > 0)
         {
-            // ✅ 优化：使用字段投影，只返回参与者元数据需要的字段
-            var filter = _userFactory.CreateFilterBuilder()
-                .In(user => user.Id, participantIds)
-                .Build();
-            var userProjection = _userFactory.CreateProjectionBuilder()
-                .Include(u => u.Id)
-                .Include(u => u.Username)
-                .Include(u => u.Name)
-                .Include(u => u.Avatar)  // 用于头像显示
-                .Build();
-
-            var users = await _userFactory.FindAsync(filter, projection: userProjection);
+            Expression<Func<AppUser, bool>> filter = user => participantIds.Contains(user.Id);
+            var users = await _userFactory.FindAsync(filter);
             participantMap = users.ToDictionary(user => user.Id, user => user);
         }
 

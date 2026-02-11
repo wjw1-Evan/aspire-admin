@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MongoDB.Driver;
 using OpenAI;
 using OpenAI.Chat;
 using Platform.ApiService.Constants;
@@ -55,23 +55,25 @@ public class AiSuggestionService : IAiSuggestionService
     private const string DefaultSuggestionNotice = "小科暂时没有生成推荐，请稍后再试或尝试调整话题。";
     private const string DefaultSystemPrompt = "你是小科，担任微信风格的对话助理，请使用简体中文，提供自然、真诚且有温度的建议。";
 
-    private readonly IDatabaseOperationFactory<ChatSession> _sessionFactory;
-    private readonly IDatabaseOperationFactory<DomainChatMessage> _messageFactory;
-    private readonly IDatabaseOperationFactory<AppUser> _userFactory;
+    private readonly IDataFactory<ChatSession> _sessionFactory;
+    private readonly IDataFactory<DomainChatMessage> _messageFactory;
+    private readonly IDataFactory<AppUser> _userFactory;
     private readonly OpenAIClient _openAiClient;
     private readonly AiCompletionOptions _aiOptions;
     private readonly ILogger<AiSuggestionService> _logger;
+    private readonly ITenantContext _tenantContext;
 
     /// <summary>
     /// 初始化 <see cref="AiSuggestionService"/>。
     /// </summary>
     public AiSuggestionService(
-        IDatabaseOperationFactory<ChatSession> sessionFactory,
-        IDatabaseOperationFactory<DomainChatMessage> messageFactory,
-        IDatabaseOperationFactory<AppUser> userFactory,
+        IDataFactory<ChatSession> sessionFactory,
+        IDataFactory<DomainChatMessage> messageFactory,
+        IDataFactory<AppUser> userFactory,
         OpenAIClient openAiClient,
         IOptions<AiCompletionOptions> aiOptions,
-        ILogger<AiSuggestionService> logger)
+        ILogger<AiSuggestionService> logger,
+        ITenantContext tenantContext)
     {
         _sessionFactory = sessionFactory;
         _messageFactory = messageFactory;
@@ -79,6 +81,7 @@ public class AiSuggestionService : IAiSuggestionService
         _openAiClient = openAiClient;
         _aiOptions = aiOptions.Value;
         _logger = logger;
+        _tenantContext = tenantContext;
     }
 
     /// <inheritdoc />
@@ -136,18 +139,13 @@ public class AiSuggestionService : IAiSuggestionService
     {
         request = NormalizeMatchRequest(request, currentUserId);
 
-        var tenantCompanyId = await _sessionFactory.GetRequiredCompanyIdAsync();
+        var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
         var interestKeywords = BuildInterestKeywords(request);
         var limit = NormalizeLimit(request.Limit);
 
-        var sessionMap = await BuildSessionMapAsync(currentUserId, tenantCompanyId);
+        var sessionMap = await BuildSessionMapAsync(currentUserId, companyId);
 
-        var userFilter = _userFactory.CreateFilterBuilder()
-            .Equal(user => user.IsActive, true)
-            .Equal(user => user.CurrentCompanyId, tenantCompanyId)
-            .Build();
-
-        var candidateUsers = await _userFactory.FindAsync(userFilter);
+        var candidateUsers = await _userFactory.FindAsync(user => user.IsActive && user.CurrentCompanyId == companyId);
         var suggestions = BuildMatchSuggestions(candidateUsers, currentUserId, interestKeywords, sessionMap, limit);
 
         return new MatchSuggestionResponse
@@ -188,15 +186,10 @@ public class AiSuggestionService : IAiSuggestionService
 
     private async Task<Dictionary<string, string>> BuildSessionMapAsync(string currentUserId, string tenantCompanyId)
     {
-        var sessionFilter = Builders<ChatSession>.Filter.And(
-            Builders<ChatSession>.Filter.AnyEq(session => session.Participants, currentUserId),
-            Builders<ChatSession>.Filter.Eq(session => session.CompanyId, tenantCompanyId));
-
-        var sessionSort = _sessionFactory.CreateSortBuilder()
-            .Descending(session => session.UpdatedAt)
-            .Build();
-
-        var sessions = await _sessionFactory.FindAsync(sessionFilter, sessionSort, limit: 50);
+        var sessions = await _sessionFactory.FindAsync(
+            session => session.Participants.Contains(currentUserId) && session.CompanyId == tenantCompanyId,
+            query => query.OrderByDescending(session => session.UpdatedAt),
+            limit: 50);
 
         var sessionMap = new Dictionary<string, string>();
         foreach (var session in sessions)
@@ -286,15 +279,9 @@ public class AiSuggestionService : IAiSuggestionService
 
         try
         {
-            var filter = _messageFactory.CreateFilterBuilder()
-                .Equal(message => message.SessionId, session.Id)
-                .Build();
-
-            var sort = _messageFactory.CreateSortBuilder()
-                .Ascending(message => message.CreatedAt)
-                .Build();
-
-            var allMessages = await _messageFactory.FindAsync(filter, sort);
+            var allMessages = await _messageFactory.FindAsync(
+                message => message.SessionId == session.Id,
+                query => query.OrderBy(message => message.CreatedAt));
 
             foreach (var message in allMessages)
             {

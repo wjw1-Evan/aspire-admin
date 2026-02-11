@@ -16,10 +16,10 @@ public static class ServiceExtensions
     {
         // 注册审计服务
         services.AddScoped<IAuditService, AuditService>();
-        
+
         // 注册数据库操作工厂
-        services.AddScoped<IDatabaseOperationFactory<T>, DatabaseOperationFactory<T>>();
-        
+        services.AddScoped<IDataFactory<T>, EFCoreDataFactory<T>>();
+
         return services;
     }
 
@@ -30,7 +30,7 @@ public static class ServiceExtensions
     {
         // 注册审计服务
         services.AddScoped<IAuditService, AuditService>();
-        
+
         return services;
     }
 
@@ -41,10 +41,10 @@ public static class ServiceExtensions
     {
         // 注册审计服务
         services.AddScoped<IAuditService, AuditService>();
-        
-        // 注册数据库操作工厂（使用工厂模式创建 IMongoCollection<T>）
-        services.AddScoped(typeof(IDatabaseOperationFactory<>), typeof(DatabaseOperationFactory<>));
-        
+
+        // 注册数据库操作工厂
+        services.AddScoped(typeof(IDataFactory<>), typeof(EFCoreDataFactory<>));
+
         return services;
     }
 }

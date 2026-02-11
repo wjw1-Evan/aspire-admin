@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
+using MongoDB.Driver;
+using MongoDB.Driver.GridFS;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
-using MongoDB.Driver.GridFS;
-using MongoDB.Driver;
 
 namespace Platform.ApiService.Controllers;
 

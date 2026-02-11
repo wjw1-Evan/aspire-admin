@@ -13,6 +13,7 @@ using System.Security.Cryptography;
 using System.Threading.Tasks;
 using UserCompany = Platform.ApiService.Models.UserCompany;
 using Platform.ApiService.Extensions;
+using System.Linq.Expressions;
 
 namespace Platform.ApiService.Services;
 
@@ -194,35 +195,29 @@ public class DocumentQueryParams
 /// </summary>
 public class DocumentService : IDocumentService
 {
-    private readonly IDatabaseOperationFactory<Document> _documentFactory;
-    private readonly IDatabaseOperationFactory<WorkflowInstance> _instanceFactory;
-    private readonly IDatabaseOperationFactory<WorkflowDefinition> _definitionFactory;
-    private readonly IDatabaseOperationFactory<UserCompany> _userCompanyFactory;
-    private readonly IDatabaseOperationFactory<FormDefinition> _formFactory;
+    private readonly IDataFactory<Document> _documentFactory;
+    private readonly IDataFactory<WorkflowInstance> _instanceFactory;
+    private readonly IDataFactory<WorkflowDefinition> _definitionFactory;
+    private readonly IDataFactory<UserCompany> _userCompanyFactory;
+    private readonly IDataFactory<FormDefinition> _formFactory;
     private readonly IWorkflowEngine _workflowEngine;
     private readonly ILogger<DocumentService> _logger;
     private readonly GridFSBucket _gridFsBucket;
+    private readonly ITenantContext _tenantContext;
 
     /// <summary>
     /// 初始化公文服务
     /// </summary>
-    /// <param name="documentFactory">公文工厂</param>
-    /// <param name="instanceFactory">流程实例工厂</param>
-    /// <param name="definitionFactory">流程定义工厂</param>
-    /// <param name="userCompanyFactory">用户企业关系工厂</param>
-    /// <param name="formFactory">表单定义工厂</param>
-    /// <param name="workflowEngine">工作流引擎</param>
-    /// <param name="logger">日志记录器</param>
-    /// <param name="gridFSService">GridFS 存储服务</param>
     public DocumentService(
-        IDatabaseOperationFactory<Document> documentFactory,
-        IDatabaseOperationFactory<WorkflowInstance> instanceFactory,
-        IDatabaseOperationFactory<WorkflowDefinition> definitionFactory,
-        IDatabaseOperationFactory<UserCompany> userCompanyFactory,
-        IDatabaseOperationFactory<FormDefinition> formFactory,
+        IDataFactory<Document> documentFactory,
+        IDataFactory<WorkflowInstance> instanceFactory,
+        IDataFactory<WorkflowDefinition> definitionFactory,
+        IDataFactory<UserCompany> userCompanyFactory,
+        IDataFactory<FormDefinition> formFactory,
         IWorkflowEngine workflowEngine,
         ILogger<DocumentService> logger,
-        Platform.ServiceDefaults.Services.IGridFSService gridFSService)
+       IGridFSService gridFSService,
+        ITenantContext tenantContext)
     {
         _documentFactory = documentFactory;
         _instanceFactory = instanceFactory;
@@ -231,6 +226,7 @@ public class DocumentService : IDocumentService
         _formFactory = formFactory;
         _workflowEngine = workflowEngine;
         _logger = logger;
+        _tenantContext = tenantContext;
         var gridFsServiceNotNull = gridFSService ?? throw new ArgumentNullException(nameof(gridFSService));
         _gridFsBucket = gridFsServiceNotNull.GetBucket("document_attachments");
     }
@@ -277,57 +273,55 @@ public class DocumentService : IDocumentService
             throw new InvalidOperationException("只有草稿状态的公文可以修改");
         }
 
-        var updateBuilder = _documentFactory.CreateUpdateBuilder();
         bool hasUpdate = false;
 
-        if (!string.IsNullOrEmpty(request.Title))
+        await _documentFactory.UpdateAsync(id, entity =>
         {
-            updateBuilder.Set(d => d.Title, request.Title);
-            hasUpdate = true;
-        }
+            if (!string.IsNullOrEmpty(request.Title))
+            {
+                entity.Title = request.Title;
+                hasUpdate = true;
+            }
 
-        if (request.Content != null)
-        {
-            updateBuilder.Set(d => d.Content, request.Content);
-            hasUpdate = true;
-        }
+            if (request.Content != null)
+            {
+                entity.Content = request.Content;
+                hasUpdate = true;
+            }
 
-        if (!string.IsNullOrEmpty(request.DocumentType))
-        {
-            updateBuilder.Set(d => d.DocumentType, request.DocumentType);
-            hasUpdate = true;
-        }
+            if (!string.IsNullOrEmpty(request.DocumentType))
+            {
+                entity.DocumentType = request.DocumentType;
+                hasUpdate = true;
+            }
 
-        if (request.Category != null)
-        {
-            updateBuilder.Set(d => d.Category, request.Category);
-            hasUpdate = true;
-        }
+            if (request.Category != null)
+            {
+                entity.Category = request.Category;
+                hasUpdate = true;
+            }
 
-        if (request.AttachmentIds != null)
-        {
-            updateBuilder.Set(d => d.AttachmentIds, request.AttachmentIds);
-            hasUpdate = true;
-        }
+            if (request.AttachmentIds != null)
+            {
+                entity.AttachmentIds = request.AttachmentIds;
+                hasUpdate = true;
+            }
 
-        if (request.FormData != null)
-        {
-            var sanitized = SerializationExtensions.SanitizeDictionary(request.FormData);
-            updateBuilder.Set(d => d.FormData, sanitized);
-            hasUpdate = true;
-        }
+            if (request.FormData != null)
+            {
+                var sanitized = SerializationExtensions.SanitizeDictionary(request.FormData);
+                entity.FormData = sanitized;
+                hasUpdate = true;
+            }
+        });
 
         if (!hasUpdate)
         {
             return document;
         }
 
-        var update = updateBuilder.Build();
-        var filter = _documentFactory.CreateFilterBuilder()
-            .Equal(d => d.Id, id)
-            .Build();
-
-        return await _documentFactory.FindOneAndUpdateAsync(filter, update);
+        var updated = await _documentFactory.FindAsync(d => d.Id == id, limit: 1);
+        return updated.FirstOrDefault();
     }
 
     /// <summary>
@@ -344,52 +338,39 @@ public class DocumentService : IDocumentService
     public async Task<(List<Document> items, long total)> GetDocumentsAsync(DocumentQueryParams query)
     {
         var userId = _documentFactory.GetRequiredUserId();
-        var filterBuilder = _documentFactory.CreateFilterBuilder();
         var companyId = await _documentFactory.GetRequiredCompanyIdAsync();
+
+        Expression<Func<Document, bool>> filter = d => d.CompanyId == companyId;
 
         // 关键词搜索
         if (!string.IsNullOrEmpty(query.Keyword))
         {
-            var pattern = $".*{System.Text.RegularExpressions.Regex.Escape(query.Keyword)}.*";
-            var regex = new MongoDB.Bson.BsonRegularExpression(pattern, "i");
-            var keywordFilters = new List<FilterDefinition<Document>>
-            {
-                Builders<Document>.Filter.Regex(d => d.Title, regex)
-            };
-
-            // Content 字段可能为 null，需要先检查
-            var contentFilter = Builders<Document>.Filter.And(
-                Builders<Document>.Filter.Ne(d => d.Content, null),
-                Builders<Document>.Filter.Regex(d => d.Content!, regex)
-            );
-            keywordFilters.Add(contentFilter);
-
-            var searchFilter = Builders<Document>.Filter.Or(keywordFilters);
-            filterBuilder.Custom(searchFilter);
+            var keyword = query.Keyword.ToLower();
+            filter = filter.And(d => d.Title.ToLower().Contains(keyword) || (d.Content != null && d.Content.ToLower().Contains(keyword)));
         }
 
         // 状态筛选
         if (query.Status.HasValue)
         {
-            filterBuilder.Equal(d => d.Status, query.Status.Value);
+            filter = filter.And(d => d.Status == query.Status.Value);
         }
 
         // 类型筛选
         if (!string.IsNullOrEmpty(query.DocumentType))
         {
-            filterBuilder.Equal(d => d.DocumentType, query.DocumentType);
+            filter = filter.And(d => d.DocumentType == query.DocumentType);
         }
 
         // 分类筛选
         if (!string.IsNullOrEmpty(query.Category))
         {
-            filterBuilder.Equal(d => d.Category, query.Category);
+            filter = filter.And(d => d.Category == query.Category);
         }
 
         // 创建人筛选
         if (!string.IsNullOrEmpty(query.CreatedBy))
         {
-            filterBuilder.Equal(d => d.CreatedBy, query.CreatedBy);
+            filter = filter.And(d => d.CreatedBy == query.CreatedBy);
         }
 
         // 筛选类型
@@ -398,62 +379,40 @@ public class DocumentService : IDocumentService
             switch (query.FilterType.ToLower())
             {
                 case "my":
-                    // 我的发起
-                    filterBuilder.Equal(d => d.CreatedBy, userId);
+                    filter = filter.And(d => d.CreatedBy == userId);
                     break;
 
                 case "pending":
-                    // 待审批：查询当前用户需要审批的公文
-                    // 🐛 优化：直接查询 CurrentApproverIds 包含当前用户的流程实例
-                    filterBuilder.Equal(d => d.Status, DocumentStatus.Pending);
-
-                    // 1. 查找当前用户作为审批人的运行中实例
-                    var pendingInstancesFilter = _instanceFactory.CreateFilterBuilder()
-                        .Equal(i => i.Status, WorkflowStatus.Running)
-                        .AnyEq(i => i.CurrentApproverIds, userId) // 利用索引直接查询
-                        .Build();
-
-                    // 仅获取 ID 列表，减少数据传输
-                    var projection = _instanceFactory.CreateProjectionBuilder()
-                        .Include(i => i.Id)
-                        .Build();
-
-                    var pendingInstances = await _instanceFactory.FindAsync(pendingInstancesFilter, projection: projection);
+                    filter = filter.And(d => d.Status == DocumentStatus.Pending);
+                    var pendingInstances = await _instanceFactory.FindAsync(i =>
+                        i.Status == WorkflowStatus.Running &&
+                        i.CurrentApproverIds.Contains(userId));
                     var instanceIds = pendingInstances.Select(i => i.Id).ToList();
-
-                    // 2. 过滤出这些实例关联的公文
                     if (instanceIds.Any())
                     {
-                        filterBuilder.In(d => d.WorkflowInstanceId, instanceIds);
+                        filter = filter.And(d => d.WorkflowInstanceId != null && instanceIds.Contains(d.WorkflowInstanceId));
                     }
                     else
                     {
-                        // 如果没有待审批的，直接返回空结果
                         return (new List<Document>(), 0);
                     }
                     break;
 
                 case "approved":
-                    filterBuilder.Equal(d => d.Status, DocumentStatus.Approved);
+                    filter = filter.And(d => d.Status == DocumentStatus.Approved);
                     break;
 
                 case "rejected":
-                    filterBuilder.Equal(d => d.Status, DocumentStatus.Rejected);
+                    filter = filter.And(d => d.Status == DocumentStatus.Rejected);
                     break;
             }
         }
 
-        var filter = filterBuilder.Build();
-        var sort = _documentFactory.CreateSortBuilder()
-            .Descending(d => d.CreatedAt)
-            .Build();
-
         return await _documentFactory.FindPagedAsync(
             filter,
-            sort,
+            q => q.OrderByDescending(d => d.CreatedAt),
             query.Page,
-            query.PageSize
-        );
+            query.PageSize);
     }
 
     /// <summary>
@@ -473,12 +432,8 @@ public class DocumentService : IDocumentService
             throw new InvalidOperationException("只有草稿状态的公文可以删除");
         }
 
-        var filter = _documentFactory.CreateFilterBuilder()
-            .Equal(d => d.Id, id)
-            .Build();
-
-        var result = await _documentFactory.FindOneAndSoftDeleteAsync(filter);
-        return result != null;
+        await _documentFactory.SoftDeleteAsync(id);
+        return true;
     }
 
     /// <summary>
@@ -522,7 +477,7 @@ public class DocumentService : IDocumentService
         }
 
         var userId = _documentFactory.GetRequiredUserId();
-        var companyId = await _documentFactory.GetRequiredCompanyIdAsync();
+        var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
 
         await using var memoryStream = new MemoryStream();
         await file.CopyToAsync(memoryStream);
@@ -662,7 +617,7 @@ public class DocumentService : IDocumentService
             throw new InvalidOperationException($"必填字段缺失: {string.Join(", ", missing)}");
         }
 
-        var companyId = await _documentFactory.GetRequiredCompanyIdAsync();
+        var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
 
         // 构造 FormData（考虑 DataScopeKey）
         Dictionary<string, object> formDataToSave;
@@ -706,7 +661,7 @@ public class DocumentService : IDocumentService
     private async Task<List<string>> ResolveApproversAsync(WorkflowInstance instance, List<ApproverRule> rules)
     {
         var approvers = new List<string>();
-        var companyId = await _documentFactory.GetRequiredCompanyIdAsync();
+        var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
 
         foreach (var rule in rules)
         {
@@ -724,15 +679,7 @@ public class DocumentService : IDocumentService
                     {
                         try
                         {
-                            var userCompanyFilter = _userCompanyFactory.CreateFilterBuilder()
-                                .Equal(uc => uc.CompanyId, companyId)
-                                .Equal(uc => uc.Status, "active")
-                                .Build();
-
-                            var additionalFilter = Builders<UserCompany>.Filter.AnyEq(uc => uc.RoleIds, rule.RoleId);
-                            var combinedFilter = Builders<UserCompany>.Filter.And(userCompanyFilter, additionalFilter);
-
-                            var userCompanies = await _userCompanyFactory.FindAsync(combinedFilter);
+                            var userCompanies = await _userCompanyFactory.FindAsync(uc => uc.CompanyId == companyId && uc.Status == "active" && uc.RoleIds.Contains(rule.RoleId!));
                             var userIds = userCompanies
                                 .Select(uc => uc.UserId)
                                 .Where(id => !string.IsNullOrEmpty(id))
@@ -763,70 +710,34 @@ public class DocumentService : IDocumentService
     public async Task<DocumentStatisticsResponse> GetStatisticsAsync()
     {
         var userId = _documentFactory.GetRequiredUserId();
-        var companyId = await _documentFactory.GetRequiredCompanyIdAsync();
-
-        // 基础过滤器：当前企业
-        var baseFilter = _documentFactory.CreateFilterBuilder().Build();
 
         // 1. 总公文数
-        var totalDocuments = await _documentFactory.CountAsync(baseFilter);
+        var totalDocuments = await _documentFactory.CountAsync();
 
         // 2. 草稿箱
-        var draftFilter = _documentFactory.CreateFilterBuilder().Equal(d => d.Status, DocumentStatus.Draft).Build();
-        var draftCount = await _documentFactory.CountAsync(draftFilter);
+        var draftCount = await _documentFactory.CountAsync(d => d.Status == DocumentStatus.Draft);
 
         // 3. 已审批（通过）
-        var approvedFilter = _documentFactory.CreateFilterBuilder().Equal(d => d.Status, DocumentStatus.Approved).Build();
-        var approvedCount = await _documentFactory.CountAsync(approvedFilter);
+        var approvedCount = await _documentFactory.CountAsync(d => d.Status == DocumentStatus.Approved);
 
         // 4. 已驳回
-        var rejectedFilter = _documentFactory.CreateFilterBuilder().Equal(d => d.Status, DocumentStatus.Rejected).Build();
-        var rejectedCount = await _documentFactory.CountAsync(rejectedFilter);
+        var rejectedCount = await _documentFactory.CountAsync(d => d.Status == DocumentStatus.Rejected);
 
         // 5. 我发起的
-        var myCreatedFilter = _documentFactory.CreateFilterBuilder().Equal(d => d.CreatedBy, userId).Build();
-        var myCreatedCount = await _documentFactory.CountAsync(myCreatedFilter);
+        var myCreatedCount = await _documentFactory.CountAsync(d => d.CreatedBy == userId);
 
-        // 6. 待审批（复杂查询，同 GetDocumentsAsync 中的 pending 逻辑）
+        // 6. 待审批
         long pendingCount = 0;
         try
         {
-            // 获取所有审批中的流程实例
-            var pendingInstancesFilter = _instanceFactory.CreateFilterBuilder()
-                .Equal(i => i.Status, WorkflowStatus.Running)
-                .Build();
-            var pendingInstances = await _instanceFactory.FindAsync(pendingInstancesFilter);
+            var pendingInstances = await _instanceFactory.FindAsync(i =>
+                i.Status == WorkflowStatus.Running &&
+                i.CurrentApproverIds.Contains(userId));
 
-            var pendingInstanceIds = new List<string>();
-            foreach (var instance in pendingInstances)
+            var instanceIds = pendingInstances.Select(i => i.Id).ToList();
+            if (instanceIds.Any())
             {
-                try
-                {
-                    var definition = await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
-                    if (definition == null) continue;
-
-                    var currentNode = definition.Graph.Nodes.FirstOrDefault(n => n.Id == instance.CurrentNodeId);
-                    if (currentNode?.Type == "approval" && currentNode.Config.Approval != null)
-                    {
-                        var approvers = await ResolveApproversAsync(instance, currentNode.Config.Approval.Approvers);
-                        if (approvers.Contains(userId))
-                        {
-                            pendingInstanceIds.Add(instance.Id);
-                        }
-                    }
-                }
-                catch
-                {
-                    // ignore individual failure
-                }
-            }
-
-            if (pendingInstanceIds.Any())
-            {
-                var pendingDocFilter = _documentFactory.CreateFilterBuilder()
-                    .In(d => d.WorkflowInstanceId, pendingInstanceIds)
-                    .Build();
-                pendingCount = await _documentFactory.CountAsync(pendingDocFilter);
+                pendingCount = await _documentFactory.CountAsync(d => instanceIds.Contains(d.WorkflowInstanceId));
             }
         }
         catch (Exception ex)
@@ -836,12 +747,12 @@ public class DocumentService : IDocumentService
 
         return new DocumentStatisticsResponse
         {
-            TotalDocuments = totalDocuments,
-            DraftCount = draftCount,
+            TotalDocuments = (int)totalDocuments,
+            DraftCount = (int)draftCount,
             PendingCount = pendingCount,
-            ApprovedCount = approvedCount,
-            RejectedCount = rejectedCount,
-            MyCreatedCount = myCreatedCount
+            ApprovedCount = (int)approvedCount,
+            RejectedCount = (int)rejectedCount,
+            MyCreatedCount = (int)myCreatedCount
         };
     }
 }

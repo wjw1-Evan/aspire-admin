@@ -1,13 +1,11 @@
 ## 后端核心与中间件规范（Backend Core & Middleware Rules）
 
-> 2026-01 补充：数据工厂与构建器行为更新
+> 2026-02 重构：由 `IDatabaseOperationFactory` 升级为 `IDataFactory`
 
-- 分页参数统一范围：`page` 1–10000，`pageSize` 1–100；控制器直接传 `page/pageSize` 给工厂分页方法。
-- 多租户过滤字段映射：工厂应用租户过滤时，优先使用实体 `CompanyId` 的 `[BsonElement]` 字段名（否则使用 camelCase），避免字符串硬编码导致不一致。
-- FilterBuilder 字段名解析：`Regex/Exists` 等基于字符串字段名的方法统一为 BsonElement-aware，与 `SortBuilder/UpdateBuilder` 保持一致。
-- 数组包含语义：`Contains` 采用 `Eq` 的数组匹配语义；复杂匹配场景使用 `AnyEq` 或自定义 `ElemMatch`。
-- UpdateBuilder 空更新处理：`Build()` 无更新项时抛出异常，调用方需保证至少一个更新操作。
-- 审计字段赋值策略：优先通过 `IOperationTrackable` 直接赋值（`CreatedBy/UpdatedBy` 等），反射仅作为兜底，建议实体逐步实现接口以去反射化。
+- **全面拥抱 LINQ**：所有数据库查询、分页和更新条件均采用标准的 C# LINQ 表达式。严格禁止在业务代码中使用 MongoDB 特定的 API (如 `FilterBuilder`、`UpdateBuilder`)。
+- **分页参数统一范围**：`page` 1–10000，`pageSize` 1–100；查询时直接传参数给 `FindPagedAsync`，由工厂处理底层分页逻辑。
+- **审计字段赋值策略**：工厂自动维护 `CreatedAt/UpdatedAt/CreatedBy/UpdatedBy` 等字段。业务代码应优先通过实现 `IOperationTrackable` 等接口来确保审计字段的自动填充，逐步淘汰反射，提升性能。
+- **数据库无关性**：`IDataFactory` 抽象层确保了业务逻辑不再绑定到特定的数据库驱动，为未来数据库迁移 (如转向 EF Core) 扫清障碍。
 
 > 本文档是对 `.cursor/rules/rule.mdc` 后端相关总纲的展开说明，**以此文档为准**，总纲只保留硬规则与索引。
 
@@ -83,7 +81,7 @@
 ### 4. 审计字段与数据库操作工厂协作
 
 - **审计字段来源**：
-  - `DatabaseOperationFactory<T>` 在 `CreateAsync` / `CreateManyAsync` / `FindOneAndUpdateAsync` / `UpdateManyAsync` / 软删除相关方法中，自动维护：
+  - `IDataFactory<T>` 在 `CreateAsync` / `UpdateAsync` / `DeleteAsync` 相关方法中，自动维护：
     - 时间戳：`CreatedAt`、`UpdatedAt`
     - 软删除：`IsDeleted`、`DeletedAt`、`DeletedBy`
     - 审计人：`CreatedBy`、`CreatedByUsername`、`UpdatedBy`、`UpdatedByUsername`
@@ -92,31 +90,29 @@
   - 实现了 `ISoftDeletable` / `ITimestamped` 的实体，**禁止**在业务代码中手工设置上述审计字段。
   - 所有创建、更新、删除操作必须通过 `IDatabaseOperationFactory<T>` 的原子方法完成，避免绕过审计逻辑。
 
-### 5. 数据库操作工厂注册方式
-
 - **统一注册扩展**（`Platform.ServiceDefaults.Extensions.ServiceExtensions`）：
-  - `AddDatabaseOperationFactory<T>()`：为指定实体类型 `T` 注册 `IDatabaseOperationFactory<T>`。
-  - `AddDatabaseOperationFactories()`：注册审计服务，供后续按需使用泛型工厂。
-  - `AddDatabaseFactory()`：推荐方式，统一注册 `IAuditService` 与开放泛型的 `IDatabaseOperationFactory<>` / `DatabaseOperationFactory<>`。
+  - `AddDataFactory<T>()`：为指定实体类型 `T` 注册 `IDataFactory<T>`。
+  - `AddDatabaseFactory()`：推荐方式，统一注册 `IAuditService` 与开放泛型的 `IDataFactory<>` / `EFCoreDataFactory<>` 等实现。
 - **服务启动约定**：
-  - 每个微服务在 `Program.cs` 或 `Startup` 中，必须调用 `services.AddDatabaseFactory()`（或等效封装）一次，**禁止**在业务代码中自行 new `DatabaseOperationFactory<T>`。
-  - 业务层只能通过构造函数注入 `IDatabaseOperationFactory<T>` 使用工厂：
+  - 每个微服务在 `Program.cs` 必须调用 `services.AddDatabaseFactory()` 一次。
+  - 业务层只能通过构造函数注入 `IDataFactory<T>` 使用工厂：
 
     ```csharp
     public class UserService : IUserService
     {
-        private readonly IDatabaseOperationFactory<User> _factory;
+        private readonly IDataFactory<User> _userFactory;
 
-        public UserService(IDatabaseOperationFactory<User> factory)
+        public UserService(IDataFactory<User> userFactory)
         {
-            _factory = factory;
+            _userFactory = userFactory;
         }
     }
     ```
 
 - **禁止行为**：
-  - **严禁**在控制器或服务中直接注入 `IMongoCollection<T>` 或 `IMongoDatabase`。所有数据操作必须使用 `IDatabaseOperationFactory<T>`。
-  - **严禁**绕过工厂自行维护审计字段或多租户过滤逻辑。
+  - **严禁**在控制器或服务中直接注入 `IMongoCollection<T>`、`IMongoDatabase` 或 `DbContext`。所有数据操作必须使用 `IDataFactory<T>`。
+  - **严禁**绕过工厂自行维护审计字段、多租户过滤或软删除逻辑。
+  - **严禁**在业务逻辑中使用数据库特定的 API（如 MongoDB `FilterBuilder`）。
 
 ### 6. 实体基类与接口规范
 
@@ -133,12 +129,11 @@
   - 多租户业务实体优先继承 `MultiTenantEntity`，自动获得 `CompanyId` 及审计字段，并实现 `IMultiTenant`。
   - 若因历史原因未继承基类，仍必须实现对应接口，并保证字段含义与工厂期望一致。
 - **多租户过滤与跨租户访问**：
-  - 默认情况下，`DatabaseOperationFactory<T>` 会：
+  - 默认情况下，`IDataFactory<T>` 会：
     - 为实现 `IMultiTenant` 的实体自动附加当前 `CompanyId` 过滤；
     - 始终附加 `IsDeleted = false` 软删除过滤。
   - 仅在极少数需要跨企业运维或全局管理场景下，才允许使用：
-    - `FindWithoutTenantFilterAsync`、`GetByIdWithoutTenantFilterAsync`、
-    - 以及对应的 `FindOneAnd*WithoutTenantFilterAsync` 方法。
+    - `FindWithoutTenantFilterAsync` 等带 `WithoutTenantFilter` 后缀的方法。
   - 使用 *WithoutTenantFilter* 方法前置条件：
     - 必须拥有明确的运维/平台级菜单权限；
     - 必须在上层服务中有严格的审计记录（谁、何时、对哪些企业做了什么操作）。
@@ -148,6 +143,6 @@
 - `.cursor/rules/rule.mdc` 中仅保留以下与本文件相关的**硬规则摘要**：
   - 必须启用统一响应格式中间件和活动日志中间件；
   - 只能通过 `ITenantContext` 获取企业与权限信息；
-  - 审计字段由 `DatabaseOperationFactory<T>` 自动维护，业务代码不得手动修改；
+  - 审计字段由 `IDataFactory<T>` 自动维护，业务代码不得手动修改；
   - 数据库工厂必须通过统一扩展方法注册，业务实体必须实现统一的接口/基类约定。
 - 详细实现、示例与背景说明请以本文件为准。

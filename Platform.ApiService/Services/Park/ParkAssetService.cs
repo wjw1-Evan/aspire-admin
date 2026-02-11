@@ -1,5 +1,6 @@
+using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
-using MongoDB.Driver;
 using Platform.ServiceDefaults.Services;
 
 namespace Platform.ApiService.Services;
@@ -10,20 +11,20 @@ namespace Platform.ApiService.Services;
 public class ParkAssetService : IParkAssetService
 {
     private readonly ILogger<ParkAssetService> _logger;
-    private readonly IDatabaseOperationFactory<Building> _buildingFactory;
-    private readonly IDatabaseOperationFactory<PropertyUnit> _unitFactory;
-    private readonly IDatabaseOperationFactory<LeaseContract> _contractFactory;
-    private readonly IDatabaseOperationFactory<ParkTenant> _tenantFactory;
+    private readonly IDataFactory<Building> _buildingFactory;
+    private readonly IDataFactory<PropertyUnit> _unitFactory;
+    private readonly IDataFactory<LeaseContract> _contractFactory;
+    private readonly IDataFactory<ParkTenant> _tenantFactory;
 
     /// <summary>
     /// 初始化资产管理服务
     /// </summary>
     public ParkAssetService(
         ILogger<ParkAssetService> logger,
-        IDatabaseOperationFactory<Building> buildingFactory,
-        IDatabaseOperationFactory<PropertyUnit> unitFactory,
-        IDatabaseOperationFactory<LeaseContract> contractFactory,
-        IDatabaseOperationFactory<ParkTenant> tenantFactory)
+        IDataFactory<Building> buildingFactory,
+        IDataFactory<PropertyUnit> unitFactory,
+        IDataFactory<LeaseContract> contractFactory,
+        IDataFactory<ParkTenant> tenantFactory)
     {
         _logger = logger;
         _buildingFactory = buildingFactory;
@@ -40,36 +41,35 @@ public class ParkAssetService : IParkAssetService
     /// </summary>
     public async Task<BuildingListResponse> GetBuildingsAsync(BuildingListRequest request)
     {
-        var filterBuilder = Builders<Building>.Filter;
-        var filter = filterBuilder.Empty;
+        Expression<Func<Building, bool>> filter = b => true;
 
-        // 搜索过滤
         if (!string.IsNullOrEmpty(request.Search))
         {
             var search = request.Search.ToLower();
-            filter &= filterBuilder.Or(
-                filterBuilder.Regex(b => b.Name, new MongoDB.Bson.BsonRegularExpression(search, "i")),
-                filterBuilder.Regex(b => b.Address!, new MongoDB.Bson.BsonRegularExpression(search, "i"))
-            );
+            filter = CombineFilters(filter, b => b.Name.ToLower().Contains(search));
         }
 
         if (!string.IsNullOrEmpty(request.Status))
         {
-            filter &= filterBuilder.Eq(b => b.Status, request.Status);
+            filter = CombineFilters(filter, b => b.Status == request.Status);
         }
 
         if (!string.IsNullOrEmpty(request.BuildingType))
         {
-            filter &= filterBuilder.Eq(b => b.BuildingType!, request.BuildingType);
+            filter = CombineFilters(filter, b => b.BuildingType == request.BuildingType);
         }
 
-        // 排序
-        var sortBuilder = _buildingFactory.CreateSortBuilder();
-        var sort = request.SortOrder?.ToLower() == "asc"
-            ? sortBuilder.Ascending(b => b.CreatedAt)
-            : sortBuilder.Descending(b => b.CreatedAt);
+        Func<IQueryable<Building>, IOrderedQueryable<Building>>? orderBy = null;
+        if (request.SortOrder?.ToLower() == "asc")
+        {
+            orderBy = q => q.OrderBy(b => b.CreatedAt);
+        }
+        else
+        {
+            orderBy = q => q.OrderByDescending(b => b.CreatedAt);
+        }
 
-        var (items, total) = await _buildingFactory.FindPagedAsync(filter, sort.Build(), request.Page, request.PageSize);
+        var (items, total) = await _buildingFactory.FindPagedAsync(filter, orderBy, request.Page, request.PageSize);
 
         // 我们需要手动填充 DTO，因为 DTO 包含一些计算字段（房源数量等）
         var buildings = new List<BuildingDto>();
@@ -141,7 +141,7 @@ public class ParkAssetService : IParkAssetService
         building.Attachments = request.Attachments;
         building.Status = request.Status ?? building.Status;
 
-        await _buildingFactory.FindOneAndReplaceAsync(_buildingFactory.CreateFilterBuilder().Equal(b => b.Id, id).Build(), building);
+        await _buildingFactory.UpdateAsync(id, building => { });
 
         return await MapToBuildingDtoAsync(building);
     }
@@ -152,19 +152,19 @@ public class ParkAssetService : IParkAssetService
     public async Task<bool> DeleteBuildingAsync(string id)
     {
         // 检查是否有关联的房源
-        var unitCount = await _unitFactory.CountAsync(Builders<PropertyUnit>.Filter.Eq(u => u.BuildingId, id));
+        var unitCount = await _unitFactory.CountAsync(u => u.BuildingId == id);
         if (unitCount > 0)
         {
             throw new InvalidOperationException("楼宇下存在房源，无法删除");
         }
 
-        var deleted = await _buildingFactory.FindOneAndSoftDeleteAsync(_buildingFactory.CreateFilterBuilder().Equal(b => b.Id, id).Build());
+        var deleted = await _buildingFactory.SoftDeleteAsync(id);
         return deleted != null;
     }
 
     private async Task<BuildingDto> MapToBuildingDtoAsync(Building building)
     {
-        var units = await _unitFactory.FindAsync(Builders<PropertyUnit>.Filter.Eq(u => u.BuildingId, building.Id));
+        var units = await _unitFactory.FindAsync(u => u.BuildingId == building.Id);
         var rentedUnits = units.Where(u => u.Status == "Rented").ToList();
         var rentedArea = rentedUnits.Sum(u => u.Area);
 
@@ -203,41 +203,44 @@ public class ParkAssetService : IParkAssetService
     /// </summary>
     public async Task<PropertyUnitListResponse> GetPropertyUnitsAsync(PropertyUnitListRequest request)
     {
-        var filterBuilder = Builders<PropertyUnit>.Filter;
-        var filter = filterBuilder.Empty;
+        Expression<Func<PropertyUnit, bool>> filter = p => true;
 
         if (!string.IsNullOrEmpty(request.BuildingId))
         {
-            filter &= filterBuilder.Eq(p => p.BuildingId, request.BuildingId);
+            filter = CombineFilters(filter, p => p.BuildingId == request.BuildingId);
         }
 
         if (!string.IsNullOrEmpty(request.Search))
         {
-            var search = request.Search.ToLower();
-            filter &= filterBuilder.Regex(p => p.UnitNumber, new MongoDB.Bson.BsonRegularExpression(search, "i"));
+            filter = CombineFilters(filter, p => p.UnitNumber.Contains(request.Search));
         }
 
         if (!string.IsNullOrEmpty(request.Status))
         {
-            filter &= filterBuilder.Eq(p => p.Status, request.Status);
+            filter = CombineFilters(filter, p => p.Status == request.Status);
         }
 
         if (!string.IsNullOrEmpty(request.UnitType))
         {
-            filter &= filterBuilder.Eq(p => p.UnitType, request.UnitType);
+            filter = CombineFilters(filter, p => p.UnitType == request.UnitType);
         }
 
         if (request.Floor.HasValue)
         {
-            filter &= filterBuilder.Eq(p => p.Floor, request.Floor.Value);
+            filter = CombineFilters(filter, p => p.Floor == request.Floor.Value);
         }
 
-        var sortBuilder = _unitFactory.CreateSortBuilder();
-        var sort = request.SortOrder?.ToLower() == "asc"
-            ? sortBuilder.Ascending(p => p.CreatedAt)
-            : sortBuilder.Descending(p => p.CreatedAt);
+        Func<IQueryable<PropertyUnit>, IOrderedQueryable<PropertyUnit>>? orderBy = null;
+        if (request.SortOrder?.ToLower() == "asc")
+        {
+            orderBy = q => q.OrderBy(p => p.CreatedAt);
+        }
+        else
+        {
+            orderBy = q => q.OrderByDescending(p => p.CreatedAt);
+        }
 
-        var (items, total) = await _unitFactory.FindPagedAsync(filter, sort.Build(), request.Page, request.PageSize);
+        var (items, total) = await _unitFactory.FindPagedAsync(filter, orderBy, request.Page, request.PageSize);
 
         var units = new List<PropertyUnitDto>();
         foreach (var item in items)
@@ -305,7 +308,7 @@ public class ParkAssetService : IParkAssetService
         unit.Images = request.Images;
         unit.Attachments = request.Attachments;
 
-        await _unitFactory.FindOneAndReplaceAsync(_unitFactory.CreateFilterBuilder().Equal(p => p.Id, id).Build(), unit);
+        await _unitFactory.UpdateAsync(id, _ => { });
 
         return await MapToPropertyUnitDtoAsync(unit);
     }
@@ -323,7 +326,7 @@ public class ParkAssetService : IParkAssetService
             throw new InvalidOperationException("房源已出租，无法删除");
         }
 
-        var deleted = await _unitFactory.FindOneAndSoftDeleteAsync(_unitFactory.CreateFilterBuilder().Equal(p => p.Id, id).Build());
+        var deleted = await _unitFactory.SoftDeleteAsync(id);
         return deleted != null;
     }
 
@@ -351,7 +354,7 @@ public class ParkAssetService : IParkAssetService
 
         if (includeHistory)
         {
-            var contracts = await _contractFactory.FindAsync(Builders<LeaseContract>.Filter.AnyEq(c => c.UnitIds, unit.Id));
+            var contracts = await _contractFactory.FindAsync(c => c.UnitIds.Contains(unit.Id));
             var leaseHistory = new List<LeaseContractDto>();
 
             foreach (var contract in contracts.OrderByDescending(c => c.CreatedAt))
@@ -382,6 +385,16 @@ public class ParkAssetService : IParkAssetService
     #endregion
 
     #region 统计
+
+    private static Expression<Func<T, bool>> CombineFilters<T>(Expression<Func<T, bool>> first, Expression<Func<T, bool>> second)
+    {
+        var parameter = Expression.Parameter(typeof(T));
+        var combined = Expression.AndAlso(
+            Expression.Invoke(first, parameter),
+            Expression.Invoke(second, parameter)
+        );
+        return Expression.Lambda<Func<T, bool>>(combined, parameter);
+    }
 
     /// <summary>
     /// 获取资产统计数据

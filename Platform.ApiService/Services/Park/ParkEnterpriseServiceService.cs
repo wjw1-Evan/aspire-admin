@@ -1,4 +1,5 @@
-using MongoDB.Driver;
+using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
@@ -10,16 +11,16 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
 {
-    private readonly IDatabaseOperationFactory<ServiceCategory> _categoryFactory;
-    private readonly IDatabaseOperationFactory<ServiceRequest> _requestFactory;
+    private readonly IDataFactory<ServiceCategory> _categoryFactory;
+    private readonly IDataFactory<ServiceRequest> _requestFactory;
     private readonly ILogger<ParkEnterpriseServiceService> _logger;
 
     /// <summary>
     /// 初始化企业服务管理服务
     /// </summary>
     public ParkEnterpriseServiceService(
-        IDatabaseOperationFactory<ServiceCategory> categoryFactory,
-        IDatabaseOperationFactory<ServiceRequest> requestFactory,
+        IDataFactory<ServiceCategory> categoryFactory,
+        IDataFactory<ServiceRequest> requestFactory,
         ILogger<ParkEnterpriseServiceService> logger)
     {
         _categoryFactory = categoryFactory;
@@ -34,10 +35,9 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
     /// </summary>
     public async Task<ServiceCategoryListResponse> GetCategoriesAsync()
     {
-        var sortBuilder = _categoryFactory.CreateSortBuilder();
-        var sort = sortBuilder.Ascending(c => c.SortOrder);
+        Func<IQueryable<ServiceCategory>, IOrderedQueryable<ServiceCategory>> orderBy = q => q.OrderBy(c => c.SortOrder);
 
-        var items = await _categoryFactory.FindAsync(Builders<ServiceCategory>.Filter.Empty, sort.Build());
+        var items = await _categoryFactory.FindAsync(null, orderBy);
 
         var categories = new List<ServiceCategoryDto>();
         foreach (var item in items)
@@ -79,7 +79,7 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
         category.Icon = request.Icon;
         category.SortOrder = request.SortOrder;
 
-        await _categoryFactory.FindOneAndReplaceAsync(Builders<ServiceCategory>.Filter.Eq(c => c.Id, id), category);
+        await _categoryFactory.UpdateAsync(id, category => { });
         return await MapToCategoryDtoAsync(category);
     }
 
@@ -89,12 +89,11 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
     public async Task<bool> DeleteCategoryAsync(string id)
     {
         // 检查是否有关联的服务申请
-        var filter = Builders<ServiceRequest>.Filter.Eq(r => r.CategoryId, id);
-        var requests = await _requestFactory.FindAsync(filter);
+        var requests = await _requestFactory.FindAsync(r => r.CategoryId == id);
         if (requests.Any())
             throw new InvalidOperationException("该类别下存在服务申请，无法删除");
 
-        var result = await _categoryFactory.FindOneAndSoftDeleteAsync(Builders<ServiceCategory>.Filter.Eq(c => c.Id, id));
+        var result = await _categoryFactory.SoftDeleteAsync(id);
         return result != null;
     }
 
@@ -107,14 +106,13 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
         if (category == null) return false;
 
         category.IsActive = !category.IsActive;
-        var result = await _categoryFactory.FindOneAndReplaceAsync(Builders<ServiceCategory>.Filter.Eq(c => c.Id, id), category);
+        var result = await _categoryFactory.UpdateAsync(id, category => { });
         return result != null;
     }
 
     private async Task<ServiceCategoryDto> MapToCategoryDtoAsync(ServiceCategory category)
     {
-        var filter = Builders<ServiceRequest>.Filter.Eq(r => r.CategoryId, category.Id);
-        var requestCount = (int)await _requestFactory.CountAsync(filter);
+        var requestCount = (int)await _requestFactory.CountAsync(r => r.CategoryId == category.Id);
 
         return new ServiceCategoryDto
         {
@@ -137,39 +135,37 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
     /// </summary>
     public async Task<ServiceRequestListResponse> GetRequestsAsync(ServiceRequestListRequest request)
     {
-        var filterBuilder = Builders<ServiceRequest>.Filter;
-        var filter = filterBuilder.Empty;
+        Expression<Func<ServiceRequest, bool>> filter = r => true;
 
         if (!string.IsNullOrEmpty(request.CategoryId))
-            filter &= filterBuilder.Eq(r => r.CategoryId, request.CategoryId);
+            filter = CombineFilters(filter, r => r.CategoryId == request.CategoryId);
 
         if (!string.IsNullOrEmpty(request.TenantId))
-            filter &= filterBuilder.Eq(r => r.TenantId, request.TenantId);
+            filter = CombineFilters(filter, r => r.TenantId == request.TenantId);
 
         if (!string.IsNullOrEmpty(request.Search))
-        {
-            var search = request.Search.ToLower();
-            filter &= filterBuilder.Or(
-                filterBuilder.Regex(r => r.Title, new MongoDB.Bson.BsonRegularExpression(search, "i")),
-                filterBuilder.Regex(r => r.Description!, new MongoDB.Bson.BsonRegularExpression(search, "i"))
-            );
-        }
+            filter = CombineFilters(filter, r => r.Title.Contains(request.Search));
 
         if (!string.IsNullOrEmpty(request.Status))
-            filter &= filterBuilder.Eq(r => r.Status, request.Status);
+            filter = CombineFilters(filter, r => r.Status == request.Status);
 
         if (!string.IsNullOrEmpty(request.Priority))
-            filter &= filterBuilder.Eq(r => r.Priority, request.Priority);
+            filter = CombineFilters(filter, r => r.Priority == request.Priority);
 
         if (!string.IsNullOrEmpty(request.AssignedTo))
-            filter &= filterBuilder.Eq(r => r.AssignedTo!, request.AssignedTo);
+            filter = CombineFilters(filter, r => r.AssignedTo == request.AssignedTo);
 
-        var sortBuilder = _requestFactory.CreateSortBuilder();
-        var sort = request.SortOrder?.ToLower() == "asc"
-            ? sortBuilder.Ascending(r => r.CreatedAt)
-            : sortBuilder.Descending(r => r.CreatedAt);
+        Func<IQueryable<ServiceRequest>, IOrderedQueryable<ServiceRequest>>? orderBy = null;
+        if (request.SortOrder?.ToLower() == "asc")
+        {
+            orderBy = q => q.OrderBy(r => r.CreatedAt);
+        }
+        else
+        {
+            orderBy = q => q.OrderByDescending(r => r.CreatedAt);
+        }
 
-        var (items, total) = await _requestFactory.FindPagedAsync(filter, sort.Build(), request.Page, request.PageSize);
+        var (items, total) = await _requestFactory.FindPagedAsync(filter, orderBy, request.Page, request.PageSize);
 
         var requestDtos = new List<ServiceRequestDto>();
         foreach (var item in items)
@@ -233,7 +229,7 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
             serviceRequest.CompletedAt = DateTime.UtcNow;
         }
 
-        await _requestFactory.FindOneAndReplaceAsync(Builders<ServiceRequest>.Filter.Eq(r => r.Id, id), serviceRequest);
+        await _requestFactory.UpdateAsync(id, _ => { });
         return await MapToRequestDtoAsync(serviceRequest);
     }
 
@@ -242,7 +238,7 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
     /// </summary>
     public async Task<bool> DeleteRequestAsync(string id)
     {
-        var result = await _requestFactory.FindOneAndSoftDeleteAsync(Builders<ServiceRequest>.Filter.Eq(r => r.Id, id));
+        var result = await _requestFactory.SoftDeleteAsync(id);
         return result != null;
     }
 
@@ -257,8 +253,8 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
         request.Rating = rating;
         request.Feedback = feedback;
 
-        var result = await _requestFactory.FindOneAndReplaceAsync(Builders<ServiceRequest>.Filter.Eq(r => r.Id, id), request);
-        return result != null;
+        var updated = await _requestFactory.UpdateAsync(id, _ => { });
+        return updated != null;
     }
 
     private async Task<ServiceRequestDto> MapToRequestDtoAsync(ServiceRequest request)
@@ -287,6 +283,16 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
     #endregion
 
     #region 统计
+
+    private static Expression<Func<T, bool>> CombineFilters<T>(Expression<Func<T, bool>> first, Expression<Func<T, bool>> second)
+    {
+        var parameter = Expression.Parameter(typeof(T));
+        var combined = Expression.AndAlso(
+            Expression.Invoke(first, parameter),
+            Expression.Invoke(second, parameter)
+        );
+        return Expression.Lambda<Func<T, bool>>(combined, parameter);
+    }
 
     /// <summary>
     /// 获取企业服务统计数据

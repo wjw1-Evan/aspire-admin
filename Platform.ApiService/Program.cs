@@ -1,10 +1,9 @@
 
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Cryptography;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -12,6 +11,8 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Options;
 using Platform.ApiService.Options;
 using Platform.ApiService.Services;
+using Platform.ServiceDefaults.Services;
+using MongoDB.Driver;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -46,7 +47,21 @@ builder.AddServiceDefaults();
 
 // Add services to the container.
 builder.Services.AddProblemDetails();
-builder.Services.AddControllers()
+
+// ✅ 性能优化：启用响应压缩
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+});
+
+// ✅ 性能优化：启用输出缓存
+builder.Services.AddOutputCache();
+
+builder.Services.AddControllers(options =>
+{
+    // ✅ 性能优化：使用全局过滤器进行响应包裹，性能优于中间件
+    options.Filters.Add<Platform.ApiService.Filters.ApiResponseWrapperFilter>();
+})
     .ConfigureApiBehaviorOptions(options =>
     {
         // 统一模型验证错误响应格式
@@ -193,9 +208,22 @@ builder.Services.AddOpenApi(options =>
     });
 });
 
-// Register MongoDB services
-// 添加MongoDB服务
+// 🚀 配置优化的MongoDB客户端（使用AddMongoDBClient，后续可在Aspire配置中添加连接池）
 builder.AddMongoDBClient(connectionName: "mongodb");
+
+// 🚀 配置EF Core DbContext（使用 MongoDB 驱动）
+builder.Services.AddDbContext<PlatformDbContext>((sp, options) =>
+{
+    var client = sp.GetRequiredService<IMongoClient>();
+    options.UseMongoDB(client, "aspire-admin-db");
+});
+
+// 注册 IMongoDatabase (GridFS 共享)
+builder.Services.AddScoped<IMongoDatabase>(sp =>
+{
+    var client = sp.GetRequiredService<IMongoClient>();
+    return client.GetDatabase("aspire-admin-db");
+});
 
 // ✅ 配置 MongoDB 全局约定：忽略额外字段，避免新旧字段不匹配导致崩溃
 var pack = new MongoDB.Bson.Serialization.Conventions.ConventionPack
@@ -225,7 +253,7 @@ builder.Services.Configure<AiCompletionOptions>(
 // 多租户上下文（v3.0 新增）
 builder.Services.AddScoped<Platform.ServiceDefaults.Services.ITenantContext, Platform.ServiceDefaults.Services.TenantContext>();
 
-// ✅ 注册数据库操作工厂（必须在业务服务之前注册）
+// 🚀 注册优化的数据工厂（使用扩展方法）
 builder.Services.AddDatabaseFactory();
 
 // 注册 GridFS 服务（用于文件存储，需要直接访问 IMongoDatabase）
@@ -256,12 +284,14 @@ builder.Services.AddHostedService<IoTGatewayStatusCheckHostedService>();
 builder.Services.AddHostedService<CloudStorageMaintenanceService>();
 
 // ✅ 自动注册所有业务服务（自动扫描并注册包含 "Services" 的命名空间下的所有服务）
-// ✅ 自动注册所有业务服务（自动扫描并注册包含 "Services" 的命名空间下的所有服务）
 builder.Services.AddBusinessServices();
 
-// 手动注册拆分的 Service，确保它们被正确注入（虽然 AddBusinessServices 可能已经涵盖，但显式注册更安全）
-builder.Services.AddScoped<IUserRoleService, UserRoleService>();
-builder.Services.AddScoped<IUserOrganizationService, UserOrganizationService>();
+// ✅ 性能优化：异步活动日志处理
+// 注意：必须在 AddBusinessServices 之后注册，以确保 Singleton 覆盖自动注册的 Scoped
+builder.Services.AddSingleton<Platform.ApiService.Services.IUserActivityLogQueue, Platform.ApiService.Services.UserActivityLogQueue>();
+builder.Services.AddHostedService<Platform.ApiService.BackgroundServices.UserActivityLogBackgroundWorker>();
+
+// 原有的显式注册已由 AddBusinessServices 自动覆盖，此处清理冗余代码
 
 // 注册审批人解析器（支持多个实现）
 builder.Services.AddScoped<IApproverResolver, UserApproverResolver>();
@@ -401,6 +431,12 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
     app.UseHsts();
 }
+
+// ✅ 性能优化：启用响应压缩（应尽早放置在管道中）
+app.UseResponseCompression();
+
+// ✅ 性能优化：启用输出缓存
+app.UseOutputCache();
 
 // 全局异常处理（最外层兜底）
 app.UseExceptionHandler(errorApp =>

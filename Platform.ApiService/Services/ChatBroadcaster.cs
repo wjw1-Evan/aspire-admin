@@ -12,7 +12,7 @@ namespace Platform.ApiService.Services;
 public class ChatBroadcaster : IChatBroadcaster
 {
     private readonly IChatSseConnectionManager _sseConnectionManager;
-    private readonly IDatabaseOperationFactory<ChatSession> _sessionFactory;
+    private readonly IDataFactory<ChatSession> _sessionFactory;
     private readonly ILogger<ChatBroadcaster> _logger;
     private readonly JsonSerializerOptions _jsonOptions;
 
@@ -24,7 +24,7 @@ public class ChatBroadcaster : IChatBroadcaster
     /// <param name="logger">日志记录器</param>
     public ChatBroadcaster(
         IChatSseConnectionManager sseConnectionManager,
-        IDatabaseOperationFactory<ChatSession> sessionFactory,
+        IDataFactory<ChatSession> sessionFactory,
         ILogger<ChatBroadcaster> logger)
     {
         _sseConnectionManager = sseConnectionManager ?? throw new ArgumentNullException(nameof(sseConnectionManager));

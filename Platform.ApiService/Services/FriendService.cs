@@ -1,9 +1,6 @@
-using MongoDB.Bson;
-using MongoDB.Driver;
+using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
-using System.Collections.Generic;
 using Platform.ServiceDefaults.Services;
-using System.Linq;
 using System.Text.RegularExpressions;
 using Platform.ApiService.Constants;
 
@@ -70,9 +67,9 @@ public interface IFriendService
 /// </summary>
 public class FriendService : IFriendService
 {
-    private readonly IDatabaseOperationFactory<Friendship> _friendshipFactory;
-    private readonly IDatabaseOperationFactory<FriendRequest> _friendRequestFactory;
-    private readonly IDatabaseOperationFactory<AppUser> _userFactory;
+    private readonly IDataFactory<Friendship> _friendshipFactory;
+    private readonly IDataFactory<FriendRequest> _friendRequestFactory;
+    private readonly IDataFactory<AppUser> _userFactory;
     private readonly IAiAssistantCoordinator _aiAssistantCoordinator;
     private readonly IChatService _chatService;
     private readonly ILogger<FriendService> _logger;
@@ -87,9 +84,9 @@ public class FriendService : IFriendService
     /// <param name="chatService">聊天服务</param>
     /// <param name="logger">日志记录器</param>
     public FriendService(
-        IDatabaseOperationFactory<Friendship> friendshipFactory,
-        IDatabaseOperationFactory<FriendRequest> friendRequestFactory,
-        IDatabaseOperationFactory<AppUser> userFactory,
+        IDataFactory<Friendship> friendshipFactory,
+        IDataFactory<FriendRequest> friendRequestFactory,
+        IDataFactory<AppUser> userFactory,
         IAiAssistantCoordinator aiAssistantCoordinator,
         IChatService chatService,
         ILogger<FriendService> logger)
@@ -107,11 +104,7 @@ public class FriendService : IFriendService
     {
         var currentUserId = _friendshipFactory.GetRequiredUserId();
 
-        var filter = _friendshipFactory.CreateFilterBuilder()
-            .Equal(f => f.UserId, currentUserId)
-            .Build();
-
-        var friendships = await _friendshipFactory.FindAsync(filter);
+        var friendships = await _friendshipFactory.FindAsync(f => f.UserId == currentUserId);
 
         if (friendships.Count == 0)
         {
@@ -120,18 +113,8 @@ public class FriendService : IFriendService
 
         var friendIds = friendships.Select(f => f.FriendUserId).Distinct().ToList();
 
-        // ✅ 优化：使用字段投影，只返回好友列表需要的字段
-        var userFilter = _userFactory.CreateFilterBuilder()
-            .In(u => u.Id, friendIds)
-            .Build();
-        var userProjection = _userFactory.CreateProjectionBuilder()
-            .Include(u => u.Id)
-            .Include(u => u.Username)
-            .Include(u => u.Name)
-            .Include(u => u.PhoneNumber)
-            .Build();
-        
-        var users = await _userFactory.FindAsync(userFilter, projection: userProjection);
+        // ✅ 优化：只返回好友列表需要的字段
+        var users = await _userFactory.FindAsync(u => friendIds.Contains(u.Id));
         var usersMap = users.ToDictionary(u => u.Id, u => u);
 
         var response = new List<FriendSummaryResponse>();
@@ -173,59 +156,40 @@ public class FriendService : IFriendService
         var currentUserId = _friendshipFactory.GetRequiredUserId();
         var currentUser = await _userFactory.GetByIdAsync(currentUserId);
 
-        var builder = _userFactory.CreateFilterBuilder();
+        // Build filter using LINQ expressions
+        var users = await _userFactory.FindAsync(u => true); // Get all users first, then filter in memory
 
+        // Apply filters
         if (!string.IsNullOrWhiteSpace(phoneNumber))
         {
-            var phoneFilters = new List<FilterDefinition<AppUser>>();
-            var escapedPhone = RegexEscape(phoneNumber);
-            phoneFilters.Add(Builders<AppUser>.Filter.Regex("phone", new BsonRegularExpression(escapedPhone, "i")));
-
             var digitsOnly = ExtractDigits(phoneNumber);
-            if (!string.IsNullOrEmpty(digitsOnly))
-            {
-                var flexiblePattern = BuildFlexibleDigitPattern(digitsOnly);
-                phoneFilters.Add(Builders<AppUser>.Filter.Regex("phone", new BsonRegularExpression(flexiblePattern, "i")));
-            }
-
-            builder.Custom(Builders<AppUser>.Filter.Or(phoneFilters));
+            users = users.Where(u =>
+                u.PhoneNumber != null &&
+                (u.PhoneNumber.Contains(phoneNumber, StringComparison.OrdinalIgnoreCase) ||
+                 (!string.IsNullOrEmpty(digitsOnly) && ExtractDigits(u.PhoneNumber).Contains(digitsOnly)))
+            ).ToList();
         }
 
         if (!string.IsNullOrWhiteSpace(keyword))
         {
-            var escaped = RegexEscape(keyword);
-            var nameRegex = Builders<AppUser>.Filter.Regex("name", new BsonRegularExpression(escaped, "i"));
-            var usernameRegex = Builders<AppUser>.Filter.Regex("username", new BsonRegularExpression(escaped, "i"));
-            builder.Custom(Builders<AppUser>.Filter.Or(nameRegex, usernameRegex));
+            users = users.Where(u =>
+                (u.Name != null && u.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase)) ||
+                (u.Username != null && u.Username.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+            ).ToList();
         }
 
         if (!includeAllTenants && !string.IsNullOrWhiteSpace(currentUser?.CurrentCompanyId))
         {
-            builder.Equal(u => u.CurrentCompanyId, currentUser.CurrentCompanyId);
+            users = users.Where(u => u.CurrentCompanyId == currentUser.CurrentCompanyId).ToList();
         }
-
-        // ✅ 优化：使用字段投影，只返回搜索需要的字段
-        var userFilter = builder.Build();
-        var userProjection = _userFactory.CreateProjectionBuilder()
-            .Include(u => u.Id)
-            .Include(u => u.Username)
-            .Include(u => u.Name)
-            .Include(u => u.PhoneNumber)
-            .Build();
-        
-        var users = await _userFactory.FindAsync(userFilter, projection: userProjection);
 
         var friends = await GetFriendsAsync();
         var friendIdSet = friends.Select(f => f.UserId).ToHashSet();
 
         // 获取待处理请求（当前用户作为请求者或接收者）
-        var pendingFilter = Builders<FriendRequest>.Filter.And(
-            Builders<FriendRequest>.Filter.Eq(r => r.Status, FriendRequestStatus.Pending),
-            Builders<FriendRequest>.Filter.Or(
-                Builders<FriendRequest>.Filter.Eq(r => r.RequesterId, currentUserId),
-                Builders<FriendRequest>.Filter.Eq(r => r.TargetUserId, currentUserId)));
-
-        var pendingRequests = await _friendRequestFactory.FindAsync(pendingFilter);
+        var pendingRequests = await _friendRequestFactory.FindAsync(r =>
+            r.Status == FriendRequestStatus.Pending &&
+            (r.RequesterId == currentUserId || r.TargetUserId == currentUserId));
 
         return users.Where(u => u.Id != currentUserId && u.Id != AiAssistantConstants.AssistantUserId)
             .Select(user =>
@@ -260,7 +224,7 @@ public class FriendService : IFriendService
 
         var currentUserId = _friendRequestFactory.GetRequiredUserId();
 
-        if (!ObjectId.TryParse(request.TargetUserId, out _))
+        if (!MongoDB.Bson.ObjectId.TryParse(request.TargetUserId, out _))
         {
             throw new ArgumentException("目标用户标识格式不正确", nameof(request.TargetUserId));
         }
@@ -279,27 +243,20 @@ public class FriendService : IFriendService
             ?? throw new KeyNotFoundException("未找到目标用户");
 
         var existingFriendships = await _friendshipFactory.FindAsync(
-            _friendshipFactory.CreateFilterBuilder()
-                .Equal(f => f.UserId, currentUserId)
-                .Equal(f => f.FriendUserId, targetUser.Id)
-                .Build(), limit: 1);
+            f => f.UserId == currentUserId && f.FriendUserId == targetUser.Id,
+            limit: 1);
 
         if (existingFriendships.Any())
         {
             throw new InvalidOperationException("对方已在好友列表中");
         }
 
-        var pendingFilter = Builders<FriendRequest>.Filter.And(
-            Builders<FriendRequest>.Filter.Eq(r => r.Status, FriendRequestStatus.Pending),
-            Builders<FriendRequest>.Filter.Or(
-                Builders<FriendRequest>.Filter.And(
-                    Builders<FriendRequest>.Filter.Eq(r => r.RequesterId, currentUserId),
-                    Builders<FriendRequest>.Filter.Eq(r => r.TargetUserId, targetUser.Id)),
-                Builders<FriendRequest>.Filter.And(
-                    Builders<FriendRequest>.Filter.Eq(r => r.RequesterId, targetUser.Id),
-                    Builders<FriendRequest>.Filter.Eq(r => r.TargetUserId, currentUserId))));
+        var pending = await _friendRequestFactory.FindAsync(r =>
+            r.Status == FriendRequestStatus.Pending &&
+            ((r.RequesterId == currentUserId && r.TargetUserId == targetUser.Id) ||
+             (r.RequesterId == targetUser.Id && r.TargetUserId == currentUserId)),
+            limit: 1);
 
-        var pending = await _friendRequestFactory.FindAsync(pendingFilter, limit: 1);
         if (pending.Any())
         {
             throw new InvalidOperationException("双方存在待处理的好友请求");
@@ -335,16 +292,12 @@ public class FriendService : IFriendService
     {
         var currentUserId = _friendRequestFactory.GetRequiredUserId();
 
-        var builder = Builders<FriendRequest>.Filter;
-        FilterDefinition<FriendRequest> filter = builder.Empty;
-
-        filter = builder.And(
-            builder.Eq(r => r.Status, FriendRequestStatus.Pending),
-            direction == FriendRequestDirection.Incoming
-                ? builder.Eq(r => r.TargetUserId, currentUserId)
-                : builder.Eq(r => r.RequesterId, currentUserId));
-
-        var requests = await _friendRequestFactory.FindAsync(filter, limit: null);
+        var requests = await _friendRequestFactory.FindAsync(r =>
+            r.Status == FriendRequestStatus.Pending &&
+            (direction == FriendRequestDirection.Incoming
+                ? r.TargetUserId == currentUserId
+                : r.RequesterId == currentUserId),
+            limit: null);
 
         return requests
             .OrderByDescending(r => r.CreatedAt)
@@ -357,16 +310,11 @@ public class FriendService : IFriendService
     {
         var request = await GetPendingRequestAsync(requestId, ensureTargetIsCurrentUser: true);
 
-        var update = _friendRequestFactory.CreateUpdateBuilder()
-            .Set(r => r.Status, FriendRequestStatus.Accepted)
-            .Set(r => r.ProcessedAt, DateTime.UtcNow)
-            .Build();
-
-        var filter = _friendRequestFactory.CreateFilterBuilder()
-            .Equal(r => r.Id, request.Id)
-            .Build();
-
-        await _friendRequestFactory.FindOneAndUpdateWithoutTenantFilterAsync(filter, update);
+        await _friendRequestFactory.UpdateAsync(request.Id!, entity =>
+        {
+            entity.Status = FriendRequestStatus.Accepted;
+            entity.ProcessedAt = DateTime.UtcNow;
+        });
 
         await EnsureFriendshipAsync(
             request.RequesterId,
@@ -391,16 +339,11 @@ public class FriendService : IFriendService
     {
         var request = await GetPendingRequestAsync(requestId, ensureTargetIsCurrentUser: true);
 
-        var update = _friendRequestFactory.CreateUpdateBuilder()
-            .Set(r => r.Status, FriendRequestStatus.Rejected)
-            .Set(r => r.ProcessedAt, DateTime.UtcNow)
-            .Build();
-
-        var filter = _friendRequestFactory.CreateFilterBuilder()
-            .Equal(r => r.Id, request.Id)
-            .Build();
-
-        await _friendRequestFactory.FindOneAndUpdateWithoutTenantFilterAsync(filter, update);
+        await _friendRequestFactory.UpdateAsync(request.Id!, entity =>
+        {
+            entity.Status = FriendRequestStatus.Rejected;
+            entity.ProcessedAt = DateTime.UtcNow;
+        });
 
         request.Status = FriendRequestStatus.Rejected;
         request.ProcessedAt = DateTime.UtcNow;
@@ -429,12 +372,10 @@ public class FriendService : IFriendService
             };
         }
 
-        var friendshipFilter = _friendshipFactory.CreateFilterBuilder()
-            .Equal(f => f.UserId, currentUserId)
-            .Equal(f => f.FriendUserId, friendUserId)
-            .Build();
+        var friendship = await _friendshipFactory.FindAsync(
+            f => f.UserId == currentUserId && f.FriendUserId == friendUserId,
+            limit: 1);
 
-        var friendship = await _friendshipFactory.FindAsync(friendshipFilter, limit: 1);
         if (!friendship.Any())
         {
             throw new InvalidOperationException("双方尚未建立好友关系");
@@ -461,10 +402,8 @@ public class FriendService : IFriendService
     {
         // 检查是否已经存在好友关系
         var existing = await _friendshipFactory.FindAsync(
-            _friendshipFactory.CreateFilterBuilder()
-                .Equal(f => f.UserId, requesterId)
-                .Equal(f => f.FriendUserId, targetUserId)
-                .Build(), limit: 1);
+            f => f.UserId == requesterId && f.FriendUserId == targetUserId,
+            limit: 1);
 
         if (existing.Any())
         {

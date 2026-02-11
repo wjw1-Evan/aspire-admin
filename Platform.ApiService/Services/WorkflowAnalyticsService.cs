@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
+using System.Linq.Expressions;
 
 namespace Platform.ApiService.Services;
 
@@ -9,8 +10,8 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class WorkflowAnalyticsService : IWorkflowAnalyticsService
 {
-    private readonly IDatabaseOperationFactory<WorkflowDefinition> _workflowFactory;
-    private readonly IDatabaseOperationFactory<WorkflowInstance> _instanceFactory;
+    private readonly IDataFactory<WorkflowDefinition> _workflowFactory;
+    private readonly IDataFactory<WorkflowInstance> _instanceFactory;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<WorkflowAnalyticsService> _logger;
 
@@ -22,8 +23,8 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
     /// <param name="tenantContext">租户上下文</param>
     /// <param name="logger">日志记录器</param>
     public WorkflowAnalyticsService(
-        IDatabaseOperationFactory<WorkflowDefinition> workflowFactory,
-        IDatabaseOperationFactory<WorkflowInstance> instanceFactory,
+        IDataFactory<WorkflowDefinition> workflowFactory,
+        IDataFactory<WorkflowInstance> instanceFactory,
         ITenantContext tenantContext,
         ILogger<WorkflowAnalyticsService> logger)
     {
@@ -40,17 +41,11 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
     {
         try
         {
-            var filter = _workflowFactory.CreateFilterBuilder()
-                .Equal(w => w.Id, workflowId)
-                .Equal(w => w.IsDeleted, false)
-                .Build();
-
-            var update = _workflowFactory.CreateUpdateBuilder()
-                .Inc(w => w.Analytics.UsageCount, 1)
-                .Set(w => w.Analytics.LastUsedAt, DateTime.UtcNow)
-                .Build();
-
-            await _workflowFactory.FindOneAndUpdateAsync(filter, update);
+            await _workflowFactory.UpdateAsync(workflowId, entity =>
+            {
+                entity.Analytics.UsageCount++;
+                entity.Analytics.LastUsedAt = DateTime.UtcNow;
+            });
 
             _logger.LogDebug("工作流使用统计已更新: WorkflowId={WorkflowId}", workflowId);
         }
@@ -80,17 +75,11 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
             // 计算完成率（假设所有使用都会完成，实际应该基于实际完成数据）
             var completionRate = Math.Min(100.0, (totalCompletions * 100.0) / Math.Max(analytics.UsageCount, 1));
 
-            var filter = _workflowFactory.CreateFilterBuilder()
-                .Equal(w => w.Id, workflowId)
-                .Equal(w => w.IsDeleted, false)
-                .Build();
-
-            var update = _workflowFactory.CreateUpdateBuilder()
-                .Set(w => w.Analytics.AverageCompletionTimeHours, newAverageTime)
-                .Set(w => w.Analytics.CompletionRate, completionRate)
-                .Build();
-
-            await _workflowFactory.FindOneAndUpdateAsync(filter, update);
+            await _workflowFactory.UpdateAsync(workflowId, entity =>
+            {
+                entity.Analytics.AverageCompletionTimeHours = newAverageTime;
+                entity.Analytics.CompletionRate = completionRate;
+            });
 
             // 更新趋势数据
             await UpdateTrendDataAsync(workflowId, completionTimeHours);
@@ -138,16 +127,10 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
             score = usageScore + completionScore + efficiencyScore;
 
             // 更新性能评分
-            var filter = _workflowFactory.CreateFilterBuilder()
-                .Equal(w => w.Id, workflowId)
-                .Equal(w => w.IsDeleted, false)
-                .Build();
-
-            var update = _workflowFactory.CreateUpdateBuilder()
-                .Set(w => w.Analytics.PerformanceScore, score)
-                .Build();
-
-            await _workflowFactory.FindOneAndUpdateAsync(filter, update);
+            await _workflowFactory.UpdateAsync(workflowId, entity =>
+            {
+                entity.Analytics.PerformanceScore = score;
+            });
 
             return score;
         }
@@ -246,16 +229,10 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
             }
 
             // 更新性能问题列表
-            var filter = _workflowFactory.CreateFilterBuilder()
-                .Equal(w => w.Id, workflowId)
-                .Equal(w => w.IsDeleted, false)
-                .Build();
-
-            var update = _workflowFactory.CreateUpdateBuilder()
-                .Set(w => w.Analytics.PerformanceIssues, issues)
-                .Build();
-
-            await _workflowFactory.FindOneAndUpdateAsync(filter, update);
+            await _workflowFactory.UpdateAsync(workflowId, entity =>
+            {
+                entity.Analytics.PerformanceIssues = issues;
+            });
         }
         catch (Exception ex)
         {
@@ -313,9 +290,7 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
         {
             _logger.LogInformation("开始批量更新工作流分析数据");
 
-            var filter = _workflowFactory.CreateFilterBuilder()
-                .Equal(w => w.IsDeleted, false)
-                .Build();
+            Expression<Func<WorkflowDefinition, bool>> filter = w => w.IsDeleted == false;
 
             var workflows = await _workflowFactory.FindAsync(filter);
 
@@ -352,18 +327,17 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
     {
         try
         {
-            var filter = _workflowFactory.CreateFilterBuilder()
-                .Equal(w => w.IsDeleted, false)
-                .GreaterThan(w => w.Analytics.UsageCount, 0)
-                .Build();
+            Expression<Func<WorkflowDefinition, bool>> filter = w => w.IsDeleted == false && w.Analytics.UsageCount > 0;
 
-            var sort = _workflowFactory.CreateSortBuilder()
-                .Descending(w => w.Analytics.UsageCount)
-                .Build();
+            var workflows = await _workflowFactory.FindAsync(filter);
 
-            var (workflows, _) = await _workflowFactory.FindPagedAsync(filter, sort, 1, topCount);
+            var sortedWorkflows = workflows
+                .Where(w => w.Analytics.UsageCount > 0)
+                .OrderByDescending(w => w.Analytics.UsageCount)
+                .Take(topCount)
+                .ToList();
 
-            return workflows.Select(w => (w.Id, w.Name, w.Analytics.UsageCount)).ToList();
+            return sortedWorkflows.Select(w => (w.Id, w.Name, w.Analytics.UsageCount)).ToList();
         }
         catch (Exception ex)
         {
@@ -379,18 +353,17 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
     {
         try
         {
-            var filter = _workflowFactory.CreateFilterBuilder()
-                .Equal(w => w.IsDeleted, false)
-                .GreaterThan(w => w.Analytics.PerformanceScore, 0)
-                .Build();
+            Expression<Func<WorkflowDefinition, bool>> filter = w => w.IsDeleted == false && w.Analytics.PerformanceScore > 0;
 
-            var sort = _workflowFactory.CreateSortBuilder()
-                .Descending(w => w.Analytics.PerformanceScore)
-                .Build();
+            var workflows = await _workflowFactory.FindAsync(filter);
 
-            var (workflows, _) = await _workflowFactory.FindPagedAsync(filter, sort, 1, topCount);
+            var sortedWorkflows = workflows
+                .Where(w => w.Analytics.PerformanceScore > 0)
+                .OrderByDescending(w => w.Analytics.PerformanceScore)
+                .Take(topCount)
+                .ToList();
 
-            return workflows.Select(w => (w.Id, w.Name, w.Analytics.PerformanceScore)).ToList();
+            return sortedWorkflows.Select(w => (w.Id, w.Name, w.Analytics.PerformanceScore)).ToList();
         }
         catch (Exception ex)
         {
@@ -438,16 +411,10 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
             var cutoffDate = DateTime.UtcNow.AddDays(-30).Date;
             trendData.RemoveAll(t => t.Date < cutoffDate);
 
-            var filter = _workflowFactory.CreateFilterBuilder()
-                .Equal(w => w.Id, workflowId)
-                .Equal(w => w.IsDeleted, false)
-                .Build();
-
-            var update = _workflowFactory.CreateUpdateBuilder()
-                .Set(w => w.Analytics.TrendData, trendData)
-                .Build();
-
-            await _workflowFactory.FindOneAndUpdateAsync(filter, update);
+            await _workflowFactory.UpdateAsync(workflowId, entity =>
+            {
+                entity.Analytics.TrendData = trendData;
+            });
         }
         catch (Exception ex)
         {

@@ -1,6 +1,6 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MongoDB.Driver;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;

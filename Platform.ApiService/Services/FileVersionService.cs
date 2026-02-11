@@ -1,8 +1,9 @@
-using Platform.ApiService.Models;
-using Platform.ServiceDefaults.Services;
+using Microsoft.EntityFrameworkCore;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.GridFS;
-using MongoDB.Bson;
+using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Services;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -13,7 +14,7 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class FileVersionService : IFileVersionService
 {
-    private readonly IDatabaseOperationFactory<FileVersion> _versionFactory;
+    private readonly IDataFactory<FileVersion> _versionFactory;
     private readonly ICloudStorageService _cloudStorageService;
     private readonly IGridFSService _gridFSService;
     private readonly ITenantContext _tenantContext;
@@ -24,7 +25,7 @@ public class FileVersionService : IFileVersionService
     /// 初始化文件版本控制服务
     /// </summary>
     public FileVersionService(
-        IDatabaseOperationFactory<FileVersion> versionFactory,
+        IDataFactory<FileVersion> versionFactory,
         ICloudStorageService cloudStorageService,
         IGridFSService gridFSService,
         ITenantContext tenantContext,
@@ -143,13 +144,9 @@ public class FileVersionService : IFileVersionService
         if (string.IsNullOrWhiteSpace(fileItemId))
             throw new ArgumentException("文件项ID不能为空", nameof(fileItemId));
 
-        var filterBuilder = _versionFactory.CreateFilterBuilder();
-        var filter = filterBuilder.Equal(v => v.FileItemId, fileItemId).Build();
-
-        var sortBuilder = _versionFactory.CreateSortBuilder();
-        var sort = sortBuilder.Descending(v => v.VersionNumber).Build();
-
-        var versions = await _versionFactory.FindAsync(filter, sort);
+        var versions = await _versionFactory.FindAsync(
+            v => v.FileItemId == fileItemId,
+            query => query.OrderByDescending(v => v.VersionNumber));
         return versions;
     }
 
@@ -161,11 +158,7 @@ public class FileVersionService : IFileVersionService
         if (string.IsNullOrWhiteSpace(versionId))
             return null;
 
-        var filterBuilder = _versionFactory.CreateFilterBuilder();
-        var filter = filterBuilder.Equal(v => v.Id, versionId).Build();
-
-        var versions = await _versionFactory.FindAsync(filter, limit: 1);
-        return versions.FirstOrDefault();
+        return await _versionFactory.GetByIdAsync(versionId);
     }
 
     /// <summary>
@@ -182,16 +175,12 @@ public class FileVersionService : IFileVersionService
             throw new ArgumentException("文件不存在", nameof(fileItemId));
 
         // 查找指定版本
-        var filterBuilder = _versionFactory.CreateFilterBuilder();
-        var filter = filterBuilder
-            .Equal(v => v.FileItemId, fileItemId)
-            .Equal(v => v.VersionNumber, versionNumber)
-            .Build();
+        var targetVersion = await _versionFactory.FindAsync(
+            v => v.FileItemId == fileItemId && v.VersionNumber == versionNumber,
+            limit: 1);
+        var version = targetVersion.FirstOrDefault();
 
-        var versions = await _versionFactory.FindAsync(filter, limit: 1);
-        var targetVersion = versions.FirstOrDefault();
-
-        if (targetVersion == null)
+        if (version == null)
             throw new ArgumentException($"版本 {versionNumber} 不存在", nameof(versionNumber));
 
         // 获取当前版本
@@ -208,12 +197,10 @@ public class FileVersionService : IFileVersionService
         }
 
         // 将目标版本标记为当前版本
-        var updateBuilder = _versionFactory.CreateUpdateBuilder();
-        var update = updateBuilder.Set(v => v.IsCurrentVersion, true).Build();
-
-        var updatedVersion = await _versionFactory.FindOneAndUpdateAsync(
-            filterBuilder.Equal(v => v.Id, targetVersion.Id).Build(),
-            update);
+        var updatedVersion = await _versionFactory.UpdateAsync(version.Id, v =>
+        {
+            v.IsCurrentVersion = true;
+        });
 
         if (updatedVersion == null)
             throw new InvalidOperationException("恢复版本失败");
@@ -253,9 +240,7 @@ public class FileVersionService : IFileVersionService
         }
 
         // 软删除版本记录
-        var filterBuilder = _versionFactory.CreateFilterBuilder();
-        await _versionFactory.FindOneAndSoftDeleteAsync(
-            filterBuilder.Equal(v => v.Id, versionId).Build());
+        await _versionFactory.SoftDeleteAsync(versionId);
 
         _logger.LogInformation("Deleted version {VersionId}", versionId);
     }
@@ -344,13 +329,9 @@ public class FileVersionService : IFileVersionService
         if (string.IsNullOrWhiteSpace(fileItemId))
             return null;
 
-        var filterBuilder = _versionFactory.CreateFilterBuilder();
-        var filter = filterBuilder
-            .Equal(v => v.FileItemId, fileItemId)
-            .Equal(v => v.IsCurrentVersion, true)
-            .Build();
-
-        var versions = await _versionFactory.FindAsync(filter, limit: 1);
+        var versions = await _versionFactory.FindAsync(
+            v => v.FileItemId == fileItemId && v.IsCurrentVersion,
+            limit: 1);
         return versions.FirstOrDefault();
     }
 
@@ -374,13 +355,10 @@ public class FileVersionService : IFileVersionService
         }
 
         // 设置为当前版本
-        var updateBuilder = _versionFactory.CreateUpdateBuilder();
-        var update = updateBuilder.Set(v => v.IsCurrentVersion, true).Build();
-
-        var filterBuilder = _versionFactory.CreateFilterBuilder();
-        var updatedVersion = await _versionFactory.FindOneAndUpdateAsync(
-            filterBuilder.Equal(v => v.Id, versionId).Build(),
-            update);
+        var updatedVersion = await _versionFactory.UpdateAsync(versionId, v =>
+        {
+            v.IsCurrentVersion = true;
+        });
 
         if (updatedVersion == null)
             throw new InvalidOperationException("设置当前版本失败");
@@ -546,18 +524,12 @@ public class FileVersionService : IFileVersionService
         return versions.Count > 0 ? versions.Max(v => v.VersionNumber) + 1 : 1;
     }
 
-    /// <summary>
-    /// 将版本标记为非当前版本
-    /// </summary>
     private async Task SetVersionAsNonCurrentAsync(string versionId)
     {
-        var updateBuilder = _versionFactory.CreateUpdateBuilder();
-        var update = updateBuilder.Set(v => v.IsCurrentVersion, false).Build();
-
-        var filterBuilder = _versionFactory.CreateFilterBuilder();
-        await _versionFactory.FindOneAndUpdateAsync(
-            filterBuilder.Equal(v => v.Id, versionId).Build(),
-            update);
+        await _versionFactory.UpdateAsync(versionId, v =>
+        {
+            v.IsCurrentVersion = false;
+        });
     }
 
     /// <summary>

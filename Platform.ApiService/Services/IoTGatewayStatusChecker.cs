@@ -1,7 +1,4 @@
-using System.Net.Http;
 using System.Net.Sockets;
-using System.Linq;
-using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Options;
 using Platform.ApiService.Models;
 using Platform.ApiService.Options;
@@ -14,7 +11,7 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class IoTGatewayStatusChecker
 {
-    private readonly IDatabaseOperationFactory<IoTGateway> _gatewayFactory;
+    private readonly IDataFactory<IoTGateway> _gatewayFactory;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IOptionsMonitor<IoTDataCollectionOptions> _optionsMonitor;
     private readonly ILogger<IoTGatewayStatusChecker> _logger;
@@ -27,7 +24,7 @@ public class IoTGatewayStatusChecker
     /// <param name="optionsMonitor">数据采集配置选项监视器</param>
     /// <param name="logger">日志记录器</param>
     public IoTGatewayStatusChecker(
-        IDatabaseOperationFactory<IoTGateway> gatewayFactory,
+        IDataFactory<IoTGateway> gatewayFactory,
         IHttpClientFactory httpClientFactory,
         IOptionsMonitor<IoTDataCollectionOptions> optionsMonitor,
         ILogger<IoTGatewayStatusChecker> logger)
@@ -50,10 +47,7 @@ public class IoTGatewayStatusChecker
         }
 
         // 后台服务需要跨租户查询所有网关
-        var gatewayFilter = _gatewayFactory.CreateFilterBuilder()
-            .ExcludeDeleted()
-            .Build();
-        var gateways = await _gatewayFactory.FindWithoutTenantFilterAsync(gatewayFilter).ConfigureAwait(false);
+        var gateways = await _gatewayFactory.FindWithoutTenantFilterAsync(g => g.IsDeleted == false).ConfigureAwait(false);
 
         // 按租户分组处理，确保数据隔离
         var gatewaysByTenant = gateways
@@ -95,7 +89,7 @@ public class IoTGatewayStatusChecker
 
         if (updatedCount > 0)
         {
-            _logger.LogInformation("Updated {Count} gateway statuses across {TenantCount} tenants", updatedCount, gatewaysByTenant.Count);
+            _logger.LogInformation("Updated {UpdatedCount} gateway statuses across {TenantCount} tenants", updatedCount, gatewaysByTenant.Count);
         }
     }
 
@@ -246,21 +240,13 @@ public class IoTGatewayStatusChecker
         IoTDeviceStatus newStatus,
         CancellationToken cancellationToken)
     {
-        var filter = _gatewayFactory.CreateFilterBuilder()
-            .Equal(g => g.GatewayId, gateway.GatewayId)
-            .WithTenant(gateway.CompanyId)
-            .ExcludeDeleted()
-            .Build();
-
-        var updateBuilder = _gatewayFactory.CreateUpdateBuilder()
-            .Set(g => g.Status, newStatus);
-
-        if (newStatus == IoTDeviceStatus.Online)
+        var result = await _gatewayFactory.UpdateAsync(gateway.Id, entity =>
         {
-            updateBuilder.Set(g => g.LastConnectedAt, DateTime.UtcNow);
-        }
-
-        var update = updateBuilder.Build();
-        await _gatewayFactory.FindOneAndUpdateAsync(filter, update).ConfigureAwait(false);
+            entity.Status = newStatus;
+            if (newStatus == IoTDeviceStatus.Online)
+            {
+                entity.LastConnectedAt = DateTime.UtcNow;
+            }
+        }).ConfigureAwait(false);
     }
 }

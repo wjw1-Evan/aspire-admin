@@ -1,4 +1,4 @@
-using MongoDB.Driver;
+using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
@@ -10,18 +10,18 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class ParkInvestmentService : IParkInvestmentService
 {
-    private readonly IDatabaseOperationFactory<InvestmentLead> _leadFactory;
-    private readonly IDatabaseOperationFactory<InvestmentProject> _projectFactory;
-    private readonly IDatabaseOperationFactory<InvestmentFollowUp> _followUpFactory;
+    private readonly IDataFactory<InvestmentLead> _leadFactory;
+    private readonly IDataFactory<InvestmentProject> _projectFactory;
+    private readonly IDataFactory<InvestmentFollowUp> _followUpFactory;
     private readonly ILogger<ParkInvestmentService> _logger;
 
     /// <summary>
     /// 初始化园区招商管理服务
     /// </summary>
     public ParkInvestmentService(
-        IDatabaseOperationFactory<InvestmentLead> leadFactory,
-        IDatabaseOperationFactory<InvestmentProject> projectFactory,
-        IDatabaseOperationFactory<InvestmentFollowUp> followUpFactory,
+        IDataFactory<InvestmentLead> leadFactory,
+        IDataFactory<InvestmentProject> projectFactory,
+        IDataFactory<InvestmentFollowUp> followUpFactory,
         ILogger<ParkInvestmentService> logger)
     {
         _leadFactory = leadFactory;
@@ -37,36 +37,23 @@ public class ParkInvestmentService : IParkInvestmentService
     /// </summary>
     public async Task<InvestmentLeadListResponse> GetLeadsAsync(InvestmentLeadListRequest request)
     {
-        var filterBuilder = Builders<InvestmentLead>.Filter;
-        var filter = filterBuilder.Empty;
+        var search = request.Search?.ToLower();
+        var status = request.Status;
+        var source = request.Source;
+        var priority = request.Priority;
+        var assignedTo = request.AssignedTo;
 
-        if (!string.IsNullOrEmpty(request.Search))
-        {
-            var search = request.Search.ToLower();
-            filter &= filterBuilder.Or(
-                filterBuilder.Regex(l => l.CompanyName, new MongoDB.Bson.BsonRegularExpression(search, "i")),
-                filterBuilder.Regex(l => l.ContactPerson!, new MongoDB.Bson.BsonRegularExpression(search, "i"))
-            );
-        }
-
-        if (!string.IsNullOrEmpty(request.Status))
-            filter &= filterBuilder.Eq(l => l.Status, request.Status);
-
-        if (!string.IsNullOrEmpty(request.Source))
-            filter &= filterBuilder.Eq(l => l.Source, request.Source);
-
-        if (!string.IsNullOrEmpty(request.Priority))
-            filter &= filterBuilder.Eq(l => l.Priority, request.Priority);
-
-        if (!string.IsNullOrEmpty(request.AssignedTo))
-            filter &= filterBuilder.Eq(l => l.AssignedTo!, request.AssignedTo);
-
-        var sortBuilder = _leadFactory.CreateSortBuilder();
-        var sort = request.SortOrder?.ToLower() == "asc"
-            ? sortBuilder.Ascending(l => l.CreatedAt)
-            : sortBuilder.Descending(l => l.CreatedAt);
-
-        var (items, total) = await _leadFactory.FindPagedAsync(filter, sort.Build(), request.Page, request.PageSize);
+        var (items, total) = await _leadFactory.FindPagedAsync(
+            l => (string.IsNullOrEmpty(search) || l.CompanyName.ToLower().Contains(search)) &&
+                 (string.IsNullOrEmpty(status) || l.Status == status) &&
+                 (string.IsNullOrEmpty(source) || l.Source == source) &&
+                 (string.IsNullOrEmpty(priority) || l.Priority == priority) &&
+                 (string.IsNullOrEmpty(assignedTo) || l.AssignedTo == assignedTo),
+            q => request.SortOrder?.ToLower() == "asc"
+                ? q.OrderBy(l => l.CreatedAt)
+                : q.OrderByDescending(l => l.CreatedAt),
+            request.Page,
+            request.PageSize);
 
         return new InvestmentLeadListResponse
         {
@@ -116,25 +103,24 @@ public class ParkInvestmentService : IParkInvestmentService
     /// </summary>
     public async Task<InvestmentLeadDto?> UpdateLeadAsync(string id, CreateInvestmentLeadRequest request)
     {
-        var lead = await _leadFactory.GetByIdAsync(id);
-        if (lead == null) return null;
+        var updatedLead = await _leadFactory.UpdateAsync(id, lead =>
+        {
+            lead.CompanyName = request.CompanyName;
+            lead.ContactPerson = request.ContactPerson;
+            lead.Phone = request.Phone;
+            lead.Email = request.Email;
+            lead.Industry = request.Industry;
+            lead.Source = request.Source ?? lead.Source;
+            lead.IntendedArea = request.IntendedArea;
+            lead.Budget = request.Budget;
+            lead.Priority = request.Priority ?? lead.Priority;
+            lead.Requirements = request.Requirements;
+            lead.Notes = request.Notes;
+            lead.AssignedTo = request.AssignedTo;
+            lead.NextFollowUpDate = request.NextFollowUpDate;
+        });
 
-        lead.CompanyName = request.CompanyName;
-        lead.ContactPerson = request.ContactPerson;
-        lead.Phone = request.Phone;
-        lead.Email = request.Email;
-        lead.Industry = request.Industry;
-        lead.Source = request.Source ?? lead.Source;
-        lead.IntendedArea = request.IntendedArea;
-        lead.Budget = request.Budget;
-        lead.Priority = request.Priority ?? lead.Priority;
-        lead.Requirements = request.Requirements;
-        lead.Notes = request.Notes;
-        lead.AssignedTo = request.AssignedTo;
-        lead.NextFollowUpDate = request.NextFollowUpDate;
-
-        await _leadFactory.FindOneAndReplaceAsync(Builders<InvestmentLead>.Filter.Eq(l => l.Id, id), lead);
-        return MapToLeadDto(lead);
+        return updatedLead != null ? MapToLeadDto(updatedLead) : null;
     }
 
     /// <summary>
@@ -142,8 +128,7 @@ public class ParkInvestmentService : IParkInvestmentService
     /// </summary>
     public async Task<bool> DeleteLeadAsync(string id)
     {
-        var result = await _leadFactory.FindOneAndSoftDeleteAsync(Builders<InvestmentLead>.Filter.Eq(l => l.Id, id));
-        return result != null;
+        return await _leadFactory.SoftDeleteAsync(id);
     }
 
     /// <summary>
@@ -168,8 +153,7 @@ public class ParkInvestmentService : IParkInvestmentService
 
         await _projectFactory.CreateAsync(project);
 
-        lead.Status = "Qualified";
-        await _leadFactory.FindOneAndReplaceAsync(Builders<InvestmentLead>.Filter.Eq(l => l.Id, leadId), lead);
+        await _leadFactory.UpdateAsync(leadId, l => l.Status = "Qualified");
 
         return MapToProjectDto(project);
     }
@@ -200,30 +184,19 @@ public class ParkInvestmentService : IParkInvestmentService
     /// </summary>
     public async Task<InvestmentProjectListResponse> GetProjectsAsync(InvestmentProjectListRequest request)
     {
-        var filterBuilder = Builders<InvestmentProject>.Filter;
-        var filter = filterBuilder.Empty;
+        var search = request.Search?.ToLower();
+        var stage = request.Stage;
+        var assignedTo = request.AssignedTo;
 
-        if (!string.IsNullOrEmpty(request.Search))
-        {
-            var search = request.Search.ToLower();
-            filter &= filterBuilder.Or(
-                filterBuilder.Regex(p => p.ProjectName, new MongoDB.Bson.BsonRegularExpression(search, "i")),
-                filterBuilder.Regex(p => p.CompanyName, new MongoDB.Bson.BsonRegularExpression(search, "i"))
-            );
-        }
-
-        if (!string.IsNullOrEmpty(request.Stage))
-            filter &= filterBuilder.Eq(p => p.Stage, request.Stage);
-
-        if (!string.IsNullOrEmpty(request.AssignedTo))
-            filter &= filterBuilder.Eq(p => p.AssignedTo!, request.AssignedTo);
-
-        var sortBuilder = _projectFactory.CreateSortBuilder();
-        var sort = request.SortOrder?.ToLower() == "asc"
-            ? sortBuilder.Ascending(p => p.CreatedAt)
-            : sortBuilder.Descending(p => p.CreatedAt);
-
-        var (items, total) = await _projectFactory.FindPagedAsync(filter, sort.Build(), request.Page, request.PageSize);
+        var (items, total) = await _projectFactory.FindPagedAsync(
+            p => (string.IsNullOrEmpty(search) || p.ProjectName.ToLower().Contains(search)) &&
+                 (string.IsNullOrEmpty(stage) || p.Stage == stage) &&
+                 (string.IsNullOrEmpty(assignedTo) || p.AssignedTo == assignedTo),
+            q => request.SortOrder?.ToLower() == "asc"
+                ? q.OrderBy(p => p.CreatedAt)
+                : q.OrderByDescending(p => p.CreatedAt),
+            request.Page,
+            request.PageSize);
 
         return new InvestmentProjectListResponse
         {
@@ -272,24 +245,23 @@ public class ParkInvestmentService : IParkInvestmentService
     /// </summary>
     public async Task<InvestmentProjectDto?> UpdateProjectAsync(string id, CreateInvestmentProjectRequest request)
     {
-        var project = await _projectFactory.GetByIdAsync(id);
-        if (project == null) return null;
+        var updatedProject = await _projectFactory.UpdateAsync(id, project =>
+        {
+            project.ProjectName = request.ProjectName;
+            project.CompanyName = request.CompanyName;
+            project.ContactPerson = request.ContactPerson;
+            project.Phone = request.Phone;
+            project.IntendedUnitIds = request.IntendedUnitIds;
+            project.IntendedArea = request.IntendedArea;
+            project.ProposedRent = request.ProposedRent;
+            project.Stage = request.Stage ?? project.Stage;
+            project.ExpectedSignDate = request.ExpectedSignDate;
+            project.Probability = request.Probability;
+            project.Notes = request.Notes;
+            project.AssignedTo = request.AssignedTo;
+        });
 
-        project.ProjectName = request.ProjectName;
-        project.CompanyName = request.CompanyName;
-        project.ContactPerson = request.ContactPerson;
-        project.Phone = request.Phone;
-        project.IntendedUnitIds = request.IntendedUnitIds;
-        project.IntendedArea = request.IntendedArea;
-        project.ProposedRent = request.ProposedRent;
-        project.Stage = request.Stage ?? project.Stage;
-        project.ExpectedSignDate = request.ExpectedSignDate;
-        project.Probability = request.Probability;
-        project.Notes = request.Notes;
-        project.AssignedTo = request.AssignedTo;
-
-        await _projectFactory.FindOneAndReplaceAsync(Builders<InvestmentProject>.Filter.Eq(p => p.Id, id), project);
-        return MapToProjectDto(project);
+        return updatedProject != null ? MapToProjectDto(updatedProject) : null;
     }
 
     /// <summary>
@@ -297,8 +269,7 @@ public class ParkInvestmentService : IParkInvestmentService
     /// </summary>
     public async Task<bool> DeleteProjectAsync(string id)
     {
-        var result = await _projectFactory.FindOneAndSoftDeleteAsync(Builders<InvestmentProject>.Filter.Eq(p => p.Id, id));
-        return result != null;
+        return await _projectFactory.SoftDeleteAsync(id);
     }
 
     private InvestmentProjectDto MapToProjectDto(InvestmentProject project) => new()
@@ -327,9 +298,6 @@ public class ParkInvestmentService : IParkInvestmentService
     /// </summary>
     public async Task<InvestmentStatisticsResponse> GetStatisticsAsync(StatisticsPeriod period = StatisticsPeriod.Month, DateTime? startDate = null, DateTime? endDate = null)
     {
-        var leads = await _leadFactory.FindAsync();
-        var projects = await _projectFactory.FindAsync();
-
         DateTime start;
         DateTime end = endDate ?? DateTime.UtcNow;
 
@@ -349,63 +317,52 @@ public class ParkInvestmentService : IParkInvestmentService
             };
         }
 
-        var leadsInPeriod = leads.Where(l => l.CreatedAt >= start && l.CreatedAt <= end).ToList();
-        var projectsInPeriod = projects.Where(p => p.CreatedAt >= start && p.CreatedAt <= end).ToList();
-
         // Stock metrics (State at 'end' date)
-        var totalLeadsAtEnd = leads.Count(l => l.CreatedAt <= end);
-        var totalProjectsAtEnd = projects.Count(p => p.CreatedAt <= end);
-        var qualifiedLeads = leads.Count(l => l.CreatedAt <= end && l.Status == "Qualified");
-        var signedProjectsTotal = projects.Count(p => p.CreatedAt <= end && p.Stage == "Completed");
+        var totalLeadsAtEnd = await _leadFactory.CountAsync(l => l.CreatedAt <= end);
+        var totalProjectsAtEnd = await _projectFactory.CountAsync(p => p.CreatedAt <= end);
+        var signedProjectsTotal = await _projectFactory.CountAsync(p => p.CreatedAt <= end && p.Stage == "Completed");
 
         // Flow metrics (Activity during period)
-        var newLeadsInPeriod = leadsInPeriod.Count;
-        var signedProjectsInPeriod = projects.Count(p => p.Stage == "Completed" && p.ExpectedSignDate >= start && p.ExpectedSignDate <= end); // Using ExpectedSignDate as proxy for SignDate
+        var newLeadsInPeriod = await _leadFactory.CountAsync(l => l.CreatedAt >= start && l.CreatedAt <= end);
+        var signedProjectsInPeriod = await _projectFactory.CountAsync(p => p.Stage == "Completed" && p.ExpectedSignDate >= start && p.ExpectedSignDate <= end);
 
-        // Helper to calculate flow metrics in a specific period
-        (int NewLeads, int SignedProjects) CalculateFlowMetrics(DateTime pStart, DateTime pEnd)
-        {
-            var newLeads = leads.Count(l => l.CreatedAt >= pStart && l.CreatedAt <= pEnd);
-            var signedProjects = projects.Count(p => p.Stage == "Completed" && p.ExpectedSignDate >= pStart && p.ExpectedSignDate <= pEnd); // Using ExpectedSignDate as proxy
-            return (newLeads, signedProjects);
-        }
-
-        var (currentNewLeads, currentSignedProjects) = (newLeadsInPeriod, signedProjectsInPeriod);
-
-        // Conversion Rate: Signed Projects / Total Leads (Lead-to-signing effectiveness)
+        // Conversion Rate
         var conversionRate = totalLeadsAtEnd > 0 ? Math.Round((decimal)signedProjectsTotal / totalLeadsAtEnd * 100, 2) : 0;
 
-        // MoM Comparison (Previous Period - shift by 1 stats period unit if standard, or same duration)
-        // Assuming -1 Month for simplicity as per previous logic
+        // Comparisons
         var momStart = start.AddMonths(-1);
         var momEnd = end.AddMonths(-1);
-        var (momNewLeads, momSignedProjects) = CalculateFlowMetrics(momStart, momEnd);
+        var momNewLeads = await _leadFactory.CountAsync(l => l.CreatedAt >= momStart && l.CreatedAt <= momEnd);
+        var momSignedProjects = await _projectFactory.CountAsync(p => p.Stage == "Completed" && p.ExpectedSignDate >= momStart && p.ExpectedSignDate <= momEnd);
 
-        // YoY Comparison (Same period last year)
         var yoyStart = start.AddYears(-1);
         var yoyEnd = end.AddYears(-1);
-        var (yoyNewLeads, yoySignedProjects) = CalculateFlowMetrics(yoyStart, yoyEnd);
+        var yoyNewLeads = await _leadFactory.CountAsync(l => l.CreatedAt >= yoyStart && l.CreatedAt <= yoyEnd);
+        var yoySignedProjects = await _projectFactory.CountAsync(p => p.Stage == "Completed" && p.ExpectedSignDate >= yoyStart && p.ExpectedSignDate <= yoyEnd);
 
-        double? CalculateGrowth(decimal current, decimal previous)
+        double? CalculateGrowth(long current, long previous)
         {
             if (previous == 0) return current > 0 ? 100 : 0;
-            return (double)Math.Round((current - previous) / previous * 100, 2);
+            return (double)Math.Round((decimal)(current - previous) / previous * 100, 2);
         }
+
+        var leads = await _leadFactory.FindAsync(l => l.CreatedAt <= end);
+        var projects = await _projectFactory.FindAsync(p => p.CreatedAt <= end);
 
         return new InvestmentStatisticsResponse
         {
-            TotalLeads = totalLeadsAtEnd,
-            NewLeadsThisMonth = newLeadsInPeriod,
-            TotalProjects = totalProjectsAtEnd,
-            ProjectsInNegotiation = projects.Count(p => p.Stage == "Negotiation" && p.CreatedAt <= end),
-            SignedProjects = signedProjectsTotal,
+            TotalLeads = (int)totalLeadsAtEnd,
+            NewLeadsThisMonth = (int)newLeadsInPeriod,
+            TotalProjects = (int)totalProjectsAtEnd,
+            ProjectsInNegotiation = projects.Count(p => p.Stage == "Negotiation"),
+            SignedProjects = (int)signedProjectsTotal,
             ConversionRate = conversionRate,
-            LeadsByStatus = leads.Where(l => l.CreatedAt <= end).GroupBy(l => l.Status).ToDictionary(g => g.Key, g => g.Count()),
-            ProjectsByStage = projects.Where(p => p.CreatedAt <= end).GroupBy(p => p.Stage).ToDictionary(g => g.Key, g => g.Count()),
-            NewLeadsYoY = CalculateGrowth(currentNewLeads, yoyNewLeads),
-            NewLeadsMoM = CalculateGrowth(currentNewLeads, momNewLeads),
-            SignedProjectsYoY = CalculateGrowth(currentSignedProjects, yoySignedProjects),
-            SignedProjectsMoM = CalculateGrowth(currentSignedProjects, momSignedProjects)
+            LeadsByStatus = leads.GroupBy(l => l.Status).ToDictionary(g => g.Key, g => g.Count()),
+            ProjectsByStage = projects.GroupBy(p => p.Stage).ToDictionary(g => g.Key, g => g.Count()),
+            NewLeadsYoY = CalculateGrowth(newLeadsInPeriod, yoyNewLeads),
+            NewLeadsMoM = CalculateGrowth(newLeadsInPeriod, momNewLeads),
+            SignedProjectsYoY = CalculateGrowth(signedProjectsInPeriod, yoySignedProjects),
+            SignedProjectsMoM = CalculateGrowth(signedProjectsInPeriod, momSignedProjects)
         };
     }
 

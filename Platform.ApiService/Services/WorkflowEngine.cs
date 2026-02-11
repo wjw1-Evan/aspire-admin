@@ -1,5 +1,4 @@
-using MongoDB.Driver;
-using MongoDB.Bson;
+using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using Microsoft.Extensions.Logging;
@@ -68,12 +67,12 @@ public interface IWorkflowEngine
 /// </summary>
 public class WorkflowEngine : IWorkflowEngine
 {
-    private readonly IDatabaseOperationFactory<WorkflowDefinition> _definitionFactory;
-    private readonly IDatabaseOperationFactory<WorkflowInstance> _instanceFactory;
-    private readonly IDatabaseOperationFactory<ApprovalRecord> _approvalRecordFactory;
-    private readonly IDatabaseOperationFactory<Document> _documentFactory;
-    private readonly IDatabaseOperationFactory<UserCompany> _userCompanyFactory;
-    private readonly IDatabaseOperationFactory<FormDefinition> _formFactory;
+    private readonly IDataFactory<WorkflowDefinition> _definitionFactory;
+    private readonly IDataFactory<WorkflowInstance> _instanceFactory;
+    private readonly IDataFactory<ApprovalRecord> _approvalRecordFactory;
+    private readonly IDataFactory<Document> _documentFactory;
+    private readonly IDataFactory<UserCompany> _userCompanyFactory;
+    private readonly IDataFactory<FormDefinition> _formFactory;
     private readonly IUserService _userService;
     private readonly IUnifiedNotificationService _notificationService;
     private readonly ITenantContext _tenantContext;
@@ -97,12 +96,12 @@ public class WorkflowEngine : IWorkflowEngine
     /// <param name="expressionEvaluator">工作流表达式评估器</param>
     /// <param name="logger">日志记录器</param>
     public WorkflowEngine(
-        IDatabaseOperationFactory<WorkflowDefinition> definitionFactory,
-        IDatabaseOperationFactory<WorkflowInstance> instanceFactory,
-        IDatabaseOperationFactory<ApprovalRecord> approvalRecordFactory,
-        IDatabaseOperationFactory<Document> documentFactory,
-        IDatabaseOperationFactory<UserCompany> userCompanyFactory,
-        IDatabaseOperationFactory<FormDefinition> formFactory,
+        IDataFactory<WorkflowDefinition> definitionFactory,
+        IDataFactory<WorkflowInstance> instanceFactory,
+        IDataFactory<ApprovalRecord> approvalRecordFactory,
+        IDataFactory<Document> documentFactory,
+        IDataFactory<UserCompany> userCompanyFactory,
+        IDataFactory<FormDefinition> formFactory,
         IUserService userService,
         IUnifiedNotificationService notificationService,
         ITenantContext tenantContext,
@@ -213,15 +212,11 @@ public class WorkflowEngine : IWorkflowEngine
 
         instance = await _instanceFactory.CreateAsync(instance);
 
-        // 5. 更新公文状态
-        var documentUpdate = _documentFactory.CreateUpdateBuilder()
-            .Set(d => d.Status, DocumentStatus.Pending)
-            .Set(d => d.WorkflowInstanceId, instance.Id)
-            .Build();
-        var documentFilter = _documentFactory.CreateFilterBuilder()
-            .Equal(d => d.Id, documentId)
-            .Build();
-        await _documentFactory.FindOneAndUpdateAsync(documentFilter, documentUpdate);
+        await _documentFactory.UpdateAsync(documentId, d =>
+        {
+            d.Status = DocumentStatus.Pending;
+            d.WorkflowInstanceId = instance.Id;
+        });
 
         // 6. 推进到第一个节点
         await MoveToNextNodeAsync(instance.Id, startNode.Id);
@@ -402,7 +397,7 @@ public class WorkflowEngine : IWorkflowEngine
 
                 var approvalRecord = new ApprovalRecord
                 {
-                    Id = GenerateSafeObjectId(), // 使用安全的ObjectId生成方法
+                    Id = GenerateSafeId(), // 使用安全的ID生成方法
                     WorkflowInstanceId = instanceId,
                     NodeId = actualNodeId, // 🔧 关键修复：使用当前节点ID（processingNode.Id），确保审批记录记录在正确的节点上
                     ApproverId = approverId,
@@ -419,28 +414,18 @@ public class WorkflowEngine : IWorkflowEngine
                     approvalRecord.Id, approvalRecord.NodeId, approvalRecord.ApproverId, approvalRecord.Action, approvalRecord.Sequence);
 
                 // 8. 使用原子操作更新实例（包含乐观锁检查）
-                var newApprovalRecords = new List<ApprovalRecord>(instance.ApprovalRecords) { approvalRecord };
+                var expectedSize = instance.ApprovalRecords.Count;
+                var updatedInstance = await _instanceFactory.UpdateAsync(instanceId, i =>
+                {
+                    // 并发检查：手动验证状态、节点和记录数
+                    if (i.Status != WorkflowStatus.Running || i.CurrentNodeId != instance.CurrentNodeId || i.ApprovalRecords.Count != expectedSize)
+                    {
+                        throw new InvalidOperationException("流程实例已被其他操作修改");
+                    }
 
-                // 乐观锁：确保实例状态没有被其他操作修改
-                // 注意：这里检查的是获取实例时的CurrentNodeId，而不是requestedNode.Id
-                // 因为在智能节点匹配中，我们可能已经将requestedNode调整为当前节点
-                // 🐛 修复：增加 ApprovalRecords 数量检查，防止并发审批时覆盖他人的审批记录
-                var sizeFilter = Builders<WorkflowInstance>.Filter.Size(i => i.ApprovalRecords, instance.ApprovalRecords.Count);
-
-                var instanceFilter = _instanceFactory.CreateFilterBuilder()
-                    .Equal(i => i.Id, instanceId)
-                    .Equal(i => i.Status, WorkflowStatus.Running) // 确保状态未变
-                    .Equal(i => i.CurrentNodeId, instance.CurrentNodeId) // 确保当前节点未变（使用获取时的节点ID）
-                    .Custom(sizeFilter)
-                    .Build();
-
-                var instanceUpdate = _instanceFactory.CreateUpdateBuilder()
-                    .Set(i => i.ApprovalRecords, newApprovalRecords)
-                    .Set(i => i.UpdatedAt, DateTime.UtcNow)
-                    .Build();
-
-                var updatedInstance = await _instanceFactory.FindOneAndUpdateAsync(instanceFilter, instanceUpdate,
-                    new MongoDB.Driver.FindOneAndUpdateOptions<WorkflowInstance> { ReturnDocument = MongoDB.Driver.ReturnDocument.After });
+                    i.ApprovalRecords.Add(approvalRecord);
+                    i.UpdatedAt = DateTime.UtcNow;
+                });
                 if (updatedInstance == null)
                 {
                     // 实例已被其他操作修改，重试
@@ -594,14 +579,10 @@ public class WorkflowEngine : IWorkflowEngine
                     var nextApprover = allApprovers[approvedApprovers.Count];
                     var nextApprovers = new List<string> { nextApprover };
 
-                    // 更新实例中的当前审批人
-                    var instanceFilter = _instanceFactory.CreateFilterBuilder()
-                        .Equal(i => i.Id, instance.Id)
-                        .Build();
-                    var instanceUpdate = _instanceFactory.CreateUpdateBuilder()
-                        .Set(i => i.CurrentApproverIds, nextApprovers)
-                        .Build();
-                    await _instanceFactory.FindOneAndUpdateAsync(instanceFilter, instanceUpdate);
+                    await _instanceFactory.UpdateAsync(instance.Id, i =>
+                    {
+                        i.CurrentApproverIds = nextApprovers;
+                    });
 
                     // 通知下一个审批人
                     await SendApprovalNotificationAsync(instance, "workflow_approval_required", null, nextApprovers);
@@ -661,14 +642,10 @@ public class WorkflowEngine : IWorkflowEngine
         // 拒绝：流程结束
         await CompleteWorkflowAsync(instance.Id, WorkflowStatus.Rejected);
 
-        // 更新公文状态
-        var documentUpdate = _documentFactory.CreateUpdateBuilder()
-            .Set(d => d.Status, DocumentStatus.Rejected)
-            .Build();
-        var documentFilter = _documentFactory.CreateFilterBuilder()
-            .Equal(d => d.Id, instance.DocumentId)
-            .Build();
-        await _documentFactory.FindOneAndUpdateAsync(documentFilter, documentUpdate);
+        await _documentFactory.UpdateAsync(instance.DocumentId, d =>
+        {
+            d.Status = DocumentStatus.Rejected;
+        });
 
         // 发送拒绝通知
         await SendApprovalNotificationAsync(instance, "workflow_rejected", approvalRecord.Comment);
@@ -799,19 +776,14 @@ public class WorkflowEngine : IWorkflowEngine
         // 清洗变量，避免 JsonElement
         variables = SerializationExtensions.SanitizeDictionary(variables);
 
-        // 更新流程变量
-        foreach (var kvp in variables)
+        await _instanceFactory.UpdateAsync(instanceId, i =>
         {
-            instance.Variables[kvp.Key] = kvp.Value;
-        }
-
-        var instanceUpdate = _instanceFactory.CreateUpdateBuilder()
-            .Set(i => i.Variables, instance.Variables)
-            .Build();
-        var instanceFilter = _instanceFactory.CreateFilterBuilder()
-            .Equal(i => i.Id, instanceId)
-            .Build();
-        await _instanceFactory.FindOneAndUpdateAsync(instanceFilter, instanceUpdate);
+            foreach (var kvp in variables)
+            {
+                i.Variables[kvp.Key] = kvp.Value;
+            }
+            i.UpdatedAt = DateTime.UtcNow;
+        });
 
         // 评估条件并推进
         await EvaluateConditionAndMoveAsync(instanceId, nodeId, instance.Variables);
@@ -830,24 +802,19 @@ public class WorkflowEngine : IWorkflowEngine
             throw new InvalidOperationException("流程实例不存在或已结束");
         }
 
-        // 记录分支完成
-        if (!instance.ParallelBranches.ContainsKey(nodeId))
+        await _instanceFactory.UpdateAsync(instanceId, i =>
         {
-            instance.ParallelBranches[nodeId] = new List<string>();
-        }
+            if (!i.ParallelBranches.ContainsKey(nodeId))
+            {
+                i.ParallelBranches[nodeId] = new List<string>();
+            }
 
-        if (!instance.ParallelBranches[nodeId].Contains(branchId))
-        {
-            instance.ParallelBranches[nodeId].Add(branchId);
-        }
-
-        var instanceUpdate = _instanceFactory.CreateUpdateBuilder()
-            .Set(i => i.ParallelBranches, instance.ParallelBranches)
-            .Build();
-        var instanceFilter = _instanceFactory.CreateFilterBuilder()
-            .Equal(i => i.Id, instanceId)
-            .Build();
-        await _instanceFactory.FindOneAndUpdateAsync(instanceFilter, instanceUpdate);
+            if (!i.ParallelBranches[nodeId].Contains(branchId))
+            {
+                i.ParallelBranches[nodeId].Add(branchId);
+            }
+            i.UpdatedAt = DateTime.UtcNow;
+        });
 
         // 检查是否所有分支都完成（使用流程定义快照，保持与实例一致）
         var definition = instance.WorkflowDefinitionSnapshot;
@@ -928,7 +895,7 @@ public class WorkflowEngine : IWorkflowEngine
         var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
         var approvalRecord = new ApprovalRecord
         {
-            Id = GenerateSafeObjectId(), // 使用安全的ObjectId生成方法
+            Id = GenerateSafeId(), // 使用安全的ID生成方法
             WorkflowInstanceId = instanceId,
             NodeId = instance.CurrentNodeId,
             ApproverId = userId,
@@ -942,16 +909,13 @@ public class WorkflowEngine : IWorkflowEngine
         await _approvalRecordFactory.CreateAsync(approvalRecord);
 
         // 更新当前节点
-        instance.ApprovalRecords.Add(approvalRecord);
-        var instanceUpdate = _instanceFactory.CreateUpdateBuilder()
-            .Set(i => i.CurrentNodeId, targetNodeId)
-            .Set(i => i.ApprovalRecords, instance.ApprovalRecords)
-            .Set(i => i.ParallelBranches, new Dictionary<string, List<string>>()) // 🔧 退回时简单清理所有并行状态，确保状态一致性
-            .Build();
-        var instanceFilter = _instanceFactory.CreateFilterBuilder()
-            .Equal(i => i.Id, instanceId)
-            .Build();
-        await _instanceFactory.FindOneAndUpdateAsync(instanceFilter, instanceUpdate);
+        await _instanceFactory.UpdateAsync(instanceId, i =>
+        {
+            i.CurrentNodeId = targetNodeId;
+            i.ApprovalRecords.Add(approvalRecord);
+            i.ParallelBranches = new Dictionary<string, List<string>>(); // 🔧 退回时简单清理所有并行状态
+            i.UpdatedAt = DateTime.UtcNow;
+        });
 
         // 发送退回通知
         try
@@ -987,14 +951,9 @@ public class WorkflowEngine : IWorkflowEngine
     /// </summary>
     public async Task<List<ApprovalRecord>> GetApprovalHistoryAsync(string instanceId)
     {
-        var filter = _approvalRecordFactory.CreateFilterBuilder()
-            .Equal(r => r.WorkflowInstanceId, instanceId)
-            .Build();
-        var sort = _approvalRecordFactory.CreateSortBuilder()
-            .Ascending(r => r.Sequence)
-            .Build();
-
-        return await _approvalRecordFactory.FindAsync(filter, sort);
+        return await _approvalRecordFactory.FindAsync(
+            r => r.WorkflowInstanceId == instanceId,
+            query => query.OrderBy(r => r.Sequence));
     }
 
     /// <summary>
@@ -1019,13 +978,10 @@ public class WorkflowEngine : IWorkflowEngine
         await CompleteWorkflowAsync(instanceId, WorkflowStatus.Cancelled);
 
         // 更新公文状态
-        var documentUpdate = _documentFactory.CreateUpdateBuilder()
-            .Set(d => d.Status, DocumentStatus.Draft)
-            .Build();
-        var documentFilter = _documentFactory.CreateFilterBuilder()
-            .Equal(d => d.Id, instance.DocumentId)
-            .Build();
-        await _documentFactory.FindOneAndUpdateAsync(documentFilter, documentUpdate);
+        await _documentFactory.UpdateAsync(instance.DocumentId, d =>
+        {
+            d.Status = DocumentStatus.Draft;
+        });
 
         // 发送取消通知
         try
@@ -1149,13 +1105,10 @@ public class WorkflowEngine : IWorkflowEngine
                     );
 
                     // 更新公文状态
-                    var documentUpdate = _documentFactory.CreateUpdateBuilder()
-                        .Set(d => d.Status, DocumentStatus.Approved)
-                        .Build();
-                    var documentFilter = _documentFactory.CreateFilterBuilder()
-                        .Equal(d => d.Id, instance.DocumentId)
-                        .Build();
-                    await _documentFactory.FindOneAndUpdateAsync(documentFilter, documentUpdate);
+                    await _documentFactory.UpdateAsync(instance.DocumentId, d =>
+                    {
+                        d.Status = DocumentStatus.Approved;
+                    });
                 }
             }
             catch (Exception ex)
@@ -1254,8 +1207,8 @@ public class WorkflowEngine : IWorkflowEngine
         _logger.LogInformation("设置当前节点: InstanceId={InstanceId}, OldNodeId={OldNodeId}, NewNodeId={NewNodeId}",
             instanceId, oldNodeId, nodeId);
 
-        var updateBuilder = _instanceFactory.CreateUpdateBuilder()
-            .Set(i => i.CurrentNodeId, nodeId);
+        List<string> currentApproverIds = new List<string>();
+        DateTime? timeoutAt = null;
 
         // 解析审批人
         if (node.Type == "approval" && node.Config.Approval != null)
@@ -1265,35 +1218,27 @@ public class WorkflowEngine : IWorkflowEngine
             if (node.Config.Approval.Type == ApprovalType.Sequential && approvers.Any())
             {
                 // 顺序审批：初始只设置第一个审批人为当前审批人
-                updateBuilder.Set(i => i.CurrentApproverIds, new List<string> { approvers[0] });
+                currentApproverIds = new List<string> { approvers[0] };
             }
             else
             {
-                updateBuilder.Set(i => i.CurrentApproverIds, approvers);
+                currentApproverIds = approvers;
             }
 
             // 设置超时时间
             if (node.Config.Approval.TimeoutHours > 0)
             {
-                updateBuilder.Set(i => i.TimeoutAt, DateTime.UtcNow.AddHours(node.Config.Approval.TimeoutHours.Value));
-            }
-            else
-            {
-                updateBuilder.Set(i => i.TimeoutAt, null);
+                timeoutAt = DateTime.UtcNow.AddHours(node.Config.Approval.TimeoutHours.Value);
             }
         }
-        else
+
+        await _instanceFactory.UpdateAsync(instanceId, i =>
         {
-            updateBuilder.Set(i => i.CurrentApproverIds, new List<string>());
-            updateBuilder.Set(i => i.TimeoutAt, null);
-        }
-
-        var update = updateBuilder.Build();
-        var filter = _instanceFactory.CreateFilterBuilder()
-            .Equal(i => i.Id, instanceId)
-            .Build();
-
-        await _instanceFactory.FindOneAndUpdateAsync(filter, update);
+            i.CurrentNodeId = nodeId;
+            i.CurrentApproverIds = currentApproverIds;
+            i.TimeoutAt = timeoutAt;
+            i.UpdatedAt = DateTime.UtcNow;
+        });
     }
 
     /// <summary>
@@ -1344,13 +1289,10 @@ public class WorkflowEngine : IWorkflowEngine
                 // 结束节点：完成流程
                 _logger.LogInformation("到达结束节点，完成流程: InstanceId={InstanceId}, NodeId={NodeId}", instanceId, nodeId);
                 await CompleteWorkflowAsync(instanceId, WorkflowStatus.Completed);
-                var documentUpdate = _documentFactory.CreateUpdateBuilder()
-                    .Set(d => d.Status, DocumentStatus.Approved)
-                    .Build();
-                var documentFilter = _documentFactory.CreateFilterBuilder()
-                    .Equal(d => d.Id, instance.DocumentId)
-                    .Build();
-                await _documentFactory.FindOneAndUpdateAsync(documentFilter, documentUpdate);
+                await _documentFactory.UpdateAsync(instance.DocumentId, d =>
+                {
+                    d.Status = DocumentStatus.Approved;
+                });
 
                 // 发送完成通知
                 try
@@ -1687,14 +1629,12 @@ public class WorkflowEngine : IWorkflowEngine
     /// </summary>
     private async Task CompleteWorkflowAsync(string instanceId, WorkflowStatus status)
     {
-        var update = _instanceFactory.CreateUpdateBuilder()
-            .Set(i => i.Status, status)
-            .Set(i => i.CompletedAt, DateTime.UtcNow)
-            .Build();
-        var filter = _instanceFactory.CreateFilterBuilder()
-            .Equal(i => i.Id, instanceId)
-            .Build();
-        await _instanceFactory.FindOneAndUpdateAsync(filter, update);
+        await _instanceFactory.UpdateAsync(instanceId, i =>
+        {
+            i.Status = status;
+            i.CompletedAt = DateTime.UtcNow;
+            i.UpdatedAt = DateTime.UtcNow;
+        });
     }
 
     /// <summary>
@@ -1788,19 +1728,8 @@ public class WorkflowEngine : IWorkflowEngine
         }
     }
 
-    /// <summary>
-    /// 安全生成ObjectId字符串
-    /// </summary>
-    private static string GenerateSafeObjectId()
+    private static string GenerateSafeId()
     {
-        try
-        {
-            return ObjectId.GenerateNewId().ToString();
-        }
-        catch (Exception)
-        {
-            // 如果ObjectId生成失败，使用GUID作为备选方案
-            return Guid.NewGuid().ToString("N");
-        }
+        return Guid.NewGuid().ToString("N");
     }
 }

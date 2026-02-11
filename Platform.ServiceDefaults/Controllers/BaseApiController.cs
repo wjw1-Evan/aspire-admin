@@ -48,17 +48,6 @@ public abstract class BaseApiController : ControllerBase
         return CurrentUserId;
     }
 
-    /// <summary>
-    /// 获取必需的企业ID（从数据库获取，不使用 JWT token）
-    /// ⚠️ 已移除 JWT token 中的 CurrentCompanyId，此方法需要从数据库获取
-    /// 注意：需要在子类中实现获取企业ID的逻辑，或直接从数据库获取 user.CurrentCompanyId
-    /// </summary>
-    protected virtual Task<string> GetRequiredCompanyIdAsync()
-    {
-        // 默认实现：由于 JWT token 中已移除 CurrentCompanyId，无法从此方法获取
-        // 子类应该覆盖此方法或使用服务层方法从数据库获取 user.CurrentCompanyId
-        throw new InvalidOperationException("请覆盖此方法或使用服务层方法从数据库获取 user.CurrentCompanyId");
-    }
 
     /// <summary>
     /// 返回成功响应
@@ -129,14 +118,7 @@ public abstract class BaseApiController : ControllerBase
         return NotFound(response);
     }
 
-    /// <summary>
-    /// 返回未授权响应
-    /// </summary>
-    protected IActionResult UnauthorizedError(string message = "未授权访问")
-    {
-        var response = ApiResponse<object>.UnauthorizedResult(message, HttpContext.TraceIdentifier);
-        return Unauthorized(response);
-    }
+  
 
     /// <summary>
     /// 返回禁止访问响应
@@ -188,24 +170,8 @@ public abstract class BaseApiController : ControllerBase
         return permissions.Contains(permission);
     }
 
-    /// <summary>
-    /// 检查权限（必需）
-    /// </summary>
-    protected void RequirePermission(string permission)
-    {
-        if (!HasPermission(permission))
-            throw new UnauthorizedAccessException($"缺少权限: {permission}");
-    }
-
-    /// <summary>
-    /// 检查管理员权限
-    /// </summary>
-    protected void RequireAdmin()
-    {
-        if (!IsAdmin)
-            throw new UnauthorizedAccessException("需要管理员权限");
-    }
-
+  
+  
     /// <summary>
     /// 获取客户端IP地址
     /// </summary>

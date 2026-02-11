@@ -1,6 +1,7 @@
+using Microsoft.EntityFrameworkCore;
+using MongoDB.Driver;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MongoDB.Driver;
 using Platform.ApiService.Scripts;
 using Platform.ServiceDefaults.Controllers;
 
@@ -73,7 +74,7 @@ public class MaintenanceController : BaseApiController
 
         _logger.LogInformation("管理员 {UserId} 开始执行 UserCompany 记录修复", CurrentUserId);
 
-        var fixerLogger = _logger as ILogger<FixMissingUserCompanyRecords> ?? 
+        var fixerLogger = _logger as ILogger<FixMissingUserCompanyRecords> ??
             LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<FixMissingUserCompanyRecords>();
         var fixer = new FixMissingUserCompanyRecords(_database, fixerLogger);
         var result = await fixer.FixAsync();
@@ -133,20 +134,20 @@ public class MaintenanceController : BaseApiController
 
         _logger.LogInformation("管理员 {UserId} 开始验证 UserCompany 记录", CurrentUserId);
 
-        var fixerLogger = _logger as ILogger<FixMissingUserCompanyRecords> ?? 
+        var fixerLogger = _logger as ILogger<FixMissingUserCompanyRecords> ??
             LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<FixMissingUserCompanyRecords>();
         var fixer = new FixMissingUserCompanyRecords(_database, fixerLogger);
         var result = await fixer.ValidateAsync();
 
         if (result.IsValid)
         {
-            _logger.LogInformation("✅ UserCompany 记录验证通过: 所有 {Count} 个用户都有记录", 
+            _logger.LogInformation("✅ UserCompany 记录验证通过: 所有 {Count} 个用户都有记录",
                 result.UsersWithUserCompany);
             return Success(result, "验证通过");
         }
         else
         {
-            _logger.LogWarning("⚠️ UserCompany 记录验证失败: {Count} 个用户缺少记录", 
+            _logger.LogWarning("⚠️ UserCompany 记录验证失败: {Count} 个用户缺少记录",
                 result.UsersWithoutUserCompany);
             return Success(result, "验证发现问题");
         }

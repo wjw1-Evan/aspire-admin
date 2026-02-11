@@ -1,11 +1,10 @@
-using MongoDB.Driver;
 using Platform.ApiService.Models;
 using Platform.ApiService.Options;
+using Platform.ServiceDefaults.Services;
 using Microsoft.Extensions.Options;
 using OpenAI;
 using OpenAI.Chat;
 using System.Text.Json;
-using MongoDB.Bson;
 
 namespace Platform.ApiService.Services;
 
@@ -13,15 +12,18 @@ namespace Platform.ApiService.Services;
 /// 项目统计服务
 /// </summary>
 public class ProjectStatisticsService(
-    IMongoDatabase database,
+    IDataFactory<Project> projectFactory,
+    IDataFactory<WorkTask> taskFactory,
+    IDataFactory<ProjectMember> memberFactory,
+    IDataFactory<Milestone> milestoneFactory,
     OpenAIClient openAiClient,
     IOptions<AiCompletionOptions> aiOptions,
     ILogger<ProjectStatisticsService> logger) : IProjectStatisticsService
 {
-    private readonly IMongoCollection<Project> _projects = database.GetCollection<Project>("projects");
-    private readonly IMongoCollection<WorkTask> _tasks = database.GetCollection<WorkTask>("tasks");
-    private readonly IMongoCollection<ProjectMember> _members = database.GetCollection<ProjectMember>("projectMembers");
-    private readonly IMongoCollection<Milestone> _milestones = database.GetCollection<Milestone>("milestones");
+    private readonly IDataFactory<Project> _projectFactory = projectFactory;
+    private readonly IDataFactory<WorkTask> _taskFactory = taskFactory;
+    private readonly IDataFactory<ProjectMember> _memberFactory = memberFactory;
+    private readonly IDataFactory<Milestone> _milestoneFactory = milestoneFactory;
     private readonly AiCompletionOptions _aiOptions = aiOptions.Value;
 
     /// <summary>
@@ -53,10 +55,7 @@ public class ProjectStatisticsService(
         var stats = new ProjectDashboardStatistics();
 
         // 2. Project Stats (Snapshot of current state)
-        var projectFilter = Builders<Project>.Filter.Eq(x => x.CompanyId, companyId) &
-                            Builders<Project>.Filter.Eq(x => x.IsDeleted, false);
-
-        var projects = await _projects.Find(projectFilter).ToListAsync();
+        var projects = await _projectFactory.FindAsync(p => p.CompanyId == companyId);
         stats.Project = new ProjectStatistics
         {
             TotalProjects = projects.Count,
@@ -77,15 +76,10 @@ public class ProjectStatisticsService(
         }
 
         // 3. Task Stats (Time-bound)
-        var taskFilter = Builders<WorkTask>.Filter.Eq(x => x.CompanyId, companyId) &
-                         Builders<WorkTask>.Filter.Eq(x => x.IsDeleted, false);
-
-        if (start.HasValue)
-            taskFilter &= Builders<WorkTask>.Filter.Gte(x => x.CreatedAt, start.Value);
-        if (end.HasValue)
-            taskFilter &= Builders<WorkTask>.Filter.Lte(x => x.CreatedAt, end.Value);
-
-        var tasks = await _tasks.Find(taskFilter).ToListAsync();
+        var tasks = await _taskFactory.FindAsync(t =>
+            t.CompanyId == companyId &&
+            (!start.HasValue || t.CreatedAt >= start.Value) &&
+            (!end.HasValue || t.CreatedAt <= end.Value));
         stats.Task = new TaskStatistics
         {
             TotalTasks = tasks.Count,
@@ -111,9 +105,7 @@ public class ProjectStatisticsService(
         }
 
         // 4. Member Stats (Snapshot)
-        var memberFilter = Builders<ProjectMember>.Filter.Eq(x => x.CompanyId, companyId) &
-                           Builders<ProjectMember>.Filter.Eq(x => x.IsDeleted, false);
-        var members = await _members.Find(memberFilter).ToListAsync();
+        var members = await _memberFactory.FindAsync(m => m.CompanyId == companyId);
         stats.Member.TotalMembers = members.Select(m => m.UserId).Distinct().Count();
         foreach (var m in members)
         {
@@ -123,12 +115,10 @@ public class ProjectStatisticsService(
         }
 
         // 5. Milestone Stats (Time-bound by TargetDate)
-        var milestoneFilter = Builders<Milestone>.Filter.Eq(x => x.CompanyId, companyId) &
-                              Builders<Milestone>.Filter.Eq(x => x.IsDeleted, false);
-        if (start.HasValue) milestoneFilter &= Builders<Milestone>.Filter.Gte(x => x.TargetDate, start.Value);
-        if (end.HasValue) milestoneFilter &= Builders<Milestone>.Filter.Lte(x => x.TargetDate, end.Value);
-
-        var milestones = await _milestones.Find(milestoneFilter).ToListAsync();
+        var milestones = await _milestoneFactory.FindAsync(m =>
+            m.CompanyId == companyId &&
+            (!start.HasValue || m.TargetDate >= start.Value) &&
+            (!end.HasValue || m.TargetDate <= end.Value));
         stats.Milestone.TotalMilestones = milestones.Count;
         stats.Milestone.PendingMilestones = milestones.Count(m => m.Status == MilestoneStatus.Pending);
         stats.Milestone.AchievedMilestones = milestones.Count(m => m.Status == MilestoneStatus.Achieved);

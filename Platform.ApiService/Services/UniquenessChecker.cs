@@ -2,6 +2,7 @@ using User = Platform.ApiService.Models.AppUser;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
+using System.Linq.Expressions;
 
 namespace Platform.ApiService.Services;
 
@@ -56,7 +57,7 @@ public interface IUniquenessChecker
 /// </summary>
 public class UniquenessChecker : IUniquenessChecker
 {
-    private readonly IDatabaseOperationFactory<User> _userFactory;
+    private readonly IDataFactory<User> _userFactory;
     private readonly ITenantContext _tenantContext;
 
     /// <summary>
@@ -65,7 +66,7 @@ public class UniquenessChecker : IUniquenessChecker
     /// <param name="userFactory">用户数据操作工厂</param>
     /// <param name="tenantContext">租户上下文</param>
     public UniquenessChecker(
-        IDatabaseOperationFactory<User> userFactory,
+        IDataFactory<User> userFactory,
         ITenantContext tenantContext)
     {
         _userFactory = userFactory;
@@ -110,17 +111,12 @@ public class UniquenessChecker : IUniquenessChecker
     /// </summary>
     public async Task<bool> IsUsernameUniqueAsync(string username, string? excludeUserId = null)
     {
-        var filterBuilder = _userFactory.CreateFilterBuilder()
-            .Equal(u => u.Username, username);
-
-        // v3.1: 用户名全局唯一，不再按企业过滤
+        Expression<Func<User, bool>> filter = u => u.Username == username;
 
         if (!string.IsNullOrEmpty(excludeUserId))
         {
-            filterBuilder.NotEqual(u => u.Id, excludeUserId);
+            filter = u => u.Username == username && u.Id != excludeUserId;
         }
-
-        var filter = filterBuilder.Build();
 
         var users = await _userFactory.FindAsync(filter);
         var existing = users.FirstOrDefault();
@@ -135,17 +131,12 @@ public class UniquenessChecker : IUniquenessChecker
         if (string.IsNullOrEmpty(email))
             return true;
 
-        var filterBuilder = _userFactory.CreateFilterBuilder()
-            .Equal(u => u.Email, email);
-
-        // v3.1: 邮箱全局唯一，不再按企业过滤
+        Expression<Func<User, bool>> filter = u => u.Email == email;
 
         if (!string.IsNullOrEmpty(excludeUserId))
         {
-            filterBuilder.NotEqual(u => u.Id, excludeUserId);
+            filter = u => u.Email == email && u.Id != excludeUserId;
         }
-
-        var filter = filterBuilder.Build();
 
         var users = await _userFactory.FindAsync(filter);
         var existing = users.FirstOrDefault();
@@ -162,15 +153,12 @@ public class UniquenessChecker : IUniquenessChecker
             return true;
         }
 
-        var filterBuilder = _userFactory.CreateFilterBuilder()
-            .Equal(u => u.PhoneNumber, phone);
+        Expression<Func<User, bool>> filter = u => u.PhoneNumber == phone;
 
         if (!string.IsNullOrEmpty(excludeUserId))
         {
-            filterBuilder.NotEqual(u => u.Id, excludeUserId);
+            filter = u => u.PhoneNumber == phone && u.Id != excludeUserId;
         }
-
-        var filter = filterBuilder.Build();
 
         var users = await _userFactory.FindAsync(filter);
         var existing = users.FirstOrDefault();

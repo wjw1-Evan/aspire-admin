@@ -1,7 +1,4 @@
-using System.Collections.Generic;
-using System.Linq;
-using MongoDB.Driver;
-using MongoDB.Bson;
+using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Constants;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
@@ -91,9 +88,9 @@ public class OrganizationService : IOrganizationService
     private const int DefaultNameMaxLength = 50;
     private const int DefaultCodeMaxLength = 50;
 
-    private readonly IDatabaseOperationFactory<OrganizationUnit> _organizationFactory;
-    private readonly IDatabaseOperationFactory<UserOrganization> _userOrgFactory;
-    private readonly IDatabaseOperationFactory<AppUser> _userFactory;
+    private readonly IDataFactory<OrganizationUnit> _organizationFactory;
+    private readonly IDataFactory<UserOrganization> _userOrgFactory;
+    private readonly IDataFactory<AppUser> _userFactory;
     private readonly ILogger<OrganizationService> _logger;
 
     /// <summary>
@@ -104,9 +101,9 @@ public class OrganizationService : IOrganizationService
     /// <param name="userFactory">用户数据工厂</param>
     /// <param name="logger">日志记录器</param>
     public OrganizationService(
-        IDatabaseOperationFactory<OrganizationUnit> organizationFactory,
-        IDatabaseOperationFactory<UserOrganization> userOrgFactory,
-        IDatabaseOperationFactory<AppUser> userFactory,
+        IDataFactory<OrganizationUnit> organizationFactory,
+        IDataFactory<UserOrganization> userOrgFactory,
+        IDataFactory<AppUser> userFactory,
         ILogger<OrganizationService> logger)
     {
         _organizationFactory = organizationFactory;
@@ -120,12 +117,10 @@ public class OrganizationService : IOrganizationService
     /// </summary>
     public async Task<List<OrganizationTreeNode>> GetTreeAsync()
     {
-        var sort = _organizationFactory.CreateSortBuilder()
-            .Ascending(o => o.SortOrder)
-            .Ascending(o => o.CreatedAt)
-            .Build();
-
-        var units = await _organizationFactory.FindAsync(sort: sort).ConfigureAwait(false);
+        var units = await _organizationFactory.FindAsync(
+            filter: null,
+            orderBy: q => q.OrderBy(o => o.SortOrder).ThenBy(o => o.CreatedAt)
+        ).ConfigureAwait(false);
 
         var lookup = units.ToLookup(u => string.IsNullOrEmpty(u.ParentId) ? null : u.ParentId);
 
@@ -219,20 +214,15 @@ public class OrganizationService : IOrganizationService
 
         await EnsureUniqueAsync(request.Name, request.Code, request.ParentId, id).ConfigureAwait(false);
 
-        var filter = _organizationFactory.CreateFilterBuilder()
-            .Equal(o => o.Id, id)
-            .Build();
-
-        var update = _organizationFactory.CreateUpdateBuilder()
-            .Set(o => o.Name, request.Name)
-            .Set(o => o.Code, request.Code)
-            .Set(o => o.ParentId, request.ParentId)
-            .Set(o => o.Description, request.Description)
-            .Set(o => o.SortOrder, request.SortOrder)
-            .Set(o => o.ManagerUserId, request.ManagerUserId)
-            .Build();
-
-        var result = await _organizationFactory.FindOneAndUpdateAsync(filter, update).ConfigureAwait(false);
+        var result = await _organizationFactory.UpdateAsync(id, entity =>
+        {
+            entity.Name = request.Name;
+            entity.Code = request.Code;
+            entity.ParentId = request.ParentId;
+            entity.Description = request.Description;
+            entity.SortOrder = request.SortOrder;
+            entity.ManagerUserId = request.ManagerUserId;
+        }).ConfigureAwait(false);
         return result != null;
     }
 
@@ -249,21 +239,14 @@ public class OrganizationService : IOrganizationService
             throw new KeyNotFoundException(OrganizationErrorMessages.OrganizationNotFound);
         }
 
-        var childFilter = _organizationFactory.CreateFilterBuilder()
-            .Equal(o => o.ParentId, id)
-            .Build();
-        var childCount = await _organizationFactory.CountAsync(childFilter).ConfigureAwait(false);
+        var childCount = await _organizationFactory.CountAsync(o => o.ParentId == id).ConfigureAwait(false);
         if (childCount > 0)
         {
             throw new InvalidOperationException(OrganizationErrorMessages.CannotDeleteWithChildren);
         }
 
-        var deleteFilter = _organizationFactory.CreateFilterBuilder()
-            .Equal(o => o.Id, id)
-            .Build();
-
-        var deleted = await _organizationFactory.FindOneAndSoftDeleteAsync(deleteFilter).ConfigureAwait(false);
-        return deleted != null;
+        var deleted = await _organizationFactory.SoftDeleteAsync(id).ConfigureAwait(false);
+        return deleted;
     }
 
     /// <summary>
@@ -300,16 +283,11 @@ public class OrganizationService : IOrganizationService
         // 应用更新（逐条原子更新，工厂负责审计）
         foreach (var item in items)
         {
-            var filter = _organizationFactory.CreateFilterBuilder()
-                .Equal(o => o.Id, item.Id)
-                .Build();
-
-            var update = _organizationFactory.CreateUpdateBuilder()
-                .Set(o => o.ParentId, item.ParentId)
-                .Set(o => o.SortOrder, item.SortOrder)
-                .Build();
-
-            var updated = await _organizationFactory.FindOneAndUpdateAsync(filter, update).ConfigureAwait(false);
+            var updated = await _organizationFactory.UpdateAsync(item.Id, entity =>
+            {
+                entity.ParentId = item.ParentId;
+                entity.SortOrder = item.SortOrder;
+            }).ConfigureAwait(false);
             if (updated == null)
                 throw new KeyNotFoundException(OrganizationErrorMessages.OrganizationNotFound);
         }
@@ -326,23 +304,16 @@ public class OrganizationService : IOrganizationService
         var allUnits = await _organizationFactory.FindAsync().ConfigureAwait(false);
         var targetIds = CollectWithDescendants(organizationUnitId, allUnits);
 
-        var filter = _userOrgFactory.CreateFilterBuilder()
-            .In(u => u.OrganizationUnitId, targetIds.ToList())
-            .Build();
-        var mappings = await _userOrgFactory.FindAsync(filter).ConfigureAwait(false);
+        var mappings = await _userOrgFactory.FindAsync(
+            filter: u => targetIds.Contains(u.OrganizationUnitId)
+        ).ConfigureAwait(false);
         var userIds = mappings.Select(m => m.UserId).Distinct().ToList();
 
-        if (userIds.Count == 0) return new List<OrganizationMemberItem>();
+        if (userIds.Count == 0) return [];
 
-        var usersFilter = _userFactory.CreateFilterBuilder()
-            .In(u => u.Id, userIds)
-            .Build();
-        var projection = _userFactory.CreateProjectionBuilder()
-            .Include(u => u.Id)
-            .Include(u => u.Name)
-            .Include(u => u.Email)
-            .Build();
-        var users = await _userFactory.FindAsync(usersFilter, projection: projection).ConfigureAwait(false);
+        var users = await _userFactory.FindAsync(
+            filter: u => userIds.Contains(u.Id)
+        ).ConfigureAwait(false);
         var userMap = users.ToDictionary(u => u.Id, u => u);
         var unitNameMap = allUnits.ToDictionary(u => u.Id, u => u.Name);
 
@@ -379,18 +350,18 @@ public class OrganizationService : IOrganizationService
         var targetUserId = user.Id;
 
         // 查找是否已有映射
-        var findFilter = _userOrgFactory.CreateFilterBuilder()
-            .Equal(m => m.UserId, targetUserId)
-            .Equal(m => m.OrganizationUnitId, request.OrganizationUnitId)
-            .Build();
-        var existing = await _userOrgFactory.FindAsync(findFilter, limit: 1).ConfigureAwait(false);
+        var existing = await _userOrgFactory.FindAsync(
+            filter: m => m.UserId == targetUserId && m.OrganizationUnitId == request.OrganizationUnitId,
+            limit: 1
+        ).ConfigureAwait(false);
 
-        if (existing.Any())
+        if (existing.Count > 0)
         {
-            var update = _userOrgFactory.CreateUpdateBuilder()
-                .Set(m => m.IsPrimary, request.IsPrimary ?? existing.First().IsPrimary)
-                .Build();
-            await _userOrgFactory.FindOneAndUpdateAsync(findFilter, update).ConfigureAwait(false);
+            var existingMapping = existing.First();
+            await _userOrgFactory.UpdateAsync(existingMapping.Id!, entity =>
+            {
+                entity.IsPrimary = request.IsPrimary ?? existingMapping.IsPrimary;
+            }).ConfigureAwait(false);
             return true;
         }
         else
@@ -424,30 +395,29 @@ public class OrganizationService : IOrganizationService
         var user = await FindUserByIdOrUsernameAsync(request.UserId).ConfigureAwait(false);
         if (user == null) throw new KeyNotFoundException(ErrorMessages.UserNotFound);
 
-        var filter = _userOrgFactory.CreateFilterBuilder()
-            .Equal(m => m.UserId, user.Id)
-            .Equal(m => m.OrganizationUnitId, request.OrganizationUnitId)
-            .Build();
+        var mapping = await _userOrgFactory.FindAsync(
+            filter: m => m.UserId == user.Id && m.OrganizationUnitId == request.OrganizationUnitId,
+            limit: 1
+        ).ConfigureAwait(false);
 
-        var deleted = await _userOrgFactory.FindOneAndSoftDeleteAsync(filter).ConfigureAwait(false);
-        return deleted != null;
+        if (mapping.Count == 0) return false;
+
+        var deleted = await _userOrgFactory.SoftDeleteAsync(mapping.First().Id!).ConfigureAwait(false);
+        return deleted;
     }
 
     /// <summary>
-    /// 兼容以用户ID或用户名查询用户，避免非 ObjectId 输入导致格式异常
+    /// 兼容以用户ID或用户名查询用户
     /// </summary>
     private async Task<AppUser?> FindUserByIdOrUsernameAsync(string userIdOrName)
     {
-        if (ObjectId.TryParse(userIdOrName, out _))
-        {
-            var byId = await _userFactory.GetByIdAsync(userIdOrName).ConfigureAwait(false);
-            if (byId != null) return byId;
-        }
+        var byId = await _userFactory.GetByIdAsync(userIdOrName).ConfigureAwait(false);
+        if (byId != null) return byId;
 
-        var usernameFilter = _userFactory.CreateFilterBuilder()
-            .Equal(u => u.Username, userIdOrName)
-            .Build();
-        var byUsername = await _userFactory.FindAsync(usernameFilter, limit: 1).ConfigureAwait(false);
+        var byUsername = await _userFactory.FindAsync(
+            filter: u => u.Username == userIdOrName,
+            limit: 1
+        ).ConfigureAwait(false);
         return byUsername.FirstOrDefault();
     }
 
@@ -570,23 +540,22 @@ public class OrganizationService : IOrganizationService
 
     private async Task EnsureUniqueAsync(string name, string? code, string? parentId, string? excludeId = null)
     {
-        var nameFilter = _organizationFactory.CreateFilterBuilder()
-            .Equal(o => o.Name, name)
-            .Equal(o => o.ParentId, parentId)
-            .Build();
-        var existingByName = await _organizationFactory.FindAsync(nameFilter, limit: 1).ConfigureAwait(false);
-        if (existingByName.Any() && existingByName.First().Id != excludeId)
+        var existingByName = await _organizationFactory.FindAsync(
+            filter: o => o.Name == name && o.ParentId == parentId,
+            limit: 1
+        ).ConfigureAwait(false);
+        if (existingByName.Count > 0 && existingByName.First().Id != excludeId)
         {
             throw new InvalidOperationException(OrganizationErrorMessages.OrganizationNameExists);
         }
 
         if (!string.IsNullOrEmpty(code))
         {
-            var codeFilter = _organizationFactory.CreateFilterBuilder()
-                .Equal(o => o.Code, code)
-                .Build();
-            var existingByCode = await _organizationFactory.FindAsync(codeFilter, limit: 1).ConfigureAwait(false);
-            if (existingByCode.Any() && existingByCode.First().Id != excludeId)
+            var existingByCode = await _organizationFactory.FindAsync(
+                filter: o => o.Code == code,
+                limit: 1
+            ).ConfigureAwait(false);
+            if (existingByCode.Count > 0 && existingByCode.First().Id != excludeId)
             {
                 throw new InvalidOperationException(OrganizationErrorMessages.OrganizationCodeExists);
             }

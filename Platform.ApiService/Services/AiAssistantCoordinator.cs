@@ -1,4 +1,4 @@
-using MongoDB.Driver;
+using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Constants;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
@@ -21,8 +21,8 @@ public interface IAiAssistantCoordinator
 /// </summary>
 public class AiAssistantCoordinator : IAiAssistantCoordinator
 {
-    private readonly IDatabaseOperationFactory<AppUser> _userFactory;
-    private readonly IDatabaseOperationFactory<ChatSession> _sessionFactory;
+    private readonly IDataFactory<AppUser> _userFactory;
+    private readonly IDataFactory<ChatSession> _sessionFactory;
     private readonly ILogger<AiAssistantCoordinator> _logger;
 
     /// <summary>
@@ -32,8 +32,8 @@ public class AiAssistantCoordinator : IAiAssistantCoordinator
     /// <param name="sessionFactory">会话数据操作工厂</param>
     /// <param name="logger">日志记录器</param>
     public AiAssistantCoordinator(
-        IDatabaseOperationFactory<AppUser> userFactory,
-        IDatabaseOperationFactory<ChatSession> sessionFactory,
+        IDataFactory<AppUser> userFactory,
+        IDataFactory<ChatSession> sessionFactory,
         ILogger<AiAssistantCoordinator> logger)
     {
         _userFactory = userFactory;
@@ -64,13 +64,12 @@ public class AiAssistantCoordinator : IAiAssistantCoordinator
     /// <param name="companyId">企业标识</param>
     private async Task<ChatSession> EnsureAssistantSessionAsync(AppUser user, string companyId)
     {
-        var filter = Builders<ChatSession>.Filter.And(
-            Builders<ChatSession>.Filter.Eq(session => session.CompanyId, companyId),
-            Builders<ChatSession>.Filter.Size(session => session.Participants, 2),
-            Builders<ChatSession>.Filter.All(session => session.Participants, new[] { user.Id, AiAssistantConstants.AssistantUserId })
-        );
-
-        var existing = await _sessionFactory.FindAsync(filter, limit: 1);
+        var existing = await _sessionFactory.FindAsync(session =>
+            session.CompanyId == companyId &&
+            session.Participants.Count == 2 &&
+            session.Participants.Contains(user.Id) &&
+            session.Participants.Contains(AiAssistantConstants.AssistantUserId),
+            limit: 1);
         if (existing.Count > 0)
         {
             return existing[0];

@@ -2,8 +2,8 @@ using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
+using System.Linq.Expressions;
 using System.Text.Json;
-using MongoDB.Driver;
 
 namespace Platform.ApiService.Services;
 
@@ -12,7 +12,7 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class RuleService : IRuleService
 {
-    private readonly IDatabaseOperationFactory<RuleListItem> _ruleFactory;
+    private readonly IDataFactory<RuleListItem> _ruleFactory;
     private readonly ITenantContext _tenantContext;
 
     /// <summary>
@@ -21,13 +21,13 @@ public class RuleService : IRuleService
     /// <param name="ruleFactory">规则数据操作工厂</param>
     /// <param name="tenantContext">租户上下文</param>
     public RuleService(
-        IDatabaseOperationFactory<RuleListItem> ruleFactory,
+        IDataFactory<RuleListItem> ruleFactory,
         ITenantContext tenantContext)
     {
         _ruleFactory = ruleFactory;
         _tenantContext = tenantContext;
     }
-    
+
     /// <summary>
     /// 获取当前用户的企业ID（从数据库获取，不使用 JWT token）
     /// </summary>
@@ -40,7 +40,7 @@ public class RuleService : IRuleService
         }
         return companyId;
     }
- 
+
 
     /// <summary>
     /// 获取规则列表
@@ -48,27 +48,25 @@ public class RuleService : IRuleService
     /// </summary>
     public async Task<RuleListResponse> GetRulesAsync(RuleQueryParams queryParams)
     {
-        var filterBuilder = _ruleFactory.CreateFilterBuilder();
+        Expression<Func<RuleListItem, bool>> filter = r => true;
 
         // 按名称筛选
         if (!string.IsNullOrEmpty(queryParams.Name))
         {
-#pragma warning disable CS8603 // FilterBuilder.Regex 总是返回 this，不会返回 null
-            filterBuilder = filterBuilder.Regex(r => r.Name, queryParams.Name, "i");
-#pragma warning restore CS8603
+            var nameLower = queryParams.Name.ToLower();
+            filter = r => r.Name.ToLower().Contains(nameLower);
         }
-
-        var filter = filterBuilder.Build();
 
         // ✅ 数据工厂会自动添加企业过滤（因为 RuleListItem 实现了 IMultiTenant）
         // 获取总数
         var total = await _ruleFactory.CountAsync(filter);
 
         // 分页
-        var skip = (queryParams.Current - 1) * queryParams.PageSize;
-        var sortBuilder = _ruleFactory.CreateSortBuilder();
-        sortBuilder.Descending(r => r.UpdatedAt);
-        var (rules, _) = await _ruleFactory.FindPagedAsync(filter, sortBuilder.Build(), skip, queryParams.PageSize);
+        var (rules, _) = await _ruleFactory.FindPagedAsync(
+            filter,
+            query => query.OrderByDescending(r => r.UpdatedAt),
+            queryParams.Current,
+            queryParams.PageSize);
 
         // 排序处理
         if (!string.IsNullOrEmpty(queryParams.Sorter))
@@ -139,54 +137,43 @@ public class RuleService : IRuleService
     /// </summary>
     public async Task<RuleListItem?> UpdateRuleAsync(string id, UpdateRuleRequest request)
     {
-        var filter = _ruleFactory.CreateFilterBuilder()
-            .Equal(r => r.Id, id)
-            .Build();
-
-        var updateBuilder = _ruleFactory.CreateUpdateBuilder();
-        
-        if (!string.IsNullOrEmpty(request.Name))
-            updateBuilder.Set(r => r.Name, request.Name);
-        
-        if (!string.IsNullOrEmpty(request.Desc))
-            updateBuilder.Set(r => r.Desc, request.Desc);
-        
-        if (!string.IsNullOrEmpty(request.Owner))
-            updateBuilder.Set(r => r.Owner, request.Owner);
-        
-        if (!string.IsNullOrEmpty(request.Href))
-            updateBuilder.Set(r => r.Href, request.Href);
-        
-        if (!string.IsNullOrEmpty(request.Avatar))
-            updateBuilder.Set(r => r.Avatar, request.Avatar);
-        
-        if (request.CallNo.HasValue)
-            updateBuilder.Set(r => r.CallNo, request.CallNo.Value);
-        
-        if (request.Status.HasValue)
-            updateBuilder.Set(r => r.Status, request.Status.Value);
-        
-        if (request.Progress.HasValue)
-            updateBuilder.Set(r => r.Progress, request.Progress.Value);
-        
-        if (request.Disabled.HasValue)
-            updateBuilder.Set(r => r.Disabled, request.Disabled.Value);
-        
-        var update = updateBuilder.Build();
-
-        var options = new FindOneAndUpdateOptions<RuleListItem>
+        var updatedRule = await _ruleFactory.UpdateAsync(id, r =>
         {
-            ReturnDocument = ReturnDocument.After,
-            IsUpsert = false
-        };
+            if (!string.IsNullOrEmpty(request.Name))
+                r.Name = request.Name;
 
-        var updatedRule = await _ruleFactory.FindOneAndUpdateAsync(filter, update, options);
-        
+            if (!string.IsNullOrEmpty(request.Desc))
+                r.Desc = request.Desc;
+
+            if (!string.IsNullOrEmpty(request.Owner))
+                r.Owner = request.Owner;
+
+            if (!string.IsNullOrEmpty(request.Href))
+                r.Href = request.Href;
+
+            if (!string.IsNullOrEmpty(request.Avatar))
+                r.Avatar = request.Avatar;
+
+            if (request.CallNo.HasValue)
+                r.CallNo = request.CallNo.Value;
+
+            if (request.Status.HasValue)
+                r.Status = request.Status.Value;
+
+            if (request.Progress.HasValue)
+                r.Progress = request.Progress.Value;
+
+            if (request.Disabled.HasValue)
+                r.Disabled = request.Disabled.Value;
+
+            r.UpdatedAt = DateTime.UtcNow;
+        });
+
         if (updatedRule == null)
         {
             throw new KeyNotFoundException($"规则 {id} 不存在");
         }
-        
+
         return await GetRuleByIdAsync(id);
     }
 
@@ -197,12 +184,7 @@ public class RuleService : IRuleService
     /// </summary>
     public async Task<bool> DeleteRuleAsync(string id)
     {
-        var filter = _ruleFactory.CreateFilterBuilder()
-            .Equal(r => r.Id, id)
-            .Build();
-        
-        // ✅ 数据工厂会自动添加企业过滤（因为 RuleListItem 实现了 IMultiTenant）
-        var result = await _ruleFactory.FindOneAndSoftDeleteAsync(filter);
+        var result = await _ruleFactory.SoftDeleteAsync(id);
         return result != null;
     }
 
@@ -212,20 +194,12 @@ public class RuleService : IRuleService
     /// </summary>
     public async Task<bool> DeleteRulesAsync(List<int> keys)
     {
-        var filter = _ruleFactory.CreateFilterBuilder()
-            .In(r => r.Key, keys)
-            .Build();
-        
-        // ✅ 数据工厂会自动添加企业过滤（因为 RuleListItem 实现了 IMultiTenant）
-        var rules = await _ruleFactory.FindAsync(filter);
-        var ruleIds = rules.Select(r => r.Id!).ToList();
-        
-        if (ruleIds.Any())
+        if (keys.Any())
         {
-            await _ruleFactory.SoftDeleteManyAsync(ruleIds);
+            await _ruleFactory.SoftDeleteManyAsync(r => keys.Contains(r.Key));
             return true;
         }
-        
+
         return false;
     }
 
@@ -235,11 +209,11 @@ public class RuleService : IRuleService
     /// </summary>
     private async Task<int> GetNextKeyAsync()
     {
-        var sortBuilder = _ruleFactory.CreateSortBuilder()
-            .Descending(r => r.Key);
-        
-        // ✅ 数据工厂会自动添加企业过滤（因为 RuleListItem 实现了 IMultiTenant）
-        var rules = await _ruleFactory.FindAsync(sort: sortBuilder.Build(), limit: 1);
+        var rules = await _ruleFactory.FindAsync(
+            r => true,
+            query => query.OrderByDescending(r => r.Key),
+            1);
+
         var lastRule = rules.FirstOrDefault();
 
         return lastRule?.Key + 1 ?? 1;
@@ -252,7 +226,7 @@ public class RuleService : IRuleService
             "https://gw.alipayobjects.com/zos/rmsportal/eeHMaZBwmTvLdIwMfBpg.png",
             "https://gw.alipayobjects.com/zos/rmsportal/udxAbMEhpwthVVcjLXik.png"
         };
-        
+
         return avatars[Random.Shared.Next(avatars.Length)];
     }
 

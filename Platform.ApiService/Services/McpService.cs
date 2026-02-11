@@ -10,12 +10,12 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class McpService : IMcpService
 {
-    private readonly IDatabaseOperationFactory<AppUser> _userFactory;
-    private readonly IDatabaseOperationFactory<ChatSession> _sessionFactory;
-    private readonly IDatabaseOperationFactory<ChatMessage> _messageFactory;
-    private readonly IDatabaseOperationFactory<Company> _companyFactory;
-    private readonly IDatabaseOperationFactory<Role> _roleFactory;
-    private readonly IDatabaseOperationFactory<RuleListItem> _ruleFactory;
+    private readonly IDataFactory<AppUser> _userFactory;
+    private readonly IDataFactory<ChatSession> _sessionFactory;
+    private readonly IDataFactory<ChatMessage> _messageFactory;
+    private readonly IDataFactory<Company> _companyFactory;
+    private readonly IDataFactory<Role> _roleFactory;
+    private readonly IDataFactory<RuleListItem> _ruleFactory;
     private readonly IUserService _userService;
     private readonly IRoleService _roleService;
     private readonly ICompanyService _companyService;
@@ -68,12 +68,12 @@ public class McpService : IMcpService
     /// <param name="passwordBookService">密码本服务</param>
     /// <param name="logger">日志记录器</param>
     public McpService(
-        IDatabaseOperationFactory<AppUser> userFactory,
-        IDatabaseOperationFactory<ChatSession> sessionFactory,
-        IDatabaseOperationFactory<ChatMessage> messageFactory,
-        IDatabaseOperationFactory<Company> companyFactory,
-        IDatabaseOperationFactory<Role> roleFactory,
-        IDatabaseOperationFactory<RuleListItem> ruleFactory,
+        IDataFactory<AppUser> userFactory,
+        IDataFactory<ChatSession> sessionFactory,
+        IDataFactory<ChatMessage> messageFactory,
+        IDataFactory<Company> companyFactory,
+        IDataFactory<Role> roleFactory,
+        IDataFactory<RuleListItem> ruleFactory,
         IUserService userService,
         IRoleService roleService,
         ICompanyService companyService,
@@ -1462,10 +1462,9 @@ public class McpService : IMcpService
         };
 
         // 添加当前用户的会话资源
-        var filter = _sessionFactory.CreateFilterBuilder()
-            .Custom(MongoDB.Driver.Builders<ChatSession>.Filter.AnyEq(s => s.Participants, currentUserId))
-            .Build();
-        var sessions = await _sessionFactory.FindAsync(filter, limit: 10);
+        var sessions = await _sessionFactory.FindAsync(
+            s => s.Participants != null && s.Participants.Contains(currentUserId),
+            limit: 10);
 
         foreach (var session in sessions)
         {
@@ -1532,13 +1531,11 @@ public class McpService : IMcpService
                 var currentUser = await _userFactory.GetByIdAsync(currentUserId);
                 if (currentUser != null && !string.IsNullOrEmpty(currentUser.CurrentCompanyId))
                 {
-                    var filter = _userFactory.CreateFilterBuilder()
-                        .Equal(u => u.CurrentCompanyId, currentUser.CurrentCompanyId)
-                        .Build();
-                    var sort = _userFactory.CreateSortBuilder()
-                        .Descending(u => u.CreatedAt)
-                        .Build();
-                    var users = await _userFactory.FindAsync(filter, sort, limit: 100);
+                    var companyId = currentUser.CurrentCompanyId;
+                    var users = await _userFactory.FindAsync(
+                        u => u.CurrentCompanyId == companyId,
+                        q => q.OrderByDescending(u => u.CreatedAt),
+                        limit: 100);
                     contents.Add(new McpContent
                     {
                         Type = "text",
@@ -1554,13 +1551,10 @@ public class McpService : IMcpService
             }
             else if (uri == "sessions://list")
             {
-                var filter = _sessionFactory.CreateFilterBuilder()
-                    .Custom(MongoDB.Driver.Builders<ChatSession>.Filter.AnyEq(s => s.Participants, currentUserId))
-                    .Build();
-                var sort = _sessionFactory.CreateSortBuilder()
-                    .Descending(s => s.UpdatedAt)
-                    .Build();
-                var sessions = await _sessionFactory.FindAsync(filter, sort, limit: 50);
+                var sessions = await _sessionFactory.FindAsync(
+                    s => s.Participants != null && s.Participants.Contains(currentUserId),
+                    q => q.OrderByDescending(s => s.UpdatedAt),
+                    limit: 50);
                 contents.Add(new McpContent
                 {
                     Type = "text",
@@ -1743,11 +1737,10 @@ public class McpService : IMcpService
             var currentUser = await _userFactory.GetByIdAsync(currentUserId);
             if (currentUser != null && !string.IsNullOrEmpty(currentUser.CurrentCompanyId))
             {
-                var filter = _userFactory.CreateFilterBuilder()
-                    .Equal(u => u.CurrentCompanyId, currentUser.CurrentCompanyId)
-                    .Equal(u => u.Username, username)
-                    .Build();
-                user = (await _userFactory.FindAsync(filter, limit: 1)).FirstOrDefault();
+                var companyId = currentUser.CurrentCompanyId;
+                user = (await _userFactory.FindAsync(
+                    u => u.CurrentCompanyId == companyId && u.Username == username,
+                    limit: 1)).FirstOrDefault();
             }
         }
         else if (arguments.ContainsKey("email") && arguments["email"] is string email)
@@ -1756,11 +1749,10 @@ public class McpService : IMcpService
             var currentUser = await _userFactory.GetByIdAsync(currentUserId);
             if (currentUser != null && !string.IsNullOrEmpty(currentUser.CurrentCompanyId))
             {
-                var filter = _userFactory.CreateFilterBuilder()
-                    .Equal(u => u.CurrentCompanyId, currentUser.CurrentCompanyId)
-                    .Equal(u => u.Email, email)
-                    .Build();
-                user = (await _userFactory.FindAsync(filter, limit: 1)).FirstOrDefault();
+                var companyId = currentUser.CurrentCompanyId;
+                user = (await _userFactory.FindAsync(
+                    u => u.CurrentCompanyId == companyId && u.Email == email,
+                    limit: 1)).FirstOrDefault();
             }
         }
         else
@@ -1799,32 +1791,17 @@ public class McpService : IMcpService
         }
         var currentCompanyId = currentUser.CurrentCompanyId;
 
-        // 构建查询过滤器
-        var filterBuilder = _userFactory.CreateFilterBuilder()
-            .Equal(u => u.CurrentCompanyId, currentCompanyId);
-
-        if (!string.IsNullOrWhiteSpace(keyword))
-        {
-            filterBuilder = filterBuilder.Custom(
-                MongoDB.Driver.Builders<AppUser>.Filter.Or(
-                    MongoDB.Driver.Builders<AppUser>.Filter.Regex(u => u.Username, new MongoDB.Bson.BsonRegularExpression(keyword, "i")),
-                    MongoDB.Driver.Builders<AppUser>.Filter.Regex(u => u.Email, new MongoDB.Bson.BsonRegularExpression(keyword, "i")),
-                    MongoDB.Driver.Builders<AppUser>.Filter.Regex(u => u.Name, new MongoDB.Bson.BsonRegularExpression(keyword, "i"))
-                ));
-        }
-
-        if (!string.IsNullOrEmpty(status))
-        {
-            var isActive = status.ToLowerInvariant() == "active";
-            filterBuilder = filterBuilder.Equal(u => u.IsActive, isActive);
-        }
-
-        var filter = filterBuilder.Build();
-        var sort = _userFactory.CreateSortBuilder()
-            .Descending(u => u.CreatedAt)
-            .Build();
-
-        var (users, total) = await _userFactory.FindPagedAsync(filter, sort, page, pageSize);
+        // 构建并执行分页查询
+        var (users, total) = await _userFactory.FindPagedAsync(
+            u => u.CurrentCompanyId == currentCompanyId &&
+                 (string.IsNullOrEmpty(keyword) ||
+                  (u.Username != null && u.Username.ToLower().Contains(keyword.ToLower())) ||
+                  (u.Email != null && u.Email.ToLower().Contains(keyword.ToLower())) ||
+                  (u.Name != null && u.Name.ToLower().Contains(keyword.ToLower()))) &&
+                 (string.IsNullOrEmpty(status) || u.IsActive == (status.ToLowerInvariant() == "active")),
+            q => q.OrderByDescending(u => u.CreatedAt),
+            page,
+            pageSize);
 
         // 直接使用查询结果，已经完成过滤和分页
         var items = users.Select(u => new
@@ -1850,21 +1827,13 @@ public class McpService : IMcpService
         var keyword = arguments.ContainsKey("keyword") ? arguments["keyword"]?.ToString() : "";
         var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
 
-        var filterBuilder = _sessionFactory.CreateFilterBuilder()
-            .Custom(MongoDB.Driver.Builders<ChatSession>.Filter.AnyEq(s => s.Participants, currentUserId));
-
-        if (!string.IsNullOrWhiteSpace(keyword))
-        {
-            filterBuilder = filterBuilder.Custom(
-                MongoDB.Driver.Builders<ChatSession>.Filter.Regex("topicTags", new MongoDB.Bson.BsonRegularExpression(keyword, "i")));
-        }
-
-        var filter = filterBuilder.Build();
-        var sort = _sessionFactory.CreateSortBuilder()
-            .Descending(s => s.UpdatedAt)
-            .Build();
-
-        var (sessions, total) = await _sessionFactory.FindPagedAsync(filter, sort, page, pageSize);
+        var (sessions, total) = await _sessionFactory.FindPagedAsync(
+            s => s.Participants != null && s.Participants.Contains(currentUserId) &&
+                 (string.IsNullOrEmpty(keyword) ||
+                  (s.TopicTags != null && s.TopicTags.Any(t => t.ToLower().Contains(keyword.ToLower())))),
+            q => q.OrderByDescending(s => s.UpdatedAt),
+            page,
+            pageSize);
 
         return new
         {
@@ -1892,14 +1861,11 @@ public class McpService : IMcpService
 
         var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
 
-        var filter = _messageFactory.CreateFilterBuilder()
-            .Equal(m => m.SessionId, sessionId)
-            .Build();
-        var sort = _messageFactory.CreateSortBuilder()
-            .Descending(m => m.CreatedAt)
-            .Build();
-
-        var (messages, total) = await _messageFactory.FindPagedAsync(filter, sort, page, pageSize);
+        var (messages, total) = await _messageFactory.FindPagedAsync(
+            m => m.SessionId == sessionId,
+            q => q.OrderByDescending(m => m.CreatedAt),
+            page,
+            pageSize);
 
         return new
         {
@@ -2713,11 +2679,7 @@ public class McpService : IMcpService
     {
         try
         {
-            var filter = _ruleFactory.CreateFilterBuilder()
-                .Custom(MongoDB.Driver.Builders<RuleListItem>.Filter.Eq(r => r.IsDeleted, false))
-                .Build();
-
-            var rules = await _ruleFactory.FindAsync(filter, limit: 1000);
+            var rules = await _ruleFactory.FindAsync(r => true, limit: 1000);
 
             var mcpTools = new List<McpTool>();
 
@@ -2756,11 +2718,7 @@ public class McpService : IMcpService
     {
         try
         {
-            var filter = _ruleFactory.CreateFilterBuilder()
-                .Custom(MongoDB.Driver.Builders<RuleListItem>.Filter.Eq(r => r.IsDeleted, false))
-                .Build();
-
-            var rules = await _ruleFactory.FindAsync(filter, limit: 1000);
+            var rules = await _ruleFactory.FindAsync(r => true, limit: 1000);
 
             var mcpResources = new List<McpResource>();
 
@@ -2796,11 +2754,7 @@ public class McpService : IMcpService
     {
         try
         {
-            var filter = _ruleFactory.CreateFilterBuilder()
-                .Custom(MongoDB.Driver.Builders<RuleListItem>.Filter.Eq(r => r.IsDeleted, false))
-                .Build();
-
-            var rules = await _ruleFactory.FindAsync(filter, limit: 1000);
+            var rules = await _ruleFactory.FindAsync(r => true, limit: 1000);
 
             var mcpPrompts = new List<McpPrompt>();
 

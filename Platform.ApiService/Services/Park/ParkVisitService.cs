@@ -1,5 +1,5 @@
+using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
-using MongoDB.Driver;
 using Platform.ServiceDefaults.Services;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
@@ -14,11 +14,11 @@ namespace Platform.ApiService.Services;
 public class ParkVisitService : IParkVisitService
 {
     private readonly ILogger<ParkVisitService> _logger;
-    private readonly IDatabaseOperationFactory<VisitTask> _visitTaskFactory;
-    private readonly IDatabaseOperationFactory<VisitAssessment> _assessmentFactory;
-    private readonly IDatabaseOperationFactory<VisitQuestion> _questionFactory;
-    private readonly IDatabaseOperationFactory<VisitQuestionnaire> _questionnaireFactory;
-    private readonly IDatabaseOperationFactory<ParkTenant> _tenantFactory;
+    private readonly IDataFactory<VisitTask> _visitTaskFactory;
+    private readonly IDataFactory<VisitAssessment> _assessmentFactory;
+    private readonly IDataFactory<VisitQuestion> _questionFactory;
+    private readonly IDataFactory<VisitQuestionnaire> _questionnaireFactory;
+    private readonly IDataFactory<ParkTenant> _tenantFactory;
     private readonly OpenAIClient _openAiClient;
     private readonly AiCompletionOptions _aiOptions;
 
@@ -27,11 +27,11 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public ParkVisitService(
         ILogger<ParkVisitService> logger,
-        IDatabaseOperationFactory<VisitTask> visitTaskFactory,
-        IDatabaseOperationFactory<VisitAssessment> assessmentFactory,
-        IDatabaseOperationFactory<VisitQuestion> questionFactory,
-        IDatabaseOperationFactory<VisitQuestionnaire> questionnaireFactory,
-        IDatabaseOperationFactory<ParkTenant> tenantFactory,
+        IDataFactory<VisitTask> visitTaskFactory,
+        IDataFactory<VisitAssessment> assessmentFactory,
+        IDataFactory<VisitQuestion> questionFactory,
+        IDataFactory<VisitQuestionnaire> questionnaireFactory,
+        IDataFactory<ParkTenant> tenantFactory,
         OpenAIClient openAiClient,
         IOptions<AiCompletionOptions> aiOptions)
     {
@@ -52,33 +52,21 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<VisitTaskListResponse> GetVisitTasksAsync(VisitTaskListRequest request)
     {
-        var filterBuilder = Builders<VisitTask>.Filter;
-        var filter = filterBuilder.Empty;
+        var search = request.Search?.ToLower();
+        var status = request.Status;
 
-        if (!string.IsNullOrEmpty(request.Search))
-        {
-            var search = request.Search.ToLower();
-            filter &= filterBuilder.Or(
-                filterBuilder.Regex(t => t.ManagerName, new MongoDB.Bson.BsonRegularExpression(search, "i")),
-                filterBuilder.Regex(t => t.Phone, new MongoDB.Bson.BsonRegularExpression(search, "i"))
-            );
-        }
-
-        if (!string.IsNullOrEmpty(request.Status))
-        {
-            filter &= filterBuilder.Eq(t => t.Status, request.Status);
-        }
-
-        var sortBuilder = _visitTaskFactory.CreateSortBuilder();
-        var sort = sortBuilder.Descending(t => t.CreatedAt).Build();
-
-        var (items, total) = await _visitTaskFactory.FindPagedAsync(filter, sort, request.Page, request.PageSize);
+        var (items, total) = await _visitTaskFactory.FindPagedAsync(
+            t => (string.IsNullOrEmpty(search) || (t.ManagerName != null && t.ManagerName.ToLower().Contains(search)) || (t.Phone != null && t.Phone.ToLower().Contains(search))) &&
+                 (string.IsNullOrEmpty(status) || t.Status == status),
+            q => q.OrderByDescending(t => t.CreatedAt),
+            request.Page,
+            request.PageSize);
 
         var tasks = new List<VisitTaskDto>();
         foreach (var item in items)
         {
             var tenant = string.IsNullOrEmpty(item.TenantId) ? null : await _tenantFactory.GetByIdAsync(item.TenantId);
-            var assessment = (await _assessmentFactory.FindAsync(Builders<VisitAssessment>.Filter.Eq(a => a.TaskId, item.Id), limit: 1)).FirstOrDefault();
+            var assessment = (await _assessmentFactory.FindAsync(a => a.TaskId == item.Id)).FirstOrDefault();
             tasks.Add(new VisitTaskDto
             {
                 Id = item.Id,
@@ -121,7 +109,7 @@ public class ParkVisitService : IParkVisitService
         if (item == null) return null;
 
         var tenant = string.IsNullOrEmpty(item.TenantId) ? null : await _tenantFactory.GetByIdAsync(item.TenantId);
-        var assessment = (await _assessmentFactory.FindAsync(Builders<VisitAssessment>.Filter.Eq(a => a.TaskId, item.Id), limit: 1)).FirstOrDefault();
+        var assessment = (await _assessmentFactory.FindAsync(a => a.TaskId == item.Id)).FirstOrDefault();
         return new VisitTaskDto
         {
             Id = item.Id,
@@ -188,37 +176,35 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<VisitTaskDto?> UpdateVisitTaskAsync(string id, CreateVisitTaskRequest request)
     {
-        var task = await _visitTaskFactory.GetByIdAsync(id);
-        if (task == null) return null;
-
-        task.Title = request.Title;
-        task.ManagerName = request.ManagerName;
-        task.Phone = request.Phone;
-        task.VisitType = request.VisitType;
-        task.VisitMethod = request.VisitMethod;
-        task.Details = request.Details;
-        task.TenantId = request.TenantId;
-        task.TenantName = request.TenantName;
-        task.VisitLocation = request.VisitLocation;
-        task.VisitDate = request.VisitDate;
-        task.QuestionnaireId = request.QuestionnaireId;
-        task.Visitor = request.Visitor;
-        task.IntervieweeName = request.IntervieweeName;
-        task.IntervieweePosition = request.IntervieweePosition;
-        task.IntervieweePhone = request.IntervieweePhone;
-        task.Content = request.Content;
-        if (request.Photos != null) task.Photos = request.Photos;
-        if (request.Attachments != null) task.Attachments = request.Attachments;
-        task.Feedback = request.Feedback;
-
-        if (!string.IsNullOrEmpty(request.Status))
+        var updatedTask = await _visitTaskFactory.UpdateAsync(id, task =>
         {
-            task.Status = request.Status;
-        }
+            task.Title = request.Title;
+            task.ManagerName = request.ManagerName;
+            task.Phone = request.Phone;
+            task.VisitType = request.VisitType;
+            task.VisitMethod = request.VisitMethod;
+            task.Details = request.Details;
+            task.TenantId = request.TenantId;
+            task.TenantName = request.TenantName;
+            task.VisitLocation = request.VisitLocation;
+            task.VisitDate = request.VisitDate;
+            task.QuestionnaireId = request.QuestionnaireId;
+            task.Visitor = request.Visitor;
+            task.IntervieweeName = request.IntervieweeName;
+            task.IntervieweePosition = request.IntervieweePosition;
+            task.IntervieweePhone = request.IntervieweePhone;
+            task.Content = request.Content;
+            if (request.Photos != null) task.Photos = request.Photos;
+            if (request.Attachments != null) task.Attachments = request.Attachments;
+            task.Feedback = request.Feedback;
 
-        await _visitTaskFactory.FindOneAndReplaceAsync(_visitTaskFactory.CreateFilterBuilder().Equal(t => t.Id, id).Build(), task);
+            if (!string.IsNullOrEmpty(request.Status))
+            {
+                task.Status = request.Status;
+            }
+        });
 
-        return await GetVisitTaskByIdAsync(id);
+        return updatedTask != null ? await GetVisitTaskByIdAsync(id) : null;
     }
 
     /// <summary>
@@ -226,8 +212,7 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<bool> DeleteVisitTaskAsync(string id)
     {
-        var deleted = await _visitTaskFactory.FindOneAndSoftDeleteAsync(_visitTaskFactory.CreateFilterBuilder().Equal(t => t.Id, id).Build());
-        return deleted != null;
+        return await _visitTaskFactory.SoftDeleteAsync(id);
     }
 
 
@@ -241,23 +226,16 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<VisitAssessmentListResponse> GetVisitAssessmentsAsync(VisitAssessmentListRequest request)
     {
-        var filterBuilder = Builders<VisitAssessment>.Filter;
-        var filter = filterBuilder.Empty;
+        var search = request.Search?.ToLower();
 
-        if (!string.IsNullOrEmpty(request.Search))
-        {
-            var search = request.Search.ToLower();
-            filter &= filterBuilder.Or(
-                filterBuilder.Regex(a => a.VisitorName, new MongoDB.Bson.BsonRegularExpression(search, "i")),
-                filterBuilder.Regex(a => a.Phone, new MongoDB.Bson.BsonRegularExpression(search, "i")),
-                filterBuilder.Regex(a => a.TaskDescription, new MongoDB.Bson.BsonRegularExpression(search, "i"))
-            );
-        }
-
-        var sortBuilder = _assessmentFactory.CreateSortBuilder();
-        var sort = sortBuilder.Descending(a => a.CreatedAt).Build();
-
-        var (items, total) = await _assessmentFactory.FindPagedAsync(filter, sort, request.Page, request.PageSize);
+        var (items, total) = await _assessmentFactory.FindPagedAsync(
+            a => string.IsNullOrEmpty(search) ||
+                 (a.VisitorName != null && a.VisitorName.ToLower().Contains(search)) ||
+                 (a.Phone != null && a.Phone.ToLower().Contains(search)) ||
+                 (a.TaskDescription != null && a.TaskDescription.ToLower().Contains(search)),
+            q => q.OrderByDescending(a => a.CreatedAt),
+            request.Page,
+            request.PageSize);
 
         return new VisitAssessmentListResponse
         {
@@ -327,23 +305,15 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<VisitQuestionListResponse> GetVisitQuestionsAsync(VisitQuestionListRequest request)
     {
-        var filterBuilder = Builders<VisitQuestion>.Filter;
-        var filter = filterBuilder.Empty;
+        var search = request.Search?.ToLower();
+        var category = request.Category;
 
-        if (!string.IsNullOrEmpty(request.Search))
-        {
-            filter &= filterBuilder.Regex(q => q.Content, new MongoDB.Bson.BsonRegularExpression(request.Search, "i"));
-        }
-
-        if (!string.IsNullOrEmpty(request.Category))
-        {
-            filter &= filterBuilder.Eq(q => q.Category, request.Category);
-        }
-
-        var sortBuilder = _questionFactory.CreateSortBuilder();
-        var sort = sortBuilder.Descending(q => q.CreatedAt).Build();
-
-        var (items, total) = await _questionFactory.FindPagedAsync(filter, sort, request.Page, request.PageSize);
+        var (items, total) = await _questionFactory.FindPagedAsync(
+            q => (string.IsNullOrEmpty(search) || (q.Content != null && q.Content.ToLower().Contains(search))) &&
+                 (string.IsNullOrEmpty(category) || q.Category == category),
+            q => q.OrderByDescending(q => q.CreatedAt),
+            request.Page,
+            request.PageSize);
 
         return new VisitQuestionListResponse
         {
@@ -364,7 +334,7 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<List<VisitQuestionDto>> GetVisitQuestionsByCategoryAsync(string category)
     {
-        var items = await _questionFactory.FindAsync(Builders<VisitQuestion>.Filter.Eq(q => q.Category, category));
+        var items = await _questionFactory.FindAsync(q => q.Category == category);
         return items.Select(q => new VisitQuestionDto
         {
             Id = q.Id,
@@ -404,16 +374,15 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<VisitQuestionDto?> UpdateVisitQuestionAsync(string id, VisitQuestionDto request)
     {
-        var question = await _questionFactory.GetByIdAsync(id);
-        if (question == null) return null;
+        var updatedQuestion = await _questionFactory.UpdateAsync(id, question =>
+        {
+            question.Content = request.Content;
+            question.Category = request.Category;
+            question.Answer = request.Answer;
+            question.IsFrequentlyUsed = request.IsFrequentlyUsed;
+        });
 
-        question.Content = request.Content;
-        question.Category = request.Category;
-        question.Answer = request.Answer;
-        question.IsFrequentlyUsed = request.IsFrequentlyUsed;
-
-        await _questionFactory.FindOneAndReplaceAsync(_questionFactory.CreateFilterBuilder().Equal(q => q.Id, id).Build(), question);
-        return request;
+        return updatedQuestion != null ? request : null;
     }
 
     /// <summary>
@@ -421,8 +390,7 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<bool> DeleteVisitQuestionAsync(string id)
     {
-        var deleted = await _questionFactory.FindOneAndSoftDeleteAsync(_questionFactory.CreateFilterBuilder().Equal(q => q.Id, id).Build());
-        return deleted != null;
+        return await _questionFactory.SoftDeleteAsync(id);
     }
 
     /// <summary>
@@ -485,154 +453,38 @@ public class ParkVisitService : IParkVisitService
         });
         var endOfPeriod = endDate ?? now;
 
-        // 基础指标使用的 Filter
-        var periodFilter = _visitTaskFactory.CreateFilterBuilder()
-            .GreaterThanOrEqual(t => t.VisitDate, startOfPeriod)
-            .LessThanOrEqual(t => t.VisitDate, endOfPeriod)
-            .Build();
-
         // 1. 基础指标
-        var pendingFilter = _visitTaskFactory.CreateFilterBuilder()
-            .Equal(t => t.Status, "Pending")
-            .GreaterThanOrEqual(t => t.VisitDate, startOfPeriod)
-            .LessThanOrEqual(t => t.VisitDate, endOfPeriod)
-            .Build();
-        var pendingTasks = await _visitTaskFactory.CountAsync(pendingFilter);
+        var pendingTasks = await _visitTaskFactory.CountAsync(t => t.Status == "Pending" && t.VisitDate >= startOfPeriod && t.VisitDate <= endOfPeriod);
+        var completedTasksThisMonth = await _visitTaskFactory.CountAsync(t => t.Status == "Completed" && t.VisitDate >= startOfPeriod && t.VisitDate <= endOfPeriod);
+        var totalTasks = await _visitTaskFactory.CountAsync(t => t.VisitDate >= startOfPeriod && t.VisitDate <= endOfPeriod);
+        decimal completionRate = totalTasks > 0 ? (decimal)completedTasksThisMonth * 100 / totalTasks : 0;
 
-        var completedMonthFilter = _visitTaskFactory.CreateFilterBuilder()
-            .Equal(t => t.Status, "Completed")
-            .GreaterThanOrEqual(t => t.VisitDate, startOfPeriod)
-            .LessThanOrEqual(t => t.VisitDate, endOfPeriod)
-            .Build();
-        var completedTasksThisMonth = await _visitTaskFactory.CountAsync(completedMonthFilter);
+        var assessments = await _assessmentFactory.FindAsync(a => a.CreatedAt >= startOfPeriod && a.CreatedAt <= endOfPeriod);
+        var totalAssessments = assessments.Count;
+        var averageScore = totalAssessments > 0 ? assessments.Average(a => a.Score) : 0;
 
-        var totalTasks = await _visitTaskFactory.CountAsync(periodFilter);
-        var completedTasks = await _visitTaskFactory.CountAsync(completedMonthFilter);
-        decimal completionRate = totalTasks > 0 ? (decimal)completedTasks * 100 / totalTasks : 0;
+        // 2-4. 按类型、状态、企管员排行统计（从基础数据加载后再分组，因为 IDataFactory 暂不支持直接复杂的聚合）
+        var tasks = await _visitTaskFactory.FindAsync(t => t.VisitDate >= startOfPeriod && t.VisitDate <= endOfPeriod);
 
-        var assessmentPeriodFilter = _assessmentFactory.CreateFilterBuilder()
-            .GreaterThanOrEqual(a => a.CreatedAt, startOfPeriod)
-            .LessThanOrEqual(a => a.CreatedAt, endOfPeriod)
-            .Build();
+        var tasksByType = tasks.GroupBy(t => t.VisitType ?? "其他")
+                               .ToDictionary(g => g.Key, g => g.Count());
 
-        var totalAssessments = await _assessmentFactory.CountAsync(assessmentPeriodFilter);
-        var averageScore = 0m;
-        if (totalAssessments > 0)
-        {
-            var scorePipeline = PipelineDefinition<VisitAssessment, MongoDB.Bson.BsonDocument>.Create(new[]
-            {
-                new MongoDB.Bson.BsonDocument { { "$match", new MongoDB.Bson.BsonDocument("createdAt", new MongoDB.Bson.BsonDocument {
-                    { "$gte", startOfPeriod },
-                    { "$lte", endOfPeriod }
-                }) } },
-                new MongoDB.Bson.BsonDocument { { "$group", new MongoDB.Bson.BsonDocument {
-                    { "_id", 1 },
-                    { "average", new MongoDB.Bson.BsonDocument("$avg", "$score") }
-                } } }
-            });
-            var scoreResult = await _assessmentFactory.AggregateAsync(scorePipeline);
-            var avgValue = scoreResult.FirstOrDefault()?.GetValue("average", 0);
-            if (avgValue != null) averageScore = (decimal)avgValue.ToDouble();
-        }
+        var tasksByStatus = tasks.GroupBy(t => t.Status ?? "Unknown")
+                                 .ToDictionary(g => g.Key, g => g.Count());
 
-        // 2. 按类型统计
-        var tasksByType = new Dictionary<string, int>();
-        var typePipeline = PipelineDefinition<VisitTask, MongoDB.Bson.BsonDocument>.Create(new[]
-        {
-            new MongoDB.Bson.BsonDocument { { "$match", new MongoDB.Bson.BsonDocument("visitDate", new MongoDB.Bson.BsonDocument {
-                { "$gte", startOfPeriod },
-                { "$lte", endOfPeriod }
-            }) } },
-            new MongoDB.Bson.BsonDocument {
-                { "$group", new MongoDB.Bson.BsonDocument {
-                    { "_id", "$visitType" },
-                    { "count", new MongoDB.Bson.BsonDocument("$sum", 1) }
-                }}
-            }
-        });
-        var typeResults = await _visitTaskFactory.AggregateAsync(typePipeline);
-        foreach (var doc in typeResults)
-        {
-            var type = doc.GetValue("_id", "其他").AsString;
-            var count = doc.GetValue("count", 0).AsInt32;
-            tasksByType[type] = count;
-        }
-
-        // 3. 按状态统计
-        var tasksByStatus = new Dictionary<string, int>();
-        var statusPipeline = PipelineDefinition<VisitTask, MongoDB.Bson.BsonDocument>.Create(new[]
-        {
-            new MongoDB.Bson.BsonDocument { { "$match", new MongoDB.Bson.BsonDocument("visitDate", new MongoDB.Bson.BsonDocument {
-                { "$gte", startOfPeriod },
-                { "$lte", endOfPeriod }
-            }) } },
-            new MongoDB.Bson.BsonDocument {
-                { "$group", new MongoDB.Bson.BsonDocument {
-                    { "_id", "$status" },
-                    { "count", new MongoDB.Bson.BsonDocument("$sum", 1) }
-                }}
-            }
-        });
-        var statusResults = await _visitTaskFactory.AggregateAsync(statusPipeline);
-        foreach (var doc in statusResults)
-        {
-            var status = doc.GetValue("_id", "Unknown").AsString;
-            var count = doc.GetValue("count", 0).AsInt32;
-            tasksByStatus[status] = count;
-        }
-
-        // 4. 企管员走访排行
-        var managerRanking = new Dictionary<string, int>();
-        var managerRankingPipeline = PipelineDefinition<VisitTask, MongoDB.Bson.BsonDocument>.Create(new[]
-        {
-            new MongoDB.Bson.BsonDocument { { "$match", new MongoDB.Bson.BsonDocument("visitDate", new MongoDB.Bson.BsonDocument {
-                { "$gte", startOfPeriod },
-                { "$lte", endOfPeriod }
-            }) } },
-            new MongoDB.Bson.BsonDocument {
-                { "$group", new MongoDB.Bson.BsonDocument {
-                    { "_id", "$managerName" },
-                    { "count", new MongoDB.Bson.BsonDocument("$sum", 1) }
-                }}
-            },
-            new MongoDB.Bson.BsonDocument { { "$sort", new MongoDB.Bson.BsonDocument("count", -1) } },
-            new MongoDB.Bson.BsonDocument { { "$limit", 10 } }
-        });
-        var rankingResults = await _visitTaskFactory.AggregateAsync(managerRankingPipeline);
-        foreach (var doc in rankingResults)
-        {
-            var name = doc.GetValue("_id", "未知").AsString;
-            var count = doc.GetValue("count", 0).AsInt32;
-            managerRanking[name] = count;
-        }
+        var managerRanking = tasks.GroupBy(t => t.ManagerName ?? "未知")
+                                  .OrderByDescending(g => g.Count())
+                                  .Take(10)
+                                  .ToDictionary(g => g.Key, g => g.Count());
 
         // 5. 趋势分析 (最近6个月)
         var monthlyTrends = new Dictionary<string, int>();
         var sixMonthsAgo = new DateTime(now.Year, now.Month, 1).AddMonths(-5);
+        var trendTasks = await _visitTaskFactory.FindAsync(t => t.VisitDate != null && t.VisitDate >= sixMonthsAgo);
 
-        var trendPipeline = PipelineDefinition<VisitTask, MongoDB.Bson.BsonDocument>.Create(new[]
-        {
-            new MongoDB.Bson.BsonDocument { { "$match", new MongoDB.Bson.BsonDocument("visitDate", new MongoDB.Bson.BsonDocument("$gte", sixMonthsAgo)) } },
-            new MongoDB.Bson.BsonDocument {
-                { "$group", new MongoDB.Bson.BsonDocument {
-                    { "_id", new MongoDB.Bson.BsonDocument("$dateToString", new MongoDB.Bson.BsonDocument {
-                        { "format", "%Y-%m" },
-                        { "date", "$visitDate" }
-                    })},
-                    { "count", new MongoDB.Bson.BsonDocument("$sum", 1) }
-                }}
-            },
-            new MongoDB.Bson.BsonDocument { { "$sort", new MongoDB.Bson.BsonDocument("_id", 1) } }
-        });
-        var trendResults = await _visitTaskFactory.AggregateAsync(trendPipeline);
-        foreach (var doc in trendResults)
-        {
-            var month = doc.GetValue("_id", "").AsString;
-            if (!string.IsNullOrEmpty(month))
-            {
-                monthlyTrends[month] = doc.GetValue("count", 0).AsInt32;
-            }
-        }
+        monthlyTrends = trendTasks.GroupBy(t => t.VisitDate!.Value.ToString("yyyy-MM"))
+                                  .OrderBy(g => g.Key)
+                                  .ToDictionary(g => g.Key, g => g.Count());
 
         return new VisitStatisticsDto
         {
@@ -641,7 +493,7 @@ public class ParkVisitService : IParkVisitService
             ActiveManagers = managerRanking.Count,
             CompletionRate = Math.Round(completionRate, 1),
             TotalAssessments = (int)totalAssessments,
-            AverageScore = Math.Round(averageScore, 1),
+            AverageScore = Math.Round((decimal)averageScore, 1),
             TasksByType = tasksByType,
             TasksByStatus = tasksByStatus,
             ManagerRanking = managerRanking,

@@ -1,8 +1,5 @@
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization;
-using MongoDB.Driver;
 
 namespace Platform.ApiService.Services;
 
@@ -11,9 +8,9 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class StorageQuotaService : IStorageQuotaService
 {
-    private readonly IDatabaseOperationFactory<StorageQuota> _quotaFactory;
-    private readonly IDatabaseOperationFactory<FileItem> _fileItemFactory;
-    private readonly IDatabaseOperationFactory<AppUser> _userFactory;
+    private readonly IDataFactory<StorageQuota> _quotaFactory;
+    private readonly IDataFactory<FileItem> _fileItemFactory;
+    private readonly IDataFactory<AppUser> _userFactory;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<StorageQuotaService> _logger;
 
@@ -26,9 +23,9 @@ public class StorageQuotaService : IStorageQuotaService
     /// 初始化存储配额服务
     /// </summary>
     public StorageQuotaService(
-        IDatabaseOperationFactory<StorageQuota> quotaFactory,
-        IDatabaseOperationFactory<FileItem> fileItemFactory,
-        IDatabaseOperationFactory<AppUser> userFactory,
+        IDataFactory<StorageQuota> quotaFactory,
+        IDataFactory<FileItem> fileItemFactory,
+        IDataFactory<AppUser> userFactory,
         ITenantContext tenantContext,
         ILogger<StorageQuotaService> logger)
     {
@@ -52,14 +49,10 @@ public class StorageQuotaService : IStorageQuotaService
             ?? throw new InvalidOperationException("用户尚未分配存储配额，请联系管理员设置配额");
 
         // 实时查询用户的所有活跃文件，计算准确的文件数量和使用空间
-        var fileFilterBuilder = _fileItemFactory.CreateFilterBuilder();
-        var fileFilter = fileFilterBuilder
-            .Equal(f => f.CreatedBy, targetUserId)
-            .Equal(f => f.Type, FileItemType.File)
-            .Equal(f => f.Status, FileStatus.Active)
-            .Build();
-
-        var allFiles = await _fileItemFactory.FindAsync(fileFilter);
+        var allFiles = await _fileItemFactory.FindAsync(f =>
+            f.CreatedBy == targetUserId &&
+            f.Type == FileItemType.File &&
+            f.Status == FileStatus.Active);
 
         // 过滤掉 CreatedBy 为空的文件（确保统计准确）
         var userFiles = allFiles
@@ -100,27 +93,13 @@ public class StorageQuotaService : IStorageQuotaService
 
         var quota = await EnsureQuotaForSettingAsync(userId, totalQuota, warningThreshold, isEnabled);
 
-        var updateBuilder = _quotaFactory.CreateUpdateBuilder();
-        updateBuilder
-            .Set(q => q.TotalQuota, totalQuota)
-            .Set(q => q.LastCalculatedAt, DateTime.UtcNow);
-
-        if (warningThreshold.HasValue)
+        var updatedQuota = await _quotaFactory.UpdateAsync(quota.Id!, entity =>
         {
-            updateBuilder.Set(q => q.WarningThreshold, warningThreshold.Value);
-        }
-
-        if (isEnabled.HasValue)
-        {
-            updateBuilder.Set(q => q.IsEnabled, isEnabled.Value);
-        }
-
-        var update = updateBuilder.Build();
-
-        var filterBuilder = _quotaFactory.CreateFilterBuilder();
-        var updatedQuota = await _quotaFactory.FindOneAndUpdateAsync(
-            filterBuilder.Equal(q => q.Id, quota.Id).Build(),
-            update);
+            entity.TotalQuota = totalQuota;
+            entity.LastCalculatedAt = DateTime.UtcNow;
+            if (warningThreshold.HasValue) entity.WarningThreshold = warningThreshold.Value;
+            if (isEnabled.HasValue) entity.IsEnabled = isEnabled.Value;
+        });
 
         if (updatedQuota == null)
             throw new InvalidOperationException("更新配额失败");
@@ -147,16 +126,11 @@ public class StorageQuotaService : IStorageQuotaService
         // 计算新的使用量
         var newUsedSpace = Math.Max(0, quota.UsedSpace + sizeChange);
 
-        var updateBuilder = _quotaFactory.CreateUpdateBuilder();
-        var update = updateBuilder
-            .Set(q => q.UsedSpace, newUsedSpace)
-            .Set(q => q.LastCalculatedAt, DateTime.UtcNow)
-            .Build();
-
-        var filterBuilder = _quotaFactory.CreateFilterBuilder();
-        var updatedQuota = await _quotaFactory.FindOneAndUpdateAsync(
-            filterBuilder.Equal(q => q.Id, quota.Id).Build(),
-            update);
+        var updatedQuota = await _quotaFactory.UpdateAsync(quota.Id!, entity =>
+        {
+            entity.UsedSpace = newUsedSpace;
+            entity.LastCalculatedAt = DateTime.UtcNow;
+        });
 
         if (updatedQuota == null)
             throw new InvalidOperationException("更新存储使用量失败");
@@ -208,18 +182,10 @@ public class StorageQuotaService : IStorageQuotaService
             throw new InvalidOperationException("企业ID不能为空");
 
         // 获取企业所有用户的配额信息
-        var filterBuilder = _quotaFactory.CreateFilterBuilder();
-        var quotaFilter = filterBuilder.Build(); // 多租户过滤会自动应用
-
-        var quotas = await _quotaFactory.FindAsync(quotaFilter);
+        var quotas = await _quotaFactory.FindAsync();
 
         // 获取企业所有文件统计
-        var fileFilterBuilder = _fileItemFactory.CreateFilterBuilder();
-        var fileFilter = fileFilterBuilder
-            .Equal(f => f.Status, FileStatus.Active)
-            .Build();
-
-        var files = await _fileItemFactory.FindAsync(fileFilter);
+        var files = await _fileItemFactory.FindAsync(f => f.Status == FileStatus.Active);
 
         // 按文件类型统计
         var typeUsage = files
@@ -259,27 +225,14 @@ public class StorageQuotaService : IStorageQuotaService
             throw new ArgumentException("用户ID不能为空", nameof(userId));
 
         // 1. 获取用户所有活跃/回收站中的文件统计
-        var fileFilterBuilder = _fileItemFactory.CreateFilterBuilder();
-        var fileFilter = fileFilterBuilder
-            .Equal(f => f.CreatedBy, userId)
-            .Equal(f => f.Type, FileItemType.File)
-            .Equal(f => f.Status, FileStatus.Active)
-            .Build();
-
-        // 渲染参数
-        var serializer = BsonSerializer.SerializerRegistry.GetSerializer<FileItem>();
-        var registry = BsonSerializer.SerializerRegistry;
-        var renderArgs = new RenderArgs<FileItem>(serializer, registry);
-
-        // 使用聚合查询统计总大小和分布 (工厂会自动应用租户过滤)
-        var stats = await _fileItemFactory.AggregateAsync(PipelineDefinition<FileItem, BsonDocument>.Create(new[] {
-             new BsonDocument("$match", fileFilter.Render(renderArgs)),
-             new BsonDocument("$group", new BsonDocument {
-                 { "_id", "$mimeType" },
-                 { "size", new BsonDocument("$sum", "$size") },
-                 { "count", new BsonDocument("$sum", 1) }
-             })
-        }));
+        // 使用 LINQ 统计总大小和分布
+        var files = await _fileItemFactory.FindAsync(f =>
+            f.CreatedBy == userId &&
+            f.Type == FileItemType.File &&
+            f.Status == FileStatus.Active);
+        var stats = files.GroupBy(f => f.MimeType ?? string.Empty)
+                         .Select(g => new { MimeType = g.Key, Size = g.Sum(f => f.Size), Count = g.Count() })
+                         .ToList();
 
         long actualUsedSpace = 0;
         long fileCount = 0;
@@ -287,9 +240,9 @@ public class StorageQuotaService : IStorageQuotaService
 
         foreach (var item in stats)
         {
-            var mimeType = item["_id"].AsString;
-            var size = item["size"].AsInt64;
-            var count = item["count"].AsInt32;
+            var mimeType = item.MimeType;
+            var size = item.Size;
+            var count = item.Count;
 
             actualUsedSpace += size;
             fileCount += count;
@@ -303,17 +256,13 @@ public class StorageQuotaService : IStorageQuotaService
         var quota = await FindUserQuotaAsync(userId)
             ?? throw new InvalidOperationException("用户尚未分配存储配额，无法重新计算使用量");
 
-        var updateBuilder = _quotaFactory.CreateUpdateBuilder();
-        var update = updateBuilder
-            .Set(q => q.UsedSpace, actualUsedSpace)
-            .Set(q => q.FileCount, fileCount)
-            .Set(q => q.TypeUsage, typeUsage)
-            .Set(q => q.LastCalculatedAt, DateTime.UtcNow)
-            .Build();
-
-        var updatedQuota = await _quotaFactory.FindOneAndUpdateAsync(
-            _quotaFactory.CreateFilterBuilder().Equal(q => q.Id, quota.Id).Build(),
-            update);
+        var updatedQuota = await _quotaFactory.UpdateAsync(quota.Id!, entity =>
+        {
+            entity.UsedSpace = actualUsedSpace;
+            entity.FileCount = fileCount;
+            entity.TypeUsage = typeUsage;
+            entity.LastCalculatedAt = DateTime.UtcNow;
+        });
 
         if (updatedQuota == null)
             throw new InvalidOperationException("重新计算存储使用量失败");
@@ -368,23 +317,18 @@ public class StorageQuotaService : IStorageQuotaService
         if (topCount <= 0)
             throw new ArgumentException("返回数量必须大于0", nameof(topCount));
 
-        var filterBuilder = _quotaFactory.CreateFilterBuilder();
-        var filter = filterBuilder.Build(); 
+        var quotas = await _quotaFactory.FindAsync();
 
-        var quotas = await _quotaFactory.FindAsync(filter);
-        
         // 获取排名前 topCount 的用户 ID
         var topQuotas = quotas.OrderByDescending(q => q.UsedSpace).Take(topCount).ToList();
         var userIds = topQuotas.Select(q => q.UserId).ToList();
 
         // 查询用户信息
-        var userFilterBuilder = _userFactory.CreateFilterBuilder();
-        var userFilter = userFilterBuilder.In(u => u.Id, userIds).Build();
-        var users = await _userFactory.FindAsync(userFilter);
+        var users = await _userFactory.FindAsync(u => userIds.Contains(u.Id));
         var userDict = users.ToDictionary(u => u.Id ?? string.Empty, u => u);
 
         var rankings = topQuotas
-            .Select((q, index) => 
+            .Select((q, index) =>
             {
                 userDict.TryGetValue(q.UserId, out var user);
                 return new UserStorageRanking
@@ -413,18 +357,14 @@ public class StorageQuotaService : IStorageQuotaService
             throw new ArgumentException("警告阈值必须在0-1之间", nameof(warningThreshold));
 
         // 1. 获取配额记录
-        var quotaFilterBuilder = _quotaFactory.CreateFilterBuilder();
-        var quotaFilter = quotaFilterBuilder.Build(); 
-        var quotas = await _quotaFactory.FindAsync(quotaFilter);
+        var quotas = await _quotaFactory.FindAsync();
 
         if (!quotas.Any())
             return [];
 
         // 2. 获取涉及到的用户信息
         var userIds = quotas.Select(q => q.UserId).Distinct().ToList();
-        var userFilterBuilder = _userFactory.CreateFilterBuilder();
-        var userFilter = userFilterBuilder.In(u => u.Id, userIds).Build();
-        var users = await _userFactory.FindAsync(userFilter);
+        var users = await _userFactory.FindAsync(u => userIds.Contains(u.Id));
         var userDict = users.ToDictionary(u => u.Id ?? string.Empty, u => u);
 
         var warnings = new List<StorageQuotaWarning>();
@@ -441,7 +381,7 @@ public class StorageQuotaService : IStorageQuotaService
             if (usagePercentage > 0 && usagePercentage >= effectiveThreshold)
             {
                 userDict.TryGetValue(quota.UserId, out var user);
-                
+
                 var warning = new StorageQuotaWarning
                 {
                     Id = quota.UserId,
@@ -476,10 +416,7 @@ public class StorageQuotaService : IStorageQuotaService
         try
         {
             // 获取所有配额记录
-            var filterBuilder = _quotaFactory.CreateFilterBuilder();
-            var filter = filterBuilder.Build(); // 多租户过滤会自动应用
-
-            var quotas = await _quotaFactory.FindAsync(filter);
+            var quotas = await _quotaFactory.FindAsync();
 
             // 查找未使用的配额（使用量为0且文件数为0，且超过30天未更新）
             var cutoffDate = DateTime.UtcNow.AddDays(-30);
@@ -494,8 +431,7 @@ public class StorageQuotaService : IStorageQuotaService
                 try
                 {
                     // 软删除配额记录
-                    await _quotaFactory.FindOneAndSoftDeleteAsync(
-                        filterBuilder.Equal(q => q.Id, quota.Id).Build());
+                    await _quotaFactory.SoftDeleteAsync(quota.Id);
 
                     result.SuccessIds.Add(quota.Id);
                     result.SuccessCount++;
@@ -541,12 +477,7 @@ public class StorageQuotaService : IStorageQuotaService
             throw new InvalidOperationException("未找到当前企业信息");
 
         // 获取当前企业的所有用户
-        var userFilterBuilder = _userFactory.CreateFilterBuilder();
-        var userFilter = userFilterBuilder
-            .Equal(u => u.CurrentCompanyId, currentCompanyId)
-            .Build();
-
-        var users = await _userFactory.FindAsync(userFilter);
+        var users = await _userFactory.FindAsync(u => u.CurrentCompanyId == currentCompanyId);
 
         // 验证用户名唯一性（调试用）
         var usernameGroups = users
@@ -580,9 +511,7 @@ public class StorageQuotaService : IStorageQuotaService
         }
 
         // 获取所有配额记录（当前企业）
-        var quotaFilterBuilder = _quotaFactory.CreateFilterBuilder();
-        var quotaFilter = quotaFilterBuilder.Build(); // 多租户过滤会自动应用
-        var quotas = await _quotaFactory.FindAsync(quotaFilter);
+        var quotas = await _quotaFactory.FindAsync();
 
         // 批量查询所有用户的文件统计（实时统计，与统计API保持一致）
         var userIds = users.Select(u => u.Id ?? string.Empty).Where(id => !string.IsNullOrEmpty(id)).ToList();
@@ -593,14 +522,10 @@ public class StorageQuotaService : IStorageQuotaService
         {
             // 查询所有用户的活跃文件（按用户分组统计）
             // 注意：CreatedBy 可能为空，需要过滤掉空值
-            var fileFilterBuilder = _fileItemFactory.CreateFilterBuilder();
-            var fileFilter = fileFilterBuilder
-                .In(f => f.CreatedBy, userIds)
-                .Equal(f => f.Type, FileItemType.File)
-                .Equal(f => f.Status, FileStatus.Active)
-                .Build();
-
-            var allFiles = await _fileItemFactory.FindAsync(fileFilter);
+            var allFiles = await _fileItemFactory.FindAsync(f =>
+                f.CreatedBy != null && userIds.Contains(f.CreatedBy) &&
+                f.Type == FileItemType.File &&
+                f.Status == FileStatus.Active);
 
             // 按 CreatedBy 分组，过滤掉 CreatedBy 为空的文件
             var fileGroups = allFiles
@@ -782,11 +707,7 @@ public class StorageQuotaService : IStorageQuotaService
             throw new InvalidOperationException("未找到当前企业信息");
 
         // 获取企业用户
-        var userFilterBuilder = _userFactory.CreateFilterBuilder();
-        var userFilter = userFilterBuilder
-            .Equal(u => u.CurrentCompanyId, currentCompanyId)
-            .Build();
-        var users = await _userFactory.FindAsync(userFilter);
+        var users = await _userFactory.FindAsync(u => u.CurrentCompanyId == currentCompanyId);
 
         // 如果指定用户，只保留该用户
         if (!string.IsNullOrWhiteSpace(userId))
@@ -802,23 +723,17 @@ public class StorageQuotaService : IStorageQuotaService
         var userIds = users.Select(u => u.Id ?? string.Empty).Where(id => !string.IsNullOrEmpty(id)).ToList();
 
         // 读取配额记录
-        var quotaFilterBuilder = _quotaFactory.CreateFilterBuilder();
-        var quotaFilter = quotaFilterBuilder.Build(); // 多租户过滤自动应用
-        var quotas = await _quotaFactory.FindAsync(quotaFilter);
+        var quotas = await _quotaFactory.FindAsync();
         var quotaDict = quotas.GroupBy(q => q.UserId).ToDictionary(g => g.Key, g => g.OrderByDescending(q => q.UpdatedAt).First());
 
         // 实时文件使用量
         var usedSpaceDict = new Dictionary<string, long>();
         if (userIds.Any())
         {
-            var fileFilterBuilder = _fileItemFactory.CreateFilterBuilder();
-            var fileFilter = fileFilterBuilder
-                .In(f => f.CreatedBy, userIds)
-                .Equal(f => f.Type, FileItemType.File)
-                .Equal(f => f.Status, FileStatus.Active)
-                .Build();
-
-            var allFiles = await _fileItemFactory.FindAsync(fileFilter);
+            var allFiles = await _fileItemFactory.FindAsync(f =>
+                f.CreatedBy != null && userIds.Contains(f.CreatedBy) &&
+                f.Type == FileItemType.File &&
+                f.Status == FileStatus.Active);
             usedSpaceDict = allFiles
                 .Where(f => !string.IsNullOrEmpty(f.CreatedBy))
                 .GroupBy(f => f.CreatedBy!)
@@ -943,10 +858,7 @@ public class StorageQuotaService : IStorageQuotaService
     /// </summary>
     private async Task<StorageQuota?> FindUserQuotaAsync(string userId)
     {
-        var filterBuilder = _quotaFactory.CreateFilterBuilder();
-        var filter = filterBuilder.Equal(q => q.UserId, userId).Build();
-
-        var quotas = await _quotaFactory.FindAsync(filter, limit: 1);
+        var quotas = await _quotaFactory.FindAsync(q => q.UserId == userId, limit: 1);
         return quotas.FirstOrDefault();
     }
 

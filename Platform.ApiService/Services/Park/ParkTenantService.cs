@@ -1,4 +1,5 @@
-using MongoDB.Driver;
+using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
@@ -10,20 +11,20 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class ParkTenantService : IParkTenantService
 {
-    private readonly IDatabaseOperationFactory<ParkTenant> _tenantFactory;
-    private readonly IDatabaseOperationFactory<LeaseContract> _contractFactory;
-    private readonly IDatabaseOperationFactory<PropertyUnit> _unitFactory;
-    private readonly IDatabaseOperationFactory<LeasePaymentRecord> _paymentFactory;
+    private readonly IDataFactory<ParkTenant> _tenantFactory;
+    private readonly IDataFactory<LeaseContract> _contractFactory;
+    private readonly IDataFactory<PropertyUnit> _unitFactory;
+    private readonly IDataFactory<LeasePaymentRecord> _paymentFactory;
     private readonly ILogger<ParkTenantService> _logger;
 
     /// <summary>
     /// 初始化园区租户管理服务
     /// </summary>
     public ParkTenantService(
-        IDatabaseOperationFactory<ParkTenant> tenantFactory,
-        IDatabaseOperationFactory<LeaseContract> contractFactory,
-        IDatabaseOperationFactory<PropertyUnit> unitFactory,
-        IDatabaseOperationFactory<LeasePaymentRecord> paymentFactory,
+        IDataFactory<ParkTenant> tenantFactory,
+        IDataFactory<LeaseContract> contractFactory,
+        IDataFactory<PropertyUnit> unitFactory,
+        IDataFactory<LeasePaymentRecord> paymentFactory,
         ILogger<ParkTenantService> logger)
     {
         _tenantFactory = tenantFactory;
@@ -40,30 +41,31 @@ public class ParkTenantService : IParkTenantService
     /// </summary>
     public async Task<ParkTenantListResponse> GetTenantsAsync(ParkTenantListRequest request)
     {
-        var filterBuilder = Builders<ParkTenant>.Filter;
-        var filter = filterBuilder.Empty;
+        Expression<Func<ParkTenant, bool>> filter = t => true;
 
         if (!string.IsNullOrEmpty(request.Search))
         {
             var search = request.Search.ToLower();
-            filter &= filterBuilder.Or(
-                filterBuilder.Regex(t => t.TenantName, new MongoDB.Bson.BsonRegularExpression(search, "i")),
-                filterBuilder.Regex(t => t.ContactPerson!, new MongoDB.Bson.BsonRegularExpression(search, "i"))
-            );
+            filter = CombineFilters(filter, t => t.TenantName.ToLower().Contains(search) || (t.ContactPerson != null && t.ContactPerson.ToLower().Contains(search)));
         }
 
         if (!string.IsNullOrEmpty(request.Status))
-            filter &= filterBuilder.Eq(t => t.Status, request.Status);
+            filter = CombineFilters(filter, t => t.Status == request.Status);
 
         if (!string.IsNullOrEmpty(request.Industry))
-            filter &= filterBuilder.Eq(t => t.Industry!, request.Industry);
+            filter = CombineFilters(filter, t => t.Industry == request.Industry);
 
-        var sortBuilder = _tenantFactory.CreateSortBuilder();
-        var sort = request.SortOrder?.ToLower() == "asc"
-            ? sortBuilder.Ascending(t => t.CreatedAt)
-            : sortBuilder.Descending(t => t.CreatedAt);
+        Func<IQueryable<ParkTenant>, IOrderedQueryable<ParkTenant>>? orderBy = null;
+        if (request.SortOrder?.ToLower() == "asc")
+        {
+            orderBy = q => q.OrderBy(t => t.CreatedAt);
+        }
+        else
+        {
+            orderBy = q => q.OrderByDescending(t => t.CreatedAt);
+        }
 
-        var (items, total) = await _tenantFactory.FindPagedAsync(filter, sort.Build(), request.Page, request.PageSize);
+        var (items, total) = await _tenantFactory.FindPagedAsync(filter, orderBy, request.Page, request.PageSize);
 
         var tenants = new List<ParkTenantDto>();
         foreach (var item in items)
@@ -124,7 +126,7 @@ public class ParkTenantService : IParkTenantService
         tenant.EntryDate = request.EntryDate;
         tenant.Notes = request.Notes;
 
-        await _tenantFactory.FindOneAndReplaceAsync(Builders<ParkTenant>.Filter.Eq(t => t.Id, id), tenant);
+        await _tenantFactory.UpdateAsync(id, tenant => { });
         return await MapToTenantDtoAsync(tenant);
     }
 
@@ -134,29 +136,23 @@ public class ParkTenantService : IParkTenantService
     public async Task<bool> DeleteTenantAsync(string id)
     {
         // 检查是否有有效合同
-        var filter = Builders<LeaseContract>.Filter.And(
-            Builders<LeaseContract>.Filter.Eq(c => c.TenantId, id),
-            Builders<LeaseContract>.Filter.Eq(c => c.Status, "Active")
-        );
-        var activeContracts = await _contractFactory.FindAsync(filter);
+        var activeContracts = await _contractFactory.FindAsync(c => c.TenantId == id && c.Status == "Active");
         if (activeContracts.Any())
             throw new InvalidOperationException("租户存在有效合同，无法删除");
 
-        var result = await _tenantFactory.FindOneAndSoftDeleteAsync(Builders<ParkTenant>.Filter.Eq(t => t.Id, id));
+        var result = await _tenantFactory.SoftDeleteAsync(id);
         return result != null;
     }
 
     private async Task<ParkTenantDto> MapToTenantDtoAsync(ParkTenant tenant)
     {
-        var contractFilter = Builders<LeaseContract>.Filter.Eq(c => c.TenantId, tenant.Id);
-        var contracts = await _contractFactory.FindAsync(contractFilter);
+        var contracts = await _contractFactory.FindAsync(c => c.TenantId == tenant.Id);
         var activeContracts = contracts.Where(c => c.Status == "Active").ToList();
 
         decimal totalArea = 0;
         if (tenant.UnitIds != null && tenant.UnitIds.Any())
         {
-            var unitFilter = Builders<PropertyUnit>.Filter.In(u => u.Id, tenant.UnitIds);
-            var units = await _unitFactory.FindAsync(unitFilter);
+            var units = await _unitFactory.FindAsync(u => tenant.UnitIds.Contains(u.Id));
             totalArea = units.Sum(u => u.Area);
         }
 
@@ -186,35 +182,37 @@ public class ParkTenantService : IParkTenantService
     /// </summary>
     public async Task<LeaseContractListResponse> GetContractsAsync(LeaseContractListRequest request)
     {
-        var filterBuilder = Builders<LeaseContract>.Filter;
-        var filter = filterBuilder.Empty;
+        Expression<Func<LeaseContract, bool>> filter = c => true;
 
         if (!string.IsNullOrEmpty(request.TenantId))
-            filter &= filterBuilder.Eq(c => c.TenantId, request.TenantId);
+            filter = CombineFilters(filter, c => c.TenantId == request.TenantId);
 
         if (!string.IsNullOrEmpty(request.Search))
         {
-            filter &= filterBuilder.Regex(c => c.ContractNumber, new MongoDB.Bson.BsonRegularExpression(request.Search, "i"));
+            var searchLower = request.Search.ToLower();
+            filter = CombineFilters(filter, c => c.ContractNumber.ToLower().Contains(searchLower));
         }
 
         if (!string.IsNullOrEmpty(request.Status))
-            filter &= filterBuilder.Eq(c => c.Status, request.Status);
+            filter = CombineFilters(filter, c => c.Status == request.Status);
 
         if (request.ExpiringWithin30Days == true)
         {
             var threshold = DateTime.UtcNow.AddDays(30);
-            filter &= filterBuilder.And(
-                filterBuilder.Lte(c => c.EndDate, threshold),
-                filterBuilder.Eq(c => c.Status, "Active")
-            );
+            filter = CombineFilters(filter, c => c.EndDate <= threshold && c.Status == "Active");
         }
 
-        var sortBuilder = _contractFactory.CreateSortBuilder();
-        var sort = request.SortOrder?.ToLower() == "asc"
-            ? sortBuilder.Ascending(c => c.CreatedAt)
-            : sortBuilder.Descending(c => c.CreatedAt);
+        Func<IQueryable<LeaseContract>, IOrderedQueryable<LeaseContract>>? orderBy = null;
+        if (request.SortOrder?.ToLower() == "asc")
+        {
+            orderBy = q => q.OrderBy(c => c.CreatedAt);
+        }
+        else
+        {
+            orderBy = q => q.OrderByDescending(c => c.CreatedAt);
+        }
 
-        var (items, total) = await _contractFactory.FindPagedAsync(filter, sort.Build(), request.Page, request.PageSize);
+        var (items, total) = await _contractFactory.FindPagedAsync(filter, orderBy, request.Page, request.PageSize);
 
         var contracts = new List<LeaseContractDto>();
         foreach (var item in items)
@@ -263,7 +261,8 @@ public class ParkTenantService : IParkTenantService
         if (string.IsNullOrWhiteSpace(contract.ContractNumber))
         {
             var dateStr = DateTime.Now.ToString("yyyyMMdd");
-            var count = await _contractFactory.CountAsync(Builders<LeaseContract>.Filter.Regex(c => c.ContractNumber, new MongoDB.Bson.BsonRegularExpression($"^HT-{dateStr}", "i")));
+            var prefix = $"HT-{dateStr}";
+            var count = await _contractFactory.CountAsync(c => c.ContractNumber.StartsWith(prefix));
             contract.ContractNumber = $"HT-{dateStr}-{(count + 1):D3}";
         }
 
@@ -281,7 +280,7 @@ public class ParkTenantService : IParkTenantService
                     tenant.UnitIds.Add(unitId);
                 }
             }
-            await _tenantFactory.FindOneAndReplaceAsync(Builders<ParkTenant>.Filter.Eq(t => t.Id, tenant.Id), tenant);
+            await _tenantFactory.UpdateAsync(tenant.Id, _ => { });
 
             // 更新房源状态
             foreach (var unitId in request.UnitIds)
@@ -293,7 +292,7 @@ public class ParkTenantService : IParkTenantService
                     unit.CurrentTenantId = tenant.Id;
                     unit.LeaseStartDate = request.StartDate;
                     unit.LeaseEndDate = request.EndDate;
-                    await _unitFactory.FindOneAndReplaceAsync(Builders<PropertyUnit>.Filter.Eq(u => u.Id, unit.Id), unit);
+                    await _unitFactory.UpdateAsync(unit.Id, _ => { });
                 }
             }
         }
@@ -332,7 +331,7 @@ public class ParkTenantService : IParkTenantService
         contract.Terms = request.Terms;
         contract.Attachments = request.Attachments;
 
-        await _contractFactory.FindOneAndReplaceAsync(Builders<LeaseContract>.Filter.Eq(c => c.Id, id), contract);
+        await _contractFactory.UpdateAsync(id, _ => { });
 
         // 处理移除的单元：恢复为 Available
         foreach (var unitId in removedUnitIds)
@@ -344,7 +343,7 @@ public class ParkTenantService : IParkTenantService
                 unit.CurrentTenantId = null;
                 unit.LeaseStartDate = null;
                 unit.LeaseEndDate = null;
-                await _unitFactory.FindOneAndReplaceAsync(Builders<PropertyUnit>.Filter.Eq(u => u.Id, unit.Id), unit);
+                await _unitFactory.UpdateAsync(unit.Id, _ => { });
             }
         }
 
@@ -358,7 +357,7 @@ public class ParkTenantService : IParkTenantService
                 unit.CurrentTenantId = request.TenantId;
                 unit.LeaseStartDate = request.StartDate;
                 unit.LeaseEndDate = request.EndDate;
-                await _unitFactory.FindOneAndReplaceAsync(Builders<PropertyUnit>.Filter.Eq(u => u.Id, unit.Id), unit);
+                await _unitFactory.UpdateAsync(unit.Id, _ => { });
             }
         }
 
@@ -380,7 +379,7 @@ public class ParkTenantService : IParkTenantService
                     tenant.UnitIds.Add(unitId);
                 }
             }
-            await _tenantFactory.FindOneAndReplaceAsync(Builders<ParkTenant>.Filter.Eq(t => t.Id, tenant.Id), tenant);
+            await _tenantFactory.UpdateAsync(tenant.Id, _ => { });
         }
 
         return await MapToContractDtoAsync(contract);
@@ -397,7 +396,7 @@ public class ParkTenantService : IParkTenantService
         if (contract.Status == "Active")
             throw new InvalidOperationException("有效合同无法删除，请先终止合同");
 
-        var result = await _contractFactory.FindOneAndSoftDeleteAsync(Builders<LeaseContract>.Filter.Eq(c => c.Id, id));
+        var result = await _contractFactory.SoftDeleteAsync(id);
         return result != null;
     }
 
@@ -411,7 +410,7 @@ public class ParkTenantService : IParkTenantService
 
         // 将旧合同标记为已续签
         oldContract.Status = "Renewed";
-        await _contractFactory.FindOneAndReplaceAsync(Builders<LeaseContract>.Filter.Eq(c => c.Id, id), oldContract);
+        await _contractFactory.UpdateAsync(id, _ => { });
 
         // 创建新合同
         var result = await CreateContractAsync(request);
@@ -426,7 +425,7 @@ public class ParkTenantService : IParkTenantService
         var unitNumbers = new List<string>();
         if (contract.UnitIds != null && contract.UnitIds.Any())
         {
-            var units = await _unitFactory.FindAsync(Builders<PropertyUnit>.Filter.In(u => u.Id, contract.UnitIds));
+            var units = await _unitFactory.FindAsync(u => contract.UnitIds.Contains(u.Id));
             unitNumbers = units.Select(u => u.UnitNumber).ToList();
         }
 
@@ -487,8 +486,7 @@ public class ParkTenantService : IParkTenantService
     /// </summary>
     public async Task<List<LeasePaymentRecordDto>> GetPaymentRecordsByContractIdAsync(string contractId)
     {
-        var filter = Builders<LeasePaymentRecord>.Filter.Eq(r => r.ContractId, contractId);
-        var records = await _paymentFactory.FindAsync(filter);
+        var records = await _paymentFactory.FindAsync(r => r.ContractId == contractId);
         return records.OrderByDescending(r => r.PaymentDate).Select(MapToPaymentRecordDto).ToList();
     }
 
@@ -497,7 +495,7 @@ public class ParkTenantService : IParkTenantService
     /// </summary>
     public async Task<bool> DeletePaymentRecordAsync(string id)
     {
-        return (await _paymentFactory.SoftDeleteManyAsync(new[] { id })) > 0;
+        return (await _paymentFactory.SoftDeleteManyAsync(r => r.Id == id)) > 0;
     }
 
     private LeasePaymentRecordDto MapToPaymentRecordDto(LeasePaymentRecord record)
@@ -522,6 +520,16 @@ public class ParkTenantService : IParkTenantService
     #endregion
 
     #region 统计
+
+    private static Expression<Func<T, bool>> CombineFilters<T>(Expression<Func<T, bool>> first, Expression<Func<T, bool>> second)
+    {
+        var parameter = Expression.Parameter(typeof(T));
+        var combined = Expression.AndAlso(
+            Expression.Invoke(first, parameter),
+            Expression.Invoke(second, parameter)
+        );
+        return Expression.Lambda<Func<T, bool>>(combined, parameter);
+    }
 
     /// <summary>
     /// 获取租户统计数据

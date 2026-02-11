@@ -23,7 +23,7 @@ namespace Platform.ApiService.Controllers;
 public class ChatMessagesController : BaseApiController
 {
     private readonly IChatService _chatService;
-    private readonly IDatabaseOperationFactory<ChatSession> _sessionFactory;
+    private readonly IDataFactory<ChatSession> _sessionFactory;
     private readonly ILogger<ChatMessagesController> _logger;
 
     /// <summary>
@@ -34,7 +34,7 @@ public class ChatMessagesController : BaseApiController
     /// <param name="logger">日志记录器</param>
     public ChatMessagesController(
         IChatService chatService,
-        IDatabaseOperationFactory<ChatSession> sessionFactory,
+        IDataFactory<ChatSession> sessionFactory,
         ILogger<ChatMessagesController> logger)
     {
         _chatService = chatService ?? throw new ArgumentNullException(nameof(chatService));

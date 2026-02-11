@@ -1,6 +1,6 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MongoDB.Bson;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Response;
 using Platform.ApiService.Services;
@@ -19,7 +19,7 @@ namespace Platform.ApiService.Controllers;
 public class ChatSessionsController : BaseApiController
 {
     private readonly IChatService _chatService;
-    private readonly IDatabaseOperationFactory<ChatSession> _sessionFactory;
+    private readonly IDataFactory<ChatSession> _sessionFactory;
     private readonly ILogger<ChatSessionsController> _logger;
 
     /// <summary>
@@ -30,7 +30,7 @@ public class ChatSessionsController : BaseApiController
     /// <param name="logger">日志记录器</param>
     public ChatSessionsController(
         IChatService chatService,
-        IDatabaseOperationFactory<ChatSession> sessionFactory,
+        IDataFactory<ChatSession> sessionFactory,
         ILogger<ChatSessionsController> logger)
     {
         _chatService = chatService ?? throw new ArgumentNullException(nameof(chatService));

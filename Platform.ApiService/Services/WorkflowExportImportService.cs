@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
+using System.Linq.Expressions;
 using System.Text.Json;
 
 namespace Platform.ApiService.Services;
@@ -10,8 +11,8 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class WorkflowExportImportService : IWorkflowExportImportService
 {
-    private readonly IDatabaseOperationFactory<WorkflowDefinition> _workflowFactory;
-    private readonly IDatabaseOperationFactory<FormDefinition> _formFactory;
+    private readonly IDataFactory<WorkflowDefinition> _workflowFactory;
+    private readonly IDataFactory<FormDefinition> _formFactory;
     private readonly ILogger<WorkflowExportImportService> _logger;
 
     /// <summary>
@@ -21,8 +22,8 @@ public class WorkflowExportImportService : IWorkflowExportImportService
     /// <param name="formFactory">表单定义数据工厂</param>
     /// <param name="logger">日志记录器</param>
     public WorkflowExportImportService(
-        IDatabaseOperationFactory<WorkflowDefinition> workflowFactory,
-        IDatabaseOperationFactory<FormDefinition> formFactory,
+        IDataFactory<WorkflowDefinition> workflowFactory,
+        IDataFactory<FormDefinition> formFactory,
         ILogger<WorkflowExportImportService> logger)
     {
         _workflowFactory = workflowFactory;
@@ -41,12 +42,7 @@ public class WorkflowExportImportService : IWorkflowExportImportService
                 workflowIds.Count, config.Format);
 
             // 获取工作流定义
-            var filter = _workflowFactory.CreateFilterBuilder()
-                .In(w => w.Id, workflowIds)
-                .Equal(w => w.IsDeleted, false)
-                .Build();
-
-            var workflows = await _workflowFactory.FindAsync(filter);
+            var workflows = await _workflowFactory.FindAsync(w => workflowIds.Contains(w.Id));
 
             if (workflows.Count == 0)
             {
@@ -120,13 +116,7 @@ public class WorkflowExportImportService : IWorkflowExportImportService
             _logger.LogInformation("开始导出过滤结果: FilterCount={FilterCount}, Format={Format}",
                 filters.Count, config.Format);
 
-            // 构建过滤条件
-            var filterBuilder = _workflowFactory.CreateFilterBuilder();
-
-            // 应用过滤条件
-            ApplyFiltersToBuilder(filterBuilder, filters);
-
-            var filter = filterBuilder.Build();
+            var filter = BuildFilterExpression(filters);
             var workflows = await _workflowFactory.FindAsync(filter);
 
             if (workflows.Count == 0)
@@ -142,6 +132,28 @@ public class WorkflowExportImportService : IWorkflowExportImportService
             _logger.LogError(ex, "导出过滤结果失败: Filters={Filters}", JsonSerializer.Serialize(filters));
             throw;
         }
+    }
+
+    private static Expression<Func<WorkflowDefinition, bool>> BuildFilterExpression(Dictionary<string, object> filters)
+    {
+        var keyword = filters.TryGetValue("keyword", out var k) && k is string kw ? kw.ToLowerInvariant() : null;
+        var categories = filters.TryGetValue("categories", out var c) && c is List<string> cl ? cl : null;
+        var isActive = filters.TryGetValue("isactive", out var a) && a is bool ab ? (bool?)ab : null;
+
+        DateTime? startDate = null;
+        DateTime? endDate = null;
+        if (filters.TryGetValue("createdat", out var dr) && dr is Dictionary<string, object> dateRange)
+        {
+            if (dateRange.TryGetValue("start", out var s) && s is DateTime sd) startDate = sd;
+            if (dateRange.TryGetValue("end", out var e) && e is DateTime ed) endDate = ed;
+        }
+
+        return w =>
+            (keyword == null || w.Name.ToLower().Contains(keyword)) &&
+            (categories == null || categories.Contains(w.Category)) &&
+            (isActive == null || w.IsActive == isActive.Value) &&
+            (startDate == null || w.CreatedAt >= startDate.Value) &&
+            (endDate == null || w.CreatedAt <= endDate.Value);
     }
 
     /// <summary>
@@ -341,12 +353,7 @@ public class WorkflowExportImportService : IWorkflowExportImportService
 
         if (formIds.Count > 0)
         {
-            var formFilter = _formFactory.CreateFilterBuilder()
-                .In(f => f.Id, formIds.ToList())
-                .Equal(f => f.IsDeleted, false)
-                .Build();
-
-            var forms = await _formFactory.FindAsync(formFilter);
+            var forms = await _formFactory.FindAsync(f => formIds.Contains(f.Id) && f.IsDeleted == false);
             foreach (var form in forms)
             {
                 dependencies.Add(new WorkflowDependency
@@ -423,50 +430,6 @@ public class WorkflowExportImportService : IWorkflowExportImportService
     }
 
     /// <summary>
-    /// 应用过滤条件到构建器
-    /// </summary>
-    private static void ApplyFiltersToBuilder(FilterBuilder<WorkflowDefinition> filterBuilder, Dictionary<string, object> filters)
-    {
-        foreach (var filter in filters)
-        {
-            switch (filter.Key.ToLowerInvariant())
-            {
-                case "keyword":
-                    if (filter.Value is string keyword && !string.IsNullOrEmpty(keyword))
-                    {
-                        filterBuilder.Regex(w => w.Name, keyword);
-                    }
-                    break;
-                case "categories":
-                    if (filter.Value is List<string> categories && categories.Count > 0)
-                    {
-                        filterBuilder.In(w => w.Category, categories);
-                    }
-                    break;
-                case "isactive":
-                    if (filter.Value is bool isActive)
-                    {
-                        filterBuilder.Equal(w => w.IsActive, isActive);
-                    }
-                    break;
-                case "createdat":
-                    if (filter.Value is Dictionary<string, object> dateRange)
-                    {
-                        if (dateRange.TryGetValue("start", out var startObj) && startObj is DateTime start)
-                        {
-                            filterBuilder.GreaterThanOrEqual(w => w.CreatedAt, start);
-                        }
-                        if (dateRange.TryGetValue("end", out var endObj) && endObj is DateTime end)
-                        {
-                            filterBuilder.LessThanOrEqual(w => w.CreatedAt, end);
-                        }
-                    }
-                    break;
-            }
-        }
-    }
-
-    /// <summary>
     /// 解析导入文件
     /// </summary>
     private static WorkflowExportData? ParseImportFile(byte[] fileContent, string fileName)
@@ -492,12 +455,8 @@ public class WorkflowExportImportService : IWorkflowExportImportService
     private async Task ValidateWorkflowForImportAsync(WorkflowExportItem workflow, WorkflowImportResult result)
     {
         // 检查名称冲突
-        var existingFilter = _workflowFactory.CreateFilterBuilder()
-            .Equal(w => w.Name, workflow.Name)
-            .Equal(w => w.IsDeleted, false)
-            .Build();
-
-        var existing = (await _workflowFactory.FindAsync(existingFilter, limit: 1)).FirstOrDefault();
+        var existingResult = await _workflowFactory.FindAsync(w => w.Name == workflow.Name && w.IsDeleted == false, limit: 1);
+        var existing = existingResult.FirstOrDefault();
         if (existing != null)
         {
             result.Conflicts.Add(new ImportConflict
@@ -537,12 +496,8 @@ public class WorkflowExportImportService : IWorkflowExportImportService
     private async Task ImportSingleWorkflowAsync(WorkflowExportItem workflowItem, WorkflowImportResult result, bool overwriteExisting, string userId, string companyId)
     {
         // 检查是否存在同名工作流
-        var existingFilter = _workflowFactory.CreateFilterBuilder()
-            .Equal(w => w.Name, workflowItem.Name)
-            .Equal(w => w.IsDeleted, false)
-            .Build();
-
-        var existing = (await _workflowFactory.FindAsync(existingFilter, limit: 1)).FirstOrDefault();
+        var existingResult = await _workflowFactory.FindAsync(w => w.Name == workflowItem.Name && w.IsDeleted == false, limit: 1);
+        var existing = existingResult.FirstOrDefault();
 
         if (existing != null && !overwriteExisting)
         {
@@ -572,17 +527,13 @@ public class WorkflowExportImportService : IWorkflowExportImportService
         if (existing != null && overwriteExisting)
         {
             // 更新现有工作流
-            var updateBuilder = _workflowFactory.CreateUpdateBuilder()
-                .Set(w => w.Description, workflow.Description)
-                .Set(w => w.Category, workflow.Category)
-                .Set(w => w.Graph, workflow.Graph)
-                .Set(w => w.IsActive, workflow.IsActive);
-
-            var filter = _workflowFactory.CreateFilterBuilder()
-                .Equal(w => w.Id, existing.Id)
-                .Build();
-
-            await _workflowFactory.FindOneAndUpdateAsync(filter, updateBuilder.Build());
+            await _workflowFactory.UpdateAsync(existing.Id, entity =>
+            {
+                entity.Description = workflow.Description;
+                entity.Category = workflow.Category;
+                entity.Graph = workflow.Graph;
+                entity.IsActive = workflow.IsActive;
+            });
             result.ImportedWorkflowIds.Add(existing.Id);
         }
         else
@@ -630,12 +581,8 @@ public class WorkflowExportImportService : IWorkflowExportImportService
         do
         {
             newName = $"{baseName} ({counter})";
-            var filter = _workflowFactory.CreateFilterBuilder()
-                .Equal(w => w.Name, newName)
-                .Equal(w => w.IsDeleted, false)
-                .Build();
-
-            var existing = (await _workflowFactory.FindAsync(filter, limit: 1)).FirstOrDefault();
+            var existingResult = await _workflowFactory.FindAsync(w => w.Name == newName && w.IsDeleted == false, limit: 1);
+            var existing = existingResult.FirstOrDefault();
             if (existing == null)
             {
                 break;

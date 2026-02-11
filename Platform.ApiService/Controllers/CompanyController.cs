@@ -106,7 +106,7 @@ public class CompanyController : BaseApiController
     {
         // 尝试从数据库获取当前用户的企业ID（JWT 已移除 companyId）
         var userId = GetRequiredUserId();
-        var userFactory = HttpContext.RequestServices.GetRequiredService<Platform.ServiceDefaults.Services.IDatabaseOperationFactory<AppUser>>();
+        var userFactory = HttpContext.RequestServices.GetRequiredService<Platform.ServiceDefaults.Services.IDataFactory<AppUser>>();
         var user = await userFactory.GetByIdAsync(userId);
 
         string? companyId = user?.CurrentCompanyId;
@@ -150,7 +150,7 @@ public class CompanyController : BaseApiController
     {
         // 从数据库获取当前用户的企业ID
         var userId = GetRequiredUserId();
-        var userService = HttpContext.RequestServices.GetRequiredService<Platform.ServiceDefaults.Services.IDatabaseOperationFactory<AppUser>>();
+        var userService = HttpContext.RequestServices.GetRequiredService<Platform.ServiceDefaults.Services.IDataFactory<AppUser>>();
         var user = await userService.GetByIdAsync(userId);
         if (user == null || string.IsNullOrEmpty(user.CurrentCompanyId))
         {
@@ -173,7 +173,7 @@ public class CompanyController : BaseApiController
     {
         // 从数据库获取当前用户的企业ID
         var userId = GetRequiredUserId();
-        var userService = HttpContext.RequestServices.GetRequiredService<Platform.ServiceDefaults.Services.IDatabaseOperationFactory<AppUser>>();
+        var userService = HttpContext.RequestServices.GetRequiredService<Platform.ServiceDefaults.Services.IDataFactory<AppUser>>();
         var user = await userService.GetByIdAsync(userId);
         if (user == null || string.IsNullOrEmpty(user.CurrentCompanyId))
         {

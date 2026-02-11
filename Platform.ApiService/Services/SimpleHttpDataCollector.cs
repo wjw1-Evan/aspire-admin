@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Microsoft.Extensions.Options;
-using MongoDB.Driver;
 using Platform.ApiService.Models;
 using Platform.ApiService.Options;
 using Platform.ServiceDefaults.Services;
@@ -12,10 +11,10 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class SimpleHttpDataCollector
 {
-    private readonly IDatabaseOperationFactory<IoTGateway> _gatewayFactory;
-    private readonly IDatabaseOperationFactory<IoTDevice> _deviceFactory;
-    private readonly IDatabaseOperationFactory<IoTDataPoint> _dataPointFactory;
-    private readonly IDatabaseOperationFactory<IoTDataRecord> _dataRecordFactory;
+    private readonly IDataFactory<IoTGateway> _gatewayFactory;
+    private readonly IDataFactory<IoTDevice> _deviceFactory;
+    private readonly IDataFactory<IoTDataPoint> _dataPointFactory;
+    private readonly IDataFactory<IoTDataRecord> _dataRecordFactory;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IOptionsMonitor<IoTDataCollectionOptions> _optionsMonitor;
     private readonly ILogger<SimpleHttpDataCollector> _logger;
@@ -31,10 +30,10 @@ public class SimpleHttpDataCollector
     /// <param name="optionsMonitor">数据采集配置选项监视器</param>
     /// <param name="logger">日志记录器</param>
     public SimpleHttpDataCollector(
-        IDatabaseOperationFactory<IoTGateway> gatewayFactory,
-        IDatabaseOperationFactory<IoTDevice> deviceFactory,
-        IDatabaseOperationFactory<IoTDataPoint> dataPointFactory,
-        IDatabaseOperationFactory<IoTDataRecord> dataRecordFactory,
+        IDataFactory<IoTGateway> gatewayFactory,
+        IDataFactory<IoTDevice> deviceFactory,
+        IDataFactory<IoTDataPoint> dataPointFactory,
+        IDataFactory<IoTDataRecord> dataRecordFactory,
         IHttpClientFactory httpClientFactory,
         IOptionsMonitor<IoTDataCollectionOptions> optionsMonitor,
         ILogger<SimpleHttpDataCollector> logger)
@@ -138,10 +137,10 @@ public class SimpleHttpDataCollector
         var matchedDataPointIds = new HashSet<string>();
 
         var unmatchedKeys = new List<string>();
-        
+
         foreach (var kvp in httpData)
         {
-            var dataPoint = dataPoints.FirstOrDefault(dp => 
+            var dataPoint = dataPoints.FirstOrDefault(dp =>
                 dp.Name.Equals(kvp.Key, StringComparison.OrdinalIgnoreCase) ||
                 dp.DataPointId.Equals(kvp.Key, StringComparison.OrdinalIgnoreCase));
 
@@ -181,7 +180,7 @@ public class SimpleHttpDataCollector
         // 批量检查重复并保存（如果有数据记录）
         var recordsInserted = 0;
         var recordsSkipped = 0;
-        
+
         if (recordsToSave.Count > 0)
         {
             var uniqueRecords = await FilterDuplicatesAsync(gateway.CompanyId, recordsToSave, cancellationToken).ConfigureAwait(false);
@@ -192,7 +191,7 @@ public class SimpleHttpDataCollector
             {
                 // 批量保存所有记录
                 await _dataRecordFactory.CreateManyAsync(uniqueRecords).ConfigureAwait(false);
-                
+
                 // 按数据点分组，每个数据点只更新一次（使用最新的值）
                 foreach (var group in uniqueRecords.GroupBy(r => r.DataPointId))
                 {
@@ -215,27 +214,20 @@ public class SimpleHttpDataCollector
             // 如果这个数据点没有被采集到数据，也要更新它的 LastUpdatedAt，避免它一直被过滤出来
             if (!matchedDataPointIds.Contains(dataPoint.DataPointId))
             {
-                _logger.LogDebug("Data point {DataPointId} ({Name}) not found in HTTP response, updating LastUpdatedAt to prevent repeated filtering", 
+                _logger.LogDebug("Data point {DataPointId} ({Name}) not found in HTTP response, updating LastUpdatedAt to prevent repeated filtering",
                     dataPoint.DataPointId, dataPoint.Name);
-                
-                var filter = _dataPointFactory.CreateFilterBuilder()
-                    .Equal(dp => dp.DataPointId, dataPoint.DataPointId)
-                    .WithTenant(gateway.CompanyId)
-                    .ExcludeDeleted()
-                    .Build();
 
-                var update = _dataPointFactory.CreateUpdateBuilder()
-                    .Set(dp => dp.LastUpdatedAt, reportedAt)
-                    .Build();
-
-                await _dataPointFactory.FindOneAndUpdateAsync(filter, update).ConfigureAwait(false);
+                await _dataPointFactory.UpdateAsync(dataPoint.Id, entity =>
+                {
+                    entity.LastUpdatedAt = reportedAt;
+                }).ConfigureAwait(false);
             }
         }
 
         result.RecordsInserted = recordsInserted;
         result.RecordsSkipped = recordsSkipped;
         result.Success = true;
-        
+
         if (dataPoints.Count == 0)
         {
             result.Warning = $"设备 {device.DeviceId} 未配置任何数据点，请先手动创建数据点";
@@ -292,7 +284,7 @@ public class SimpleHttpDataCollector
             }
 
             var request = new HttpRequestMessage(method, url);
-            
+
             // 添加请求头（如果有配置）
             if (gateway.Config != null && gateway.Config.TryGetValue("headers", out var headersStr))
             {
@@ -348,46 +340,32 @@ public class SimpleHttpDataCollector
         CancellationToken cancellationToken)
     {
         // 查找网关下的设备（优先使用已启用的设备）
-        var deviceFilter = _deviceFactory.CreateFilterBuilder()
-            .Equal(d => d.GatewayId, gateway.GatewayId)
-            .Equal(d => d.IsEnabled, true)
-            .WithTenant(gateway.CompanyId)
-            .ExcludeDeleted()
-            .Build();
+        var devices = await _deviceFactory
+            .FindAsync(d => d.GatewayId == gateway.GatewayId && d.IsEnabled == true)
+            .ConfigureAwait(false);
 
-        var devices = await _deviceFactory.FindAsync(deviceFilter).ConfigureAwait(false);
-        
         // 优先返回第一个启用的设备
         if (devices.Count > 0)
         {
-            _logger.LogDebug("Found existing device {DeviceId} for gateway {GatewayId}", 
+            _logger.LogDebug("Found existing device {DeviceId} for gateway {GatewayId}",
                 devices[0].DeviceId, gateway.GatewayId);
             return devices[0];
         }
 
         // 如果没有启用的设备，检查是否有任何设备（包括禁用的）
-        var anyDeviceFilter = _deviceFactory.CreateFilterBuilder()
-            .Equal(d => d.GatewayId, gateway.GatewayId)
-            .WithTenant(gateway.CompanyId)
-            .ExcludeDeleted()
-            .Build();
-
-        var anyDevices = await _deviceFactory.FindAsync(anyDeviceFilter, limit: 1).ConfigureAwait(false);
+        var anyDevices = await _deviceFactory
+            .FindAsync(d => d.GatewayId == gateway.GatewayId, limit: 1)
+            .ConfigureAwait(false);
         if (anyDevices.Count > 0)
         {
             // 如果有设备但被禁用了，启用它
             var device = anyDevices[0];
             if (!device.IsEnabled)
             {
-                var updateFilter = _deviceFactory.CreateFilterBuilder()
-                    .Equal(d => d.DeviceId, device.DeviceId)
-                    .WithTenant(gateway.CompanyId)
-                    .ExcludeDeleted()
-                    .Build();
-                var update = _deviceFactory.CreateUpdateBuilder()
-                    .Set(d => d.IsEnabled, true)
-                    .Build();
-                await _deviceFactory.FindOneAndUpdateAsync(updateFilter, update).ConfigureAwait(false);
+                await _deviceFactory.UpdateAsync(device.Id, entity =>
+                {
+                    entity.IsEnabled = true;
+                }).ConfigureAwait(false);
                 _logger.LogInformation("Enabled existing device {DeviceId} for gateway {GatewayId}",
                     device.DeviceId, gateway.GatewayId);
             }
@@ -420,15 +398,10 @@ public class SimpleHttpDataCollector
         IoTDevice device,
         CancellationToken cancellationToken)
     {
-        var filter = _dataPointFactory.CreateFilterBuilder()
-            .Equal(dp => dp.DeviceId, device.DeviceId)
-            .Equal(dp => dp.IsEnabled, true)
-            .WithTenant(gateway.CompanyId)
-            .ExcludeDeleted()
-            .Build();
+        var allDataPoints = await _dataPointFactory
+            .FindAsync(dp => dp.DeviceId == device.DeviceId && dp.IsEnabled == true)
+            .ConfigureAwait(false);
 
-        var allDataPoints = await _dataPointFactory.FindAsync(filter).ConfigureAwait(false);
-        
         // 根据采样间隔过滤数据点：只返回需要采集的数据点
         var now = DateTime.UtcNow;
         var dataPoints = allDataPoints.Where(dp =>
@@ -441,14 +414,14 @@ public class SimpleHttpDataCollector
 
             // 计算距离上次采集的时间间隔（秒）
             var elapsedSeconds = (now - dp.LastUpdatedAt.Value).TotalSeconds;
-            
+
             // 如果已超过采样间隔，需要采集
             return elapsedSeconds >= dp.SamplingInterval;
         }).ToList();
-        
-        _logger.LogDebug("Found {ReadyCount}/{TotalCount} enabled data points ready for collection on device {DeviceId}", 
+
+        _logger.LogDebug("Found {ReadyCount}/{TotalCount} enabled data points ready for collection on device {DeviceId}",
             dataPoints.Count, allDataPoints.Count, device.DeviceId);
-        
+
         return dataPoints;
     }
 
@@ -490,34 +463,23 @@ public class SimpleHttpDataCollector
             return records;
         }
 
-        // 使用 MongoDB 的 $or 查询检查所有记录
-        var builder = MongoDB.Driver.Builders<IoTDataRecord>.Filter;
-        var orConditions = records.Select(record =>
-            builder.And(
-                builder.Eq(r => r.DeviceId, record.DeviceId),
-                builder.Eq(r => r.DataPointId, record.DataPointId),
-                builder.Eq(r => r.ReportedAt, record.ReportedAt)
-            )
-        ).ToList();
+        var deviceIds = records.Select(r => r.DeviceId).Distinct().ToList();
+        var dataPointIds = records.Select(r => r.DataPointId).Distinct().ToList();
+        var reportedAtValues = records.Select(r => r.ReportedAt).Distinct().ToList();
 
-        // 构建完整查询：租户过滤 + 软删除过滤 + OR条件
-        var baseFilter = _dataRecordFactory.CreateFilterBuilder()
-            .WithTenant(companyId)
-            .ExcludeDeleted()
-            .Build();
+        var existingRecords = await _dataRecordFactory
+            .FindWithoutTenantFilterAsync(r =>
+                r.CompanyId == companyId &&
+                deviceIds.Contains(r.DeviceId) &&
+                dataPointIds.Contains(r.DataPointId) &&
+                reportedAtValues.Contains(r.ReportedAt))
+            .ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
 
-        var orFilter = orConditions.Count > 0 ? builder.Or(orConditions) : builder.Empty;
-        var combinedFilter = builder.And(baseFilter, orFilter);
-
-        // 查询已存在的记录
-        var existingRecords = await _dataRecordFactory.FindAsync(combinedFilter).ConfigureAwait(false);
-
-        // 构建已存在记录的键集合（用于快速查找）
         var existingKeys = existingRecords
             .Select(r => (r.DeviceId, r.DataPointId, r.ReportedAt))
             .ToHashSet();
 
-        // 过滤出不重复的记录
         var uniqueRecords = records
             .Where(record => !existingKeys.Contains((record.DeviceId, record.DataPointId, record.ReportedAt)))
             .ToList();
@@ -532,18 +494,11 @@ public class SimpleHttpDataCollector
         DateTime reportedAt,
         CancellationToken cancellationToken)
     {
-        var filter = _dataPointFactory.CreateFilterBuilder()
-            .Equal(dp => dp.DataPointId, dataPoint.DataPointId)
-            .WithTenant(companyId)
-            .ExcludeDeleted()
-            .Build();
-
-        var update = _dataPointFactory.CreateUpdateBuilder()
-            .Set(dp => dp.LastValue, value)
-            .Set(dp => dp.LastUpdatedAt, reportedAt)
-            .Build();
-
-        await _dataPointFactory.FindOneAndUpdateAsync(filter, update).ConfigureAwait(false);
+        await _dataPointFactory.UpdateAsync(dataPoint.Id, entity =>
+        {
+            entity.LastValue = value;
+            entity.LastUpdatedAt = reportedAt;
+        }).ConfigureAwait(false);
     }
 
     private async Task UpdateDeviceLastReportedAsync(
@@ -552,17 +507,10 @@ public class SimpleHttpDataCollector
         DateTime reportedAt,
         CancellationToken cancellationToken)
     {
-        var filter = _deviceFactory.CreateFilterBuilder()
-            .Equal(d => d.DeviceId, device.DeviceId)
-            .WithTenant(companyId)
-            .ExcludeDeleted()
-            .Build();
-
-        var update = _deviceFactory.CreateUpdateBuilder()
-            .Set(d => d.LastReportedAt, reportedAt)
-            .Build();
-
-        await _deviceFactory.FindOneAndUpdateAsync(filter, update).ConfigureAwait(false);
+        await _deviceFactory.UpdateAsync(device.Id, entity =>
+        {
+            entity.LastReportedAt = reportedAt;
+        }).ConfigureAwait(false);
     }
 
     /// <summary>

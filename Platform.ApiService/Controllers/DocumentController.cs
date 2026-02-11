@@ -22,9 +22,9 @@ public class DocumentController : BaseApiController
 {
     private readonly IDocumentService _documentService;
     private readonly IWorkflowEngine _workflowEngine;
-    private readonly IDatabaseOperationFactory<WorkflowInstance> _instanceFactory;
-    private readonly IDatabaseOperationFactory<WorkflowDefinition> _definitionFactory;
-    private readonly IDatabaseOperationFactory<FormDefinition> _formFactory;
+    private readonly IDataFactory<WorkflowInstance> _instanceFactory;
+    private readonly IDataFactory<WorkflowDefinition> _definitionFactory;
+    private readonly IDataFactory<FormDefinition> _formFactory;
 
     /// <summary>
     /// 初始化公文管理控制器
@@ -37,9 +37,9 @@ public class DocumentController : BaseApiController
     public DocumentController(
         IDocumentService documentService,
         IWorkflowEngine workflowEngine,
-        IDatabaseOperationFactory<WorkflowInstance> instanceFactory,
-        IDatabaseOperationFactory<WorkflowDefinition> definitionFactory,
-        IDatabaseOperationFactory<FormDefinition> formFactory)
+        IDataFactory<WorkflowInstance> instanceFactory,
+        IDataFactory<WorkflowDefinition> definitionFactory,
+        IDataFactory<FormDefinition> formFactory)
     {
         _documentService = documentService;
         _workflowEngine = workflowEngine;

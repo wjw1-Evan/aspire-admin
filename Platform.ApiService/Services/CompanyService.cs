@@ -1,10 +1,9 @@
+using Microsoft.EntityFrameworkCore;
 using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Constants;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
-using MongoDB.Bson;
-using MongoDB.Driver;
 
 namespace Platform.ApiService.Services;
 
@@ -69,12 +68,12 @@ public interface ICompanyService
 /// </summary>
 public class CompanyService : ICompanyService
 {
-    private readonly IDatabaseOperationFactory<Company> _companyFactory;
-    private readonly IDatabaseOperationFactory<AppUser> _userFactory;
-    private readonly IDatabaseOperationFactory<Role> _roleFactory;
-    private readonly IDatabaseOperationFactory<UserCompany> _userCompanyFactory;
-    private readonly IDatabaseOperationFactory<CompanyJoinRequest> _joinRequestFactory;
-    private readonly IDatabaseOperationFactory<Menu> _menuFactory;
+    private readonly IDataFactory<Company> _companyFactory;
+    private readonly IDataFactory<AppUser> _userFactory;
+    private readonly IDataFactory<Role> _roleFactory;
+    private readonly IDataFactory<UserCompany> _userCompanyFactory;
+    private readonly IDataFactory<CompanyJoinRequest> _joinRequestFactory;
+    private readonly IDataFactory<Menu> _menuFactory;
     private readonly IPasswordHasher _passwordHasher;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<CompanyService> _logger;
@@ -92,12 +91,12 @@ public class CompanyService : ICompanyService
     /// <param name="tenantContext">租户上下文</param>
     /// <param name="logger">日志记录器</param>
     public CompanyService(
-        IDatabaseOperationFactory<Company> companyFactory,
-        IDatabaseOperationFactory<AppUser> userFactory,
-        IDatabaseOperationFactory<Role> roleFactory,
-        IDatabaseOperationFactory<UserCompany> userCompanyFactory,
-        IDatabaseOperationFactory<CompanyJoinRequest> joinRequestFactory,
-        IDatabaseOperationFactory<Menu> menuFactory,
+        IDataFactory<Company> companyFactory,
+        IDataFactory<AppUser> userFactory,
+        IDataFactory<Role> roleFactory,
+        IDataFactory<UserCompany> userCompanyFactory,
+        IDataFactory<CompanyJoinRequest> joinRequestFactory,
+        IDataFactory<Menu> menuFactory,
         IPasswordHasher passwordHasher,
         ITenantContext tenantContext,
         ILogger<CompanyService> logger)
@@ -199,14 +198,11 @@ public class CompanyService : ICompanyService
                 CreatedBy = currentUser.Id  // ✅ 显式设置创建人ID
             };
 
-            await _companyFactory.CreateAsync(company, currentUser.Id, null);
+            await _companyFactory.CreateAsync(company);
             _logger.LogInformation("创建企业: {CompanyName} ({CompanyCode}), ID: {CompanyId}, CreatedBy: {CreatedBy}", company.Name, company.Code, company.Id, company.CreatedBy);
 
             // 2. 获取所有全局菜单ID（菜单是全局资源，所有企业共享）
-            var menuFilter = _menuFactory.CreateFilterBuilder()
-                .Equal(m => m.IsEnabled, true)
-                .Build();
-            var allMenus = await _menuFactory.FindAsync(menuFilter);
+            var allMenus = await _menuFactory.FindAsync(m => m.IsEnabled == true);
             var allMenuIds = allMenus.Select(m => m.Id!).ToList();
             _logger.LogInformation("获取 {Count} 个全局菜单", allMenuIds.Count);
 
@@ -256,10 +252,7 @@ public class CompanyService : ICompanyService
             {
                 try
                 {
-                    var ucFilter = _userCompanyFactory.CreateFilterBuilder()
-                        .Equal(uc => uc.Id, userCompany.Id!)
-                        .Build();
-                    await _userCompanyFactory.FindOneAndSoftDeleteAsync(ucFilter);
+                    await _userCompanyFactory.SoftDeleteAsync(userCompany.Id!);
                 }
                 catch { }
             }
@@ -268,10 +261,7 @@ public class CompanyService : ICompanyService
             {
                 try
                 {
-                    var roleFilter = _roleFactory.CreateFilterBuilder()
-                        .Equal(r => r.Id, adminRole.Id!)
-                        .Build();
-                    await _roleFactory.FindOneAndSoftDeleteAsync(roleFilter);
+                    await _roleFactory.SoftDeleteAsync(adminRole.Id!);
                 }
                 catch { }
             }
@@ -280,10 +270,7 @@ public class CompanyService : ICompanyService
             {
                 try
                 {
-                    var companyFilter = _companyFactory.CreateFilterBuilder()
-                        .Equal(c => c.Id, company.Id!)
-                        .Build();
-                    await _companyFactory.FindOneAndSoftDeleteAsync(companyFilter);
+                    await _companyFactory.SoftDeleteAsync(company.Id!);
                 }
                 catch { }
             }
@@ -306,10 +293,7 @@ public class CompanyService : ICompanyService
     /// </summary>
     public async Task<Company?> GetCompanyByCodeAsync(string code)
     {
-        var filter = _companyFactory.CreateFilterBuilder()
-            .Equal(c => c.Code, code.ToLower())
-            .Build();
-        var companies = await _companyFactory.FindAsync(filter);
+        var companies = await _companyFactory.FindAsync(c => c.Code == code.ToLower());
         return companies.FirstOrDefault();
     }
 
@@ -318,39 +302,17 @@ public class CompanyService : ICompanyService
     /// </summary>
     public async Task<bool> UpdateCompanyAsync(string id, UpdateCompanyRequest request)
     {
-        var filter = _companyFactory.CreateFilterBuilder()
-            .Equal(c => c.Id, id)
-            .Build();
-
-        var updateBuilder = _companyFactory.CreateUpdateBuilder();
-
-        if (request.Name != null)
-            updateBuilder.Set(c => c.Name, request.Name);
-        if (request.Description != null)
-            updateBuilder.Set(c => c.Description, request.Description);
-        if (request.Industry != null)
-            updateBuilder.Set(c => c.Industry, request.Industry);
-        if (request.ContactName != null)
-            updateBuilder.Set(c => c.ContactName, request.ContactName);
-        if (request.ContactEmail != null)
-            updateBuilder.Set(c => c.ContactEmail, request.ContactEmail);
-        if (request.ContactPhone != null)
-            updateBuilder.Set(c => c.ContactPhone, request.ContactPhone);
-        if (request.Logo != null)
-            updateBuilder.Set(c => c.Logo, request.Logo);
-        if (request.DisplayName != null)
-            updateBuilder.Set(c => c.DisplayName, request.DisplayName);
-
-        updateBuilder.SetCurrentTimestamp();
-        var update = updateBuilder.Build();
-
-        var options = new FindOneAndUpdateOptions<Company>
+        var updatedCompany = await _companyFactory.UpdateAsync(id, entity =>
         {
-            ReturnDocument = ReturnDocument.After,
-            IsUpsert = false
-        };
-
-        var updatedCompany = await _companyFactory.FindOneAndUpdateAsync(filter, update, options);
+            if (request.Name != null) entity.Name = request.Name;
+            if (request.Description != null) entity.Description = request.Description;
+            if (request.Industry != null) entity.Industry = request.Industry;
+            if (request.ContactName != null) entity.ContactName = request.ContactName;
+            if (request.ContactEmail != null) entity.ContactEmail = request.ContactEmail;
+            if (request.ContactPhone != null) entity.ContactPhone = request.ContactPhone;
+            if (request.Logo != null) entity.Logo = request.Logo;
+            if (request.DisplayName != null) entity.DisplayName = request.DisplayName;
+        });
         return updatedCompany != null;
     }
 
@@ -365,34 +327,16 @@ public class CompanyService : ICompanyService
             throw new KeyNotFoundException(CompanyErrorMessages.CompanyNotFound);
         }
 
-        // v3.1: 使用 UserCompany 表统计用户数量
-        var ucFilter = _userCompanyFactory.CreateFilterBuilder()
-            .Equal(uc => uc.CompanyId, companyId)
-            .Equal(uc => uc.Status, "active")
-            .Build();
-        var totalUsers = await _userCompanyFactory.CountAsync(ucFilter);
+        var totalUsers = await _userCompanyFactory.CountAsync(uc => uc.CompanyId == companyId && uc.Status == "active");
 
-        // 统计活跃用户（需要关联 AppUser 表）
-        var activeUserIds = await _userCompanyFactory.FindAsync(ucFilter);
+        var activeUserIds = await _userCompanyFactory.FindAsync(uc => uc.CompanyId == companyId && uc.Status == "active");
         var userIds = activeUserIds.Select(uc => uc.UserId).ToList();
 
-        var activeUserFilter = _userFactory.CreateFilterBuilder()
-            .In(u => u.Id, userIds)
-            .Equal(u => u.IsActive, true)
-            .Build();
-        var activeUsers = await _userFactory.CountAsync(activeUserFilter);
+        var activeUsers = await _userFactory.CountAsync(u => userIds.Contains(u.Id) && u.IsActive);
 
-        // 角色统计
-        var roleFilter = _roleFactory.CreateFilterBuilder()
-            .Equal(r => r.CompanyId, companyId)
-            .Build();
-        var totalRoles = await _roleFactory.CountAsync(roleFilter);
+        var totalRoles = await _roleFactory.CountAsync(r => r.CompanyId == companyId);
 
-        // 菜单统计：统计系统中所有启用的菜单
-        var menuFilter = _menuFactory.CreateFilterBuilder()
-            .Equal(m => m.IsEnabled, true)
-            .Build();
-        var totalMenus = await _menuFactory.CountAsync(menuFilter);
+        var totalMenus = await _menuFactory.CountAsync(m => m.IsEnabled == true);
 
         return new CompanyStatistics
         {
@@ -427,19 +371,10 @@ public class CompanyService : ICompanyService
         var userId = _tenantContext.GetCurrentUserId();
 
         // 搜索企业（按名称或代码）
-        var nameFilter = _companyFactory.CreateFilterBuilder()
-            .Regex(c => c.Name, keyword, "i")
-            .Equal(c => c.IsActive, true)
-            .Build();
-
-        var codeFilter = _companyFactory.CreateFilterBuilder()
-            .Regex(c => c.Code, keyword, "i")
-            .Equal(c => c.IsActive, true)
-            .Build();
-
-        var filter = Builders<Company>.Filter.Or(nameFilter, codeFilter);
-
-        var companies = await _companyFactory.FindAsync(filter, limit: 20);
+        var keywordLower = keyword.ToLower();
+        var companies = await _companyFactory.FindAsync(
+            c => (c.Name.ToLower().Contains(keywordLower) || c.Code.ToLower().Contains(keywordLower)) && c.IsActive == true,
+            limit: 20);
 
         var results = new List<CompanySearchResult>();
 
@@ -448,49 +383,27 @@ public class CompanyService : ICompanyService
         var creators = new Dictionary<string, AppUser>();
         if (creatorIds.Any())
         {
-            var creatorFilter = _userFactory.CreateFilterBuilder().In(u => u.Id, creatorIds).Build();
-            // ✅ 使用 FindWithoutTenantFilterAsync 确保即便 AppUser 系统有潜在过滤也能查到全局创建者
-            var creatorList = await _userFactory.FindWithoutTenantFilterAsync(creatorFilter);
+            var creatorList = await _userFactory.FindWithoutTenantFilterAsync(u => creatorIds.Contains(u.Id));
             creators = creatorList.Where(u => u.Id != null).ToDictionary(u => u.Id!, u => u);
         }
 
         foreach (var company in companies)
         {
-            // 检查用户是否已是成员
             UserCompany? membership = null;
             if (!string.IsNullOrEmpty(userId))
             {
-                var membershipFilter = _userCompanyFactory.CreateFilterBuilder()
-                    .Equal(uc => uc.UserId, userId)
-                    .Equal(uc => uc.CompanyId, company.Id)
-                    .Build();
-                // UserCompany 不实现 IMultiTenant，CompanyId 是业务字段，可以直接查询
-                var memberships = await _userCompanyFactory.FindAsync(membershipFilter);
+                var memberships = await _userCompanyFactory.FindAsync(uc => uc.UserId == userId && uc.CompanyId == company.Id);
                 membership = memberships.FirstOrDefault();
             }
 
-            // 检查是否有待审核的申请
-            // ✅ 使用 FindWithoutTenantFilterAsync：需要跨企业查询申请记录
             CompanyJoinRequest? pendingRequest = null;
             if (!string.IsNullOrEmpty(userId))
             {
-                var requestFilter = _joinRequestFactory.CreateFilterBuilder()
-                    .Equal(jr => jr.UserId, userId)
-                    .Equal(jr => jr.CompanyId, company.Id)
-                    .Equal(jr => jr.Status, "pending")
-                    .Build();
-                // ✅ 跨企业查询：申请记录可能属于其他企业，不能只查询当前企业
-                var requests = await _joinRequestFactory.FindWithoutTenantFilterAsync(requestFilter);
+                var requests = await _joinRequestFactory.FindWithoutTenantFilterAsync(jr => jr.UserId == userId && jr.CompanyId == company.Id && jr.Status == "pending");
                 pendingRequest = requests.FirstOrDefault();
             }
 
-            // 统计成员数
-            // UserCompany 不实现 IMultiTenant，CompanyId 是业务字段，可以直接查询
-            var memberCountFilter = _userCompanyFactory.CreateFilterBuilder()
-                .Equal(uc => uc.CompanyId, company.Id)
-                .Equal(uc => uc.Status, "active")
-                .Build();
-            var memberCountList = await _userCompanyFactory.FindAsync(memberCountFilter);
+            var memberCountList = await _userCompanyFactory.FindAsync(uc => uc.CompanyId == company.Id && uc.Status == "active");
             var memberCount = memberCountList.Count;
 
             // 获取创建人名称 (仅通过ID查询)

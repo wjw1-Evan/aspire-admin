@@ -5,12 +5,12 @@
 ## ✨ 关键特性
 
 - **国际化与本地化**：系统全面支持 **18 种国际化语言** (i18n)，适配 RTL 布局（如阿拉伯语、波斯语），支持自动检测浏览器语言并实现全局菜单与界面的即时切换。
-- **现代化数据模型**：强制执行 **数据访问工厂 (`IDatabaseOperationFactory<T>`)** 模式，统一处理多租户隔离、软删除、审计追踪与自动分页，禁止绕过工厂直接操作集合。
+- **现代化数据模型**：采用统一的 **IDataFactory** 模式与 **LINQ 表达式**，实现数据库无关的数据访问层。所有过滤与更新操作均在引擎层/数据库侧执行（避免内存过滤），全面去除了 MongoDB 特定 API（如 `FindOneAndUpdate`、`CreateUpdateBuilder`）的显式依赖，确保了核心逻辑（如工作流引擎、云存储）的架构通用性与可迁移性。
 - **园区管理 (Park Management)**：提供端到端的资产管理（楼宇/房源）、招商辅助（线索/项目/跟进）、租户全生命周期管理（合同/租金/账单）以及企业服务（工单/评价）与 AI 驱动的运营报表。
 - **走访管理 (Visit Management)**：完整的走访协同体系，包含任务下发、现场核查、走访考核、知识库沉淀及多维度的走访统计。
-- **工作流引擎**：可视化工作流与表单设计器，支持跨租户的公文审批流程，包含任务拾取、转签、驳回、撤回与流程快照回溯。
+- **工作流引擎**：自研轻量级高性能工作流引擎，全面重构为基于 LINQ 的通用模型，支持可视化流程设计、表单绑定、任务拾取、转签、驳回、撤回与流程快照回溯。
 - **全栈 AI 协同**：内置 AI 助手（小科管理）与 MCP (Model Context Protocol) 规则引擎，支持 SSE 长连接流式输出、消息上下文管理、AI 报告生成、附件协同与附近的人/社交会话。
-- **云存储协作**：基于 MongoDB GridFS 的云硬盘系统，支持文件版本管理、外链分享（含权限/审计）、配额控制与实时统计。
+- **云硬盘协作**：基于 IDataFactory 抽象的云存储系统（底层支持 GridFS），支持多版本管理、秒传校验、外链分享（含权限/审计）、配额控制与实时容量统计。
 - **项目与任务管理**：支持任务依赖链条、执行日志追踪、看板模式、成员权限隔离与全局项目进度统计。
 - **IoT 平台**：完整的物联网监控方案，涵盖网关管理、设备状态追踪、数据点采集、事件告警与实时监控面板。
 - **基础设施**：采用 .NET Aspire 编排，集成 YARP 网关、Scalar/OpenAPI 文档、OpenTelemetry 观测、安全验证码与登录失败保护。
@@ -21,7 +21,7 @@
 Platform/
 ├── Platform.AppHost/          # Aspire 应用主机与服务编排 (v10.0)
 ├── Platform.DataInitializer/  # 数据初始化微服务（索引、全局菜单与多语言同步）
-├── Platform.ApiService/       # 多租户 REST API 服务 (MongoDB + IDatabaseOperationFactory)
+├── Platform.ApiService/       # 多租户 REST API 服务 (IDataFactory 统一数据访问)
 ├── Platform.Admin/            # 管理后台 (React 19 + Ant Design 6 + UmiJS)
 ├── Platform.App/              # 移动端 (React Native + Expo Router)
 ├── Platform.MiniApp/          # 微信小程序 (原生开发)
@@ -30,7 +30,7 @@ Platform/
 
 ### 服务编排
 
-`Platform.AppHost` 自动化拉起 MongoDB 容器、数据初始化服务、后端 API、管理后台与移动端预览，并通过 YARP 将请求统一路由到响应的服务。Aspire Dashboard 提供了实时的指标监控与分布式追踪。
+`Platform.AppHost` 自动化拉起数据库容器、数据初始化服务、后端 API、管理后台与移动端预览，并通过 YARP 将请求统一路由到响应的服务。Aspire Dashboard 提供了实时的指标监控与分布式追踪。
 
 ## 🔙 后端服务 (Platform.ApiService)
 
@@ -100,6 +100,7 @@ Platform/
    - [Docker Desktop](https://www.docker.com/products/docker-desktop)
 
 2. **前端准备**
+
    ```bash
    (cd Platform.Admin && npm install)
    (cd Platform.App && npm install)
@@ -110,6 +111,7 @@ Platform/
    - 在 `Platform.AppHost` 设置相应的 Endpoint 与 Key 以启用 AI 对话与报告生成功能。
 
 4. **一键启动**
+
    ```bash
    dotnet run --project Platform.AppHost
    ```
@@ -128,11 +130,13 @@ Platform/
 ## 📚 延伸阅读
 
 ### 核心规范与架构
+
 - [docs/开发规范.md](docs/开发规范.md)
 - [docs/features/BACKEND-RULES.md](docs/features/BACKEND-RULES.md)
 - [docs/features/DATABASE-OPERATION-FACTORY-GUIDE.md](docs/features/DATABASE-OPERATION-FACTORY-GUIDE.md)
 
 ### 功能指南
+
 - [docs/features/IOT-MENU-CONFIGURATION.md](docs/features/IOT-MENU-CONFIGURATION.md)
 - [docs/features/SSE-REALTIME-COMMUNICATION.md](docs/features/SSE-REALTIME-COMMUNICATION.md)
 - [docs/features/TASK-PROJECT-MANAGEMENT.md](docs/features/TASK-PROJECT-MANAGEMENT.md)

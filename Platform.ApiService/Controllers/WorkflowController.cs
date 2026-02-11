@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using MongoDB.Driver;
 using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
@@ -11,6 +10,7 @@ using Platform.ServiceDefaults.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 namespace Platform.ApiService.Controllers;
@@ -23,10 +23,10 @@ namespace Platform.ApiService.Controllers;
 [Authorize]
 public class WorkflowController : BaseApiController
 {
-    private readonly IDatabaseOperationFactory<WorkflowDefinition> _definitionFactory;
-    private readonly IDatabaseOperationFactory<WorkflowInstance> _instanceFactory;
-    private readonly IDatabaseOperationFactory<FormDefinition> _formFactory;
-    private readonly IDatabaseOperationFactory<Document> _documentFactory;
+    private readonly IDataFactory<WorkflowDefinition> _definitionFactory;
+    private readonly IDataFactory<WorkflowInstance> _instanceFactory;
+    private readonly IDataFactory<FormDefinition> _formFactory;
+    private readonly IDataFactory<Document> _documentFactory;
     private readonly IWorkflowEngine _workflowEngine;
     private readonly IUserService _userService;
     private readonly IFieldValidationService _fieldValidationService;
@@ -46,10 +46,10 @@ public class WorkflowController : BaseApiController
     /// <param name="graphValidator">流程图形校验服务</param>
     /// <param name="logger">日志记录器</param>
     public WorkflowController(
-        IDatabaseOperationFactory<WorkflowDefinition> definitionFactory,
-        IDatabaseOperationFactory<WorkflowInstance> instanceFactory,
-        IDatabaseOperationFactory<FormDefinition> formFactory,
-        IDatabaseOperationFactory<Document> documentFactory,
+        IDataFactory<WorkflowDefinition> definitionFactory,
+        IDataFactory<WorkflowInstance> instanceFactory,
+        IDataFactory<FormDefinition> formFactory,
+        IDataFactory<Document> documentFactory,
         IWorkflowEngine workflowEngine,
         IUserService userService,
         IFieldValidationService fieldValidationService,
@@ -76,123 +76,105 @@ public class WorkflowController : BaseApiController
     {
         try
         {
-            // 验证分页参数
             if (request.Page < 1 || request.Page > 10000)
                 throw new ArgumentException("页码必须在 1-10000 之间");
 
             if (request.PageSize < 1 || request.PageSize > 100)
                 throw new ArgumentException("每页数量必须在 1-100 之间");
 
-            var filterBuilder = _definitionFactory.CreateFilterBuilder();
+            Expression<Func<WorkflowDefinition, bool>>? filter = null;
 
-            // 多字段搜索：在名称、描述和类别中搜索关键词
             if (!string.IsNullOrEmpty(request.Keyword))
             {
-                // 创建OR条件：名称包含关键词 OR 描述包含关键词 OR 类别包含关键词
-                var nameFilter = _definitionFactory.CreateFilterBuilder().Regex(w => w.Name, request.Keyword).Build();
-                var descFilter = _definitionFactory.CreateFilterBuilder().Regex(w => w.Description ?? string.Empty, request.Keyword).Build();
-                var categoryFilter = _definitionFactory.CreateFilterBuilder().Regex(w => w.Category, request.Keyword).Build();
-
-                var orFilter = Builders<WorkflowDefinition>.Filter.Or(nameFilter, descFilter, categoryFilter);
-                filterBuilder.Custom(orFilter);
+                filter = w => w.Name.Contains(request.Keyword) ||
+                              (w.Description != null && w.Description.Contains(request.Keyword)) ||
+                              w.Category.Contains(request.Keyword);
             }
 
-            // 多类别过滤
             if (request.Categories != null && request.Categories.Any())
             {
-                filterBuilder.In(w => w.Category, request.Categories);
+                var categories = request.Categories;
+                Expression<Func<WorkflowDefinition, bool>> categoryFilter = w => categories.Contains(w.Category);
+                filter = filter == null ? categoryFilter : w => filter.Compile()(w) && categoryFilter.Compile()(w);
             }
 
-            // 多状态过滤
             if (request.Statuses != null && request.Statuses.Any())
             {
                 var statusValues = request.Statuses.Select(s => s == "active").ToList();
-                filterBuilder.In(w => w.IsActive, statusValues);
+                Expression<Func<WorkflowDefinition, bool>> statusFilter = w => statusValues.Contains(w.IsActive);
+                filter = filter == null ? statusFilter : w => filter.Compile()(w) && statusFilter.Compile()(w);
             }
 
-            // 日期范围过滤
             if (request.DateRange != null)
             {
+                Expression<Func<WorkflowDefinition, bool>> dateFilter = w => true;
                 switch (request.DateRange.Field?.ToLowerInvariant())
                 {
                     case "createdat":
                     case "created":
                         if (request.DateRange.Start.HasValue)
-                            filterBuilder.GreaterThanOrEqual(w => w.CreatedAt, request.DateRange.Start.Value);
+                            dateFilter = w => w.CreatedAt >= request.DateRange.Start.Value;
                         if (request.DateRange.End.HasValue)
-                            filterBuilder.LessThanOrEqual(w => w.CreatedAt, request.DateRange.End.Value);
+                            dateFilter = w => w.CreatedAt <= request.DateRange.End.Value;
                         break;
                     case "updatedat":
                     case "updated":
                         if (request.DateRange.Start.HasValue)
-                            filterBuilder.GreaterThanOrEqual(w => w.UpdatedAt, request.DateRange.Start.Value);
+                            dateFilter = w => w.UpdatedAt >= request.DateRange.Start.Value;
                         if (request.DateRange.End.HasValue)
-                            filterBuilder.LessThanOrEqual(w => w.UpdatedAt, request.DateRange.End.Value);
+                            dateFilter = w => w.UpdatedAt <= request.DateRange.End.Value;
                         break;
                     case "lastused":
                         if (request.DateRange.Start.HasValue)
-                            filterBuilder.GreaterThanOrEqual(w => w.Analytics.LastUsedAt, request.DateRange.Start.Value);
+                            dateFilter = w => w.Analytics.LastUsedAt >= request.DateRange.Start.Value;
                         if (request.DateRange.End.HasValue)
-                            filterBuilder.LessThanOrEqual(w => w.Analytics.LastUsedAt, request.DateRange.End.Value);
+                            dateFilter = w => w.Analytics.LastUsedAt <= request.DateRange.End.Value;
                         break;
                 }
+                filter = filter == null ? dateFilter : w => filter.Compile()(w) && dateFilter.Compile()(w);
             }
 
-            // 使用范围过滤
             if (request.UsageRange != null)
             {
+                Expression<Func<WorkflowDefinition, bool>> usageFilter = w => true;
                 if (request.UsageRange.Min.HasValue)
-                    filterBuilder.GreaterThanOrEqual(w => w.Analytics.UsageCount, request.UsageRange.Min.Value);
+                    usageFilter = w => w.Analytics.UsageCount >= request.UsageRange.Min.Value;
                 if (request.UsageRange.Max.HasValue)
-                    filterBuilder.LessThanOrEqual(w => w.Analytics.UsageCount, request.UsageRange.Max.Value);
+                    usageFilter = w => w.Analytics.UsageCount <= request.UsageRange.Max.Value;
+                filter = filter == null ? usageFilter : w => filter.Compile()(w) && usageFilter.Compile()(w);
             }
 
-            // 创建者过滤
             if (request.CreatedBy != null && request.CreatedBy.Any())
             {
-                filterBuilder.In(w => w.CreatedBy, request.CreatedBy);
+                var createdByList = request.CreatedBy;
+                Expression<Func<WorkflowDefinition, bool>> createdByFilter = w => createdByList.Contains(w.CreatedBy);
+                filter = filter == null ? createdByFilter : w => filter.Compile()(w) && createdByFilter.Compile()(w);
             }
 
-            var filter = filterBuilder.Build();
-
-            // 排序处理
-            var sortBuilder = _definitionFactory.CreateSortBuilder();
-            if (!string.IsNullOrEmpty(request.SortBy))
+            Func<IQueryable<WorkflowDefinition>, IOrderedQueryable<WorkflowDefinition>> sort = q =>
             {
-                var isDescending = request.SortOrder?.ToLowerInvariant() == "desc";
-                switch (request.SortBy.ToLowerInvariant())
+                if (!string.IsNullOrEmpty(request.SortBy))
                 {
-                    case "name":
-                        if (isDescending) sortBuilder.Descending(w => w.Name);
-                        else sortBuilder.Ascending(w => w.Name);
-                        break;
-                    case "category":
-                        if (isDescending) sortBuilder.Descending(w => w.Category);
-                        else sortBuilder.Ascending(w => w.Category);
-                        break;
-                    case "createdat":
-                        if (isDescending) sortBuilder.Descending(w => w.CreatedAt);
-                        else sortBuilder.Ascending(w => w.CreatedAt);
-                        break;
-                    case "updatedat":
-                        if (isDescending) sortBuilder.Descending(w => w.UpdatedAt);
-                        else sortBuilder.Ascending(w => w.UpdatedAt);
-                        break;
-                    case "usagecount":
-                        if (isDescending) sortBuilder.Descending(w => w.Analytics.UsageCount);
-                        else sortBuilder.Ascending(w => w.Analytics.UsageCount);
-                        break;
-                    default:
-                        sortBuilder.Descending(w => w.CreatedAt);
-                        break;
+                    var isDescending = request.SortOrder?.ToLowerInvariant() == "desc";
+                    switch (request.SortBy.ToLowerInvariant())
+                    {
+                        case "name":
+                            return isDescending ? q.OrderByDescending(w => w.Name) : q.OrderBy(w => w.Name);
+                        case "category":
+                            return isDescending ? q.OrderByDescending(w => w.Category) : q.OrderBy(w => w.Category);
+                        case "createdat":
+                            return isDescending ? q.OrderByDescending(w => w.CreatedAt) : q.OrderBy(w => w.CreatedAt);
+                        case "updatedat":
+                            return isDescending ? q.OrderByDescending(w => w.UpdatedAt) : q.OrderBy(w => w.UpdatedAt);
+                        case "usagecount":
+                            return isDescending ? q.OrderByDescending(w => w.Analytics.UsageCount) : q.OrderBy(w => w.Analytics.UsageCount);
+                        default:
+                            return q.OrderByDescending(w => w.CreatedAt);
+                    }
                 }
-            }
-            else
-            {
-                sortBuilder.Descending(w => w.CreatedAt);
-            }
+                return q.OrderByDescending(w => w.CreatedAt);
+            };
 
-            var sort = sortBuilder.Build();
             var result = await _definitionFactory.FindPagedAsync(filter, sort, request.Page, request.PageSize);
 
             return SuccessPaged(result.items, result.total, request.Page, request.PageSize);
@@ -249,7 +231,6 @@ public class WorkflowController : BaseApiController
                 return ValidationError("流程图形定义不能为空");
             }
 
-            // 验证图形合法性
             var (isGraphValid, graphError) = _graphValidator.Validate(request.Graph);
             if (!isGraphValid)
             {
@@ -294,58 +275,46 @@ public class WorkflowController : BaseApiController
                 return NotFoundError("流程定义", id);
             }
 
-            var updateBuilder = _definitionFactory.CreateUpdateBuilder();
-            bool hasUpdate = false;
-
-            if (!string.IsNullOrEmpty(request.Name))
+            Action<WorkflowDefinition> updateAction = w =>
             {
-                updateBuilder.Set(w => w.Name, request.Name);
-                hasUpdate = true;
-            }
-
-            if (request.Description != null)
-            {
-                updateBuilder.Set(w => w.Description, request.Description);
-                hasUpdate = true;
-            }
-
-            if (!string.IsNullOrEmpty(request.Category))
-            {
-                updateBuilder.Set(w => w.Category, request.Category);
-                hasUpdate = true;
-            }
-
-            if (request.Graph != null)
-            {
-                // 验证图形合法性
-                var (isGraphValid, graphError) = _graphValidator.Validate(request.Graph);
-                if (!isGraphValid)
+                if (!string.IsNullOrEmpty(request.Name))
                 {
-                    return ValidationError($"流程图形定义不合法: {graphError}");
+                    w.Name = request.Name;
                 }
 
-                updateBuilder.Set(w => w.Graph, request.Graph);
-                hasUpdate = true;
-            }
+                if (request.Description != null)
+                {
+                    w.Description = request.Description;
+                }
 
-            if (request.IsActive.HasValue)
-            {
-                updateBuilder.Set(w => w.IsActive, request.IsActive.Value);
-                hasUpdate = true;
-            }
+                if (!string.IsNullOrEmpty(request.Category))
+                {
+                    w.Category = request.Category;
+                }
 
-            if (!hasUpdate)
-            {
-                return Success(workflow);
-            }
+                if (request.Graph != null)
+                {
+                    var (isGraphValid, graphError) = _graphValidator.Validate(request.Graph);
+                    if (!isGraphValid)
+                    {
+                        throw new ArgumentException($"流程图形定义不合法: {graphError}");
+                    }
 
-            var update = updateBuilder.Build();
-            var filter = _definitionFactory.CreateFilterBuilder()
-                .Equal(w => w.Id, id)
-                .Build();
+                    w.Graph = request.Graph;
+                }
 
-            var updated = await _definitionFactory.FindOneAndUpdateAsync(filter, update);
+                if (request.IsActive.HasValue)
+                {
+                    w.IsActive = request.IsActive.Value;
+                }
+            };
+
+            var updated = await _definitionFactory.UpdateAsync(id, updateAction);
             return Success(updated);
+        }
+        catch (ArgumentException ex)
+        {
+            return ValidationError(ex.Message);
         }
         catch (Exception ex)
         {
@@ -362,12 +331,8 @@ public class WorkflowController : BaseApiController
     {
         try
         {
-            var filter = _definitionFactory.CreateFilterBuilder()
-                .Equal(w => w.Id, id)
-                .Build();
-
-            var result = await _definitionFactory.FindOneAndSoftDeleteAsync(filter);
-            if (result == null)
+            var result = await _definitionFactory.SoftDeleteAsync(id);
+            if (!result)
             {
                 return NotFoundError("流程定义", id);
             }
@@ -431,22 +396,20 @@ public class WorkflowController : BaseApiController
     {
         try
         {
-            var filterBuilder = _instanceFactory.CreateFilterBuilder();
+            Expression<Func<WorkflowInstance, bool>> filter = i => true;
 
             if (!string.IsNullOrEmpty(workflowDefinitionId))
             {
-                filterBuilder.Equal(i => i.WorkflowDefinitionId, workflowDefinitionId);
+                filter = i => i.WorkflowDefinitionId == workflowDefinitionId;
             }
 
             if (status.HasValue)
             {
-                filterBuilder.Equal(i => i.Status, status.Value);
+                var statusValue = status.Value;
+                filter = filter == null ? i => i.Status == statusValue : i => filter.Compile()(i) && i.Status == statusValue;
             }
 
-            var filter = filterBuilder.Build();
-            var sort = _instanceFactory.CreateSortBuilder()
-                .Descending(i => i.CreatedAt)
-                .Build();
+            Func<IQueryable<WorkflowInstance>, IOrderedQueryable<WorkflowInstance>> sort = q => q.OrderByDescending(i => i.CreatedAt);
 
             var result = await _instanceFactory.FindPagedAsync(filter, sort, current, pageSize);
             return SuccessPaged(result.items, result.total, current, pageSize);
@@ -472,13 +435,11 @@ public class WorkflowController : BaseApiController
                 return NotFoundError("流程定义", id);
             }
 
-            // 优先起始节点
             var startNode = definition.Graph.Nodes.FirstOrDefault(n => n.Type == "start");
             FormBinding? binding = startNode?.Config?.Form;
 
             if (binding == null || binding.Target != FormTarget.Document)
             {
-                // 取第一个绑定了文档表单的节点
                 var nodeWithDocForm = definition.Graph.Nodes
                     .FirstOrDefault(n => n.Config?.Form?.Target == FormTarget.Document);
                 binding = nodeWithDocForm?.Config?.Form;
@@ -495,7 +456,6 @@ public class WorkflowController : BaseApiController
                 return NotFoundError("表单定义", binding.FormDefinitionId);
             }
 
-            // 生成初始值：使用字段 defaultValue；若存在 title 字段且无默认值，则用流程名称
             var initialValues = new Dictionary<string, object>();
             foreach (var field in form.Fields)
             {
@@ -529,13 +489,10 @@ public class WorkflowController : BaseApiController
         try
         {
             var userId = GetRequiredUserId();
-            var filter = _instanceFactory.CreateFilterBuilder()
-                .Equal(i => i.Status, WorkflowStatus.Running)
-                .AnyEq(i => i.CurrentApproverIds, userId) // 🔧 关键改进：使用高效索引直接查询待办
-                .Build();
-            var sort = _instanceFactory.CreateSortBuilder()
-                .Descending(i => i.CreatedAt)
-                .Build();
+            Expression<Func<WorkflowInstance, bool>> filter = i => i.Status == WorkflowStatus.Running &&
+                i.CurrentApproverIds.Contains(userId);
+
+            Func<IQueryable<WorkflowInstance>, IOrderedQueryable<WorkflowInstance>> sort = q => q.OrderByDescending(i => i.CreatedAt);
 
             var result = await _instanceFactory.FindPagedAsync(filter, sort, current, pageSize);
             var todos = new List<object>();
@@ -568,7 +525,7 @@ public class WorkflowController : BaseApiController
                     instance.CurrentNodeId,
                     instance.StartedBy,
                     instance.StartedAt,
-                    instance.TimeoutAt, // 增加超时时间显示
+                    instance.TimeoutAt,
                     DefinitionName = definition.Name,
                     DefinitionCategory = definition.Category,
                     CurrentNode = new { currentNode.Id, currentNode.Label, currentNode.Type },
@@ -649,7 +606,6 @@ public class WorkflowController : BaseApiController
                 return NotFoundError("流程实例", id);
             }
 
-            // 优先使用实例中的定义快照，如果没有快照则使用最新定义（向后兼容）
             WorkflowDefinition? definition = instance.WorkflowDefinitionSnapshot;
             if (definition == null)
             {
@@ -672,7 +628,6 @@ public class WorkflowController : BaseApiController
                 return Success(new { form = (FormDefinition?)null, initialValues = (object?)null });
             }
 
-            // 优先使用实例中的表单定义快照
             FormDefinition? form = null;
             if (instance.FormDefinitionSnapshots != null && instance.FormDefinitionSnapshots.TryGetValue(nodeId, out var snapshotForm))
             {
@@ -680,7 +635,6 @@ public class WorkflowController : BaseApiController
             }
             else
             {
-                // 如果没有快照，则使用最新定义（向后兼容）
                 form = await _formFactory.GetByIdAsync(binding.FormDefinitionId);
                 if (form == null)
                 {
@@ -736,7 +690,6 @@ public class WorkflowController : BaseApiController
                 return NotFoundError("流程实例", id);
             }
 
-            // 优先使用实例中的定义快照
             WorkflowDefinition? definition = instance.WorkflowDefinitionSnapshot;
             if (definition == null)
             {
@@ -759,7 +712,6 @@ public class WorkflowController : BaseApiController
                 return ValidationError("该节点未绑定表单");
             }
 
-            // 获取表单定义进行验证
             FormDefinition? form = null;
             if (instance.FormDefinitionSnapshots != null && instance.FormDefinitionSnapshots.TryGetValue(nodeId, out var snapshotForm))
             {
@@ -774,13 +726,11 @@ public class WorkflowController : BaseApiController
                 }
             }
 
-            // 表单数据验证
             if (binding.Required && (values == null || values.Count == 0))
             {
                 return ValidationError("表单数据不能为空");
             }
 
-            // 使用字段验证服务进行详细验证
             if (values != null && values.Any())
             {
                 var validationErrors = _fieldValidationService.ValidateFormData(form, values);
@@ -790,62 +740,53 @@ public class WorkflowController : BaseApiController
                 }
             }
 
-            // 清洗 JsonElement 等不可序列化类型
             values = Platform.ApiService.Extensions.SerializationExtensions.SanitizeDictionary(values ?? new Dictionary<string, object>());
 
             if (binding.Target == FormTarget.Document)
             {
-                var updateBuilder = _documentFactory.CreateUpdateBuilder();
-                if (!string.IsNullOrWhiteSpace(binding.DataScopeKey))
+                Action<Document> updateAction = d =>
                 {
-                    // 将数据作为子键存储在 FormData 中
-                    var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
-                    var formData = document?.FormData ?? new Dictionary<string, object>();
-                    formData[binding.DataScopeKey] = values;
-                    updateBuilder.Set(d => d.FormData, formData);
-                }
-                else
-                {
-                    // 🐛 修复：使用合并策略而不是覆盖，防止丢失其他步骤的数据
-                    var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
-                    var existingFormData = document?.FormData ?? new Dictionary<string, object>();
-
-                    // 合并新值到现有数据中
-                    foreach (var kvp in values)
+                    var scopedValues = values;
+                    if (!string.IsNullOrWhiteSpace(binding.DataScopeKey))
                     {
-                        existingFormData[kvp.Key] = kvp.Value;
+                        var document = _documentFactory.GetByIdAsync(instance.DocumentId).GetAwaiter().GetResult();
+                        var formData = document?.FormData ?? new Dictionary<string, object>();
+                        formData[binding.DataScopeKey] = scopedValues;
+                        d.FormData = formData;
                     }
+                    else
+                    {
+                        var document = _documentFactory.GetByIdAsync(instance.DocumentId).GetAwaiter().GetResult();
+                        var existingFormData = document?.FormData ?? new Dictionary<string, object>();
+                        foreach (var kvp in scopedValues)
+                        {
+                            existingFormData[kvp.Key] = kvp.Value;
+                        }
+                        d.FormData = existingFormData;
+                    }
+                };
 
-                    updateBuilder.Set(d => d.FormData, existingFormData);
-                }
-
-                var update = updateBuilder.Build();
-                var filter = _documentFactory.CreateFilterBuilder()
-                    .Equal(d => d.Id, instance.DocumentId)
-                    .Build();
-                var updated = await _documentFactory.FindOneAndUpdateAsync(filter, update);
+                var updated = await _documentFactory.UpdateAsync(instance.DocumentId, updateAction);
                 return Success(updated?.FormData ?? values);
             }
             else
             {
-                // 存储到实例变量
-                var instanceUpdateBuilder = _instanceFactory.CreateUpdateBuilder();
-                if (!string.IsNullOrWhiteSpace(binding.DataScopeKey))
+                Action<WorkflowInstance> updateAction = i =>
                 {
-                    var vars = instance.Variables ?? new Dictionary<string, object>();
-                    vars[binding.DataScopeKey] = values;
-                    instanceUpdateBuilder.Set(i => i.Variables, vars);
-                }
-                else
-                {
-                    instanceUpdateBuilder.Set(i => i.Variables, values);
-                }
+                    var scopedValues = values;
+                    if (!string.IsNullOrWhiteSpace(binding.DataScopeKey))
+                    {
+                        var vars = i.Variables ?? new Dictionary<string, object>();
+                        vars[binding.DataScopeKey] = scopedValues;
+                        i.Variables = vars;
+                    }
+                    else
+                    {
+                        i.Variables = scopedValues;
+                    }
+                };
 
-                var update = instanceUpdateBuilder.Build();
-                var filter = _instanceFactory.CreateFilterBuilder()
-                    .Equal(i => i.Id, id)
-                    .Build();
-                var updated = await _instanceFactory.FindOneAndUpdateAsync(filter, update);
+                var updated = await _instanceFactory.UpdateAsync(id, updateAction);
                 return Success(updated?.Variables ?? values);
             }
         }
@@ -869,13 +810,12 @@ public class WorkflowController : BaseApiController
                 return ValidationError("操作类型不能为空");
             }
 
-            // 🔧 支持填表 + 审批一步到位
             if (request.FormData != null && request.FormData.Any())
             {
                 var submitResult = await SubmitNodeForm(id, nodeId, request.FormData);
                 if (submitResult is ObjectResult obj && obj.StatusCode != 200)
                 {
-                    return submitResult; // 如果填表校验失败，直接返回
+                    return submitResult;
                 }
             }
 
@@ -990,16 +930,12 @@ public class WorkflowController : BaseApiController
         try
         {
             var userId = GetRequiredUserId();
-            var preferencesFactory = HttpContext.RequestServices.GetRequiredService<IDatabaseOperationFactory<UserWorkflowFilterPreference>>();
+            var preferencesFactory = HttpContext.RequestServices.GetRequiredService<IDataFactory<UserWorkflowFilterPreference>>();
 
-            var filter = preferencesFactory.CreateFilterBuilder()
-                .Equal(p => p.UserId, userId)
-                .Build();
+            Expression<Func<UserWorkflowFilterPreference, bool>> filter = p => p.UserId == userId;
 
-            var sort = preferencesFactory.CreateSortBuilder()
-                .Descending(p => p.IsDefault)
-                .Ascending(p => p.Name)
-                .Build();
+            Func<IQueryable<UserWorkflowFilterPreference>, IOrderedQueryable<UserWorkflowFilterPreference>> sort = q =>
+                q.OrderByDescending(p => p.IsDefault).ThenBy(p => p.Name);
 
             var preferences = await preferencesFactory.FindAsync(filter, sort);
             return Success(preferences);
@@ -1025,32 +961,19 @@ public class WorkflowController : BaseApiController
             }
 
             var userId = GetRequiredUserId();
-            var preferencesFactory = HttpContext.RequestServices.GetRequiredService<IDatabaseOperationFactory<UserWorkflowFilterPreference>>();
+            var preferencesFactory = HttpContext.RequestServices.GetRequiredService<IDataFactory<UserWorkflowFilterPreference>>();
 
-            // 检查是否已存在同名偏好
-            var existingFilter = preferencesFactory.CreateFilterBuilder()
-                .Equal(p => p.UserId, userId)
-                .Equal(p => p.Name, request.Name)
-                .Build();
-
+            Expression<Func<UserWorkflowFilterPreference, bool>> existingFilter = p => p.UserId == userId && p.Name == request.Name;
             var existing = (await preferencesFactory.FindAsync(existingFilter, limit: 1)).FirstOrDefault();
             if (existing != null)
             {
                 return ValidationError("已存在同名的过滤器偏好");
             }
 
-            // 如果设置为默认偏好，需要先取消其他默认偏好
             if (request.IsDefault)
             {
-                var defaultFilter = preferencesFactory.CreateFilterBuilder()
-                    .Equal(p => p.UserId, userId)
-                    .Equal(p => p.IsDefault, true)
-                    .Build();
-
-                var updateBuilder = preferencesFactory.CreateUpdateBuilder()
-                    .Set(p => p.IsDefault, false);
-
-                await preferencesFactory.UpdateManyAsync(defaultFilter, updateBuilder.Build());
+                Expression<Func<UserWorkflowFilterPreference, bool>> defaultFilter = p => p.UserId == userId && p.IsDefault == true;
+                await preferencesFactory.UpdateManyAsync(defaultFilter, p => p.IsDefault = false);
             }
 
             var preference = new UserWorkflowFilterPreference
@@ -1080,75 +1003,52 @@ public class WorkflowController : BaseApiController
         try
         {
             var userId = GetRequiredUserId();
-            var preferencesFactory = HttpContext.RequestServices.GetRequiredService<IDatabaseOperationFactory<UserWorkflowFilterPreference>>();
+            var preferencesFactory = HttpContext.RequestServices.GetRequiredService<IDataFactory<UserWorkflowFilterPreference>>();
 
-            var filter = preferencesFactory.CreateFilterBuilder()
-                .Equal(p => p.Id, id)
-                .Equal(p => p.UserId, userId)
-                .Build();
-
+            Expression<Func<UserWorkflowFilterPreference, bool>> filter = p => p.Id == id && p.UserId == userId;
             var preference = (await preferencesFactory.FindAsync(filter, limit: 1)).FirstOrDefault();
             if (preference == null)
             {
                 return NotFoundError("过滤器偏好", id);
             }
 
-            var updateBuilder = preferencesFactory.CreateUpdateBuilder();
-            bool hasUpdate = false;
-
-            if (!string.IsNullOrEmpty(request.Name) && request.Name != preference.Name)
+            Action<UserWorkflowFilterPreference> updateAction = p =>
             {
-                // 检查新名称是否已存在
-                var nameFilter = preferencesFactory.CreateFilterBuilder()
-                    .Equal(p => p.UserId, userId)
-                    .Equal(p => p.Name, request.Name)
-                    .NotEqual(p => p.Id, id)
-                    .Build();
-
-                var existingWithName = (await preferencesFactory.FindAsync(nameFilter, limit: 1)).FirstOrDefault();
-                if (existingWithName != null)
+                if (!string.IsNullOrEmpty(request.Name) && request.Name != preference.Name)
                 {
-                    return ValidationError("已存在同名的过滤器偏好");
+                    Expression<Func<UserWorkflowFilterPreference, bool>> nameFilter = pref =>
+                        pref.UserId == userId && pref.Name == request.Name && pref.Id != id;
+                    var existingWithName = (preferencesFactory.FindAsync(nameFilter, limit: 1).GetAwaiter().GetResult()).FirstOrDefault();
+                    if (existingWithName != null)
+                    {
+                        throw new ArgumentException("已存在同名的过滤器偏好");
+                    }
+                    p.Name = request.Name;
                 }
 
-                updateBuilder.Set(p => p.Name, request.Name);
-                hasUpdate = true;
-            }
-
-            if (request.FilterConfig != null)
-            {
-                updateBuilder.Set(p => p.FilterConfig, request.FilterConfig);
-                hasUpdate = true;
-            }
-
-            if (request.IsDefault.HasValue && request.IsDefault.Value != preference.IsDefault)
-            {
-                if (request.IsDefault.Value)
+                if (request.FilterConfig != null)
                 {
-                    // 取消其他默认偏好
-                    var defaultFilter = preferencesFactory.CreateFilterBuilder()
-                        .Equal(p => p.UserId, userId)
-                        .Equal(p => p.IsDefault, true)
-                        .NotEqual(p => p.Id, id)
-                        .Build();
-
-                    var defaultUpdateBuilder = preferencesFactory.CreateUpdateBuilder()
-                        .Set(p => p.IsDefault, false);
-
-                    await preferencesFactory.UpdateManyAsync(defaultFilter, defaultUpdateBuilder.Build());
+                    p.FilterConfig = request.FilterConfig;
                 }
 
-                updateBuilder.Set(p => p.IsDefault, request.IsDefault.Value);
-                hasUpdate = true;
-            }
+                if (request.IsDefault.HasValue && request.IsDefault.Value != preference.IsDefault)
+                {
+                    if (request.IsDefault.Value)
+                    {
+                        Expression<Func<UserWorkflowFilterPreference, bool>> defaultFilter = pref =>
+                            pref.UserId == userId && pref.IsDefault == true && pref.Id != id;
+                        preferencesFactory.UpdateManyAsync(defaultFilter, pref => pref.IsDefault = false).GetAwaiter().GetResult();
+                    }
+                    p.IsDefault = request.IsDefault.Value;
+                }
+            };
 
-            if (!hasUpdate)
-            {
-                return Success(preference);
-            }
-
-            var updated = await preferencesFactory.FindOneAndUpdateAsync(filter, updateBuilder.Build());
+            var updated = await preferencesFactory.UpdateAsync(id, updateAction);
             return Success(updated);
+        }
+        catch (ArgumentException ex)
+        {
+            return ValidationError(ex.Message);
         }
         catch (Exception ex)
         {
@@ -1166,15 +1066,17 @@ public class WorkflowController : BaseApiController
         try
         {
             var userId = GetRequiredUserId();
-            var preferencesFactory = HttpContext.RequestServices.GetRequiredService<IDatabaseOperationFactory<UserWorkflowFilterPreference>>();
+            var preferencesFactory = HttpContext.RequestServices.GetRequiredService<IDataFactory<UserWorkflowFilterPreference>>();
 
-            var filter = preferencesFactory.CreateFilterBuilder()
-                .Equal(p => p.Id, id)
-                .Equal(p => p.UserId, userId)
-                .Build();
+            Expression<Func<UserWorkflowFilterPreference, bool>> filter = p => p.Id == id && p.UserId == userId;
+            var preference = (await preferencesFactory.FindAsync(filter, limit: 1)).FirstOrDefault();
+            if (preference == null)
+            {
+                return NotFoundError("过滤器偏好", id);
+            }
 
-            var result = await preferencesFactory.FindOneAndSoftDeleteAsync(filter);
-            if (result == null)
+            var result = await preferencesFactory.SoftDeleteAsync(id);
+            if (!result)
             {
                 return NotFoundError("过滤器偏好", id);
             }
@@ -1197,13 +1099,9 @@ public class WorkflowController : BaseApiController
         try
         {
             var userId = GetRequiredUserId();
-            var preferencesFactory = HttpContext.RequestServices.GetRequiredService<IDatabaseOperationFactory<UserWorkflowFilterPreference>>();
+            var preferencesFactory = HttpContext.RequestServices.GetRequiredService<IDataFactory<UserWorkflowFilterPreference>>();
 
-            var filter = preferencesFactory.CreateFilterBuilder()
-                .Equal(p => p.UserId, userId)
-                .Equal(p => p.IsDefault, true)
-                .Build();
-
+            Expression<Func<UserWorkflowFilterPreference, bool>> filter = p => p.UserId == userId && p.IsDefault == true;
             var defaultPreference = (await preferencesFactory.FindAsync(filter, limit: 1)).FirstOrDefault();
             return Success(defaultPreference);
         }
@@ -1223,10 +1121,8 @@ public class WorkflowController : BaseApiController
         try
         {
             var docService = HttpContext.RequestServices.GetRequiredService<IDocumentService>();
-            // 1. 按表单创建草稿公文（含必填校验与 DataScopeKey 存储）
             var document = await docService.CreateDocumentForWorkflowAsync(id, request.Values ?? new Dictionary<string, object>(), request.AttachmentIds);
 
-            // 2. 启动流程：若未显式提供 variables，则将表单值合并为实例变量
             var mergedVariables = request.Variables != null
                 ? Platform.ApiService.Extensions.SerializationExtensions.SanitizeDictionary(request.Variables)
                 : new Dictionary<string, object>();
@@ -1362,268 +1258,10 @@ public class WorkflowController : BaseApiController
         }
         catch (Exception ex)
         {
-            return ServerError($"获取批量操作状态失败: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// 获取用户的批量操作列表
-    /// </summary>
-    [HttpGet("bulk-operations")]
-    [RequireMenu("workflow-list")]
-    public async Task<IActionResult> GetUserBulkOperations([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
-    {
-        try
-        {
-            // 验证分页参数
-            if (page < 1 || page > 10000)
-                throw new ArgumentException("页码必须在 1-10000 之间");
-
-            if (pageSize < 1 || pageSize > 100)
-                throw new ArgumentException("每页数量必须在 1-100 之间");
-
-            var bulkService = HttpContext.RequestServices.GetRequiredService<IBulkOperationService>();
-            var operations = await bulkService.GetUserBulkOperationsAsync(page, pageSize);
-
-            // 计算总数（简化实现，实际应该从服务返回）
-            var total = operations.Count;
-
-            return SuccessPaged(operations, total, page, pageSize);
-        }
-        catch (ArgumentException ex)
-        {
-            return ValidationError(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            return ServerError($"获取批量操作列表失败: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// 导出工作流
-    /// </summary>
-    [HttpPost("export")]
-    [RequireMenu("workflow-list")]
-    public async Task<IActionResult> ExportWorkflows([FromBody] ExportWorkflowsRequest request)
-    {
-        try
-        {
-            if (request.WorkflowIds == null || request.WorkflowIds.Count == 0)
-            {
-                return ValidationError("工作流ID列表不能为空");
-            }
-
-            if (request.WorkflowIds.Count > 100)
-            {
-                return ValidationError("导出工作流数量不能超过100个");
-            }
-
-            var exportService = HttpContext.RequestServices.GetRequiredService<IWorkflowExportImportService>();
-            var config = request.Config ?? new WorkflowExportConfig();
-
-            var fileContent = await exportService.ExportWorkflowsAsync(request.WorkflowIds, config);
-
-            var fileName = $"workflows-export-{DateTime.UtcNow:yyyyMMddHHmmss}";
-            var contentType = config.Format switch
-            {
-                ExportFormat.Json => "application/json",
-                ExportFormat.Excel => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                ExportFormat.Csv => "text/csv",
-                _ => "application/octet-stream"
-            };
-
-            var fileExtension = config.Format switch
-            {
-                ExportFormat.Json => ".json",
-                ExportFormat.Excel => ".xlsx",
-                ExportFormat.Csv => ".csv",
-                _ => ".bin"
-            };
-
-            return File(fileContent, contentType, fileName + fileExtension);
-        }
-        catch (Exception ex)
-        {
-            return ServerError($"导出工作流失败: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// 导出过滤结果
-    /// </summary>
-    [HttpPost("export-filtered")]
-    [RequireMenu("workflow-list")]
-    public async Task<IActionResult> ExportFilteredWorkflows([FromBody] ExportFilteredWorkflowsRequest request)
-    {
-        try
-        {
-            var exportService = HttpContext.RequestServices.GetRequiredService<IWorkflowExportImportService>();
-            var config = request.Config ?? new WorkflowExportConfig();
-            var filters = request.Filters ?? new Dictionary<string, object>();
-
-            var fileContent = await exportService.ExportFilteredWorkflowsAsync(filters, config);
-
-            var fileName = $"workflows-filtered-export-{DateTime.UtcNow:yyyyMMddHHmmss}";
-            var contentType = config.Format switch
-            {
-                ExportFormat.Json => "application/json",
-                ExportFormat.Excel => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                ExportFormat.Csv => "text/csv",
-                _ => "application/octet-stream"
-            };
-
-            var fileExtension = config.Format switch
-            {
-                ExportFormat.Json => ".json",
-                ExportFormat.Excel => ".xlsx",
-                ExportFormat.Csv => ".csv",
-                _ => ".bin"
-            };
-
-            return File(fileContent, contentType, fileName + fileExtension);
-        }
-        catch (Exception ex)
-        {
-            return ServerError($"导出过滤结果失败: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// 验证导入文件
-    /// </summary>
-    [HttpPost("import/validate")]
-    [RequireMenu("workflow-list")]
-    public async Task<IActionResult> ValidateImportFile([FromForm] ValidateImportFileRequest request)
-    {
-        try
-        {
-            if (request.File == null || request.File.Length == 0)
-            {
-                return ValidationError("请选择要导入的文件");
-            }
-
-            if (request.File.Length > 10 * 1024 * 1024) // 10MB限制
-            {
-                return ValidationError("文件大小不能超过10MB");
-            }
-
-            using var stream = new MemoryStream();
-            await request.File.CopyToAsync(stream);
-            var fileContent = stream.ToArray();
-
-            var exportService = HttpContext.RequestServices.GetRequiredService<IWorkflowExportImportService>();
-            var result = await exportService.ValidateImportFileAsync(fileContent, request.File.FileName);
-
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            return ServerError($"验证导入文件失败: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// 导入工作流
-    /// </summary>
-    [HttpPost("import")]
-    [RequireMenu("workflow-list")]
-    public async Task<IActionResult> ImportWorkflows([FromForm] ImportWorkflowsRequest request)
-    {
-        try
-        {
-            if (request.File == null || request.File.Length == 0)
-            {
-                return ValidationError("请选择要导入的文件");
-            }
-
-            if (request.File.Length > 10 * 1024 * 1024) // 10MB限制
-            {
-                return ValidationError("文件大小不能超过10MB");
-            }
-
-            using var stream = new MemoryStream();
-            await request.File.CopyToAsync(stream);
-            var fileContent = stream.ToArray();
-
-            var exportService = HttpContext.RequestServices.GetRequiredService<IWorkflowExportImportService>();
-            var result = await exportService.ImportWorkflowsAsync(fileContent, request.File.FileName, request.OverwriteExisting);
-
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            return ServerError($"导入工作流失败: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// 预览导入
-    /// </summary>
-    [HttpPost("import/preview")]
-    [RequireMenu("workflow-list")]
-    public async Task<IActionResult> PreviewImport([FromForm] PreviewImportRequest request)
-    {
-        try
-        {
-            if (request.File == null || request.File.Length == 0)
-            {
-                return ValidationError("请选择要预览的文件");
-            }
-
-            using var stream = new MemoryStream();
-            await request.File.CopyToAsync(stream);
-            var fileContent = stream.ToArray();
-
-            var exportService = HttpContext.RequestServices.GetRequiredService<IWorkflowExportImportService>();
-            var result = await exportService.PreviewImportAsync(fileContent, request.File.FileName);
-
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            return ServerError($"预览导入失败: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// 解决导入冲突
-    /// </summary>
-    [HttpPost("import/resolve-conflicts")]
-    [RequireMenu("workflow-list")]
-    public async Task<IActionResult> ResolveImportConflicts([FromForm] ResolveImportConflictsRequest request)
-    {
-        try
-        {
-            if (request.File == null || request.File.Length == 0)
-            {
-                return ValidationError("请选择要导入的文件");
-            }
-
-            if (request.Resolutions == null || request.Resolutions.Count == 0)
-            {
-                return ValidationError("请提供冲突解决方案");
-            }
-
-            using var stream = new MemoryStream();
-            await request.File.CopyToAsync(stream);
-            var fileContent = stream.ToArray();
-
-            var exportService = HttpContext.RequestServices.GetRequiredService<IWorkflowExportImportService>();
-            var result = await exportService.ResolveImportConflictsAsync(fileContent, request.File.FileName, request.Resolutions);
-
-            return Success(result);
-        }
-        catch (Exception ex)
-        {
-            return ServerError($"解决导入冲突失败: {ex.Message}");
+            return ServerError($"获取批量操作失败: {ex.Message}");
         }
     }
 }
-
-/// <summary>
-/// 工作流搜索请求
-/// </summary>
 public class WorkflowSearchRequest
 {
     /// <summary>

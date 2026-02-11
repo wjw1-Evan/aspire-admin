@@ -1,4 +1,3 @@
-using MongoDB.Driver;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using Microsoft.Extensions.Logging;
@@ -11,11 +10,11 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class IoTService : IIoTService
 {
-    private readonly IDatabaseOperationFactory<IoTGateway> _gatewayFactory;
-    private readonly IDatabaseOperationFactory<IoTDevice> _deviceFactory;
-    private readonly IDatabaseOperationFactory<IoTDataPoint> _dataPointFactory;
-    private readonly IDatabaseOperationFactory<IoTDataRecord> _dataRecordFactory;
-    private readonly IDatabaseOperationFactory<IoTDeviceEvent> _eventFactory;
+    private readonly IDataFactory<IoTGateway> _gatewayFactory;
+    private readonly IDataFactory<IoTDevice> _deviceFactory;
+    private readonly IDataFactory<IoTDataPoint> _dataPointFactory;
+    private readonly IDataFactory<IoTDataRecord> _dataRecordFactory;
+    private readonly IDataFactory<IoTDeviceEvent> _eventFactory;
     private readonly ILogger<IoTService> _logger;
 
     /// <summary>
@@ -28,11 +27,11 @@ public class IoTService : IIoTService
     /// <param name="eventFactory">设备事件数据操作工厂</param>
     /// <param name="logger">日志记录器</param>
     public IoTService(
-        IDatabaseOperationFactory<IoTGateway> gatewayFactory,
-        IDatabaseOperationFactory<IoTDevice> deviceFactory,
-        IDatabaseOperationFactory<IoTDataPoint> dataPointFactory,
-        IDatabaseOperationFactory<IoTDataRecord> dataRecordFactory,
-        IDatabaseOperationFactory<IoTDeviceEvent> eventFactory,
+        IDataFactory<IoTGateway> gatewayFactory,
+        IDataFactory<IoTDevice> deviceFactory,
+        IDataFactory<IoTDataPoint> dataPointFactory,
+        IDataFactory<IoTDataRecord> dataRecordFactory,
+        IDataFactory<IoTDeviceEvent> eventFactory,
         ILogger<IoTService> logger)
     {
         _gatewayFactory = gatewayFactory ?? throw new ArgumentNullException(nameof(gatewayFactory));
@@ -78,31 +77,18 @@ public class IoTService : IIoTService
     /// <returns>网关列表和总数</returns>
     public async Task<(List<IoTGateway> Items, long Total)> GetGatewaysAsync(string? keyword = null, IoTDeviceStatus? status = null, int pageIndex = 1, int pageSize = 20)
     {
-        var filterBuilder = _gatewayFactory.CreateFilterBuilder()
-            .ExcludeDeleted();
+        var keywordLower = keyword?.ToLowerInvariant();
 
-        if (!string.IsNullOrEmpty(keyword))
-        {
-            var builder = Builders<IoTGateway>.Filter;
-            filterBuilder.Custom(builder.Or(
-                builder.Regex("name", new MongoDB.Bson.BsonRegularExpression(keyword, "i")),
-                builder.Regex("title", new MongoDB.Bson.BsonRegularExpression(keyword, "i")),
-                builder.Regex("gatewayId", new MongoDB.Bson.BsonRegularExpression(keyword, "i"))
-            ));
-        }
-
-        if (status.HasValue)
-        {
-            filterBuilder.Equal(g => g.Status, status.Value);
-        }
-
-        var filter = filterBuilder.Build();
-        var sort = _gatewayFactory.CreateSortBuilder()
-            .Descending(g => g.CreatedAt)
-            .Build();
-
-        var (items, total) = await _gatewayFactory.FindPagedAsync(filter, sort, pageIndex, pageSize);
-        return (items, total);
+        return await _gatewayFactory.FindPagedAsync(
+            g =>
+                (string.IsNullOrEmpty(keywordLower) ||
+                 (g.Name != null && g.Name.ToLower().Contains(keywordLower)) ||
+                 (g.Title != null && g.Title.ToLower().Contains(keywordLower)) ||
+                 (g.GatewayId != null && g.GatewayId.ToLower().Contains(keywordLower))) &&
+                (!status.HasValue || g.Status == status.Value),
+            query => query.OrderByDescending(g => g.CreatedAt),
+            pageIndex,
+            pageSize);
     }
 
     /// <summary>
@@ -122,11 +108,7 @@ public class IoTService : IIoTService
     /// <returns>网关信息</returns>
     public async Task<IoTGateway?> GetGatewayByGatewayIdAsync(string gatewayId)
     {
-        var filter = _gatewayFactory.CreateFilterBuilder()
-            .Equal(g => g.GatewayId, gatewayId)
-            .ExcludeDeleted()
-            .Build();
-        var gateways = await _gatewayFactory.FindAsync(filter, limit: 1);
+        var gateways = await _gatewayFactory.FindAsync(g => g.GatewayId == gatewayId, limit: 1);
         return gateways.FirstOrDefault();
     }
 
@@ -142,40 +124,40 @@ public class IoTService : IIoTService
         if (gateway == null)
             return null;
 
-        var updateBuilder = _gatewayFactory.CreateUpdateBuilder();
+        // Check if there are any updates
+        bool hasUpdates = !string.IsNullOrEmpty(request.Title) ||
+                         !string.IsNullOrEmpty(request.ProtocolType) ||
+                         !string.IsNullOrEmpty(request.Address) ||
+                         request.Username != null ||
+                         request.Password != null ||
+                         request.IsEnabled.HasValue ||
+                         request.Config != null;
 
-        if (!string.IsNullOrEmpty(request.Title))
-        {
-            updateBuilder.Set(g => g.Title, request.Title);
-            updateBuilder.Set(g => g.Name, request.Title);
-        }
-        if (!string.IsNullOrEmpty(request.ProtocolType))
-            updateBuilder.Set(g => g.ProtocolType, request.ProtocolType);
-        if (!string.IsNullOrEmpty(request.Address))
-            updateBuilder.Set(g => g.Address, request.Address);
-        if (request.Username != null)
-            updateBuilder.Set(g => g.Username, request.Username);
-        if (request.Password != null)
-            updateBuilder.Set(g => g.Password, request.Password);
-        if (request.IsEnabled.HasValue)
-            updateBuilder.Set(g => g.IsEnabled, request.IsEnabled.Value);
-        if (request.Config != null)
-            updateBuilder.Set(g => g.Config, NormalizeConfig(request.Config));
-
-        // 检查是否有任何更新，如果没有则直接返回原始实体，避免空更新导致 Id 被设置为空字符串
-        if (updateBuilder.Count == 0)
+        if (!hasUpdates)
         {
             return gateway;
         }
 
-        var filter = _gatewayFactory.CreateFilterBuilder()
-            .Equal(g => g.Id, id)
-            .ExcludeDeleted()
-            .Build();
-        var update = updateBuilder.Build();
-
-        var result = await _gatewayFactory.FindOneAndUpdateAsync(filter, update,
-            new FindOneAndUpdateOptions<IoTGateway> { ReturnDocument = ReturnDocument.After });
+        var result = await _gatewayFactory.UpdateAsync(id, entity =>
+        {
+            if (!string.IsNullOrEmpty(request.Title))
+            {
+                entity.Title = request.Title;
+                entity.Name = request.Title;
+            }
+            if (!string.IsNullOrEmpty(request.ProtocolType))
+                entity.ProtocolType = request.ProtocolType;
+            if (!string.IsNullOrEmpty(request.Address))
+                entity.Address = request.Address;
+            if (request.Username != null)
+                entity.Username = request.Username;
+            if (request.Password != null)
+                entity.Password = request.Password;
+            if (request.IsEnabled.HasValue)
+                entity.IsEnabled = request.IsEnabled.Value;
+            if (request.Config != null)
+                entity.Config = NormalizeConfig(request.Config);
+        });
 
         return result;
     }
@@ -191,15 +173,11 @@ public class IoTService : IIoTService
         if (gateway == null)
             return false;
 
-        var filter = _gatewayFactory.CreateFilterBuilder()
-            .Equal(g => g.Id, id)
-            .ExcludeDeleted()
-            .Build();
-        var result = await _gatewayFactory.FindOneAndSoftDeleteAsync(filter);
+        var result = await _gatewayFactory.SoftDeleteAsync(id);
 
-        if (result != null)
+        if (result)
         {
-            _logger.LogInformation("Gateway deleted: {GatewayId}", result.GatewayId);
+            _logger.LogInformation("Gateway deleted: {GatewayId}", gateway.GatewayId);
             return true;
         }
 
@@ -218,19 +196,13 @@ public class IoTService : IIoTService
         if (gateway == null)
             return false;
 
-        var updateBuilder = _gatewayFactory.CreateUpdateBuilder()
-            .Set(g => g.Status, status);
+        var result = await _gatewayFactory.UpdateAsync(gateway.Id, entity =>
+        {
+            entity.Status = status;
+            if (status == IoTDeviceStatus.Online)
+                entity.LastConnectedAt = DateTime.UtcNow;
+        });
 
-        if (status == IoTDeviceStatus.Online)
-            updateBuilder.Set(g => g.LastConnectedAt, DateTime.UtcNow);
-
-        var filter = _gatewayFactory.CreateFilterBuilder()
-            .Equal(g => g.GatewayId, gatewayId)
-            .ExcludeDeleted()
-            .Build();
-        var update = updateBuilder.Build();
-
-        var result = await _gatewayFactory.FindOneAndUpdateAsync(filter, update);
         return result != null;
     }
 
@@ -245,24 +217,17 @@ public class IoTService : IIoTService
         if (gateway == null)
             return null;
 
-        var deviceFilter = _deviceFactory.CreateFilterBuilder()
-            .Equal(d => d.GatewayId, gatewayId)
-            .WithTenant(gateway.CompanyId)
-            .ExcludeDeleted()
-            .Build();
-        var devices = await _deviceFactory.FindAsync(deviceFilter);
-
-        // 基于 LastReportedAt 判断设备是否在线（5分钟内上报过视为在线）
         var onlineThreshold = DateTime.UtcNow.AddMinutes(-5);
-        var onlineDevices = devices.Count(x => x.LastReportedAt.HasValue && x.LastReportedAt.Value >= onlineThreshold);
+        var totalDevices = await _deviceFactory.CountAsync(d => d.GatewayId == gatewayId);
+        var onlineDevices = await _deviceFactory.CountAsync(d => d.GatewayId == gatewayId && d.LastReportedAt.HasValue && d.LastReportedAt.Value >= onlineThreshold);
 
         return new GatewayStatistics
         {
             GatewayId = gatewayId,
-            TotalDevices = devices.Count,
-            OnlineDevices = onlineDevices,
-            OfflineDevices = devices.Count - onlineDevices,
-            FaultDevices = 0, // 不再维护故障状态
+            TotalDevices = (int)totalDevices,
+            OnlineDevices = (int)onlineDevices,
+            OfflineDevices = (int)(totalDevices - onlineDevices),
+            FaultDevices = 0,
             LastConnectedAt = gateway.LastConnectedAt
         };
     }
@@ -290,11 +255,7 @@ public class IoTService : IIoTService
             }
 
             // 检查是否已存在（确保企业内唯一）
-            var existingFilter = _deviceFactory.CreateFilterBuilder()
-                .Equal(d => d.DeviceId, request.DeviceId)
-                .ExcludeDeleted()
-                .Build();
-            var existing = await _deviceFactory.FindAsync(existingFilter, limit: 1);
+            var existing = await _deviceFactory.FindAsync(d => d.DeviceId == request.DeviceId && d.IsDeleted == false, limit: 1);
             if (existing.Count > 0)
             {
                 throw new InvalidOperationException($"设备标识符 {request.DeviceId} 已存在");
@@ -324,14 +285,10 @@ public class IoTService : IIoTService
             var gateway = await GetGatewayByGatewayIdAsync(request.GatewayId);
             if (gateway != null)
             {
-                var gatewayFilter = _gatewayFactory.CreateFilterBuilder()
-                    .Equal(g => g.Id, gateway.Id)
-                    .ExcludeDeleted()
-                    .Build();
-                var update = _gatewayFactory.CreateUpdateBuilder()
-                    .Inc(g => g.DeviceCount, 1)
-                    .Build();
-                await _gatewayFactory.FindOneAndUpdateAsync(gatewayFilter, update);
+                await _gatewayFactory.UpdateAsync(gateway.Id, entity =>
+                {
+                    entity.DeviceCount += 1;
+                });
             }
         }
 
@@ -349,30 +306,19 @@ public class IoTService : IIoTService
     /// <returns>设备列表和总数</returns>
     public async Task<(List<IoTDevice> Items, long Total)> GetDevicesAsync(string? gatewayId = null, string? keyword = null, int pageIndex = 1, int pageSize = 20)
     {
-        var filterBuilder = _deviceFactory.CreateFilterBuilder()
-            .ExcludeDeleted();
+        var keywordLower = keyword?.ToLowerInvariant();
 
-        if (!string.IsNullOrEmpty(gatewayId))
-        {
-            filterBuilder.Equal(d => d.GatewayId, gatewayId);
-        }
+        var (items, total) = await _deviceFactory.FindPagedAsync(
+            d =>
+                (string.IsNullOrEmpty(gatewayId) || d.GatewayId == gatewayId) &&
+                (string.IsNullOrEmpty(keywordLower) ||
+                 (d.Name != null && d.Name.ToLower().Contains(keywordLower)) ||
+                 (d.Title != null && d.Title.ToLower().Contains(keywordLower)) ||
+                 (d.DeviceId != null && d.DeviceId.ToLower().Contains(keywordLower))),
+            query => query.OrderByDescending(d => d.CreatedAt),
+            pageIndex,
+            pageSize);
 
-        if (!string.IsNullOrEmpty(keyword))
-        {
-            var builder = Builders<IoTDevice>.Filter;
-            filterBuilder.Custom(builder.Or(
-                builder.Regex("name", new MongoDB.Bson.BsonRegularExpression(keyword, "i")),
-                builder.Regex("title", new MongoDB.Bson.BsonRegularExpression(keyword, "i")),
-                builder.Regex("deviceId", new MongoDB.Bson.BsonRegularExpression(keyword, "i"))
-            ));
-        }
-
-        var filter = filterBuilder.Build();
-        var sort = _deviceFactory.CreateSortBuilder()
-            .Descending(d => d.CreatedAt)
-            .Build();
-
-        var (items, total) = await _deviceFactory.FindPagedAsync(filter, sort, pageIndex, pageSize);
         return (items, total);
     }
 
@@ -393,11 +339,7 @@ public class IoTService : IIoTService
     /// <returns>设备信息</returns>
     public async Task<IoTDevice?> GetDeviceByDeviceIdAsync(string deviceId)
     {
-        var filter = _deviceFactory.CreateFilterBuilder()
-            .Equal(d => d.DeviceId, deviceId)
-            .ExcludeDeleted()
-            .Build();
-        var devices = await _deviceFactory.FindAsync(filter, limit: 1);
+        var devices = await _deviceFactory.FindAsync(d => d.DeviceId == deviceId && d.IsDeleted == false, limit: 1);
         return devices.FirstOrDefault();
     }
 
@@ -413,31 +355,28 @@ public class IoTService : IIoTService
         if (device == null)
             return null;
 
-        var updateBuilder = _deviceFactory.CreateUpdateBuilder();
+        // Check if there are any updates
+        bool hasUpdates = !string.IsNullOrEmpty(request.Name) ||
+                         !string.IsNullOrEmpty(request.Title) ||
+                         !string.IsNullOrEmpty(request.GatewayId) ||
+                         request.IsEnabled.HasValue;
 
-        if (!string.IsNullOrEmpty(request.Name))
-            updateBuilder.Set(d => d.Name, request.Name);
-        if (!string.IsNullOrEmpty(request.Title))
-            updateBuilder.Set(d => d.Title, request.Title);
-        if (!string.IsNullOrEmpty(request.GatewayId))
-            updateBuilder.Set(d => d.GatewayId, request.GatewayId);
-        if (request.IsEnabled.HasValue)
-            updateBuilder.Set(d => d.IsEnabled, request.IsEnabled.Value);
-
-        // 检查是否有任何更新，如果没有则直接返回原始实体，避免空更新导致 Id 被设置为空字符串
-        if (updateBuilder.Count == 0)
+        if (!hasUpdates)
         {
             return device;
         }
 
-        var filter = _deviceFactory.CreateFilterBuilder()
-            .Equal(d => d.Id, id)
-            .ExcludeDeleted()
-            .Build();
-        var update = updateBuilder.Build();
-
-        var result = await _deviceFactory.FindOneAndUpdateAsync(filter, update,
-            new FindOneAndUpdateOptions<IoTDevice> { ReturnDocument = ReturnDocument.After });
+        var result = await _deviceFactory.UpdateAsync(id, entity =>
+        {
+            if (!string.IsNullOrEmpty(request.Name))
+                entity.Name = request.Name;
+            if (!string.IsNullOrEmpty(request.Title))
+                entity.Title = request.Title;
+            if (!string.IsNullOrEmpty(request.GatewayId))
+                entity.GatewayId = request.GatewayId;
+            if (request.IsEnabled.HasValue)
+                entity.IsEnabled = request.IsEnabled.Value;
+        });
 
         return result;
     }
@@ -453,29 +392,21 @@ public class IoTService : IIoTService
         if (device == null)
             return false;
 
-        var filter = _deviceFactory.CreateFilterBuilder()
-            .Equal(d => d.Id, id)
-            .ExcludeDeleted()
-            .Build();
-        var result = await _deviceFactory.FindOneAndSoftDeleteAsync(filter);
+        var result = await _deviceFactory.SoftDeleteAsync(id);
 
-        if (result != null)
+        if (result)
         {
             // Update gateway device count using atomic decrement
-            var gateway = await GetGatewayByGatewayIdAsync(result.GatewayId);
+            var gateway = await GetGatewayByGatewayIdAsync(device.GatewayId);
             if (gateway != null)
             {
-                var gatewayFilter = _gatewayFactory.CreateFilterBuilder()
-                    .Equal(g => g.Id, gateway.Id)
-                    .ExcludeDeleted()
-                    .Build();
-                var update = _gatewayFactory.CreateUpdateBuilder()
-                    .Inc(g => g.DeviceCount, -1)
-                    .Build();
-                await _gatewayFactory.FindOneAndUpdateAsync(gatewayFilter, update);
+                await _gatewayFactory.UpdateAsync(gateway.Id, entity =>
+                {
+                    entity.DeviceCount = Math.Max(0, entity.DeviceCount - 1);
+                });
             }
 
-            _logger.LogInformation("Device deleted: {DeviceId} for company {CompanyId}", result.DeviceId, result.CompanyId);
+            _logger.LogInformation("Device deleted: {DeviceId} for company {CompanyId}", device.DeviceId, device.CompanyId);
             return true;
         }
 
@@ -491,24 +422,23 @@ public class IoTService : IIoTService
     public async Task<bool> UpdateDeviceStatusAsync(string deviceId, IoTDeviceStatus status)
     {
         // 简化：只更新最后上报时间，不再维护 Status 字段
-        var filter = _deviceFactory.CreateFilterBuilder()
-            .Equal(d => d.DeviceId, deviceId)
-            .ExcludeDeleted()
-            .Build();
-
         // 如果状态不是 Online，不需要更新任何字段，只需检查设备是否存在
         if (status != IoTDeviceStatus.Online)
         {
-            var devices = await _deviceFactory.FindAsync(filter, limit: 1);
+            var devices = await _deviceFactory.FindAsync(d => d.DeviceId == deviceId && d.IsDeleted == false, limit: 1);
             return devices.Count > 0;
         }
 
         // 状态为 Online 时，更新最后上报时间
-        var updateBuilder = _deviceFactory.CreateUpdateBuilder()
-            .Set(d => d.LastReportedAt, DateTime.UtcNow);
+        var device = await GetDeviceByDeviceIdAsync(deviceId);
+        if (device == null)
+            return false;
 
-        var update = updateBuilder.Build();
-        var result = await _deviceFactory.FindOneAndUpdateAsync(filter, update);
+        var result = await _deviceFactory.UpdateAsync(device.Id, entity =>
+        {
+            entity.LastReportedAt = DateTime.UtcNow;
+        });
+
         return result != null;
     }
 
@@ -519,16 +449,14 @@ public class IoTService : IIoTService
     /// <returns>是否处理成功</returns>
     public async Task<bool> HandleDeviceConnectAsync(DeviceConnectRequest request)
     {
-        var updateBuilder = _deviceFactory.CreateUpdateBuilder()
-            .Set(d => d.LastReportedAt, DateTime.UtcNow);
+        var device = await GetDeviceByDeviceIdAsync(request.DeviceId);
+        if (device == null)
+            return false;
 
-        var filter = _deviceFactory.CreateFilterBuilder()
-            .Equal(d => d.DeviceId, request.DeviceId)
-            .ExcludeDeleted()
-            .Build();
-        var update = updateBuilder.Build();
-
-        var result = await _deviceFactory.FindOneAndUpdateAsync(filter, update);
+        var result = await _deviceFactory.UpdateAsync(device.Id, entity =>
+        {
+            entity.LastReportedAt = DateTime.UtcNow;
+        });
 
         if (result != null)
         {
@@ -549,12 +477,7 @@ public class IoTService : IIoTService
     public async Task<bool> HandleDeviceDisconnectAsync(DeviceDisconnectRequest request)
     {
         // 断开连接不需要更新设备字段，只需检查设备是否存在并创建事件
-        var filter = _deviceFactory.CreateFilterBuilder()
-            .Equal(d => d.DeviceId, request.DeviceId)
-            .ExcludeDeleted()
-            .Build();
-
-        var devices = await _deviceFactory.FindAsync(filter, limit: 1);
+        var devices = await _deviceFactory.FindAsync(d => d.DeviceId == request.DeviceId && d.IsDeleted == false, limit: 1);
 
         if (devices.Count > 0)
         {
@@ -579,27 +502,11 @@ public class IoTService : IIoTService
         if (device == null)
             return null;
 
-        var dataPointFilter = _dataPointFactory.CreateFilterBuilder()
-            .Equal(dp => dp.DeviceId, deviceId)
-            .WithTenant(device.CompanyId)
-            .ExcludeDeleted()
-            .Build();
-        var dataPoints = await _dataPointFactory.FindAsync(dataPointFilter);
+        var dataPoints = await _dataPointFactory.FindAsync(dp => dp.DeviceId == deviceId && dp.IsDeleted == false);
 
-        var recordFilter = _dataRecordFactory.CreateFilterBuilder()
-            .Equal(r => r.DeviceId, deviceId)
-            .WithTenant(device.CompanyId)
-            .ExcludeDeleted()
-            .Build();
-        var recordCount = await _dataRecordFactory.CountAsync(recordFilter);
+        var recordCount = await _dataRecordFactory.CountAsync(r => r.DeviceId == deviceId && r.IsDeleted == false);
 
-        var alarmFilter = _eventFactory.CreateFilterBuilder()
-            .Equal(e => e.DeviceId, deviceId)
-            .Equal(e => e.IsHandled, false)
-            .WithTenant(device.CompanyId)
-            .ExcludeDeleted()
-            .Build();
-        var unhandledAlarms = await _eventFactory.CountAsync(alarmFilter);
+        var unhandledAlarms = await _eventFactory.CountAsync(e => e.DeviceId == deviceId && e.IsHandled == false && e.IsDeleted == false);
 
         return new DeviceStatistics
         {
@@ -651,30 +558,19 @@ public class IoTService : IIoTService
     /// <returns>数据点列表和总数</returns>
     public async Task<(List<IoTDataPoint> Items, long Total)> GetDataPointsAsync(string? deviceId = null, string? keyword = null, int pageIndex = 1, int pageSize = 20)
     {
-        var filterBuilder = _dataPointFactory.CreateFilterBuilder()
-            .ExcludeDeleted();
+        var keywordLower = keyword?.ToLowerInvariant();
 
-        if (!string.IsNullOrEmpty(deviceId))
-        {
-            filterBuilder.Equal(dp => dp.DeviceId, deviceId);
-        }
+        var (items, total) = await _dataPointFactory.FindPagedAsync(
+            dp =>
+                (string.IsNullOrEmpty(deviceId) || dp.DeviceId == deviceId) &&
+                (string.IsNullOrEmpty(keywordLower) ||
+                 (dp.Name != null && dp.Name.ToLower().Contains(keywordLower)) ||
+                 (dp.Title != null && dp.Title.ToLower().Contains(keywordLower)) ||
+                 (dp.DataPointId != null && dp.DataPointId.ToLower().Contains(keywordLower))),
+            query => query.OrderByDescending(dp => dp.CreatedAt),
+            pageIndex,
+            pageSize);
 
-        if (!string.IsNullOrEmpty(keyword))
-        {
-            var builder = Builders<IoTDataPoint>.Filter;
-            filterBuilder.Custom(builder.Or(
-                builder.Regex("name", new MongoDB.Bson.BsonRegularExpression(keyword, "i")),
-                builder.Regex("title", new MongoDB.Bson.BsonRegularExpression(keyword, "i")),
-                builder.Regex("dataPointId", new MongoDB.Bson.BsonRegularExpression(keyword, "i"))
-            ));
-        }
-
-        var filter = filterBuilder.Build();
-        var sort = _dataPointFactory.CreateSortBuilder()
-            .Descending(dp => dp.CreatedAt)
-            .Build();
-
-        var (items, total) = await _dataPointFactory.FindPagedAsync(filter, sort, pageIndex, pageSize);
         return (items, total);
     }
 
@@ -695,11 +591,7 @@ public class IoTService : IIoTService
     /// <returns>数据点信息</returns>
     public async Task<IoTDataPoint?> GetDataPointByDataPointIdAsync(string dataPointId)
     {
-        var filter = _dataPointFactory.CreateFilterBuilder()
-            .Equal(dp => dp.DataPointId, dataPointId)
-            .ExcludeDeleted()
-            .Build();
-        var dataPoints = await _dataPointFactory.FindAsync(filter, limit: 1);
+        var dataPoints = await _dataPointFactory.FindAsync(dp => dp.DataPointId == dataPointId && dp.IsDeleted == false, limit: 1);
         return dataPoints.FirstOrDefault();
     }
 
@@ -715,39 +607,40 @@ public class IoTService : IIoTService
         if (dataPoint == null)
             return null;
 
-        var updateBuilder = _dataPointFactory.CreateUpdateBuilder();
+        // Check if there are any updates
+        bool hasUpdates = !string.IsNullOrEmpty(request.Name) ||
+                         !string.IsNullOrEmpty(request.Title) ||
+                         request.DataType.HasValue ||
+                         request.Unit != null ||
+                         request.IsReadOnly.HasValue ||
+                         request.SamplingInterval.HasValue ||
+                         request.IsEnabled.HasValue ||
+                         request.AlarmConfig != null;
 
-        if (!string.IsNullOrEmpty(request.Name))
-            updateBuilder.Set(dp => dp.Name, request.Name);
-        if (!string.IsNullOrEmpty(request.Title))
-            updateBuilder.Set(dp => dp.Title, request.Title);
-        if (request.DataType.HasValue)
-            updateBuilder.Set(dp => dp.DataType, request.DataType.Value);
-        if (request.Unit != null)
-            updateBuilder.Set(dp => dp.Unit, request.Unit);
-        if (request.IsReadOnly.HasValue)
-            updateBuilder.Set(dp => dp.IsReadOnly, request.IsReadOnly.Value);
-        if (request.SamplingInterval.HasValue)
-            updateBuilder.Set(dp => dp.SamplingInterval, request.SamplingInterval.Value);
-        if (request.IsEnabled.HasValue)
-            updateBuilder.Set(dp => dp.IsEnabled, request.IsEnabled.Value);
-        if (request.AlarmConfig != null)
-            updateBuilder.Set(dp => dp.AlarmConfig, request.AlarmConfig);
-
-        // 检查是否有任何更新，如果没有则直接返回原始实体，避免空更新导致 Id 被设置为空字符串
-        if (updateBuilder.Count == 0)
+        if (!hasUpdates)
         {
             return dataPoint;
         }
 
-        var filter = _dataPointFactory.CreateFilterBuilder()
-            .Equal(dp => dp.Id, id)
-            .ExcludeDeleted()
-            .Build();
-        var update = updateBuilder.Build();
-
-        var result = await _dataPointFactory.FindOneAndUpdateAsync(filter, update,
-            new FindOneAndUpdateOptions<IoTDataPoint> { ReturnDocument = ReturnDocument.After });
+        var result = await _dataPointFactory.UpdateAsync(id, entity =>
+        {
+            if (!string.IsNullOrEmpty(request.Name))
+                entity.Name = request.Name;
+            if (!string.IsNullOrEmpty(request.Title))
+                entity.Title = request.Title;
+            if (request.DataType.HasValue)
+                entity.DataType = request.DataType.Value;
+            if (request.Unit != null)
+                entity.Unit = request.Unit;
+            if (request.IsReadOnly.HasValue)
+                entity.IsReadOnly = request.IsReadOnly.Value;
+            if (request.SamplingInterval.HasValue)
+                entity.SamplingInterval = request.SamplingInterval.Value;
+            if (request.IsEnabled.HasValue)
+                entity.IsEnabled = request.IsEnabled.Value;
+            if (request.AlarmConfig != null)
+                entity.AlarmConfig = request.AlarmConfig;
+        });
 
         return result;
     }
@@ -763,15 +656,11 @@ public class IoTService : IIoTService
         if (dataPoint == null)
             return false;
 
-        var filter = _dataPointFactory.CreateFilterBuilder()
-            .Equal(dp => dp.Id, id)
-            .ExcludeDeleted()
-            .Build();
-        var result = await _dataPointFactory.FindOneAndSoftDeleteAsync(filter);
+        var result = await _dataPointFactory.SoftDeleteAsync(id);
 
-        if (result != null)
+        if (result)
         {
-            _logger.LogInformation("DataPoint deleted: {DataPointId} for company {CompanyId}", result.DataPointId, result.CompanyId);
+            _logger.LogInformation("DataPoint deleted: {DataPointId} for company {CompanyId}", dataPoint.DataPointId, dataPoint.CompanyId);
             return true;
         }
 
@@ -820,28 +709,20 @@ public class IoTService : IIoTService
         var result = await _dataRecordFactory.CreateAsync(record);
 
         // Update data point last value
-        var dpFilter = _dataPointFactory.CreateFilterBuilder()
-            .Equal(dp => dp.Id, dataPoint.Id)
-            .ExcludeDeleted()
-            .Build();
-        var dpUpdate = _dataPointFactory.CreateUpdateBuilder()
-            .Set(dp => dp.LastValue, request.Value)
-            .Set(dp => dp.LastUpdatedAt, DateTime.UtcNow)
-            .Build();
-        await _dataPointFactory.FindOneAndUpdateAsync(dpFilter, dpUpdate);
+        await _dataPointFactory.UpdateAsync(dataPoint.Id, entity =>
+        {
+            entity.LastValue = request.Value;
+            entity.LastUpdatedAt = DateTime.UtcNow;
+        });
 
         // Update device last reported time
         var device = await GetDeviceByDeviceIdAsync(request.DeviceId);
         if (device != null)
         {
-            var deviceFilter = _deviceFactory.CreateFilterBuilder()
-                .Equal(d => d.Id, device.Id)
-                .ExcludeDeleted()
-                .Build();
-            var deviceUpdate = _deviceFactory.CreateUpdateBuilder()
-                .Set(d => d.LastReportedAt, DateTime.UtcNow)
-                .Build();
-            await _deviceFactory.FindOneAndUpdateAsync(deviceFilter, deviceUpdate);
+            await _deviceFactory.UpdateAsync(device.Id, entity =>
+            {
+                entity.LastReportedAt = DateTime.UtcNow;
+            });
         }
 
         return result;
@@ -892,28 +773,20 @@ public class IoTService : IIoTService
     /// <returns>数据记录列表和总数</returns>
     public async Task<(List<IoTDataRecord> Records, long Total)> QueryDataRecordsAsync(QueryIoTDataRequest request)
     {
-        var filterBuilder = _dataRecordFactory.CreateFilterBuilder()
-            .ExcludeDeleted();
+        var deviceId = request.DeviceId;
+        var dataPointId = request.DataPointId;
+        var startTime = request.StartTime;
+        var endTime = request.EndTime;
 
-        if (!string.IsNullOrEmpty(request.DeviceId))
-            filterBuilder.Equal(r => r.DeviceId, request.DeviceId);
-
-        if (!string.IsNullOrEmpty(request.DataPointId))
-            filterBuilder.Equal(r => r.DataPointId, request.DataPointId);
-
-        if (request.StartTime.HasValue || request.EndTime.HasValue)
-        {
-            if (request.StartTime.HasValue)
-                filterBuilder.GreaterThanOrEqual(r => r.ReportedAt, request.StartTime.Value);
-            if (request.EndTime.HasValue)
-                filterBuilder.LessThanOrEqual(r => r.ReportedAt, request.EndTime.Value);
-        }
-
-        var filter = filterBuilder.Build();
-        var sort = _dataRecordFactory.CreateSortBuilder()
-            .Descending(r => r.ReportedAt)
-            .Build();
-        var (records, total) = await _dataRecordFactory.FindPagedAsync(filter, sort, request.PageIndex, request.PageSize);
+        var (records, total) = await _dataRecordFactory.FindPagedAsync(
+            r =>
+                (string.IsNullOrEmpty(deviceId) || r.DeviceId == deviceId) &&
+                (string.IsNullOrEmpty(dataPointId) || r.DataPointId == dataPointId) &&
+                (!startTime.HasValue || r.ReportedAt >= startTime.Value) &&
+                (!endTime.HasValue || r.ReportedAt <= endTime.Value),
+            query => query.OrderByDescending(r => r.ReportedAt),
+            request.PageIndex,
+            request.PageSize);
 
         return (records, total);
     }
@@ -925,15 +798,10 @@ public class IoTService : IIoTService
     /// <returns>最新的数据记录</returns>
     public async Task<IoTDataRecord?> GetLatestDataAsync(string dataPointId)
     {
-        var filter = _dataRecordFactory.CreateFilterBuilder()
-            .Equal(r => r.DataPointId, dataPointId)
-            .ExcludeDeleted()
-            .Build();
-        var sort = _dataRecordFactory.CreateSortBuilder()
-            .Descending(r => r.ReportedAt)
-            .Build();
-
-        var records = await _dataRecordFactory.FindAsync(filter, sort, 1);
+        var records = await _dataRecordFactory.FindAsync(
+            r => r.DataPointId == dataPointId && r.IsDeleted == false,
+            query => query.OrderByDescending(r => r.ReportedAt),
+            limit: 1);
         return records.FirstOrDefault();
     }
 
@@ -946,14 +814,11 @@ public class IoTService : IIoTService
     /// <returns>数据统计信息</returns>
     public async Task<DataStatistics?> GetDataStatisticsAsync(string dataPointId, DateTime startTime, DateTime endTime)
     {
-        var filter = _dataRecordFactory.CreateFilterBuilder()
-            .Equal(r => r.DataPointId, dataPointId)
-            .GreaterThanOrEqual(r => r.ReportedAt, startTime)
-            .LessThanOrEqual(r => r.ReportedAt, endTime)
-            .ExcludeDeleted()
-            .Build();
-
-        var records = await _dataRecordFactory.FindAsync(filter);
+        var records = await _dataRecordFactory.FindAsync(
+            r => r.DataPointId == dataPointId &&
+                 r.ReportedAt >= startTime &&
+                 r.ReportedAt <= endTime &&
+                 r.IsDeleted == false);
 
         if (records.Count == 0)
             return null;
@@ -1010,34 +875,23 @@ public class IoTService : IIoTService
     /// <returns>事件列表和总数</returns>
     public async Task<(List<IoTDeviceEvent> Events, long Total)> QueryEventsAsync(QueryIoTEventRequest request)
     {
-        var filterBuilder = _eventFactory.CreateFilterBuilder()
-            .ExcludeDeleted();
+        var deviceId = request.DeviceId;
+        var eventType = request.EventType;
+        var level = request.Level;
+        var startTime = request.StartTime;
+        var endTime = request.EndTime;
 
-        if (!string.IsNullOrEmpty(request.DeviceId))
-            filterBuilder.Equal(e => e.DeviceId, request.DeviceId);
-
-        if (!string.IsNullOrEmpty(request.EventType))
-            filterBuilder.Equal(e => e.EventType, request.EventType);
-
-        if (!string.IsNullOrEmpty(request.Level))
-            filterBuilder.Equal(e => e.Level, request.Level);
-
-        if (request.IsHandled.HasValue)
-            filterBuilder.Equal(e => e.IsHandled, request.IsHandled.Value);
-
-        if (request.StartTime.HasValue || request.EndTime.HasValue)
-        {
-            if (request.StartTime.HasValue)
-                filterBuilder.GreaterThanOrEqual(e => e.OccurredAt, request.StartTime.Value);
-            if (request.EndTime.HasValue)
-                filterBuilder.LessThanOrEqual(e => e.OccurredAt, request.EndTime.Value);
-        }
-
-        var filter = filterBuilder.Build();
-        var sort = _eventFactory.CreateSortBuilder()
-            .Descending(e => e.OccurredAt)
-            .Build();
-        var (events, total) = await _eventFactory.FindPagedAsync(filter, sort, request.PageIndex, request.PageSize);
+        var (events, total) = await _eventFactory.FindPagedAsync(
+            e =>
+                (string.IsNullOrEmpty(deviceId) || e.DeviceId == deviceId) &&
+                (string.IsNullOrEmpty(eventType) || e.EventType == eventType) &&
+                (string.IsNullOrEmpty(level) || e.Level == level) &&
+                (!request.IsHandled.HasValue || e.IsHandled == request.IsHandled.Value) &&
+                (!startTime.HasValue || e.OccurredAt >= startTime.Value) &&
+                (!endTime.HasValue || e.OccurredAt <= endTime.Value),
+            query => query.OrderByDescending(e => e.OccurredAt),
+            request.PageIndex,
+            request.PageSize);
 
         return (events, total);
     }
@@ -1050,16 +904,12 @@ public class IoTService : IIoTService
     /// <returns>是否处理成功</returns>
     public async Task<bool> HandleEventAsync(string eventId, string remarks)
     {
-        var filter = _eventFactory.CreateFilterBuilder()
-            .Equal(e => e.Id, eventId)
-            .ExcludeDeleted()
-            .Build();
-        var update = _eventFactory.CreateUpdateBuilder()
-            .Set(e => e.IsHandled, true)
-            .Set(e => e.HandledRemarks, remarks)
-            .Build();
+        var result = await _eventFactory.UpdateAsync(eventId, entity =>
+        {
+            entity.IsHandled = true;
+            entity.HandledRemarks = remarks;
+        });
 
-        var result = await _eventFactory.FindOneAndUpdateAsync(filter, update);
         return result != null;
     }
 
@@ -1070,15 +920,12 @@ public class IoTService : IIoTService
     /// <returns>未处理事件数量</returns>
     public async Task<long> GetUnhandledEventCountAsync(string? deviceId = null)
     {
-        var filterBuilder = _eventFactory.CreateFilterBuilder()
-            .Equal(e => e.IsHandled, false)
-            .ExcludeDeleted();
-
         if (!string.IsNullOrEmpty(deviceId))
-            filterBuilder.Equal(e => e.DeviceId, deviceId);
+        {
+            return await _eventFactory.CountAsync(e => e.IsHandled == false && e.DeviceId == deviceId && e.IsDeleted == false);
+        }
 
-        var filter = filterBuilder.Build();
-        return await _eventFactory.CountAsync(filter);
+        return await _eventFactory.CountAsync(e => e.IsHandled == false && e.IsDeleted == false);
     }
 
     #endregion
@@ -1091,41 +938,27 @@ public class IoTService : IIoTService
     /// <returns>平台统计信息</returns>
     public async Task<PlatformStatistics> GetPlatformStatisticsAsync()
     {
-        var gatewayFilter = _gatewayFactory.CreateFilterBuilder()
-            .ExcludeDeleted()
-            .Build();
-        var gateways = await _gatewayFactory.FindAsync(gatewayFilter);
+        var onlineThreshold = DateTime.UtcNow.AddMinutes(-5);
 
-        var deviceFilter = _deviceFactory.CreateFilterBuilder()
-            .ExcludeDeleted()
-            .Build();
-        var devices = await _deviceFactory.FindAsync(deviceFilter);
+        var totalGateways = await _gatewayFactory.CountAsync();
+        var onlineGateways = await _gatewayFactory.CountAsync(g => g.Status == IoTDeviceStatus.Online);
 
-        var dataPointFilter = _dataPointFactory.CreateFilterBuilder()
-            .ExcludeDeleted()
-            .Build();
-        var dataPoints = await _dataPointFactory.FindAsync(dataPointFilter);
+        var totalDevices = await _deviceFactory.CountAsync();
+        var onlineDevices = await _deviceFactory.CountAsync(d => d.LastReportedAt.HasValue && d.LastReportedAt.Value >= onlineThreshold);
 
-        var recordFilter = _dataRecordFactory.CreateFilterBuilder()
-            .ExcludeDeleted()
-            .Build();
-        var recordCount = await _dataRecordFactory.CountAsync(recordFilter);
-
-        var alarmFilter = _eventFactory.CreateFilterBuilder()
-            .Equal(e => e.IsHandled, false)
-            .ExcludeDeleted()
-            .Build();
-        var unhandledAlarms = await _eventFactory.CountAsync(alarmFilter);
+        var totalDataPoints = await _dataPointFactory.CountAsync();
+        var recordCount = await _dataRecordFactory.CountAsync();
+        var unhandledAlarms = await _eventFactory.CountAsync(e => e.IsHandled == false);
 
         return new PlatformStatistics
         {
-            TotalGateways = gateways.Count,
-            OnlineGateways = gateways.Count(x => x.Status == IoTDeviceStatus.Online),
-            TotalDevices = devices.Count,
-            OnlineDevices = devices.Count(x => x.LastReportedAt.HasValue && x.LastReportedAt.Value >= DateTime.UtcNow.AddMinutes(-5)),
-            TotalDataPoints = dataPoints.Count,
+            TotalGateways = (int)totalGateways,
+            OnlineGateways = (int)onlineGateways,
+            TotalDevices = (int)totalDevices,
+            OnlineDevices = (int)onlineDevices,
+            TotalDataPoints = (int)totalDataPoints,
             TotalDataRecords = recordCount,
-            UnhandledAlarms = unhandledAlarms,
+            UnhandledAlarms = (int)unhandledAlarms,
             LastUpdatedAt = DateTime.UtcNow
         };
     }
@@ -1136,21 +969,17 @@ public class IoTService : IIoTService
     /// <returns>设备状态统计信息</returns>
     public async Task<DeviceStatusStatistics> GetDeviceStatusStatisticsAsync()
     {
-        var filter = _deviceFactory.CreateFilterBuilder()
-            .ExcludeDeleted()
-            .Build();
-        var devices = await _deviceFactory.FindAsync(filter);
-
-        // 基于 LastReportedAt 判断设备是否在线（5分钟内上报过视为在线）
         var onlineThreshold = DateTime.UtcNow.AddMinutes(-5);
-        var online = devices.Count(x => x.LastReportedAt.HasValue && x.LastReportedAt.Value >= onlineThreshold);
+
+        var totalDevices = await _deviceFactory.CountAsync();
+        var online = await _deviceFactory.CountAsync(d => d.LastReportedAt.HasValue && d.LastReportedAt.Value >= onlineThreshold);
 
         return new DeviceStatusStatistics
         {
-            Online = online,
-            Offline = devices.Count - online,
-            Fault = 0, // 不再维护故障状态
-            Maintenance = 0 // 不再维护维护状态
+            Online = (int)online,
+            Offline = (int)(totalDevices - online),
+            Fault = 0,
+            Maintenance = 0
         };
     }
 

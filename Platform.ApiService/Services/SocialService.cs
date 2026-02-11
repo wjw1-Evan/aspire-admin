@@ -1,5 +1,4 @@
-using System.Linq;
-using MongoDB.Driver;
+using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Constants;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
@@ -52,9 +51,9 @@ public class SocialService : ISocialService
     private const double EarthRadiusMeters = 6371000d;
     private static readonly TimeSpan BeaconTtl = TimeSpan.FromMinutes(30);
 
-    private readonly IDatabaseOperationFactory<UserLocationBeacon> _beaconFactory;
-    private readonly IDatabaseOperationFactory<AppUser> _userFactory;
-    private readonly IDatabaseOperationFactory<ChatSession> _sessionFactory;
+    private readonly IDataFactory<UserLocationBeacon> _beaconFactory;
+    private readonly IDataFactory<AppUser> _userFactory;
+    private readonly IDataFactory<ChatSession> _sessionFactory;
     private readonly ILogger<SocialService> _logger;
     private readonly IServiceProvider _serviceProvider;
     private readonly IConfiguration _configuration;
@@ -69,9 +68,9 @@ public class SocialService : ISocialService
     /// <param name="serviceProvider">服务提供者（用于创建后台任务的作用域）。</param>
     /// <param name="configuration">配置对象（用于读取地理编码 API Key）。</param>
     public SocialService(
-        IDatabaseOperationFactory<UserLocationBeacon> beaconFactory,
-        IDatabaseOperationFactory<AppUser> userFactory,
-        IDatabaseOperationFactory<ChatSession> sessionFactory,
+        IDataFactory<UserLocationBeacon> beaconFactory,
+        IDataFactory<AppUser> userFactory,
+        IDataFactory<ChatSession> sessionFactory,
         ILogger<SocialService> logger,
         IServiceProvider serviceProvider,
         IConfiguration configuration)
@@ -133,7 +132,7 @@ public class SocialService : ISocialService
 
         // 创建新记录（ID 会自动生成）
         var createdBeacon = await _beaconFactory.CreateAsync(beacon);
-        
+
         // ✅ 保存关键信息，供后台任务使用（后台任务无法访问 HttpContext）
         var beaconId = createdBeacon?.Id ?? throw new InvalidOperationException("位置信标创建失败：无法获取信标ID");
 
@@ -145,35 +144,26 @@ public class SocialService : ISocialService
             {
                 // 创建新的 Scope，确保 Scoped 服务正常工作
                 using var scope = _serviceProvider.CreateScope();
-                var scopedBeaconFactory = scope.ServiceProvider.GetRequiredService<IDatabaseOperationFactory<UserLocationBeacon>>();
-                
+                var scopedBeaconFactory = scope.ServiceProvider.GetRequiredService<IDataFactory<UserLocationBeacon>>();
+
                 // 执行地理编码（设置超时，避免无限等待）
                 var geocodeResult = await ReverseGeocodeAsync(request.Latitude, request.Longitude);
-                
+
                 if (geocodeResult != null && (!string.IsNullOrEmpty(geocodeResult.City) || !string.IsNullOrEmpty(geocodeResult.Country)))
                 {
                     // ✅ 使用 beacon 的 Id 直接更新，避免在后台任务中无法获取用户信息
-                    var filter = scopedBeaconFactory.CreateFilterBuilder()
-                        .Equal(b => b.Id, beaconId) // 直接使用 Id 匹配，不依赖 HttpContext
-                        .Build();
+                    var updatedCount = await scopedBeaconFactory.UpdateManyAsync(
+                        b => b.Id == beaconId,
+                        b =>
+                        {
+                            if (!string.IsNullOrEmpty(geocodeResult.City)) b.City = geocodeResult.City;
+                            if (!string.IsNullOrEmpty(geocodeResult.Country)) b.Country = geocodeResult.Country;
+                        });
 
-                    var updateBuilder = scopedBeaconFactory.CreateUpdateBuilder();
-                    if (!string.IsNullOrEmpty(geocodeResult.City))
-                    {
-                        updateBuilder = updateBuilder.Set(b => b.City, geocodeResult.City);
-                    }
-                    if (!string.IsNullOrEmpty(geocodeResult.Country))
-                    {
-                        updateBuilder = updateBuilder.Set(b => b.Country, geocodeResult.Country);
-                    }
-                    var update = updateBuilder.Build();
-
-                    var updatedCount = await scopedBeaconFactory.UpdateManyAsync(filter, update);
-                    
 #if DEBUG
                     if (updatedCount > 0)
                     {
-                        _logger.LogInformation("位置上报：后台更新位置信息成功 City: {City}, Country: {Country}，坐标 ({Latitude}, {Longitude})，BeaconId: {BeaconId}", 
+                        _logger.LogInformation("位置上报：后台更新位置信息成功 City: {City}, Country: {Country}，坐标 ({Latitude}, {Longitude})，BeaconId: {BeaconId}",
                             geocodeResult.City, geocodeResult.Country, request.Latitude, request.Longitude, beaconId);
                     }
                     else
@@ -185,7 +175,7 @@ public class SocialService : ISocialService
                 else
                 {
 #if DEBUG
-                    _logger.LogWarning("位置上报：地理编码返回空值，坐标 ({Latitude}, {Longitude})", 
+                    _logger.LogWarning("位置上报：地理编码返回空值，坐标 ({Latitude}, {Longitude})",
                         request.Latitude, request.Longitude);
 #endif
                 }
@@ -193,7 +183,7 @@ public class SocialService : ISocialService
             catch (Exception ex)
             {
                 // 地理编码失败不影响位置保存，只记录警告
-                _logger.LogWarning(ex, "位置上报：后台逆地理编码失败，坐标 ({Latitude}, {Longitude})，BeaconId: {BeaconId}", 
+                _logger.LogWarning(ex, "位置上报：后台逆地理编码失败，坐标 ({Latitude}, {Longitude})，BeaconId: {BeaconId}",
                     request.Latitude, request.Longitude, beaconId);
             }
         });
@@ -223,20 +213,13 @@ public class SocialService : ISocialService
         var minLon = Math.Max(-180, lon - lonDelta);
         var maxLon = Math.Min(180, lon + lonDelta);
 
-        var filter = Builders<UserLocationBeacon>.Filter.And(
-            Builders<UserLocationBeacon>.Filter.Gte(beacon => beacon.LastSeenAt, staleThreshold),
-            Builders<UserLocationBeacon>.Filter.Ne(beacon => beacon.UserId, currentUserId),
-            Builders<UserLocationBeacon>.Filter.Ne(beacon => beacon.UserId, AiAssistantConstants.AssistantUserId),
-            Builders<UserLocationBeacon>.Filter.Gte(beacon => beacon.Latitude, minLat),
-            Builders<UserLocationBeacon>.Filter.Lte(beacon => beacon.Latitude, maxLat),
-            Builders<UserLocationBeacon>.Filter.Gte(beacon => beacon.Longitude, minLon),
-            Builders<UserLocationBeacon>.Filter.Lte(beacon => beacon.Longitude, maxLon));
-
-        var sort = _beaconFactory.CreateSortBuilder()
-            .Descending(beacon => beacon.LastSeenAt)
-            .Build();
-
-        var rawBeacons = await _beaconFactory.FindAsync(filter, sort, limit: 500);
+        var rawBeacons = await _beaconFactory.FindAsync(beacon =>
+            beacon.LastSeenAt >= staleThreshold &&
+            beacon.UserId != currentUserId &&
+            beacon.UserId != AiAssistantConstants.AssistantUserId &&
+            beacon.Latitude >= minLat && beacon.Latitude <= maxLat &&
+            beacon.Longitude >= minLon && beacon.Longitude <= maxLon,
+            q => q.OrderByDescending(b => b.LastSeenAt), limit: 500);
         if (rawBeacons.Count == 0)
         {
             return new NearbyUsersResponse();
@@ -284,10 +267,7 @@ public class SocialService : ISocialService
         var userMap = new Dictionary<string, AppUser>();
         if (userIds.Count > 0)
         {
-            var userFilter = _userFactory.CreateFilterBuilder()
-                .In(user => user.Id, userIds)
-                .Build();
-            var users = await _userFactory.FindAsync(userFilter);
+            var users = await _userFactory.FindAsync(user => userIds.Contains(user.Id));
             foreach (var user in users)
             {
                 if (!string.IsNullOrEmpty(user.Id))
@@ -370,11 +350,10 @@ public class SocialService : ISocialService
             return cached;
         }
 
-        var filter = Builders<ChatSession>.Filter.And(
-            Builders<ChatSession>.Filter.Size(session => session.Participants, 2),
-            Builders<ChatSession>.Filter.All(session => session.Participants, new[] { currentUserId, targetUserId }));
-
-        var sessions = await _sessionFactory.FindAsync(filter, limit: 1);
+        var sessions = await _sessionFactory.FindAsync(session =>
+            session.Participants.Count == 2 &&
+            session.Participants.Contains(currentUserId) &&
+            session.Participants.Contains(targetUserId), limit: 1);
         var sessionId = sessions.FirstOrDefault()?.Id;
         cache[targetUserId] = sessionId;
         return sessionId;
@@ -440,17 +419,9 @@ public class SocialService : ISocialService
         var currentUserId = _beaconFactory.GetRequiredUserId();
         var companyId = await _beaconFactory.GetRequiredCompanyIdAsync();
 
-        var filter = _beaconFactory.CreateFilterBuilder()
-            .Equal(b => b.UserId, currentUserId)
-            .Equal(b => b.CompanyId, companyId)
-            .Build();
-
-        // 按最后上报时间降序排序，获取最后一次保存的位置信息
-        var sort = _beaconFactory.CreateSortBuilder()
-            .Descending(b => b.LastSeenAt)
-            .Build();
-
-        var beacons = await _beaconFactory.FindAsync(filter, sort, limit: 1);
+        var beacons = await _beaconFactory.FindAsync(
+            b => b.UserId == currentUserId && b.CompanyId == companyId,
+            q => q.OrderByDescending(b => b.LastSeenAt), limit: 1);
         return beacons.FirstOrDefault();
     }
 
@@ -490,7 +461,7 @@ public class SocialService : ISocialService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "BigDataCloud 逆地理编码失败，尝试 GeoNames，坐标 ({Latitude}, {Longitude})", 
+            _logger.LogWarning(ex, "BigDataCloud 逆地理编码失败，尝试 GeoNames，坐标 ({Latitude}, {Longitude})",
                 latitude, longitude);
             // 继续尝试 GeoNames
         }
@@ -506,7 +477,7 @@ public class SocialService : ISocialService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "GeoNames 逆地理编码失败，坐标 ({Latitude}, {Longitude})", 
+            _logger.LogWarning(ex, "GeoNames 逆地理编码失败，坐标 ({Latitude}, {Longitude})",
                 latitude, longitude);
         }
 
@@ -524,15 +495,15 @@ public class SocialService : ISocialService
             // 文档：https://www.bigdatacloud.com/docs/api/reverse-geocoding-api
             // 免费额度：每天 10,000 次，不需要 API Key
             var url = $"https://api.bigdatacloud.net/data/reverse-geocode-client?latitude={latitude}&longitude={longitude}&localityLanguage=zh";
-            
+
             using var httpClient = new HttpClient();
             httpClient.Timeout = TimeSpan.FromSeconds(5);
-            
+
             var response = await httpClient.GetStringAsync(url);
             var json = JsonSerializer.Deserialize<JsonElement>(response);
-            
+
             var result = new GeocodeResult();
-            
+
             // ✅ 改进城市解析逻辑：按优先级尝试多个字段
             // 1. 优先使用 locality（城市/地区）
             if (json.TryGetProperty("locality", out var locality) && !string.IsNullOrWhiteSpace(locality.GetString()))
@@ -550,9 +521,9 @@ public class SocialService : ISocialService
                 result.City = subdivision.GetString()!.Trim();
             }
             // 4. 如果没有 principalSubdivision，尝试使用 localityInfo.administrative[0].name（行政区划）
-            else if (json.TryGetProperty("localityInfo", out var localityInfo) && 
+            else if (json.TryGetProperty("localityInfo", out var localityInfo) &&
                      localityInfo.TryGetProperty("administrative", out var administrative) &&
-                     administrative.ValueKind == JsonValueKind.Array && 
+                     administrative.ValueKind == JsonValueKind.Array &&
                      administrative.GetArrayLength() > 0)
             {
                 var firstAdmin = administrative[0];
@@ -561,7 +532,7 @@ public class SocialService : ISocialService
                     result.City = adminName.GetString()!.Trim();
                 }
             }
-            
+
             // ✅ 改进国家解析逻辑：按优先级尝试多个字段
             // 1. 优先使用 countryName（国家名称）
             if (json.TryGetProperty("countryName", out var countryName) && !string.IsNullOrWhiteSpace(countryName.GetString()))
@@ -575,7 +546,7 @@ public class SocialService : ISocialService
                 result.Country = countryCode.GetString()!.Trim().ToUpper();
             }
             // 3. 如果没有 countryCode，尝试使用 localityInfo.administrative 中的国家信息
-            else if (json.TryGetProperty("localityInfo", out var localityInfo2) && 
+            else if (json.TryGetProperty("localityInfo", out var localityInfo2) &&
                      localityInfo2.TryGetProperty("administrative", out var administrative2) &&
                      administrative2.ValueKind == JsonValueKind.Array)
             {
@@ -590,21 +561,21 @@ public class SocialService : ISocialService
                     }
                 }
             }
-            
+
             // 如果城市和国家都为空，记录警告并返回 null
             if (string.IsNullOrEmpty(result.City) && string.IsNullOrEmpty(result.Country))
             {
-                _logger.LogWarning("BigDataCloud 逆地理编码返回空结果，坐标 ({Latitude}, {Longitude})，响应: {Response}", 
+                _logger.LogWarning("BigDataCloud 逆地理编码返回空结果，坐标 ({Latitude}, {Longitude})，响应: {Response}",
                     latitude, longitude, response);
                 return null;
             }
-            
+
             // 记录解析结果（仅在开发环境）
 #if DEBUG
-            _logger.LogInformation("BigDataCloud 逆地理编码成功，坐标 ({Latitude}, {Longitude})，City: {City}, Country: {Country}", 
+            _logger.LogInformation("BigDataCloud 逆地理编码成功，坐标 ({Latitude}, {Longitude})，City: {City}, Country: {Country}",
                 latitude, longitude, result.City, result.Country);
 #endif
-            
+
             return result;
         }
         catch (TaskCanceledException ex)
@@ -614,7 +585,7 @@ public class SocialService : ISocialService
         }
         catch (HttpRequestException ex)
         {
-            _logger.LogWarning(ex, "BigDataCloud 逆地理编码 HTTP 请求失败，坐标 ({Latitude}, {Longitude})，状态码: {StatusCode}", 
+            _logger.LogWarning(ex, "BigDataCloud 逆地理编码 HTTP 请求失败，坐标 ({Latitude}, {Longitude})，状态码: {StatusCode}",
                 latitude, longitude, ex.Data.Contains("StatusCode") ? ex.Data["StatusCode"] : "未知");
             return null;
         }
@@ -643,35 +614,35 @@ public class SocialService : ISocialService
             // 注意：使用默认用户名 "demo"，但建议注册自己的用户名
             var username = _configuration["Geocoding:GeoNamesUsername"] ?? "demo";
             var url = $"http://api.geonames.org/findNearbyPlaceNameJSON?lat={latitude}&lng={longitude}&username={username}&lang=zh";
-            
+
             using var httpClient = new HttpClient();
             httpClient.Timeout = TimeSpan.FromSeconds(5);
-            
+
             var response = await httpClient.GetStringAsync(url);
             var json = JsonSerializer.Deserialize<JsonElement>(response);
-            
+
             // 检查是否有错误
             if (json.TryGetProperty("status", out var status))
             {
                 var statusObj = status.GetProperty("message");
-                _logger.LogWarning("GeoNames API 返回错误，坐标 ({Latitude}, {Longitude})，错误: {Error}", 
+                _logger.LogWarning("GeoNames API 返回错误，坐标 ({Latitude}, {Longitude})，错误: {Error}",
                     latitude, longitude, statusObj.GetString());
                 return null;
             }
-            
+
             var result = new GeocodeResult();
-            
+
             if (json.TryGetProperty("geonames", out var geonames) && geonames.ValueKind == JsonValueKind.Array && geonames.GetArrayLength() > 0)
             {
                 // ✅ 改进：遍历所有结果，寻找最合适的城市信息
                 var places = geonames.EnumerateArray().ToList();
-                
+
                 foreach (var place in places)
                 {
                     // 获取 fcode（特征代码），优先选择城市类型的地点
                     var fcode = place.TryGetProperty("fcode", out var fcodeProp) ? fcodeProp.GetString() : null;
                     var isCity = fcode != null && (fcode.StartsWith("PPL") || fcode.StartsWith("ADM")); // PPL=人口聚集地, ADM=行政区划
-                    
+
                     // ✅ 改进城市解析逻辑：按优先级尝试多个字段
                     if (string.IsNullOrEmpty(result.City))
                     {
@@ -692,7 +663,7 @@ public class SocialService : ISocialService
                             result.City = adminName2.GetString()!.Trim();
                         }
                     }
-                    
+
                     // ✅ 改进国家解析逻辑
                     if (string.IsNullOrEmpty(result.Country))
                     {
@@ -707,7 +678,7 @@ public class SocialService : ISocialService
                             result.Country = countryCode.GetString()!.Trim().ToUpper();
                         }
                     }
-                    
+
                     // 如果已经获取到城市和国家，可以提前退出
                     if (!string.IsNullOrEmpty(result.City) && !string.IsNullOrEmpty(result.Country))
                     {
@@ -715,21 +686,21 @@ public class SocialService : ISocialService
                     }
                 }
             }
-            
+
             // 如果城市和国家都为空，记录警告并返回 null
             if (string.IsNullOrEmpty(result.City) && string.IsNullOrEmpty(result.Country))
             {
-                _logger.LogWarning("GeoNames 逆地理编码返回空结果，坐标 ({Latitude}, {Longitude})，响应: {Response}", 
+                _logger.LogWarning("GeoNames 逆地理编码返回空结果，坐标 ({Latitude}, {Longitude})，响应: {Response}",
                     latitude, longitude, response);
                 return null;
             }
-            
+
             // 记录解析结果（仅在开发环境）
 #if DEBUG
-            _logger.LogInformation("GeoNames 逆地理编码成功，坐标 ({Latitude}, {Longitude})，City: {City}, Country: {Country}", 
+            _logger.LogInformation("GeoNames 逆地理编码成功，坐标 ({Latitude}, {Longitude})，City: {City}, Country: {Country}",
                 latitude, longitude, result.City, result.Country);
 #endif
-            
+
             return result;
         }
         catch (TaskCanceledException ex)
@@ -739,7 +710,7 @@ public class SocialService : ISocialService
         }
         catch (HttpRequestException ex)
         {
-            _logger.LogWarning(ex, "GeoNames 逆地理编码 HTTP 请求失败，坐标 ({Latitude}, {Longitude})，状态码: {StatusCode}", 
+            _logger.LogWarning(ex, "GeoNames 逆地理编码 HTTP 请求失败，坐标 ({Latitude}, {Longitude})，状态码: {StatusCode}",
                 latitude, longitude, ex.Data.Contains("StatusCode") ? ex.Data["StatusCode"] : "未知");
             return null;
         }

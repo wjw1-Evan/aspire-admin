@@ -19,8 +19,5 @@
     </None>
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Aspire.StackExchange.Redis" Version="13.1.0" />
-  </ItemGroup>
 
 </Project>

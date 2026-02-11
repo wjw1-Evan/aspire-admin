@@ -96,31 +96,13 @@ public class ResponseFormattingMiddleware
                     responseBody.Seek(0, SeekOrigin.Begin);
                     responseBodyText = await new StreamReader(responseBody).ReadToEndAsync();
 
+                    // 存储响应体供 ActivityLogMiddleware 使用
                     StoreResponseBody(context, responseBodyText);
                     responseBody.Seek(0, SeekOrigin.Begin);
                 }
 
-                if (context.Response.StatusCode == 200 &&
-                    isJsonResponse &&
-                    !string.IsNullOrEmpty(responseBodyText) &&
-                    !IsAlreadyFormatted(responseBodyText))
-                {
-                    var wrappedResponse = new
-                    {
-                        success = true,
-                        data = JsonSerializer.Deserialize<object>(responseBodyText, JsonOptions),
-                        timestamp = DateTime.UtcNow
-                    };
-
-                    responseBodyText = JsonSerializer.Serialize(wrappedResponse, JsonOptions);
-                    StoreResponseBody(context, responseBodyText);
-
-                    var bytes = Encoding.UTF8.GetBytes(responseBodyText);
-                    context.Response.ContentLength = bytes.Length;
-
-                    responseBody.SetLength(0);
-                    await responseBody.WriteAsync(bytes);
-                }
+                // 注意：响应包裹逻辑已迁移到 ApiResponseWrapperFilter (Action Filter)
+                // 这里不再进行反序列化和重新序列化，从而大幅提升性能。
 
                 // 复制响应到原始流
                 responseBody.Seek(0, SeekOrigin.Begin);
@@ -128,16 +110,15 @@ public class ResponseFormattingMiddleware
             }
             catch (Exception ex)
             {
-
                 // 如果响应已经开始发送，则无法修改
                 if (context.Response.HasStarted)
                 {
                     throw;
                 }
 
-                // 清除之前的响应内容并准备写入错误响应
+                // 对于未捕获的异常，在此进行兜底包装并记录
                 responseBody.SetLength(0);
-                context.Response.StatusCode = 400; // 业务错误通常视为 400
+                context.Response.StatusCode = 500; // 未捕获异常应视为 500
                 context.Response.ContentType = "application/json";
 
                 var errorResponse = new

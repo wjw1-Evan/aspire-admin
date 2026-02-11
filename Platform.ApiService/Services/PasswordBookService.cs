@@ -1,8 +1,7 @@
-using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
-using MongoDB.Driver;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Platform.ApiService.Services;
 
@@ -11,7 +10,7 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class PasswordBookService : IPasswordBookService
 {
-    private readonly IDatabaseOperationFactory<PasswordBookEntry> _factory;
+    private readonly IDataFactory<PasswordBookEntry> _factory;
     private readonly IEncryptionService _encryptionService;
     private readonly ILogger<PasswordBookService> _logger;
 
@@ -22,7 +21,7 @@ public class PasswordBookService : IPasswordBookService
     /// <param name="encryptionService">加密服务</param>
     /// <param name="logger">日志记录器</param>
     public PasswordBookService(
-        IDatabaseOperationFactory<PasswordBookEntry> factory,
+        IDataFactory<PasswordBookEntry> factory,
         IEncryptionService encryptionService,
         ILogger<PasswordBookService> logger)
     {
@@ -76,38 +75,37 @@ public class PasswordBookService : IPasswordBookService
         if (entry.UserId != userId)
             throw new UnauthorizedAccessException("无权更新此条目");
 
-        var updateBuilder = _factory.CreateUpdateBuilder();
-
-        if (!string.IsNullOrEmpty(request.Platform))
-            updateBuilder.Set(e => e.Platform, request.Platform);
-        if (!string.IsNullOrEmpty(request.Account))
-            updateBuilder.Set(e => e.Account, request.Account);
+        string? encryptedPassword = null;
         if (!string.IsNullOrEmpty(request.Password))
         {
-            // 加密新密码
-            var encryptedPassword = await _encryptionService.EncryptAsync(request.Password, userId);
-            updateBuilder.Set(e => e.EncryptedPassword, encryptedPassword);
+            encryptedPassword = await _encryptionService.EncryptAsync(request.Password, userId);
         }
-        if (request.Url != null)
-            updateBuilder.Set(e => e.Url, request.Url);
-        // 处理分类：始终更新分类字段（允许清空分类）
-        // 空字符串或 null 视为清空分类（设置为 null）
-        updateBuilder.Set(e => e.Category, string.IsNullOrWhiteSpace(request.Category) ? null : request.Category);
-        if (request.Tags != null)
-            updateBuilder.Set(e => e.Tags, request.Tags);
-        if (request.Notes != null)
-            updateBuilder.Set(e => e.Notes, request.Notes);
 
-        if (updateBuilder.Count == 0)
-            return entry;
+        var updated = await _factory.UpdateAsync(id, entity =>
+        {
+            if (!string.IsNullOrEmpty(request.Platform))
+                entity.Platform = request.Platform;
+            if (!string.IsNullOrEmpty(request.Account))
+                entity.Account = request.Account;
+            if (!string.IsNullOrEmpty(encryptedPassword))
+                entity.EncryptedPassword = encryptedPassword;
+            if (request.Url != null)
+                entity.Url = request.Url;
 
-        var filter = _factory.CreateFilterBuilder()
-            .Equal(e => e.Id, id)
-            .Build();
+            entity.Category = string.IsNullOrWhiteSpace(request.Category) ? null : request.Category;
 
-        var result = await _factory.FindOneAndUpdateAsync(filter, updateBuilder.Build());
-        _logger.LogInformation("Password book entry updated: {EntryId}", id);
-        return result;
+            if (request.Tags != null)
+                entity.Tags = request.Tags;
+            if (request.Notes != null)
+                entity.Notes = request.Notes;
+        });
+
+        if (updated != null)
+        {
+            _logger.LogInformation("Password book entry updated: {EntryId}", id);
+        }
+
+        return updated;
     }
 
     /// <summary>
@@ -127,12 +125,7 @@ public class PasswordBookService : IPasswordBookService
         var password = await _encryptionService.DecryptAsync(entry.EncryptedPassword, userId);
 
         // 更新最后使用时间
-        var updateBuilder = _factory.CreateUpdateBuilder();
-        updateBuilder.Set(e => e.LastUsedAt, DateTime.UtcNow);
-        var filter = _factory.CreateFilterBuilder()
-            .Equal(e => e.Id, id)
-            .Build();
-        await _factory.FindOneAndUpdateAsync(filter, updateBuilder.Build());
+        await _factory.UpdateAsync(id, entity => entity.LastUsedAt = DateTime.UtcNow);
 
         return new PasswordBookEntryDetailDto
         {
@@ -155,61 +148,27 @@ public class PasswordBookService : IPasswordBookService
     /// </summary>
     public async Task<(List<PasswordBookEntryDto> Items, long Total)> GetEntriesAsync(PasswordBookQueryRequest request)
     {
-        var filterBuilder = _factory.CreateFilterBuilder();
+        var platform = request.Platform?.Trim();
+        var account = request.Account?.Trim();
+        var category = request.Category?.Trim();
+        var keywordLower = request.Keyword?.Trim().ToLowerInvariant();
+        var tags = request.Tags;
 
-        // 平台搜索
-        if (!string.IsNullOrEmpty(request.Platform))
-            filterBuilder = filterBuilder.Contains(e => e.Platform, request.Platform);
-
-        // 账号搜索
-        if (!string.IsNullOrEmpty(request.Account))
-            filterBuilder = filterBuilder.Contains(e => e.Account, request.Account);
-
-        // 分类筛选
-        if (!string.IsNullOrEmpty(request.Category))
-            filterBuilder = filterBuilder.Equal(e => e.Category, request.Category);
-
-        // 标签筛选（使用 AnyIn 匹配数组中的任意元素）
-        if (request.Tags != null && request.Tags.Any())
-        {
-            filterBuilder = filterBuilder.Custom(
-                Builders<PasswordBookEntry>.Filter.AnyIn(e => e.Tags, request.Tags)
-            );
-        }
-
-        // 关键词搜索（平台、账号、备注）
-        if (!string.IsNullOrEmpty(request.Keyword))
-        {
-            var keyword = request.Keyword;
-            var regex = new MongoDB.Bson.BsonRegularExpression(keyword, "i");
-            
-            // 🔧 修复：MongoDB LINQ 不支持空合并运算符 ??，需要分别处理 Notes 字段可能为 null 的情况
-            var keywordFilters = new List<FilterDefinition<PasswordBookEntry>>
-            {
-                Builders<PasswordBookEntry>.Filter.Regex(e => e.Platform, regex),
-                Builders<PasswordBookEntry>.Filter.Regex(e => e.Account, regex)
-            };
-            
-            // 对于 Notes 字段，只有当它不为 null 时才进行正则匹配
-            // 如果 Notes 为 null，它不会包含任何关键词，所以不需要匹配
-            var notesFilter = Builders<PasswordBookEntry>.Filter.And(
-                Builders<PasswordBookEntry>.Filter.Ne(e => e.Notes, null),
-                Builders<PasswordBookEntry>.Filter.Regex(e => e.Notes!, regex)
-            );
-            keywordFilters.Add(notesFilter);
-            
-            filterBuilder = filterBuilder.Custom(
-                Builders<PasswordBookEntry>.Filter.Or(keywordFilters)
-            );
-        }
-
-        var filter = filterBuilder.Build();
-        var sort = _factory.CreateSortBuilder()
-            .Descending(e => e.LastUsedAt)
-            .Descending(e => e.CreatedAt)
-            .Build();
-
-        var (items, total) = await _factory.FindPagedAsync(filter, sort, request.Current, request.PageSize);
+        var (items, total) = await _factory.FindPagedAsync(
+            e =>
+                (string.IsNullOrEmpty(platform) || e.Platform.Contains(platform)) &&
+                (string.IsNullOrEmpty(account) || e.Account.Contains(account)) &&
+                (string.IsNullOrEmpty(category) || e.Category == category) &&
+                (tags == null || tags.Count == 0 || (e.Tags != null && e.Tags.Any(t => tags.Contains(t)))) &&
+                (string.IsNullOrEmpty(keywordLower) ||
+                 e.Platform.ToLower().Contains(keywordLower) ||
+                 e.Account.ToLower().Contains(keywordLower) ||
+                 (e.Notes != null && e.Notes.ToLower().Contains(keywordLower))),
+            query => query
+                .OrderByDescending(e => e.LastUsedAt)
+                .ThenByDescending(e => e.CreatedAt),
+            request.Current,
+            request.PageSize);
 
         var dtos = items.Select(e => new PasswordBookEntryDto
         {
@@ -241,16 +200,12 @@ public class PasswordBookService : IPasswordBookService
         if (entry.UserId != userId)
             throw new UnauthorizedAccessException("无权删除此条目");
 
-        var filter = _factory.CreateFilterBuilder()
-            .Equal(e => e.Id, id)
-            .Build();
-
-        var result = await _factory.FindOneAndSoftDeleteAsync(filter);
-        if (result != null)
+        var deleted = await _factory.SoftDeleteAsync(id);
+        if (deleted)
         {
             _logger.LogInformation("Password book entry deleted: {EntryId} by user {UserId}", id, userId);
         }
-        return result != null;
+        return deleted;
     }
 
     /// <summary>
@@ -258,8 +213,7 @@ public class PasswordBookService : IPasswordBookService
     /// </summary>
     public async Task<List<string>> GetCategoriesAsync()
     {
-        var filter = _factory.CreateFilterBuilder().Build();
-        var entries = await _factory.FindAsync(filter);
+        var entries = await _factory.FindAsync();
 
         var categories = entries
             .Where(e => !string.IsNullOrEmpty(e.Category))
@@ -276,8 +230,7 @@ public class PasswordBookService : IPasswordBookService
     /// </summary>
     public async Task<List<string>> GetTagsAsync()
     {
-        var filter = _factory.CreateFilterBuilder().Build();
-        var entries = await _factory.FindAsync(filter);
+        var entries = await _factory.FindAsync();
 
         var tags = entries
             .Where(e => e.Tags != null && e.Tags.Any())
@@ -294,22 +247,12 @@ public class PasswordBookService : IPasswordBookService
     /// </summary>
     public async Task<List<PasswordBookEntryDetailDto>> ExportEntriesAsync(ExportPasswordBookRequest request, string userId)
     {
-        var filterBuilder = _factory.CreateFilterBuilder();
+        var category = request.Category?.Trim();
+        var tags = request.Tags;
 
-        // 分类筛选
-        if (!string.IsNullOrEmpty(request.Category))
-            filterBuilder = filterBuilder.Equal(e => e.Category, request.Category);
-
-        // 标签筛选（使用 AnyIn 匹配数组中的任意元素）
-        if (request.Tags != null && request.Tags.Any())
-        {
-            filterBuilder = filterBuilder.Custom(
-                Builders<PasswordBookEntry>.Filter.AnyIn(e => e.Tags, request.Tags)
-            );
-        }
-
-        var filter = filterBuilder.Build();
-        var entries = await _factory.FindAsync(filter);
+        var entries = await _factory.FindAsync(e =>
+            (string.IsNullOrEmpty(category) || e.Category == category) &&
+            (tags == null || tags.Count == 0 || (e.Tags != null && e.Tags.Any(t => tags.Contains(t)))));
 
         // 只导出当前用户的条目
         entries = entries.Where(e => e.UserId == userId).ToList();
@@ -350,8 +293,7 @@ public class PasswordBookService : IPasswordBookService
     /// </summary>
     public async Task<PasswordBookStatistics> GetStatisticsAsync()
     {
-        var filter = _factory.CreateFilterBuilder().Build();
-        var entries = await _factory.FindAsync(filter);
+        var entries = await _factory.FindAsync();
 
         var totalEntries = entries.Count;
         var categories = entries

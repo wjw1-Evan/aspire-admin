@@ -13,7 +13,6 @@ public class ActivityLogMiddleware
     private readonly RequestDelegate _next;
     private readonly ILogger<ActivityLogMiddleware> _logger;
     private readonly IConfiguration _configuration;
-    private readonly IServiceProvider _serviceProvider;
 
     // 排除路径列表
     private static readonly string[] ExcludedPaths =
@@ -28,23 +27,25 @@ public class ActivityLogMiddleware
         "/chat/sse"  // SSE 端点（直接访问）
     };
 
+    private readonly IUserActivityLogQueue _logQueue;
+
     /// <summary>
     /// 初始化活动日志中间件
     /// </summary>
     /// <param name="next">下一个中间件委托</param>
     /// <param name="logger">日志记录器</param>
     /// <param name="configuration">配置对象</param>
-    /// <param name="serviceProvider">服务提供者</param>
+    /// <param name="logQueue">异步日志队列</param>
     public ActivityLogMiddleware(
         RequestDelegate next,
         ILogger<ActivityLogMiddleware> logger,
         IConfiguration configuration,
-        IServiceProvider serviceProvider)
+        IUserActivityLogQueue logQueue)
     {
         _next = next;
         _logger = logger;
         _configuration = configuration;
-        _serviceProvider = serviceProvider;
+        _logQueue = logQueue;
     }
 
     /// <summary>
@@ -82,27 +83,9 @@ public class ActivityLogMiddleware
 
         if (logData.HasValue)
         {
-            // 异步记录日志（不等待完成，避免阻塞响应）
-            // 使用根 ServiceProvider 创建新的 Scope
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    // 创建新的 Scope，确保 Scoped 服务正常工作
-                    using var scope = _serviceProvider.CreateScope();
-                    var scopedLogService = scope.ServiceProvider.GetRequiredService<IUserActivityLogService>();
-
-                    await LogRequestAsync(logData.Value, scopedLogService);
-                }
-                catch (OperationCanceledException)
-                {
-                    // 正常取消，不记录日志
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to log activity for {Path}", logData.Value.path);
-                }
-            }, context.RequestAborted);
+            // ✅ 性能优化：将日志请求发送到异步队列，由后台 Worker 处理
+            // 这比直接 Task.Run 更节省资源，且具备背压处理能力
+            await _logQueue.EnqueueAsync(ToRequest(logData.Value), context.RequestAborted);
         }
     }
 
@@ -194,34 +177,26 @@ public class ActivityLogMiddleware
     }
 
     /// <summary>
-    /// 记录请求信息（使用已提取的数据，不访问 HttpContext）
+    /// 日志数据元组转请求对象的转换方法
     /// </summary>
-    private static async Task LogRequestAsync(
-        (string? userId, string? username, string httpMethod, string path, string? queryString, string scheme, string host, int statusCode, long durationMs, string? ipAddress, string? userAgent, string? responseBody, Dictionary<string, object>? metadata) logData,
-        IUserActivityLogService logService)
+    private static LogHttpRequestRequest ToRequest((string? userId, string? username, string httpMethod, string path, string? queryString, string scheme, string host, int statusCode, long durationMs, string? ipAddress, string? userAgent, string? responseBody, Dictionary<string, object>? metadata) data)
     {
-        var (userId, username, httpMethod, path, queryString, scheme, host, statusCode, durationMs, ipAddress, userAgent, responseBody, metadata) = logData;
-
-        // 构建请求对象
-        var request = new LogHttpRequestRequest
+        return new LogHttpRequestRequest
         {
-            UserId = userId,
-            Username = username,
-            HttpMethod = httpMethod,
-            Path = path,
-            QueryString = queryString,
-            Scheme = scheme,
-            Host = host,
-            StatusCode = statusCode,
-            DurationMs = durationMs,
-            IpAddress = ipAddress,
-            UserAgent = userAgent,
-            ResponseBody = responseBody,
-            Metadata = metadata ?? new Dictionary<string, object>()
+            UserId = data.userId,
+            Username = data.username,
+            HttpMethod = data.httpMethod,
+            Path = data.path,
+            QueryString = data.queryString,
+            Scheme = data.scheme,
+            Host = data.host,
+            StatusCode = data.statusCode,
+            DurationMs = data.durationMs,
+            IpAddress = data.ipAddress,
+            UserAgent = data.userAgent,
+            ResponseBody = data.responseBody,
+            Metadata = data.metadata ?? new Dictionary<string, object>()
         };
-
-        // 调用日志服务记录
-        await logService.LogHttpRequestAsync(request);
     }
 
     /// <summary>

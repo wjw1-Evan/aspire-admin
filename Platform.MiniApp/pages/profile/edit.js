@@ -59,11 +59,11 @@ Page(withAuth({
                 try {
                     const uploadRes = await new Promise((resolve, reject) => {
                         wx.uploadFile({
-                            url: `${apiUrl}/api/cloud-storage/upload`,
+                            url: `${apiUrl}/api/avatar/upload`,
                             filePath: tempFilePath,
-                            name: 'File', // 后端要求 File
+                            name: 'file', // 后端参数名为 file
                             formData: {
-                                'Overwrite': 'true' // 头像上传通常覆盖或后端处理
+                                // 'Overwrite': 'true' // AvatarController 不需要此参数
                             },
                             header: {
                                 'Authorization': `Bearer ${wx.getStorageSync('token')}`
@@ -77,7 +77,8 @@ Page(withAuth({
                         const data = JSON.parse(uploadRes.data);
                         if (data.success) {
                             // 使用临时路径立即展示，解决上传后不刷新问题
-                            const avatarUrl = `${apiUrl}/api/cloud-storage/${data.data.id}/download`;
+                            // 后端直接返回完整的 url
+                            const avatarUrl = data.data.url;
                             this.setData({
                                 'formData.avatar': avatarUrl,
                                 'localAvatar': tempFilePath

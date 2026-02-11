@@ -7,7 +7,7 @@ import {
   CameraOutlined,
   DeleteOutlined,
 } from '@ant-design/icons';
-import { FormattedMessage, useIntl } from '@umijs/max';
+import { FormattedMessage, useIntl, request, useModel } from '@umijs/max';
 import {
   App,
   Avatar,
@@ -74,72 +74,23 @@ interface UserProfile {
   lastLoginAt?: string;
 }
 
-// 将文件转换为 base64 格式
-const fileToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      resolve(result);
-    };
-    reader.onerror = (error) => reject(error);
-    reader.readAsDataURL(file);
-  });
-};
+
 
 const UserCenter: React.FC = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | undefined>(undefined);
-  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
+  // const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined); // Removed obsolete state
   const [form] = Form.useForm();
   const { styles } = useStyles();
   const { styles: commonStyles } = useCommonStyles();
   const intl = useIntl();
+  const { initialState, setInitialState } = useModel('@@initialState');
   const { message } = App.useApp();
 
-  // 处理受保护的头像加载
-  useEffect(() => {
-    let activeObjectUrl: string | undefined = undefined;
+  // 以前的 loadProtectedAvatar 逻辑已移除，因为头像现在是公开访问的
 
-    const loadProtectedAvatar = async () => {
-      const url = userProfile?.avatar;
-      if (url && url.startsWith('http')) {
-        try {
-          // 尝试直接加载（对于公共图片）
-          // 但为了处理受保护图片，我们直接使用带 token 的 fetch
-          const token = localStorage.getItem('token');
-          const response = await fetch(url, {
-            headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-          });
-
-          if (response.ok) {
-            const blob = await response.blob();
-            const objectUrl = URL.createObjectURL(blob);
-            activeObjectUrl = objectUrl;
-            setAvatarUrl(objectUrl);
-          } else {
-            // 如果 fetch 失败，回退到原始 URL (可能是 404 或其他，让 img 标签处理)
-            setAvatarUrl(url);
-          }
-        } catch (error) {
-          console.error('Failed to load protected avatar:', error);
-          setAvatarUrl(url);
-        }
-      } else {
-        setAvatarUrl(url);
-      }
-    };
-
-    loadProtectedAvatar();
-
-    return () => {
-      if (activeObjectUrl) {
-        URL.revokeObjectURL(activeObjectUrl);
-      }
-    };
-  }, [userProfile?.avatar]);
 
   // 获取用户信息
   const fetchUserProfile = async () => {
@@ -198,11 +149,20 @@ const UserCenter: React.FC = () => {
   }, [editing, userProfile, form]);
 
 
+  // 用一个引用来存储最新上传的头像URL，避免 Form 字段同步问题
+  const [lastUploadedAvatar, setLastUploadedAvatar] = useState<string | undefined>(undefined);
+
   // 更新用户信息
   const handleUpdateProfile = async (values: any) => {
     try {
       // ✅ 过滤掉 username 字段，因为后端不允许修改用户名
-      const { username: _username, ...updateData } = values;
+      const { username: _username, ...formValues } = values;
+
+      // 如果有新上传的头像，优先使用
+      const updateData = {
+        ...formValues,
+        avatar: lastUploadedAvatar || formValues.avatar,
+      };
 
       const response = await updateUserProfile(updateData);
       if (response.success) {
@@ -213,7 +173,22 @@ const UserCenter: React.FC = () => {
           }),
         );
         setEditing(false);
+        setLastUploadedAvatar(undefined); // 清除上传状态
         fetchUserProfile(); // 重新获取用户信息
+
+        // 保存成功后，同步更新全局用户状态（包括头像）
+        setInitialState((s) => {
+          if (!s || !s.currentUser) return s;
+          return {
+            ...s,
+            currentUser: {
+              ...s.currentUser,
+              ...updateData,
+              name: updateData.name || s.currentUser.name,
+              avatar: updateData.avatar || s.currentUser.avatar,
+            },
+          };
+        });
       } else {
         // 失败时抛出错误，由全局错误处理统一处理
         throw new Error(
@@ -333,7 +308,7 @@ const UserCenter: React.FC = () => {
               <div style={{ position: 'relative', display: 'inline-block' }}>
                 <Avatar
                   size={80}
-                  src={getUserAvatar(avatarPreview || avatarUrl)}
+                  src={getUserAvatar(avatarPreview || userProfile?.avatar)}
                   icon={<UserOutlined />}
                 />
                 <label
@@ -362,9 +337,9 @@ const UserCenter: React.FC = () => {
                       const file = e.target.files?.[0];
                       if (!file) return;
 
-                      // 检查文件大小（2MB）
-                      if (file.size > 2 * 1024 * 1024) {
-                        message.error('图片大小不能超过 2MB');
+                      // 检查文件大小（5MB）
+                      if (file.size > 5 * 1024 * 1024) {
+                        message.error('图片大小不能超过 5MB');
                         e.target.value = ''; // 清空选择
                         return;
                       }
@@ -376,17 +351,48 @@ const UserCenter: React.FC = () => {
                         return;
                       }
 
+                      // ✅ 立即显示本地预览，无需等待上传完成，体验更好
+                      const localPreviewUrl = URL.createObjectURL(file);
+                      setAvatarPreview(localPreviewUrl);
+
+                      const hide = message.loading('正在上传...', 0);
                       try {
-                        const base64 = await fileToBase64(file);
-                        setAvatarPreview(base64);
-                        form.setFieldsValue({ avatar: base64 });
+                        const formData = new FormData();
+                        formData.append('file', file);
+
+                        const response = await request<any>('/api/avatar/upload', { // Use any to be safe
+                          method: 'POST',
+                          data: formData,
+                          requestType: 'form',
+                        });
+
+                        hide();
+
+                        // 兼容两种响应结构：直接返回数据 或 包含在 data 字段中
+                        // 1. { url: "..." }
+                        // 2. { data: { url: "..." }, success: true }
+                        const newUrl = response?.url || response?.data?.url;
+
+                        if (newUrl) {
+                          message.success('头像上传成功');
+
+                          // 更新表单值，准备保存
+                          form.setFieldsValue({ avatar: newUrl });
+                          setLastUploadedAvatar(newUrl); // Store in local state for safe submission
+
+                          // 直接显示新的 URL (后端已设置为公开访问，无需手动 fetch Blob)
+                          setAvatarPreview(newUrl);
+
+                          // 全局状态更新已移至保存操作之后
+                          // setInitialState((s) => ...);
+                        }
                       } catch (error) {
-                        console.error('头像转换失败:', error);
-                        // 这是一个本地文件处理错误，不涉及 API 调用，所以可以在这里显示错误
-                        // 但为了统一，也可以使用全局错误处理
-                        message.error('头像处理失败，请重试');
-                        e.target.value = ''; // 清空选择
+                        hide();
+                        message.error('头像上传失败');
+                        console.error('Avatar upload failed:', error);
                       }
+
+                      e.target.value = ''; // 清空选择，允许重复上传同一文件
                     }}
                   />
                   <CameraOutlined style={{ color: '#fff', fontSize: 14 }} />
@@ -417,7 +423,7 @@ const UserCenter: React.FC = () => {
             ) : (
               <Avatar
                 size={80}
-                src={getUserAvatar(avatarUrl)}
+                src={getUserAvatar(userProfile?.avatar)}
                 icon={<UserOutlined />}
               />
             )}

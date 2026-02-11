@@ -836,15 +836,9 @@ public class UserService(
         if (request.Avatar != null)
         {
             var avatarPayload = request.Avatar.Trim();
-            if (!string.IsNullOrEmpty(avatarPayload))
-            {
-                if (avatarPayload.Length > 2_500_000) throw new ArgumentException("AVATAR_TOO_LARGE", nameof(request.Avatar));
-                updateBuilder.Set(u => u.Avatar, avatarPayload);
-            }
-            else
-            {
-                updateBuilder.Set(u => u.Avatar, string.Empty);
-            }
+            // 允许清空头像，或者更新为新的头像（URL或Base64）
+            // 长度验证已在 Model 的 DataAnnotations 中定义，此处不再重复硬编码检查
+            updateBuilder.Set(u => u.Avatar, avatarPayload);
         }
 
         if (request.PhoneNumber != null)

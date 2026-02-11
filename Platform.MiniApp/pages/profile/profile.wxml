@@ -1,16 +1,27 @@
 <view class="container">
   <!-- Profile Header -->
   <view class="profile-card">
-    <view class="user-block">
-      <image class="avatar" src="{{userInfo.avatar || '/assets/logo.png'}}" mode="aspectFill"></image>
-      <view class="info">
-        <text class="nickname">{{userInfo.name || '未登录用户'}}</text>
-        <view class="tag-group">
-          <text class="role-tag" wx:for="{{userInfo.roles}}" wx:key="*this">{{item}}</text>
-          <text class="status-tag" wx:if="{{userInfo.roles.length > 0}}">在职</text>
+      <view class="user-block">
+        <image class="avatar" src="{{userInfo.avatar || '/assets/logo.png'}}" mode="aspectFill" bindtap="handleAvatarTap"></image>
+        <view class="info">
+          <text class="nickname">{{userInfo.name || '未登录用户'}}</text>
+          <view class="tag-group">
+            <text class="role-tag" wx:for="{{userInfo.roles}}" wx:key="*this">{{item}}</text>
+            <text class="status-tag" wx:if="{{userInfo.roles.length > 0}}">在职</text>
+          </view>
         </view>
       </view>
-    </view>
+      <!-- Current Company Info -->
+      <view class="company-info" wx:if="{{currentCompany}}" bindtap="handleSwitchCompany">
+        <view class="company-header">
+          <text class="company-name">{{currentCompany.companyName}}</text>
+          <view class="company-badges">
+            <text class="badge current-badge">当前企业</text>
+            <text class="badge admin-badge" wx:if="{{currentCompany.isAdmin}}">管理员</text>
+          </view>
+        </view>
+        <text class="iconfont icon-arrow-right arrow"></text>
+      </view>
   </view>
 
   <!-- Menu Groups -->

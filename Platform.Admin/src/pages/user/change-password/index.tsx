@@ -79,7 +79,7 @@ const ChangePassword: React.FC = () => {
   const { errorCode, errorMessage } = changePasswordState;
 
   const pageTitle = intl.formatMessage({
-    id: 'menu.changePassword',
+    id: 'menu.account.changePassword',
     defaultMessage: '修改密码',
   }) + (Settings.title ? ` - ${Settings.title}` : '');
 
@@ -88,127 +88,127 @@ const ChangePassword: React.FC = () => {
       <title>{pageTitle}</title>
       <div className={styles.container}>
         <Card
-        title={intl.formatMessage({
-          id: 'menu.changePassword',
-          defaultMessage: '修改密码',
-        })}
-        className={styles.card}
-      >
-        <Form
-          onFinish={async (values) => {
-            await handleSubmit(values as API.ChangePasswordParams);
-          }}
-          layout="vertical"
+          title={intl.formatMessage({
+            id: 'menu.account.changePassword',
+            defaultMessage: '修改密码',
+          })}
+          className={styles.card}
         >
-          {errorCode && (
-            <ChangePasswordMessage content={errorMessage || '密码修改失败'} />
-          )}
-
-          <Form.Item
-            name="currentPassword"
-            rules={[
-              {
-                required: true,
-                message: (
-                  <FormattedMessage
-                    id="pages.changePassword.currentPassword.required"
-                    defaultMessage="请输入当前密码!"
-                  />
-                ),
-              },
-            ]}
+          <Form
+            onFinish={async (values) => {
+              await handleSubmit(values as API.ChangePasswordParams);
+            }}
+            layout="vertical"
           >
-            <Input.Password
-              size="large"
-              prefix={<LockOutlined />}
-              placeholder={intl.formatMessage({
-                id: 'pages.changePassword.currentPassword.placeholder',
-                defaultMessage: '请输入当前密码',
-              })}
-            />
-          </Form.Item>
+            {errorCode && (
+              <ChangePasswordMessage content={errorMessage || '密码修改失败'} />
+            )}
 
-          <Form.Item
-            name="newPassword"
-            rules={[
-              {
-                required: true,
-                message: (
-                  <FormattedMessage
-                    id="pages.changePassword.newPassword.required"
-                    defaultMessage="请输入新密码！"
-                  />
-                ),
-              },
-              {
-                min: 6,
-                message: (
-                  <FormattedMessage
-                    id="pages.changePassword.newPassword.length"
-                    defaultMessage="密码长度至少6个字符"
-                  />
-                ),
-              },
-            ]}
-          >
-            <Input.Password
-              size="large"
-              prefix={<LockOutlined />}
-              placeholder={intl.formatMessage({
-                id: 'pages.changePassword.newPassword.placeholder',
-                defaultMessage: '请输入新密码',
-              })}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="confirmPassword"
-            dependencies={['newPassword']}
-            rules={[
-              {
-                required: true,
-                message: (
-                  <FormattedMessage
-                    id="pages.changePassword.confirmPassword.required"
-                    defaultMessage="请确认新密码！"
-                  />
-                ),
-              },
-              ({ getFieldValue }) => ({
-                validator(_, value) {
-                  if (!value || getFieldValue('newPassword') === value) {
-                    return Promise.resolve();
-                  }
-                  return Promise.reject(new Error('两次输入的密码不一致！'));
+            <Form.Item
+              name="currentPassword"
+              rules={[
+                {
+                  required: true,
+                  message: (
+                    <FormattedMessage
+                      id="pages.changePassword.currentPassword.required"
+                      defaultMessage="请输入当前密码!"
+                    />
+                  ),
                 },
-              }),
-            ]}
-          >
-            <Input.Password
-              size="large"
-              prefix={<LockOutlined />}
-              placeholder={intl.formatMessage({
-                id: 'pages.changePassword.confirmPassword.placeholder',
-                defaultMessage: '请确认新密码',
-              })}
-            />
-          </Form.Item>
-
-          <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              size="large"
-              block
+              ]}
             >
-              {intl.formatMessage({
-                id: 'pages.changePassword.submit',
-                defaultMessage: '修改密码',
-              })}
-            </Button>
-          </Form.Item>
-        </Form>
-      </Card>
+              <Input.Password
+                size="large"
+                prefix={<LockOutlined />}
+                placeholder={intl.formatMessage({
+                  id: 'pages.changePassword.currentPassword.placeholder',
+                  defaultMessage: '请输入当前密码',
+                })}
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="newPassword"
+              rules={[
+                {
+                  required: true,
+                  message: (
+                    <FormattedMessage
+                      id="pages.changePassword.newPassword.required"
+                      defaultMessage="请输入新密码！"
+                    />
+                  ),
+                },
+                {
+                  min: 6,
+                  message: (
+                    <FormattedMessage
+                      id="pages.changePassword.newPassword.length"
+                      defaultMessage="密码长度至少6个字符"
+                    />
+                  ),
+                },
+              ]}
+            >
+              <Input.Password
+                size="large"
+                prefix={<LockOutlined />}
+                placeholder={intl.formatMessage({
+                  id: 'pages.changePassword.newPassword.placeholder',
+                  defaultMessage: '请输入新密码',
+                })}
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="confirmPassword"
+              dependencies={['newPassword']}
+              rules={[
+                {
+                  required: true,
+                  message: (
+                    <FormattedMessage
+                      id="pages.changePassword.confirmPassword.required"
+                      defaultMessage="请确认新密码！"
+                    />
+                  ),
+                },
+                ({ getFieldValue }) => ({
+                  validator(_, value) {
+                    if (!value || getFieldValue('newPassword') === value) {
+                      return Promise.resolve();
+                    }
+                    return Promise.reject(new Error('两次输入的密码不一致！'));
+                  },
+                }),
+              ]}
+            >
+              <Input.Password
+                size="large"
+                prefix={<LockOutlined />}
+                placeholder={intl.formatMessage({
+                  id: 'pages.changePassword.confirmPassword.placeholder',
+                  defaultMessage: '请确认新密码',
+                })}
+              />
+            </Form.Item>
+
+            <Form.Item>
+              <Button
+                type="primary"
+                htmlType="submit"
+                size="large"
+                block
+              >
+                {intl.formatMessage({
+                  id: 'pages.changePassword.submit',
+                  defaultMessage: '修改密码',
+                })}
+              </Button>
+            </Form.Item>
+          </Form>
+        </Card>
       </div>
     </>
   );

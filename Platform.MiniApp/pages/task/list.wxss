@@ -23,7 +23,7 @@
 .stats-item {
   display: flex;
   flex-direction: column;
-  items-center;
+  align-items: center;
 }
 
 .stats-item .num {
@@ -164,7 +164,7 @@
   padding: 100rpx 0;
   display: flex;
   flex-direction: column;
-  items-center;
+  align-items: center;
 }
 
 .empty-icon {

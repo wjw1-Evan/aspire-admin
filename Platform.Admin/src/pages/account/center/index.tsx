@@ -213,6 +213,7 @@ const UserCenter: React.FC = () => {
   const handleCancelEdit = () => {
     setEditing(false);
     setAvatarPreview(userProfile?.avatar);
+    setLastUploadedAvatar(undefined);
     form.resetFields();
   };
 
@@ -308,7 +309,7 @@ const UserCenter: React.FC = () => {
               <div style={{ position: 'relative', display: 'inline-block' }}>
                 <Avatar
                   size={80}
-                  src={getUserAvatar(avatarPreview || userProfile?.avatar)}
+                  src={getUserAvatar(typeof avatarPreview === 'string' ? avatarPreview : userProfile?.avatar)}
                   icon={<UserOutlined />}
                 />
                 <label
@@ -397,14 +398,15 @@ const UserCenter: React.FC = () => {
                   />
                   <CameraOutlined style={{ color: '#fff', fontSize: 14 }} />
                 </label>
-                {avatarPreview && (
+                {(typeof avatarPreview === 'string' ? avatarPreview : userProfile?.avatar) && (
                   <Button
                     type="text"
                     danger
                     size="small"
                     icon={<DeleteOutlined />}
                     onClick={() => {
-                      setAvatarPreview(undefined);
+                      setAvatarPreview(''); // Explicitly set to empty string to indicate deletion
+                      setLastUploadedAvatar(undefined);
                       form.setFieldsValue({ avatar: '' });
                     }}
                     style={{

@@ -1,6 +1,9 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using Platform.ServiceDefaults.Models;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 
 namespace Platform.ApiService.Models;
@@ -265,92 +268,123 @@ public class PageParams
 /// <summary>
 /// 应用用户实体（多企业模型）
 /// v3.1: 用户与企业是多对多关系，通过 UserCompany 中间表管理
+/// <summary>
+/// 用户实体 - 支持多企业登录 (EFCore + MongoDB 兼容)
 /// 注意：AppUser 不支持 IMultiTenant，因为它是多企业模型，使用 CurrentCompanyId 进行过滤
 /// </summary>
-[BsonIgnoreExtraElements]  // 忽略数据库中存在但模型中不存在的字段（如旧的 role 字段、companyId 字段）
-public class AppUser : BaseEntity, Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.ITimestamped
+[BsonIgnoreExtraElements]
+[Table("users")]
+public class AppUser : BaseEntity
 {
     /// <summary>
     /// 用户名（全局唯一）
     /// </summary>
+    [Required]
+    [StringLength(50)]
+    [Column("username")]
     [BsonElement("username")]
     public string Username { get; set; } = string.Empty;
 
     /// <summary>
     /// 显示名称
     /// </summary>
+    [StringLength(100)]
+    [Column("name")]
     [BsonElement("name")]
     public string? Name { get; set; }
 
     /// <summary>
     /// 年龄
     /// </summary>
+    [Column("age")]
     [BsonElement("age")]
     public int? Age { get; set; }
 
     /// <summary>
     /// 密码哈希值
     /// </summary>
+    [Required]
+    [StringLength(255)]
+    [Column("passwordHash")]
     [BsonElement("passwordHash")]
     public string PasswordHash { get; set; } = string.Empty;
 
     /// <summary>
     /// 邮箱地址
     /// </summary>
+    [EmailAddress]
+    [StringLength(255)]
+    [Column("email")]
     [BsonElement("email")]
     public string? Email { get; set; }
 
     /// <summary>
-    /// 头像地址。
+    /// 头像地址
     /// </summary>
+    [StringLength(500)]
+    [Column("avatar")]
     [BsonElement("avatar")]
     public string? Avatar { get; set; }
 
     /// <summary>
     /// 手机号码
     /// </summary>
+    [Phone]
+    [StringLength(20)]
+    [Column("phone")]
     [BsonElement("phone")]
     public string? PhoneNumber { get; set; }
 
     /// <summary>
     /// 当前选中的企业ID（v3.1新增）
     /// </summary>
+    [StringLength(50)]
+    [Column("currentCompanyId")]
     [BsonElement("currentCompanyId")]
     public string? CurrentCompanyId { get; set; }
 
     /// <summary>
     /// 个人企业ID（注册时自动创建，v3.1新增）
     /// </summary>
+    [StringLength(50)]
+    [Column("personalCompanyId")]
     [BsonElement("personalCompanyId")]
     public string? PersonalCompanyId { get; set; }
 
     /// <summary>
     /// 是否活跃
     /// </summary>
+    [Column("isActive")]
     [BsonElement("isActive")]
     public bool IsActive { get; set; } = true;
 
     /// <summary>
     /// 最后登录时间
     /// </summary>
+    [Column("lastLoginAt")]
     [BsonElement("lastLoginAt")]
     public DateTime? LastLoginAt { get; set; }
 
     /// <summary>
-    /// 兴趣标签列表。
+    /// 兴趣标签列表
     /// </summary>
+    [Column("tags")]
     [BsonElement("tags")]
     public List<UserTag>? Tags { get; set; }
 
     /// <summary>
     /// AI 助手"小科"的角色定义（用户自定义）
     /// </summary>
+    [StringLength(2000)]
+    [Column("aiRoleDefinition")]
     [BsonElement("aiRoleDefinition")]
     public string? AiRoleDefinition { get; set; }
 
     /// <summary>
     /// 备注
     /// </summary>
+    [StringLength(500)]
+    [Column("remark")]
     [BsonElement("remark")]
     public string? Remark { get; set; }
 }
@@ -493,7 +527,7 @@ public class VerifyCaptchaRequest
 /// 用于存储和管理刷新令牌，支持 Token 轮换检测和安全撤销
 /// </summary>
 [BsonIgnoreExtraElements]
-public class RefreshToken : BaseEntity, Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.ITimestamped
+public class RefreshToken : BaseEntity
 {
     /// <summary>
     /// 用户ID

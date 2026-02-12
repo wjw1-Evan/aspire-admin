@@ -86,7 +86,7 @@ public class ChatAttachmentInfo
 /// <summary>
 /// 聊天附件实体
 /// </summary>
-public class ChatAttachment : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+public class ChatAttachment : MultiTenantEntity
 {
     /// <summary>
     /// 关联会话标识
@@ -161,7 +161,7 @@ public class ChatAttachment : MultiTenantEntity, IEntity, ISoftDeletable, ITimes
 /// <summary>
 /// 聊天会话实体
 /// </summary>
-public class ChatSession : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+public class ChatSession : MultiTenantEntity
 {
     /// <summary>
     /// 会话参与用户标识集合
@@ -235,7 +235,7 @@ public class ChatSession : MultiTenantEntity, IEntity, ISoftDeletable, ITimestam
 /// <summary>
 /// 聊天消息实体
 /// </summary>
-public class ChatMessage : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+public class ChatMessage : MultiTenantEntity
 {
     /// <summary>
     /// 会话标识

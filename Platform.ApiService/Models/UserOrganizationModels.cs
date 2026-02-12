@@ -9,7 +9,7 @@ namespace Platform.ApiService.Models;
 /// </summary>
 [BsonIgnoreExtraElements]
 [BsonCollectionName("user_organizations")]
-public class UserOrganization : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped, IMultiTenant
+public class UserOrganization : MultiTenantEntity
 {
     /// <summary>
     /// 用户ID

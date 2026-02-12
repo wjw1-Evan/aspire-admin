@@ -96,7 +96,7 @@ public enum MilestoneStatus
 /// </summary>
 [BsonIgnoreExtraElements]
 [BsonCollectionName("projects")]
-public class Project : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped, IMultiTenant
+public class Project : MultiTenantEntity
 {
     /// <summary>项目名称</summary>
     [BsonElement("name")]
@@ -142,7 +142,7 @@ public class Project : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped,
 /// </summary>
 [BsonIgnoreExtraElements]
 [BsonCollectionName("taskDependencies")]
-public class TaskDependency : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped, IMultiTenant
+public class TaskDependency : MultiTenantEntity
 {
     /// <summary>前置任务ID</summary>
     [BsonElement("predecessorTaskId")]
@@ -167,7 +167,7 @@ public class TaskDependency : MultiTenantEntity, IEntity, ISoftDeletable, ITimes
 /// </summary>
 [BsonIgnoreExtraElements]
 [BsonCollectionName("projectMembers")]
-public class ProjectMember : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped, IMultiTenant
+public class ProjectMember : MultiTenantEntity
 {
     /// <summary>项目ID</summary>
     [BsonElement("projectId")]
@@ -192,7 +192,7 @@ public class ProjectMember : MultiTenantEntity, IEntity, ISoftDeletable, ITimest
 /// </summary>
 [BsonIgnoreExtraElements]
 [BsonCollectionName("milestones")]
-public class Milestone : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped, IMultiTenant
+public class Milestone : MultiTenantEntity
 {
     /// <summary>项目ID</summary>
     [BsonElement("projectId")]

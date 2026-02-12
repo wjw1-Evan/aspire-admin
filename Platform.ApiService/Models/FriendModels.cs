@@ -45,7 +45,7 @@ public enum FriendRequestDirection
 /// <summary>
 /// 好友请求实体
 /// </summary>
-public class FriendRequest : BaseEntity, IEntity, ISoftDeletable, ITimestamped
+public class FriendRequest : BaseEntity
 {
     /// <summary>
     /// 请求发起人用户标识
@@ -126,7 +126,7 @@ public class FriendRequest : BaseEntity, IEntity, ISoftDeletable, ITimestamped
 /// <summary>
 /// 好友关系实体（单向记录）
 /// </summary>
-public class Friendship : BaseEntity, IEntity, ISoftDeletable, ITimestamped
+public class Friendship : BaseEntity
 {
     /// <summary>
     /// 用户标识

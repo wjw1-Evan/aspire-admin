@@ -11,7 +11,7 @@ namespace Platform.ApiService.Models;
 /// 使用 MongoDB TTL 索引自动清理过期记录
 /// </summary>
 [BsonCollectionName("login_failure_records")]
-public class LoginFailureRecord : BaseEntity, ISoftDeletable, Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ITimestamped
+public class LoginFailureRecord : BaseEntity
 {
     /// <summary>
     /// 客户端标识（用户名或IP地址）

@@ -11,7 +11,7 @@ namespace Platform.ApiService.Models;
 /// </summary>
 [BsonIgnoreExtraElements]
 [BsonCollectionName("organization_units")]
-public class OrganizationUnit : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped, IMultiTenant
+public class OrganizationUnit : MultiTenantEntity
 {
     /// <summary>
     /// 节点名称

@@ -10,7 +10,7 @@ namespace Platform.ApiService.Models;
 /// 小科配置实体
 /// </summary>
 [BsonCollectionName("xiaokeConfigs")]
-public class XiaokeConfig : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+public class XiaokeConfig : MultiTenantEntity
 {
     /// <summary>
     /// 配置名称

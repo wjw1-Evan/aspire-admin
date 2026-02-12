@@ -12,7 +12,7 @@ namespace Platform.ApiService.Models;
 /// v6.1: 使用自定义集合名称修复命名规范问题
 /// </summary>
 [BsonCollectionName("captcha_images")]
-public class CaptchaImage : BaseEntity, ISoftDeletable, Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ITimestamped
+public class CaptchaImage : BaseEntity
 {
     /// <summary>
     /// 验证码ID（用作唯一标识）

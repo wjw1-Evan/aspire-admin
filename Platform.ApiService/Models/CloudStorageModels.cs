@@ -70,7 +70,7 @@ public enum SharePermission
 /// </summary>
 [BsonIgnoreExtraElements]
 [BsonCollectionName("file_items")]
-public class FileItem : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+public class FileItem : MultiTenantEntity
 {
     /// <summary>文件/文件夹名称</summary>
     [BsonElement("name")]
@@ -148,7 +148,7 @@ public class FileItem : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
 /// </summary>
 [BsonIgnoreExtraElements]
 [BsonCollectionName("file_shares")]
-public class FileShare : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+public class FileShare : MultiTenantEntity
 {
     /// <summary>被分享的文件项ID</summary>
     [BsonElement("fileItemId")]
@@ -202,7 +202,7 @@ public class FileShare : MultiTenantEntity, IEntity, ISoftDeletable, ITimestampe
 /// </summary>
 [BsonIgnoreExtraElements]
 [BsonCollectionName("file_versions")]
-public class FileVersion : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+public class FileVersion : MultiTenantEntity
 {
     /// <summary>文件项ID</summary>
     [BsonElement("fileItemId")]
@@ -242,7 +242,7 @@ public class FileVersion : MultiTenantEntity, IEntity, ISoftDeletable, ITimestam
 /// </summary>
 [BsonIgnoreExtraElements]
 [BsonCollectionName("storage_quotas")]
-public class StorageQuota : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+public class StorageQuota : MultiTenantEntity
 {
     /// <summary>用户ID</summary>
     [BsonElement("userId")]

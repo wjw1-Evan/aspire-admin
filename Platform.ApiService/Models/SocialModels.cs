@@ -8,7 +8,7 @@ namespace Platform.ApiService.Models;
 /// <summary>
 /// 表示用户上报的定位信标信息。
 /// </summary>
-public class UserLocationBeacon : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+public class UserLocationBeacon : MultiTenantEntity
 {
     /// <summary>
     /// 用户标识。

@@ -11,7 +11,7 @@ namespace Platform.ApiService.Models;
 /// v6.1: 使用自定义集合名称确保命名一致性
 /// </summary>
 [BsonCollectionName("captchas")]
-public class Captcha : BaseEntity, ISoftDeletable, Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ITimestamped
+public class Captcha : BaseEntity
 {
     /// <summary>
     /// 手机号（用作唯一标识）

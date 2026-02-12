@@ -169,7 +169,7 @@ public class PropertyUnit : MultiTenantEntity
 /// 招商线索
 /// </summary>
 [BsonIgnoreExtraElements]
-public class InvestmentLead : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+public class InvestmentLead : MultiTenantEntity
 {
     /// <summary>企业名称</summary>
     [Required]
@@ -243,7 +243,7 @@ public class InvestmentLead : MultiTenantEntity, IEntity, ISoftDeletable, ITimes
 /// 招商项目（从线索转化而来）
 /// </summary>
 [BsonIgnoreExtraElements]
-public class InvestmentProject : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+public class InvestmentProject : MultiTenantEntity
 {
     /// <summary>线索ID</summary>
     [BsonElement("leadId")]
@@ -309,7 +309,7 @@ public class InvestmentProject : MultiTenantEntity, IEntity, ISoftDeletable, ITi
 /// 招商跟进记录
 /// </summary>
 [BsonIgnoreExtraElements]
-public class InvestmentFollowUp : BaseEntity, IEntity, ISoftDeletable, ITimestamped
+public class InvestmentFollowUp : BaseEntity
 {
     /// <summary>线索ID</summary>
     [BsonElement("leadId")]
@@ -352,7 +352,7 @@ public class InvestmentFollowUp : BaseEntity, IEntity, ISoftDeletable, ITimestam
 /// 园区租户
 /// </summary>
 [BsonIgnoreExtraElements]
-public class ParkTenant : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+public class ParkTenant : MultiTenantEntity
 {
     /// <summary>租户名称</summary>
     [Required]
@@ -417,7 +417,7 @@ public class ParkTenant : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamp
 /// 租赁合同
 /// </summary>
 [BsonIgnoreExtraElements]
-public class LeaseContract : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+public class LeaseContract : MultiTenantEntity
 {
     /// <summary>租户ID</summary>
     [BsonElement("tenantId")]
@@ -492,7 +492,7 @@ public class LeaseContract : MultiTenantEntity, IEntity, ISoftDeletable, ITimest
 /// 租赁合同付款记录
 /// </summary>
 [BsonIgnoreExtraElements]
-public class LeasePaymentRecord : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+public class LeasePaymentRecord : MultiTenantEntity
 {
     /// <summary>合同ID</summary>
     [BsonElement("contractId")]
@@ -541,7 +541,7 @@ public class LeasePaymentRecord : MultiTenantEntity, IEntity, ISoftDeletable, IT
 /// 租金账单
 /// </summary>
 [BsonIgnoreExtraElements]
-public class RentBill : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+public class RentBill : MultiTenantEntity
 {
     /// <summary>合同ID</summary>
     [BsonElement("contractId")]
@@ -599,7 +599,7 @@ public class RentBill : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
 /// 服务类别
 /// </summary>
 [BsonIgnoreExtraElements]
-public class ServiceCategory : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+public class ServiceCategory : MultiTenantEntity
 {
     /// <summary>类别名称</summary>
     [Required]
@@ -630,7 +630,7 @@ public class ServiceCategory : MultiTenantEntity, IEntity, ISoftDeletable, ITime
 /// 服务申请
 /// </summary>
 [BsonIgnoreExtraElements]
-public class ServiceRequest : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+public class ServiceRequest : MultiTenantEntity
 {
     /// <summary>类别ID</summary>
     [BsonElement("categoryId")]
@@ -711,7 +711,7 @@ public class ServiceRequest : MultiTenantEntity, IEntity, ISoftDeletable, ITimes
 /// </summary>
 [BsonIgnoreExtraElements]
 [Platform.ServiceDefaults.Attributes.BsonCollectionName("visittasks")]
-public class VisitTask : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+public class VisitTask : MultiTenantEntity
 {
     /// <summary>企管员姓名</summary>
     [Required]
@@ -812,7 +812,7 @@ public class VisitTask : MultiTenantEntity, IEntity, ISoftDeletable, ITimestampe
 /// 走访考核情况
 /// </summary>
 [BsonIgnoreExtraElements]
-public class VisitAssessment : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+public class VisitAssessment : MultiTenantEntity
 {
     /// <summary>关联走访任务ID</summary>
     [BsonElement("taskId")]
@@ -848,7 +848,7 @@ public class VisitAssessment : MultiTenantEntity, IEntity, ISoftDeletable, ITime
 /// 走访高频问题 (知识库)
 /// </summary>
 [BsonIgnoreExtraElements]
-public class VisitQuestion : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+public class VisitQuestion : MultiTenantEntity
 {
     /// <summary>问题内容</summary>
     [Required]
@@ -875,7 +875,7 @@ public class VisitQuestion : MultiTenantEntity, IEntity, ISoftDeletable, ITimest
 /// 走访问卷模板
 /// </summary>
 [BsonIgnoreExtraElements]
-public class VisitQuestionnaire : MultiTenantEntity, IEntity, ISoftDeletable, ITimestamped
+public class VisitQuestionnaire : MultiTenantEntity
 {
     /// <summary>问卷名称</summary>
     [Required]

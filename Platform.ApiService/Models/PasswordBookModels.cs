@@ -28,7 +28,7 @@ public enum PasswordStrengthLevel
 /// </summary>
 [BsonIgnoreExtraElements]
 [BsonCollectionName("passwordBookEntries")]
-public class PasswordBookEntry : MultiTenantEntity, ISoftDeletable, ITimestamped, IEntity
+public class PasswordBookEntry : MultiTenantEntity
 {
     /// <summary>平台名称</summary>
     [BsonElement("platform")]

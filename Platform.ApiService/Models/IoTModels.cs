@@ -57,7 +57,7 @@ public enum DataPointType
 /// 物联网网关 - 用于设备接入和数据收集
 /// </summary>
 [BsonIgnoreExtraElements]  // 忽略数据库中存在但模型中不存在的字段（如已删除的 description, tags, remarks 等）
-public class IoTGateway : MultiTenantEntity, INamedEntity, ISoftDeletable,IEntity, ITimestamped
+public class IoTGateway : MultiTenantEntity, INamedEntity
 {
     /// <summary>网关名称</summary>
     [BsonElement("name")]
@@ -113,7 +113,7 @@ public class IoTGateway : MultiTenantEntity, INamedEntity, ISoftDeletable,IEntit
 /// 物联网设备 - 表示接入平台的物理设备
 /// </summary>
 [BsonIgnoreExtraElements]  // 忽略数据库中存在但模型中不存在的字段（如已删除的 description, model, tags 等）
-public class IoTDevice : MultiTenantEntity, INamedEntity, ISoftDeletable, ITimestamped,IEntity
+public class IoTDevice : MultiTenantEntity, INamedEntity
 {
     /// <summary>设备名称</summary>
     [BsonElement("name")]
@@ -144,7 +144,7 @@ public class IoTDevice : MultiTenantEntity, INamedEntity, ISoftDeletable, ITimes
 /// 数据点 - 表示设备的一个数据采集点
 /// </summary>
 [BsonIgnoreExtraElements]  // 忽略数据库中存在但模型中不存在的字段（如已删除的 description, minValue, maxValue, tags 等）
-public class IoTDataPoint : MultiTenantEntity, INamedEntity, ISoftDeletable, ITimestamped,IEntity
+public class IoTDataPoint : MultiTenantEntity, INamedEntity
 {
     /// <summary>数据点名称</summary>
     [BsonElement("name")]
@@ -221,7 +221,7 @@ public class AlarmConfig
 /// 物联网数据记录 - 存储设备上报的数据
 /// </summary>
 [BsonIgnoreExtraElements]  // 忽略数据库中存在但模型中不存在的字段（如已删除的 remarks 等）
-public class IoTDataRecord : MultiTenantEntity, ISoftDeletable, ITimestamped,IEntity
+public class IoTDataRecord : MultiTenantEntity
 {
     /// <summary>所属设备ID</summary>
     [BsonElement("deviceId")]
@@ -259,7 +259,7 @@ public class IoTDataRecord : MultiTenantEntity, ISoftDeletable, ITimestamped,IEn
 /// <summary>
 /// 物联网设备事件 - 记录设备的重要事件
 /// </summary>
-public class IoTDeviceEvent : MultiTenantEntity, ISoftDeletable, ITimestamped,IEntity
+public class IoTDeviceEvent : MultiTenantEntity
 {
     /// <summary>所属设备ID</summary>
     [BsonElement("deviceId")]

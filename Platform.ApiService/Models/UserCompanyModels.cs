@@ -14,7 +14,7 @@ namespace Platform.ApiService.Models;
 /// 用户需要能够访问自己所在的所有企业，不应该被当前企业的多租户机制限制
 /// </summary>
 [BsonCollectionName("user_companies")]
-public class UserCompany : BaseEntity, Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.ITimestamped
+public class UserCompany : BaseEntity
 {
     /// <summary>
     /// 用户ID
@@ -70,7 +70,7 @@ public class UserCompany : BaseEntity, Platform.ServiceDefaults.Models.IEntity, 
 /// 企业加入申请表（简化模型）
 /// 修复：使用基础实体类，简化软删除实现
 /// </summary>
-public class CompanyJoinRequest : BaseEntity, Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ITimestamped
+public class CompanyJoinRequest : BaseEntity
 {
     /// <summary>
     /// 申请人用户ID

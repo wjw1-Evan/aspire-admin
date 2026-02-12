@@ -2,85 +2,113 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using Platform.ServiceDefaults.Models;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Platform.ApiService.Models;
 
 /// <summary>
-/// 企业实体（简化模型）
+/// 企业实体（EFCore + MongoDB 兼容）
 /// 修复：使用基础实体类，简化软删除实现
 /// </summary>
 [BsonIgnoreExtraElements]
-public class Company : BaseEntity, Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ITimestamped
+[Table("companies")]
+public class Company : BaseEntity
 {
     /// <summary>
     /// 企业名称
     /// </summary>
+    [Required]
+    [StringLength(100)]
+    [Column("name")]
     [BsonElement("name")]
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
     /// 企业代码（唯一标识）
     /// </summary>
+    [Required]
+    [StringLength(20)]
+    [Column("code")]
     [BsonElement("code")]
     public string Code { get; set; } = string.Empty;
 
     /// <summary>
     /// 系统显示名称 (admin端左上角显示，替换默认的 Aspire Admin Platform)
     /// </summary>
+    [StringLength(100)]
+    [Column("displayName")]
     [BsonElement("displayName")]
     public string? DisplayName { get; set; }
 
     /// <summary>
     /// 企业Logo URL
     /// </summary>
+    [StringLength(500)]
+    [Column("logo")]
     [BsonElement("logo")]
     public string? Logo { get; set; }
 
     /// <summary>
     /// 企业描述
     /// </summary>
+    [StringLength(500)]
+    [Column("description")]
     [BsonElement("description")]
     public string? Description { get; set; }
 
     /// <summary>
     /// 所属行业
     /// </summary>
+    [StringLength(50)]
+    [Column("industry")]
     [BsonElement("industry")]
     public string? Industry { get; set; }
 
     /// <summary>
     /// 联系人姓名
     /// </summary>
+    [StringLength(50)]
+    [Column("contactName")]
     [BsonElement("contactName")]
     public string? ContactName { get; set; }
 
     /// <summary>
     /// 联系人邮箱
     /// </summary>
+    [EmailAddress]
+    [StringLength(255)]
+    [Column("contactEmail")]
     [BsonElement("contactEmail")]
     public string? ContactEmail { get; set; }
 
     /// <summary>
     /// 联系人电话
     /// </summary>
+    [Phone]
+    [StringLength(20)]
+    [Column("contactPhone")]
     [BsonElement("contactPhone")]
     public string? ContactPhone { get; set; }
 
     /// <summary>
     /// 是否激活
     /// </summary>
+    [Column("isActive")]
     [BsonElement("isActive")]
     public bool IsActive { get; set; } = true;
 
     /// <summary>
     /// 最大用户数
     /// </summary>
+    [Range(1, int.MaxValue)]
+    [Column("maxUsers")]
     [BsonElement("maxUsers")]
     public int MaxUsers { get; set; } = 100;
 
     /// <summary>
     /// 过期时间
     /// </summary>
+    [Column("expiresAt")]
     [BsonElement("expiresAt")]
     public DateTime? ExpiresAt { get; set; }
 

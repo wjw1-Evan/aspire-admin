@@ -11,6 +11,8 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Options;
 using Platform.ApiService.Options;
 using Platform.ApiService.Services;
+using Platform.ApiService.Extensions;
+using Platform.ApiService.Middleware;
 using Platform.ServiceDefaults.Services;
 using MongoDB.Driver;
 
@@ -235,6 +237,10 @@ builder.Services.AddHttpClient();
 builder.Services.Configure<AiCompletionOptions>(
     builder.Configuration.GetSection(AiCompletionOptions.SectionName));
 
+// 配置全局身份验证选项
+builder.Services.Configure<Platform.ApiService.Options.GlobalAuthenticationOptions>(
+    builder.Configuration.GetSection(Platform.ApiService.Options.GlobalAuthenticationOptions.SectionName));
+
 // 多租户上下文（v3.0 新增）
 builder.Services.AddScoped<Platform.ServiceDefaults.Services.ITenantContext, Platform.ServiceDefaults.Services.TenantContext>();
 
@@ -458,6 +464,9 @@ app.UseCors();
 // Add authentication and authorization middleware
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Add global authentication middleware for additional security
+app.UseGlobalAuthentication();
 
 // 活动日志中间件（在认证之后，可以获取用户信息）
 app.UseMiddleware<Platform.ApiService.Middleware.ActivityLogMiddleware>();

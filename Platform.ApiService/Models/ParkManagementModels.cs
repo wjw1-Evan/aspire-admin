@@ -955,10 +955,11 @@ public class VisitTask : MultiTenantEntity
     [BsonElement("visitLocation")]
     public string? VisitLocation { get; set; }
 
-    /// <summary>计划/实际走访日期</summary>
+    /// <summary>计划/实际走访日期 (必填，统计报表依赖此数据)</summary>
+    [Required]
     [Column("visitDate")]
     [BsonElement("visitDate")]
-    public DateTime? VisitDate { get; set; }
+    public DateTime VisitDate { get; set; }
 
     /// <summary>状态 (Pending-待走访, Completed-已完成, Cancelled-已取消)</summary>
     [StringLength(20)]
@@ -2492,8 +2493,9 @@ public class VisitTaskDto
     public string? TenantName { get; set; }
     /// <summary>走访地点</summary>
     public string? VisitLocation { get; set; }
-    /// <summary>计划走访日期</summary>
-    public DateTime? VisitDate { get; set; }
+    /// <summary>计划走访日期 (必填，统计报表依赖此数据)</summary>
+    [Required]
+    public DateTime VisitDate { get; set; }
     /// <summary>状态</summary>
     public string Status { get; set; } = string.Empty;
     /// <summary>走访人员</summary>
@@ -2537,6 +2539,9 @@ public class CreateVisitTaskRequest
     public string VisitType { get; set; } = "日常走访";
     /// <summary>走访方式（默认：实地走访）</summary>
     public string VisitMethod { get; set; } = "实地走访";
+    /// <summary>计划走访日期 (必填，统计报表依赖此数据)</summary>
+    [Required(ErrorMessage = "走访时间不能为空")]
+    public DateTime VisitDate { get; set; }
     /// <summary>详情描述</summary>
     public string? Details { get; set; }
     /// <summary>关联企业ID</summary>
@@ -2545,8 +2550,6 @@ public class CreateVisitTaskRequest
     public string? TenantName { get; set; }
     /// <summary>走访地点</summary>
     public string? VisitLocation { get; set; }
-    /// <summary>计划走访日期</summary>
-    public DateTime? VisitDate { get; set; }
     /// <summary>关联问卷ID</summary>
     public string? QuestionnaireId { get; set; }
     /// <summary>走访人员</summary>

@@ -455,16 +455,21 @@ public class ParkVisitService : IParkVisitService
 
         // 1. 基础指标
         var pendingTasks = await _visitTaskFactory.CountAsync(t => t.Status == "Pending" && t.VisitDate >= startOfPeriod && t.VisitDate <= endOfPeriod);
-        var completedTasksThisMonth = await _visitTaskFactory.CountAsync(t => t.Status == "Completed" && t.VisitDate >= startOfPeriod && t.VisitDate <= endOfPeriod);
+        var completedTasksInPeriod = await _visitTaskFactory.CountAsync(t => t.Status == "Completed" && t.VisitDate >= startOfPeriod && t.VisitDate <= endOfPeriod);
         var totalTasks = await _visitTaskFactory.CountAsync(t => t.VisitDate >= startOfPeriod && t.VisitDate <= endOfPeriod);
-        decimal completionRate = totalTasks > 0 ? (decimal)completedTasksThisMonth * 100 / totalTasks : 0;
+        decimal completionRate = totalTasks > 0 ? (decimal)completedTasksInPeriod * 100 / totalTasks : 0;
 
         var assessments = await _assessmentFactory.FindAsync(a => a.CreatedAt >= startOfPeriod && a.CreatedAt <= endOfPeriod);
         var totalAssessments = assessments.Count;
-        var averageScore = totalAssessments > 0 ? assessments.Average(a => a.Score) : 0;
+        var averageScore = totalAssessments > 0 ? (decimal)assessments.Average(a => a.Score) : 0m;
 
         // 2-4. 按类型、状态、企管员排行统计（从基础数据加载后再分组，因为 IDataFactory 暂不支持直接复杂的聚合）
         var tasks = await _visitTaskFactory.FindAsync(t => t.VisitDate >= startOfPeriod && t.VisitDate <= endOfPeriod);
+        
+        // 修复：活跃企管员数计算（有完成走访任务的企管员）
+        var activeManagers = tasks.Where(t => 
+            !string.IsNullOrEmpty(t.ManagerName) && t.Status == "Completed"
+        ).Select(t => t.ManagerName!).Distinct().Count();
 
         var tasksByType = tasks.GroupBy(t => t.VisitType ?? "其他")
                                .ToDictionary(g => g.Key, g => g.Count());
@@ -477,20 +482,23 @@ public class ParkVisitService : IParkVisitService
                                   .Take(10)
                                   .ToDictionary(g => g.Key, g => g.Count());
 
-        // 5. 趋势分析 (最近6个月)
+        // 5. 趋势分析 (最近6个月) - 修复边界问题
         var monthlyTrends = new Dictionary<string, int>();
-        var sixMonthsAgo = new DateTime(now.Year, now.Month, 1).AddMonths(-5);
-        var trendTasks = await _visitTaskFactory.FindAsync(t => t.VisitDate != null && t.VisitDate >= sixMonthsAgo);
+        var sixMonthsAgo = startOfPeriod.AddMonths(-5).Date;
+        var trendTasks = await _visitTaskFactory.FindAsync(t => t.VisitDate >= sixMonthsAgo);
 
-        monthlyTrends = trendTasks.GroupBy(t => t.VisitDate!.Value.ToString("yyyy-MM"))
-                                  .OrderBy(g => g.Key)
-                                  .ToDictionary(g => g.Key, g => g.Count());
+        monthlyTrends = trendTasks.GroupBy(t => new { t.VisitDate.Year, t.VisitDate.Month })
+                                   .OrderBy(g => g.Key.Year)
+                                   .ThenBy(g => g.Key.Month)
+                                   .ToDictionary(
+                                       g => $"{g.Key.Year:D4}-{g.Key.Month:D2}", 
+                                       g => g.Count());
 
         return new VisitStatisticsDto
         {
             PendingTasks = (int)pendingTasks,
-            CompletedTasksThisMonth = (int)completedTasksThisMonth,
-            ActiveManagers = managerRanking.Count,
+            CompletedTasksThisMonth = (int)completedTasksInPeriod,
+            ActiveManagers = activeManagers,
             CompletionRate = Math.Round(completionRate, 1),
             TotalAssessments = (int)totalAssessments,
             AverageScore = Math.Round((decimal)averageScore, 1),

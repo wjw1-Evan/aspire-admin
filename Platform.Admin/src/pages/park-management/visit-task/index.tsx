@@ -103,7 +103,10 @@ const VisitTask: React.FC = () => {
                     visitDate: editingTask.visitDate ? dayjs(editingTask.visitDate) : undefined
                 });
             } else {
-                form.resetFields();
+                // 新建任务时设置默认走访时间为当前时间
+                form.setFieldsValue({
+                    visitDate: dayjs()
+                });
             }
         }
     }, [isModalVisible, editingTask, form]);
@@ -187,7 +190,14 @@ const VisitTask: React.FC = () => {
                             type="link"
                             size="small"
                             icon={<EditOutlined />}
-                            onClick={() => { setEditingTask(record); form.setFieldsValue({ ...record, visitDate: record.visitDate ? dayjs(record.visitDate) : undefined }); setIsModalVisible(true); }}
+                            onClick={() => { 
+                                setEditingTask(record); 
+                                form.setFieldsValue({ 
+                                    ...record, 
+                                    visitDate: record.visitDate ? dayjs(record.visitDate) : dayjs() 
+                                }); 
+                                setIsModalVisible(true); 
+                            }}
                         >
                             编辑
                         </Button>
@@ -247,7 +257,7 @@ const VisitTask: React.FC = () => {
 
             const submitData = {
                 ...values,
-                visitDate: values.visitDate ? values.visitDate.toISOString() : undefined,
+                visitDate: values.visitDate.toISOString(), // 现在是必填字段，确保有值
                 tenantId: finalTenantId,
                 tenantName: values.tenantName,
             };
@@ -478,8 +488,17 @@ const VisitTask: React.FC = () => {
                     </Row>
                     <Row gutter={16}>
                         <Col span={12}>
-                            <Form.Item name="visitDate" label="走访时间">
-                                <DatePicker style={{ width: '100%' }} showTime format="YYYY-MM-DD HH:mm" />
+                            <Form.Item 
+                                name="visitDate" 
+                                label="走访时间" 
+                                rules={[{ required: true, message: '请选择走访时间' }]}
+                            >
+                                <DatePicker 
+                                    style={{ width: '100%' }} 
+                                    showTime 
+                                    format="YYYY-MM-DD HH:mm" 
+                                    placeholder="请选择走访时间"
+                                />
                             </Form.Item>
                         </Col>
                         <Col span={12}>
@@ -523,7 +542,17 @@ const VisitTask: React.FC = () => {
                 extra={
                     <Space>
                         <Button onClick={() => setDetailVisible(false)}>关闭</Button>
-                        <Button type="primary" icon={<EditOutlined />} onClick={() => { setDetailVisible(false); setEditingTask(selectedTask); setIsModalVisible(true); }}>编辑</Button>
+                        <Button type="primary" icon={<EditOutlined />} onClick={() => { 
+                            setDetailVisible(false); 
+                            setEditingTask(selectedTask); 
+                            if (selectedTask) {
+                                form.setFieldsValue({ 
+                                    ...selectedTask, 
+                                    visitDate: selectedTask.visitDate ? dayjs(selectedTask.visitDate) : dayjs() 
+                                });
+                            }
+                            setIsModalVisible(true); 
+                        }}>编辑</Button>
                     </Space>
                 }
             >

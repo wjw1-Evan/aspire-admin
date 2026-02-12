@@ -93,20 +93,21 @@ public class StorageQuotaService : IStorageQuotaService
 
         var quota = await EnsureQuotaForSettingAsync(userId, totalQuota, warningThreshold, isEnabled);
 
-        quota.TotalQuota = totalQuota;
-        quota.LastCalculatedAt = DateTime.UtcNow;
-
-        if (warningThreshold.HasValue)
+        var updatedQuota = await _quotaFactory.UpdateAsync(quota.Id!, entity =>
         {
-            quota.WarningThreshold = warningThreshold.Value;
-        }
+            entity.TotalQuota = totalQuota;
+            entity.LastCalculatedAt = DateTime.UtcNow;
 
-        if (isEnabled.HasValue)
-        {
-            quota.IsEnabled = isEnabled.Value;
-        }
+            if (warningThreshold.HasValue)
+            {
+                entity.WarningThreshold = warningThreshold.Value;
+            }
 
-        var updatedQuota = await _quotaFactory.UpdateAsync(quota);
+            if (isEnabled.HasValue)
+            {
+                entity.IsEnabled = isEnabled.Value;
+            }
+        });
 
         if (updatedQuota == null)
             throw new InvalidOperationException("更新配额失败");
@@ -530,6 +531,7 @@ public class StorageQuotaService : IStorageQuotaService
             // 查询所有用户的活跃文件（按用户分组统计）
             // 注意：CreatedBy 可能为空，需要过滤掉空值
             var allFiles = await _fileItemFactory.FindAsync(f =>
+                f.CreatedBy != null &&
                 userIds.Contains(f.CreatedBy) &&
                 f.Type == FileItemType.File &&
                 f.Status == FileStatus.Active);
@@ -738,6 +740,7 @@ public class StorageQuotaService : IStorageQuotaService
         if (userIds.Any())
         {
             var allFiles = await _fileItemFactory.FindAsync(f =>
+                f.CreatedBy != null &&
                 userIds.Contains(f.CreatedBy) &&
                 f.Type == FileItemType.File &&
                 f.Status == FileStatus.Active);

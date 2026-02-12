@@ -5,6 +5,9 @@ using System.Linq.Expressions;
 
 namespace Platform.ApiService.Services;
 
+/// <summary>
+/// 批量操作服务
+/// </summary>
 public class BulkOperationService : IBulkOperationService
 {
     private readonly IDataFactory<BulkOperation> _bulkOperationFactory;
@@ -12,6 +15,13 @@ public class BulkOperationService : IBulkOperationService
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<BulkOperationService> _logger;
 
+    /// <summary>
+    /// 初始化批量操作服务
+    /// </summary>
+    /// <param name="bulkOperationFactory">批量操作数据工厂</param>
+    /// <param name="workflowFactory">工作流数据工厂</param>
+    /// <param name="tenantContext">租户上下文</param>
+    /// <param name="logger">日志</param>
     public BulkOperationService(
         IDataFactory<BulkOperation> bulkOperationFactory,
         IDataFactory<WorkflowDefinition> workflowFactory,
@@ -24,6 +34,13 @@ public class BulkOperationService : IBulkOperationService
         _logger = logger;
     }
 
+    /// <summary>
+    /// 创建批量操作
+    /// </summary>
+    /// <param name="operationType">操作类型</param>
+    /// <param name="workflowIds">目标工作流ID列表</param>
+    /// <param name="parameters">操作参数</param>
+    /// <returns>创建的批量操作</returns>
     public async Task<BulkOperation> CreateBulkOperationAsync(BulkOperationType operationType, List<string> workflowIds, Dictionary<string, object>? parameters = null)
     {
         var userId = _bulkOperationFactory.GetRequiredUserId();
@@ -60,6 +77,12 @@ public class BulkOperationService : IBulkOperationService
         return createdOperation;
     }
 
+    /// <summary>
+    /// 执行批量操作
+    /// </summary>
+    /// <param name="operationId">批量操作ID</param>
+    /// <param name="cancellationToken">取消标记</param>
+    /// <returns>是否执行成功</returns>
     public async Task<bool> ExecuteBulkOperationAsync(string operationId, CancellationToken cancellationToken = default)
     {
         var operation = await _bulkOperationFactory.GetByIdAsync(operationId);
@@ -120,6 +143,11 @@ public class BulkOperationService : IBulkOperationService
         }
     }
 
+    /// <summary>
+    /// 取消批量操作
+    /// </summary>
+    /// <param name="operationId">批量操作ID</param>
+    /// <returns>是否取消成功</returns>
     public async Task<bool> CancelBulkOperationAsync(string operationId)
     {
         var operation = await _bulkOperationFactory.GetByIdAsync(operationId);
@@ -138,11 +166,22 @@ public class BulkOperationService : IBulkOperationService
         return false;
     }
 
+    /// <summary>
+    /// 获取批量操作详情
+    /// </summary>
+    /// <param name="operationId">批量操作ID</param>
+    /// <returns>批量操作详情</returns>
     public async Task<BulkOperation?> GetBulkOperationAsync(string operationId)
     {
         return await _bulkOperationFactory.GetByIdAsync(operationId);
     }
 
+    /// <summary>
+    /// 获取当前用户的批量操作列表
+    /// </summary>
+    /// <param name="page">页码</param>
+    /// <param name="pageSize">每页数量</param>
+    /// <returns>批量操作列表</returns>
     public async Task<List<BulkOperation>> GetUserBulkOperationsAsync(int page = 1, int pageSize = 20)
     {
         var userId = _bulkOperationFactory.GetRequiredUserId();
@@ -157,6 +196,11 @@ public class BulkOperationService : IBulkOperationService
         return operations;
     }
 
+    /// <summary>
+    /// 清理已完成的批量操作
+    /// </summary>
+    /// <param name="olderThan">清理阈值</param>
+    /// <returns>删除数量</returns>
     public async Task<int> CleanupCompletedOperationsAsync(TimeSpan olderThan)
     {
         var cutoffDate = DateTime.UtcNow.Subtract(olderThan);

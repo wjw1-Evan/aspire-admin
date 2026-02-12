@@ -843,7 +843,7 @@ public class TaskService : ITaskService
             StatusName = GetStatusName(task.Status),
             Priority = (int)task.Priority,
             PriorityName = GetPriorityName(task.Priority),
-            CreatedBy = task.CreatedBy,
+            CreatedBy = task.CreatedBy ?? string.Empty,
             CreatedAt = task.CreatedAt,
             AssignedTo = task.AssignedTo,
             AssignedAt = task.AssignedAt,

@@ -10,12 +10,21 @@ using UserCompany = Platform.ApiService.Models.UserCompany;
 
 namespace Platform.ApiService.Services;
 
+/// <summary>
+/// 用户审批人解析器
+/// </summary>
 public class UserApproverResolver : IApproverResolver
 {
     private readonly IUserService _userService;
     private readonly IDataFactory<UserCompany> _userCompanyFactory;
     private readonly ILogger<UserApproverResolver> _logger;
 
+    /// <summary>
+    /// 初始化用户审批人解析器
+    /// </summary>
+    /// <param name="userService">用户服务</param>
+    /// <param name="userCompanyFactory">用户企业关联数据工厂</param>
+    /// <param name="logger">日志</param>
     public UserApproverResolver(
         IUserService userService,
         IDataFactory<UserCompany> userCompanyFactory,
@@ -26,6 +35,13 @@ public class UserApproverResolver : IApproverResolver
         _logger = logger;
     }
 
+    /// <summary>
+    /// 解析审批人
+    /// </summary>
+    /// <param name="rule">审批规则</param>
+    /// <param name="companyId">企业ID</param>
+    /// <param name="instance">流程实例（可选）</param>
+    /// <returns>审批人用户ID列表</returns>
     public async Task<List<string>> ResolveAsync(ApproverRule rule, string companyId, WorkflowInstance? instance = null)
     {
         if (rule.Type != ApproverType.User || string.IsNullOrEmpty(rule.UserId))
@@ -55,11 +71,19 @@ public class UserApproverResolver : IApproverResolver
     }
 }
 
+/// <summary>
+/// 角色审批人解析器
+/// </summary>
 public class RoleApproverResolver : IApproverResolver
 {
     private readonly IDataFactory<UserCompany> _userCompanyFactory;
     private readonly ILogger<RoleApproverResolver> _logger;
 
+    /// <summary>
+    /// 初始化角色审批人解析器
+    /// </summary>
+    /// <param name="userCompanyFactory">用户企业关联数据工厂</param>
+    /// <param name="logger">日志</param>
     public RoleApproverResolver(
         IDataFactory<UserCompany> userCompanyFactory,
         ILogger<RoleApproverResolver> logger)
@@ -68,6 +92,13 @@ public class RoleApproverResolver : IApproverResolver
         _logger = logger;
     }
 
+    /// <summary>
+    /// 解析审批人
+    /// </summary>
+    /// <param name="rule">审批规则</param>
+    /// <param name="companyId">企业ID</param>
+    /// <param name="instance">流程实例（可选）</param>
+    /// <returns>审批人用户ID列表</returns>
     public async Task<List<string>> ResolveAsync(ApproverRule rule, string companyId, WorkflowInstance? instance = null)
     {
         if (rule.Type != ApproverType.Role || string.IsNullOrEmpty(rule.RoleId))
@@ -96,11 +127,19 @@ public class RoleApproverResolver : IApproverResolver
     }
 }
 
+/// <summary>
+/// 表单字段审批人解析器
+/// </summary>
 public class FormFieldApproverResolver : IApproverResolver
 {
     private readonly IDataFactory<Document> _documentFactory;
     private readonly ILogger<FormFieldApproverResolver> _logger;
 
+    /// <summary>
+    /// 初始化表单字段审批人解析器
+    /// </summary>
+    /// <param name="documentFactory">公文数据工厂</param>
+    /// <param name="logger">日志</param>
     public FormFieldApproverResolver(
         IDataFactory<Document> documentFactory,
         ILogger<FormFieldApproverResolver> logger)
@@ -109,6 +148,13 @@ public class FormFieldApproverResolver : IApproverResolver
         _logger = logger;
     }
 
+    /// <summary>
+    /// 解析审批人
+    /// </summary>
+    /// <param name="rule">审批规则</param>
+    /// <param name="companyId">企业ID</param>
+    /// <param name="instance">流程实例（可选）</param>
+    /// <returns>审批人用户ID列表</returns>
     public async Task<List<string>> ResolveAsync(ApproverRule rule, string companyId, WorkflowInstance? instance = null)
     {
         if (rule.Type != ApproverType.FormField || string.IsNullOrEmpty(rule.FormFieldKey) || instance == null)

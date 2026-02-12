@@ -34,6 +34,27 @@ public class AuthService : IAuthService
     private readonly IDataFactory<RefreshToken> _refreshTokenFactory;
     private readonly IConfiguration _configuration;
 
+    /// <summary>
+    /// 初始化认证服务
+    /// </summary>
+    /// <param name="userFactory">用户数据工厂</param>
+    /// <param name="userCompanyFactory">用户企业关联数据工厂</param>
+    /// <param name="roleFactory">角色数据工厂</param>
+    /// <param name="companyFactory">企业数据工厂</param>
+    /// <param name="menuFactory">菜单数据工厂</param>
+    /// <param name="jwtService">JWT 服务</param>
+    /// <param name="httpContextAccessor">HTTP 上下文访问器</param>
+    /// <param name="userService">用户服务</param>
+    /// <param name="logger">日志</param>
+    /// <param name="uniquenessChecker">唯一性校验器</param>
+    /// <param name="validationService">字段校验服务</param>
+    /// <param name="passwordHasher">密码哈希服务</param>
+    /// <param name="imageCaptchaService">图形验证码服务</param>
+    /// <param name="phoneValidationService">手机号校验服务</param>
+    /// <param name="failureRecordFactory">登录失败记录工厂</param>
+    /// <param name="socialService">社交服务</param>
+    /// <param name="refreshTokenFactory">刷新令牌工厂</param>
+    /// <param name="configuration">配置</param>
     public AuthService(
         IDataFactory<User> userFactory,
         IDataFactory<UserCompany> userCompanyFactory,
@@ -133,6 +154,10 @@ public class AuthService : IAuthService
         return httpContext?.Connection?.RemoteIpAddress?.ToString() ?? "unknown";
     }
 
+    /// <summary>
+    /// 获取当前登录用户信息
+    /// </summary>
+    /// <returns>当前用户信息，未登录时返回 IsLogin=false</returns>
     public async Task<CurrentUser?> GetCurrentUserAsync()
     {
         var httpContext = _httpContextAccessor.HttpContext;
@@ -219,6 +244,11 @@ public class AuthService : IAuthService
         };
     }
 
+    /// <summary>
+    /// 用户登录
+    /// </summary>
+    /// <param name="request">登录请求</param>
+    /// <returns>登录结果</returns>
     public async Task<ApiResponse<LoginData>> LoginAsync(LoginRequest request)
     {
         var clientId = GetClientIdentifier(request.Username);
@@ -313,6 +343,10 @@ public class AuthService : IAuthService
         return ApiResponse<LoginData>.SuccessResult(loginData);
     }
 
+    /// <summary>
+    /// 用户登出
+    /// </summary>
+    /// <returns>是否成功</returns>
     public async Task<bool> LogoutAsync()
     {
         var httpContext = _httpContextAccessor.HttpContext;
@@ -329,6 +363,11 @@ public class AuthService : IAuthService
         return true;
     }
 
+    /// <summary>
+    /// 用户注册
+    /// </summary>
+    /// <param name="request">注册请求</param>
+    /// <returns>注册结果</returns>
     public async Task<ApiResponse<User>> RegisterAsync(RegisterRequest request)
     {
         var clientId = GetClientIdentifier(request.Username);
@@ -677,6 +716,11 @@ public class AuthService : IAuthService
         }
     }
 
+    /// <summary>
+    /// 修改密码
+    /// </summary>
+    /// <param name="request">修改密码请求</param>
+    /// <returns>修改结果</returns>
     public async Task<ApiResponse<bool>> ChangePasswordAsync(ChangePasswordRequest request)
     {
         try
@@ -735,6 +779,11 @@ public class AuthService : IAuthService
         }
     }
 
+    /// <summary>
+    /// 刷新访问令牌
+    /// </summary>
+    /// <param name="request">刷新令牌请求</param>
+    /// <returns>刷新结果</returns>
     public async Task<ApiResponse<RefreshTokenResult>> RefreshTokenAsync(RefreshTokenRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.RefreshToken))

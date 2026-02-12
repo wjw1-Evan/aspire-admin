@@ -143,7 +143,7 @@ public class AiSuggestionService : IAiSuggestionService
         var interestKeywords = BuildInterestKeywords(request);
         var limit = NormalizeLimit(request.Limit);
 
-        var sessionMap = await BuildSessionMapAsync(currentUserId, companyId);
+        var sessionMap = await BuildSessionMapAsync(currentUserId, companyId ?? string.Empty);
 
         var candidateUsers = await _userFactory.FindAsync(user => user.IsActive && user.CurrentCompanyId == companyId);
         var suggestions = BuildMatchSuggestions(candidateUsers, currentUserId, interestKeywords, sessionMap, limit);

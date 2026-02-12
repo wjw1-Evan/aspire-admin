@@ -54,7 +54,7 @@ public class RuleService : IRuleService
         if (!string.IsNullOrEmpty(queryParams.Name))
         {
             var nameLower = queryParams.Name.ToLower();
-            filter = r => r.Name.ToLower().Contains(nameLower);
+            filter = r => r.Name != null && r.Name.ToLower().Contains(nameLower);
         }
 
         // ✅ 数据工厂会自动添加企业过滤（因为 RuleListItem 实现了 IMultiTenant）
@@ -185,7 +185,7 @@ public class RuleService : IRuleService
     public async Task<bool> DeleteRuleAsync(string id)
     {
         var result = await _ruleFactory.SoftDeleteAsync(id);
-        return result != null;
+        return result;
     }
 
     /// <summary>

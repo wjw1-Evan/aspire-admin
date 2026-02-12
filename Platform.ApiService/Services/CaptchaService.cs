@@ -9,16 +9,36 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public interface ICaptchaService
 {
+    /// <summary>
+    /// 生成验证码
+    /// </summary>
+    /// <param name="phone">手机号</param>
+    /// <returns>验证码结果</returns>
     Task<CaptchaResult> GenerateCaptchaAsync(string phone);
+
+    /// <summary>
+    /// 验证验证码
+    /// </summary>
+    /// <param name="phone">手机号</param>
+    /// <param name="code">验证码</param>
+    /// <returns>验证是否通过</returns>
     Task<bool> ValidateCaptchaAsync(string phone, string code);
 }
 
+/// <summary>
+/// 验证码服务实现
+/// </summary>
 public class CaptchaService : ICaptchaService
 {
     private readonly IDataFactory<Captcha> _captchaFactory;
     private readonly ILogger<CaptchaService> _logger;
     private const int EXPIRATION_MINUTES = 5;
 
+    /// <summary>
+    /// 初始化验证码服务
+    /// </summary>
+    /// <param name="captchaFactory">验证码数据工厂</param>
+    /// <param name="logger">日志记录器</param>
     public CaptchaService(
         IDataFactory<Captcha> captchaFactory,
         ILogger<CaptchaService> logger)
@@ -27,6 +47,7 @@ public class CaptchaService : ICaptchaService
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public async Task<CaptchaResult> GenerateCaptchaAsync(string phone)
     {
         var random = new Random();
@@ -64,6 +85,7 @@ public class CaptchaService : ICaptchaService
         };
     }
 
+    /// <inheritdoc/>
     public async Task<bool> ValidateCaptchaAsync(string phone, string code)
     {
         if (string.IsNullOrWhiteSpace(phone) || string.IsNullOrWhiteSpace(code))
@@ -93,8 +115,18 @@ public class CaptchaService : ICaptchaService
     }
 }
 
+/// <summary>
+/// 验证码生成结果
+/// </summary>
 public class CaptchaResult
 {
+    /// <summary>
+    /// 验证码
+    /// </summary>
     public string Code { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 过期时间（秒）
+    /// </summary>
     public int ExpiresIn { get; set; }
 }

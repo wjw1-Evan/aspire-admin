@@ -10,6 +10,9 @@ using System.Linq.Expressions;
 
 namespace Platform.ApiService.Controllers;
 
+/// <summary>
+/// 聊天历史记录管理控制器
+/// </summary>
 [ApiController]
 [Route("api/xiaoke/chat-history")]
 [Authorize]
@@ -19,6 +22,12 @@ public class ChatHistoryController : BaseApiController
     private readonly IDataFactory<ChatSession> _sessionFactory;
     private readonly IDataFactory<ChatMessage> _messageFactory;
 
+    /// <summary>
+    /// 初始化聊天历史记录管理控制器
+    /// </summary>
+    /// <param name="chatService">聊天服务</param>
+    /// <param name="sessionFactory">聊天会话数据工厂</param>
+    /// <param name="messageFactory">聊天消息数据工厂</param>
     public ChatHistoryController(
         IChatService chatService,
         IDataFactory<ChatSession> sessionFactory,
@@ -29,6 +38,11 @@ public class ChatHistoryController : BaseApiController
         _messageFactory = messageFactory ?? throw new ArgumentNullException(nameof(messageFactory));
     }
 
+    /// <summary>
+    /// 获取聊天历史会话列表（支持多种过滤条件）
+    /// </summary>
+    /// <param name="request">查询请求参数</param>
+    /// <returns>分页会话列表结果</returns>
     [HttpPost("list")]
     [RequireMenu("xiaoke-management-chat-history")]
     public async Task<IActionResult> GetChatHistory([FromBody] ChatHistoryQueryRequest request)
@@ -142,6 +156,11 @@ public class ChatHistoryController : BaseApiController
         return Success(response);
     }
 
+    /// <summary>
+    /// 获取聊天历史会话详情（包含消息列表）
+    /// </summary>
+    /// <param name="sessionId">会话标识</param>
+    /// <returns>包含会话和消息详情的结果</returns>
     [HttpGet("{sessionId}")]
     [RequireMenu("xiaoke-management-chat-history")]
     public async Task<IActionResult> GetChatHistoryDetail(string sessionId)
@@ -168,6 +187,11 @@ public class ChatHistoryController : BaseApiController
         return Success(response);
     }
 
+    /// <summary>
+    /// 删除（软删除）指定的聊天历史会话
+    /// </summary>
+    /// <param name="sessionId">会话标识</param>
+    /// <returns>操作结果</returns>
     [HttpDelete("{sessionId}")]
     [RequireMenu("xiaoke-management-chat-history")]
     public async Task<IActionResult> DeleteChatHistory(string sessionId)

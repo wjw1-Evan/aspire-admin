@@ -9,9 +9,9 @@
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Aspire.MongoDB.Driver" Version="13.1.0" />
-    <PackageReference Include="Aspire.StackExchange.Redis" Version="13.1.0" />
-    <PackageReference Include="Aspire.OpenAI" Version="13.1.0-preview.1.25616.3" />
+    <PackageReference Include="Aspire.MongoDB.Driver" Version="13.1.1" />
+    <PackageReference Include="Aspire.StackExchange.Redis" Version="13.1.1" />
+    <PackageReference Include="Aspire.OpenAI" Version="13.1.1-preview.1.26105.8" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.3" />
     <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.3.0" />
     <PackageReference Include="Microsoft.Extensions.ServiceDiscovery" Version="10.3.0" />

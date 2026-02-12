@@ -1,6 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <Sdk Name="Aspire.AppHost.Sdk" Version="13.1.0" />
+<Project Sdk="Aspire.AppHost.Sdk/13.1.1">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -16,16 +14,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Hosting.Docker" Version="13.1.0-preview.1.25616.3" />
-    <PackageReference Include="Aspire.Hosting.Kubernetes" Version="13.1.0-preview.1.25616.3" />
-    <PackageReference Include="Aspire.Hosting.AppHost" Version="13.1.0" />
-    <PackageReference Include="Aspire.Hosting.MongoDB" Version="13.1.0" />
-    <PackageReference Include="Aspire.Hosting.Redis" Version="13.1.0" />
-    <PackageReference Include="Aspire.Hosting.Yarp" Version="13.1.0" />
+    <PackageReference Include="Aspire.Hosting.Docker" Version="13.1.1-preview.1.26105.8" />
+    <PackageReference Include="Aspire.Hosting.Kubernetes" Version="13.1.1-preview.1.26105.8" />
+    <PackageReference Include="Aspire.Hosting.MongoDB" Version="13.1.1" />
+    <PackageReference Include="Aspire.Hosting.Redis" Version="13.1.1" />
+    <PackageReference Include="Aspire.Hosting.Yarp" Version="13.1.1" />
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.NodeJS.Extensions" Version="9.9.0" />
-    <PackageReference Include="Scalar.Aspire" Version="0.8.46" />
+    <PackageReference Include="Scalar.Aspire" Version="0.8.47" />
     <PackageReference Include="Aspire.Hosting.NodeJs" Version="9.5.2" />
-    <PackageReference Include="Aspire.Hosting.OpenAI" Version="13.1.0" />
+    <PackageReference Include="Aspire.Hosting.OpenAI" Version="13.1.1" />
 
   </ItemGroup>
 

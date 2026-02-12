@@ -10,6 +10,7 @@ namespace Platform.ServiceDefaults.Models;
 /// v7.0: 统一模型定义，从 ApiService 和 DataInitializer 迁移到 ServiceDefaults
 /// </summary>
 [BsonCollectionName("menus")]
+[BsonIgnoreExtraElements]
 public class Menu : BaseEntity, INamedEntity, ISoftDeletable, IEntity, ITimestamped
 {
     /// <summary>

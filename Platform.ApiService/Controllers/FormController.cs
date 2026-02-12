@@ -8,6 +8,9 @@ using System.Linq.Expressions;
 
 namespace Platform.ApiService.Controllers;
 
+/// <summary>
+/// 表单管理控制器
+/// </summary>
 [ApiController]
 [Route("api/forms")]
 [Authorize]
@@ -16,12 +19,25 @@ public class FormController : BaseApiController
     private readonly IDataFactory<FormDefinition> _formFactory;
     private readonly ITenantContext _tenantContext;
 
+    /// <summary>
+    /// 初始化表单管理控制器
+    /// </summary>
+    /// <param name="formFactory">表单定义数据工厂</param>
+    /// <param name="tenantContext">租户上下文</param>
     public FormController(IDataFactory<FormDefinition> formFactory, ITenantContext tenantContext)
     {
         _formFactory = formFactory;
         _tenantContext = tenantContext;
     }
 
+    /// <summary>
+    /// 获取表单列表（支持分页、关键词和状态筛选）
+    /// </summary>
+    /// <param name="current">页码</param>
+    /// <param name="pageSize">每页大小</param>
+    /// <param name="keyword">搜索关键词</param>
+    /// <param name="isActive">是否启用</param>
+    /// <returns>分页列表结果</returns>
     [HttpGet]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> GetForms([FromQuery] int current = 1, [FromQuery] int pageSize = 10, [FromQuery] string? keyword = null, [FromQuery] bool? isActive = null)
@@ -54,6 +70,11 @@ public class FormController : BaseApiController
         }
     }
 
+    /// <summary>
+    /// 获取指定 IDs 的表单详情
+    /// </summary>
+    /// <param name="id">对象标识</param>
+    /// <returns>表单对象</returns>
     [HttpGet("{id}")]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> GetForm(string id)
@@ -74,6 +95,11 @@ public class FormController : BaseApiController
         }
     }
 
+    /// <summary>
+    /// 创建表单定义
+    /// </summary>
+    /// <param name="form">表单对象主体</param>
+    /// <returns>创建后的对象</returns>
     [HttpPost]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> CreateForm([FromBody] FormDefinition form)
@@ -86,7 +112,7 @@ public class FormController : BaseApiController
             }
 
             var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
-            form.CompanyId = companyId;
+            form.CompanyId = companyId ?? string.Empty;
             form.Key = string.IsNullOrWhiteSpace(form.Key) ? $"form_{Guid.NewGuid():N}" : form.Key;
 
             var created = await _formFactory.CreateAsync(form);
@@ -98,6 +124,12 @@ public class FormController : BaseApiController
         }
     }
 
+    /// <summary>
+    /// 更新表单定义
+    /// </summary>
+    /// <param name="id">对象标识</param>
+    /// <param name="form">带有更新内容的表单对象</param>
+    /// <returns>更新后的对象</returns>
     [HttpPut("{id}")]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> UpdateForm(string id, [FromBody] FormDefinition form)
@@ -128,6 +160,11 @@ public class FormController : BaseApiController
         }
     }
 
+    /// <summary>
+    /// 删除表单定义
+    /// </summary>
+    /// <param name="id">对象标识</param>
+    /// <returns>操作结果</returns>
     [HttpDelete("{id}")]
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> DeleteForm(string id)

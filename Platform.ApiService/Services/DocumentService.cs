@@ -493,7 +493,7 @@ public class DocumentService : IDocumentService
 
         var metadata = new Dictionary<string, object>
         {
-            { "companyId", companyId },
+            { "companyId", companyId ?? string.Empty },
             { "uploaderId", userId },
             { "mimeType", file.ContentType ?? "application/octet-stream" },
             { "size", file.Length },
@@ -633,7 +633,7 @@ public class DocumentService : IDocumentService
             Status = DocumentStatus.Draft,
             AttachmentIds = attachmentIds ?? new List<string>(),
             FormData = formDataToSave,
-            CompanyId = companyId
+            CompanyId = companyId ?? string.Empty
         };
 
         document = await _documentFactory.CreateAsync(document);
@@ -723,7 +723,7 @@ public class DocumentService : IDocumentService
             var instanceIds = pendingInstances.Select(i => i.Id).ToList();
             if (instanceIds.Any())
             {
-                pendingCount = await _documentFactory.CountAsync(d => instanceIds.Contains(d.WorkflowInstanceId));
+                pendingCount = await _documentFactory.CountAsync(d => d.WorkflowInstanceId != null && instanceIds.Contains(d.WorkflowInstanceId));
             }
         }
         catch (Exception ex)

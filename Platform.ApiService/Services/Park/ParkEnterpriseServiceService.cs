@@ -94,7 +94,7 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
             throw new InvalidOperationException("该类别下存在服务申请，无法删除");
 
         var result = await _categoryFactory.SoftDeleteAsync(id);
-        return result != null;
+        return result;
     }
 
     /// <summary>
@@ -239,7 +239,7 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
     public async Task<bool> DeleteRequestAsync(string id)
     {
         var result = await _requestFactory.SoftDeleteAsync(id);
-        return result != null;
+        return result;
     }
 
     /// <summary>

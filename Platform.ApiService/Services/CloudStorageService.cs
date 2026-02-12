@@ -50,7 +50,7 @@ public class CloudStorageService : ICloudStorageService
     /// <param name="fileItemFactory">文件项数据库工厂</param>
     /// <param name="fileVersionFactory">文件版本数据库工厂</param>
     /// <param name="storageQuotaService">存储配额服务</param>
-    /// <param name="gridFSService">GridFS服务</param>
+    /// <param name="fileStorageFactory">文件存储工厂</param>
     /// <param name="tenantContext">租户上下文</param>
     /// <param name="logger">日志记录器</param>
     public CloudStorageService(
@@ -474,23 +474,20 @@ public class CloudStorageService : ICloudStorageService
     }
 
     /// <inheritdoc/>
-    public async Task DeleteFileItemAsync(string id)
+    public async Task DeleteFileAsync(string id, string userId)
     {
         var fileItem = await GetFileItemAsync(id);
         if (fileItem == null)
             throw new ArgumentException("文件项不存在", nameof(id));
 
         var now = DateTime.UtcNow;
-        var currentUserId = _tenantContext.GetCurrentUserId();
-        var currentUsername = await _tenantContext.GetCurrentUsernameAsync();
         var keepDays = 30;
 
         await _fileItemFactory.UpdateAsync(id, entity =>
         {
             entity.Status = FileStatus.InRecycleBin;
             entity.DeletedAt = now;
-            entity.DeletedBy = currentUserId;
-            entity.DeletedByName = currentUsername;
+            entity.DeletedBy = userId;
             entity.OriginalPath = fileItem.Path;
             entity.DaysUntilPermanentDelete = keepDays;
         });
@@ -505,13 +502,19 @@ public class CloudStorageService : ICloudStorageService
                 {
                     entity.Status = FileStatus.InRecycleBin;
                     entity.DeletedAt = now;
-                    entity.DeletedBy = currentUserId;
-                    entity.DeletedByName = currentUsername;
+                    entity.DeletedBy = userId;
                 });
             }
         }
 
-        _logger.LogInformation("Moved file item {Id} to recycle bin: {Name}", id, fileItem.Name);
+        _logger.LogInformation("User {UserId} moved file item {Id} to recycle bin: {Name}", userId, id, fileItem.Name);
+    }
+
+    /// <inheritdoc/>
+    public async Task DeleteFileItemAsync(string id)
+    {
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? "system";
+        await DeleteFileAsync(id, currentUserId);
     }
 
     /// <inheritdoc/>

@@ -785,7 +785,7 @@ public class UserCompanyService : IUserCompanyService
         if (membership != null)
         {
             var result = await _userCompanyFactory.SoftDeleteAsync(membership.Id!);
-            return result != null;
+            return result;
         }
         return false;
     }
@@ -834,7 +834,7 @@ public class UserCompanyService : IUserCompanyService
             });
         }
 
-        return result != null;
+        return result;
     }
 
     #region 私有辅助方法

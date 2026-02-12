@@ -32,6 +32,7 @@ public interface IOperationTrackable
 /// <summary>
 /// 操作审计记录
 /// </summary>
+[BsonIgnoreExtraElements]
 public class OperationAudit : BaseEntity
 {
     /// <summary>

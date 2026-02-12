@@ -12,6 +12,12 @@ public class UserActivityLogBackgroundWorker : BackgroundService
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<UserActivityLogBackgroundWorker> _logger;
 
+    /// <summary>
+    /// 初始化用户活动日志后台处理服务
+    /// </summary>
+    /// <param name="queue">日志异步队列</param>
+    /// <param name="serviceProvider">服务提供者</param>
+    /// <param name="logger">日志记录器</param>
     public UserActivityLogBackgroundWorker(
         IUserActivityLogQueue queue,
         IServiceProvider serviceProvider,
@@ -22,6 +28,8 @@ public class UserActivityLogBackgroundWorker : BackgroundService
         _logger = logger;
     }
 
+    /// <param name="stoppingToken">指示处理应停止的时间。</param>
+    /// <returns>一个表示后台操作的 <see cref="Task"/>。</returns>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("用户活动日志后台处理程序已启动。");

@@ -147,7 +147,7 @@ public class WorkflowController : BaseApiController
             if (request.CreatedBy != null && request.CreatedBy.Any())
             {
                 var createdByList = request.CreatedBy;
-                Expression<Func<WorkflowDefinition, bool>> createdByFilter = w => createdByList.Contains(w.CreatedBy);
+                Expression<Func<WorkflowDefinition, bool>> createdByFilter = w => w.CreatedBy != null && createdByList.Contains(w.CreatedBy);
                 filter = filter == null ? createdByFilter : w => filter.Compile()(w) && createdByFilter.Compile()(w);
             }
 
@@ -1262,6 +1262,9 @@ public class WorkflowController : BaseApiController
         }
     }
 }
+/// <summary>
+/// 工作流搜索请求
+/// </summary>
 public class WorkflowSearchRequest
 {
     /// <summary>

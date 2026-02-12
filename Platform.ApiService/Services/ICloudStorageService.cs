@@ -75,6 +75,14 @@ public interface ICloudStorageService
     Task DeleteFileItemAsync(string id);
 
     /// <summary>
+    /// 删除文件或文件夹（指定用户ID）
+    /// </summary>
+    /// <param name="id">文件项ID</param>
+    /// <param name="userId">执行删除的用户ID</param>
+    /// <returns>异步任务</returns>
+    Task DeleteFileAsync(string id, string userId);
+
+    /// <summary>
     /// 永久删除文件或文件夹
     /// </summary>
     /// <param name="id">文件项ID</param>

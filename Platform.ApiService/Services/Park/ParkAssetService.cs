@@ -159,7 +159,7 @@ public class ParkAssetService : IParkAssetService
         }
 
         var deleted = await _buildingFactory.SoftDeleteAsync(id);
-        return deleted != null;
+        return deleted;
     }
 
     private async Task<BuildingDto> MapToBuildingDtoAsync(Building building)
@@ -326,8 +326,8 @@ public class ParkAssetService : IParkAssetService
             throw new InvalidOperationException("房源已出租，无法删除");
         }
 
-        var deleted = await _unitFactory.SoftDeleteAsync(id);
-        return deleted != null;
+        var result = await _unitFactory.SoftDeleteAsync(id);
+        return result;
     }
 
     private async Task<PropertyUnitDto> MapToPropertyUnitDtoAsync(PropertyUnit unit, bool includeHistory = false)

@@ -141,7 +141,7 @@ public class ParkTenantService : IParkTenantService
             throw new InvalidOperationException("租户存在有效合同，无法删除");
 
         var result = await _tenantFactory.SoftDeleteAsync(id);
-        return result != null;
+        return result;
     }
 
     private async Task<ParkTenantDto> MapToTenantDtoAsync(ParkTenant tenant)
@@ -397,7 +397,7 @@ public class ParkTenantService : IParkTenantService
             throw new InvalidOperationException("有效合同无法删除，请先终止合同");
 
         var result = await _contractFactory.SoftDeleteAsync(id);
-        return result != null;
+        return result;
     }
 
     /// <summary>

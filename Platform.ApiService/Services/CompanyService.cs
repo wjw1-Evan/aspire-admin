@@ -285,7 +285,9 @@ public class CompanyService : ICompanyService
     /// </summary>
     public async Task<Company?> GetCompanyByIdAsync(string id)
     {
-        return await _companyFactory.GetByIdAsync(id);
+        // 使用 FindWithoutTenantFilterAsync 绕过过滤器，确保跨租户或登录时能找到企业
+        var companies = await _companyFactory.FindWithoutTenantFilterAsync(c => c.Id == id);
+        return companies.FirstOrDefault();
     }
 
     /// <summary>

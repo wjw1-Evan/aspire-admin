@@ -41,7 +41,7 @@ public class MenuService : IMenuService
     public async Task<List<MenuTreeNode>> GetMenuTreeAsync()
     {
         var allMenus = await _menuFactory.FindAsync(
-            m => m.IsEnabled == true && m.IsDeleted == false,
+            m => m.IsEnabled == true && m.IsDeleted != true,
             query => query.OrderBy(m => m.SortOrder));
         return BuildMenuTree(allMenus, null);
     }
@@ -57,7 +57,7 @@ public class MenuService : IMenuService
         // 为了保持一致性和避免切换企业后的问题，我们使用 FindWithoutTenantFilterAsync
         // 前提是：调用方必须确保 roleIds 都属于同一企业
         var userRoles = await _roleFactory.FindWithoutTenantFilterAsync(
-            r => roleIds.Contains(r.Id) && r.IsDeleted == false && r.IsActive == true);
+            r => roleIds.Contains(r.Id) && r.IsDeleted != true && r.IsActive == true);
 
         // 收集所有角色可访问的菜单ID
         var accessibleMenuIds = userRoles
@@ -67,7 +67,7 @@ public class MenuService : IMenuService
 
         // 获取这些菜单（未删除且已启用）
         var accessibleMenus = await _menuFactory.FindAsync(
-            m => accessibleMenuIds.Contains(m.Id) && m.IsEnabled == true && m.IsDeleted == false,
+            m => accessibleMenuIds.Contains(m.Id) && m.IsEnabled == true && m.IsDeleted != true,
             query => query.OrderBy(m => m.SortOrder));
 
         // 构建菜单树（需要包含父菜单，即使父菜单不在权限列表中）
@@ -78,7 +78,7 @@ public class MenuService : IMenuService
         }
 
         var allAccessibleMenus = await _menuFactory.FindAsync(
-            m => allMenuIds.Contains(m.Id) && m.IsEnabled == true && m.IsDeleted == false,
+            m => allMenuIds.Contains(m.Id) && m.IsEnabled == true && m.IsDeleted != true,
             query => query.OrderBy(m => m.SortOrder));
 
         return BuildMenuTree(allAccessibleMenus, null);

@@ -47,7 +47,7 @@ public class IoTGatewayStatusChecker
         }
 
         // 后台服务需要跨租户查询所有网关
-        var gateways = await _gatewayFactory.FindWithoutTenantFilterAsync(g => g.IsDeleted == false).ConfigureAwait(false);
+        var gateways = await _gatewayFactory.FindWithoutTenantFilterAsync(g => g.IsDeleted != true).ConfigureAwait(false);
 
         // 按租户分组处理，确保数据隔离
         var gatewaysByTenant = gateways

@@ -457,6 +457,10 @@ export default function Register() {
                   name="email"
                   rules={[
                     {
+                      required: true,
+                      message: <FormattedMessage id="pages.register.email.required" />,
+                    },
+                    {
                       type: 'email',
                       message: <FormattedMessage id="pages.register.email.invalid" />,
                     },

@@ -18,34 +18,39 @@ public interface ITenantContext
     string? GetCurrentUserId();
 
     /// <summary>
-    /// 获取当前用户名（从数据库读取）
+    /// 获取当前用户名（从数据库读取，带缓存）
     /// </summary>
     Task<string?> GetCurrentUsernameAsync();
 
     /// <summary>
-    /// 获取当前企业ID（从数据库读取 user.CurrentCompanyId）
+    /// 获取当前企业ID（从数据库读取 user.CurrentCompanyId，带缓存）
     /// </summary>
     Task<string?> GetCurrentCompanyIdAsync();
 
     /// <summary>
-    /// 获取当前企业名称（从数据库读取）
+    /// 获取当前企业名称（从数据库读取，带缓存）
     /// </summary>
     Task<string?> GetCurrentCompanyNameAsync();
 
     /// <summary>
-    /// 是否为管理员（从数据库读取）
+    /// 是否为管理员（从数据库读取，带缓存）
     /// </summary>
     Task<bool> IsAdminAsync();
 
     /// <summary>
-    /// 检查权限（从数据库读取）
+    /// 检查权限（从数据库读取，带缓存）
     /// </summary>
     Task<bool> HasPermissionAsync(string permission);
 
     /// <summary>
-    /// 获取用户权限列表（从数据库读取）
+    /// 获取用户权限列表（从数据库读取，带缓存）
     /// </summary>
     Task<IEnumerable<string>> GetUserPermissionsAsync();
+
+    /// <summary>
+    /// 🚀 清除用户缓存（用于用户更新后）
+    /// </summary>
+    void ClearUserCache(string userId);
 }
 
 /// <summary>
@@ -56,6 +61,7 @@ public class TenantContext : ITenantContext
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IMongoDatabase _database;
     private readonly ILogger<TenantContext> _logger;
+    private UserInfo? _cachedUserInfo;
 
     public TenantContext(
         IHttpContextAccessor httpContextAccessor,
@@ -140,14 +146,21 @@ public class TenantContext : ITenantContext
     /// </summary>
     public async Task<bool> HasPermissionAsync(string permission)
     {
-        // 获取用户信息（避免重复查询）
+        var userId = GetCurrentUserId();
+        if (string.IsNullOrEmpty(userId))
+            return false;
+
+        // 获取用户信息
         var userInfo = await LoadUserInfoAsync();
         if (userInfo == null)
             return false;
-        
+
         // 管理员拥有所有权限
-        if (userInfo.IsAdmin) return true;
-        
+        if (userInfo.IsAdmin)
+        {
+            return true;
+        }
+
         // 检查用户权限
         return userInfo.Permissions.Contains(permission);
     }
@@ -157,15 +170,25 @@ public class TenantContext : ITenantContext
     /// </summary>
     public async Task<IEnumerable<string>> GetUserPermissionsAsync()
     {
+        var userId = GetCurrentUserId();
+        if (string.IsNullOrEmpty(userId))
+            return Enumerable.Empty<string>();
+
         var userInfo = await LoadUserInfoAsync();
-        return userInfo?.Permissions ?? Enumerable.Empty<string>();
+        return userInfo?.Permissions ?? new List<string>();
     }
 
     /// <summary>
-    /// 加载用户信息（每次调用都从数据库读取，无缓存）
+    /// 加载用户信息（从数据库读取）
     /// </summary>
     private async Task<UserInfo?> LoadUserInfoAsync()
     {
+        // 🚀 性能优化：返回 Scoped 级别的缓存结果
+        if (_cachedUserInfo != null)
+        {
+            return _cachedUserInfo;
+        }
+
         // 获取用户ID
         var userId = GetCurrentUserId();
         if (string.IsNullOrEmpty(userId))
@@ -175,7 +198,8 @@ public class TenantContext : ITenantContext
 
         try
         {
-            return await LoadUserInfoInternalAsync(userId);
+            _cachedUserInfo = await LoadUserInfoInternalAsync(userId);
+            return _cachedUserInfo;
         }
         catch (Exception ex)
         {
@@ -185,156 +209,101 @@ public class TenantContext : ITenantContext
     }
 
     /// <summary>
-    /// 异步加载用户信息（使用 BsonDocument 避免跨项目依赖）
+    /// 🚀 异步加载用户信息（使用 BsonDocument 避免跨项目依赖，优化数据库查询）
     /// </summary>
     private async Task<UserInfo?> LoadUserInfoInternalAsync(string userId)
     {
         try
         {
             // 1. 从数据库获取用户信息
-            if (!ObjectId.TryParse(userId, out var userIdObjectId))
-            {
-                _logger.LogWarning("无效的用户ID格式: {UserId}", userId);
-                return null;
-            }
-
             var usersCollection = _database.GetCollection<BsonDocument>("appusers");
             var userFilter = Builders<BsonDocument>.Filter.And(
-                Builders<BsonDocument>.Filter.Eq("_id", userIdObjectId),
-                Builders<BsonDocument>.Filter.Eq("isDeleted", false)
+                Builders<BsonDocument>.Filter.Or(
+                    Builders<BsonDocument>.Filter.Eq("_id", userId),
+                    Builders<BsonDocument>.Filter.Eq("_id", ObjectId.TryParse(userId, out var uid) ? uid : ObjectId.Empty)
+                ),
+                Builders<BsonDocument>.Filter.Ne("isDeleted", true)
             );
-            var userDoc = await usersCollection.Find(userFilter).FirstOrDefaultAsync();
+
+            // 🚀 只投影需要的字段，减少数据传输
+            var userProjection = Builders<BsonDocument>.Projection.Include("username")
+                .Include("isActive")
+                .Include("currentCompanyId")
+                .Include("personalCompanyId");
+
+            var userDoc = await usersCollection.Find(userFilter)
+                .Project(userProjection)
+                .FirstOrDefaultAsync();
 
             if (userDoc == null)
             {
+                _logger.LogWarning("未找到用户文档: {UserId}", userId);
                 return null;
             }
 
-            var isActive = userDoc.GetValue("isActive", BsonValue.Create(false)).AsBoolean;
+            var isActive = userDoc.GetValue("isActive", BsonBoolean.False).AsBoolean;
             if (!isActive)
             {
+                _logger.LogWarning("用户未激活: {UserId}", userId);
                 return null;
             }
 
             var username = userDoc.GetValue("username", BsonString.Empty).AsString;
             var companyId = userDoc.GetValue("currentCompanyId", BsonNull.Value);
-            
-            if (companyId.IsBsonNull || string.IsNullOrEmpty(companyId.AsString))
+
+            // 🚀 如果 currentCompanyId 为空，尝试使用 personalCompanyId 作为后备
+            string? currentCompanyId = GetBsonIdString(companyId);
+            if (string.IsNullOrEmpty(currentCompanyId))
+            {
+                var personalCompanyId = userDoc.GetValue("personalCompanyId", BsonNull.Value);
+                currentCompanyId = GetBsonIdString(personalCompanyId);
+                if (!string.IsNullOrEmpty(currentCompanyId))
+                {
+                    // ⚠️ 注意：此处 userId 是用户 ID，currentCompanyId 是从 personalCompanyId 字段读取的企业 ID
+                    _logger.LogInformation("TenantContext: [后备] 用户 {UserId} 缺少 currentCompanyId，启用后备策略使用个人企业 ID: {CompanyId}", userId, currentCompanyId);
+                }
+            }
+            else
+            {
+                // ⚠️ 明确区分：userId = 用户唯一标识 (如 6989...49), currentCompanyId = 当前选中的企业 ID (如 6989...4a)
+                _logger.LogInformation("TenantContext: [获取] 成功获取用户 {UserId} 的当前选中企业 currentCompanyId: {CurrentCompanyId}", userId, currentCompanyId);
+            }
+
+            if (string.IsNullOrEmpty(currentCompanyId))
             {
                 // 没有当前企业，返回基本信息
+                _logger.LogWarning("TenantContext: [缺失] 用户没有设置 currentCompanyId 或 personalCompanyId: {UserId}", userId);
                 return CreateEmptyUserInfo(userId, username);
             }
 
-            var currentCompanyId = companyId.AsString;
+            // 🚀 并行查询企业信息和用户企业关系
+            _logger.LogInformation("TenantContext: [加载] 开始并行加载企业和成员关系: {UserId}, CompanyId: {CompanyId}", userId, currentCompanyId);
+            var companyTask = GetCompanyInfoAsync(currentCompanyId);
+            var userCompanyTask = GetUserCompanyInfoAsync(userId, currentCompanyId);
 
-            // 2. 获取企业信息
-            if (!ObjectId.TryParse(currentCompanyId, out var companyIdObjectId))
+            await Task.WhenAll(companyTask, userCompanyTask);
+
+            var (companyName, companyExists) = await companyTask;
+            var (isAdmin, roleIds) = await userCompanyTask;
+
+            // 🚀 特殊逻辑：如果是个人企业，强制拥有管理员权限（解决数据一致性导致的 403 错误）
+            var userPersonalCompanyId = GetBsonIdString(userDoc.GetValue("personalCompanyId", BsonNull.Value));
+            if (!isAdmin && !string.IsNullOrEmpty(userPersonalCompanyId) && currentCompanyId == userPersonalCompanyId)
             {
-                _logger.LogWarning("无效的企业ID格式: {CompanyId}", currentCompanyId);
+                _logger.LogInformation("TenantContext: [自动授权] 用户 {UserId} 正在访问个人企业 {CompanyId}，自动授予管理员权限", userId, currentCompanyId);
+                isAdmin = true;
+            }
+
+            if (!companyExists)
+            {
                 return CreateEmptyUserInfo(userId, username);
             }
 
-            var companiesCollection = _database.GetCollection<BsonDocument>("companies");
-            var companyFilter = Builders<BsonDocument>.Filter.And(
-                Builders<BsonDocument>.Filter.Eq("_id", companyIdObjectId),
-                Builders<BsonDocument>.Filter.Eq("isDeleted", false)
-            );
-            var companyDoc = await companiesCollection.Find(companyFilter).FirstOrDefaultAsync();
-            var companyName = companyDoc?.GetValue("name", BsonString.Empty).AsString;
-
-            // 3. 获取用户在企业中的角色信息
-            var userCompaniesCollection = _database.GetCollection<BsonDocument>("user_companies");
-            var userCompanyFilter = Builders<BsonDocument>.Filter.And(
-                Builders<BsonDocument>.Filter.Eq("userId", userId),
-                Builders<BsonDocument>.Filter.Eq("companyId", currentCompanyId),
-                Builders<BsonDocument>.Filter.Eq("status", "active"),
-                Builders<BsonDocument>.Filter.Eq("isDeleted", false)
-            );
-            var userCompanyDoc = await userCompaniesCollection.Find(userCompanyFilter).FirstOrDefaultAsync();
-
+            // 🚀 获取权限（如果有角色）
             var permissions = new List<string>();
-            var isAdmin = false;
-
-            if (userCompanyDoc != null)
+            if (roleIds.Count > 0 && !isAdmin) // 管理员不需要查询权限
             {
-                isAdmin = userCompanyDoc.GetValue("isAdmin", BsonBoolean.False).AsBoolean;
-                var roleIdsBson = userCompanyDoc.GetValue("roleIds", BsonNull.Value);
-
-                if (!roleIdsBson.IsBsonNull && roleIdsBson.IsBsonArray)
-                {
-                    var roleIds = roleIdsBson.AsBsonArray.Select(r => r.AsString).ToList();
-
-                    if (roleIds.Any())
-                    {
-                        // 4. 获取角色信息（仅用于获取菜单权限，不需要角色名称）
-                        var roleObjectIds = new List<ObjectId>();
-                        foreach (var roleId in roleIds)
-                        {
-                            if (ObjectId.TryParse(roleId, out var roleObjectId))
-                            {
-                                roleObjectIds.Add(roleObjectId);
-                            }
-                        }
-
-                        if (roleObjectIds.Any())
-                        {
-                            var rolesCollection = _database.GetCollection<BsonDocument>("roles");
-                            var roleFilter = Builders<BsonDocument>.Filter.And(
-                                Builders<BsonDocument>.Filter.In("_id", roleObjectIds),
-                                Builders<BsonDocument>.Filter.Eq("companyId", currentCompanyId),
-                                Builders<BsonDocument>.Filter.Eq("isDeleted", false)
-                            );
-                            var roleDocs = await rolesCollection.Find(roleFilter).ToListAsync();
-
-                            // 5. 收集所有角色的权限（从菜单中获取）
-                            var menuIds = roleDocs
-                                .SelectMany(r =>
-                                {
-                                    var menuIdsBson = r.GetValue("menuIds", BsonNull.Value);
-                                    if (menuIdsBson.IsBsonNull || !menuIdsBson.IsBsonArray)
-                                        return Enumerable.Empty<string>();
-                                    return menuIdsBson.AsBsonArray.Select(m => m.AsString);
-                                })
-                                .Distinct()
-                                .ToList();
-
-                            if (menuIds.Any())
-                            {
-                                var menuObjectIds = new List<ObjectId>();
-                                foreach (var menuId in menuIds)
-                                {
-                                    if (ObjectId.TryParse(menuId, out var menuObjectId))
-                                    {
-                                        menuObjectIds.Add(menuObjectId);
-                                    }
-                                }
-
-                                if (menuObjectIds.Any())
-                                {
-                                    var menusCollection = _database.GetCollection<BsonDocument>("menus");
-                                    var menuFilter = Builders<BsonDocument>.Filter.And(
-                                        Builders<BsonDocument>.Filter.In("_id", menuObjectIds),
-                                        Builders<BsonDocument>.Filter.Eq("isDeleted", false),
-                                        Builders<BsonDocument>.Filter.Eq("isEnabled", true)
-                                    );
-                                    var menuDocs = await menusCollection.Find(menuFilter).ToListAsync();
-
-                                    // 收集菜单的权限代码
-                                    permissions = menuDocs
-                                        .SelectMany(m =>
-                                        {
-                                            var permsBson = m.GetValue("permissions", BsonNull.Value);
-                                            if (permsBson.IsBsonNull || !permsBson.IsBsonArray)
-                                                return Enumerable.Empty<string>();
-                                            return permsBson.AsBsonArray.Select(p => p.AsString);
-                                        })
-                                        .Distinct()
-                                        .ToList();
-                                }
-                            }
-                        }
-                    }
-                }
+                permissions = await GetPermissionsFromRolesAsync(roleIds, currentCompanyId);
             }
 
             return new UserInfo
@@ -355,6 +324,189 @@ public class TenantContext : ITenantContext
     }
 
     /// <summary>
+    /// 🚀 获取企业信息
+    /// </summary>
+    private async Task<(string? companyName, bool exists)> GetCompanyInfoAsync(string companyId)
+    {
+        var companiesCollection = _database.GetCollection<BsonDocument>("companies");
+        var companyFilter = Builders<BsonDocument>.Filter.And(
+            Builders<BsonDocument>.Filter.Or(
+                Builders<BsonDocument>.Filter.Eq("_id", companyId),
+                Builders<BsonDocument>.Filter.Eq("_id", ObjectId.TryParse(companyId, out var cid) ? cid : ObjectId.Empty)
+            ),
+            Builders<BsonDocument>.Filter.Ne("isDeleted", true)
+        );
+
+        var projection = Builders<BsonDocument>.Projection.Include("name");
+        var companyDoc = await companiesCollection.Find(companyFilter)
+            .Project(projection)
+            .FirstOrDefaultAsync();
+
+        if (companyDoc == null)
+        {
+            return (null, false);
+        }
+
+        var companyName = companyDoc.GetValue("name", BsonString.Empty).AsString;
+        return (companyName, true);
+    }
+
+    /// <summary>
+    /// 🚀 获取用户企业关系信息
+    /// </summary>
+    private async Task<(bool isAdmin, List<string> roleIds)> GetUserCompanyInfoAsync(string userId, string companyId)
+    {
+        var userCompaniesCollection = _database.GetCollection<BsonDocument>("user_companies");
+        var userCompanyFilter = Builders<BsonDocument>.Filter.And(
+            Builders<BsonDocument>.Filter.Or(
+                Builders<BsonDocument>.Filter.Eq("userId", userId),
+                Builders<BsonDocument>.Filter.Eq("userId", ObjectId.TryParse(userId, out var uid) ? uid : ObjectId.Empty)
+            ),
+            Builders<BsonDocument>.Filter.Or(
+                Builders<BsonDocument>.Filter.Eq("companyId", companyId),
+                Builders<BsonDocument>.Filter.Eq("companyId", ObjectId.TryParse(companyId, out var cid) ? cid : ObjectId.Empty)
+            ),
+            Builders<BsonDocument>.Filter.Eq("status", "active"),
+            Builders<BsonDocument>.Filter.Ne("isDeleted", true)
+        );
+
+        var projection = Builders<BsonDocument>.Projection.Include("isAdmin").Include("roleIds");
+        var userCompanyDoc = await userCompaniesCollection.Find(userCompanyFilter)
+            .Project(projection)
+            .FirstOrDefaultAsync();
+
+        if (userCompanyDoc == null)
+        {
+            return (false, new List<string>());
+        }
+
+        var isAdmin = userCompanyDoc.GetValue("isAdmin", BsonBoolean.False).AsBoolean;
+        var roleIds = new List<string>();
+
+        var roleIdsBson = userCompanyDoc.GetValue("roleIds", BsonNull.Value);
+        if (!roleIdsBson.IsBsonNull && roleIdsBson.IsBsonArray)
+        {
+            roleIds = roleIdsBson.AsBsonArray
+                .Select(r => r.AsString)
+                .Where(r => !string.IsNullOrEmpty(r))
+                .ToList();
+        }
+
+        return (isAdmin, roleIds);
+    }
+
+    /// <summary>
+    /// 🚀 兼容 ObjectId/string 的企业ID解析
+    /// </summary>
+    private static string? GetBsonIdString(BsonValue value)
+    {
+        if (value == null || value.IsBsonNull)
+        {
+            return null;
+        }
+
+        if (value.IsString)
+        {
+            return string.IsNullOrWhiteSpace(value.AsString) ? null : value.AsString;
+        }
+
+        if (value.IsObjectId)
+        {
+            var objectId = value.AsObjectId;
+            return objectId == ObjectId.Empty ? null : objectId.ToString();
+        }
+
+        return value.ToString();
+    }
+
+    /// <summary>
+    /// 🚀 从角色获取权限
+    /// </summary>
+    private async Task<List<string>> GetPermissionsFromRolesAsync(List<string> roleIds, string companyId)
+    {
+        var roleObjectIds = roleIds
+            .Select(r => ObjectId.TryParse(r, out var id) ? (ObjectId?)id : null)
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
+            .ToList();
+
+        if (roleObjectIds.Count == 0)
+        {
+            return new List<string>();
+        }
+
+        var rolesCollection = _database.GetCollection<BsonDocument>("roles");
+        var roleFilter = Builders<BsonDocument>.Filter.And(
+            Builders<BsonDocument>.Filter.In("_id", roleObjectIds),
+            Builders<BsonDocument>.Filter.Or(
+                Builders<BsonDocument>.Filter.Eq("companyId", companyId),
+                Builders<BsonDocument>.Filter.Eq("companyId", ObjectId.TryParse(companyId, out var rid) ? rid : ObjectId.Empty)
+            ),
+            Builders<BsonDocument>.Filter.Ne("isDeleted", true)
+        );
+
+        var projection = Builders<BsonDocument>.Projection.Include("menuIds");
+        var roleDocs = await rolesCollection.Find(roleFilter)
+            .Project(projection)
+            .ToListAsync();
+
+        // 收集所有菜单ID
+        var menuIds = roleDocs
+            .SelectMany(r =>
+            {
+                var menuIdsBson = r.GetValue("menuIds", BsonNull.Value);
+                if (menuIdsBson.IsBsonNull || !menuIdsBson.IsBsonArray)
+                    return Enumerable.Empty<string>();
+                return menuIdsBson.AsBsonArray.Select(m => m.AsString);
+            })
+            .Where(m => !string.IsNullOrEmpty(m))
+            .Distinct()
+            .ToList();
+
+        if (menuIds.Count == 0)
+        {
+            return new List<string>();
+        }
+
+        // 查询菜单权限
+        var menuObjectIds = menuIds
+            .Select(m => ObjectId.TryParse(m, out var id) ? (ObjectId?)id : null)
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
+            .ToList();
+
+        if (menuObjectIds.Count == 0)
+        {
+            return new List<string>();
+        }
+
+        var menusCollection = _database.GetCollection<BsonDocument>("menus");
+        var menuFilter = Builders<BsonDocument>.Filter.And(
+            Builders<BsonDocument>.Filter.In("_id", menuObjectIds),
+            Builders<BsonDocument>.Filter.Ne("isDeleted", true),
+            Builders<BsonDocument>.Filter.Eq("isEnabled", true)
+        );
+
+        var menuProjection = Builders<BsonDocument>.Projection.Include("permissions");
+        var menuDocs = await menusCollection.Find(menuFilter)
+            .Project(menuProjection)
+            .ToListAsync();
+
+        // 收集权限
+        return menuDocs
+            .SelectMany(m =>
+            {
+                var permsBson = m.GetValue("permissions", BsonNull.Value);
+                if (permsBson.IsBsonNull || !permsBson.IsBsonArray)
+                    return Enumerable.Empty<string>();
+                return permsBson.AsBsonArray.Select(p => p.AsString);
+            })
+            .Where(p => !string.IsNullOrEmpty(p))
+            .Distinct()
+            .ToList();
+    }
+
+    /// <summary>
     /// 创建空的用户信息（用于无企业场景）
     /// </summary>
     private static UserInfo CreateEmptyUserInfo(string userId, string username)
@@ -368,6 +520,16 @@ public class TenantContext : ITenantContext
             IsAdmin = false,
             Permissions = new List<string>()
         };
+    }
+
+    /// <summary>
+    /// 🚀 清除用户缓存
+    /// </summary>
+    public void ClearUserCache(string userId)
+    {
+        // 清除 Scoped 缓存
+        _cachedUserInfo = null;
+        _logger.LogDebug("TenantContext: 缓存已清除: {UserId}", userId);
     }
 
     /// <summary>

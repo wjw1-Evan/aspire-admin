@@ -255,7 +255,7 @@ public class IoTService : IIoTService
             }
 
             // 检查是否已存在（确保企业内唯一）
-            var existing = await _deviceFactory.FindAsync(d => d.DeviceId == request.DeviceId && d.IsDeleted == false, limit: 1);
+            var existing = await _deviceFactory.FindAsync(d => d.DeviceId == request.DeviceId && d.IsDeleted != true, limit: 1);
             if (existing.Count > 0)
             {
                 throw new InvalidOperationException($"设备标识符 {request.DeviceId} 已存在");
@@ -339,7 +339,7 @@ public class IoTService : IIoTService
     /// <returns>设备信息</returns>
     public async Task<IoTDevice?> GetDeviceByDeviceIdAsync(string deviceId)
     {
-        var devices = await _deviceFactory.FindAsync(d => d.DeviceId == deviceId && d.IsDeleted == false, limit: 1);
+        var devices = await _deviceFactory.FindAsync(d => d.DeviceId == deviceId && d.IsDeleted != true, limit: 1);
         return devices.FirstOrDefault();
     }
 
@@ -425,7 +425,7 @@ public class IoTService : IIoTService
         // 如果状态不是 Online，不需要更新任何字段，只需检查设备是否存在
         if (status != IoTDeviceStatus.Online)
         {
-            var devices = await _deviceFactory.FindAsync(d => d.DeviceId == deviceId && d.IsDeleted == false, limit: 1);
+            var devices = await _deviceFactory.FindAsync(d => d.DeviceId == deviceId && d.IsDeleted != true, limit: 1);
             return devices.Count > 0;
         }
 
@@ -477,7 +477,7 @@ public class IoTService : IIoTService
     public async Task<bool> HandleDeviceDisconnectAsync(DeviceDisconnectRequest request)
     {
         // 断开连接不需要更新设备字段，只需检查设备是否存在并创建事件
-        var devices = await _deviceFactory.FindAsync(d => d.DeviceId == request.DeviceId && d.IsDeleted == false, limit: 1);
+        var devices = await _deviceFactory.FindAsync(d => d.DeviceId == request.DeviceId && d.IsDeleted != true, limit: 1);
 
         if (devices.Count > 0)
         {
@@ -502,11 +502,11 @@ public class IoTService : IIoTService
         if (device == null)
             return null;
 
-        var dataPoints = await _dataPointFactory.FindAsync(dp => dp.DeviceId == deviceId && dp.IsDeleted == false);
+        var dataPoints = await _dataPointFactory.FindAsync(dp => dp.DeviceId == deviceId && dp.IsDeleted != true);
 
-        var recordCount = await _dataRecordFactory.CountAsync(r => r.DeviceId == deviceId && r.IsDeleted == false);
+        var recordCount = await _dataRecordFactory.CountAsync(r => r.DeviceId == deviceId && r.IsDeleted != true);
 
-        var unhandledAlarms = await _eventFactory.CountAsync(e => e.DeviceId == deviceId && e.IsHandled == false && e.IsDeleted == false);
+        var unhandledAlarms = await _eventFactory.CountAsync(e => e.DeviceId == deviceId && e.IsHandled == false && e.IsDeleted != true);
 
         return new DeviceStatistics
         {
@@ -591,7 +591,7 @@ public class IoTService : IIoTService
     /// <returns>数据点信息</returns>
     public async Task<IoTDataPoint?> GetDataPointByDataPointIdAsync(string dataPointId)
     {
-        var dataPoints = await _dataPointFactory.FindAsync(dp => dp.DataPointId == dataPointId && dp.IsDeleted == false, limit: 1);
+        var dataPoints = await _dataPointFactory.FindAsync(dp => dp.DataPointId == dataPointId && dp.IsDeleted != true, limit: 1);
         return dataPoints.FirstOrDefault();
     }
 
@@ -799,7 +799,7 @@ public class IoTService : IIoTService
     public async Task<IoTDataRecord?> GetLatestDataAsync(string dataPointId)
     {
         var records = await _dataRecordFactory.FindAsync(
-            r => r.DataPointId == dataPointId && r.IsDeleted == false,
+            r => r.DataPointId == dataPointId && r.IsDeleted != true,
             query => query.OrderByDescending(r => r.ReportedAt),
             limit: 1);
         return records.FirstOrDefault();
@@ -818,7 +818,7 @@ public class IoTService : IIoTService
             r => r.DataPointId == dataPointId &&
                  r.ReportedAt >= startTime &&
                  r.ReportedAt <= endTime &&
-                 r.IsDeleted == false);
+                 r.IsDeleted != true);
 
         if (records.Count == 0)
             return null;
@@ -922,10 +922,10 @@ public class IoTService : IIoTService
     {
         if (!string.IsNullOrEmpty(deviceId))
         {
-            return await _eventFactory.CountAsync(e => e.IsHandled == false && e.DeviceId == deviceId && e.IsDeleted == false);
+            return await _eventFactory.CountAsync(e => e.IsHandled == false && e.DeviceId == deviceId && e.IsDeleted != true);
         }
 
-        return await _eventFactory.CountAsync(e => e.IsHandled == false && e.IsDeleted == false);
+        return await _eventFactory.CountAsync(e => e.IsHandled == false && e.IsDeleted != true);
     }
 
     #endregion

@@ -270,7 +270,7 @@ public class PageParams
 /// 注意：AppUser 不支持 IMultiTenant，因为它是多企业模型，使用 CurrentCompanyId 进行过滤
 /// </summary>
 [BsonIgnoreExtraElements]
-[Table("users")]
+[Table("appusers")]
 public class AppUser : BaseEntity
 {
     /// <summary>
@@ -334,6 +334,8 @@ public class AppUser : BaseEntity
 
     /// <summary>
     /// 当前选中的企业ID（v3.1新增）
+    /// 指向用户当前正在操作的企业上下文。可在切换企业时更新。
+    /// 示例：69895113d644cf046d97904a
     /// </summary>
     [StringLength(50)]
     [Column("currentCompanyId")]
@@ -342,6 +344,8 @@ public class AppUser : BaseEntity
 
     /// <summary>
     /// 个人企业ID（注册时自动创建，v3.1新增）
+    /// 用户永远拥有的默认“个人空间”企业 ID。当 CurrentCompanyId 丢失时作为最终后备。
+    /// ⚠️ 请勿将其与用户自身的 ID (Id) 混淆。
     /// </summary>
     [StringLength(50)]
     [Column("personalCompanyId")]
@@ -406,10 +410,11 @@ public class RegisterRequest
     public string Password { get; set; } = string.Empty;
 
     /// <summary>
-    /// 邮箱地址（可选）
+    /// 邮箱地址
     /// </summary>
+    [Required(ErrorMessage = "邮箱不能为空")]
     [EmailAddress(ErrorMessage = "邮箱格式不正确")]
-    public string? Email { get; set; }
+    public string Email { get; set; } = string.Empty;
 
     /// <summary>
     /// 手机号码（可选，中国标准：11位数字，符合中国手机号号段规则）

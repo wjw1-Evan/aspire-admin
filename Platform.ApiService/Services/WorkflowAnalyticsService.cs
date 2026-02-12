@@ -290,7 +290,7 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
         {
             _logger.LogInformation("开始批量更新工作流分析数据");
 
-            Expression<Func<WorkflowDefinition, bool>> filter = w => w.IsDeleted == false;
+            Expression<Func<WorkflowDefinition, bool>> filter = w => w.IsDeleted != true;
 
             var workflows = await _workflowFactory.FindAsync(filter);
 
@@ -327,7 +327,7 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
     {
         try
         {
-            Expression<Func<WorkflowDefinition, bool>> filter = w => w.IsDeleted == false && w.Analytics.UsageCount > 0;
+            Expression<Func<WorkflowDefinition, bool>> filter = w => w.IsDeleted != true && w.Analytics.UsageCount > 0;
 
             var workflows = await _workflowFactory.FindAsync(filter);
 
@@ -353,7 +353,7 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
     {
         try
         {
-            Expression<Func<WorkflowDefinition, bool>> filter = w => w.IsDeleted == false && w.Analytics.PerformanceScore > 0;
+            Expression<Func<WorkflowDefinition, bool>> filter = w => w.IsDeleted != true && w.Analytics.PerformanceScore > 0;
 
             var workflows = await _workflowFactory.FindAsync(filter);
 

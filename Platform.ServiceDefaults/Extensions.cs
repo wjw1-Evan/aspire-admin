@@ -26,6 +26,9 @@ public static class Extensions
 
         builder.Services.AddServiceDiscovery();
 
+        // 🚀 添加内存缓存服务（TenantContext等需要使用）
+        builder.Services.AddMemoryCache();
+
         builder.Services.ConfigureHttpClientDefaults(http =>
         {
             // Turn on resilience by default

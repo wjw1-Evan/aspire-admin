@@ -37,9 +37,14 @@ public interface IDataFactory<T> where T : class, IEntity, ISoftDeletable, ITime
 
     // 🚀 更新操作 - 支持Action和ExecuteUpdate
     Task<T?> UpdateAsync(string id, Action<T> updateAction, CancellationToken cancellationToken = default);
+    Task<T?> UpdateAsync(string id, Func<T, Task> updateAction, CancellationToken cancellationToken = default);
     Task<int> UpdateManyAsync(
         System.Linq.Expressions.Expression<Func<T, bool>> filter,
         Action<T> updateAction,
+        CancellationToken cancellationToken = default);
+    Task<int> UpdateManyAsync(
+        System.Linq.Expressions.Expression<Func<T, bool>> filter,
+        Func<T, Task> updateAction,
         CancellationToken cancellationToken = default);
 
     // 🚀 删除操作 - 软删除和硬删除
@@ -70,6 +75,11 @@ public interface IDataFactory<T> where T : class, IEntity, ISoftDeletable, ITime
     // 🚀 用户信息获取（向后兼容）
     string? GetCurrentUserId();
     string GetRequiredUserId();
+
+    /// <summary>
+    /// 获取当前企业ID（可为空）
+    /// </summary>
+    Task<string?> GetCurrentCompanyIdAsync();
 
     /// <summary>
     /// 获取必需的企业ID（为空则抛异常）

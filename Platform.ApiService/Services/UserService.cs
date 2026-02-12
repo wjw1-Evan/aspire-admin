@@ -239,7 +239,7 @@ public class UserService(
             var ucResult = await _userCompanyFactory.FindAsync(uc =>
                 uc.UserId == id &&
                 uc.CompanyId == companyId &&
-                uc.IsDeleted == false, limit: 1);
+                uc.IsDeleted != true, limit: 1);
             var existingUc = ucResult.FirstOrDefault();
             UserCompany? updatedUserCompany = null;
             if (existingUc != null)

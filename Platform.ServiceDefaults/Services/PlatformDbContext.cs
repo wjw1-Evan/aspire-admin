@@ -3,6 +3,8 @@ using MongoDB.EntityFrameworkCore.Extensions;
 using Platform.ServiceDefaults.Models;
 using System.Reflection;
 using System.Linq.Expressions;
+using System.Collections.Concurrent;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Platform.ServiceDefaults.Services;
 
@@ -12,8 +14,28 @@ namespace Platform.ServiceDefaults.Services;
 public class PlatformDbContext(DbContextOptions<PlatformDbContext> options, ITenantContext? tenantContext = null)
     : DbContext(options)
 {
-    private readonly string? _currentCompanyId = tenantContext?.GetCurrentCompanyIdAsync().GetAwaiter().GetResult();
+    public string? CurrentCompanyId
+    {
+        get
+        {
+            if (_tenantContext == null) return null;
+
+            // 🚀 性能优化：由于 EF Core 过滤器要求同步访问，此处使用同步阻塞。
+            // 但通过 TenantContext 的 Scoped 缓存，后续调用将直接从内存返回，减少阻塞时间。
+            var task = _tenantContext.GetCurrentCompanyIdAsync();
+            if (!task.IsCompleted)
+            {
+                // _logger?.LogWarning("PlatformDbContext: 同步阻塞获取 CurrentCompanyId，请检查是否已在请求开始时预热缓存");
+            }
+            return task.GetAwaiter().GetResult();
+        }
+    }
+
     private readonly ITenantContext? _tenantContext = tenantContext;
+
+    // 缓存实体类型扫描结果
+    private static List<Type>? _cachedEntityTypes;
+    private static readonly object _cacheLock = new();
 
     public override int SaveChanges()
     {
@@ -21,77 +43,97 @@ public class PlatformDbContext(DbContextOptions<PlatformDbContext> options, ITen
         return base.SaveChanges();
     }
 
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        ApplyAuditInfo();
-        return base.SaveChangesAsync(cancellationToken);
+        await ApplyAuditInfoAsync();
+        return await base.SaveChangesAsync(cancellationToken);
     }
 
-    /// <summary>
-    /// 🚀 自动填充审计字段（CreatedBy, UpdatedBy, CreatedAt, UpdatedAt 等）
-    /// </summary>
     private void ApplyAuditInfo()
     {
+        // 同步版本保持不变，用于 SaveChanges()
         var userId = _tenantContext?.GetCurrentUserId();
+        var companyId = CurrentCompanyId;
         var now = DateTime.UtcNow;
 
         foreach (var entry in ChangeTracker.Entries())
         {
-            // 处理时间戳
-            if (entry.Entity is ITimestamped timestamped)
+            ApplyEntryAuditInfo(entry, userId, companyId, now);
+        }
+    }
+
+    private async Task ApplyAuditInfoAsync()
+    {
+        // 🚀 性能优化：异步获取租户信息，避免 SaveChangesAsync 内部触发同步阻塞
+        var userId = _tenantContext?.GetCurrentUserId();
+        var companyId = _tenantContext != null ? await _tenantContext.GetCurrentCompanyIdAsync() : null;
+        var now = DateTime.UtcNow;
+
+        foreach (var entry in ChangeTracker.Entries())
+        {
+            ApplyEntryAuditInfo(entry, userId, companyId, now);
+        }
+    }
+
+    private void ApplyEntryAuditInfo(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry, string? userId, string? companyId, DateTime now)
+    {
+        var state = entry.State;
+        if (state != EntityState.Added && state != EntityState.Modified) return;
+
+        var entity = entry.Entity;
+        var isAdded = state == EntityState.Added;
+
+        // 处理时间戳
+        if (entity is ITimestamped timestamped)
+        {
+            if (isAdded)
             {
-                if (entry.State == EntityState.Added)
-                {
-                    timestamped.CreatedAt = now;
-                    timestamped.UpdatedAt = now;
-                }
-                else if (entry.State == EntityState.Modified)
-                {
-                    timestamped.UpdatedAt = now;
-                }
+                timestamped.CreatedAt = now;
+                timestamped.UpdatedAt = now;
             }
-
-            // 处理操作追踪
-            if (entry.Entity is IOperationTrackable trackable)
+            else
             {
-                if (entry.State == EntityState.Added)
-                {
-                    trackable.CreatedBy ??= userId;
-                    trackable.UpdatedBy = userId;
-                    trackable.LastOperationAt = now;
-                    trackable.LastOperationType = "CREATE";
-                }
-                else if (entry.State == EntityState.Modified)
-                {
-                    trackable.UpdatedBy = userId;
-                    trackable.LastOperationAt = now;
-                    trackable.LastOperationType = "UPDATE";
-                }
+                timestamped.UpdatedAt = now;
             }
+        }
 
-            // 处理多租户
-            if (entry.Entity is IMultiTenant tenant && string.IsNullOrEmpty(tenant.CompanyId))
+        // 处理操作追踪
+        if (entity is IOperationTrackable trackable)
+        {
+            if (isAdded)
             {
-                if (entry.State == EntityState.Added)
-                {
-                    tenant.CompanyId = _currentCompanyId ?? string.Empty;
-                }
+                trackable.CreatedBy ??= userId;
+                trackable.UpdatedBy = userId;
+                trackable.LastOperationAt = now;
+                trackable.LastOperationType = "CREATE";
             }
-
-            // 处理软删除审计
-            if (entry.Entity is ISoftDeletable softDeletable && entry.State == EntityState.Modified)
+            else
             {
-                var isDeletedProp = entry.Property(nameof(ISoftDeletable.IsDeleted));
-                if (isDeletedProp.IsModified && (bool)isDeletedProp.CurrentValue!)
-                {
-                    softDeletable.DeletedAt ??= now;
-                    softDeletable.DeletedBy ??= userId;
+                trackable.UpdatedBy = userId;
+                trackable.LastOperationAt = now;
+                trackable.LastOperationType = "UPDATE";
+            }
+        }
 
-                    if (entry.Entity is IOperationTrackable ot)
-                    {
-                        ot.LastOperationType = "DELETE";
-                        ot.LastOperationAt = now;
-                    }
+        // 处理多租户
+        if (isAdded && entity is IMultiTenant tenant && string.IsNullOrEmpty(tenant.CompanyId))
+        {
+            tenant.CompanyId = companyId ?? string.Empty;
+        }
+
+        // 处理软删除审计（仅在修改状态时检查）
+        if (!isAdded && entity is ISoftDeletable softDeletable)
+        {
+            var isDeletedProp = entry.Property(nameof(ISoftDeletable.IsDeleted));
+            if (isDeletedProp.IsModified && softDeletable.IsDeleted)
+            {
+                softDeletable.DeletedAt ??= now;
+                softDeletable.DeletedBy ??= userId;
+
+                if (entity is IOperationTrackable ot)
+                {
+                    ot.LastOperationType = "DELETE";
+                    ot.LastOperationAt = now;
                 }
             }
         }
@@ -101,59 +143,78 @@ public class PlatformDbContext(DbContextOptions<PlatformDbContext> options, ITen
     {
         base.OnModelCreating(modelBuilder);
 
-        // 获取所有继承自 IEntity 的实体模型
-        // 扫描当前程序集以及入口程序集（ApiService）
-        var assemblies = new List<Assembly> { Assembly.GetExecutingAssembly() };
-        var entryAssembly = Assembly.GetEntryAssembly();
-        if (entryAssembly != null) assemblies.Add(entryAssembly);
-
-        var entityTypes = assemblies
-            .SelectMany(a => a.GetTypes())
-            .Where(t => t.IsClass && !t.IsAbstract && typeof(IEntity).IsAssignableFrom(t))
-            .Distinct();
+        // 获取缓存的实体类型或扫描
+        var entityTypes = GetEntityTypes();
 
         foreach (var type in entityTypes)
         {
             var entityBuilder = modelBuilder.Entity(type);
 
-            // 配置集合名称：优先使用 BsonCollectionNameAttribute，否则使用类名复数
-            var attr = type.GetCustomAttribute<Attributes.BsonCollectionNameAttribute>();
-            var collectionName = attr?.Name ?? type.Name.ToLowerInvariant() + "s";
-
+            // 配置集合名称：优先使用 BsonCollectionNameAttribute，其次是 TableAttribute，最后是类名复数
+            var bsonAttr = type.GetCustomAttribute<Attributes.BsonCollectionNameAttribute>();
+            var tableAttr = type.GetCustomAttribute<TableAttribute>();
+            var collectionName = bsonAttr?.Name ?? tableAttr?.Name ?? type.Name.ToLowerInvariant() + "s";
             entityBuilder.ToCollection(collectionName);
 
             // 🚀 配置全局查询过滤器（软删除 + 多租户）
-            var globalFilter = CreateGlobalFilter(type, _currentCompanyId);
-            if (globalFilter != null)
+            var parameter = Expression.Parameter(type, "e");
+            Expression? filterBody = null;
+
+            // 1. 软删除过滤器 (静态部分)
+            if (typeof(ISoftDeletable).IsAssignableFrom(type))
             {
-                entityBuilder.HasQueryFilter(globalFilter);
+                var isDeleted = Expression.Property(parameter, nameof(ISoftDeletable.IsDeleted));
+                var nullableIsDeleted = Expression.Convert(isDeleted, typeof(bool?));
+                filterBody = Expression.NotEqual(nullableIsDeleted, Expression.Constant(true, typeof(bool?)));
+            }
+
+            // 2. 多租户过滤器 (动态部分)
+            if (typeof(IMultiTenant).IsAssignableFrom(type))
+            {
+                // 获取当前上下文实例的 CurrentCompanyId 属性
+                var companyIdProperty = Expression.Property(parameter, nameof(IMultiTenant.CompanyId));
+                var currentCompanyIdProperty = Expression.Property(Expression.Constant(this), nameof(CurrentCompanyId));
+
+                var tenantFilter = Expression.Equal(companyIdProperty, currentCompanyIdProperty);
+                filterBody = filterBody == null ? tenantFilter : Expression.AndAlso(filterBody, tenantFilter);
+                Console.WriteLine($"[DEBUG] Applied IMultiTenant filter to: {type.Name}");
+            }
+            else
+            {
+                Console.WriteLine($"[DEBUG] Skipping IMultiTenant filter for: {type.Name}");
+            }
+
+            if (filterBody != null)
+            {
+                entityBuilder.HasQueryFilter(Expression.Lambda(filterBody, parameter));
             }
         }
     }
 
     /// <summary>
-    /// 🚀 创建全局过滤器（软删除 + 多租户）
+    /// 获取所有实体类型（带缓存）
     /// </summary>
-    private static System.Linq.Expressions.LambdaExpression? CreateGlobalFilter(Type type, string? companyId)
+    private static List<Type> GetEntityTypes()
     {
-        var parameter = System.Linq.Expressions.Expression.Parameter(type, "e");
-        System.Linq.Expressions.Expression? body = null;
+        if (_cachedEntityTypes != null) return _cachedEntityTypes;
 
-        if (typeof(ISoftDeletable).IsAssignableFrom(type))
+        lock (_cacheLock)
         {
-            var isDeleted = System.Linq.Expressions.Expression.Property(parameter, nameof(ISoftDeletable.IsDeleted));
-            var notDeleted = System.Linq.Expressions.Expression.Equal(isDeleted, System.Linq.Expressions.Expression.Constant(false));
-            body = notDeleted;
-        }
+            if (_cachedEntityTypes != null) return _cachedEntityTypes;
 
-        if (typeof(IMultiTenant).IsAssignableFrom(type) && !string.IsNullOrEmpty(companyId))
-        {
-            var companyIdProperty = System.Linq.Expressions.Expression.Property(parameter, nameof(IMultiTenant.CompanyId));
-            var companyIdConstant = System.Linq.Expressions.Expression.Constant(companyId);
-            var tenantFilter = System.Linq.Expressions.Expression.Equal(companyIdProperty, companyIdConstant);
-            body = body == null ? tenantFilter : System.Linq.Expressions.Expression.AndAlso(body, tenantFilter);
-        }
+            var assemblies = new List<Assembly> { Assembly.GetExecutingAssembly() };
+            var entryAssembly = Assembly.GetEntryAssembly();
+            if (entryAssembly != null && entryAssembly != Assembly.GetExecutingAssembly())
+                assemblies.Add(entryAssembly);
 
-        return body == null ? null : System.Linq.Expressions.Expression.Lambda(body, parameter);
+            _cachedEntityTypes = assemblies
+                .SelectMany(a => a.GetTypes())
+                .Where(t => t.IsClass && !t.IsAbstract && typeof(IEntity).IsAssignableFrom(t))
+                .Distinct()
+                .ToList();
+
+            return _cachedEntityTypes;
+        }
     }
+
 }

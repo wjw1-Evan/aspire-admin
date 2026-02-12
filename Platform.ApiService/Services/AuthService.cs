@@ -287,28 +287,42 @@ public class AuthService : IAuthService
 
         await ClearFailureAsync(clientId, "login");
 
+        bool shouldClearInvalidCompanyId = false;
         if (!string.IsNullOrEmpty(user.CurrentCompanyId))
         {
-            var companies = await _companyFactory.FindAsync(c => c.Id == user.CurrentCompanyId);
+            // 使用 FindWithoutTenantFilterAsync 绕过过滤器，确保登录时能找到企业
+            var companies = await _companyFactory.FindWithoutTenantFilterAsync(c => c.Id == user.CurrentCompanyId);
             var company = companies.FirstOrDefault();
 
             if (company == null)
             {
-                return ApiResponse<LoginData>.ErrorResult("COMPANY_NOT_FOUND", "CURRENT_COMPANY_NOT_FOUND");
+                // 鲁棒性修复：记录警告并标记清理，但不在此处立即执行异步任务避免 DbContext 并发错误
+                _logger.LogWarning("LoginAsync: [发现无效数据] 用户 {UserId} 的 CurrentCompanyId 为 '{CompanyId}'，但在数据库中未找到。将在后续步骤中清理。", user.Id, user.CurrentCompanyId);
+                shouldClearInvalidCompanyId = true;
             }
-
-            if (!company.IsActive)
+            else
             {
-                return ApiResponse<LoginData>.ErrorResult("COMPANY_INACTIVE", ErrorMessages.CompanyInactive);
-            }
+                if (!company.IsActive)
+                {
+                    return ApiResponse<LoginData>.ErrorResult("COMPANY_INACTIVE", ErrorMessages.CompanyInactive);
+                }
 
-            if (company.ExpiresAt.HasValue && company.ExpiresAt.Value < DateTime.UtcNow)
-            {
-                return ApiResponse<LoginData>.ErrorResult("COMPANY_EXPIRED", ErrorMessages.CompanyExpired);
+                if (company.ExpiresAt.HasValue && company.ExpiresAt.Value < DateTime.UtcNow)
+                {
+                    return ApiResponse<LoginData>.ErrorResult("COMPANY_EXPIRED", ErrorMessages.CompanyExpired);
+                }
             }
         }
 
-        await _userFactory.UpdateAsync(user.Id!, u => u.LastLoginAt = DateTime.UtcNow);
+        // 统一更新用户信息（最后登录时间 + 可选的无效企业 ID 清理）
+        await _userFactory.UpdateAsync(user.Id!, u =>
+        {
+            u.LastLoginAt = DateTime.UtcNow;
+            if (shouldClearInvalidCompanyId)
+            {
+                u.CurrentCompanyId = null;
+            }
+        });
 
         var httpContext = _httpContextAccessor.HttpContext;
         var ipAddress = httpContext?.Connection?.RemoteIpAddress?.ToString();

@@ -104,39 +104,79 @@ public class CompanyController : BaseApiController
     [Authorize]
     public async Task<IActionResult> GetCurrentCompany()
     {
+        var logger = HttpContext.RequestServices.GetRequiredService<ILogger<CompanyController>>();
         // 尝试从数据库获取当前用户的企业ID（JWT 已移除 companyId）
         var userId = GetRequiredUserId();
         var userFactory = HttpContext.RequestServices.GetRequiredService<Platform.ServiceDefaults.Services.IDataFactory<AppUser>>();
         var user = await userFactory.GetByIdAsync(userId);
 
-        string? companyId = user?.CurrentCompanyId;
+        if (user == null)
+        {
+            logger.LogWarning("GetCurrentCompany: [未找到用户] UserId: {UserId}", userId);
+            throw new UnauthorizedAccessException("用户信息不存在");
+        }
+
+        string? companyId = user.CurrentCompanyId;
+        logger.LogInformation("GetCurrentCompany: [用户关联企业] UserId: {UserId}, CurrentCompanyId: {CompanyId}", userId, companyId);
 
         // 回退策略：如果用户未设置 CurrentCompanyId，则从其企业列表中选择一个企业
         if (string.IsNullOrEmpty(companyId))
         {
+            logger.LogInformation("GetCurrentCompany: [启动回退策略] UserId: {UserId}", userId);
             var myCompanies = await _userCompanyService.GetUserCompaniesAsync(userId);
             var candidate = myCompanies.FirstOrDefault(c => c.IsCurrent)
                            ?? myCompanies.FirstOrDefault();
 
             if (candidate != null)
             {
+                logger.LogInformation("GetCurrentCompany: [后备策略] 发现候选企业 CompanyId: {CompanyId}", candidate.CompanyId);
                 // 尝试将其设置为当前企业（忽略设置失败，不阻塞读取）
                 try
                 {
                     await _userCompanyService.SwitchCompanyAsync(candidate.CompanyId);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "GetCurrentCompany: [切换失败] CompanyId: {CompanyId}", candidate.CompanyId);
+                }
 
                 companyId = candidate.CompanyId;
             }
         }
 
+        // 二级回退策略：如果上述方式都未找到企业，使用个人企业 ID（防止 500/401 错误）
+        if (string.IsNullOrEmpty(companyId) && !string.IsNullOrEmpty(user.PersonalCompanyId))
+        {
+            logger.LogInformation("GetCurrentCompany: [个人企业二级后备] UserId: {UserId}, PersonalCompanyId: {CompanyId}", userId, user.PersonalCompanyId);
+            companyId = user.PersonalCompanyId;
+        }
+
         if (string.IsNullOrEmpty(companyId))
         {
+            logger.LogWarning("GetCurrentCompany: [最终未找到企业] UserId: {UserId}", userId);
             throw new UnauthorizedAccessException("未找到当前企业信息");
         }
 
+        logger.LogInformation("GetCurrentCompany: [开始获取企业详情] CompanyId: {CompanyId}", companyId);
         var company = await _companyService.GetCompanyByIdAsync(companyId);
+        if (company == null)
+        {
+            logger.LogError("GetCurrentCompany: [企业详情缺失] CompanyId: {CompanyId}. 正在尝试不带过滤器再次获取...", companyId);
+            // 尝试直接通过工厂获取（绕过可能的过滤器）
+            var companyFactory = HttpContext.RequestServices.GetRequiredService<Platform.ServiceDefaults.Services.IDataFactory<Company>>();
+            var companies = await companyFactory.FindWithoutTenantFilterAsync(c => c.Id == companyId);
+            company = companies.FirstOrDefault();
+
+            if (company != null)
+            {
+                logger.LogInformation("GetCurrentCompany: [成功] 通过非过滤查询找回了企业: {CompanyId}", companyId);
+            }
+            else
+            {
+                logger.LogError("GetCurrentCompany: [失败] 即使非过滤查询也找不到该企业: {CompanyId}", companyId);
+            }
+        }
+
         return Success(company.EnsureFound("企业"));
     }
 

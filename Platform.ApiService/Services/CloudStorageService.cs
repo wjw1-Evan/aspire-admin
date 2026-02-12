@@ -246,15 +246,15 @@ public class CloudStorageService : ICloudStorageService
 
         Expression<Func<FileItem, bool>> baseFilter;
         if (normalizedParentId == null)
-            baseFilter = x => x.Name == fileName && x.Type == FileItemType.File && x.Status == FileStatus.Active && x.IsDeleted == false && (x.ParentId == null || x.ParentId == string.Empty);
+            baseFilter = x => x.Name == fileName && x.Type == FileItemType.File && x.Status == FileStatus.Active && x.IsDeleted != true && (x.ParentId == null || x.ParentId == string.Empty);
         else
-            baseFilter = x => x.Name == fileName && x.Type == FileItemType.File && x.Status == FileStatus.Active && x.IsDeleted == false && x.ParentId == normalizedParentId;
+            baseFilter = x => x.Name == fileName && x.Type == FileItemType.File && x.Status == FileStatus.Active && x.IsDeleted != true && x.ParentId == normalizedParentId;
 
         var existingFiles = await _fileItemFactory.FindAsync(baseFilter, limit: 1);
         var existingFile = existingFiles.FirstOrDefault();
 
         var hashFiles = await _fileItemFactory.FindAsync(
-            x => x.Hash == fileHash && x.Status == FileStatus.Active && x.IsDeleted == false,
+            x => x.Hash == fileHash && x.Status == FileStatus.Active && x.IsDeleted != true,
             limit: 1);
         var duplicateFile = hashFiles.FirstOrDefault();
         string gridFSId;
@@ -380,16 +380,16 @@ public class CloudStorageService : ICloudStorageService
         if (normalizedParentId == null)
         {
             if (query.Type.HasValue)
-                filter = x => x.Status == FileStatus.Active && x.IsDeleted == false && (x.ParentId == null || x.ParentId == string.Empty) && x.Type == query.Type.Value;
+                filter = x => x.Status == FileStatus.Active && x.IsDeleted != true && (x.ParentId == null || x.ParentId == string.Empty) && x.Type == query.Type.Value;
             else
-                filter = x => x.Status == FileStatus.Active && x.IsDeleted == false && (x.ParentId == null || x.ParentId == string.Empty);
+                filter = x => x.Status == FileStatus.Active && x.IsDeleted != true && (x.ParentId == null || x.ParentId == string.Empty);
         }
         else
         {
             if (query.Type.HasValue)
-                filter = x => x.Status == FileStatus.Active && x.IsDeleted == false && x.ParentId == normalizedParentId && x.Type == query.Type.Value;
+                filter = x => x.Status == FileStatus.Active && x.IsDeleted != true && x.ParentId == normalizedParentId && x.Type == query.Type.Value;
             else
-                filter = x => x.Status == FileStatus.Active && x.IsDeleted == false && x.ParentId == normalizedParentId;
+                filter = x => x.Status == FileStatus.Active && x.IsDeleted != true && x.ParentId == normalizedParentId;
         }
 
         Func<IQueryable<FileItem>, IOrderedQueryable<FileItem>> sort;
@@ -969,9 +969,9 @@ public class CloudStorageService : ICloudStorageService
         {
             Expression<Func<FileItem, bool>> baseFilter;
             if (currentParentId == null)
-                baseFilter = x => x.Name == segment && x.Type == FileItemType.Folder && x.Status == FileStatus.Active && x.IsDeleted == false && (x.ParentId == null || x.ParentId == string.Empty);
+                baseFilter = x => x.Name == segment && x.Type == FileItemType.Folder && x.Status == FileStatus.Active && x.IsDeleted != true && (x.ParentId == null || x.ParentId == string.Empty);
             else
-                baseFilter = x => x.Name == segment && x.Type == FileItemType.Folder && x.Status == FileStatus.Active && x.IsDeleted == false && x.ParentId == currentParentId;
+                baseFilter = x => x.Name == segment && x.Type == FileItemType.Folder && x.Status == FileStatus.Active && x.IsDeleted != true && x.ParentId == currentParentId;
 
             var existing = await _fileItemFactory.FindAsync(baseFilter, limit: 1);
 

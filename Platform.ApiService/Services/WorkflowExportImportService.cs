@@ -353,7 +353,7 @@ public class WorkflowExportImportService : IWorkflowExportImportService
 
         if (formIds.Count > 0)
         {
-            var forms = await _formFactory.FindAsync(f => formIds.Contains(f.Id) && f.IsDeleted == false);
+            var forms = await _formFactory.FindAsync(f => formIds.Contains(f.Id) && f.IsDeleted != true);
             foreach (var form in forms)
             {
                 dependencies.Add(new WorkflowDependency
@@ -455,7 +455,7 @@ public class WorkflowExportImportService : IWorkflowExportImportService
     private async Task ValidateWorkflowForImportAsync(WorkflowExportItem workflow, WorkflowImportResult result)
     {
         // 检查名称冲突
-        var existingResult = await _workflowFactory.FindAsync(w => w.Name == workflow.Name && w.IsDeleted == false, limit: 1);
+        var existingResult = await _workflowFactory.FindAsync(w => w.Name == workflow.Name && w.IsDeleted != true, limit: 1);
         var existing = existingResult.FirstOrDefault();
         if (existing != null)
         {
@@ -496,7 +496,7 @@ public class WorkflowExportImportService : IWorkflowExportImportService
     private async Task ImportSingleWorkflowAsync(WorkflowExportItem workflowItem, WorkflowImportResult result, bool overwriteExisting, string userId, string companyId)
     {
         // 检查是否存在同名工作流
-        var existingResult = await _workflowFactory.FindAsync(w => w.Name == workflowItem.Name && w.IsDeleted == false, limit: 1);
+        var existingResult = await _workflowFactory.FindAsync(w => w.Name == workflowItem.Name && w.IsDeleted != true, limit: 1);
         var existing = existingResult.FirstOrDefault();
 
         if (existing != null && !overwriteExisting)
@@ -581,7 +581,7 @@ public class WorkflowExportImportService : IWorkflowExportImportService
         do
         {
             newName = $"{baseName} ({counter})";
-            var existingResult = await _workflowFactory.FindAsync(w => w.Name == newName && w.IsDeleted == false, limit: 1);
+            var existingResult = await _workflowFactory.FindAsync(w => w.Name == newName && w.IsDeleted != true, limit: 1);
             var existing = existingResult.FirstOrDefault();
             if (existing == null)
             {

@@ -337,7 +337,7 @@ public class CreateAllIndexes
     /// </summary>
     private async Task CreateCompanyIndexesAsync()
     {
-        var collection = _database.GetCollection<BsonDocument>("companys");
+        var collection = _database.GetCollection<BsonDocument>("companies");
 
         try
         {
@@ -346,21 +346,21 @@ public class CreateAllIndexes
                 Builders<BsonDocument>.IndexKeys.Ascending("code"),
                 new CreateIndexOptions
                 {
-                    Name = "idx_companys_code_unique",
+                    Name = "idx_companies_code_unique",
                     Unique = true,
                     Background = true
                 },
-                "companys.code (unique)");
+                "companies.code (unique)");
 
             // 查询优化：name
             await CreateIndexAsync(collection,
                 Builders<BsonDocument>.IndexKeys.Ascending("name"),
                 new CreateIndexOptions
                 {
-                    Name = "idx_companys_name",
+                    Name = "idx_companies_name",
                     Background = true
                 },
-                "companys.name");
+                "companies.name");
 
             _logger.LogInformation("✅ Companys 集合索引创建完成");
         }

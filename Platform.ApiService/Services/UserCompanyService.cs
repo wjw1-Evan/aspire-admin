@@ -463,7 +463,7 @@ public class UserCompanyService : IUserCompanyService
         // UserCompany 不实现 IMultiTenant，CompanyId 是业务字段，可以查询用户在所有企业的关联记录
         Expression<Func<UserCompany, bool>> filter = uc => uc.UserId == userId && uc.Status == "active";
 
-        var memberships = await _userCompanyFactory.FindAsync(filter);
+        var memberships = await _userCompanyFactory.FindWithoutTenantFilterAsync(filter);
         var result = new List<UserCompanyItem>();
 
         if (!memberships.Any())
@@ -480,7 +480,7 @@ public class UserCompanyService : IUserCompanyService
         // 批量查询企业信息（跨企业查询，需要查询多个企业的信息）
         // 只需要 Name 和 Code
         Expression<Func<Company, bool>> companyFilter = c => companyIds.Contains(c.Id);
-        var companies = await _companyFactory.FindAsync(companyFilter);
+        var companies = await _companyFactory.FindWithoutTenantFilterAsync(companyFilter);
         var companyDict = companies.ToDictionary(c => c.Id!, c => c);
 
         // 批量查询角色信息（跨企业查询，需要按企业分组）
@@ -513,7 +513,7 @@ public class UserCompanyService : IUserCompanyService
                 if (roleIds.Any())
                 {
                     Expression<Func<Role, bool>> roleFilter = r => roleIds.Contains(r.Id) && r.CompanyId == companyId && r.IsActive == true;
-                    var roles = await _roleFactory.FindAsync(roleFilter);
+                    var roles = await _roleFactory.FindWithoutTenantFilterAsync(roleFilter);
                     foreach (var role in roles)
                     {
                         if (role.Id != null && !roleDict.ContainsKey(role.Id))
@@ -630,6 +630,9 @@ public class UserCompanyService : IUserCompanyService
             u.UpdatedAt = DateTime.UtcNow;
         });
 
+        // 🚀 清除用户缓存，确保获取最新企业信息
+        _tenantContext.ClearUserCache(userId);
+
         var updatedUser = await _userFactory.GetByIdAsync(userId);
         if (updatedUser == null)
         {
@@ -735,7 +738,11 @@ public class UserCompanyService : IUserCompanyService
             }
         }
 
-        var updatedUserCompany = await _userCompanyFactory.UpdateAsync(companyId, uc =>
+        var membership = await GetUserCompanyAsync(userId, companyId);
+        if (membership == null)
+            throw new KeyNotFoundException("未找到该用户的企业成员记录");
+
+        var updatedUserCompany = await _userCompanyFactory.UpdateAsync(membership.Id!, uc =>
         {
             uc.RoleIds = roleIds;
             uc.UpdatedAt = DateTime.UtcNow;
@@ -758,7 +765,11 @@ public class UserCompanyService : IUserCompanyService
             throw new InvalidOperationException("不能修改自己的管理员权限");
         }
 
-        var updatedUserCompany = await _userCompanyFactory.UpdateAsync(companyId, uc =>
+        var membership = await GetUserCompanyAsync(userId, companyId);
+        if (membership == null)
+            throw new KeyNotFoundException("未找到该用户的企业成员记录");
+
+        var updatedUserCompany = await _userCompanyFactory.UpdateAsync(membership.Id!, uc =>
         {
             uc.IsAdmin = isAdmin;
             uc.UpdatedAt = DateTime.UtcNow;

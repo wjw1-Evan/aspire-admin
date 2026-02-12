@@ -99,14 +99,11 @@ public class SocialService : ISocialService
             {
                 var user = await _userFactory.GetByIdWithoutTenantFilterAsync(currentUserId);
                 companyId = user?.CurrentCompanyId;
-                if (string.IsNullOrEmpty(companyId))
-                {
-                    throw new UnauthorizedAccessException("未找到当前企业信息");
-                }
             }
             else
             {
-                companyId = await _beaconFactory.GetRequiredCompanyIdAsync();
+                // 尝试获取企业ID，如果没有企业则不强制要求
+                companyId = await _beaconFactory.GetCurrentCompanyIdAsync();
             }
         }
         var now = DateTime.UtcNow;
@@ -118,7 +115,7 @@ public class SocialService : ISocialService
         var beacon = new UserLocationBeacon
         {
             UserId = currentUserId,
-            CompanyId = companyId,
+            CompanyId = companyId ?? string.Empty,
             Latitude = request.Latitude,
             Longitude = request.Longitude,
             Accuracy = request.Accuracy,

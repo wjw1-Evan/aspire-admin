@@ -48,7 +48,7 @@ public class BulkOperationService : IBulkOperationService
 
         Expression<Func<WorkflowDefinition, bool>> filter = w =>
             workflowIds.Contains(w.Id!) &&
-            w.IsDeleted == false;
+            w.IsDeleted != true;
 
         var existingWorkflows = await _workflowFactory.FindAsync(filter);
         var existingWorkflowIds = existingWorkflows.Select(w => w.Id).ToList();
@@ -188,7 +188,7 @@ public class BulkOperationService : IBulkOperationService
 
         Expression<Func<BulkOperation, bool>> filter = b =>
             b.CreatedBy == userId &&
-            b.IsDeleted == false;
+            b.IsDeleted != true;
 
         var orderBy = (IQueryable<BulkOperation> query) => query.OrderByDescending(b => b.CreatedAt);
 
@@ -210,7 +210,7 @@ public class BulkOperationService : IBulkOperationService
              b.Status == BulkOperationStatus.Cancelled ||
              b.Status == BulkOperationStatus.Failed) &&
             b.CompletedAt < cutoffDate &&
-            b.IsDeleted == false;
+            b.IsDeleted != true;
 
         var operationsToDelete = await _bulkOperationFactory.FindAsync(filter);
         var deletedCount = 0;

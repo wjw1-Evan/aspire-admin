@@ -14,7 +14,7 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/organization")]
-[Authorize]
+
 public class OrganizationController : BaseApiController
 {
     private readonly IOrganizationService _organizationService;

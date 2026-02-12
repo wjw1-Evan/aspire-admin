@@ -46,7 +46,7 @@ public class SystemMonitorController : BaseApiController
     /// <response code="200">成功返回系统资源信息</response>
     /// <response code="401">未授权</response>
     [HttpGet("resources")]
-    [Authorize]
+
     public IActionResult GetSystemResources()
     {
         lock (_resourceLock)

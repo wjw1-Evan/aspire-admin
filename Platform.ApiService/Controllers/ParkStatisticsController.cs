@@ -11,7 +11,7 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/park/statistics")]
-[Authorize]
+
 public class ParkStatisticsController : ControllerBase
 {
     private readonly IParkStatisticsService _statisticsService;

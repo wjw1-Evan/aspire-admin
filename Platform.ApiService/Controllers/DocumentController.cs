@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Attributes;
@@ -17,7 +16,6 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/documents")]
-[Authorize]
 public class DocumentController : BaseApiController
 {
     private readonly IDocumentService _documentService;

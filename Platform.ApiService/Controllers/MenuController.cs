@@ -13,7 +13,7 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/menu")]
-[Authorize]
+
 public class MenuController : BaseApiController
 {
     private readonly IMenuService _menuService;
@@ -75,7 +75,7 @@ public class MenuController : BaseApiController
     public async Task<IActionResult> GetUserMenus()
     {
         var userId = GetRequiredUserId();
-        
+
         // 从数据库获取当前用户的企业ID
         var userService = HttpContext.RequestServices.GetRequiredService<Platform.ServiceDefaults.Services.IDataFactory<AppUser>>();
         var user = await userService.GetByIdAsync(userId);
@@ -85,17 +85,17 @@ public class MenuController : BaseApiController
             return Success(new List<MenuTreeNode>());
         }
         var currentCompanyId = user.CurrentCompanyId;
-        
+
         // 获取用户在当前企业的角色
         var userCompanyService = HttpContext.RequestServices.GetRequiredService<IUserCompanyService>();
         var membership = await userCompanyService.GetUserCompanyAsync(userId, currentCompanyId);
-        
+
         if (membership == null)
         {
             _logger.LogWarning("用户 {UserId} 不属于企业 {CompanyId}", userId, currentCompanyId);
             return Success(new List<MenuTreeNode>());
         }
-        
+
         var menus = await _menuService.GetUserMenusAsync(membership.RoleIds);
         return Success(menus);
     }

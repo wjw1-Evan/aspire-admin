@@ -15,7 +15,7 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/mcp")]
-[Authorize]
+
 public class McpController : BaseApiController
 {
     private readonly IMcpService _mcpService;

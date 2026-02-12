@@ -20,7 +20,6 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/workflows")]
-[Authorize]
 public class WorkflowController : BaseApiController
 {
     private readonly IDataFactory<WorkflowDefinition> _definitionFactory;

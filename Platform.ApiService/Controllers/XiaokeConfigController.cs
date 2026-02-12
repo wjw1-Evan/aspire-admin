@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Attributes;
 using Platform.ApiService.Extensions;
@@ -13,7 +12,6 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/xiaoke/config")]
-[Authorize]
 public class XiaokeConfigController : BaseApiController
 {
     private readonly IXiaokeConfigService _xiaokeConfigService;

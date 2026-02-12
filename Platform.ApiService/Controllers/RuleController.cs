@@ -12,7 +12,7 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/rule")]
-[Authorize]
+
 public class RuleController : BaseApiController
 {
     private readonly IRuleService _ruleService;
@@ -50,7 +50,7 @@ public class RuleController : BaseApiController
             Sorter = sorter,
             Filter = filter
         };
-        
+
         var result = await _ruleService.GetRulesAsync(queryParams);
         return Success(result);
     }
@@ -86,7 +86,7 @@ public class RuleController : BaseApiController
     {
         if (!request.Key.HasValue)
             throw new ArgumentException("Key不能为空");
-        
+
         var id = request.Key.Value.ToString();
         var rule = await _ruleService.UpdateRuleAsync(id, request);
         return Success(rule.EnsureFound("规则", id));
@@ -101,7 +101,7 @@ public class RuleController : BaseApiController
     {
         if (!request.Key.HasValue)
             throw new ArgumentException("Key不能为空");
-        
+
         var deleted = await _ruleService.DeleteRulesAsync(new List<int> { request.Key.Value });
         deleted.EnsureSuccess("规则", request.Key.Value.ToString());
         return Success();

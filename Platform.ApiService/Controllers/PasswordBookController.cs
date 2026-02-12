@@ -12,7 +12,7 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/password-book")]
-[Authorize]
+
 public class PasswordBookController : BaseApiController
 {
     private readonly IPasswordBookService _passwordBookService;

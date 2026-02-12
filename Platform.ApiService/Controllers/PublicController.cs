@@ -89,14 +89,15 @@ public class PublicController : BaseApiController
     /// </remarks>
     /// <returns>当前用户信息</returns>
     [HttpGet("current-user")]
-    [Authorize] // 覆盖控制器的SkipGlobalAuthentication属性
+    // 覆盖控制器的SkipGlobalAuthentication属性
     [RequireGlobalAuthentication("获取用户信息需要认证")]
     public IActionResult GetCurrentUser()
     {
         if (User?.Identity?.IsAuthenticated != true)
         {
-            return Unauthorized(new { 
-                success = false, 
+            return Unauthorized(new
+            {
+                success = false,
                 errorMessage = "用户未认证",
                 errorCode = "UNAUTHORIZED"
             });
@@ -122,9 +123,9 @@ public class PublicController : BaseApiController
     [HttpGet("test")]
     public IActionResult TestEndpoint()
     {
-        return Ok(new 
-        { 
-            success = true, 
+        return Ok(new
+        {
+            success = true,
             message = "公共接口测试成功",
             timestamp = DateTime.UtcNow
         });

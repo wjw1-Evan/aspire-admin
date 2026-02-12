@@ -19,7 +19,7 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/chat/messages")]
-[Authorize]
+
 public class ChatMessagesController : BaseApiController
 {
     private readonly IChatService _chatService;
@@ -99,7 +99,7 @@ public class ChatMessagesController : BaseApiController
     public async Task<IActionResult> SendMessage([FromBody] SendChatMessageRequest request, [FromQuery] bool stream = false)
     {
         // 如果启用流式返回，使用 SSE 流式响应
-        if (stream && request.Type == ChatMessageType.Text && 
+        if (stream && request.Type == ChatMessageType.Text &&
             !string.IsNullOrWhiteSpace(request.SessionId))
         {
             return await SendMessageWithStreamingResponseAsync(request);
@@ -120,7 +120,7 @@ public class ChatMessagesController : BaseApiController
         Response.Headers["Connection"] = "keep-alive";
         Response.Headers["X-Accel-Buffering"] = "no"; // 禁用 Nginx 缓冲
         Response.ContentType = "text/event-stream";
-        
+
         // 禁用 ASP.NET Core 响应缓冲
         if (Response.Body.CanSeek)
         {
@@ -150,21 +150,21 @@ public class ChatMessagesController : BaseApiController
                 if (assistantMessageId == null && !string.IsNullOrEmpty(messageId))
                 {
                     assistantMessageId = messageId;
-                    await WriteSseEventAsync("AssistantMessageStart", new 
-                    { 
-                        sessionId, 
-                        message = new 
-                        { 
+                    await WriteSseEventAsync("AssistantMessageStart", new
+                    {
+                        sessionId,
+                        message = new
+                        {
                             id = messageId,
                             sessionId = sessionId,
                             senderId = AiAssistantConstants.AssistantUserId,
                             type = "Text",
                             content = string.Empty,
                             createdAt = DateTime.UtcNow
-                        } 
+                        }
                     }, cancellationToken);
                 }
-                
+
                 // 立即发送增量内容
                 await WriteSseEventAsync("AssistantMessageChunk", new { sessionId, messageId, delta }, cancellationToken);
             };
@@ -178,11 +178,11 @@ public class ChatMessagesController : BaseApiController
 
             // 1. 发送消息并流式生成 AI 回复
             var (userMessage, _) = await _chatService.SendMessageWithStreamingReplyAsync(
-                request, 
-                onChunk, 
+                request,
+                onChunk,
                 onComplete,
                 cancellationToken);
-            
+
             // 发送用户消息事件
             await WriteSseEventAsync("UserMessage", new { message = userMessage }, cancellationToken);
 

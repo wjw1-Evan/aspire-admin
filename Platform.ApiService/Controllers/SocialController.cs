@@ -12,7 +12,7 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/social")]
-[Authorize]
+
 public class SocialController : BaseApiController
 {
     private readonly ISocialService _socialService;
@@ -91,7 +91,7 @@ public class SocialController : BaseApiController
 
         // 判断是否为表单数据：检查 Content-Type 和是否有表单参数
         var contentType = Request.ContentType?.ToLowerInvariant() ?? string.Empty;
-        var isFormData = contentType.Contains("application/x-www-form-urlencoded") 
+        var isFormData = contentType.Contains("application/x-www-form-urlencoded")
                          && latitude.HasValue && longitude.HasValue;
 
         if (isFormData)

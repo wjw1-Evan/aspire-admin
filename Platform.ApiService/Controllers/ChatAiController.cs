@@ -14,7 +14,7 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/chat/ai")]
-[Authorize]
+
 public class ChatAiController : BaseApiController
 {
     private readonly IAiSuggestionService _aiSuggestionService;

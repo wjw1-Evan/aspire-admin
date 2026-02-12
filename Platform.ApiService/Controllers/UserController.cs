@@ -90,7 +90,7 @@ public class UserController : BaseApiController
     /// <response code="403">权限不足，无法查看该用户信息</response>
     /// <response code="404">用户不存在</response>
     [HttpGet("{id}")]
-    [Authorize]
+
     public async Task<IActionResult> GetUserById(string id)
     {
         // ✅ 完整的权限检查：只能查看自己，或者有用户管理权限
@@ -291,7 +291,7 @@ public class UserController : BaseApiController
     /// 获取当前企业的所有用户（避免 /api/user/all 命中 /api/user/{id} 导致 ObjectId 解析错误）
     /// </summary>
     [HttpGet("all")]
-    [Authorize]
+
     public async Task<IActionResult> GetAllUsers()
     {
         var users = await _userService.GetAllUsersAsync();
@@ -343,7 +343,7 @@ public class UserController : BaseApiController
     /// <param name="id">用户ID</param>
     /// <param name="limit">限制数量</param>
     [HttpGet("{id}/activity-logs")]
-    [Authorize]
+
     public async Task<IActionResult> GetUserActivityLogs(string id, [FromQuery] int limit = 50)
     {
         var logs = await _activityLogService.GetUserActivityLogsAsync(id, limit);
@@ -522,7 +522,7 @@ public class UserController : BaseApiController
     /// </summary>
     /// <param name="id">用户ID</param>
     [HttpPut("{id}/activate")]
-    [Authorize]
+
     public async Task<IActionResult> ActivateUser(string id)
     {
         var success = await _userService.ActivateUserAsync(id);
@@ -535,7 +535,7 @@ public class UserController : BaseApiController
     /// </summary>
     /// <param name="id">用户ID</param>
     [HttpPut("{id}/deactivate")]
-    [Authorize]
+
     public async Task<IActionResult> DeactivateUser(string id)
     {
         var success = await _userService.DeactivateUserAsync(id);
@@ -550,7 +550,7 @@ public class UserController : BaseApiController
     /// RESTful 路径: /api/user/me 表示当前用户
     /// </remarks>
     [HttpGet("me")]
-    [Authorize]
+
     public async Task<IActionResult> GetCurrentUserProfile()
     {
         // 返回 CurrentUser 格式，包含角色等信息
@@ -569,7 +569,7 @@ public class UserController : BaseApiController
     /// </remarks>
     /// <param name="request">更新用户信息请求</param>
     [HttpPut("me")]
-    [Authorize]
+
     public async Task<IActionResult> UpdateCurrentUserProfile([FromBody] UpdateProfileRequest request)
     {
         // 验证模型状态（邮箱、姓名、年龄等）
@@ -622,7 +622,7 @@ public class UserController : BaseApiController
     /// </remarks>
     /// <param name="request">修改密码请求</param>
     [HttpPut("me/password")]
-    [Authorize]
+
     public async Task<IActionResult> ChangeCurrentUserPassword([FromBody] ChangePasswordRequest request)
     {
         var userId = GetRequiredUserId();
@@ -641,7 +641,7 @@ public class UserController : BaseApiController
     /// </remarks>
     /// <param name="limit">限制数量</param>
     [HttpGet("me/activity-logs")]
-    [Authorize]
+
     public async Task<IActionResult> GetCurrentUserActivityLogs([FromQuery] int limit = 20)
     {
         var userId = GetRequiredUserId();
@@ -694,7 +694,7 @@ public class UserController : BaseApiController
     /// <response code="200">成功返回活动日志</response>
     /// <response code="401">未授权，需要登录</response>
     [HttpGet("me/activity-logs-paged")]
-    [Authorize]
+
     public async Task<IActionResult> GetCurrentUserActivityLogsPaged(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
@@ -792,7 +792,7 @@ public class UserController : BaseApiController
     /// <response code="404">日志不存在或不属于当前用户</response>
     /// <response code="401">未授权，需要登录</response>
     [HttpGet("me/activity-logs/{logId}")]
-    [Authorize]
+
     public async Task<IActionResult> GetCurrentUserActivityLogById(string logId)
     {
         // ✅ 验证日志ID格式
@@ -815,7 +815,7 @@ public class UserController : BaseApiController
     /// RESTful 路径: GET /api/user/me/permissions 获取当前用户的权限列表
     /// </remarks>
     [HttpGet("me/permissions")]
-    [Authorize]
+
     public async Task<IActionResult> GetMyPermissions()
     {
         var userId = GetRequiredUserId();
@@ -849,7 +849,7 @@ public class UserController : BaseApiController
     /// <response code="200">成功返回角色定义</response>
     /// <response code="401">未授权，需要登录</response>
     [HttpGet("me/ai-role-definition")]
-    [Authorize]
+
     public async Task<IActionResult> GetAiRoleDefinition()
     {
         var userId = GetRequiredUserId();
@@ -900,7 +900,7 @@ public class UserController : BaseApiController
     /// <response code="400">参数验证失败（角色定义为空或超过长度限制）</response>
     /// <response code="401">未授权，需要登录</response>
     [HttpPut("me/ai-role-definition")]
-    [Authorize]
+
     public async Task<IActionResult> UpdateAiRoleDefinition([FromBody] UpdateAiRoleDefinitionRequest request)
     {
         var validationResult = ValidateModelState();

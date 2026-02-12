@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
@@ -12,7 +11,6 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/friends")]
-[Authorize]
 public class FriendsController : BaseApiController
 {
     private readonly IFriendService _friendService;

@@ -12,7 +12,7 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/unified-notification")]
-[Authorize]
+
 public class UnifiedNotificationController : BaseApiController
 {
     private readonly IUnifiedNotificationService _unifiedNotificationService;

@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
@@ -11,7 +10,6 @@ namespace Platform.ApiService.Controllers;
 /// <summary>
 /// 园区走访管理控制器
 /// </summary>
-[Authorize]
 [ApiController]
 [Route("api/park-management/visit")]
 public class ParkVisitController : BaseApiController

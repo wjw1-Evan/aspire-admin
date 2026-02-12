@@ -38,7 +38,7 @@ public class AvatarController : BaseApiController
     /// <param name="file">头像文件</param>
     /// <returns>头像URL</returns>
     [HttpPost("upload")]
-    [Authorize]
+
     public async Task<IActionResult> UploadAvatar(IFormFile file)
     {
         if (file == null || file.Length == 0)
@@ -76,10 +76,10 @@ public class AvatarController : BaseApiController
                 };
 
                 await _fileStorage.UploadAsync(
-                    stream, 
-                    fileName, 
-                    file.ContentType, 
-                    metadata, 
+                    stream,
+                    fileName,
+                    file.ContentType,
+                    metadata,
                     AvatarBucketName);
             }
 
@@ -113,7 +113,7 @@ public class AvatarController : BaseApiController
         {
             // 根据文件名查找文件
             var fileInfo = await _fileStorage.FindByFileNameAsync(fileName, AvatarBucketName);
-            
+
             if (fileInfo == null)
             {
                 return NotFound("头像文件不存在");
@@ -125,8 +125,8 @@ public class AvatarController : BaseApiController
             stream.Position = 0;
 
             // 优先使用存储的 ContentType，否则根据文件名判断
-            var contentType = !string.IsNullOrEmpty(fileInfo.ContentType) 
-                ? fileInfo.ContentType 
+            var contentType = !string.IsNullOrEmpty(fileInfo.ContentType)
+                ? fileInfo.ContentType
                 : GetContentTypeFromFileName(fileName);
 
             return File(stream, contentType);

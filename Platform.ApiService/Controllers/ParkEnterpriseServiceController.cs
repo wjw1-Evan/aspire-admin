@@ -11,7 +11,7 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/park/services")]
-[Authorize]
+
 public class ParkEnterpriseServiceController : ControllerBase
 {
     private readonly IParkEnterpriseServiceService _enterpriseService;

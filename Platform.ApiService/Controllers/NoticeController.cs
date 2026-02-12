@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Attributes;
 using Platform.ApiService.Extensions;
@@ -18,7 +17,6 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/notice")]
-[Authorize] // 所有接口默认需要登录
 public class NoticeController : BaseApiController
 {
     private readonly INoticeService _noticeService;

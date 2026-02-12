@@ -29,7 +29,7 @@ public class AuthController : BaseApiController
     /// <param name="imageCaptchaService">图形验证码服务</param>
     /// <param name="phoneValidationService">手机号验证服务</param>
     public AuthController(
-        IAuthService authService, 
+        IAuthService authService,
         ICaptchaService captchaService,
         IImageCaptchaService imageCaptchaService,
         IPhoneValidationService phoneValidationService)
@@ -71,7 +71,7 @@ public class AuthController : BaseApiController
     /// <response code="200">成功返回用户信息</response>
     /// <response code="401">未授权，需要登录</response>
     [HttpGet("current-user")]
-    [Authorize]
+
     public async Task<IActionResult> GetCurrentUser()
     {
         // 检查用户是否已认证
@@ -149,7 +149,7 @@ public class AuthController : BaseApiController
     /// <response code="200">登出成功</response>
     /// <response code="401">未授权，需要登录</response>
     [HttpPost("logout")]
-    [Authorize]
+
     public async Task<IActionResult> Logout()
     {
         await _authService.LogoutAsync();
@@ -187,7 +187,7 @@ public class AuthController : BaseApiController
     {
         _phoneValidationService.ValidatePhone(phone);
         var result = await _captchaService.GenerateCaptchaAsync(phone);
-        
+
         return Success(new
         {
             captcha = result.Code,
@@ -233,7 +233,7 @@ public class AuthController : BaseApiController
 
         var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString();
         var result = await _imageCaptchaService.GenerateCaptchaAsync(type, clientIp);
-        
+
         return Success(result);
     }
 
@@ -275,12 +275,12 @@ public class AuthController : BaseApiController
     {
         if (string.IsNullOrWhiteSpace(request.CaptchaId))
             throw new ArgumentException("验证码ID不能为空");
-        
+
         if (string.IsNullOrWhiteSpace(request.Answer))
             throw new ArgumentException("验证码答案不能为空");
 
         var isValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.Answer, request.Type);
-        
+
         return Success(new { valid = isValid });
     }
 
@@ -322,7 +322,7 @@ public class AuthController : BaseApiController
         _phoneValidationService.ValidateCaptchaCode(request.Code);
 
         var isValid = await _captchaService.ValidateCaptchaAsync(request.Phone, request.Code);
-        
+
         return Success(new { valid = isValid });
     }
 
@@ -401,7 +401,7 @@ public class AuthController : BaseApiController
     /// <response code="400">当前密码错误或新密码格式不正确</response>
     /// <response code="401">未授权，需要登录</response>
     [HttpPost("change-password")]
-    [Authorize]
+
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
     {
         var result = await _authService.ChangePasswordAsync(request);

@@ -15,7 +15,7 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/chat/sessions")]
-[Authorize]
+
 public class ChatSessionsController : BaseApiController
 {
     private readonly IChatService _chatService;

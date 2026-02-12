@@ -15,7 +15,7 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/xiaoke/chat-history")]
-[Authorize]
+
 public class ChatHistoryController : BaseApiController
 {
     private readonly IChatService _chatService;
@@ -68,7 +68,7 @@ public class ChatHistoryController : BaseApiController
         if (!string.IsNullOrEmpty(request.UserId))
         {
             var userId = request.UserId;
-            filter = filter == null 
+            filter = filter == null
                 ? s => s.Participants != null && s.Participants.Contains(userId)
                 : s => (filter.Compile()(s) && s.Participants != null && s.Participants.Contains(userId));
         }
@@ -76,7 +76,7 @@ public class ChatHistoryController : BaseApiController
         if (request.StartTime.HasValue)
         {
             var startTime = request.StartTime.Value;
-            filter = filter == null 
+            filter = filter == null
                 ? s => s.LastMessageAt >= startTime
                 : s => (filter.Compile()(s) && s.LastMessageAt >= startTime);
         }
@@ -84,7 +84,7 @@ public class ChatHistoryController : BaseApiController
         if (request.EndTime.HasValue)
         {
             var endTime = request.EndTime.Value;
-            filter = filter == null 
+            filter = filter == null
                 ? s => s.LastMessageAt <= endTime
                 : s => (filter.Compile()(s) && s.LastMessageAt <= endTime);
         }
@@ -109,7 +109,7 @@ public class ChatHistoryController : BaseApiController
                 });
             }
 
-            filter = filter == null 
+            filter = filter == null
                 ? s => matchedSessionIds.Contains(s.Id!)
                 : s => (filter.Compile()(s) && matchedSessionIds.Contains(s.Id!));
         }

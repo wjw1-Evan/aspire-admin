@@ -16,7 +16,7 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/task")]
-[Authorize]
+
 public class TaskController : BaseApiController
 {
     private readonly ITaskService _taskService;

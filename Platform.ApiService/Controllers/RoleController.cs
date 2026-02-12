@@ -14,7 +14,7 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/role")]
-[Authorize]
+
 public class RoleController : BaseApiController
 {
     private readonly IRoleService _roleService;
@@ -38,7 +38,7 @@ public class RoleController : BaseApiController
         var roles = await _roleService.GetAllRolesAsync();
         return Success(roles);
     }
-    
+
     /// <summary>
     /// 获取所有角色（带统计信息）
     /// </summary>

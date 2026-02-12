@@ -54,7 +54,7 @@ public class CompanyController : BaseApiController
     /// ```
     /// </remarks>
     [HttpPost("create")]
-    [Authorize]
+
     public async Task<IActionResult> CreateCompany([FromBody] CreateCompanyRequest request)
     {
         // 验证必需参数
@@ -101,7 +101,7 @@ public class CompanyController : BaseApiController
     /// <response code="401">未授权，需要登录</response>
     /// <response code="404">企业不存在</response>
     [HttpGet("current")]
-    [Authorize]
+
     public async Task<IActionResult> GetCurrentCompany()
     {
         var logger = HttpContext.RequestServices.GetRequiredService<ILogger<CompanyController>>();
@@ -185,7 +185,7 @@ public class CompanyController : BaseApiController
     /// </summary>
     /// <param name="request">更新请求</param>
     [HttpPut("current")]
-    [Authorize]
+
     public async Task<IActionResult> UpdateCurrentCompany([FromBody] UpdateCompanyRequest request)
     {
         // 从数据库获取当前用户的企业ID
@@ -208,7 +208,7 @@ public class CompanyController : BaseApiController
     /// 获取当前企业统计信息
     /// </summary>
     [HttpGet("statistics")]
-    [Authorize]
+
     public async Task<IActionResult> GetStatistics()
     {
         // 从数据库获取当前用户的企业ID
@@ -247,7 +247,7 @@ public class CompanyController : BaseApiController
     /// v3.1: 搜索企业
     /// </summary>
     [HttpGet("search")]
-    [Authorize]
+
     public async Task<IActionResult> SearchCompanies([FromQuery] string keyword)
     {
         keyword.EnsureNotEmpty("搜索关键词");
@@ -260,7 +260,7 @@ public class CompanyController : BaseApiController
     /// v3.1: 获取我的企业列表
     /// </summary>
     [HttpGet("my-companies")]
-    [Authorize]
+
     public async Task<IActionResult> GetMyCompanies()
     {
         var userId = GetRequiredUserId();
@@ -272,7 +272,7 @@ public class CompanyController : BaseApiController
     /// v3.1: 切换当前企业
     /// </summary>
     [HttpPost("switch")]
-    [Authorize]
+
     public async Task<IActionResult> SwitchCompany([FromBody] SwitchCompanyRequest request)
     {
         request.TargetCompanyId.EnsureNotEmpty("目标企业ID");
@@ -285,7 +285,7 @@ public class CompanyController : BaseApiController
     /// v3.1: 获取企业成员列表（管理员）
     /// </summary>
     [HttpGet("{companyId}/members")]
-    [Authorize]
+
     public async Task<IActionResult> GetCompanyMembers(string companyId)
     {
         // 验证当前用户是否是该企业的管理员
@@ -302,7 +302,7 @@ public class CompanyController : BaseApiController
     /// v3.1: 更新成员角色（管理员）
     /// </summary>
     [HttpPut("{companyId}/members/{userId}/roles")]
-    [Authorize]
+
     public async Task<IActionResult> UpdateMemberRoles(
         string companyId,
         string userId,
@@ -325,7 +325,7 @@ public class CompanyController : BaseApiController
     /// v3.1: 设置/取消成员管理员权限（管理员）
     /// </summary>
     [HttpPut("{companyId}/members/{userId}/admin")]
-    [Authorize]
+
     public async Task<IActionResult> SetMemberAdmin(
         string companyId,
         string userId,
@@ -348,7 +348,7 @@ public class CompanyController : BaseApiController
     /// v3.1: 移除企业成员（管理员）
     /// </summary>
     [HttpDelete("{companyId}/members/{userId}")]
-    [Authorize]
+
     public async Task<IActionResult> RemoveMember(string companyId, string userId)
     {
         // 验证当前用户是否是该企业的管理员
@@ -368,7 +368,7 @@ public class CompanyController : BaseApiController
     /// v3.1: 退出企业（用户自主）
     /// </summary>
     [HttpDelete("{companyId}/leave")]
-    [Authorize]
+
     public async Task<IActionResult> LeaveCompany(string companyId)
     {
         var userId = GetRequiredUserId();
@@ -383,7 +383,7 @@ public class CompanyController : BaseApiController
     /// v3.1: 申请加入企业
     /// </summary>
     [HttpPost("join")]
-    [Authorize]
+
     public async Task<IActionResult> ApplyToJoin([FromBody] ApplyToJoinCompanyRequest request)
     {
         request.CompanyId.EnsureNotEmpty("企业ID");
@@ -398,7 +398,7 @@ public class CompanyController : BaseApiController
     /// v3.1: 获取我的加入申请列表
     /// </summary>
     [HttpGet("my-join-requests")]
-    [Authorize]
+
     public async Task<IActionResult> GetMyJoinRequests()
     {
         var userId = GetRequiredUserId();
@@ -410,7 +410,7 @@ public class CompanyController : BaseApiController
     /// v3.1: 撤销加入申请
     /// </summary>
     [HttpPost("join-requests/{requestId}/cancel")]
-    [Authorize]
+
     public async Task<IActionResult> CancelJoinRequest(string requestId)
     {
         var userId = GetRequiredUserId();
@@ -422,7 +422,7 @@ public class CompanyController : BaseApiController
     /// v3.1: 获取企业加入申请列表（管理员）
     /// </summary>
     [HttpGet("{companyId}/join-requests")]
-    [Authorize]
+
     public async Task<IActionResult> GetJoinRequests(string companyId, [FromQuery] string? status = null)
     {
         // 验证当前用户是否是该企业的管理员
@@ -439,7 +439,7 @@ public class CompanyController : BaseApiController
     /// v3.1: 同意加入申请（管理员）
     /// </summary>
     [HttpPost("join-requests/{requestId}/approve")]
-    [Authorize]
+
     public async Task<IActionResult> ApproveJoinRequest(string requestId, [FromBody] ReviewJoinRequestRequest request)
     {
         // 注意：ReviewJoinRequestAsync 内部会再次验证权限
@@ -451,7 +451,7 @@ public class CompanyController : BaseApiController
     /// v3.1: 拒绝加入申请（管理员）
     /// </summary>
     [HttpPost("join-requests/{requestId}/reject")]
-    [Authorize]
+
     public async Task<IActionResult> RejectJoinRequest(string requestId, [FromBody] ReviewJoinRequestRequest request)
     {
         // 注意：ReviewJoinRequestAsync 内部会再次验证权限

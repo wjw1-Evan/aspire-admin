@@ -13,7 +13,7 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/iot")]
-[Authorize]
+
 [RequireMenu("iot-platform")]
 public class IoTController : BaseApiController
 {

@@ -12,7 +12,6 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/maintenance")]
-[Authorize] // 需要登录
 public class MaintenanceController : BaseApiController
 {
     private readonly IMongoDatabase _database;

@@ -11,7 +11,6 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/join-request")]
-[Authorize]
 public class JoinRequestController : BaseApiController
 {
     private readonly IJoinRequestService _joinRequestService;
@@ -29,7 +28,7 @@ public class JoinRequestController : BaseApiController
     /// 申请加入企业
     /// </summary>
     [HttpPost]
-    [Authorize]
+
     public async Task<IActionResult> ApplyToJoinCompany([FromBody] ApplyToJoinCompanyRequest request)
     {
         var result = await _joinRequestService.ApplyToJoinCompanyAsync(request);
@@ -40,7 +39,7 @@ public class JoinRequestController : BaseApiController
     /// 获取我的申请列表
     /// </summary>
     [HttpGet("my-requests")]
-    [Authorize]
+
     public async Task<IActionResult> GetMyRequests([FromQuery] string? keyword = null)
     {
         var requests = await _joinRequestService.GetMyRequestsAsync(keyword);
@@ -51,7 +50,7 @@ public class JoinRequestController : BaseApiController
     /// 撤回申请
     /// </summary>
     [HttpDelete("{id}")]
-    [Authorize]
+
     public async Task<IActionResult> CancelRequest(string id)
     {
         var success = await _joinRequestService.CancelRequestAsync(id);
@@ -65,7 +64,7 @@ public class JoinRequestController : BaseApiController
     /// 获取待审核的申请列表（管理员）
     /// </summary>
     [HttpGet("pending")]
-    [Authorize]
+
     public async Task<IActionResult> GetPendingRequests([FromQuery] string? companyId = null, [FromQuery] string? keyword = null)
     {
         // 如果没有指定企业ID，使用当前企业（从数据库获取）
@@ -89,7 +88,7 @@ public class JoinRequestController : BaseApiController
     /// 审核通过申请
     /// </summary>
     [HttpPost("{id}/approve")]
-    [Authorize]
+
     public async Task<IActionResult> ApproveRequest(string id, [FromBody] ReviewJoinRequestRequest? request = null)
     {
         var success = await _joinRequestService.ApproveRequestAsync(id, request);
@@ -100,7 +99,6 @@ public class JoinRequestController : BaseApiController
     /// 拒绝申请
     /// </summary>
     [HttpPost("{id}/reject")]
-    [Authorize]
     public async Task<IActionResult> RejectRequest(string id, [FromBody] ReviewJoinRequestRequest request)
     {
         if (string.IsNullOrEmpty(request.RejectReason))

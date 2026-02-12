@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
@@ -11,7 +10,6 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/park/investment")]
-[Authorize]
 public class ParkInvestmentController : ControllerBase
 {
     private readonly IParkInvestmentService _investmentService;

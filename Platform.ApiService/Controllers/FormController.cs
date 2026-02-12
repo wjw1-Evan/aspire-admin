@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
@@ -13,7 +12,6 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/forms")]
-[Authorize]
 public class FormController : BaseApiController
 {
     private readonly IDataFactory<FormDefinition> _formFactory;

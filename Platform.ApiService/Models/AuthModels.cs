@@ -1,10 +1,8 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
 using Platform.ServiceDefaults.Models;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.ComponentModel.DataAnnotations;
 
 namespace Platform.ApiService.Models;
 
@@ -268,7 +266,6 @@ public class PageParams
 /// <summary>
 /// 应用用户实体（多企业模型）
 /// v3.1: 用户与企业是多对多关系，通过 UserCompany 中间表管理
-/// <summary>
 /// 用户实体 - 支持多企业登录 (EFCore + MongoDB 兼容)
 /// 注意：AppUser 不支持 IMultiTenant，因为它是多企业模型，使用 CurrentCompanyId 进行过滤
 /// </summary>

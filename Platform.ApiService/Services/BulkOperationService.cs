@@ -46,10 +46,10 @@ public class BulkOperationService : IBulkOperationService
         var userId = _bulkOperationFactory.GetRequiredUserId();
         var companyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? throw new UnauthorizedAccessException("未找到当前企业信息");
 
-        Expression<Func<WorkflowDefinition, bool>> filter = w => 
-            workflowIds.Contains(w.Id!) && 
+        Expression<Func<WorkflowDefinition, bool>> filter = w =>
+            workflowIds.Contains(w.Id!) &&
             w.IsDeleted == false;
-        
+
         var existingWorkflows = await _workflowFactory.FindAsync(filter);
         var existingWorkflowIds = existingWorkflows.Select(w => w.Id).ToList();
         var invalidWorkflowIds = workflowIds.Except(existingWorkflowIds.Where(id => id != null).Select(id => id!)).ToList();
@@ -186,10 +186,10 @@ public class BulkOperationService : IBulkOperationService
     {
         var userId = _bulkOperationFactory.GetRequiredUserId();
 
-        Expression<Func<BulkOperation, bool>> filter = b => 
-            b.CreatedBy == userId && 
+        Expression<Func<BulkOperation, bool>> filter = b =>
+            b.CreatedBy == userId &&
             b.IsDeleted == false;
-        
+
         var orderBy = (IQueryable<BulkOperation> query) => query.OrderByDescending(b => b.CreatedAt);
 
         var (operations, _) = await _bulkOperationFactory.FindPagedAsync(filter, orderBy, page, pageSize);
@@ -205,13 +205,13 @@ public class BulkOperationService : IBulkOperationService
     {
         var cutoffDate = DateTime.UtcNow.Subtract(olderThan);
 
-        Expression<Func<BulkOperation, bool>> filter = b => 
-            (b.Status == BulkOperationStatus.Completed || 
-             b.Status == BulkOperationStatus.Cancelled || 
+        Expression<Func<BulkOperation, bool>> filter = b =>
+            (b.Status == BulkOperationStatus.Completed ||
+             b.Status == BulkOperationStatus.Cancelled ||
              b.Status == BulkOperationStatus.Failed) &&
             b.CompletedAt < cutoffDate &&
             b.IsDeleted == false;
-        
+
         var operationsToDelete = await _bulkOperationFactory.FindAsync(filter);
         var deletedCount = 0;
 

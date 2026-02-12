@@ -384,11 +384,11 @@ public class GridFSFileStorage : IFileStorageFactory
                 .ToListAsync(cancellationToken);
 
             stats.FileCount = files.Count;
-            stats.SizeBytes = files.Sum(f => f.GetValue("length", 0).AsInt64);
+            stats.SizeBytes = files.Sum(f => GetInt64Safe(f, "length"));
             stats.ChunksCount = files.Sum(f =>
             {
-                var length = f.GetValue("length", 0).AsInt64;
-                var chunkSize = f.GetValue("chunkSize", 261120).AsInt64;
+                var length = GetInt64Safe(f, "length");
+                var chunkSize = GetInt64Safe(f, "chunkSize", 261120);
                 return (long)Math.Ceiling((double)length / chunkSize);
             });
         }
@@ -398,6 +398,22 @@ public class GridFSFileStorage : IFileStorageFactory
         }
 
         return stats;
+    }
+
+    /// <summary>
+    /// 安全地获取 Int64 值（处理 Int32/Int64 类型混用的情况）
+    /// </summary>
+    private static long GetInt64Safe(BsonDocument doc, string key, long defaultValue = 0)
+    {
+        var value = doc.GetValue(key, null);
+        if (value == null) return defaultValue;
+
+        return value.BsonType switch
+        {
+            BsonType.Int32 => value.AsInt32,
+            BsonType.Int64 => value.AsInt64,
+            _ => defaultValue
+        };
     }
 
     /// <inheritdoc />

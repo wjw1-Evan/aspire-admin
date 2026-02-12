@@ -54,9 +54,9 @@ public class UserApproverResolver : IApproverResolver
             return new List<string>();
         }
 
-        Expression<Func<UserCompany, bool>> filter = uc => 
-            uc.UserId == rule.UserId && 
-            uc.CompanyId == companyId && 
+        Expression<Func<UserCompany, bool>> filter = uc =>
+            uc.UserId == rule.UserId &&
+            uc.CompanyId == companyId &&
             uc.Status == "active";
 
         var userCompanies = await _userCompanyFactory.FindAsync(filter);
@@ -104,10 +104,10 @@ public class RoleApproverResolver : IApproverResolver
         if (rule.Type != ApproverType.Role || string.IsNullOrEmpty(rule.RoleId))
             return new List<string>();
 
-        Expression<Func<UserCompany, bool>> filter = uc => 
-            uc.CompanyId == companyId && 
+        Expression<Func<UserCompany, bool>> filter = uc =>
+            uc.CompanyId == companyId &&
             uc.Status == "active" &&
-            uc.RoleIds != null && 
+            uc.RoleIds != null &&
             uc.RoleIds.Contains(rule.RoleId);
 
         var userCompanies = await _userCompanyFactory.FindAsync(filter);

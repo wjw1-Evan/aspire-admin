@@ -153,16 +153,32 @@ public class StoredFileInfo
 
     public static StoredFileInfo FromBsonDocument(BsonDocument doc, string bucketName = "default")
     {
+        var metadata = doc.GetValue("metadata", null)?.AsBsonDocument;
+        
+        // 安全地获取 Int64 值（处理 Int32/Int64 类型混用的情况）
+        long GetInt64Safe(BsonDocument d, string key)
+        {
+            var value = d.GetValue(key, null);
+            if (value == null) return 0;
+            
+            return value.BsonType switch
+            {
+                BsonType.Int32 => value.AsInt32,
+                BsonType.Int64 => value.AsInt64,
+                _ => 0
+            };
+        }
+        
         return new StoredFileInfo
         {
             Id = doc["_id"].AsObjectId.ToString(),
             FileName = doc["filename"].AsString,
-            Length = doc["length"].AsInt64,
-            ChunkSize = doc["chunkSize"].AsInt64,
+            Length = GetInt64Safe(doc, "length"),
+            ChunkSize = GetInt64Safe(doc, "chunkSize"),
             UploadDateTime = doc["uploadDate"].ToUniversalTime(),
             MD5 = doc.GetValue("md5", null)?.AsString,
-            ContentType = doc.GetValue("contentType", null)?.AsString,
-            Metadata = doc.GetValue("metadata", null)?.AsBsonDocument?.ToDictionary(
+            ContentType = metadata?.GetValue("contentType", null)?.AsString,
+            Metadata = metadata?.ToDictionary(
                 k => k.Name,
                 v => (object)v.Value
             ) ?? new Dictionary<string, object>(),

@@ -174,6 +174,15 @@ public class ResponseFormattingMiddleware
             return true;
         }
 
+        // 跳过文件和图片下载相关的端点（避免缓冲二进制大对象）
+        if (path.Contains("/api/avatar/view") ||
+            path.Contains("/api/avatar/preview") ||
+            path.Contains("/api/files/download") ||
+            path.Contains("/api/images"))
+        {
+            return true;
+        }
+
         // 跳过流式响应（检查查询参数或响应 Content-Type）
         var query = context.Request.Query;
         if (query.ContainsKey("stream") && query["stream"].ToString().Equals("true", StringComparison.OrdinalIgnoreCase))

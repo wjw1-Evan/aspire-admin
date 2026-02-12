@@ -102,6 +102,7 @@ public class AvatarController : BaseApiController
     /// <returns>图片流</returns>
     [HttpGet("view/{fileName}")]
     [AllowAnonymous]
+    [Platform.ApiService.Attributes.SkipGlobalAuthentication("Avatar view is public")]
     public async Task<IActionResult> ViewAvatar(string fileName)
     {
         if (string.IsNullOrEmpty(fileName))

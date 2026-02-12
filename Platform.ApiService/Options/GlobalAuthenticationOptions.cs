@@ -81,9 +81,12 @@ public class GlobalAuthenticationOptions
                 "/content",
                 "/assets",
 
-                // 文件下载（可能需要特殊处理）
+                // 文件下载与预览（公开访问）
                 "/api/files/download/public",
-                "/api/images"
+                "/api/images",
+                "/api/avatar/view",
+                "/api/avatar/preview",
+                "/api/captcha"
             });
         }
     }

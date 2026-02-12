@@ -79,6 +79,15 @@ public class GlobalAuthenticationMiddleware
                 await _next(context);
                 return;
             }
+
+            // 检查 IAllowAnonymous 属性 (对应 [AllowAnonymous])
+            var allowAnonymous = endpoint.Metadata.GetMetadata<IAllowAnonymous>();
+            if (allowAnonymous != null)
+            {
+                _logger.LogDebug("跳过全局身份验证: 端点标记为 [AllowAnonymous]");
+                await _next(context);
+                return;
+            }
         }
 
         // 检查是否为公共路径

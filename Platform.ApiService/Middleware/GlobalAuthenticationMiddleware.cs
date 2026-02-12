@@ -28,6 +28,9 @@ public class GlobalAuthenticationMiddleware
     // 无需认证的公共路径列表
     private readonly GlobalAuthenticationOptions _options;
 
+    /// <summary>
+    /// 构造函数
+    /// </summary>
     public GlobalAuthenticationMiddleware(
         RequestDelegate next,
         ILogger<GlobalAuthenticationMiddleware> logger,
@@ -44,7 +47,7 @@ public class GlobalAuthenticationMiddleware
         _options.InitializeDefaults();
 
         // 从配置获取JWT参数
-        _secretKey = _configuration["Jwt:SecretKey"] 
+        _secretKey = _configuration["Jwt:SecretKey"]
             ?? throw new InvalidOperationException("JWT SecretKey is not configured");
         _issuer = _configuration["Jwt:Issuer"] ?? "Platform.ApiService";
         _audience = _configuration["Jwt:Audience"] ?? "Platform.Web";
@@ -57,6 +60,9 @@ public class GlobalAuthenticationMiddleware
         };
     }
 
+    /// <summary>
+    /// 执行中间件逻辑
+    /// </summary>  
     public async Task InvokeAsync(HttpContext context)
     {
         var path = context.Request.Path.Value?.ToLowerInvariant();
@@ -98,7 +104,7 @@ public class GlobalAuthenticationMiddleware
         }
 
         var token = authHeader.Substring("Bearer ".Length).Trim();
-        
+
         if (string.IsNullOrEmpty(token))
         {
             await WriteUnauthorizedResponse(context, "Token不能为空");
@@ -107,7 +113,7 @@ public class GlobalAuthenticationMiddleware
 
         // 验证JWT token
         var validationResult = await ValidateTokenAsync(token, context);
-        
+
         if (!validationResult.IsValid)
         {
             await WriteUnauthorizedResponse(context, validationResult.ErrorMessage!);
@@ -128,7 +134,7 @@ public class GlobalAuthenticationMiddleware
         if (string.IsNullOrEmpty(path))
             return false;
 
-        return _options.PublicPaths.Any(publicPath => 
+        return _options.PublicPaths.Any(publicPath =>
             path.StartsWith(publicPath, StringComparison.OrdinalIgnoreCase));
     }
 
@@ -165,8 +171,8 @@ public class GlobalAuthenticationMiddleware
 
             // 验证token
             var principal = _tokenHandler.ValidateToken(
-                token, 
-                tokenValidationParameters, 
+                token,
+                tokenValidationParameters,
                 out var validatedToken);
 
             // 检查token是否为JWT

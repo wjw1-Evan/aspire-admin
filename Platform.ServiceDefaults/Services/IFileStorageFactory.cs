@@ -126,6 +126,14 @@ public interface IFileStorageFactory
     Task<StorageStatistics> GetStorageStatisticsAsync(
         string? bucketName = null,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 根据文件名查找文件
+    /// </summary>
+    Task<StoredFileInfo?> FindByFileNameAsync(
+        string fileName,
+        string bucketName = "default",
+        CancellationToken cancellationToken = default);
 }
 
 /// <summary>

@@ -11,7 +11,7 @@ namespace Platform.ServiceDefaults.Models;
 /// </summary>
 [BsonCollectionName("menus")]
 [BsonIgnoreExtraElements]
-public class Menu : BaseEntity, INamedEntity
+public class Menu : BaseEntity
 {
     /// <summary>
     /// 菜单名称（全局唯一）

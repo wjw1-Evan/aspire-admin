@@ -103,18 +103,4 @@ public static class MongoFilterExtensions
         );
     }
 
-    /// <summary>
-    /// 创建根据名称模糊查找且未删除的过滤器（适用于Menu、Role等）
-    /// </summary>
-    /// <typeparam name="T">实体类型，必须实现 ISoftDeletable 和 INamedEntity 接口</typeparam>
-    /// <param name="name">名称关键词</param>
-    /// <returns>根据名称模糊查找且未删除的过滤器</returns>
-    public static FilterDefinition<T> ByNameContainsAndNotDeleted<T>(string name) where T : Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.INamedEntity
-    {
-        var builder = Builders<T>.Filter;
-        return builder.And(
-            builder.Regex(x => x.Name, new MongoDB.Bson.BsonRegularExpression(name, "i")),
-            builder.Eq(x => x.IsDeleted, false)
-        );
-    }
 }

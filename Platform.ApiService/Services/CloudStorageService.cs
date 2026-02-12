@@ -74,7 +74,33 @@ public class CloudStorageService : ICloudStorageService
     /// <inheritdoc/>
     public Task<bool> SupportsResumeUploadAsync() => Task.FromResult(false);
     /// <inheritdoc/>
-    public Task<RecycleStatistics> GetRecycleStatisticsAsync() => throw new NotImplementedException();
+    public async Task<RecycleStatistics> GetRecycleStatisticsAsync()
+    {
+        var recycleItems = await _fileItemFactory.FindAsync(x => x.Status == FileStatus.InRecycleBin);
+
+        var totalItems = recycleItems.Count;
+        var totalSize = recycleItems.Where(f => f.Type == FileItemType.File).Sum(f => f.Size);
+
+        // Group by date (yyyy-MM-dd)
+        var itemsByDate = recycleItems
+            .Where(x => x.DeletedAt.HasValue)
+            .GroupBy(x => x.DeletedAt!.Value.ToString("yyyy-MM-dd"))
+            .Select(g => new RecycleStatisticsItem
+            {
+                Date = g.Key,
+                Count = g.Count(),
+                Size = g.Where(f => f.Type == FileItemType.File).Sum(f => f.Size)
+            })
+            .OrderByDescending(x => x.Date)
+            .ToList();
+
+        return new RecycleStatistics
+        {
+            TotalItems = totalItems,
+            TotalSize = totalSize,
+            ItemsByDate = itemsByDate
+        };
+    }
     /// <inheritdoc/>
     public async Task<BatchOperationResult> BatchDeleteAsync(List<string> ids)
     {

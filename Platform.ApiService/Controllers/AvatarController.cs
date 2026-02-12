@@ -1,45 +1,35 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
-using MongoDB.Driver;
-using MongoDB.Driver.GridFS;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
+using Platform.ServiceDefaults.Services;
 
 namespace Platform.ApiService.Controllers;
 
 /// <summary>
 /// 头像管理控制器
-/// 负责处理用户头像的上传和查看，使用独立的全局数据库和 GridFS Bucket 存储，确保跨租户和匿名访问
+/// 负责处理用户头像的上传和查看，使用 IFileStorageFactory 存储
 /// </summary>
 [Route("api/avatar")]
 [ApiController]
 public class AvatarController : BaseApiController
 {
     private readonly IUserService _userService;
-    private readonly GridFSBucket _avatarBucket;
+    private readonly IFileStorageFactory _fileStorage;
     private readonly ILogger<AvatarController> _logger;
+    private const string AvatarBucketName = "user_avatars";
 
     /// <summary>
     /// 初始化头像控制器
     /// </summary>
     public AvatarController(
         IUserService userService,
-        IMongoClient mongoClient, // 直接注入 MongoClient 以绕过租户隔离
+        IFileStorageFactory fileStorage,
         ILogger<AvatarController> logger)
     {
         _userService = userService;
+        _fileStorage = fileStorage;
         _logger = logger;
-
-        // 使用该特定的公共数据库存储头像，确保匿名访问时也能找到文件
-        // 避开基于 ITenantContext 的自动数据库路由
-        var publicDatabase = mongoClient.GetDatabase("platform_public");
-
-        // 使用独立的 Bucket 存储头像
-        _avatarBucket = new GridFSBucket(publicDatabase, new GridFSBucketOptions
-        {
-            BucketName = "user_avatars"
-        });
     }
 
     /// <summary>
@@ -75,34 +65,32 @@ public class AvatarController : BaseApiController
             var userId = GetRequiredUserId();
             var fileName = $"{userId}_{DateTime.UtcNow.Ticks}{extension}";
 
-            // 上传到 GridFS (platform_public db)
+            // 上传到 GridFS
             using (var stream = file.OpenReadStream())
             {
-                var options = new GridFSUploadOptions
+                var metadata = new Dictionary<string, object>
                 {
-                    Metadata = new MongoDB.Bson.BsonDocument
-                    {
-                        { "userId", userId },
-                        { "contentType", file.ContentType },
-                        { "originalName", file.FileName },
-                        { "uploadedAt", DateTime.UtcNow }
-                    }
+                    { "userId", userId },
+                    { "originalName", file.FileName },
+                    { "uploadedAt", DateTime.UtcNow }
                 };
-                await _avatarBucket.UploadFromStreamAsync(fileName, stream, options);
+
+                await _fileStorage.UploadAsync(
+                    stream, 
+                    fileName, 
+                    file.ContentType, 
+                    metadata, 
+                    AvatarBucketName);
             }
 
-            // 构建公开访问 URL (保持原有格式)
+            // 构建公开访问 URL
             var avatarUrl = $"/api/avatar/view/{fileName}";
 
-            // 仅返回文件URL，不在此更新用户信息
             return Success(new { url = avatarUrl }, "头像上传成功");
         }
         catch (Exception ex)
         {
-            if (_logger.IsEnabled(LogLevel.Error))
-            {
-                _logger.LogError(ex, "头像上传失败");
-            }
+            _logger.LogError(ex, "头像上传失败");
             return ServerError($"头像上传失败: {ex.Message}");
         }
     }
@@ -123,35 +111,46 @@ public class AvatarController : BaseApiController
 
         try
         {
-            // 从 GridFS (platform_public db) 下载
+            // 根据文件名查找文件
+            var fileInfo = await _fileStorage.FindByFileNameAsync(fileName, AvatarBucketName);
+            
+            if (fileInfo == null)
+            {
+                return NotFound("头像文件不存在");
+            }
+
+            // 下载文件到流
             var stream = new MemoryStream();
-            await _avatarBucket.DownloadToStreamByNameAsync(fileName, stream);
+            await _fileStorage.DownloadAsync(fileInfo.Id, stream, AvatarBucketName);
             stream.Position = 0;
 
-            // 根据文件名判断 ContentType
-            var extension = Path.GetExtension(fileName).ToLowerInvariant();
-            var contentType = extension switch
-            {
-                ".jpg" or ".jpeg" => "image/jpeg",
-                ".png" => "image/png",
-                ".gif" => "image/gif",
-                ".webp" => "image/webp",
-                _ => "application/octet-stream"
-            };
+            // 优先使用存储的 ContentType，否则根据文件名判断
+            var contentType = !string.IsNullOrEmpty(fileInfo.ContentType) 
+                ? fileInfo.ContentType 
+                : GetContentTypeFromFileName(fileName);
 
             return File(stream, contentType);
         }
-        catch (GridFSFileNotFoundException)
-        {
-            return NotFound("头像文件不存在");
-        }
         catch (Exception ex)
         {
-            if (_logger.IsEnabled(LogLevel.Error))
-            {
-                _logger.LogError(ex, "读取头像失败: {FileName}", fileName);
-            }
+            _logger.LogError(ex, "读取头像失败: {FileName}", fileName);
             return NotFound("读取头像失败");
         }
+    }
+
+    /// <summary>
+    /// 根据文件名获取 ContentType
+    /// </summary>
+    private static string GetContentTypeFromFileName(string fileName)
+    {
+        var extension = Path.GetExtension(fileName).ToLowerInvariant();
+        return extension switch
+        {
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".gif" => "image/gif",
+            ".webp" => "image/webp",
+            _ => "application/octet-stream"
+        };
     }
 }

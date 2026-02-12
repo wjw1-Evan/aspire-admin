@@ -1,8 +1,9 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Attributes;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Models;
 
@@ -31,60 +32,76 @@ public enum StatisticsPeriod
 /// 楼宇信息
 /// </summary>
 [BsonIgnoreExtraElements]
+[Table("buildings")]
 public class Building : MultiTenantEntity
 {
     /// <summary>楼宇名称</summary>
     [Required]
     [StringLength(100)]
+    [Column("name")]
     [BsonElement("name")]
     public string Name { get; set; } = string.Empty;
 
     /// <summary>楼宇地址</summary>
     [StringLength(500)]
+    [Column("address")]
     [BsonElement("address")]
     public string? Address { get; set; }
 
     /// <summary>总层数</summary>
+    [Range(1, 200)]
+    [Column("totalFloors")]
     [BsonElement("totalFloors")]
     public int TotalFloors { get; set; }
 
     /// <summary>总面积</summary>
+    [Column("totalArea")]
     [BsonElement("totalArea")]
     public decimal TotalArea { get; set; }
 
     /// <summary>楼宇类型</summary>
     [StringLength(50)]
+    [Column("buildingType")]
     [BsonElement("buildingType")]
-    public string? BuildingType { get; set; } // 办公楼、厂房、仓库等
+    public string? BuildingType { get; set; }
 
     /// <summary>建成年份</summary>
+    [Range(1900, 2100)]
+    [Column("yearBuilt")]
     [BsonElement("yearBuilt")]
     public int YearBuilt { get; set; }
 
     /// <summary>交付/取得日期</summary>
     [Required]
+    [Column("deliveryDate")]
     [BsonElement("deliveryDate")]
     public DateTime? DeliveryDate { get; set; }
 
     /// <summary>状态</summary>
     [StringLength(20)]
+    [Column("status")]
     [BsonElement("status")]
-    public string Status { get; set; } = "Active"; // Active, UnderMaintenance, Inactive
+    public string Status { get; set; } = "Active";
 
     /// <summary>楼宇描述</summary>
     [StringLength(1000)]
+    [Column("description")]
     [BsonElement("description")]
     public string? Description { get; set; }
 
     /// <summary>封面图片</summary>
+    [StringLength(500)]
+    [Column("coverImage")]
     [BsonElement("coverImage")]
     public string? CoverImage { get; set; }
 
     /// <summary>楼宇图片集</summary>
+    [Column("images")]
     [BsonElement("images")]
     public List<string>? Images { get; set; }
 
     /// <summary>附件列表</summary>
+    [Column("attachments")]
     [BsonElement("attachments")]
     public List<string>? Attachments { get; set; }
 }
@@ -93,70 +110,90 @@ public class Building : MultiTenantEntity
 /// 房源/可租赁单元
 /// </summary>
 [BsonIgnoreExtraElements]
+[Table("propertyUnits")]
 public class PropertyUnit : MultiTenantEntity
 {
     /// <summary>所属楼宇ID</summary>
+    [Required]
+    [StringLength(100)]
+    [Column("buildingId")]
     [BsonElement("buildingId")]
     public string BuildingId { get; set; } = string.Empty;
 
     /// <summary>房号</summary>
     [Required]
     [StringLength(50)]
+    [Column("unitNumber")]
     [BsonElement("unitNumber")]
     public string UnitNumber { get; set; } = string.Empty;
 
     /// <summary>所在楼层</summary>
+    [Range(-10, 200)]
+    [Column("floor")]
     [BsonElement("floor")]
     public int Floor { get; set; }
 
     /// <summary>面积</summary>
+    [Column("area")]
     [BsonElement("area")]
     public decimal Area { get; set; }
 
     /// <summary>月租金</summary>
+    [Column("monthlyRent")]
     [BsonElement("monthlyRent")]
     public decimal MonthlyRent { get; set; }
 
     /// <summary>日租金</summary>
+    [Column("dailyRent")]
     [BsonElement("dailyRent")]
     public decimal? DailyRent { get; set; }
 
     /// <summary>单元类型</summary>
     [StringLength(50)]
+    [Column("unitType")]
     [BsonElement("unitType")]
-    public string UnitType { get; set; } = "Office"; // Office, Workshop, Warehouse, Retail
+    public string UnitType { get; set; } = "Office";
 
     /// <summary>状态</summary>
     [StringLength(20)]
+    [Column("status")]
     [BsonElement("status")]
-    public string Status { get; set; } = "Available"; // Available, Rented, Reserved, UnderMaintenance
+    public string Status { get; set; } = "Available";
 
     /// <summary>描述</summary>
     [StringLength(1000)]
+    [Column("description")]
     [BsonElement("description")]
     public string? Description { get; set; }
 
     /// <summary>当前租户ID</summary>
+    [StringLength(100)]
+    [Column("currentTenantId")]
     [BsonElement("currentTenantId")]
     public string? CurrentTenantId { get; set; }
 
     /// <summary>起租日期</summary>
+    [Column("leaseStartDate")]
     [BsonElement("leaseStartDate")]
     public DateTime? LeaseStartDate { get; set; }
 
     /// <summary>免租到期日期/租约到期日期</summary>
+    [Column("leaseEndDate")]
     [BsonElement("leaseEndDate")]
     public DateTime? LeaseEndDate { get; set; }
 
     /// <summary>配属设施</summary>
+    [Column("facilities")]
     [BsonElement("facilities")]
-    public List<string>? Facilities { get; set; } // 空调、网络、停车位等
+    public List<string>? Facilities { get; set; }
 
     /// <summary>图片集</summary>
+    [Column("images")]
     [BsonElement("images")]
     public List<string>? Images { get; set; }
 
     /// <summary>附件列表</summary>
+    [Column("attachments")]
     [BsonElement("attachments")]
     public List<string>? Attachments { get; set; }
 }
@@ -169,72 +206,89 @@ public class PropertyUnit : MultiTenantEntity
 /// 招商线索
 /// </summary>
 [BsonIgnoreExtraElements]
+[Table("investmentLeads")]
 public class InvestmentLead : MultiTenantEntity
 {
     /// <summary>企业名称</summary>
     [Required]
     [StringLength(200)]
+    [Column("companyName")]
     [BsonElement("companyName")]
     public string CompanyName { get; set; } = string.Empty;
 
     /// <summary>联系人</summary>
     [StringLength(100)]
+    [Column("contactPerson")]
     [BsonElement("contactPerson")]
     public string? ContactPerson { get; set; }
 
     /// <summary>联系电话</summary>
     [StringLength(50)]
+    [Column("phone")]
     [BsonElement("phone")]
     public string? Phone { get; set; }
 
     /// <summary>邮箱</summary>
     [StringLength(200)]
+    [Column("email")]
     [BsonElement("email")]
+    [EmailAddress]
     public string? Email { get; set; }
 
     /// <summary>所属行业</summary>
     [StringLength(50)]
+    [Column("industry")]
     [BsonElement("industry")]
     public string? Industry { get; set; }
 
     /// <summary>线索来源</summary>
     [StringLength(50)]
+    [Column("source")]
     [BsonElement("source")]
-    public string Source { get; set; } = "Direct"; // Direct, Referral, Exhibition, Online, Agent
+    public string Source { get; set; } = "Direct";
 
     /// <summary>意向面积</summary>
+    [Column("intendedArea")]
     [BsonElement("intendedArea")]
     public decimal? IntendedArea { get; set; }
 
     /// <summary>预算</summary>
+    [Column("budget")]
     [BsonElement("budget")]
     public decimal? Budget { get; set; }
 
     /// <summary>状态</summary>
     [StringLength(20)]
+    [Column("status")]
     [BsonElement("status")]
-    public string Status { get; set; } = "New"; // New, Contacted, Negotiating, Qualified, Lost
+    public string Status { get; set; } = "New";
 
     /// <summary>优先级</summary>
     [StringLength(20)]
+    [Column("priority")]
     [BsonElement("priority")]
-    public string Priority { get; set; } = "Medium"; // High, Medium, Low
+    public string Priority { get; set; } = "Medium";
 
     /// <summary>需求描述</summary>
     [StringLength(2000)]
+    [Column("requirements")]
     [BsonElement("requirements")]
     public string? Requirements { get; set; }
 
     /// <summary>备注</summary>
     [StringLength(2000)]
+    [Column("notes")]
     [BsonElement("notes")]
     public string? Notes { get; set; }
 
     /// <summary>分配给谁</summary>
+    [StringLength(100)]
+    [Column("assignedTo")]
     [BsonElement("assignedTo")]
     public string? AssignedTo { get; set; }
 
     /// <summary>下次跟进日期</summary>
+    [Column("nextFollowUpDate")]
     [BsonElement("nextFollowUpDate")]
     public DateTime? NextFollowUpDate { get; set; }
 }
@@ -243,64 +297,81 @@ public class InvestmentLead : MultiTenantEntity
 /// 招商项目（从线索转化而来）
 /// </summary>
 [BsonIgnoreExtraElements]
+[Table("investmentProjects")]
 public class InvestmentProject : MultiTenantEntity
 {
     /// <summary>线索ID</summary>
+    [StringLength(100)]
+    [Column("leadId")]
     [BsonElement("leadId")]
     public string? LeadId { get; set; }
 
     /// <summary>项目名称</summary>
     [Required]
     [StringLength(200)]
+    [Column("projectName")]
     [BsonElement("projectName")]
     public string ProjectName { get; set; } = string.Empty;
 
     /// <summary>企业名称</summary>
     [StringLength(200)]
+    [Column("companyName")]
     [BsonElement("companyName")]
     public string CompanyName { get; set; } = string.Empty;
 
     /// <summary>联系人</summary>
     [StringLength(100)]
+    [Column("contactPerson")]
     [BsonElement("contactPerson")]
     public string? ContactPerson { get; set; }
 
     /// <summary>联系电话</summary>
     [StringLength(50)]
+    [Column("phone")]
     [BsonElement("phone")]
     public string? Phone { get; set; }
 
     /// <summary>意向房源集合</summary>
+    [Column("intendedUnitIds")]
     [BsonElement("intendedUnitIds")]
     public List<string>? IntendedUnitIds { get; set; }
 
     /// <summary>意向面积</summary>
+    [Column("intendedArea")]
     [BsonElement("intendedArea")]
     public decimal? IntendedArea { get; set; }
 
     /// <summary>预期租金</summary>
+    [Column("proposedRent")]
     [BsonElement("proposedRent")]
     public decimal? ProposedRent { get; set; }
 
     /// <summary>项目阶段</summary>
     [StringLength(20)]
+    [Column("stage")]
     [BsonElement("stage")]
-    public string Stage { get; set; } = "Initial"; // Initial, SiteVisit, Negotiation, ContractDraft, Signing, Completed, Lost
+    public string Stage { get; set; } = "Initial";
 
     /// <summary>预计签约日期</summary>
+    [Column("expectedSignDate")]
     [BsonElement("expectedSignDate")]
     public DateTime? ExpectedSignDate { get; set; }
 
     /// <summary>成功概率百分比</summary>
+    [Range(0, 100)]
+    [Column("probability")]
     [BsonElement("probability")]
-    public decimal? Probability { get; set; } // 成功概率百分比
+    public decimal? Probability { get; set; }
 
     /// <summary>备注</summary>
     [StringLength(2000)]
+    [Column("notes")]
     [BsonElement("notes")]
     public string? Notes { get; set; }
 
     /// <summary>分配给谁</summary>
+    [StringLength(100)]
+    [Column("assignedTo")]
     [BsonElement("assignedTo")]
     public string? AssignedTo { get; set; }
 }
@@ -309,37 +380,48 @@ public class InvestmentProject : MultiTenantEntity
 /// 招商跟进记录
 /// </summary>
 [BsonIgnoreExtraElements]
+[Table("investmentFollowUps")]
 public class InvestmentFollowUp : BaseEntity
 {
     /// <summary>线索ID</summary>
+    [StringLength(100)]
+    [Column("leadId")]
     [BsonElement("leadId")]
     public string? LeadId { get; set; }
 
     /// <summary>项目ID</summary>
+    [StringLength(100)]
+    [Column("projectId")]
     [BsonElement("projectId")]
     public string? ProjectId { get; set; }
 
     /// <summary>跟进方式</summary>
     [StringLength(50)]
+    [Column("followUpType")]
     [BsonElement("followUpType")]
-    public string FollowUpType { get; set; } = "Call"; // Call, Meeting, SiteVisit, Email, Other
+    public string FollowUpType { get; set; } = "Call";
 
     /// <summary>跟进内容</summary>
+    [Required]
     [StringLength(2000)]
+    [Column("content")]
     [BsonElement("content")]
     public string Content { get; set; } = string.Empty;
 
     /// <summary>跟进结果</summary>
     [StringLength(500)]
+    [Column("result")]
     [BsonElement("result")]
     public string? Result { get; set; }
 
     /// <summary>下次跟进日期</summary>
+    [Column("nextFollowUpDate")]
     [BsonElement("nextFollowUpDate")]
     public DateTime? NextFollowUpDate { get; set; }
 
     /// <summary>后续计划</summary>
     [StringLength(500)]
+    [Column("nextAction")]
     [BsonElement("nextAction")]
     public string? NextAction { get; set; }
 }
@@ -352,63 +434,77 @@ public class InvestmentFollowUp : BaseEntity
 /// 园区租户
 /// </summary>
 [BsonIgnoreExtraElements]
+[Table("parkTenants")]
 public class ParkTenant : MultiTenantEntity
 {
     /// <summary>租户名称</summary>
     [Required]
     [StringLength(200)]
+    [Column("tenantName")]
     [BsonElement("tenantName")]
     public string TenantName { get; set; } = string.Empty;
 
     /// <summary>联系人</summary>
     [StringLength(100)]
+    [Column("contactPerson")]
     [BsonElement("contactPerson")]
     public string? ContactPerson { get; set; }
 
     /// <summary>联系电话</summary>
     [StringLength(50)]
+    [Column("phone")]
     [BsonElement("phone")]
     public string? Phone { get; set; }
 
     /// <summary>邮箱</summary>
     [StringLength(200)]
+    [Column("email")]
     [BsonElement("email")]
+    [EmailAddress]
     public string? Email { get; set; }
 
     /// <summary>所属行业</summary>
     [StringLength(50)]
+    [Column("industry")]
     [BsonElement("industry")]
     public string? Industry { get; set; }
 
     /// <summary>营业执照号</summary>
     [StringLength(100)]
+    [Column("businessLicense")]
     [BsonElement("businessLicense")]
     public string? BusinessLicense { get; set; }
 
     /// <summary>地址</summary>
     [StringLength(500)]
+    [Column("address")]
     [BsonElement("address")]
     public string? Address { get; set; }
 
     /// <summary>租用单元ID集合</summary>
+    [Column("unitIds")]
     [BsonElement("unitIds")]
     public List<string>? UnitIds { get; set; }
 
     /// <summary>状态</summary>
     [StringLength(20)]
+    [Column("status")]
     [BsonElement("status")]
-    public string Status { get; set; } = "Active"; // Active, Inactive, Suspended
+    public string Status { get; set; } = "Active";
 
     /// <summary>入驻日期</summary>
+    [Column("entryDate")]
     [BsonElement("entryDate")]
     public DateTime? EntryDate { get; set; }
 
     /// <summary>迁出日期</summary>
+    [Column("exitDate")]
     [BsonElement("exitDate")]
     public DateTime? ExitDate { get; set; }
 
     /// <summary>备注</summary>
     [StringLength(2000)]
+    [Column("notes")]
     [BsonElement("notes")]
     public string? Notes { get; set; }
 }
@@ -417,73 +513,97 @@ public class ParkTenant : MultiTenantEntity
 /// 租赁合同
 /// </summary>
 [BsonIgnoreExtraElements]
+[Table("leaseContracts")]
 public class LeaseContract : MultiTenantEntity
 {
     /// <summary>租户ID</summary>
+    [Required]
+    [StringLength(100)]
+    [Column("tenantId")]
     [BsonElement("tenantId")]
     public string TenantId { get; set; } = string.Empty;
 
     /// <summary>合同编号</summary>
+    [Required]
     [StringLength(100)]
+    [Column("contractNumber")]
     [BsonElement("contractNumber")]
     public string ContractNumber { get; set; } = string.Empty;
 
     /// <summary>租赁单元ID集合</summary>
+    [Column("unitIds")]
     [BsonElement("unitIds")]
     public List<string> UnitIds { get; set; } = new();
 
     /// <summary>开始日期</summary>
+    [Required]
+    [Column("startDate")]
     [BsonElement("startDate")]
     public DateTime StartDate { get; set; }
 
     /// <summary>结束日期</summary>
+    [Required]
+    [Column("endDate")]
     [BsonElement("endDate")]
     public DateTime EndDate { get; set; }
 
     /// <summary>月租金</summary>
+    [Column("monthlyRent")]
     [BsonElement("monthlyRent")]
     public decimal MonthlyRent { get; set; }
 
     /// <summary>租赁计费方式</summary>
+    [StringLength(50)]
+    [Column("rentalPricingMethod")]
     [BsonElement("rentalPricingMethod")]
-    public string RentalPricingMethod { get; set; } = "FixedMonthly"; // FixedMonthly (按月), PerSqmPerDay (按平米天)
+    public string RentalPricingMethod { get; set; } = "FixedMonthly";
 
     /// <summary>单价</summary>
+    [Column("unitPrice")]
     [BsonElement("unitPrice")]
     public decimal? UnitPrice { get; set; }
 
     /// <summary>押金</summary>
+    [Column("deposit")]
     [BsonElement("deposit")]
     public decimal? Deposit { get; set; }
 
     /// <summary>物业费（月）</summary>
+    [Column("propertyFee")]
     [BsonElement("propertyFee")]
     public decimal? PropertyFee { get; set; }
 
     /// <summary>合同总额</summary>
+    [Column("totalAmount")]
     [BsonElement("totalAmount")]
     public decimal? TotalAmount { get; set; }
 
     /// <summary>付款周期</summary>
     [StringLength(20)]
+    [Column("paymentCycle")]
     [BsonElement("paymentCycle")]
-    public string PaymentCycle { get; set; } = "Monthly"; // Monthly, Quarterly, HalfYearly, Yearly
+    public string PaymentCycle { get; set; } = "Monthly";
 
     /// <summary>付款日</summary>
+    [Range(1, 28)]
+    [Column("paymentDay")]
     [BsonElement("paymentDay")]
-    public int PaymentDay { get; set; } = 1; // 每月几号付款
+    public int PaymentDay { get; set; } = 1;
 
     /// <summary>状态</summary>
     [StringLength(20)]
+    [Column("status")]
     [BsonElement("status")]
-    public string Status { get; set; } = "Active"; // Draft, Active, Expired, Terminated, Renewed
+    public string Status { get; set; } = "Active";
 
     /// <summary>合同条款</summary>
     [StringLength(2000)]
+    [Column("terms")]
     [BsonElement("terms")]
     public string? Terms { get; set; }
 
     /// <summary>附件列表</summary>
+    [Column("attachments")]
     [BsonElement("attachments")]
     public List<string>? Attachments { get; set; }
 }
@@ -492,47 +612,65 @@ public class LeaseContract : MultiTenantEntity
 /// 租赁合同付款记录
 /// </summary>
 [BsonIgnoreExtraElements]
+[Table("leasePaymentRecords")]
 public class LeasePaymentRecord : MultiTenantEntity
 {
     /// <summary>合同ID</summary>
+    [Required]
+    [StringLength(100)]
+    [Column("contractId")]
     [BsonElement("contractId")]
     public string ContractId { get; set; } = string.Empty;
 
     /// <summary>租户ID</summary>
+    [Required]
+    [StringLength(100)]
+    [Column("tenantId")]
     [BsonElement("tenantId")]
     public string TenantId { get; set; } = string.Empty;
 
     /// <summary>付款类型</summary>
+    [StringLength(50)]
+    [Column("paymentType")]
     [BsonElement("paymentType")]
-    public string PaymentType { get; set; } = "Rent"; // Rent, PropertyFee, Deposit, Other
+    public string PaymentType { get; set; } = "Rent";
 
     /// <summary>付款金额</summary>
+    [Column("amount")]
     [BsonElement("amount")]
     public decimal Amount { get; set; }
 
     /// <summary>付款日期</summary>
+    [Required]
+    [Column("paymentDate")]
     [BsonElement("paymentDate")]
     public DateTime PaymentDate { get; set; }
 
     /// <summary>付款方式</summary>
     [StringLength(50)]
+    [Column("paymentMethod")]
     [BsonElement("paymentMethod")]
     public string? PaymentMethod { get; set; }
 
     /// <summary>账期开始</summary>
+    [Column("periodStart")]
     [BsonElement("periodStart")]
     public DateTime? PeriodStart { get; set; }
 
     /// <summary>账期结束</summary>
+    [Column("periodEnd")]
     [BsonElement("periodEnd")]
     public DateTime? PeriodEnd { get; set; }
 
     /// <summary>备注</summary>
     [StringLength(500)]
+    [Column("notes")]
     [BsonElement("notes")]
     public string? Notes { get; set; }
 
     /// <summary>经办人</summary>
+    [StringLength(100)]
+    [Column("handledBy")]
     [BsonElement("handledBy")]
     public string? HandledBy { get; set; }
 }
@@ -541,52 +679,72 @@ public class LeasePaymentRecord : MultiTenantEntity
 /// 租金账单
 /// </summary>
 [BsonIgnoreExtraElements]
+[Table("rentBills")]
 public class RentBill : MultiTenantEntity
 {
     /// <summary>合同ID</summary>
+    [Required]
+    [StringLength(100)]
+    [Column("contractId")]
     [BsonElement("contractId")]
     public string ContractId { get; set; } = string.Empty;
 
     /// <summary>租户ID</summary>
+    [Required]
+    [StringLength(100)]
+    [Column("tenantId")]
     [BsonElement("tenantId")]
     public string TenantId { get; set; } = string.Empty;
 
     /// <summary>账单编号</summary>
+    [Required]
     [StringLength(100)]
+    [Column("billNumber")]
     [BsonElement("billNumber")]
     public string BillNumber { get; set; } = string.Empty;
 
     /// <summary>账单年份</summary>
+    [Range(2000, 2100)]
+    [Column("billYear")]
     [BsonElement("billYear")]
     public int BillYear { get; set; }
 
     /// <summary>账单月份</summary>
+    [Range(1, 12)]
+    [Column("billMonth")]
     [BsonElement("billMonth")]
     public int BillMonth { get; set; }
 
     /// <summary>金额</summary>
+    [Column("amount")]
     [BsonElement("amount")]
     public decimal Amount { get; set; }
 
     /// <summary>已付金额</summary>
+    [Column("paidAmount")]
     [BsonElement("paidAmount")]
     public decimal? PaidAmount { get; set; }
 
     /// <summary>应付日期</summary>
+    [Required]
+    [Column("dueDate")]
     [BsonElement("dueDate")]
     public DateTime DueDate { get; set; }
 
     /// <summary>实付日期</summary>
+    [Column("paidDate")]
     [BsonElement("paidDate")]
     public DateTime? PaidDate { get; set; }
 
     /// <summary>状态</summary>
     [StringLength(20)]
+    [Column("status")]
     [BsonElement("status")]
-    public string Status { get; set; } = "Pending"; // Pending, Paid, Overdue, PartiallyPaid
+    public string Status { get; set; } = "Pending";
 
     /// <summary>备注</summary>
     [StringLength(500)]
+    [Column("notes")]
     [BsonElement("notes")]
     public string? Notes { get; set; }
 }
@@ -599,29 +757,35 @@ public class RentBill : MultiTenantEntity
 /// 服务类别
 /// </summary>
 [BsonIgnoreExtraElements]
+[Table("serviceCategories")]
 public class ServiceCategory : MultiTenantEntity
 {
     /// <summary>类别名称</summary>
     [Required]
     [StringLength(100)]
+    [Column("name")]
     [BsonElement("name")]
     public string Name { get; set; } = string.Empty;
 
     /// <summary>描述</summary>
     [StringLength(500)]
+    [Column("description")]
     [BsonElement("description")]
     public string? Description { get; set; }
 
     /// <summary>图标</summary>
     [StringLength(100)]
+    [Column("icon")]
     [BsonElement("icon")]
     public string? Icon { get; set; }
 
     /// <summary>排序号</summary>
+    [Column("sortOrder")]
     [BsonElement("sortOrder")]
     public int SortOrder { get; set; }
 
     /// <summary>是否启用</summary>
+    [Column("isActive")]
     [BsonElement("isActive")]
     public bool IsActive { get; set; } = true;
 }
@@ -630,74 +794,95 @@ public class ServiceCategory : MultiTenantEntity
 /// 服务申请
 /// </summary>
 [BsonIgnoreExtraElements]
+[Table("serviceRequests")]
 public class ServiceRequest : MultiTenantEntity
 {
     /// <summary>类别ID</summary>
+    [Required]
+    [StringLength(100)]
+    [Column("categoryId")]
     [BsonElement("categoryId")]
     public string CategoryId { get; set; } = string.Empty;
 
     /// <summary>租户ID</summary>
+    [StringLength(100)]
+    [Column("tenantId")]
     [BsonElement("tenantId")]
     public string? TenantId { get; set; }
 
     /// <summary>标题</summary>
     [Required]
     [StringLength(200)]
+    [Column("title")]
     [BsonElement("title")]
     public string Title { get; set; } = string.Empty;
 
     /// <summary>需求描述</summary>
     [StringLength(2000)]
+    [Column("description")]
     [BsonElement("description")]
     public string? Description { get; set; }
 
     /// <summary>联系人</summary>
     [StringLength(100)]
+    [Column("contactPerson")]
     [BsonElement("contactPerson")]
     public string? ContactPerson { get; set; }
 
     /// <summary>联系电话</summary>
     [StringLength(50)]
+    [Column("contactPhone")]
     [BsonElement("contactPhone")]
     public string? ContactPhone { get; set; }
 
     /// <summary>优先级</summary>
     [StringLength(20)]
+    [Column("priority")]
     [BsonElement("priority")]
-    public string Priority { get; set; } = "Normal"; // Urgent, High, Normal, Low
+    public string Priority { get; set; } = "Normal";
 
     /// <summary>状态</summary>
     [StringLength(200)]
+    [Column("status")]
     [BsonElement("status")]
-    public string Status { get; set; } = "Pending"; // Pending, Processing, Completed, Cancelled
+    public string Status { get; set; } = "Pending";
 
     /// <summary>分配给谁</summary>
+    [StringLength(100)]
+    [Column("assignedTo")]
     [BsonElement("assignedTo")]
     public string? AssignedTo { get; set; }
 
     /// <summary>分配时间</summary>
+    [Column("assignedAt")]
     [BsonElement("assignedAt")]
     public DateTime? AssignedAt { get; set; }
 
     /// <summary>完成时间</summary>
+    [Column("completedAt")]
     [BsonElement("completedAt")]
     public DateTime? CompletedAt { get; set; }
 
     /// <summary>处理方案</summary>
     [StringLength(2000)]
+    [Column("resolution")]
     [BsonElement("resolution")]
     public string? Resolution { get; set; }
 
     /// <summary>评分</summary>
+    [Range(1, 5)]
+    [Column("rating")]
     [BsonElement("rating")]
-    public int? Rating { get; set; } // 1-5星评价
+    public int? Rating { get; set; }
 
     /// <summary>反馈意见</summary>
     [StringLength(500)]
+    [Column("feedback")]
     [BsonElement("feedback")]
     public string? Feedback { get; set; }
 
     /// <summary>附件列表</summary>
+    [Column("attachments")]
     [BsonElement("attachments")]
     public List<string>? Attachments { get; set; }
 }
@@ -710,100 +895,124 @@ public class ServiceRequest : MultiTenantEntity
 /// 走访任务
 /// </summary>
 [BsonIgnoreExtraElements]
-[Platform.ServiceDefaults.Attributes.BsonCollectionName("visittasks")]
+[Table("visitTasks")]
 public class VisitTask : MultiTenantEntity
 {
     /// <summary>企管员姓名</summary>
     [Required]
     [StringLength(100)]
+    [Column("managerName")]
     [BsonElement("managerName")]
     public string ManagerName { get; set; } = string.Empty;
 
     /// <summary>企管员手机号</summary>
     [Required]
     [StringLength(20)]
+    [Column("phone")]
     [BsonElement("phone")]
     public string Phone { get; set; } = string.Empty;
 
     /// <summary>任务标题/主题</summary>
     [Required]
     [StringLength(200)]
+    [Column("title")]
     [BsonElement("title")]
     public string Title { get; set; } = string.Empty;
 
     /// <summary>走访类型 (日常走访、安全检查、政策宣讲、需球调研、其他)</summary>
     [StringLength(50)]
+    [Column("visitType")]
     [BsonElement("visitType")]
     public string VisitType { get; set; } = "日常走访";
 
     /// <summary>走访方式 (实地走访、电话沟通、微信联系)</summary>
     [StringLength(50)]
+    [Column("visitMethod")]
     [BsonElement("visitMethod")]
     public string VisitMethod { get; set; } = "实地走访";
 
     /// <summary>计划/任务说明</summary>
     [StringLength(2000)]
+    [Column("details")]
     [BsonElement("details")]
     public string? Details { get; set; }
 
     /// <summary>受访企业ID</summary>
+    [StringLength(100)]
+    [Column("tenantId")]
     [BsonElement("tenantId")]
     public string? TenantId { get; set; }
 
     /// <summary>受访企业名称 (冗余)</summary>
+    [StringLength(200)]
+    [Column("tenantName")]
     [BsonElement("tenantName")]
     public string? TenantName { get; set; }
 
     /// <summary>受访地点</summary>
     [StringLength(500)]
+    [Column("visitLocation")]
     [BsonElement("visitLocation")]
     public string? VisitLocation { get; set; }
 
     /// <summary>计划/实际走访日期</summary>
+    [Column("visitDate")]
     [BsonElement("visitDate")]
     public DateTime? VisitDate { get; set; }
 
     /// <summary>状态 (Pending-待走访, Completed-已完成, Cancelled-已取消)</summary>
     [StringLength(20)]
+    [Column("status")]
     [BsonElement("status")]
     public string Status { get; set; } = "Pending";
 
     /// <summary>关联问卷ID</summary>
+    [StringLength(100)]
+    [Column("questionnaireId")]
     [BsonElement("questionnaireId")]
     public string? QuestionnaireId { get; set; }
 
     /// <summary>走访执行人</summary>
     [StringLength(100)]
+    [Column("visitor")]
     [BsonElement("visitor")]
     public string? Visitor { get; set; }
 
-    // --- 走访结果/记录字段 ---
-
     /// <summary>受访人姓名</summary>
+    [StringLength(100)]
+    [Column("intervieweeName")]
     [BsonElement("intervieweeName")]
     public string? IntervieweeName { get; set; }
 
     /// <summary>受访人职务</summary>
+    [StringLength(100)]
+    [Column("intervieweePosition")]
     [BsonElement("intervieweePosition")]
     public string? IntervieweePosition { get; set; }
 
     /// <summary>受访人联系方式</summary>
+    [StringLength(50)]
+    [Column("intervieweePhone")]
     [BsonElement("intervieweePhone")]
     public string? IntervieweePhone { get; set; }
 
     /// <summary>走访纪要/内容记录</summary>
+    [Column("content")]
     [BsonElement("content")]
     public string? Content { get; set; }
 
     /// <summary>现场照片列表</summary>
+    [Column("photos")]
     [BsonElement("photos")]
     public List<string> Photos { get; set; } = new();
 
     /// <summary>附件列表</summary>
+    [Column("attachments")]
     [BsonElement("attachments")]
     public List<string> Attachments { get; set; } = new();
 
     /// <summary>企业反馈/诉求</summary>
+    [Column("feedback")]
     [BsonElement("feedback")]
     public string? Feedback { get; set; }
 }
@@ -812,34 +1021,53 @@ public class VisitTask : MultiTenantEntity
 /// 走访考核情况
 /// </summary>
 [BsonIgnoreExtraElements]
+[Table("visitAssessments")]
 public class VisitAssessment : MultiTenantEntity
 {
     /// <summary>关联走访任务ID</summary>
+    [Required]
+    [StringLength(100)]
+    [Column("taskId")]
     [BsonElement("taskId")]
     public string TaskId { get; set; } = string.Empty;
 
     /// <summary>走访人姓名</summary>
+    [Required]
+    [StringLength(100)]
+    [Column("visitorName")]
     [BsonElement("visitorName")]
     public string VisitorName { get; set; } = string.Empty;
 
     /// <summary>手机号</summary>
+    [Required]
+    [StringLength(50)]
+    [Column("phone")]
     [BsonElement("phone")]
     public string Phone { get; set; } = string.Empty;
 
     /// <summary>走访地点</summary>
+    [Required]
+    [StringLength(500)]
+    [Column("location")]
     [BsonElement("location")]
     public string Location { get; set; } = string.Empty;
 
     /// <summary>走访任务描述</summary>
+    [Required]
+    [StringLength(2000)]
+    [Column("taskDescription")]
     [BsonElement("taskDescription")]
     public string TaskDescription { get; set; } = string.Empty;
 
     /// <summary>考核评分</summary>
+    [Range(0, 100)]
+    [Column("score")]
     [BsonElement("score")]
-    public int Score { get; set; } // 1-100
+    public int Score { get; set; }
 
     /// <summary>考核意见/评语</summary>
     [StringLength(1000)]
+    [Column("comments")]
     [BsonElement("comments")]
     public string? Comments { get; set; }
 }
@@ -848,25 +1076,30 @@ public class VisitAssessment : MultiTenantEntity
 /// 走访高频问题 (知识库)
 /// </summary>
 [BsonIgnoreExtraElements]
+[Table("visitQuestions")]
 public class VisitQuestion : MultiTenantEntity
 {
     /// <summary>问题内容</summary>
     [Required]
     [StringLength(1000)]
+    [Column("content")]
     [BsonElement("content")]
     public string Content { get; set; } = string.Empty;
 
     /// <summary>问题分类</summary>
     [StringLength(100)]
+    [Column("category")]
     [BsonElement("category")]
     public string? Category { get; set; }
 
     /// <summary>标准回答/解析</summary>
     [StringLength(2000)]
+    [Column("answer")]
     [BsonElement("answer")]
     public string? Answer { get; set; }
 
     /// <summary>是否常用</summary>
+    [Column("isFrequentlyUsed")]
     [BsonElement("isFrequentlyUsed")]
     public bool IsFrequentlyUsed { get; set; }
 }
@@ -875,25 +1108,30 @@ public class VisitQuestion : MultiTenantEntity
 /// 走访问卷模板
 /// </summary>
 [BsonIgnoreExtraElements]
+[Table("visitQuestionnaires")]
 public class VisitQuestionnaire : MultiTenantEntity
 {
     /// <summary>问卷名称</summary>
     [Required]
     [StringLength(200)]
+    [Column("title")]
     [BsonElement("title")]
     public string Title { get; set; } = string.Empty;
 
     /// <summary>走访目的</summary>
     [StringLength(500)]
+    [Column("purpose")]
     [BsonElement("purpose")]
     public string? Purpose { get; set; }
 
     /// <summary>包含的问题ID集合</summary>
+    [Column("questionIds")]
     [BsonElement("questionIds")]
     public List<string> QuestionIds { get; set; } = new();
 
     /// <summary>备注</summary>
     [StringLength(1000)]
+    [Column("notes")]
     [BsonElement("notes")]
     public string? Notes { get; set; }
 }

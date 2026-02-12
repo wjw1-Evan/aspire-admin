@@ -7,49 +7,65 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Platform.ApiService.Models;
 
 /// <summary>
-/// 角色实体
+/// 角色实体 (EFCore + MongoDB 兼容)
 /// </summary>
-public class Role : MultiTenantEntity, INamedEntity
+[BsonIgnoreExtraElements]
+[Table("roles")]
+public class Role : MultiTenantEntity
 {
     /// <summary>
     /// 角色名称（唯一标识）
     /// </summary>
+    [Required]
+    [StringLength(50)]
+    [Column("name")]
     [BsonElement("name")]
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
     /// 角色显示标题
     /// </summary>
+    [Required]
+    [StringLength(100)]
+    [Column("title")]
     [BsonElement("title")]
     public string Title { get; set; } = string.Empty;
 
     /// <summary>
     /// 角色描述
     /// </summary>
+    [StringLength(200)]
+    [Column("description")]
     [BsonElement("description")]
     public string? Description { get; set; }
 
     /// <summary>
     /// 关联的菜单ID列表
     /// </summary>
+    [Column("menuIds")]
     [BsonElement("menuIds")]
     public List<string> MenuIds { get; set; } = new();
 
     /// <summary>
     /// 是否激活
     /// </summary>
+    [Column("isActive")]
     [BsonElement("isActive")]
     public bool IsActive { get; set; } = true;
 
     /// <summary>
     /// 创建者用户名
     /// </summary>
+    [StringLength(50)]
+    [Column("createdByUsername")]
     [BsonElement("createdByUsername")]
     public string? CreatedByUsername { get; set; }
 
     /// <summary>
     /// 更新者用户名
     /// </summary>
+    [StringLength(50)]
+    [Column("updatedByUsername")]
     [BsonElement("updatedByUsername")]
     public string? UpdatedByUsername { get; set; }
 }

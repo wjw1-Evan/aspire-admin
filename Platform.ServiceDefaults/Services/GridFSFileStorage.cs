@@ -399,4 +399,22 @@ public class GridFSFileStorage : IFileStorageFactory
 
         return stats;
     }
+
+    /// <inheritdoc />
+    public async Task<StoredFileInfo?> FindByFileNameAsync(
+        string fileName,
+        string bucketName = "default",
+        CancellationToken cancellationToken = default)
+    {
+        var filesCollection = _database.GetCollection<BsonDocument>($"{bucketName}.files");
+        var filter = Builders<BsonDocument>.Filter.Eq("filename", fileName);
+        var doc = await filesCollection.Find(filter).FirstOrDefaultAsync(cancellationToken);
+
+        if (doc == null)
+        {
+            return null;
+        }
+
+        return StoredFileInfo.FromBsonDocument(doc, bucketName);
+    }
 }

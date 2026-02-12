@@ -112,15 +112,6 @@ public abstract class MultiTenantEntity : BaseEntity, IMultiTenant
 }
 
 /// <summary>
-/// 命名实体接口 - 提供名称和标题属性
-/// </summary>
-public interface INamedEntity
-{
-    string Name { get; set; }
-    string Title { get; set; }
-}
-
-/// <summary>
 /// 实体接口 - 提供基础实体标识
 /// </summary>
 public interface IEntity

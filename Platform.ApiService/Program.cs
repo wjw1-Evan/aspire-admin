@@ -208,8 +208,9 @@ builder.Services.AddOpenApi(options =>
     });
 });
 
-// 🚀 配置优化的MongoDB客户端（使用AddMongoDBClient，后续可在Aspire配置中添加连接池）
-builder.AddMongoDBClient(connectionName: "mongodb");
+// ✅ 使用 Aspire 统一配置注册平台所有数据库相关服务（Client, Database, DbContext）
+// 内部会自动从 "mongodb" 连接字符串中提取数据库名称 (aspire-admin-db)
+builder.AddPlatformDatabase("mongodb");
 
 // ✅ 配置 MongoDB 全局约定：忽略额外字段，避免新旧字段不匹配导致崩溃
 var pack = new MongoDB.Bson.Serialization.Conventions.ConventionPack
@@ -223,8 +224,6 @@ MongoDB.Bson.Serialization.Conventions.ConventionRegistry.Register("PlatformConv
 // 添加OpenAI服务
 builder.AddOpenAIClient(connectionName: "chat");
 
-// 添加 Redis 服务 (SSE Backplane)
-builder.AddRedisClient("redis");
 
 // Add HTTP context accessor
 builder.Services.AddHttpContextAccessor();

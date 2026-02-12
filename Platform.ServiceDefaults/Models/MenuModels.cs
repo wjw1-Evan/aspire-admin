@@ -85,7 +85,6 @@ public class Menu : BaseEntity, INamedEntity, ISoftDeletable, IEntity, ITimestam
     /// 权限控制现在基于菜单名称，不再使用此字段
     /// </summary>
     [BsonElement("permissions")]
-    [BsonIgnoreIfNull]
     [Obsolete("权限控制已改为菜单级别，此字段不再使用")]
     public List<string>? Permissions { get; set; }
 

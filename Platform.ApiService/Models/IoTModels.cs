@@ -1,6 +1,8 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using Platform.ServiceDefaults.Models;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Collections.Generic;
 
 namespace Platform.ApiService.Models;
 
@@ -103,6 +105,7 @@ public class IoTGateway : MultiTenantEntity, INamedEntity, ISoftDeletable,IEntit
 
     /// <summary>配置信息（字符串键值对）</summary>
     [BsonElement("config")]
+    [NotMapped]
     public Dictionary<string, string>? Config { get; set; }
 }
 
@@ -276,6 +279,7 @@ public class IoTDeviceEvent : MultiTenantEntity, ISoftDeletable, ITimestamped,IE
 
     /// <summary>事件数据（JSON格式）</summary>
     [BsonElement("eventData")]
+    [NotMapped]
     public Dictionary<string, object>? EventData { get; set; }
 
     /// <summary>事件发生时间</summary>

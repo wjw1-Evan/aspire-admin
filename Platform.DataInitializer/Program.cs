@@ -11,8 +11,8 @@ builder.AddServiceDefaults();
 // Add services to the container.
 builder.Services.AddProblemDetails();
 
-// Register MongoDB services 
-builder.AddMongoDBClient(connectionName: "mongodb");
+// ✅ 一键注册所有 MongoDB 相关服务 (IMongoClient, IMongoDatabase, DbContext)
+builder.AddPlatformDatabase("mongodb");
 
 // Register services
 builder.Services.AddScoped<IDataInitializerService, DataInitializerService>();

@@ -2,6 +2,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using Platform.ServiceDefaults.Attributes;
 using Platform.ServiceDefaults.Models;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Platform.ApiService.Models;
 
@@ -320,6 +321,7 @@ public class BulkOperation : IEntity, ISoftDeletable, ITimestamped, IMultiTenant
     /// 操作参数（JSON格式）
     /// </summary>
     [BsonElement("parameters")]
+    [NotMapped]
     public Dictionary<string, object> Parameters { get; set; } = new();
 
     /// <summary>
@@ -821,10 +823,9 @@ public class TemplateParameter
     [BsonElement("type")]
     public string Type { get; set; } = "string";
 
-    /// <summary>
-    /// 默认值
-    /// </summary>
+    /// <summary>默认值</summary>
     [BsonElement("defaultValue")]
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
     public object? DefaultValue { get; set; }
 
     /// <summary>
@@ -1708,6 +1709,7 @@ public class WorkflowInstance : IEntity, ISoftDeletable, ITimestamped, IMultiTen
     /// 流程变量
     /// </summary>
     [BsonElement("variables")]
+    [NotMapped]
     public Dictionary<string, object> Variables { get; set; } = new();
 
     /// <summary>
@@ -1744,18 +1746,21 @@ public class WorkflowInstance : IEntity, ISoftDeletable, ITimestamped, IMultiTen
     /// 并行网关状态跟踪（nodeId -> completed branchIds）
     /// </summary>
     [BsonElement("parallelBranches")]
+    [NotMapped]
     public Dictionary<string, List<string>> ParallelBranches { get; set; } = new();
 
     /// <summary>
     /// 流程定义快照（创建实例时保存，确保已创建的流程不受后续定义变更影响）
     /// </summary>
     [BsonElement("workflowDefinitionSnapshot")]
+    [NotMapped]
     public WorkflowDefinition? WorkflowDefinitionSnapshot { get; set; }
 
     /// <summary>
     /// 表单定义快照（节点ID -> 表单定义，创建实例时保存）
     /// </summary>
     [BsonElement("formDefinitionSnapshots")]
+    [NotMapped]
     public Dictionary<string, FormDefinition> FormDefinitionSnapshots { get; set; } = new();
 
     // IEntity
@@ -2027,6 +2032,7 @@ public class Document : IEntity, ISoftDeletable, ITimestamped, IMultiTenant
     /// 表单数据
     /// </summary>
     [BsonElement("formData")]
+    [NotMapped]
     public Dictionary<string, object> FormData { get; set; } = new();
 
     /// <summary>

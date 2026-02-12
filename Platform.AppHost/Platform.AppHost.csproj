@@ -17,7 +17,6 @@
     <PackageReference Include="Aspire.Hosting.Docker" Version="13.1.1-preview.1.26105.8" />
     <PackageReference Include="Aspire.Hosting.Kubernetes" Version="13.1.1-preview.1.26105.8" />
     <PackageReference Include="Aspire.Hosting.MongoDB" Version="13.1.1" />
-    <PackageReference Include="Aspire.Hosting.Redis" Version="13.1.1" />
     <PackageReference Include="Aspire.Hosting.Yarp" Version="13.1.1" />
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.NodeJS.Extensions" Version="9.9.0" />
     <PackageReference Include="Scalar.Aspire" Version="0.8.47" />

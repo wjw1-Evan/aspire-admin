@@ -4,6 +4,7 @@ using Platform.ServiceDefaults.Attributes;
 using Platform.ServiceDefaults.Models;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Platform.ApiService.Models;
 
@@ -154,6 +155,7 @@ public class FormField
 
     /// <summary>默认值</summary>
     [BsonElement("defaultValue")]
+    [NotMapped]
     public object? DefaultValue { get; set; }
 
     /// <summary>选项列表（用于 Select/Radio/Checkbox）</summary>

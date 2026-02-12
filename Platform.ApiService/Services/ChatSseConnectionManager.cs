@@ -1,12 +1,11 @@
 using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
-using StackExchange.Redis;
 
 namespace Platform.ApiService.Services;
 
 /// <summary>
-/// SSE 连接管理器实现（支持 Redis Backplane）
+/// SSE 连接管理器实现（单机版）
 /// 管理所有活跃的 SSE 连接，支持按用户ID发送消息
 /// </summary>
 public class ChatSseConnectionManager : IChatSseConnectionManager, IDisposable
@@ -19,24 +18,13 @@ public class ChatSseConnectionManager : IChatSseConnectionManager, IDisposable
     private readonly ConcurrentDictionary<string, string> _connectionToUserMap = new();
 
     private readonly ILogger<ChatSseConnectionManager> _logger;
-    private readonly IConnectionMultiplexer _redis;
-    private readonly ISubscriber _subscriber;
-    private const string RedisChannelName = "chat:sse:broadcast";
 
     /// <summary>
     /// 初始化 SSE 连接管理器
     /// </summary>
-    public ChatSseConnectionManager(ILogger<ChatSseConnectionManager> logger, IConnectionMultiplexer redis)
+    public ChatSseConnectionManager(ILogger<ChatSseConnectionManager> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _redis = redis ?? throw new ArgumentNullException(nameof(redis));
-        _subscriber = _redis.GetSubscriber();
-
-        // 订阅 Redis 频道
-        _subscriber.Subscribe(RedisChannel.Literal(RedisChannelName), (channel, message) =>
-        {
-            _ = HandleRedisMessageAsync(message);
-        });
     }
 
     /// <summary>
@@ -54,7 +42,7 @@ public class ChatSseConnectionManager : IChatSseConnectionManager, IDisposable
 
         cancellationToken.Register(() =>
         {
-            UnregisterConnectionAsync(connectionId);
+            _ = UnregisterConnectionAsync(connectionId);
         });
 
         _logger.LogDebug("注册 SSE 连接: {ConnectionId}", connectionId);
@@ -66,7 +54,7 @@ public class ChatSseConnectionManager : IChatSseConnectionManager, IDisposable
     /// </summary>
     public Task RegisterUserConnectionAsync(string userId, string connectionId, HttpResponse response, CancellationToken cancellationToken)
     {
-        RegisterConnectionAsync(connectionId, response, cancellationToken);
+        _ = RegisterConnectionAsync(connectionId, response, cancellationToken);
 
         _connectionToUserMap.TryAdd(connectionId, userId);
 
@@ -86,59 +74,35 @@ public class ChatSseConnectionManager : IChatSseConnectionManager, IDisposable
     }
 
     /// <summary>
-    /// 向用户发送消息（通过 Redis 广播）
+    /// 向用户发送消息（单机直接发送）
     /// </summary>
     public async Task SendToUserAsync(string userId, string message)
     {
-        var payload = new SseMessagePayload
+        // 检查本地是否有该用户的连接
+        if (_userConnections.TryGetValue(userId, out var connections))
         {
-            UserId = userId,
-            Message = message
-        };
-
-        var json = JsonSerializer.Serialize(payload);
-        await _subscriber.PublishAsync(RedisChannel.Literal(RedisChannelName), json);
-    }
-
-    private async Task HandleRedisMessageAsync(RedisValue redisMessage)
-    {
-        if (!redisMessage.HasValue) return;
-
-        try
-        {
-            var payload = JsonSerializer.Deserialize<SseMessagePayload>(redisMessage.ToString());
-            if (payload == null || string.IsNullOrEmpty(payload.UserId)) return;
-
-            // 检查本地是否有该用户的连接
-            if (_userConnections.TryGetValue(payload.UserId, out var connections))
+            List<string>? connectionIds;
+            lock (connections)
             {
-                List<string>? connectionIds;
-                lock (connections)
-                {
-                    connectionIds = connections.ToList();
-                }
-
-                if (connectionIds.Any())
-                {
-                    var tasks = connectionIds.Select(async connectionId =>
-                    {
-                        try
-                        {
-                            await SendMessageToLocalConnectionAsync(connectionId, payload.Message);
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogWarning(ex, "向用户 {UserId} 的连接 {ConnectionId} 发送消息失败", payload.UserId, connectionId);
-                        }
-                    });
-
-                    await Task.WhenAll(tasks);
-                }
+                connectionIds = [.. connections];
             }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "处理 Redis SSE 消息失败");
+
+            if (connectionIds.Count != 0)
+            {
+                var tasks = connectionIds.Select(async connectionId =>
+                {
+                    try
+                    {
+                        await SendMessageToLocalConnectionAsync(connectionId, message);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "向用户 {UserId} 的连接 {ConnectionId} 发送消息失败", userId, connectionId);
+                    }
+                });
+
+                await Task.WhenAll(tasks);
+            }
         }
     }
 
@@ -173,13 +137,10 @@ public class ChatSseConnectionManager : IChatSseConnectionManager, IDisposable
     }
 
     /// <summary>
-    /// 向指定连接发送消息（内部使用，已修改为 SendMessageToLocalConnectionAsync）
+    /// 向指定连接发送消息
     /// </summary>
     public async Task SendMessageAsync(string connectionId, string message)
     {
-        // 兼容旧接口，直接发送（仅限本地）
-        // 如果调用此方法，意味着调用者知道 connectionId，通常是在单机模式下。
-        // 为了安全，这里只处理本地连接。
         await SendMessageToLocalConnectionAsync(connectionId, message);
     }
 
@@ -231,18 +192,12 @@ public class ChatSseConnectionManager : IChatSseConnectionManager, IDisposable
     /// </summary>
     public void Dispose()
     {
-        _subscriber?.UnsubscribeAll();
+        GC.SuppressFinalize(this);
     }
 
     private class SseConnection
     {
         public HttpResponse Response { get; set; } = null!;
         public CancellationToken CancellationToken { get; set; }
-    }
-
-    private class SseMessagePayload
-    {
-        public string UserId { get; set; } = string.Empty;
-        public string Message { get; set; } = string.Empty;
     }
 }

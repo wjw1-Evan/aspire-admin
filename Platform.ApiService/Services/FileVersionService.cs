@@ -1,7 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using MongoDB.Bson;
-using MongoDB.Driver;
-using MongoDB.Driver.GridFS;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using System.Security.Cryptography;
@@ -16,10 +13,9 @@ public class FileVersionService : IFileVersionService
 {
     private readonly IDataFactory<FileVersion> _versionFactory;
     private readonly ICloudStorageService _cloudStorageService;
-    private readonly IGridFSService _gridFSService;
+    private readonly IFileStorageFactory _fileStorageFactory;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<FileVersionService> _logger;
-    private readonly GridFSBucket _filesBucket;
 
     /// <summary>
     /// 初始化文件版本控制服务
@@ -27,17 +23,15 @@ public class FileVersionService : IFileVersionService
     public FileVersionService(
         IDataFactory<FileVersion> versionFactory,
         ICloudStorageService cloudStorageService,
-        IGridFSService gridFSService,
+        IFileStorageFactory fileStorageFactory,
         ITenantContext tenantContext,
         ILogger<FileVersionService> logger)
     {
         _versionFactory = versionFactory ?? throw new ArgumentNullException(nameof(versionFactory));
         _cloudStorageService = cloudStorageService ?? throw new ArgumentNullException(nameof(cloudStorageService));
-        _gridFSService = gridFSService ?? throw new ArgumentNullException(nameof(gridFSService));
+        _fileStorageFactory = fileStorageFactory ?? throw new ArgumentNullException(nameof(fileStorageFactory));
         _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-
-        _filesBucket = _gridFSService.GetBucket("cloud_storage_files");
     }
 
     /// <summary>
@@ -76,27 +70,28 @@ public class FileVersionService : IFileVersionService
         // 获取下一个版本号
         var nextVersionNumber = await GetNextVersionNumberAsync(fileItemId);
 
-        // 上传文件到GridFS
+        // 上传文件到存储
         string gridFSId;
         using (var fileStream = file.OpenReadStream())
         {
             var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
-            var uploadOptions = new GridFSUploadOptions
+            var metadata = new Dictionary<string, object>
             {
-                Metadata = new BsonDocument
-                {
-                    ["originalName"] = file.FileName,
-                    ["contentType"] = file.ContentType ?? "application/octet-stream",
-                    ["uploadedAt"] = DateTime.UtcNow,
-                    ["companyId"] = companyId ?? string.Empty,
-                    ["hash"] = fileHash,
-                    ["fileItemId"] = fileItemId,
-                    ["versionNumber"] = nextVersionNumber
-                }
+                ["originalName"] = file.FileName,
+                ["contentType"] = file.ContentType ?? "application/octet-stream",
+                ["uploadedAt"] = DateTime.UtcNow,
+                ["companyId"] = companyId ?? string.Empty,
+                ["hash"] = fileHash,
+                ["fileItemId"] = fileItemId,
+                ["versionNumber"] = nextVersionNumber
             };
 
-            var objectId = await _filesBucket.UploadFromStreamAsync(file.FileName, fileStream, uploadOptions);
-            gridFSId = objectId.ToString();
+            gridFSId = await _fileStorageFactory.UploadAsync(
+                fileStream,
+                file.FileName,
+                file.ContentType,
+                metadata,
+                "cloud_storage_files");
         }
 
         // 将之前的当前版本标记为非当前版本
@@ -257,14 +252,12 @@ public class FileVersionService : IFileVersionService
         if (string.IsNullOrEmpty(version.GridFSId))
             throw new InvalidOperationException("版本文件内容不存在");
 
-        if (!ObjectId.TryParse(version.GridFSId, out var gridFSId))
-            throw new InvalidOperationException("版本文件标识格式不正确");
-
         try
         {
-            return await _filesBucket.OpenDownloadStreamAsync(gridFSId);
+            var bytes = await _fileStorageFactory.DownloadAsBytesAsync(version.GridFSId, "cloud_storage_files");
+            return new MemoryStream(bytes);
         }
-        catch (GridFSFileNotFoundException)
+        catch
         {
             throw new InvalidOperationException("版本文件内容不存在或已被删除");
         }

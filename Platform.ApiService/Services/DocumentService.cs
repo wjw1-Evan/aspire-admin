@@ -1,6 +1,3 @@
-using MongoDB.Bson;
-using MongoDB.Driver;
-using MongoDB.Driver.GridFS;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using Microsoft.AspNetCore.Http;
@@ -202,7 +199,7 @@ public class DocumentService : IDocumentService
     private readonly IDataFactory<FormDefinition> _formFactory;
     private readonly IWorkflowEngine _workflowEngine;
     private readonly ILogger<DocumentService> _logger;
-    private readonly GridFSBucket _gridFsBucket;
+    private readonly IFileStorageFactory _fileStorageFactory;
     private readonly ITenantContext _tenantContext;
 
     /// <summary>
@@ -216,7 +213,7 @@ public class DocumentService : IDocumentService
         IDataFactory<FormDefinition> formFactory,
         IWorkflowEngine workflowEngine,
         ILogger<DocumentService> logger,
-       IGridFSService gridFSService,
+        IFileStorageFactory fileStorageFactory,
         ITenantContext tenantContext)
     {
         _documentFactory = documentFactory;
@@ -226,9 +223,8 @@ public class DocumentService : IDocumentService
         _formFactory = formFactory;
         _workflowEngine = workflowEngine;
         _logger = logger;
+        _fileStorageFactory = fileStorageFactory;
         _tenantContext = tenantContext;
-        var gridFsServiceNotNull = gridFSService ?? throw new ArgumentNullException(nameof(gridFSService));
-        _gridFsBucket = gridFsServiceNotNull.GetBucket("document_attachments");
     }
 
     /// <summary>
@@ -495,24 +491,25 @@ public class DocumentService : IDocumentService
             ? $"attachment-{Guid.NewGuid():N}"
             : file.FileName;
 
-        var gridFsId = await _gridFsBucket.UploadFromStreamAsync(
-            fileName,
+        var metadata = new Dictionary<string, object>
+        {
+            { "companyId", companyId },
+            { "uploaderId", userId },
+            { "mimeType", file.ContentType ?? "application/octet-stream" },
+            { "size", file.Length },
+            { "checksum", checksum }
+        };
+
+        var gridFsId = await _fileStorageFactory.UploadAsync(
             memoryStream,
-            new GridFSUploadOptions
-            {
-                Metadata = new BsonDocument
-                {
-                    { "companyId", companyId },
-                    { "uploaderId", userId },
-                    { "mimeType", file.ContentType ?? "application/octet-stream" },
-                    { "size", file.Length },
-                    { "checksum", checksum }
-                }
-            });
+            fileName,
+            file.ContentType,
+            metadata,
+            "document_attachments");
 
         return new DocumentAttachmentUploadResult
         {
-            Id = gridFsId.ToString(),
+            Id = gridFsId,
             Name = fileName,
             Size = file.Length,
             ContentType = file.ContentType ?? "application/octet-stream",
@@ -530,31 +527,20 @@ public class DocumentService : IDocumentService
             throw new ArgumentException("附件标识不能为空", nameof(attachmentId));
         }
 
-        if (!ObjectId.TryParse(attachmentId, out var gridFsId))
-        {
-            throw new ArgumentException("附件标识格式不正确", nameof(attachmentId));
-        }
-
         try
         {
-            var downloadStream = await _gridFsBucket.OpenDownloadStreamAsync(gridFsId);
-            if (downloadStream.CanSeek)
-            {
-                downloadStream.Seek(0, SeekOrigin.Begin);
-            }
-
-            var contentType = downloadStream.FileInfo?.Metadata?["mimeType"]?.AsString ?? "application/octet-stream";
-            var fileName = downloadStream.FileInfo?.Filename ?? "attachment";
+            var bytes = await _fileStorageFactory.DownloadAsBytesAsync(attachmentId, "document_attachments");
+            var fileInfo = await _fileStorageFactory.GetFileInfoAsync(attachmentId, "document_attachments");
 
             return new DocumentAttachmentDownloadResult
             {
-                Content = downloadStream,
-                ContentType = contentType,
-                FileName = fileName,
-                ContentLength = downloadStream.FileInfo?.Length ?? 0
+                Content = new MemoryStream(bytes),
+                ContentType = fileInfo?.ContentType ?? "application/octet-stream",
+                FileName = fileInfo?.FileName ?? "attachment",
+                ContentLength = fileInfo?.Length ?? bytes.Length
             };
         }
-        catch (GridFSFileNotFoundException)
+        catch
         {
             return null;
         }

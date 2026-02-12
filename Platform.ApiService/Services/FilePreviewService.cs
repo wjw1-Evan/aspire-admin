@@ -1,7 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using MongoDB.Bson;
-using MongoDB.Driver;
-using MongoDB.Driver.GridFS;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using System.Text;
@@ -14,11 +11,9 @@ namespace Platform.ApiService.Services;
 public class FilePreviewService : IFilePreviewService
 {
     private readonly ICloudStorageService _cloudStorageService;
-    private readonly IGridFSService _gridFSService;
+    private readonly IFileStorageFactory _fileStorageFactory;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<FilePreviewService> _logger;
-    private readonly GridFSBucket _thumbnailsBucket;
-    private readonly GridFSBucket _previewsBucket;
 
     /// <summary>
     /// 支持预览的MIME类型
@@ -58,17 +53,14 @@ public class FilePreviewService : IFilePreviewService
     /// </summary>
     public FilePreviewService(
         ICloudStorageService cloudStorageService,
-        IGridFSService gridFSService,
+        IFileStorageFactory fileStorageFactory,
         ITenantContext tenantContext,
         ILogger<FilePreviewService> logger)
     {
         _cloudStorageService = cloudStorageService ?? throw new ArgumentNullException(nameof(cloudStorageService));
-        _gridFSService = gridFSService ?? throw new ArgumentNullException(nameof(gridFSService));
+        _fileStorageFactory = fileStorageFactory ?? throw new ArgumentNullException(nameof(fileStorageFactory));
         _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-
-        _thumbnailsBucket = _gridFSService.GetBucket("cloud_storage_thumbnails");
-        _previewsBucket = _gridFSService.GetBucket("cloud_storage_previews");
     }
 
     /// <summary>
@@ -124,34 +116,26 @@ public class FilePreviewService : IFilePreviewService
             // 获取原文件内容
             using var originalStream = await _cloudStorageService.DownloadFileAsync(fileItemId);
 
-            // 生成缩略图（这里是简化实现，实际应该使用图像处理库）
             var thumbnailData = await GenerateThumbnailDataAsync(originalStream, fileItem.MimeType, width, height);
 
-            // 上传缩略图到GridFS
+            // 上传缩略图到存储
             var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
-            var uploadOptions = new GridFSUploadOptions
+            var metadata = new Dictionary<string, object>
             {
-                Metadata = new BsonDocument
-                {
-                    ["originalFileId"] = fileItemId,
-                    ["width"] = width,
-                    ["height"] = height,
-                    ["generatedAt"] = DateTime.UtcNow,
-                    ["companyId"] = companyId ?? string.Empty
-                }
+                ["originalFileId"] = fileItemId,
+                ["width"] = width,
+                ["height"] = height,
+                ["generatedAt"] = DateTime.UtcNow,
+                ["companyId"] = companyId ?? string.Empty
             };
 
             using var thumbnailStream = new MemoryStream(thumbnailData);
-            var objectId = await _thumbnailsBucket.UploadFromStreamAsync(
-                $"thumbnail_{fileItem.Name}",
+            var thumbnailGridFSId = await _fileStorageFactory.UploadAsync(
                 thumbnailStream,
-                uploadOptions);
-
-            var thumbnailGridFSId = objectId.ToString();
-
-            // 更新文件项的缩略图ID
-            // 注意：这里需要直接更新FileItem，但我们没有直接访问FileItem工厂的权限
-            // 实际实现中应该通过CloudStorageService提供的方法来更新
+                $"thumbnail_{fileItem.Name}",
+                "image/png",
+                metadata,
+                "cloud_storage_thumbnails");
 
             _logger.LogInformation("Generated thumbnail for file {FileItemId}: {ThumbnailId}", fileItemId, thumbnailGridFSId);
             return thumbnailGridFSId;
@@ -186,14 +170,12 @@ public class FilePreviewService : IFilePreviewService
                 throw new InvalidOperationException("缩略图不存在且无法生成");
         }
 
-        if (!ObjectId.TryParse(fileItem.ThumbnailGridFSId, out var thumbnailId))
-            throw new InvalidOperationException("缩略图标识格式不正确");
-
         try
         {
-            return await _thumbnailsBucket.OpenDownloadStreamAsync(thumbnailId);
+            var bytes = await _fileStorageFactory.DownloadAsBytesAsync(fileItem!.ThumbnailGridFSId, "cloud_storage_thumbnails");
+            return new MemoryStream(bytes);
         }
-        catch (GridFSFileNotFoundException)
+        catch
         {
             throw new InvalidOperationException("缩略图文件不存在或已被删除");
         }

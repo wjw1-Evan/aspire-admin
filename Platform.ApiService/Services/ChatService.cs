@@ -34,7 +34,7 @@ public class ChatService : IChatService
     private readonly IUserService _userService;
     private readonly ILogger<ChatService> _logger;
     private readonly IChatBroadcaster _broadcaster;
-    private readonly GridFSBucket _gridFsBucket;
+    private readonly IFileStorageFactory _fileStorageFactory;
     private readonly IAiAssistantCoordinator _aiAssistantCoordinator;
     private readonly OpenAIClient _openAiClient;
     private readonly AiCompletionOptions _aiOptions;
@@ -51,7 +51,7 @@ public class ChatService : IChatService
         IDataFactory<ChatAttachment> attachmentFactory,
         IDataFactory<AppUser> userFactory,
         IUserService userService,
-        Platform.ServiceDefaults.Services.IGridFSService gridFSService,
+        Platform.ServiceDefaults.Services.IFileStorageFactory fileStorageFactory,
         IChatBroadcaster broadcaster,
         IAiAssistantCoordinator aiAssistantCoordinator,
         OpenAIClient openAiClient,
@@ -66,15 +66,13 @@ public class ChatService : IChatService
         _userFactory = userFactory ?? throw new ArgumentNullException(nameof(userFactory));
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         _broadcaster = broadcaster ?? throw new ArgumentNullException(nameof(broadcaster));
+        _fileStorageFactory = fileStorageFactory ?? throw new ArgumentNullException(nameof(fileStorageFactory));
         _aiAssistantCoordinator = aiAssistantCoordinator ?? throw new ArgumentNullException(nameof(aiAssistantCoordinator));
         _openAiClient = openAiClient ?? throw new ArgumentNullException(nameof(openAiClient));
         _aiOptions = aiOptions?.Value ?? throw new ArgumentNullException(nameof(aiOptions));
         _mcpService = mcpService;
         _xiaokeConfigService = xiaokeConfigService;
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-
-        var gridFSServiceNotNull = gridFSService ?? throw new ArgumentNullException(nameof(gridFSService));
-        _gridFsBucket = gridFSServiceNotNull.GetBucket("chat_attachments");
     }
 
     /// <inheritdoc />
@@ -453,8 +451,8 @@ public class ChatService : IChatService
         // 尝试查找已存在的消息（通过 ClientMessageId）
         if (!string.IsNullOrWhiteSpace(request.ClientMessageId))
         {
-            Expression<Func<ChatMessage, bool>> filter = m => m.SessionId == request.SessionId && 
-                                                            m.ClientMessageId == request.ClientMessageId && 
+            Expression<Func<ChatMessage, bool>> filter = m => m.SessionId == request.SessionId &&
+                                                            m.ClientMessageId == request.ClientMessageId &&
                                                             m.SenderId == currentUserId;
 
             var existingMessages = await _messageFactory.FindAsync(filter, null, 1);
@@ -616,20 +614,19 @@ public class ChatService : IChatService
             ? $"attachment-{Guid.NewGuid():N}"
             : file.FileName;
 
-        var gridFsId = await _gridFsBucket.UploadFromStreamAsync(
-            fileName,
+        memoryStream.Position = 0;
+
+        var gridFsId = await _fileStorageFactory.UploadAsync(
             memoryStream,
-            new GridFSUploadOptions
+            fileName,
+            file.ContentType ?? "application/octet-stream",
+            new Dictionary<string, object>
             {
-                Metadata = new BsonDocument
-                {
-                    { "sessionId", session.Id },
-                    { "uploaderId", currentUserId },
-                    { "mimeType", file.ContentType ?? "application/octet-stream" },
-                    { "size", file.Length },
-                    { "checksum", checksum }
-                }
-            });
+                { "sessionId", session.Id },
+                { "uploaderId", currentUserId },
+                { "checksum", checksum }
+            },
+            "chat_attachments");
 
         var attachment = new ChatAttachment
         {
@@ -690,7 +687,7 @@ public class ChatService : IChatService
             throw new UnauthorizedAccessException("当前用户不属于该会话");
         }
 
-        Expression<Func<ChatAttachment, bool>> filter = attachment => attachment.SessionId == session.Id && 
+        Expression<Func<ChatAttachment, bool>> filter = attachment => attachment.SessionId == session.Id &&
                                                                  attachment.StorageObjectId == storageObjectId;
 
         var attachments = await _attachmentFactory.FindAsync(filter, null, 1);
@@ -702,12 +699,13 @@ public class ChatService : IChatService
 
         try
         {
-            var gridFsId = new ObjectId(attachment.StorageObjectId);
-            var downloadStream = await _gridFsBucket.OpenDownloadStreamAsync(gridFsId);
-            if (downloadStream.CanSeek)
+            var fileInfo = await _fileStorageFactory.GetFileInfoAsync(attachment.StorageObjectId, "chat_attachments");
+            if (fileInfo == null)
             {
-                downloadStream.Seek(0, SeekOrigin.Begin);
+                throw new KeyNotFoundException("附件内容不存在或已被删除");
             }
+
+            var downloadStream = await _fileStorageFactory.GetDownloadStreamAsync(attachment.StorageObjectId, "chat_attachments");
 
             return new ChatAttachmentDownloadResult
             {
@@ -716,10 +714,10 @@ public class ChatService : IChatService
                 ContentType = string.IsNullOrWhiteSpace(attachment.MimeType)
                     ? "application/octet-stream"
                     : attachment.MimeType,
-                ContentLength = downloadStream.FileInfo.Length
+                ContentLength = fileInfo.Length
             };
         }
-        catch (GridFSFileNotFoundException)
+        catch (Exception ex) when (ex is KeyNotFoundException)
         {
             throw new KeyNotFoundException("附件内容不存在或已被删除");
         }
@@ -835,8 +833,8 @@ public class ChatService : IChatService
 
         var participants = new[] { currentUserId, participantUserId };
 
-        Expression<Func<ChatSession, bool>> existingFilter = s => s.CompanyId == companyId && 
-                                                            s.Participants.Count == 2 && 
+        Expression<Func<ChatSession, bool>> existingFilter = s => s.CompanyId == companyId &&
+                                                            s.Participants.Count == 2 &&
                                                             participants.All(p => s.Participants.Contains(p));
 
         var existingSessions = await _sessionFactory.FindAsync(existingFilter, limit: 1);

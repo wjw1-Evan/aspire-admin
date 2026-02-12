@@ -211,20 +211,6 @@ builder.Services.AddOpenApi(options =>
 // 🚀 配置优化的MongoDB客户端（使用AddMongoDBClient，后续可在Aspire配置中添加连接池）
 builder.AddMongoDBClient(connectionName: "mongodb");
 
-// 🚀 配置EF Core DbContext（使用 MongoDB 驱动）
-builder.Services.AddDbContext<PlatformDbContext>((sp, options) =>
-{
-    var client = sp.GetRequiredService<IMongoClient>();
-    options.UseMongoDB(client, "aspire-admin-db");
-});
-
-// 注册 IMongoDatabase (GridFS 共享)
-builder.Services.AddScoped<IMongoDatabase>(sp =>
-{
-    var client = sp.GetRequiredService<IMongoClient>();
-    return client.GetDatabase("aspire-admin-db");
-});
-
 // ✅ 配置 MongoDB 全局约定：忽略额外字段，避免新旧字段不匹配导致崩溃
 var pack = new MongoDB.Bson.Serialization.Conventions.ConventionPack
 {
@@ -256,8 +242,8 @@ builder.Services.AddScoped<Platform.ServiceDefaults.Services.ITenantContext, Pla
 // 🚀 注册优化的数据工厂（使用扩展方法）
 builder.Services.AddDatabaseFactory();
 
-// 注册 GridFS 服务（用于文件存储，需要直接访问 IMongoDatabase）
-builder.Services.AddScoped<Platform.ServiceDefaults.Services.IGridFSService, Platform.ServiceDefaults.Services.GridFSService>();
+// 注册文件存储工厂（支持 GridFS/Azure Blob/S3 等）
+builder.Services.AddScoped<Platform.ServiceDefaults.Services.IFileStorageFactory, Platform.ServiceDefaults.Services.GridFSFileStorage>();
 
 // IoT 数据采集配置与后台任务
 builder.Services.Configure<IoTDataCollectionOptions>(

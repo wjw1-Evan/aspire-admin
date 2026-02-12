@@ -78,13 +78,8 @@ public enum TaskExecutionResult
 /// </summary>
 [BsonIgnoreExtraElements]
 [BsonCollectionName("tasks")]
-public class WorkTask : IEntity, ISoftDeletable, ITimestamped, IMultiTenant
+public class WorkTask : MultiTenantEntity
 {
-    /// <summary>任务ID</summary>
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
-    public string Id { get; set; } = string.Empty;
-
     /// <summary>任务名称</summary>
     [BsonElement("taskName")]
     public string TaskName { get; set; } = string.Empty;
@@ -107,16 +102,9 @@ public class WorkTask : IEntity, ISoftDeletable, ITimestamped, IMultiTenant
     [BsonRepresentation(BsonType.Int32)]
     public TaskPriority Priority { get; set; } = TaskPriority.Medium;
 
-    /// <summary>创建者ID</summary>
-    [BsonElement("createdBy")]
-    public string CreatedBy { get; set; } = string.Empty;
-
-    /// <summary>创建时间</summary>
-    [BsonElement("createdAt")]
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
     /// <summary>分配给的用户ID</summary>
     [BsonElement("assignedTo")]
+    [BsonRepresentation(BsonType.ObjectId)]
     public string? AssignedTo { get; set; }
 
     /// <summary>分配时间</summary>
@@ -160,10 +148,6 @@ public class WorkTask : IEntity, ISoftDeletable, ITimestamped, IMultiTenant
     [BsonElement("remarks")]
     public string? Remarks { get; set; }
 
-    /// <summary>所属企业ID</summary>
-    [BsonElement("companyId")]
-    public string CompanyId { get; set; } = string.Empty;
-
     /// <summary>相关用户ID列表（参与者）</summary>
     [BsonElement("participantIds")]
     public List<string> ParticipantIds { get; set; } = new();
@@ -178,10 +162,12 @@ public class WorkTask : IEntity, ISoftDeletable, ITimestamped, IMultiTenant
 
     /// <summary>所属项目ID（可选，支持独立任务）</summary>
     [BsonElement("projectId")]
+    [BsonRepresentation(BsonType.ObjectId)]
     public string? ProjectId { get; set; }
 
     /// <summary>父任务ID（可选，支持任务层级结构）</summary>
     [BsonElement("parentTaskId")]
+    [BsonRepresentation(BsonType.ObjectId)]
     public string? ParentTaskId { get; set; }
 
     /// <summary>排序顺序（用于任务树排序）</summary>
@@ -191,30 +177,6 @@ public class WorkTask : IEntity, ISoftDeletable, ITimestamped, IMultiTenant
     /// <summary>工期（天数，从 PlannedStartTime 和 PlannedEndTime 计算或手动设置）</summary>
     [BsonElement("duration")]
     public int? Duration { get; set; }
-
-    /// <summary>是否已删除</summary>
-    [BsonElement("isDeleted")]
-    public bool IsDeleted { get; set; } = false;
-
-    /// <summary>删除时间</summary>
-    [BsonElement("deletedAt")]
-    public DateTime? DeletedAt { get; set; }
-
-    /// <summary>删除者ID</summary>
-    [BsonElement("deletedBy")]
-    public string? DeletedBy { get; set; }
-
-    /// <summary>删除原因</summary>
-    [BsonElement("deletedReason")]
-    public string? DeletedReason { get; set; }
-
-    /// <summary>最后更新时间</summary>
-    [BsonElement("updatedAt")]
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
-    /// <summary>最后更新者ID</summary>
-    [BsonElement("updatedBy")]
-    public string? UpdatedBy { get; set; }
 }
 
 /// <summary>
@@ -253,19 +215,16 @@ public class TaskAttachment
 /// </summary>
 [BsonIgnoreExtraElements]
 [BsonCollectionName("task_execution_logs")]
-public class TaskExecutionLog : IEntity, ISoftDeletable, ITimestamped, IMultiTenant
+public class TaskExecutionLog : MultiTenantEntity
 {
-    /// <summary>日志ID</summary>
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
-    public string Id { get; set; } = string.Empty;
-
     /// <summary>任务ID</summary>
     [BsonElement("taskId")]
+    [BsonRepresentation(BsonType.ObjectId)]
     public string TaskId { get; set; } = string.Empty;
 
     /// <summary>执行者ID</summary>
     [BsonElement("executedBy")]
+    [BsonRepresentation(BsonType.ObjectId)]
     public string ExecutedBy { get; set; } = string.Empty;
 
     /// <summary>执行开始时间</summary>
@@ -292,34 +251,6 @@ public class TaskExecutionLog : IEntity, ISoftDeletable, ITimestamped, IMultiTen
     /// <summary>执行进度百分比</summary>
     [BsonElement("progressPercentage")]
     public int ProgressPercentage { get; set; } = 0;
-
-    /// <summary>所属企业ID</summary>
-    [BsonElement("companyId")]
-    public string CompanyId { get; set; } = string.Empty;
-
-    /// <summary>创建时间</summary>
-    [BsonElement("createdAt")]
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-    /// <summary>最后更新时间</summary>
-    [BsonElement("updatedAt")]
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
-    /// <summary>是否已删除</summary>
-    [BsonElement("isDeleted")]
-    public bool IsDeleted { get; set; } = false;
-
-    /// <summary>删除时间</summary>
-    [BsonElement("deletedAt")]
-    public DateTime? DeletedAt { get; set; }
-
-    /// <summary>删除者ID</summary>
-    [BsonElement("deletedBy")]
-    public string? DeletedBy { get; set; }
-
-    /// <summary>删除原因</summary>
-    [BsonElement("deletedReason")]
-    public string? DeletedReason { get; set; }
 }
 
 /// <summary>

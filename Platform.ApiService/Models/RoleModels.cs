@@ -8,15 +8,8 @@ namespace Platform.ApiService.Models;
 /// <summary>
 /// 角色实体
 /// </summary>
-public class Role : Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDefaults.Models.ISoftDeletable, Platform.ServiceDefaults.Models.INamedEntity, Platform.ServiceDefaults.Models.ITimestamped, Platform.ServiceDefaults.Models.IMultiTenant
+public class Role : MultiTenantEntity, INamedEntity
 {
-    /// <summary>
-    /// 角色ID（MongoDB ObjectId）
-    /// </summary>
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
-    public string Id { get; set; } = string.Empty;
-
     /// <summary>
     /// 角色名称（唯一标识）
     /// </summary>
@@ -42,70 +35,16 @@ public class Role : Platform.ServiceDefaults.Models.IEntity, Platform.ServiceDef
     public List<string> MenuIds { get; set; } = new();
 
     /// <summary>
-    /// 所属企业ID
-    /// </summary>
-    [BsonElement("companyId")]
-    public string CompanyId { get; set; } = string.Empty;
-
-    /// <summary>
     /// 是否激活
     /// </summary>
     [BsonElement("isActive")]
     public bool IsActive { get; set; } = true;
 
     /// <summary>
-    /// 创建时间
-    /// </summary>
-    [BsonElement("createdAt")]
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-    /// <summary>
-    /// 更新时间
-    /// </summary>
-    [BsonElement("updatedAt")]
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
-    /// <summary>
-    /// 是否已删除（软删除）
-    /// </summary>
-    [BsonElement("isDeleted")]
-    public bool IsDeleted { get; set; } = false;
-
-    /// <summary>
-    /// 删除时间
-    /// </summary>
-    [BsonElement("deletedAt")]
-    public DateTime? DeletedAt { get; set; }
-
-    /// <summary>
-    /// 删除者
-    /// </summary>
-    [BsonElement("deletedBy")]
-    public string? DeletedBy { get; set; }
-
-    /// <summary>
-    /// 删除原因
-    /// </summary>
-    [BsonElement("deletedReason")]
-    public string? DeletedReason { get; set; }
-
-    /// <summary>
-    /// 创建者ID
-    /// </summary>
-    [BsonElement("createdBy")]
-    public string? CreatedBy { get; set; }
-
-    /// <summary>
     /// 创建者用户名
     /// </summary>
     [BsonElement("createdByUsername")]
     public string? CreatedByUsername { get; set; }
-
-    /// <summary>
-    /// 更新者ID
-    /// </summary>
-    [BsonElement("updatedBy")]
-    public string? UpdatedBy { get; set; }
 
     /// <summary>
     /// 更新者用户名

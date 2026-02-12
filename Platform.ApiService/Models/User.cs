@@ -459,15 +459,8 @@ public class UserStatisticsResponse
 /// <summary>
 /// 用户活动日志实体
 /// </summary>
-public class UserActivityLog : ISoftDeletable, IEntity, ITimestamped, IMultiTenant
+public class UserActivityLog : MultiTenantEntity
 {
-    /// <summary>
-    /// 日志ID（MongoDB ObjectId）
-    /// </summary>
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
-    public string Id { get; set; } = string.Empty;
-
     /// <summary>
     /// 用户ID
     /// </summary>
@@ -553,48 +546,6 @@ public class UserActivityLog : ISoftDeletable, IEntity, ITimestamped, IMultiTena
     [BsonElement("metadata")]
     [JsonPropertyName("metadata")]
     public Dictionary<string, object> Metadata { get; set; } = new();
-
-    /// <summary>
-    /// 企业ID
-    /// </summary>
-    [BsonElement("companyId")]
-    public string CompanyId { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 创建时间
-    /// </summary>
-    [BsonElement("createdAt")]
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-    /// <summary>
-    /// 更新时间
-    /// </summary>
-    [BsonElement("updatedAt")]
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
-    /// <summary>
-    /// 是否已删除（软删除）
-    /// </summary>
-    [BsonElement("isDeleted")]
-    public bool IsDeleted { get; set; } = false;
-
-    /// <summary>
-    /// 删除时间
-    /// </summary>
-    [BsonElement("deletedAt")]
-    public DateTime? DeletedAt { get; set; }
-
-    /// <summary>
-    /// 删除者
-    /// </summary>
-    [BsonElement("deletedBy")]
-    public string? DeletedBy { get; set; }
-
-    /// <summary>
-    /// 删除原因
-    /// </summary>
-    [BsonElement("deletedReason")]
-    public string? DeletedReason { get; set; }
 }
 
 /// <summary>

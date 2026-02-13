@@ -30,6 +30,7 @@ public class AuthController : BaseApiController
     /// <param name="captchaService">验证码服务</param>
     /// <param name="imageCaptchaService">图形验证码服务</param>
     /// <param name="phoneValidationService">手机号验证服务</param>
+    /// <param name="encryptionService">密码加密服务</param>
     public AuthController(
         IAuthService authService,
         ICaptchaService captchaService,

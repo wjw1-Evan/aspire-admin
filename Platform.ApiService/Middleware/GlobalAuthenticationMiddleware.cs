@@ -130,7 +130,7 @@ public class GlobalAuthenticationMiddleware
         }
 
         // 设置用户身份
-        context.User = validationResult.Principal;
+        context.User = validationResult.Principal!;
 
         await _next(context);
     }

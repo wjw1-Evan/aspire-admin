@@ -296,26 +296,10 @@ public class ParkInvestmentService : IParkInvestmentService
     /// <summary>
     /// 获取招商统计数据
     /// </summary>
-    public async Task<InvestmentStatisticsResponse> GetStatisticsAsync(StatisticsPeriod period = StatisticsPeriod.Month, DateTime? startDate = null, DateTime? endDate = null)
+    public async Task<InvestmentStatisticsResponse> GetStatisticsAsync(DateTime? startDate = null, DateTime? endDate = null)
     {
-        DateTime start;
+        DateTime start = startDate ?? new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
         DateTime end = endDate ?? DateTime.UtcNow;
-
-        if (period == StatisticsPeriod.Custom && startDate.HasValue)
-        {
-            start = startDate.Value;
-        }
-        else
-        {
-            start = period switch
-            {
-                StatisticsPeriod.Day => DateTime.UtcNow.Date,
-                StatisticsPeriod.Week => DateTime.UtcNow.Date.AddDays(-(int)DateTime.UtcNow.DayOfWeek),
-                StatisticsPeriod.Month => new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1),
-                StatisticsPeriod.Year => new DateTime(DateTime.UtcNow.Year, 1, 1),
-                _ => new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1)
-            };
-        }
 
         // Stock metrics (State at 'end' date)
         var totalLeadsAtEnd = await _leadFactory.CountAsync(l => l.CreatedAt <= end);

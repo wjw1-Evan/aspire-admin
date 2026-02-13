@@ -534,39 +534,21 @@ public class ParkTenantService : IParkTenantService
     /// <summary>
     /// 获取租户统计数据
     /// </summary>
-    public async Task<TenantStatisticsResponse> GetStatisticsAsync(StatisticsPeriod period = StatisticsPeriod.Month, DateTime? startDate = null, DateTime? endDate = null)
+    public async Task<TenantStatisticsResponse> GetStatisticsAsync(DateTime? startDate = null, DateTime? endDate = null)
     {
         var tenants = await _tenantFactory.FindAsync();
         var contracts = await _contractFactory.FindAsync();
         var payments = await _paymentFactory.FindAsync();
 
         DateTime end = endDate ?? DateTime.UtcNow;
-        DateTime start;
-
-        if (period == StatisticsPeriod.Custom && startDate.HasValue)
-        {
-            start = startDate.Value;
-        }
-        else
-        {
-            start = period switch
-            {
-                StatisticsPeriod.Day => DateTime.UtcNow.Date,
-                StatisticsPeriod.Week => DateTime.UtcNow.Date.AddDays(-(int)DateTime.UtcNow.DayOfWeek),
-                StatisticsPeriod.Month => new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1),
-                StatisticsPeriod.Year => new DateTime(DateTime.UtcNow.Year, 1, 1),
-                _ => new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1)
-            };
-        }
+        DateTime start = startDate ?? new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
 
         // Get contracts active during the period
         List<LeaseContract> activeContracts;
 
-        // For Custom period, filter by date range AND valid status
-        // For standard periods, use current "Active" status
-        if (period == StatisticsPeriod.Custom && startDate.HasValue)
+        // If startDate is provided, filter contracts that overlap with the period
+        if (startDate.HasValue)
         {
-            // Include contracts that overlap with the period AND are not terminated/draft
             activeContracts = contracts.Where(c =>
                 (c.Status == "Active" || c.Status == "Renewed") &&
                 c.StartDate <= end &&

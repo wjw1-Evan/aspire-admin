@@ -67,6 +67,7 @@ const PageContainer: React.FC<PageContainerProps> = React.memo(({
   tabList,
   tabActiveKey,
   onTabChange,
+  ghost, // 提取 ghost 属性，避免传递给原生 div
   ...restProps
 }) => {
   const location = useLocation();

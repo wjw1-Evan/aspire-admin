@@ -297,30 +297,14 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
     /// <summary>
     /// 获取企业服务统计数据
     /// </summary>
-    public async Task<ServiceStatisticsResponse> GetStatisticsAsync(StatisticsPeriod period = StatisticsPeriod.Month, DateTime? startDate = null, DateTime? endDate = null)
+    public async Task<ServiceStatisticsResponse> GetStatisticsAsync(DateTime? startDate = null, DateTime? endDate = null)
     {
         var categories = await _categoryFactory.FindAsync();
         // Get all requests first (or optimize to filter in DB)
         var allRequests = await _requestFactory.FindAsync();
 
-        DateTime start;
+        DateTime start = startDate ?? new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
         DateTime end = endDate ?? DateTime.UtcNow;
-
-        if (period == StatisticsPeriod.Custom && startDate.HasValue)
-        {
-            start = startDate.Value;
-        }
-        else
-        {
-            start = period switch
-            {
-                StatisticsPeriod.Day => DateTime.UtcNow.Date,
-                StatisticsPeriod.Week => DateTime.UtcNow.Date.AddDays(-(int)DateTime.UtcNow.DayOfWeek),
-                StatisticsPeriod.Month => new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1),
-                StatisticsPeriod.Year => new DateTime(DateTime.UtcNow.Year, 1, 1),
-                _ => new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1) // Default to Month
-            };
-        }
 
         // Filter requests for the statistics period
         var requests = allRequests.Where(r => r.CreatedAt >= start && r.CreatedAt <= end).ToList();

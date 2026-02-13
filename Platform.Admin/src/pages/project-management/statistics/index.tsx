@@ -142,21 +142,21 @@ const StatisticsPage: React.FC = () => {
                             <Statistic
                                 title="进行中"
                                 value={inProgressProjects}
-                                valueStyle={{ color: '#1890ff' }}
+                                styles={{ content: { color: '#1890ff' } }}
                             />
                         </Col>
                         <Col span={8}>
                             <Statistic
                                 title="已完成"
                                 value={completedProjects}
-                                valueStyle={{ color: '#52c41a' }}
+                                styles={{ content: { color: '#52c41a' } }}
                             />
                         </Col>
                         <Col span={8}>
                             <Statistic
                                 title="延期"
                                 value={delayedProjects}
-                                valueStyle={{ color: '#ff4d4f' }}
+                                styles={{ content: { color: '#ff4d4f' } }}
                             />
                         </Col>
                     </Row>
@@ -234,7 +234,7 @@ const StatisticsPage: React.FC = () => {
                                 title="待达成"
                                 value={pendingMilestones}
                                 prefix={<ClockCircleOutlined />}
-                                valueStyle={{ color: '#faad14' }}
+                                styles={{ content: { color: '#faad14' } }}
                             />
                         </Col>
                         <Col span={12}>
@@ -242,7 +242,7 @@ const StatisticsPage: React.FC = () => {
                                 title="已达成"
                                 value={achievedMilestones}
                                 prefix={<CheckCircleOutlined />}
-                                valueStyle={{ color: '#52c41a' }}
+                                styles={{ content: { color: '#52c41a' } }}
                             />
                         </Col>
                     </Row>
@@ -299,7 +299,7 @@ const StatisticsPage: React.FC = () => {
             title="项目统计报表"
             ghost
             extra={[
-                <Space>
+                <Space key="statistics-extra">
                     <StatisticsPeriodSelector
                         value={period as string}
                         dateRange={dateRange}

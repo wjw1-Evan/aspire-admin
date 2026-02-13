@@ -5,51 +5,52 @@ export enum StatisticsPeriod {
     Day = 0,
     Week = 1,
     Month = 2,
-    Year = 3,
-    Custom = 4,
+    Quarter = 3,
+    Year = 4,
+    Custom = 5,
 }
 
 // ... (rest of the file until getAssetStatistics)
 
 // Statistics
-export async function getAssetStatistics(period?: StatisticsPeriod, startDate?: string, endDate?: string) {
+export async function getAssetStatistics(startDate?: string, endDate?: string) {
     return request<ApiResponse<AssetStatistics>>('/api/park/asset/statistics', {
         method: 'GET',
-        params: { period, startDate, endDate },
+        params: { startDate, endDate },
     });
 }
 
 // ... (rest of the file until getInvestmentStatistics)
 
-export async function getInvestmentStatistics(period?: StatisticsPeriod, startDate?: string, endDate?: string) {
+export async function getInvestmentStatistics(startDate?: string, endDate?: string) {
     return request<ApiResponse<InvestmentStatistics>>('/api/park/investment/statistics', {
         method: 'GET',
-        params: { period, startDate, endDate },
+        params: { startDate, endDate },
     });
 }
 
 // ... (rest of the file until getTenantStatistics)
 
-export async function getTenantStatistics(period?: StatisticsPeriod, startDate?: string, endDate?: string) {
+export async function getTenantStatistics(startDate?: string, endDate?: string) {
     return request<ApiResponse<TenantStatistics>>('/api/park/tenant/statistics', {
         method: 'GET',
-        params: { period, startDate, endDate },
+        params: { startDate, endDate },
     });
 }
 
 // ... (rest of the file until getServiceStatistics)
 
-export async function getServiceStatistics(period?: StatisticsPeriod, startDate?: string, endDate?: string) {
+export async function getServiceStatistics(startDate?: string, endDate?: string) {
     return request<ApiResponse<ServiceStatistics>>('/api/park/services/statistics', {
         method: 'GET',
-        params: { period, startDate, endDate },
+        params: { startDate, endDate },
     });
 }
 
-export async function generateAiReport(period?: StatisticsPeriod, startDate?: string, endDate?: string, data?: any) {
+export async function generateAiReport(startDate?: string, endDate?: string, data?: any) {
     return request<ApiResponse<string>>('/api/park/statistics/ai-report', {
         method: 'POST',
-        params: { period, startDate, endDate },
+        params: { startDate, endDate },
         data,
     });
 }

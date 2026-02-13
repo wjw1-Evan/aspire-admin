@@ -1985,6 +1985,13 @@ export default {
   'pages.park.statistics.totalReceived': 'Received Rent',
   'pages.park.statistics.collectionRate': 'Collection Rate',
 
+  // Statistics Period Selector
+  'pages.statistics.period.week': 'This Week',
+  'pages.statistics.period.month': 'This Month',
+  'pages.statistics.period.quarter': 'This Quarter',
+  'pages.statistics.period.year': 'This Year',
+  'pages.statistics.period.custom': 'Custom',
+
   // Status and Workflow
   'status.unknown': 'Unknown',
   'pages.workflow.select': 'Select Workflow',

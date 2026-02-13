@@ -305,15 +305,14 @@ public class ParkTenantController : BaseApiController
     /// <summary>
     /// 获取租户统计
     /// </summary>
-    /// <param name="period">统计周期</param>
-    /// <param name="startDate">开始日期（自定义周期时必填）</param>
-    /// <param name="endDate">结束日期（自定义周期时必填）</param>
+    /// <param name="startDate">开始日期</param>
+    /// <param name="endDate">结束日期</param>
     [HttpGet("tenant/statistics")]
-    public async Task<IActionResult> GetStatistics([FromQuery] StatisticsPeriod period = StatisticsPeriod.Month, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
+    public async Task<IActionResult> GetStatistics([FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
     {
         try
         {
-            var result = await _tenantService.GetStatisticsAsync(period, startDate, endDate);
+            var result = await _tenantService.GetStatisticsAsync(startDate, endDate);
             return Success(result);
         }
         catch (Exception ex)

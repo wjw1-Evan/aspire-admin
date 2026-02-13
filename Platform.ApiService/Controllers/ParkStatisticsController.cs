@@ -33,14 +33,13 @@ public class ParkStatisticsController : BaseApiController
     /// </summary>
     [HttpPost("ai-report")]
     public async Task<IActionResult> GenerateAiReport(
-        [FromQuery] StatisticsPeriod period = StatisticsPeriod.Month,
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null,
         [FromBody] object? statisticsData = null)
     {
         try
         {
-            var result = await _statisticsService.GenerateAiReportAsync(period, startDate, endDate, statisticsData);
+            var result = await _statisticsService.GenerateAiReportAsync(startDate, endDate, statisticsData);
             return Success(result);
         }
         catch (Exception ex)

@@ -2090,6 +2090,13 @@ export default {
   'pages.park.statistics.totalReceived': '实收租金',
   'pages.park.statistics.collectionRate': '收缴率',
 
+  // 通用统计周期选择器
+  'pages.statistics.period.week': '本周',
+  'pages.statistics.period.month': '本月',
+  'pages.statistics.period.quarter': '本季',
+  'pages.statistics.period.year': '本年',
+  'pages.statistics.period.custom': '自定义',
+
   // 走访管理 (Visit Management)
   'pages.park.visit.title': '走访管理',
   'pages.park.visit.task': '走访任务',

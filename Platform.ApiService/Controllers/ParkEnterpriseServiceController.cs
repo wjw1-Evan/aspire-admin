@@ -253,15 +253,14 @@ public class ParkEnterpriseServiceController : BaseApiController
     /// <summary>
     /// 获取服务统计
     /// </summary>
-    /// <param name="period">统计周期</param>
-    /// <param name="startDate">开始日期（自定义周期时必填）</param>
-    /// <param name="endDate">结束日期（自定义周期时必填）</param>
+    /// <param name="startDate">开始日期</param>
+    /// <param name="endDate">结束日期</param>
     [HttpGet("statistics")]
-    public async Task<IActionResult> GetServiceStatistics([FromQuery] StatisticsPeriod period = StatisticsPeriod.Month, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
+    public async Task<IActionResult> GetServiceStatistics([FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
     {
         try
         {
-            var result = await _enterpriseService.GetStatisticsAsync(period, startDate, endDate);
+            var result = await _enterpriseService.GetStatisticsAsync(startDate, endDate);
             return Success(result);
         }
         catch (Exception ex)

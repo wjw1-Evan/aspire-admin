@@ -36,13 +36,11 @@ public class ProjectStatisticsController : BaseApiController
     /// <summary>
     /// 获取仪表盘统计数据
     /// </summary>
-    /// <param name="period">统计周期</param>
     /// <param name="startDate">开始日期</param>
     /// <param name="endDate">结束日期</param>
     /// <returns>仪表盘统计数据</returns>
     [HttpGet("dashboard")]
     public async Task<IActionResult> GetDashboardStatistics(
-        [FromQuery] StatisticsPeriod period = StatisticsPeriod.Month,
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null)
     {
@@ -55,7 +53,7 @@ public class ProjectStatisticsController : BaseApiController
                 return ValidationError("无法获取企业信息的统计数据");
             }
 
-            var stats = await _statisticsService.GetDashboardStatisticsAsync(user.CurrentCompanyId, period, startDate, endDate);
+            var stats = await _statisticsService.GetDashboardStatisticsAsync(user.CurrentCompanyId, startDate, endDate);
             return Success(stats);
         }
         catch (Exception ex)
@@ -68,14 +66,12 @@ public class ProjectStatisticsController : BaseApiController
     /// <summary>
     /// 生成 AI 统计报告
     /// </summary>
-    /// <param name="period">统计周期</param>
     /// <param name="startDate">开始日期</param>
     /// <param name="endDate">结束日期</param>
     /// <param name="statisticsData">前台传递的统计数据（可选）</param>
     /// <returns>AI 生成的markdown 报告</returns>
     [HttpPost("ai-report")]
     public async Task<IActionResult> GenerateAiReport(
-        [FromQuery] StatisticsPeriod period = StatisticsPeriod.Month,
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null,
         [FromBody] object? statisticsData = null)
@@ -89,7 +85,7 @@ public class ProjectStatisticsController : BaseApiController
                 return ValidationError("无法获取企业信息的统计数据");
             }
 
-            var report = await _statisticsService.GenerateAiReportAsync(user.CurrentCompanyId, period, startDate, endDate, statisticsData);
+            var report = await _statisticsService.GenerateAiReportAsync(user.CurrentCompanyId, startDate, endDate, statisticsData);
             return Success(data: report);
         }
         catch (Exception ex)

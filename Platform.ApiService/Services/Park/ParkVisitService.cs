@@ -440,17 +440,11 @@ public class ParkVisitService : IParkVisitService
     /// <summary>
     /// 获取走访统计数据
     /// </summary>
-    public async Task<VisitStatisticsDto> GetVisitStatisticsAsync(StatisticsPeriod period = StatisticsPeriod.Month, DateTime? startDate = null, DateTime? endDate = null)
+    public async Task<VisitStatisticsDto> GetVisitStatisticsAsync(DateTime? startDate = null, DateTime? endDate = null)
     {
         // 1. 获取周期范围
         var now = DateTime.Now;
-        var startOfPeriod = startDate ?? (period switch
-        {
-            StatisticsPeriod.Day => now.Date,
-            StatisticsPeriod.Week => now.AddDays(-(int)now.DayOfWeek),
-            StatisticsPeriod.Year => new DateTime(now.Year, 1, 1),
-            _ => new DateTime(now.Year, now.Month, 1)
-        });
+        var startOfPeriod = startDate ?? new DateTime(now.Year, now.Month, 1);
         var endOfPeriod = endDate ?? now;
 
         // 1. 基础指标

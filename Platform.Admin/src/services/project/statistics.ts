@@ -54,13 +54,12 @@ export interface ProjectDashboardStatistics {
  * 获取仪表盘统计数据
  */
 export async function getDashboardStatistics(
-    period?: ProjectStatisticsPeriod,
     startDate?: string,
     endDate?: string
 ) {
     return request<ApiResponse<ProjectDashboardStatistics>>('/api/project/statistics/dashboard', {
         method: 'GET',
-        params: { period, startDate, endDate },
+        params: { startDate, endDate },
     });
 }
 
@@ -68,14 +67,13 @@ export async function getDashboardStatistics(
  * 生成 AI 统计报告
  */
 export async function generateAiReport(
-    period?: ProjectStatisticsPeriod,
     startDate?: string,
     endDate?: string,
     data?: any
 ) {
     return request<ApiResponse<string>>('/api/project/statistics/ai-report', {
         method: 'POST',
-        params: { period, startDate, endDate },
+        params: { startDate, endDate },
         data,
     });
 }

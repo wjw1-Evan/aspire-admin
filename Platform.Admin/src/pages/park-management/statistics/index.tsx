@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Spin, Tabs, Typography, Progress, Tag, Empty, Button, Space, Table, Radio, DatePicker, Modal } from 'antd';
+import { Card, Row, Col, Statistic, Spin, Tabs, Typography, Progress, Tag, Empty, Button, Space, Table, DatePicker, Modal } from 'antd';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
@@ -26,6 +26,7 @@ import PageContainer from '@/components/PageContainer';
 import * as parkService from '@/services/park';
 import { StatisticsPeriod } from '@/services/park';
 import type { AssetStatistics, InvestmentStatistics, TenantStatistics, ServiceStatistics } from '@/services/park';
+import StatisticsPeriodSelector from '@/components/StatisticsPeriodSelector';
 import styles from './index.less';
 
 const { Text, Title } = Typography;
@@ -42,11 +43,11 @@ const StatisticsPage: React.FC = () => {
     const intl = useIntl();
     const [loading, setLoading] = useState(false);
     const [activeTab, setActiveTab] = useState<string>('overview');
-    // Default to Custom period with current month selected
-    const [period, setPeriod] = useState<StatisticsPeriod | string>(StatisticsPeriod.Custom);
+    // Default to Month period
+    const [period, setPeriod] = useState<string>('month');
     const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>([
         dayjs().startOf('month'),
-        dayjs().endOf('month')
+        dayjs().endOf('month').startOf('day')
     ]);
     const [statistics, setStatistics] = useState<AllStatistics>({
         asset: null,
@@ -69,12 +70,12 @@ const StatisticsPage: React.FC = () => {
             let endDate: string | undefined;
 
             if (dateRange) {
-                startDate = dateRange[0].startOf('day').toISOString();
-                endDate = dateRange[1].endOf('day').toISOString();
+                startDate = dateRange[0].startOf('day').format('YYYY-MM-DDTHH:mm:ss');
+                // 使用左闭右开区间：结束日期 + 1天，确保包含最后一天
+                endDate = dateRange[1].add(1, 'day').startOf('day').format('YYYY-MM-DDTHH:mm:ss');
             }
 
-            const apiPeriod = typeof period === 'string' ? StatisticsPeriod.Custom : period;
-            const res = await parkService.generateAiReport(apiPeriod, startDate, endDate, statistics);
+            const res = await parkService.generateAiReport(startDate, endDate, statistics);
             if (res.success && res.data) {
                 try {
                     const html = await marked.parse(res.data);
@@ -102,18 +103,16 @@ const StatisticsPage: React.FC = () => {
             let endDate: string | undefined;
 
             if (dateRange) {
-                startDate = dateRange[0].startOf('day').toISOString();
-                endDate = dateRange[1].endOf('day').toISOString();
+                startDate = dateRange[0].startOf('day').format('YYYY-MM-DDTHH:mm:ss');
+                // 使用左闭右开区间：结束日期 + 1天，确保包含最后一天
+                endDate = dateRange[1].add(1, 'day').startOf('day').format('YYYY-MM-DDTHH:mm:ss');
             }
 
-            // Determine the correct period enum to pass to the API
-            const apiPeriod = typeof period === 'string' ? StatisticsPeriod.Custom : period;
-
             const [assetRes, investmentRes, tenantRes, serviceRes] = await Promise.all([
-                parkService.getAssetStatistics(apiPeriod, startDate, endDate),
-                parkService.getInvestmentStatistics(apiPeriod, startDate, endDate),
-                parkService.getTenantStatistics(apiPeriod, startDate, endDate),
-                parkService.getServiceStatistics(apiPeriod, startDate, endDate),
+                parkService.getAssetStatistics(startDate, endDate),
+                parkService.getInvestmentStatistics(startDate, endDate),
+                parkService.getTenantStatistics(startDate, endDate),
+                parkService.getServiceStatistics(startDate, endDate),
             ]);
 
             setStatistics({
@@ -130,7 +129,7 @@ const StatisticsPage: React.FC = () => {
     }, [period, dateRange]);
 
     useEffect(() => {
-        if (period !== StatisticsPeriod.Custom || (period === StatisticsPeriod.Custom && dateRange)) {
+        if (period !== 'custom' || (period === 'custom' && dateRange)) {
             loadAllStatistics();
         }
     }, [loadAllStatistics]);
@@ -161,7 +160,7 @@ const StatisticsPage: React.FC = () => {
             ? (asset.rentedArea / asset.totalRentableArea) * 100
             : 0;
 
-        const isYearly = period === StatisticsPeriod.Year || (period as any) === 'last_year';
+        const isYearly = period === 'year' || (period as any) === 'last_year';
 
         // Derived Metrics
         const collectionRate = (tenant && tenant.totalExpected && tenant.totalExpected > 0)
@@ -322,7 +321,7 @@ const StatisticsPage: React.FC = () => {
                                 </Col>
                                 <Col span={12}>
                                     <Statistic
-                                        title={period === StatisticsPeriod.Year
+                                        title={period === 'year'
                                             ? intl.formatMessage({ id: 'pages.park.statistics.newLeadsThisYear', defaultMessage: '本年新增' })
                                             : intl.formatMessage({ id: 'pages.park.statistics.newLeadsThisMonth', defaultMessage: '本月新增' })
                                         }
@@ -582,7 +581,7 @@ const StatisticsPage: React.FC = () => {
                     <Col xs={24} sm={12} lg={6}>
                         <Card>
                             <Statistic
-                                title={period === StatisticsPeriod.Year
+                                title={period === 'year'
                                     ? intl.formatMessage({ id: 'pages.park.statistics.newLeadsThisYear', defaultMessage: '本年新增' })
                                     : intl.formatMessage({ id: 'pages.park.statistics.newLeadsThisMonth', defaultMessage: '本月新增' })
                                 }
@@ -1105,46 +1104,13 @@ const StatisticsPage: React.FC = () => {
             title={intl.formatMessage({ id: 'pages.park.statistics.title', defaultMessage: '统计报表' })}
             extra={[
                 <Space key="period-selection" wrap>
-                    <Radio.Group
-                        value={period}
-                        onChange={(e) => {
-                            const val = e.target.value;
-                            setPeriod(val);
-
-                            let start: Dayjs = dayjs().startOf('month');
-                            let end: Dayjs = dayjs().endOf('month');
-
-                            if (val === StatisticsPeriod.Month) {
-                                start = dayjs().startOf('month');
-                                end = dayjs().endOf('month');
-                            } else if (val === StatisticsPeriod.Year) {
-                                start = dayjs().startOf('year');
-                                end = dayjs().endOf('year');
-                            } else if (val === 'last_year') {
-                                start = dayjs().subtract(1, 'year').startOf('year');
-                                end = dayjs().subtract(1, 'year').endOf('year');
-                                setPeriod(StatisticsPeriod.Custom);
-                            }
-
-                            setDateRange([start, end]);
-                        }}
-                        optionType="button"
-                        buttonStyle="solid"
-                        size="middle"
-                    >
-                        <Radio.Button value={StatisticsPeriod.Month}>{intl.formatMessage({ id: 'pages.park.statistics.thisMonth', defaultMessage: '本月' })}</Radio.Button>
-                        <Radio.Button value={StatisticsPeriod.Year}>{intl.formatMessage({ id: 'pages.park.statistics.thisYear', defaultMessage: '今年' })}</Radio.Button>
-                        <Radio.Button value="last_year">{intl.formatMessage({ id: 'pages.park.statistics.lastYear', defaultMessage: '去年' })}</Radio.Button>
-                        <Radio.Button value={StatisticsPeriod.Custom}>{intl.formatMessage({ id: 'pages.park.statistics.custom', defaultMessage: '自定义' })}</Radio.Button>
-                    </Radio.Group>
-                    <RangePicker
-                        value={dateRange}
-                        onChange={(dates) => {
-                            if (dates && dates[0] && dates[1]) {
-                                setDateRange([dates[0], dates[1]]);
-                                setPeriod(StatisticsPeriod.Custom);
-                            } else {
-                                setDateRange(null);
+                    <StatisticsPeriodSelector
+                        value={period as string}
+                        dateRange={dateRange}
+                        onChange={(newDateRange, newPeriod) => {
+                            setDateRange(newDateRange);
+                            if (newPeriod) {
+                                setPeriod(newPeriod);
                             }
                         }}
                     />

@@ -46,14 +46,13 @@ public class ParkStatisticsService : IParkStatisticsService
     /// <summary>
     /// 生成 AI 统计报告
     /// </summary>
-    public async Task<string> GenerateAiReportAsync(StatisticsPeriod period = StatisticsPeriod.Month,
-        DateTime? startDate = null, DateTime? endDate = null, object? statisticsData = null)
+    public async Task<string> GenerateAiReportAsync(DateTime? startDate = null, DateTime? endDate = null, object? statisticsData = null)
     {
         // 1. 获取所有模块统计数据
         object statsData;
-        var periodDesc = period == StatisticsPeriod.Custom
+        var periodDesc = startDate.HasValue && endDate.HasValue
             ? $"{startDate:yyyy-MM-dd} 至 {endDate:yyyy-MM-dd}"
-            : period.ToString();
+            : "本月";
 
         if (statisticsData != null)
         {
@@ -65,10 +64,10 @@ public class ParkStatisticsService : IParkStatisticsService
         }
         else
         {
-            var assetStats = await _assetService.GetAssetStatisticsAsync(period, startDate, endDate);
-            var investmentStats = await _investmentService.GetStatisticsAsync(period, startDate, endDate);
-            var tenantStats = await _tenantService.GetStatisticsAsync(period, startDate, endDate);
-            var serviceStats = await _enterpriseService.GetStatisticsAsync(period, startDate, endDate);
+            var assetStats = await _assetService.GetAssetStatisticsAsync(startDate, endDate);
+            var investmentStats = await _investmentService.GetStatisticsAsync(startDate, endDate);
+            var tenantStats = await _tenantService.GetStatisticsAsync(startDate, endDate);
+            var serviceStats = await _enterpriseService.GetStatisticsAsync(startDate, endDate);
 
             statsData = new
             {

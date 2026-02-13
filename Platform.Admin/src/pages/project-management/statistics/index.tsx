@@ -16,6 +16,7 @@ import {
     ReloadOutlined
 } from '@ant-design/icons';
 import PageContainer from '@/components/PageContainer';
+import StatisticsPeriodSelector from '@/components/StatisticsPeriodSelector';
 import * as projectStatisticsService from '@/services/project/statistics';
 import { ProjectStatisticsPeriod, ProjectDashboardStatistics } from '@/services/project/statistics';
 import styles from './index.less';
@@ -25,10 +26,10 @@ const { RangePicker } = DatePicker;
 
 const StatisticsPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
-    const [period, setPeriod] = useState<ProjectStatisticsPeriod | string>(ProjectStatisticsPeriod.Month);
+    const [period, setPeriod] = useState<string>('month');
     const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>([
         dayjs().startOf('month'),
-        dayjs().endOf('month')
+        dayjs().endOf('month').startOf('day')
     ]);
     const [statistics, setStatistics] = useState<ProjectDashboardStatistics | null>(null);
 
@@ -42,14 +43,13 @@ const StatisticsPage: React.FC = () => {
             let startDate: string | undefined;
             let endDate: string | undefined;
 
-            if (period === 'custom' && dateRange) {
-                startDate = dateRange[0].startOf('day').toISOString();
-                endDate = dateRange[1].endOf('day').toISOString();
+            if (dateRange) {
+                startDate = dateRange[0].startOf('day').format('YYYY-MM-DDTHH:mm:ss');
+                // 使用左闭右开区间：结束日期 + 1天，确保包含最后一天
+                endDate = dateRange[1].add(1, 'day').startOf('day').format('YYYY-MM-DDTHH:mm:ss');
             }
 
-            const apiPeriod = typeof period === 'string' ? ProjectStatisticsPeriod.Custom : period;
-
-            const res = await projectStatisticsService.getDashboardStatistics(apiPeriod, startDate, endDate);
+            const res = await projectStatisticsService.getDashboardStatistics(startDate, endDate);
             if (res.success && res.data) {
                 setStatistics(res.data);
             }
@@ -59,7 +59,7 @@ const StatisticsPage: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, [period, dateRange]);
+    }, [dateRange]);
 
     useEffect(() => {
         loadStatistics();
@@ -75,14 +75,12 @@ const StatisticsPage: React.FC = () => {
             let endDate: string | undefined;
 
             if (dateRange) {
-                startDate = dateRange[0].startOf('day').toISOString();
-                endDate = dateRange[1].endOf('day').toISOString();
+                startDate = dateRange[0].startOf('day').format('YYYY-MM-DDTHH:mm:ss');
+                // 使用左闭右开区间：结束日期 + 1天，确保包含最后一天
+                endDate = dateRange[1].add(1, 'day').startOf('day').format('YYYY-MM-DDTHH:mm:ss');
             }
 
-            const apiPeriod = typeof period === 'string' ? ProjectStatisticsPeriod.Custom : period;
-            
-            // Ensure statistics data is always passed
-            const res = await projectStatisticsService.generateAiReport(apiPeriod, startDate, endDate, statistics);
+            const res = await projectStatisticsService.generateAiReport(startDate, endDate, statistics);
 
             if (res.success && res.data) {
                 try {
@@ -302,35 +300,16 @@ const StatisticsPage: React.FC = () => {
             ghost
             extra={[
                 <Space>
-                    <Radio.Group
-                        value={period === 'custom' ? 'custom' : String(period)}
-                        onChange={(e) => {
-                            const value = e.target.value;
-                            setPeriod(value === 'custom' ? 'custom' : Number(value));
+                    <StatisticsPeriodSelector
+                        value={period as string}
+                        dateRange={dateRange}
+                        onChange={(newDateRange, newPeriod) => {
+                            setDateRange(newDateRange);
+                            if (newPeriod) {
+                                setPeriod(newPeriod);
+                            }
                         }}
-                        optionType="button"
-                        buttonStyle="solid"
-                        size="middle"
-                    >
-                        <Radio.Button value={String(ProjectStatisticsPeriod.Week)}>本周</Radio.Button>
-                        <Radio.Button value={String(ProjectStatisticsPeriod.Month)}>本月</Radio.Button>
-                        <Radio.Button value={String(ProjectStatisticsPeriod.Quarter)}>本季</Radio.Button>
-                        <Radio.Button value={String(ProjectStatisticsPeriod.Year)}>本年</Radio.Button>
-                        <Radio.Button value="custom">自定义</Radio.Button>
-                    </Radio.Group>
-                    {period === 'custom' && (
-                        <RangePicker
-                            value={dateRange}
-                            onChange={(dates) => {
-                                if (dates && dates[0] && dates[1]) {
-                                    setDateRange([dates[0], dates[1]]);
-                                    setPeriod(ProjectStatisticsPeriod.Custom);
-                                } else {
-                                    setDateRange(null);
-                                }
-                            }}
-                        />
-                    )}
+                    />
                     <Button
                         icon={<RobotOutlined />}
                         onClick={handleGenerateAiReport}

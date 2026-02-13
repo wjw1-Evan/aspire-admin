@@ -92,7 +92,7 @@ public interface IParkVisitService
     /// <summary>
     /// 获取走访统计数据
     /// </summary>
-    Task<VisitStatisticsDto> GetVisitStatisticsAsync(StatisticsPeriod period = StatisticsPeriod.Month, DateTime? startDate = null, DateTime? endDate = null);
+    Task<VisitStatisticsDto> GetVisitStatisticsAsync(DateTime? startDate = null, DateTime? endDate = null);
 
     /// <summary>
     /// 生成走访 AI 分析报告

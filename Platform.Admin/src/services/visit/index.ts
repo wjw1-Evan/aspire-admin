@@ -5,8 +5,9 @@ export enum StatisticsPeriod {
     Day = 0,
     Week = 1,
     Month = 2,
-    Year = 3,
-    Custom = 4,
+    Quarter = 3,
+    Year = 4,
+    Custom = 5,
 }
 
 export interface VisitTask {
@@ -191,10 +192,10 @@ export async function createQuestionnaire(data: any) {
 }
 
 // Statistics
-export async function getVisitStatistics(period?: StatisticsPeriod, startDate?: string, endDate?: string) {
+export async function getVisitStatistics(startDate?: string, endDate?: string) {
     return request<ApiResponse<VisitStatistics>>('/api/park-management/visit/statistics', {
         method: 'GET',
-        params: { period, startDate, endDate },
+        params: { startDate, endDate },
     });
 }
 

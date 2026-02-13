@@ -189,11 +189,10 @@ public class ParkVisitController : BaseApiController
     [HttpGet("statistics")]
     [RequireMenu("park-management-visit-statistics")]
     public async Task<IActionResult> GetStatistics(
-        [FromQuery] StatisticsPeriod period = StatisticsPeriod.Month,
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null)
     {
-        var result = await _visitService.GetVisitStatisticsAsync(period, startDate, endDate);
+        var result = await _visitService.GetVisitStatisticsAsync(startDate, endDate);
         return Success(result);
     }
 

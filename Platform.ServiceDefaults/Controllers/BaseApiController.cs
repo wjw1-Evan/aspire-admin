@@ -67,68 +67,24 @@ public abstract class BaseApiController : ControllerBase
     /// <summary>
     /// 返回标准成功的 API 响应（含数据和可选消息）
     /// </summary>
-    /// <typeparam name="T">数据类型</typeparam>
-    /// <param name="data">要返回给前端的数据对象</param>
-    /// <param name="message">可选的成功提示消息，默认为 null</param>
-    /// <example>
-    /// <code>
-    /// return Success(userInfo, "获取成功");
-    /// </code>
-    /// </example>
     protected IActionResult Success<T>(T data, string? message = null)
     {
-        var response = new
-        {
-            success = true,
-            code = "OK",
-            data,
-            message,
-            timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
-            traceId = HttpContext.TraceIdentifier
-        };
-        return Ok(response);
+        return Ok(CreateResponse(true, "OK", data, message));
     }
 
     /// <summary>
     /// 返回无具体数据的标准成功响应
     /// </summary>
-    /// <example>
-    /// <code>
-    /// return Success(); // 返回 { "success": true, "data": null ... }
-    /// </code>
-    /// </example>
-    protected IActionResult Success()
-    {
-        return Success<object>(null!);
-    }
+    protected IActionResult Success() => Success<object>(null!);
 
     /// <summary>
     /// 返回仅包含成功消息的标准响应
     /// </summary>
-    /// <param name="message">成功提示信息</param>
-    /// <example>
-    /// <code>
-    /// return SuccessMessage("操作已入队");
-    /// </code>
-    /// </example>
-    protected IActionResult SuccessMessage(string message)
-    {
-        return Success<object>(null!, message);
-    }
+    protected IActionResult SuccessMessage(string message) => Success<object>(null!, message);
 
     /// <summary>
     /// 返回标准分页成功的 API 响应
     /// </summary>
-    /// <typeparam name="T">数据项类型</typeparam>
-    /// <param name="data">数据列表</param>
-    /// <param name="total">总记录数</param>
-    /// <param name="page">当前页码</param>
-    /// <param name="pageSize">每页大小</param>
-    /// <example>
-    /// <code>
-    /// return SuccessPaged(users, totalCount, 1, 10);
-    /// </code>
-    /// </example>
     protected IActionResult SuccessPaged<T>(IEnumerable<T> data, long total, int page, int pageSize, string? message = null)
     {
         var pagedData = new
@@ -139,186 +95,93 @@ public abstract class BaseApiController : ControllerBase
             pageSize,
             totalPages = (int)Math.Ceiling((double)total / pageSize)
         };
-        var response = new
-        {
-            success = true,
-            code = "OK",
-            data = pagedData,
-            message,
-            timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
-            traceId = HttpContext.TraceIdentifier
-        };
-        return Ok(response);
+        return Ok(CreateResponse(true, "OK", pagedData, message));
     }
 
     /// <summary>
     /// 返回自定义错误信息的标准响应
     /// </summary>
-    /// <param name="errorCode">错误代码，如 "USER_NOT_FOUND"</param>
-    /// <param name="errorMessage">错误描述信息</param>
-    /// <example>
-    /// <code>
-    /// return Error("INSUFFICIENT_BALANCE", "余额不足以完成支付");
-    /// </code>
-    /// </example>
     protected IActionResult Error(string code, string message)
     {
-        var response = new
-        {
-            success = false,
-            code,
-            data = (object?)null,
-            message,
-            timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
-            traceId = HttpContext.TraceIdentifier
-        };
-        return BadRequest(response);
+        return BadRequest(CreateResponse(false, code, null, message));
     }
 
     /// <summary>
     /// 返回数据校验错误的响应 (HTTP 400)
     /// </summary>
-    /// <param name="errorMessage">具体的校验错误描述</param>
-    /// <example>
-    /// <code>
-    /// if (string.IsNullOrEmpty(name)) return ValidationError("名称不能为空");
-    /// </code>
-    /// </example>
     protected IActionResult ValidationError(string message)
     {
-        var response = new
-        {
-            success = false,
-            code = "VALIDATION_ERROR",
-            data = (object?)null,
-            message,
-            timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
-            traceId = HttpContext.TraceIdentifier
-        };
-        return BadRequest(response);
+        return BadRequest(CreateResponse(false, "VALIDATION_ERROR", null, message));
     }
 
     /// <summary>
     /// 返回资源未找到的响应 (HTTP 404)
     /// </summary>
-    /// <param name="resource">资源名称</param>
-    /// <param name="id">资源唯一标识</param>
-    /// <example>
-    /// <code>
-    /// return NotFoundError("User", userId);
-    /// </code>
-    /// </example>
     protected IActionResult NotFoundError(string resource, string id)
     {
-        var response = new
-        {
-            success = false,
-            code = "NOT_FOUND",
-            data = (object?)null,
-            message = $"{resource} {id} 不存在",
-            timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
-            traceId = HttpContext.TraceIdentifier
-        };
-        return NotFound(response);
+        return NotFound(CreateResponse(false, "NOT_FOUND", null, $"{resource} {id} 不存在"));
     }
 
     /// <summary>
     /// 返回未授权的响应 (HTTP 401)
     /// </summary>
-    /// <param name="message">错误消息</param>
     protected IActionResult UnauthorizedError(string message = "未授权访问")
     {
-        var response = new
-        {
-            success = false,
-            code = "UNAUTHORIZED",
-            data = (object?)null,
-            message,
-            timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
-            traceId = HttpContext.TraceIdentifier
-        };
-        return Unauthorized(response);
+        return Unauthorized(CreateResponse(false, "UNAUTHORIZED", null, message));
     }
-
-
 
     /// <summary>
     /// 返回无权访问/禁止访问的响应 (HTTP 403)
     /// </summary>
-    /// <param name="message">拒绝访问的原因消息</param>
     protected IActionResult ForbiddenError(string message = "禁止访问")
     {
-        var response = new
-        {
-            success = false,
-            code = "FORBIDDEN",
-            data = (object?)null,
-            message,
-            timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
-            traceId = HttpContext.TraceIdentifier
-        };
-        return StatusCode(403, response);
+        return StatusCode(403, CreateResponse(false, "FORBIDDEN", null, message));
     }
 
     /// <summary>
     /// 返回服务器内部错误的响应 (HTTP 500)
     /// </summary>
-    /// <param name="message">错误说明</param>
     protected IActionResult ServerError(string message = "服务器内部错误")
     {
-        var response = new
-        {
-            success = false,
-            code = "INTERNAL_ERROR",
-            data = (object?)null,
-            message,
-            timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
-            traceId = HttpContext.TraceIdentifier
-        };
-        return StatusCode(500, response);
+        return StatusCode(500, CreateResponse(false, "INTERNAL_ERROR", null, message));
     }
 
     /// <summary>
     /// 根据 ServiceResult 结果自动判定并返回对应 HTTP 状态码的响应
     /// </summary>
-    /// <typeparam name="T">数据类型</typeparam>
-    /// <param name="result">Service 层返回的 ServiceResult 对象</param>
-    /// <returns>API 响应结果</returns>
     protected IActionResult Result<T>(ServiceResult<T> result)
     {
-        if (result.IsSuccess)
-        {
-            var successResponse = new
-            {
-                success = true,
-                code = result.Code ?? "OK",
-                data = result.Data,
-                message = result.Message,
-                timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
-                traceId = HttpContext.TraceIdentifier
-            };
-            return Ok(successResponse);
-        }
+        var response = CreateResponse(result.IsSuccess,
+            result.Code ?? (result.IsSuccess ? "OK" : "ERROR"),
+            result.Data,
+            result.Message ?? (result.IsSuccess ? null : "操作失败"));
 
-        // 统一处理业务错误码映射到 HTTP 状态码
-        var errorResponse = new
-        {
-            success = false,
-            code = result.Code ?? "ERROR",
-            data = (object?)null,
-            message = result.Message ?? "操作失败",
-            timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
-            traceId = HttpContext.TraceIdentifier
-        };
+        if (result.IsSuccess) return Ok(response);
 
         return result.Code switch
         {
-            "NOT_FOUND" => NotFound(errorResponse),
-            "UNAUTHORIZED" => Unauthorized(errorResponse),
-            "FORBIDDEN" => StatusCode(403, errorResponse),
-            "VALIDATION_ERROR" => BadRequest(errorResponse),
-            "ALREADY_EXISTS" => Conflict(errorResponse),
-            _ => BadRequest(errorResponse)
+            "NOT_FOUND" => NotFound(response),
+            "UNAUTHORIZED" => Unauthorized(response),
+            "FORBIDDEN" => StatusCode(403, response),
+            "VALIDATION_ERROR" => BadRequest(response),
+            "ALREADY_EXISTS" => Conflict(response),
+            _ => BadRequest(response)
+        };
+    }
+
+    /// <summary>
+    /// 创建统一的 API 响应载体
+    /// </summary>
+    private object CreateResponse(bool success, string code, object? data, string? message)
+    {
+        return new
+        {
+            success,
+            code,
+            data,
+            message,
+            timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
+            traceId = HttpContext.TraceIdentifier
         };
     }
 

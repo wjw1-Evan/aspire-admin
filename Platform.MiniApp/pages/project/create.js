@@ -1,25 +1,56 @@
 const { request } = require('../../utils/request');
 const { withAuth } = require('../../utils/auth');
+const { t, withI18n } = require('../../utils/i18n');
 
-Page(withAuth({
+Page(withAuth(withI18n({
     data: {
-        statusOptions: [
-            { label: '规划中', value: 0 },
-            { label: '进行中', value: 1 },
-            { label: '暂停', value: 2 },
-            { label: '已完成', value: 3 },
-            { label: '已取消', value: 4 }
-        ],
+        statusOptions: [],
         statusIndex: 0,
-        priorityOptions: [
-            { label: '低', value: 0 },
-            { label: '中', value: 1 },
-            { label: '高', value: 2 }
-        ],
+        priorityOptions: [],
         priorityIndex: 1,
         startDate: '',
         endDate: '',
-        submitting: false
+        submitting: false,
+        t: {}
+    },
+
+    onShow() {
+        this.updateTranslations();
+    },
+
+    updateTranslations() {
+        const statusOptions = [
+            { label: t('project.status.planning'), value: 0 },
+            { label: t('project.status.in_progress'), value: 1 },
+            { label: t('project.status.paused'), value: 2 },
+            { label: t('project.status.completed'), value: 3 },
+            { label: t('project.status.cancelled'), value: 4 }
+        ];
+        const priorityOptions = [
+            { label: t('project.priority.low'), value: 0 },
+            { label: t('project.priority.medium'), value: 1 },
+            { label: t('project.priority.high'), value: 2 }
+        ];
+        this.setData({
+            t: {
+                'title': t('project.create.title'),
+                'name': t('project.name'),
+                'description': t('common.description'),
+                'status': t('common.status'),
+                'priority': t('common.priority'),
+                'start_date': t('project.start_date'),
+                'end_date': t('project.end_date'),
+                'budget': t('project.budget'),
+                'submit': t('common.submit')
+            },
+            statusOptions,
+            priorityOptions
+        });
+        wx.setNavigationBarTitle({ title: t('project.create.title') });
+    },
+
+    onLoad() {
+        this.updateTranslations();
     },
 
     onStatusChange(e) {
@@ -41,7 +72,7 @@ Page(withAuth({
     async handleSubmit(e) {
         const values = e.detail.value;
         if (!values.name) {
-            wx.showToast({ title: '项目名称必填', icon: 'none' });
+            wx.showToast({ title: t('project.name_required'), icon: 'none' });
             return;
         }
 
@@ -62,7 +93,7 @@ Page(withAuth({
             });
 
             if (res.success) {
-                wx.showToast({ title: '创建成功' });
+                wx.showToast({ title: t('project.create.success') });
                 setTimeout(() => {
                     const pages = getCurrentPages();
                     const prevPage = pages[pages.length - 2];
@@ -76,9 +107,9 @@ Page(withAuth({
             }
         } catch (err) {
             console.error('Create project failed', err);
-            wx.showToast({ title: '创建失败', icon: 'none' });
+            wx.showToast({ title: t('project.create.failed'), icon: 'none' });
         } finally {
             this.setData({ submitting: false });
         }
     }
-}));
+})));

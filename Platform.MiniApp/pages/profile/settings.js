@@ -3,8 +3,7 @@ const { t, setLocale, getLocale } = require('../../utils/i18n');
 Page({
     data: {
         t: {},
-        currentLanguageName: '',
-        isDarkTheme: false
+        currentLanguageName: ''
     },
 
     onLoad() {
@@ -16,7 +15,6 @@ Page({
         const tObj = {
             'settings.title': t('settings.title'),
             'settings.language': t('settings.language'),
-            'settings.theme': t('settings.theme'),
             'settings.cache': t('settings.cache'),
             'settings.version': t('settings.version'),
         };
@@ -37,7 +35,7 @@ Page({
     },
 
     handleLanguageChange() {
-        const languages = ['简体中文', 'English'];
+        const languages = [t('settings.language.chinese'), t('settings.language.english')];
         const codes = ['zh-CN', 'en-US'];
 
         wx.showActionSheet({
@@ -47,22 +45,22 @@ Page({
                 if (selectedCode !== getLocale()) {
                     setLocale(selectedCode);
                     this.updateTranslations();
+                    
+                    const appInstance = getApp();
+                    if (appInstance.updateTabBarI18n) {
+                        appInstance.updateTabBarI18n();
+                    }
+                    
+                    wx.reLaunch({
+                        url: '/pages/index/index'
+                    });
+                    
                     wx.showToast({
                         title: selectedCode === 'zh-CN' ? '设置成功' : 'Language changed',
                         icon: 'success'
                     });
-
-                    // 通知其他页面更新（可选，也可以通过全局变量或事件总线）
                 }
             }
-        });
-    },
-
-    handleThemeChange(e) {
-        this.setData({ isDarkTheme: e.detail.value });
-        wx.showToast({
-            title: t('common.tips'),
-            icon: 'none'
         });
     },
 

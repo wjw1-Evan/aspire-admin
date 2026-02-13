@@ -1,22 +1,44 @@
 const { request } = require('../../utils/request');
 const { withAuth } = require('../../utils/auth');
+const { t, withI18n } = require('../../utils/i18n');
 
-Page(withAuth({
+Page(withAuth(withI18n({
     data: {
-        periods: [
-            { label: '周', value: 0 },
-            { label: '月', value: 1 },
-            { label: '季', value: 2 },
-            { label: '年', value: 3 }
-        ],
-        currentPeriod: 1, // Default Month
+        periods: [],
+        currentPeriod: 1,
         loading: false,
         statistics: null,
         projectCompletion: 0,
-        aiLoading: false
+        aiLoading: false,
+        t: {}
+    },
+
+    onShow() {
+        this.updateTranslations();
+    },
+
+    updateTranslations() {
+        const periods = [
+            { label: t('stats.period.week'), value: 0 },
+            { label: t('stats.period.month'), value: 1 },
+            { label: t('stats.period.quarter'), value: 2 },
+            { label: t('stats.period.year'), value: 3 }
+        ];
+        this.setData({
+            t: {
+                'title': t('stats.title'),
+                'ai_report': t('stats.ai_report'),
+                'completion_rate': t('stats.completion_rate'),
+                'total_projects': t('stats.total_projects'),
+                'completed_projects': t('stats.completed_projects')
+            },
+            periods
+        });
+        wx.setNavigationBarTitle({ title: t('stats.title') });
     },
 
     onLoad() {
+        this.updateTranslations();
         this.fetchStatistics();
     },
 
@@ -49,7 +71,7 @@ Page(withAuth({
             }
         } catch (err) {
             console.error('Fetch statistics failed', err);
-            wx.showToast({ title: '加载失败', icon: 'none' });
+            wx.showToast({ title: t('stats.load_failed'), icon: 'none' });
         } finally {
             this.setData({ loading: false });
         }
@@ -71,13 +93,13 @@ Page(withAuth({
                     url: '/pages/statistics/report'
                 });
             } else {
-                wx.showToast({ title: '报告生成失败', icon: 'none' });
+                wx.showToast({ title: t('stats.ai_report_failed'), icon: 'none' });
             }
         } catch (err) {
             console.error('Generate AI report failed', err);
-            wx.showToast({ title: '生成异常', icon: 'none' });
+            wx.showToast({ title: t('stats.ai_report_exception'), icon: 'none' });
         } finally {
             this.setData({ aiLoading: false });
         }
     }
-}));
+})));

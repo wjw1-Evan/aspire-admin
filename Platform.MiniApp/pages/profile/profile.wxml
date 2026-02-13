@@ -46,7 +46,7 @@
     <view class="menu-item" bindtap="aboutUs">
       <view class="item-left">
         <text class="iconfont icon-info icon"></text>
-        <text class="label">{{t['settings.about']}}</text>
+        <text class="label">{{t['profile.about']}}</text>
       </view>
       <text class="iconfont icon-arrow-right arrow"></text>
     </view>

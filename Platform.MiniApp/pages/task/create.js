@@ -1,27 +1,62 @@
 const { request } = require('../../utils/request');
 const { withAuth } = require('../../utils/auth');
+const { t, withI18n } = require('../../utils/i18n');
 
-Page(withAuth({
+Page(withAuth(withI18n({
     data: {
-        typeOptions: ['开发', '设计', '测试', '文档', '其他'],
+        typeOptions: [],
         typeIndex: 0,
-        priorityOptions: [
-            { label: '低', value: 0 },
-            { label: '中', value: 1 },
-            { label: '高', value: 2 },
-            { label: '紧急', value: 3 }
-        ],
+        priorityOptions: [],
         priorityIndex: 1,
-        userList: [{ name: '请选择', id: '' }],
+        userList: [],
         userIndex: 0,
-        projectList: [{ name: '请选择', id: '' }],
+        projectList: [],
         projectIndex: 0,
         startDate: '',
         endDate: '',
-        submitting: false
+        submitting: false,
+        t: {}
+    },
+
+    onShow() {
+        this.updateTranslations();
+    },
+
+    updateTranslations() {
+        const typeOptions = [
+            t('task.type.dev'),
+            t('task.type.design'),
+            t('task.type.test'),
+            t('task.type.doc'),
+            t('task.type.other')
+        ];
+        const priorityOptions = [
+            { label: t('task.priority.low'), value: 0 },
+            { label: t('task.priority.medium'), value: 1 },
+            { label: t('task.priority.high'), value: 2 },
+            { label: t('task.priority.urgent'), value: 3 }
+        ];
+        this.setData({
+            t: {
+                'title': t('task.create.title'),
+                'name': t('task.name'),
+                'description': t('common.description'),
+                'type': t('task.type'),
+                'priority': t('common.priority'),
+                'assigned_to': t('task.assigned_to'),
+                'related_project': t('task.related_project'),
+                'planned_start': t('task.planned_start'),
+                'planned_end': t('task.planned_end'),
+                'submit': t('common.submit')
+            },
+            typeOptions,
+            priorityOptions
+        });
+        wx.setNavigationBarTitle({ title: t('task.create.title') });
     },
 
     onLoad(options) {
+        this.updateTranslations();
         this.loadUsers();
         this.loadProjects(options.projectId);
     },
@@ -33,8 +68,9 @@ Page(withAuth({
                 method: 'GET'
             });
             if (res.success) {
+                const selectText = t('common.select');
                 this.setData({
-                    userList: [{ name: '请选择', id: '' }, ...res.data]
+                    userList: [{ name: selectText, id: '' }, ...res.data]
                 });
             }
         } catch (err) {
@@ -50,7 +86,8 @@ Page(withAuth({
                 data: { page: 1, pageSize: 100 }
             });
             if (res.success) {
-                const list = [{ name: '请选择', id: '' }, ...res.data.projects];
+                const selectText = t('common.select');
+                const list = [{ name: selectText, id: '' }, ...res.data.projects];
                 let index = 0;
                 if (selectedProjectId) {
                     index = list.findIndex(p => p.id === selectedProjectId);
@@ -76,7 +113,7 @@ Page(withAuth({
     async handleSubmit(e) {
         const values = e.detail.value;
         if (!values.taskName) {
-            wx.showToast({ title: '任务名称必填', icon: 'none' });
+            wx.showToast({ title: t('task.name_required'), icon: 'none' });
             return;
         }
 
@@ -101,7 +138,7 @@ Page(withAuth({
             });
 
             if (res.success) {
-                wx.showToast({ title: '发布成功' });
+                wx.showToast({ title: t('task.create.success') });
                 setTimeout(() => {
                     const pages = getCurrentPages();
                     const prevPage = pages[pages.length - 2];
@@ -115,9 +152,9 @@ Page(withAuth({
             }
         } catch (err) {
             console.error('Create task failed', err);
-            wx.showToast({ title: '发布失败', icon: 'none' });
+            wx.showToast({ title: t('task.create.failed'), icon: 'none' });
         } finally {
             this.setData({ submitting: false });
         }
     }
-}));
+})));

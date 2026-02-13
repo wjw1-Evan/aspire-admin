@@ -10,10 +10,10 @@
 
     <view class="form">
       <view class="input-item">
-        <view class="input-label">账号</view>
+        <view class="input-label">{{t['login.username']}}</view>
         <input 
           class="input" 
-          placeholder="请输入用户名" 
+          placeholder="{{t['login.username']}}" 
           placeholder-class="placeholder"
           bindinput="onUsernameInput" 
           value="{{username}}"
@@ -21,11 +21,11 @@
       </view>
       
       <view class="input-item">
-        <view class="input-label">密码</view>
+        <view class="input-label">{{t['login.password']}}</view>
         <input 
           class="input" 
           password 
-          placeholder="请输入密码" 
+          placeholder="{{t['login.password']}}" 
           placeholder-class="placeholder"
           bindinput="onPasswordInput" 
           value="{{password}}"
@@ -33,11 +33,11 @@
       </view>
 
       <view class="input-item" wx:if="{{showCaptcha}}">
-        <view class="input-label">验证码</view>
+        <view class="input-label">{{t['login.captcha']}}</view>
         <view class="captcha-box">
           <input 
             class="input captcha-input" 
-            placeholder="请输入验证码" 
+            placeholder="{{t['login.captcha']}}" 
             placeholder-class="placeholder"
             bindinput="onCaptchaInput" 
             value="{{captchaAnswer}}"
@@ -52,12 +52,12 @@
         loading="{{loading}}"
         disabled="{{loading}}"
       >
-        立即登录
+        {{t['login.submit']}}
       </button>
       
       <view class="extra-actions">
-        <text class="action-text">忘记密码？</text>
-        <text class="action-text">注册账号</text>
+        <text class="action-text">{{t['login.forgot']}}</text>
+        <text class="action-text">{{t['login.register']}}</text>
       </view>
     </view>
   </view>

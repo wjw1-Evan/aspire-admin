@@ -4,37 +4,37 @@
       <view class="app-icon color-blue">
         <text class="iconfont icon-statistics"></text>
       </view>
-      <text class="app-name">统计报表</text>
+      <text class="app-name">{{t['apps.statistics']}}</text>
     </view>
     <view class="app-card" bindtap="navigateToTask">
       <view class="app-icon color-orange">
         <text class="iconfont icon-task"></text>
       </view>
-      <text class="app-name">任务管理</text>
+      <text class="app-name">{{t['apps.task']}}</text>
     </view>
     <view class="app-card" bindtap="navigateToProject">
       <view class="app-icon color-blue">
         <text class="iconfont icon-project"></text>
       </view>
-      <text class="app-name">项目管理</text>
+      <text class="app-name">{{t['apps.project']}}</text>
     </view>
     <view class="app-card" bindtap="navigateToCloudStorage">
       <view class="app-icon color-green">
         <text class="iconfont icon-cloud"></text>
       </view>
-      <text class="app-name">云盘文件</text>
+      <text class="app-name">{{t['apps.cloud']}}</text>
     </view>
     <view class="app-card" bindtap="navigateToParkInvestment">
       <view class="app-icon color-red">
         <text class="iconfont icon-investment"></text>
       </view>
-      <text class="app-name">园区招商</text>
+      <text class="app-name">{{t['apps.park']}}</text>
     </view>
     <view class="app-card" bindtap="navigateToProfile">
       <view class="app-icon color-purple">
         <text class="iconfont icon-profile"></text>
       </view>
-      <text class="app-name">个人中心</text>
+      <text class="app-name">{{t['tab.profile']}}</text>
     </view>
   </view>
 </view>

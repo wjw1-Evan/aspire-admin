@@ -1,6 +1,11 @@
 const { withAuth } = require('../../utils/auth');
+const { withI18n } = require('../../utils/i18n');
 
-Page(withAuth({
+Page(withAuth(withI18n({
+    data: {
+        i18nTitleKey: 'apps.title'
+    },
+
     onShow: function () {
         // 页面展示时的逻辑
     },
@@ -40,4 +45,4 @@ Page(withAuth({
             url: '/pages/profile/profile'
         });
     }
-}));
+})));

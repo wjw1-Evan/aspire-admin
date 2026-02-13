@@ -1,7 +1,8 @@
 const { request } = require('../../utils/request');
 const { withAuth } = require('../../utils/auth');
+const { t, withI18n } = require('../../utils/i18n');
 
-Page(withAuth({
+Page(withAuth(withI18n({
     data: {
         tasks: [],
         statistics: null,
@@ -9,33 +10,56 @@ Page(withAuth({
         page: 1,
         pageSize: 10,
         hasMore: true,
-        currentStatus: '', // '' means all
+        currentStatus: '',
         projectId: null,
-        statusTabs: [
-            { label: '全部', value: '' },
-            { label: '待处理', value: 0 },
-            { label: '执行中', value: 2 },
-            { label: '已完成', value: 3 },
-            { label: '已暂停', value: 4 }
-        ],
-        statusMap: {
-            0: '待处理',
-            1: '已分配',
-            2: '执行中',
-            3: '已完成',
-            4: '已暂停',
-            5: '已失败',
-            6: '已取消'
-        },
-        priorityMap: {
-            0: '低',
-            1: '中',
-            2: '高',
-            3: '紧急'
-        }
+        statusTabs: [],
+        statusMap: {},
+        priorityMap: {},
+        t: {}
+    },
+
+    onShow() {
+        this.updateTranslations();
+    },
+
+    updateTranslations() {
+        const statusTabs = [
+            { label: t('common.all'), value: '' },
+            { label: t('task.status.todo'), value: 0 },
+            { label: t('task.status.in_progress'), value: 2 },
+            { label: t('task.status.completed'), value: 3 },
+            { label: t('task.status.paused'), value: 4 }
+        ];
+        const statusMap = {
+            0: t('task.status.todo'),
+            1: t('task.status.assigned'),
+            2: t('task.status.in_progress'),
+            3: t('task.status.completed'),
+            4: t('task.status.paused'),
+            5: t('task.status.failed'),
+            6: t('task.status.cancelled')
+        };
+        const priorityMap = {
+            0: t('task.priority.low'),
+            1: t('task.priority.medium'),
+            2: t('task.priority.high'),
+            3: t('task.priority.urgent')
+        };
+        this.setData({
+            t: {
+                'title': t('task.list.title'),
+                'empty': t('common.empty'),
+                'create': t('common.create')
+            },
+            statusTabs,
+            statusMap,
+            priorityMap
+        });
+        wx.setNavigationBarTitle({ title: t('task.list.title') });
     },
 
     onLoad(options) {
+        this.updateTranslations();
         if (options.projectId) {
             this.setData({ projectId: options.projectId });
         }
@@ -137,4 +161,4 @@ Page(withAuth({
             url: `/pages/task/detail?id=${id}`
         });
     }
-}));
+})));

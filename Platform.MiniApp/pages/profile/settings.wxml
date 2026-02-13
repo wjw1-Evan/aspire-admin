@@ -10,16 +10,6 @@
         <text class="iconfont icon-arrow-right arrow"></text>
       </view>
     </view>
-
-    <!-- Theme Selection (Mock) -->
-    <view class="settings-item">
-      <view class="item-left">
-        <text class="label">{{t['settings.theme']}}</text>
-      </view>
-      <view class="item-right">
-        <switch checked="{{isDarkTheme}}" bindchange="handleThemeChange" color="#1890ff"></switch>
-      </view>
-    </view>
   </view>
 
   <view class="settings-list card-style">

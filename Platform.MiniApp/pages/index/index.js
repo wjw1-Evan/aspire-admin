@@ -1,7 +1,8 @@
 const { request } = require('../../utils/request');
 const { withAuth } = require('../../utils/auth');
+const { withI18n, getLocale } = require('../../utils/i18n');
 
-Page(withAuth({
+Page(withAuth(withI18n({
     data: {
         userInfo: null,
         currentDate: ''
@@ -10,6 +11,7 @@ Page(withAuth({
     onShow() {
         this.fetchUserInfo();
         this.fetchDashboardStats();
+        this.updateDate();
     },
 
     async fetchUserInfo() {
@@ -79,9 +81,20 @@ Page(withAuth({
         const year = now.getFullYear();
         const month = now.getMonth() + 1;
         const day = now.getDate();
-        const week = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][now.getDay()];
+        const locale = getLocale();
+
+        let dateStr = '';
+        if (locale === 'zh-CN') {
+            const week = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][now.getDay()];
+            dateStr = `${year}年${month}月${day}日 ${week}`;
+        } else {
+            const week = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()];
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            dateStr = `${months[now.getMonth()]} ${day}, ${year} (${week})`;
+        }
+
         this.setData({
-            currentDate: `${year}年${month}月${day}日 ${week}`
+            currentDate: dateStr
         });
     }
-}));
+})));

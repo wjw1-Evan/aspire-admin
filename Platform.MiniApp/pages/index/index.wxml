@@ -3,10 +3,10 @@
   <view class="dashboard-header">
     <view class="user-profile">
       <view class="greeting">
-        <text class="hi">您好，</text>
-        <text class="user-name">{{userInfo.name || '管理员'}}</text>
+        <text class="hi">{{t['home.hi']}}</text>
+        <text class="user-name">{{userInfo.name || (t['tab.profile'])}}</text>
       </view>
-      <text class="sub-greeting">欢迎回到 {{userInfo.currentCompanyDisplayName || 'Aspire 数字化管理平台'}}</text>
+      <text class="sub-greeting">{{t['home.welcome']}} {{userInfo.currentCompanyDisplayName || (t['home.subtitle'])}}</text>
       <text class="company-subtitle" wx:if="{{userInfo.currentCompanyName}}">{{userInfo.currentCompanyName}}</text>
     </view>
     <view class="date-badge">{{currentDate}}</view>
@@ -17,7 +17,7 @@
     <view class="stat-card" bindtap="navigateToTask">
       <view class="stat-content">
         <text class="stat-num color-primary">{{todoTasks || 0}}</text>
-        <text class="stat-title">待办任务</text>
+        <text class="stat-title">{{t['home.stats.tasks']}}</text>
       </view>
       <view class="stat-icon icon-bg-primary">
         <text class="iconfont icon-task"></text>
@@ -26,7 +26,7 @@
     <view class="stat-card" bindtap="navigateToProject">
       <view class="stat-content">
         <text class="stat-num color-success">{{activeProjects || 0}}</text>
-        <text class="stat-title">活跃项目</text>
+        <text class="stat-title">{{t['home.stats.projects']}}</text>
       </view>
       <view class="stat-icon icon-bg-success">
         <text class="iconfont icon-project"></text>
@@ -37,33 +37,33 @@
   <!-- Rapid Actions -->
   <view class="panel">
     <view class="panel-header">
-      <text class="panel-title">常用功能</text>
-      <text class="panel-more" bindtap="switchTabToApps">查看全部</text>
+      <text class="panel-title">{{t['home.functions']}}</text>
+      <text class="panel-more" bindtap="switchTabToApps">{{t['home.view_all']}}</text>
     </view>
     <view class="action-grid">
       <view class="action-item" bindtap="navigateToProject">
         <view class="action-box bg-blue">
           <text class="iconfont icon-project"></text>
         </view>
-        <text class="action-name">项目管理</text>
+        <text class="action-name">{{t['apps.project']}}</text>
       </view>
       <view class="action-item" bindtap="navigateToTask">
         <view class="action-box bg-orange">
           <text class="iconfont icon-task"></text>
         </view>
-        <text class="action-name">任务管理</text>
+        <text class="action-name">{{t['apps.task']}}</text>
       </view>
       <view class="action-item" bindtap="navigateToStatistics">
         <view class="action-box bg-purple">
           <text class="iconfont icon-statistics"></text>
         </view>
-        <text class="action-name">统计报表</text>
+        <text class="action-name">{{t['apps.statistics']}}</text>
       </view>
       <view class="action-item" bindtap="navigateToProfile">
         <view class="action-box bg-green">
           <text class="iconfont icon-profile"></text>
         </view>
-        <text class="action-name">个人中心</text>
+        <text class="action-name">{{t['tab.profile']}}</text>
       </view>
     </view>
   </view>
@@ -71,18 +71,18 @@
   <!-- Recent Activity -->
   <view class="panel">
     <view class="panel-header">
-      <text class="panel-title">最新公告</text>
+      <text class="panel-title">{{t['home.announcements']}}</text>
     </view>
     <view class="msg-list">
       <view class="msg-item">
-        <view class="msg-tag tag-blue">公告</view>
-        <text class="msg-text">2026年度园区安全生产检查通知</text>
-        <text class="msg-time">1小时前</text>
+        <view class="msg-tag tag-blue">{{t['common.tips']}}</view>
+        <text class="msg-text">{{t['home.announcement.demo1']}}</text>
+        <text class="msg-time">{{t['home.time.hour']}}</text>
       </view>
       <view class="msg-item">
-        <view class="msg-tag tag-orange">预警</view>
-        <text class="msg-text">3号楼变压器运行负载异常提示</text>
-        <text class="msg-time">3小时前</text>
+        <view class="msg-tag tag-orange">{{t['common.tips']}}</view>
+        <text class="msg-text">{{t['home.announcement.demo2']}}</text>
+        <text class="msg-time">{{t['home.time.hours']}}</text>
       </view>
     </view>
   </view>

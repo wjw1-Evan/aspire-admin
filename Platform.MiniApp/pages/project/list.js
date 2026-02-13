@@ -1,7 +1,8 @@
 const { request } = require('../../utils/request');
 const { withAuth } = require('../../utils/auth');
+const { t, getLocale, withI18n } = require('../../utils/i18n');
 
-Page(withAuth({
+Page(withAuth(withI18n({
     data: {
         projects: [],
         statistics: null,
@@ -10,16 +11,36 @@ Page(withAuth({
         page: 1,
         pageSize: 10,
         hasMore: true,
-        statusMap: {
-            0: '规划中',
-            1: '进行中',
-            2: '暂停',
-            3: '已完成',
-            4: '已取消'
-        }
+        statusMap: {},
+        t: {}
+    },
+
+    onShow() {
+        this.updateTranslations();
+    },
+
+    updateTranslations() {
+        const statusMap = {
+            0: t('project.status.planning'),
+            1: t('project.status.in_progress'),
+            2: t('project.status.paused'),
+            3: t('project.status.completed'),
+            4: t('project.status.cancelled')
+        };
+        this.setData({
+            t: {
+                'title': t('project.list.title'),
+                'search': t('common.search'),
+                'empty': t('common.empty'),
+                'create': t('common.create')
+            },
+            statusMap
+        });
+        wx.setNavigationBarTitle({ title: t('project.list.title') });
     },
 
     onLoad() {
+        this.updateTranslations();
         this.fetchStatistics();
         this.fetchProjects(true);
     },
@@ -114,4 +135,4 @@ Page(withAuth({
             url: `/pages/project/detail?id=${id}`
         });
     }
-}));
+})));

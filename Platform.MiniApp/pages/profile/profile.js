@@ -1,35 +1,23 @@
 const { request } = require('../../utils/request');
 const { logout, withAuth } = require('../../utils/auth');
-const { t, getLocale } = require('../../utils/i18n');
+const { t, getLocale, withI18n } = require('../../utils/i18n');
 
 const app = getApp();
 
-Page(withAuth({
+Page(withAuth(withI18n({
     data: {
         t: {},
         userInfo: null,
         currentCompany: null
     },
 
-    onShow() {
-        this.updateTranslations();
-        this.fetchUserInfo();
-        this.fetchCurrentCompany();
+    onLoad() {
+        wx.setNavigationBarTitle({ title: t('profile.title') });
     },
 
-    updateTranslations() {
-        const tObj = {
-            'profile.title': t('profile.title'),
-            'profile.account': t('profile.account'),
-            'profile.security': t('profile.security'),
-            'settings.title': t('settings.title'),
-            'profile.logout': t('profile.logout'),
-            'settings.about': t('settings.about'),
-        };
-        this.setData({ t: tObj });
-        wx.setNavigationBarTitle({
-            title: t('profile.title')
-        });
+    onShow() {
+        this.fetchUserInfo();
+        this.fetchCurrentCompany();
     },
 
     async fetchUserInfo() {
@@ -66,11 +54,11 @@ Page(withAuth({
 
                 // 检查文件大小 (5MB)
                 if (res.tempFiles[0].size > 5 * 1024 * 1024) {
-                    wx.showToast({ title: '图片过大，请使用5MB以内的图片', icon: 'none' });
+                    wx.showToast({ title: t('profile.image_too_large'), icon: 'none' });
                     return;
                 }
 
-                wx.showLoading({ title: '上传中...' });
+                wx.showLoading({ title: t('common.uploading') });
 
                 const token = wx.getStorageSync('token');
 
@@ -109,30 +97,29 @@ Page(withAuth({
                                         'userInfo.avatar': newAvatarUrl
                                     });
 
-                                    wx.showToast({ title: '修改成功', icon: 'success' });
+                                    wx.showToast({ title: t('profile.modify_success'), icon: 'success' });
 
-                                    // 更新本地存储
                                     const currentUserInfo = wx.getStorageSync('userInfo') || {};
                                     currentUserInfo.avatar = newAvatarUrl;
                                     wx.setStorageSync('userInfo', currentUserInfo);
                                 } else {
-                                    wx.showToast({ title: '上传成功但未获取到地址', icon: 'none' });
+                                    wx.showToast({ title: t('profile.no_avatar_url'), icon: 'none' });
                                 }
                             } else {
                                 wx.showToast({
-                                    title: data.message || '上传失败',
+                                    title: data.message || t('profile.upload_failed'),
                                     icon: 'none'
                                 });
                             }
                         } catch (e) {
                             console.error('解析上传响应失败', e);
-                            wx.showToast({ title: '上传响应异常', icon: 'none' });
+                            wx.showToast({ title: t('profile.upload_response_error'), icon: 'none' });
                         }
                     },
                     fail: (err) => {
                         wx.hideLoading();
                         console.error('上传失败', err);
-                        wx.showToast({ title: '网络错误', icon: 'none' });
+                        wx.showToast({ title: t('profile.network_error'), icon: 'none' });
                     }
                 });
             }
@@ -191,9 +178,8 @@ Page(withAuth({
 
     async handleSwitchCompany() {
         try {
-            wx.showLoading({ title: '加载中...' });
+            wx.showLoading({ title: t('common.loading') });
 
-            // 1. 获取我的企业列表
             const res = await request({
                 url: '/api/company/my-companies',
                 method: 'GET'
@@ -202,35 +188,31 @@ Page(withAuth({
             wx.hideLoading();
 
             if (!res.success || !res.data || res.data.length === 0) {
-                wx.showToast({ title: '暂无其他企业', icon: 'none' });
+                wx.showToast({ title: t('profile.no_other_company'), icon: 'none' });
                 return;
             }
 
             const companies = res.data;
             const currentCompanyId = this.data.currentCompany?.id;
 
-            // 2. 构建 ActionSheet 选项
             const itemList = companies.map(c => {
                 let name = c.companyName;
-                if (c.isAdmin) name += ' (管理员)';
-                if (c.isPersonal) name += ' (个人)';
-                if (c.companyId === currentCompanyId) name += ' [当前]';
+                if (c.isAdmin) name += ` (${t('profile.admin')})`;
+                if (c.isPersonal) name += ` (${t('profile.personal')})`;
+                if (c.companyId === currentCompanyId) name += ` [${t('profile.current')}]`;
                 return name;
             });
 
-            // 3. 显示选择菜单
             wx.showActionSheet({
                 itemList,
                 success: async (tapRes) => {
                     const selectedCompany = companies[tapRes.tapIndex];
 
-                    // 如果选择的是当前企业，直接返回
                     if (selectedCompany.companyId === currentCompanyId) {
                         return;
                     }
 
-                    // 4. 执行切换
-                    wx.showLoading({ title: '切换中...' });
+                    wx.showLoading({ title: t('profile.switching') });
                     try {
                         const switchRes = await request({
                             url: '/api/company/switch',
@@ -239,38 +221,33 @@ Page(withAuth({
                         });
 
                         if (switchRes.success) {
-                            // 更新 Token
                             if (switchRes.data && switchRes.data.token) {
                                 wx.setStorageSync('token', switchRes.data.token);
                             }
 
-                            wx.showToast({ title: '切换成功', icon: 'success' });
+                            wx.showToast({ title: t('profile.switch_success'), icon: 'success' });
 
-                            // 刷新数据
                             this.setData({
                                 userInfo: null,
                                 currentCompany: null
                             });
 
-                            // 重新加载页面数据
                             await this.fetchUserInfo();
                             await this.fetchCurrentCompany();
 
-                            // 通知首页或其他页面刷新（如果需要）
-                            // 也可以选择 reLaunch 重启应用确保状态彻底清理
                             setTimeout(() => {
                                 wx.reLaunch({ url: '/pages/index/index' });
                             }, 1000);
 
                         } else {
                             wx.showToast({
-                                title: switchRes.message || '切换失败',
+                                title: switchRes.message || t('profile.switch_failed'),
                                 icon: 'none'
                             });
                         }
                     } catch (err) {
                         console.error('切换企业异常:', err);
-                        wx.showToast({ title: '切换失败', icon: 'none' });
+                        wx.showToast({ title: t('profile.switch_failed'), icon: 'none' });
                     } finally {
                         wx.hideLoading();
                     }
@@ -280,16 +257,16 @@ Page(withAuth({
         } catch (err) {
             wx.hideLoading();
             console.error('获取企业列表失败:', err);
-            wx.showToast({ title: '获取列表失败', icon: 'none' });
+            wx.showToast({ title: t('profile.failed_to_load_companies'), icon: 'none' });
         }
     },
 
     aboutUs() {
         wx.showModal({
-            title: '关于系统',
-            content: 'Aspire Admin v1.0.0\n企业级微服务管理平台移动端',
+            title: t('profile.about'),
+            content: t('profile.about.content'),
             showCancel: false,
             confirmColor: '#1890ff'
         });
     }
-}));
+})));

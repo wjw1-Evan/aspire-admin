@@ -1,7 +1,8 @@
 const { request } = require('../../../utils/request');
 const { withAuth } = require('../../../utils/auth');
+const { t, getLocale, withI18n } = require('../../../utils/i18n');
 
-Page(withAuth({
+Page(withAuth(withI18n({
     data: {
         leads: [],
         loading: false,
@@ -9,17 +10,37 @@ Page(withAuth({
         pageSize: 10,
         hasMore: true,
         searchKeyword: '',
-        statusOptions: [
-            { label: '全部', value: '' },
-            { label: '新线索', value: 'New' },
-            { label: '跟进中', value: 'Following' },
-            { label: '由于', value: 'Qualified' },
-            { label: '已丢弃', value: 'Lost' }
-        ],
-        currentStatus: ''
+        statusOptions: [],
+        currentStatus: '',
+        t: {}
+    },
+
+    onShow() {
+        this.updateTranslations();
+    },
+
+    updateTranslations() {
+        const locale = getLocale();
+        const statusOptions = [
+            { label: t('park.leads.status.all'), value: '' },
+            { label: t('park.leads.status.new'), value: 'New' },
+            { label: t('park.leads.status.following'), value: 'Following' },
+            { label: t('park.leads.status.qualified'), value: 'Qualified' },
+            { label: t('park.leads.status.lost'), value: 'Lost' }
+        ];
+        this.setData({
+            t: {
+                'title': t('park.leads.title'),
+                'search': t('common.search'),
+                'empty': t('common.empty')
+            },
+            statusOptions
+        });
+        wx.setNavigationBarTitle({ title: t('park.leads.title') });
     },
 
     onLoad() {
+        this.updateTranslations();
         this.fetchLeads(true);
     },
 
@@ -99,4 +120,4 @@ Page(withAuth({
             url: `/pages/park/investment/lead-detail?id=${id}`
         });
     }
-}));
+})));

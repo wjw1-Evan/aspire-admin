@@ -1,8 +1,10 @@
 const { login } = require('../../utils/auth.js');
 const { request } = require('../../utils/request.js');
+const { withI18n, t } = require('../../utils/i18n.js');
 
-Page({
+Page(withI18n({
     data: {
+        i18nTitleKey: 'login.title',
         username: '',
         password: '',
         loading: false,
@@ -48,7 +50,7 @@ Page({
         const { username, password, showCaptcha, captchaId, captchaAnswer } = this.data;
         if (!username || !password) {
             wx.showToast({
-                title: '请输入用户名和密码',
+                title: t('login.failed'),
                 icon: 'none'
             });
             return;
@@ -56,7 +58,7 @@ Page({
 
         if (showCaptcha && !captchaAnswer) {
             wx.showToast({
-                title: '请输入验证码',
+                title: t('login.captcha'),
                 icon: 'none'
             });
             return;
@@ -72,7 +74,7 @@ Page({
             });
 
             wx.showToast({
-                title: '登录成功',
+                title: t('common.success'),
                 icon: 'success'
             });
             setTimeout(() => {
@@ -85,16 +87,16 @@ Page({
             const code = res.code || res.errorCode;
             let message = res.errorMessage || res.message;
 
-            // 🔧 优化：错误码转义，提供更友好的中文提示
+            // 🔧 优化：错误码转义，提供更友好的多语言提示
             const errorMap = {
-                'CAPTCHA_REQUIRED': '请输入验证码',
-                'CAPTCHA_INVALID': '验证码错误',
-                'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN': '多次登录失败，请输入验证码后重试',
-                'LOGIN_FAILED': '用户名或密码错误',
-                'INVALID_CREDENTIALS': '用户名或密码错误',
-                'USER_NOT_FOUND': '用户不存在',
-                'USER_DISABLED': '该账户已被禁用',
-                'VALIDATION_ERROR': '输入格式不正确'
+                'CAPTCHA_REQUIRED': t('login.captcha'),
+                'CAPTCHA_INVALID': t('common.fail'),
+                'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN': t('login.captcha'),
+                'LOGIN_FAILED': t('login.failed'),
+                'INVALID_CREDENTIALS': t('login.failed'),
+                'USER_NOT_FOUND': t('login.failed'),
+                'USER_DISABLED': t('common.fail'),
+                'VALIDATION_ERROR': t('common.fail')
             };
 
             if (errorMap[code]) {
@@ -109,7 +111,7 @@ Page({
             }
 
             wx.showToast({
-                title: message || '登录失败',
+                title: message || t('login.failed'),
                 icon: 'none',
                 duration: 2000
             });
@@ -117,4 +119,4 @@ Page({
             this.setData({ loading: false });
         }
     }
-});
+}));

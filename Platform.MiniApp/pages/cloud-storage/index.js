@@ -1,11 +1,12 @@
 const { request } = require('../../utils/request');
 const { withAuth } = require('../../utils/auth');
+const { t, withI18n } = require('../../utils/i18n');
 const app = getApp();
 
-Page(withAuth({
+Page(withAuth(withI18n({
     data: {
         fileList: [],
-        pathStack: [], // [{id, name}]
+        pathStack: [],
         currentParentId: '',
         loading: false,
         isRefreshing: false,
@@ -13,10 +14,32 @@ Page(withAuth({
         showFolderModal: false,
         newFolderName: '',
         page: 1,
-        pageSize: 50
+        pageSize: 50,
+        t: {}
+    },
+
+    onShow() {
+        this.updateTranslations();
+    },
+
+    updateTranslations() {
+        this.setData({
+            t: {
+                'title': t('cloud.title'),
+                'create_folder': t('cloud.create_folder'),
+                'folder_name': t('cloud.folder_name'),
+                'please_enter_name': t('cloud.please_enter_name'),
+                'confirm': t('common.confirm'),
+                'cancel': t('common.cancel'),
+                'rename': t('cloud.rename'),
+                'delete': t('cloud.delete')
+            }
+        });
+        wx.setNavigationBarTitle({ title: t('cloud.title') });
     },
 
     onLoad() {
+        this.updateTranslations();
         this.fetchFiles();
     },
 
@@ -49,7 +72,7 @@ Page(withAuth({
             }
         } catch (err) {
             console.error('Fetch files failed', err);
-            wx.showToast({ title: '加载失败', icon: 'none' });
+            wx.showToast({ title: t('cloud.load_failed'), icon: 'none' });
         } finally {
             this.setData({ loading: false, isRefreshing: false });
             wx.stopPullDownRefresh();
@@ -101,7 +124,7 @@ Page(withAuth({
     async previewFile(item) {
         // First try to get preview info from server
         try {
-            wx.showLoading({ title: '加载中' });
+            wx.showLoading({ title: t('common.loading') });
             const res = await request({
                 url: `/api/cloud-storage/${item.id}/preview`,
                 method: 'GET'
@@ -141,7 +164,7 @@ Page(withAuth({
     },
 
     downloadAndOpenDoc(item) {
-        wx.showLoading({ title: '正在下载文件' });
+        wx.showLoading({ title: t('common.downloading') });
         const apiUrl = app.globalData.baseUrl;
         const downloadUrl = `${apiUrl}/api/cloud-storage/${item.id}/download`;
         const token = wx.getStorageSync('token');
@@ -156,13 +179,13 @@ Page(withAuth({
                         showMenu: true,
                         success: (res) => console.log('打开预览成功'),
                         fail: (err) => {
-                            wx.showToast({ title: '不支持该类型预览', icon: 'none' });
+                            wx.showToast({ title: t('cloud.preview_not_supported'), icon: 'none' });
                         }
                     });
                 }
             },
             fail: (err) => {
-                wx.showToast({ title: '下载失败', icon: 'none' });
+                wx.showToast({ title: t('cloud.download_failed'), icon: 'none' });
             },
             complete: () => wx.hideLoading()
         });
@@ -218,7 +241,7 @@ Page(withAuth({
     },
 
     async doUpload(filePath, type, originalName) {
-        wx.showLoading({ title: '上传中' });
+        wx.showLoading({ title: t('common.uploading') });
         const token = wx.getStorageSync('token');
         const apiUrl = app.globalData.baseUrl;
 
@@ -236,14 +259,14 @@ Page(withAuth({
             success: (res) => {
                 const data = JSON.parse(res.data);
                 if (data.success) {
-                    wx.showToast({ title: '上传成功' });
+                    wx.showToast({ title: t('cloud.upload_success') });
                     this.fetchFiles();
                 } else {
-                    wx.showToast({ title: data.errorMessage || '上传失败', icon: 'none' });
+                    wx.showToast({ title: data.errorMessage || t('cloud.upload_failed'), icon: 'none' });
                 }
             },
             fail: (err) => {
-                wx.showToast({ title: '上传异常', icon: 'none' });
+                wx.showToast({ title: t('cloud.upload_exception'), icon: 'none' });
             },
             complete: () => wx.hideLoading()
         });
@@ -263,7 +286,7 @@ Page(withAuth({
 
     async confirmCreateFolder() {
         if (!this.data.newFolderName) {
-            wx.showToast({ title: '请输入名称', icon: 'none' });
+            wx.showToast({ title: t('cloud.please_enter_name'), icon: 'none' });
             return;
         }
 
@@ -278,24 +301,23 @@ Page(withAuth({
             });
 
             if (res.success) {
-                wx.showToast({ title: '创建成功' });
+                wx.showToast({ title: t('cloud.create_success') });
                 this.setData({ showFolderModal: false });
                 this.fetchFiles();
             }
         } catch (err) {
-            wx.showToast({ title: '创建失败', icon: 'none' });
+            wx.showToast({ title: t('cloud.create_failed'), icon: 'none' });
         }
     },
 
     showActionMenu(e) {
         const item = e.currentTarget.dataset.item;
         wx.showActionSheet({
-            itemList: ['重命名', '删除'],
+            itemList: [t('cloud.rename'), t('cloud.delete')],
             itemColor: '#333',
             success: (res) => {
                 if (res.tapIndex === 0) {
-                    // Rename logic placeholder
-                    wx.showToast({ title: '功能开发中', icon: 'none' });
+                    wx.showToast({ title: t('cloud.in_development'), icon: 'none' });
                 } else if (res.tapIndex === 1) {
                     this.deleteItem(item.id);
                 }
@@ -305,8 +327,8 @@ Page(withAuth({
 
     async deleteItem(id) {
         wx.showModal({
-            title: '确认删除',
-            content: '文件将移动到回收站',
+            title: t('cloud.confirm_delete'),
+            content: t('cloud.delete_hint'),
             success: async (res) => {
                 if (res.confirm) {
                     try {
@@ -315,14 +337,14 @@ Page(withAuth({
                             method: 'DELETE'
                         });
                         if (delRes.success) {
-                            wx.showToast({ title: '已移除' });
+                            wx.showToast({ title: t('cloud.removed') });
                             this.fetchFiles();
                         }
                     } catch (err) {
-                        wx.showToast({ title: '操作失败', icon: 'none' });
+                        wx.showToast({ title: t('cloud.operation_failed'), icon: 'none' });
                     }
                 }
             }
         });
     }
-}));
+})));

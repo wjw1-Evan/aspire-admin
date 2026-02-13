@@ -1,4 +1,6 @@
-Page({
+const { withAuth } = require('../../utils/auth.js');
+
+Page(withAuth({
     data: {
         content: ''
     },
@@ -33,4 +35,4 @@ Page({
             path: '/pages/statistics/index'
         };
     }
-});
+}));

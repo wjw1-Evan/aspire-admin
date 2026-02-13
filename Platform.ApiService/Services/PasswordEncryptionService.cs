@@ -28,18 +28,20 @@ public class PasswordEncryptionService : IPasswordEncryptionService
     /// </summary>
     public string GetPublicKey()
     {
-        var publicKey = _rsa.ExportRSAPublicKey();
+        // 🔧 修复：使用 ExportSubjectPublicKeyInfo 导出标准 PKCS#8 格式
+        // 以确保与主流前端加密库（如 jsrsasign, jsencrypt）的常规加载方式兼容
+        var publicKey = _rsa.ExportSubjectPublicKeyInfo();
         var base64 = Convert.ToBase64String(publicKey);
-
+ 
         // 构造 PEM 格式
         var sb = new StringBuilder();
-        sb.AppendLine("-----BEGIN RSA PUBLIC KEY-----");
+        sb.AppendLine("-----BEGIN PUBLIC KEY-----");
         for (int i = 0; i < base64.Length; i += 64)
         {
             sb.AppendLine(base64.Substring(i, Math.Min(64, base64.Length - i)));
         }
-        sb.AppendLine("-----END RSA PUBLIC KEY-----");
-
+        sb.AppendLine("-----END PUBLIC KEY-----");
+ 
         return sb.ToString();
     }
 

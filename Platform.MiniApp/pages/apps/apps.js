@@ -29,6 +29,12 @@ Page(withAuth({
         });
     },
 
+    navigateToParkInvestment() {
+        wx.navigateTo({
+            url: '/pages/park/investment/leads',
+        });
+    },
+
     navigateToProfile() {
         wx.switchTab({
             url: '/pages/profile/profile'

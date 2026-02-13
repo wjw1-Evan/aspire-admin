@@ -32,6 +32,20 @@
         />
       </view>
 
+      <view class="input-item" wx:if="{{showCaptcha}}">
+        <view class="input-label">验证码</view>
+        <view class="captcha-box">
+          <input 
+            class="input captcha-input" 
+            placeholder="请输入验证码" 
+            placeholder-class="placeholder"
+            bindinput="onCaptchaInput" 
+            value="{{captchaAnswer}}"
+          />
+          <image class="captcha-img" src="{{captchaUrl}}" bindtap="fetchCaptcha" mode="aspectFit"></image>
+        </view>
+      </view>
+
       <button 
         class="login-btn {{loading ? 'btn-loading' : ''}}" 
         bindtap="handleLogin" 

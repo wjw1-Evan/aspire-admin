@@ -24,6 +24,12 @@
       </view>
       <text class="app-name">云盘文件</text>
     </view>
+    <view class="app-card" bindtap="navigateToParkInvestment">
+      <view class="app-icon color-red">
+        <text class="iconfont icon-investment"></text>
+      </view>
+      <text class="app-name">园区招商</text>
+    </view>
     <view class="app-card" bindtap="navigateToProfile">
       <view class="app-icon color-purple">
         <text class="iconfont icon-profile"></text>

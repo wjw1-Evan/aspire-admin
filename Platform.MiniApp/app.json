@@ -14,7 +14,9 @@
     "pages/task/create",
     "pages/statistics/index",
     "pages/statistics/report",
-    "pages/cloud-storage/index"
+    "pages/cloud-storage/index",
+    "pages/park/investment/leads",
+    "pages/park/investment/lead-detail"
   ],
   "window": {
     "backgroundTextStyle": "light",

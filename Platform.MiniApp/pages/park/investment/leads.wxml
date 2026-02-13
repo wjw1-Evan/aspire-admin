@@ -1,0 +1,60 @@
+<view class="container">
+  <view class="search-bar">
+    <view class="search-box">
+      <icon type="search" size="14"></icon>
+      <input class="search-input" placeholder="搜索企业名称" bindinput="onSearchInput" value="{{searchKeyword}}" bindconfirm="handleSearch" />
+    </view>
+    <view class="search-btn" bindtap="handleSearch">搜索</view>
+  </view>
+
+  <view class="filter-bar">
+    <scroll-view class="filter-scroll" scroll-x="true">
+      <view class="filter-tabs">
+        <view wx:for="{{statusOptions}}" wx:key="value" 
+              class="filter-tab {{currentStatus === item.value ? 'active' : ''}}" 
+              bindtap="switchStatus" data-status="{{item.value}}">
+          {{item.label}}
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <view class="leads-list">
+    <view wx:for="{{leads}}" wx:key="id" class="lead-card" bindtap="goToDetail" data-id="{{item.id}}">
+      <view class="lead-header">
+        <text class="company-name">{{item.companyName}}</text>
+        <view class="tags">
+            <text class="status-tag status-{{item.status}}">{{item.status === 'New' ? '新线索' : (item.status === 'Following' ? '跟进中' : (item.status === 'Qualified' ? '已转化' : '已丢弃'))}}</text>
+        </view>
+      </view>
+      <view class="lead-body">
+        <view class="info-row">
+            <text class="label">联系人：</text>
+            <text class="value">{{item.contactPerson || '-'}}</text>
+        </view>
+        <view class="info-row">
+            <text class="label">所属行业：</text>
+            <text class="value">{{item.industry || '-'}}</text>
+        </view>
+        <view class="info-row">
+            <text class="label">意向面积：</text>
+            <text class="value">{{item.intendedArea ? item.intendedArea + '㎡' : '-'}}</text>
+        </view>
+      </view>
+      <view class="lead-footer">
+        <text class="date">创建：{{item.createdAt}}</text>
+        <text class="priority priority-{{item.priority}}">{{item.priority === 'High' ? '高优先级' : (item.priority === 'Medium' ? '中' : '低')}}</text>
+      </view>
+    </view>
+    
+    <view class="loading-wrap" wx:if="{{loading}}">
+      <view class="loading"></view>
+      <text>加载中...</text>
+    </view>
+    <view class="no-more" wx:if="{{!hasMore && leads.length > 0}}">没有更多线索了</view>
+    <view class="empty-wrap" wx:if="{{!loading && leads.length === 0}}">
+      <icon type="info" size="64" color="#ccc"></icon>
+      <text>暂无相关招商线索</text>
+    </view>
+  </view>
+</view>

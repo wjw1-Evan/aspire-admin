@@ -74,7 +74,7 @@ public class UnifiedNotificationController : BaseApiController
         [FromQuery] int pageSize = 10)
     {
         var result = await _unifiedNotificationService.GetSystemMessagesAsync(page, pageSize);
-        return Ok(result);
+        return Success(result);
     }
 
     /// <summary>
@@ -89,7 +89,7 @@ public class UnifiedNotificationController : BaseApiController
         [FromQuery] int pageSize = 10)
     {
         var result = await _unifiedNotificationService.GetTaskNotificationsAsync(page, pageSize);
-        return Ok(result);
+        return Success(result);
     }
 
     /// <summary>
@@ -101,7 +101,7 @@ public class UnifiedNotificationController : BaseApiController
     public async Task<IActionResult> CreateTodo([FromBody] CreateTodoRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Title))
-            return BadRequest("待办项标题不能为空");
+            return ValidationError("待办项标题不能为空");
 
         var todo = await _unifiedNotificationService.CreateTodoAsync(request);
         return Success(todo, "待办项创建成功");
@@ -118,7 +118,7 @@ public class UnifiedNotificationController : BaseApiController
     {
         var todo = await _unifiedNotificationService.UpdateTodoAsync(id, request);
         if (todo == null)
-            return NotFound("待办项不存在");
+            return NotFoundError("待办项", id);
 
         return Success(todo, "待办项更新成功");
     }
@@ -133,7 +133,7 @@ public class UnifiedNotificationController : BaseApiController
     {
         var success = await _unifiedNotificationService.CompleteTodoAsync(id);
         if (!success)
-            return NotFound("待办项不存在");
+            return NotFoundError("待办项", id);
 
         return Success("待办项已完成");
     }
@@ -148,7 +148,7 @@ public class UnifiedNotificationController : BaseApiController
     {
         var success = await _unifiedNotificationService.DeleteTodoAsync(id);
         if (!success)
-            return NotFound("待办项不存在");
+            return NotFoundError("待办项", id);
 
         return Success("待办项已删除");
     }
@@ -163,7 +163,7 @@ public class UnifiedNotificationController : BaseApiController
     {
         var success = await _unifiedNotificationService.MarkAsReadAsync(id);
         if (!success)
-            return NotFound("通知不存在");
+            return NotFoundError("通知", id);
 
         return Success("通知已标记为已读");
     }
@@ -177,7 +177,7 @@ public class UnifiedNotificationController : BaseApiController
     public async Task<IActionResult> MarkMultipleAsRead([FromBody] MarkMultipleAsReadRequest request)
     {
         if (request.Ids == null || request.Ids.Count == 0)
-            return BadRequest("通知ID列表不能为空");
+            return ValidationError("通知ID列表不能为空");
 
         var success = await _unifiedNotificationService.MarkMultipleAsReadAsync(request.Ids);
         return Success("通知已标记为已读");
@@ -191,7 +191,7 @@ public class UnifiedNotificationController : BaseApiController
     public async Task<IActionResult> GetUnreadCount()
     {
         var count = await _unifiedNotificationService.GetUnreadCountAsync();
-        return Ok(new { unreadCount = count });
+        return Success(new { unreadCount = count });
     }
 
     /// <summary>
@@ -202,7 +202,7 @@ public class UnifiedNotificationController : BaseApiController
     public async Task<IActionResult> GetUnreadStatistics()
     {
         var statistics = await _unifiedNotificationService.GetUnreadCountStatisticsAsync();
-        return Ok(statistics);
+        return Success(statistics);
     }
 }
 

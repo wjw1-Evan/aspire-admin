@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
+using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using System.Text;
 using System.Text.Json;
@@ -16,7 +17,7 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/chat")]
-public class ChatSseController : ControllerBase
+public class ChatSseController : BaseApiController
 {
     private readonly IChatSseConnectionManager _connectionManager;
     private readonly IJwtService _jwtService;
@@ -70,7 +71,8 @@ public class ChatSseController : ControllerBase
         if (string.IsNullOrWhiteSpace(userId))
         {
             _logger.LogWarning("SSE 连接失败: 未提供有效的 token");
-            return Unauthorized(new { error = "UNAUTHORIZED", message = "未提供有效的认证令牌" });
+            var errorResponse = ApiResponse<object>.ErrorResult("UNAUTHORIZED", "未提供有效的认证令牌", HttpContext.TraceIdentifier);
+            return Unauthorized(errorResponse);
         }
 
         // 设置 SSE 响应头

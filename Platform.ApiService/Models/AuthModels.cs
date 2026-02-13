@@ -156,7 +156,7 @@ public class LoginRequest
     /// 密码
     /// </summary>
     [Required(ErrorMessage = "密码不能为空")]
-    [StringLength(100, MinimumLength = 6, ErrorMessage = "密码长度至少6个字符")]
+    [StringLength(2000, MinimumLength = 6, ErrorMessage = "密码长度不符合要求")]
     public string? Password { get; set; }
 
     /// <summary>
@@ -406,7 +406,7 @@ public class RegisterRequest
     /// 密码（至少6个字符）
     /// </summary>
     [Required(ErrorMessage = "密码不能为空")]
-    [StringLength(100, MinimumLength = 6, ErrorMessage = "密码长度至少6个字符")]
+    [StringLength(2000, MinimumLength = 6, ErrorMessage = "密码长度不符合要求")]
     public string Password { get; set; } = string.Empty;
 
     /// <summary>
@@ -446,13 +446,14 @@ public class ChangePasswordRequest
     /// 当前密码
     /// </summary>
     [Required(ErrorMessage = "当前密码不能为空")]
+    [StringLength(2000, ErrorMessage = "当前密码长度超限")]
     public string CurrentPassword { get; set; } = string.Empty;
 
     /// <summary>
     /// 新密码
     /// </summary>
     [Required(ErrorMessage = "新密码不能为空")]
-    [StringLength(100, MinimumLength = 6, ErrorMessage = "新密码长度至少6个字符")]
+    [StringLength(2000, MinimumLength = 6, ErrorMessage = "新密码长度不符合要求")]
     public string NewPassword { get; set; } = string.Empty;
 
     /// <summary>

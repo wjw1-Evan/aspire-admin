@@ -185,6 +185,14 @@ export async function getImageCaptcha(type: 'login' | 'register' = 'login', opti
   });
 }
 
+/** 获取 RSA 公钥 GET /api/auth/public-key */
+export async function getPublicKey(options?: { [key: string]: any }) {
+  return request<ApiResponse<string>>('/api/auth/public-key', {
+    method: 'GET',
+    ...(options || {}),
+  });
+}
+
 /** 验证图形验证码 POST /api/auth/captcha/verify-image */
 export async function verifyImageCaptcha(body: API.VerifyImageCaptchaRequest, options?: { [key: string]: any }) {
   return request<ApiResponse<API.VerifyImageCaptchaResponse>>('/api/auth/captcha/verify-image', {

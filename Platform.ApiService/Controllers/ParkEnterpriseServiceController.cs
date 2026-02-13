@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
+using Platform.ServiceDefaults.Controllers;
 using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Controllers;
@@ -11,8 +12,7 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/park/services")]
-
-public class ParkEnterpriseServiceController : ControllerBase
+public class ParkEnterpriseServiceController : BaseApiController
 {
     private readonly IParkEnterpriseServiceService _enterpriseService;
     private readonly ILogger<ParkEnterpriseServiceController> _logger;
@@ -34,17 +34,17 @@ public class ParkEnterpriseServiceController : ControllerBase
     /// 获取服务类别列表
     /// </summary>
     [HttpGet("categories")]
-    public async Task<ActionResult<ApiResponse<ServiceCategoryListResponse>>> GetCategories()
+    public async Task<IActionResult> GetCategories()
     {
         try
         {
             var result = await _enterpriseService.GetCategoriesAsync();
-            return Ok(ApiResponse<ServiceCategoryListResponse>.SuccessResult(result));
+            return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取服务类别列表失败");
-            return Ok(ApiResponse<ServiceCategoryListResponse>.ErrorResult("ERROR", "获取服务类别列表失败"));
+            return Error("ERROR", "获取服务类别列表失败");
         }
     }
 
@@ -52,17 +52,17 @@ public class ParkEnterpriseServiceController : ControllerBase
     /// 创建服务类别
     /// </summary>
     [HttpPost("categories")]
-    public async Task<ActionResult<ApiResponse<ServiceCategoryDto>>> CreateCategory([FromBody] CreateServiceCategoryRequest request)
+    public async Task<IActionResult> CreateCategory([FromBody] CreateServiceCategoryRequest request)
     {
         try
         {
             var result = await _enterpriseService.CreateCategoryAsync(request);
-            return Ok(ApiResponse<ServiceCategoryDto>.SuccessResult(result));
+            return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "创建服务类别失败");
-            return Ok(ApiResponse<ServiceCategoryDto>.ErrorResult("ERROR", "创建服务类别失败: " + ex.Message));
+            return Error("ERROR", "创建服务类别失败: " + ex.Message);
         }
     }
 
@@ -70,19 +70,19 @@ public class ParkEnterpriseServiceController : ControllerBase
     /// 更新服务类别
     /// </summary>
     [HttpPut("categories/{id}")]
-    public async Task<ActionResult<ApiResponse<ServiceCategoryDto>>> UpdateCategory(string id, [FromBody] CreateServiceCategoryRequest request)
+    public async Task<IActionResult> UpdateCategory(string id, [FromBody] CreateServiceCategoryRequest request)
     {
         try
         {
             var result = await _enterpriseService.UpdateCategoryAsync(id, request);
             if (result == null)
-                return Ok(ApiResponse<ServiceCategoryDto>.ErrorResult("ERROR", "服务类别不存在"));
-            return Ok(ApiResponse<ServiceCategoryDto>.SuccessResult(result));
+                return Error("ERROR", "服务类别不存在");
+            return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "更新服务类别失败: {Id}", id);
-            return Ok(ApiResponse<ServiceCategoryDto>.ErrorResult("ERROR", "更新服务类别失败: " + ex.Message));
+            return Error("ERROR", "更新服务类别失败: " + ex.Message);
         }
     }
 
@@ -90,19 +90,19 @@ public class ParkEnterpriseServiceController : ControllerBase
     /// 删除服务类别
     /// </summary>
     [HttpDelete("categories/{id}")]
-    public async Task<ActionResult<ApiResponse<bool>>> DeleteCategory(string id)
+    public async Task<IActionResult> DeleteCategory(string id)
     {
         try
         {
             var result = await _enterpriseService.DeleteCategoryAsync(id);
             if (!result)
-                return Ok(ApiResponse<bool>.ErrorResult("ERROR", "服务类别不存在或无法删除"));
-            return Ok(ApiResponse<bool>.SuccessResult(true));
+                return Error("ERROR", "服务类别不存在或无法删除");
+            return Success(true);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "删除服务类别失败: {Id}", id);
-            return Ok(ApiResponse<bool>.ErrorResult("ERROR", "删除服务类别失败: " + ex.Message));
+            return Error("ERROR", "删除服务类别失败: " + ex.Message);
         }
     }
 
@@ -110,19 +110,19 @@ public class ParkEnterpriseServiceController : ControllerBase
     /// 切换服务类别状态
     /// </summary>
     [HttpPut("categories/{id}/toggle")]
-    public async Task<ActionResult<ApiResponse<bool>>> ToggleCategoryStatus(string id)
+    public async Task<IActionResult> ToggleCategoryStatus(string id)
     {
         try
         {
             var result = await _enterpriseService.ToggleCategoryStatusAsync(id);
             if (!result)
-                return Ok(ApiResponse<bool>.ErrorResult("ERROR", "服务类别不存在"));
-            return Ok(ApiResponse<bool>.SuccessResult(true));
+                return Error("ERROR", "服务类别不存在");
+            return Success(true);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "切换服务类别状态失败: {Id}", id);
-            return Ok(ApiResponse<bool>.ErrorResult("ERROR", "切换服务类别状态失败: " + ex.Message));
+            return Error("ERROR", "切换服务类别状态失败: " + ex.Message);
         }
     }
 
@@ -134,17 +134,17 @@ public class ParkEnterpriseServiceController : ControllerBase
     /// 获取服务申请列表
     /// </summary>
     [HttpPost("requests/list")]
-    public async Task<ActionResult<ApiResponse<ServiceRequestListResponse>>> GetRequests([FromBody] ServiceRequestListRequest request)
+    public async Task<IActionResult> GetRequests([FromBody] ServiceRequestListRequest request)
     {
         try
         {
             var result = await _enterpriseService.GetRequestsAsync(request);
-            return Ok(ApiResponse<ServiceRequestListResponse>.SuccessResult(result));
+            return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取服务申请列表失败");
-            return Ok(ApiResponse<ServiceRequestListResponse>.ErrorResult("ERROR", "获取服务申请列表失败"));
+            return Error("ERROR", "获取服务申请列表失败");
         }
     }
 
@@ -152,19 +152,19 @@ public class ParkEnterpriseServiceController : ControllerBase
     /// 获取单个服务申请
     /// </summary>
     [HttpGet("requests/{id}")]
-    public async Task<ActionResult<ApiResponse<ServiceRequestDto>>> GetRequest(string id)
+    public async Task<IActionResult> GetRequest(string id)
     {
         try
         {
             var result = await _enterpriseService.GetRequestByIdAsync(id);
             if (result == null)
-                return Ok(ApiResponse<ServiceRequestDto>.ErrorResult("ERROR", "服务申请不存在"));
-            return Ok(ApiResponse<ServiceRequestDto>.SuccessResult(result));
+                return Error("ERROR", "服务申请不存在");
+            return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取服务申请详情失败: {Id}", id);
-            return Ok(ApiResponse<ServiceRequestDto>.ErrorResult("ERROR", "获取服务申请详情失败"));
+            return Error("ERROR", "获取服务申请详情失败");
         }
     }
 
@@ -172,17 +172,17 @@ public class ParkEnterpriseServiceController : ControllerBase
     /// 创建服务申请
     /// </summary>
     [HttpPost("requests")]
-    public async Task<ActionResult<ApiResponse<ServiceRequestDto>>> CreateRequest([FromBody] CreateServiceRequestRequest request)
+    public async Task<IActionResult> CreateRequest([FromBody] CreateServiceRequestRequest request)
     {
         try
         {
             var result = await _enterpriseService.CreateRequestAsync(request);
-            return Ok(ApiResponse<ServiceRequestDto>.SuccessResult(result));
+            return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "创建服务申请失败");
-            return Ok(ApiResponse<ServiceRequestDto>.ErrorResult("ERROR", "创建服务申请失败: " + ex.Message));
+            return Error("ERROR", "创建服务申请失败: " + ex.Message);
         }
     }
 
@@ -190,19 +190,19 @@ public class ParkEnterpriseServiceController : ControllerBase
     /// 更新服务申请状态
     /// </summary>
     [HttpPut("requests/{id}/status")]
-    public async Task<ActionResult<ApiResponse<ServiceRequestDto>>> UpdateRequestStatus(string id, [FromBody] UpdateServiceRequestStatusRequest request)
+    public async Task<IActionResult> UpdateRequestStatus(string id, [FromBody] UpdateServiceRequestStatusRequest request)
     {
         try
         {
             var result = await _enterpriseService.UpdateRequestStatusAsync(id, request);
             if (result == null)
-                return Ok(ApiResponse<ServiceRequestDto>.ErrorResult("ERROR", "服务申请不存在"));
-            return Ok(ApiResponse<ServiceRequestDto>.SuccessResult(result));
+                return Error("ERROR", "服务申请不存在");
+            return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "更新服务申请状态失败: {Id}", id);
-            return Ok(ApiResponse<ServiceRequestDto>.ErrorResult("ERROR", "更新服务申请状态失败: " + ex.Message));
+            return Error("ERROR", "更新服务申请状态失败: " + ex.Message);
         }
     }
 
@@ -210,19 +210,19 @@ public class ParkEnterpriseServiceController : ControllerBase
     /// 删除服务申请
     /// </summary>
     [HttpDelete("requests/{id}")]
-    public async Task<ActionResult<ApiResponse<bool>>> DeleteRequest(string id)
+    public async Task<IActionResult> DeleteRequest(string id)
     {
         try
         {
             var result = await _enterpriseService.DeleteRequestAsync(id);
             if (!result)
-                return Ok(ApiResponse<bool>.ErrorResult("ERROR", "服务申请不存在或无法删除"));
-            return Ok(ApiResponse<bool>.SuccessResult(true));
+                return Error("ERROR", "服务申请不存在或无法删除");
+            return Success(true);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "删除服务申请失败: {Id}", id);
-            return Ok(ApiResponse<bool>.ErrorResult("ERROR", "删除服务申请失败: " + ex.Message));
+            return Error("ERROR", "删除服务申请失败: " + ex.Message);
         }
     }
 
@@ -230,19 +230,19 @@ public class ParkEnterpriseServiceController : ControllerBase
     /// 评价服务
     /// </summary>
     [HttpPost("requests/{id}/rate")]
-    public async Task<ActionResult<ApiResponse<bool>>> RateRequest(string id, [FromBody] RateServiceRequest request)
+    public async Task<IActionResult> RateRequest(string id, [FromBody] RateServiceRequest request)
     {
         try
         {
             var result = await _enterpriseService.RateRequestAsync(id, request.Rating, request.Feedback);
             if (!result)
-                return Ok(ApiResponse<bool>.ErrorResult("ERROR", "服务申请不存在或未完成"));
-            return Ok(ApiResponse<bool>.SuccessResult(true));
+                return Error("ERROR", "服务申请不存在或未完成");
+            return Success(true);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "评价服务失败: {Id}", id);
-            return Ok(ApiResponse<bool>.ErrorResult("ERROR", "评价服务失败: " + ex.Message));
+            return Error("ERROR", "评价服务失败: " + ex.Message);
         }
     }
 
@@ -257,17 +257,17 @@ public class ParkEnterpriseServiceController : ControllerBase
     /// <param name="startDate">开始日期（自定义周期时必填）</param>
     /// <param name="endDate">结束日期（自定义周期时必填）</param>
     [HttpGet("statistics")]
-    public async Task<ActionResult<ApiResponse<ServiceStatisticsResponse>>> GetServiceStatistics([FromQuery] StatisticsPeriod period = StatisticsPeriod.Month, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
+    public async Task<IActionResult> GetServiceStatistics([FromQuery] StatisticsPeriod period = StatisticsPeriod.Month, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
     {
         try
         {
             var result = await _enterpriseService.GetStatisticsAsync(period, startDate, endDate);
-            return Ok(ApiResponse<ServiceStatisticsResponse>.SuccessResult(result));
+            return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取服务统计失败");
-            return Ok(ApiResponse<ServiceStatisticsResponse>.ErrorResult("ERROR", "获取服务统计失败"));
+            return Error("ERROR", "获取服务统计失败");
         }
     }
 

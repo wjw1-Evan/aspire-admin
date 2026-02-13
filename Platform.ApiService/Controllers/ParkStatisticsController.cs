@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
+using Platform.ServiceDefaults.Controllers;
 using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Controllers;
@@ -11,8 +12,7 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/park/statistics")]
-
-public class ParkStatisticsController : ControllerBase
+public class ParkStatisticsController : BaseApiController
 {
     private readonly IParkStatisticsService _statisticsService;
     private readonly ILogger<ParkStatisticsController> _logger;
@@ -32,7 +32,7 @@ public class ParkStatisticsController : ControllerBase
     /// 生成 AI 统计报告
     /// </summary>
     [HttpPost("ai-report")]
-    public async Task<ActionResult<ApiResponse<string>>> GenerateAiReport(
+    public async Task<IActionResult> GenerateAiReport(
         [FromQuery] StatisticsPeriod period = StatisticsPeriod.Month,
         [FromQuery] DateTime? startDate = null,
         [FromQuery] DateTime? endDate = null,
@@ -41,12 +41,12 @@ public class ParkStatisticsController : ControllerBase
         try
         {
             var result = await _statisticsService.GenerateAiReportAsync(period, startDate, endDate, statisticsData);
-            return Ok(ApiResponse<string>.SuccessResult(result));
+            return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "生成 AI 报告失败");
-            return Ok(ApiResponse<string>.ErrorResult("ERROR", "生成 AI 报告失败"));
+            return Error("ERROR", "生成 AI 报告失败");
         }
     }
 }

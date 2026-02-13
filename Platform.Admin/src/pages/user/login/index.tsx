@@ -20,6 +20,7 @@ import ImageCaptcha, { type ImageCaptchaRef } from '@/components/ImageCaptcha';
 import { login } from '@/services/ant-design-pro/api';
 import { getFakeCaptcha } from '@/services/ant-design-pro/login';
 import { tokenUtils } from '@/utils/token';
+import { PasswordEncryption } from '@/utils/encryption';
 import Settings from '../../../../config/defaultSettings';
 
 const useStyles = createStyles(({ token }) => {
@@ -176,12 +177,17 @@ const Login: React.FC = () => {
       });
     }
   };
-
   const handleSubmit = async (values: API.LoginParams) => {
     try {
+      // 🔒 安全增强：在发送前加密密码
+      const encryptedPassword = values.password
+        ? await PasswordEncryption.encrypt(values.password)
+        : undefined;
+
       // 登录
       const loginData = {
         ...values,
+        password: encryptedPassword,
         type,
         captchaId: captchaId || undefined,
         captchaAnswer: captchaAnswer || undefined,

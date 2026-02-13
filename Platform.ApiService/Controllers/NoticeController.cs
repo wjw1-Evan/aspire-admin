@@ -69,7 +69,7 @@ public class NoticeController : BaseApiController
     public async Task<IActionResult> GetNotices()
     {
         var result = await _noticeService.GetNoticesAsync();
-        return Ok(result);
+        return Success(result);
     }
 
     /// <summary>
@@ -96,8 +96,8 @@ public class NoticeController : BaseApiController
     public async Task<IActionResult> UpdateNotice(string id, [FromBody] UpdateNoticeRequest request)
     {
         // 权限检查：普通用户只能修改 Read 状态（已读/未读），不能修改通知内容
-        var isOnlyReadStatusChange = request.Read.HasValue && 
-            string.IsNullOrEmpty(request.Title) && 
+        var isOnlyReadStatusChange = request.Read.HasValue &&
+            string.IsNullOrEmpty(request.Title) &&
             string.IsNullOrEmpty(request.Description) &&
             string.IsNullOrEmpty(request.Avatar) &&
             string.IsNullOrEmpty(request.Status) &&
@@ -112,7 +112,7 @@ public class NoticeController : BaseApiController
             var notice = await _noticeService.UpdateNoticeAsync(id, request);
             return Success(notice.EnsureFound("通知", id), "标记成功");
         }
-        
+
         // 修改通知内容需要管理权限，但这里不提供此功能
         // 如果需要修改通知内容，应该通过具有 notice 菜单权限的管理员重新创建
         throw new UnauthorizedAccessException("普通用户只能标记通知为已读/未读状态，无法修改通知内容");
@@ -143,6 +143,6 @@ public class NoticeController : BaseApiController
     {
         var deleted = await _noticeService.DeleteNoticeAsync(id);
         deleted.EnsureSuccess("通知", id);
-        return Success("删除成功");
+        return SuccessMessage("删除成功");
     }
 }

@@ -48,10 +48,10 @@ public class ChatHistoryController : BaseApiController
     public async Task<IActionResult> GetChatHistory([FromBody] ChatHistoryQueryRequest request)
     {
         if (request.Current < 1 || request.Current > 10000)
-            throw new ArgumentException("页码必须在 1-10000 之间");
+            return ValidationError("页码必须在 1-10000 之间");
 
         if (request.PageSize < 1 || request.PageSize > 100)
-            throw new ArgumentException("每页数量必须在 1-100 之间");
+            return ValidationError("每页数量必须在 1-100 之间");
 
         if (request.StartTime.HasValue && request.EndTime.HasValue && request.StartTime.Value > request.EndTime.Value)
         {

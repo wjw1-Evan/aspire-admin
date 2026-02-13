@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Controllers;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Controllers;
 
@@ -59,7 +60,7 @@ public class PublicController : BaseApiController
             Environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Unknown"
         };
 
-        return Ok(new { success = true, data = systemInfo });
+        return Success(systemInfo);
     }
 
     /// <summary>
@@ -95,12 +96,8 @@ public class PublicController : BaseApiController
     {
         if (User?.Identity?.IsAuthenticated != true)
         {
-            return Unauthorized(new
-            {
-                success = false,
-                errorMessage = "用户未认证",
-                errorCode = "UNAUTHORIZED"
-            });
+            var errorResponse = ApiResponse<object>.ErrorResult("UNAUTHORIZED", "用户未认证", HttpContext.TraceIdentifier);
+            return Unauthorized(errorResponse);
         }
 
         var userInfo = new
@@ -110,7 +107,7 @@ public class PublicController : BaseApiController
             IsAuthenticated = User.Identity.IsAuthenticated
         };
 
-        return Ok(new { success = true, data = userInfo });
+        return Success(userInfo);
     }
 
     /// <summary>
@@ -123,11 +120,6 @@ public class PublicController : BaseApiController
     [HttpGet("test")]
     public IActionResult TestEndpoint()
     {
-        return Ok(new
-        {
-            success = true,
-            message = "公共接口测试成功",
-            timestamp = DateTime.UtcNow
-        });
+        return SuccessMessage("公共接口测试成功");
     }
 }

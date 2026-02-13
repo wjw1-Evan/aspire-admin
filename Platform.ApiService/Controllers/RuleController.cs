@@ -85,7 +85,7 @@ public class RuleController : BaseApiController
     public async Task<IActionResult> UpdateRule([FromBody] UpdateRuleRequest request)
     {
         if (!request.Key.HasValue)
-            throw new ArgumentException("Key不能为空");
+            return ValidationError("Key不能为空");
 
         var id = request.Key.Value.ToString();
         var rule = await _ruleService.UpdateRuleAsync(id, request);
@@ -100,7 +100,7 @@ public class RuleController : BaseApiController
     public async Task<IActionResult> DeleteRule([FromBody] DeleteRuleRequest request)
     {
         if (!request.Key.HasValue)
-            throw new ArgumentException("Key不能为空");
+            return ValidationError("Key不能为空");
 
         var deleted = await _ruleService.DeleteRulesAsync(new List<int> { request.Key.Value });
         deleted.EnsureSuccess("规则", request.Key.Value.ToString());

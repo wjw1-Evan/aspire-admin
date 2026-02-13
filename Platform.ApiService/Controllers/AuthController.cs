@@ -5,6 +5,7 @@ using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Controllers;
 
@@ -20,6 +21,7 @@ public class AuthController : BaseApiController
     private readonly ICaptchaService _captchaService;
     private readonly IImageCaptchaService _imageCaptchaService;
     private readonly IPhoneValidationService _phoneValidationService;
+    private readonly IPasswordEncryptionService _encryptionService;
 
     /// <summary>
     /// 初始化认证控制器
@@ -32,12 +34,36 @@ public class AuthController : BaseApiController
         IAuthService authService,
         ICaptchaService captchaService,
         IImageCaptchaService imageCaptchaService,
-        IPhoneValidationService phoneValidationService)
+        IPhoneValidationService phoneValidationService,
+        IPasswordEncryptionService encryptionService)
     {
         _authService = authService ?? throw new ArgumentNullException(nameof(authService));
         _captchaService = captchaService ?? throw new ArgumentNullException(nameof(captchaService));
         _imageCaptchaService = imageCaptchaService ?? throw new ArgumentNullException(nameof(imageCaptchaService));
         _phoneValidationService = phoneValidationService ?? throw new ArgumentNullException(nameof(phoneValidationService));
+        _encryptionService = encryptionService ?? throw new ArgumentNullException(nameof(encryptionService));
+    }
+
+    /// <summary>
+    /// 获取用于密码加密的 RSA 公钥
+    /// </summary>
+    /// <remarks>
+    /// 前端在提交登录或注册请求前，应先获取此公钥并对密码字段进行 RSA 加密。
+    /// 
+    /// 示例响应：
+    /// ```json
+    /// {
+    ///   "success": true,
+    ///   "data": "-----BEGIN RSA PUBLIC KEY-----\n..."
+    /// }
+    /// ```
+    /// </remarks>
+    /// <returns>PEM 格式的公钥</returns>
+    [HttpGet("public-key")]
+    [AllowAnonymous]
+    public IActionResult GetPublicKey()
+    {
+        return Success(data: _encryptionService.GetPublicKey());
     }
 
     /// <summary>
@@ -76,7 +102,10 @@ public class AuthController : BaseApiController
     {
         // 检查用户是否已认证
         if (!IsAuthenticated)
-            throw new UnauthorizedAccessException("用户未认证");
+        {
+            var errorResponse = ApiResponse<object>.ErrorResult("UNAUTHORIZED", "用户未认证", HttpContext.TraceIdentifier);
+            return Unauthorized(errorResponse);
+        }
 
         var user = await _authService.GetCurrentUserAsync();
         return Success(user.EnsureFound("用户"));
@@ -122,7 +151,7 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         var result = await _authService.LoginAsync(request);
-        return Ok(result);
+        return Result(result);
     }
 
     /// <summary>
@@ -228,7 +257,7 @@ public class AuthController : BaseApiController
     {
         if (type != "login" && type != "register")
         {
-            throw new ArgumentException("验证码类型只能是 login 或 register");
+            return ValidationError("验证码类型只能是 login 或 register");
         }
 
         var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString();
@@ -259,10 +288,6 @@ public class AuthController : BaseApiController
     /// 示例响应：
     /// ```json
     /// {
-    ///   "success": true,
-    ///   "data": {
-    ///     "valid": true
-    ///   }
     /// }
     /// ```
     /// </remarks>
@@ -273,15 +298,18 @@ public class AuthController : BaseApiController
     [AllowAnonymous]
     public async Task<IActionResult> VerifyImageCaptcha([FromBody] VerifyCaptchaImageRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.CaptchaId))
-            throw new ArgumentException("验证码ID不能为空");
+        if (string.IsNullOrEmpty(request.CaptchaId))
+            return ValidationError("验证码ID不能为空");
 
-        if (string.IsNullOrWhiteSpace(request.Answer))
-            throw new ArgumentException("验证码答案不能为空");
+        if (string.IsNullOrEmpty(request.Answer))
+            return ValidationError("验证码答案不能为空");
 
         var isValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.Answer, request.Type);
 
-        return Success(new { valid = isValid });
+        if (!isValid)
+            return Error("INVALID_CAPTCHA", "验证码不正确或已过期");
+
+        return SuccessMessage("验证码正确");
     }
 
     /// <summary>
@@ -365,7 +393,7 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
         var result = await _authService.RegisterAsync(request);
-        return Ok(result);
+        return Result(result);
     }
 
     /// <summary>
@@ -405,7 +433,7 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
     {
         var result = await _authService.ChangePasswordAsync(request);
-        return Ok(result);
+        return Result(result);
     }
 
     /// <summary>
@@ -445,6 +473,6 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
     {
         var result = await _authService.RefreshTokenAsync(request);
-        return Ok(result);
+        return Result(result);
     }
 }

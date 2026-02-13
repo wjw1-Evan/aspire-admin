@@ -23,7 +23,8 @@ public class UserService(
     IUserOrganizationService userOrganizationService,
     IOrganizationService organizationService,
     IUserActivityLogService userActivityLogService,
-    IMenuAccessService menuAccessService) : IUserService
+    IMenuAccessService menuAccessService,
+    IPasswordEncryptionService encryptionService) : IUserService
 {
     // private const string ACTIVE_STATUS = "active"; // Replaced by SystemConstants.UserStatus.Active
 
@@ -39,6 +40,7 @@ public class UserService(
     private readonly IOrganizationService _organizationService = organizationService;
     private readonly IUserActivityLogService _userActivityLogService = userActivityLogService;
     private readonly IMenuAccessService _menuAccessService = menuAccessService;
+    private readonly IPasswordEncryptionService _encryptionService = encryptionService;
 
     /// <inheritdoc/>
     public async Task<List<AppUser>> GetAllUsersAsync()
@@ -693,9 +695,13 @@ public class UserService(
         var user = await GetUserByIdWithoutTenantFilterAsync(userId);
         if (user == null) return false;
 
-        if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash)) return false;
+        // 🔒 安全增强：解密前端加密的密码
+        var rawCurrentPassword = _encryptionService.TryDecryptPassword(request.CurrentPassword);
+        var rawNewPassword = _encryptionService.TryDecryptPassword(request.NewPassword);
 
-        var newPasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        if (!BCrypt.Net.BCrypt.Verify(rawCurrentPassword, user.PasswordHash)) return false;
+
+        var newPasswordHash = BCrypt.Net.BCrypt.HashPassword(rawNewPassword);
         var updatedUser = await _userFactory.UpdateAsync(user.Id!, u => u.PasswordHash = newPasswordHash);
         return updatedUser != null;
     }

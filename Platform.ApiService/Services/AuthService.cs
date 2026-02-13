@@ -33,6 +33,7 @@ public class AuthService : IAuthService
     private readonly ISocialService _socialService;
     private readonly IDataFactory<RefreshToken> _refreshTokenFactory;
     private readonly IConfiguration _configuration;
+    private readonly IPasswordEncryptionService _encryptionService;
 
     /// <summary>
     /// 初始化认证服务
@@ -55,6 +56,7 @@ public class AuthService : IAuthService
     /// <param name="socialService">社交服务</param>
     /// <param name="refreshTokenFactory">刷新令牌工厂</param>
     /// <param name="configuration">配置</param>
+    /// <param name="encryptionService">密码加密服务</param>
     public AuthService(
         IDataFactory<User> userFactory,
         IDataFactory<UserCompany> userCompanyFactory,
@@ -73,7 +75,8 @@ public class AuthService : IAuthService
         IDataFactory<LoginFailureRecord> failureRecordFactory,
         ISocialService socialService,
         IDataFactory<RefreshToken> refreshTokenFactory,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IPasswordEncryptionService encryptionService)
     {
         _userFactory = userFactory;
         _userCompanyFactory = userCompanyFactory;
@@ -93,6 +96,7 @@ public class AuthService : IAuthService
         _socialService = socialService;
         _refreshTokenFactory = refreshTokenFactory;
         _configuration = configuration;
+        _encryptionService = encryptionService;
     }
 
     private async Task<int> GetFailureCountAsync(string clientId, string type)
@@ -279,7 +283,10 @@ public class AuthService : IAuthService
             return ApiResponse<LoginData>.ErrorResult("LOGIN_FAILED", "INVALID_CREDENTIALS");
         }
 
-        if (!_passwordHasher.VerifyPassword(request.Password ?? string.Empty, user.PasswordHash))
+        // 🔒 安全增强：解密前端加密的密码
+        var rawPassword = _encryptionService.TryDecryptPassword(request.Password ?? string.Empty);
+
+        if (!_passwordHasher.VerifyPassword(rawPassword, user.PasswordHash))
         {
             await RecordFailureAsync(clientId, "login");
             return ApiResponse<LoginData>.ErrorResult("LOGIN_FAILED", "INVALID_CREDENTIALS");
@@ -454,10 +461,13 @@ public class AuthService : IAuthService
 
         try
         {
+            // 🔒 安全增强：解密前端加密的密码
+            var rawPassword = _encryptionService.TryDecryptPassword(request.Password);
+
             user = new User
             {
                 Username = request.Username.Trim(),
-                PasswordHash = _passwordHasher.HashPassword(request.Password),
+                PasswordHash = _passwordHasher.HashPassword(rawPassword),
                 Email = string.IsNullOrEmpty(request.Email) ? null : request.Email.Trim(),
                 IsActive = true
             };
@@ -769,10 +779,14 @@ public class AuthService : IAuthService
             if (user == null)
                 return ApiResponse<bool>.NotFoundResult("用户", userId);
 
-            if (!_passwordHasher.VerifyPassword(request.CurrentPassword, user.PasswordHash))
+            // 🔒 安全增强：解密前端加密的密码
+            var rawCurrentPassword = _encryptionService.TryDecryptPassword(request.CurrentPassword);
+            var rawNewPassword = _encryptionService.TryDecryptPassword(request.NewPassword);
+
+            if (!_passwordHasher.VerifyPassword(rawCurrentPassword, user.PasswordHash))
                 return ApiResponse<bool>.ErrorResult("INVALID_CURRENT_PASSWORD", "当前密码不正确");
 
-            var newPasswordHash = _passwordHasher.HashPassword(request.NewPassword);
+            var newPasswordHash = _passwordHasher.HashPassword(rawNewPassword);
             await _userFactory.UpdateAsync(user.Id!, u =>
             {
                 u.PasswordHash = newPasswordHash;

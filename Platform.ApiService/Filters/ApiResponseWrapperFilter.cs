@@ -47,25 +47,33 @@ public class ApiResponseWrapperFilter : IAsyncResultFilter
             return;
         }
 
-        // 只处理未被包裹的成功的 ObjectResult
-        if (context.Result is ObjectResult objectResult &&
-            context.HttpContext.Response.StatusCode >= 200 &&
-            context.HttpContext.Response.StatusCode < 300)
+        // 只处理 ObjectResult
+        if (context.Result is ObjectResult objectResult)
         {
-            // 检查是否已经包裹过了（避免重复包裹）
-            if (objectResult.Value != null)
-            {
-                var type = objectResult.Value.GetType();
-                var isAlreadyWrapped = type.GetProperty("success") != null && type.GetProperty("data") != null;
+            // 获取状态码（优先从结果对象获取，因为此时 Response.StatusCode 映射可能还没更新）
+            var statusCode = objectResult.StatusCode ?? context.HttpContext.Response.StatusCode;
 
-                if (!isAlreadyWrapped)
+            // 只处理成功的 ObjectResult (2xx)
+            if (statusCode >= 200 && statusCode < 300)
+            {
+                // 检查是否已经包裹过了（避免重复包裹）
+                if (objectResult.Value != null)
                 {
-                    objectResult.Value = new
+                    var type = objectResult.Value.GetType();
+                    // 检查是否包含 success 和 (data 或 errorCode) 字段，不区分大小写
+                    var hasSuccess = type.GetProperty("success", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase) != null;
+                    var hasData = type.GetProperty("data", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase) != null;
+                    var hasErrorCode = type.GetProperty("errorCode", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase) != null;
+
+                    if (!(hasSuccess && (hasData || hasErrorCode)))
                     {
-                        success = true,
-                        data = objectResult.Value,
-                        timestamp = DateTime.UtcNow
-                    };
+                        objectResult.Value = new
+                        {
+                            success = true,
+                            data = objectResult.Value,
+                            timestamp = DateTime.UtcNow
+                        };
+                    }
                 }
             }
         }

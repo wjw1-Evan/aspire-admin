@@ -298,7 +298,8 @@ builder.Services.AddScoped<Platform.ApiService.Services.IFieldValidationService,
 
 // 注册 SSE 相关服务（简化版：直接通过用户ID发送消息，无需订阅机制）
 builder.Services.AddSingleton<Platform.ApiService.Services.IChatSseConnectionManager, Platform.ApiService.Services.ChatSseConnectionManager>();
-builder.Services.AddScoped<Platform.ApiService.Services.IChatBroadcaster, Platform.ApiService.Services.ChatBroadcaster>();
+// 注册密码传输加密服务 (RSA) 为单例
+builder.Services.AddSingleton<Platform.ApiService.Services.IPasswordEncryptionService, Platform.ApiService.Services.PasswordEncryptionService>();
 
 // Configure JWT authentication
 // JWT SecretKey 必须配置，不提供默认值以确保安全

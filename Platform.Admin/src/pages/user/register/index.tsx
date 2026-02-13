@@ -18,6 +18,7 @@ import React, { useRef, useState } from 'react';
 import { Footer } from '@/components';
 import ImageCaptcha, { type ImageCaptchaRef } from '@/components/ImageCaptcha';
 import { checkUsernameExists, register } from '@/services/ant-design-pro/api';
+import { PasswordEncryption } from '@/utils/encryption';
 import Settings from '../../../../config/defaultSettings';
 
 const useStyles = createStyles(({ token }) => {
@@ -29,8 +30,8 @@ const useStyles = createStyles(({ token }) => {
       position: 'fixed',
       right: 16,
       top: 16,
-      zIndex: 100, 
-     
+      zIndex: 100,
+
     },
     container: {
       display: 'flex',
@@ -201,8 +202,14 @@ export default function Register() {
 
   const handleSubmit = async (values: API.RegisterParams) => {
     try {
+      // 🔒 安全增强：在发送前加密密码
+      const encryptedPassword = values.password
+        ? await PasswordEncryption.encrypt(values.password)
+        : '';
+
       const response = await register({
         ...values,
+        password: encryptedPassword,
         captchaId: captchaId || undefined,
         captchaAnswer: captchaAnswer || undefined,
       });

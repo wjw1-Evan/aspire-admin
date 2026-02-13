@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Services;
+using Platform.ServiceDefaults.Controllers;
+using Platform.ServiceDefaults.Models;
+using Platform.ServiceDefaults.Services;
 
 namespace Platform.ApiService.Controllers
 {
@@ -8,7 +11,7 @@ namespace Platform.ApiService.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
-    public class QuotaController : ControllerBase
+    public class QuotaController : BaseApiController
     {
         private readonly IStorageQuotaService _storageQuotaService;
 
@@ -31,7 +34,7 @@ namespace Platform.ApiService.Controllers
         public async Task<IActionResult> AddQuota([FromQuery] string userId, [FromQuery] long amount)
         {
             var result = await _storageQuotaService.SetUserQuotaAsync(userId, amount);
-            return Ok(result);
+            return Success<object>(result);
         }
 
         /// <summary>
@@ -44,7 +47,7 @@ namespace Platform.ApiService.Controllers
         public async Task<IActionResult> RemoveQuota([FromQuery] string userId, [FromQuery] long amount)
         {
             // Logic to remove quota
-            return Ok();
+            return SuccessMessage("操作成功");
         }
     }
 }

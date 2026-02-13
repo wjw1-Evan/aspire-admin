@@ -223,7 +223,7 @@ public class UserController : BaseApiController
 
         var user = await _userService.UpdateUserManagementAsync(id, request);
         if (user == null)
-            throw new KeyNotFoundException(string.Format(ErrorMessages.ResourceNotFound, "用户"));
+            return NotFoundError("用户", id);
 
         return Success(user, ErrorMessages.UpdateSuccess);
     }
@@ -264,14 +264,11 @@ public class UserController : BaseApiController
         // 检查是否删除自己（不允许）
         var currentUserId = CurrentUserId;
         if (currentUserId == id)
-        {
-            throw new InvalidOperationException(ErrorMessages.CannotDeleteSelf);
-        }
+            return Error("CANNOT_DELETE_SELF", ErrorMessages.CannotDeleteSelf);
 
         var deleted = await _userService.DeleteUserAsync(id, reason);
         if (!deleted)
-            throw new KeyNotFoundException(string.Format(ErrorMessages.ResourceNotFound, "用户"));
-
+            return NotFoundError("用户", id);
         return NoContent();
     }
 
@@ -325,13 +322,12 @@ public class UserController : BaseApiController
 
         if (request.UserIds.Count > MaxBatchSize)
         {
-            throw new ArgumentException(
-                $"批量操作最多支持 {MaxBatchSize} 个用户，当前请求: {request.UserIds.Count} 个");
+            return ValidationError($"批量操作最多支持 {MaxBatchSize} 个用户，当前请求: {request.UserIds.Count} 个");
         }
 
         var success = await _userService.BulkUpdateUsersAsync(request, request.Reason);
         if (!success)
-            throw new InvalidOperationException(ErrorMessages.OperationFailed);
+            return Error("OPERATION_FAILED", ErrorMessages.OperationFailed);
 
         return Success(ErrorMessages.OperationSuccess);
     }
@@ -383,15 +379,15 @@ public class UserController : BaseApiController
     {
         // ✅ 添加输入验证
         if (page < 1 || page > 10000)
-            throw new ArgumentException("页码必须在 1-10000 之间");
+            return ValidationError("页码必须在 1-10000 之间");
 
         if (pageSize < 1 || pageSize > 100)
-            throw new ArgumentException("每页数量必须在 1-100 之间");
+            return ValidationError("每页数量必须在 1-100 之间");
 
         // 验证userId格式
         if (!string.IsNullOrEmpty(userId) &&
             !MongoDB.Bson.ObjectId.TryParse(userId, out _))
-            throw new ArgumentException("用户ID格式不正确");
+            return ValidationError("用户ID格式不正确");
 
         // 验证action参数
         if (!string.IsNullOrEmpty(action))
@@ -401,7 +397,7 @@ public class UserController : BaseApiController
                 "view", "export", "import", "change_password", "refresh_token"
             };
             if (!allowedActions.Contains(action.ToLower()))
-                throw new ArgumentException($"不支持的操作类型: {action}");
+                return ValidationError($"不支持的操作类型: {action}");
         }
 
         // 验证 httpMethod
@@ -409,7 +405,7 @@ public class UserController : BaseApiController
         {
             var allowedMethods = new[] { "GET", "POST", "PUT", "DELETE", "PATCH" };
             if (!allowedMethods.Contains(httpMethod.ToUpper()))
-                throw new ArgumentException($"不支持的请求方法: {httpMethod}");
+                return ValidationError($"不支持的请求方法: {httpMethod}");
             httpMethod = httpMethod.ToUpperInvariant();
         }
 
@@ -422,8 +418,7 @@ public class UserController : BaseApiController
 
         // 验证日期范围
         if (startDate.HasValue && endDate.HasValue && startDate.Value > endDate.Value)
-            throw new ArgumentException("开始日期不能晚于结束日期");
-
+            return ValidationError("开始日期不能晚于结束日期");
         // 优化后的查询：使用批量查询替代 N+1 查询
         var (logs, total, userMap) = await _activityLogService.GetAllActivityLogsWithUsersAsync(
             page,
@@ -475,7 +470,7 @@ public class UserController : BaseApiController
     {
         var log = await _activityLogService.GetActivityLogByIdAsync(logId);
         if (log == null)
-            throw new KeyNotFoundException("活动日志不存在或不可用");
+            return NotFoundError("活动日志", logId);
 
         var response = new ActivityLogWithUserResponse
         {
@@ -562,8 +557,8 @@ public class UserController : BaseApiController
         // 返回 CurrentUser 格式，包含角色等信息
         var currentUser = await _authService.GetCurrentUserAsync();
         if (currentUser == null)
-            throw new KeyNotFoundException("用户不存在");
-
+            return NotFoundError("用户", CurrentUserId ?? "未知");
+                    
         return Success(currentUser);
     }
 
@@ -609,13 +604,13 @@ public class UserController : BaseApiController
 
         var user = await _userService.UpdateUserProfileAsync(userId, filteredRequest);
         if (user == null)
-            throw new KeyNotFoundException("用户不存在");
+            return NotFoundError("用户", userId);
 
         // 返回 CurrentUser 格式，确保前端能正确接收手机号等字段
         // 使用 AuthService 的 GetCurrentUserAsync 方法获取转换后的用户信息
         var currentUser = await _authService.GetCurrentUserAsync();
         if (currentUser == null)
-            throw new KeyNotFoundException("获取用户信息失败");
+            return NotFoundError("用户信息", userId);
 
         return Success(currentUser);
     }
@@ -634,7 +629,7 @@ public class UserController : BaseApiController
         var userId = GetRequiredUserId();
         var success = await _userService.ChangePasswordAsync(userId, request);
         if (!success)
-            throw new InvalidOperationException("当前密码错误或修改失败");
+            return Error("CHANGE_PASSWORD_FAILED", "当前密码错误或修改失败");
 
         return Success("密码修改成功");
     }
@@ -715,28 +710,28 @@ public class UserController : BaseApiController
     {
         // ✅ 添加输入验证
         if (page < 1 || page > 10000)
-            throw new ArgumentException("页码必须在 1-10000 之间");
+            return ValidationError("页码必须在 1-10000 之间");
 
         if (pageSize < 1 || pageSize > 100)
-            throw new ArgumentException("每页数量必须在 1-100 之间");
+            return ValidationError("每页数量必须在 1-100 之间");
 
         // 验证日期范围
         if (startDate.HasValue && endDate.HasValue && startDate.Value > endDate.Value)
-            throw new ArgumentException("开始日期不能晚于结束日期");
+            return ValidationError("开始日期不能晚于结束日期");
 
         // 验证排序参数
         if (!string.IsNullOrEmpty(sortBy))
         {
             var allowedSortFields = new[] { "createdAt", "action" };
             if (!allowedSortFields.Contains(sortBy, StringComparer.OrdinalIgnoreCase))
-                throw new ArgumentException($"不支持的排序字段: {sortBy}，支持字段: {string.Join(", ", allowedSortFields)}");
+                return ValidationError($"不支持的排序字段: {sortBy}，支持字段: {string.Join(", ", allowedSortFields)}");
         }
 
         if (!string.IsNullOrEmpty(sortOrder))
         {
             var allowedSortOrders = new[] { "asc", "desc" };
             if (!allowedSortOrders.Contains(sortOrder, StringComparer.OrdinalIgnoreCase))
-                throw new ArgumentException($"不支持的排序方向: {sortOrder}，支持: asc、desc");
+                return ValidationError($"不支持的排序方向: {sortOrder}，支持: asc、desc");
         }
 
         var response = await _activityLogService.GetCurrentUserActivityLogsAsync(
@@ -803,13 +798,13 @@ public class UserController : BaseApiController
     {
         // ✅ 验证日志ID格式
         if (!MongoDB.Bson.ObjectId.TryParse(logId, out _))
-            throw new ArgumentException("日志ID格式不正确");
+            return ValidationError("日志ID格式不正确");
 
         var log = await _activityLogService.GetCurrentUserActivityLogByIdAsync(logId);
 
 
         if (log == null)
-            throw new KeyNotFoundException("日志不存在或不属于当前用户");
+            return NotFoundError("日志", logId);
 
         return Success(log);
     }
@@ -868,9 +863,7 @@ public class UserController : BaseApiController
             roleDefinition = "你是小科，请使用简体中文提供简洁、专业且友好的回复。";
         }
 
-        // 确保返回的字符串不为 null（JSON 序列化配置会忽略 null 值）
-        var response = ApiResponse<string>.SuccessResult(roleDefinition, HttpContext.TraceIdentifier);
-        return Ok(response);
+        return Success(roleDefinition);
     }
 
     /// <summary>
@@ -917,9 +910,9 @@ public class UserController : BaseApiController
         var success = await _userService.UpdateAiRoleDefinitionAsync(userId, request.RoleDefinition);
 
         if (!success)
-            throw new InvalidOperationException("更新角色定义失败");
+            return Error("UPDATE_FAILED", "更新角色定义失败");
 
-        return Success("角色定义更新成功");
+        return SuccessMessage("角色定义更新成功");
     }
 
 }

@@ -38,12 +38,11 @@ public class AvatarController : BaseApiController
     /// <param name="file">头像文件</param>
     /// <returns>头像URL</returns>
     [HttpPost("upload")]
-
     public async Task<IActionResult> UploadAvatar(IFormFile file)
     {
         if (file == null || file.Length == 0)
         {
-            return BadRequest("请选择要上传的文件");
+            return ValidationError("请选择要上传的文件");
         }
 
         // 验证文件类型
@@ -51,13 +50,13 @@ public class AvatarController : BaseApiController
         var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
         if (!allowedExtensions.Contains(extension))
         {
-            return BadRequest("仅支持 JPG, PNG, GIF, WEBP 格式的图片");
+            return ValidationError("仅支持 JPG, PNG, GIF, WEBP 格式的图片");
         }
 
         // 验证文件大小 (5MB)
         if (file.Length > 5 * 1024 * 1024)
         {
-            return BadRequest("图片大小不能超过 5MB");
+            return ValidationError("图片大小不能超过 5MB");
         }
 
         try
@@ -107,7 +106,7 @@ public class AvatarController : BaseApiController
     {
         if (string.IsNullOrEmpty(fileName))
         {
-            return NotFound("文件名不能为空");
+            return ValidationError("文件名不能为空");
         }
 
         try
@@ -117,7 +116,7 @@ public class AvatarController : BaseApiController
 
             if (fileInfo == null)
             {
-                return NotFound("头像文件不存在");
+                return NotFoundError("头像文件", fileName);
             }
 
             // 下载文件到流
@@ -135,7 +134,7 @@ public class AvatarController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "读取头像失败: {FileName}", fileName);
-            return NotFound("读取头像失败");
+            return NotFoundError("头像文件", fileName);
         }
     }
 

@@ -4,6 +4,7 @@ import { Alert, App, Card, Form, Input, Button } from 'antd';
 import { createStyles } from 'antd-style';
 import React, { useState } from 'react';
 import { changePassword } from '@/services/ant-design-pro/api';
+import { PasswordEncryption } from '@/utils/encryption';
 import Settings from '../../../../config/defaultSettings';
 
 const useStyles = createStyles(() => {
@@ -43,8 +44,16 @@ const ChangePassword: React.FC = () => {
 
   const handleSubmit = async (values: API.ChangePasswordParams) => {
     try {
+      // 🔒 安全增强：在发送前加密密码
+      const encryptedCurrentPassword = await PasswordEncryption.encrypt(values.currentPassword || '');
+      const encryptedNewPassword = await PasswordEncryption.encrypt(values.newPassword || '');
+
       // 修改密码
-      const result = await changePassword(values);
+      const result = await changePassword({
+        ...values,
+        currentPassword: encryptedCurrentPassword,
+        newPassword: encryptedNewPassword,
+      });
       if (result.success) {
         const defaultChangePasswordSuccessMessage = intl.formatMessage({
           id: 'pages.changePassword.success',

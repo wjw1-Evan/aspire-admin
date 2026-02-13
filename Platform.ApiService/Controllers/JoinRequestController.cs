@@ -57,7 +57,7 @@ public class JoinRequestController : BaseApiController
         if (!success)
             throw new KeyNotFoundException("申请不存在或已处理");
 
-        return Success("申请已撤回");
+        return SuccessMessage("申请已撤回");
     }
 
     /// <summary>

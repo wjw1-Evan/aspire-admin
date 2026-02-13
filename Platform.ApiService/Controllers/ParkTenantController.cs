@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
+using Platform.ServiceDefaults.Controllers;
 using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Controllers;
@@ -10,7 +11,7 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/park")]
-public class ParkTenantController : ControllerBase
+public class ParkTenantController : BaseApiController
 {
     private readonly IParkTenantService _tenantService;
     private readonly ILogger<ParkTenantController> _logger;
@@ -32,17 +33,17 @@ public class ParkTenantController : ControllerBase
     /// 获取租户列表
     /// </summary>
     [HttpPost("tenants/list")]
-    public async Task<ActionResult<ApiResponse<ParkTenantListResponse>>> GetTenants([FromBody] ParkTenantListRequest request)
+    public async Task<IActionResult> GetTenants([FromBody] ParkTenantListRequest request)
     {
         try
         {
             var result = await _tenantService.GetTenantsAsync(request);
-            return Ok(ApiResponse<ParkTenantListResponse>.SuccessResult(result));
+            return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取租户列表失败");
-            return Ok(ApiResponse<ParkTenantListResponse>.ErrorResult("ERROR", "获取租户列表失败"));
+            return Error("ERROR", "获取租户列表失败");
         }
     }
 
@@ -50,19 +51,19 @@ public class ParkTenantController : ControllerBase
     /// 获取单个租户
     /// </summary>
     [HttpGet("tenants/{id}")]
-    public async Task<ActionResult<ApiResponse<ParkTenantDto>>> GetTenant(string id)
+    public async Task<IActionResult> GetTenant(string id)
     {
         try
         {
             var result = await _tenantService.GetTenantByIdAsync(id);
             if (result == null)
-                return Ok(ApiResponse<ParkTenantDto>.ErrorResult("ERROR", "租户不存在"));
-            return Ok(ApiResponse<ParkTenantDto>.SuccessResult(result));
+                return Error("ERROR", "租户不存在");
+            return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取租户详情失败: {Id}", id);
-            return Ok(ApiResponse<ParkTenantDto>.ErrorResult("ERROR", "获取租户详情失败"));
+            return Error("ERROR", "获取租户详情失败");
         }
     }
 
@@ -70,17 +71,17 @@ public class ParkTenantController : ControllerBase
     /// 创建租户
     /// </summary>
     [HttpPost("tenants")]
-    public async Task<ActionResult<ApiResponse<ParkTenantDto>>> CreateTenant([FromBody] CreateParkTenantRequest request)
+    public async Task<IActionResult> CreateTenant([FromBody] CreateParkTenantRequest request)
     {
         try
         {
             var result = await _tenantService.CreateTenantAsync(request);
-            return Ok(ApiResponse<ParkTenantDto>.SuccessResult(result));
+            return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "创建租户失败");
-            return Ok(ApiResponse<ParkTenantDto>.ErrorResult("ERROR", "创建租户失败: " + ex.Message));
+            return Error("ERROR", "创建租户失败: " + ex.Message);
         }
     }
 
@@ -88,19 +89,19 @@ public class ParkTenantController : ControllerBase
     /// 更新租户
     /// </summary>
     [HttpPut("tenants/{id}")]
-    public async Task<ActionResult<ApiResponse<ParkTenantDto>>> UpdateTenant(string id, [FromBody] CreateParkTenantRequest request)
+    public async Task<IActionResult> UpdateTenant(string id, [FromBody] CreateParkTenantRequest request)
     {
         try
         {
             var result = await _tenantService.UpdateTenantAsync(id, request);
             if (result == null)
-                return Ok(ApiResponse<ParkTenantDto>.ErrorResult("ERROR", "租户不存在"));
-            return Ok(ApiResponse<ParkTenantDto>.SuccessResult(result));
+                return Error("ERROR", "租户不存在");
+            return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "更新租户失败: {Id}", id);
-            return Ok(ApiResponse<ParkTenantDto>.ErrorResult("ERROR", "更新租户失败: " + ex.Message));
+            return Error("ERROR", "更新租户失败: " + ex.Message);
         }
     }
 
@@ -108,19 +109,19 @@ public class ParkTenantController : ControllerBase
     /// 删除租户
     /// </summary>
     [HttpDelete("tenants/{id}")]
-    public async Task<ActionResult<ApiResponse<bool>>> DeleteTenant(string id)
+    public async Task<IActionResult> DeleteTenant(string id)
     {
         try
         {
             var result = await _tenantService.DeleteTenantAsync(id);
             if (!result)
-                return Ok(ApiResponse<bool>.ErrorResult("ERROR", "租户不存在或无法删除"));
-            return Ok(ApiResponse<bool>.SuccessResult(true));
+                return Error("ERROR", "租户不存在或无法删除");
+            return Success(true);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "删除租户失败: {Id}", id);
-            return Ok(ApiResponse<bool>.ErrorResult("ERROR", "删除租户失败: " + ex.Message));
+            return Error("ERROR", "删除租户失败: " + ex.Message);
         }
     }
 
@@ -132,17 +133,17 @@ public class ParkTenantController : ControllerBase
     /// 获取合同列表
     /// </summary>
     [HttpPost("contracts/list")]
-    public async Task<ActionResult<ApiResponse<LeaseContractListResponse>>> GetContracts([FromBody] LeaseContractListRequest request)
+    public async Task<IActionResult> GetContracts([FromBody] LeaseContractListRequest request)
     {
         try
         {
             var result = await _tenantService.GetContractsAsync(request);
-            return Ok(ApiResponse<LeaseContractListResponse>.SuccessResult(result));
+            return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取合同列表失败");
-            return Ok(ApiResponse<LeaseContractListResponse>.ErrorResult("ERROR", "获取合同列表失败"));
+            return Error("ERROR", "获取合同列表失败");
         }
     }
 
@@ -150,19 +151,19 @@ public class ParkTenantController : ControllerBase
     /// 获取单个合同
     /// </summary>
     [HttpGet("contracts/{id}")]
-    public async Task<ActionResult<ApiResponse<LeaseContractDto>>> GetContract(string id)
+    public async Task<IActionResult> GetContract(string id)
     {
         try
         {
             var result = await _tenantService.GetContractByIdAsync(id);
             if (result == null)
-                return Ok(ApiResponse<LeaseContractDto>.ErrorResult("ERROR", "合同不存在"));
-            return Ok(ApiResponse<LeaseContractDto>.SuccessResult(result));
+                return Error("ERROR", "合同不存在");
+            return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取合同详情失败: {Id}", id);
-            return Ok(ApiResponse<LeaseContractDto>.ErrorResult("ERROR", "获取合同详情失败"));
+            return Error("ERROR", "获取合同详情失败");
         }
     }
 
@@ -170,17 +171,17 @@ public class ParkTenantController : ControllerBase
     /// 创建合同
     /// </summary>
     [HttpPost("contracts")]
-    public async Task<ActionResult<ApiResponse<LeaseContractDto>>> CreateContract([FromBody] CreateLeaseContractRequest request)
+    public async Task<IActionResult> CreateContract([FromBody] CreateLeaseContractRequest request)
     {
         try
         {
             var result = await _tenantService.CreateContractAsync(request);
-            return Ok(ApiResponse<LeaseContractDto>.SuccessResult(result));
+            return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "创建合同失败");
-            return Ok(ApiResponse<LeaseContractDto>.ErrorResult("ERROR", "创建合同失败: " + ex.Message));
+            return Error("ERROR", "创建合同失败: " + ex.Message);
         }
     }
 
@@ -188,19 +189,19 @@ public class ParkTenantController : ControllerBase
     /// 更新合同
     /// </summary>
     [HttpPut("contracts/{id}")]
-    public async Task<ActionResult<ApiResponse<LeaseContractDto>>> UpdateContract(string id, [FromBody] CreateLeaseContractRequest request)
+    public async Task<IActionResult> UpdateContract(string id, [FromBody] CreateLeaseContractRequest request)
     {
         try
         {
             var result = await _tenantService.UpdateContractAsync(id, request);
             if (result == null)
-                return Ok(ApiResponse<LeaseContractDto>.ErrorResult("ERROR", "合同不存在"));
-            return Ok(ApiResponse<LeaseContractDto>.SuccessResult(result));
+                return Error("ERROR", "合同不存在");
+            return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "更新合同失败: {Id}", id);
-            return Ok(ApiResponse<LeaseContractDto>.ErrorResult("ERROR", "更新合同失败: " + ex.Message));
+            return Error("ERROR", "更新合同失败: " + ex.Message);
         }
     }
 
@@ -208,39 +209,39 @@ public class ParkTenantController : ControllerBase
     /// 删除合同
     /// </summary>
     [HttpDelete("contracts/{id}")]
-    public async Task<ActionResult<ApiResponse<bool>>> DeleteContract(string id)
+    public async Task<IActionResult> DeleteContract(string id)
     {
         try
         {
             var result = await _tenantService.DeleteContractAsync(id);
             if (!result)
-                return Ok(ApiResponse<bool>.ErrorResult("ERROR", "合同不存在或无法删除"));
-            return Ok(ApiResponse<bool>.SuccessResult(true));
+                return Error("ERROR", "合同不存在或无法删除");
+            return Success(true);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "删除合同失败: {Id}", id);
-            return Ok(ApiResponse<bool>.ErrorResult("ERROR", "删除合同失败: " + ex.Message));
+            return Error("ERROR", "删除合同失败: " + ex.Message);
         }
     }
 
     /// <summary>
-    /// 续签合同失败: {Id}
+    /// 续签合同
     /// </summary>
     [HttpPost("contracts/{id}/renew")]
-    public async Task<ActionResult<ApiResponse<LeaseContractDto>>> RenewContract(string id, [FromBody] CreateLeaseContractRequest request)
+    public async Task<IActionResult> RenewContract(string id, [FromBody] CreateLeaseContractRequest request)
     {
         try
         {
             var result = await _tenantService.RenewContractAsync(id, request);
             if (result == null)
-                return Ok(ApiResponse<LeaseContractDto>.ErrorResult("ERROR", "合同不存在或无法续签"));
-            return Ok(ApiResponse<LeaseContractDto>.SuccessResult(result));
+                return Error("ERROR", "合同不存在或无法续签");
+            return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "续签合同失败: {Id}", id);
-            return Ok(ApiResponse<LeaseContractDto>.ErrorResult("ERROR", "续签合同失败: " + ex.Message));
+            return Error("ERROR", "续签合同失败: " + ex.Message);
         }
     }
 
@@ -248,17 +249,17 @@ public class ParkTenantController : ControllerBase
     /// 创建合同付款记录
     /// </summary>
     [HttpPost("contracts/payments")]
-    public async Task<ActionResult<ApiResponse<LeasePaymentRecordDto>>> CreatePaymentRecord([FromBody] CreateLeasePaymentRecordRequest request)
+    public async Task<IActionResult> CreatePaymentRecord([FromBody] CreateLeasePaymentRecordRequest request)
     {
         try
         {
             var result = await _tenantService.CreatePaymentRecordAsync(request);
-            return Ok(ApiResponse<LeasePaymentRecordDto>.SuccessResult(result));
+            return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "创建合同付款记录失败");
-            return Ok(ApiResponse<LeasePaymentRecordDto>.ErrorResult("ERROR", "创建合同付款记录失败: " + ex.Message));
+            return Error("ERROR", "创建合同付款记录失败: " + ex.Message);
         }
     }
 
@@ -266,17 +267,17 @@ public class ParkTenantController : ControllerBase
     /// 获取合同付款记录列表
     /// </summary>
     [HttpGet("contracts/{id}/payments")]
-    public async Task<ActionResult<ApiResponse<List<LeasePaymentRecordDto>>>> GetPaymentRecords(string id)
+    public async Task<IActionResult> GetPaymentRecords(string id)
     {
         try
         {
             var result = await _tenantService.GetPaymentRecordsByContractIdAsync(id);
-            return Ok(ApiResponse<List<LeasePaymentRecordDto>>.SuccessResult(result));
+            return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取合同付款记录列表失败: {Id}", id);
-            return Ok(ApiResponse<List<LeasePaymentRecordDto>>.ErrorResult("ERROR", "获取合同付款记录列表失败"));
+            return Error("ERROR", "获取合同付款记录列表失败");
         }
     }
 
@@ -284,17 +285,17 @@ public class ParkTenantController : ControllerBase
     /// 删除合同付款记录
     /// </summary>
     [HttpDelete("contracts/payments/{id}")]
-    public async Task<ActionResult<ApiResponse<bool>>> DeletePaymentRecord(string id)
+    public async Task<IActionResult> DeletePaymentRecord(string id)
     {
         try
         {
             var result = await _tenantService.DeletePaymentRecordAsync(id);
-            return Ok(ApiResponse<bool>.SuccessResult(result));
+            return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "删除合同付款记录失败: {Id}", id);
-            return Ok(ApiResponse<bool>.ErrorResult("ERROR", "删除合同付款记录失败: " + ex.Message));
+            return Error("ERROR", "删除合同付款记录失败: " + ex.Message);
         }
     }
     #endregion
@@ -308,17 +309,17 @@ public class ParkTenantController : ControllerBase
     /// <param name="startDate">开始日期（自定义周期时必填）</param>
     /// <param name="endDate">结束日期（自定义周期时必填）</param>
     [HttpGet("tenant/statistics")]
-    public async Task<ActionResult<ApiResponse<TenantStatisticsResponse>>> GetStatistics([FromQuery] StatisticsPeriod period = StatisticsPeriod.Month, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
+    public async Task<IActionResult> GetStatistics([FromQuery] StatisticsPeriod period = StatisticsPeriod.Month, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
     {
         try
         {
             var result = await _tenantService.GetStatisticsAsync(period, startDate, endDate);
-            return Ok(ApiResponse<TenantStatisticsResponse>.SuccessResult(result));
+            return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取租户统计失败");
-            return Ok(ApiResponse<TenantStatisticsResponse>.ErrorResult("ERROR", "获取租户统计失败"));
+            return Error("ERROR", "获取租户统计失败");
         }
     }
 

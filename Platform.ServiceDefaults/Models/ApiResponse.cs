@@ -30,6 +30,11 @@ public class ApiResponse<T>
     public string? errorMessage { get; set; }
 
     /// <summary>
+    /// 响应消息（用于成功提示）
+    /// </summary>
+    public string? message { get; set; }
+
+    /// <summary>
     /// 响应时间戳
     /// </summary>
     [Required]
@@ -45,14 +50,16 @@ public class ApiResponse<T>
     /// </summary>
     /// <param name="data">响应数据</param>
     /// <param name="traceId">追踪ID</param>
+    /// <param name="message">成功消息</param>
     /// <returns>成功响应</returns>
-    public static ApiResponse<T> SuccessResult(T data, string? traceId = null)
+    public static ApiResponse<T> SuccessResult(T data, string? traceId = null, string? message = null)
     {
         return new ApiResponse<T>
         {
             success = true,
             data = data,
-            traceId = traceId
+            traceId = traceId,
+            message = message
         };
     }
 
@@ -162,22 +169,22 @@ public class PagedResult<T>
     /// 数据列表
     /// </summary>
     public List<T> list { get; set; } = new();
-    
+
     /// <summary>
     /// 总记录数
     /// </summary>
     public long total { get; set; }
-    
+
     /// <summary>
     /// 当前页码
     /// </summary>
     public int page { get; set; }
-    
+
     /// <summary>
     /// 每页大小
     /// </summary>
     public int pageSize { get; set; }
-    
+
     /// <summary>
     /// 总页数
     /// </summary>

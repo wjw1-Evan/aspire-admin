@@ -1,17 +1,35 @@
 const { request } = require('../../utils/request');
 const { logout, withAuth } = require('../../utils/auth');
+const { t, getLocale } = require('../../utils/i18n');
 
 const app = getApp();
 
 Page(withAuth({
     data: {
+        t: {},
         userInfo: null,
         currentCompany: null
     },
 
     onShow() {
+        this.updateTranslations();
         this.fetchUserInfo();
         this.fetchCurrentCompany();
+    },
+
+    updateTranslations() {
+        const tObj = {
+            'profile.title': t('profile.title'),
+            'profile.account': t('profile.account'),
+            'profile.security': t('profile.security'),
+            'settings.title': t('settings.title'),
+            'profile.logout': t('profile.logout'),
+            'settings.about': t('settings.about'),
+        };
+        this.setData({ t: tObj });
+        wx.setNavigationBarTitle({
+            title: t('profile.title')
+        });
     },
 
     async fetchUserInfo() {
@@ -123,8 +141,8 @@ Page(withAuth({
 
     handleLogout() {
         wx.showModal({
-            title: '提示',
-            content: '确定要退出登录吗？',
+            title: t('common.tips'),
+            content: t('profile.logout.confirm'),
             confirmColor: '#1890ff',
             success: async (res) => {
                 if (res.confirm) {
@@ -148,6 +166,10 @@ Page(withAuth({
 
     navigateToPassword() {
         wx.navigateTo({ url: '/pages/profile/password' });
+    },
+
+    navigateToSettings() {
+        wx.navigateTo({ url: '/pages/profile/settings' });
     },
 
     async fetchCurrentCompany() {

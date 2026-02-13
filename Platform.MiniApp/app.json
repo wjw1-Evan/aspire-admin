@@ -6,6 +6,7 @@
     "pages/profile/profile",
     "pages/profile/edit",
     "pages/profile/password",
+    "pages/profile/settings",
     "pages/project/list",
     "pages/project/detail",
     "pages/task/list",

@@ -1,0 +1,46 @@
+<view class="container">
+  <view class="settings-list card-style">
+    <!-- Language Selection -->
+    <view class="settings-item" bindtap="handleLanguageChange">
+      <view class="item-left">
+        <text class="label">{{t['settings.language']}}</text>
+      </view>
+      <view class="item-right">
+        <text class="current-value">{{currentLanguageName}}</text>
+        <text class="iconfont icon-arrow-right arrow"></text>
+      </view>
+    </view>
+
+    <!-- Theme Selection (Mock) -->
+    <view class="settings-item">
+      <view class="item-left">
+        <text class="label">{{t['settings.theme']}}</text>
+      </view>
+      <view class="item-right">
+        <switch checked="{{isDarkTheme}}" bindchange="handleThemeChange" color="#1890ff"></switch>
+      </view>
+    </view>
+  </view>
+
+  <view class="settings-list card-style">
+    <!-- Clear Cache -->
+    <view class="settings-item" bindtap="handleClearCache">
+      <view class="item-left">
+        <text class="label text-danger">{{t['settings.cache']}}</text>
+      </view>
+      <text class="iconfont icon-arrow-right arrow"></text>
+    </view>
+  </view>
+
+  <view class="settings-list card-style">
+    <!-- Version Info -->
+    <view class="settings-item">
+      <view class="item-left">
+        <text class="label">{{t['settings.version']}}</text>
+      </view>
+      <view class="item-right">
+        <text class="version-text">v1.0.0 (Build 20260210)</text>
+      </view>
+    </view>
+  </view>
+</view>

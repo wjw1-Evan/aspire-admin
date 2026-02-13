@@ -29,14 +29,14 @@
     <view class="menu-item" bindtap="navigateToEdit">
       <view class="item-left">
         <text class="iconfont icon-profile icon"></text>
-        <text class="label">账户设置</text>
+        <text class="label">{{t['profile.account']}}</text>
       </view>
       <text class="iconfont icon-arrow-right arrow"></text>
     </view>
     <view class="menu-item" bindtap="navigateToPassword">
       <view class="item-left">
         <text class="iconfont icon-password icon"></text>
-        <text class="label">安全中心</text>
+        <text class="label">{{t['profile.security']}}</text>
       </view>
       <text class="iconfont icon-arrow-right arrow"></text>
     </view>
@@ -46,21 +46,21 @@
     <view class="menu-item" bindtap="aboutUs">
       <view class="item-left">
         <text class="iconfont icon-info icon"></text>
-        <text class="label">关于系统</text>
+        <text class="label">{{t['settings.about']}}</text>
       </view>
       <text class="iconfont icon-arrow-right arrow"></text>
     </view>
-    <view class="menu-item">
+    <view class="menu-item" bindtap="navigateToSettings">
       <view class="item-left">
         <text class="iconfont icon-settings icon"></text>
-        <text class="label">通用设置</text>
+        <text class="label">{{t['settings.title']}}</text>
       </view>
       <text class="iconfont icon-arrow-right arrow"></text>
     </view>
   </view>
 
   <view class="logout-section">
-    <button class="logout-btn" bindtap="handleLogout">退出当前账号</button>
+    <button class="logout-btn" bindtap="handleLogout">{{t['profile.logout']}}</button>
     <text class="version-text">当前版本 v1.0.0 (Build 20260210)</text>
   </view>
 </view>

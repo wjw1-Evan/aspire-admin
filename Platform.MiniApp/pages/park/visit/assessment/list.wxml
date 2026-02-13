@@ -1,0 +1,42 @@
+<view class="container">
+  <view class="search-bar">
+    <icon class="search-icon" type="search" size="16"></icon>
+    <input class="search-input" placeholder="{{t['common.search']}}" bindinput="onSearchInput" value="{{search}}"></input>
+  </view>
+
+  <scroll-view class="assessment-list" scroll-y onScrollToLower="loadMore">
+    <view wx:if="{{assessments.length > 0}}">
+      <view class="assessment-card" wx:for="{{assessments}}" wx:key="id" bindtap="goToDetail" data-id="{{item.id}}">
+        <view class="card-header">
+          <text class="task-title">{{item.taskDescription}}</text>
+          <view class="score-tag {{item.score >= 80 ? 'high' : item.score >= 60 ? 'medium' : 'low'}}">
+            {{item.score}}
+          </view>
+        </view>
+        <view class="card-body">
+          <view class="info-row">
+            <text class="label">{{t['park.visit.assessment.visit_task']}}:</text>
+            <text class="value">{{item.visitorName}}</text>
+          </view>
+          <view class="info-row">
+            <text class="label">{{t['common.date']}}:</text>
+            <text class="value">{{item.createdAt}}</text>
+          </view>
+          <view class="comment-preview" wx:if="{{item.comments}}">
+            <text class="comment-text">{{item.comments}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view wx:else class="empty-state">
+      <text class="iconfont icon-folder" style="font-size: 48px; color: #d9d9d9; margin-bottom: 16px;"></text>
+      <text>{{t['common.empty']}}</text>
+    </view>
+    <view wx:if="{{loading}}" class="loading-more">
+      <text>{{t['common.loading']}}</text>
+    </view>
+    <view wx:if="{{!hasMore && assessments.length > 0}}" class="no-more">
+      <text>{{t['common.no_more']}}</text>
+    </view>
+  </scroll-view>
+</view>

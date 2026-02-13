@@ -1,0 +1,5 @@
+@import "../../../styles/forms.wxss";
+
+.form-item input {
+  text-align: right;
+}

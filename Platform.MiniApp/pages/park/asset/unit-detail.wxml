@@ -1,0 +1,58 @@
+<view class="detail-container">
+  <view class="header-card {{'bg-status-' + unit.status}}" wx:if="{{unit}}">
+    <view class="title-row">
+      <text class="main-title">{{unit.unitNumber}}</text>
+      <view class="header-actions">
+        <text class="iconfont icon-edit" bindtap="goToEdit"></text>
+        <text class="iconfont icon-delete" bindtap="handleDelete"></text>
+      </view>
+    </view>
+    <view class="status-row">
+      <text class="status-tag">{{unit.status === 'Available' ? t['park.asset.status.available'] : (unit.status === 'Rented' ? t['park.asset.status.rented'] : t['park.asset.status.reserved'])}}</text>
+    </view>
+  </view>
+
+  <view class="section-title">基准信息</view>
+  <view class="info-card" wx:if="{{unit}}">
+    <view class="info-item">
+      <text class="label">楼层</text>
+      <text class="value">{{unit.floor}}F</text>
+    </view>
+    <view class="info-item">
+      <text class="label">面积</text>
+      <text class="value">{{unit.area}}㎡</text>
+    </view>
+    <view class="info-item">
+      <text class="label">月租金</text>
+      <text class="value highlight-red">¥{{unit.monthlyRent}}</text>
+    </view>
+    <view class="info-item" wx:if="{{unit.dailyRent}}">
+      <text class="label">日租金</text>
+      <text class="value">¥{{unit.dailyRent}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">房源类型</text>
+      <text class="value">{{unit.unitType === 'Office' ? t['park.asset.type.office'] : (unit.unitType === 'Retail' ? t['park.asset.type.retail'] : t['park.asset.type.warehouse'])}}</text>
+    </view>
+  </view>
+
+  <view class="section-title" wx:if="{{unit.description}}">房源描述</view>
+  <view class="info-card" wx:if="{{unit.description}}">
+    <view class="info-item vertical">
+      <text class="value">{{unit.description}}</text>
+    </view>
+  </view>
+
+  <view class="section-title" wx:if="{{unit.facilities && unit.facilities.length > 0}}">配备设施</view>
+  <view class="info-card" wx:if="{{unit.facilities && unit.facilities.length > 0}}">
+    <view class="facilities-tags" style="padding: 20rpx 0;">
+      <text wx:for="{{unit.facilities}}" wx:key="*this" class="facility-tag">{{item}}</text>
+    </view>
+  </view>
+
+  <view class="bottom-placeholder"></view>
+
+  <view class="loading-overlay" wx:if="{{loading}}">
+    <view class="loading"></view>
+  </view>
+</view>

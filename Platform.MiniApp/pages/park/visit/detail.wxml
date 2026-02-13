@@ -1,0 +1,56 @@
+<view class="detail-container">
+  <view class="header-card bg-status-{{task.status}}" wx:if="{{task}}">
+    <view class="title-row">
+      <text class="main-title">{{task.taskName}}</text>
+      <view class="header-actions">
+        <text class="iconfont icon-edit" bindtap="goToEdit"></text>
+        <text class="iconfont icon-delete" bindtap="handleDelete"></text>
+      </view>
+    </view>
+    <view class="status-row">
+      <text class="status-tag">{{task.status === 'Pending' ? t['park.visit.status.pending'] : (task.status === 'Completed' ? t['park.visit.status.completed'] : t['park.visit.status.cancelled'])}}</text>
+      <view class="priority-badge priority-{{task.priority}}">
+        {{task.priority === 'High' ? t['park.visit.priority.high'] : (task.priority === 'Medium' ? t['park.visit.priority.medium'] : t['park.visit.priority.low'])}}
+      </view>
+    </view>
+  </view>
+
+  <view class="section-title">走访信息</view>
+  <view class="info-card" wx:if="{{task}}">
+    <view class="info-item">
+      <text class="label">走访企业</text>
+      <text class="value">{{task.tenantName || '-'}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">计划日期</text>
+      <text class="value">{{task.plannedVisitDate || '-'}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">走访人</text>
+      <text class="value">{{task.visitorName || '-'}}</text>
+    </view>
+  </view>
+
+  <view class="section-title">任务描述</view>
+  <view class="info-card" wx:if="{{task}}">
+    <view class="info-item vertical">
+      <text class="value">{{task.description || '无详细描述'}}</text>
+    </view>
+  </view>
+
+  <view class="section-title" wx:if="{{task.status === 'Completed' || task.visitResult}}">走访结果</view>
+  <view class="info-card" wx:if="{{task.status === 'Completed' || task.visitResult}}">
+    <view class="info-item vertical">
+      <text class="value">{{task.visitResult || '走访已执行'}}</text>
+      <view class="extra-info" wx:if="{{task.actualVisitDate}}">
+        <text>执行时间：{{task.actualVisitDate}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="bottom-placeholder"></view>
+
+  <view class="loading-overlay" wx:if="{{loading}}">
+    <view class="loading"></view>
+  </view>
+</view>

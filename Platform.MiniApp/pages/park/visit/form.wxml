@@ -1,0 +1,42 @@
+<view class="form-container">
+  <form bindsubmit="handleSubmit">
+    <view class="form-group">
+      <view class="form-item">
+        <text class="label">任务名称</text>
+        <input name="taskName" value="{{formData.taskName}}" placeholder="请输入走访任务名称" placeholder-class="placeholder" />
+      </view>
+
+      <view class="form-item">
+        <text class="label">相关租户</text>
+        <picker bindchange="onTenantChange" value="{{tenantIndex}}" range="{{tenantList}}" range-key="name">
+          <view class="picker-value">{{tenantList[tenantIndex].name || '请选择'}}</view>
+        </picker>
+      </view>
+
+      <view class="form-item">
+        <text class="label">走访日期</text>
+        <picker mode="date" bindchange="onDateChange" value="{{plannedVisitDate}}">
+          <view class="picker-value">{{plannedVisitDate || '请选择'}}</view>
+        </picker>
+      </view>
+
+      <view class="form-item">
+        <text class="label">优先级</text>
+        <picker bindchange="onPriorityChange" value="{{priorityIndex}}" range="{{priorityOptions}}" range-key="label">
+          <view class="picker-value">{{priorityOptions[priorityIndex].label}}</view>
+        </picker>
+      </view>
+    </view>
+
+    <view class="section-title">任务描述</view>
+    <view class="form-group">
+      <view class="form-item vertical">
+        <textarea name="description" value="{{formData.description}}" placeholder="请输入详细的走访任务描述..." placeholder-class="placeholder"></textarea>
+      </view>
+    </view>
+
+    <view class="btn-area">
+      <button form-type="submit" type="primary" loading="{{submitting}}">{{isEdit ? '保存修改' : '创建任务'}}</button>
+    </view>
+  </form>
+</view>

@@ -1,10 +1,11 @@
 <view class="container">
   <view class="apps-grid">
-    <view class="app-card" bindtap="navigateToStatistics">
+    <!-- Group 1: Project Collaboration -->
+    <view class="app-card" bindtap="navigateToProject">
       <view class="app-icon color-blue">
-        <text class="iconfont icon-statistics"></text>
+        <text class="iconfont icon-project"></text>
       </view>
-      <text class="app-name">{{t['apps.statistics']}}</text>
+      <text class="app-name">{{t['apps.project']}}</text>
     </view>
     <view class="app-card" bindtap="navigateToTask">
       <view class="app-icon color-orange">
@@ -12,11 +13,77 @@
       </view>
       <text class="app-name">{{t['apps.task']}}</text>
     </view>
-    <view class="app-card" bindtap="navigateToProject">
+    <view class="app-card" bindtap="navigateToStatistics">
       <view class="app-icon color-blue">
-        <text class="iconfont icon-project"></text>
+        <text class="iconfont icon-statistics"></text>
       </view>
-      <text class="app-name">{{t['apps.project']}}</text>
+      <text class="app-name">{{t['apps.statistics']}}</text>
+    </view>
+
+    <!-- Group 2: Park Operations -->
+    <view class="app-card" bindtap="navigateToAsset">
+      <view class="app-icon color-blue">
+        <text class="iconfont icon-asset"></text>
+      </view>
+      <text class="app-name">{{t['apps.asset']}}</text>
+    </view>
+    <view class="app-card" bindtap="navigateToTenant">
+      <view class="app-icon color-green">
+        <text class="iconfont icon-tenant"></text>
+      </view>
+      <text class="app-name">{{t['apps.tenant']}}</text>
+    </view>
+    <view class="app-card" bindtap="navigateToContract">
+      <view class="app-icon color-orange">
+        <text class="iconfont icon-contract"></text>
+      </view>
+      <text class="app-name">{{t['apps.contract']}}</text>
+    </view>
+    <view class="app-card" bindtap="navigateToService">
+      <view class="app-icon color-red">
+        <text class="iconfont icon-service"></text>
+      </view>
+      <text class="app-name">{{t['apps.service']}}</text>
+    </view>
+
+    <!-- Group 3: Investment & Visits -->
+    <view class="app-card" bindtap="navigateToParkInvestment">
+      <view class="app-icon color-red">
+        <text class="iconfont icon-investment"></text>
+      </view>
+      <text class="app-name">{{t['apps.park']}}</text>
+    </view>
+    <view class="app-card" bindtap="navigateToVisit">
+      <view class="app-icon color-purple">
+        <text class="iconfont icon-visit"></text>
+      </view>
+      <text class="app-name">{{t['apps.visit']}}</text>
+    </view>
+    <view class="app-card" bindtap="navigateToVisitAssessment">
+      <view class="app-icon color-blue">
+        <text class="iconfont icon-assessment"></text>
+      </view>
+      <text class="app-name">{{t['park.visit.assessment']}}</text>
+    </view>
+    <view class="app-card" bindtap="navigateToVisitKnowledge">
+      <view class="app-icon color-green">
+        <text class="iconfont icon-knowledge"></text>
+      </view>
+      <text class="app-name">{{t['park.visit.knowledge']}}</text>
+    </view>
+    <view class="app-card" bindtap="navigateToVisitStats">
+      <view class="app-icon color-orange">
+        <text class="iconfont icon-statistics"></text>
+      </view>
+      <text class="app-name">{{t['park.visit.statistics']}}</text>
+    </view>
+
+    <!-- Group 4: Support Data -->
+    <view class="app-card" bindtap="navigateToParkStats">
+      <view class="app-icon color-blue">
+        <text class="iconfont icon-statistics"></text>
+      </view>
+      <text class="app-name">{{t['apps.park_stats']}}</text>
     </view>
     <view class="app-card" bindtap="navigateToCloudStorage">
       <view class="app-icon color-green">
@@ -24,11 +91,11 @@
       </view>
       <text class="app-name">{{t['apps.cloud']}}</text>
     </view>
-    <view class="app-card" bindtap="navigateToParkInvestment">
+    <view class="app-card" bindtap="navigateToPasswordBook">
       <view class="app-icon color-red">
-        <text class="iconfont icon-investment"></text>
+        <text class="iconfont icon-password"></text>
       </view>
-      <text class="app-name">{{t['apps.park']}}</text>
+      <text class="app-name">{{t['apps.password_book']}}</text>
     </view>
     <view class="app-card" bindtap="navigateToProfile">
       <view class="app-icon color-purple">

@@ -1,0 +1,56 @@
+<view class="container">
+  <view class="search-bar">
+    <view class="search-box">
+      <icon type="search" size="14"></icon>
+      <input 
+        class="search-input" 
+        placeholder="{{t['common.search']}}" 
+        bindinput="onSearchInput" 
+        value="{{keyword}}" 
+        bindconfirm="handleSearch"
+      />
+    </view>
+    <view class="search-btn" bindtap="handleSearch">{{t['common.search']}}</view>
+  </view>
+
+  <scroll-view class="password-list" scroll-y bindscrolltolower="loadMore">
+    <view class="list-container" wx:if="{{passwords.length > 0}}">
+      <view class="password-card card-style" wx:for="{{passwords}}" wx:key="id" bindtap="goToDetail" data-id="{{item.id}}" hover-class="card-hover">
+        <view class="card-header">
+          <text class="platform">{{item.platform}}</text>
+          <text class="category-tag" wx:if="{{item.category}}">{{item.category}}</text>
+        </view>
+        <view class="card-body">
+          <view class="info-row">
+            <text class="label">{{t['password.book.account']}}：</text>
+            <text class="value">{{item.account}}</text>
+            <text class="iconfont icon-copy" catchtap="copyText" data-text="{{item.account}}"></text>
+          </view>
+          <view class="tags-row" wx:if="{{item.tags && item.tags.length > 0}}">
+            <text class="tag-item" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this">{{tag}}</text>
+          </view>
+        </view>
+        <view class="card-footer">
+          <text class="btn-detail">{{t['common.detail']}} ></text>
+        </view>
+      </view>
+    </view>
+    
+    <view wx:else class="empty-state">
+      <text class="iconfont icon-folder"></text>
+      <text>{{t['common.empty']}}</text>
+    </view>
+
+    <view wx:if="{{loading}}" class="loading-wrap">
+      <view class="loading"></view>
+      <text>{{t['common.loading']}}</text>
+    </view>
+    <view wx:if="{{!hasMore && passwords.length > 0}}" class="no-more">
+      <text>{{t['common.no_more']}}</text>
+    </view>
+  </scroll-view>
+
+  <view class="fab" bindtap="goToAdd">
+    <text class="iconfont icon-add"></text>
+  </view>
+</view>

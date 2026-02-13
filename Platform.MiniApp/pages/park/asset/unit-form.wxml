@@ -1,0 +1,60 @@
+<view class="container">
+  <view class="form-container">
+    <view class="form-item">
+      <text class="label">所属楼宇<text class="required">*</text></text>
+      <picker bindchange="onBuildingChange" value="{{buildingIndex}}" range="{{buildings}}" range-key="name">
+        <view class="picker-box">
+          <text>{{buildingIndex > -1 ? buildings[buildingIndex].name : '请选择楼宇'}}</text>
+          <text class="iconfont icon-right"></text>
+        </view>
+      </picker>
+    </view>
+
+    <view class="form-row">
+      <view class="form-item half">
+        <text class="label">房号<text class="required">*</text></text>
+        <input class="input" placeholder="101" value="{{formData.unitNumber}}" bindinput="onInputChange" data-field="unitNumber" />
+      </view>
+      <view class="form-item half">
+        <text class="label">楼层</text>
+        <input class="input" type="number" placeholder="1" value="{{formData.floor}}" bindinput="onInputChange" data-field="floor" />
+      </view>
+    </view>
+
+    <view class="form-row">
+      <view class="form-item half">
+        <text class="label">面积 (㎡)</text>
+        <input class="input" type="digit" placeholder="0.00" value="{{formData.area}}" bindinput="onInputChange" data-field="area" />
+      </view>
+      <view class="form-item half">
+        <text class="label">月租金 (元)</text>
+        <input class="input" type="digit" placeholder="0.00" value="{{formData.monthlyRent}}" bindinput="onInputChange" data-field="monthlyRent" />
+      </view>
+    </view>
+
+    <view class="form-item">
+      <text class="label">单元类型</text>
+      <picker bindchange="onTypeChange" value="{{unitTypeIndex}}" range="{{unitTypeNames}}">
+        <view class="picker-box">
+          <text>{{unitTypeNames[unitTypeIndex]}}</text>
+          <text class="iconfont icon-right"></text>
+        </view>
+      </picker>
+    </view>
+
+    <view class="form-item">
+      <text class="label">描述信息</text>
+      <textarea class="textarea" placeholder="请输入相关说明..." value="{{formData.description}}" bindinput="onInputChange" data-field="description" maxlength="500"></textarea>
+    </view>
+  </view>
+
+  <view class="footer-btn">
+    <button class="submit-btn" bindtap="handleSubmit" loading="{{submitting}}" disabled="{{submitting}}">
+      {{isEdit ? '提交修改' : '立即创建'}}
+    </button>
+  </view>
+
+  <view class="loading-overlay" wx:if="{{loading}}">
+    <view class="loading"></view>
+  </view>
+</view>

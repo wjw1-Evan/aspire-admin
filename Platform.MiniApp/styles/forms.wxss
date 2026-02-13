@@ -1,0 +1,92 @@
+/* Standard Form Styles for WeChat Mini Program */
+
+.form-container {
+  padding: 30rpx;
+  background-color: #f7f8fa;
+  min-height: 100vh;
+}
+
+.form-group {
+  background-color: #fff;
+  border-radius: 16rpx;
+  padding: 0 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.05);
+}
+
+.section-title {
+  font-size: 26rpx;
+  color: #969799;
+  margin: 32rpx 0 16rpx 10rpx;
+}
+
+.form-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.form-item:last-child {
+  border-bottom: none;
+}
+
+.form-item .label {
+  font-size: 28rpx;
+  color: #323233;
+  width: 180rpx;
+  flex-shrink: 0;
+}
+
+.form-item input, 
+.form-item picker {
+  flex: 1;
+  text-align: right;
+  font-size: 28rpx;
+  color: #323233;
+}
+
+.form-item .picker-value {
+  color: #323233;
+}
+
+.form-item.vertical {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.form-item.vertical .label {
+  width: 100%;
+  margin-bottom: 24rpx;
+}
+
+.form-item textarea {
+  width: 100%;
+  min-height: 200rpx;
+  font-size: 28rpx;
+  padding: 24rpx;
+  background-color: #f9f9f9;
+  border-radius: 8rpx;
+  box-sizing: border-box;
+}
+
+.btn-area {
+  margin-top: 64rpx;
+  padding-bottom: 48rpx;
+}
+
+.btn-area button {
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
+  background: #1890ff;
+  border-radius: 44rpx;
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #fff !important;
+}
+
+.placeholder {
+  color: #ccc;
+}

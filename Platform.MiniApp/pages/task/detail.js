@@ -49,5 +49,43 @@ Page(withAuth({
         } catch (err) {
             console.error('Fetch task detail failed', err);
         }
+    },
+    goToEdit() {
+        wx.navigateTo({
+            url: `/pages/task/create?id=${this.data.id}`
+        });
+    },
+
+    async handleDelete() {
+        wx.showModal({
+            title: '确认删除',
+            content: '确定要删除这个任务吗？',
+            success: async (res) => {
+                if (res.confirm) {
+                    try {
+                        const delRes = await request({
+                            url: `/api/task/${this.data.id}`,
+                            method: 'DELETE'
+                        });
+                        if (delRes.success) {
+                            wx.showToast({ title: '已删除' });
+                            setTimeout(() => {
+                                const pages = getCurrentPages();
+                                const prevPage = pages[pages.length - 2];
+                                if (prevPage && prevPage.fetchTasks) {
+                                    prevPage.setData({ page: 1, tasks: [] }, () => {
+                                        prevPage.fetchTasks(true);
+                                    });
+                                }
+                                wx.navigateBack();
+                            }, 1500);
+                        }
+                    } catch (err) {
+                        console.error('Delete task failed', err);
+                        wx.showToast({ title: '删除失败', icon: 'none' });
+                    }
+                }
+            }
+        });
     }
 }));

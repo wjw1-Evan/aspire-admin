@@ -1,0 +1,59 @@
+<view class="container">
+  <view class="tab-bar">
+    <view class="tab-item {{activeTab === 'category' ? 'active' : ''}}" bindtap="switchTab" data-tab="category">
+      服务项目
+    </view>
+    <view class="tab-item {{activeTab === 'request' ? 'active' : ''}}" bindtap="switchTab" data-tab="request">
+      申请记录
+    </view>
+  </view>
+
+  <view class="content-list">
+    <!-- Category List -->
+    <block wx:if="{{activeTab === 'category'}}">
+      <view class="category-grid">
+        <view wx:for="{{categories}}" wx:key="id" class="category-item" bindtap="goToCreate" data-id="{{item.id}}">
+          <view class="category-card">
+            <view class="action-btns">
+              <text class="iconfont icon-edit" catchtap="handleEditCategory" data-id="{{item.id}}"></text>
+              <text class="iconfont icon-delete" catchtap="handleDeleteCategory" data-id="{{item.id}}"></text>
+            </view>
+            <view class="category-icon">
+              <text class="iconfont {{item.icon || 'icon-service'}}"></text>
+            </view>
+            <text class="category-name">{{item.name}}</text>
+            <text class="category-desc">{{item.description || ''}}</text>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!-- Request List -->
+    <block wx:else>
+      <view class="request-list">
+        <view wx:for="{{requests}}" wx:key="id" class="request-card" bindtap="goToDetail" data-id="{{item.id}}">
+          <view class="request-header">
+            <text class="request-type">{{item.categoryName}}</text>
+            <text class="request-status status-{{item.status}}">{{item.status}}</text>
+          </view>
+          <view class="request-body">
+            <text class="request-summary">{{item.description || '无详细描述'}}</text>
+            <text class="request-date">{{item.createdAt}}</text>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <view class="loading-wrap" wx:if="{{loading}}">
+      <view class="loading"></view>
+      <text>{{t['common.loading']}}</text>
+    </view>
+    <view class="empty-wrap" wx:if="{{!loading && (activeTab === 'category' ? categories.length === 0 : requests.length === 0)}}">
+      <icon type="info" size="64" color="#ccc"></icon>
+      <text>{{t['common.empty']}}</text>
+    </view>
+    <view class="add-btn" bindtap="goToAdd">
+    <text class="iconfont icon-add"></text>
+  </view>
+</view>
+</view>

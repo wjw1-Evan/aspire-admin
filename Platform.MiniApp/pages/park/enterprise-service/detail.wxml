@@ -1,0 +1,57 @@
+<view class="detail-container">
+  <view class="header-card bg-status-{{serviceRequest.status}}" wx:if="{{serviceRequest}}">
+    <view class="title-row">
+      <text class="main-title">{{serviceRequest.categoryName}}</text>
+      <view class="header-actions">
+        <text class="iconfont icon-time" style="color: rgba(255,255,255,0.6);"></text>
+      </view>
+    </view>
+    <view class="status-row">
+      <text class="status-tag">{{serviceRequest.status}}</text>
+    </view>
+  </view>
+
+  <view class="section-title">申请列表</view>
+  <view class="info-card" wx:if="{{serviceRequest}}">
+    <view class="info-item">
+      <text class="label">所属租户</text>
+      <text class="value">{{serviceRequest.tenantName || '-'}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">联系人</text>
+      <text class="value">{{serviceRequest.contactPerson || '-'}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">联系电话</text>
+      <text class="value">{{serviceRequest.phone || '-'}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">申请时间</text>
+      <text class="value">{{serviceRequest.createdAt}}</text>
+    </view>
+  </view>
+
+  <view class="section-title">申请信息</view>
+  <view class="info-card" wx:if="{{serviceRequest}}">
+    <view class="info-item vertical">
+      <text class="value">{{serviceRequest.description || '无详细内容'}}</text>
+    </view>
+  </view>
+
+  <view class="section-title" wx:if="{{serviceRequest.status === 'Completed' || serviceRequest.handledResult}}">处理结果</view>
+  <view class="info-card" wx:if="{{serviceRequest.status === 'Completed' || serviceRequest.handledResult}}">
+    <view class="info-item vertical">
+      <text class="value">{{serviceRequest.handledResult || '服务已完成'}}</text>
+      <view class="handle-meta" wx:if="{{serviceRequest.handledAt}}">
+        <text>处理时间：{{serviceRequest.handledAt}}</text>
+        <text>处理人：{{serviceRequest.handledByName || '-'}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="bottom-placeholder"></view>
+
+  <view class="loading-overlay" wx:if="{{loading}}">
+    <view class="loading"></view>
+  </view>
+</view>

@@ -1,0 +1,45 @@
+<view class="form-container">
+  <view class="form-group">
+    <view class="form-item">
+      <text class="label">分类名称<text class="required">*</text></text>
+      <input placeholder="请输入分类名称" value="{{formData.name}}" bindinput="onInputChange" data-field="name" placeholder-class="placeholder" />
+    </view>
+
+    <view class="form-item">
+      <text class="label">分类图标</text>
+      <picker bindchange="onPickerChange" value="{{iconIndex}}" range="{{icons}}" data-field="icon" data-name="icon" data-range="icons">
+        <view class="picker-value">
+          <text class="iconfont {{icons[iconIndex]}}"></text>
+          <text>{{icons[iconIndex]}}</text>
+        </view>
+      </picker>
+    </view>
+
+    <view class="form-item">
+      <text class="label">排序</text>
+      <input type="number" placeholder="数字越小越靠前" value="{{formData.sort}}" bindinput="onInputChange" data-field="sort" placeholder-class="placeholder" />
+    </view>
+
+    <view class="form-item">
+      <text class="label">状态</text>
+      <picker bindchange="onPickerChange" value="{{statusIndex}}" range="{{statusNames}}" data-field="status" data-name="status" data-range="statusNames">
+        <view class="picker-value">{{statusNames[statusIndex]}}</view>
+      </picker>
+    </view>
+
+    <view class="form-item vertical">
+      <text class="label">分类描述</text>
+      <textarea placeholder="描述分类的适用场景..." value="{{formData.description}}" bindinput="onInputChange" data-field="description" maxlength="200" placeholder-class="placeholder"></textarea>
+    </view>
+  </view>
+
+  <view class="btn-area">
+    <button bindtap="handleSubmit" loading="{{submitting}}" disabled="{{submitting}}">
+      {{isEdit ? '提交修改' : '立即创建'}}
+    </button>
+  </view>
+
+  <view class="loading-overlay" wx:if="{{loading}}">
+    <view class="loading"></view>
+  </view>
+</view>

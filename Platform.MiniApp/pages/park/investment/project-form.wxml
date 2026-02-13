@@ -1,0 +1,43 @@
+<view class="container">
+  <view class="form-container">
+    <view class="form-item">
+      <text class="label">项目名称<text class="required">*</text></text>
+      <input class="input" placeholder="请输入项目名称" value="{{formData.name}}" bindinput="onInputChange" data-field="name" />
+    </view>
+
+    <view class="form-item">
+      <text class="label">关联线索</text>
+      <picker bindchange="onLeadChange" value="{{leadIndex}}" range="{{leads}}" range-key="companyName">
+        <view class="picker-box">
+          <text>{{leadIndex > -1 ? leads[leadIndex].companyName : '请选择关联线索'}}</text>
+          <text class="iconfont icon-right"></text>
+        </view>
+      </picker>
+    </view>
+
+    <view class="form-item">
+      <text class="label">项目状态</text>
+      <picker bindchange="onStatusChange" value="{{statusIndex}}" range="{{statusNames}}">
+        <view class="picker-box">
+          <text>{{statusNames[statusIndex]}}</text>
+          <text class="iconfont icon-right"></text>
+        </view>
+      </picker>
+    </view>
+
+    <view class="form-item">
+      <text class="label">项目需求</text>
+      <textarea class="textarea" placeholder="详细描述客户的项目需求..." value="{{formData.requirements}}" bindinput="onInputChange" data-field="requirements" maxlength="1000"></textarea>
+    </view>
+  </view>
+
+  <view class="footer-btn">
+    <button class="submit-btn" bindtap="handleSubmit" loading="{{submitting}}" disabled="{{submitting}}">
+      {{isEdit ? '提交修改' : '立即创建'}}
+    </button>
+  </view>
+
+  <view class="loading-overlay" wx:if="{{loading}}">
+    <view class="loading"></view>
+  </view>
+</view>

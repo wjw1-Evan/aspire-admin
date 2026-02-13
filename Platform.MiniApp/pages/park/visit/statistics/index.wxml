@@ -1,0 +1,64 @@
+<view class="container">
+  <!-- Stats Header -->
+  <view class="stats-grid">
+    <view class="stats-card">
+      <text class="stats-value">{{stats.completedTasksThisMonth || 0}}</text>
+      <text class="stats-label">本月完成走访</text>
+    </view>
+    <view class="stats-card">
+      <text class="stats-value">{{stats.pendingTasks || 0}}</text>
+      <text class="stats-label">待处理任务</text>
+    </view>
+    <view class="stats-card">
+      <text class="stats-value">{{stats.averageScore || 0}}</text>
+      <text class="stats-label">平均分</text>
+    </view>
+  </view>
+
+  <!-- Progress Section -->
+  <view class="chart-section card-style">
+    <view class="section-header">
+      <text class="section-title">走访完成率</text>
+      <text class="section-value">{{stats.completionRate || 0}}%</text>
+    </view>
+    <progress percent="{{stats.completionRate || 0}}" stroke-width="8" activeColor="#1890ff" backgroundColor="#f2f3f5" border-radius="4" active />
+  </view>
+
+  <!-- Monthly Trends -->
+  <view class="chart-section card-style">
+    <view class="section-header">
+      <text class="section-title">月度走访趋势</text>
+    </view>
+    <view class="trend-list">
+      <view class="trend-item" wx:for="{{monthlyTrends}}" wx:key="month">
+        <text class="trend-month">{{item.month}}</text>
+        <view class="trend-bar-wrapper">
+          <view class="trend-bar" style="width: {{item.percent}}%"></view>
+        </view>
+        <text class="trend-count">{{item.count}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Manager Ranking -->
+  <view class="ranking-section card-style">
+    <view class="section-header">
+      <text class="section-title">企管员走访排行</text>
+    </view>
+    <view class="ranking-list">
+      <view class="ranking-item" wx:for="{{managerRanking}}" wx:key="name">
+        <text class="rank-index {{index < 3 ? 'top' : ''}}">{{index + 1}}</text>
+        <text class="rank-name">{{item.name}}</text>
+        <text class="rank-count">{{item.count}} 次</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- AI Report Action -->
+  <view class="btn-area">
+    <button type="primary" class="ai-btn" bindtap="generateAiReport" loading="{{aiLoading}}">
+      <text class="iconfont icon-ai"></text>
+      {{t['stats.ai_report']}}
+    </button>
+  </view>
+</view>

@@ -1,42 +1,45 @@
-<view class="container" wx:if="{{task}}">
-  <!-- Status Header -->
-  <view class="detail-header card-style {{'bg-status-' + task.status}}">
-    <view class="status-top">
-      <text class="status-name">{{statusMap[task.status]}}</text>
+<view class="detail-container" wx:if="{{task}}">
+  <view class="header-card">
+    <view class="title-row">
+      <text class="main-title">{{task.taskName}}</text>
+      <view class="header-actions">
+        <text class="iconfont icon-edit" bindtap="goToEdit"></text>
+        <text class="iconfont icon-delete" bindtap="handleDelete"></text>
+      </view>
+    </view>
+    <view class="status-row">
+      <text class="status-tag status-{{task.status}}">{{statusMap[task.status]}}</text>
       <text class="task-id">ID: {{task.id}}</text>
     </view>
-    <view class="task-main-title">{{task.taskName}}</view>
-  </view>
-
-  <!-- Progress Card -->
-  <view class="progress-card card-style">
-    <view class="info-row">
-      <text class="label">当前进度</text>
-      <text class="value percent">{{task.completionPercentage}}%</text>
+    
+    <view class="progress-section">
+      <view class="progress-info">
+        <text>当前进度</text>
+        <text class="percent">{{task.completionPercentage}}%</text>
+      </view>
+      <progress 
+        percent="{{task.completionPercentage}}" 
+        stroke-width="8" 
+        color="#1890ff" 
+        active 
+        border-radius="4"
+      />
     </view>
-    <progress 
-      percent="{{task.completionPercentage}}" 
-      stroke-width="8" 
-      color="#1890ff" 
-      active 
-      border-radius="4"
-    />
   </view>
 
-  <!-- Base Info -->
   <view class="section-title">核心信息</view>
-  <view class="info-group card-style">
+  <view class="info-card">
     <view class="info-item">
       <text class="label">负责人</text>
       <text class="value">{{task.assignedToName || '未分配'}}</text>
     </view>
     <view class="info-item">
       <text class="label">优先级</text>
-      <view class="priority-tag priority-{{task.priority}}">{{priorityMap[task.priority]}}</view>
+      <text class="priority-tag priority-{{task.priority}}">{{priorityMap[task.priority]}}</text>
     </view>
-    <view class="info-item">
+    <view class="info-item" wx:if="{{task.projectName}}">
       <text class="label">所属项目</text>
-      <text class="value">{{task.projectName || '-'}}</text>
+      <text class="value">{{task.projectName}}</text>
     </view>
     <view class="info-item">
       <text class="label">计划结束</text>
@@ -44,15 +47,15 @@
     </view>
   </view>
 
-  <!-- Description -->
   <view class="section-title">详细描述</view>
-  <view class="desc-card card-style">
-    <text class="desc-content">{{task.description || '暂无详细描述'}}</text>
+  <view class="info-card">
+    <view class="info-item vertical">
+      <text class="value">{{task.description || '暂无详细描述'}}</text>
+    </view>
   </view>
 
-  <!-- Time Info -->
   <view class="section-title">时间轨迹</view>
-  <view class="info-group card-style">
+  <view class="info-card">
     <view class="info-item">
       <text class="label">创建时间</text>
       <text class="value">{{task.createdAt || '-'}}</text>
@@ -70,7 +73,7 @@
   <view class="bottom-padding"></view>
 </view>
 
-<view class="loading-full" wx:else>
-  <view class="loading-spinner"></view>
+<view class="loading-state" wx:else>
+  <view class="loading-icon"></view>
   <text>任务加载中...</text>
 </view>

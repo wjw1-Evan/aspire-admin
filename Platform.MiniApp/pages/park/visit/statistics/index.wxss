@@ -1,0 +1,165 @@
+.container {
+  padding: 20rpx;
+  background-color: #f7f8fa;
+  min-height: 100vh;
+  padding-bottom: 120rpx;
+}
+
+.card-style {
+  background-color: #fff;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+}
+
+.stats-grid {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 24rpx;
+}
+
+.stats-card {
+  flex: 1;
+  background-color: #fff;
+  border-radius: 16rpx;
+  padding: 30rpx 20rpx;
+  margin: 0 10rpx;
+  text-align: center;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+}
+
+.stats-card:first-child { margin-left: 0; }
+.stats-card:last-child { margin-right: 0; }
+
+.stats-value {
+  display: block;
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #1890ff;
+  margin-bottom: 8rpx;
+}
+
+.stats-label {
+  font-size: 22rpx;
+  color: #969799;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24rpx;
+}
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #323233;
+}
+
+.section-value {
+  font-size: 32rpx;
+  color: #1890ff;
+  font-weight: bold;
+}
+
+/* Trend List */
+.trend-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.trend-month {
+  font-size: 24rpx;
+  color: #646566;
+  width: 100rpx;
+}
+
+.trend-bar-wrapper {
+  flex: 1;
+  height: 16rpx;
+  background-color: #f2f3f5;
+  border-radius: 8rpx;
+  margin: 0 20rpx;
+  overflow: hidden;
+}
+
+.trend-bar {
+  height: 100%;
+  background-color: #1890ff;
+  border-radius: 8rpx;
+}
+
+.trend-count {
+  font-size: 24rpx;
+  color: #323233;
+  width: 60rpx;
+  text-align: right;
+}
+
+/* Ranking List */
+.ranking-item {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #f2f3f5;
+}
+
+.ranking-item:last-child { border-bottom: none; }
+
+.rank-index {
+  width: 40rpx;
+  height: 40rpx;
+  background-color: #f2f3f5;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22rpx;
+  color: #969799;
+  margin-right: 24rpx;
+}
+
+.rank-index.top {
+  background-color: #1890ff;
+  color: #fff;
+}
+
+.rank-name {
+  flex: 1;
+  font-size: 28rpx;
+  color: #323233;
+}
+
+.rank-count {
+  font-size: 26rpx;
+  color: #646566;
+}
+
+.btn-area {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20rpx 40rpx;
+  background-color: #fff;
+  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.05);
+}
+
+.ai-btn {
+  width: 100%;
+  height: 88rpx;
+  background: linear-gradient(135deg, #1890ff 0%, #36cfc9 100%);
+  border-radius: 44rpx;
+  border: none;
+  font-size: 32rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ai-btn .iconfont {
+  margin-right: 12rpx;
+  font-size: 36rpx;
+}

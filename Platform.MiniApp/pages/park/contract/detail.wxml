@@ -1,0 +1,59 @@
+<view class="detail-container">
+  <view class="header-card {{'bg-status-' + contract.status}}" wx:if="{{contract}}">
+    <view class="title-row">
+      <text class="main-title">{{contract.contractNumber}}</text>
+      <view class="header-actions">
+        <text class="iconfont icon-edit" bindtap="goToEdit"></text>
+        <text class="iconfont icon-delete" bindtap="handleDelete"></text>
+      </view>
+    </view>
+    <view class="status-row">
+      <text class="status-tag">{{contract.status === 'Active' ? t['park.contract.status.active'] : (contract.status === 'Expired' ? t['park.contract.status.expired'] : t['park.contract.status.terminated'])}}</text>
+    </view>
+  </view>
+
+  <view class="section-title">基准信息</view>
+  <view class="info-card" wx:if="{{contract}}">
+    <view class="info-item">
+      <text class="label">租赁客户</text>
+      <text class="value">{{contract.tenantName}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">{{t['park.contract.monthly_rent']}}</text>
+      <text class="value highlight-red">¥{{contract.monthlyRent}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">{{t['park.contract.payment_cycle']}}</text>
+      <text class="value">{{contract.paymentCycle}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">合同起止</text>
+      <text class="value">{{contract.startDate}} ~ {{contract.endDate}}</text>
+    </view>
+    <view class="info-item vertical">
+      <text class="label">租赁房源</text>
+      <text class="value">{{contract.unitNumbers ? contract.unitNumbers.join(', ') : '-'}}</text>
+    </view>
+  </view>
+
+  <view class="section-title">收支记录 ({{payments.length}})</view>
+  <view class="info-card" wx:if="{{payments.length > 0}}">
+    <view wx:for="{{payments}}" wx:key="id" class="payment-row">
+      <view class="payment-date">{{item.paymentDate}}</view>
+      <view class="payment-details">
+        <text class="payment-type">{{item.paymentType}}</text>
+        <text class="payment-amount {{item.amount > 0 ? 'plus' : 'minus'}}">{{item.amount > 0 ? '+' : ''}}¥{{item.amount}}</text>
+      </view>
+    </view>
+  </view>
+  
+  <view class="empty-hint" wx:if="{{!loading && payments.length === 0}}">
+    <text>暂无收支记录</text>
+  </view>
+
+  <view class="bottom-placeholder"></view>
+
+  <view class="loading-overlay" wx:if="{{loading}}">
+    <view class="loading"></view>
+  </view>
+</view>

@@ -70,5 +70,43 @@ Page(withAuth({
         wx.navigateTo({
             url: `/pages/task/create?projectId=${this.data.id}`
         });
+    },
+    goToEdit() {
+        wx.navigateTo({
+            url: `/pages/project/create?id=${this.data.id}`
+        });
+    },
+
+    async handleDelete() {
+        wx.showModal({
+            title: '确认删除',
+            content: '确定要删除这个项目吗？所有相关任务也将受到影响。',
+            success: async (res) => {
+                if (res.confirm) {
+                    try {
+                        const delRes = await request({
+                            url: `/api/project/${this.data.id}`,
+                            method: 'DELETE'
+                        });
+                        if (delRes.success) {
+                            wx.showToast({ title: '已删除' });
+                            setTimeout(() => {
+                                const pages = getCurrentPages();
+                                const prevPage = pages[pages.length - 2];
+                                if (prevPage && prevPage.fetchProjects) {
+                                    prevPage.setData({ page: 1, projects: [] }, () => {
+                                        prevPage.fetchProjects(true);
+                                    });
+                                }
+                                wx.navigateBack();
+                            }, 1500);
+                        }
+                    } catch (err) {
+                        console.error('Delete project failed', err);
+                        wx.showToast({ title: '删除失败', icon: 'none' });
+                    }
+                }
+            }
+        });
     }
 }));

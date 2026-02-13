@@ -1,79 +1,80 @@
-<view class="container" wx:if="{{lead}}">
+<view class="detail-container" wx:if="{{lead}}">
   <view class="header-card">
-    <view class="company-row">
-      <text class="company-name">{{lead.companyName}}</text>
+    <view class="title-row">
+      <text class="main-title">{{lead.companyName}}</text>
+      <view class="header-actions">
+        <text class="iconfont icon-edit" bindtap="goToEdit"></text>
+        <text class="iconfont icon-delete" bindtap="handleDelete"></text>
+      </view>
+    </view>
+    <view class="status-row">
       <text class="status-tag status-{{lead.status}}">{{lead.status === 'New' ? '新线索' : (lead.status === 'Following' ? '跟进中' : (lead.status === 'Qualified' ? '已转化' : '已丢弃'))}}</text>
     </view>
-    <view class="sub-row">
-      <view class="priority-box">
-        <text class="label">优先级：</text>
-        <text class="value priority-{{lead.priority}}">{{lead.priority === 'High' ? '高' : (lead.priority === 'Medium' ? '中' : '低')}}</text>
+  </view>
+
+  <view class="section-title">联系人信息</view>
+  <view class="info-card">
+    <view class="info-item" bindtap="callPhone">
+      <text class="label">联系人</text>
+      <text class="value">{{lead.contactPerson || '-'}}</text>
+    </view>
+    <view class="info-item" bindtap="callPhone">
+      <text class="label">联系电话</text>
+      <view class="value highlight-blue">
+        <text>{{lead.phone || '-'}}</text>
+        <text class="iconfont icon-phone" wx:if="{{lead.phone}}" style="margin-left: 10rpx; font-size: 28rpx;"></text>
       </view>
-      <view class="source-box" wx:if="{{lead.source}}">
-        <text class="label">来源：</text>
-        <text class="value">{{lead.source}}</text>
-      </view>
+    </view>
+    <view class="info-item" bindtap="copyEmail">
+      <text class="label">电子邮箱</text>
+      <text class="value">{{lead.email || '-'}}</text>
     </view>
   </view>
 
-  <view class="card-group">
-    <view class="group-title">联系人信息</view>
-    <view class="cell" bindtap="callPhone" hover-class="cell-hover">
-      <view class="cell-label">联系人</view>
-      <view class="cell-value">{{lead.contactPerson || '-'}}</view>
-      <view class="cell-action" wx:if="{{lead.phone}}">呼叫</view>
+  <view class="section-title">意向详情</view>
+  <view class="info-card">
+    <view class="info-item">
+      <text class="label">所属行业</text>
+      <text class="value">{{lead.industry || '-'}}</text>
     </view>
-    <view class="cell" bindtap="callPhone" hover-class="cell-hover">
-      <view class="cell-label">联系电话</view>
-      <view class="cell-value highlight">{{lead.phone || '-'}}</view>
+    <view class="info-item">
+      <text class="label">意向面积</text>
+      <text class="value">{{lead.intendedArea ? lead.intendedArea + '㎡' : '-'}}</text>
     </view>
-    <view class="cell" bindtap="copyEmail" hover-class="cell-hover">
-      <view class="cell-label">电子邮箱</view>
-      <view class="cell-value">{{lead.email || '-'}}</view>
-      <view class="cell-action" wx:if="{{lead.email}}">复制</view>
+    <view class="info-item">
+      <text class="label">线索来源</text>
+      <text class="value">{{lead.source || '-'}}</text>
     </view>
-  </view>
-
-  <view class="card-group">
-    <view class="group-title">意向详情</view>
-    <view class="cell">
-      <view class="cell-label">所属行业</view>
-      <view class="cell-value">{{lead.industry || '-'}}</view>
+    <view class="info-item">
+      <text class="label">优先级</text>
+      <text class="priority-text priority-{{lead.priority}}">{{lead.priority === 'High' ? '高' : (lead.priority === 'Medium' ? '中' : '低')}}</text>
     </view>
-    <view class="cell">
-      <view class="cell-label">意向面积</view>
-      <view class="cell-value">{{lead.intendedArea ? lead.intendedArea + '㎡' : '-'}}</view>
-    </view>
-    <view class="cell">
-      <view class="cell-label">下次跟进</view>
-      <view class="cell-value">{{lead.nextFollowUpDate || '-'}}</view>
-    </view>
-    <view class="cell">
-      <view class="cell-label">分配人员</view>
-      <view class="cell-value">{{lead.assignedTo || '未分配'}}</view>
+    <view class="info-item">
+      <text class="label">分配人员</text>
+      <text class="value">{{lead.assignedTo || '未分配'}}</text>
     </view>
   </view>
 
-  <view class="card-group">
-    <view class="group-title">需求描述</view>
-    <view class="content-box">
-      <text class="memo">{{lead.requirements || '暂无详细需求说明'}}</text>
+  <view class="section-title">需求描述</view>
+  <view class="info-card">
+    <view class="info-item vertical">
+      <text class="value">{{lead.requirements || '暂无详细需求说明'}}</text>
     </view>
   </view>
 
-  <view class="card-group">
-    <view class="group-title">备忘录</view>
-    <view class="content-box">
-      <text class="memo">{{lead.notes || '暂无备注'}}</text>
+  <view class="section-title">备忘录</view>
+  <view class="info-card">
+    <view class="info-item vertical">
+      <text class="value">{{lead.notes || '暂无备注'}}</text>
     </view>
   </view>
-  
-  <view class="footer-section">
+
+  <view class="footer-info">
     <text>线索创建于 {{lead.createdAt}}</text>
   </view>
 </view>
 
-<view class="loading-full" wx:if="{{loading}}">
+<view class="loading-state" wx:if="{{loading}}">
   <view class="loading-icon"></view>
   <text>详情加载中...</text>
 </view>

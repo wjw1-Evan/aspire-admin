@@ -1,0 +1,56 @@
+<view class="detail-container">
+  <view class="header-card">
+    <view class="title-row">
+      <text class="main-title">{{details.platform}}</text>
+      <view class="header-actions">
+        <text class="iconfont icon-edit" bindtap="goToEdit"></text>
+        <text class="iconfont icon-delete" bindtap="handleDelete"></text>
+      </view>
+    </view>
+    <view class="status-row">
+      <text class="status-tag" wx:if="{{details.category}}">{{details.category}}</text>
+    </view>
+  </view>
+
+  <view class="info-card">
+    <view class="info-item">
+      <text class="label">{{t['password.book.account']}}</text>
+      <view class="value-action">
+        <text class="value">{{details.account}}</text>
+        <text class="iconfont icon-copy" bindtap="copyText" data-text="{{details.account}}"></text>
+      </view>
+    </view>
+
+    <view class="info-item">
+      <text class="label">{{t['password.book.password']}}</text>
+      <view class="value-action">
+        <text class="value password-value">{{showPassword ? details.password : '••••••••••••'}}</text>
+        <view class="actions-group">
+          <text class="iconfont {{showPassword ? 'icon-hide' : 'icon-show'}}" bindtap="togglePassword"></text>
+          <text class="iconfont icon-copy" bindtap="copyPassword"></text>
+        </view>
+      </view>
+    </view>
+
+    <view class="info-item" wx:if="{{details.url}}">
+      <text class="label">{{t['password.book.url']}}</text>
+      <view class="value-action">
+        <text class="value url-text" bindtap="copyText" data-text="{{details.url}}">{{details.url}}</text>
+      </view>
+    </view>
+
+    <view class="info-item vertical" wx:if="{{details.tags && details.tags.length > 0}}">
+      <text class="label">{{t['password.book.tags']}}</text>
+      <view class="tags-row">
+        <text class="tag-item" wx:for="{{details.tags}}" wx:key="*this">{{item}}</text>
+      </view>
+    </view>
+
+    <view class="info-item vertical" wx:if="{{details.notes}}">
+      <text class="label">{{t['password.book.notes']}}</text>
+      <text class="value">{{details.notes}}</text>
+    </view>
+  </view>
+
+  <view class="bottom-placeholder"></view>
+</view>

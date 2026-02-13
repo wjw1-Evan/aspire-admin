@@ -1,0 +1,154 @@
+/* Standard Detail Styles for WeChat Mini Program */
+
+.detail-container {
+  padding: 30rpx;
+  background-color: #f7f8fa;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+/* Header Card */
+.header-card {
+  background-color: #fff;
+  border-radius: 16rpx;
+  padding: 40rpx 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.05);
+  position: relative;
+}
+
+.header-card .title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24rpx;
+}
+
+.header-card .main-title {
+  font-size: 40rpx;
+  font-weight: bold;
+  color: #323233;
+  flex: 1;
+  margin-right: 20rpx;
+}
+
+.header-card .status-tag {
+  font-size: 24rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 4rpx;
+  background-color: #f2f3f5;
+  color: #646566;
+}
+
+/* Info Group Card */
+.info-card {
+  background-color: #fff;
+  border-radius: 16rpx;
+  padding: 10rpx 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.05);
+}
+
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #323233;
+  margin: 40rpx 0 24rpx 10rpx;
+  padding-left: 16rpx;
+  border-left: 8rpx solid #1890ff;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30rpx 0;
+  border-bottom: 1rpx solid #f2f3f5;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-item .label {
+  font-size: 28rpx;
+  color: #969799;
+  width: 200rpx;
+  flex-shrink: 0;
+}
+
+.info-item .value {
+  font-size: 28rpx;
+  color: #323233;
+  flex: 1;
+  text-align: right;
+}
+
+/* Vertical Info Item (for long text/notes) */
+.info-item.vertical {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.info-item.vertical .label {
+  width: 100%;
+  margin-bottom: 20rpx;
+}
+
+.info-item.vertical .value {
+  width: 100%;
+  text-align: left;
+  line-height: 1.6;
+  color: #646566;
+}
+
+/* Footer Actions (Standard at bottom) */
+.footer-btn-area {
+  margin-top: 60rpx;
+  padding-bottom: 40rpx;
+  display: flex;
+  gap: 20rpx;
+}
+
+.footer-btn-area button {
+  flex: 1;
+  height: 88rpx;
+  line-height: 88rpx;
+  border-radius: 44rpx;
+  font-size: 32rpx;
+  font-weight: 500;
+}
+
+.btn-primary {
+  background-color: #1890ff !important;
+  color: #fff !important;
+}
+
+.btn-outline {
+  background-color: #fff !important;
+  color: #1890ff !important;
+  border: 1rpx solid #1890ff;
+}
+
+.btn-danger {
+  background-color: #ff4d4f !important;
+  color: #fff !important;
+}
+
+/* Action Icons (Floating in header) */
+.header-actions {
+  display: flex;
+  gap: 30rpx;
+}
+
+.header-actions .iconfont {
+  font-size: 36rpx;
+  color: #969799;
+  padding: 10rpx;
+}
+
+.icon-edit { color: #1890ff; }
+.icon-delete { color: #ff4d4f; }

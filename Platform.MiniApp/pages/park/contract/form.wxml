@@ -1,0 +1,70 @@
+<view class="form-container">
+  <view class="form-group">
+    <view class="form-item">
+      <text class="label">合同编号<text class="required">*</text></text>
+      <input placeholder="请输入合同编号" value="{{formData.contractNumber}}" bindinput="onInputChange" data-field="contractNumber" placeholder-class="placeholder" />
+    </view>
+
+    <view class="form-item">
+      <text class="label">承租企业<text class="required">*</text></text>
+      <picker bindchange="onTenantChange" value="{{tenantIndex}}" range="{{tenants}}" range-key="name">
+        <view class="picker-value">{{tenantIndex > -1 ? tenants[tenantIndex].name : '请选择承租企业'}}</view>
+      </picker>
+    </view>
+
+    <view class="form-item">
+      <text class="label">租赁单元</text>
+      <picker bindchange="onUnitChange" value="{{unitIndex}}" range="{{units}}" range-key="unitNumber">
+        <view class="picker-value">{{unitIndex > -1 ? units[unitIndex].unitNumber : '请选择房源单元'}}</view>
+      </picker>
+    </view>
+
+    <view class="form-item">
+      <text class="label">开始日期</text>
+      <picker mode="date" value="{{formData.startDate}}" bindchange="onDateChange" data-field="startDate">
+        <view class="picker-value">{{formData.startDate}}</view>
+      </picker>
+    </view>
+    
+    <view class="form-item">
+      <text class="label">结束日期</text>
+      <picker mode="date" value="{{formData.endDate}}" bindchange="onDateChange" data-field="endDate">
+        <view class="picker-value">{{formData.endDate}}</view>
+      </picker>
+    </view>
+
+    <view class="form-item">
+      <text class="label">月租金 (元)</text>
+      <input type="digit" placeholder="0.00" value="{{formData.monthlyRent}}" bindinput="onInputChange" data-field="monthlyRent" placeholder-class="placeholder" />
+    </view>
+    
+    <view class="form-item">
+      <text class="label">保证金 (元)</text>
+      <input type="digit" placeholder="0.00" value="{{formData.deposit}}" bindinput="onInputChange" data-field="deposit" placeholder-class="placeholder" />
+    </view>
+
+    <view class="form-item">
+      <text class="label">支付频率</text>
+      <picker bindchange="onPickerChange" value="{{paymentCycleIndex}}" range="{{paymentCycleNames}}" data-field="paymentCycle" data-name="paymentCycle" data-range="paymentCycleNames">
+        <view class="picker-value">{{paymentCycleNames[paymentCycleIndex]}}</view>
+      </picker>
+    </view>
+    
+    <view class="form-item">
+      <text class="label">合同状态</text>
+      <picker bindchange="onPickerChange" value="{{statusIndex}}" range="{{statusNames}}" data-field="status" data-name="status" data-range="statusNames">
+        <view class="picker-value">{{statusNames[statusIndex]}}</view>
+      </picker>
+    </view>
+  </view>
+
+  <view class="btn-area">
+    <button bindtap="handleSubmit" loading="{{submitting}}" disabled="{{submitting}}">
+      {{isEdit ? '提交修改' : '立即创建'}}
+    </button>
+  </view>
+
+  <view class="loading-overlay" wx:if="{{loading}}">
+    <view class="loading"></view>
+  </view>
+</view>

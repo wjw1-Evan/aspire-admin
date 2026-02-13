@@ -1,0 +1,107 @@
+<view class="form-container">
+  <form bindsubmit="handleSubmit">
+    <view class="form-group">
+      <view class="form-item">
+        <text class="label">{{t['password.book.platform']}}</text>
+        <input 
+          name="platform" 
+          value="{{formData.platform}}" 
+          placeholder="{{t['password.book.platform_placeholder']}}" 
+          placeholder-class="placeholder" 
+          bindinput="onInputChange" 
+          data-field="platform"
+        />
+      </view>
+
+      <view class="form-item">
+        <text class="label">{{t['password.book.account']}}</text>
+        <input 
+          name="account" 
+          value="{{formData.account}}" 
+          placeholder="{{t['password.book.account_placeholder']}}" 
+          placeholder-class="placeholder" 
+          bindinput="onInputChange" 
+          data-field="account"
+        />
+      </view>
+
+      <view class="form-item password-item">
+        <view class="item-header">
+          <text class="label">{{t['password.book.password']}}</text>
+          <text class="gen-btn" bindtap="generatePassword">{{t['password.book.generate']}}</text>
+        </view>
+        <input 
+          name="password" 
+          value="{{formData.password}}" 
+          placeholder="{{t['password.book.password_placeholder']}}" 
+          placeholder-class="placeholder" 
+          bindinput="onInputChange" 
+          data-field="password"
+          password="{{!showPassword}}"
+        />
+        <!-- Strength Indicator -->
+        <view class="strength-box" wx:if="{{strength}}">
+          <view class="strength-bar">
+            <view class="bar-inner level-{{strength.level}}" style="width: {{strength.score}}%"></view>
+          </view>
+          <text class="strength-text level-{{strength.level}}">{{strength.description}}</text>
+        </view>
+      </view>
+
+      <view class="form-item">
+        <text class="label">{{t['password.book.url']}}</text>
+        <input 
+          name="url" 
+          value="{{formData.url}}" 
+          placeholder="https://..." 
+          placeholder-class="placeholder" 
+          bindinput="onInputChange" 
+          data-field="url"
+        />
+      </view>
+
+      <view class="form-item">
+        <text class="label">{{t['password.book.category']}}</text>
+        <input 
+          name="category" 
+          value="{{formData.category}}" 
+          placeholder="{{t['common.input']}}" 
+          placeholder-class="placeholder" 
+          bindinput="onInputChange" 
+          data-field="category"
+        />
+      </view>
+
+      <view class="form-item">
+        <text class="label">{{t['password.book.tags']}}</text>
+        <input 
+          name="tagsString" 
+          value="{{formData.tagsString}}" 
+          placeholder="{{t['password.book.tags_placeholder']}}" 
+          placeholder-class="placeholder" 
+          bindinput="onInputChange" 
+          data-field="tagsString"
+        />
+      </view>
+    </view>
+
+    <view class="section-title">{{t['password.book.notes']}}</view>
+    <view class="form-group">
+      <view class="form-item vertical">
+        <textarea 
+          name="notes" 
+          value="{{formData.notes}}" 
+          placeholder="{{t['common.input']}}" 
+          placeholder-class="placeholder" 
+          bindinput="onInputChange" 
+          data-field="notes"
+          auto-height
+        />
+      </view>
+    </view>
+
+    <view class="btn-area">
+      <button form-type="submit" type="primary" loading="{{submitting}}">{{t['common.submit']}}</button>
+    </view>
+  </form>
+</view>

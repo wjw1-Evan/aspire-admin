@@ -1,143 +1,41 @@
-.container {
-  padding: 24rpx;
-  background-color: #f7f8fa;
-  min-height: 100vh;
-  padding-bottom: 60rpx;
-}
-
-.header-card {
-  background-color: #fff;
-  border-radius: 16rpx;
-  padding: 30rpx;
-  margin-bottom: 24rpx;
-}
-
-.company-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20rpx;
-}
-
-.company-name {
-  font-size: 38rpx;
-  font-weight: bold;
-  color: #323233;
-}
+@import "../../../styles/details.wxss";
 
 .status-tag {
-  font-size: 24rpx;
-  padding: 6rpx 20rpx;
-  border-radius: 6rpx;
+  background: #f0f2f5;
+  color: #666;
 }
 
-.status-New { background-color: #e8f4ff; color: #1890ff; }
-.status-Following { background-color: #fff7e6; color: #fa8c16; }
-.status-Qualified { background-color: #f6ffed; color: #52c41a; }
-.status-Lost { background-color: #f5f5f5; color: #8a8a8a; }
+.status-New { background: #e6f7ff; color: #1890ff; }
+.status-Following { background: #fff7e6; color: #faad14; }
+.status-Qualified { background: #f6ffed; color: #52c41a; }
+.status-Dropped { background: #fff1f0; color: #f5222d; }
 
-.sub-row {
-  display: flex;
-  font-size: 26rpx;
-  color: #969799;
+.highlight-blue {
+  color: #1890ff;
+  font-weight: 500;
 }
 
-.priority-box {
-  margin-right: 40rpx;
+.priority-text {
+  font-weight: bold;
 }
 
-.priority-High { color: #f5222d; font-weight: bold; }
-.priority-Medium { color: #1890ff; }
+.priority-High { color: #f5222d; }
+.priority-Medium { color: #faad14; }
 .priority-Low { color: #52c41a; }
 
-.card-group {
-  background-color: #fff;
-  border-radius: 16rpx;
-  margin-bottom: 24rpx;
-  overflow: hidden;
-}
-
-.group-title {
-  padding: 24rpx 30rpx 10rpx;
-  font-size: 26rpx;
-  color: #969799;
-}
-
-.cell {
-  display: flex;
-  align-items: center;
-  padding: 30rpx;
-  border-bottom: 1rpx solid #f2f3f5;
-}
-
-.cell:last-child {
-  border-bottom: none;
-}
-
-.cell-hover {
-  background-color: #f2f3f5;
-}
-
-.cell-label {
-  width: 160rpx;
-  font-size: 30rpx;
-  color: #646566;
-}
-
-.cell-value {
-  flex: 1;
-  font-size: 30rpx;
-  color: #323233;
-}
-
-.cell-value.highlight {
-  color: #1890ff;
-}
-
-.cell-action {
-  font-size: 26rpx;
-  color: #1890ff;
-  border: 1rpx solid #1890ff;
-  padding: 4rpx 16rpx;
-  border-radius: 20rpx;
-}
-
-.content-box {
-  padding: 20rpx 30rpx 30rpx;
-}
-
-.memo {
-  font-size: 28rpx;
-  color: #323233;
-  line-height: 1.6;
-}
-
-.footer-section {
+.footer-info {
   text-align: center;
   padding: 40rpx 0;
+  color: #999;
   font-size: 24rpx;
-  color: #c8c9cc;
 }
 
-.loading-full {
+.loading-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 80vh;
-  color: #969799;
-}
-
-.loading-icon {
-  width: 60rpx;
-  height: 60rpx;
-  border: 4rpx solid #e5e5e5;
-  border-top-color: #1890ff;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 30rpx;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
+  height: 60vh;
+  color: #999;
+  font-size: 28rpx;
 }

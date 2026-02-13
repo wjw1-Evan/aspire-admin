@@ -1,0 +1,134 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #f7f8fa;
+}
+
+.tabs {
+  display: flex;
+  background-color: #fff;
+  border-bottom: 1rpx solid #ebedf0;
+}
+
+.tab {
+  flex: 1;
+  text-align: center;
+  font-size: 28rpx;
+  color: #646566;
+  padding: 24rpx 0;
+  position: relative;
+}
+
+.tab.active {
+  color: #1890ff;
+  font-weight: bold;
+}
+
+.tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40rpx;
+  height: 4rpx;
+  background-color: #1890ff;
+  border-radius: 2rpx;
+}
+
+.content {
+  flex: 1;
+  overflow: hidden;
+}
+
+.list-scroll {
+  height: 100%;
+}
+
+.list-container {
+  padding: 20rpx;
+}
+
+.card-style {
+  background-color: #fff;
+  border-radius: 12rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+/* FAQ Styles */
+.faq-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.faq-q {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.tag {
+  font-size: 20rpx;
+  color: #1890ff;
+  background-color: #e6f7ff;
+  padding: 4rpx 12rpx;
+  border-radius: 4rpx;
+  margin-right: 12rpx;
+  white-space: nowrap;
+}
+
+.question {
+  font-size: 28rpx;
+  color: #323233;
+}
+
+.faq-answer {
+  margin-top: 20rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid #f2f3f5;
+}
+
+.answer {
+  font-size: 26rpx;
+  color: #646566;
+  line-height: 1.6;
+}
+
+/* Questionnaire Styles */
+.q-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.q-title {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #323233;
+  margin-bottom: 12rpx;
+}
+
+.q-desc {
+  font-size: 24rpx;
+  color: #969799;
+  margin-bottom: 20rpx;
+}
+
+.q-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 22rpx;
+  color: #c8c9cc;
+}
+
+.empty-state {
+  display: flex;
+  justify-content: center;
+  padding: 100rpx 0;
+  color: #969799;
+  font-size: 28rpx;
+}

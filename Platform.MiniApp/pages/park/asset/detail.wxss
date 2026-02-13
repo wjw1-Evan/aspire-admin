@@ -1,0 +1,105 @@
+@import "../../../styles/details.wxss";
+
+.header-card {
+  background-color: #001529;
+}
+
+.header-card .main-title {
+  color: #fff;
+}
+
+.header-card .status-tag {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.units-grid {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0 10rpx;
+}
+
+.unit-wrapper {
+  width: 50%;
+  padding: 10rpx;
+  box-sizing: border-box;
+}
+
+.unit-card-compact {
+  background-color: #fff;
+  padding: 24rpx;
+  border-radius: 12rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.04);
+}
+
+.unit-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.unit-no {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #323233;
+}
+
+.unit-status-tag {
+  font-size: 20rpx;
+  padding: 2rpx 8rpx;
+  border-radius: 4rpx;
+}
+
+.status-Available { color: #52c41a; background-color: #f6ffed; }
+.status-Rented { color: #1890ff; background-color: #e6f7ff; }
+.status-Reserved { color: #fa8c16; background-color: #fff7e6; }
+
+.unit-card-body {
+  display: flex;
+  justify-content: space-between;
+  font-size: 24rpx;
+  color: #969799;
+}
+
+.unit-price {
+  color: #ff4d4f;
+  font-weight: bold;
+}
+
+.empty-hint {
+  text-align: center;
+  padding: 60rpx 0;
+  color: #ccc;
+  font-size: 28rpx;
+}
+
+.bottom-placeholder {
+  height: 60rpx;
+}
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.loading {
+  width: 40rpx;
+  height: 40rpx;
+  border: 4rpx solid #e5e5e5;
+  border-top-color: #1890ff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

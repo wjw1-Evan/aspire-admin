@@ -1,0 +1,64 @@
+<view class="form-container">
+  <view class="form-group">
+    <view class="form-item">
+      <text class="label">企业名称<text class="required">*</text></text>
+      <input placeholder="请输入企业全称" value="{{formData.companyName}}" bindinput="onInputChange" data-field="companyName" placeholder-class="placeholder" />
+    </view>
+
+    <view class="form-item">
+      <text class="label">联系人</text>
+      <input placeholder="姓名" value="{{formData.contactPerson}}" bindinput="onInputChange" data-field="contactPerson" placeholder-class="placeholder" />
+    </view>
+    
+    <view class="form-item">
+      <text class="label">联系电话</text>
+      <input type="number" placeholder="手机或座机" value="{{formData.phone}}" bindinput="onInputChange" data-field="phone" placeholder-class="placeholder" />
+    </view>
+
+    <view class="form-item">
+      <text class="label">电子邮箱</text>
+      <input placeholder="example@domain.com" value="{{formData.email}}" bindinput="onInputChange" data-field="email" placeholder-class="placeholder" />
+    </view>
+
+    <view class="form-item">
+      <text class="label">所属行业</text>
+      <input placeholder="信息技术/制造业等" value="{{formData.industry}}" bindinput="onInputChange" data-field="industry" placeholder-class="placeholder" />
+    </view>
+
+    <view class="form-item">
+      <text class="label">线索来源</text>
+      <picker bindchange="onPickerChange" value="{{sources.indexOf(formData.source)}}" range="{{sources}}" data-field="source" data-range="sources">
+        <view class="picker-value">{{formData.source}}</view>
+      </picker>
+    </view>
+    
+    <view class="form-item">
+      <text class="label">意向面积 (㎡)</text>
+      <input type="digit" placeholder="0.00" value="{{formData.intendedArea}}" bindinput="onInputChange" data-field="intendedArea" placeholder-class="placeholder" />
+    </view>
+
+    <view class="form-item">
+      <text class="label">优先级</text>
+      <picker bindchange="onPickerChange" value="{{priorities.indexOf(formData.priority)}}" range="{{priorities}}" data-field="priority" data-range="priorities">
+        <view class="picker-value">{{formData.priority}}</view>
+      </picker>
+    </view>
+    
+    <view class="form-item">
+      <text class="label">状态</text>
+      <picker bindchange="onPickerChange" value="{{statuses.indexOf(formData.status)}}" range="{{statuses}}" data-field="status" data-range="statuses">
+        <view class="picker-value">{{formData.status}}</view>
+      </picker>
+    </view>
+  </view>
+
+  <view class="btn-area">
+    <button bindtap="handleSubmit" loading="{{submitting}}" disabled="{{submitting}}">
+      {{isEdit ? '提交修改' : '立即创建'}}
+    </button>
+  </view>
+
+  <view class="loading-overlay" wx:if="{{loading}}">
+    <view class="loading"></view>
+  </view>
+</view>

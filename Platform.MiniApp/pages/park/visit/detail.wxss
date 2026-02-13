@@ -1,0 +1,68 @@
+@import "../../../styles/details.wxss";
+
+.bg-status-Pending { background-color: #fa8c16; }
+.bg-status-Completed { background-color: #52c41a; }
+.bg-status-Cancelled { background-color: #bfbfbf; }
+
+.header-card.bg-status-Pending .main-title,
+.header-card.bg-status-Completed .main-title,
+.header-card.bg-status-Cancelled .main-title { color: #fff; }
+
+.header-card.bg-status-Pending .status-tag,
+.header-card.bg-status-Completed .status-tag,
+.header-card.bg-status-Cancelled .status-tag { background-color: rgba(255, 255, 255, 0.2); color: #fff; }
+
+.header-card.bg-status-Pending .iconfont,
+.header-card.bg-status-Completed .iconfont,
+.header-card.bg-status-Cancelled .iconfont { color: #fff; }
+
+.priority-badge {
+  font-size: 22rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 4rpx;
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.priority-High { background-color: #f5222d; }
+.priority-Medium { background-color: #faad14; }
+.priority-Low { background-color: #52c41a; }
+
+.extra-info {
+  margin-top: 20rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx dotted #f2f3f5;
+  font-size: 24rpx;
+  color: #969799;
+  width: 100%;
+}
+
+.bottom-placeholder {
+  height: 60rpx;
+}
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.loading {
+  width: 40rpx;
+  height: 40rpx;
+  border: 4rpx solid #e5e5e5;
+  border-top-color: #1890ff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

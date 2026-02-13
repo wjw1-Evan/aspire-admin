@@ -1,74 +1,32 @@
-.container {
-  padding: 24rpx;
-  background-color: #f7f8fa;
-  min-height: 100vh;
+@import "../../styles/details.wxss";
+
+.header-card .status-row {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
 }
 
-.card-style {
-  background: #ffffff;
-  border-radius: 16rpx;
-  padding: 32rpx;
-  margin-bottom: 24rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.04);
-}
-
-.section-title {
-  font-size: 28rpx;
-  font-weight: bold;
+.task-id {
+  font-size: 24rpx;
   color: #999;
-  margin: 32rpx 0 16rpx 8rpx;
 }
 
-/* Header */
-.detail-header {
-  color: #fff;
+.progress-section {
+  margin-top: 32rpx;
 }
 
-.bg-status-0 { background: linear-gradient(135deg, #bfbfbf, #8c8c8c); }
-.bg-status-2 { background: linear-gradient(135deg, #40a9ff, #096dd9); }
-.bg-status-3 { background: linear-gradient(135deg, #73d13d, #389e0d); }
-.bg-status-4 { background: linear-gradient(135deg, #ffc53d, #d48806); }
-
-.status-top {
+.progress-info {
   display: flex;
   justify-content: space-between;
-  font-size: 22rpx;
-  opacity: 0.8;
-  margin-bottom: 16rpx;
+  margin-bottom: 12rpx;
+  font-size: 24rpx;
+  color: #666;
 }
 
-.task-main-title {
-  font-size: 40rpx;
-  font-weight: bold;
-  word-break: break-all;
-}
-
-/* Progress */
-.info-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 16rpx;
-}
-
-.percent {
+.progress-info .percent {
   font-weight: bold;
   color: #1890ff;
-  font-size: 32rpx;
 }
-
-/* Info Items */
-.info-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 24rpx 0;
-  border-bottom: 1rpx solid #f0f0f0;
-}
-
-.info-item:last-child { border-bottom: none; }
-
-.info-item .label { font-size: 28rpx; color: #666; }
-.info-item .value { font-size: 28rpx; color: #333; }
 
 .priority-tag {
   font-size: 24rpx;
@@ -80,21 +38,19 @@
 .priority-2 { background: #fff7e6; color: #faad14; }
 .priority-1 { background: #e6f7ff; color: #1890ff; }
 
-/* Description */
-.desc-content {
-  font-size: 28rpx;
-  color: #444;
-  line-height: 1.6;
-}
+.status-tag.status-0 { background: #f5f5f5; color: #8c8c8c; }
+.status-tag.status-2 { background: #e6f7ff; color: #1890ff; }
+.status-tag.status-3 { background: #f6ffed; color: #52c41a; }
+.status-tag.status-4 { background: #fff7e6; color: #faad14; }
 
 .bottom-padding { height: 60rpx; }
 
-/* Loading */
-.loading-full {
+.loading-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100vh;
   color: #999;
+  font-size: 28rpx;
 }

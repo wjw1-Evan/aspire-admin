@@ -1,0 +1,50 @@
+<view class="container">
+  <view class="search-bar">
+    <view class="search-box">
+      <icon type="search" size="14"></icon>
+      <input class="search-input" placeholder="{{t['common.search']}}" bindinput="onSearchInput" value="{{searchKeyword}}" bindconfirm="handleSearch" />
+    </view>
+    <view class="search-btn" bindtap="handleSearch">{{t['common.search']}}</view>
+  </view>
+
+  <view class="visit-list">
+    <view wx:for="{{tasks}}" wx:key="id" class="visit-card" bindtap="goToDetail" data-id="{{item.id}}">
+      <view class="visit-header">
+        <text class="task-name">{{item.taskName}}</text>
+        <text class="status-tag status-{{item.status}}">{{item.status === 'Pending' ? t['park.visit.status.pending'] : (item.status === 'Completed' ? t['park.visit.status.completed'] : t['park.visit.status.cancelled'])}}</text>
+      </view>
+      <view class="visit-body">
+        <view class="info-row">
+          <text class="label">{{t['park.visit.tenant']}}：</text>
+          <text class="value">{{item.tenantName || '-'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">{{t['park.visit.date']}}：</text>
+          <text class="value">{{item.plannedVisitDate || '-'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">执行人：</text>
+          <text class="value">{{item.visitorName || '-'}}</text>
+        </view>
+      </view>
+      <view class="visit-footer">
+        <text class="priority priority-{{item.priority}}">{{item.priority === 'High' ? t['park.visit.priority.high'] : (item.priority === 'Medium' ? t['park.visit.priority.medium'] : t['park.visit.priority.low'])}}</text>
+        <text class="btn-detail">{{t['common.detail']}} ></text>
+      </view>
+    </view>
+
+    <view class="loading-wrap" wx:if="{{loading}}">
+      <view class="loading"></view>
+      <text>{{t['common.loading']}}</text>
+    </view>
+    <view class="no-more" wx:if="{{!hasMore && tasks.length > 0}}">{{t['common.empty']}}</view>
+    <view class="empty-wrap" wx:if="{{!loading && tasks.length === 0}}">
+      <icon type="info" size="64" color="#ccc"></icon>
+      <text>{{t['common.empty']}}</text>
+    </view>
+  </view>
+  
+  <view class="fab" bindtap="goToAdd">
+    <text class="iconfont icon-add"></text>
+  </view>
+</view>

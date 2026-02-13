@@ -1,0 +1,50 @@
+<view class="form-container">
+  <view class="task-summary card-style" wx:if="{{taskInfo}}">
+    <view class="summary-header">
+      <text class="title">{{taskInfo.title}}</text>
+    </view>
+    <view class="summary-body">
+      <view class="info-item">
+        <text class="label">{{t['park.visit.task_name']}}:</text>
+        <text class="value">{{taskInfo.tenantName || '-'}}</text>
+      </view>
+      <view class="info-item">
+        <text class="label">{{t['park.visit.date']}}:</text>
+        <text class="value">{{taskInfo.visitDate}}</text>
+      </view>
+    </view>
+  </view>
+
+  <form bindsubmit="handleSubmit">
+    <view class="form-group">
+      <view class="form-item vertical">
+        <text class="label">{{t['park.visit.assessment.score']}} ({{formData.score}})</text>
+        <slider 
+          class="score-slider" 
+          min="0" max="100" 
+          value="{{formData.score}}" 
+          bindchange="onScoreChange" 
+          disabled="{{mode === 'view'}}"
+          activeColor="#1890ff"
+        />
+      </view>
+
+      <view class="form-item vertical">
+        <text class="label">{{t['park.visit.assessment.comment']}}</text>
+        <textarea 
+          name="comment" 
+          value="{{formData.comments}}" 
+          placeholder="{{t['common.input']}}" 
+          placeholder-class="placeholder" 
+          bindinput="onCommentInput"
+          disabled="{{mode === 'view'}}"
+          auto-height
+        />
+      </view>
+    </view>
+
+    <view class="btn-area" wx:if="{{mode !== 'view'}}">
+      <button form-type="submit" type="primary" loading="{{submitting}}">{{t['common.submit']}}</button>
+    </view>
+  </form>
+</view>

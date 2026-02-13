@@ -1,0 +1,50 @@
+<view class="form-container">
+  <view class="form-group">
+    <view class="form-item">
+      <text class="label">租户名称<text class="required">*</text></text>
+      <input placeholder="请输入租户全称" value="{{formData.name}}" bindinput="onInputChange" data-field="name" placeholder-class="placeholder" />
+    </view>
+
+    <view class="form-item">
+      <text class="label">联系人</text>
+      <input placeholder="姓名" value="{{formData.contactPerson}}" bindinput="onInputChange" data-field="contactPerson" placeholder-class="placeholder" />
+    </view>
+    
+    <view class="form-item">
+      <text class="label">联系电话</text>
+      <input type="number" placeholder="手机或座机" value="{{formData.phone}}" bindinput="onInputChange" data-field="phone" placeholder-class="placeholder" />
+    </view>
+
+    <view class="form-item">
+      <text class="label">所属行业</text>
+      <input placeholder="信息技术/制造业等" value="{{formData.industry}}" bindinput="onInputChange" data-field="industry" placeholder-class="placeholder" />
+    </view>
+
+    <view class="form-item">
+      <text class="label">社会信用代码</text>
+      <input placeholder="18位统一社会信用代码" value="{{formData.unifySocialCreditCode}}" bindinput="onInputChange" data-field="unifySocialCreditCode" placeholder-class="placeholder" />
+    </view>
+
+    <view class="form-item">
+      <text class="label">租户状态</text>
+      <picker bindchange="onStatusChange" value="{{statusIndex}}" range="{{statusNames}}">
+        <view class="picker-value">{{statusNames[statusIndex]}}</view>
+      </picker>
+    </view>
+
+    <view class="form-item vertical">
+      <text class="label">详细地址</text>
+      <textarea placeholder="请输入详细联系地址..." value="{{formData.address}}" bindinput="onInputChange" data-field="address" maxlength="500" placeholder-class="placeholder"></textarea>
+    </view>
+  </view>
+
+  <view class="btn-area">
+    <button bindtap="handleSubmit" loading="{{submitting}}" disabled="{{submitting}}">
+      {{isEdit ? '提交修改' : '立即创建'}}
+    </button>
+  </view>
+
+  <view class="loading-overlay" wx:if="{{loading}}">
+    <view class="loading"></view>
+  </view>
+</view>

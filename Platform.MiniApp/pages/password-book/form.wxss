@@ -1,0 +1,57 @@
+@import "../../styles/forms.wxss";
+
+.form-item input {
+  text-align: right;
+}
+
+.password-item {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.password-item .item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.gen-btn {
+  font-size: 24rpx;
+  color: #1890ff;
+  padding: 10rpx 20rpx;
+  background-color: #e6f7ff;
+  border-radius: 20rpx;
+}
+
+.strength-box {
+  margin-top: 16rpx;
+  display: flex;
+  align-items: center;
+}
+
+.strength-bar {
+  flex: 1;
+  height: 8rpx;
+  background-color: #f2f3f5;
+  border-radius: 4rpx;
+  overflow: hidden;
+  margin-right: 20rpx;
+}
+
+.bar-inner {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.strength-text {
+  font-size: 22rpx;
+}
+
+/* Levels: 0-Weak, 1-Medium, 2-Strong, 3-VeryStrong */
+.level-0 { background-color: #f5222d; color: #f5222d; }
+.level-1 { background-color: #fa8c16; color: #fa8c16; }
+.level-2 { background-color: #52c41a; color: #52c41a; }
+.level-3 { background-color: #13c2c2; color: #13c2c2; }
+
+

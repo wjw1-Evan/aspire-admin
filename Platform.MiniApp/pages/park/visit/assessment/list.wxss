@@ -1,0 +1,128 @@
+.container {
+  padding-bottom: 30rpx;
+  background-color: #f7f8fa;
+  min-height: 100vh;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 30rpx;
+  background-color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2rpx 10rpx rgba(0,0,0,0.05);
+}
+
+.search-icon {
+  margin-right: 15rpx;
+}
+
+.search-input {
+  flex: 1;
+  font-size: 28rpx;
+  color: #323233;
+}
+
+.assessment-list {
+  padding: 20rpx;
+}
+
+.assessment-card {
+  background-color: #fff;
+  border-radius: 12rpx;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20rpx;
+}
+
+.task-title {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #323233;
+  flex: 1;
+  margin-right: 20rpx;
+}
+
+.score-tag {
+  font-size: 28rpx;
+  font-weight: bold;
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 30rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.score-tag.high { background-color: #52c41a; }
+.score-tag.medium { background-color: #fa8c16; }
+.score-tag.low { background-color: #f5222d; }
+
+.card-body {
+  border-top: 1rpx solid #ebedf0;
+  padding-top: 20rpx;
+}
+
+.info-row {
+  display: flex;
+  margin-bottom: 12rpx;
+  font-size: 26rpx;
+}
+
+.label {
+  color: #969799;
+  width: 160rpx;
+}
+
+.value {
+  color: #323233;
+  flex: 1;
+}
+
+.comment-preview {
+  margin-top: 20rpx;
+  background-color: #f9f9f9;
+  padding: 16rpx;
+  border-radius: 8rpx;
+}
+
+.comment-text {
+  font-size: 24rpx;
+  color: #646566;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 100rpx;
+  color: #969799;
+  font-size: 28rpx;
+}
+
+.empty-state image {
+  width: 240rpx;
+  height: 240rpx;
+  margin-bottom: 20rpx;
+}
+
+.loading-more, .no-more {
+  text-align: center;
+  padding: 30rpx;
+  font-size: 24rpx;
+  color: #969799;
+}

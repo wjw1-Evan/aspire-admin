@@ -1,9 +1,9 @@
-<view class="container">
+<view class="form-container">
   <form bindsubmit="handleSubmit">
-    <view class="form-group card-style">
+    <view class="form-group">
       <view class="form-item">
         <text class="label">任务名称</text>
-        <input name="taskName" placeholder="请输入任务名称" placeholder-class="placeholder" />
+        <input name="taskName" value="{{formData.taskName}}" placeholder="请输入任务名称" placeholder-class="placeholder" />
       </view>
 
       <view class="form-item">
@@ -15,12 +15,12 @@
 
       <view class="form-item vertical">
         <text class="label">任务描述</text>
-        <textarea name="description" placeholder="请输入任务描述..." placeholder-class="placeholder"></textarea>
+        <textarea name="description" value="{{formData.description}}" placeholder="请输入任务描述..." placeholder-class="placeholder"></textarea>
       </view>
     </view>
 
     <view class="section-title">分派与权重</view>
-    <view class="form-group card-style">
+    <view class="form-group">
       <view class="form-item">
         <text class="label">负责人</text>
         <picker bindchange="onUserChange" value="{{userIndex}}" range="{{userList}}" range-key="name">
@@ -44,7 +44,7 @@
     </view>
 
     <view class="section-title">计划周期</view>
-    <view class="form-group card-style">
+    <view class="form-group">
       <view class="form-item">
         <text class="label">开始日期</text>
         <picker mode="date" bindchange="onStartDateChange" value="{{startDate}}">
@@ -61,7 +61,7 @@
     </view>
 
     <view class="btn-area">
-      <button form-type="submit" type="primary" loading="{{submitting}}">发布任务</button>
+      <button form-type="submit" type="primary" loading="{{submitting}}">{{isEdit ? '提交修改' : '发布任务'}}</button>
     </view>
   </form>
 </view>

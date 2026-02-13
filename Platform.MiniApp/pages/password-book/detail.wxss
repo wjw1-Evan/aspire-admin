@@ -1,0 +1,61 @@
+@import "../../styles/details.wxss";
+
+.header-card .status-tag {
+  color: #1890ff;
+  background-color: #e6f7ff;
+}
+
+.value-action {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1;
+}
+
+.value-action .value {
+  text-align: right;
+  margin-right: 12rpx;
+}
+
+.value-action .iconfont {
+  font-size: 32rpx;
+  color: #1890ff;
+  padding: 10rpx;
+}
+
+.password-value {
+  font-family: monospace;
+  letter-spacing: 2rpx;
+}
+
+.actions-group {
+  display: flex;
+  align-items: center;
+}
+
+.actions-group .iconfont {
+  margin-left: 20rpx;
+}
+
+.url-text {
+  color: #1890ff;
+  text-decoration: underline;
+}
+
+.tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.tag-item {
+  font-size: 22rpx;
+  color: #646566;
+  background-color: #f2f3f5;
+  padding: 6rpx 16rpx;
+  border-radius: 4rpx;
+}
+
+.bottom-placeholder {
+  height: 60rpx;
+}

@@ -1,19 +1,19 @@
-<view class="container">
+<view class="form-container">
   <form bindsubmit="handleSubmit">
-    <view class="form-group card-style">
+    <view class="form-group">
       <view class="form-item">
         <text class="label">项目名称</text>
-        <input name="name" placeholder="请输入项目名称" placeholder-class="placeholder" />
+        <input name="name" value="{{formData.name}}" placeholder="请输入项目名称" placeholder-class="placeholder" />
       </view>
 
       <view class="form-item vertical">
         <text class="label">项目描述</text>
-        <textarea name="description" placeholder="请输入项目详情描述..." placeholder-class="placeholder"></textarea>
+        <textarea name="description" value="{{formData.description}}" placeholder="请输入项目详情描述..." placeholder-class="placeholder"></textarea>
       </view>
     </view>
 
     <view class="section-title">设置项</view>
-    <view class="form-group card-style">
+    <view class="form-group">
       <view class="form-item">
         <text class="label">项目状态</text>
         <picker bindchange="onStatusChange" value="{{statusIndex}}" range="{{statusOptions}}" range-key="label">
@@ -30,7 +30,7 @@
     </view>
 
     <view class="section-title">时间与预算</view>
-    <view class="form-group card-style">
+    <view class="form-group">
       <view class="form-item">
         <text class="label">开始日期</text>
         <picker mode="date" bindchange="onStartDateChange" value="{{startDate}}">
@@ -47,12 +47,12 @@
 
       <view class="form-item">
         <text class="label">预算金额</text>
-        <input name="budget" type="digit" placeholder="请输入预算" placeholder-class="placeholder" />
+        <input name="budget" value="{{formData.budget}}" type="digit" placeholder="请输入预算" placeholder-class="placeholder" />
       </view>
     </view>
 
     <view class="btn-area">
-      <button form-type="submit" type="primary" loading="{{submitting}}">立即创建</button>
+      <button form-type="submit" type="primary" loading="{{submitting}}">{{isEdit ? '提交修改' : '立即创建'}}</button>
     </view>
   </form>
 </view>

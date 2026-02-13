@@ -1,0 +1,52 @@
+<view class="container">
+  <view class="search-bar">
+    <view class="search-box">
+      <icon type="search" size="14"></icon>
+      <input class="search-input" placeholder="{{t['common.search']}}" bindinput="onSearchInput" value="{{searchKeyword}}" bindconfirm="handleSearch" />
+    </view>
+    <view class="search-btn" bindtap="handleSearch">{{t['common.search']}}</view>
+  </view>
+
+  <view class="contract-list">
+    <view wx:for="{{contracts}}" wx:key="id" class="contract-card" bindtap="goToDetail" data-id="{{item.id}}">
+      <view class="contract-header">
+        <view class="contract-basic">
+          <text class="contract-no">{{item.contractNumber}}</text>
+          <text class="tenant-name">{{item.tenantName}}</text>
+        </view>
+        <text class="contract-status status-{{item.status}}">{{item.status === 'Active' ? t['park.contract.status.active'] : (item.status === 'Expired' ? t['park.contract.status.expired'] : t['park.contract.status.terminated'])}}</text>
+      </view>
+      <view class="contract-body">
+        <view class="info-row">
+          <text class="label">{{t['park.contract.start_date']}}：</text>
+          <text class="value">{{item.startDate}}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">{{t['park.contract.end_date']}}：</text>
+          <text class="value">{{item.endDate}}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">{{t['park.contract.monthly_rent']}}：</text>
+          <text class="value rent">¥{{item.monthlyRent}}</text>
+        </view>
+      </view>
+      <view class="contract-footer">
+        <text class="expiry-hint" wx:if="{{item.daysUntilExpiry <= 30 && item.status === 'Active'}}">即将到期 ({{item.daysUntilExpiry}}天)</text>
+        <text class="btn-detail">{{t['common.detail']}} ></text>
+      </view>
+    </view>
+
+    <view class="loading-wrap" wx:if="{{loading}}">
+      <view class="loading"></view>
+      <text>{{t['common.loading']}}</text>
+    </view>
+    <view class="no-more" wx:if="{{!hasMore && contracts.length > 0}}">{{t['common.empty']}}</view>
+    <view class="empty-wrap" wx:if="{{!loading && contracts.length === 0}}">
+      <icon type="info" size="64" color="#ccc"></icon>
+      <text>{{t['common.empty']}}</text>
+    </view>
+    <view class="add-btn" bindtap="goToAdd">
+    <text class="iconfont icon-add"></text>
+  </view>
+</view>
+</view>

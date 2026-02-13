@@ -1,12 +1,18 @@
-<view class="container" wx:if="{{project}}">
-  <!-- Header Card -->
-  <view class="detail-header card-style">
+<view class="detail-container" wx:if="{{project}}">
+  <view class="header-card">
     <view class="title-row">
-      <text class="project-title">{{project.name}}</text>
-      <view class="status-tag status-{{project.status}}">{{statusMap[project.status]}}</view>
+      <text class="main-title">{{project.name}}</text>
+      <view class="header-actions">
+        <text class="iconfont icon-edit" bindtap="goToEdit"></text>
+        <text class="iconfont icon-delete" bindtap="handleDelete"></text>
+      </view>
     </view>
-    <view class="progress-bar-container">
-      <view class="progress-label">
+    <view class="status-row">
+      <text class="status-tag status-{{project.status}}">{{statusMap[project.status]}}</text>
+    </view>
+    
+    <view class="progress-section">
+      <view class="progress-info">
         <text>总体进度</text>
         <text class="percent">{{project.progress}}%</text>
       </view>
@@ -18,22 +24,22 @@
         border-radius="4"
       />
     </view>
-    <view class="header-actions">
-      <button class="btn-tasks" bindtap="viewProjectTasks">查看相关任务</button>
-      <button class="btn-create-task" bindtap="goToCreateTask">新建任务</button>
+
+    <view class="action-bar">
+      <button class="btn-outline" bindtap="viewProjectTasks">查看相关任务</button>
+      <button class="btn-primary" bindtap="goToCreateTask">新建任务</button>
     </view>
   </view>
 
-  <!-- Info Section -->
   <view class="section-title">基本信息</view>
-  <view class="info-group card-style">
+  <view class="info-card">
     <view class="info-item">
       <text class="label">负责人</text>
       <text class="value">{{project.managerName || '未指定'}}</text>
     </view>
     <view class="info-item">
       <text class="label">优先级</text>
-      <view class="priority-tag priority-{{project.priority}}">{{priorityMap[project.priority]}}</view>
+      <text class="priority-tag priority-{{project.priority}}">{{priorityMap[project.priority]}}</text>
     </view>
     <view class="info-item">
       <text class="label">开始日期</text>
@@ -45,15 +51,15 @@
     </view>
   </view>
 
-  <!-- Description -->
   <view class="section-title">项目描述</view>
-  <view class="description-card card-style">
-    <text class="desc-text">{{project.description || '暂无描述信息'}}</text>
+  <view class="info-card">
+    <view class="info-item vertical">
+      <text class="value">{{project.description || '暂无描述信息'}}</text>
+    </view>
   </view>
 
-  <!-- Members Section -->
   <view class="section-title">项目成员 ({{members.length}})</view>
-  <view class="member-list card-style">
+  <view class="info-card">
     <view class="member-item" wx:for="{{members}}" wx:key="userId">
       <image class="member-avatar" src="{{item.avatar || '/assets/logo.png'}}" mode="aspectFill"></image>
       <view class="member-info">

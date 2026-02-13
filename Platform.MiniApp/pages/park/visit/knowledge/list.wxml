@@ -1,0 +1,52 @@
+<view class="container">
+  <view class="tabs">
+    <view class="tab {{activeTab === 'faq' ? 'active' : ''}}" bindtap="switchTab" data-tab="faq">
+      {{t['park.visit.knowledge.faq']}}
+    </view>
+    <view class="tab {{activeTab === 'questionnaire' ? 'active' : ''}}" bindtap="switchTab" data-tab="questionnaire">
+      {{t['park.visit.knowledge.questionnaire']}}
+    </view>
+  </view>
+
+  <view class="content">
+    <!-- FAQ List -->
+    <scroll-view wx:if="{{activeTab === 'faq'}}" class="list-scroll" scroll-y bindscrolltolower="loadMore">
+      <view class="list-container">
+        <view class="faq-item card-style" wx:for="{{faqList}}" wx:key="id" bindtap="toggleFaq" data-id="{{item.id}}">
+          <view class="faq-header">
+            <view class="faq-q">
+              <text class="tag">{{item.category || t['common.all']}}</text>
+              <text class="question">{{item.content}}</text>
+            </view>
+            <icon class="arrow {{expandedFaq === item.id ? 'up' : 'down'}}" type="arrow" size="12"></icon>
+          </view>
+          <view class="faq-answer" wx:if="{{expandedFaq === item.id}}">
+            <text class="answer">{{item.answer || t['common.empty']}}</text>
+          </view>
+        </view>
+        <view wx:if="{{faqList.length === 0}}" class="empty-state">
+          <text>{{t['common.empty']}}</text>
+        </view>
+      </view>
+    </scroll-view>
+
+    <!-- Questionnaire List -->
+    <scroll-view wx:if="{{activeTab === 'questionnaire'}}" class="list-scroll" scroll-y bindscrolltolower="loadMore">
+      <view class="list-container">
+        <view class="q-item card-style" wx:for="{{questionnaireList}}" wx:key="id">
+          <view class="q-info">
+            <text class="q-title">{{item.title}}</text>
+            <text class="q-desc">{{item.purpose || '-'}}</text>
+          </view>
+          <view class="q-meta">
+            <text class="q-count">{{item.questionCount}} {{t['task.detail.title']}}</text>
+            <text class="q-date">{{item.createdAt}}</text>
+          </view>
+        </view>
+        <view wx:if="{{questionnaireList.length === 0}}" class="empty-state">
+          <text>{{t['common.empty']}}</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+</view>

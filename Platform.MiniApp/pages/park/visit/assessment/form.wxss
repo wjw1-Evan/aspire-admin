@@ -1,0 +1,38 @@
+@import "../../../../styles/forms.wxss";
+
+.card-style {
+  background-color: #fff;
+  border-radius: 12rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+.task-summary .title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #323233;
+  margin-bottom: 20rpx;
+  display: block;
+}
+
+.summary-body .info-item {
+  display: flex;
+  margin-bottom: 15rpx;
+  font-size: 28rpx;
+}
+
+.info-item .label {
+  color: #969799;
+  width: 160rpx;
+}
+
+.info-item .value {
+  color: #323233;
+  flex: 1;
+}
+
+.score-slider {
+  width: 100%;
+  margin: 20rpx 0;
+}

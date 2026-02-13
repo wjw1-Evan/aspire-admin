@@ -1,0 +1,81 @@
+<view class="container">
+  <view class="search-bar">
+    <view class="search-box">
+      <icon type="search" size="14"></icon>
+      <input class="search-input" placeholder="{{t['common.search']}}" bindinput="onSearchInput" value="{{searchKeyword}}" bindconfirm="handleSearch" />
+    </view>
+    <view class="search-btn" bindtap="handleSearch">{{t['common.search']}}</view>
+  </view>
+
+  <view class="tab-bar">
+    <view class="tab-item {{activeTab === 'building' ? 'active' : ''}}" bindtap="switchTab" data-tab="building">
+      {{t['park.asset.building']}}
+    </view>
+    <view class="tab-item {{activeTab === 'property' ? 'active' : ''}}" bindtap="switchTab" data-tab="property">
+      {{t['park.asset.property']}}
+    </view>
+  </view>
+
+  <view class="asset-list">
+    <!-- Building List -->
+    <block wx:if="{{activeTab === 'building'}}">
+      <view wx:for="{{buildings}}" wx:key="id" class="asset-card" bindtap="goToDetail" data-id="{{item.id}}">
+        <view class="asset-header">
+          <text class="asset-name">{{item.name}}</text>
+          <text class="status-tag">{{item.status}}</text>
+        </view>
+        <view class="asset-body">
+          <view class="info-row">
+            <text class="label">{{t['park.asset.total_floors']}}：</text>
+            <text class="value">{{item.totalFloors}}</text>
+          </view>
+          <view class="info-row">
+            <text class="label">{{t['park.asset.total_area']}}：</text>
+            <text class="value">{{item.totalArea}}㎡</text>
+          </view>
+          <view class="info-row">
+            <text class="label">地址：</text>
+            <text class="value">{{item.address || '-'}}</text>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!-- Property List -->
+    <block wx:else>
+      <view wx:for="{{properties}}" wx:key="id" class="asset-card" bindtap="goToUnitDetail" data-id="{{item.id}}">
+        <view class="asset-header">
+          <text class="asset-name">{{item.unitNumber}}</text>
+          <text class="status-tag status-{{item.status}}">{{item.status === 'Available' ? t['park.asset.status.available'] : (item.status === 'Rented' ? t['park.asset.status.rented'] : t['park.asset.status.reserved'])}}</text>
+        </view>
+        <view class="asset-body">
+          <view class="info-row">
+            <text class="label">{{t['park.asset.floor']}}：</text>
+            <text class="value">{{item.floor}}F</text>
+          </view>
+          <view class="info-row">
+            <text class="label">{{t['park.asset.area']}}：</text>
+            <text class="value">{{item.area}}㎡</text>
+          </view>
+          <view class="info-row">
+            <text class="label">类型：</text>
+            <text class="value">{{item.unitType === 'Office' ? t['park.asset.type.office'] : (item.unitType === 'Retail' ? t['park.asset.type.retail'] : t['park.asset.type.warehouse'])}}</text>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <view class="loading-wrap" wx:if="{{loading}}">
+      <view class="loading"></view>
+      <text>{{t['common.loading']}}</text>
+    </view>
+    <view class="no-more" wx:if="{{!hasMore && (activeTab === 'building' ? buildings.length : properties.length) > 0}}">{{t['common.empty']}}</view>
+    <view class="empty-wrap" wx:if="{{!loading && (activeTab === 'building' ? buildings.length === 0 : properties.length === 0)}}">
+      <icon type="info" size="64" color="#ccc"></icon>
+      <text>{{t['common.empty']}}</text>
+    </view>
+  </view>
+  <view class="add-btn" bindtap="goToAdd">
+    <text class="iconfont icon-add"></text>
+  </view>
+</view>

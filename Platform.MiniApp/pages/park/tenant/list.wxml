@@ -1,0 +1,49 @@
+<view class="container">
+  <view class="search-bar">
+    <view class="search-box">
+      <icon type="search" size="14"></icon>
+      <input class="search-input" placeholder="{{t['common.search']}}" bindinput="onSearchInput" value="{{searchKeyword}}" bindconfirm="handleSearch" />
+    </view>
+    <view class="search-btn" bindtap="handleSearch">{{t['common.search']}}</view>
+  </view>
+
+  <view class="tenant-list">
+    <view wx:for="{{tenants}}" wx:key="id" class="tenant-card" bindtap="goToDetail" data-id="{{item.id}}">
+      <view class="tenant-header">
+        <text class="tenant-name">{{item.tenantName}}</text>
+        <text class="status-tag status-{{item.status}}">{{item.status === 'Active' ? t['park.tenant.status.active'] : t['park.tenant.status.inactive']}}</text>
+      </view>
+      <view class="tenant-body">
+        <view class="info-row">
+          <text class="label">{{t['park.tenant.industry']}}：</text>
+          <text class="value">{{item.industry || '-'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">{{t['park.tenant.contact']}}：</text>
+          <text class="value">{{item.contactPerson || '-'}}</text>
+        </view>
+        <view class="info-row">
+          <text class="label">{{t['park.tenant.entry_date']}}：</text>
+          <text class="value">{{item.entryDate || '-'}}</text>
+        </view>
+      </view>
+      <view class="tenant-footer">
+        <text class="stats">单元: {{item.unitCount || 0}} | 面积: {{item.totalArea || 0}}㎡</text>
+        <text class="btn-detail">{{t['common.detail']}} ></text>
+      </view>
+    </view>
+
+    <view class="loading-wrap" wx:if="{{loading}}">
+      <view class="loading"></view>
+      <text>{{t['common.loading']}}</text>
+    </view>
+    <view class="no-more" wx:if="{{!hasMore && tenants.length > 0}}">{{t['common.empty']}}</view>
+    <view class="empty-wrap" wx:if="{{!loading && tenants.length === 0}}">
+      <icon type="info" size="64" color="#ccc"></icon>
+      <text>{{t['common.empty']}}</text>
+    </view>
+  </view>
+  <view class="add-btn" bindtap="goToAdd">
+    <text class="iconfont icon-add"></text>
+  </view>
+</view>

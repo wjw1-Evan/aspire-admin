@@ -15,6 +15,12 @@ Page(withAuth(withI18n({
         startDate: '',
         endDate: '',
         submitting: false,
+        isEdit: false,
+        taskId: '',
+        formData: {
+            taskName: '',
+            description: ''
+        },
         t: {}
     },
 
@@ -52,13 +58,73 @@ Page(withAuth(withI18n({
             typeOptions,
             priorityOptions
         });
-        wx.setNavigationBarTitle({ title: t('task.create.title') });
+        wx.setNavigationBarTitle({ title: this.data.isEdit ? '编辑任务' : t('task.create.title') });
     },
 
     onLoad(options) {
+        if (options.id) {
+            this.setData({
+                isEdit: true,
+                taskId: options.id
+            });
+            this.fetchTaskDetail(options.id);
+        }
         this.updateTranslations();
         this.loadUsers();
         this.loadProjects(options.projectId);
+    },
+
+    async fetchTaskDetail(id) {
+        this.setData({ loading: true });
+        try {
+            const res = await request({
+                url: `/api/task/${id}`,
+                method: 'GET'
+            });
+            if (res.success) {
+                const task = res.data;
+
+                // Find indices for pickers
+                const typeIndex = this.data.typeOptions.indexOf(task.taskType);
+                const priorityIndex = this.data.priorityOptions.findIndex(p => p.value === task.priority);
+
+                // We'll need to wait for userList and projectList to load if we want to set indices correctly
+                // or set them after they load.
+
+                this.setData({
+                    'formData.taskName': task.taskName,
+                    'formData.description': task.description || '',
+                    typeIndex: typeIndex > -1 ? typeIndex : 0,
+                    priorityIndex: priorityIndex > -1 ? priorityIndex : 1,
+                    startDate: task.plannedStartTime ? task.plannedStartTime.split('T')[0] : '',
+                    endDate: task.plannedEndTime ? task.plannedEndTime.split('T')[0] : ''
+                });
+
+                // Store IDs to match after loading lists
+                this._pendingAssignedTo = task.assignedTo;
+                this._pendingProjectId = task.projectId;
+
+                this.matchPickerIndices();
+            }
+        } catch (err) {
+            console.error('Fetch task detail failed', err);
+        } finally {
+            this.setData({ loading: false });
+        }
+    },
+
+    matchPickerIndices() {
+        const { userList, projectList } = this.data;
+        if (this._pendingAssignedTo && userList.length > 1) {
+            const index = userList.findIndex(u => u.id === this._pendingAssignedTo);
+            if (index > -1) this.setData({ userIndex: index });
+            this._pendingAssignedTo = null;
+        }
+        if (this._pendingProjectId && projectList.length > 1) {
+            const index = projectList.findIndex(p => p.id === this._pendingProjectId);
+            if (index > -1) this.setData({ projectIndex: index });
+            this._pendingProjectId = null;
+        }
     },
 
     async loadUsers() {
@@ -71,6 +137,8 @@ Page(withAuth(withI18n({
                 const selectText = t('common.select');
                 this.setData({
                     userList: [{ name: selectText, id: '' }, ...res.data]
+                }, () => {
+                    this.matchPickerIndices();
                 });
             }
         } catch (err) {
@@ -96,6 +164,8 @@ Page(withAuth(withI18n({
                 this.setData({
                     projectList: list,
                     projectIndex: index
+                }, () => {
+                    this.matchPickerIndices();
                 });
             }
         } catch (err) {
@@ -122,30 +192,43 @@ Page(withAuth(withI18n({
 
         this.setData({ submitting: true });
         try {
+            const url = this.data.isEdit ? '/api/task/update' : '/api/task/create';
+            const method = this.data.isEdit ? 'PUT' : 'POST';
+            const data = {
+                taskName: values.taskName,
+                description: values.description,
+                taskType: this.data.typeOptions[this.data.typeIndex],
+                priority: this.data.priorityOptions[this.data.priorityIndex].value,
+                assignedTo: assignedTo || null,
+                projectId: projectId || null,
+                plannedStartTime: this.data.startDate ? (this.data.startDate.includes('T') ? this.data.startDate : this.data.startDate + 'T00:00:00Z') : null,
+                plannedEndTime: this.data.endDate ? (this.data.endDate.includes('T') ? this.data.endDate : this.data.endDate + 'T23:59:59Z') : null
+            };
+
+            if (this.data.isEdit) {
+                data.taskId = this.data.taskId;
+            }
+
             const res = await request({
-                url: '/api/task/create',
-                method: 'POST',
-                data: {
-                    taskName: values.taskName,
-                    description: values.description,
-                    taskType: this.data.typeOptions[this.data.typeIndex],
-                    priority: this.data.priorityOptions[this.data.priorityIndex].value,
-                    assignedTo: assignedTo || null,
-                    projectId: projectId || null,
-                    plannedStartTime: this.data.startDate ? this.data.startDate + 'T00:00:00Z' : null,
-                    plannedEndTime: this.data.endDate ? this.data.endDate + 'T23:59:59Z' : null
-                }
+                url,
+                method,
+                data
             });
 
             if (res.success) {
-                wx.showToast({ title: t('task.create.success') });
+                wx.showToast({ title: this.data.isEdit ? '修改成功' : t('task.create.success') });
                 setTimeout(() => {
                     const pages = getCurrentPages();
                     const prevPage = pages[pages.length - 2];
-                    if (prevPage && prevPage.fetchTasks) {
-                        prevPage.setData({ page: 1, tasks: [] }, () => {
-                            prevPage.fetchTasks(true);
-                        });
+                    if (prevPage) {
+                        if (prevPage.fetchTasks) {
+                            prevPage.setData({ page: 1, tasks: [] }, () => {
+                                prevPage.fetchTasks(true);
+                            });
+                        }
+                        if (prevPage.fetchTaskDetail) {
+                            prevPage.fetchTaskDetail();
+                        }
                     }
                     wx.navigateBack();
                 }, 1500);

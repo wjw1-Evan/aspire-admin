@@ -1,0 +1,55 @@
+<view class="form-container">
+  <view class="form-group">
+    <view class="form-item">
+      <text class="label">楼宇名称<text class="required">*</text></text>
+      <input placeholder="请输入楼宇名称" value="{{formData.name}}" bindinput="onInputChange" data-field="name" placeholder-class="placeholder" />
+    </view>
+
+    <view class="form-item">
+      <text class="label">详细地址</text>
+      <input placeholder="请输入楼宇地址" value="{{formData.address}}" bindinput="onInputChange" data-field="address" placeholder-class="placeholder" />
+    </view>
+
+    <view class="form-item">
+      <text class="label">总层数</text>
+      <input type="number" placeholder="0" value="{{formData.totalFloors}}" bindinput="onInputChange" data-field="totalFloors" placeholder-class="placeholder" />
+    </view>
+    
+    <view class="form-item">
+      <text class="label">总面积 (㎡)</text>
+      <input type="digit" placeholder="0.00" value="{{formData.totalArea}}" bindinput="onInputChange" data-field="totalArea" placeholder-class="placeholder" />
+    </view>
+
+    <view class="form-item">
+      <text class="label">楼宇类型</text>
+      <input placeholder="写字楼/厂房" value="{{formData.buildingType}}" bindinput="onInputChange" data-field="buildingType" placeholder-class="placeholder" />
+    </view>
+    
+    <view class="form-item">
+      <text class="label">建成年份</text>
+      <input type="number" placeholder="2024" value="{{formData.yearBuilt}}" bindinput="onInputChange" data-field="yearBuilt" placeholder-class="placeholder" />
+    </view>
+
+    <view class="form-item">
+      <text class="label">交付日期<text class="required">*</text></text>
+      <picker mode="date" value="{{formData.deliveryDate}}" bindchange="onDateChange">
+        <view class="picker-value">{{formData.deliveryDate || '请选择日期'}}</view>
+      </picker>
+    </view>
+
+    <view class="form-item vertical">
+      <text class="label">楼宇描述</text>
+      <textarea placeholder="请输入相关说明..." value="{{formData.description}}" bindinput="onInputChange" data-field="description" maxlength="500" placeholder-class="placeholder"></textarea>
+    </view>
+  </view>
+
+  <view class="btn-area">
+    <button bindtap="handleSubmit" loading="{{submitting}}" disabled="{{submitting}}">
+      {{isEdit ? '提交修改' : '立即创建'}}
+    </button>
+  </view>
+
+  <view class="loading-overlay" wx:if="{{loading}}">
+    <view class="loading"></view>
+  </view>
+</view>

@@ -1,0 +1,71 @@
+<view class="detail-container">
+  <view class="header-card" wx:if="{{tenant}}">
+    <view class="title-row">
+      <text class="main-title">{{tenant.tenantName}}</text>
+      <view class="header-actions">
+        <text class="iconfont icon-edit" bindtap="goToEdit"></text>
+        <text class="iconfont icon-delete" bindtap="handleDelete"></text>
+      </view>
+    </view>
+    <view class="status-row">
+      <text class="status-tag status-{{tenant.status}}">{{tenant.status === 'Active' ? t['park.tenant.status.active'] : t['park.tenant.status.inactive']}}</text>
+    </view>
+  </view>
+
+  <view class="section-title">基本信息</view>
+  <view class="info-card" wx:if="{{tenant}}">
+    <view class="info-item" bindtap="makePhoneCall">
+      <text class="label">联系人</text>
+      <text class="value">{{tenant.contactPerson || '-'}}</text>
+    </view>
+    <view class="info-item" bindtap="makePhoneCall">
+      <text class="label">联系电话</text>
+      <view class="value highlight-blue">
+        <text>{{tenant.phone || '-'}}</text>
+        <text class="iconfont icon-phone" wx:if="{{tenant.phone}}" style="margin-left: 10rpx; font-size: 28rpx;"></text>
+      </view>
+    </view>
+    <view class="info-item">
+      <text class="label">所属行业</text>
+      <text class="value">{{tenant.industry || '-'}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">入驻日期</text>
+      <text class="value">{{tenant.entryDate || '-'}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">房源单元</text>
+      <text class="value">{{tenant.unitCount || 0}} 个</text>
+    </view>
+    <view class="info-item">
+      <text class="label">租赁总面积</text>
+      <text class="value">{{tenant.totalArea || 0}} ㎡</text>
+    </view>
+  </view>
+
+  <view class="section-title">租赁合同 ({{contracts.length}})</view>
+  <view class="contracts-list" wx:if="{{contracts.length > 0}}">
+    <view wx:for="{{contracts}}" wx:key="id" class="contract-wrapper" bindtap="goToContractDetail" data-id="{{item.id}}">
+      <view class="contract-card-compact">
+        <view class="contract-card-header">
+          <text class="contract-no">{{item.contractNumber}}</text>
+          <text class="contract-status-tag status-{{item.status}}">{{item.status === 'Active' ? t['park.contract.status.active'] : (item.status === 'Expired' ? t['park.contract.status.expired'] : t['park.contract.status.terminated'])}}</text>
+        </view>
+        <view class="contract-card-body">
+          <text class="date-text">{{item.startDate}} ~ {{item.endDate}}</text>
+          <text class="rent-text">¥{{item.monthlyRent}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+  
+  <view class="empty-hint" wx:if="{{!loading && contracts.length === 0}}">
+    <text>暂无合同信息</text>
+  </view>
+
+  <view class="bottom-placeholder"></view>
+
+  <view class="loading-overlay" wx:if="{{loading}}">
+    <view class="loading"></view>
+  </view>
+</view>

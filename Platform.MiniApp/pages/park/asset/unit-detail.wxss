@@ -1,0 +1,67 @@
+@import "../../../styles/details.wxss";
+
+.bg-status-Available { background-color: #52c41a; }
+.bg-status-Rented { background-color: #1890ff; }
+.bg-status-Reserved { background-color: #fa8c16; }
+
+.header-card.bg-status-Available .main-title,
+.header-card.bg-status-Rented .main-title,
+.header-card.bg-status-Reserved .main-title { color: #fff; }
+
+.header-card.bg-status-Available .status-tag,
+.header-card.bg-status-Rented .status-tag,
+.header-card.bg-status-Reserved .status-tag { background-color: rgba(255, 255, 255, 0.2); color: #fff; }
+
+.header-card.bg-status-Available .iconfont,
+.header-card.bg-status-Rented .iconfont,
+.header-card.bg-status-Reserved .iconfont { color: #fff; }
+
+.highlight-red {
+  color: #ff4d4f;
+  font-weight: bold;
+}
+
+.facilities-tags {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.facility-tag {
+  background-color: #f0f5ff;
+  color: #1d39c4;
+  font-size: 24rpx;
+  padding: 8rpx 20rpx;
+  border-radius: 4rpx;
+  margin-right: 16rpx;
+  margin-bottom: 16rpx;
+}
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.loading {
+  width: 40rpx;
+  height: 40rpx;
+  border: 4rpx solid #e5e5e5;
+  border-top-color: #1890ff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.bottom-placeholder {
+  height: 60rpx;
+}

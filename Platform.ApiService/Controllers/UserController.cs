@@ -343,9 +343,15 @@ public class UserController : BaseApiController
     /// <param name="id">用户ID</param>
     /// <param name="limit">限制数量</param>
     [HttpGet("{id}/activity-logs")]
-
     public async Task<IActionResult> GetUserActivityLogs(string id, [FromQuery] int limit = 50)
     {
+        // 🔒 安全修复：增加 IDOR 权限检查
+        var currentUserId = CurrentUserId;
+        if (!string.IsNullOrEmpty(currentUserId))
+        {
+            await _userService.EnsureUserAccessAsync(currentUserId, id);
+        }
+
         var logs = await _activityLogService.GetUserActivityLogsAsync(id, limit);
         return Success(logs);
     }

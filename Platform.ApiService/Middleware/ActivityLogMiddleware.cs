@@ -214,13 +214,9 @@ public class ActivityLogMiddleware
             return null;
         }
 
-        // 🔒 安全修复：过滤密码本相关 API 响应中的敏感信息
-        var path = context.Request.Path.Value?.ToLower() ?? string.Empty;
-        if (path.Contains("/password-book"))
-        {
-            // 过滤密码相关字段
-            body = FilterSensitiveData(body);
-        }
+        // 🔒 安全修复：全局过滤响应中的敏感信息（如密码字段）
+        // 之前仅针对 /password-book，现在改为全局过滤以增强安全性
+        body = FilterSensitiveData(body);
 
         return body;
     }

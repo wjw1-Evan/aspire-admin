@@ -15,30 +15,30 @@
     </view>
   </view>
 
-  <view class="section-title">走访信息</view>
+  <view class="section-title">{{t['park.visit.visit_info']}}</view>
   <view class="info-card" wx:if="{{task}}">
     <view class="info-item">
-      <text class="label">走访企业</text>
+      <text class="label">{{t['park.visit.visit_company']}}</text>
       <text class="value">{{task.tenantName || '-'}}</text>
     </view>
     <view class="info-item">
-      <text class="label">计划日期</text>
+      <text class="label">{{t['park.visit.planned_date']}}</text>
       <text class="value">{{task.plannedVisitDate || '-'}}</text>
     </view>
     <view class="info-item">
-      <text class="label">走访人</text>
+      <text class="label">{{t['park.visit.visitor']}}</text>
       <text class="value">{{task.visitorName || '-'}}</text>
     </view>
   </view>
 
-  <view class="section-title">任务描述</view>
+  <view class="section-title">{{t['park.visit.task_desc']}}</view>
   <view class="info-card" wx:if="{{task}}">
     <view class="info-item vertical">
       <text class="value">{{task.description || '无详细描述'}}</text>
     </view>
   </view>
 
-  <view class="section-title" wx:if="{{task.status === 'Completed' || task.visitResult}}">走访结果</view>
+  <view class="section-title" wx:if="{{task.status === 'Completed' || task.visitResult}}">{{t['park.visit.visit_result']}}</view>
   <view class="info-card" wx:if="{{task.status === 'Completed' || task.visitResult}}">
     <view class="info-item vertical">
       <text class="value">{{task.visitResult || '走访已执行'}}</text>

@@ -13,7 +13,7 @@
     
     <view class="progress-section">
       <view class="progress-info">
-        <text>总体进度</text>
+        <text>{{t['project.detail.overall_progress']}}</text>
         <text class="percent">{{project.progress}}%</text>
       </view>
       <progress 
@@ -26,48 +26,48 @@
     </view>
 
     <view class="action-bar">
-      <button class="btn-outline" bindtap="viewProjectTasks">查看相关任务</button>
-      <button class="btn-primary" bindtap="goToCreateTask">新建任务</button>
+      <button class="btn-outline" bindtap="viewProjectTasks">{{t['project.detail.view_tasks']}}</button>
+      <button class="btn-primary" bindtap="goToCreateTask">{{t['project.detail.create_task']}}</button>
     </view>
   </view>
 
-  <view class="section-title">基本信息</view>
+  <view class="section-title">{{t['project.detail.basic_info']}}</view>
   <view class="info-card">
     <view class="info-item">
-      <text class="label">负责人</text>
-      <text class="value">{{project.managerName || '未指定'}}</text>
+      <text class="label">{{t['project.detail.manager']}}</text>
+      <text class="value">{{project.managerName || t['project.detail.unassigned']}}</text>
     </view>
     <view class="info-item">
-      <text class="label">优先级</text>
+      <text class="label">{{t['project.detail.priority_label']}}</text>
       <text class="priority-tag priority-{{project.priority}}">{{priorityMap[project.priority]}}</text>
     </view>
     <view class="info-item">
-      <text class="label">开始日期</text>
+      <text class="label">{{t['project.detail.start_date']}}</text>
       <text class="value">{{project.startDate || '-'}}</text>
     </view>
     <view class="info-item">
-      <text class="label">截止日期</text>
+      <text class="label">{{t['project.detail.end_date']}}</text>
       <text class="value">{{project.endDate || '-'}}</text>
     </view>
   </view>
 
-  <view class="section-title">项目描述</view>
+  <view class="section-title">{{t['project.detail.description']}}</view>
   <view class="info-card">
     <view class="info-item vertical">
-      <text class="value">{{project.description || '暂无描述信息'}}</text>
+      <text class="value">{{project.description || t['project.detail.no_description']}}</text>
     </view>
   </view>
 
-  <view class="section-title">项目成员 ({{members.length}})</view>
+  <view class="section-title">{{t['project.detail.members']}} ({{members.length}})</view>
   <view class="info-card">
     <view class="member-item" wx:for="{{members}}" wx:key="userId">
       <image class="member-avatar" src="{{item.avatar || '/assets/logo.png'}}" mode="aspectFill"></image>
       <view class="member-info">
         <text class="member-name">{{item.name}}</text>
-        <text class="member-role">{{item.role || '成员'}}</text>
+        <text class="member-role">{{item.role || t['project.detail.member_role']}}</text>
       </view>
     </view>
-    <view class="empty-members" wx:if="{{members.length === 0}}">暂无项目成员</view>
+    <view class="empty-members" wx:if="{{members.length === 0}}">{{t['project.detail.no_members']}}</view>
   </view>
 
   <view class="bottom-placeholder"></view>
@@ -75,5 +75,5 @@
 
 <view class="loading-state" wx:else>
   <view class="loading-icon"></view>
-  <text>加载中...</text>
+  <text>{{t['project.detail.loading']}}</text>
 </view>

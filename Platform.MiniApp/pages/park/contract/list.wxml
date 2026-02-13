@@ -31,7 +31,7 @@
         </view>
       </view>
       <view class="contract-footer">
-        <text class="expiry-hint" wx:if="{{item.daysUntilExpiry <= 30 && item.status === 'Active'}}">即将到期 ({{item.daysUntilExpiry}}天)</text>
+        <text class="expiry-hint" wx:if="{{item.daysUntilExpiry <= 30 && item.status === 'Active'}}">{{t['park.contract.expiry_warning']}} ({{item.daysUntilExpiry}}{{t['park.contract.days']}})</text>
         <text class="btn-detail">{{t['common.detail']}} ></text>
       </view>
     </view>

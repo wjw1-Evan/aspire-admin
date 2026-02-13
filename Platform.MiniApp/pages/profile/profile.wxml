@@ -4,10 +4,10 @@
       <view class="user-block">
         <image class="avatar" src="{{userInfo.avatar || '/assets/logo.png'}}" mode="aspectFill" bindtap="handleAvatarTap"></image>
         <view class="info">
-          <text class="nickname">{{userInfo.name || '未登录用户'}}</text>
+          <text class="nickname">{{userInfo.name || t['profile.not_logged_in']}}</text>
           <view class="tag-group">
             <text class="role-tag" wx:for="{{userInfo.roles}}" wx:key="*this">{{item}}</text>
-            <text class="status-tag" wx:if="{{userInfo.roles.length > 0}}">在职</text>
+            <text class="status-tag" wx:if="{{userInfo.roles.length > 0}}">{{t['profile.active']}}</text>
           </view>
         </view>
       </view>
@@ -16,8 +16,8 @@
         <view class="company-header">
           <text class="company-name">{{currentCompany.companyName}}</text>
           <view class="company-badges">
-            <text class="badge current-badge">当前企业</text>
-            <text class="badge admin-badge" wx:if="{{currentCompany.isAdmin}}">管理员</text>
+            <text class="badge current-badge">{{t['profile.current_company']}}</text>
+            <text class="badge admin-badge" wx:if="{{currentCompany.isAdmin}}">{{t['profile.admin_label']}}</text>
           </view>
         </view>
         <text class="iconfont icon-arrow-right arrow"></text>
@@ -61,6 +61,6 @@
 
   <view class="logout-section">
     <button class="logout-btn" bindtap="handleLogout">{{t['profile.logout']}}</button>
-    <text class="version-text">当前版本 v1.0.0 (Build 20260210)</text>
+    <text class="version-text">{{t['profile.version_text']}}</text>
   </view>
 </view>

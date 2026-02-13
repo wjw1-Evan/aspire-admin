@@ -4,19 +4,19 @@
     <view class="stats-row">
       <view class="stat-item">
         <text class="stat-value primary">{{statistics.totalProjects || 0}}</text>
-        <text class="stat-label">总项目数</text>
+        <text class="stat-label">{{t['project.list.total']}}</text>
       </view>
       <view class="stat-item">
         <text class="stat-value success">{{statistics.inProgressProjects || 0}}</text>
-        <text class="stat-label">进行中</text>
+        <text class="stat-label">{{t['project.list.in_progress']}}</text>
       </view>
       <view class="stat-item">
         <text class="stat-value warning">{{statistics.completedProjects || 0}}</text>
-        <text class="stat-label">已完成</text>
+        <text class="stat-label">{{t['project.list.completed']}}</text>
       </view>
       <view class="stat-item">
         <text class="stat-value danger">{{statistics.delayedProjects || 0}}</text>
-        <text class="stat-label">已延期</text>
+        <text class="stat-label">{{t['project.list.delayed']}}</text>
       </view>
     </view>
   </view>
@@ -27,7 +27,7 @@
       <text class="iconfont icon-search search-icon"></text>
       <input 
         class="search-input" 
-        placeholder="搜索项目名称..." 
+        placeholder="{{t['project.list.search_placeholder']}}" 
         value="{{searchKeyword}}"
         bindinput="onSearchInput"
         confirm-type="search"
@@ -53,17 +53,17 @@
         
         <view class="card-body">
           <view class="info-row">
-            <text class="label">负责人：</text>
-            <text class="value">{{item.managerName || '未指定'}}</text>
+            <text class="label">{{t['project.list.manager']}}</text>
+            <text class="value">{{item.managerName || t['project.list.manager_unassigned']}}</text>
           </view>
           <view class="info-row">
-            <text class="label">截止日期：</text>
+            <text class="label">{{t['project.list.deadline']}}</text>
             <text class="value">{{item.endDate || '-'}}</text>
           </view>
           
           <view class="progress-section">
             <view class="progress-info">
-              <text class="label">项目进度</text>
+              <text class="label">{{t['project.list.progress']}}</text>
               <text class="percent">{{item.progress}}%</text>
             </view>
             <progress 
@@ -80,12 +80,12 @@
     <!-- Empty State -->
     <view class="empty-state" wx:else>
       <image src="/assets/logo.png" mode="aspectFit" class="empty-icon"></image>
-      <text class="empty-text">暂无项目数据</text>
+      <text class="empty-text">{{t['project.list.no_data']}}</text>
     </view>
 
     <!-- Loading More -->
-    <view class="loading-more" wx:if="{{loading}}">正在加载...</view>
-    <view class="no-more" wx:if="{{!hasMore && projects.length > 0}}">没有更多项目了</view>
+    <view class="loading-more" wx:if="{{loading}}">{{t['project.list.loading_more']}}</view>
+    <view class="no-more" wx:if="{{!hasMore && projects.length > 0}}">{{t['project.list.no_more']}}</view>
   </view>
 
   <view class="fab-btn" bindtap="goToCreate">

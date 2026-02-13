@@ -38,14 +38,14 @@
 }
 
 .contract-list {
-  padding: 20rpx;
+  padding: 24rpx;
 }
 
 .contract-card {
   background-color: #fff;
   border-radius: 12rpx;
   padding: 30rpx;
-  margin-bottom: 20rpx;
+  margin-bottom: 24rpx;
   box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.05);
 }
 

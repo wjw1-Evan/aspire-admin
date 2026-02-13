@@ -1,8 +1,9 @@
 const { request } = require('../../utils/request');
 const { withAuth } = require('../../utils/auth');
+const { t, withI18n } = require('../../utils/i18n');
 const app = getApp();
 
-Page(withAuth({
+Page(withAuth(withI18n({
     data: {
         formData: {
             name: '',
@@ -11,7 +12,8 @@ Page(withAuth({
             age: 0,
             avatar: ''
         },
-        loading: false
+        loading: false,
+        i18nTitleKey: 'profile.edit.title'
     },
 
     onLoad() {
@@ -53,18 +55,15 @@ Page(withAuth({
             success: async (res) => {
                 const tempFilePath = res.tempFiles[0].tempFilePath;
 
-                // 上传头像
-                wx.showLoading({ title: '上传中...' });
+                wx.showLoading({ title: t('profile.edit.upload_ing') });
                 const apiUrl = app.globalData.baseUrl;
                 try {
                     const uploadRes = await new Promise((resolve, reject) => {
                         wx.uploadFile({
                             url: `${apiUrl}/api/avatar/upload`,
                             filePath: tempFilePath,
-                            name: 'file', // 后端参数名为 file
-                            formData: {
-                                // 'Overwrite': 'true' // AvatarController 不需要此参数
-                            },
+                            name: 'file',
+                            formData: {},
                             header: {
                                 'Authorization': `Bearer ${wx.getStorageSync('token')}`
                             },
@@ -76,23 +75,21 @@ Page(withAuth({
                     if (uploadRes.statusCode === 200) {
                         const data = JSON.parse(uploadRes.data);
                         if (data.success) {
-                            // 使用临时路径立即展示，解决上传后不刷新问题
-                            // 后端直接返回完整的 url
                             const avatarUrl = data.data.url;
                             this.setData({
                                 'formData.avatar': avatarUrl,
                                 'localAvatar': tempFilePath
                             });
-                            wx.showToast({ title: '上传成功', icon: 'success' });
+                            wx.showToast({ title: t('profile.edit.upload_success'), icon: 'success' });
                         } else {
-                            wx.showToast({ title: '上传失败', icon: 'none' });
+                            wx.showToast({ title: t('profile.edit.upload_failed'), icon: 'none' });
                         }
                     } else {
-                        wx.showToast({ title: '上传失败', icon: 'none' });
+                        wx.showToast({ title: t('profile.edit.upload_failed'), icon: 'none' });
                     }
                 } catch (err) {
                     console.error('Upload avatar failed', err);
-                    wx.showToast({ title: '上传出错', icon: 'none' });
+                    wx.showToast({ title: t('profile.edit.upload_error'), icon: 'none' });
                 } finally {
                     wx.hideLoading();
                 }
@@ -112,7 +109,7 @@ Page(withAuth({
         const { formData } = this.data;
 
         if (!formData.name) {
-            return wx.showToast({ title: '姓名不能为空', icon: 'none' });
+            return wx.showToast({ title: t('profile.edit.name_required'), icon: 'none' });
         }
 
         this.setData({ loading: true });
@@ -124,13 +121,13 @@ Page(withAuth({
             });
 
             if (res.success) {
-                wx.showToast({ title: '保存成功', icon: 'success' });
+                wx.showToast({ title: t('profile.edit.save_success'), icon: 'success' });
                 // 更新本地缓存
                 const userInfo = wx.getStorageSync('userInfo');
                 wx.setStorageSync('userInfo', {
                     ...userInfo,
                     ...formData,
-                    phone: formData.phoneNumber // 同时更新 phone 字段，保持一致
+                    phone: formData.phoneNumber
                 });
 
                 setTimeout(() => {
@@ -143,4 +140,4 @@ Page(withAuth({
             this.setData({ loading: false });
         }
     }
-}));
+})));

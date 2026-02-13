@@ -12,7 +12,7 @@
     </view>
   </view>
 
-  <view class="section-title">基本信息</view>
+  <view class="section-title">{{t['park.asset.basic_info']}}</view>
   <view class="info-card" wx:if="{{building}}">
     <view class="info-item">
       <text class="label">{{t['park.asset.total_floors']}}</text>
@@ -23,20 +23,20 @@
       <text class="value">{{building.totalArea}}㎡</text>
     </view>
     <view class="info-item">
-      <text class="label">楼宇类型</text>
+      <text class="label">{{t['park.asset.building_type']}}</text>
       <text class="value">{{building.buildingType || '-'}}</text>
     </view>
     <view class="info-item">
-      <text class="label">建成年份</text>
+      <text class="label">{{t['park.asset.built_year']}}</text>
       <text class="value">{{building.yearBuilt || '-'}}</text>
     </view>
     <view class="info-item vertical">
-      <text class="label">地址</text>
+      <text class="label">{{t['park.asset.address']}}</text>
       <text class="value">{{building.address || '-'}}</text>
     </view>
   </view>
 
-  <view class="section-title" wx:if="{{building.description}}">楼宇描述</view>
+  <view class="section-title" wx:if="{{building.description}}">{{t['park.asset.building_desc']}}</view>
   <view class="info-card" wx:if="{{building.description}}">
     <view class="info-item vertical">
       <text class="value">{{building.description}}</text>
@@ -64,7 +64,7 @@
   </view>
   
   <view class="empty-hint" wx:if="{{!loading && units.length === 0}}">
-    <text>暂无相关房源</text>
+    <text>{{t['park.asset.no_units']}}</text>
   </view>
 
   <view class="bottom-placeholder"></view>

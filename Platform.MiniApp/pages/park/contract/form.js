@@ -22,13 +22,36 @@ Page(withAuth(withI18n({
       status: 'Active'
     },
     paymentCycles: ['Monthly', 'Quarterly', 'SemiAnnually', 'Annually'],
-    paymentCycleNames: ['月付', '季付', '半年付', '年付'],
+    paymentCycleNames: [], // set in onShow
     paymentCycleIndex: 0,
     statuses: ['Active', 'Expired', 'Terminated'],
-    statusNames: ['执行中', '已到期', '已解除'],
+    statusNames: [], // set in onShow
     statusIndex: 0,
     loading: false,
-    submitting: false
+    submitting: false,
+    i18nTitleKey: 'park.contract.create_title'
+  },
+
+  onShow() {
+    this.updateTranslations();
+  },
+
+  updateTranslations() {
+    this.setData({
+      paymentCycleNames: [
+        t('park.contract.cycle.monthly'),
+        t('park.contract.cycle.quarterly'),
+        t('park.contract.cycle.semi'),
+        t('park.contract.cycle.annual')
+      ],
+      statusNames: [
+        t('park.contract.status_label.active'),
+        t('park.contract.status_label.expired'),
+        t('park.contract.status_label.terminated')
+      ]
+    });
+    const title = this.data.isEdit ? t('park.contract.edit_title') : t('park.contract.create_title');
+    wx.setNavigationBarTitle({ title });
   },
 
   onLoad(options) {
@@ -37,12 +60,11 @@ Page(withAuth(withI18n({
     if (options.id) {
       this.setData({
         id: options.id,
-        isEdit: true
+        isEdit: true,
+        i18nTitleKey: 'park.contract.edit_title'
       });
-      wx.setNavigationBarTitle({ title: '编辑合同' });
       this.fetchDetail();
     } else {
-      wx.setNavigationBarTitle({ title: '新建合同' });
       if (options.tenantId) {
         this.setData({
           'formData.tenantId': options.tenantId
@@ -56,6 +78,7 @@ Page(withAuth(withI18n({
         'formData.endDate': nextYear.toISOString().split('T')[0]
       });
     }
+    this.updateTranslations();
   },
 
   async fetchTenants() {
@@ -193,11 +216,11 @@ Page(withAuth(withI18n({
     const { formData, isEdit, id } = this.data;
 
     if (!formData.contractNumber) {
-      wx.showToast({ title: '请输入合同编号', icon: 'none' });
+      wx.showToast({ title: t('park.contract.input_number'), icon: 'none' });
       return;
     }
     if (!formData.tenantId) {
-      wx.showToast({ title: '请选择租户', icon: 'none' });
+      wx.showToast({ title: t('park.contract.select_tenant_toast'), icon: 'none' });
       return;
     }
 
@@ -213,14 +236,14 @@ Page(withAuth(withI18n({
       });
 
       if (res.success) {
-        wx.showToast({ title: '保存成功', icon: 'success' });
+        wx.showToast({ title: t('common.save_success'), icon: 'success' });
         setTimeout(() => {
           wx.navigateBack();
         }, 1500);
       }
     } catch (err) {
       console.error('Save contract failed', err);
-      wx.showToast({ title: '保存失败', icon: 'none' });
+      wx.showToast({ title: t('common.save_fail'), icon: 'none' });
     } finally {
       this.setData({ submitting: false });
     }

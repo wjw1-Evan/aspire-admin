@@ -23,7 +23,7 @@
           <text class="value">{{item.plannedVisitDate || '-'}}</text>
         </view>
         <view class="info-row">
-          <text class="label">执行人：</text>
+          <text class="label">{{t['park.visit.executor']}}：</text>
           <text class="value">{{item.visitorName || '-'}}</text>
         </view>
       </view>

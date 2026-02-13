@@ -36,7 +36,7 @@ Page(withAuth(withI18n({
 
             if (res.success) {
                 this.setData({ tenant: res.data });
-                wx.setNavigationBarTitle({ title: res.data.name || '租户详情' });
+                wx.setNavigationBarTitle({ title: res.data.name || t('park.tenant.detail') });
                 this.fetchContracts();
             }
         } catch (err) {
@@ -54,8 +54,8 @@ Page(withAuth(withI18n({
 
     handleDelete() {
         wx.showModal({
-            title: '确认删除',
-            content: '确定要删除该租户吗？',
+            title: t('common.confirm_delete'),
+            content: t('park.tenant.delete_hint'),
             success: async (res) => {
                 if (res.confirm) {
                     try {
@@ -64,7 +64,7 @@ Page(withAuth(withI18n({
                             method: 'DELETE'
                         });
                         if (delRes.success) {
-                            wx.showToast({ title: '删除成功', icon: 'success' });
+                            wx.showToast({ title: t('common.delete_success'), icon: 'success' });
                             setTimeout(() => wx.navigateBack(), 1500);
                         }
                     } catch (err) {

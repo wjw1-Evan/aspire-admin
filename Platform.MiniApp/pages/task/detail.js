@@ -1,28 +1,42 @@
 const { request } = require('../../utils/request');
 const { withAuth } = require('../../utils/auth');
+const { t, withI18n } = require('../../utils/i18n');
 
-Page(withAuth({
+Page(withAuth(withI18n({
     data: {
         id: '',
         task: null,
-        statusMap: {
-            0: '待处理',
-            1: '已分配',
-            2: '执行中',
-            3: '已完成',
-            4: '已暂停',
-            5: '已失败',
-            6: '已取消'
-        },
-        priorityMap: {
-            0: '低',
-            1: '中',
-            2: '高',
-            3: '紧急'
-        }
+        statusMap: {},
+        priorityMap: {},
+        i18nTitleKey: 'task.detail.title'
+    },
+
+    onShow() {
+        this.updateTranslations();
+    },
+
+    updateTranslations() {
+        this.setData({
+            statusMap: {
+                0: t('task.status.todo'),
+                1: t('task.status.assigned'),
+                2: t('task.status.in_progress'),
+                3: t('task.status.completed'),
+                4: t('task.status.paused'),
+                5: t('task.status.failed'),
+                6: t('task.status.cancelled')
+            },
+            priorityMap: {
+                0: t('task.priority.low'),
+                1: t('task.priority.medium'),
+                2: t('task.priority.high'),
+                3: t('task.priority.urgent')
+            }
+        });
     },
 
     onLoad(options) {
+        this.updateTranslations();
         if (options.id) {
             this.setData({ id: options.id });
             this.fetchTaskDetail();
@@ -58,8 +72,8 @@ Page(withAuth({
 
     async handleDelete() {
         wx.showModal({
-            title: '确认删除',
-            content: '确定要删除这个任务吗？',
+            title: t('task.detail.confirm_delete'),
+            content: t('task.detail.delete_hint'),
             success: async (res) => {
                 if (res.confirm) {
                     try {
@@ -68,7 +82,7 @@ Page(withAuth({
                             method: 'DELETE'
                         });
                         if (delRes.success) {
-                            wx.showToast({ title: '已删除' });
+                            wx.showToast({ title: t('task.detail.deleted') });
                             setTimeout(() => {
                                 const pages = getCurrentPages();
                                 const prevPage = pages[pages.length - 2];
@@ -82,10 +96,10 @@ Page(withAuth({
                         }
                     } catch (err) {
                         console.error('Delete task failed', err);
-                        wx.showToast({ title: '删除失败', icon: 'none' });
+                        wx.showToast({ title: t('task.detail.delete_failed'), icon: 'none' });
                     }
                 }
             }
         });
     }
-}));
+})));

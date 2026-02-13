@@ -1,16 +1,9 @@
 .container {
   padding: 0;
   background-color: #f7f8fa;
-  min-height: 100vh;
 }
 
-.card-style {
-  background: #ffffff;
-  border-radius: 12rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
-  margin-bottom: 24rpx;
-  padding: 24rpx;
-}
+/* Inherits .card-style from app.wxss */
 
 /* Statistics */
 .stats-overview {

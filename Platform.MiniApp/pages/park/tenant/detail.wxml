@@ -12,33 +12,33 @@
     </view>
   </view>
 
-  <view class="section-title">基本信息</view>
+  <view class="section-title">{{t['park.tenant.basic_info']}}</view>
   <view class="info-card" wx:if="{{tenant}}">
     <view class="info-item" bindtap="makePhoneCall">
-      <text class="label">联系人</text>
+      <text class="label">{{t['park.tenant.tenant_contact']}}</text>
       <text class="value">{{tenant.contactPerson || '-'}}</text>
     </view>
     <view class="info-item" bindtap="makePhoneCall">
-      <text class="label">联系电话</text>
+      <text class="label">{{t['park.tenant.tenant_phone']}}</text>
       <view class="value highlight-blue">
         <text>{{tenant.phone || '-'}}</text>
         <text class="iconfont icon-phone" wx:if="{{tenant.phone}}" style="margin-left: 10rpx; font-size: 28rpx;"></text>
       </view>
     </view>
     <view class="info-item">
-      <text class="label">所属行业</text>
+      <text class="label">{{t['park.tenant.tenant_industry']}}</text>
       <text class="value">{{tenant.industry || '-'}}</text>
     </view>
     <view class="info-item">
-      <text class="label">入驻日期</text>
+      <text class="label">{{t['park.tenant.tenant_entry_date']}}</text>
       <text class="value">{{tenant.entryDate || '-'}}</text>
     </view>
     <view class="info-item">
-      <text class="label">房源单元</text>
+      <text class="label">{{t['park.asset.unit_number']}}</text>
       <text class="value">{{tenant.unitCount || 0}} 个</text>
     </view>
     <view class="info-item">
-      <text class="label">租赁总面积</text>
+      <text class="label">{{t['park.stats.total_area']}}</text>
       <text class="value">{{tenant.totalArea || 0}} ㎡</text>
     </view>
   </view>

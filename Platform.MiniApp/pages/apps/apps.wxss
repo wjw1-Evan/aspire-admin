@@ -35,6 +35,9 @@
 .color-orange .iconfont { color: #fa8c16; }
 .color-green .iconfont { color: #52c41a; }
 .color-purple .iconfont { color: #722ed1; }
+.color-red .iconfont { color: #ff4d4f; }
+.color-teal .iconfont { color: #13c2c2; }
+.color-pink .iconfont { color: #eb2f96; }
 
 .app-name { 
   font-size: 26rpx; 

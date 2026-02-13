@@ -2,20 +2,20 @@
   <view class="stats-section" wx:if="{{stats.asset}}">
     <view class="section-header">
       <text class="iconfont icon-asset"></text>
-      <text class="section-title">资产概览</text>
+      <text class="section-title">{{t['park.stats.asset_overview']}}</text>
     </view>
     <view class="stats-grid">
       <view class="stats-card">
         <text class="stats-value">{{stats.asset.totalBuildings || 0}}</text>
-        <text class="stats-label">总楼宇</text>
+        <text class="stats-label">{{t['park.stats.total_buildings']}}</text>
       </view>
       <view class="stats-card">
         <text class="stats-value">{{stats.asset.occupancyRate || 0}}%</text>
-        <text class="stats-label">出租率</text>
+        <text class="stats-label">{{t['park.stats.occupancy_rate']}}</text>
       </view>
       <view class="stats-card">
         <text class="stats-value">{{stats.asset.totalArea || 0}}㎡</text>
-        <text class="stats-label">总面积</text>
+        <text class="stats-label">{{t['park.stats.total_area']}}</text>
       </view>
     </view>
   </view>
@@ -23,20 +23,20 @@
   <view class="stats-section" wx:if="{{stats.investment}}">
     <view class="section-header">
       <text class="iconfont icon-investment"></text>
-      <text class="section-title">招商概览</text>
+      <text class="section-title">{{t['park.stats.investment_overview']}}</text>
     </view>
     <view class="stats-grid">
       <view class="stats-card">
         <text class="stats-value">{{stats.investment.totalLeads || 0}}</text>
-        <text class="stats-label">获客总数</text>
+        <text class="stats-label">{{t['park.stats.total_leads']}}</text>
       </view>
       <view class="stats-card">
         <text class="stats-value">{{stats.investment.activeProjects || 0}}</text>
-        <text class="stats-label">在推项目</text>
+        <text class="stats-label">{{t['park.stats.active_projects']}}</text>
       </view>
       <view class="stats-card">
         <text class="stats-value">{{stats.investment.conversionRate || 0}}%</text>
-        <text class="stats-label">转化率</text>
+        <text class="stats-label">{{t['park.stats.conversion_rate']}}</text>
       </view>
     </view>
   </view>
@@ -44,20 +44,20 @@
   <view class="stats-section" wx:if="{{stats.tenant}}">
     <view class="section-header">
       <text class="iconfont icon-tenant"></text>
-      <text class="section-title">租户概览</text>
+      <text class="section-title">{{t['park.stats.tenant_overview']}}</text>
     </view>
     <view class="stats-grid">
       <view class="stats-card">
         <text class="stats-value">{{stats.tenant.totalTenants || 0}}</text>
-        <text class="stats-label">租户总数</text>
+        <text class="stats-label">{{t['park.stats.total_tenants']}}</text>
       </view>
       <view class="stats-card">
         <text class="stats-value">¥{{stats.tenant.totalRent || 0}}</text>
-        <text class="stats-label">总租金</text>
+        <text class="stats-label">{{t['park.stats.total_rent']}}</text>
       </view>
       <view class="stats-card">
         <text class="stats-value">{{stats.tenant.collectionRate || 0}}%</text>
-        <text class="stats-label">收缴率</text>
+        <text class="stats-label">{{t['park.stats.collection_rate']}}</text>
       </view>
     </view>
   </view>
@@ -65,16 +65,16 @@
   <view class="ai-report-section">
     <view class="ai-header">
       <text class="iconfont icon-ai"></text>
-      <text class="ai-title">AI 智能分析报告</text>
+      <text class="ai-title">{{t['park.stats.ai_report_title']}}</text>
       <button class="ai-btn" bindtap="generateAiReport" loading="{{generatingAi}}" disabled="{{generatingAi}}">
-        {{aiReport ? '更新报告' : '生成报告'}}
+        {{aiReport ? t['park.stats.update_report'] : t['park.stats.generate_report']}}
       </button>
     </view>
     <view class="ai-content" wx:if="{{aiReport}}">
       <text class="report-text">{{aiReport}}</text>
     </view>
     <view class="ai-empty" wx:else>
-      <text>点击按钮通过 AI 深度分析运营现状</text>
+      <text>{{t['park.stats.ai_empty']}}</text>
     </view>
   </view>
 

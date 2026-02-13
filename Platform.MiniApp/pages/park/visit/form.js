@@ -19,7 +19,25 @@ Page(withAuth(withI18n({
             { label: '低', value: 'Low' }
         ],
         priorityIndex: 1,
-        submitting: false
+        submitting: false,
+        i18nTitleKey: 'park.visit.task_create'
+    },
+
+    onShow() {
+        this.updateTranslations();
+    },
+
+    updateTranslations() {
+        this.setData({
+            priorityOptions: [
+                { label: t('park.visit.priority.high'), value: 'High' },
+                { label: t('park.visit.priority.medium'), value: 'Medium' },
+                { label: t('park.visit.priority.low'), value: 'Low' }
+            ]
+        });
+        // We set title manually or rely on i18nTitleKey if simple
+        const title = this.data.isEdit ? t('park.visit.task_edit') : t('park.visit.task_create');
+        wx.setNavigationBarTitle({ title });
     },
 
     onLoad(options) {
@@ -27,74 +45,20 @@ Page(withAuth(withI18n({
         if (options.id) {
             this.setData({
                 isEdit: true,
-                taskId: options.id
+                taskId: options.id,
+                i18nTitleKey: 'park.visit.task_edit'
             });
-            wx.setNavigationBarTitle({ title: '编辑走访任务' });
             this.fetchTaskDetail(options.id);
-        } else {
-            wx.setNavigationBarTitle({ title: '创建走访任务' });
         }
+        this.updateTranslations();
     },
 
-    async loadTenants() {
-        try {
-            const res = await request({
-                url: '/api/park-management/tenants',
-                method: 'GET',
-                data: { page: 1, pageSize: 100 }
-            });
-            if (res.success) {
-                const list = [{ name: '请选择', id: '' }, ...(res.data.tenants || [])];
-                this.setData({ tenantList: list }, () => {
-                    this.matchPickerIndices();
-                });
-            }
-        } catch (err) {
-            console.error('Load tenants failed', err);
-        }
-    },
-
-    async fetchTaskDetail(id) {
-        try {
-            const res = await request({
-                url: `/api/park-management/visit/task/${id}`,
-                method: 'GET'
-            });
-            if (res.success) {
-                const task = res.data;
-                const priorityIndex = this.data.priorityOptions.findIndex(p => p.value === task.priority);
-
-                this.setData({
-                    'formData.taskName': task.taskName,
-                    'formData.description': task.description || '',
-                    priorityIndex: priorityIndex > -1 ? priorityIndex : 1,
-                    plannedVisitDate: task.plannedVisitDate ? task.plannedVisitDate.split('T')[0] : ''
-                });
-
-                this._pendingTenantId = task.tenantId;
-                this.matchPickerIndices();
-            }
-        } catch (err) {
-            console.error('Fetch visit detail failed', err);
-        }
-    },
-
-    matchPickerIndices() {
-        if (this._pendingTenantId && this.data.tenantList.length > 1) {
-            const index = this.data.tenantList.findIndex(t => t.id === this._pendingTenantId);
-            if (index > -1) this.setData({ tenantIndex: index });
-            this._pendingTenantId = null;
-        }
-    },
-
-    onTenantChange(e) { this.setData({ tenantIndex: e.detail.value }); },
-    onDateChange(e) { this.setData({ plannedVisitDate: e.detail.value }); },
-    onPriorityChange(e) { this.setData({ priorityIndex: e.detail.value }); },
+    // ... existing ...
 
     async handleSubmit(e) {
         const values = e.detail.value;
         if (!values.taskName) {
-            wx.showToast({ title: '请输入任务名称', icon: 'none' });
+            wx.showToast({ title: t('park.visit.task_input_name'), icon: 'none' });
             return;
         }
 
@@ -119,7 +83,7 @@ Page(withAuth(withI18n({
             });
 
             if (res.success) {
-                wx.showToast({ title: this.data.isEdit ? '保存成功' : '创建成功' });
+                wx.showToast({ title: t('common.save_success') });
                 setTimeout(() => {
                     const pages = getCurrentPages();
                     const prevPage = pages[pages.length - 2];
@@ -138,7 +102,7 @@ Page(withAuth(withI18n({
             }
         } catch (err) {
             console.error('Submit visit task failed', err);
-            wx.showToast({ title: '提交失败', icon: 'none' });
+            wx.showToast({ title: t('common.submit_fail'), icon: 'none' });
         } finally {
             this.setData({ submitting: false });
         }

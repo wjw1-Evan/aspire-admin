@@ -14,7 +14,7 @@
     
     <view class="progress-section">
       <view class="progress-info">
-        <text>当前进度</text>
+        <text>{{t['task.detail.progress']}}</text>
         <text class="percent">{{task.completionPercentage}}%</text>
       </view>
       <progress 
@@ -27,45 +27,45 @@
     </view>
   </view>
 
-  <view class="section-title">核心信息</view>
+  <view class="section-title">{{t['task.detail.core_info']}}</view>
   <view class="info-card">
     <view class="info-item">
-      <text class="label">负责人</text>
-      <text class="value">{{task.assignedToName || '未分配'}}</text>
+      <text class="label">{{t['task.detail.assignee']}}</text>
+      <text class="value">{{task.assignedToName || t['task.detail.unassigned']}}</text>
     </view>
     <view class="info-item">
-      <text class="label">优先级</text>
+      <text class="label">{{t['task.detail.priority_label']}}</text>
       <text class="priority-tag priority-{{task.priority}}">{{priorityMap[task.priority]}}</text>
     </view>
     <view class="info-item" wx:if="{{task.projectName}}">
-      <text class="label">所属项目</text>
+      <text class="label">{{t['task.detail.project']}}</text>
       <text class="value">{{task.projectName}}</text>
     </view>
     <view class="info-item">
-      <text class="label">计划结束</text>
+      <text class="label">{{t['task.detail.planned_end']}}</text>
       <text class="value">{{task.plannedEndTime || '-'}}</text>
     </view>
   </view>
 
-  <view class="section-title">详细描述</view>
+  <view class="section-title">{{t['task.detail.description']}}</view>
   <view class="info-card">
     <view class="info-item vertical">
-      <text class="value">{{task.description || '暂无详细描述'}}</text>
+      <text class="value">{{task.description || t['task.detail.no_description']}}</text>
     </view>
   </view>
 
-  <view class="section-title">时间轨迹</view>
+  <view class="section-title">{{t['task.detail.timeline']}}</view>
   <view class="info-card">
     <view class="info-item">
-      <text class="label">创建时间</text>
+      <text class="label">{{t['task.detail.created_at']}}</text>
       <text class="value">{{task.createdAt || '-'}}</text>
     </view>
     <view class="info-item">
-      <text class="label">开始时间</text>
+      <text class="label">{{t['task.detail.started_at']}}</text>
       <text class="value">{{task.actualStartTime || '-'}}</text>
     </view>
     <view class="info-item">
-      <text class="label">完成时间</text>
+      <text class="label">{{t['task.detail.completed_at']}}</text>
       <text class="value">{{task.actualEndTime || '-'}}</text>
     </view>
   </view>
@@ -75,5 +75,5 @@
 
 <view class="loading-state" wx:else>
   <view class="loading-icon"></view>
-  <text>任务加载中...</text>
+  <text>{{t['task.detail.loading']}}</text>
 </view>

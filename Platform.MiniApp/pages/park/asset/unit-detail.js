@@ -35,7 +35,7 @@ Page(withAuth(withI18n({
 
             if (res.success) {
                 this.setData({ unit: res.data });
-                wx.setNavigationBarTitle({ title: `${res.data.unitNumber} 详情` });
+                wx.setNavigationBarTitle({ title: `${res.data.unitNumber} ${t('common.detail')}` });
             }
         } catch (err) {
             console.error('Fetch unit detail failed', err);
@@ -52,8 +52,8 @@ Page(withAuth(withI18n({
 
     handleDelete() {
         wx.showModal({
-            title: '确认删除',
-            content: '确定要删除该单元吗？',
+            title: t('common.confirm_delete'),
+            content: t('park.asset.delete_unit_hint'),
             success: async (res) => {
                 if (res.confirm) {
                     try {
@@ -62,7 +62,7 @@ Page(withAuth(withI18n({
                             method: 'DELETE'
                         });
                         if (delRes.success) {
-                            wx.showToast({ title: '删除成功', icon: 'success' });
+                            wx.showToast({ title: t('common.delete_success'), icon: 'success' });
                             setTimeout(() => wx.navigateBack(), 1500);
                         }
                     } catch (err) {

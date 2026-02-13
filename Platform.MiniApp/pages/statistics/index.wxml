@@ -20,13 +20,13 @@
       <view class="stat-card card-style">
         <view class="card-header">
           <view class="icon-box blue">项</view>
-          <text class="title">项目总数</text>
+          <text class="title">{{t['stats.project_total']}}</text>
         </view>
         <view class="card-body">
           <text class="value">{{statistics.project.totalProjects}}</text>
           <view class="progress-box">
              <view class="progress-info">
-               <text>完成度</text>
+               <text>{{t['stats.completion_label']}}</text>
                <text>{{projectCompletion}}%</text>
              </view>
              <progress percent="{{projectCompletion}}" stroke-width="4" color="#1890ff" />
@@ -37,13 +37,13 @@
       <view class="stat-card card-style">
         <view class="card-header">
           <view class="icon-box green">任</view>
-          <text class="title">任务总数</text>
+          <text class="title">{{t['stats.task_total']}}</text>
         </view>
         <view class="card-body">
           <text class="value">{{statistics.task.totalTasks}}</text>
           <view class="progress-box">
              <view class="progress-info">
-               <text>完成率</text>
+               <text>{{t['stats.completion_rate_label']}}</text>
                <text>{{statistics.task.completionRate}}%</text>
              </view>
              <progress percent="{{statistics.task.completionRate}}" stroke-width="4" color="#52c41a" />
@@ -54,38 +54,38 @@
 
     <!-- Detail Sections -->
     <view class="section-card card-style">
-      <view class="section-header">项目状态分布</view>
+      <view class="section-header">{{t['stats.project_status']}}</view>
       <view class="status-rows">
         <view class="status-row">
-          <text class="label">进行中</text>
+          <text class="label">{{t['stats.in_progress']}}</text>
           <text class="num primary">{{statistics.project.inProgressProjects}}</text>
         </view>
         <view class="status-row">
-          <text class="label">已完成</text>
+          <text class="label">{{t['stats.completed']}}</text>
           <text class="num success">{{statistics.project.completedProjects}}</text>
         </view>
         <view class="status-row">
-          <text class="label">延迟项目</text>
+          <text class="label">{{t['stats.delayed']}}</text>
           <text class="num danger">{{statistics.project.delayedProjects}}</text>
         </view>
       </view>
     </view>
 
     <view class="section-card card-style">
-      <view class="section-header">里程碑与团队</view>
+      <view class="section-header">{{t['stats.milestone_team']}}</view>
       <view class="split-stats">
         <view class="split-item">
-          <text class="label">里程碑总数</text>
+          <text class="label">{{t['stats.milestones_total']}}</text>
           <text class="num">{{statistics.milestone.totalMilestones}}</text>
           <view class="sub-tags">
-            <text class="tag-success">已达成 {{statistics.milestone.achievedMilestones}}</text>
+            <text class="tag-success">{{t['stats.milestones_achieved']}} {{statistics.milestone.achievedMilestones}}</text>
           </view>
         </view>
         <view class="split-item">
-          <text class="label">团队人数</text>
+          <text class="label">{{t['stats.team_size']}}</text>
           <text class="num">{{statistics.member.totalMembers}}</text>
           <view class="sub-tags">
-             <text class="tag-blue">核心成员</text>
+             <text class="tag-blue">{{t['stats.core_members']}}</text>
           </view>
         </view>
       </view>
@@ -94,12 +94,12 @@
     <!-- AI Action -->
     <view class="ai-button-wrap">
       <button class="ai-btn" bindtap="generateAiReport" loading="{{aiLoading}}">
-        <text class="sparkle">✨</text> AI 深度分析报告
+        {{t['stats.ai_deep_report']}}
       </button>
     </view>
   </block>
 
   <view class="empty-state" wx:if="{{!loading && !statistics}}">
-    <text>暂无统计数据</text>
+    <text>{{t['stats.no_data']}}</text>
   </view>
 </view>

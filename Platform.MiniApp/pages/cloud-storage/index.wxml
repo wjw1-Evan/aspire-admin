@@ -2,7 +2,7 @@
   <!-- Breadcrumb / Header Navigation -->
   <view class="nav-header card-style">
     <view class="breadcrumb">
-      <view class="bread-item {{pathStack.length === 0 ? 'active' : ''}}" bindtap="navToRoot">全部文件</view>
+      <view class="bread-item {{pathStack.length === 0 ? 'active' : ''}}" bindtap="navToRoot">{{t['cloud.all_files']}}</view>
       <block wx:for="{{pathStack}}" wx:key="id">
         <text class="separator">/</text>
         <view class="bread-item {{index === pathStack.length - 1 ? 'active' : ''}}" bindtap="navToFolder" data-index="{{index}}">{{item.name}}</view>
@@ -20,7 +20,7 @@
         wx:for="{{fileList}}" 
         wx:key="id" 
         bindtap="onItemClick" 
-        bindlongpress="onItemLongPress"
+        bindlongpress="showActionMenu"
         data-item="{{item}}"
       >
         <view class="file-icon {{item.type === 1 ? 'folder' : 'file'}}">
@@ -45,7 +45,7 @@
       <view class="empty-icon">
         <text class="iconfont icon-folder"></text>
       </view>
-      <text>当前目录下空空如也</text>
+      <text>{{t['cloud.empty_folder']}}</text>
     </view>
   </scroll-view>
 
@@ -60,19 +60,19 @@
         <view class="fab-item-icon bg-blue">
           <text class="iconfont icon-file-image"></text>
         </view>
-        <text class="fab-item-text">上传图片</text>
+        <text class="fab-item-text">{{t['cloud.upload_image']}}</text>
       </view>
       <view class="fab-item" bindtap="uploadFile">
         <view class="fab-item-icon bg-orange">
           <text class="iconfont icon-file"></text>
         </view>
-        <text class="fab-item-text">微信文件</text>
+        <text class="fab-item-text">{{t['cloud.wechat_file']}}</text>
       </view>
       <view class="fab-item" bindtap="showCreateFolder">
         <view class="fab-item-icon bg-green">
           <text class="iconfont icon-folder"></text>
         </view>
-        <text class="fab-item-text">新建目录</text>
+        <text class="fab-item-text">{{t['cloud.new_folder']}}</text>
       </view>
     </view>
   </view>
@@ -80,17 +80,17 @@
   <!-- Create Folder Dialog -->
   <view class="modal-mask" wx:if="{{showFolderModal}}" bindtap="closeFolderModal">
     <view class="modal-content" catchtap="prevent">
-      <view class="modal-header">新建文件夹</view>
+      <view class="modal-header">{{t['cloud.new_folder_title']}}</view>
       <input 
         class="modal-input" 
-        placeholder="请输入文件夹名称" 
+        placeholder="{{t['cloud.folder_placeholder']}}" 
         focus="{{showFolderModal}}"
         bindinput="onFolderNameInput"
         value="{{newFolderName}}"
       />
       <view class="modal-footer">
-        <button class="btn-cancel" bindtap="closeFolderModal">取消</button>
-        <button class="btn-confirm" bindtap="confirmCreateFolder">确认</button>
+        <button class="btn-cancel" bindtap="closeFolderModal">{{t['common.cancel']}}</button>
+        <button class="btn-confirm" bindtap="confirmCreateFolder">{{t['common.confirm']}}</button>
       </view>
     </view>
   </view>

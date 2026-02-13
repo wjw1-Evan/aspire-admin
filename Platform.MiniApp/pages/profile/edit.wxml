@@ -2,31 +2,31 @@
   <view class="form-group">
     <view class="avatar-wrapper" bindtap="chooseAvatar">
       <image class="avatar" src="{{localAvatar || displayAvatar || '/assets/logo.png'}}" mode="aspectFill"></image>
-      <text class="avatar-tip">点击更换头像</text>
+      <text class="avatar-tip">{{t['profile.edit.avatar_tip']}}</text>
     </view>
 
     <view class="form-item">
-      <text class="label">姓名</text>
-      <input class="input" value="{{formData.name}}" placeholder="请输入姓名" bindinput="onInput" data-field="name" placeholder-class="placeholder" />
+      <text class="label">{{t['profile.edit.name']}}</text>
+      <input class="input" value="{{formData.name}}" placeholder="{{t['profile.edit.name_placeholder']}}" bindinput="onInput" data-field="name" placeholder-class="placeholder" />
     </view>
 
     <view class="form-item">
-      <text class="label">邮箱</text>
-      <input class="input" value="{{formData.email}}" placeholder="请输入邮箱" bindinput="onInput" data-field="email" placeholder-class="placeholder" />
+      <text class="label">{{t['profile.edit.email']}}</text>
+      <input class="input" value="{{formData.email}}" placeholder="{{t['profile.edit.email_placeholder']}}" bindinput="onInput" data-field="email" placeholder-class="placeholder" />
     </view>
 
     <view class="form-item">
-      <text class="label">手机号</text>
-      <input class="input" value="{{formData.phoneNumber}}" placeholder="请输入手机号" bindinput="onInput" data-field="phoneNumber" maxlength="11" type="number" placeholder-class="placeholder" />
+      <text class="label">{{t['profile.edit.phone']}}</text>
+      <input class="input" value="{{formData.phoneNumber}}" placeholder="{{t['profile.edit.phone_placeholder']}}" bindinput="onInput" data-field="phoneNumber" maxlength="11" type="number" placeholder-class="placeholder" />
     </view>
 
     <view class="form-item">
-      <text class="label">年龄</text>
-      <input class="input" value="{{formData.age}}" placeholder="请输入年龄" bindinput="onInput" data-field="age" type="number" placeholder-class="placeholder" />
+      <text class="label">{{t['profile.edit.age']}}</text>
+      <input class="input" value="{{formData.age}}" placeholder="{{t['profile.edit.age_placeholder']}}" bindinput="onInput" data-field="age" type="number" placeholder-class="placeholder" />
     </view>
   </view>
 
   <view class="btn-area">
-    <button class="submit-btn" bindtap="handleSubmit" loading="{{loading}}" disabled="{{loading}}">保存修改</button>
+    <button class="submit-btn" bindtap="handleSubmit" loading="{{loading}}" disabled="{{loading}}">{{t['profile.edit.submit']}}</button>
   </view>
 </view>

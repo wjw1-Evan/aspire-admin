@@ -11,34 +11,34 @@
     </view>
   </view>
 
-  <view class="section-title">申请列表</view>
+  <view class="section-title">{{t['park.service.request_list']}}</view>
   <view class="info-card" wx:if="{{serviceRequest}}">
     <view class="info-item">
-      <text class="label">所属租户</text>
+      <text class="label">{{t['park.service.request_tenant']}}</text>
       <text class="value">{{serviceRequest.tenantName || '-'}}</text>
     </view>
     <view class="info-item">
-      <text class="label">联系人</text>
+      <text class="label">{{t['park.service.request_contact']}}</text>
       <text class="value">{{serviceRequest.contactPerson || '-'}}</text>
     </view>
     <view class="info-item">
-      <text class="label">联系电话</text>
+      <text class="label">{{t['park.service.request_phone']}}</text>
       <text class="value">{{serviceRequest.phone || '-'}}</text>
     </view>
     <view class="info-item">
-      <text class="label">申请时间</text>
+      <text class="label">{{t['park.service.request_time']}}</text>
       <text class="value">{{serviceRequest.createdAt}}</text>
     </view>
   </view>
 
-  <view class="section-title">申请信息</view>
+  <view class="section-title">{{t['park.service.request_info']}}</view>
   <view class="info-card" wx:if="{{serviceRequest}}">
     <view class="info-item vertical">
       <text class="value">{{serviceRequest.description || '无详细内容'}}</text>
     </view>
   </view>
 
-  <view class="section-title" wx:if="{{serviceRequest.status === 'Completed' || serviceRequest.handledResult}}">处理结果</view>
+  <view class="section-title" wx:if="{{serviceRequest.status === 'Completed' || serviceRequest.handledResult}}">{{t['park.service.handle_result']}}</view>
   <view class="info-card" wx:if="{{serviceRequest.status === 'Completed' || serviceRequest.handledResult}}">
     <view class="info-item vertical">
       <text class="value">{{serviceRequest.handledResult || '服务已完成'}}</text>

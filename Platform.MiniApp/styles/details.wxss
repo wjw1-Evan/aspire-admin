@@ -1,7 +1,7 @@
 /* Standard Detail Styles for WeChat Mini Program */
 
 .detail-container {
-  padding: 30rpx;
+  padding: 24rpx;
   background-color: #f7f8fa;
   min-height: 100vh;
   box-sizing: border-box;

@@ -3,19 +3,19 @@
   <view class="stats-overview card-style" wx:if="{{statistics}}">
     <view class="stats-item">
       <text class="num">{{statistics.totalTasks || 0}}</text>
-      <text class="label">总任务</text>
+      <text class="label">{{t['task.list.total']}}</text>
     </view>
     <view class="stats-item">
       <text class="num primary">{{statistics.inProgressTasks || 0}}</text>
-      <text class="label">进行中</text>
+      <text class="label">{{t['task.list.in_progress']}}</text>
     </view>
     <view class="stats-item">
       <text class="num success">{{statistics.completedTasks || 0}}</text>
-      <text class="label">已完成</text>
+      <text class="label">{{t['task.list.completed']}}</text>
     </view>
     <view class="stats-item">
       <text class="num danger">{{statistics.completionRate || 0}}%</text>
-      <text class="label">完成率</text>
+      <text class="label">{{t['task.list.completion_rate']}}</text>
     </view>
   </view>
 
@@ -52,11 +52,11 @@
 
         <view class="task-info">
           <view class="info-row">
-            <text class="label">负责人：</text>
-            <text class="value">{{item.assignedToName || '未分配'}}</text>
+            <text class="label">{{t['task.list.assignee']}}</text>
+            <text class="value">{{item.assignedToName || t['task.list.unassigned']}}</text>
           </view>
           <view class="info-row">
-            <text class="label">截止期：</text>
+            <text class="label">{{t['task.list.deadline']}}</text>
             <text class="value">{{item.plannedEndTime || '-'}}</text>
           </view>
         </view>
@@ -79,12 +79,12 @@
     <!-- Empty State -->
     <view class="empty-state" wx:else>
       <image src="/assets/logo.png" mode="aspectFit" class="empty-icon"></image>
-      <text class="empty-text">暂无相关任务</text>
+      <text class="empty-text">{{t['task.list.no_data']}}</text>
     </view>
 
     <!-- Loading -->
-    <view class="loading-bar" wx:if="{{loading}}">加载中...</view>
-    <view class="no-more" wx:if="{{!hasMore && tasks.length > 0}}">到底了~</view>
+    <view class="loading-bar" wx:if="{{loading}}">{{t['task.list.loading_more']}}</view>
+    <view class="no-more" wx:if="{{!hasMore && tasks.length > 0}}">{{t['task.list.no_more']}}</view>
   </view>
 
   <!-- Floating Action Button -->

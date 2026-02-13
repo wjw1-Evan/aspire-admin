@@ -1,7 +1,7 @@
 <view class="container">
   <view class="form-container">
     <view class="form-item">
-      <text class="label">所属楼宇<text class="required">*</text></text>
+      <text class="label">{{t['park.asset.unit_building']}}<text class="required">*</text></text>
       <picker bindchange="onBuildingChange" value="{{buildingIndex}}" range="{{buildings}}" range-key="name">
         <view class="picker-box">
           <text>{{buildingIndex > -1 ? buildings[buildingIndex].name : '请选择楼宇'}}</text>
@@ -12,28 +12,28 @@
 
     <view class="form-row">
       <view class="form-item half">
-        <text class="label">房号<text class="required">*</text></text>
+        <text class="label">{{t['park.asset.unit_number']}}<text class="required">*</text></text>
         <input class="input" placeholder="101" value="{{formData.unitNumber}}" bindinput="onInputChange" data-field="unitNumber" />
       </view>
       <view class="form-item half">
-        <text class="label">楼层</text>
+        <text class="label">{{t['park.asset.unit_floor_label']}}</text>
         <input class="input" type="number" placeholder="1" value="{{formData.floor}}" bindinput="onInputChange" data-field="floor" />
       </view>
     </view>
 
     <view class="form-row">
       <view class="form-item half">
-        <text class="label">面积 (㎡)</text>
+        <text class="label">{{t['park.asset.unit_area']}}</text>
         <input class="input" type="digit" placeholder="0.00" value="{{formData.area}}" bindinput="onInputChange" data-field="area" />
       </view>
       <view class="form-item half">
-        <text class="label">月租金 (元)</text>
+        <text class="label">{{t['park.asset.unit_monthly_rent']}}</text>
         <input class="input" type="digit" placeholder="0.00" value="{{formData.monthlyRent}}" bindinput="onInputChange" data-field="monthlyRent" />
       </view>
     </view>
 
     <view class="form-item">
-      <text class="label">单元类型</text>
+      <text class="label">{{t['park.asset.unit_type']}}</text>
       <picker bindchange="onTypeChange" value="{{unitTypeIndex}}" range="{{unitTypeNames}}">
         <view class="picker-box">
           <text>{{unitTypeNames[unitTypeIndex]}}</text>
@@ -43,7 +43,7 @@
     </view>
 
     <view class="form-item">
-      <text class="label">描述信息</text>
+      <text class="label">{{t['park.asset.unit_desc']}}</text>
       <textarea class="textarea" placeholder="请输入相关说明..." value="{{formData.description}}" bindinput="onInputChange" data-field="description" maxlength="500"></textarea>
     </view>
   </view>

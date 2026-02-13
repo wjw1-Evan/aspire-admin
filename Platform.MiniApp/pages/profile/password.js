@@ -1,14 +1,16 @@
 const { request } = require('../../utils/request');
 const { withAuth } = require('../../utils/auth');
+const { t, withI18n } = require('../../utils/i18n');
 
-Page(withAuth({
+Page(withAuth(withI18n({
     data: {
         formData: {
             oldPassword: '',
             newPassword: '',
             confirmPassword: ''
         },
-        loading: false
+        loading: false,
+        i18nTitleKey: 'profile.password.title'
     },
 
     onInput(e) {
@@ -23,13 +25,13 @@ Page(withAuth({
         const { formData } = this.data;
 
         if (!formData.oldPassword) {
-            return wx.showToast({ title: '请输入当前密码', icon: 'none' });
+            return wx.showToast({ title: t('profile.password.current_required'), icon: 'none' });
         }
         if (formData.newPassword.length < 6) {
-            return wx.showToast({ title: '新密码长度至少6位', icon: 'none' });
+            return wx.showToast({ title: t('profile.password.min_length'), icon: 'none' });
         }
         if (formData.newPassword !== formData.confirmPassword) {
-            return wx.showToast({ title: '两次输入的密码不一致', icon: 'none' });
+            return wx.showToast({ title: t('profile.password.not_match'), icon: 'none' });
         }
 
         this.setData({ loading: true });
@@ -44,7 +46,7 @@ Page(withAuth({
             });
 
             if (res.success) {
-                wx.showToast({ title: '修改成功', icon: 'success' });
+                wx.showToast({ title: t('profile.password.success'), icon: 'success' });
                 setTimeout(() => {
                     wx.navigateBack();
                 }, 1500);
@@ -55,4 +57,4 @@ Page(withAuth({
             this.setData({ loading: false });
         }
     }
-}));
+})));

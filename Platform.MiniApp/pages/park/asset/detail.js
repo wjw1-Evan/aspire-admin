@@ -75,8 +75,8 @@ Page(withAuth(withI18n({
 
     handleDelete() {
         wx.showModal({
-            title: '确认删除',
-            content: '确定要删除该楼宇吗？（关联的单元也将受影响）',
+            title: t('common.confirm_delete'),
+            content: t('park.asset.delete_building_hint'),
             success: async (res) => {
                 if (res.confirm) {
                     try {
@@ -85,7 +85,7 @@ Page(withAuth(withI18n({
                             method: 'DELETE'
                         });
                         if (delRes.success) {
-                            wx.showToast({ title: '删除成功', icon: 'success' });
+                            wx.showToast({ title: t('common.delete_success'), icon: 'success' });
                             setTimeout(() => wx.navigateBack(), 1500);
                         }
                     } catch (err) {

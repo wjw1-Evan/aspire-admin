@@ -34,7 +34,7 @@
             <text class="value">{{item.totalArea}}㎡</text>
           </view>
           <view class="info-row">
-            <text class="label">地址：</text>
+            <text class="label">{{t['park.asset.address_label']}}</text>
             <text class="value">{{item.address || '-'}}</text>
           </view>
         </view>
@@ -58,7 +58,7 @@
             <text class="value">{{item.area}}㎡</text>
           </view>
           <view class="info-row">
-            <text class="label">类型：</text>
+            <text class="label">{{t['park.asset.type_label']}}</text>
             <text class="value">{{item.unitType === 'Office' ? t['park.asset.type.office'] : (item.unitType === 'Retail' ? t['park.asset.type.retail'] : t['park.asset.type.warehouse'])}}</text>
           </view>
         </view>

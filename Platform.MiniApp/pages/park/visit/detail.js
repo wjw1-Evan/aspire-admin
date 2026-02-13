@@ -46,8 +46,8 @@ Page(withAuth(withI18n({
 
     async handleDelete() {
         wx.showModal({
-            title: '确认删除',
-            content: '确定要删除这个走访任务吗？',
+            title: t('common.confirm_delete'),
+            content: t('park.visit.delete_hint'),
             success: async (res) => {
                 if (res.confirm) {
                     try {
@@ -56,7 +56,7 @@ Page(withAuth(withI18n({
                             method: 'DELETE'
                         });
                         if (delRes.success) {
-                            wx.showToast({ title: '已删除' });
+                            wx.showToast({ title: t('common.delete_success') });
                             setTimeout(() => {
                                 const pages = getCurrentPages();
                                 const prevPage = pages[pages.length - 2];
@@ -70,7 +70,7 @@ Page(withAuth(withI18n({
                         }
                     } catch (err) {
                         console.error('Delete visit task failed', err);
-                        wx.showToast({ title: '删除失败', icon: 'none' });
+                        wx.showToast({ title: t('common.fail'), icon: 'none' });
                     }
                 }
             }

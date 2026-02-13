@@ -1,6 +1,6 @@
 .container {
-  padding: 32rpx;
-  background-color: #f0f2f5;
+  padding: 24rpx;
+  background-color: #f7f8fa;
   padding-bottom: 60rpx;
 }
 

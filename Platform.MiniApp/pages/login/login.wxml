@@ -3,7 +3,7 @@
     <view class="header">
       <image class="logo" src="/assets/logo.png" mode="aspectFit"></image>
       <view class="title-group">
-        <text class="title">Aspire Admin</text>
+        <text class="title">通用数据平台</text>
         <text class="subtitle">让管理更高效，让数据更有价值</text>
       </view>
     </view>
@@ -63,6 +63,6 @@
   </view>
 
   <view class="footer">
-    <text class="footer-copy">© 2026 Aspire Digital Group</text>
+    <text class="footer-copy">© 2026 融众信息技术</text>
   </view>
 </view>

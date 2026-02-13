@@ -22,7 +22,7 @@
   "window": {
     "backgroundTextStyle": "light",
     "navigationBarBackgroundColor": "#001529",
-    "navigationBarTitleText": "Aspire Admin",
+    "navigationBarTitleText": "通用数据平台",
     "navigationBarTextStyle": "white"
   },
   "tabBar": {

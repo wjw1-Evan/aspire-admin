@@ -39,8 +39,9 @@ Page(withAuth(withI18n({
     },
 
     goToEdit() {
+        const id = this.data.task && this.data.task.id ? this.data.task.id : this.data.id;
         wx.navigateTo({
-            url: `/pages/park/visit/form?id=${this.data.id}`
+            url: `/pages/park/visit/form?id=${id}`
         });
     },
 
@@ -51,8 +52,9 @@ Page(withAuth(withI18n({
             success: async (res) => {
                 if (res.confirm) {
                     try {
+                        const id = this.data.task && this.data.task.id ? this.data.task.id : this.data.id;
                         const delRes = await request({
-                            url: `/api/park-management/visit/task/${this.data.id}`,
+                            url: `/api/park-management/visit/task/${id}`,
                             method: 'DELETE'
                         });
                         if (delRes.success) {

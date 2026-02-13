@@ -130,7 +130,7 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
         setDetailData(response.data);
         setDetailVisible(true);
       } else {
-        message.error(response.errorMessage || intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.message.getDetailFailed' }));
+        message.error(response.message || intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.message.getDetailFailed' }));
       }
     } catch (error: any) {
       message.error(error.message || intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.message.getDetailFailed' }));
@@ -154,7 +154,7 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
               actionRef.current.reload();
             }
           } else {
-            message.error(response.errorMessage || intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.message.deleteFailed' }));
+            message.error(response.message || intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.message.deleteFailed' }));
           }
         } catch (error: any) {
           message.error(error.message || intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.message.deleteFailed' }));

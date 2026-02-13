@@ -316,7 +316,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
           message.success(intl.formatMessage({ id: 'pages.roleForm.updateSuccess' }));
           onSuccess();
         } else {
-          throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.roleForm.updateFailed' }));
+          throw new Error(response.message || intl.formatMessage({ id: 'pages.roleForm.updateFailed' }));
         }
       } else {
         // 创建角色
@@ -332,7 +332,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
           message.success(intl.formatMessage({ id: 'pages.roleForm.createSuccess' }));
           onSuccess();
         } else {
-          throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.roleForm.createFailed' }));
+          throw new Error(response.message || intl.formatMessage({ id: 'pages.roleForm.createFailed' }));
         }
       }
     } finally {

@@ -132,7 +132,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
 
         if (!response.success) {
           console.error('Update user failed:', response);
-          throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.message.updateFailed' }));
+          throw new Error(response.message || intl.formatMessage({ id: 'pages.message.updateFailed' }));
         }
         // 成功提示由 onSuccess 回调处理
       } else {
@@ -156,7 +156,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
         );
 
         if (!response.success) {
-          throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.message.createFailed' }));
+          throw new Error(response.message || intl.formatMessage({ id: 'pages.message.createFailed' }));
         }
         // 成功提示由 onSuccess 回调处理
       }

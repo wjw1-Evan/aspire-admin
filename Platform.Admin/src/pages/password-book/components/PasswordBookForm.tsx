@@ -102,7 +102,7 @@ const PasswordBookForm: React.FC<PasswordBookFormProps> = ({
       } else {
         // API 返回失败，清空强度显示
         setStrength(null);
-        console.warn('密码强度检测失败:', response.errorMessage);
+        console.warn('密码强度检测失败:', response.message);
       }
     } catch (error) {
       // 错误由全局错误处理统一处理，但也要清空强度显示
@@ -156,7 +156,7 @@ const PasswordBookForm: React.FC<PasswordBookFormProps> = ({
         const response = await updatePasswordBookEntry(entry.id, updateData);
 
         if (!response.success) {
-          throw new Error(response.errorMessage || '更新失败');
+          throw new Error(response.message || '更新失败');
         }
 
         message.success('更新成功');
@@ -175,7 +175,7 @@ const PasswordBookForm: React.FC<PasswordBookFormProps> = ({
         const response = await createPasswordBookEntry(createData);
 
         if (!response.success) {
-          throw new Error(response.errorMessage || '创建失败');
+          throw new Error(response.message || '创建失败');
         }
 
         message.success('创建成功');

@@ -6,8 +6,8 @@
 export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
-  errorMessage?: string;
-  errorCode?: string;
+  message?: string;
+  code?: string;
 }
 
 /**
@@ -50,7 +50,7 @@ export function getErrorMessage<T>(
   response: ApiResponse<T>,
   defaultMessage = '操作失败，请稍后重试',
 ): string {
-  return response.errorMessage || defaultMessage;
+  return response.message || defaultMessage;
 }
 
 /**

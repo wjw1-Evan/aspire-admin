@@ -171,7 +171,7 @@ const RoleManagement: FC = () => {
           } else {
             // 失败时抛出错误，由全局错误处理统一处理
             throw new Error(
-              response.errorMessage ||
+              response.message ||
               intl.formatMessage({ id: 'pages.message.deleteFailed' }),
             );
           }

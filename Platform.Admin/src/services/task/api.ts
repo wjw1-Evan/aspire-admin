@@ -159,7 +159,7 @@ export interface CompleteTaskRequest {
   taskId: string;
   executionResult?: number;
   remarks?: string;
-  errorMessage?: string;
+  message?: string;
 }
 
 /**
@@ -205,7 +205,6 @@ export interface TaskExecutionLogDto {
   status: number;
   statusName: string;
   message?: string;
-  errorMessage?: string;
   progressPercentage: number;
   createdAt: string;
 }

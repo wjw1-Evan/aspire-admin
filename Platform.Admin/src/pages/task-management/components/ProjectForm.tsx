@@ -55,14 +55,14 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ project, onSuccess, onCancel 
         if (response.success) {
           onSuccess();
         } else {
-          console.error('更新项目失败:', response.errorMessage);
+          console.error('更新项目失败:', response.message);
         }
       } else {
         const response = await createProject(requestData as CreateProjectRequest);
         if (response.success) {
           onSuccess();
         } else {
-          console.error('创建项目失败:', response.errorMessage);
+          console.error('创建项目失败:', response.message);
         }
       }
     } catch (error) {

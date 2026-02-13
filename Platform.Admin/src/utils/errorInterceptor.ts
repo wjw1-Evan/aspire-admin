@@ -220,15 +220,15 @@ class UnifiedErrorInterceptor {
 
     // 添加额外信息
     // 优先从 error.info 中提取（UmiJS errorThrower 存储的位置）
-    if (error.info?.errorCode) {
-      errorInfo.code = error.info.errorCode;
+    if (error.info?.code) {
+      errorInfo.code = error.info.code;
       errorInfo.details = error.info;
     } else if (error.response) {
-      errorInfo.code = error.response.data?.errorCode;
+      errorInfo.code = error.response.data?.code;
       errorInfo.details = error.response.data;
-    } else if (error.errorCode) {
-      // 如果错误对象直接包含 errorCode
-      errorInfo.code = error.errorCode;
+    } else if (error.code) {
+      // 如果错误对象直接包含 code
+      errorInfo.code = error.code;
       errorInfo.details = error;
     }
 
@@ -323,11 +323,11 @@ class UnifiedErrorInterceptor {
       });
     }
 
-    // 2. 我们的标准 errorMessage (包含在 data 中或 Umi 的 error.info 中)
+    // 2. 我们的标准 message (包含在 data 中或 Umi 的 error.info 中)
     if (errors.length === 0) {
       // UmiJS 可能把响应体放在 error.info
-      const customMessage = error.info?.errorMessage ||
-        error.response?.data?.errorMessage ||
+      const customMessage = error.info?.message ||
+        error.response?.data?.message ||
         error.response?.data?.title; // ProblemDetail title
 
       if (customMessage) {
@@ -408,6 +408,12 @@ class UnifiedErrorInterceptor {
     const message = getMessage();
     const notification = getNotification();
 
+    // 检查 message 和 notification 是否可用
+    if (!message?.error || !notification?.error) {
+      console.error('Message/Notification API not available:', errorInfo.message);
+      return;
+    }
+
     // 如果是验证错误（400状态码），尝试显示所有验证错误
     if (errorInfo.type === ErrorType.VALIDATION && originalError) {
       const validationErrors = this.extractValidationErrors(originalError);
@@ -467,6 +473,13 @@ class UnifiedErrorInterceptor {
   displayValidationErrors(error: any, displayType: ErrorDisplayType = ErrorDisplayType.MESSAGE) {
     const message = getMessage();
     const notification = getNotification();
+    
+    // 检查 message 和 notification 是否可用
+    if (!message?.error || !notification?.error) {
+      console.error('Message/Notification API not available in displayValidationErrors');
+      return;
+    }
+    
     const errors = this.extractValidationErrors(error);
 
     if (errors.length === 0) {

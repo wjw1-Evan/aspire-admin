@@ -80,7 +80,7 @@ const ConfigForm: React.FC<ConfigFormProps> = ({ config, onSuccess, onCancel }) 
         const response = await updateXiaokeConfig(config!.id, updateData);
 
         if (!response.success) {
-          throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.updateFailed' }));
+          throw new Error(response.message || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.updateFailed' }));
         }
 
         message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.updateSuccess' }));
@@ -101,7 +101,7 @@ const ConfigForm: React.FC<ConfigFormProps> = ({ config, onSuccess, onCancel }) 
         const response = await createXiaokeConfig(createData);
 
         if (!response.success) {
-          throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.createFailed' }));
+          throw new Error(response.message || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.createFailed' }));
         }
 
         message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.createSuccess' }));

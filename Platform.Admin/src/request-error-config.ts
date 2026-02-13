@@ -1,5 +1,5 @@
-﻿import type { RequestConfig } from '@umijs/max';
-import { history } from '@umijs/max';
+import type { RequestConfig } from '@umijs/max';
+import { history, getIntl, getLocale } from '@umijs/max';
 import { errorInterceptor } from '@/utils/errorInterceptor';
 import AuthenticationService from '@/utils/authService';
 import { tokenUtils } from '@/utils/token';
@@ -26,9 +26,9 @@ enum ErrorShowType {
 // 与后端约定的响应数据格式 - 统一 API 标准
 interface ResponseStructure {
   success: boolean;
+  code: string;
   data?: any;
-  errorCode?: string;
-  errorMessage?: string;
+  message?: string;
   timestamp?: string;
   traceId?: string;
   showType?: ErrorShowType;
@@ -66,8 +66,8 @@ export const errorConfig: RequestConfig = {
         const error: any = new Error(problemDetails.title || problemDetails.detail || '请求失败');
         error.name = 'BizError';
         error.info = {
-          errorCode: problemDetails.type || `HTTP_${problemDetails.status}`,
-          errorMessage: problemDetails.title || problemDetails.detail || '请求失败',
+          code: problemDetails.type || `HTTP_${problemDetails.status}`,
+          message: problemDetails.title || problemDetails.detail || '请求失败',
           showType: ErrorShowType.ERROR_MESSAGE,
           data: problemDetails,
           errors: problemDetails.errors, // 验证错误字段（用于表单验证）
@@ -76,12 +76,12 @@ export const errorConfig: RequestConfig = {
       }
 
       // 3. 检查是否是标准错误响应格式（有 success 字段但为 false）
-      const { success, data, errorCode, errorMessage, showType } =
+      const { success, data, code, message, showType } =
         res as unknown as ResponseStructure;
       if (success === false) {
-        const error: any = new Error(errorMessage || '请求失败');
+        const error: any = new Error(message || '请求失败');
         error.name = 'BizError';
-        error.info = { errorCode, errorMessage, showType, data };
+        error.info = { code, message, showType, data };
         throw error;
       }
 
@@ -93,6 +93,11 @@ export const errorConfig: RequestConfig = {
     errorHandler: (error: any, opts: any) => {
       if (opts?.skipErrorHandler) throw error;
 
+      // 如果错误已经被登录页面处理过，直接返回
+      if (error?.skipGlobalHandler) {
+        return;
+      }
+
       const context = {
         url: error.config?.url,
         method: error.config?.method,
@@ -101,12 +106,12 @@ export const errorConfig: RequestConfig = {
 
       // 1. 统一处理认证错误（含后端返回 400 但表示未登录的情况）
       const messageText =
-        error?.info?.errorMessage ||
-        error?.response?.data?.errorMessage ||
+        error?.info?.message ||
+        error?.response?.data?.message ||
         error?.response?.data?.title ||
         error?.message;
 
-      const errorCode = error?.info?.errorCode || error?.response?.data?.errorCode;
+      const errorCode = error?.info?.code || error?.response?.data?.code;
       const isLoginRequest = error.config?.url?.includes('/api/auth/login') ||
         error.config?.url?.includes('/login');
 
@@ -124,20 +129,10 @@ export const errorConfig: RequestConfig = {
         error.message === 'Authentication handled';
 
       // 2. 特殊处理登录错误：只显示友好的消息提示，不显示技术性错误页面
-      if (isLoginRequest && (errorCode === 'LOGIN_FAILED' || errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED' || error.name === 'BizError')) {
-        // 如果错误已经被登录页面处理过（标记了 skipGlobalHandler），直接返回
-        if (error?.skipGlobalHandler) {
-          return;
-        }
-
-        // 登录错误已经在登录页面中处理了，这里只需要静默处理，避免显示技术性错误页面
-        // 如果登录页面没有处理（比如直接从错误拦截器抛出），则显示友好提示
-        const { message: msg } = getMessage();
-        const errorMessage = error?.info?.errorMessage || messageText || '登录失败，请检查用户名和密码';
-        runAfterRender(() => {
-          msg.error(errorMessage);
-        });
-        // 静默处理，不再抛出错误
+      // 注意：登录错误应该在登录页面中自己处理，这里只做兜底处理
+      if (isLoginRequest && (errorCode === 'LOGIN_FAILED' || errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED' || errorCode === 'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN' || error.name === 'BizError')) {
+        // 登录错误已经在登录页面中处理了，这里静默处理即可
+        // 避免显示技术性错误页面
         return;
       }
 

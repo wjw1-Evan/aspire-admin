@@ -155,9 +155,9 @@ const WorkflowMonitor: React.FC = () => {
                   setTimeout(() => {
                     setNodeFormVisible(true);
                   }, 50);
-                } else {
-                  console.error('获取节点表单失败:', res.errorMessage);
-                }
+                    } else {
+                      console.error('获取节点表单失败:', res.message);
+                    }
               } catch (error) {
                 console.error('获取节点表单失败:', error);
               } finally {
@@ -267,7 +267,7 @@ const WorkflowMonitor: React.FC = () => {
                           setNodeFormVisible(true);
                         }, 50);
                       } else {
-                        console.error('获取节点表单失败:', res.errorMessage);
+                        console.error('获取节点表单失败:', res.message);
                       }
                     } catch (error) {
                       console.error('获取节点表单失败:', error);

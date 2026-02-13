@@ -68,16 +68,16 @@ const ChangePassword: React.FC = () => {
 
       // 如果失败，设置用户错误信息（用于表单显示）并抛出错误
       setChangePasswordState(result);
-      throw new Error(result.errorMessage || intl.formatMessage({
+      throw new Error(result.message || intl.formatMessage({
         id: 'pages.changePassword.failure',
         defaultMessage: '密码修改失败，请重试！',
       }));
     } catch (error: any) {
       // 设置错误状态用于表单显示
-      if (error?.info?.errorCode || error?.errorCode) {
+      if (error?.info?.code || error?.code) {
         setChangePasswordState({
-          errorCode: error.info?.errorCode || error.errorCode,
-          errorMessage: error.info?.errorMessage || error.message,
+          code: error.info?.code || error.code,
+          message: error.info?.message || error.message,
         });
       }
       // 错误提示由全局错误处理统一处理，这里重新抛出确保全局处理能够捕获
@@ -85,7 +85,7 @@ const ChangePassword: React.FC = () => {
     }
   };
 
-  const { errorCode, errorMessage } = changePasswordState;
+  const { code, message: errorMsg } = changePasswordState;
 
   const pageTitle = intl.formatMessage({
     id: 'menu.account.changePassword',
@@ -109,8 +109,8 @@ const ChangePassword: React.FC = () => {
             }}
             layout="vertical"
           >
-            {errorCode && (
-              <ChangePasswordMessage content={errorMessage || '密码修改失败'} />
+            {code && (
+              <ChangePasswordMessage content={errorMsg || '密码修改失败'} />
             )}
 
             <Form.Item

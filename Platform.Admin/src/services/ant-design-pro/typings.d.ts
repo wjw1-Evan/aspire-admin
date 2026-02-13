@@ -6,8 +6,8 @@ declare namespace API {
   type ApiResponse<T = any> = {
     success: boolean;
     data?: T;
-    errorCode?: string;
-    errorMessage?: string;
+    code?: string;
+    message?: string;
     errors?: Record<string, string[]>; // 验证字段错误
     timestamp: string;
     traceId?: string;
@@ -55,8 +55,8 @@ declare namespace API {
     token?: string;
     refreshToken?: string;
     expiresAt?: string;
-    errorCode?: string;
-    errorMessage?: string;
+    code?: string;
+    message?: string;
   };
 
   type LoginData = {
@@ -170,8 +170,8 @@ declare namespace API {
   type RegisterResult = {
     success?: boolean;
     data?: any;
-    errorCode?: string;
-    errorMessage?: string;
+    code?: string;
+    message?: string;
   };
 
   type AppUser = {
@@ -197,8 +197,8 @@ declare namespace API {
   type ChangePasswordResult = {
     success?: boolean;
     data?: boolean;
-    errorCode?: string;
-    errorMessage?: string;
+    code?: string;
+    message?: string;
   };
 
   type POST_API_REFRESH_TOKEN_PAYLOAD = {
@@ -210,14 +210,14 @@ declare namespace API {
     token?: string;
     refreshToken?: string;
     expiresAt?: string;
-    errorMessage?: string;
+    message?: string;
   };
 
   type ErrorResponse = {
     /** 业务约定的错误码 */
-    errorCode: string;
+    code: string;
     /** 业务上的错误信息 */
-    errorMessage?: string;
+    message?: string;
     /** 业务上的请求是否成功 */
     success?: boolean;
   };
@@ -369,7 +369,7 @@ declare namespace API {
     token?: string;
     refreshToken?: string;
     expiresAt?: string;
-    errorMessage?: string;
+    message?: string;
   };
 
   // v3.1: 多企业隶属相关类型

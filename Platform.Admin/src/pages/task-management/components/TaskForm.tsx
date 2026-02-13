@@ -140,8 +140,8 @@ const TaskForm: React.FC<TaskFormProps> = ({
     setLoading(true);
     try {
       const assignedUserIds: string[] = values.assignedUserIds || [];
-      // 如果清空选择，使用空字符串表示需要清空后端的 AssignedTo
-      const assignedTo = assignedUserIds.length > 0 ? assignedUserIds[0] : '';
+      // 如果清空选择，使用 undefined 而不是空字符串（MongoDB ObjectId 验证要求）
+      const assignedTo = assignedUserIds.length > 0 ? assignedUserIds[0] : undefined;
 
       // 合并分配用户和参与者，确保没有重复
       const participantIds = Array.from(
@@ -156,7 +156,6 @@ const TaskForm: React.FC<TaskFormProps> = ({
         description: values.description,
         taskType: Array.isArray(values.taskType) ? values.taskType[0] : values.taskType,
         priority: values.priority,
-        assignedTo,
         plannedStartTime: values.plannedStartTime?.toISOString(),
         plannedEndTime: values.plannedEndTime?.toISOString(),
         estimatedDuration: values.estimatedDuration,
@@ -164,6 +163,11 @@ const TaskForm: React.FC<TaskFormProps> = ({
         tags: values.tags,
         remarks: values.remarks,
       };
+
+      // 只有当 assignedTo 有值时才添加到请求中
+      if (assignedTo) {
+        data.assignedTo = assignedTo;
+      }
 
       // 添加项目和父任务字段（如果存在）
       if (values.projectId || projectId) {

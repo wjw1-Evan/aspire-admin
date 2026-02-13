@@ -96,8 +96,7 @@ public class PublicController : BaseApiController
     {
         if (User?.Identity?.IsAuthenticated != true)
         {
-            var errorResponse = ApiResponse<object>.ErrorResult("UNAUTHORIZED", "用户未认证", HttpContext.TraceIdentifier);
-            return Unauthorized(errorResponse);
+            return UnauthorizedError("用户未认证");
         }
 
         var userInfo = new

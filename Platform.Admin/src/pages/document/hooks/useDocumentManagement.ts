@@ -304,7 +304,7 @@ export const useDocumentManagement = () => {
                     wfForm.setFieldsValue({ values: initVals, attachmentIds: [] });
                     setIsFormStep(true);
                 } else {
-                    message.error(resp.errorMessage || intl.formatMessage({ id: 'pages.workflow.form.loadFailed', defaultMessage: '表单加载失败' }));
+                    message.error(resp.message || intl.formatMessage({ id: 'pages.workflow.form.loadFailed', defaultMessage: '表单加载失败' }));
                 }
             } catch (e) {
                 console.error(e);
@@ -361,7 +361,7 @@ export const useDocumentManagement = () => {
                 setWfAttachmentFileList([]);
                 handleRefresh();
             } else {
-                message.error(resp.errorMessage || intl.formatMessage({ id: 'pages.document.create.message.createFailed', defaultMessage: '创建失败' }));
+                message.error(resp.message || intl.formatMessage({ id: 'pages.document.create.message.createFailed', defaultMessage: '创建失败' }));
             }
         } catch (err) {
             console.error(err);
@@ -395,7 +395,7 @@ export const useDocumentManagement = () => {
                     setWfAttachmentFileList((prev) => [...prev, newFile]);
                     onSuccess?.(response, file as any);
                 } else {
-                    const msg = response.errorMessage || intl.formatMessage({ id: 'pages.document.create.message.uploadFailed', defaultMessage: '附件上传失败' });
+                    const msg = response.message || intl.formatMessage({ id: 'pages.document.create.message.uploadFailed', defaultMessage: '附件上传失败' });
                     message.error(msg);
                     onError?.(new Error(msg));
                 }

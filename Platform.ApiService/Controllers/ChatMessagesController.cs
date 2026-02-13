@@ -57,7 +57,7 @@ public class ChatMessagesController : BaseApiController
     /// </remarks>
     /// <response code="200">成功返回消息时间线</response>
     [HttpGet("{sessionId}")]
-    [ProducesResponseType(typeof(ApiResponse<ChatMessageTimelineResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMessages(string sessionId, [FromQuery] ChatMessageListRequest request)
     {
         var (messages, hasMore, nextCursor) = await _chatService.GetMessagesAsync(sessionId, request);
@@ -95,7 +95,7 @@ public class ChatMessagesController : BaseApiController
     /// </remarks>
     /// <response code="200">成功返回发送结果</response>
     [HttpPost]
-    [ProducesResponseType(typeof(ApiResponse<ChatMessage>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> SendMessage([FromBody] SendChatMessageRequest request, [FromQuery] bool stream = false)
     {
         // 如果启用流式返回，使用 SSE 流式响应
@@ -232,7 +232,7 @@ public class ChatMessagesController : BaseApiController
     /// </remarks>
     /// <response code="200">成功返回附件信息</response>
     [HttpPost("{sessionId}/attachments")]
-    [ProducesResponseType(typeof(ApiResponse<UploadAttachmentResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> UploadAttachment(string sessionId, [FromForm] IFormFile file)
     {
         var attachment = await _chatService.UploadAttachmentAsync(sessionId, file);
@@ -269,7 +269,7 @@ public class ChatMessagesController : BaseApiController
     /// <returns>操作结果</returns>
     /// <response code="200">操作成功</response>
     [HttpPost("{sessionId}/read")]
-    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> MarkRead(string sessionId, [FromBody] MarkSessionReadRequest request)
     {
         await _chatService.MarkSessionReadAsync(sessionId, request.LastMessageId);
@@ -284,7 +284,7 @@ public class ChatMessagesController : BaseApiController
     /// <returns>操作结果</returns>
     /// <response code="200">删除成功</response>
     [HttpDelete("{sessionId}/{messageId}")]
-    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> DeleteMessage(string sessionId, string messageId)
     {
         await _chatService.DeleteMessageAsync(sessionId, messageId);

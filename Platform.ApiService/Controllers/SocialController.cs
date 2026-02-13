@@ -43,7 +43,7 @@ public class SocialController : BaseApiController
     /// ```
     /// </remarks>
     [HttpPost("location/beacon")]
-    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> UpdateLocation([FromBody] UpdateLocationBeaconRequest request)
     {
         await _socialService.UpdateLocationAsync(request);
@@ -76,7 +76,7 @@ public class SocialController : BaseApiController
     /// ```
     /// </remarks>
     [HttpPost("location/report")]
-    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> ReportLocation(
         [FromBody] UpdateLocationBeaconRequest? request = null,
         [FromForm] double? latitude = null,
@@ -141,7 +141,7 @@ public class SocialController : BaseApiController
     /// ```
     /// </remarks>
     [HttpPost("nearby-users")]
-    [ProducesResponseType(typeof(ApiResponse<NearbyUsersResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetNearbyUsers([FromBody] NearbyUsersRequest request)
     {
         var response = await _socialService.GetNearbyUsersAsync(request);
@@ -153,7 +153,7 @@ public class SocialController : BaseApiController
     /// </summary>
     /// <returns>当前用户的位置信标信息。</returns>
     [HttpGet("location/beacon")]
-    [ProducesResponseType(typeof(ApiResponse<UserLocationBeacon>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCurrentUserLocation()
     {
         var location = await _socialService.GetCurrentUserLocationAsync();
@@ -166,7 +166,7 @@ public class SocialController : BaseApiController
     /// </summary>
     /// <returns>用户位置信息（包含最后一次保存的城市名称和国家名称）。</returns>
     [HttpGet("location/info")]
-    [ProducesResponseType(typeof(ApiResponse<UserLocationInfo>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCurrentUserLocationInfo()
     {
         var locationInfo = await _socialService.GetCurrentUserLocationInfoAsync();

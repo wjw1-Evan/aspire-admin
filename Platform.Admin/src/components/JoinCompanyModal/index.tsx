@@ -58,7 +58,7 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
           message.info('未找到匹配的企业');
         }
       } else {
-        message.error(response.errorMessage || '搜索失败');
+        message.error(response.message || '搜索失败');
         setSearchResults([]);
       }
     } catch (error: any) {
@@ -119,7 +119,7 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
         onClose();
         onSuccess?.();
       } else {
-        message.error(response.errorMessage || '申请提交失败');
+        message.error(response.message || '申请提交失败');
       }
     } catch (error: any) {
       // 提交申请失败，由错误处理机制处理

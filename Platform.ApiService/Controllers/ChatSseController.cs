@@ -71,8 +71,7 @@ public class ChatSseController : BaseApiController
         if (string.IsNullOrWhiteSpace(userId))
         {
             _logger.LogWarning("SSE 连接失败: 未提供有效的 token");
-            var errorResponse = ApiResponse<object>.ErrorResult("UNAUTHORIZED", "未提供有效的认证令牌", HttpContext.TraceIdentifier);
-            return Unauthorized(errorResponse);
+            return UnauthorizedError("未提供有效的认证令牌");
         }
 
         // 设置 SSE 响应头

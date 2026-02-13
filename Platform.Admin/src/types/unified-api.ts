@@ -6,9 +6,9 @@
 // 统一 API 响应格式
 export interface ApiResponse<T = any> {
   success: boolean;
+  code: string;
   data?: T;
-  errorCode?: string;
-  errorMessage?: string;
+  message?: string;
   timestamp: string;
   traceId?: string;
 }
@@ -100,7 +100,7 @@ export interface RefreshTokenResult {
   token?: string;
   refreshToken?: string;
   expiresAt?: string;
-  errorMessage?: string;
+  message?: string;
 }
 
 // 标准错误代码枚举
@@ -122,11 +122,11 @@ export enum ApiErrorCode {
 }
 
 // 向后兼容的 API 响应格式（用于内部转换）
-export interface ApiResponse<T> {
+export interface ApiResponseLegacy<T> {
   success: boolean;
+  code: string;
   data?: T;
-  errorCode?: string;
-  errorMessage?: string;
+  message?: string;
 }
 
 // 登录结果（向后兼容）
@@ -137,8 +137,8 @@ export interface LoginResult {
   token?: string;
   refreshToken?: string;
   expiresAt?: string;
-  errorCode?: string;
-  errorMessage?: string;
+  code?: string;
+  message?: string;
 }
 
 // 用户列表请求

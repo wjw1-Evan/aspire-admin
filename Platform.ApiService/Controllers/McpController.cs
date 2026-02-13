@@ -59,7 +59,7 @@ public class McpController : BaseApiController
     /// ```
     /// </remarks>
     [HttpPost("initialize")]
-    [ProducesResponseType(typeof(ApiResponse<McpInitializeResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> Initialize([FromBody] McpInitializeRequest request)
     {
         var response = await _mcpService.InitializeAsync(request);
@@ -80,7 +80,7 @@ public class McpController : BaseApiController
     /// - get_company_info: 获取企业信息
     /// </remarks>
     [HttpPost("tools/list")]
-    [ProducesResponseType(typeof(ApiResponse<McpListToolsResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListTools()
     {
         var response = await _mcpService.ListToolsAsync();
@@ -111,7 +111,7 @@ public class McpController : BaseApiController
     /// ```
     /// </remarks>
     [HttpPost("tools/call")]
-    [ProducesResponseType(typeof(ApiResponse<McpCallToolResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> CallTool([FromBody] McpCallToolRequest request)
     {
         var currentUserId = GetRequiredUserId();
@@ -130,7 +130,7 @@ public class McpController : BaseApiController
     /// - 聊天会话资源
     /// </remarks>
     [HttpPost("resources/list")]
-    [ProducesResponseType(typeof(ApiResponse<McpListResourcesResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListResources()
     {
         var currentUserId = GetRequiredUserId();
@@ -159,7 +159,7 @@ public class McpController : BaseApiController
     /// ```
     /// </remarks>
     [HttpPost("resources/read")]
-    [ProducesResponseType(typeof(ApiResponse<McpReadResourceResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> ReadResource([FromBody] McpReadResourceRequest request)
     {
         var currentUserId = GetRequiredUserId();
@@ -175,7 +175,7 @@ public class McpController : BaseApiController
     /// 返回 MCP 服务器支持的所有提示词模板列表。
     /// </remarks>
     [HttpPost("prompts/list")]
-    [ProducesResponseType(typeof(ApiResponse<McpListPromptsResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> ListPrompts()
     {
         var response = await _mcpService.ListPromptsAsync();
@@ -206,7 +206,7 @@ public class McpController : BaseApiController
     /// ```
     /// </remarks>
     [HttpPost("prompts/get")]
-    [ProducesResponseType(typeof(ApiResponse<McpGetPromptResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetPrompt([FromBody] McpGetPromptRequest request)
     {
         var currentUserId = GetRequiredUserId();

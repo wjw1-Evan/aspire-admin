@@ -27,6 +27,7 @@ export async function login(body: API.LoginParams, options?: { [key: string]: an
       'Content-Type': 'application/json',
     },
     data: body,
+    skipErrorHandler: true, // 登录错误由登录页面自己处理
     ...(options || {}),
   });
 }

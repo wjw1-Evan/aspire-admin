@@ -36,7 +36,7 @@ export const CreateCompanyModal: React.FC<CreateCompanyModalProps> = ({
         onClose();
         return true;
       } else {
-        message.error(response.errorMessage || intl.formatMessage({ id: 'pages.company.createFailed' }));
+        message.error(response.message || intl.formatMessage({ id: 'pages.company.createFailed' }));
         return false;
       }
     } catch (error: any) {

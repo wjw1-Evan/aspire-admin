@@ -187,7 +187,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
           fetchOverviewStats();
         }, 100);
       } else {
-        message.error((response as any).errorMessage || '删除失败');
+        message.error((response as any).message || '删除失败');
       }
     } catch (error: any) {
       console.error('删除数据点失败:', error);
@@ -202,7 +202,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
         if (response.success) {
           message.success('更新成功');
         } else {
-          message.error((response as any).errorMessage || '更新失败');
+          message.error((response as any).message || '更新失败');
           return;
         }
       } else {
@@ -210,7 +210,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
         if (response.success) {
           message.success('创建成功');
         } else {
-          message.error((response as any).errorMessage || '创建失败');
+          message.error((response as any).message || '创建失败');
           return;
         }
       }

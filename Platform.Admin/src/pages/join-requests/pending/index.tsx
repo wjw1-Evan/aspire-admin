@@ -120,7 +120,7 @@ const PendingJoinRequests: React.FC = () => {
             actionRef.current?.reload?.();
           } else {
             // 失败时抛出错误，由全局错误处理统一处理
-            throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.message.operationFailed' }));
+            throw new Error(response.message || intl.formatMessage({ id: 'pages.message.operationFailed' }));
           }
         } catch (error) {
           // 错误已被全局错误处理捕获并显示
@@ -171,7 +171,7 @@ const PendingJoinRequests: React.FC = () => {
             actionRef.current?.reload?.();
           } else {
             // 失败时抛出错误，由全局错误处理统一处理
-            throw new Error(response.errorMessage || intl.formatMessage({ id: 'pages.message.operationFailed' }));
+            throw new Error(response.message || intl.formatMessage({ id: 'pages.message.operationFailed' }));
           }
         } catch (error) {
           // 错误已被全局错误处理捕获并显示

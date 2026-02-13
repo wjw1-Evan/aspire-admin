@@ -126,7 +126,7 @@ export async function getSessions(
   });
 
   if (!response.success || !response.data) {
-    throw new Error(response.errorMessage || '获取会话列表失败');
+    throw new Error(response.message || '获取会话列表失败');
   }
 
   return response.data;
@@ -287,7 +287,7 @@ export async function getMessages(
   });
 
   if (!response.success || !response.data) {
-    throw new Error(response.errorMessage || '获取消息列表失败');
+    throw new Error(response.message || '获取消息列表失败');
   }
 
   return response.data;

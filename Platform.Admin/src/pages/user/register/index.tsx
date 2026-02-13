@@ -226,8 +226,8 @@ export default function Register() {
       }
 
       // 注册失败，处理业务逻辑（显示验证码），然后抛出错误让全局错误处理显示错误提示
-      const errorCode = response.errorCode;
-      const errorMsg = response.errorMessage || intl.formatMessage({ id: 'pages.login.failure' }); // Using existing login failure as fallback or add new one
+      const errorCode = response.code;
+      const errorMsg = response.message || intl.formatMessage({ id: 'pages.login.failure' }); // Using existing login failure as fallback or add new one
 
       // 注册失败后显示验证码（业务逻辑）
       if (errorCode === 'USER_EXISTS' || errorCode === 'EMAIL_EXISTS' ||
@@ -250,11 +250,11 @@ export default function Register() {
       // 抛出错误，由全局错误处理统一显示错误提示
       throw new Error(errorMsg);
     } catch (error: any) {
-      // 从错误对象中提取 errorCode
+      // 从错误对象中提取 code
       const errorCode =
-        error?.info?.errorCode ||
-        error?.errorCode ||
-        error?.response?.data?.errorCode;
+        error?.info?.code ||
+        error?.code ||
+        error?.response?.data?.code;
 
       // 注册失败后显示验证码（业务逻辑）
       if (errorCode === 'USER_EXISTS' || errorCode === 'EMAIL_EXISTS' ||

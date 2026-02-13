@@ -35,7 +35,7 @@ const MyJoinRequestsTable: React.FC<MyJoinRequestsTableProps> = () => {
                 message.success('申请已撤销');
                 actionRef.current?.reload?.();
             } else {
-                message.error(response.errorMessage || '撤销失败');
+                message.error(response.message || '撤销失败');
             }
         } catch (error) {
             console.error('撤销失败:', error);

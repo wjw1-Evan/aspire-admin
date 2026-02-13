@@ -432,7 +432,7 @@ const BulkOperationsPanel: React.FC<BulkOperationsPanelProps> = ({
                                             renderItem={(error) => (
                                                 <List.Item>
                                                     <Text ellipsis>
-                                                        <Text code>{error.workflowName || error.workflowId}</Text>: {error.errorMessage}
+                                                        <Text code>{error.workflowName || error.workflowId}</Text>: {error.message}
                                                     </Text>
                                                 </List.Item>
                                             )}

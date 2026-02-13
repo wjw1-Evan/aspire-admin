@@ -103,8 +103,7 @@ public class AuthController : BaseApiController
         // 检查用户是否已认证
         if (!IsAuthenticated)
         {
-            var errorResponse = ApiResponse<object>.ErrorResult("UNAUTHORIZED", "用户未认证", HttpContext.TraceIdentifier);
-            return Unauthorized(errorResponse);
+            return UnauthorizedError("用户未认证");
         }
 
         var user = await _authService.GetCurrentUserAsync();

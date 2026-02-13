@@ -88,7 +88,7 @@ const WorkflowExportModal: React.FC<WorkflowExportModalProps> = ({
                 onCancel();
             } else {
                 message.error(
-                    response.errorMessage ||
+                    response.message ||
                     intl.formatMessage({ id: 'pages.workflow.export.failed' })
                 );
             }

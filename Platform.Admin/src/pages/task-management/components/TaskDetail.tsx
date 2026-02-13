@@ -250,7 +250,7 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ open, task, onClose }) => {
                           {dayjs(log.startTime).format('YYYY-MM-DD HH:mm:ss')} 执行
                         </p>
                         {log.message && <p>消息: {log.message}</p>}
-                        {log.errorMessage && <p style={{ color: 'red' }}>错误: {log.errorMessage}</p>}
+                        {log.message && <p style={{ color: 'red' }}>错误: {log.message}</p>}
                         <p>进度: {log.progressPercentage}%</p>
                       </div>
                     ),

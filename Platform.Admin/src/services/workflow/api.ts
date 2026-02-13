@@ -17,7 +17,7 @@ export type BulkOperationStatus = 'Pending' | 'InProgress' | 'Completed' | 'Canc
 export interface BulkOperationError {
   workflowId: string;
   workflowName?: string;
-  errorMessage: string;
+  message: string;
 }
 
 /**
@@ -624,7 +624,7 @@ export interface ImportConflict {
  */
 export interface ImportError {
   workflowName?: string;
-  errorMessage: string;
+  message: string;
   errorDetails?: string;
   lineNumber?: number;
 }

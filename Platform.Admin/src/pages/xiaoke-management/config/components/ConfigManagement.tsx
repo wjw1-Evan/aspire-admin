@@ -126,7 +126,7 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
               actionRef.current.reload();
             }
           } else {
-            message.error(response.errorMessage || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.deleteFailed' }));
+            message.error(response.message || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.deleteFailed' }));
           }
         } catch (error: any) {
           message.error(error.message || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.deleteFailed' }));
@@ -145,7 +145,7 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
           actionRef.current.reload();
         }
       } else {
-        message.error(response.errorMessage || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.setDefaultFailed' }));
+        message.error(response.message || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.setDefaultFailed' }));
       }
     } catch (error: any) {
       message.error(error.message || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.setDefaultFailed' }));

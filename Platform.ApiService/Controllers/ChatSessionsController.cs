@@ -74,7 +74,7 @@ public class ChatSessionsController : BaseApiController
     /// </remarks>
     /// <response code="200">成功返回会话列表</response>
     [HttpGet]
-    [ProducesResponseType(typeof(ApiResponse<PaginatedResponse<ChatSession>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetSessions([FromQuery] ChatSessionListRequest request)
     {
         var (sessions, total) = await _chatService.GetSessionsAsync(request);

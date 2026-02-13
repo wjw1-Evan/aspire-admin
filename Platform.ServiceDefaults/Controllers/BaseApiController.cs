@@ -11,7 +11,7 @@ namespace Platform.ServiceDefaults.Controllers;
 /// API 控制器基类 - 提供统一的响应格式和常用的用户上下文属性
 /// </summary>
 /// <remarks>
-/// 所有的 Web API 控制器都应该继承此类，以确保响应格式的一致性（使用 ApiResponse 对象封装）。
+/// 所有的 Web API 控制器都应该继承此类。
 /// 提供了成功、错误、分页、验证失败等多种标准返回方法。
 /// </remarks>
 /// <example>
@@ -77,7 +77,15 @@ public abstract class BaseApiController : ControllerBase
     /// </example>
     protected IActionResult Success<T>(T data, string? message = null)
     {
-        var response = ApiResponse<T>.SuccessResult(data, HttpContext.TraceIdentifier, message);
+        var response = new
+        {
+            success = true,
+            code = "OK",
+            data,
+            message,
+            timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
+            traceId = HttpContext.TraceIdentifier
+        };
         return Ok(response);
     }
 
@@ -121,16 +129,25 @@ public abstract class BaseApiController : ControllerBase
     /// return SuccessPaged(users, totalCount, 1, 10);
     /// </code>
     /// </example>
-    protected IActionResult SuccessPaged<T>(IEnumerable<T> data, long total, int page, int pageSize)
+    protected IActionResult SuccessPaged<T>(IEnumerable<T> data, long total, int page, int pageSize, string? message = null)
     {
-        var pagedData = new PagedResult<T>
+        var pagedData = new
         {
             list = data.ToList(),
-            total = total,
-            page = page,
-            pageSize = pageSize
+            total,
+            page,
+            pageSize,
+            totalPages = (int)Math.Ceiling((double)total / pageSize)
         };
-        var response = ApiResponse<PagedResult<T>>.SuccessResult(pagedData, HttpContext.TraceIdentifier);
+        var response = new
+        {
+            success = true,
+            code = "OK",
+            data = pagedData,
+            message,
+            timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
+            traceId = HttpContext.TraceIdentifier
+        };
         return Ok(response);
     }
 
@@ -144,9 +161,17 @@ public abstract class BaseApiController : ControllerBase
     /// return Error("INSUFFICIENT_BALANCE", "余额不足以完成支付");
     /// </code>
     /// </example>
-    protected IActionResult Error(string errorCode, string errorMessage)
+    protected IActionResult Error(string code, string message)
     {
-        var response = ApiResponse<object>.ErrorResult(errorCode, errorMessage, HttpContext.TraceIdentifier);
+        var response = new
+        {
+            success = false,
+            code,
+            data = (object?)null,
+            message,
+            timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
+            traceId = HttpContext.TraceIdentifier
+        };
         return BadRequest(response);
     }
 
@@ -159,9 +184,17 @@ public abstract class BaseApiController : ControllerBase
     /// if (string.IsNullOrEmpty(name)) return ValidationError("名称不能为空");
     /// </code>
     /// </example>
-    protected IActionResult ValidationError(string errorMessage)
+    protected IActionResult ValidationError(string message)
     {
-        var response = ApiResponse<object>.ValidationErrorResult(errorMessage, HttpContext.TraceIdentifier);
+        var response = new
+        {
+            success = false,
+            code = "VALIDATION_ERROR",
+            data = (object?)null,
+            message,
+            timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
+            traceId = HttpContext.TraceIdentifier
+        };
         return BadRequest(response);
     }
 
@@ -177,8 +210,34 @@ public abstract class BaseApiController : ControllerBase
     /// </example>
     protected IActionResult NotFoundError(string resource, string id)
     {
-        var response = ApiResponse<object>.NotFoundResult(resource, id, HttpContext.TraceIdentifier);
+        var response = new
+        {
+            success = false,
+            code = "NOT_FOUND",
+            data = (object?)null,
+            message = $"{resource} {id} 不存在",
+            timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
+            traceId = HttpContext.TraceIdentifier
+        };
         return NotFound(response);
+    }
+
+    /// <summary>
+    /// 返回未授权的响应 (HTTP 401)
+    /// </summary>
+    /// <param name="message">错误消息</param>
+    protected IActionResult UnauthorizedError(string message = "未授权访问")
+    {
+        var response = new
+        {
+            success = false,
+            code = "UNAUTHORIZED",
+            data = (object?)null,
+            message,
+            timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
+            traceId = HttpContext.TraceIdentifier
+        };
+        return Unauthorized(response);
     }
 
 
@@ -189,7 +248,15 @@ public abstract class BaseApiController : ControllerBase
     /// <param name="message">拒绝访问的原因消息</param>
     protected IActionResult ForbiddenError(string message = "禁止访问")
     {
-        var response = ApiResponse<object>.ErrorResult("FORBIDDEN", message, HttpContext.TraceIdentifier);
+        var response = new
+        {
+            success = false,
+            code = "FORBIDDEN",
+            data = (object?)null,
+            message,
+            timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
+            traceId = HttpContext.TraceIdentifier
+        };
         return StatusCode(403, response);
     }
 
@@ -199,37 +266,59 @@ public abstract class BaseApiController : ControllerBase
     /// <param name="message">错误说明</param>
     protected IActionResult ServerError(string message = "服务器内部错误")
     {
-        var response = ApiResponse<object>.ErrorResult("INTERNAL_ERROR", message, HttpContext.TraceIdentifier);
+        var response = new
+        {
+            success = false,
+            code = "INTERNAL_ERROR",
+            data = (object?)null,
+            message,
+            timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
+            traceId = HttpContext.TraceIdentifier
+        };
         return StatusCode(500, response);
     }
 
     /// <summary>
-    /// 根据 ApiResponse 结果自动判定并返回对应 HTTP 状态码的响应
-    /// 通常用于透传 Service 层返回的 ApiResponse 结果。
+    /// 根据 ServiceResult 结果自动判定并返回对应 HTTP 状态码的响应
     /// </summary>
     /// <typeparam name="T">数据类型</typeparam>
-    /// <param name="result">Service层或其他模块返回的 ApiResponse 对象</param>
-    /// <example>
-    /// <code>
-    /// var result = await _authService.LoginAsync(dto);
-    /// return Result(result); // 内部会自动判定 success 与否并映射状态码
-    /// </code>
-    /// </example>
-    protected IActionResult Result<T>(ApiResponse<T> result)
+    /// <param name="result">Service 层返回的 ServiceResult 对象</param>
+    /// <returns>API 响应结果</returns>
+    protected IActionResult Result<T>(ServiceResult<T> result)
     {
-        if (result.success)
+        if (result.IsSuccess)
         {
-            return Ok(result);
+            var successResponse = new
+            {
+                success = true,
+                code = result.Code ?? "OK",
+                data = result.Data,
+                message = result.Message,
+                timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
+                traceId = HttpContext.TraceIdentifier
+            };
+            return Ok(successResponse);
         }
 
-        // 处理特定错误代码对应的 HTTP 状态码
-        return result.errorCode switch
+        // 统一处理业务错误码映射到 HTTP 状态码
+        var errorResponse = new
         {
-            "NOT_FOUND" => NotFound(result),
-            "UNAUTHORIZED" => Unauthorized(result),
-            "FORBIDDEN" => StatusCode(403, result),
-            "VALIDATION_ERROR" => BadRequest(result),
-            _ => BadRequest(result)
+            success = false,
+            code = result.Code ?? "ERROR",
+            data = (object?)null,
+            message = result.Message ?? "操作失败",
+            timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
+            traceId = HttpContext.TraceIdentifier
+        };
+
+        return result.Code switch
+        {
+            "NOT_FOUND" => NotFound(errorResponse),
+            "UNAUTHORIZED" => Unauthorized(errorResponse),
+            "FORBIDDEN" => StatusCode(403, errorResponse),
+            "VALIDATION_ERROR" => BadRequest(errorResponse),
+            "ALREADY_EXISTS" => Conflict(errorResponse),
+            _ => BadRequest(errorResponse)
         };
     }
 

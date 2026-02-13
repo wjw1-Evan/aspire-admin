@@ -61,7 +61,7 @@ interface ImportConflict {
 
 interface ImportError {
     workflowName?: string;
-    errorMessage: string;
+    message: string;
     errorDetails?: string;
     lineNumber?: number;
 }
@@ -120,7 +120,7 @@ const WorkflowImportModal: React.FC<WorkflowImportModalProps> = ({
                 }
             } else {
                 message.error(
-                    response.errorMessage ||
+                    response.message ||
                     intl.formatMessage({ id: 'pages.workflow.import.validation.failed' })
                 );
             }
@@ -169,7 +169,7 @@ const WorkflowImportModal: React.FC<WorkflowImportModalProps> = ({
                 }
             } else {
                 message.error(
-                    response.errorMessage ||
+                    response.message ||
                     intl.formatMessage({ id: 'pages.workflow.import.failed' })
                 );
             }
@@ -244,7 +244,7 @@ const WorkflowImportModal: React.FC<WorkflowImportModalProps> = ({
                                     <List.Item>
                                         <Text type="danger">
                                             {error.workflowName && `${error.workflowName}: `}
-                                            {error.errorMessage}
+                                            {error.message}
                                         </Text>
                                     </List.Item>
                                 )}
@@ -347,7 +347,7 @@ const WorkflowImportModal: React.FC<WorkflowImportModalProps> = ({
                                     <List.Item>
                                         <Text type="danger">
                                             {error.workflowName && `${error.workflowName}: `}
-                                            {error.errorMessage}
+                                            {error.message}
                                         </Text>
                                     </List.Item>
                                 )}

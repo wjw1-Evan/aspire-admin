@@ -40,7 +40,7 @@ export const CompanySwitcher: React.FC = () => {
       if (response.success && response.data) {
         setCompanies(response.data);
       } else {
-        message.error(response.errorMessage || intl.formatMessage({ id: 'pages.company.loadFailed' }));
+        message.error(response.message || intl.formatMessage({ id: 'pages.company.loadFailed' }));
       }
     } catch (error: any) {
       console.error('加载企业列表失败:', error);
@@ -98,7 +98,7 @@ export const CompanySwitcher: React.FC = () => {
           window.location.reload();
         }, 500);
       } else {
-        message.error(response.errorMessage || intl.formatMessage({ id: 'pages.company.switchFailed' }));
+        message.error(response.message || intl.formatMessage({ id: 'pages.company.switchFailed' }));
       }
     } catch (error: any) {
       message.error(error.message || intl.formatMessage({ id: 'pages.company.switchFailed' }));

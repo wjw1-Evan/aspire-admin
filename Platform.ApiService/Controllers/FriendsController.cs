@@ -28,7 +28,7 @@ public class FriendsController : BaseApiController
     /// 获取好友列表
     /// </summary>
     [HttpGet]
-    [ProducesResponseType(typeof(ApiResponse<List<FriendSummaryResponse>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetFriends()
     {
         var friends = await _friendService.GetFriendsAsync();
@@ -42,7 +42,7 @@ public class FriendsController : BaseApiController
     /// <param name="keyword">姓名或用户名关键字（可选）</param>
     /// <param name="includeAllTenants">是否跨租户搜索（仅限具有跨租户权限的管理员使用）</param>
     [HttpGet("search")]
-    [ProducesResponseType(typeof(ApiResponse<List<FriendSearchResult>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> Search([FromQuery] string? phone, [FromQuery] string? keyword, [FromQuery] bool includeAllTenants = false)
     {
         var results = await _friendService.SearchAsync(phone, keyword, includeAllTenants);
@@ -54,7 +54,7 @@ public class FriendsController : BaseApiController
     /// </summary>
     /// <param name="request">请求参数</param>
     [HttpPost("requests")]
-    [ProducesResponseType(typeof(ApiResponse<FriendRequestResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> SendRequest([FromBody] CreateFriendRequestRequest request)
     {
         var result = await _friendService.SendFriendRequestAsync(request);
@@ -66,7 +66,7 @@ public class FriendsController : BaseApiController
     /// </summary>
     /// <param name="direction">请求方向（incoming/outgoing）</param>
     [HttpGet("requests")]
-    [ProducesResponseType(typeof(ApiResponse<List<FriendRequestResponse>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetRequests([FromQuery] FriendRequestDirection direction = FriendRequestDirection.Incoming)
     {
         var requests = await _friendService.GetFriendRequestsAsync(direction);
@@ -78,7 +78,7 @@ public class FriendsController : BaseApiController
     /// </summary>
     /// <param name="requestId">请求标识</param>
     [HttpPost("requests/{requestId}/approve")]
-    [ProducesResponseType(typeof(ApiResponse<FriendRequestResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> Approve(string requestId)
     {
         var result = await _friendService.ApproveRequestAsync(requestId);
@@ -90,7 +90,7 @@ public class FriendsController : BaseApiController
     /// </summary>
     /// <param name="requestId">请求标识</param>
     [HttpPost("requests/{requestId}/reject")]
-    [ProducesResponseType(typeof(ApiResponse<FriendRequestResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> Reject(string requestId)
     {
         var result = await _friendService.RejectRequestAsync(requestId);
@@ -102,7 +102,7 @@ public class FriendsController : BaseApiController
     /// </summary>
     /// <param name="friendUserId">好友用户ID</param>
     [HttpPost("{friendUserId}/session")]
-    [ProducesResponseType(typeof(ApiResponse<FriendSessionResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> EnsureSession(string friendUserId)
     {
         var session = await _friendService.EnsureDirectSessionAsync(friendUserId);

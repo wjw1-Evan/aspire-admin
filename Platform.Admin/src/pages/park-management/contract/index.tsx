@@ -334,7 +334,7 @@ const ContractManagement: React.FC = () => {
                     setContractFileList(prev => [...prev, newFile]);
                     onSuccess?.(res.data);
                 } else {
-                    onError?.(new Error(res.errorMessage || '上传失败'));
+                    onError?.(new Error(res.message || '上传失败'));
                 }
             } catch (err) {
                 onError?.(err as Error);

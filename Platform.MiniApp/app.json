@@ -44,7 +44,8 @@
     "pages/park/statistics/index",
     "pages/password-book/list",
     "pages/password-book/detail",
-    "pages/password-book/form"
+    "pages/password-book/form",
+    "pages/notification/list"
   ],
   "window": {
     "backgroundTextStyle": "light",

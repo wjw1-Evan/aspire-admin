@@ -1,16 +1,20 @@
 const { request } = require('../../utils/request');
 const { withAuth } = require('../../utils/auth');
-const { withI18n, getLocale } = require('../../utils/i18n');
+const { t, withI18n, getLocale } = require('../../utils/i18n');
 
 Page(withAuth(withI18n({
     data: {
         userInfo: null,
-        currentDate: ''
+        currentDate: '',
+        notifications: [],
+        todoTasks: 0,
+        activeProjects: 0
     },
 
     onShow() {
         this.fetchUserInfo();
         this.fetchDashboardStats();
+        this.fetchNotifications();
         this.updateDate();
     },
 
@@ -52,6 +56,78 @@ Page(withAuth(withI18n({
         }
     },
 
+    async fetchNotifications() {
+        try {
+            const res = await request({
+                url: '/api/unified-notification/center',
+                method: 'GET',
+                data: { page: 1, pageSize: 5 }
+            });
+
+            if (res.success && res.data.items) {
+                const items = res.data.items.map(item => {
+                    // 简化的时间处理，实际项目中可使用 dayjs 等库
+                    const date = new Date(item.datetime);
+                    const now = new Date();
+                    const diff = Math.floor((now - date) / 1000 / 60); // minutes
+
+                    let timeStr = '';
+                    if (diff < 1) timeStr = '刚刚';
+                    else if (diff < 60) timeStr = `${diff}分钟前`;
+                    else if (diff < 1440) timeStr = `${Math.floor(diff / 60)}小时前`;
+                    else timeStr = `${Math.floor(diff / 1440)}天前`;
+
+                    return {
+                        ...item,
+                        displayTime: timeStr,
+                        tagClass: this.getTagClass(item.type),
+                        tagLabel: this.getTagLabel(item.type)
+                    };
+                });
+
+                this.setData({ notifications: items });
+            }
+        } catch (err) {
+            console.error('Fetch notifications failed', err);
+        }
+    },
+
+    getTagClass(type) {
+        switch (type) {
+            case 'System': return 'tag-blue';
+            case 'Task': return 'tag-orange';
+            default: return 'tag-purple';
+        }
+    },
+
+    getTagLabel(type) {
+        switch (type) {
+            case 'System': return 'common.system';
+            case 'Task': return 'common.task';
+            default: return 'common.tips';
+        }
+    },
+
+    async onNotificationTap(e) {
+        const item = e.currentTarget.dataset.item;
+        if (!item.read) {
+            try {
+                await request({
+                    url: `/api/unified-notification/${item.id}/mark-as-read`,
+                    method: 'POST'
+                });
+                this.fetchNotifications();
+            } catch (err) {
+                console.error('Mark as read failed', err);
+            }
+        }
+
+        // 如果是任务通知，可以跳转到任务详情
+        if (item.taskId) {
+            wx.navigateTo({ url: `/pages/task/detail?id=${item.taskId}` });
+        }
+    },
+
     navigateToProject() {
         wx.navigateTo({ url: '/pages/project/list' });
     },
@@ -70,6 +146,10 @@ Page(withAuth(withI18n({
 
     switchTabToApps() {
         wx.switchTab({ url: '/pages/apps/apps' });
+    },
+
+    navigateToNotifications() {
+        wx.navigateTo({ url: '/pages/notification/list' });
     },
 
     onLoad() {

@@ -1,0 +1,57 @@
+<view class="container">
+  <!-- Tabs -->
+  <view class="tab-bar">
+    <view 
+      class="tab-item {{activeTab === item.key ? 'active' : ''}}" 
+      wx:for="{{tabs}}" 
+      wx:key="key"
+      bindtap="handleTabChange"
+      data-key="{{item.key}}"
+    >
+      {{item.title}}
+    </view>
+  </view>
+
+  <!-- List Content -->
+  <scroll-view class="scroll-content">
+    <view class="list-container" wx:if="{{notifications.length > 0}}">
+      <view 
+        class="list-item" 
+        wx:for="{{notifications}}" 
+        wx:key="id" 
+        bindtap="onNotificationTap" 
+        data-item="{{item}}"
+      >
+        <view class="item-icon {{item.read ? '' : 'unread-icon'}}">
+          <text class="iconfont {{item.type === 'Task' ? 'icon-task' : 'icon-notification'}}" style="color: {{item.read ? '#969799' : '#1890ff'}};"></text>
+        </view>
+        <view class="item-content">
+          <view class="item-title {{item.read ? '' : 'bold'}}">{{item.title}}</view>
+          <view class="item-meta">
+            <text class="tag-mini {{item.tagClass}}">{{t[item.tagLabel]}}</text>
+            <text style="margin-left: 20rpx;">{{item.displayTime}}</text>
+          </view>
+          <view class="item-desc" wx:if="{{item.description}}">{{item.description}}</view>
+        </view>
+        <view class="item-status" wx:if="{{!item.read}}"></view>
+      </view>
+
+      <!-- Loading More -->
+      <view class="load-more">
+        <text wx:if="{{loading}}">加载中...</text>
+        <text wx:elif="{{!hasMore}}">没有更多通知了</text>
+      </view>
+    </view>
+
+    <!-- Empty State -->
+    <view class="empty-wrap" wx:elif="{{!loading}}">
+      <view class="iconfont icon-notification" style="font-size: 120rpx; color: #eee;"></view>
+      <text>暂无通知</text>
+    </view>
+  </scroll-view>
+
+  <!-- Footer Actions -->
+  <view class="footer-actions" wx:if="{{notifications.length > 0}}">
+    <button class="btn-secondary" bindtap="markAllAsRead">全部已读</button>
+  </view>
+</view>

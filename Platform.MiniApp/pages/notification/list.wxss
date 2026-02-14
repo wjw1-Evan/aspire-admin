@@ -1,0 +1,84 @@
+/* 通用样式已迁移至 styles/business.wxss */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  background-color: #f7f8fa;
+  min-height: 100vh;
+}
+
+.scroll-content {
+  flex: 1;
+  height: 0;
+}
+
+.tab-bar {
+  background-color: #fff;
+  margin-bottom: 2rpx;
+}
+
+.list-item {
+  position: relative;
+  background-color: #fff;
+  padding: 30rpx;
+  border-bottom: 1rpx solid #f2f3f5;
+}
+
+.item-title.bold {
+  font-weight: 600;
+  color: #000;
+}
+
+.item-desc {
+  font-size: 24rpx;
+  color: #646566;
+  margin-top: 10rpx;
+  line-height: 1.6;
+}
+
+.item-status {
+  width: 16rpx;
+  height: 16rpx;
+  background-color: #ee0a24;
+  border-radius: 50%;
+  position: absolute;
+  right: 30rpx;
+  top: 40rpx;
+}
+
+.tag-mini {
+  font-size: 18rpx;
+  padding: 2rpx 10rpx;
+  border-radius: 4rpx;
+  display: inline-block;
+}
+
+.footer-actions {
+  padding: 20rpx 40rpx;
+  background-color: #fff;
+  border-top: 1rpx solid #f2f3f5;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+}
+
+.btn-secondary {
+  background-color: #f7f8fa;
+  color: #646566;
+  font-size: 28rpx;
+  border: none;
+  border-radius: 44rpx;
+}
+
+.btn-secondary:active {
+  opacity: 0.7;
+}
+
+.load-more {
+  text-align: center;
+  padding: 30rpx;
+  color: #969799;
+  font-size: 24rpx;
+}
+
+.unread-icon {
+  background-color: #e6f7ff !important;
+}

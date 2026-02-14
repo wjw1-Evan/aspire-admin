@@ -68,22 +68,26 @@
     </view>
   </view>
 
-  <!-- Recent Activity -->
   <view class="panel">
     <view class="panel-header">
       <text class="panel-title">{{t['home.announcements']}}</text>
+      <text class="panel-more" bindtap="navigateToNotifications">{{t['home.view_all']}}</text>
     </view>
-    <view class="msg-list">
-      <view class="msg-item">
-        <view class="msg-tag tag-blue">{{t['common.tips']}}</view>
-        <text class="msg-text">{{t['home.announcement.demo1']}}</text>
-        <text class="msg-time">{{t['home.time.hour']}}</text>
+    <view class="msg-list" wx:if="{{notifications.length > 0}}">
+      <view 
+        class="msg-item" 
+        wx:for="{{notifications}}" 
+        wx:key="id" 
+        bindtap="onNotificationTap" 
+        data-item="{{item}}"
+      >
+        <view class="msg-tag {{item.tagClass}}">{{t[item.tagLabel]}}</view>
+        <text class="msg-text {{item.read ? '' : 'unread'}}">{{item.title}}</text>
+        <text class="msg-time">{{item.displayTime}}</text>
       </view>
-      <view class="msg-item">
-        <view class="msg-tag tag-orange">{{t['common.tips']}}</view>
-        <text class="msg-text">{{t['home.announcement.demo2']}}</text>
-        <text class="msg-time">{{t['home.time.hours']}}</text>
-      </view>
+    </view>
+    <view class="empty-msg" wx:else>
+      <text>{{t['common.empty']}}</text>
     </view>
   </view>
 </view>

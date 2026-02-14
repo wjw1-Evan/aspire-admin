@@ -199,16 +199,22 @@
   border-bottom: none;
 }
 
-.msg-tag {
-  font-size: 20rpx;
-  padding: 4rpx 12rpx;
-  border-radius: 4rpx;
-  margin-right: 16rpx;
-  white-space: nowrap;
+.msg-item:active {
+  background-color: #fafafa;
 }
 
-.tag-blue { background: #e6f7ff; color: #1890ff; border: 1rpx solid #91d5ff; }
-.tag-orange { background: #fff7e6; color: #fa8c16; border: 1rpx solid #ffd591; }
+.msg-tag {
+  font-size: 20rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 8rpx;
+  margin-right: 16rpx;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.tag-blue { background: #e6f7ff; color: #1890ff; border: 1rpx solid rgba(24, 144, 255, 0.2); }
+.tag-orange { background: #fff7e6; color: #fa8c16; border: 1rpx solid rgba(250, 140, 22, 0.2); }
+.tag-purple { background: #f9f0ff; color: #722ed1; border: 1rpx solid rgba(114, 46, 209, 0.2); }
 
 .msg-text {
   flex: 1;
@@ -217,6 +223,18 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.msg-text.unread {
+  font-weight: 600;
+  color: #001529;
+}
+
+.empty-msg {
+  padding: 48rpx 0;
+  text-align: center;
+  font-size: 26rpx;
+  color: #bfbfbf;
 }
 
 .msg-time {

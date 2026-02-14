@@ -18,6 +18,8 @@ const zhCN = {
 
     'common.create_success': '创建成功',
     'common.submit_fail': '提交失败',
+    'common.system': '系统',
+    'common.task': '任务',
 
     // Park JS Messages
     'park.asset.building_detail': '楼宇详情',
@@ -131,9 +133,9 @@ const zhCN = {
     'home.stats.tasks': '待办任务',
     'home.functions': '常用功能',
     'home.view_all': '查看全部',
-    'home.announcements': '最新公告',
-    'home.announcement.demo1': '2026年度园区安全生产检查通知',
-    'home.announcement.demo2': '3号楼变压器运行负载异常提示',
+    'home.announcements': '通知中心',
+    'home.announcement.demo1': '系统通知：您的密码将在15天后过期，请及时修改',
+    'home.announcement.demo2': '任务提示：[项目 A] 有 3 个任务今天截止',
     'home.time.hour': '1小时前',
     'home.time.hours': '3小时前',
 
@@ -656,6 +658,8 @@ const enUS = {
 
     'common.create_success': 'Created',
     'common.submit_fail': 'Submit Failed',
+    'common.system': 'System',
+    'common.task': 'Task',
     'park.visit.task_edit': 'Edit Task',
     'park.visit.task_create': 'Create Task',
     'park.visit.task_input_name': 'Please input task name',
@@ -753,9 +757,9 @@ const enUS = {
     'home.stats.tasks': 'My Tasks',
     'home.functions': 'Quick Actions',
     'home.view_all': 'View All',
-    'home.announcements': 'Recent Announcements',
-    'home.announcement.demo1': 'Park Safety Inspection Notice 2026',
-    'home.announcement.demo2': 'Transformer Load Alert (Building 3)',
+    'home.announcements': 'Notification Center',
+    'home.announcement.demo1': 'System: Your password will expire in 15 days',
+    'home.announcement.demo2': 'Task: 3 tasks expire today for [Project A]',
     'home.time.hour': '1 hour ago',
     'home.time.hours': '3 hours ago',
 

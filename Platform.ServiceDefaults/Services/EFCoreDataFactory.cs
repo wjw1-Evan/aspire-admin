@@ -1,10 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using Platform.ServiceDefaults.Models;
-using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using System.Collections.Concurrent;
+using Platform.ServiceDefaults.Models;
+using System.Linq.Expressions;
 
 namespace Platform.ServiceDefaults.Services;
 
@@ -20,9 +19,7 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
     private readonly string? _currentUserId;
     private readonly ITenantContext? _tenantContext;
 
-    // 编译查询缓存 - 大幅提升重复查询性能
-    private static readonly ConcurrentDictionary<string, object> QueryCache = new();
-    private static readonly SemaphoreSlim BatchLock = new(1, 1);
+
 
     public EFCoreDataFactory(
         PlatformDbContext context,
@@ -171,9 +168,14 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
 
     public async Task<T> CreateAsync(T entity, CancellationToken cancellationToken = default)
     {
-        // 🚀 性能优化：显式异步获取企业 ID，减少对 DbContext 同步属性的依赖
-        var companyId = await GetCurrentCompanyIdAsync();
-        SetCreateAudit(entity, companyId);
+        // 🚀 异步获取企业 ID 并提前设置，避免 DbContext.SaveChanges 内部同步阻塞
+        if (entity is IMultiTenant multiTenant && string.IsNullOrEmpty(multiTenant.CompanyId))
+        {
+            var companyId = await GetCurrentCompanyIdAsync();
+            if (!string.IsNullOrEmpty(companyId))
+                multiTenant.CompanyId = companyId;
+        }
+        // 其余审计字段由 PlatformDbContext.SaveChangesAsync 统一设置
         _dbSet.Add(entity);
         await _context.SaveChangesAsync(cancellationToken);
         return entity;
@@ -184,25 +186,21 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
         var entityList = entities.ToList();
         if (entityList.Count == 0) return entityList;
 
-        // 🚀 性能优化：显式异步获取企业 ID
+        // 🚀 异步获取企业 ID 并提前批量设置，避免 DbContext 内部同步阻塞
         var companyId = await GetCurrentCompanyIdAsync();
-
-        // 🚀 批量设置审计字段
-        var now = DateTime.UtcNow;
-        foreach (var entity in entityList)
+        if (!string.IsNullOrEmpty(companyId))
         {
-            entity.CreatedAt = now;
-            entity.UpdatedAt = now;
-            if (entity is IMultiTenant multiTenant && string.IsNullOrEmpty(multiTenant.CompanyId) && !string.IsNullOrEmpty(companyId))
+            foreach (var entity in entityList)
             {
-                multiTenant.CompanyId = companyId;
+                if (entity is IMultiTenant multiTenant && string.IsNullOrEmpty(multiTenant.CompanyId))
+                    multiTenant.CompanyId = companyId;
             }
         }
 
+        // 其余审计字段由 PlatformDbContext.SaveChangesAsync 统一设置
         await _dbSet.AddRangeAsync(entityList, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
 
-        // 🚀 批量审计记录（只在有实体时记录）
         if (entityList.Count > 0)
         {
             await _auditService.RecordOperationAsync("BATCH_CREATE", typeof(T).Name, $"count:{entityList.Count}", entityList.Count, $"Created {entityList.Count} entities");
@@ -216,8 +214,8 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
         var entity = await GetByIdAsync(id, cancellationToken);
         if (entity == null) return null;
 
-        SetUpdateAudit(entity);
         updateAction(entity);
+        // 审计字段由 PlatformDbContext.SaveChangesAsync 统一设置
         await _context.SaveChangesAsync(cancellationToken);
         return entity;
     }
@@ -227,74 +225,48 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
         var entity = await GetByIdAsync(id, cancellationToken);
         if (entity == null) return null;
 
-        SetUpdateAudit(entity);
         await updateAction(entity);
+        // 审计字段由 PlatformDbContext.SaveChangesAsync 统一设置
         await _context.SaveChangesAsync(cancellationToken);
         return entity;
     }
 
     public async Task<int> UpdateManyAsync(Expression<Func<T, bool>> filter, Action<T> updateAction, CancellationToken cancellationToken = default)
     {
-        // 🚀 限制批量更新数量以避免内存问题
         const int maxBatchSize = 1000;
-
         var entities = await _dbSet.Where(filter).Take(maxBatchSize + 1).ToListAsync(cancellationToken);
-
-        // 🚀 如果超过最大批量大小，记录警告并只处理前maxBatchSize个
-        var totalCount = entities.Count;
-        if (totalCount > maxBatchSize)
-        {
+        if (entities.Count > maxBatchSize)
             entities = entities.Take(maxBatchSize).ToList();
-        }
-
         if (entities.Count == 0) return 0;
 
-        var now = DateTime.UtcNow;
         foreach (var entity in entities)
-        {
-            entity.UpdatedAt = now;
             updateAction(entity);
-        }
 
+        // 审计字段由 PlatformDbContext.SaveChangesAsync 统一设置
         await _context.SaveChangesAsync(cancellationToken);
 
-        // 🚀 只在有更新时记录审计
         if (entities.Count > 0)
-        {
             await _auditService.RecordOperationAsync("BATCH_UPDATE", typeof(T).Name, $"count:{entities.Count}", entities.Count, $"Updated {entities.Count} entities");
-        }
 
         return entities.Count;
     }
 
     public async Task<int> UpdateManyAsync(Expression<Func<T, bool>> filter, Func<T, Task> updateAction, CancellationToken cancellationToken = default)
     {
-        // 🚀 限制批量更新数量以避免内存问题
         const int maxBatchSize = 1000;
-
         var entities = await _dbSet.Where(filter).Take(maxBatchSize + 1).ToListAsync(cancellationToken);
-
-        var totalCount = entities.Count;
-        if (totalCount > maxBatchSize)
-        {
+        if (entities.Count > maxBatchSize)
             entities = entities.Take(maxBatchSize).ToList();
-        }
-
         if (entities.Count == 0) return 0;
 
-        var now = DateTime.UtcNow;
         foreach (var entity in entities)
-        {
-            entity.UpdatedAt = now;
             await updateAction(entity);
-        }
 
+        // 审计字段由 PlatformDbContext.SaveChangesAsync 统一设置
         await _context.SaveChangesAsync(cancellationToken);
 
         if (entities.Count > 0)
-        {
             await _auditService.RecordOperationAsync("BATCH_UPDATE", typeof(T).Name, $"count:{entities.Count}", entities.Count, $"Updated {entities.Count} entities");
-        }
 
         return entities.Count;
     }
@@ -304,7 +276,9 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
         var entity = await GetByIdAsync(id, cancellationToken);
         if (entity == null) return false;
 
-        ApplySoftDelete(entity, reason);
+        // 只设置软删除标记，审计字段由 PlatformDbContext.SaveChangesAsync 统一设置
+        entity.IsDeleted = true;
+        entity.DeletedReason = reason;
         await _context.SaveChangesAsync(cancellationToken);
         await _auditService.RecordOperationAsync("SOFT_DELETE", typeof(T).Name, id, null, reason);
         return true;
@@ -312,31 +286,17 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
 
     public async Task<int> SoftDeleteManyAsync(Expression<Func<T, bool>> filter, string? reason = null, CancellationToken cancellationToken = default)
     {
-        // 🚀 限制批量软删除数量
         const int maxBatchSize = 1000;
-
         var entities = await _dbSet.Where(filter).Take(maxBatchSize + 1).ToListAsync(cancellationToken);
-
-        var totalCount = entities.Count;
-        if (totalCount > maxBatchSize)
-        {
+        if (entities.Count > maxBatchSize)
             entities = entities.Take(maxBatchSize).ToList();
-        }
-
         if (entities.Count == 0) return 0;
 
-        var now = DateTime.UtcNow;
+        // 只设置软删除标记，审计字段由 PlatformDbContext.SaveChangesAsync 统一设置
         foreach (var entity in entities)
         {
-            // 🚀 使用接口显式转换避免二义性
-            if (entity is ISoftDeletable softDeletable)
-            {
-                softDeletable.IsDeleted = true;
-                softDeletable.DeletedAt = now;
-                softDeletable.DeletedBy = _currentUserId;
-                softDeletable.DeletedReason = reason;
-            }
-            entity.UpdatedAt = now;
+            entity.IsDeleted = true;
+            entity.DeletedReason = reason;
         }
 
         await _context.SaveChangesAsync(cancellationToken);
@@ -349,7 +309,6 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
         var entity = await _dbSet.IgnoreQueryFilters().FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
         if (entity == null) return false;
 
-        SetDeleteAudit(entity);
         _dbSet.Remove(entity);
         await _context.SaveChangesAsync(cancellationToken);
         return true;
@@ -468,60 +427,4 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
         return companyId;
     }
 
-
-    private void SetCreateAudit(T entity, string? companyId)
-    {
-        entity.CreatedAt = DateTime.UtcNow;
-        entity.UpdatedAt = DateTime.UtcNow;
-        if (entity is IMultiTenant multiTenant && string.IsNullOrEmpty(multiTenant.CompanyId) && !string.IsNullOrEmpty(companyId))
-        {
-            multiTenant.CompanyId = companyId;
-        }
-        if (entity is IOperationTrackable trackable)
-        {
-            trackable.CreatedBy = _currentUserId;
-            trackable.UpdatedBy = _currentUserId;
-            trackable.LastOperationType = "CREATE";
-            trackable.LastOperationAt = DateTime.UtcNow;
-        }
-    }
-
-    private void SetUpdateAudit(T entity)
-    {
-        entity.UpdatedAt = DateTime.UtcNow;
-        if (entity is IOperationTrackable trackable)
-        {
-            trackable.UpdatedBy = _currentUserId;
-            trackable.LastOperationType = "UPDATE";
-            trackable.LastOperationAt = DateTime.UtcNow;
-        }
-    }
-
-    private void SetDeleteAudit(T entity)
-    {
-        if (entity is IOperationTrackable trackable)
-        {
-            trackable.LastOperationType = "DELETE";
-            trackable.LastOperationAt = DateTime.UtcNow;
-        }
-    }
-
-    private void ApplySoftDelete(T entity, string? reason)
-    {
-        SetDeleteAudit(entity);
-        if (entity is ISoftDeletable softDeletable)
-        {
-            softDeletable.IsDeleted = true;
-            softDeletable.DeletedAt = DateTime.UtcNow;
-            softDeletable.DeletedBy = _currentUserId;
-            softDeletable.DeletedReason = reason;
-        }
-        if (entity is ITimestamped timestamped) timestamped.UpdatedAt = DateTime.UtcNow;
-        if (entity is IOperationTrackable trackable)
-        {
-            trackable.UpdatedBy = _currentUserId;
-            trackable.LastOperationType = "SOFT_DELETE";
-            trackable.LastOperationAt = DateTime.UtcNow;
-        }
-    }
 }

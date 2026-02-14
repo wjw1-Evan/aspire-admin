@@ -177,11 +177,6 @@ public class PlatformDbContext(DbContextOptions<PlatformDbContext> options, ITen
 
                 var tenantFilter = Expression.Equal(companyIdProperty, currentCompanyIdProperty);
                 filterBody = filterBody == null ? tenantFilter : Expression.AndAlso(filterBody, tenantFilter);
-                Console.WriteLine($"[DEBUG] Applied IMultiTenant filter to: {type.Name}");
-            }
-            else
-            {
-                Console.WriteLine($"[DEBUG] Skipping IMultiTenant filter for: {type.Name}");
             }
 
             if (filterBody != null)

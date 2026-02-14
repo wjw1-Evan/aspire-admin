@@ -1,6 +1,6 @@
 const { request } = require('../../utils/request');
 const { withAuth } = require('../../utils/auth');
-const { t, withI18n } = require('../../utils/i18n');
+const { t, getTranslations, withI18n } = require('../../utils/i18n');
 const app = getApp();
 
 Page(withAuth(withI18n({
@@ -23,8 +23,10 @@ Page(withAuth(withI18n({
     },
 
     updateTranslations() {
+        const translations = getTranslations();
         this.setData({
             t: {
+                ...translations,
                 'title': t('cloud.title'),
                 'allFiles': t('cloud.all_files'),
                 'emptyFolder': t('cloud.empty_folder'),

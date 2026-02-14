@@ -1,33 +1,9 @@
-/* 通用样式已迁移至 styles/business.wxss */
-
+/* 通用业务样式已通过 app.wxss 引入 styles/business.wxss */
 
 .container {
   padding: 0;
   background-color: #f7f8fa;
   min-height: 100vh;
-}
-
-/* Task Card (页面特有) */
-.task-card {
-  transition: opacity 0.2s;
-}
-
-.task-card:active {
-  opacity: 0.7;
-}
-
-.task-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 20rpx;
-}
-
-.task-name {
-  font-size: 30rpx;
-  font-weight: 600;
-  color: #333;
-  display: block;
 }
 
 .project-tag {
@@ -40,41 +16,6 @@
   display: inline-block;
 }
 
-.task-info {
-  margin-bottom: 20rpx;
-}
-
-.progress-bar-wrap {
-  margin-top: 24rpx;
-}
-
-.progress-text {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10rpx;
-  font-size: 24rpx;
-}
-
-.status-text { font-weight: bold; }
-.status-0 { color: #999; }
-.status-2 { color: #1890ff; }
-.status-3 { color: #52c41a; }
-.status-4 { color: #faad14; }
-
-.percent { color: #333; }
-
-.empty-icon {
-  width: 160rpx;
-  height: 160rpx;
-  opacity: 0.1;
-  margin-bottom: 24rpx;
-}
-
-.empty-text { color: #ccc; font-size: 26rpx; }
-
-.loading-bar {
-  text-align: center;
-  font-size: 24rpx;
-  color: #ccc;
-  padding: 20rpx 0;
+.list-container {
+  padding: 24rpx;
 }

@@ -1,6 +1,6 @@
 const { request } = require('../../utils/request');
 const { withAuth } = require('../../utils/auth');
-const { t, withI18n } = require('../../utils/i18n');
+const { t, getTranslations, withI18n } = require('../../utils/i18n');
 
 Page(withAuth(withI18n({
     data: {
@@ -23,6 +23,7 @@ Page(withAuth(withI18n({
     },
 
     updateTranslations() {
+        const translations = getTranslations();
         const statusTabs = [
             { label: t('common.all'), value: '' },
             { label: t('task.status.todo'), value: 0 },
@@ -47,6 +48,7 @@ Page(withAuth(withI18n({
         };
         this.setData({
             t: {
+                ...translations,
                 'title': t('task.list.title'),
                 'empty': t('common.empty'),
                 'create': t('common.create')

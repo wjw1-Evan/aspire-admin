@@ -1,26 +1,28 @@
 <view class="container">
   <!-- Statistics Section -->
-  <view class="stats-overview card-style" wx:if="{{statistics}}">
-    <view class="stats-item">
-      <text class="num">{{statistics.totalTasks || 0}}</text>
-      <text class="label">{{t['task.list.total']}}</text>
-    </view>
-    <view class="stats-item">
-      <text class="num primary">{{statistics.inProgressTasks || 0}}</text>
-      <text class="label">{{t['task.list.in_progress']}}</text>
-    </view>
-    <view class="stats-item">
-      <text class="num success">{{statistics.completedTasks || 0}}</text>
-      <text class="label">{{t['task.list.completed']}}</text>
-    </view>
-    <view class="stats-item">
-      <text class="num danger">{{statistics.completionRate || 0}}%</text>
-      <text class="label">{{t['task.list.completion_rate']}}</text>
+  <view class="biz-card" wx:if="{{statistics}}" style="margin: 0 0 24rpx 0; border-radius: 0;">
+    <view class="stats-overview">
+      <view class="stats-item">
+        <text class="num">{{statistics.totalTasks || 0}}</text>
+        <text class="label">{{t['task.list.total']}}</text>
+      </view>
+      <view class="stats-item">
+        <text class="num" style="color: #1890ff;">{{statistics.inProgressTasks || 0}}</text>
+        <text class="label">{{t['task.list.in_progress']}}</text>
+      </view>
+      <view class="stats-item">
+        <text class="num" style="color: #52c41a;">{{statistics.completedTasks || 0}}</text>
+        <text class="label">{{t['task.list.completed']}}</text>
+      </view>
+      <view class="stats-item">
+        <text class="num" style="color: #faad14;">{{statistics.completionRate || 0}}%</text>
+        <text class="label">{{t['task.list.completion_rate']}}</text>
+      </view>
     </view>
   </view>
 
-  <!-- Filter Tabs -->
-  <scroll-view class="filter-tabs" scroll-x enable-flex>
+  <!-- Filter Tabs (Sticky) -->
+  <view class="tab-bar">
     <view 
       class="tab-item {{currentStatus === item.value ? 'active' : ''}}" 
       wx:for="{{statusTabs}}" 
@@ -30,65 +32,74 @@
     >
       {{item.label}}
     </view>
-  </scroll-view>
+  </view>
 
   <!-- Task List -->
-  <view class="task-list">
+  <view class="list-container">
     <block wx:if="{{tasks.length > 0}}">
       <view 
-        class="task-card card-style" 
+        class="biz-card" 
         wx:for="{{tasks}}" 
         wx:key="id"
         bindtap="goToDetail"
         data-id="{{item.id}}"
       >
-        <view class="task-header">
-          <view class="title-area">
-            <text class="task-name">{{item.taskName}}</text>
-            <text class="project-tag" wx:if="{{item.projectName}}">{{item.projectName}}</text>
+        <view class="card-header">
+          <view style="flex: 1; overflow: hidden;">
+            <view class="card-title">{{item.taskName}}</view>
+            <view class="project-tag" wx:if="{{item.projectName}}">{{item.projectName}}</view>
           </view>
           <view class="priority-tag priority-{{item.priority}}">{{priorityMap[item.priority]}}</view>
         </view>
 
-        <view class="task-info">
+        <view class="card-body">
           <view class="info-row">
-            <text class="label">{{t['task.list.assignee']}}</text>
-            <text class="value">{{item.assignedToName || t['task.list.unassigned']}}</text>
+            <text class="info-label">{{t['task.list.assignee']}}</text>
+            <text class="info-value">{{item.assignedToName || t['task.list.unassigned']}}</text>
           </view>
           <view class="info-row">
-            <text class="label">{{t['task.list.deadline']}}</text>
-            <text class="value">{{item.plannedEndTime || '-'}}</text>
+            <text class="info-label">{{t['task.list.deadline']}}</text>
+            <text class="info-value">{{item.plannedEndTime || '-'}}</text>
           </view>
-        </view>
 
-        <view class="progress-bar-wrap">
-          <view class="progress-text">
-            <text class="status-text {{'status-' + item.status}}">{{statusMap[item.status]}}</text>
-            <text class="percent">{{item.completionPercentage}}%</text>
+          <!-- Status & Progress -->
+          <view style="margin-top: 24rpx;">
+            <view class="flex justify-between" style="margin-bottom: 8rpx; font-size: 24rpx;">
+              <text class="status-tag status-{{item.status === 2 ? 'Processing' : (item.status === 3 ? 'Completed' : 'Pending')}}">{{statusMap[item.status]}}</text>
+              <text style="font-weight: bold; color: #1890ff;">{{item.completionPercentage}}%</text>
+            </view>
+            <progress 
+              percent="{{item.completionPercentage}}" 
+              stroke-width="6" 
+              color="{{item.status === 3 ? '#52c41a' : '#1890ff'}}" 
+              border-radius="4"
+            />
           </view>
-          <progress 
-            percent="{{item.completionPercentage}}" 
-            stroke-width="4" 
-            color="#1890ff" 
-            border-radius="2"
-          />
         </view>
       </view>
     </block>
 
     <!-- Empty State -->
-    <view class="empty-state" wx:else>
-      <image src="/assets/logo.png" mode="aspectFit" class="empty-icon"></image>
-      <text class="empty-text">{{t['task.list.no_data']}}</text>
+    <view class="empty-wrap" wx:elif="{{!loading}}">
+      <view class="iconfont icon-task" style="font-size: 120rpx; color: #eee;"></view>
+      <text>{{t['task.list.no_data']}}</text>
     </view>
 
     <!-- Loading -->
-    <view class="loading-bar" wx:if="{{loading}}">{{t['task.list.loading_more']}}</view>
-    <view class="no-more" wx:if="{{!hasMore && tasks.length > 0}}">{{t['task.list.no_more']}}</view>
+    <view class="loading-wrap" wx:if="{{loading}}">
+      <view class="loading"></view>
+      <text>{{t['task.list.loading_more']}}</text>
+    </view>
+
+    <view class="text-secondary" style="text-align: center; padding: 30rpx 0; font-size: 24rpx;" wx:if="{{!hasMore && tasks.length > 0}}">
+      {{t['task.list.no_more']}}
+    </view>
   </view>
 
-  <!-- Floating Action Button -->
-  <view class="fab-btn" bindtap="goToCreate">
-    <text class="iconfont icon-plus"></text>
+  <!-- Floating Action Button (Fixed) -->
+  <view class="fab-group">
+    <view class="add-btn" bindtap="goToCreate">
+      <text class="iconfont icon-plus"></text>
+    </view>
   </view>
 </view>

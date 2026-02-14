@@ -1,6 +1,6 @@
 const { request } = require('../../utils/request');
 const { withAuth } = require('../../utils/auth');
-const { t, getLocale, withI18n } = require('../../utils/i18n');
+const { t, getLocale, getTranslations, withI18n } = require('../../utils/i18n');
 
 Page(withAuth(withI18n({
     data: {
@@ -20,6 +20,7 @@ Page(withAuth(withI18n({
     },
 
     updateTranslations() {
+        const translations = getTranslations();
         const statusMap = {
             0: t('project.status.planning'),
             1: t('project.status.in_progress'),
@@ -29,6 +30,7 @@ Page(withAuth(withI18n({
         };
         this.setData({
             t: {
+                ...translations,
                 'title': t('project.list.title'),
                 'search': t('common.search'),
                 'empty': t('common.empty'),

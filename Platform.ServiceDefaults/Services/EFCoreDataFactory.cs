@@ -8,8 +8,8 @@ using System.Linq.Expressions;
 namespace Platform.ServiceDefaults.Services;
 
 /// <summary>
-/// 🚀 优化的Entity Framework Core数据工厂 - 纯LINQ操作
-/// 替换DatabaseOperationFactory，提供高性能、类型安全的数据访问
+/// EF Core 数据工厂 - 提供类型安全的 CRUD 和分页查询
+/// 审计字段（时间戳、操作人、多租户等）统一由 PlatformDbContext.SaveChangesAsync 设置
 /// </summary>
 public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, ISoftDeletable, ITimestamped
 {
@@ -18,8 +18,6 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
     private readonly IAuditService _auditService;
     private readonly string? _currentUserId;
     private readonly ITenantContext? _tenantContext;
-
-
 
     public EFCoreDataFactory(
         PlatformDbContext context,
@@ -31,43 +29,20 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
         _dbSet = context.Set<T>();
         _auditService = auditService;
         _tenantContext = tenantContext;
-
-        // 🚀 获取当前用户ID（同步方式）
         _currentUserId = tenantContext?.GetCurrentUserId()
             ?? httpContextAccessor?.HttpContext?.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
     }
 
+    #region 查询操作
+
     public async Task<T?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
-    {
-        // 🚀 使用FindAsync优先（更高效的键查找）
-        var entity = await _dbSet.FindAsync(new object[] { id }, cancellationToken);
-        if (entity == null)
-        {
-            // 🚀 如果找不到，尝试 IgnoreQueryFilters 看看是否被过滤器拦截
-            var ignoredEntity = await _dbSet.IgnoreQueryFilters().FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
-            if (ignoredEntity != null)
-            {
-                var logger = _context.GetService<ILogger<EFCoreDataFactory<T>>>();
-                if (logger != null)
-                {
-                    logger.LogWarning("EFCoreDataFactory: [过滤器拦截] 实体 {Type} ID {Id} 被全局过滤器拦截 (可能是 isDeleted:true 或多租户不匹配)", typeof(T).Name, id);
-                }
-            }
-        }
-        return entity;
-    }
+        => await _dbSet.FindAsync(new object[] { id }, cancellationToken);
 
     public async Task<bool> ExistsAsync(string id, CancellationToken cancellationToken = default)
-    {
-        // 🚀 使用AnyAsync配合Select只查Id，减少数据传输
-        return await _dbSet.Where(e => e.Id == id).Select(e => e.Id).AnyAsync(cancellationToken);
-    }
+        => await _dbSet.AnyAsync(e => e.Id == id, cancellationToken);
 
     public async Task<bool> ExistsAsync(Expression<Func<T, bool>> filter, CancellationToken cancellationToken = default)
-    {
-        // 🚀 使用Select只查Id，减少数据传输
-        return await _dbSet.Where(filter).Select(e => e.Id).AnyAsync(cancellationToken);
-    }
+        => await _dbSet.AnyAsync(filter, cancellationToken);
 
     public async Task<List<T>> FindAsync(
         Expression<Func<T, bool>>? filter = null,
@@ -76,35 +51,8 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
         Expression<Func<T, object>>[]? includes = null,
         CancellationToken cancellationToken = default)
     {
-        // 🚀 使用AsNoTracking提升查询性能
-        IQueryable<T> query = _dbSet.AsNoTracking();
-
-        // 🚀 先应用过滤条件，再应用Include（优化查询计划）
-        if (filter != null)
-        {
-            query = query.Where(filter);
-        }
-
-        // 🚀 Include只应用于需要的关联
-        if (includes != null && includes.Length > 0)
-        {
-            foreach (var include in includes)
-            {
-                query = query.Include(include);
-            }
-        }
-
-        // 🚀 先排序再分页
-        if (orderBy != null)
-        {
-            query = orderBy(query);
-        }
-
-        if (limit.HasValue && limit.Value > 0)
-        {
-            query = query.Take(limit.Value);
-        }
-
+        var query = BuildQuery(_dbSet.AsNoTracking(), filter, orderBy, includes);
+        if (limit is > 0) query = query.Take(limit.Value);
         return await query.ToListAsync(cancellationToken);
     }
 
@@ -116,66 +64,35 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
         Expression<Func<T, object>>[]? includes = null,
         CancellationToken cancellationToken = default)
     {
-        // 🚀 参数验证和边界处理
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
         IQueryable<T> baseQuery = _dbSet.AsNoTracking();
+        if (filter != null) baseQuery = baseQuery.Where(filter);
 
-        if (filter != null)
-        {
-            baseQuery = baseQuery.Where(filter);
-        }
-
-        // 🚀 优化的分页查询：先获取总数，再获取数据
-        // 对于小数据集，可以考虑使用CountAsync的fast path
+        // 并行执行计数和数据查询
         var totalTask = baseQuery.CountAsync(cancellationToken);
+        var itemsQuery = BuildQuery(baseQuery, null, orderBy, includes);
+        var itemsTask = itemsQuery.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
 
-        // 🚀 构建数据查询
-        var itemsQuery = baseQuery;
-
-        // 🚀 Include只应用于数据查询，不应用于计数
-        if (includes != null && includes.Length > 0)
-        {
-            foreach (var include in includes)
-            {
-                itemsQuery = itemsQuery.Include(include);
-            }
-        }
-
-        // 🚀 排序必须在Skip/Take之前
-        if (orderBy != null)
-        {
-            itemsQuery = orderBy(itemsQuery);
-        }
-        else
-        {
-            // 🚀 默认按创建时间倒序排序
-            itemsQuery = itemsQuery.OrderByDescending(e => e.CreatedAt);
-        }
-
-        // 🚀 执行分页查询
-        var itemsTask = itemsQuery
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
-
-        // 🚀 并行执行计数和查询
         await Task.WhenAll(totalTask, itemsTask);
-
         return (itemsTask.Result, totalTask.Result);
     }
 
+    public async Task<long> CountAsync(Expression<Func<T, bool>>? filter = null, CancellationToken cancellationToken = default)
+    {
+        IQueryable<T> query = _dbSet;
+        if (filter != null) query = query.Where(filter);
+        return await query.CountAsync(cancellationToken);
+    }
+
+    #endregion
+
+    #region 创建操作
+
     public async Task<T> CreateAsync(T entity, CancellationToken cancellationToken = default)
     {
-        // 🚀 异步获取企业 ID 并提前设置，避免 DbContext.SaveChanges 内部同步阻塞
-        if (entity is IMultiTenant multiTenant && string.IsNullOrEmpty(multiTenant.CompanyId))
-        {
-            var companyId = await GetCurrentCompanyIdAsync();
-            if (!string.IsNullOrEmpty(companyId))
-                multiTenant.CompanyId = companyId;
-        }
-        // 其余审计字段由 PlatformDbContext.SaveChangesAsync 统一设置
+        await SetCompanyIdAsync(entity);
         _dbSet.Add(entity);
         await _context.SaveChangesAsync(cancellationToken);
         return entity;
@@ -186,36 +103,31 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
         var entityList = entities.ToList();
         if (entityList.Count == 0) return entityList;
 
-        // 🚀 异步获取企业 ID 并提前批量设置，避免 DbContext 内部同步阻塞
         var companyId = await GetCurrentCompanyIdAsync();
         if (!string.IsNullOrEmpty(companyId))
         {
             foreach (var entity in entityList)
             {
-                if (entity is IMultiTenant multiTenant && string.IsNullOrEmpty(multiTenant.CompanyId))
-                    multiTenant.CompanyId = companyId;
+                if (entity is IMultiTenant mt && string.IsNullOrEmpty(mt.CompanyId))
+                    mt.CompanyId = companyId;
             }
         }
 
-        // 其余审计字段由 PlatformDbContext.SaveChangesAsync 统一设置
         await _dbSet.AddRangeAsync(entityList, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
-
-        if (entityList.Count > 0)
-        {
-            await _auditService.RecordOperationAsync("BATCH_CREATE", typeof(T).Name, $"count:{entityList.Count}", entityList.Count, $"Created {entityList.Count} entities");
-        }
-
+        await _auditService.RecordOperationAsync("BATCH_CREATE", typeof(T).Name, $"count:{entityList.Count}", entityList.Count, $"Created {entityList.Count} entities");
         return entityList;
     }
+
+    #endregion
+
+    #region 更新操作
 
     public async Task<T?> UpdateAsync(string id, Action<T> updateAction, CancellationToken cancellationToken = default)
     {
         var entity = await GetByIdAsync(id, cancellationToken);
         if (entity == null) return null;
-
         updateAction(entity);
-        // 审计字段由 PlatformDbContext.SaveChangesAsync 统一设置
         await _context.SaveChangesAsync(cancellationToken);
         return entity;
     }
@@ -224,59 +136,42 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
     {
         var entity = await GetByIdAsync(id, cancellationToken);
         if (entity == null) return null;
-
         await updateAction(entity);
-        // 审计字段由 PlatformDbContext.SaveChangesAsync 统一设置
         await _context.SaveChangesAsync(cancellationToken);
         return entity;
     }
 
     public async Task<int> UpdateManyAsync(Expression<Func<T, bool>> filter, Action<T> updateAction, CancellationToken cancellationToken = default)
     {
-        const int maxBatchSize = 1000;
-        var entities = await _dbSet.Where(filter).Take(maxBatchSize + 1).ToListAsync(cancellationToken);
-        if (entities.Count > maxBatchSize)
-            entities = entities.Take(maxBatchSize).ToList();
+        var entities = await LoadBatchAsync(filter, cancellationToken);
         if (entities.Count == 0) return 0;
 
-        foreach (var entity in entities)
-            updateAction(entity);
-
-        // 审计字段由 PlatformDbContext.SaveChangesAsync 统一设置
+        foreach (var entity in entities) updateAction(entity);
         await _context.SaveChangesAsync(cancellationToken);
-
-        if (entities.Count > 0)
-            await _auditService.RecordOperationAsync("BATCH_UPDATE", typeof(T).Name, $"count:{entities.Count}", entities.Count, $"Updated {entities.Count} entities");
-
+        await _auditService.RecordOperationAsync("BATCH_UPDATE", typeof(T).Name, $"count:{entities.Count}", entities.Count, $"Updated {entities.Count} entities");
         return entities.Count;
     }
 
     public async Task<int> UpdateManyAsync(Expression<Func<T, bool>> filter, Func<T, Task> updateAction, CancellationToken cancellationToken = default)
     {
-        const int maxBatchSize = 1000;
-        var entities = await _dbSet.Where(filter).Take(maxBatchSize + 1).ToListAsync(cancellationToken);
-        if (entities.Count > maxBatchSize)
-            entities = entities.Take(maxBatchSize).ToList();
+        var entities = await LoadBatchAsync(filter, cancellationToken);
         if (entities.Count == 0) return 0;
 
-        foreach (var entity in entities)
-            await updateAction(entity);
-
-        // 审计字段由 PlatformDbContext.SaveChangesAsync 统一设置
+        foreach (var entity in entities) await updateAction(entity);
         await _context.SaveChangesAsync(cancellationToken);
-
-        if (entities.Count > 0)
-            await _auditService.RecordOperationAsync("BATCH_UPDATE", typeof(T).Name, $"count:{entities.Count}", entities.Count, $"Updated {entities.Count} entities");
-
+        await _auditService.RecordOperationAsync("BATCH_UPDATE", typeof(T).Name, $"count:{entities.Count}", entities.Count, $"Updated {entities.Count} entities");
         return entities.Count;
     }
+
+    #endregion
+
+    #region 删除操作
 
     public async Task<bool> SoftDeleteAsync(string id, string? reason = null, CancellationToken cancellationToken = default)
     {
         var entity = await GetByIdAsync(id, cancellationToken);
         if (entity == null) return false;
 
-        // 只设置软删除标记，审计字段由 PlatformDbContext.SaveChangesAsync 统一设置
         entity.IsDeleted = true;
         entity.DeletedReason = reason;
         await _context.SaveChangesAsync(cancellationToken);
@@ -286,13 +181,9 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
 
     public async Task<int> SoftDeleteManyAsync(Expression<Func<T, bool>> filter, string? reason = null, CancellationToken cancellationToken = default)
     {
-        const int maxBatchSize = 1000;
-        var entities = await _dbSet.Where(filter).Take(maxBatchSize + 1).ToListAsync(cancellationToken);
-        if (entities.Count > maxBatchSize)
-            entities = entities.Take(maxBatchSize).ToList();
+        var entities = await LoadBatchAsync(filter, cancellationToken);
         if (entities.Count == 0) return 0;
 
-        // 只设置软删除标记，审计字段由 PlatformDbContext.SaveChangesAsync 统一设置
         foreach (var entity in entities)
         {
             entity.IsDeleted = true;
@@ -316,39 +207,21 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
 
     public async Task<int> DeleteManyAsync(Expression<Func<T, bool>> filter, CancellationToken cancellationToken = default)
     {
-        // 🚀 限制批量硬删除数量
-        const int maxBatchSize = 1000;
-
-        var entities = await _dbSet.IgnoreQueryFilters()
-            .Where(filter)
-            .Take(maxBatchSize + 1)
-            .ToListAsync(cancellationToken);
-
-        var totalCount = entities.Count;
-        if (totalCount > maxBatchSize)
-        {
-            entities = entities.Take(maxBatchSize).ToList();
-        }
-
+        var entities = await _dbSet.IgnoreQueryFilters().Where(filter).ToListAsync(cancellationToken);
         if (entities.Count == 0) return 0;
 
         _dbSet.RemoveRange(entities);
         await _context.SaveChangesAsync(cancellationToken);
-
         await _auditService.RecordOperationAsync("BATCH_DELETE", typeof(T).Name, $"count:{entities.Count}", entities.Count, "Hard deleted entities");
         return entities.Count;
     }
 
-    public async Task<long> CountAsync(Expression<Func<T, bool>>? filter = null, CancellationToken cancellationToken = default)
-    {
-        IQueryable<T> query = _dbSet;
-        if (filter != null) query = query.Where(filter);
-        return await query.CountAsync(cancellationToken);
-    }
+    #endregion
+
+    #region 忽略过滤器操作
 
     public async Task<T?> GetByIdWithoutTenantFilterAsync(string id, CancellationToken cancellationToken = default)
     {
-        // 🚀 使用FindAsync更高效，但需要在内存中应用过滤器
         var entity = await _dbSet.FindAsync(new object[] { id }, cancellationToken);
         return entity?.IsDeleted != true ? entity : null;
     }
@@ -360,71 +233,74 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
         Expression<Func<T, object>>[]? includes = null,
         CancellationToken cancellationToken = default)
     {
-        // 🚀 使用IgnoreQueryFilters但保留软删除过滤
-        IQueryable<T> query = _dbSet.IgnoreQueryFilters().AsNoTracking();
-
-        // 🚀 手动应用软删除过滤 - 优化：使用 != true 以兼容 MongoDB 缺失字段
-        query = query.Where(e => e.IsDeleted != true);
-
-        // 🚀 先应用过滤再Include
-        if (filter != null)
-        {
-            query = query.Where(filter);
-        }
-
-        if (includes != null && includes.Length > 0)
-        {
-            foreach (var include in includes)
-            {
-                query = query.Include(include);
-            }
-        }
-
-        if (orderBy != null)
-        {
-            query = orderBy(query);
-        }
-        else
-        {
-            // 🚀 默认排序
-            query = query.OrderByDescending(e => e.CreatedAt);
-        }
-
-        if (limit.HasValue && limit.Value > 0)
-        {
-            query = query.Take(limit.Value);
-        }
-
+        // IgnoreQueryFilters 跳过多租户过滤，但手动保留软删除过滤
+        var baseQuery = _dbSet.IgnoreQueryFilters().AsNoTracking().Where(e => e.IsDeleted != true);
+        var query = BuildQuery(baseQuery, filter, orderBy, includes);
+        if (limit is > 0) query = query.Take(limit.Value);
         return await query.ToListAsync(cancellationToken);
     }
+
+    #endregion
+
+    #region 用户与租户信息
 
     public string? GetCurrentUserId() => _currentUserId;
     public string GetRequiredUserId() => _currentUserId ?? throw new UnauthorizedAccessException("User not authenticated");
 
     public async Task<string?> GetCurrentCompanyIdAsync()
-    {
-        if (_tenantContext == null)
-        {
-            return null;
-        }
-
-        return await _tenantContext.GetCurrentCompanyIdAsync().ConfigureAwait(false);
-    }
+        => _tenantContext != null ? await _tenantContext.GetCurrentCompanyIdAsync().ConfigureAwait(false) : null;
 
     public async Task<string> GetRequiredCompanyIdAsync()
     {
         if (_tenantContext == null)
-        {
             throw new UnauthorizedAccessException("Tenant context not available");
-        }
 
         var companyId = await _tenantContext.GetCurrentCompanyIdAsync().ConfigureAwait(false);
-        if (string.IsNullOrEmpty(companyId))
-        {
-            throw new UnauthorizedAccessException("未找到当前企业信息");
-        }
-
-        return companyId;
+        return !string.IsNullOrEmpty(companyId) ? companyId : throw new UnauthorizedAccessException("未找到当前企业信息");
     }
 
+    #endregion
+
+    #region 私有工具方法
+
+    /// <summary>
+    /// 构建查询：应用过滤、Include、排序
+    /// </summary>
+    private static IQueryable<T> BuildQuery(
+        IQueryable<T> query,
+        Expression<Func<T, bool>>? filter,
+        Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy,
+        Expression<Func<T, object>>[]? includes)
+    {
+        if (filter != null) query = query.Where(filter);
+
+        if (includes is { Length: > 0 })
+        {
+            foreach (var include in includes)
+                query = query.Include(include);
+        }
+
+        return orderBy != null ? orderBy(query) : query.OrderByDescending(e => e.CreatedAt);
+    }
+
+    /// <summary>
+    /// 加载批量操作的实体
+    /// </summary>
+    private async Task<List<T>> LoadBatchAsync(Expression<Func<T, bool>> filter, CancellationToken cancellationToken)
+        => await _dbSet.Where(filter).ToListAsync(cancellationToken);
+
+    /// <summary>
+    /// 异步获取并设置实体的企业 ID，避免 DbContext 内部同步阻塞
+    /// </summary>
+    private async Task SetCompanyIdAsync(T entity)
+    {
+        if (entity is IMultiTenant mt && string.IsNullOrEmpty(mt.CompanyId))
+        {
+            var companyId = await GetCurrentCompanyIdAsync();
+            if (!string.IsNullOrEmpty(companyId))
+                mt.CompanyId = companyId;
+        }
+    }
+
+    #endregion
 }

@@ -1,96 +1,96 @@
 <view class="container">
-  <!-- Breadcrumb / Header Navigation -->
-  <view class="nav-header card-style">
-    <view class="breadcrumb">
-      <view class="bread-item {{pathStack.length === 0 ? 'active' : ''}}" bindtap="navToRoot">{{t['cloud.all_files']}}</view>
-      <block wx:for="{{pathStack}}" wx:key="id">
-        <text class="separator">/</text>
-        <view class="bread-item {{index === pathStack.length - 1 ? 'active' : ''}}" bindtap="navToFolder" data-index="{{index}}">{{item.name}}</view>
-      </block>
-    </view>
+  <!-- Breadcrumb Navigation -->
+  <view class="breadcrumb">
+    <view class="bread-item {{pathStack.length === 0 ? 'active' : ''}}" bindtap="navToRoot">{{t['allFiles']}}</view>
+    <block wx:for="{{pathStack}}" wx:key="id">
+      <text class="bread-separator">/</text>
+      <view class="bread-item {{index === pathStack.length - 1 ? 'active' : ''}}" bindtap="navToFolder" data-index="{{index}}">{{item.name}}</view>
+    </block>
   </view>
 
-  <loading wx:if="{{loading && !isRefreshing}}" />
-
   <!-- File List -->
-  <scroll-view scroll-y class="file-list-scroll">
-    <view class="file-list" wx:if="{{fileList.length > 0}}">
+  <scroll-view scroll-y class="file-list-wrap">
+    <view class="list-container" wx:if="{{fileList.length > 0}}">
       <view 
-        class="file-item" 
+        class="list-item" 
         wx:for="{{fileList}}" 
         wx:key="id" 
         bindtap="onItemClick" 
         bindlongpress="showActionMenu"
         data-item="{{item}}"
       >
-        <view class="file-icon {{item.type === 1 ? 'folder' : 'file'}}">
-           <text wx:if="{{item.type === 1}}" class="iconfont icon-folder"></text>
-           <text wx:else class="iconfont {{item.icon || 'icon-file'}}"></text>
+        <view class="item-icon {{item.type === 1 ? 'folder' : ''}}">
+           <text wx:if="{{item.type === 1}}" class="iconfont icon-folder" style="color: #ffc107;"></text>
+           <text wx:else class="iconfont {{item.icon || 'icon-file'}}" style="color: #1890ff;"></text>
         </view>
-        <view class="file-info">
-          <text class="file-name">{{item.name}}</text>
-          <view class="file-meta">
-            <text class="file-date">{{item.displayTime}}</text>
-            <text class="file-size" wx:if="{{item.type === 0}}">{{item.displaySize}}</text>
+        <view class="item-content">
+          <view class="item-title">{{item.name}}</view>
+          <view class="item-meta">
+            <text>{{item.displayTime}}</text>
+            <text style="margin-left: 20rpx;" wx:if="{{item.type === 0}}">{{item.displaySize}}</text>
           </view>
         </view>
-        <view class="file-action" catchtap="showActionMenu" data-item="{{item}}">
-          <text class="iconfont icon-more"></text>
+        <view class="item-action" catchtap="showActionMenu" data-item="{{item}}">
+          <view class="iconfont icon-more"></view>
         </view>
       </view>
     </view>
 
     <!-- Empty State -->
-    <view class="empty-state" wx:elif="{{!loading}}">
-      <view class="empty-icon">
-        <text class="iconfont icon-folder"></text>
-      </view>
-      <text>{{t['cloud.empty_folder']}}</text>
+    <view class="empty-wrap" wx:elif="{{!loading}}">
+      <view class="iconfont icon-folder" style="font-size: 120rpx; color: #eee;"></view>
+      <text>{{t['emptyFolder']}}</text>
+    </view>
+
+    <!-- Loading State -->
+    <view class="loading-wrap" wx:if="{{loading}}">
+      <view class="loading"></view>
+      <text>{{t['loading']}}</text>
     </view>
   </scroll-view>
 
   <!-- Floating Action Buttons -->
   <view class="fab-group">
-    <view class="fab-btn main-fab" bindtap="toggleFab">
-      <text class="iconfont icon-plus fab-icon {{showFabMenu ? 'rotate' : ''}}"></text>
-    </view>
-    
     <view class="fab-menu {{showFabMenu ? 'show' : ''}}">
-      <view class="fab-item" bindtap="uploadImage">
-        <view class="fab-item-icon bg-blue">
+      <view class="fab-menu-item" bindtap="uploadImage">
+        <text class="fab-menu-text">{{t['uploadImage']}}</text>
+        <view class="fab-menu-icon bg-blue">
           <text class="iconfont icon-file-image"></text>
         </view>
-        <text class="fab-item-text">{{t['cloud.upload_image']}}</text>
       </view>
-      <view class="fab-item" bindtap="uploadFile">
-        <view class="fab-item-icon bg-orange">
+      <view class="fab-menu-item" bindtap="uploadFile">
+        <text class="fab-menu-text">{{t['wechatFile']}}</text>
+        <view class="fab-menu-icon bg-orange">
           <text class="iconfont icon-file"></text>
         </view>
-        <text class="fab-item-text">{{t['cloud.wechat_file']}}</text>
       </view>
-      <view class="fab-item" bindtap="showCreateFolder">
-        <view class="fab-item-icon bg-green">
+      <view class="fab-menu-item" bindtap="showCreateFolder">
+        <text class="fab-menu-text">{{t['newFolder']}}</text>
+        <view class="fab-menu-icon bg-green">
           <text class="iconfont icon-folder"></text>
         </view>
-        <text class="fab-item-text">{{t['cloud.new_folder']}}</text>
       </view>
+    </view>
+
+    <view class="add-btn" bindtap="toggleFab">
+      <text class="iconfont icon-plus fab-icon {{showFabMenu ? 'rotate' : ''}}"></text>
     </view>
   </view>
 
-  <!-- Create Folder Dialog -->
+  <!-- Create Folder Modal -->
   <view class="modal-mask" wx:if="{{showFolderModal}}" bindtap="closeFolderModal">
     <view class="modal-content" catchtap="prevent">
-      <view class="modal-header">{{t['cloud.new_folder_title']}}</view>
+      <view class="modal-header">{{t['newFolderTitle']}}</view>
       <input 
         class="modal-input" 
-        placeholder="{{t['cloud.folder_placeholder']}}" 
+        placeholder="{{t['folderPlaceholder']}}" 
         focus="{{showFolderModal}}"
         bindinput="onFolderNameInput"
         value="{{newFolderName}}"
       />
       <view class="modal-footer">
-        <button class="btn-cancel" bindtap="closeFolderModal">{{t['common.cancel']}}</button>
-        <button class="btn-confirm" bindtap="confirmCreateFolder">{{t['common.confirm']}}</button>
+        <button bindtap="closeFolderModal">{{t['cancel']}}</button>
+        <button class="btn-confirm" bindtap="confirmCreateFolder">{{t['confirm']}}</button>
       </view>
     </view>
   </view>

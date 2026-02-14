@@ -1,3 +1,5 @@
+/* 通用样式已迁移至 styles/business.wxss */
+
 .container {
   padding: 0;
   background-color: #f7f8fa;

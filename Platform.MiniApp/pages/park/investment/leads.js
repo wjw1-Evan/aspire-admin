@@ -14,44 +14,82 @@ Page(withAuth(withI18n({
         searchKeyword: '',
         statusOptions: [],
         currentStatus: '',
+        statusMap: {},
+        priorityMap: {},
         t: {}
     },
 
     onShow() {
+        this.updateTranslations();
+        this.fetchData(true);
+    },
+
+    onLoad() {
+        this.updateTranslations();
         this.fetchData(true);
     },
 
     updateTranslations() {
-        const locale = getLocale();
-        const statusOptions = this.data.activeTab === 'lead' ? [
+        const isLead = this.data.activeTab === 'lead';
+
+        const statusOptions = isLead ? [
             { label: t('park.leads.status.all'), value: '' },
             { label: t('park.leads.status.new'), value: 'New' },
             { label: t('park.leads.status.following'), value: 'Following' },
             { label: t('park.leads.status.qualified'), value: 'Qualified' },
             { label: t('park.leads.status.lost'), value: 'Lost' }
         ] : [
-            { label: '全部', value: '' },
+            { label: t('common.all'), value: '' },
             { label: '邀约中', value: 'Negotiating' },
             { label: '签约成功', value: 'Signing' },
             { label: '已落地', value: 'Completed' }
         ];
+
+        const statusMap = isLead ? {
+            'New': t('park.leads.status.new'),
+            'Following': t('park.leads.status.following'),
+            'Qualified': t('park.leads.status.qualified'),
+            'Lost': t('park.leads.status.lost')
+        } : {
+            'Negotiating': '邀约中',
+            'Signing': '签约成功',
+            'Completed': '已落地'
+        };
+
+        const priorityMap = {
+            'High': '高',
+            'Medium': '中',
+            'Low': '低'
+        };
+
         this.setData({
             t: {
-                'title': this.data.activeTab === 'lead' ? t('park.leads.title') : '招商项目',
+                'title': isLead ? t('park.leads.title') : '招商项目',
                 'search': t('common.search'),
-                'empty': t('common.empty')
+                'searchPlaceholder': isLead ? '搜索企业名称' : '搜索项目名称',
+                'tabLead': t('park.leads.title'),
+                'tabProject': '招商项目',
+                'contactPerson': '联系人',
+                'industry': '所属行业',
+                'intendedArea': '意向面积',
+                'projectName': '页面项目名称',
+                'requirements': '项目需求',
+                'createdAt': '创建日期',
+                'empty': t('common.empty'),
+                'loading': t('common.loading'),
+                'noMore': '没有更多了'
             },
-            statusOptions
+            statusOptions,
+            statusMap,
+            priorityMap
         });
-        wx.setNavigationBarTitle({ title: this.data.activeTab === 'lead' ? t('park.leads.title') : '招商项目' });
-    },
-
-    onLoad() {
-        this.fetchData(true);
+        wx.setNavigationBarTitle({ title: isLead ? t('park.leads.title') : '招商项目' });
     },
 
     async fetchData(reset = false) {
-        this.updateTranslations();
+        if (reset) {
+            this.setData({ page: 1, hasMore: true });
+        }
         if (this.data.activeTab === 'lead') {
             await this.fetchLeads(reset);
         } else {
@@ -60,10 +98,8 @@ Page(withAuth(withI18n({
     },
 
     onPullDownRefresh() {
-        this.setData({ page: 1, hasMore: true }, () => {
-            this.fetchData(true).then(() => {
-                wx.stopPullDownRefresh();
-            });
+        this.fetchData(true).then(() => {
+            wx.stopPullDownRefresh();
         });
     },
 
@@ -86,6 +122,7 @@ Page(withAuth(withI18n({
             currentStatus: '',
             searchKeyword: ''
         }, () => {
+            this.updateTranslations();
             this.fetchData(true);
         });
     },
@@ -105,7 +142,10 @@ Page(withAuth(withI18n({
                 }
             });
             if (res.success) {
-                const list = res.data.leads || [];
+                const list = (res.data.leads || []).map(item => ({
+                    ...item,
+                    createdAt: item.createdAt ? item.createdAt.split('T')[0] : '-'
+                }));
                 this.setData({
                     leads: reset ? list : [...this.data.leads, ...list],
                     hasMore: list.length === this.data.pageSize
@@ -151,9 +191,7 @@ Page(withAuth(withI18n({
     },
 
     handleSearch() {
-        this.setData({ page: 1, hasMore: true }, () => {
-            this.fetchData(true);
-        });
+        this.fetchData(true);
     },
 
     switchStatus(e) {
@@ -178,7 +216,6 @@ Page(withAuth(withI18n({
 
     goToProjectDetail(e) {
         const id = e.currentTarget.dataset.id;
-        // Navigation to project-detail (if implemented)
         wx.showToast({ title: '开发中', icon: 'none' });
     },
 

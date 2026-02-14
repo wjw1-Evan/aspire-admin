@@ -1,20 +1,7 @@
+/* 通用样式已迁移至 styles/business.wxss */
+
 .container {
   padding: 0;
   background-color: #f7f8fa;
   min-height: 100vh;
-}
-
-/* Priority Tags */
-.priority-tag {
-  font-size: 22rpx;
-  padding: 4rpx 12rpx;
-  border-radius: 4rpx;
-}
-
-.priority-High { background-color: #fff1f0; color: #f5222d; }
-.priority-Medium { background-color: #e6f7ff; color: #1890ff; }
-.priority-Low { background-color: #f6ffed; color: #52c41a; }
-
-.text-primary {
-  color: var(--primary-color);
 }

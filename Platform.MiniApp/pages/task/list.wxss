@@ -1,82 +1,13 @@
+/* 通用样式已迁移至 styles/business.wxss */
+
+
 .container {
   padding: 0;
   background-color: #f7f8fa;
+  min-height: 100vh;
 }
 
-/* Inherits .card-style from app.wxss */
-
-/* Statistics */
-.stats-overview {
-  display: flex;
-  justify-content: space-around;
-  margin: 24rpx;
-  padding: 40rpx 0;
-}
-
-.stats-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.stats-item .num {
-  font-size: 32rpx;
-  font-weight: bold;
-  color: #333;
-}
-
-.stats-item .label {
-  font-size: 24rpx;
-  color: #999;
-  margin-top: 8rpx;
-}
-
-.num.primary { color: #1890ff; }
-.num.success { color: #52c41a; }
-.num.danger { color: #ff4d4f; }
-
-/* Tabs */
-.filter-tabs {
-  background: #fff;
-  white-space: nowrap;
-  height: 88rpx;
-  border-bottom: 1rpx solid #eee;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-.tab-item {
-  display: inline-block;
-  padding: 0 40rpx;
-  line-height: 88rpx;
-  font-size: 28rpx;
-  color: #666;
-  position: relative;
-}
-
-.tab-item.active {
-  color: #1890ff;
-  font-weight: bold;
-}
-
-.tab-item.active::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 40rpx;
-  height: 4rpx;
-  background: #1890ff;
-  border-radius: 2rpx;
-}
-
-/* Task List */
-.task-list {
-  padding: 24rpx;
-}
-
+/* Task Card (页面特有) */
 .task-card {
   transition: opacity 0.2s;
 }
@@ -109,29 +40,9 @@
   display: inline-block;
 }
 
-.priority-tag {
-  font-size: 22rpx;
-  padding: 4rpx 16rpx;
-  border-radius: 4rpx;
-}
-
-.priority-3 { background: #fff1f0; color: #ff4d4f; }
-.priority-2 { background: #fff7e6; color: #faad14; }
-.priority-1 { background: #e6f7ff; color: #1890ff; }
-.priority-0 { background: #f5f5f5; color: #888; }
-
 .task-info {
   margin-bottom: 20rpx;
 }
-
-.info-row {
-  display: flex;
-  font-size: 26rpx;
-  margin-bottom: 8rpx;
-}
-
-.info-row .label { color: #999; width: 130rpx; }
-.info-row .value { color: #666; }
 
 .progress-bar-wrap {
   margin-top: 24rpx;
@@ -152,14 +63,6 @@
 
 .percent { color: #333; }
 
-/* Utils */
-.empty-state {
-  padding: 100rpx 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
 .empty-icon {
   width: 160rpx;
   height: 160rpx;
@@ -169,36 +72,9 @@
 
 .empty-text { color: #ccc; font-size: 26rpx; }
 
-.loading-bar, .no-more {
+.loading-bar {
   text-align: center;
   font-size: 24rpx;
   color: #ccc;
   padding: 20rpx 0;
-}
-
-/* Floating Action Button */
-.fab-btn {
-  position: fixed;
-  right: 40rpx;
-  bottom: 60rpx;
-  width: 100rpx;
-  height: 100rpx;
-  background-color: #1890ff;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  box-shadow: 0 4rpx 16rpx rgba(24, 144, 255, 0.4);
-  z-index: 100;
-  transition: all 0.3s;
-}
-
-.fab-btn:active {
-  opacity: 0.8;
-  transform: scale(0.95);
-}
-
-.fab-btn .iconfont {
-  color: #ffffff;
-  font-size: 50rpx;
 }

@@ -1,70 +1,12 @@
+/* 通用样式已迁移至 styles/business.wxss */
+
 .container {
   padding: 20rpx;
-  background-color: #f7f8fa;
   min-height: 100vh;
   padding-bottom: 120rpx;
 }
 
-.card-style {
-  background-color: #fff;
-  border-radius: 16rpx;
-  padding: 30rpx;
-  margin-bottom: 24rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
-}
-
-.stats-grid {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 24rpx;
-}
-
-.stats-card {
-  flex: 1;
-  background-color: #fff;
-  border-radius: 16rpx;
-  padding: 30rpx 20rpx;
-  margin: 0 10rpx;
-  text-align: center;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
-}
-
-.stats-card:first-child { margin-left: 0; }
-.stats-card:last-child { margin-right: 0; }
-
-.stats-value {
-  display: block;
-  font-size: 40rpx;
-  font-weight: bold;
-  color: #1890ff;
-  margin-bottom: 8rpx;
-}
-
-.stats-label {
-  font-size: 22rpx;
-  color: #969799;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24rpx;
-}
-
-.section-title {
-  font-size: 30rpx;
-  font-weight: bold;
-  color: #323233;
-}
-
-.section-value {
-  font-size: 32rpx;
-  color: #1890ff;
-  font-weight: bold;
-}
-
-/* Trend List */
+/* Trend List (页面特有) */
 .trend-item {
   display: flex;
   align-items: center;
@@ -99,7 +41,7 @@
   text-align: right;
 }
 
-/* Ranking List */
+/* Ranking List (页面特有) */
 .ranking-item {
   display: flex;
   align-items: center;
@@ -138,6 +80,7 @@
   color: #646566;
 }
 
+/* AI Button (页面特有) */
 .btn-area {
   position: fixed;
   bottom: 0;
@@ -159,6 +102,7 @@
   align-items: center;
   justify-content: center;
 }
+
 .ai-btn .iconfont {
   margin-right: 12rpx;
   font-size: 36rpx;

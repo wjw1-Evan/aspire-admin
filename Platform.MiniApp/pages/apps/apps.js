@@ -80,9 +80,4 @@ Page(withAuth(withI18n({
         wx.navigateTo({ url: '/pages/password-book/list' });
     },
 
-    navigateToProfile() {
-        wx.switchTab({
-            url: '/pages/profile/profile'
-        });
-    }
 })));

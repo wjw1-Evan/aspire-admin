@@ -97,11 +97,5 @@
       </view>
       <text class="app-name">{{t['apps.password_book']}}</text>
     </view>
-    <view class="app-card" bindtap="navigateToProfile">
-      <view class="app-icon color-purple">
-        <text class="iconfont icon-profile"></text>
-      </view>
-      <text class="app-name">{{t['tab.profile']}}</text>
-    </view>
   </view>
 </view>

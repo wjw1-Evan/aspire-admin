@@ -1,52 +1,65 @@
 <view class="container">
-  <view class="tabs">
-    <view class="tab {{activeTab === 'faq' ? 'active' : ''}}" bindtap="switchTab" data-tab="faq">
-      {{t['park.visit.knowledge.faq']}}
+  <view class="tab-bar">
+    <view class="tab-item {{activeTab === 'faq' ? 'active' : ''}}" bindtap="switchTab" data-tab="faq">
+      {{t['faq']}}
     </view>
-    <view class="tab {{activeTab === 'questionnaire' ? 'active' : ''}}" bindtap="switchTab" data-tab="questionnaire">
-      {{t['park.visit.knowledge.questionnaire']}}
+    <view class="tab-item {{activeTab === 'questionnaire' ? 'active' : ''}}" bindtap="switchTab" data-tab="questionnaire">
+      {{t['questionnaire']}}
     </view>
   </view>
 
-  <view class="content">
+  <view class="list-container">
     <!-- FAQ List -->
-    <scroll-view wx:if="{{activeTab === 'faq'}}" class="list-scroll" scroll-y bindscrolltolower="loadMore">
-      <view class="list-container">
-        <view class="faq-item card-style" wx:for="{{faqList}}" wx:key="id" bindtap="toggleFaq" data-id="{{item.id}}">
-          <view class="faq-header">
-            <view class="faq-q">
-              <text class="tag">{{item.category || t['common.all']}}</text>
-              <text class="question">{{item.content}}</text>
-            </view>
-            <icon class="arrow {{expandedFaq === item.id ? 'up' : 'down'}}" type="arrow" size="12"></icon>
+    <block wx:if="{{activeTab === 'faq'}}">
+      <view class="biz-card" wx:for="{{faqList}}" wx:key="id" bindtap="toggleFaq" data-id="{{item.id}}">
+        <view class="section-header">
+          <view class="faq-q-wrap" style="display: flex; align-items: center; flex: 1;">
+            <text class="category-tag" style="margin-right: 12rpx;">{{item.category || t['all']}}</text>
+            <text class="section-title" style="flex: 1;">{{item.content}}</text>
           </view>
-          <view class="faq-answer" wx:if="{{expandedFaq === item.id}}">
-            <text class="answer">{{item.answer || t['common.empty']}}</text>
-          </view>
+          <text class="iconfont {{expandedFaq === item.id ? 'icon-up' : 'icon-down'}}" style="font-size: 24rpx; color: #ccc; margin-left: 20rpx;"></text>
         </view>
-        <view wx:if="{{faqList.length === 0}}" class="empty-state">
-          <text>{{t['common.empty']}}</text>
+        <view class="card-detail" wx:if="{{expandedFaq === item.id}}">
+          {{item.answer || t['empty']}}
         </view>
       </view>
-    </scroll-view>
+
+      <view wx:if="{{faqList.length === 0}}" class="empty-wrap">
+        <view class="iconfont icon-empty" style="font-size: 120rpx; color: #eee;"></view>
+        <text>{{t['empty']}}</text>
+      </view>
+    </block>
 
     <!-- Questionnaire List -->
-    <scroll-view wx:if="{{activeTab === 'questionnaire'}}" class="list-scroll" scroll-y bindscrolltolower="loadMore">
-      <view class="list-container">
-        <view class="q-item card-style" wx:for="{{questionnaireList}}" wx:key="id">
-          <view class="q-info">
-            <text class="q-title">{{item.title}}</text>
-            <text class="q-desc">{{item.purpose || '-'}}</text>
-          </view>
-          <view class="q-meta">
-            <text class="q-count">{{item.questionCount}} {{t['task.detail.title']}}</text>
-            <text class="q-date">{{item.createdAt}}</text>
-          </view>
+    <block wx:if="{{activeTab === 'questionnaire'}}">
+      <view class="biz-card" wx:for="{{questionnaireList}}" wx:key="id">
+        <view class="section-header">
+          <text class="section-title">{{item.title}}</text>
         </view>
-        <view wx:if="{{questionnaireList.length === 0}}" class="empty-state">
-          <text>{{t['common.empty']}}</text>
+        <view class="card-body" style="border-top: none; padding-top: 0; margin-top: 10rpx;">
+          <view style="font-size: 24rpx; color: #969799; margin-bottom: 20rpx;">{{item.purpose || '-'}}</view>
+          <view class="meta-row">
+            <text>{{item.questionCount}} {{t['questions']}}</text>
+            <text>{{item.createdAt}}</text>
+          </view>
         </view>
       </view>
-    </scroll-view>
+
+      <view wx:if="{{questionnaireList.length === 0}}" class="empty-wrap">
+        <view class="iconfont icon-empty" style="font-size: 120rpx; color: #eee;"></view>
+        <text>{{t['empty']}}</text>
+      </view>
+    </block>
+
+    <!-- Loading State -->
+    <view class="loading-wrap" wx:if="{{loading}}">
+      <view class="loading"></view>
+      <text>{{t['loading']}}</text>
+    </view>
+
+    <!-- No More Data -->
+    <view class="no-more" wx:if="{{!hasMoreFaq && activeTab === 'faq' && faqList.length > 0}}">
+      {{t['noMore']}}
+    </view>
   </view>
 </view>

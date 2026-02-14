@@ -9,11 +9,33 @@ Page(withI18n({
         search: '',
         loading: false,
         hasMore: true,
-        i18nTitleKey: 'park.visit.assessment.list.title'
+        i18nTitleKey: 'park.visit.assessment.list.title',
+        t: {}
+    },
+
+    onShow() {
+        this.updateTranslations();
     },
 
     onLoad() {
+        this.updateTranslations();
         this.loadAssessments();
+    },
+
+    updateTranslations() {
+        this.setData({
+            t: {
+                'title': t('park.visit.assessment.list.title'),
+                'search': t('common.search'),
+                'searchPlaceholder': t('common.search'),
+                'visitTask': t('park.visit.assessment.visit_task'),
+                'date': t('common.date'),
+                'empty': t('common.empty'),
+                'loading': t('common.loading'),
+                'noMore': t('common.no_more')
+            }
+        });
+        wx.setNavigationBarTitle({ title: t('park.visit.assessment.list.title') });
     },
 
     onPullDownRefresh() {

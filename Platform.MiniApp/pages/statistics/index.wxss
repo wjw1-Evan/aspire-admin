@@ -1,17 +1,10 @@
+/* 通用样式已迁移至 styles/business.wxss */
+
 .container {
-  padding: 24rpx;
-  background-color: #f7f8fa;
   min-height: 100vh;
 }
 
-.card-style {
-  background: #ffffff;
-  border-radius: 16rpx;
-  padding: 30rpx;
-  margin-bottom: 24rpx;
-}
-
-/* Period Selector */
+/* Period Selector (页面特有) */
 .period-selector {
   display: flex;
   padding: 10rpx;
@@ -37,13 +30,7 @@
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
 }
 
-/* Stats Grid */
-.stats-grid {
-  display: flex;
-  gap: 24rpx;
-  margin-bottom: 24rpx;
-}
-
+/* Stat Card (页面特有) */
 .stat-card {
   flex: 1;
   padding: 24rpx;
@@ -92,7 +79,7 @@
   margin-bottom: 8rpx;
 }
 
-/* Section Cards */
+/* Section Card (页面特有) */
 .section-header {
   font-size: 30rpx;
   font-weight: bold;
@@ -115,9 +102,6 @@
 
 .status-row .label { font-size: 28rpx; color: #666; }
 .status-row .num { font-size: 28rpx; font-weight: bold; }
-.num.primary { color: #1890ff; }
-.num.success { color: #52c41a; }
-.num.danger { color: #ff4d4f; }
 
 .split-stats {
   display: flex;
@@ -139,7 +123,7 @@
 .tag-success { background: #f6ffed; color: #52c41a; }
 .tag-blue { background: #e6f7ff; color: #1890ff; }
 
-/* AI Action */
+/* AI Action (页面特有) */
 .ai-button-wrap {
   margin-top: 40rpx;
 }
@@ -159,10 +143,3 @@
 }
 
 .sparkle { margin-right: 8rpx; }
-
-.empty-state {
-  text-align: center;
-  padding-top: 100rpx;
-  color: #ccc;
-  font-size: 28rpx;
-}

@@ -26,13 +26,18 @@ Page(withAuth(withI18n({
         this.setData({
             t: {
                 'title': t('cloud.title'),
-                'create_folder': t('cloud.create_folder'),
-                'folder_name': t('cloud.folder_name'),
-                'please_enter_name': t('cloud.please_enter_name'),
+                'allFiles': t('cloud.all_files'),
+                'emptyFolder': t('cloud.empty_folder'),
+                'uploadImage': t('cloud.upload_image'),
+                'wechatFile': t('cloud.wechat_file'),
+                'newFolder': t('cloud.new_folder'),
+                'newFolderTitle': t('cloud.new_folder_title'),
+                'folderPlaceholder': t('cloud.folder_placeholder'),
                 'confirm': t('common.confirm'),
                 'cancel': t('common.cancel'),
                 'rename': t('cloud.rename'),
-                'delete': t('cloud.delete')
+                'delete': t('cloud.delete'),
+                'loading': t('common.loading')
             }
         });
         wx.setNavigationBarTitle({ title: t('cloud.title') });

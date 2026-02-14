@@ -11,11 +11,33 @@ Page(withI18n({
         hasMoreFaq: true,
         loading: false,
         expandedFaq: '',
-        i18nTitleKey: 'park.visit.knowledge.list.title'
+        i18nTitleKey: 'park.visit.knowledge.list.title',
+        t: {}
+    },
+
+    onShow() {
+        this.updateTranslations();
     },
 
     onLoad() {
+        this.updateTranslations();
         this.loadFaq();
+    },
+
+    updateTranslations() {
+        this.setData({
+            t: {
+                'title': t('park.visit.knowledge.list.title'),
+                'faq': t('park.visit.knowledge.faq'),
+                'questionnaire': t('park.visit.knowledge.questionnaire'),
+                'all': t('common.all'),
+                'empty': t('common.empty'),
+                'loading': t('common.loading'),
+                'noMore': t('common.no_more'),
+                'questions': t('task.detail.title') // 使用已有的翻译键或调整
+            }
+        });
+        wx.setNavigationBarTitle({ title: t('park.visit.knowledge.list.title') });
     },
 
     switchTab(e) {

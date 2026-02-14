@@ -1,70 +1,12 @@
+/* 通用样式已迁移至 styles/business.wxss */
+
 .container {
   padding: 0;
   background-color: #f7f8fa;
   min-height: 100vh;
 }
 
-.tab-bar {
-  display: flex;
-  background-color: #fff;
-  border-bottom: 1rpx solid #ebedf0;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.no-more {
-  text-align: center;
-  color: #c8c9cc;
-  font-size: 24rpx;
-  padding: 30rpx 0;
-}
-
-.add-btn {
-  position: fixed;
-  right: 40rpx;
-  bottom: 60rpx;
-  width: 100rpx;
-  height: 100rpx;
-  background-color: #1890ff;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  box-shadow: 0 4rpx 16rpx rgba(24, 144, 255, 0.4);
-  z-index: 100;
-}
-
-.add-btn .iconfont {
-  color: #fff;
-  font-size: 48rpx;
-}
-
-.tab-item {
-  flex: 1;
-  text-align: center;
-  padding: 24rpx 0;
-  font-size: 28rpx;
-  color: #646566;
-  position: relative;
-}
-
-.tab-item.active {
-  color: #1890ff;
-  font-weight: bold;
-}
-
-.tab-item.active::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 30%;
-  right: 30%;
-  height: 4rpx;
-  background-color: #1890ff;
-  border-radius: 2rpx;
-}
-
+/* Category Grid (页面特有) */
 .category-grid {
   display: flex;
   flex-wrap: wrap;
@@ -122,6 +64,7 @@
   overflow: hidden;
 }
 
+/* Request Card (页面特有) */
 .request-list {
   padding: 20rpx;
 }
@@ -155,11 +98,6 @@
   color: #646566;
 }
 
-.status-Pending { background-color: #fff7e6; color: #fa8c16; }
-.status-Processing { background-color: #e8f4ff; color: #1890ff; }
-.status-Completed { background-color: #f6ffed; color: #52c41a; }
-.status-Cancelled { background-color: #f5f5f5; color: #bfbfbf; }
-
 .request-body {
   border-top: 1rpx solid #f2f3f5;
   padding-top: 20rpx;
@@ -176,27 +114,4 @@
 .request-date {
   font-size: 24rpx;
   color: #969799;
-}
-
-.loading-wrap, .empty-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 100rpx 0;
-  color: #969799;
-  font-size: 28rpx;
-}
-
-.loading {
-  width: 40rpx;
-  height: 40rpx;
-  border: 4rpx solid #e5e5e5;
-  border-top-color: #1890ff;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 20rpx;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
 }

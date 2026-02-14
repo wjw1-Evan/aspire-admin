@@ -1,29 +1,27 @@
 <view class="container">
   <view class="search-bar">
     <view class="search-box">
-      <icon type="search" size="14"></icon>
-      <input class="search-input" placeholder="搜索企业名称" bindinput="onSearchInput" value="{{searchKeyword}}" bindconfirm="handleSearch" />
+      <icon class="search-icon" type="search" size="14"></icon>
+      <input class="search-input" placeholder="{{t['searchPlaceholder']}}" bindinput="onSearchInput" value="{{searchKeyword}}" bindconfirm="handleSearch" />
     </view>
-    <view class="search-btn" bindtap="handleSearch">搜索</view>
+    <view class="search-btn" bindtap="handleSearch">{{t['search']}}</view>
   </view>
 
   <view class="tab-bar">
     <view class="tab-item {{activeTab === 'lead' ? 'active' : ''}}" bindtap="switchTab" data-tab="lead">
-      招商线索
+      {{t['tabLead']}}
     </view>
     <view class="tab-item {{activeTab === 'project' ? 'active' : ''}}" bindtap="switchTab" data-tab="project">
-      招商项目
+      {{t['tabProject']}}
     </view>
   </view>
 
   <view class="filter-bar">
-    <scroll-view class="filter-scroll" scroll-x="true">
-      <view class="filter-tabs">
-        <view wx:for="{{statusOptions}}" wx:key="value" 
-              class="filter-tab {{currentStatus === item.value ? 'active' : ''}}" 
-              bindtap="switchStatus" data-status="{{item.value}}">
-          {{item.label}}
-        </view>
+    <scroll-view class="filter-tabs" scroll-x="true" enable-flex>
+      <view wx:for="{{statusOptions}}" wx:key="value" 
+            class="filter-tab {{currentStatus === item.value ? 'active' : ''}}" 
+            bindtap="switchStatus" data-status="{{item.value}}">
+        {{item.label}}
       </view>
     </scroll-view>
   </view>
@@ -31,65 +29,72 @@
   <view class="list-container">
     <!-- Leads List -->
     <block wx:if="{{activeTab === 'lead'}}">
-      <view wx:for="{{leads}}" wx:key="id" class="lead-card" bindtap="goToDetail" data-id="{{item.id}}">
-        <view class="lead-header">
-          <text class="company-name">{{item.companyName}}</text>
-          <view class="tags">
-              <text class="status-tag status-{{item.status}}">{{item.status === 'New' ? '新线索' : (item.status === 'Following' ? '跟进中' : (item.status === 'Qualified' ? '已转化' : '已丢弃'))}}</text>
+      <view wx:for="{{leads}}" wx:key="id" class="biz-card" bindtap="goToDetail" data-id="{{item.id}}">
+        <view class="section-header">
+          <text class="section-title">{{item.companyName}}</text>
+          <view class="status-tag status-{{item.status}}">{{statusMap[item.status]}}</view>
+        </view>
+        <view class="card-body">
+          <view class="info-row">
+            <text class="label">{{t['contactPerson']}}</text>
+            <text class="value">{{item.contactPerson || '-'}}</text>
+          </view>
+          <view class="info-row">
+            <text class="label">{{t['industry']}}</text>
+            <text class="value">{{item.industry || '-'}}</text>
+          </view>
+          <view class="info-row">
+            <text class="label">{{t['intendedArea']}}</text>
+            <text class="value">{{item.intendedArea ? item.intendedArea + '㎡' : '-'}}</text>
           </view>
         </view>
-        <view class="lead-body">
-          <view class="info-row">
-              <text class="label">联系人：</text>
-              <text class="value">{{item.contactPerson || '-'}}</text>
-          </view>
-          <view class="info-row">
-              <text class="label">所属行业：</text>
-              <text class="value">{{item.industry || '-'}}</text>
-          </view>
-          <view class="info-row">
-              <text class="label">意向面积：</text>
-              <text class="value">{{item.intendedArea ? item.intendedArea + '㎡' : '-'}}</text>
-          </view>
-        </view>
-        <view class="lead-footer">
-          <text class="date">创建：{{item.createdAt}}</text>
-          <text class="priority priority-{{item.priority}}">{{item.priority === 'High' ? '高优先级' : (item.priority === 'Medium' ? '中' : '低')}}</text>
+        <view class="card-footer">
+          <text class="date">{{t['createdAt']}}: {{item.createdAt}}</text>
+          <text class="priority-tag priority-{{item.priority}}">{{priorityMap[item.priority]}}</text>
         </view>
       </view>
     </block>
 
     <!-- Projects List -->
     <block wx:if="{{activeTab === 'project'}}">
-      <view wx:for="{{projects}}" wx:key="id" class="lead-card" bindtap="goToProjectDetail" data-id="{{item.id}}">
-        <view class="lead-header">
-          <text class="company-name">{{item.name}}</text>
-          <text class="status-tag status-{{item.status}}">{{item.status}}</text>
+      <view wx:for="{{projects}}" wx:key="id" class="biz-card" bindtap="goToProjectDetail" data-id="{{item.id}}">
+        <view class="section-header">
+          <text class="section-title">{{item.name}}</text>
+          <view class="status-tag status-{{item.status}}">{{statusMap[item.status] || item.status}}</view>
         </view>
-        <view class="lead-body">
+        <view class="card-body">
           <view class="info-row">
-              <text class="label">所属线索ID：</text>
-              <text class="value">{{item.leadId}}</text>
+            <text class="label">ID</text>
+            <text class="value">{{item.leadId}}</text>
           </view>
           <view class="info-row">
-              <text class="label">项目需求：</text>
-              <text class="value">{{item.requirements || '-'}}</text>
+            <text class="label">{{t['requirements']}}</text>
+            <text class="value">{{item.requirements || '-'}}</text>
           </view>
         </view>
       </view>
     </block>
     
+    <!-- Loading State -->
     <view class="loading-wrap" wx:if="{{loading}}">
       <view class="loading"></view>
-      <text>加载中...</text>
+      <text>{{t['loading']}}</text>
     </view>
-    <view class="no-more" wx:if="{{!hasMore && (activeTab === 'lead' ? leads.length : projects.length) > 0}}">没有更多了</view>
+
+    <!-- No More Data -->
+    <view class="no-more" wx:if="{{!hasMore && (activeTab === 'lead' ? leads.length : projects.length) > 0}}">
+      {{t['noMore'] || '没有更多了'}}
+    </view>
+
+    <!-- Empty State -->
     <view class="empty-wrap" wx:if="{{!loading && (activeTab === 'lead' ? leads.length === 0 : projects.length === 0)}}">
-      <icon type="info" size="64" color="#ccc"></icon>
-      <text>暂无相关数据</text>
+      <view class="iconfont icon-empty" style="font-size: 120rpx; color: #eee;"></view>
+      <text>{{t['empty']}}</text>
     </view>
   </view>
+
+  <!-- Add Button -->
   <view class="add-btn" bindtap="goToAdd">
-    <text class="iconfont icon-add"></text>
+    <text class="iconfont icon-plus"></text>
   </view>
 </view>

@@ -40,15 +40,7 @@ public class ActivityLogListItemResponse
     /// </summary>
     public string? HttpMethod { get; set; }
 
-    /// <summary>
-    /// 请求路径
-    /// </summary>
-    public string? Path { get; set; }
 
-    /// <summary>
-    /// 查询字符串
-    /// </summary>
-    public string? QueryString { get; set; }
 
     /// <summary>
     /// 完整URL

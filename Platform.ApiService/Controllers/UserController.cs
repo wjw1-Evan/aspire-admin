@@ -441,8 +441,7 @@ public class UserController : BaseApiController
             Description = log.Description,
             IpAddress = log.IpAddress,
             HttpMethod = log.HttpMethod,
-            Path = log.Path,
-            QueryString = log.QueryString,
+
             FullUrl = log.FullUrl,
             StatusCode = log.StatusCode,
             Duration = log.Duration,
@@ -558,7 +557,7 @@ public class UserController : BaseApiController
         var currentUser = await _authService.GetCurrentUserAsync();
         if (currentUser == null)
             return NotFoundError("用户", CurrentUserId ?? "未知");
-                    
+
         return Success(currentUser);
     }
 

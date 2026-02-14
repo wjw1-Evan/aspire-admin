@@ -187,6 +187,7 @@ export default {
   'pages.table.actionTime': 'Action Time',
   'pages.table.httpMethod': 'HTTP Method',
   'pages.table.statusCode': 'Status Code',
+  'pages.table.duration': 'Duration',
   'pages.table.path': 'Request Path',
   'pages.table.queryString': 'Query String',
   'pages.table.fullUrl': 'Full URL',

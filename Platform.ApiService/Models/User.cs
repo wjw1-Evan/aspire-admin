@@ -4,6 +4,8 @@ using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using Platform.ServiceDefaults.Models;
 
+using Platform.ApiService.Models.Response;
+
 namespace Platform.ApiService.Models;
 
 /// <summary>
@@ -777,7 +779,7 @@ public class UserActivityPagedWithStatsResponse
     /// <summary>
     /// 日志数据
     /// </summary>
-    public List<UserActivityLog> Data { get; set; } = new();
+    public List<ActivityLogListItemResponse> Data { get; set; } = new();
 
     /// <summary>
     /// 总记录数

@@ -537,26 +537,6 @@ const UserLog: React.FC = () => {
       render: (_: any, record: UserActivityLog) => getStatusBadge(record.statusCode),
     },
     {
-      title: intl.formatMessage({ id: 'pages.table.path' }),
-      dataIndex: 'path',
-      key: 'path',
-      ellipsis: true,
-      render: (_: any, record: UserActivityLog) => {
-        if (!record.path) return '-';
-        return <span style={{ fontFamily: 'monospace' }}>{record.path}</span>;
-      },
-    },
-    {
-      title: intl.formatMessage({ id: 'pages.table.queryString' }),
-      dataIndex: 'queryString',
-      key: 'queryString',
-      ellipsis: true,
-      render: (_: any, record: UserActivityLog) => {
-        if (!record.queryString) return '-';
-        return <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{record.queryString}</span>;
-      },
-    },
-    {
       title: intl.formatMessage({ id: 'pages.table.fullUrl' }),
       dataIndex: 'fullUrl',
       key: 'fullUrl',
@@ -567,11 +547,25 @@ const UserLog: React.FC = () => {
       },
     },
     {
+      title: intl.formatMessage({ id: 'pages.table.duration' }),
+      dataIndex: 'duration',
+      key: 'duration',
+      sorter: (a: UserActivityLog, b: UserActivityLog) => (a.duration || 0) - (b.duration || 0),
+      render: (dom: any, record: UserActivityLog) => {
+        if (record.duration === undefined || record.duration === null) return '-';
+        let color = 'green';
+        if (record.duration > 1000) color = 'orange';
+        if (record.duration > 3000) color = 'red';
+        return <span style={{ color }}>{record.duration}ms</span>;
+      },
+    },
+    {
       title: intl.formatMessage({ id: 'pages.table.ipAddress' }),
       dataIndex: 'ipAddress',
       key: 'ipAddress',
       ellipsis: true,
     },
+
     {
       title: intl.formatMessage({ id: 'pages.table.actionTime' }),
       dataIndex: 'createdAt',

@@ -3,6 +3,8 @@ using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Models;
 using System.Linq.Expressions;
 
+using Platform.ApiService.Models.Response;
+
 namespace Platform.ApiService.Services;
 
 /// <summary>
@@ -191,20 +193,22 @@ public class UserActivityLogService : IUserActivityLogService
             (!endDate.HasValue || log.CreatedAt <= endDate.Value) &&
             log.StatusCode >= 400);
 
-        // 操作类型总数统计 (使用聚合获取去重后的 Action 列表)
-        var actionTypesTask = _activityLogFactory.FindAsync(filter);
-
-        await Task.WhenAll(totalTask, successTask, errorTask, actionTypesTask);
+        await Task.WhenAll(totalTask, successTask, errorTask);
 
         var total = totalTask.Result;
         var successCount = successTask.Result;
         var errorCount = errorTask.Result;
+        var actionTypesCount = 0; // 暂时禁用，优化性能
+
+        /*
+        // 旧的统计逻辑（已废弃）
         var actionTypesResults = actionTypesTask.Result;
         var actionTypesCount = actionTypesResults
             .Select(log => log.Action)
             .Where(actionName => !string.IsNullOrEmpty(actionName))
             .Distinct()
             .Count();
+        */
 
         Func<IQueryable<UserActivityLog>, IOrderedQueryable<UserActivityLog>> orderBy = query =>
         {
@@ -227,9 +231,24 @@ public class UserActivityLogService : IUserActivityLogService
 
         var (logs, _) = await _activityLogFactory.FindPagedAsync(filter, orderBy, page, pageSize);
 
+        var logDtos = logs.Select(log => new ActivityLogListItemResponse
+        {
+            Id = log.Id ?? string.Empty,
+            UserId = log.UserId,
+            Username = log.Username,
+            Action = log.Action,
+            Description = log.Description,
+            IpAddress = log.IpAddress,
+            HttpMethod = log.HttpMethod,
+            FullUrl = log.FullUrl,
+            StatusCode = log.StatusCode,
+            Duration = log.Duration,
+            CreatedAt = log.CreatedAt
+        }).ToList();
+
         return new UserActivityPagedWithStatsResponse
         {
-            Data = logs,
+            Data = logDtos,
             Total = total,
             Page = page,
             PageSize = pageSize,
@@ -238,7 +257,7 @@ public class UserActivityLogService : IUserActivityLogService
                 TotalCount = total,
                 SuccessCount = successCount,
                 ErrorCount = errorCount,
-                ActionTypesCount = actionTypesCount
+                ActionTypesCount = actionTypesCount // 暂时禁用，优化性能
             }
         };
     }

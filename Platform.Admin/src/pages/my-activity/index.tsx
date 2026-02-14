@@ -14,6 +14,7 @@ import {
   ThunderboltOutlined,
   ReloadOutlined,
   SearchOutlined,
+  DashboardOutlined,
 } from '@ant-design/icons';
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { useIntl } from '@umijs/max';
@@ -199,6 +200,7 @@ const MyActivity: React.FC = () => {
     successCount: number;
     errorCount: number;
     actionTypes: number;
+    avgDuration: number;
   } | null>(null);
   const [searchForm] = Form.useForm();
   const [searchParams, setSearchParams] = useState<any>({});
@@ -439,19 +441,26 @@ const MyActivity: React.FC = () => {
       sorter: (a: UserActivityLog, b: UserActivityLog) => (a.fullUrl || '').localeCompare(b.fullUrl || ''),
     },
     {
+      title: intl.formatMessage({ id: 'pages.table.duration' }),
+      dataIndex: 'duration',
+      key: 'duration',
+      sorter: (a: UserActivityLog, b: UserActivityLog) => (a.duration || 0) - (b.duration || 0),
+      render: (_, record: UserActivityLog) => {
+        if (record.duration === undefined || record.duration === null) return '-';
+        let color = 'green';
+        if (record.duration > 1000) color = 'orange';
+        if (record.duration > 3000) color = 'red';
+        return <span style={{ color }}>{record.duration}ms</span>;
+      },
+    },
+    {
       title: intl.formatMessage({ id: 'pages.table.ipAddress' }),
       dataIndex: 'ipAddress',
       key: 'ipAddress',
       ellipsis: true,
       sorter: (a: UserActivityLog, b: UserActivityLog) => (a.ipAddress || '').localeCompare(b.ipAddress || ''),
     },
-    {
-      title: intl.formatMessage({ id: 'pages.table.userAgent' }),
-      dataIndex: 'userAgent',
-      key: 'userAgent',
-      ellipsis: true,
-      sorter: (a: UserActivityLog, b: UserActivityLog) => (a.userAgent || '').localeCompare(b.userAgent || ''),
-    },
+
     {
       title: intl.formatMessage({ id: 'pages.table.actionTime' }),
       dataIndex: 'createdAt',
@@ -534,16 +543,25 @@ const MyActivity: React.FC = () => {
 
       if (response.success && response.data) {
         // 后端返回的数据结构：{ data: { data: [...], total: xxx, ... } }
+
         const result = response.data as any;
         const list: UserActivityLog[] = result.data || [];
         const total: number = result.total || 0;
         const stats = result.statistics || {};
 
+        // 前端计算部分统计信息 (平均耗时, 操作类型数)
+        // 成功和错误次数改为使用后端返回的全局统计
+        const avgDuration = list.length
+          ? Math.round(list.reduce((sum, item) => sum + (item.duration || 0), 0) / list.length)
+          : 0;
+        const actionTypes = new Set(list.map((item) => item.action || 'unknown')).size;
+
         setStatistics({
-          total: stats.totalCount || total,
+          total: total,
           successCount: stats.successCount || 0,
           errorCount: stats.errorCount || 0,
-          actionTypes: stats.actionTypesCount || 0,
+          actionTypes: actionTypes,
+          avgDuration: avgDuration,
         });
 
         return {
@@ -592,46 +610,6 @@ const MyActivity: React.FC = () => {
         </Space>
       }
     >
-      {/* 活动统计信息：统一使用 StatCard 风格 */}
-      {statistics && (
-        <Card className={styles.card} style={{ marginBottom: 16 }}>
-          <Row gutter={[12, 12]}>
-            <Col xs={24} sm={12} md={6}>
-              <StatCard
-                title={intl.formatMessage({ id: 'pages.myActivity.statistics.totalLogs' })}
-                value={statistics.total}
-                icon={<HistoryOutlined />}
-                color="#1890ff"
-              />
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <StatCard
-                title={intl.formatMessage({ id: 'pages.myActivity.statistics.successCount' })}
-                value={statistics.successCount}
-                icon={<CheckCircleOutlined />}
-                color="#52c41a"
-              />
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <StatCard
-                title={intl.formatMessage({ id: 'pages.myActivity.statistics.errorCount' })}
-                value={statistics.errorCount}
-                icon={<CloseCircleOutlined />}
-                color="#ff4d4f"
-              />
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <StatCard
-                title={intl.formatMessage({ id: 'pages.myActivity.statistics.actionTypes' })}
-                value={statistics.actionTypes}
-                icon={<ThunderboltOutlined />}
-                color="#faad14"
-              />
-            </Col>
-          </Row>
-        </Card>
-      )}
-
       {/* 搜索表单 */}
       <SearchFormCard>
         <Form form={searchForm} layout={isMobile ? 'vertical' : 'inline'} onFinish={handleSearch}>
@@ -697,6 +675,55 @@ const MyActivity: React.FC = () => {
           </Form.Item>
         </Form>
       </SearchFormCard>
+
+      {/* 活动统计信息：统一使用 StatCard 风格 */}
+      {statistics && (
+        <Card className={styles.card} style={{ marginBottom: 16 }}>
+          <Row gutter={[12, 12]}>
+            <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}>
+              <StatCard
+                title={intl.formatMessage({ id: 'pages.myActivity.statistics.totalLogs' })}
+                value={statistics.total}
+                icon={<HistoryOutlined />}
+                color="#1890ff"
+              />
+            </Col>
+            <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}>
+              <StatCard
+                title={intl.formatMessage({ id: 'pages.myActivity.statistics.successCount' })}
+                value={statistics.successCount}
+                icon={<CheckCircleOutlined />}
+                color="#52c41a"
+              />
+            </Col>
+            <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}>
+              <StatCard
+                title={intl.formatMessage({ id: 'pages.myActivity.statistics.errorCount' })}
+                value={statistics.errorCount}
+                icon={<CloseCircleOutlined />}
+                color="#ff4d4f"
+              />
+            </Col>
+            <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}>
+              <StatCard
+                title={intl.formatMessage({ id: 'pages.myActivity.statistics.actionTypes' })}
+                value={statistics.actionTypes}
+                icon={<ThunderboltOutlined />}
+                color="#faad14"
+              />
+            </Col>
+            <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}>
+              <StatCard
+                title={intl.formatMessage({ id: 'pages.myActivity.statistics.avgDuration' })}
+                value={statistics.avgDuration}
+                suffix="ms"
+                icon={<DashboardOutlined />}
+                color="#722ed1"
+              />
+            </Col>
+          </Row>
+        </Card>
+      )}
 
       <div ref={tableRef}>
         <DataTable<UserActivityLog>

@@ -179,6 +179,7 @@ export default {
   'pages.table.actionTime': '操作时间',
   'pages.table.httpMethod': '请求方法',
   'pages.table.statusCode': '状态码',
+  'pages.table.duration': '耗时',
   'pages.table.path': '请求路径',
   'pages.table.queryString': '查询参数',
   'pages.table.fullUrl': '完整URL',
@@ -903,6 +904,7 @@ export default {
   'pages.myActivity.statistics.successCount': '成功请求数',
   'pages.myActivity.statistics.errorCount': '错误请求数',
   'pages.myActivity.statistics.actionTypes': '操作类型数',
+  'pages.myActivity.statistics.avgDuration': '平均耗时',
   // 系统帮助
   'pages.help.title': '系统帮助',
   'pages.help.tab.quickStart': '快速开始',

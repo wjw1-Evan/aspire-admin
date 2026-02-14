@@ -11,27 +11,16 @@ namespace Platform.ServiceDefaults.Services;
 /// EF Core 数据工厂 - 提供类型安全的 CRUD 和分页查询
 /// 审计字段（时间戳、操作人、多租户等）统一由 PlatformDbContext.SaveChangesAsync 设置
 /// </summary>
-public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, ISoftDeletable, ITimestamped
+public class EFCoreDataFactory<T>(
+    DbContext context,
+    IAuditService auditService,
+    IHttpContextAccessor? httpContextAccessor = null,
+    ITenantContext? tenantContext = null)
+    : IDataFactory<T> where T : class, IEntity, ISoftDeletable, ITimestamped
 {
-    private readonly PlatformDbContext _context;
-    private readonly DbSet<T> _dbSet;
-    private readonly IAuditService _auditService;
-    private readonly string? _currentUserId;
-    private readonly ITenantContext? _tenantContext;
-
-    public EFCoreDataFactory(
-        PlatformDbContext context,
-        IAuditService auditService,
-        IHttpContextAccessor? httpContextAccessor = null,
-        ITenantContext? tenantContext = null)
-    {
-        _context = context;
-        _dbSet = context.Set<T>();
-        _auditService = auditService;
-        _tenantContext = tenantContext;
-        _currentUserId = tenantContext?.GetCurrentUserId()
-            ?? httpContextAccessor?.HttpContext?.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-    }
+    private readonly DbSet<T> _dbSet = context.Set<T>();
+    private readonly string? _currentUserId = tenantContext?.GetCurrentUserId()
+        ?? httpContextAccessor?.HttpContext?.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
     #region 查询操作
 
@@ -94,7 +83,7 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
     {
         await SetCompanyIdAsync(entity);
         _dbSet.Add(entity);
-        await _context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
         return entity;
     }
 
@@ -114,8 +103,8 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
         }
 
         await _dbSet.AddRangeAsync(entityList, cancellationToken);
-        await _context.SaveChangesAsync(cancellationToken);
-        await _auditService.RecordOperationAsync("BATCH_CREATE", typeof(T).Name, $"count:{entityList.Count}", entityList.Count, $"Created {entityList.Count} entities");
+        await context.SaveChangesAsync(cancellationToken);
+        await auditService.RecordOperationAsync("BATCH_CREATE", typeof(T).Name, $"count:{entityList.Count}", entityList.Count, $"Created {entityList.Count} entities");
         return entityList;
     }
 
@@ -128,7 +117,7 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
         var entity = await GetByIdAsync(id, cancellationToken);
         if (entity == null) return null;
         updateAction(entity);
-        await _context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
         return entity;
     }
 
@@ -137,7 +126,7 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
         var entity = await GetByIdAsync(id, cancellationToken);
         if (entity == null) return null;
         await updateAction(entity);
-        await _context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
         return entity;
     }
 
@@ -147,8 +136,8 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
         if (entities.Count == 0) return 0;
 
         foreach (var entity in entities) updateAction(entity);
-        await _context.SaveChangesAsync(cancellationToken);
-        await _auditService.RecordOperationAsync("BATCH_UPDATE", typeof(T).Name, $"count:{entities.Count}", entities.Count, $"Updated {entities.Count} entities");
+        await context.SaveChangesAsync(cancellationToken);
+        await auditService.RecordOperationAsync("BATCH_UPDATE", typeof(T).Name, $"count:{entities.Count}", entities.Count, $"Updated {entities.Count} entities");
         return entities.Count;
     }
 
@@ -158,8 +147,8 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
         if (entities.Count == 0) return 0;
 
         foreach (var entity in entities) await updateAction(entity);
-        await _context.SaveChangesAsync(cancellationToken);
-        await _auditService.RecordOperationAsync("BATCH_UPDATE", typeof(T).Name, $"count:{entities.Count}", entities.Count, $"Updated {entities.Count} entities");
+        await context.SaveChangesAsync(cancellationToken);
+        await auditService.RecordOperationAsync("BATCH_UPDATE", typeof(T).Name, $"count:{entities.Count}", entities.Count, $"Updated {entities.Count} entities");
         return entities.Count;
     }
 
@@ -174,8 +163,8 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
 
         entity.IsDeleted = true;
         entity.DeletedReason = reason;
-        await _context.SaveChangesAsync(cancellationToken);
-        await _auditService.RecordOperationAsync("SOFT_DELETE", typeof(T).Name, id, null, reason);
+        await context.SaveChangesAsync(cancellationToken);
+        await auditService.RecordOperationAsync("SOFT_DELETE", typeof(T).Name, id, null, reason);
         return true;
     }
 
@@ -190,8 +179,8 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
             entity.DeletedReason = reason;
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
-        await _auditService.RecordOperationAsync("BATCH_SOFT_DELETE", typeof(T).Name, $"count:{entities.Count}", entities.Count, reason);
+        await context.SaveChangesAsync(cancellationToken);
+        await auditService.RecordOperationAsync("BATCH_SOFT_DELETE", typeof(T).Name, $"count:{entities.Count}", entities.Count, reason);
         return entities.Count;
     }
 
@@ -201,7 +190,7 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
         if (entity == null) return false;
 
         _dbSet.Remove(entity);
-        await _context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
         return true;
     }
 
@@ -211,8 +200,8 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
         if (entities.Count == 0) return 0;
 
         _dbSet.RemoveRange(entities);
-        await _context.SaveChangesAsync(cancellationToken);
-        await _auditService.RecordOperationAsync("BATCH_DELETE", typeof(T).Name, $"count:{entities.Count}", entities.Count, "Hard deleted entities");
+        await context.SaveChangesAsync(cancellationToken);
+        await auditService.RecordOperationAsync("BATCH_DELETE", typeof(T).Name, $"count:{entities.Count}", entities.Count, "Hard deleted entities");
         return entities.Count;
     }
 
@@ -248,14 +237,14 @@ public class EFCoreDataFactory<T> : IDataFactory<T> where T : class, IEntity, IS
     public string GetRequiredUserId() => _currentUserId ?? throw new UnauthorizedAccessException("User not authenticated");
 
     public async Task<string?> GetCurrentCompanyIdAsync()
-        => _tenantContext != null ? await _tenantContext.GetCurrentCompanyIdAsync().ConfigureAwait(false) : null;
+        => tenantContext != null ? await tenantContext.GetCurrentCompanyIdAsync().ConfigureAwait(false) : null;
 
     public async Task<string> GetRequiredCompanyIdAsync()
     {
-        if (_tenantContext == null)
+        if (tenantContext == null)
             throw new UnauthorizedAccessException("Tenant context not available");
 
-        var companyId = await _tenantContext.GetCurrentCompanyIdAsync().ConfigureAwait(false);
+        var companyId = await tenantContext.GetCurrentCompanyIdAsync().ConfigureAwait(false);
         return !string.IsNullOrEmpty(companyId) ? companyId : throw new UnauthorizedAccessException("未找到当前企业信息");
     }
 

@@ -100,8 +100,19 @@ public static class Extensions
     public static TBuilder AddDefaultHealthChecks<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
     {
         builder.Services.AddHealthChecks()
-            // Add a default liveness check to ensure app is responsive
-            .AddCheck("self", () => HealthCheckResult.Healthy(), ["live"]);
+            // 存活检查 - 确保应用进程响应
+            .AddCheck("self", () => HealthCheckResult.Healthy(), ["live"])
+            // 就绪检查 - 确保 MongoDB 数据库可连接
+            // Aspire Dashboard 和 K8s 探针使用此状态判断服务是否就绪
+            .Add(new HealthCheckRegistration(
+                "mongodb",
+                sp =>
+                {
+                    var db = sp.GetService<MongoDB.Driver.IMongoDatabase>();
+                    return new MongoHealthCheck(db);
+                },
+                failureStatus: HealthStatus.Unhealthy,
+                tags: ["ready"]));
 
         return builder;
     }
@@ -123,5 +134,31 @@ public static class Extensions
         }
 
         return app;
+    }
+}
+
+/// <summary>
+/// MongoDB 健康检查 - 通过 ping 命令检测数据库连接状态
+/// </summary>
+internal sealed class MongoHealthCheck : IHealthCheck
+{
+    private readonly MongoDB.Driver.IMongoDatabase? _database;
+
+    public MongoHealthCheck(MongoDB.Driver.IMongoDatabase? database) => _database = database;
+
+    public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
+    {
+        if (_database == null)
+            return Task.FromResult(HealthCheckResult.Healthy("MongoDB not configured for this service"));
+
+        try
+        {
+            _database.RunCommand<MongoDB.Bson.BsonDocument>(new MongoDB.Bson.BsonDocument("ping", 1));
+            return Task.FromResult(HealthCheckResult.Healthy());
+        }
+        catch (Exception ex)
+        {
+            return Task.FromResult(HealthCheckResult.Unhealthy("MongoDB connection failed", ex));
+        }
     }
 }

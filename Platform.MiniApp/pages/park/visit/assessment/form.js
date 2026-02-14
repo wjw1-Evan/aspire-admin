@@ -7,7 +7,7 @@ Page(withI18n({
         taskId: '',
         mode: 'create', // create, view
         formData: {
-            score: 100,
+            score: 5,
             comments: ''
         },
         taskInfo: null,
@@ -28,12 +28,8 @@ Page(withI18n({
 
     async loadAssessment(id) {
         try {
-            // Assuming a get-by-id endpoint exists or filtering the list
-            // For now, let's look for it in the list or fetch it if possible
-            // ParkVisitController doesn't have a GetAssessmentById, so we might need to fetch the list and find it
-            // or assume the task info is already in the DTO
-            const res = await request.get('/api/park-management/visit/assessments', { search: id });
-            if (res.data && res.data.assessments && res.data.assessments.length > 0) {
+            const res = await request.get(`/api/park-management/visit/assessments`, { id });
+            if (res.data && res.data.assessments) {
                 const assessment = res.data.assessments.find(a => a.id === id);
                 if (assessment) {
                     this.setData({
@@ -43,10 +39,13 @@ Page(withI18n({
                         },
                         taskInfo: {
                             title: assessment.taskDescription,
-                            visitorName: assessment.visitorName,
-                            location: assessment.location
+                            tenantName: assessment.visitorName,
+                            visitDate: assessment.createdAt
                         }
                     });
+                    if (assessment.taskId) {
+                        this.loadTaskInfo(assessment.taskId);
+                    }
                 }
             }
         } catch (e) {
@@ -75,21 +74,28 @@ Page(withI18n({
         this.setData({ 'formData.comments': e.detail.value });
     },
 
-    async handleSubmit() {
+    async handleSubmit(e) {
         if (this.data.mode === 'view') return;
+
+        const { score, comment } = e.detail.value;
 
         this.setData({ submitting: true });
 
         try {
+            // Check if visitorName exists in taskInfo
+            const visitorName = this.data.taskInfo.intervieweeName || this.data.taskInfo.tenantName || 'Unknown';
+            const phone = this.data.taskInfo.intervieweePhone || this.data.taskInfo.phone;
+            const location = this.data.taskInfo.visitLocation;
+            const taskDescription = this.data.taskInfo.title;
+
             const payload = {
                 taskId: this.data.taskId,
-                score: parseInt(this.data.formData.score),
-                comments: this.data.formData.comments,
-                // The backend VisitAssessmentDto has more fields, but usually they are mapped from the Task on server side
-                // If not, we might need to send them. Assuming TaskId is enough for the service to map.
-                visitorName: this.data.taskInfo.managerName || this.data.taskInfo.visitor,
-                location: this.data.taskInfo.visitLocation,
-                taskDescription: this.data.taskInfo.title
+                score: parseInt(score || this.data.formData.score),
+                comments: comment || this.data.formData.comments,
+                visitorName,
+                phone,
+                location,
+                taskDescription
             };
 
             await request.post('/api/park-management/visit/assessment', payload);

@@ -40,20 +40,62 @@ Page(withAuth(withI18n({
         wx.setNavigationBarTitle({ title });
     },
 
-    onLoad(options) {
-        this.loadTenants();
+    async onLoad(options) {
+        // Load tenants first
+        await this.loadTenants();
+
         if (options.id) {
             this.setData({
                 isEdit: true,
                 taskId: options.id,
                 i18nTitleKey: 'park.visit.task_edit'
             });
-            this.fetchTaskDetail(options.id);
+            await this.fetchTaskDetail(options.id);
         }
         this.updateTranslations();
     },
 
-    // ... existing ...
+    async loadTenants() {
+        try {
+            const res = await request({
+                url: '/api/park/tenants/list',
+                method: 'POST',
+                data: { page: 1, pageSize: 100 }
+            });
+            if (res.success && res.data && res.data.tenants) {
+                this.setData({ tenantList: res.data.tenants });
+            }
+        } catch (err) {
+            console.error('Load tenants failed', err);
+        }
+    },
+
+    async fetchTaskDetail(id) {
+        try {
+            const res = await request({
+                url: `/api/park-management/visit/task/${id}`,
+                method: 'GET'
+            });
+            if (res.success && res.data) {
+                const task = res.data;
+                // Find tenant index
+                const tenantIndex = this.data.tenantList.findIndex(t => t.id === task.tenantId);
+
+                // Find priority index
+                const priorityIndex = this.data.priorityOptions.findIndex(p => p.value === task.priority);
+
+                this.setData({
+                    'formData.taskName': task.taskName || task.title,
+                    'formData.description': task.description || task.details,
+                    tenantIndex: tenantIndex >= 0 ? tenantIndex : 0,
+                    priorityIndex: priorityIndex >= 0 ? priorityIndex : 1,
+                    plannedVisitDate: task.plannedVisitDate ? task.plannedVisitDate.substring(0, 10) : ''
+                });
+            }
+        } catch (err) {
+            console.error('Fetch task detail failed', err);
+        }
+    },
 
     async handleSubmit(e) {
         const values = e.detail.value;

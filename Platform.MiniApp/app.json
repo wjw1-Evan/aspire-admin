@@ -45,7 +45,9 @@
     "pages/password-book/list",
     "pages/password-book/detail",
     "pages/password-book/form",
-    "pages/notification/list"
+    "pages/notification/list",
+    "pages/park/visit/knowledge/form",
+    "pages/park/visit/knowledge/questionnaire-form"
   ],
   "window": {
     "backgroundTextStyle": "light",

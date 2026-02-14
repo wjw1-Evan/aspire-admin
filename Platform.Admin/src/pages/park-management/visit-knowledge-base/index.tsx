@@ -6,6 +6,7 @@ import {
     Modal,
     Form,
     Input,
+    InputNumber,
     Select,
     Switch,
     App,
@@ -20,6 +21,7 @@ import {
     Drawer,
     Descriptions,
     Divider,
+    Transfer,
 } from 'antd';
 import {
     PlusOutlined,
@@ -32,6 +34,8 @@ import {
     DeleteOutlined,
     InfoCircleOutlined,
     EyeOutlined,
+    ArrowUpOutlined,
+    ArrowDownOutlined,
 } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import PageContainer from '@/components/PageContainer';
@@ -57,6 +61,8 @@ const VisitKnowledgeBase: React.FC = () => {
     const [questionForm] = Form.useForm();
     const [questionnaireForm] = Form.useForm();
     const [searchForm] = Form.useForm();
+    const [allQuestions, setAllQuestions] = useState<VisitQuestion[]>([]);
+    const [targetKeys, setTargetKeys] = useState<string[]>([]);
     const [statistics, setStatistics] = useState<VisitStatistics | null>(null);
     const [loading, setLoading] = useState(false);
     const [questionDetailVisible, setQuestionDetailVisible] = useState(false);
@@ -76,6 +82,17 @@ const VisitKnowledgeBase: React.FC = () => {
             console.error('Failed to load statistics:', error);
         }
     }, []);
+
+    const loadAllQuestions = async () => {
+        try {
+            const res = await visitService.getQuestions({ page: 1, pageSize: 1000 });
+            if (res.success && res.data) {
+                setAllQuestions(res.data.questions);
+            }
+        } catch (error) {
+            console.error('Failed to load questions:', error);
+        }
+    };
 
     useEffect(() => {
         loadStatistics();
@@ -169,8 +186,21 @@ const VisitKnowledgeBase: React.FC = () => {
             width: 100,
             render: (_: any, record: VisitQuestionnaire) => (
                 <Space>
-                    <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => { setSelectedQuestionnaire(record); setQuestionnaireDetailVisible(true); }}>查看</Button>
-                    <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { setEditingQuestionnaire(record); questionnaireForm.setFieldsValue(record); setIsQuestionnaireModalVisible(true); }}>编辑</Button>
+                    <Button type="link" size="small" icon={<EyeOutlined />} onClick={async () => {
+                        setSelectedQuestionnaire(record);
+                        setQuestionnaireDetailVisible(true);
+                        if (allQuestions.length === 0) {
+                            await loadAllQuestions();
+                        }
+                    }}>查看</Button>
+                    <Button type="link" size="small" icon={<EditOutlined />} onClick={async () => {
+                        setEditingQuestionnaire(record);
+                        questionnaireForm.setFieldsValue(record);
+                        setTargetKeys(record.questionIds || []);
+                        await loadAllQuestions();
+                        setIsQuestionnaireModalVisible(true);
+                    }}>编辑</Button>
+                    <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDeleteQuestionnaire(record.id)}>删除</Button>
                 </Space>
             ),
         },
@@ -178,7 +208,7 @@ const VisitKnowledgeBase: React.FC = () => {
 
     const handleDeleteQuestion = (id: string) => {
         modal.confirm({
-            title: '确定要删除这个办公问题吗？',
+            title: '确定要删除这个走访问题吗？',
             icon: <InfoCircleOutlined />,
             content: '删除后将无法在问卷组题中使用',
             okText: '确定',
@@ -198,6 +228,39 @@ const VisitKnowledgeBase: React.FC = () => {
         });
     };
 
+    const handleDeleteQuestionnaire = (id: string) => {
+        modal.confirm({
+            title: '确定要删除这个问卷模板吗？',
+            icon: <InfoCircleOutlined />,
+            content: '删除后将无法使用该模版创建走访任务',
+            okText: '确定',
+            okType: 'danger',
+            cancelText: '取消',
+            onOk: async () => {
+                try {
+                    const res = await visitService.deleteQuestionnaire(id);
+                    if (res.success) {
+                        message.success('删除成功');
+                        actionRef.current?.reload();
+                    }
+                } catch (error) {
+                    message.error('删除失败');
+                }
+            },
+        });
+    };
+
+    const handleMoveQuestion = (index: number, direction: 'up' | 'down') => {
+        const newTargetKeys = [...targetKeys];
+        const swapIndex = direction === 'up' ? index - 1 : index + 1;
+
+        if (swapIndex >= 0 && swapIndex < newTargetKeys.length) {
+            [newTargetKeys[index], newTargetKeys[swapIndex]] = [newTargetKeys[swapIndex], newTargetKeys[index]];
+            setTargetKeys(newTargetKeys as string[]);
+            questionnaireForm.setFieldsValue({ questionIds: newTargetKeys });
+        }
+    };
+
     return (
         <PageContainer
             title="走访知识库"
@@ -211,7 +274,13 @@ const VisitKnowledgeBase: React.FC = () => {
                             新增问题
                         </Button>
                     ) : (
-                        <Button key="add-template" type="primary" icon={<PlusOutlined />} onClick={() => { setEditingQuestionnaire(null); questionnaireForm.resetFields(); setIsQuestionnaireModalVisible(true); }}>
+                        <Button key="add-template" type="primary" icon={<PlusOutlined />} onClick={async () => {
+                            setEditingQuestionnaire(null);
+                            questionnaireForm.resetFields();
+                            setTargetKeys([]);
+                            await loadAllQuestions();
+                            setIsQuestionnaireModalVisible(true);
+                        }}>
                             新增问卷
                         </Button>
                     )}
@@ -334,6 +403,12 @@ const VisitKnowledgeBase: React.FC = () => {
                     <Form.Item name="isFrequentlyUsed" label="标记为常用" valuePropName="checked">
                         <Switch />
                     </Form.Item>
+                    <Form.Item name="sortOrder" label="排序值" extra="数值越小越靠前" initialValue={0}>
+                        <InputNumber style={{ width: '100%' }} precision={0} />
+                    </Form.Item>
+                    <Form.Item name="questionIds" hidden>
+                        <Select mode="multiple" />
+                    </Form.Item>
                 </Form>
             </Modal>
 
@@ -345,7 +420,9 @@ const VisitKnowledgeBase: React.FC = () => {
                     const values = await questionnaireForm.validateFields();
                     setLoading(true);
                     try {
-                        const res = await visitService.createQuestionnaire(values);
+                        const res = editingQuestionnaire
+                            ? await visitService.updateQuestionnaire(editingQuestionnaire.id, values)
+                            : await visitService.createQuestionnaire(values);
                         if (res.success) {
                             message.success('保存成功');
                             setIsQuestionnaireModalVisible(false);
@@ -365,19 +442,104 @@ const VisitKnowledgeBase: React.FC = () => {
                     <Form.Item name="purpose" label="走访目的">
                         <Input placeholder="例如：收集企业诉求，改进物业服务" />
                     </Form.Item>
-                    <Form.Item label="选择题目">
-                        <Card size="small" className={styles.selectionCard}>
-                            <List
-                                size="small"
-                                dataSource={[]}
-                                locale={{ emptyText: '暂无可选题目' }}
-                                renderItem={item => (
-                                    <List.Item extra={<Button type="link" size="small" icon={<PlusOutlined />}>添加</Button>}>
-                                        {item}
-                                    </List.Item>
-                                )}
-                            />
-                        </Card>
+                    <Form.Item name="sortOrder" label="排序值" extra="数值越小越靠前" initialValue={0}>
+                        <InputNumber style={{ width: '100%' }} precision={0} />
+                    </Form.Item>
+                    <Form.Item label="选择题目" required>
+                        <Transfer
+                            dataSource={allQuestions}
+                            showSearch
+                            listStyle={{
+                                width: 350,
+                                height: 400,
+                            }}
+                            titles={['待选题目', '已选题目']}
+                            targetKeys={targetKeys}
+                            onChange={(nextTargetKeys) => {
+                                setTargetKeys(nextTargetKeys as string[]);
+                                questionnaireForm.setFieldsValue({ questionIds: nextTargetKeys });
+                            }}
+                            render={item => item.content}
+                            rowKey={item => item.id}
+                        >
+                            {({ direction, filteredItems, onItemSelect }) => {
+                                if (direction === 'left') {
+                                    return (
+                                        <List
+                                            size="small"
+                                            dataSource={filteredItems}
+                                            style={{ height: '100%', overflow: 'auto' }}
+                                            renderItem={(item) => (
+                                                <List.Item
+                                                    onClick={() => onItemSelect(item.id as string, !targetKeys.includes(item.id))}
+                                                    style={{ cursor: 'pointer', padding: '8px 12px' }}
+                                                >
+                                                    <Space>
+                                                        {targetKeys.includes(item.id) ?
+                                                            <Tag color="blue">已选</Tag> :
+                                                            <div style={{ width: 34 }} />
+                                                        }
+                                                        <Text ellipsis style={{ width: 240 }}>{item.content}</Text>
+                                                    </Space>
+                                                </List.Item>
+                                            )}
+                                        />
+                                    );
+                                } else {
+                                    // Use targetKeys to maintain order
+                                    const sortedItems = targetKeys
+                                        .map(key => allQuestions.find(q => q.id === key))
+                                        .filter((item): item is VisitQuestion => !!item);
+
+                                    return (
+                                        <List
+                                            size="small"
+                                            dataSource={sortedItems}
+                                            style={{ height: '100%', overflow: 'auto' }}
+                                            renderItem={(item, index) => (
+                                                <List.Item
+                                                    actions={[
+                                                        <Button
+                                                            key="up"
+                                                            type="text"
+                                                            size="small"
+                                                            icon={<ArrowUpOutlined />}
+                                                            disabled={index === 0}
+                                                            onClick={(e) => { e.stopPropagation(); handleMoveQuestion(index, 'up'); }}
+                                                        />,
+                                                        <Button
+                                                            key="down"
+                                                            type="text"
+                                                            size="small"
+                                                            icon={<ArrowDownOutlined />}
+                                                            disabled={index === sortedItems.length - 1}
+                                                            onClick={(e) => { e.stopPropagation(); handleMoveQuestion(index, 'down'); }}
+                                                        />,
+                                                        <Button
+                                                            key="del"
+                                                            type="text"
+                                                            size="small"
+                                                            danger
+                                                            icon={<DeleteOutlined />}
+                                                            onClick={(e) => { e.stopPropagation(); onItemSelect(item.id, false); }}
+                                                        />
+                                                    ]}
+                                                    style={{ padding: '8px 12px' }}
+                                                >
+                                                    <Space>
+                                                        <Tag color="#108ee9">{index + 1}</Tag>
+                                                        <Text ellipsis={{ tooltip: item.content }} style={{ width: 180 }}>{item.content}</Text>
+                                                    </Space>
+                                                </List.Item>
+                                            )}
+                                        />
+                                    );
+                                }
+                            }}
+                        </Transfer>
+                    </Form.Item>
+                    <Form.Item name="questionIds" hidden>
+                        <Select mode="multiple" />
                     </Form.Item>
                 </Form>
             </Modal>
@@ -427,8 +589,27 @@ const VisitKnowledgeBase: React.FC = () => {
                         </Descriptions>
                         <Divider />
                         <Card title="包含题目" size="small">
-                            {/* Note: This is a placeholder since we don't have a direct expanded question list here yet */}
-                            <Text type="secondary">该问卷共包含 {selectedQuestionnaire.questionCount} 个题目。详细题目内容可通过编辑功能查看。</Text>
+                            <List
+                                size="small"
+                                dataSource={allQuestions.filter(q => selectedQuestionnaire.questionIds?.includes(q.id))}
+                                renderItem={(item, index) => (
+                                    <List.Item>
+                                        <Space direction="vertical" style={{ width: '100%' }}>
+                                            <Space>
+                                                <Tag color="#108ee9">{index + 1}</Tag>
+                                                <Text strong>{item.content}</Text>
+                                            </Space>
+                                            {item.answer && (
+                                                <div style={{ paddingLeft: 30, color: '#666', fontSize: 13 }}>
+                                                    <Text type="secondary">解析：</Text>
+                                                    <Text style={{ whiteSpace: 'pre-wrap' }}>{item.answer}</Text>
+                                                </div>
+                                            )}
+                                        </Space>
+                                    </List.Item>
+                                )}
+                                locale={{ emptyText: '该问卷暂无题目' }}
+                            />
                         </Card>
                     </Space>
                 ) : <Empty />}

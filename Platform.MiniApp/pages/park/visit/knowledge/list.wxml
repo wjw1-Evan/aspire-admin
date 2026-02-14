@@ -11,16 +11,29 @@
   <view class="list-container">
     <!-- FAQ List -->
     <block wx:if="{{activeTab === 'faq'}}">
-      <view class="biz-card" wx:for="{{faqList}}" wx:key="id" bindtap="toggleFaq" data-id="{{item.id}}">
-        <view class="section-header">
+      <view class="biz-card" wx:for="{{faqList}}" wx:key="id">
+        <view class="section-header" bindtap="toggleFaq" data-id="{{item.id}}">
           <view class="faq-q-wrap" style="display: flex; align-items: center; flex: 1;">
             <text class="category-tag" style="margin-right: 12rpx;">{{item.category || t['all']}}</text>
             <text class="section-title" style="flex: 1;">{{item.content}}</text>
           </view>
           <text class="iconfont {{expandedFaq === item.id ? 'icon-up' : 'icon-down'}}" style="font-size: 24rpx; color: #ccc; margin-left: 20rpx;"></text>
         </view>
+        
         <view class="card-detail" wx:if="{{expandedFaq === item.id}}">
-          {{item.answer || t['empty']}}
+          <view style="margin-bottom: 20rpx;">{{item.answer || t['empty']}}</view>
+          
+          <view class="card-footer" style="padding-top: 20rpx; border-top: 1rpx dashed #eee;">
+            <view></view> <!-- Placeholder -->
+            <view class="flex">
+              <view class="btn-detail" style="margin-right: 30rpx;" catchtap="goToEdit" data-id="{{item.id}}" data-item="{{item}}">
+                <text class="iconfont icon-edit" style="margin-right: 6rpx;"></text>{{t['common.edit']}}
+              </view>
+              <view class="btn-detail" style="color: #ff4d4f;" catchtap="deleteQuestion" data-id="{{item.id}}">
+                <text class="iconfont icon-delete" style="margin-right: 6rpx;"></text>{{t['common.delete']}}
+              </view>
+            </view>
+          </view>
         </view>
       </view>
 
@@ -32,15 +45,27 @@
 
     <!-- Questionnaire List -->
     <block wx:if="{{activeTab === 'questionnaire'}}">
-      <view class="biz-card" wx:for="{{questionnaireList}}" wx:key="id">
+      <view class="biz-card" wx:for="{{questionnaireList}}" wx:key="id" bindtap="goToQuestionnaireDetail" data-id="{{item.id}}">
         <view class="section-header">
           <text class="section-title">{{item.title}}</text>
         </view>
         <view class="card-body" style="border-top: none; padding-top: 0; margin-top: 10rpx;">
           <view style="font-size: 24rpx; color: #969799; margin-bottom: 20rpx;">{{item.purpose || '-'}}</view>
-          <view class="meta-row">
+          <view class="meta-row" style="margin-bottom: 20rpx;">
             <text>{{item.questionCount}} {{t['questions']}}</text>
             <text>{{item.createdAt}}</text>
+          </view>
+          
+          <view class="card-footer" style="padding-top: 20rpx; border-top: 1rpx dashed #eee;">
+            <view></view> <!-- Placeholder -->
+            <view class="flex">
+              <view class="btn-detail" style="margin-right: 30rpx;" catchtap="goToEditQuestionnaire" data-id="{{item.id}}" data-item="{{item}}">
+                <text class="iconfont icon-edit" style="margin-right: 6rpx;"></text>{{t['common.edit']}}
+              </view>
+              <view class="btn-detail" style="color: #ff4d4f;" catchtap="deleteQuestionnaire" data-id="{{item.id}}">
+                <text class="iconfont icon-delete" style="margin-right: 6rpx;"></text>{{t['common.delete']}}
+              </view>
+            </view>
           </view>
         </view>
       </view>
@@ -60,6 +85,13 @@
     <!-- No More Data -->
     <view class="no-more" wx:if="{{!hasMoreFaq && activeTab === 'faq' && faqList.length > 0}}">
       {{t['noMore']}}
+    </view>
+  </view>
+
+  <!-- Floating Action Button -->
+  <view class="fab-group">
+    <view class="add-btn" bindtap="goToCreate">
+      <text class="iconfont icon-plus"></text>
     </view>
   </view>
 </view>

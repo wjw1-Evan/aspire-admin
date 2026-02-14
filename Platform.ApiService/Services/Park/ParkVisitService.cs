@@ -323,7 +323,8 @@ public class ParkVisitService : IParkVisitService
                 Content = q.Content,
                 Category = q.Category,
                 Answer = q.Answer,
-                IsFrequentlyUsed = q.IsFrequentlyUsed
+                IsFrequentlyUsed = q.IsFrequentlyUsed ?? false,
+                SortOrder = q.SortOrder ?? 0
             }).ToList(),
             Total = (int)total
         };
@@ -335,13 +336,14 @@ public class ParkVisitService : IParkVisitService
     public async Task<List<VisitQuestionDto>> GetVisitQuestionsByCategoryAsync(string category)
     {
         var items = await _questionFactory.FindAsync(q => q.Category == category);
-        return items.Select(q => new VisitQuestionDto
+        return items.OrderByDescending(q => q.IsFrequentlyUsed ?? false).ThenBy(q => q.SortOrder).Select(q => new VisitQuestionDto
         {
             Id = q.Id,
             Content = q.Content,
             Category = q.Category,
             Answer = q.Answer,
-            IsFrequentlyUsed = q.IsFrequentlyUsed
+            IsFrequentlyUsed = q.IsFrequentlyUsed ?? false,
+            SortOrder = q.SortOrder ?? 0
         }).ToList();
     }
 
@@ -355,7 +357,8 @@ public class ParkVisitService : IParkVisitService
             Content = request.Content,
             Category = request.Category,
             Answer = request.Answer,
-            IsFrequentlyUsed = request.IsFrequentlyUsed
+            IsFrequentlyUsed = request.IsFrequentlyUsed,
+            SortOrder = request.SortOrder
         };
 
         await _questionFactory.CreateAsync(question);
@@ -365,7 +368,8 @@ public class ParkVisitService : IParkVisitService
             Content = question.Content,
             Category = question.Category,
             Answer = question.Answer,
-            IsFrequentlyUsed = question.IsFrequentlyUsed
+            IsFrequentlyUsed = question.IsFrequentlyUsed ?? false,
+            SortOrder = question.SortOrder ?? 0
         };
     }
 
@@ -380,6 +384,7 @@ public class ParkVisitService : IParkVisitService
             question.Category = request.Category;
             question.Answer = request.Answer;
             question.IsFrequentlyUsed = request.IsFrequentlyUsed;
+            question.SortOrder = request.SortOrder;
         });
 
         return updatedQuestion != null ? request : null;
@@ -401,15 +406,16 @@ public class ParkVisitService : IParkVisitService
         var items = await _questionnaireFactory.FindAsync();
         return new VisitQuestionnaireListResponse
         {
-            Questionnaires = items.Select(q => new VisitQuestionnaireDto
+            Questionnaires = items.OrderBy(q => q.SortOrder).Select(q => new VisitQuestionnaireDto
             {
                 Id = q.Id,
                 Title = q.Title,
                 Purpose = q.Purpose,
                 QuestionIds = q.QuestionIds,
-                CreatedAt = q.CreatedAt
+                CreatedAt = q.CreatedAt,
+                SortOrder = q.SortOrder ?? 0
             }).ToList(),
-            Total = items.Count
+            Total = (int)await _questionnaireFactory.CountAsync()
         };
     }
 
@@ -423,7 +429,8 @@ public class ParkVisitService : IParkVisitService
             Title = request.Title,
             Purpose = request.Purpose,
             QuestionIds = request.QuestionIds,
-            Notes = ""
+            Notes = "",
+            SortOrder = request.SortOrder
         };
 
         await _questionnaireFactory.CreateAsync(questionnaire);
@@ -433,8 +440,43 @@ public class ParkVisitService : IParkVisitService
             Title = questionnaire.Title,
             Purpose = questionnaire.Purpose,
             QuestionIds = questionnaire.QuestionIds,
-            CreatedAt = questionnaire.CreatedAt
+            CreatedAt = questionnaire.CreatedAt,
+            SortOrder = questionnaire.SortOrder ?? 0
         };
+    }
+
+    /// <summary>
+    /// 更新走访问卷模板
+    /// </summary>
+    public async Task<VisitQuestionnaireDto?> UpdateVisitQuestionnaireAsync(string id, VisitQuestionnaireDto request)
+    {
+        var updated = await _questionnaireFactory.UpdateAsync(id, q =>
+        {
+            q.Title = request.Title;
+            q.Purpose = request.Purpose;
+            q.QuestionIds = request.QuestionIds;
+            q.SortOrder = request.SortOrder;
+        });
+
+        if (updated == null) return null;
+
+        return new VisitQuestionnaireDto
+        {
+            Id = updated.Id,
+            Title = updated.Title,
+            Purpose = updated.Purpose,
+            QuestionIds = updated.QuestionIds,
+            CreatedAt = updated.CreatedAt,
+            SortOrder = updated.SortOrder ?? 0
+        };
+    }
+
+    /// <summary>
+    /// 删除走访问卷模板
+    /// </summary>
+    public async Task<bool> DeleteVisitQuestionnaireAsync(string id)
+    {
+        return await _questionnaireFactory.SoftDeleteAsync(id);
     }
 
     /// <summary>
@@ -459,9 +501,9 @@ public class ParkVisitService : IParkVisitService
 
         // 2-4. 按类型、状态、企管员排行统计（从基础数据加载后再分组，因为 IDataFactory 暂不支持直接复杂的聚合）
         var tasks = await _visitTaskFactory.FindAsync(t => t.VisitDate >= startOfPeriod && t.VisitDate <= endOfPeriod);
-        
+
         // 修复：活跃企管员数计算（有完成走访任务的企管员）
-        var activeManagers = tasks.Where(t => 
+        var activeManagers = tasks.Where(t =>
             !string.IsNullOrEmpty(t.ManagerName) && t.Status == "Completed"
         ).Select(t => t.ManagerName!).Distinct().Count();
 
@@ -485,7 +527,7 @@ public class ParkVisitService : IParkVisitService
                                    .OrderBy(g => g.Key.Year)
                                    .ThenBy(g => g.Key.Month)
                                    .ToDictionary(
-                                       g => $"{g.Key.Year:D4}-{g.Key.Month:D2}", 
+                                       g => $"{g.Key.Year:D4}-{g.Key.Month:D2}",
                                        g => g.Count());
 
         return new VisitStatisticsDto

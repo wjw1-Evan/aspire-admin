@@ -74,6 +74,7 @@ export interface VisitQuestion {
     category?: string;
     answer?: string;
     isFrequentlyUsed: boolean;
+    sortOrder: number;
 }
 
 export interface VisitQuestionnaire {
@@ -83,6 +84,7 @@ export interface VisitQuestionnaire {
     questionIds: string[];
     questionCount: number;
     createdAt: string;
+    sortOrder: number;
 }
 
 export interface VisitTaskListRequest {
@@ -189,6 +191,14 @@ export async function getQuestionnaires() {
 
 export async function createQuestionnaire(data: any) {
     return request<ApiResponse<VisitQuestionnaire>>('/api/park-management/visit/questionnaire', { method: 'POST', data });
+}
+
+export async function updateQuestionnaire(id: string, data: any) {
+    return request<ApiResponse<VisitQuestionnaire>>(`/api/park-management/visit/questionnaire/${id}`, { method: 'PUT', data });
+}
+
+export async function deleteQuestionnaire(id: string) {
+    return request<ApiResponse<boolean>>(`/api/park-management/visit/questionnaire/${id}`, { method: 'DELETE' });
 }
 
 // Statistics

@@ -1,0 +1,49 @@
+<view class="form-container">
+  <form bindsubmit="submitForm">
+    <view class="form-group">
+      <view class="form-item">
+        <text class="label">{{t['park.visit.knowledge.category']}}</text>
+        <picker bindchange="onCategoryChange" value="{{categoryIndex}}" range="{{categories}}">
+          <view class="picker-value {{!formData.category ? 'placeholder' : ''}}">
+            {{formData.category || t['park.visit.knowledge.select_category']}}
+          </view>
+        </picker>
+      </view>
+
+      <view class="form-item vertical">
+        <text class="label">{{t['park.visit.knowledge.content']}}</text>
+        <textarea 
+          name="content" 
+          value="{{formData.content}}" 
+          placeholder="{{t['park.visit.knowledge.input_content']}}"
+          placeholder-class="placeholder"
+        />
+      </view>
+
+      <view class="form-item vertical">
+        <text class="label">{{t['park.visit.knowledge.answer']}}</text>
+        <textarea 
+          name="answer" 
+          value="{{formData.answer}}" 
+          placeholder="{{t['park.visit.knowledge.input_answer']}}"
+          placeholder-class="placeholder"
+        />
+      </view>
+
+      <view class="form-item">
+        <text class="label">{{t['common.sort_order']}}</text>
+        <input 
+          name="sortOrder" 
+          type="number"
+          value="{{formData.sortOrder}}" 
+          placeholder="0"
+          placeholder-class="placeholder"
+        />
+      </view>
+    </view>
+
+    <view class="btn-area">
+      <button form-type="submit" class="btn-primary" loading="{{submitting}}">{{t['common.save']}}</button>
+    </view>
+  </form>
+</view>

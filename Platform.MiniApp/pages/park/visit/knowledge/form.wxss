@@ -1,0 +1,2 @@
+/* 样式完全依赖 styles/forms.wxss */
+@import "../../../../styles/forms.wxss";

@@ -1,6 +1,9 @@
 const zhCN = {
     // Common
-    'common.confirm': '确定',
+    'common.confirm': '确认',
+    'common.move_up': '上移',
+    'common.move_down': '下移',
+    'common.sort_order': '排序值',
     'common.cancel': '取消',
     'common.tips': '提示',
     'common.loading': '加载中...',
@@ -359,6 +362,22 @@ const zhCN = {
     'park.visit.assessment': '走访考核',
     'park.visit.knowledge': '走访知识库',
     'park.visit.statistics': '走访统计',
+    'park.visit.knowledge.create_question': '创建问题',
+    'park.visit.knowledge.edit_question': '编辑问题',
+    'park.visit.knowledge.category': '分类',
+    'park.visit.knowledge.content': '问题内容',
+    'park.visit.knowledge.answer': '答案内容',
+    'park.visit.knowledge.delete_hint': '确定要删除该问题吗？',
+    'park.visit.knowledge.input_content': '请输入问题内容',
+    'park.visit.knowledge.input_answer': '请输入答案内容',
+    'park.visit.knowledge.select_category': '请选择分类',
+    'park.visit.knowledge.questionnaire_title': '问卷标题',
+    'park.visit.knowledge.questionnaire_purpose': '问卷用途',
+    'park.visit.knowledge.select_questions': '选择题目',
+    'park.visit.knowledge.selected_count': '已选 {count} 题',
+    'park.visit.knowledge.create_questionnaire': '创建问卷',
+    'park.visit.knowledge.edit_questionnaire': '编辑问卷',
+    'park.visit.knowledge.no_questions_selected': '请至少选择一个题目',
 
     // Password Book
     'password.book': '密码本',
@@ -629,6 +648,9 @@ const zhCN = {
 const enUS = {
     // Common
     'common.confirm': 'Confirm',
+    'common.move_up': 'Move Up',
+    'common.move_down': 'Move Down',
+    'common.sort_order': 'Sort Order',
     'common.cancel': 'Cancel',
     'common.tips': 'Tips',
     'common.loading': 'Loading...',
@@ -983,6 +1005,22 @@ const enUS = {
     'park.visit.assessment': 'Assessment',
     'park.visit.knowledge': 'Knowledge',
     'park.visit.statistics': 'Statistics',
+    'park.visit.knowledge.create_question': 'Create Question',
+    'park.visit.knowledge.edit_question': 'Edit Question',
+    'park.visit.knowledge.category': 'Category',
+    'park.visit.knowledge.content': 'Question',
+    'park.visit.knowledge.answer': 'Answer',
+    'park.visit.knowledge.delete_hint': 'Delete this question?',
+    'park.visit.knowledge.input_content': 'Please enter question',
+    'park.visit.knowledge.input_answer': 'Please enter answer',
+    'park.visit.knowledge.select_category': 'Please select category',
+    'park.visit.knowledge.questionnaire_title': 'Title',
+    'park.visit.knowledge.questionnaire_purpose': 'Purpose',
+    'park.visit.knowledge.select_questions': 'Select Questions',
+    'park.visit.knowledge.selected_count': '{count} Selected',
+    'park.visit.knowledge.create_questionnaire': 'Create Questionnaire',
+    'park.visit.knowledge.edit_questionnaire': 'Edit Questionnaire',
+    'park.visit.knowledge.no_questions_selected': 'Please select at least one question',
 
     // Password Book
     'password.book': 'Password Book',
@@ -1247,7 +1285,28 @@ const enUS = {
     'park.visit.form.task_name': 'Task Name',
     'park.visit.form.related_tenant': 'Related Tenant',
     'park.visit.form.visit_date': 'Visit Date',
-    'park.visit.form.priority': 'Priority'
+    'park.visit.form.priority': 'Priority',
+
+    // Visit Knowledge Base
+    'park.visit.knowledge.list.title': 'Visit Knowledge Base',
+    'park.visit.knowledge.faq': 'FAQ',
+    'park.visit.knowledge.questionnaire': 'Templates',
+    'park.visit.knowledge.create_question': 'Create Question',
+    'park.visit.knowledge.edit_question': 'Edit Question',
+    'park.visit.knowledge.category': 'Category',
+    'park.visit.knowledge.content': 'Content',
+    'park.visit.knowledge.answer': 'Answer',
+    'park.visit.knowledge.delete_hint': 'Delete this question?',
+    'park.visit.knowledge.input_content': 'Enter question content',
+    'park.visit.knowledge.input_answer': 'Enter answer',
+    'park.visit.knowledge.select_category': 'Select Category',
+    'park.visit.knowledge.questionnaire_title': 'Questionnaire Title',
+    'park.visit.knowledge.questionnaire_purpose': 'Purpose',
+    'park.visit.knowledge.select_questions': 'Select Questions',
+    'park.visit.knowledge.selected_count': '{count} selected',
+    'park.visit.knowledge.create_questionnaire': 'Create Questionnaire',
+    'park.visit.knowledge.edit_questionnaire': 'Edit Questionnaire',
+    'park.visit.knowledge.no_questions_selected': 'Please select questions',
 };
 
 let currentLocale = wx.getStorageSync('locale') || 'zh-CN';

@@ -179,6 +179,28 @@ public class ParkVisitController : BaseApiController
         return Success(result);
     }
 
+    /// <summary>
+    /// 更新问卷
+    /// </summary>
+    [HttpPut("questionnaire/{id}")]
+    [RequireMenu("park-management-visit-knowledge-base")]
+    public async Task<IActionResult> UpdateQuestionnaire(string id, [FromBody] VisitQuestionnaireDto request)
+    {
+        var result = await _visitService.UpdateVisitQuestionnaireAsync(id, request);
+        return result != null ? Success(result) : NotFound();
+    }
+
+    /// <summary>
+    /// 删除问卷
+    /// </summary>
+    [HttpDelete("questionnaire/{id}")]
+    [RequireMenu("park-management-visit-knowledge-base")]
+    public async Task<IActionResult> DeleteQuestionnaire(string id)
+    {
+        var result = await _visitService.DeleteVisitQuestionnaireAsync(id);
+        return Success(result);
+    }
+
     #endregion
 
     #region 统计

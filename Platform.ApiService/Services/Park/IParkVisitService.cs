@@ -90,6 +90,16 @@ public interface IParkVisitService
     Task<VisitQuestionnaireDto> CreateVisitQuestionnaireAsync(VisitQuestionnaireDto request);
 
     /// <summary>
+    /// 更新走访问卷模板
+    /// </summary>
+    Task<VisitQuestionnaireDto?> UpdateVisitQuestionnaireAsync(string id, VisitQuestionnaireDto request);
+
+    /// <summary>
+    /// 删除走访问卷模板
+    /// </summary>
+    Task<bool> DeleteVisitQuestionnaireAsync(string id);
+
+    /// <summary>
     /// 获取走访统计数据
     /// </summary>
     Task<VisitStatisticsDto> GetVisitStatisticsAsync(DateTime? startDate = null, DateTime? endDate = null);

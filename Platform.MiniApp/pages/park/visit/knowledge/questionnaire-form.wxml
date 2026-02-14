@@ -1,0 +1,57 @@
+<view class="container">
+  <view class="form-container">
+    <view class="form-item">
+      <view class="label">{{t['park.visit.knowledge.questionnaire_title']}}</view>
+      <input class="input" placeholder="{{t['park.visit.knowledge.questionnaire_title']}}" value="{{title}}" bindinput="onTitleInput" />
+    </view>
+
+    <view class="form-item">
+      <view class="label">{{t['park.visit.knowledge.questionnaire_purpose']}}</view>
+      <textarea class="textarea" placeholder="{{t['park.visit.knowledge.questionnaire_purpose']}}" value="{{purpose}}" bindinput="onPurposeInput" />
+    </view>
+
+    <view class="form-item">
+      <view class="label">{{t['common.sort_order']}}</view>
+      <input class="input" type="number" placeholder="0" value="{{sortOrder}}" bindinput="onSortOrderInput" />
+    </view>
+
+    <view wx:if="{{selectedQuestionIds.length > 0}}">
+      <view class="section-title">{{t['park.visit.knowledge.selected_count']}} (可排序)</view>
+      <view class="sorted-list">
+        <view class="sorted-item" wx:for="{{selectedQuestions}}" wx:key="id">
+          <view class="sorted-content">
+            <view>{{index + 1}}. {{item.content}}</view>
+            <view class="sorted-answer" wx:if="{{item.answer}}">解析：{{item.answer}}</view>
+          </view>
+          <view class="sort-actions">
+            <view class="sort-btn" catchtap="moveUp" data-index="{{index}}" wx:if="{{index > 0}}">
+              <text class="iconfont icon-up"></text>{{t['common.move_up']}}
+            </view>
+            <view class="sort-btn" catchtap="moveDown" data-index="{{index}}" wx:if="{{index < selectedQuestions.length - 1}}">
+              <text class="iconfont icon-down"></text>{{t['common.move_down']}}
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="section-title">{{t['park.visit.knowledge.select_questions']}}</view>
+    <view class="question-list">
+      <checkbox-group bindchange="onQuestionChange">
+        <label class="question-item" wx:for="{{allQuestions}}" wx:key="id">
+          <checkbox value="{{item.id}}" checked="{{item.selected}}" color="#1989fa" />
+          <view class="question-info">
+            <view class="question-content">{{item.content}}</view>
+            <view class="question-answer" wx:if="{{item.answer}}">解析：{{item.answer}}</view>
+            <view class="question-category">{{item.category}}</view>
+          </view>
+        </label>
+      </checkbox-group>
+    </view>
+  </view>
+
+  <view class="footer-btns">
+    <view class="selected-status">{{selectedText}}</view>
+    <button class="submit-btn" bindtap="submit">{{t['common.confirm']}}</button>
+  </view>
+</view>

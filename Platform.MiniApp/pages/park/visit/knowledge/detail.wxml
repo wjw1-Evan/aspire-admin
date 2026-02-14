@@ -1,0 +1,46 @@
+<view class="detail-container" wx:if="{{questionnaire}}">
+  <view class="header-card">
+    <view class="title-row">
+      <text class="main-title">{{questionnaire.title}}</text>
+      <view class="header-actions">
+        <view class="action-btn" bindtap="goToEdit">
+            <text class="iconfont icon-edit"></text>
+        </view>
+        <view class="action-btn" bindtap="handleDelete">
+            <text class="iconfont icon-delete"></text>
+        </view>
+      </view>
+    </view>
+    
+    <view class="meta-row" style="color: #666; font-size: 24rpx; margin-top: 10rpx;">
+      <text>{{t['park.visit.knowledge.questionnaire_purpose']}}: {{questionnaire.purpose || '-'}}</text>
+    </view>
+    <view class="meta-row" style="color: #999; font-size: 24rpx; margin-top: 10rpx;">
+      <text>{{t['common.date']}}: {{questionnaire.createdAt}}</text>
+    </view>
+  </view>
+
+  <view class="section-title">{{t['park.visit.knowledge.select_questions']}} ({{questions.length}})</view>
+  <view class="info-card" style="padding: 0;">
+    <view class="question-item" wx:for="{{questions}}" wx:key="id" style="padding: 24rpx 30rpx; border-bottom: 1rpx solid #f2f3f5;">
+      <view class="q-content">
+        <text class="index-tag">{{index + 1}}</text>
+        <text class="text">{{item.content}}</text>
+      </view>
+      <view class="q-category" style="margin-top: 10rpx; padding-left: 50rpx;">
+        <text class="tag">{{item.category || '通用'}}</text>
+      </view>
+      <view class="q-answer" wx:if="{{item.answer}}" style="margin-top: 12rpx; padding-left: 50rpx; background: #f8f9fa; padding: 16rpx; border-radius: 8rpx;">
+        <text style="color: #666; font-size: 26rpx;">解析：{{item.answer}}</text>
+      </view>
+    </view>
+    <view class="empty-members" wx:if="{{questions.length === 0}}">{{t['common.empty']}}</view>
+  </view>
+
+  <view class="bottom-placeholder"></view>
+</view>
+
+<view class="loading-state" wx:else>
+  <view class="loading"></view>
+  <text>{{t['common.loading']}}</text>
+</view>

@@ -1099,10 +1099,12 @@ public class VisitQuestion : MultiTenantEntity
     [BsonElement("answer")]
     public string? Answer { get; set; }
 
-    /// <summary>是否常用</summary>
-    [Column("isFrequentlyUsed")]
-    [BsonElement("isFrequentlyUsed")]
-    public bool IsFrequentlyUsed { get; set; }
+    public bool? IsFrequentlyUsed { get; set; }
+
+    /// <summary>排序值</summary>
+    [Column("sortOrder")]
+    [BsonElement("sortOrder")]
+    public int? SortOrder { get; set; }
 }
 
 /// <summary>
@@ -1129,6 +1131,11 @@ public class VisitQuestionnaire : MultiTenantEntity
     [Column("questionIds")]
     [BsonElement("questionIds")]
     public List<string> QuestionIds { get; set; } = new();
+
+    /// <summary>排序值</summary>
+    [Column("sortOrder")]
+    [BsonElement("sortOrder")]
+    public int? SortOrder { get; set; }
 
     /// <summary>备注</summary>
     [StringLength(1000)]
@@ -2664,6 +2671,8 @@ public class VisitQuestionDto
     public string? Answer { get; set; }
     /// <summary>是否常用问题</summary>
     public bool IsFrequentlyUsed { get; set; }
+    /// <summary>排序值</summary>
+    public int? SortOrder { get; set; }
 }
 
 /// <summary>
@@ -2694,6 +2703,8 @@ public class VisitQuestionnaireDto
     public int QuestionCount => QuestionIds.Count;
     /// <summary>创建时间</summary>
     public DateTime CreatedAt { get; set; }
+    /// <summary>排序值</summary>
+    public int? SortOrder { get; set; }
 }
 
 /// <summary>

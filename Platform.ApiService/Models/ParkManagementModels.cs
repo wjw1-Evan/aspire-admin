@@ -1099,6 +1099,7 @@ public class VisitQuestion : MultiTenantEntity
     [BsonElement("answer")]
     public string? Answer { get; set; }
 
+    /// <summary>是否常用</summary>
     public bool? IsFrequentlyUsed { get; set; }
 
     /// <summary>排序值</summary>

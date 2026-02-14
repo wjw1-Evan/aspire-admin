@@ -20,7 +20,6 @@ Aspire Admin 的移动端配套应用，基于微信小程序原生框架开发�
 ### 2. 国际化 (i18n)
 - **翻译定义**：所有文本定义在 `utils/i18n.js` 中。
 - **逻辑绑定**：页面需通过 `withI18n` 包装。
-- **动态更新**：提倡在 `js` 中建立 `t` 对象并在 `onShow` 中调用 `updateTranslations` 刷新 WXML 中的文字，避免在 WXML 中直接调用 `t()` 以提高渲染性能。
 
 ### 3. 鉴权与请求
 - **`utils/request.js`**：统一拦截器，自动处理 Token、多租户 Header 以及全局错误提示。

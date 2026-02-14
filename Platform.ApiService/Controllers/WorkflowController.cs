@@ -30,6 +30,7 @@ public class WorkflowController : BaseApiController
     private readonly IUserService _userService;
     private readonly IFieldValidationService _fieldValidationService;
     private readonly IWorkflowGraphValidator _graphValidator;
+    private readonly IWorkflowExportImportService _exportImportService;
     private readonly ILogger<WorkflowController> _logger;
 
     /// <summary>
@@ -43,6 +44,7 @@ public class WorkflowController : BaseApiController
     /// <param name="userService">用户服务</param>
     /// <param name="fieldValidationService">字段验证服务</param>
     /// <param name="graphValidator">流程图形校验服务</param>
+    /// <param name="exportImportService">工作流导出导入服务</param>
     /// <param name="logger">日志记录器</param>
     public WorkflowController(
         IDataFactory<WorkflowDefinition> definitionFactory,
@@ -53,6 +55,7 @@ public class WorkflowController : BaseApiController
         IUserService userService,
         IFieldValidationService fieldValidationService,
         IWorkflowGraphValidator graphValidator,
+        IWorkflowExportImportService exportImportService,
         ILogger<WorkflowController> logger)
     {
         _definitionFactory = definitionFactory;
@@ -63,6 +66,7 @@ public class WorkflowController : BaseApiController
         _userService = userService;
         _fieldValidationService = fieldValidationService;
         _graphValidator = graphValidator;
+        _exportImportService = exportImportService;
         _logger = logger;
     }
 
@@ -1258,6 +1262,164 @@ public class WorkflowController : BaseApiController
         catch (Exception ex)
         {
             return ServerError($"获取批量操作失败: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 导出工作流
+    /// </summary>
+    [HttpPost("export")]
+    [RequireMenu("workflow-list")]
+    public async Task<IActionResult> ExportWorkflows([FromBody] ExportWorkflowsRequest request)
+    {
+        try
+        {
+            if (request.WorkflowIds == null || request.WorkflowIds.Count == 0)
+            {
+                return ValidationError("工作流ID列表不能为空");
+            }
+
+            var fileContent = await _exportImportService.ExportWorkflowsAsync(request.WorkflowIds, request.Config ?? new WorkflowExportConfig());
+            var fileName = $"workflows_export_{DateTime.Now:yyyyMMddHHmmss}.{(request.Config?.Format == ExportFormat.Json ? "json" : "csv")}";
+
+            return File(fileContent, "application/octet-stream", fileName);
+        }
+        catch (Exception ex)
+        {
+            return ServerError($"导出工作流失败: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 导出过滤结果
+    /// </summary>
+    [HttpPost("export-filtered")]
+    [RequireMenu("workflow-list")]
+    public async Task<IActionResult> ExportFilteredWorkflows([FromBody] ExportFilteredWorkflowsRequest request)
+    {
+        try
+        {
+            var fileContent = await _exportImportService.ExportFilteredWorkflowsAsync(request.Filters, request.Config ?? new WorkflowExportConfig());
+            var fileName = $"workflows_export_filtered_{DateTime.Now:yyyyMMddHHmmss}.{(request.Config?.Format == ExportFormat.Json ? "json" : "csv")}";
+
+            return File(fileContent, "application/octet-stream", fileName);
+        }
+        catch (Exception ex)
+        {
+            return ServerError($"导出过滤结果失败: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 验证导入文件
+    /// </summary>
+    [HttpPost("import/validate")]
+    [RequireMenu("workflow-list")]
+    public async Task<IActionResult> ValidateImportFile([FromForm] ValidateImportFileRequest request)
+    {
+        try
+        {
+            if (request.File == null || request.File.Length == 0)
+            {
+                return ValidationError("导入文件不能为空");
+            }
+
+            using var memoryStream = new MemoryStream();
+            await request.File.CopyToAsync(memoryStream);
+            var fileContent = memoryStream.ToArray();
+
+            var result = await _exportImportService.ValidateImportFileAsync(fileContent, request.File.FileName);
+            return Success(result);
+        }
+        catch (Exception ex)
+        {
+            return ServerError($"验证导入文件失败: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 导入工作流
+    /// </summary>
+    [HttpPost("import")]
+    [RequireMenu("workflow-list")]
+    public async Task<IActionResult> ImportWorkflows([FromForm] ImportWorkflowsRequest request)
+    {
+        try
+        {
+            if (request.File == null || request.File.Length == 0)
+            {
+                return ValidationError("导入文件不能为空");
+            }
+
+            using var memoryStream = new MemoryStream();
+            await request.File.CopyToAsync(memoryStream);
+            var fileContent = memoryStream.ToArray();
+
+            var result = await _exportImportService.ImportWorkflowsAsync(fileContent, request.File.FileName, request.OverwriteExisting);
+            return Success(result);
+        }
+        catch (Exception ex)
+        {
+            return ServerError($"导入工作流失败: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 预览导入
+    /// </summary>
+    [HttpPost("import/preview")]
+    [RequireMenu("workflow-list")]
+    public async Task<IActionResult> PreviewImport([FromForm] PreviewImportRequest request)
+    {
+        try
+        {
+            if (request.File == null || request.File.Length == 0)
+            {
+                return ValidationError("导入文件不能为空");
+            }
+
+            using var memoryStream = new MemoryStream();
+            await request.File.CopyToAsync(memoryStream);
+            var fileContent = memoryStream.ToArray();
+
+            var result = await _exportImportService.PreviewImportAsync(fileContent, request.File.FileName);
+            return Success(result);
+        }
+        catch (Exception ex)
+        {
+            return ServerError($"预览导入失败: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 解决导入冲突
+    /// </summary>
+    [HttpPost("import/resolve-conflicts")]
+    [RequireMenu("workflow-list")]
+    public async Task<IActionResult> ResolveImportConflicts([FromForm] ResolveImportConflictsRequest request)
+    {
+        try
+        {
+            if (request.File == null || request.File.Length == 0)
+            {
+                return ValidationError("导入文件不能为空");
+            }
+
+            if (request.Resolutions == null || request.Resolutions.Count == 0)
+            {
+                return ValidationError("冲突解决方案不能为空");
+            }
+
+            using var memoryStream = new MemoryStream();
+            await request.File.CopyToAsync(memoryStream);
+            var fileContent = memoryStream.ToArray();
+
+            var result = await _exportImportService.ResolveImportConflictsAsync(fileContent, request.File.FileName, request.Resolutions);
+            return Success(result);
+        }
+        catch (Exception ex)
+        {
+            return ServerError($"解决导入冲突失败: {ex.Message}");
         }
     }
 }

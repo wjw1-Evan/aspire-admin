@@ -15,7 +15,6 @@
 }
 
 .section-title {
-  font-size: 26rpx;
   color: #969799;
   margin: 32rpx 0 16rpx 10rpx;
 }
@@ -33,17 +32,15 @@
 }
 
 .form-item .label {
-  font-size: 28rpx;
   color: #323233;
   width: 180rpx;
   flex-shrink: 0;
 }
 
-.form-item input, 
+.form-item input,
 .form-item picker {
   flex: 1;
   text-align: right;
-  font-size: 28rpx;
   color: #323233;
 }
 
@@ -64,7 +61,6 @@
 .form-item textarea {
   width: 100%;
   min-height: 200rpx;
-  font-size: 28rpx;
   padding: 24rpx;
   background-color: #f9f9f9;
   border-radius: 8rpx;
@@ -82,7 +78,6 @@
   line-height: 88rpx;
   background: #1890ff;
   border-radius: 44rpx;
-  font-size: 32rpx;
   font-weight: 500;
   color: #fff !important;
 }

@@ -40,7 +40,6 @@
 .color-pink .iconfont { color: #eb2f96; }
 
 .app-name { 
-  font-size: 26rpx; 
   color: #262626;
   font-weight: 500;
 }

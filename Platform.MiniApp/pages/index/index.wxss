@@ -13,25 +13,21 @@
 }
 
 .greeting .hi {
-  font-size: 32rpx;
   color: rgba(0, 0, 0, 0.45);
 }
 
 .greeting .user-name {
-  font-size: 40rpx;
   font-weight: 600;
   color: #001529;
 }
 
 .sub-greeting {
-  font-size: 24rpx;
   color: rgba(0, 0, 0, 0.45);
   margin-top: 8rpx;
   display: block;
 }
 
 .company-subtitle {
-  font-size: 20rpx;
   color: rgba(0, 0, 0, 0.35);
   margin-top: 4rpx;
   display: block;
@@ -41,7 +37,6 @@
   background: #fff;
   padding: 8rpx 20rpx;
   border-radius: 30rpx;
-  font-size: 22rpx;
   color: #1890ff;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.03);
   border: 1px solid rgba(24, 144, 255, 0.1);
@@ -66,13 +61,11 @@
 }
 
 .stat-num {
-  font-size: 44rpx;
   font-weight: bold;
   display: block;
 }
 
 .stat-title {
-  font-size: 24rpx;
   color: rgba(0, 0, 0, 0.45);
   margin-top: 4rpx;
 }
@@ -113,7 +106,6 @@
 }
 
 .panel-title {
-  font-size: 30rpx;
   font-weight: 600;
   color: #262626;
   position: relative;
@@ -133,7 +125,6 @@
 }
 
 .panel-more {
-  font-size: 24rpx;
   color: #1890ff;
 }
 
@@ -178,7 +169,6 @@
 .bg-orange { background-color: #fa8c16; }
 
 .action-name {
-  font-size: 24rpx;
   color: #595959;
 }
 
@@ -204,7 +194,6 @@
 }
 
 .msg-tag {
-  font-size: 20rpx;
   padding: 4rpx 16rpx;
   border-radius: 8rpx;
   margin-right: 16rpx;
@@ -218,7 +207,6 @@
 
 .msg-text {
   flex: 1;
-  font-size: 26rpx;
   color: #262626;
   white-space: nowrap;
   overflow: hidden;
@@ -233,12 +221,10 @@
 .empty-msg {
   padding: 48rpx 0;
   text-align: center;
-  font-size: 26rpx;
   color: #bfbfbf;
 }
 
 .msg-time {
-  font-size: 22rpx;
   color: #bfbfbf;
   margin-left: 20rpx;
 }

@@ -36,13 +36,11 @@
 .search-input {
   flex: 1;
   margin-left: 12rpx;
-  font-size: 28rpx;
   color: #323233;
 }
 
 .search-btn {
   margin-left: 20rpx;
-  font-size: 30rpx;
   color: #1890ff;
   padding: 10rpx;
   font-weight: 500;
@@ -62,7 +60,6 @@
   flex: 1;
   text-align: center;
   padding: 24rpx 0;
-  font-size: 28rpx;
   color: #646566;
   position: relative;
 }
@@ -96,7 +93,6 @@
 }
 
 .bread-item {
-  font-size: 28rpx;
   color: #1890ff;
 }
 
@@ -107,7 +103,6 @@
 .bread-separator {
   margin: 0 12rpx;
   color: #c8c9cc;
-  font-size: 24rpx;
 }
 
 /* ---- 业务卡片 ---- */
@@ -139,7 +134,6 @@
   margin-top: 20rpx;
   padding-top: 20rpx;
   border-top: 1rpx dashed #ebedf0;
-  font-size: 26rpx;
   color: #646566;
   line-height: 1.6;
 }
@@ -152,7 +146,6 @@
 }
 
 .comment-box .text {
-  font-size: 24rpx;
   color: #646566;
   line-height: 1.6;
   display: -webkit-box;
@@ -165,7 +158,6 @@
 .info-row {
   display: flex;
   margin-bottom: 12rpx;
-  font-size: 26rpx;
   line-height: 1.5;
 }
 
@@ -202,7 +194,6 @@
   padding: 8rpx 24rpx;
   background-color: #f2f3f5;
   color: #646566;
-  font-size: 24rpx;
   border-radius: 24rpx;
   margin-right: 16rpx;
   transition: all 0.2s;
@@ -259,7 +250,6 @@
 }
 
 .list-item .item-title {
-  font-size: 28rpx;
   color: #323233;
   font-weight: 500;
   white-space: nowrap;
@@ -269,7 +259,6 @@
 }
 
 .list-item .item-meta {
-  font-size: 22rpx;
   color: #969799;
 }
 
@@ -284,7 +273,6 @@
   align-items: center;
   padding: 100rpx 0;
   color: #969799;
-  font-size: 26rpx;
 }
 
 .loading {
@@ -308,7 +296,6 @@
   align-items: center;
   padding: 100rpx 0;
   color: #969799;
-  font-size: 28rpx;
 }
 
 .empty-wrap .iconfont {
@@ -322,7 +309,6 @@
 .no-more {
   text-align: center;
   color: #c8c9cc;
-  font-size: 24rpx;
   padding: 30rpx 0;
 }
 
@@ -359,7 +345,6 @@
 }
 
 .fab-menu-text {
-  font-size: 24rpx;
   color: #646566;
   background-color: #fff;
   padding: 12rpx 24rpx;
@@ -410,7 +395,6 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 22rpx;
   padding: 4rpx 16rpx;
   border-radius: 4rpx;
   font-weight: 500;
@@ -425,7 +409,6 @@
 
 /* ---- 评分徽章 ---- */
 .score-badge {
-  font-size: 28rpx;
   font-weight: bold;
   width: 64rpx;
   height: 64rpx;
@@ -443,7 +426,6 @@
 
 /* ---- 优先级标签 ---- */
 .priority-tag {
-  font-size: 22rpx;
   padding: 4rpx 12rpx;
   border-radius: 4rpx;
 }
@@ -473,7 +455,6 @@
 }
 
 .stats-item .label {
-  font-size: 24rpx;
   color: #999;
   margin-top: 8rpx;
 }
@@ -508,7 +489,6 @@
 }
 
 .stats-label {
-  font-size: 22rpx;
   color: #969799;
 }
 
@@ -521,7 +501,6 @@
 }
 
 .section-title {
-  font-size: 30rpx;
   font-weight: bold;
   color: #323233;
 }
@@ -548,7 +527,6 @@
 }
 
 .modal-header {
-  font-size: 32rpx;
   font-weight: bold;
   text-align: center;
   margin-bottom: 40rpx;
@@ -569,7 +547,6 @@
 
 .modal-footer button {
   flex: 1;
-  font-size: 28rpx;
   border-radius: 40rpx;
 }
 
@@ -584,12 +561,10 @@
 }
 
 .btn-detail {
-  font-size: 26rpx;
   color: #1890ff;
 }
 
 .date {
-  font-size: 24rpx;
   color: #969799;
 }
 
@@ -598,14 +573,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 22rpx;
   color: #c8c9cc;
   margin-top: 16rpx;
 }
 
 /* ---- 标签/分类 ---- */
 .category-tag {
-  font-size: 22rpx;
   color: #1890ff;
   background-color: #e6f7ff;
   padding: 4rpx 16rpx;
@@ -619,7 +592,6 @@
 }
 
 .tag-item {
-  font-size: 20rpx;
   color: #646566;
   background-color: #f2f3f5;
   padding: 4rpx 12rpx;

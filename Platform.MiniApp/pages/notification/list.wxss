@@ -30,7 +30,6 @@
 }
 
 .item-desc {
-  font-size: 24rpx;
   color: #646566;
   margin-top: 10rpx;
   line-height: 1.6;
@@ -47,7 +46,6 @@
 }
 
 .tag-mini {
-  font-size: 18rpx;
   padding: 2rpx 10rpx;
   border-radius: 4rpx;
   display: inline-block;
@@ -63,7 +61,6 @@
 .btn-secondary {
   background-color: #f7f8fa;
   color: #646566;
-  font-size: 28rpx;
   border: none;
   border-radius: 44rpx;
 }
@@ -76,7 +73,6 @@
   text-align: center;
   padding: 30rpx;
   color: #969799;
-  font-size: 24rpx;
 }
 
 .unread-icon {

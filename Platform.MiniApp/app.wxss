@@ -36,7 +36,6 @@ page {
     'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
     'Noto Color Emoji';
   color: rgba(0, 0, 0, 0.85);
-  font-size: 28rpx;
   line-height: 1.5715;
 }
 
@@ -78,7 +77,6 @@ page {
   justify-content: center;
   padding: 100rpx 0;
   color: #969799;
-  font-size: 26rpx;
 }
 
 .loading-icon {
@@ -102,7 +100,6 @@ page {
   align-items: center;
   padding: 80rpx 0;
   color: #969799;
-  font-size: 26rpx;
 }
 
 /* Floating Action Button (unified) */
@@ -175,14 +172,12 @@ page {
 
 .common-search-input {
   flex: 1;
-  font-size: 28rpx;
   margin-left: 12rpx;
   height: 100%;
 }
 
 .common-search-btn {
   margin-left: 24rpx;
-  font-size: 30rpx;
   color: var(--primary-color);
   padding: 10rpx 0;
   font-weight: 500;
@@ -202,7 +197,6 @@ page {
   flex: 1;
   text-align: center;
   padding: 24rpx 0;
-  font-size: 28rpx;
   color: #666;
   position: relative;
   transition: all 0.3s;
@@ -239,7 +233,6 @@ page {
 }
 
 .card-title {
-  font-size: 32rpx;
   font-weight: 600;
   color: #333;
   flex: 1;
@@ -258,7 +251,6 @@ page {
 .info-row {
   display: flex;
   margin-bottom: 16rpx;
-  font-size: 26rpx;
   line-height: 1.5;
 }
 
@@ -285,7 +277,6 @@ page {
   justify-content: center;
   padding: 4rpx 16rpx;
   border-radius: 8rpx;
-  font-size: 22rpx;
   font-weight: 500;
 }
 

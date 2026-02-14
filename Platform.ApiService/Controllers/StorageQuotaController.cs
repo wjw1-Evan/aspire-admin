@@ -50,7 +50,7 @@ public class StorageQuotaController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("GetMyQuota", ex);
+            _logger.LogError(ex, "获取我的配额失败");
             return ServerError("获取我的配额失败，请稍后重试");
         }
     }
@@ -78,7 +78,7 @@ public class StorageQuotaController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("GetUserQuota", ex, userId);
+            _logger.LogError(ex, "获取用户配额失败, UserId: {UserId}", userId);
             return ServerError("获取用户配额失败，请稍后重试");
         }
     }
@@ -106,7 +106,7 @@ public class StorageQuotaController : BaseApiController
                 request.TotalQuota,
                 request.WarningThreshold,
                 request.IsEnabled);
-            LogOperation("SetUserQuota", userId, new { request.TotalQuota, request.WarningThreshold, request.IsEnabled });
+            _logger.LogInformation("设置用户配额, UserId: {UserId}, TotalQuota: {TotalQuota}", userId, request.TotalQuota);
             return Success(quota, "配额设置成功");
         }
         catch (ArgumentException ex)
@@ -115,7 +115,7 @@ public class StorageQuotaController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("SetUserQuota", ex, userId);
+            _logger.LogError(ex, "设置用户配额失败, UserId: {UserId}", userId);
             return ServerError("设置用户配额失败，请稍后重试");
         }
     }
@@ -141,12 +141,12 @@ public class StorageQuotaController : BaseApiController
         try
         {
             var result = await _storageQuotaService.BatchSetUserQuotasAsync(request.QuotaSettings);
-            LogOperation("BatchSetUserQuotas", null, new { Count = request.QuotaSettings.Count, result.SuccessCount, result.FailureCount });
+            _logger.LogInformation("批量设置配额, Count: {Count}, Success: {SuccessCount}", request.QuotaSettings.Count, result.SuccessCount);
             return Success(result, $"批量设置完成，成功 {result.SuccessCount} 个，失败 {result.FailureCount} 个");
         }
         catch (Exception ex)
         {
-            LogError("BatchSetUserQuotas", ex);
+            _logger.LogError(ex, "批量设置配额失败");
             return ServerError("批量设置配额失败，请稍后重试");
         }
     }
@@ -166,7 +166,7 @@ public class StorageQuotaController : BaseApiController
         try
         {
             var quota = await _storageQuotaService.RecalculateUserStorageAsync(userId);
-            LogOperation("RecalculateUserStorage", userId);
+            _logger.LogInformation("重新计算用户存储, UserId: {UserId}", userId);
             return Success(quota, "存储使用量重新计算完成");
         }
         catch (ArgumentException ex)
@@ -179,7 +179,7 @@ public class StorageQuotaController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("RecalculateUserStorage", ex, userId);
+            _logger.LogError(ex, "重新计算存储失败, UserId: {UserId}", userId);
             return ServerError("重新计算存储使用量失败，请稍后重试");
         }
     }
@@ -201,7 +201,7 @@ public class StorageQuotaController : BaseApiController
             // 清除配额，恢复为未分配状态
             const long defaultQuota = 0;
             var quota = await _storageQuotaService.SetUserQuotaAsync(userId, defaultQuota, 0, false);
-            LogOperation("DeleteUserQuota", userId, new { defaultQuota });
+            _logger.LogInformation("删除用户配额, UserId: {UserId}", userId);
             return Success(quota, "已清除用户配额，需管理员重新分配后才能使用网盘");
         }
         catch (ArgumentException ex)
@@ -214,7 +214,7 @@ public class StorageQuotaController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("DeleteUserQuota", ex, userId);
+            _logger.LogError(ex, "删除配额失败, UserId: {UserId}", userId);
             return ServerError("删除配额失败，请稍后重试");
         }
     }
@@ -238,7 +238,7 @@ public class StorageQuotaController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("GetUsageStats", ex);
+            _logger.LogError(ex, "获取存储统计失败");
             return ServerError("获取存储统计失败，请稍后重试");
         }
     }
@@ -302,7 +302,7 @@ public class StorageQuotaController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("GetStorageQuotaList", ex);
+            _logger.LogError(ex, "获取存储配额列表失败");
             return ServerError("获取存储配额列表失败，请稍后重试");
         }
     }
@@ -327,7 +327,7 @@ public class StorageQuotaController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("GetCompanyUsage", ex);
+            _logger.LogError(ex, "获取企业存储统计失败");
             return ServerError("获取企业存储统计失败，请稍后重试");
         }
     }
@@ -352,7 +352,7 @@ public class StorageQuotaController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("GetStorageUsageRanking", ex);
+            _logger.LogError(ex, "获取存储排行失败");
             return ServerError("获取存储使用量排行失败，请稍后重试");
         }
     }
@@ -381,7 +381,7 @@ public class StorageQuotaController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("GetQuotaWarnings", ex);
+            _logger.LogError(ex, "获取配额警告失败");
             return ServerError("获取配额警告失败，请稍后重试");
         }
     }
@@ -402,12 +402,12 @@ public class StorageQuotaController : BaseApiController
         try
         {
             var result = await _storageQuotaService.CleanupUnusedQuotasAsync(companyId);
-            LogOperation("CleanupUnusedQuotas", null, new { companyId, result.SuccessCount });
+            _logger.LogInformation("清理未使用配额, CompanyId: {CompanyId}, Count: {Count}", companyId, result.SuccessCount);
             return Success(result, $"清理完成，删除了 {result.SuccessCount} 个未使用的配额记录");
         }
         catch (Exception ex)
         {
-            LogError("CleanupUnusedQuotas", ex);
+            _logger.LogError(ex, "清理配额记录失败");
             return ServerError("清理配额记录失败，请稍后重试");
         }
     }
@@ -449,7 +449,7 @@ public class StorageQuotaController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("CheckStorageAvailability", ex, userId);
+            _logger.LogError(ex, "检查存储可用性失败, UserId: {UserId}", userId);
             return ServerError("检查存储可用性失败，请稍后重试");
         }
     }
@@ -473,7 +473,7 @@ public class StorageQuotaController : BaseApiController
         try
         {
             var quota = await _storageQuotaService.UpdateStorageUsageAsync(userId, request.SizeChange);
-            LogOperation("UpdateStorageUsage", userId, new { request.SizeChange });
+            _logger.LogInformation("更新存储使用量, UserId: {UserId}, SizeChange: {SizeChange}", userId, request.SizeChange);
             return Success(quota, "存储使用量更新成功");
         }
         catch (ArgumentException ex)
@@ -486,7 +486,7 @@ public class StorageQuotaController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("UpdateStorageUsage", ex, userId);
+            _logger.LogError(ex, "更新存储使用量失败, UserId: {UserId}", userId);
             return ServerError("更新存储使用量失败，请稍后重试");
         }
     }

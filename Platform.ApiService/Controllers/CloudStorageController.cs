@@ -56,7 +56,7 @@ public class CloudStorageController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("GetStatistics", ex);
+            _logger.LogError(ex, "获取存储统计失败");
             return ServerError("获取存储统计失败，请稍后重试");
         }
     }
@@ -76,7 +76,7 @@ public class CloudStorageController : BaseApiController
         try
         {
             var folder = await _cloudStorageService.CreateFolderAsync(request.Name, request.ParentId);
-            LogOperation("CreateFolder", folder.Id, new { request.Name, request.ParentId });
+            _logger.LogInformation("创建文件夹, FolderId: {FolderId}", folder.Id);
             return Success(folder, "文件夹创建成功");
         }
         catch (ArgumentException ex)
@@ -89,7 +89,7 @@ public class CloudStorageController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("CreateFolder", ex);
+            _logger.LogError(ex, "创建文件夹失败");
             return ServerError("创建文件夹失败，请稍后重试");
         }
     }
@@ -108,7 +108,7 @@ public class CloudStorageController : BaseApiController
         try
         {
             var fileItem = await _cloudStorageService.UploadFileAsync(request.File, request.ParentId, request.Overwrite);
-            LogOperation("UploadFile", fileItem.Id, new { request.File.FileName, request.ParentId, request.Overwrite });
+            _logger.LogInformation("上传文件, FileId: {FileId}, FileName: {FileName}", fileItem.Id, request.File.FileName);
             return Success(fileItem, "文件上传成功");
         }
         catch (ArgumentException ex)
@@ -121,7 +121,7 @@ public class CloudStorageController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("UploadFile", ex);
+            _logger.LogError(ex, "文件上传失败");
             return ServerError("文件上传失败，请稍后重试");
         }
     }
@@ -142,7 +142,7 @@ public class CloudStorageController : BaseApiController
         try
         {
             var result = await _cloudStorageService.UploadMultipleFilesAsync(files, parentId ?? string.Empty);
-            LogOperation("BatchUploadFiles", null, new { fileCount = files.Count, parentId });
+            _logger.LogInformation("批量上传文件, Count: {Count}", files.Count);
             return Success(result, "批量上传成功");
         }
         catch (ArgumentException ex)
@@ -155,7 +155,7 @@ public class CloudStorageController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("BatchUploadFiles", ex);
+            _logger.LogError(ex, "批量上传失败");
             return ServerError("批量上传失败，请稍后重试");
         }
     }
@@ -182,7 +182,7 @@ public class CloudStorageController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("GetFileItem", ex, id);
+            _logger.LogError(ex, "获取文件项失败, Id: {Id}", id);
             return ServerError("获取文件项失败，请稍后重试");
         }
     }
@@ -212,7 +212,7 @@ public class CloudStorageController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("GetFileItems", ex);
+            _logger.LogError(ex, "获取文件列表失败");
             return ServerError("获取文件列表失败，请稍后重试");
         }
     }
@@ -237,7 +237,7 @@ public class CloudStorageController : BaseApiController
         try
         {
             var fileItem = await _cloudStorageService.RenameFileItemAsync(id, request.NewName);
-            LogOperation("RenameFileItem", id, new { request.NewName });
+            _logger.LogInformation("重命名文件, Id: {Id}", id);
             return Success(fileItem, "重命名成功");
         }
         catch (ArgumentException ex)
@@ -250,7 +250,7 @@ public class CloudStorageController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("RenameFileItem", ex, id);
+            _logger.LogError(ex, "重命名失败, Id: {Id}", id);
             return ServerError("重命名失败，请稍后重试");
         }
     }
@@ -275,7 +275,7 @@ public class CloudStorageController : BaseApiController
         try
         {
             var fileItem = await _cloudStorageService.MoveFileItemAsync(id, request.NewParentId);
-            LogOperation("MoveFileItem", id, new { request.NewParentId });
+            _logger.LogInformation("移动文件, Id: {Id}", id);
             return Success(fileItem, "移动成功");
         }
         catch (ArgumentException ex)
@@ -288,7 +288,7 @@ public class CloudStorageController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("MoveFileItem", ex, id);
+            _logger.LogError(ex, "移动失败, Id: {Id}", id);
             return ServerError("移动失败，请稍后重试");
         }
     }
@@ -313,7 +313,7 @@ public class CloudStorageController : BaseApiController
         try
         {
             var fileItem = await _cloudStorageService.CopyFileItemAsync(id, request.NewParentId, request.NewName);
-            LogOperation("CopyFileItem", id, new { request.NewParentId, request.NewName });
+            _logger.LogInformation("复制文件, Id: {Id}", id);
             return Success(fileItem, "复制成功");
         }
         catch (ArgumentException ex)
@@ -326,7 +326,7 @@ public class CloudStorageController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("CopyFileItem", ex, id);
+            _logger.LogError(ex, "复制失败, Id: {Id}", id);
             return ServerError("复制失败，请稍后重试");
         }
     }
@@ -347,7 +347,7 @@ public class CloudStorageController : BaseApiController
         try
         {
             await _cloudStorageService.DeleteFileItemAsync(id);
-            LogOperation("DeleteFileItem", id);
+            _logger.LogInformation("删除文件, Id: {Id}", id);
             return Success("文件已移动到回收站");
         }
         catch (ArgumentException ex)
@@ -356,7 +356,7 @@ public class CloudStorageController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("DeleteFileItem", ex, id);
+            _logger.LogError(ex, "删除失败, Id: {Id}", id);
             return ServerError("删除失败，请稍后重试");
         }
     }
@@ -384,7 +384,7 @@ public class CloudStorageController : BaseApiController
                 return NotFoundError("文件", id);
 
             var stream = await _cloudStorageService.DownloadFileAsync(id);
-            LogOperation("DownloadFile", id);
+            _logger.LogInformation("下载文件, Id: {Id}", id);
 
             return File(stream, fileItem.MimeType, fileItem.Name);
         }
@@ -398,7 +398,7 @@ public class CloudStorageController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("DownloadFile", ex, id);
+            _logger.LogError(ex, "下载失败, Id: {Id}", id);
             return ServerError("下载失败，请稍后重试");
         }
     }
@@ -418,7 +418,7 @@ public class CloudStorageController : BaseApiController
         try
         {
             var stream = await _cloudStorageService.DownloadFolderAsZipAsync(id);
-            LogOperation("DownloadFolderAsZip", id);
+            _logger.LogInformation("下载文件夹ZIP, Id: {Id}", id);
             return File(stream, "application/zip", $"folder-{id}.zip");
         }
         catch (ArgumentException ex)
@@ -431,7 +431,7 @@ public class CloudStorageController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("DownloadFolderAsZip", ex, id);
+            _logger.LogError(ex, "下载文件夹失败, Id: {Id}", id);
             return ServerError("下载文件夹失败，请稍后重试");
         }
     }
@@ -459,7 +459,7 @@ public class CloudStorageController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("PreviewFile", ex, id);
+            _logger.LogError(ex, "获取预览信息失败, Id: {Id}", id);
             return ServerError("获取预览信息失败，请稍后重试");
         }
     }
@@ -491,7 +491,7 @@ public class CloudStorageController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("GetThumbnail", ex, id);
+            _logger.LogError(ex, "获取缩略图失败, Id: {Id}", id);
             return ServerError("获取缩略图失败，请稍后重试");
         }
     }
@@ -523,7 +523,7 @@ public class CloudStorageController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("SearchFiles", ex);
+            _logger.LogError(ex, "搜索失败");
             return ServerError("搜索失败，请稍后重试");
         }
     }
@@ -547,7 +547,7 @@ public class CloudStorageController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("GetRecentFiles", ex);
+            _logger.LogError(ex, "获取最近文件失败");
             return ServerError("获取最近文件失败，请稍后重试");
         }
     }
@@ -571,7 +571,7 @@ public class CloudStorageController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("GetRecycleStatistics", ex);
+            _logger.LogError(ex, "获取回收站统计失败");
             return ServerError("获取回收站统计失败，请稍后重试");
         }
     }
@@ -625,7 +625,7 @@ public class CloudStorageController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("GetRecycleItems", ex);
+            _logger.LogError(ex, "获取回收站列表失败");
             return ServerError("获取回收站列表失败，请稍后重试");
         }
     }
@@ -653,7 +653,7 @@ public class CloudStorageController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("GetRecycleBinItems", ex);
+            _logger.LogError(ex, "获取回收站列表失败");
             return ServerError("获取回收站列表失败，请稍后重试");
         }
     }
@@ -674,7 +674,7 @@ public class CloudStorageController : BaseApiController
         try
         {
             var fileItem = await _cloudStorageService.RestoreFileItemAsync(id, request?.NewParentId);
-            LogOperation("RestoreFileItem", id, new { request?.NewParentId });
+            _logger.LogInformation("恢复文件, Id: {Id}", id);
             return Success(fileItem, "恢复成功");
         }
         catch (ArgumentException ex)
@@ -687,7 +687,7 @@ public class CloudStorageController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("RestoreFileItem", ex, id);
+            _logger.LogError(ex, "恢复失败, Id: {Id}", id);
             return ServerError("恢复失败，请稍后重试");
         }
     }
@@ -708,7 +708,7 @@ public class CloudStorageController : BaseApiController
         try
         {
             await _cloudStorageService.PermanentDeleteFileItemAsync(id);
-            LogOperation("PermanentDeleteFileItem", id);
+            _logger.LogInformation("永久删除文件, Id: {Id}", id);
             return Success("文件已永久删除");
         }
         catch (ArgumentException ex)
@@ -717,7 +717,7 @@ public class CloudStorageController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("PermanentDeleteFileItem", ex, id);
+            _logger.LogError(ex, "永久删除失败, Id: {Id}", id);
             return ServerError("永久删除失败，请稍后重试");
         }
     }
@@ -734,12 +734,12 @@ public class CloudStorageController : BaseApiController
         try
         {
             await _cloudStorageService.EmptyRecycleBinAsync();
-            LogOperation("EmptyRecycleBin");
+            _logger.LogInformation("清空回收站");
             return Success("回收站已清空");
         }
         catch (Exception ex)
         {
-            LogError("EmptyRecycleBin", ex);
+            _logger.LogError(ex, "清空回收站失败");
             return ServerError("清空回收站失败，请稍后重试");
         }
     }
@@ -757,13 +757,13 @@ public class CloudStorageController : BaseApiController
         {
             var days = expireDays ?? 30;
             var result = await _cloudStorageService.CleanupExpiredRecycleBinItemsAsync(days);
-            LogOperation("AutoCleanupRecycleBin", null, new { expireDays = days, result.deletedCount, result.freedSpace });
+            _logger.LogInformation("自动清理回收站, Days: {Days}, Deleted: {Count}", days, result.deletedCount);
             return Success(new { deletedCount = result.deletedCount, freedSpace = result.freedSpace },
                 $"自动清理完成，删除 {result.deletedCount} 个文件，释放 {result.freedSpace} 字节");
         }
         catch (Exception ex)
         {
-            LogError("AutoCleanupRecycleBin", ex, expireDays?.ToString());
+            _logger.LogError(ex, "自动清理失败");
             return ServerError("自动清理失败，请稍后重试");
         }
     }
@@ -788,7 +788,7 @@ public class CloudStorageController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("GetStorageUsage", ex);
+            _logger.LogError(ex, "获取存储使用情况失败");
             return ServerError("获取存储使用情况失败，请稍后重试");
         }
     }
@@ -833,7 +833,7 @@ public class CloudStorageController : BaseApiController
             }
         }
 
-        LogOperation("BatchPermanentDelete", null, new { request.Ids, successCount, failureCount, errors });
+        _logger.LogInformation("批量永久删除, Success: {SuccessCount}, Failure: {FailureCount}", successCount, failureCount);
 
         return Success(new { successCount, failureCount, errors },
             $"批量永久删除完成，成功 {successCount} 个，失败 {failureCount} 个");
@@ -861,12 +861,12 @@ public class CloudStorageController : BaseApiController
         try
         {
             var result = await _cloudStorageService.BatchDeleteAsync(request.Ids);
-            LogOperation("BatchDelete", null, new { request.Ids, result.SuccessCount, result.FailureCount });
+            _logger.LogInformation("批量删除, Success: {SuccessCount}, Failure: {FailureCount}", result.SuccessCount, result.FailureCount);
             return Success(result, $"批量删除完成，成功 {result.SuccessCount} 个，失败 {result.FailureCount} 个");
         }
         catch (Exception ex)
         {
-            LogError("BatchDelete", ex);
+            _logger.LogError(ex, "批量删除失败");
             return ServerError("批量删除失败，请稍后重试");
         }
     }
@@ -893,12 +893,12 @@ public class CloudStorageController : BaseApiController
         try
         {
             var result = await _cloudStorageService.BatchMoveAsync(request.Ids, request.TargetParentId);
-            LogOperation("BatchMove", null, new { request.Ids, request.TargetParentId, result.SuccessCount, result.FailureCount });
+            _logger.LogInformation("批量移动, Success: {SuccessCount}, Failure: {FailureCount}", result.SuccessCount, result.FailureCount);
             return Success(result, $"批量移动完成，成功 {result.SuccessCount} 个，失败 {result.FailureCount} 个");
         }
         catch (Exception ex)
         {
-            LogError("BatchMove", ex);
+            _logger.LogError(ex, "批量移动失败");
             return ServerError("批量移动失败，请稍后重试");
         }
     }
@@ -925,12 +925,12 @@ public class CloudStorageController : BaseApiController
         try
         {
             var result = await _cloudStorageService.BatchCopyAsync(request.Ids, request.TargetParentId);
-            LogOperation("BatchCopy", null, new { request.Ids, request.TargetParentId, result.SuccessCount, result.FailureCount });
+            _logger.LogInformation("批量复制, Success: {SuccessCount}, Failure: {FailureCount}", result.SuccessCount, result.FailureCount);
             return Success(result, $"批量复制完成，成功 {result.SuccessCount} 个，失败 {result.FailureCount} 个");
         }
         catch (Exception ex)
         {
-            LogError("BatchCopy", ex);
+            _logger.LogError(ex, "批量复制失败");
             return ServerError("批量复制失败，请稍后重试");
         }
     }

@@ -50,7 +50,7 @@ public class FileShareController : BaseApiController
         try
         {
             var share = await _fileShareService.CreateShareAsync(fileItemId, request);
-            LogOperation("CreateShare", share.Id, new { fileItemId, request.Type, request.Permission });
+            _logger.LogInformation("创建分享, ShareId: {ShareId}, FileItemId: {FileItemId}", share.Id, fileItemId);
             return Success(share, "分享创建成功");
         }
         catch (ArgumentException ex)
@@ -63,7 +63,7 @@ public class FileShareController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("CreateShare", ex, fileItemId);
+            _logger.LogError(ex, "创建分享失败, FileItemId: {FileItemId}", fileItemId);
             return ServerError("创建分享失败，请稍后重试");
         }
     }
@@ -90,7 +90,7 @@ public class FileShareController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("GetShare", ex, id);
+            _logger.LogError(ex, "获取分享信息失败, ShareId: {ShareId}", id);
             return ServerError("获取分享信息失败，请稍后重试");
         }
     }
@@ -114,7 +114,7 @@ public class FileShareController : BaseApiController
         try
         {
             var share = await _fileShareService.UpdateShareAsync(id, request);
-            LogOperation("UpdateShare", id, new { request.Permission, request.IsActive });
+            _logger.LogInformation("更新分享, ShareId: {ShareId}", id);
             return Success(share, "分享更新成功");
         }
         catch (ArgumentException ex)
@@ -127,7 +127,7 @@ public class FileShareController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("UpdateShare", ex, id);
+            _logger.LogError(ex, "更新分享失败, ShareId: {ShareId}", id);
             return ServerError("更新分享失败，请稍后重试");
         }
     }
@@ -147,7 +147,7 @@ public class FileShareController : BaseApiController
         try
         {
             await _fileShareService.DeleteShareAsync(id);
-            LogOperation("DeleteShare", id);
+            _logger.LogInformation("删除分享, ShareId: {ShareId}", id);
             return Success("分享已删除");
         }
         catch (ArgumentException ex)
@@ -156,7 +156,7 @@ public class FileShareController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("DeleteShare", ex, id);
+            _logger.LogError(ex, "删除分享失败, ShareId: {ShareId}", id);
             return ServerError("删除分享失败，请稍后重试");
         }
     }
@@ -184,7 +184,7 @@ public class FileShareController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("GetMyShares", ex);
+            _logger.LogError(ex, "获取分享列表失败");
             return ServerError("获取分享列表失败，请稍后重试");
         }
     }
@@ -212,7 +212,7 @@ public class FileShareController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("GetSharedWithMe", ex);
+            _logger.LogError(ex, "获取共享文件列表失败");
             return ServerError("获取共享文件列表失败，请稍后重试");
         }
     }
@@ -238,12 +238,12 @@ public class FileShareController : BaseApiController
         try
         {
             var result = await _fileShareService.BatchDeleteSharesAsync(request.Ids);
-            LogOperation("BatchDeleteShares", null, new { request.Ids, result.SuccessCount, result.FailureCount });
+            _logger.LogInformation("批量删除分享, Count: {Count}, Success: {SuccessCount}", request.Ids.Count, result.SuccessCount);
             return Success(result, $"批量删除完成，成功 {result.SuccessCount} 个，失败 {result.FailureCount} 个");
         }
         catch (Exception ex)
         {
-            LogError("BatchDeleteShares", ex);
+            _logger.LogError(ex, "批量删除分享失败");
             return ServerError("批量删除分享失败，请稍后重试");
         }
     }
@@ -279,7 +279,7 @@ public class FileShareController : BaseApiController
                 return NotFoundError("分享文件", shareToken);
 
             // 记录访问日志
-            var accessorInfo = $"IP: {GetClientIpAddress()}, UserAgent: {GetUserAgent()}";
+            var accessorInfo = $"IP: {GetClientIpAddress()}, UserAgent: {Request.Headers["User-Agent"].FirstOrDefault() ?? "Unknown"}";
             await _fileShareService.RecordShareAccessAsync(shareToken, accessorInfo);
 
             // 包含权限信息，便于前端判断下载/预览能力
@@ -351,7 +351,7 @@ public class FileShareController : BaseApiController
             var stream = await _fileShareService.GetSharedFileContentAsync(shareToken, password);
 
             // 记录访问日志
-            var accessorInfo = $"IP: {GetClientIpAddress()}, UserAgent: {GetUserAgent()}, Action: Download";
+            var accessorInfo = $"IP: {GetClientIpAddress()}, UserAgent: {Request.Headers["User-Agent"].FirstOrDefault() ?? "Unknown"}, Action: Download";
             await _fileShareService.RecordShareAccessAsync(shareToken, accessorInfo);
 
             return File(stream, fileInfo.MimeType, fileInfo.Name);
@@ -397,7 +397,7 @@ public class FileShareController : BaseApiController
                 return NotFoundError("分享文件", shareToken);
 
             // 记录访问日志
-            var accessorInfo = $"IP: {GetClientIpAddress()}, UserAgent: {GetUserAgent()}, Action: Preview";
+            var accessorInfo = $"IP: {GetClientIpAddress()}, UserAgent: {Request.Headers["User-Agent"].FirstOrDefault() ?? "Unknown"}, Action: Preview";
             await _fileShareService.RecordShareAccessAsync(shareToken, accessorInfo);
 
             // 构建预览信息

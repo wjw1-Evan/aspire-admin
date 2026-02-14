@@ -67,7 +67,7 @@ public class FileVersionController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("GetVersionList", ex, fileId);
+            _logger.LogError(ex, "获取版本列表失败, FileId: {FileId}", fileId);
             return ServerError("获取版本列表失败，请稍后重试");
         }
     }
@@ -90,7 +90,7 @@ public class FileVersionController : BaseApiController
         try
         {
             var version = await _fileVersionService.CreateVersionAsync(fileId, request.File, request.Comment);
-            LogOperation("CreateVersion", version.Id, new { fileId, request.Comment });
+            _logger.LogInformation("创建版本, VersionId: {VersionId}, FileId: {FileId}", version.Id, fileId);
             return Success(version, "版本创建成功");
         }
         catch (ArgumentException ex)
@@ -103,7 +103,7 @@ public class FileVersionController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("CreateVersion", ex, fileId);
+            _logger.LogError(ex, "创建版本失败, FileId: {FileId}", fileId);
             return ServerError("创建版本失败，请稍后重试");
         }
     }
@@ -126,7 +126,7 @@ public class FileVersionController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("GetVersionHistory", ex, fileId);
+            _logger.LogError(ex, "获取版本历史失败, FileId: {FileId}", fileId);
             return ServerError("获取版本历史失败，请稍后重试");
         }
     }
@@ -152,7 +152,7 @@ public class FileVersionController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("GetVersion", ex, versionId);
+            _logger.LogError(ex, "获取版本详情失败, VersionId: {VersionId}", versionId);
             return ServerError("获取版本详情失败，请稍后重试");
         }
     }
@@ -175,7 +175,7 @@ public class FileVersionController : BaseApiController
         try
         {
             var version = await _fileVersionService.RestoreVersionAsync(fileId, versionNumber);
-            LogOperation("RestoreVersion", version.Id, new { fileId, versionNumber });
+            _logger.LogInformation("恢复版本, FileId: {FileId}, Version: {VersionNumber}", fileId, versionNumber);
             return Success(version, "版本恢复成功");
         }
         catch (ArgumentException ex)
@@ -188,7 +188,7 @@ public class FileVersionController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("RestoreVersion", ex, fileId);
+            _logger.LogError(ex, "恢复版本失败, FileId: {FileId}", fileId);
             return ServerError("版本恢复失败，请稍后重试");
         }
     }
@@ -207,7 +207,7 @@ public class FileVersionController : BaseApiController
         try
         {
             await _fileVersionService.DeleteVersionAsync(versionId);
-            LogOperation("DeleteVersion", versionId);
+            _logger.LogInformation("删除版本, VersionId: {VersionId}", versionId);
             return Success("版本已删除");
         }
         catch (ArgumentException ex)
@@ -220,7 +220,7 @@ public class FileVersionController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("DeleteVersion", ex, versionId);
+            _logger.LogError(ex, "删除版本失败, VersionId: {VersionId}", versionId);
             return ServerError("删除版本失败，请稍后重试");
         }
     }
@@ -243,7 +243,7 @@ public class FileVersionController : BaseApiController
                 return NotFoundError("版本", versionId);
 
             var stream = await _fileVersionService.DownloadVersionAsync(versionId);
-            LogOperation("DownloadVersion", versionId);
+            _logger.LogInformation("下载版本, VersionId: {VersionId}", versionId);
 
             var fileName = $"version_{version.VersionNumber}_{DateTime.Now:yyyyMMdd_HHmmss}";
             return File(stream, "application/octet-stream", fileName);
@@ -258,7 +258,7 @@ public class FileVersionController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("DownloadVersion", ex, versionId);
+            _logger.LogError(ex, "下载版本失败, VersionId: {VersionId}", versionId);
             return ServerError("下载版本失败，请稍后重试");
         }
     }
@@ -284,7 +284,7 @@ public class FileVersionController : BaseApiController
         try
         {
             var comparison = await _fileVersionService.CompareVersionsAsync(versionId1, versionId2);
-            LogOperation("CompareVersions", null, new { versionId1, versionId2 });
+            _logger.LogInformation("比较版本, V1: {VersionId1}, V2: {VersionId2}", versionId1, versionId2);
             return Success(comparison);
         }
         catch (ArgumentException ex)
@@ -297,7 +297,7 @@ public class FileVersionController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("CompareVersions", ex);
+            _logger.LogError(ex, "版本比较失败");
             return ServerError("版本比较失败，请稍后重试");
         }
     }
@@ -323,7 +323,7 @@ public class FileVersionController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("GetCurrentVersion", ex, fileId);
+            _logger.LogError(ex, "获取当前版本失败, FileId: {FileId}", fileId);
             return ServerError("获取当前版本失败，请稍后重试");
         }
     }
@@ -342,7 +342,7 @@ public class FileVersionController : BaseApiController
         try
         {
             var version = await _fileVersionService.SetAsCurrentVersionAsync(versionId);
-            LogOperation("SetAsCurrentVersion", versionId);
+            _logger.LogInformation("设置当前版本, VersionId: {VersionId}", versionId);
             return Success(version, "已设置为当前版本");
         }
         catch (ArgumentException ex)
@@ -355,7 +355,7 @@ public class FileVersionController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("SetAsCurrentVersion", ex, versionId);
+            _logger.LogError(ex, "设置当前版本失败, VersionId: {VersionId}", versionId);
             return ServerError("设置当前版本失败，请稍后重试");
         }
     }
@@ -382,7 +382,7 @@ public class FileVersionController : BaseApiController
         }
         catch (Exception ex)
         {
-            LogError("GetVersionStatistics", ex, fileId);
+            _logger.LogError(ex, "获取版本统计失败, FileId: {FileId}", fileId);
             return ServerError("获取版本统计失败，请稍后重试");
         }
     }
@@ -405,12 +405,12 @@ public class FileVersionController : BaseApiController
         try
         {
             var result = await _fileVersionService.CleanupOldVersionsAsync(fileId, keepCount);
-            LogOperation("CleanupOldVersions", fileId, new { keepCount, result.SuccessCount });
+            _logger.LogInformation("清理旧版本, FileId: {FileId}, Keep: {KeepCount}", fileId, keepCount);
             return Success(result, $"清理完成，删除了 {result.SuccessCount} 个旧版本");
         }
         catch (Exception ex)
         {
-            LogError("CleanupOldVersions", ex, fileId);
+            _logger.LogError(ex, "清理版本失败, FileId: {FileId}", fileId);
             return ServerError("清理版本失败，请稍后重试");
         }
     }
@@ -435,12 +435,12 @@ public class FileVersionController : BaseApiController
         try
         {
             var result = await _fileVersionService.BatchDeleteVersionsAsync(request.VersionIds);
-            LogOperation("BatchDeleteVersions", null, new { request.VersionIds, result.SuccessCount, result.FailureCount });
+            _logger.LogInformation("批量删除版本, Count: {Count}, Success: {SuccessCount}", request.VersionIds.Count, result.SuccessCount);
             return Success(result, $"批量删除完成，成功 {result.SuccessCount} 个，失败 {result.FailureCount} 个");
         }
         catch (Exception ex)
         {
-            LogError("BatchDeleteVersions", ex);
+            _logger.LogError(ex, "批量删除版本失败");
             return ServerError("批量删除版本失败，请稍后重试");
         }
     }

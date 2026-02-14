@@ -1,52 +1,66 @@
 <view class="container">
-  <view class="search-bar">
-    <view class="search-box">
-      <icon type="search" size="14"></icon>
-      <input class="search-input" placeholder="{{t['common.search']}}" bindinput="onSearchInput" value="{{searchKeyword}}" bindconfirm="handleSearch" />
+  <!-- Unified Search Bar -->
+  <view class="common-search-bar">
+    <view class="common-search-box">
+      <text class="iconfont icon-search common-search-icon"></text>
+      <input class="common-search-input" placeholder="{{t['common.search']}}" bindinput="onSearchInput" value="{{searchKeyword}}" bindconfirm="handleSearch" confirm-type="search" />
     </view>
-    <view class="search-btn" bindtap="handleSearch">{{t['common.search']}}</view>
+    <view class="common-search-btn" bindtap="handleSearch">{{t['common.search']}}</view>
   </view>
 
-  <view class="contract-list">
-    <view wx:for="{{contracts}}" wx:key="id" class="contract-card" bindtap="goToDetail" data-id="{{item.id}}">
-      <view class="contract-header">
-        <view class="contract-basic">
-          <text class="contract-no">{{item.contractNumber}}</text>
-          <text class="tenant-name">{{item.tenantName}}</text>
+  <view class="common-list-container">
+    <view wx:for="{{contracts}}" wx:key="id" class="card" bindtap="goToDetail" data-id="{{item.id}}">
+      <view class="card-header">
+        <view class="flex" style="flex-direction: column; overflow: hidden; flex: 1; margin-right: 16rpx;">
+          <text class="card-title" style="margin-bottom: 4rpx;">{{item.contractNumber}}</text>
+          <text class="text-secondary" style="font-size: 26rpx; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">{{item.tenantName}}</text>
         </view>
-        <text class="contract-status status-{{item.status}}">{{item.status === 'Active' ? t['park.contract.status.active'] : (item.status === 'Expired' ? t['park.contract.status.expired'] : t['park.contract.status.terminated'])}}</text>
+        <text class="status-tag {{item.status === 'Active' ? 'processing' : (item.status === 'Expired' ? 'warning' : 'default')}}">
+          {{item.status === 'Active' ? t['park.contract.status.active'] : (item.status === 'Expired' ? t['park.contract.status.expired'] : t['park.contract.status.terminated'])}}
+        </text>
       </view>
-      <view class="contract-body">
+      
+      <view class="card-body">
         <view class="info-row">
-          <text class="label">{{t['park.contract.start_date']}}：</text>
-          <text class="value">{{item.startDate}}</text>
+          <text class="info-label">{{t['park.contract.start_date']}}</text>
+          <text class="info-value">{{item.startDate}}</text>
         </view>
         <view class="info-row">
-          <text class="label">{{t['park.contract.end_date']}}：</text>
-          <text class="value">{{item.endDate}}</text>
+          <text class="info-label">{{t['park.contract.end_date']}}</text>
+          <text class="info-value">{{item.endDate}}</text>
         </view>
         <view class="info-row">
-          <text class="label">{{t['park.contract.monthly_rent']}}：</text>
-          <text class="value rent">¥{{item.monthlyRent}}</text>
+          <text class="info-label">{{t['park.contract.monthly_rent']}}</text>
+          <text class="info-value" style="font-weight: 500; font-family: Roboto, sans-serif;">¥{{item.monthlyRent}}</text>
         </view>
-      </view>
-      <view class="contract-footer">
-        <text class="expiry-hint" wx:if="{{item.daysUntilExpiry <= 30 && item.status === 'Active'}}">{{t['park.contract.expiry_warning']}} ({{item.daysUntilExpiry}}{{t['park.contract.days']}})</text>
-        <text class="btn-detail">{{t['common.detail']}} ></text>
+        
+        <view class="flex justify-between align-center" style="margin-top: 20rpx; border-top: 1rpx dashed #eee; padding-top: 16rpx;">
+          <text class="text-danger" style="font-size: 24rpx;" wx:if="{{item.daysUntilExpiry <= 30 && item.status === 'Active'}}">
+            {{t['park.contract.expiry_warning']}} ({{item.daysUntilExpiry}}{{t['park.contract.days']}})
+          </text>
+          <text wx:else></text> <!-- Spacer if needed -->
+          <text class="text-primary" style="font-size: 26rpx;">{{t['common.detail']}} ></text>
+        </view>
       </view>
     </view>
 
-    <view class="loading-wrap" wx:if="{{loading}}">
-      <view class="loading"></view>
+    <!-- Unified Loading/Empty States -->
+    <view class="loading-state" wx:if="{{loading}}">
+      <view class="loading-icon"></view>
       <text>{{t['common.loading']}}</text>
     </view>
-    <view class="no-more" wx:if="{{!hasMore && contracts.length > 0}}">{{t['common.empty']}}</view>
-    <view class="empty-wrap" wx:if="{{!loading && contracts.length === 0}}">
-      <icon type="info" size="64" color="#ccc"></icon>
+    
+    <view class="empty-state" wx:if="{{!loading && contracts.length === 0}}">
+      <text class="iconfont icon-empty" style="font-size: 80rpx; margin-bottom: 20rpx; color: #ccc;"></text>
       <text>{{t['common.empty']}}</text>
     </view>
-    <view class="add-btn" bindtap="goToAdd">
+
+    <view class="text-secondary" style="text-align: center; padding: 30rpx 0; font-size: 24rpx;" wx:if="{{!hasMore && contracts.length > 0}}">
+      {{t['common.no_more']}}
+    </view>
+  </view>
+  
+  <view class="fab" bindtap="goToAdd">
     <text class="iconfont icon-add"></text>
   </view>
-</view>
 </view>

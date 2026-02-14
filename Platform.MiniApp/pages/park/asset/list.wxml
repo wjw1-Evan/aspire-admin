@@ -1,41 +1,44 @@
 <view class="container">
-  <view class="search-bar">
-    <view class="search-box">
-      <icon type="search" size="14"></icon>
-      <input class="search-input" placeholder="{{t['common.search']}}" bindinput="onSearchInput" value="{{searchKeyword}}" bindconfirm="handleSearch" />
+  <!-- Unified Search Bar -->
+  <view class="common-search-bar">
+    <view class="common-search-box">
+      <text class="iconfont icon-search common-search-icon"></text>
+      <input class="common-search-input" placeholder="{{t['common.search']}}" bindinput="onSearchInput" value="{{searchKeyword}}" bindconfirm="handleSearch" confirm-type="search" />
     </view>
-    <view class="search-btn" bindtap="handleSearch">{{t['common.search']}}</view>
+    <view class="common-search-btn" bindtap="handleSearch">{{t['common.search']}}</view>
   </view>
 
-  <view class="tab-bar">
-    <view class="tab-item {{activeTab === 'building' ? 'active' : ''}}" bindtap="switchTab" data-tab="building">
+  <!-- Unified Tab Bar -->
+  <view class="common-tab-bar">
+    <view class="common-tab-item {{activeTab === 'building' ? 'active' : ''}}" bindtap="switchTab" data-tab="building">
       {{t['park.asset.building']}}
     </view>
-    <view class="tab-item {{activeTab === 'property' ? 'active' : ''}}" bindtap="switchTab" data-tab="property">
+    <view class="common-tab-item {{activeTab === 'property' ? 'active' : ''}}" bindtap="switchTab" data-tab="property">
       {{t['park.asset.property']}}
     </view>
   </view>
 
-  <view class="asset-list">
+  <view class="common-list-container">
     <!-- Building List -->
     <block wx:if="{{activeTab === 'building'}}">
-      <view wx:for="{{buildings}}" wx:key="id" class="asset-card" bindtap="goToDetail" data-id="{{item.id}}">
-        <view class="asset-header">
-          <text class="asset-name">{{item.name}}</text>
-          <text class="status-tag">{{item.status}}</text>
+      <view wx:for="{{buildings}}" wx:key="id" class="card" bindtap="goToDetail" data-id="{{item.id}}">
+        <view class="card-header">
+          <text class="card-title">{{item.name}}</text>
+          <!-- Assuming status is generic text, or map it to status-tag classes if fixed set -->
+          <text class="status-tag default">{{item.status}}</text>
         </view>
-        <view class="asset-body">
+        <view class="card-body">
           <view class="info-row">
-            <text class="label">{{t['park.asset.total_floors']}}：</text>
-            <text class="value">{{item.totalFloors}}</text>
+            <text class="info-label">{{t['park.asset.total_floors']}}</text>
+            <text class="info-value">{{item.totalFloors}}</text>
           </view>
           <view class="info-row">
-            <text class="label">{{t['park.asset.total_area']}}：</text>
-            <text class="value">{{item.totalArea}}㎡</text>
+            <text class="info-label">{{t['park.asset.total_area']}}</text>
+            <text class="info-value">{{item.totalArea}}㎡</text>
           </view>
           <view class="info-row">
-            <text class="label">{{t['park.asset.address_label']}}</text>
-            <text class="value">{{item.address || '-'}}</text>
+            <text class="info-label">{{t['park.asset.address_label']}}</text>
+            <text class="info-value">{{item.address || '-'}}</text>
           </view>
         </view>
       </view>
@@ -43,39 +46,47 @@
 
     <!-- Property List -->
     <block wx:else>
-      <view wx:for="{{properties}}" wx:key="id" class="asset-card" bindtap="goToUnitDetail" data-id="{{item.id}}">
-        <view class="asset-header">
-          <text class="asset-name">{{item.unitNumber}}</text>
-          <text class="status-tag status-{{item.status}}">{{item.status === 'Available' ? t['park.asset.status.available'] : (item.status === 'Rented' ? t['park.asset.status.rented'] : t['park.asset.status.reserved'])}}</text>
+      <view wx:for="{{properties}}" wx:key="id" class="card" bindtap="goToUnitDetail" data-id="{{item.id}}">
+        <view class="card-header">
+          <text class="card-title">{{item.unitNumber}}</text>
+          <text class="status-tag {{item.status === 'Available' ? 'success' : (item.status === 'Rented' ? 'processing' : 'warning')}}">
+            {{item.status === 'Available' ? t['park.asset.status.available'] : (item.status === 'Rented' ? t['park.asset.status.rented'] : t['park.asset.status.reserved'])}}
+          </text>
         </view>
-        <view class="asset-body">
+        <view class="card-body">
           <view class="info-row">
-            <text class="label">{{t['park.asset.floor']}}：</text>
-            <text class="value">{{item.floor}}F</text>
+            <text class="info-label">{{t['park.asset.floor']}}</text>
+            <text class="info-value">{{item.floor}}F</text>
           </view>
           <view class="info-row">
-            <text class="label">{{t['park.asset.area']}}：</text>
-            <text class="value">{{item.area}}㎡</text>
+            <text class="info-label">{{t['park.asset.area']}}</text>
+            <text class="info-value">{{item.area}}㎡</text>
           </view>
           <view class="info-row">
-            <text class="label">{{t['park.asset.type_label']}}</text>
-            <text class="value">{{item.unitType === 'Office' ? t['park.asset.type.office'] : (item.unitType === 'Retail' ? t['park.asset.type.retail'] : t['park.asset.type.warehouse'])}}</text>
+            <text class="info-label">{{t['park.asset.type_label']}}</text>
+            <text class="info-value">{{item.unitType === 'Office' ? t['park.asset.type.office'] : (item.unitType === 'Retail' ? t['park.asset.type.retail'] : t['park.asset.type.warehouse'])}}</text>
           </view>
         </view>
       </view>
     </block>
 
-    <view class="loading-wrap" wx:if="{{loading}}">
-      <view class="loading"></view>
+    <!-- Unified Loading/Empty States -->
+    <view class="loading-state" wx:if="{{loading}}">
+      <view class="loading-icon"></view>
       <text>{{t['common.loading']}}</text>
     </view>
-    <view class="no-more" wx:if="{{!hasMore && (activeTab === 'building' ? buildings.length : properties.length) > 0}}">{{t['common.empty']}}</view>
-    <view class="empty-wrap" wx:if="{{!loading && (activeTab === 'building' ? buildings.length === 0 : properties.length === 0)}}">
-      <icon type="info" size="64" color="#ccc"></icon>
+    
+    <view class="empty-state" wx:if="{{!loading && (activeTab === 'building' ? buildings.length === 0 : properties.length === 0)}}">
+      <text class="iconfont icon-empty" style="font-size: 80rpx; margin-bottom: 20rpx; color: #ccc;"></text>
       <text>{{t['common.empty']}}</text>
     </view>
+
+    <view class="text-secondary" style="text-align: center; padding: 30rpx 0; font-size: 24rpx;" wx:if="{{!hasMore && (activeTab === 'building' ? buildings.length : properties.length) > 0}}">
+      {{t['common.no_more']}}
+    </view>
   </view>
-  <view class="add-btn" bindtap="goToAdd">
+
+  <view class="fab" bindtap="goToAdd">
     <text class="iconfont icon-add"></text>
   </view>
 </view>

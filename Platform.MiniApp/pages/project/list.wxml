@@ -1,32 +1,10 @@
 <view class="container">
-  <!-- Statistics Dashboard -->
-  <view class="stats-board card-style" wx:if="{{statistics}}">
-    <view class="stats-row">
-      <view class="stat-item">
-        <text class="stat-value primary">{{statistics.totalProjects || 0}}</text>
-        <text class="stat-label">{{t['project.list.total']}}</text>
-      </view>
-      <view class="stat-item">
-        <text class="stat-value success">{{statistics.inProgressProjects || 0}}</text>
-        <text class="stat-label">{{t['project.list.in_progress']}}</text>
-      </view>
-      <view class="stat-item">
-        <text class="stat-value warning">{{statistics.completedProjects || 0}}</text>
-        <text class="stat-label">{{t['project.list.completed']}}</text>
-      </view>
-      <view class="stat-item">
-        <text class="stat-value danger">{{statistics.delayedProjects || 0}}</text>
-        <text class="stat-label">{{t['project.list.delayed']}}</text>
-      </view>
-    </view>
-  </view>
-
-  <!-- Search Bar -->
-  <view class="search-section card-style">
-    <view class="search-box">
-      <text class="iconfont icon-search search-icon"></text>
+  <!-- Unified Search Bar (Sticky) -->
+  <view class="common-search-bar">
+    <view class="common-search-box">
+      <text class="iconfont icon-search common-search-icon"></text>
       <input 
-        class="search-input" 
+        class="common-search-input" 
         placeholder="{{t['project.list.search_placeholder']}}" 
         value="{{searchKeyword}}"
         bindinput="onSearchInput"
@@ -36,35 +14,59 @@
     </view>
   </view>
 
-  <!-- Project List -->
-  <view class="project-list">
+  <view class="common-list-container">
+    <!-- Statistics Dashboard -->
+    <view class="card" wx:if="{{statistics}}" style="margin-bottom: 24rpx; padding: 40rpx 20rpx;">
+      <view class="flex justify-between align-center" style="justify-content: space-around;">
+        <view class="flex" style="flex-direction: column; align-items: center;">
+          <text style="font-size: 36rpx; font-weight: bold; margin-bottom: 8rpx; color: var(--primary-color);">{{statistics.totalProjects || 0}}</text>
+          <text class="text-secondary" style="font-size: 24rpx;">{{t['project.list.total']}}</text>
+        </view>
+        <view class="flex" style="flex-direction: column; align-items: center;">
+          <text style="font-size: 36rpx; font-weight: bold; margin-bottom: 8rpx; color: #52c41a;">{{statistics.inProgressProjects || 0}}</text>
+          <text class="text-secondary" style="font-size: 24rpx;">{{t['project.list.in_progress']}}</text>
+        </view>
+        <view class="flex" style="flex-direction: column; align-items: center;">
+          <text style="font-size: 36rpx; font-weight: bold; margin-bottom: 8rpx; color: #faad14;">{{statistics.completedProjects || 0}}</text>
+          <text class="text-secondary" style="font-size: 24rpx;">{{t['project.list.completed']}}</text>
+        </view>
+        <view class="flex" style="flex-direction: column; align-items: center;">
+          <text style="font-size: 36rpx; font-weight: bold; margin-bottom: 8rpx; color: #ff4d4f;">{{statistics.delayedProjects || 0}}</text>
+          <text class="text-secondary" style="font-size: 24rpx;">{{t['project.list.delayed']}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Project List -->
     <block wx:if="{{projects.length > 0}}">
       <view 
-        class="project-card card-style" 
+        class="card" 
         wx:for="{{projects}}" 
         wx:key="id"
         bindtap="goToDetail"
         data-id="{{item.id}}"
       >
         <view class="card-header">
-          <text class="project-title">{{item.name}}</text>
-          <view class="status-tag status-{{item.status}}">{{statusMap[item.status]}}</view>
+          <text class="card-title">{{item.name}}</text>
+          <view class="status-tag {{item.status === 1 ? 'processing' : (item.status === 3 ? 'success' : 'warning')}}">
+            {{statusMap[item.status]}}
+          </view>
         </view>
         
         <view class="card-body">
           <view class="info-row">
-            <text class="label">{{t['project.list.manager']}}</text>
-            <text class="value">{{item.managerName || t['project.list.manager_unassigned']}}</text>
+            <text class="info-label">{{t['project.list.manager']}}</text>
+            <text class="info-value">{{item.managerName || t['project.list.manager_unassigned']}}</text>
           </view>
           <view class="info-row">
-            <text class="label">{{t['project.list.deadline']}}</text>
-            <text class="value">{{item.endDate || '-'}}</text>
+            <text class="info-label">{{t['project.list.deadline']}}</text>
+            <text class="info-value">{{item.endDate || '-'}}</text>
           </view>
           
-          <view class="progress-section">
-            <view class="progress-info">
-              <text class="label">{{t['project.list.progress']}}</text>
-              <text class="percent">{{item.progress}}%</text>
+          <view style="margin-top: 24rpx;">
+            <view class="flex justify-between" style="margin-bottom: 8rpx; font-size: 24rpx;">
+              <text class="text-secondary">{{t['project.list.progress']}}</text>
+              <text style="font-weight: bold; color: var(--primary-color);">{{item.progress}}%</text>
             </view>
             <progress 
               percent="{{item.progress}}" 
@@ -77,18 +79,23 @@
       </view>
     </block>
     
-    <!-- Empty State -->
-    <view class="empty-state" wx:else>
-      <image src="/assets/logo.png" mode="aspectFit" class="empty-icon"></image>
-      <text class="empty-text">{{t['project.list.no_data']}}</text>
+    <!-- Unified Loading/Empty States -->
+    <view class="loading-state" wx:if="{{loading}}">
+      <view class="loading-icon"></view>
+      <text>{{t['common.loading']}}</text> <!-- Updated to common key if available, else hardcode or keep original -->
     </view>
 
-    <!-- Loading More -->
-    <view class="loading-more" wx:if="{{loading}}">{{t['project.list.loading_more']}}</view>
-    <view class="no-more" wx:if="{{!hasMore && projects.length > 0}}">{{t['project.list.no_more']}}</view>
+    <view class="empty-state" wx:if="{{!loading && projects.length === 0}}">
+      <image src="/assets/logo.png" mode="aspectFit" style="width: 200rpx; height: 200rpx; opacity: 0.2; margin-bottom: 20rpx;"></image>
+      <text>{{t['project.list.no_data']}}</text>
+    </view>
+
+    <view class="text-secondary" style="text-align: center; padding: 30rpx 0; font-size: 24rpx;" wx:if="{{!hasMore && projects.length > 0}}">
+      {{t['project.list.no_more']}}
+    </view>
   </view>
 
-  <view class="fab-btn" bindtap="goToCreate">
+  <view class="fab" bindtap="goToCreate">
     <text class="iconfont icon-plus"></text>
   </view>
 </view>

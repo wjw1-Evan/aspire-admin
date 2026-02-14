@@ -721,15 +721,17 @@ public class UserService(
     }
 
     /// <inheritdoc/>
-    public Task<string> GetAiRoleDefinitionAsync(string userId)
+    public async Task<string> GetAiRoleDefinitionAsync(string userId)
     {
-        // Placeholder implementation
-        return Task.FromResult("");
+        var user = await _userFactory.GetByIdWithoutTenantFilterAsync(userId);
+        return user?.AiRoleDefinition ?? string.Empty;
     }
 
     /// <inheritdoc/>
-    public Task<bool> UpdateAiRoleDefinitionAsync(string userId, string roleDefinition)
+    public async Task<bool> UpdateAiRoleDefinitionAsync(string userId, string roleDefinition)
     {
-        return Task.FromResult(true);
+        // 允许设置为空字符串以清除定义
+        var updatedUser = await _userFactory.UpdateAsync(userId, u => u.AiRoleDefinition = roleDefinition);
+        return updatedUser != null;
     }
 }

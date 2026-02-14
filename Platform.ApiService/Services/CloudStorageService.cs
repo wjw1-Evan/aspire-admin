@@ -165,9 +165,140 @@ public class CloudStorageService : ICloudStorageService
         return result;
     }
     /// <inheritdoc/>
-    public Task<Stream> DownloadFolderAsZipAsync(string folderId) => throw new NotImplementedException();
+    public async Task<Stream> DownloadFolderAsZipAsync(string folderId)
+    {
+        var folder = await GetFileItemAsync(folderId);
+        if (folder == null)
+            throw new ArgumentException("文件夹不存在", nameof(folderId));
+        if (folder.Type != FileItemType.Folder)
+            throw new ArgumentException("指定的ID不是文件夹", nameof(folderId));
+
+        var memoryStream = new MemoryStream();
+        using (var archive = new System.IO.Compression.ZipArchive(memoryStream, System.IO.Compression.ZipArchiveMode.Create, true))
+        {
+            await AddFolderToZipAsync(archive, folder, "");
+        }
+
+        memoryStream.Position = 0;
+        return memoryStream;
+    }
+
+    private async Task AddFolderToZipAsync(System.IO.Compression.ZipArchive archive, FileItem folder, string relativePath)
+    {
+        // 获取该文件夹下的所有直接子项
+        var children = await _fileItemFactory.FindAsync(x => x.ParentId == folder.Id && x.Status == FileStatus.Active);
+
+        foreach (var child in children)
+        {
+            var childPath = string.IsNullOrEmpty(relativePath) ? child.Name : $"{relativePath}/{child.Name}";
+
+            if (child.Type == FileItemType.Folder)
+            {
+                // 递归处理子文件夹
+                // 创建一个空目录项（如果在 zip 中需要显式空目录）
+                // archive.CreateEntry(childPath + "/"); 
+                await AddFolderToZipAsync(archive, child, childPath);
+            }
+            else
+            {
+                // 处理文件
+                if (!string.IsNullOrEmpty(child.GridFSId))
+                {
+                    var entry = archive.CreateEntry(childPath);
+                    using var entryStream = entry.Open();
+                    using var fileStream = await _fileStorageFactory.GetDownloadStreamAsync(child.GridFSId, "cloud_storage_files");
+                    await fileStream.CopyToAsync(entryStream);
+                }
+            }
+        }
+    }
+
     /// <inheritdoc/>
-    public Task<FileItem> CopyFileItemAsync(string id, string newParentId, string? newName = null) => throw new NotImplementedException();
+    public async Task<FileItem> CopyFileItemAsync(string id, string newParentId, string? newName = null)
+    {
+        var sourceItem = await GetFileItemAsync(id);
+        if (sourceItem == null)
+            throw new ArgumentException("源文件项不存在", nameof(id));
+
+        // 验证目标父文件夹
+        string targetPathPrefix = "";
+        if (!string.IsNullOrEmpty(newParentId))
+        {
+            var targetParent = await GetFileItemAsync(newParentId);
+            if (targetParent == null)
+                throw new ArgumentException("目标文件夹不存在", nameof(newParentId));
+            if (targetParent.Type != FileItemType.Folder)
+                throw new ArgumentException("目标必须是文件夹", nameof(newParentId));
+
+            // 防止将文件夹复制到其自身或子文件夹中
+            if (sourceItem.Type == FileItemType.Folder)
+            {
+                if (sourceItem.Id == newParentId)
+                    throw new InvalidOperationException("不能将文件夹复制到自身");
+
+                var isDescendant = await IsDescendantFolderAsync(sourceItem.Id, newParentId);
+                if (isDescendant)
+                    throw new InvalidOperationException("不能将文件夹复制到其子文件夹中");
+            }
+            targetPathPrefix = targetParent.Path;
+        }
+
+        var targetName = !string.IsNullOrWhiteSpace(newName) ? newName : sourceItem.Name;
+
+        // 检查重名
+        var existingItems = await _fileItemFactory.FindAsync(
+            x => x.Name == targetName && x.ParentId == newParentId && x.Type == sourceItem.Type && x.Status == FileStatus.Active,
+            limit: 1);
+
+        if (existingItems.Count > 0)
+            throw new InvalidOperationException($"目标位置已存在同名{(sourceItem.Type == FileItemType.File ? "文件" : "文件夹")}: {targetName}");
+
+        return await CopyItemRecursiveAsync(sourceItem, newParentId, targetName, targetPathPrefix);
+    }
+
+    private async Task<FileItem> CopyItemRecursiveAsync(FileItem source, string parentId, string name, string parentPath)
+    {
+        var newPath = string.IsNullOrEmpty(parentPath) ? name : $"{parentPath}/{name}";
+
+        var newItem = new FileItem
+        {
+            Name = name,
+            Path = newPath,
+            ParentId = parentId,
+            Type = source.Type,
+            Size = source.Size,
+            MimeType = source.MimeType,
+            GridFSId = source.GridFSId, // 文件内容引用同一个 GridFS ID
+            Hash = source.Hash,
+            ThumbnailGridFSId = source.ThumbnailGridFSId,
+            Metadata = source.Metadata != null ? new Dictionary<string, object>(source.Metadata) : null,
+            Status = FileStatus.Active,
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = _tenantContext.GetCurrentUserId(), // CreatedBy 是字符串类型，可能为空
+            LastAccessedAt = DateTime.UtcNow,
+            DownloadCount = 0
+            // Removed non-existent properties: CreatedByName, IsStarred
+        };
+
+        await _fileItemFactory.CreateAsync(newItem);
+
+        // 如果是文件，增加空间使用量
+        if (newItem.Type == FileItemType.File)
+        {
+            await UpdateStorageUsageAsync(newItem.Size);
+        }
+        // 如果是文件夹，递归复制子项
+        else if (newItem.Type == FileItemType.Folder)
+        {
+            var children = await _fileItemFactory.FindAsync(x => x.ParentId == source.Id && x.Status == FileStatus.Active);
+            foreach (var child in children)
+            {
+                await CopyItemRecursiveAsync(child, newItem.Id!, child.Name, newItem.Path);
+            }
+        }
+
+        return newItem;
+    }
 
     /// <inheritdoc/>
     public async Task<FileItem> CreateFolderAsync(string name, string parentId)

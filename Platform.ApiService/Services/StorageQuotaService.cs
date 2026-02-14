@@ -11,6 +11,7 @@ public class StorageQuotaService : IStorageQuotaService
     private readonly IDataFactory<StorageQuota> _quotaFactory;
     private readonly IDataFactory<FileItem> _fileItemFactory;
     private readonly IDataFactory<AppUser> _userFactory;
+    private readonly IDataFactory<Company> _companyFactory;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<StorageQuotaService> _logger;
 
@@ -26,15 +27,18 @@ public class StorageQuotaService : IStorageQuotaService
         IDataFactory<StorageQuota> quotaFactory,
         IDataFactory<FileItem> fileItemFactory,
         IDataFactory<AppUser> userFactory,
+        IDataFactory<Company> companyFactory,
         ITenantContext tenantContext,
         ILogger<StorageQuotaService> logger)
     {
         _quotaFactory = quotaFactory ?? throw new ArgumentNullException(nameof(quotaFactory));
         _fileItemFactory = fileItemFactory ?? throw new ArgumentNullException(nameof(fileItemFactory));
         _userFactory = userFactory ?? throw new ArgumentNullException(nameof(userFactory));
+        _companyFactory = companyFactory ?? throw new ArgumentNullException(nameof(companyFactory));
         _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
+
 
     /// <summary>
     /// 获取用户存储配额信息（实时计算文件统计）
@@ -207,10 +211,13 @@ public class StorageQuotaService : IStorageQuotaService
             .GroupBy(f => f.CreatedBy!)
             .ToDictionary(g => g.Key, g => g.Sum(f => f.Size));
 
+        var company = await _companyFactory.GetByIdAsync(targetCompanyId);
+        var companyName = company?.Name ?? "未知企业";
+
         var statistics = new CompanyStorageStatistics
         {
             CompanyId = targetCompanyId,
-            CompanyName = "企业", // TODO: 从企业服务获取企业名称
+            CompanyName = companyName,
             TotalUsers = quotas.Count,
             TotalQuota = quotas.Sum(q => q.TotalQuota),
             UsedSpace = quotas.Sum(q => q.UsedSpace),

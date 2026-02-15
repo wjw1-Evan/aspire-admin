@@ -841,7 +841,7 @@
                             <div class="gate-turnstile gt-left"></div>
                             <div class="gate-turnstile gt-right"></div>
 
-                            <div class="b-label" style="transform: translateZ(60px) rotateX(-60deg);">Main Gate</div>
+                            <div class="b-label" style="transform: translateZ(60px) rotateX(-60deg);">园区大门</div>
                             <div class="energy-label el-gate">
                                 <div class="e-val">Live</div>
                                 <div class="e-line"
@@ -1678,7 +1678,7 @@
 
                         /* 2. R&D A (Blue, L-Shape feel via 2 blocks) */
                         .b-rd-a {
-                            transform: translate(-300px, -150px);
+                            transform: translate(-180px, -120px);
                         }
 
                         /* R&D A with Office Windows */
@@ -1899,11 +1899,16 @@
                             transform: translate(30px, 20px);
                         }
 
-                        /* (removed duplicate - solid style below) */
+                        .b-mall-atrium .face {
+                            background: rgba(147, 197, 253, 0.9);
+                            /* Light Blue Glass */
+                            border: 1px solid rgba(255, 255, 255, 0.6);
+                            box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+                        }
 
                         .b-mall-atrium .f-front,
                         .b-mall-atrium .f-back {
-                            width: 50px;
+                            width: 40px;
                             height: 70px;
                             transform: translate(-50%, -50%) translateZ(35px) rotateX(90deg) translateZ(20px);
                         }
@@ -1916,29 +1921,18 @@
                         .b-mall-atrium .f-right {
                             width: 40px;
                             height: 70px;
-                            transform: translate(-50%, -50%) translateZ(35px) rotateY(-90deg) rotateZ(-90deg) translateZ(25px);
+                            transform: translate(-50%, -50%) translateZ(35px) rotateY(-90deg) rotateZ(-90deg) translateZ(20px);
                         }
 
                         .b-mall-atrium .f-right {
-                            transform: translate(-50%, -50%) translateZ(35px) rotateY(90deg) rotateZ(90deg) translateZ(25px);
+                            transform: translate(-50%, -50%) translateZ(35px) rotateY(90deg) rotateZ(90deg) translateZ(20px);
                         }
 
                         .b-mall-atrium .f-top {
-                            width: 50px;
+                            width: 40px;
                             height: 40px;
                             transform: translate(-50%, -50%) translateZ(70px);
-                        }
-
-                        /* Mall Atrium - Glass Box */
-                        /* Mall Atrium - Tinted Glass Box */
-                        .b-mall-atrium .face {
-                            background-color: rgba(250, 204, 21, 0.4);
-                            border: 1px solid #ca8a04;
-                            box-shadow: inset 0 0 15px rgba(250, 204, 21, 0.4);
-                        }
-
-                        .b-mall-atrium .f-top {
-                            background-color: #eab308;
+                            background: #60a5fa;
                         }
 
                         /* 5. Apartments (Purple, Twin Towers) */
@@ -1948,17 +1942,14 @@
 
                         /* Tower 1 - Solid Concrete */
                         .b-apt-1 {
-                            transform: translate(-25px, 0);
+                            transform: translate(-20px, -20px);
                         }
 
                         /* Apartments with Balconies/Windows */
                         .b-apt-1 .face {
                             background-color: #9333ea;
                             /* Purple-600 */
-                            background-image:
-                                linear-gradient(rgba(0, 0, 0, 0.2) 2px, transparent 2px),
-                                linear-gradient(90deg, rgba(0, 0, 0, 0.2) 2px, transparent 2px);
-                            background-size: 8px 12px;
+                            background-image: repeating-linear-gradient(transparent 0, transparent 10px, rgba(0, 0, 0, 0.2) 10px, rgba(0, 0, 0, 0.2) 12px);
                             border: 1px solid #7e22ce;
                         }
 
@@ -2052,7 +2043,7 @@
 
                         /* Tower 2 */
                         .b-apt-2 {
-                            transform: translate(25px, 0);
+                            transform: translate(20px, 20px);
                         }
 
                         .b-apt-2 .face {
@@ -2101,7 +2092,7 @@
 
                         /* 6. Gym (Cyan) */
                         .b-gym {
-                            transform: translate(-350px, 50px);
+                            transform: translate(-180px, 120px);
                         }
 
                         /* 7. Facilities (Gray) */

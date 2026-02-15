@@ -617,6 +617,39 @@
                     width: 1px;
                     height: 10px;
                 }
+
+                /* Services & Activities */
+                .activity-item {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 0.6rem 0;
+                    font-size: 0.85rem;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                }
+
+                .activity-item:last-child {
+                    border-bottom: none;
+                }
+
+                .badge {
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                    font-size: 0.7rem;
+                    font-weight: 600;
+                }
+
+                .badge-info {
+                    color: #60a5fa;
+                    background: rgba(96, 165, 250, 0.15);
+                    border: 1px solid rgba(96, 165, 250, 0.3);
+                }
+
+                .badge-warn {
+                    color: #facc15;
+                    background: rgba(250, 204, 21, 0.15);
+                    border: 1px solid rgba(250, 204, 21, 0.3);
+                }
             </style>
 
             <div class="cockpit-container">
@@ -642,10 +675,14 @@
                             <span class="stat-value">12 栋</span>
                         </div>
                         <div class="cp-stat-row">
-                            <span class="stat-label">总面积 (Area)</span>
+                            <span class="stat-label">总面积 (GFA)</span>
                             <span class="stat-value">150,000 ㎡</span>
                         </div>
-                        <div class="progress-item">
+                        <div class="cp-stat-row">
+                            <span class="stat-label">空置面积 (Available)</span>
+                            <span class="stat-value" style="color: #4ade80;">18,000 ㎡</span>
+                        </div>
+                        <div class="progress-item" style="margin-top: 0.5rem;">
                             <div class="progress-header"><span>出租率 (Occupancy)</span><span>88%</span></div>
                             <div class="progress-track">
                                 <div class="progress-fill" style="width: 88%; background: #4ade80;"></div>
@@ -682,9 +719,20 @@
                         <h4>💰 合同 & 财务 (Finance)</h4>
                         <div class="cp-stat-row">
                             <span class="stat-label">本月营收 (Revenue)</span>
-                            <span class="stat-value">¥ 2.4M</span>
+                            <div style="text-align: right;">
+                                <div class="stat-value">¥ 2.4M</div>
+                                <div style="font-size: 0.7rem; color: #4ade80;">▲ 12% YoY</div>
+                            </div>
                         </div>
-                        <div class="progress-item">
+                        <div class="cp-stat-row">
+                            <span class="stat-label">待收金额 (Pending)</span>
+                            <span class="stat-value" style="color: #facc15;">¥ 340k</span>
+                        </div>
+                        <div class="cp-stat-row">
+                            <span class="stat-label">合同预警 (Expiring)</span>
+                            <span class="badge badge-warn">5 份</span>
+                        </div>
+                        <div class="progress-item" style="margin-top: 0.5rem;">
                             <div class="progress-header"><span>收缴率 (Collection)</span><span>95%</span></div>
                             <div class="progress-track">
                                 <div class="progress-fill" style="width: 95%; background: #60a5fa;"></div>
@@ -728,7 +776,7 @@
                             </div>
                             <div
                                 style="text-align: center; background: rgba(255,255,255,0.05); padding: 0.8rem; border-radius: 8px;">
-                                <div style="font-size: 1.1rem; color: #22d3ee; font-weight: bold;" id="env-lux">12,500Lx
+                                <div style="font-size: 1.1rem; color: #22d3ee; font-weight: bold;" id="env-lux">12.5kLx
                                 </div>
                                 <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">光照</div>
                             </div>
@@ -3497,9 +3545,13 @@
                                 <div class="progress-fill" style="width: 78%; background: #f472b6;"></div>
                             </div>
                         </div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">
-                            <div>• 重点企业走访: <span style="color: #fff;">12/15</span></div>
-                            <div>• 满意度调查: <span style="color: #fff;">45/50</span></div>
+                        <div class="cp-stat-row" style="margin-top: 1rem;">
+                            <span class="stat-label">重点企业走访</span>
+                            <span class="stat-value">12 / 15</span>
+                        </div>
+                        <div class="cp-stat-row" style="margin-bottom: 0;">
+                            <span class="stat-label">满意度调查</span>
+                            <span class="stat-value">45 / 50</span>
                         </div>
                     </div>
 
@@ -3960,7 +4012,7 @@
             const lux = 10000 + Math.floor(Math.random() * 5000);
             if (document.getElementById('env-noise')) document.getElementById('env-noise').innerText = noise.toFixed(0) + 'dB';
             if (document.getElementById('env-co2')) document.getElementById('env-co2').innerText = co2.toFixed(0);
-            if (document.getElementById('env-lux')) document.getElementById('env-lux').innerText = lux.toLocaleString() + 'Lx';
+            if (document.getElementById('env-lux')) document.getElementById('env-lux').innerText = (lux / 1000).toFixed(1) + 'kLx';
 
             // Update Parking & Logistics
             if (document.getElementById('val-parking')) {

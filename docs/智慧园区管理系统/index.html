@@ -858,6 +858,13 @@
                             <div class="car c-4"></div>
                             <div class="car c-5"></div>
                             <div class="parking-label">P</div>
+                            <div class="b-label" style="transform: translateZ(20px) rotateX(-60deg);">停车场</div>
+                            <div class="energy-label el-parking">
+                                <div class="e-val" id="map-val-parking">156</div>
+                                <div class="e-line"
+                                    style="background: linear-gradient(to top, rgba(34,197,94,0.2), #4ade80); height: 30px;">
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Security Camera Poles -->
@@ -2041,6 +2048,10 @@
                             transform: translate(60px, 20px) translateZ(80px);
                         }
 
+                        .el-parking {
+                            transform: translate(0, 0) translateZ(30px);
+                        }
+
                         /* Tower 2 */
                         .b-apt-2 {
                             transform: translate(20px, 20px);
@@ -2941,6 +2952,9 @@
             if (document.getElementById('val-parking')) {
                 const p = 150 + Math.floor(Math.random() * 10);
                 document.getElementById('val-parking').innerText = p;
+                if (document.getElementById('map-val-parking')) {
+                    document.getElementById('map-val-parking').innerText = p;
+                }
             }
             if (document.getElementById('val-visitors')) {
                 const v = 80 + Math.floor(Math.random() * 20);

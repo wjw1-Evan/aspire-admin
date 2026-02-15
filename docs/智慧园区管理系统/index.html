@@ -878,9 +878,28 @@
                             <div class="car c-4"></div>
                             <div class="car c-5"></div>
                             <!-- Added Teslas -->
-                            <div class="car tesla c-tesla-1"></div>
-                            <div class="car tesla c-tesla-2"></div>
-                            <div class="car tesla c-tesla-3"></div>
+                            <!-- Added 3D Teslas -->
+                            <div class="car-3d tesla c-tesla-1">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="car-3d tesla c-tesla-2">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="car-3d tesla c-tesla-3">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
                             <div class="parking-label">P</div>
                             <div class="b-label" style="transform: translateZ(20px) rotateX(-60deg);">停车场</div>
                             <div class="energy-label el-parking">
@@ -1547,49 +1566,72 @@
                         }
 
                         /* Tesla Vehicles: Red Multi-Coat & Pearl White */
-                        .car.tesla {
-                            border: 1px solid rgba(0, 0, 0, 0.3);
-                            overflow: hidden;
+                        .car-3d.tesla {
+                            position: absolute;
+                            transform-style: preserve-3d;
                         }
 
-                        /* Tesla Glass Roof Effect */
-                        .car.tesla::after {
-                            content: '';
+                        .car-3d.tesla .face {
                             position: absolute;
-                            top: 4px;
-                            left: 2px;
-                            right: 2px;
-                            bottom: 8px;
-                            background: #000;
-                            opacity: 0.8;
-                            border-radius: 1px;
+                            background: inherit;
+                            border: 1px solid rgba(0, 0, 0, 0.2);
+                        }
+
+                        /* Car Dimensions: 12 wide, 24 long, 6 high */
+                        .car-3d.tesla .f-front,
+                        .car-3d.tesla .f-back {
+                            width: 12px;
+                            height: 6px;
+                            transform: translate(-50%, -50%) rotateX(90deg) translateZ(12px);
+                        }
+
+                        .car-3d.tesla .f-back {
+                            transform: translate(-50%, -50%) rotateX(90deg) translateZ(-12px);
+                        }
+
+                        .car-3d.tesla .f-left,
+                        .car-3d.tesla .f-right {
+                            width: 24px;
+                            height: 6px;
+                            transform: translate(-50%, -50%) rotateY(90deg) rotateZ(90deg) translateZ(6px);
+                        }
+
+                        .car-3d.tesla .f-right {
+                            transform: translate(-50%, -50%) rotateY(-90deg) rotateZ(-90deg) translateZ(6px);
+                        }
+
+                        .car-3d.tesla .f-top {
+                            width: 12px;
+                            height: 24px;
+                            transform: translate(-50%, -50%) translateZ(6px);
+                            /* Tesla Glass Roof Effect */
+                            background-image: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8));
+                            background-size: 8px 16px;
+                            background-position: center;
+                            background-repeat: no-repeat;
                         }
 
                         .c-tesla-1 {
                             top: 48px;
-                            right: 24px;
-                            /* 15px from right edge of 80px slot */
+                            right: 34px;
                             background: #cc0000;
-                            /* Tesla Red */
                             box-shadow: 0 0 8px rgba(204, 0, 0, 0.4);
                         }
 
                         .c-tesla-2 {
                             top: 78px;
-                            right: 24px;
-                            /* 15px from right edge of 80px slot */
+                            right: 34px;
                             background: #ffffff;
-                            /* Tesla White */
                             box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
                         }
 
                         .c-tesla-3 {
                             top: 108px;
-                            left: 24px;
-                            /* 15px from left edge of 80px slot */
+                            left: 34px;
                             background: #cc0000;
                             box-shadow: 0 0 8px rgba(204, 0, 0, 0.4);
                         }
+
 
                         /* Security Cameras */
                         .camera-pole {

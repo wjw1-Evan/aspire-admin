@@ -695,20 +695,42 @@
                     <!-- Environment Health (NEW) -->
                     <div class="cp-card">
                         <h4>🌱 环境指标 (Environment)</h4>
-                        <div style="display: flex; justify-content: space-around; gap: 0.5rem; margin-top: 0.5rem;">
-                            <div style="text-align: center;">
-                                <div style="font-size: 0.9rem; color: #4ade80; font-weight: bold;" id="env-temp">24°C
+                        <div
+                            style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; margin-top: 0.8rem;">
+                            <div
+                                style="text-align: center; background: rgba(255,255,255,0.05); padding: 0.8rem; border-radius: 8px;">
+                                <div style="font-size: 1.1rem; color: #4ade80; font-weight: bold;" id="env-temp">24.5°C
                                 </div>
-                                <div style="font-size: 0.6rem; color: var(--text-muted);">温度</div>
+                                <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">温度</div>
                             </div>
-                            <div style="text-align: center;">
-                                <div style="font-size: 0.9rem; color: #3b82f6; font-weight: bold;" id="env-hum">45%
+                            <div
+                                style="text-align: center; background: rgba(255,255,255,0.05); padding: 0.8rem; border-radius: 8px;">
+                                <div style="font-size: 1.1rem; color: #3b82f6; font-weight: bold;" id="env-hum">45%
                                 </div>
-                                <div style="font-size: 0.6rem; color: var(--text-muted);">湿度</div>
+                                <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">湿度</div>
                             </div>
-                            <div style="text-align: center;">
-                                <div style="font-size: 0.9rem; color: #fbbf24; font-weight: bold;" id="env-pm">18</div>
-                                <div style="font-size: 0.6rem; color: var(--text-muted);">PM2.5</div>
+                            <div
+                                style="text-align: center; background: rgba(255,255,255,0.05); padding: 0.8rem; border-radius: 8px;">
+                                <div style="font-size: 1.1rem; color: #fbbf24; font-weight: bold;" id="env-pm">18</div>
+                                <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">PM2.5</div>
+                            </div>
+                            <div
+                                style="text-align: center; background: rgba(255,255,255,0.05); padding: 0.8rem; border-radius: 8px;">
+                                <div style="font-size: 1.1rem; color: #f87171; font-weight: bold;" id="env-noise">45dB
+                                </div>
+                                <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">噪音</div>
+                            </div>
+                            <div
+                                style="text-align: center; background: rgba(255,255,255,0.05); padding: 0.8rem; border-radius: 8px;">
+                                <div style="font-size: 1.1rem; color: #a78bfa; font-weight: bold;" id="env-co2">420
+                                </div>
+                                <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">CO2</div>
+                            </div>
+                            <div
+                                style="text-align: center; background: rgba(255,255,255,0.05); padding: 0.8rem; border-radius: 8px;">
+                                <div style="font-size: 1.1rem; color: #22d3ee; font-weight: bold;" id="env-lux">12,500Lx
+                                </div>
+                                <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">光照</div>
                             </div>
                         </div>
                     </div>
@@ -898,10 +920,8 @@
                             <div class="parking-label">P</div>
                             <div class="b-label" style="transform: translateZ(20px) rotateX(-60deg);">停车场</div>
                             <div class="energy-label el-parking">
-                                <div class="e-val" id="map-val-parking">156</div>
-                                <div class="e-line"
-                                    style="background: linear-gradient(to top, rgba(34,197,94,0.2), #4ade80); height: 30px;">
-                                </div>
+                                <div class="e-val" id="map-val-parking">156 / 800</div>
+                                <div class="e-line"></div>
                             </div>
                         </div>
 
@@ -972,6 +992,9 @@
                             <div class="occupancy-label el-rda-occ">
                                 <div class="occ-tag">入住率 85%</div>
                             </div>
+                            <div class="env-label el-rda-env">
+                                <div class="env-tag">55dB</div>
+                            </div>
                             <div class="energy-label el-rda">
                                 <div class="e-val">128 kW</div>
                                 <div class="e-line"></div>
@@ -1018,6 +1041,9 @@
                             <div class="occupancy-label el-mall-occ">
                                 <div class="occ-tag">入住率 94%</div>
                             </div>
+                            <div class="env-label el-mall-env">
+                                <div class="env-tag">45dB</div>
+                            </div>
                             <div class="energy-label el-mall">
                                 <div class="e-val">310 kW</div>
                                 <div class="e-line"></div>
@@ -1062,6 +1088,9 @@
                             <div class="b-label" style="transform: translateZ(50px) rotateX(-60deg);">体育中心 Gym</div>
                             <div class="occupancy-label el-gym-occ">
                                 <div class="occ-tag">入住率 100%</div>
+                            </div>
+                            <div class="env-label el-gym-env">
+                                <div class="env-tag">60dB</div>
                             </div>
                             <div class="energy-label el-gym">
                                 <div class="e-val">45 kW</div>
@@ -1114,6 +1143,9 @@
                                 <div class="face f-top"></div>
                             </div>
                             <div class="b-label" style="transform: translateZ(70px) rotateX(-60deg);">数据中心</div>
+                            <div class="env-label el-data-env">
+                                <div class="env-tag">50dB</div>
+                            </div>
                             <div class="energy-label el-data">
                                 <div class="e-val">520 kW</div>
                                 <div class="e-line"></div>
@@ -1532,6 +1564,7 @@
                             top: 50%;
                             left: 50%;
                             transform: translate(-420px, 480px);
+                            transform-style: preserve-3d;
                             /* Precision Markings: 80px spots | 120px driveway | 80px spots */
                             background-image:
                                 /* Horizontal separators between cars (every 30px, offset by 15px) */
@@ -2975,6 +3008,39 @@
                             box-shadow: 0 0 5px #4ade80;
                         }
 
+                        /* NEW: Environment Label Style */
+                        .env-label {
+                            position: absolute;
+                            transform-style: preserve-3d;
+                            pointer-events: none;
+                            z-index: 11;
+                        }
+
+                        .env-tag {
+                            position: absolute;
+                            left: 50%;
+                            top: 50%;
+                            transform: translate(-50%, -50%);
+                            background: rgba(15, 23, 42, 0.85);
+                            border: 1px solid #f87171;
+                            /* Red-400 */
+                            padding: 2px 8px;
+                            border-radius: 20px;
+                            color: #f87171;
+                            font-size: 9px;
+                            font-weight: bold;
+                            white-space: nowrap;
+                            box-shadow: 0 0 10px rgba(248, 113, 113, 0.4);
+                            display: flex;
+                            align-items: center;
+                            gap: 3px;
+                        }
+
+                        .env-tag::before {
+                            content: '🔊';
+                            font-size: 8px;
+                        }
+
                         .energy-label {
                             margin-top: 0;
                         }
@@ -3007,6 +3073,10 @@
 
                         .b-rd-a .occupancy-label {
                             --h-pos: 170px;
+                        }
+
+                        .b-rd-a .env-label {
+                            --h-pos: 100px;
                         }
 
                         /* R&D B 研发B */
@@ -3048,6 +3118,10 @@
                             --h-pos: 180px;
                         }
 
+                        .b-mall .env-label {
+                            --h-pos: 120px;
+                        }
+
                         /* Apartments 人才公寓 */
                         .b-apt .b-label {
                             --h-pos: 210px;
@@ -3068,6 +3142,10 @@
 
                         .b-gym .occupancy-label {
                             --h-pos: 110px;
+                        }
+
+                        .b-gym .env-label {
+                            --h-pos: 50px;
                         }
 
                         /* PV Array 光伏阵列 */
@@ -3097,8 +3175,21 @@
                             --h-pos: 160px;
                         }
 
+                        .b-data .env-label {
+                            --h-pos: 130px;
+                        }
+
                         .b-data .energy-label {
                             --h-pos: 100px;
+                        }
+
+                        /* Parking Lot 停车场 */
+                        .parking-lot .b-label {
+                            --h-pos: 80px;
+                        }
+
+                        .parking-lot .energy-label {
+                            --h-pos: 40px;
                         }
 
                         /* Power Station 动力中心 */
@@ -3492,8 +3583,8 @@
                             </div>
                         </div>
                         <div class="cp-stat-row">
-                            <span class="stat-label">剩余车位 (Parking)</span>
-                            <span class="stat-value" id="val-parking" style="color: #4ade80;">156</span>
+                            <span class="stat-label">空余/总位 (Parking)</span>
+                            <span class="stat-value" id="val-parking" style="color: #4ade80;">156 / 800</span>
                         </div>
                     </div>
                 </div>
@@ -3504,15 +3595,15 @@
                         style="flex-direction: column; align-items: flex-start; justify-content: flex-start; padding: 0.6rem 1rem; overflow: hidden;">
                         <div
                             style="display: flex; width: 100%; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                            <div style="font-size: 0.7rem; color: var(--text-muted);">项目管理 (Projects)</div>
-                            <div style="font-size: 1.2rem; font-weight: bold;">12 <span
+                            <div style="font-size: 0.9rem; color: var(--text-muted);">项目管理 (Projects)</div>
+                            <div style="font-size: 1.4rem; font-weight: bold;">12 <span
                                     style="font-size: 0.8rem; font-weight: normal;">进行中</span></div>
                         </div>
-                        <div style="font-size: 0.65rem; color: #ffffff; opacity: 0.8; width: 100%;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                        <div style="font-size: 0.8rem; color: #ffffff; opacity: 0.9; width: 100%;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                                 <span>• 园区二期景观工程</span><span style="color: #3b82f6;">65%</span>
                             </div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                                 <span>• 5G工业平台部署</span><span style="color: #10b981;">90%</span>
                             </div>
                             <div style="display: flex; justify-content: space-between;">
@@ -3524,15 +3615,15 @@
                         style="flex-direction: column; align-items: flex-start; justify-content: flex-start; padding: 0.6rem 1rem; overflow: hidden;">
                         <div
                             style="display: flex; width: 100%; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                            <div style="font-size: 0.7rem; color: var(--text-muted);">待办公文 (Docs)</div>
-                            <div style="font-size: 1.2rem; font-weight: bold;">5 <span
+                            <div style="font-size: 0.9rem; color: var(--text-muted);">待办公文 (Docs)</div>
+                            <div style="font-size: 1.4rem; font-weight: bold;">5 <span
                                     style="font-size: 0.8rem; font-weight: normal;">待审批</span></div>
                         </div>
-                        <div style="font-size: 0.65rem; color: #ffffff; opacity: 0.8; width: 100%;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                        <div style="font-size: 0.8rem; color: #ffffff; opacity: 0.9; width: 100%;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                                 <span>• 租户 A1-403 续租合同</span><span style="color: #60a5fa;">法务核中</span>
                             </div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                                 <span>• 园区Q1物业采购申请</span><span style="color: #60a5fa;">待总办签</span>
                             </div>
                             <div style="display: flex; justify-content: space-between;">
@@ -3543,11 +3634,11 @@
                     <div class="cp-card"
                         style="flex-direction: row; align-items: center; justify-content: space-between; padding: 0.5rem 1rem;">
                         <div>
-                            <div style="font-size: 0.7rem; color: var(--text-muted);">智能小科 (AI)</div>
-                            <div style="font-size: 1.2rem; font-weight: bold;">Online <span
+                            <div style="font-size: 0.9rem; color: var(--text-muted);">智能小科 (AI)</div>
+                            <div style="font-size: 1.4rem; font-weight: bold;">Online <span
                                     style="font-size: 0.8rem; font-weight: normal;">助手</span></div>
                         </div>
-                        <div style="font-size: 1.5rem;">🤖</div>
+                        <div style="font-size: 2rem;">🤖</div>
                     </div>
                 </div>
 
@@ -3838,6 +3929,11 @@
                 { id: '.el-off-f-occ .occ-tag', base: 75, variance: 3, unit: '%', prefix: '入住率 ' },
                 { id: '.el-off-g-occ .occ-tag', base: 90, variance: 1, unit: '%', prefix: '入住率 ' },
                 { id: '.el-tea-occ .occ-tag', base: 82, variance: 4, unit: '%', prefix: '入住率 ' },
+                /* Environment Data */
+                { id: '.el-rda-env .env-tag', base: 55, variance: 5, unit: 'dB' },
+                { id: '.el-mall-env .env-tag', base: 45, variance: 10, unit: 'dB' },
+                { id: '.el-gym-env .env-tag', base: 60, variance: 8, unit: 'dB' },
+                { id: '.el-data-env .env-tag', base: 50, variance: 2, unit: 'dB' },
                 { id: '.el-gate .e-val', type: 'status' } // Gate stays 'Live'
             ];
 
@@ -3859,12 +3955,21 @@
             if (document.getElementById('env-hum')) document.getElementById('env-hum').innerText = hum.toFixed(0) + '%';
             if (document.getElementById('env-pm')) document.getElementById('env-pm').innerText = pm.toFixed(0);
 
+            const noise = 40 + Math.random() * 10;
+            const co2 = 400 + Math.random() * 50;
+            const lux = 10000 + Math.floor(Math.random() * 5000);
+            if (document.getElementById('env-noise')) document.getElementById('env-noise').innerText = noise.toFixed(0) + 'dB';
+            if (document.getElementById('env-co2')) document.getElementById('env-co2').innerText = co2.toFixed(0);
+            if (document.getElementById('env-lux')) document.getElementById('env-lux').innerText = lux.toLocaleString() + 'Lx';
+
             // Update Parking & Logistics
             if (document.getElementById('val-parking')) {
+                const total = 800;
                 const p = 150 + Math.floor(Math.random() * 10);
-                document.getElementById('val-parking').innerText = p;
+                const txt = p + ' / ' + total;
+                document.getElementById('val-parking').innerText = txt;
                 if (document.getElementById('map-val-parking')) {
-                    document.getElementById('map-val-parking').innerText = p;
+                    document.getElementById('map-val-parking').innerText = txt;
                 }
             }
             if (document.getElementById('val-visitors')) {
@@ -3915,7 +4020,7 @@
             }
 
             // Billboard effect: negZ cancels park spin, negX stands the label up towards user
-            const labels = document.querySelectorAll('.b-label, .energy-label, .occupancy-label');
+            const labels = document.querySelectorAll('.b-label, .energy-label, .occupancy-label, .env-label');
             const negZ = -state.rotZ;
             const negX = -state.rotX;
             labels.forEach(el => {

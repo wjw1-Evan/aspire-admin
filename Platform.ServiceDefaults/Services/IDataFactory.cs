@@ -63,6 +63,11 @@ public interface IDataFactory<T> where T : class, IEntity, ISoftDeletable, ITime
         System.Linq.Expressions.Expression<Func<T, bool>>? filter = null,
         CancellationToken cancellationToken = default);
 
+    Task<long> SumAsync(
+        System.Linq.Expressions.Expression<Func<T, bool>>? filter,
+        System.Linq.Expressions.Expression<Func<T, long>> selector,
+        CancellationToken cancellationToken = default);
+
     // 🚀 忽略过滤器操作（用于管理场景）
     Task<T?> GetByIdWithoutTenantFilterAsync(string id, CancellationToken cancellationToken = default);
     Task<List<T>> FindWithoutTenantFilterAsync(

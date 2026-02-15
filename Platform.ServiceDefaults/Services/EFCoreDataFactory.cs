@@ -75,6 +75,13 @@ public class EFCoreDataFactory<T>(
         return await query.CountAsync(cancellationToken);
     }
 
+    public async Task<long> SumAsync(Expression<Func<T, bool>>? filter, Expression<Func<T, long>> selector, CancellationToken cancellationToken = default)
+    {
+        IQueryable<T> query = _dbSet;
+        if (filter != null) query = query.Where(filter);
+        return await query.SumAsync(selector, cancellationToken);
+    }
+
     #endregion
 
     #region 创建操作

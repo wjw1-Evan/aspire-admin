@@ -4,6 +4,8 @@ using Platform.ServiceDefaults.Services;
 using System.Text;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace Platform.ApiService.Services;
 
@@ -13,6 +15,7 @@ namespace Platform.ApiService.Services;
 public class FilePreviewService : IFilePreviewService
 {
     private readonly ICloudStorageService _cloudStorageService;
+    private readonly IDataFactory<FileItem> _fileItemFactory;
     private readonly IFileStorageFactory _fileStorageFactory;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<FilePreviewService> _logger;
@@ -55,11 +58,13 @@ public class FilePreviewService : IFilePreviewService
     /// </summary>
     public FilePreviewService(
         ICloudStorageService cloudStorageService,
+        IDataFactory<FileItem> fileItemFactory,
         IFileStorageFactory fileStorageFactory,
         ITenantContext tenantContext,
         ILogger<FilePreviewService> logger)
     {
         _cloudStorageService = cloudStorageService ?? throw new ArgumentNullException(nameof(cloudStorageService));
+        _fileItemFactory = fileItemFactory ?? throw new ArgumentNullException(nameof(fileItemFactory));
         _fileStorageFactory = fileStorageFactory ?? throw new ArgumentNullException(nameof(fileStorageFactory));
         _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -308,12 +313,14 @@ public class FilePreviewService : IFilePreviewService
 
         try
         {
-            var cutoffDate = DateTime.UtcNow.AddDays(-expireDays);
+            // 由于当前的 IFileStorageFactory 不支持列出文件，无法有效地遍历和清理孤立的缩略图
+            // 这里我们只做日志记录，提示功能受限
+            _logger.LogWarning("CleanupPreviewCacheAsync is partially implemented. Orphaned thumbnails cannot be cleaned up without ListFiles capability in IFileStorageFactory.");
 
-            // 这里应该实现清理逻辑，删除过期的预览和缩略图文件
-            // 由于GridFS的限制，这里只是一个示例实现
+            // 未来如果 IFileStorageFactory 支持 ListFiles，可以遍历 cloud_storage_thumbnails 桶
+            // 并删除不在 FileItems.ThumbnailGridFSId 中的文件
 
-            _logger.LogInformation("Cleaned up preview cache older than {ExpireDays} days", expireDays);
+            await Task.CompletedTask;
         }
         catch (Exception ex)
         {
@@ -323,6 +330,7 @@ public class FilePreviewService : IFilePreviewService
                 ErrorCode = "CLEANUP_FAILED",
                 ErrorMessage = ex.Message
             });
+            result.FailureCount++;
         }
 
         result.EndTime = DateTime.UtcNow;
@@ -334,16 +342,20 @@ public class FilePreviewService : IFilePreviewService
     /// </summary>
     public async Task<PreviewStatistics> GetPreviewStatisticsAsync()
     {
-        // 这里应该实现统计逻辑，统计预览次数、缓存大小等
-        // 由于没有专门的统计表，这里返回一个示例实现
-
         var statistics = new PreviewStatistics
         {
-            TotalPreviews = 0,
-            TotalThumbnails = 0,
-            CacheSize = 0,
             LastUpdatedAt = DateTime.UtcNow
         };
+
+        // 统计生成的缩略图数量 (ThumbnailGridFSId 不为空)
+        statistics.TotalThumbnails = await _fileItemFactory.CountAsync(f => f.ThumbnailGridFSId != null && f.ThumbnailGridFSId != "");
+
+        // 统计总预览次数 (DownloadCount 并不完全等同于预览，但作为近似值)
+        var totalDownloads = await _fileItemFactory.SumAsync(null, f => (long)f.DownloadCount);
+        statistics.TotalPreviews = totalDownloads;
+
+        // 统计按类型分布 (需要聚合查询，这里简化通过多次查询或后续优化)
+        // 暂时只统计总数
 
         return statistics;
     }
@@ -465,12 +477,39 @@ public class FilePreviewService : IFilePreviewService
     /// </summary>
     private async Task GeneratePdfPreviewAsync(FileItem fileItem, FilePreviewContent previewContent, PreviewOptions options)
     {
-        // 这里应该实现PDF预览逻辑，可能需要PDF处理库
-        await Task.Delay(100); // 模拟处理时间
+        try
+        {
+            // 由于缺乏专门的PDF处理库，我们生成一个带文字的图片作为预览
+            var width = options.MaxWidth ?? 800;
+            var height = options.MaxHeight ?? 600;
 
-        previewContent.Content = "PDF预览功能待实现";
-        previewContent.PageCount = 1; // 应该从PDF中获取实际页数
-        previewContent.CurrentPage = options.Page ?? 1;
+            using var image = new Image<SixLabors.ImageSharp.PixelFormats.Rgba32>(width, height);
+
+            // 填充白色背景
+            image.Mutate(x => x.BackgroundColor(SixLabors.ImageSharp.Color.White));
+
+            // 绘制文字 (简单模拟，不使用字体库以避免依赖问题，或者画简单的形状)
+            // 由于ImageSharp.Drawing需要字体，这里简化为只返回基本信息
+            // 如果项目中引入了字体，可以使用 TextGraphics
+
+            // 简单起见，我们生成一个带有 "PDF Preview" 字样颜色块的图片
+            image.Mutate(x => x.Fill(SixLabors.ImageSharp.Color.LightGray, new Rectangle(0, 0, width, 50)));
+
+            using var ms = new MemoryStream();
+            await image.SaveAsPngAsync(ms);
+            var base64 = Convert.ToBase64String(ms.ToArray());
+
+            previewContent.Content = $"data:image/png;base64,{base64}";
+            previewContent.ContentType = "image/png";
+            previewContent.PageCount = 1;
+            previewContent.CurrentPage = 1;
+            previewContent.Metadata["note"] = "Preview generated as placeholder";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to generate PDF placeholder for {FileId}", fileItem.Id);
+            previewContent.Content = "PDF预览生成失败";
+        }
     }
 
     /// <summary>
@@ -478,12 +517,13 @@ public class FilePreviewService : IFilePreviewService
     /// </summary>
     private async Task GenerateVideoPreviewAsync(FileItem fileItem, FilePreviewContent previewContent, PreviewOptions options)
     {
-        // 这里应该实现视频预览逻辑，可能需要FFmpeg等工具
-        await Task.Delay(100); // 模拟处理时间
-
-        previewContent.Content = $"/api/cloud-storage/files/{fileItem.Id}/stream";
+        // 返回流地址供前端播放器使用
+        previewContent.Content = $"/api/cloud-storage/files/{fileItem.Id}/download";
         previewContent.ContentType = fileItem.MimeType;
-        previewContent.Metadata["duration"] = "未知"; // 应该从视频中获取实际时长
+        previewContent.Metadata["duration"] = "未知"; // 需要FFmpeg等工具分析
+        previewContent.Metadata["streamingUrl"] = $"/api/cloud-storage/files/{fileItem.Id}/download";
+
+        await Task.CompletedTask;
     }
 
     /// <summary>
@@ -491,12 +531,13 @@ public class FilePreviewService : IFilePreviewService
     /// </summary>
     private async Task GenerateAudioPreviewAsync(FileItem fileItem, FilePreviewContent previewContent, PreviewOptions options)
     {
-        // 这里应该实现音频预览逻辑
-        await Task.Delay(100); // 模拟处理时间
-
-        previewContent.Content = $"/api/cloud-storage/files/{fileItem.Id}/stream";
+        // 返回流地址供前端播放器使用
+        previewContent.Content = $"/api/cloud-storage/files/{fileItem.Id}/download";
         previewContent.ContentType = fileItem.MimeType;
-        previewContent.Metadata["duration"] = "未知"; // 应该从音频中获取实际时长
+        previewContent.Metadata["duration"] = "未知";
+        previewContent.Metadata["streamingUrl"] = $"/api/cloud-storage/files/{fileItem.Id}/download";
+
+        await Task.CompletedTask;
     }
 
     #endregion

@@ -83,7 +83,7 @@ const CloudStorageSharedPage: React.FC = () => {
     const isMobile = !screens.md;
 
     // 表格引用
-    const actionRef = useRef<ActionType>();
+    const actionRef = useRef<ActionType | null>(null);
 
     // 状态管理
     const [activeTab, setActiveTab] = useState<'my-shares' | 'shared-with-me'>('my-shares');
@@ -111,7 +111,7 @@ const CloudStorageSharedPage: React.FC = () => {
 
     // 刷新处理
     const handleRefresh = useCallback(() => {
-        actionRef.current?.reload();
+        actionRef.current?.reload?.();
     }, []);
 
     const mapShareType = (type: any): 'internal' | 'external' => {
@@ -196,17 +196,17 @@ const CloudStorageSharedPage: React.FC = () => {
             }
 
             if (response.success && response.data) {
-                const list = response.data.list || response.data.data || [];
+                const list = response.data.data || [];
                 const transformed = list.map(transformShare);
 
                 // 补齐文件名（接口只返回 fileItemId）
                 const missingIds = transformed
-                    .map(item => item.fileId)
-                    .filter(id => id && !fileNameMap[id]);
+                    .map((item: any) => item.fileId)
+                    .filter((id: string) => id && !fileNameMap[id]);
 
                 if (missingIds.length > 0) {
                     const uniqueIds = Array.from(new Set(missingIds));
-                    const details = await Promise.all(uniqueIds.map(async (id) => {
+                    const details = await Promise.all(uniqueIds.map(async (id: string) => {
                         try {
                             const resp = await getFileDetail(id);
                             if (resp.success && resp.data) {
@@ -218,19 +218,19 @@ const CloudStorageSharedPage: React.FC = () => {
                         return { id, name: id };
                     }));
 
-                    const newMap = { ...fileNameMap };
+                    const newMap: Record<string, string> = { ...fileNameMap };
                     details.forEach(d => {
                         if (d?.id) newMap[d.id] = d.name;
                     });
                     setFileNameMap(newMap);
 
-                    transformed.forEach(item => {
+                    transformed.forEach((item: any) => {
                         if (newMap[item.fileId]) {
                             item.fileName = newMap[item.fileId];
                         }
                     });
                 } else {
-                    transformed.forEach(item => {
+                    transformed.forEach((item: any) => {
                         if (fileNameMap[item.fileId]) {
                             item.fileName = fileNameMap[item.fileId];
                         }
@@ -239,7 +239,7 @@ const CloudStorageSharedPage: React.FC = () => {
 
                 return {
                     data: transformed,
-                    total: response.data.total || response.data.totalCount || list.length,
+                    total: response.data.total || list.length,
                     success: true,
                 };
             }
@@ -269,7 +269,7 @@ const CloudStorageSharedPage: React.FC = () => {
         if (actionRef.current?.reloadAndReset) {
             actionRef.current.reloadAndReset();
         } else if (actionRef.current?.reload) {
-            actionRef.current.reload();
+            actionRef.current.reload?.();
         }
     }, []);
 
@@ -282,7 +282,7 @@ const CloudStorageSharedPage: React.FC = () => {
         if (actionRef.current?.reloadAndReset) {
             actionRef.current.reloadAndReset();
         } else if (actionRef.current?.reload) {
-            actionRef.current.reload();
+            actionRef.current.reload?.();
         }
     }, [searchForm]);
 
@@ -291,7 +291,7 @@ const CloudStorageSharedPage: React.FC = () => {
         setActiveTab(key as 'my-shares' | 'shared-with-me');
         setSelectedRowKeys([]);
         setSelectedRows([]);
-        actionRef.current?.reload();
+        actionRef.current?.reload?.();
     }, []);
 
     // 分享操作
@@ -329,7 +329,7 @@ const CloudStorageSharedPage: React.FC = () => {
         try {
             await deleteShare(share.id);
             success('删除分享成功');
-            actionRef.current?.reload();
+            actionRef.current?.reload?.();
         } catch (err) {
             error('删除分享失败');
         }
@@ -339,7 +339,7 @@ const CloudStorageSharedPage: React.FC = () => {
         try {
             await toggleShare(share.id, !share.isEnabled);
             success(`${share.isEnabled ? '禁用' : '启用'}分享成功`);
-            actionRef.current?.reload();
+            actionRef.current?.reload?.();
         } catch (err) {
             error(`${share.isEnabled ? '禁用' : '启用'}分享失败`);
         }
@@ -382,7 +382,7 @@ const CloudStorageSharedPage: React.FC = () => {
             setEditShareVisible(false);
             setEditingShare(null);
             editShareForm.resetFields();
-            actionRef.current?.reload();
+            actionRef.current?.reload?.();
         } catch (err) {
             error('更新分享失败');
         }
@@ -485,7 +485,7 @@ const CloudStorageSharedPage: React.FC = () => {
         {
             title: '状态',
             key: 'status',
-            render: (_, record: FileShare) => getShareStatusTag(record),
+            render: (_: any, record: FileShare) => getShareStatusTag(record),
         },
         {
             title: '访问次数',
@@ -507,7 +507,7 @@ const CloudStorageSharedPage: React.FC = () => {
             title: '操作',
             key: 'action',
             fixed: 'right' as const,
-            render: (_, record: FileShare) => (
+            render: (_: any, record: FileShare) => (
                 <Space size="small">
                     <Button
                         type="link"
@@ -586,24 +586,24 @@ const CloudStorageSharedPage: React.FC = () => {
                     layout={isMobile ? 'vertical' : 'inline'}
                     onFinish={handleSearch}
                 >
-                    <Form.Item name="shareType" label="分享类型">
+                    <Form.Item name="shareType" label={intl.formatMessage({ id: 'pages.cloud-storage.shared.label.shareType' })}>
                         <Select
-                            placeholder="选择分享类型"
+                            placeholder={intl.formatMessage({ id: 'pages.cloud-storage.shared.placeholder.shareType' })}
                             style={isMobile ? { width: '100%' } : { width: 120 }}
                             allowClear
                         >
-                            <Select.Option value="internal">内部分享</Select.Option>
-                            <Select.Option value="external">外部分享</Select.Option>
+                            <Select.Option value="internal">{intl.formatMessage({ id: 'pages.cloud-storage.shared.type.internal' })}</Select.Option>
+                            <Select.Option value="external">{intl.formatMessage({ id: 'pages.cloud-storage.shared.type.external' })}</Select.Option>
                         </Select>
                     </Form.Item>
-                    <Form.Item name="isEnabled" label="状态">
+                    <Form.Item name="isEnabled" label={intl.formatMessage({ id: 'pages.table.isEnabled' })}>
                         <Select
-                            placeholder="选择状态"
+                            placeholder={intl.formatMessage({ id: 'pages.cloud-storage.shared.placeholder.status' })}
                             style={isMobile ? { width: '100%' } : { width: 100 }}
                             allowClear
                         >
-                            <Select.Option value={true}>启用</Select.Option>
-                            <Select.Option value={false}>禁用</Select.Option>
+                            <Select.Option value={true}>{intl.formatMessage({ id: 'pages.cloud-storage.shared.status.enabled' })}</Select.Option>
+                            <Select.Option value={false}>{intl.formatMessage({ id: 'pages.cloud-storage.shared.status.disabled' })}</Select.Option>
                         </Select>
                     </Form.Item>
                     <Form.Item>
@@ -613,13 +613,13 @@ const CloudStorageSharedPage: React.FC = () => {
                                 htmlType="submit"
                                 style={isMobile ? { width: '100%' } : {}}
                             >
-                                搜索
+                                {intl.formatMessage({ id: 'pages.searchTable.search' })}
                             </Button>
                             <Button
                                 onClick={handleReset}
                                 style={isMobile ? { width: '100%' } : {}}
                             >
-                                重置
+                                {intl.formatMessage({ id: 'pages.searchTable.reset' })}
                             </Button>
                         </Space>
                     </Form.Item>

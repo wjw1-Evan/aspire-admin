@@ -46,7 +46,7 @@ const DocumentCreateModal: React.FC<DocumentCreateModalProps> = ({
             confirmLoading={nextStepLoading}
             onOk={onOk}
             onCancel={onCancel}
-            maskClosable={false}
+            mask={{ closable: false }}
             width={720}
         >
             {!isFormStep ? (

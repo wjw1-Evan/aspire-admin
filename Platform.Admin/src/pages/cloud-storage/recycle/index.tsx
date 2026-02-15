@@ -570,7 +570,7 @@ const CloudStorageRecyclePage: React.FC = () => {
                                 icon={<UndoOutlined />}
                                 onClick={handleBatchRestore}
                             >
-                                批量恢复 ({selectedRowKeys.length})
+                                {intl.formatMessage({ id: 'pages.cloud-storage.recycle.action.batchRestore' })} ({selectedRowKeys.length})
                             </Button>
                             <Button
                                 key="batch-delete"
@@ -578,7 +578,7 @@ const CloudStorageRecyclePage: React.FC = () => {
                                 icon={<DeleteOutlined />}
                                 onClick={handleBatchPermanentDelete}
                             >
-                                批量永久删除 ({selectedRowKeys.length})
+                                {intl.formatMessage({ id: 'pages.cloud-storage.recycle.action.batchDelete' })} ({selectedRowKeys.length})
                             </Button>
                         </>
                     )}
@@ -587,7 +587,7 @@ const CloudStorageRecyclePage: React.FC = () => {
                         icon={<ClearOutlined />}
                         onClick={handleAutoCleanup}
                     >
-                        自动清理
+                        {intl.formatMessage({ id: 'pages.cloud-storage.recycle.action.autoCleanup' })}
                     </Button>
                     <Button
                         key="refresh"

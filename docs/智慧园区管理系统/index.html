@@ -737,6 +737,7 @@
 
                             <!-- 3. Perimeter & Special -->
                             <div class="road road-ring"></div>
+                            <div class="road road-south-main"></div>
                             <div class="road road-parking-connect"></div>
                             <!-- Park Zones -->
                             <div class="zone-green"></div>
@@ -778,11 +779,7 @@
                             </div>
                         </div>
 
-                        <!-- Green Zones & Landscape -->
-                        <!-- North Park (Back) -->
-                        <div class="land-zone lz-north"></div>
-                        <!-- South Park (Front) -->
-                        <div class="land-zone lz-south"></div>
+                        <!-- Green Zones & Landscape Removed -->
 
                         <!-- Trees (Simplified as Green Markers) -->
                         <div class="tree t-1"></div>
@@ -793,6 +790,33 @@
                         <div class="tree t-6"></div>
                         <div class="tree t-7"></div>
                         <div class="tree t-8"></div>
+
+                        <!-- Photovoltaic Power Generation (South) -->
+                        <div class="solar-array">
+                            <div class="solar-panel"></div>
+                            <div class="solar-panel"></div>
+                            <div class="solar-panel"></div>
+                            <div class="solar-panel"></div>
+                            <div class="solar-panel"></div>
+                            <div class="solar-panel"></div>
+                            <div class="solar-panel"></div>
+                            <div class="solar-panel"></div>
+
+                            <!-- 3D Wrappers to prevent label overlap while maintaining billboard effect -->
+                            <div
+                                style="transform: translateY(60px); transform-style: preserve-3d; position: absolute; left: 50%; top: 50%;">
+                                <div class="b-label" style="font-size: 10px;">光伏发电阵列 (PV Array)</div>
+                            </div>
+                            <div
+                                style="transform: translateY(-20px); transform-style: preserve-3d; position: absolute; left: 50%; top: 50%;">
+                                <div class="energy-label el-pv">
+                                    <div class="e-val" style="color: #4ade80;">+45kW</div>
+                                    <div class="e-line"
+                                        style="background: linear-gradient(to top, rgba(34,197,94,0.2), #4ade80); height: 30px; display: block;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
                         <!-- Main Gate (South) -->
                         <div class="building-group main-gate">
@@ -853,6 +877,10 @@
                             <div class="car c-3"></div>
                             <div class="car c-4"></div>
                             <div class="car c-5"></div>
+                            <!-- Added Teslas -->
+                            <div class="car tesla c-tesla-1"></div>
+                            <div class="car tesla c-tesla-2"></div>
+                            <div class="car tesla c-tesla-3"></div>
                             <div class="parking-label">P</div>
                             <div class="b-label" style="transform: translateZ(20px) rotateX(-60deg);">停车场</div>
                             <div class="energy-label el-parking">
@@ -899,14 +927,7 @@
                                 <div class="face f-right"></div>
                                 <div class="face f-top"></div>
                             </div>
-                            <!-- Top Spire -->
-                            <div class="cube b-hq-top">
-                                <div class="face f-front"></div>
-                                <div class="face f-back"></div>
-                                <div class="face f-left"></div>
-                                <div class="face f-right"></div>
-                                <div class="face f-top"></div>
-                            </div>
+                            <!-- Top decoration removed -->
                             <div class="b-label" style="transform: translateZ(200px) rotateX(-60deg);">总部大厦 HQ</div>
                             <div class="energy-label el-hq">
                                 <div class="e-val">452 kW</div>
@@ -1076,6 +1097,31 @@
                             <div class="b-label" style="transform: translateZ(40px) rotateX(-60deg);">变电站</div>
                             <div class="energy-label el-power">
                                 <div class="e-val">880 kW</div>
+                                <div class="e-line"></div>
+                            </div>
+                        </div>
+
+                        <!-- 11. Emerald Tea House (SE Corner) -->
+                        <div class="building-group b-teahouse">
+                            <!-- Tier 1: Base -->
+                            <div class="cube b-tea-base">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <!-- Tier 2: Upper Level -->
+                            <div class="cube b-tea-top">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="b-label">臻韵茶楼 (Teahouse)</div>
+                            <div class="energy-label el-tea">
+                                <div class="e-val">12 kW</div>
                                 <div class="e-line"></div>
                             </div>
                         </div>
@@ -1374,26 +1420,55 @@
                             /* Connects to new SW parking location */
                         }
 
+                        /* Central Axis Boulevard (South Gate to HQ) - Standard Style */
+                        .road-south-main {
+                            width: 80px;
+                            height: 500px;
+                            /* Exactly Connects South Gate (500) to HQ Center (0) */
+                            transform: translate(-50%, 60px);
+                            background-image: linear-gradient(90deg, transparent 48%, rgba(255, 255, 255, 0.1) 48%, rgba(255, 255, 255, 0.1) 52%, transparent 52%);
+                        }
+
                         /* Landscape Zones */
-                        .land-zone {
+                        /* Landscape Zones: High-Detail Turf */
+                        /* Landscape Zones (Removed) */
+
+                        /* Photovoltaic (PV) Array Styles */
+                        .solar-array {
                             position: absolute;
-                            background: rgba(34, 197, 94, 0.1);
-                            border: 1px dashed rgba(34, 197, 94, 0.3);
-                            border-radius: 10px;
                             top: 50%;
                             left: 50%;
+                            /* Positioned further North, next to the road corridor */
+                            transform: translate(calc(350px - 50%), -250px);
+                            transform-style: preserve-3d;
+                            display: grid;
+                            grid-template-columns: repeat(4, 50px);
+                            gap: 10px;
+                            justify-content: center;
                         }
 
-                        .lz-north {
-                            width: 300px;
-                            height: 150px;
-                            transform: translate(-50%, -450px);
+                        .solar-panel {
+                            width: 50px;
+                            height: 40px;
+                            background: #1e293b;
+                            border: 1px solid #3b82f6;
+                            transform: rotateX(-25deg);
+                            background-image:
+                                linear-gradient(90deg, rgba(59, 130, 246, 0.3) 1px, transparent 1px),
+                                linear-gradient(rgba(59, 130, 246, 0.3) 1px, transparent 1px);
+                            background-size: 8px 8px;
+                            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(59, 130, 246, 0.4);
+                            position: relative;
                         }
 
-                        .lz-south {
-                            width: 300px;
-                            height: 150px;
-                            transform: translate(-50%, 300px);
+                        .solar-panel::after {
+                            content: '';
+                            position: absolute;
+                            top: 0;
+                            left: 0;
+                            right: 0;
+                            bottom: 0;
+                            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
                         }
 
 
@@ -1402,15 +1477,20 @@
                             position: absolute;
                             width: 280px;
                             height: 160px;
-                            background: rgba(148, 163, 184, 0.1);
-                            border: 1px solid rgba(255, 255, 255, 0.1);
+                            background: rgba(15, 23, 42, 0.6);
+                            border: 1px solid rgba(255, 255, 255, 0.15);
                             top: 50%;
                             left: 50%;
                             transform: translate(-420px, 480px);
-                            /* Markings: White lines */
+                            /* Precision Markings: 80px spots | 120px driveway | 80px spots */
                             background-image:
-                                repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.1) 0, rgba(255, 255, 255, 0.1) 2px, transparent 2px, transparent 30px),
-                                linear-gradient(90deg, transparent 48%, rgba(255, 255, 255, 0.1) 48%, rgba(255, 255, 255, 0.1) 52%, transparent 52%);
+                                /* Horizontal separators between cars (every 30px, offset by 15px) */
+                                repeating-linear-gradient(0deg, transparent 0, transparent 14px, rgba(255, 255, 255, 0.15) 14px, rgba(255, 255, 255, 0.15) 16px, transparent 16px, transparent 30px),
+                                /* Vertical lines defining the parking rows */
+                                linear-gradient(90deg,
+                                    transparent 80px, rgba(255, 255, 255, 0.2) 80px, rgba(255, 255, 255, 0.2) 82px,
+                                    transparent 82px, transparent 198px,
+                                    rgba(255, 255, 255, 0.2) 198px, rgba(255, 255, 255, 0.2) 200px, transparent 200px);
                         }
 
                         .parking-label {
@@ -1438,32 +1518,77 @@
 
                         .c-1 {
                             top: 18px;
-                            left: 20px;
+                            left: 34px;
                             background: #e2e8f0;
                         }
 
                         .c-2 {
                             top: 48px;
-                            left: 20px;
+                            left: 34px;
                             background: #cbd5e1;
                         }
 
                         .c-3 {
                             top: 78px;
-                            left: 20px;
+                            left: 34px;
                             background: #94a3b8;
                         }
 
                         .c-4 {
                             top: 18px;
-                            right: 20px;
+                            right: 34px;
                             background: #f8fafc;
                         }
 
                         .c-5 {
                             top: 108px;
-                            right: 20px;
+                            right: 34px;
                             background: #e2e8f0;
+                        }
+
+                        /* Tesla Vehicles: Red Multi-Coat & Pearl White */
+                        .car.tesla {
+                            border: 1px solid rgba(0, 0, 0, 0.3);
+                            overflow: hidden;
+                        }
+
+                        /* Tesla Glass Roof Effect */
+                        .car.tesla::after {
+                            content: '';
+                            position: absolute;
+                            top: 4px;
+                            left: 2px;
+                            right: 2px;
+                            bottom: 8px;
+                            background: #000;
+                            opacity: 0.8;
+                            border-radius: 1px;
+                        }
+
+                        .c-tesla-1 {
+                            top: 48px;
+                            right: 24px;
+                            /* 15px from right edge of 80px slot */
+                            background: #cc0000;
+                            /* Tesla Red */
+                            box-shadow: 0 0 8px rgba(204, 0, 0, 0.4);
+                        }
+
+                        .c-tesla-2 {
+                            top: 78px;
+                            right: 24px;
+                            /* 15px from right edge of 80px slot */
+                            background: #ffffff;
+                            /* Tesla White */
+                            box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+                        }
+
+                        .c-tesla-3 {
+                            top: 108px;
+                            left: 24px;
+                            /* 15px from left edge of 80px slot */
+                            background: #cc0000;
+                            box-shadow: 0 0 8px rgba(204, 0, 0, 0.4);
                         }
 
                         /* Security Cameras */
@@ -1735,11 +1860,16 @@
                             position: absolute;
                             top: 50%;
                             left: 50%;
-                            border: 1px solid rgba(255, 255, 255, 0.1);
-                            /* Removed inset shadow for solid look */
+                            border: 1px solid rgba(255, 255, 255, 0.12);
                             backface-visibility: visible;
                             background-color: #334155;
-                            /* Default solid color */
+                            /* Global Surface Detail: Light Reflection + Micro Texture */
+                            background-image:
+                                linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, transparent 40%),
+                                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+                            background-size: 100% 100%, 4px 4px, 4px 4px;
+                            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.15);
                         }
 
                         /* Building Specific Styles */
@@ -1806,15 +1936,15 @@
                         /* HQ Tower with Grid Windows */
                         /* HQ Tower with Grid Windows */
                         .b-hq-tower .face {
-                            /* Solid Background */
                             background-color: #0891b2;
-                            /* Cyan-600 */
-                            /* Window Grid Overlay */
+                            /* Premium Glass Facade: Interlocking grids + vertical ribs */
                             background-image:
-                                linear-gradient(rgba(255, 255, 255, 0.8) 1px, transparent 1px),
-                                linear-gradient(90deg, rgba(255, 255, 255, 0.8) 1px, transparent 1px);
-                            background-size: 20px 20px;
+                                linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px, transparent 19px, rgba(255, 255, 255, 0.1) 19px),
+                                linear-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px),
+                                linear-gradient(90deg, rgba(0, 0, 0, 0.2) 2px, transparent 2px);
+                            background-size: 20px 20px, 20px 10px, 40px 100%;
                             border: 1px solid #155e75;
+                            box-shadow: inset 0 0 30px rgba(0, 255, 255, 0.1);
                         }
 
                         /* Directional Lighting for Tower */
@@ -1834,73 +1964,50 @@
                         .b-hq-tower .f-front,
                         .b-hq-tower .f-back {
                             width: 80px;
-                            height: 140px;
-                            transform: translate(-50%, -50%) translateZ(70px) rotateX(90deg) translateZ(30px);
+                            height: 280px;
+                            transform: translate(-50%, -50%) translateZ(140px) rotateX(90deg) translateZ(30px);
                         }
 
                         .b-hq-tower .f-back {
-                            transform: translate(-50%, -50%) translateZ(70px) rotateX(90deg) translateZ(-30px);
+                            transform: translate(-50%, -50%) translateZ(140px) rotateX(90deg) translateZ(-30px);
                         }
 
                         .b-hq-tower .f-left,
                         .b-hq-tower .f-right {
                             width: 60px;
-                            height: 140px;
-                            transform: translate(-50%, -50%) translateZ(70px) rotateY(-90deg) rotateZ(-90deg) translateZ(40px);
+                            height: 280px;
+                            transform: translate(-50%, -50%) translateZ(140px) rotateY(-90deg) rotateZ(-90deg) translateZ(40px);
                         }
 
                         .b-hq-tower .f-right {
-                            transform: translate(-50%, -50%) translateZ(70px) rotateY(90deg) rotateZ(90deg) translateZ(40px);
+                            transform: translate(-50%, -50%) translateZ(140px) rotateY(90deg) rotateZ(90deg) translateZ(40px);
                         }
 
                         .b-hq-tower .f-top {
                             width: 80px;
                             height: 60px;
-                            transform: translate(-50%, -50%) translateZ(140px);
-                            background: #22d3ee;
-                            box-shadow: 0 0 40px rgba(6, 182, 212, 0.8);
-                        }
-
-                        /* Spire: 20x20, 40 tall, starts at Z=170 */
-                        .b-hq-top {
-                            transform: translateZ(170px);
-                        }
-
-                        /* (removed duplicate - solid style below) */
-
-                        .b-hq-top .f-front,
-                        .b-hq-top .f-back {
-                            width: 30px;
-                            height: 100px;
-                            transform: translate(-50%, -50%) translateZ(50px) rotateX(90deg) translateZ(10px);
-                        }
-
-                        .b-hq-top .f-back {
-                            transform: translate(-50%, -50%) translateZ(50px) rotateX(90deg) translateZ(-10px);
-                        }
-
-                        .b-hq-top .f-left,
-                        .b-hq-top .f-right {
-                            width: 20px;
-                            height: 100px;
-                            transform: translate(-50%, -50%) translateZ(50px) rotateY(-90deg) rotateZ(-90deg) translateZ(15px);
-                        }
-
-                        .b-hq-top .f-right {
-                            transform: translate(-50%, -50%) translateZ(50px) rotateY(90deg) rotateZ(90deg) translateZ(15px);
-                        }
-
-                        .b-hq-top .f-top {
-                            width: 30px;
-                            height: 20px;
-                            transform: translate(-50%, -50%) translateZ(100px);
-                        }
-
-                        /* HQ Spire - Glowing Top */
-                        .b-hq-top .face {
-                            background-color: #cffafe;
-                            border: none;
-                            box-shadow: 0 0 15px #22d3ee;
+                            transform: translate(-50%, -50%) translateZ(280.1px);
+                            background-color: #334155;
+                            /* Dark Concrete */
+                            /* Helipad Markings: Circle + H + Safety Perimeter */
+                            background-image:
+                                /* The 'H' - Horizontal bar */
+                                linear-gradient(90deg, transparent 40%, #fff 40%, #fff 60%, transparent 60%),
+                                /* The 'H' - Vertical bars */
+                                linear-gradient(0deg, transparent 25%, #fff 25%, #fff 75%, transparent 75%),
+                                /* The 'H' - Side rails */
+                                linear-gradient(90deg, transparent 33%, #fff 33%, #fff 38%, transparent 38%, transparent 62%, #fff 62%, #fff 67%, transparent 67%),
+                                /* Landing Circle */
+                                radial-gradient(circle, transparent 44%, #fff 45%, #fff 51%, transparent 52%),
+                                /* Outer Yellow Safety Ring */
+                                radial-gradient(circle, transparent 72%, #fbbf24 73%, #fbbf24 81%, transparent 82%),
+                                /* Concrete Texture */
+                                radial-gradient(circle, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+                            background-size: 30px 40px, 30px 40px, 30px 40px, 45px 45px, 55px 55px, 4px 4px;
+                            background-position: center, center, center, center, center, 0 0;
+                            background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, repeat;
+                            border: 2px solid #475569;
+                            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 0, 0, 0.4);
                         }
 
                         /* 2. R&D A (Blue, L-Shape feel via 2 blocks) */
@@ -1910,13 +2017,16 @@
 
                         /* R&D A with Office Windows */
                         .b-rda-main .face {
-                            background-color: #2563eb;
-                            /* Blue-600 */
+                            background-color: #1e40af;
+                            /* Deep Royal Blue */
+                            /* Precise Horizontal Office Bands */
                             background-image:
-                                linear-gradient(#1e293b 2px, transparent 2px),
-                                linear-gradient(90deg, #1e293b 2px, transparent 2px);
-                            background-size: 10px 10px;
+                                linear-gradient(to bottom,
+                                    rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.15) 60%,
+                                    rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0.3) 100%);
+                            background-size: 100% 12px;
                             border: 1px solid #1e3a8a;
+                            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
                         }
 
                         .b-rda-main .f-top {
@@ -2164,7 +2274,7 @@
 
                         /* 5. Apartments (Purple, Twin Towers) */
                         .b-apt {
-                            transform: translate(350px, 350px);
+                            transform: translate(350px, 150px);
                         }
 
                         /* Tower 1 - Solid Concrete */
@@ -2302,9 +2412,18 @@
 
                         /* Tower 2 */
 
-                        /* Tower 2 */
                         .b-apt-2 {
                             transform: translate(20px, 20px);
+                        }
+
+                        .b-mall-main .face {
+                            background-color: #7c3aed;
+                            /* Modern Retail Facade: Large window panes */
+                            background-image:
+                                linear-gradient(rgba(255, 255, 255, 0.2) 1px, transparent 1px),
+                                linear-gradient(90deg, rgba(255, 255, 255, 0.2) 1px, transparent 1px);
+                            background-size: 30px 40px;
+                            border: 1px solid #6d28d9;
                         }
 
                         .b-apt-2 .face {
@@ -2422,6 +2541,31 @@
                             width: 30px;
                             height: 30px;
                             transform: translate(-50%, -50%) translateZ(20px);
+                            background-image: linear-gradient(to top right, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 70%);
+                        }
+
+                        /* R&D A Facade */
+                        .b-rda-main .face {
+                            background-color: #0d9488;
+                            /* Teal-600 */
+                            /* Modern Ribbon Window Style */
+                            background-image:
+                                linear-gradient(rgba(255, 255, 255, 0.1) 2px, transparent 2px),
+                                linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+                            background-size: 100% 15px, 20px 100%;
+                            border: 1px solid #0f766e;
+                        }
+
+                        /* R&D B Facade */
+                        .b-rdb-main .face {
+                            background-color: #0d9488;
+                            /* Teal-600 */
+                            /* Modern Ribbon Window Style */
+                            background-image:
+                                linear-gradient(rgba(255, 255, 255, 0.1) 2px, transparent 2px),
+                                linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+                            background-size: 100% 15px, 20px 100%;
+                            border: 1px solid #0f766e;
                         }
 
                         /* 7. Gym Faces */
@@ -2433,6 +2577,7 @@
 
                         .b-gym .f-top {
                             background-color: #22d3ee;
+                            background-image: linear-gradient(to top right, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 70%);
                         }
 
                         .b-gym .f-front,
@@ -2507,7 +2652,8 @@
 
                         /* Staff Canteen (Orange/Red) */
                         .b-canteen {
-                            transform: translate(350px, 0);
+                            /* Moved to the North side of Talent Apartments */
+                            transform: translate(350px, -50px);
                         }
 
                         .b-can-main .face {
@@ -2546,14 +2692,18 @@
 
                         /* Data Center (Dark Slate with Cyan Glow) */
                         .b-data {
-                            transform: translate(520px, -350px);
+                            transform: translate(0, -200px);
                         }
 
                         .b-dat-main .face {
                             background-color: #0f172a;
                             border: 1px solid #06b6d4;
-                            background-image: linear-gradient(90deg, transparent 90%, #06b6d4 90%);
-                            background-size: 10px 10px;
+                            /* High-Tech Data Center Pattern: Hex-like grid or small digital dots */
+                            background-image:
+                                radial-gradient(#06b6d4 1px, transparent 1px),
+                                linear-gradient(rgba(6, 182, 212, 0.05) 1px, transparent 1px);
+                            background-size: 10px 10px, 100% 5px;
+                            box-shadow: inset 0 0 15px rgba(6, 182, 212, 0.2);
                         }
 
                         .b-dat-main .f-front,
@@ -2728,7 +2878,7 @@
                         }
 
                         .b-hq .energy-label {
-                            --h-pos: 340px;
+                            --h-pos: 350px;
                         }
 
                         /* R&D A 研发A */
@@ -2781,6 +2931,15 @@
                             --h-pos: 140px;
                         }
 
+                        /* PV Array 光伏阵列 */
+                        .el-pv {
+                            --h-pos: 120px;
+                        }
+
+                        .solar-array .b-label {
+                            --h-pos: 80px;
+                        }
+
                         .b-gym .energy-label {
                             --h-pos: 80px;
                         }
@@ -2810,6 +2969,120 @@
 
                         .b-power .energy-label {
                             --h-pos: 80px;
+                        }
+
+                        /* Tea House 茶楼 */
+                        .b-teahouse {
+                            transform: translate(350px, 360px);
+                        }
+
+                        .b-teahouse .b-label {
+                            --h-pos: 100px;
+                        }
+
+                        .b-teahouse .energy-label {
+                            --h-pos: 60px;
+                        }
+
+                        /* Tea House Style: Huizhou Architecture (White Walls, Grey Tiles) */
+                        .b-tea-base .face,
+                        .b-tea-top .face {
+                            background-color: #f8fafc;
+                            /* Powder White Walls */
+                            background-image:
+                                /* Traditional Lattice Windows */
+                                linear-gradient(to bottom, transparent 30%, #334155 30%, #334155 32%, transparent 32%, transparent 50%, #334155 50%, #334155 52%, transparent 52%),
+                                linear-gradient(to right, transparent 40%, rgba(51, 65, 85, 0.3) 40%, rgba(51, 65, 85, 0.3) 60%, transparent 60%);
+                            background-size: 15px 15px, 100% 100%;
+                            border: 1px solid #e2e8f0;
+                        }
+
+                        /* Horse-Head Walls (Ma-Tou-Qiang) */
+                        .b-tea-base .f-left::before,
+                        .b-tea-base .f-right::before,
+                        .b-tea-top .f-left::before,
+                        .b-tea-top .f-right::before {
+                            content: '';
+                            position: absolute;
+                            bottom: 100%;
+                            left: 0;
+                            width: 100%;
+                            height: 15px;
+                            background: #f8fafc;
+                            /* Step-like shape */
+                            clip-path: polygon(0 100%, 0 0, 30% 0, 30% 30%, 70% 30%, 70% 60%, 100% 60%, 100% 100%);
+                            border-top: 2px solid #1e293b;
+                        }
+
+                        .b-tea-base .f-front,
+                        .b-tea-base .f-back {
+                            width: 60px;
+                            height: 30px;
+                            transform: translate(-50%, -50%) translateZ(15px) rotateX(90deg) translateZ(30px);
+                        }
+
+                        .b-tea-base .f-back {
+                            transform: translate(-50%, -50%) translateZ(15px) rotateX(90deg) translateZ(-30px);
+                        }
+
+                        .b-tea-base .f-left,
+                        .b-tea-base .f-right {
+                            width: 60px;
+                            height: 30px;
+                            transform: translate(-50%, -50%) translateZ(15px) rotateY(-90deg) rotateZ(-90deg) translateZ(30px);
+                            overflow: visible;
+                        }
+
+                        .b-tea-base .f-right {
+                            transform: translate(-50%, -50%) translateZ(15px) rotateY(90deg) rotateZ(90deg) translateZ(30px);
+                        }
+
+                        .b-tea-base .f-top {
+                            width: 74px;
+                            /* Eaves */
+                            height: 74px;
+                            transform: translate(-50%, -50%) translateZ(30px);
+                            background-color: #1e293b;
+                            /* Dark Grey Tiles */
+                            background-image: repeating-linear-gradient(0deg, #0f172a 0, #0f172a 2px, transparent 2px, transparent 6px);
+                            border: 1px solid #0f172a;
+                        }
+
+                        /* Upper Level */
+                        .b-tea-top .f-front,
+                        .b-tea-top .f-back {
+                            width: 40px;
+                            height: 25px;
+                            transform: translate(-50%, -50%) translateZ(42.5px) rotateX(90deg) translateZ(20px);
+                        }
+
+                        .b-tea-top .f-back {
+                            transform: translate(-50%, -50%) translateZ(42.5px) rotateX(90deg) translateZ(-20px);
+                        }
+
+                        .b-tea-top .f-left,
+                        .b-tea-top .f-right {
+                            width: 40px;
+                            height: 25px;
+                            transform: translate(-50%, -50%) translateZ(42.5px) rotateY(-90deg) rotateZ(-90deg) translateZ(20px);
+                            overflow: visible;
+                        }
+
+                        .b-tea-top .f-right {
+                            transform: translate(-50%, -50%) translateZ(42.5px) rotateY(90deg) rotateZ(90deg) translateZ(20px);
+                        }
+
+                        .b-tea-top .f-top {
+                            width: 54px;
+                            height: 54px;
+                            transform: translate(-50%, -50%) translateZ(55px);
+                            background-color: #0f172a;
+                            /* Darker Slate Tiles */
+                            background-image:
+                                repeating-linear-gradient(90deg, #1e293b 0, #1e293b 2px, transparent 2px, transparent 8px),
+                                radial-gradient(circle, #334155 1px, transparent 1px);
+                            background-size: 100% 100%, 8px 8px;
+                            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
                         }
 
                         /* Office Towers D-G 办公楼 */
@@ -3046,6 +3319,10 @@
                             <div style="display: flex; justify-content: space-between;">
                                 <span>今日能耗</span>
                                 <span style="color: #fff;">4,230 kWh</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+                                <span>光伏发电</span>
+                                <span style="color: #4ade80;">+450 kWh</span>
                             </div>
                         </div>
                     </div>
@@ -3397,6 +3674,7 @@
                 { id: '.el-off-e .e-val', base: 160, variance: 15, unit: ' kW' },
                 { id: '.el-off-f .e-val', base: 110, variance: 10, unit: ' kW' },
                 { id: '.el-off-g .e-val', base: 125, variance: 11, unit: ' kW' },
+                { id: '.el-tea .e-val', base: 12, variance: 3, unit: ' kW' },
                 { id: '.el-gate .e-val', type: 'status' } // Gate stays 'Live'
             ];
 

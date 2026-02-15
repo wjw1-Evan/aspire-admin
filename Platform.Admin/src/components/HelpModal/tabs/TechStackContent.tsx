@@ -18,7 +18,7 @@ const TechStackContent: React.FC = () => {
 
             <Title level={5}>{intl.formatMessage({ id: 'pages.help.tech.backend.title' })}</Title>
             <ul>
-                <li><strong>.NET 9.0</strong> - 最新的 .NET 平台，高性能 Web API</li>
+                <li><strong>.NET 10.0</strong> - 最新的 .NET 平台，高性能 Web API</li>
                 <li><strong>ASP.NET Core</strong> - 跨平台 Web 框架</li>
                 <li><strong>.NET Aspire</strong> - 云原生应用开发框架</li>
                 <li><strong>MongoDB</strong> - 文档数据库，灵活的数据模型</li>

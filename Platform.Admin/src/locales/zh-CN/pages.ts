@@ -643,6 +643,7 @@ export default {
   'pages.welcome.recentActivities.systemActivity': '系统活动',
   'pages.welcome.recentActivities.unknownTime': '未知时间',
   'pages.welcome.recentActivities.url': 'URL',
+  'pages.welcome.recentActivities.noMore': '没有更多记录了',
   'pages.welcome.recentActivities.systemStart.title': '系统启动',
   'pages.welcome.recentActivities.systemStart.desc': '系统已成功启动并运行',
   'pages.welcome.recentActivities.userLogin.title': '用户登录',

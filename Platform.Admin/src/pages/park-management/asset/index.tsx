@@ -957,7 +957,7 @@ const AssetManagement: React.FC = () => {
                 title={currentBuilding?.name || intl.formatMessage({ id: 'pages.park.asset.buildingDetail', defaultMessage: '楼宇详情' })}
                 open={detailDrawerVisible}
                 onClose={() => setDetailDrawerVisible(false)}
-                width={640}
+                size={640}
             >
                 {currentBuilding && (
                     <div>
@@ -1003,7 +1003,7 @@ const AssetManagement: React.FC = () => {
                 title={currentUnit?.unitNumber || intl.formatMessage({ id: 'pages.park.asset.unitDetail', defaultMessage: '房源详情' })}
                 open={unitDetailDrawerVisible}
                 onClose={() => setUnitDetailDrawerVisible(false)}
-                width={720}
+                size={720}
             >
                 {currentUnit && (
                     <Flex vertical gap={24}>

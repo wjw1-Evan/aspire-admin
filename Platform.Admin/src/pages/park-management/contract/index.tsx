@@ -454,7 +454,7 @@ const ContractManagement: React.FC = () => {
                 </Form>
             </Modal>
 
-            <Drawer title={currentContract?.contractNumber || '合同详情'} open={contractDetailDrawerVisible} onClose={() => setContractDetailDrawerVisible(false)} styles={{ wrapper: { width: 640 } }}>
+            <Drawer title={currentContract?.contractNumber || '合同详情'} open={contractDetailDrawerVisible} onClose={() => setContractDetailDrawerVisible(false)} size={640}>
                 {currentContract && (
                     <div style={{ padding: '0 8px' }}>
                         <Descriptions bordered column={2} size="small">

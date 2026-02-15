@@ -548,7 +548,7 @@ const VisitKnowledgeBase: React.FC = () => {
                 title="问题详情"
                 open={questionDetailVisible}
                 onClose={() => setQuestionDetailVisible(false)}
-                width={640}
+                size={640}
                 extra={<Button onClick={() => setQuestionDetailVisible(false)}>关闭</Button>}
             >
                 {selectedQuestion ? (
@@ -576,7 +576,7 @@ const VisitKnowledgeBase: React.FC = () => {
                 title="问卷详情"
                 open={questionnaireDetailVisible}
                 onClose={() => setQuestionnaireDetailVisible(false)}
-                width={640}
+                size={640}
                 extra={<Button onClick={() => setQuestionnaireDetailVisible(false)}>关闭</Button>}
             >
                 {selectedQuestionnaire ? (

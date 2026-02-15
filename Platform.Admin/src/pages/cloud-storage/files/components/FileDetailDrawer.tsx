@@ -39,7 +39,7 @@ const FileDetailDrawer: React.FC<FileDetailDrawerProps> = ({
             placement="right"
             onClose={onClose}
             open={open}
-            styles={{ wrapper: { width: isMobile ? '100%' : 600 } }}
+            size={isMobile ? 'large' : 600}
         >
             <Spin spinning={!file}>
                 {file ? (

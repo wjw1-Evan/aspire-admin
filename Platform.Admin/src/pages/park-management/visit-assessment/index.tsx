@@ -275,7 +275,7 @@ const VisitAssessmentList: React.FC = () => {
                 placement="right"
                 onClose={() => setDetailVisible(false)}
                 open={detailVisible}
-                width={500}
+                size={500}
             >
                 {selectedAssessment && (
                     <div className={styles.detailContainer}>

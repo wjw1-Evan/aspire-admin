@@ -190,13 +190,13 @@ const VisitTask: React.FC = () => {
                             type="link"
                             size="small"
                             icon={<EditOutlined />}
-                            onClick={() => { 
-                                setEditingTask(record); 
-                                form.setFieldsValue({ 
-                                    ...record, 
-                                    visitDate: record.visitDate ? dayjs(record.visitDate) : dayjs() 
-                                }); 
-                                setIsModalVisible(true); 
+                            onClick={() => {
+                                setEditingTask(record);
+                                form.setFieldsValue({
+                                    ...record,
+                                    visitDate: record.visitDate ? dayjs(record.visitDate) : dayjs()
+                                });
+                                setIsModalVisible(true);
                             }}
                         >
                             编辑
@@ -488,15 +488,15 @@ const VisitTask: React.FC = () => {
                     </Row>
                     <Row gutter={16}>
                         <Col span={12}>
-                            <Form.Item 
-                                name="visitDate" 
-                                label="走访时间" 
+                            <Form.Item
+                                name="visitDate"
+                                label="走访时间"
                                 rules={[{ required: true, message: '请选择走访时间' }]}
                             >
-                                <DatePicker 
-                                    style={{ width: '100%' }} 
-                                    showTime 
-                                    format="YYYY-MM-DD HH:mm" 
+                                <DatePicker
+                                    style={{ width: '100%' }}
+                                    showTime
+                                    format="YYYY-MM-DD HH:mm"
                                     placeholder="请选择走访时间"
                                 />
                             </Form.Item>
@@ -538,20 +538,20 @@ const VisitTask: React.FC = () => {
                 title="走访任务详情"
                 open={detailVisible}
                 onClose={() => setDetailVisible(false)}
-                width={640}
+                size={640}
                 extra={
                     <Space>
                         <Button onClick={() => setDetailVisible(false)}>关闭</Button>
-                        <Button type="primary" icon={<EditOutlined />} onClick={() => { 
-                            setDetailVisible(false); 
-                            setEditingTask(selectedTask); 
+                        <Button type="primary" icon={<EditOutlined />} onClick={() => {
+                            setDetailVisible(false);
+                            setEditingTask(selectedTask);
                             if (selectedTask) {
-                                form.setFieldsValue({ 
-                                    ...selectedTask, 
-                                    visitDate: selectedTask.visitDate ? dayjs(selectedTask.visitDate) : dayjs() 
+                                form.setFieldsValue({
+                                    ...selectedTask,
+                                    visitDate: selectedTask.visitDate ? dayjs(selectedTask.visitDate) : dayjs()
                                 });
                             }
-                            setIsModalVisible(true); 
+                            setIsModalVisible(true);
                         }}>编辑</Button>
                     </Space>
                 }

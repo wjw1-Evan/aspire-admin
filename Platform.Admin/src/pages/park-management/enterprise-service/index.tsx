@@ -407,7 +407,7 @@ const EnterpriseService: React.FC = () => {
                 </Form>
             </Modal>
 
-            <Drawer title={currentRequest?.title || '申请详情'} open={detailDrawerVisible} onClose={() => setDetailDrawerVisible(false)} styles={{ wrapper: { width: 640 } }}>
+            <Drawer title={currentRequest?.title || '申请详情'} open={detailDrawerVisible} onClose={() => setDetailDrawerVisible(false)} size={640}>
                 {currentRequest && (
                     <Descriptions bordered column={2} size="small">
                         <Descriptions.Item label="服务标题" span={2}>{currentRequest.title}</Descriptions.Item>

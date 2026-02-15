@@ -85,7 +85,7 @@ const CloudStorageRecyclePage: React.FC = () => {
     const isMobile = !screens.md;
 
     // 表格引用
-    const actionRef = useRef<ActionType>();
+    const actionRef = useRef<ActionType | null>(null);
 
     // 状态管理
     const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
@@ -126,7 +126,7 @@ const CloudStorageRecyclePage: React.FC = () => {
 
     // 刷新处理
     const handleRefresh = useCallback(() => {
-        actionRef.current?.reload();
+        actionRef.current?.reload?.();
         loadStatistics();
     }, [loadStatistics]);
 
@@ -153,7 +153,7 @@ const CloudStorageRecyclePage: React.FC = () => {
             const response = await getRecycleList(listRequest);
 
             if (response.success && response.data) {
-                const list = response.data.list || response.data.data || [];
+                const list = response.data.data || [];
                 const normalizedList = (list || []).map((item: RecycleItem) => ({
                     ...item,
                     // 兼容后端未直接返回 isFolder 的情况
@@ -251,7 +251,7 @@ const CloudStorageRecyclePage: React.FC = () => {
         try {
             await permanentDeleteItem(item.id);
             success('永久删除成功');
-            actionRef.current?.reload();
+            actionRef.current?.reload?.();
             loadStatistics();
         } catch (err) {
             error('永久删除失败');
@@ -274,7 +274,7 @@ const CloudStorageRecyclePage: React.FC = () => {
                     success('批量恢复成功');
                     setSelectedRowKeys([]);
                     setSelectedRows([]);
-                    actionRef.current?.reload();
+                    actionRef.current?.reload?.();
                     loadStatistics();
                 } catch (err) {
                     error('批量恢复失败');
@@ -308,7 +308,7 @@ const CloudStorageRecyclePage: React.FC = () => {
                     success('批量永久删除成功');
                     setSelectedRowKeys([]);
                     setSelectedRows([]);
-                    actionRef.current?.reload();
+                    actionRef.current?.reload?.();
                     loadStatistics();
                 } catch (err) {
                     error('批量永久删除失败');
@@ -340,7 +340,7 @@ const CloudStorageRecyclePage: React.FC = () => {
                         success(`清空回收站成功，删除了 ${response.data.deletedCount} 个文件，释放了 ${formatFileSize(response.data.freedSpace)} 空间`);
                     }
                     setCleanupProgress(null);
-                    actionRef.current?.reload();
+                    actionRef.current?.reload?.();
                     loadStatistics();
                 } catch (err) {
                     error('清空回收站失败');
@@ -361,7 +361,7 @@ const CloudStorageRecyclePage: React.FC = () => {
                     if (response.success && response.data) {
                         success(`自动清理完成，删除了 ${response.data.deletedCount} 个过期文件，释放了 ${formatFileSize(response.data.freedSpace)} 空间`);
                     }
-                    actionRef.current?.reload();
+                    actionRef.current?.reload?.();
                     loadStatistics();
                 } catch (err) {
                     error('自动清理失败');
@@ -386,7 +386,7 @@ const CloudStorageRecyclePage: React.FC = () => {
             setRestoreVisible(false);
             setRestoringItem(null);
             restoreForm.resetFields();
-            actionRef.current?.reload();
+            actionRef.current?.reload?.();
             loadStatistics();
         } catch (err) {
             error('恢复失败');
@@ -496,13 +496,13 @@ const CloudStorageRecyclePage: React.FC = () => {
         {
             title: '过期状态',
             key: 'expiry',
-            render: (_, record: RecycleItem) => getExpiryTag(record),
+            render: (_: any, record: RecycleItem) => getExpiryTag(record),
         },
         {
             title: '操作',
             key: 'action',
             fixed: 'right' as const,
-            render: (_, record: RecycleItem) => (
+            render: (_: any, record: RecycleItem) => (
                 <Space size="small">
                     <Button
                         type="link"
@@ -762,7 +762,7 @@ const CloudStorageRecyclePage: React.FC = () => {
                 placement="right"
                 onClose={() => setDetailVisible(false)}
                 open={detailVisible}
-                width={isMobile ? '100%' : 600}
+                size={isMobile ? 'large' : 600}
             >
                 <Spin spinning={!viewingItem}>
                     {viewingItem ? (

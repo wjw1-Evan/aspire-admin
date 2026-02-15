@@ -499,6 +499,7 @@ public class UserController : BaseApiController
     /// <param name="email">邮箱地址</param>
     /// <param name="excludeUserId">排除的用户ID</param>
     [HttpGet("check-email")]
+    [AllowAnonymous]
     public async Task<IActionResult> CheckEmailExists([FromQuery] string email, [FromQuery] string? excludeUserId = null)
     {
         var exists = await _userService.CheckEmailExistsAsync(email, excludeUserId);
@@ -511,6 +512,7 @@ public class UserController : BaseApiController
     /// <param name="username">用户名</param>
     /// <param name="excludeUserId">排除的用户ID</param>
     [HttpGet("check-username")]
+    [AllowAnonymous]
     public async Task<IActionResult> CheckUsernameExists([FromQuery] string username, [FromQuery] string? excludeUserId = null)
     {
         var exists = await _userService.CheckUsernameExistsAsync(username, excludeUserId);

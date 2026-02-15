@@ -671,9 +671,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
         }
         open={configDrawerVisible}
         onClose={() => setConfigDrawerVisible(false)}
-        size="default"
-        className="node-drawer"
-        width={450}
+        size={450}
       >
         <Form form={configForm} layout="vertical">
           <Form.Item name="nodeType" label={intl.formatMessage({ id: 'pages.workflow.designer.nodeType' })}>

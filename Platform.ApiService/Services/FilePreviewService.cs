@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using System.Text;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
 
 namespace Platform.ApiService.Services;
 
@@ -384,17 +386,41 @@ public class FilePreviewService : IFilePreviewService
     }
 
     /// <summary>
-    /// 生成缩略图数据（简化实现）
+    /// 生成缩略图数据
     /// </summary>
     private async Task<byte[]> GenerateThumbnailDataAsync(Stream originalStream, string mimeType, int width, int height)
     {
-        // 这里应该使用图像处理库（如ImageSharp、SkiaSharp等）来生成真正的缩略图
-        // 现在只是返回一个占位符
+        // 仅处理图片类型
+        if (mimeType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                if (originalStream.CanSeek)
+                    originalStream.Position = 0;
 
-        await Task.Delay(100); // 模拟处理时间
+                using var image = await Image.LoadAsync(originalStream);
 
-        // 返回一个简单的占位符图片数据
-        var placeholderText = $"Thumbnail {width}x{height}";
+                var options = new ResizeOptions
+                {
+                    Size = new Size(width, height),
+                    Mode = ResizeMode.Max
+                };
+
+                image.Mutate(x => x.Resize(options));
+
+                using var ms = new MemoryStream();
+                await image.SaveAsPngAsync(ms);
+                return ms.ToArray();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to generate thumbnail for image {MimeType}", mimeType);
+            }
+        }
+
+        // 对于不支持的类型或处理失败的情况，返回一个简单的占位符
+        // 注意：实际生产中可能需要根据类型生成默认图标
+        var placeholderText = $"Thumbnail placeholder for {mimeType}";
         return Encoding.UTF8.GetBytes(placeholderText);
     }
 

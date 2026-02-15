@@ -271,7 +271,7 @@ public class CloudStorageService : ICloudStorageService
             GridFSId = source.GridFSId, // 文件内容引用同一个 GridFS ID
             Hash = source.Hash,
             ThumbnailGridFSId = source.ThumbnailGridFSId,
-            Metadata = source.Metadata != null ? new Dictionary<string, object>(source.Metadata) : null,
+            Metadata = source.Metadata != null ? new Dictionary<string, object>(source.Metadata) : [],
             Status = FileStatus.Active,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = _tenantContext.GetCurrentUserId(), // CreatedBy 是字符串类型，可能为空

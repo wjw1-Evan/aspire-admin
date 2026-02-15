@@ -389,20 +389,21 @@
 
         <!-- Slide 3: Dashboard Demo (High Fidelity & Module Aligned) -->
         <div class="slide" id="slide-2">
-            <h2>全景数据驾驶舱 (Data Cockpit)</h2>
-            <p>基于真实业务模块构建，打破数据孤岛，实现园区运营全可视化。</p>
+            <h2>全景数据驾驶舱 (Data Cockpit) <span
+                    style="font-size: 14px; font-weight: normal; margin-left: 15px; color: #93c5fd; opacity: 1; vertical-align: middle;">基于真实业务模块构建，打破数据孤岛，实现园区运营全可视化。</span>
+            </h2>
 
             <style>
                 /* Dashboard Specific Styles */
                 .cockpit-container {
                     width: 95vw;
-                    height: 75vh;
+                    height: 88vh;
                     background: rgba(15, 23, 42, 0.9);
                     border: 1px solid rgba(59, 130, 246, 0.3);
                     border-radius: 1rem;
                     display: grid;
                     grid-template-columns: 300px 1fr 300px;
-                    grid-template-rows: 60px 1fr 200px;
+                    grid-template-rows: 60px 1fr 150px;
                     gap: 1rem;
                     padding: 1rem;
                     box-shadow: 0 0 50px rgba(59, 130, 246, 0.15);
@@ -722,22 +723,26 @@
                     <div class="scene-3d">
                         <!-- Ground Grid -->
                         <div class="ground">
-                            <div class="road-ring"></div>
-                            <div class="road-cross"></div>
+                            <!-- 1. Central Hub Ring (Around HQ) -->
+                            <div class="road road-h-inner-top"></div>
+                            <div class="road road-h-inner-bottom"></div>
+                            <div class="road road-v-inner-left"></div>
+                            <div class="road road-v-inner-right"></div>
+
+                            <!-- 2. Main Grid Lines -->
+                            <div class="road road-h-grid-n"></div>
+                            <div class="road road-h-grid-s"></div>
+                            <div class="road road-v-grid-w"></div>
+                            <div class="road road-v-grid-e"></div>
+
+                            <!-- 3. Perimeter & Special -->
+                            <div class="road road-ring"></div>
+                            <div class="road road-parking-connect"></div>
                             <!-- Park Zones -->
                             <div class="zone-green"></div>
                         </div>
 
-                        <!-- Park Boundary (Fences) -->
-                        <div class="park-boundary pb-front"></div>
-                        <div class="park-boundary pb-back"></div>
                         <!-- West Side with Gate -->
-                        <div class="park-boundary pb-left"
-                            style="width: 500px; transform: translate(-50%, -50%) translateZ(20px) translateX(-600px) translateY(-350px) rotateZ(90deg) rotateX(-90deg);">
-                        </div>
-                        <div class="park-boundary pb-left"
-                            style="width: 500px; transform: translate(-50%, -50%) translateZ(20px) translateX(-600px) translateY(350px) rotateZ(90deg) rotateX(-90deg);">
-                        </div>
                         <div class="building-group west-gate" style="transform: translateX(-600px) rotateZ(90deg);">
                             <div class="cube gate-pillar gp-left">
                                 <div class="face f-front"></div>
@@ -756,12 +761,6 @@
                         </div>
 
                         <!-- East Side with Gate -->
-                        <div class="park-boundary pb-right"
-                            style="width: 500px; transform: translate(-50%, -50%) translateZ(20px) translateX(600px) translateY(-350px) rotateZ(90deg) rotateX(-90deg);">
-                        </div>
-                        <div class="park-boundary pb-right"
-                            style="width: 500px; transform: translate(-50%, -50%) translateZ(20px) translateX(600px) translateY(350px) rotateZ(90deg) rotateX(-90deg);">
-                        </div>
                         <div class="building-group east-gate" style="transform: translateX(600px) rotateZ(-90deg);">
                             <div class="cube gate-pillar gp-left">
                                 <div class="face f-front"></div>
@@ -948,6 +947,10 @@
                                 <div class="face f-top"></div>
                             </div>
                             <div class="b-label" style="transform: translateZ(100px) rotateX(-60deg);">研发中心 B</div>
+                            <div class="energy-label el-rdb">
+                                <div class="e-val">85 kW</div>
+                                <div class="e-line"></div>
+                            </div>
                         </div>
 
                         <!-- 4. Commercial Mall (Low, Wide, Complex Roof) -->
@@ -991,6 +994,10 @@
                                 <div class="face f-top"></div>
                             </div>
                             <div class="b-label" style="transform: translateZ(120px) rotateX(-60deg);">人才公寓</div>
+                            <div class="energy-label el-apt">
+                                <div class="e-val">180 kW</div>
+                                <div class="e-line"></div>
+                            </div>
                         </div>
 
                         <!-- 6. Sports Center -->
@@ -1003,6 +1010,10 @@
                                 <div class="face f-top"></div>
                             </div>
                             <div class="b-label" style="transform: translateZ(50px) rotateX(-60deg);">体育中心 Gym</div>
+                            <div class="energy-label el-gym">
+                                <div class="e-val">45 kW</div>
+                                <div class="e-line"></div>
+                            </div>
                         </div>
 
                         <!-- 7. Research Center C (NEW) -->
@@ -1015,6 +1026,10 @@
                                 <div class="face f-top"></div>
                             </div>
                             <div class="b-label" style="transform: translateZ(140px) rotateX(-60deg);">研发中心 C</div>
+                            <div class="energy-label el-rdc">
+                                <div class="e-val">95 kW</div>
+                                <div class="e-line"></div>
+                            </div>
                         </div>
 
                         <!-- 8. Staff Canteen (NEW) -->
@@ -1027,6 +1042,10 @@
                                 <div class="face f-top"></div>
                             </div>
                             <div class="b-label" style="transform: translateZ(50px) rotateX(-60deg);">员工食堂</div>
+                            <div class="energy-label el-can">
+                                <div class="e-val">65 kW</div>
+                                <div class="e-line"></div>
+                            </div>
                         </div>
 
                         <!-- 9. Data Center (NEW) -->
@@ -1039,6 +1058,10 @@
                                 <div class="face f-top"></div>
                             </div>
                             <div class="b-label" style="transform: translateZ(70px) rotateX(-60deg);">数据中心</div>
+                            <div class="energy-label el-data">
+                                <div class="e-val">520 kW</div>
+                                <div class="e-line"></div>
+                            </div>
                         </div>
 
                         <!-- 10. Power Station (NEW) -->
@@ -1051,6 +1074,74 @@
                                 <div class="face f-top"></div>
                             </div>
                             <div class="b-label" style="transform: translateZ(40px) rotateX(-60deg);">变电站</div>
+                            <div class="energy-label el-power">
+                                <div class="e-val">880 kW</div>
+                                <div class="e-line"></div>
+                            </div>
+                        </div>
+
+                        <!-- 11. Office Tower D (North-West) -->
+                        <div class="building-group b-off-d">
+                            <div class="cube b-off-main b-office-tower">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="b-label" style="transform: translateZ(100px) rotateX(-60deg);">写字楼 D</div>
+                            <div class="energy-label el-off-d">
+                                <div class="e-val">145 kW</div>
+                                <div class="e-line"></div>
+                            </div>
+                        </div>
+
+                        <!-- 12. Office Tower E (North-East) -->
+                        <div class="building-group b-off-e">
+                            <div class="cube b-off-main b-office-tower">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="b-label" style="transform: translateZ(110px) rotateX(-60deg);">写字楼 E</div>
+                            <div class="energy-label el-off-e">
+                                <div class="e-val">160 kW</div>
+                                <div class="e-line"></div>
+                            </div>
+                        </div>
+
+                        <!-- 13. Office Tower F (West) -->
+                        <div class="building-group b-off-f">
+                            <div class="cube b-off-main b-office-tower">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="b-label" style="transform: translateZ(100px) rotateX(-60deg);">写字楼 F</div>
+                            <div class="energy-label el-off-f">
+                                <div class="e-val">110 kW</div>
+                                <div class="e-line"></div>
+                            </div>
+                        </div>
+
+                        <!-- 14. Office Tower G (South-East) -->
+                        <div class="building-group b-off-g">
+                            <div class="cube b-off-main b-office-tower">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="b-label" style="transform: translateZ(100px) rotateX(-60deg);">写字楼 G</div>
+                            <div class="energy-label el-off-g">
+                                <div class="e-val">125 kW</div>
+                                <div class="e-line"></div>
+                            </div>
                         </div>
 
                         <!-- Floating Data Points -->
@@ -1062,6 +1153,17 @@
                         <div class="data-point p-6"></div>
                     </div>
 
+                    <!-- Compass UI -->
+                    <div class="map-compass" id="map-compass-ui">
+                        <div class="compass-ring">
+                            <span class="c-n">N</span>
+                            <span class="c-e">E</span>
+                            <span class="c-s">S</span>
+                            <span class="c-w">W</span>
+                        </div>
+                        <div class="compass-needle"></div>
+                    </div>
+
                     <!-- 3D Styles -->
                     <style>
                         .scene-3d {
@@ -1070,7 +1172,82 @@
                             position: relative;
                             transform-style: preserve-3d;
                             transform: rotateX(60deg) rotateZ(0deg);
-                            animation: rotateScene 40s linear infinite;
+                        }
+
+                        /* Compass UI Styles */
+                        .map-compass {
+                            position: absolute;
+                            bottom: 30px;
+                            right: 30px;
+                            width: 80px;
+                            height: 80px;
+                            background: radial-gradient(circle, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+                            border: 2px solid rgba(59, 130, 246, 0.5);
+                            border-radius: 50%;
+                            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(59, 130, 246, 0.2);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            z-index: 1000;
+                            pointer-events: none;
+                        }
+
+                        .compass-ring {
+                            position: relative;
+                            width: 100%;
+                            height: 100%;
+                        }
+
+                        @keyframes rotateCompass {
+                            0% {
+                                transform: rotate(0deg);
+                            }
+
+                            100% {
+                                transform: rotate(360deg);
+                            }
+                        }
+
+                        .compass-ring span {
+                            position: absolute;
+                            font-size: 12px;
+                            font-weight: 900;
+                            color: rgba(255, 255, 255, 0.8);
+                            text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+                        }
+
+                        .c-n {
+                            top: 5px;
+                            left: 50%;
+                            transform: translateX(-50%);
+                            color: #ef4444 !important;
+                        }
+
+                        .c-e {
+                            right: 8px;
+                            top: 50%;
+                            transform: translateY(-50%);
+                        }
+
+                        .c-s {
+                            bottom: 5px;
+                            left: 50%;
+                            transform: translateX(-50%);
+                        }
+
+                        .c-w {
+                            left: 8px;
+                            top: 50%;
+                            transform: translateY(-50%);
+                        }
+
+                        .compass-needle {
+                            position: absolute;
+                            width: 4px;
+                            height: 40px;
+                            background: linear-gradient(to bottom, #ef4444 50%, #94a3b8 50%);
+                            border-radius: 2px;
+                            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
                         }
 
                         @keyframes rotateScene {
@@ -1100,55 +1277,101 @@
                         }
 
                         /* Boundary Fence */
-                        .park-boundary {
+
+
+                        /* Road System - Aligned with Buildings */
+                        .road {
                             position: absolute;
-                            background: repeating-linear-gradient(90deg, rgba(59, 130, 246, 0.3) 0, rgba(59, 130, 246, 0.3) 2px, transparent 2px, transparent 10px);
-                            border: 1px solid rgba(59, 130, 246, 0.5);
-                            box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
-                            backface-visibility: visible;
-                        }
-
-                        .pb-front,
-                        .pb-back {
-                            width: 1200px;
-                            height: 40px;
                             top: 50%;
                             left: 50%;
-                            transform: translate(-50%, -50%) translateZ(20px) translateY(600px) rotateX(-90deg);
+                            background-color: rgba(30, 41, 59, 0.6);
+                            border: 1px solid rgba(255, 255, 255, 0.05);
+                            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
                         }
 
-                        .pb-back {
-                            transform: translate(-50%, -50%) translateZ(20px) translateY(-600px) rotateX(-90deg);
+                        /* --- NEW ROAD SYSTEM: Grid & Block Design --- */
+
+                        /* Inner Hub (Surrounding HQ) */
+                        .road-h-inner-top,
+                        .road-h-inner-bottom {
+                            width: 250px;
+                            height: 30px;
+                            transform: translate(-50%, -90px);
                         }
 
-                        .pb-left,
-                        .pb-right {
+                        .road-h-inner-bottom {
+                            transform: translate(-50%, 60px);
+                        }
+
+                        .road-v-inner-left,
+                        .road-v-inner-right {
+                            width: 30px;
+                            height: 250px;
+                            transform: translate(-100px, -50%);
+                        }
+
+                        .road-v-inner-right {
+                            transform: translate(70px, -50%);
+                        }
+
+                        /* Main Grid Lines (Cross-Park) */
+                        .road-h-grid-n {
                             width: 1200px;
-                            height: 40px;
-                            top: 50%;
-                            left: 50%;
+                            height: 25px;
+                            transform: translate(-50%, -275px);
+                            background-image: linear-gradient(0deg, transparent 45%, rgba(255, 255, 255, 0.08) 45%, rgba(255, 255, 255, 0.08) 55%, transparent 55%);
                         }
 
-                        /* Rotation tricky */
-                        .pb-left {
-                            transform: translate(-50%, -50%) translateZ(20px) translateX(-600px) rotateZ(90deg) rotateX(-90deg);
+                        .road-h-grid-s {
+                            width: 1200px;
+                            height: 25px;
+                            transform: translate(-50%, 275px);
                         }
 
-                        .pb-right {
-                            transform: translate(-50%, -50%) translateZ(20px) translateX(600px) rotateZ(90deg) rotateX(-90deg);
+                        .road-v-grid-w {
+                            width: 25px;
+                            height: 1200px;
+                            transform: translate(-275px, -50%);
+                            background-image: linear-gradient(90deg, transparent 45%, rgba(255, 255, 255, 0.08) 45%, rgba(255, 255, 255, 0.08) 55%, transparent 55%);
                         }
 
+                        .road-v-grid-e {
+                            width: 25px;
+                            height: 1200px;
+                            transform: translate(250px, -50%);
+                        }
+
+                        /* Perimeter Loop */
                         .road-ring {
-                            position: absolute;
-                            top: 50%;
-                            left: 50%;
+                            width: 1000px;
+                            height: 1000px;
                             transform: translate(-50%, -50%);
+                            background: transparent;
+                            border: 35px solid rgba(30, 41, 59, 0.5);
+                            border-radius: 80px;
+                            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8), 0 0 10px rgba(59, 130, 246, 0.1);
+                        }
+
+                        /* Connectivity */
+                        .road-parking-connect {
+                            width: 180px;
+                            height: 25px;
+                            transform: translate(-450px, 480px);
+                        }
+
+                        /* Secondary Access Roads */
+                        .road-mall-apt {
                             width: 800px;
-                            height: 800px;
-                            border: 40px solid rgba(255, 255, 255, 0.03);
-                            border-radius: 100px;
-                            /* Squarish ring */
-                            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+                            height: 30px;
+                            transform: translate(-50%, 250px) translateX(0);
+                            /* Aligns with Mall and Apt at y=250 */
+                        }
+
+                        .road-parking {
+                            width: 150px;
+                            height: 30px;
+                            transform: translate(-525px, 480px);
+                            /* Connects to new SW parking location */
                         }
 
                         /* Landscape Zones */
@@ -1177,13 +1400,13 @@
                         /* Parking Lot */
                         .parking-lot {
                             position: absolute;
-                            width: 200px;
-                            height: 300px;
+                            width: 280px;
+                            height: 160px;
                             background: rgba(148, 163, 184, 0.1);
                             border: 1px solid rgba(255, 255, 255, 0.1);
                             top: 50%;
                             left: 50%;
-                            transform: translate(-500px, -150px);
+                            transform: translate(-420px, 480px);
                             /* Markings: White lines */
                             background-image:
                                 repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.1) 0, rgba(255, 255, 255, 0.1) 2px, transparent 2px, transparent 30px),
@@ -1315,7 +1538,7 @@
 
                         /* Main Gate */
                         .main-gate {
-                            transform: translate(0, 420px);
+                            transform: translate(0, 500px);
                         }
 
                         /* Position at South Entrance */
@@ -1463,7 +1686,7 @@
                         }
 
                         .t-1 {
-                            transform: translate(-450px, -450px) translateZ(30px);
+                            transform: translate(-550px, -500px) translateZ(30px);
                         }
 
                         .t-2 {
@@ -1479,19 +1702,19 @@
                         }
 
                         .t-5 {
-                            transform: translate(0px, 500px) translateZ(15px);
+                            transform: translate(60px, 500px) translateZ(15px);
                         }
 
                         .t-6 {
-                            transform: translate(0px, -500px) translateZ(35px);
+                            transform: translate(-60px, -500px) translateZ(35px);
                         }
 
                         .t-7 {
-                            transform: translate(550px, 0px) translateZ(25px);
+                            transform: translate(550px, 60px) translateZ(25px);
                         }
 
                         .t-8 {
-                            transform: translate(-550px, 0px) translateZ(20px);
+                            transform: translate(-580px, 400px) translateZ(20px);
                         }
 
                         .building-group {
@@ -1682,7 +1905,7 @@
 
                         /* 2. R&D A (Blue, L-Shape feel via 2 blocks) */
                         .b-rd-a {
-                            transform: translate(-180px, -120px);
+                            transform: translate(-200px, -200px);
                         }
 
                         /* R&D A with Office Windows */
@@ -1794,7 +2017,7 @@
                         /* 3. R&D B (Blue) Simple slab */
                         /* 3. R&D B (Blue) Simple slab */
                         .b-rd-b {
-                            transform: translate(300px, -150px);
+                            transform: translate(200px, -200px);
                         }
 
                         .b-rdb-main .face {
@@ -1845,7 +2068,7 @@
 
                         /* 4. Commercial (Gold, Wide) */
                         .b-mall {
-                            transform: translate(-250px, 250px);
+                            transform: translate(-350px, 0);
                         }
 
                         /* Mall with Commercial GlassFacade */
@@ -1941,7 +2164,7 @@
 
                         /* 5. Apartments (Purple, Twin Towers) */
                         .b-apt {
-                            transform: translate(250px, 250px);
+                            transform: translate(350px, 350px);
                         }
 
                         /* Tower 1 - Solid Concrete */
@@ -2003,25 +2226,17 @@
                             pointer-events: none;
                         }
 
-                        /* The Line */
+                        /* Removed e-line to avoid vertical clutter */
                         .e-line {
-                            position: absolute;
-                            width: 2px;
-                            height: 60px;
-                            background: linear-gradient(to top, rgba(59, 130, 246, 0.2), #3b82f6);
-                            bottom: 0;
-                            left: 50%;
-                            transform: translateX(-50%) rotateX(-90deg);
-                            transform-origin: bottom center;
+                            display: none;
                         }
 
-                        /* The Label Content */
+                        /* The Label Content - Centered in container */
                         .e-val {
                             position: absolute;
-                            bottom: 60px;
                             left: 50%;
-                            transform: translateX(-50%) rotateX(-60deg);
-                            /* Match camera angle approx */
+                            top: 50%;
+                            transform: translate(-50%, -50%);
                             background: rgba(15, 23, 42, 0.8);
                             border: 1px solid #3b82f6;
                             padding: 4px 8px;
@@ -2033,21 +2248,59 @@
                             box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
                         }
 
-                        .el-hq {
-                            transform: translateZ(180px);
+                        /* Building Elevation Mapping (Calculated Tops) */
+                        .b-hq {
+                            --h: 300px;
                         }
 
-                        .el-rda {
-                            transform: translate(30px, 0) translateZ(120px);
+                        /* Calibrated closer to building top (actual spire is 270px) */
+
+                        /* Removed old buffers */
+
+                        .b-rd-a {
+                            --h: 120px;
                         }
 
-                        .el-mall {
-                            transform: translate(60px, 20px) translateZ(80px);
+                        .b-rd-b {
+                            --h: 100px;
                         }
 
-                        .el-parking {
-                            transform: translate(0, 0) translateZ(30px);
+                        .b-mall {
+                            --h: 130px;
                         }
+
+                        .b-apt {
+                            --h: 140px;
+                        }
+
+                        .b-gym {
+                            --h: 80px;
+                        }
+
+                        .b-rd-c {
+                            --h: 170px;
+                        }
+
+                        .b-canteen {
+                            --h: 80px;
+                        }
+
+                        .b-data {
+                            --h: 100px;
+                        }
+
+                        .b-power {
+                            --h: 80px;
+                        }
+
+                        .b-off-d,
+                        .b-off-e,
+                        .b-off-f,
+                        .b-off-g {
+                            --h: 130px;
+                        }
+
+                        /* Tower 2 */
 
                         /* Tower 2 */
                         .b-apt-2 {
@@ -2100,16 +2353,16 @@
 
                         /* 6. Gym (Cyan) */
                         .b-gym {
-                            transform: translate(-180px, 120px);
+                            transform: translate(-350px, 350px);
                         }
 
                         /* 7. Facilities (Gray) */
                         .b-fac-1 {
-                            transform: translate(-200px, -350px);
+                            transform: translate(-520px, -480px);
                         }
 
                         .b-fac-2 {
-                            transform: translate(200px, -350px);
+                            transform: translate(520px, -200px);
                         }
 
                         .b-fac-1 .face,
@@ -2214,7 +2467,7 @@
 
                         /* R&D Center C (Slate/Gold tech tower) */
                         .b-rd-c {
-                            transform: translate(0, -350px);
+                            transform: translate(0, -400px);
                         }
 
                         .b-rdc-main .face {
@@ -2254,7 +2507,7 @@
 
                         /* Staff Canteen (Orange/Red) */
                         .b-canteen {
-                            transform: translate(350px, 50px);
+                            transform: translate(350px, 0);
                         }
 
                         .b-can-main .face {
@@ -2293,7 +2546,7 @@
 
                         /* Data Center (Dark Slate with Cyan Glow) */
                         .b-data {
-                            transform: translate(0, 200px);
+                            transform: translate(520px, -350px);
                         }
 
                         .b-dat-main .face {
@@ -2335,7 +2588,7 @@
 
                         /* Power Station (Green Industrial) */
                         .b-power {
-                            transform: translate(400px, -400px);
+                            transform: translate(520px, -480px);
                         }
 
                         .b-pow-main .face {
@@ -2372,21 +2625,206 @@
                             background: #4ade80;
                         }
 
+                        /* Office Buildings Style */
+                        .b-off-d {
+                            transform: translate(-350px, -350px);
+                        }
 
-                        /* Labels */
-                        .b-label {
+                        .b-off-e {
+                            transform: translate(350px, -350px);
+                        }
+
+                        .b-off-f {
+                            transform: translate(-200px, 200px);
+                        }
+
+                        .b-off-g {
+                            transform: translate(200px, 200px);
+                        }
+
+                        .b-office-tower .face {
+                            background-color: #1e3a8a;
+                            /* Blue-900 */
+                            background-image:
+                                linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+                                linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+                            background-size: 15px 15px;
+                            border: 1px solid #1e40af;
+                        }
+
+                        .b-office-tower .f-top {
+                            background-color: #3b82f6;
+                            background-image: none;
+                        }
+
+                        .b-off-main .f-front,
+                        .b-off-main .f-back {
+                            width: 60px;
+                            height: 100px;
+                            transform: translate(-50%, -50%) translateZ(50px) rotateX(90deg) translateZ(30px);
+                        }
+
+                        .b-off-main .f-back {
+                            transform: translate(-50%, -50%) translateZ(50px) rotateX(90deg) translateZ(-30px);
+                        }
+
+                        .b-off-main .f-left,
+                        .b-off-main .f-right {
+                            width: 60px;
+                            height: 100px;
+                            transform: translate(-50%, -50%) translateZ(50px) rotateY(-90deg) rotateZ(-90deg) translateZ(30px);
+                        }
+
+                        .b-off-main .f-right {
+                            transform: translate(-50%, -50%) translateZ(50px) rotateY(90deg) rotateZ(90deg) translateZ(30px);
+                        }
+
+                        .b-off-main .f-top {
+                            width: 60px;
+                            height: 60px;
+                            transform: translate(-50%, -50%) translateZ(100px);
+                        }
+
+                        /* Group heights already defined above */
+
+
+                        /* Labels Master Styles */
+                        .b-label,
+                        .energy-label {
+                            --h-pos: 100px;
+                            /* Global Fallback */
                             position: absolute;
-                            color: white;
-                            font-size: 10px;
-                            white-space: nowrap;
-                            padding: 2px 4px;
-                            background: rgba(0, 0, 0, 0.6);
-                            border: 1px solid rgba(255, 255, 255, 0.2);
-                            border-radius: 4px;
                             left: 50%;
                             top: 50%;
-                            transform: translate(-50%, -50%);
-                            backface-visibility: hidden;
+                            pointer-events: none;
+                            z-index: 10;
+                            transition: transform 0.05s linear;
+                        }
+
+                        .b-label {
+                            color: #ffffff;
+                            font-size: 11px;
+                            font-weight: 800;
+                            white-space: nowrap;
+                            padding: 2px 10px;
+                            background: rgba(15, 23, 42, 0.9);
+                            border: 1px solid #3b82f6;
+                            border-radius: 4px;
+                            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+                            text-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+                        }
+
+                        .energy-label {
+                            margin-top: 0;
+                        }
+
+                        /* ============================================================
+                           INDIVIDUAL POSITIONING (Adjust these for each building)
+                           ============================================================ */
+
+                        /* Headquarters 总部 */
+                        .b-hq .b-label {
+                            --h-pos: 420px;
+                        }
+
+                        .b-hq .energy-label {
+                            --h-pos: 340px;
+                        }
+
+                        /* R&D A 研发A */
+                        .b-rd-a .b-label {
+                            --h-pos: 200px;
+                        }
+
+                        .b-rd-a .energy-label {
+                            --h-pos: 140px;
+                        }
+
+                        /* R&D B 研发B */
+                        .b-rd-b .b-label {
+                            --h-pos: 180px;
+                        }
+
+                        .b-rd-b .energy-label {
+                            --h-pos: 120px;
+                        }
+
+                        /* R&D C 研发C */
+                        .b-rd-c .b-label {
+                            --h-pos: 240px;
+                        }
+
+                        .b-rd-c .energy-label {
+                            --h-pos: 180px;
+                        }
+
+                        /* Commercial Mall 商业中心 */
+                        .b-mall .b-label {
+                            --h-pos: 210px;
+                        }
+
+                        .b-mall .energy-label {
+                            --h-pos: 150px;
+                        }
+
+                        /* Apartments 人才公寓 */
+                        .b-apt .b-label {
+                            --h-pos: 210px;
+                        }
+
+                        .b-apt .energy-label {
+                            --h-pos: 150px;
+                        }
+
+                        /* Gym 体育中心 */
+                        .b-gym .b-label {
+                            --h-pos: 140px;
+                        }
+
+                        .b-gym .energy-label {
+                            --h-pos: 80px;
+                        }
+
+                        /* Staff Canteen 职工食堂 */
+                        .b-canteen .b-label {
+                            --h-pos: 140px;
+                        }
+
+                        .b-canteen .energy-label {
+                            --h-pos: 80px;
+                        }
+
+                        /* Data Center 数据中心 */
+                        .b-data .b-label {
+                            --h-pos: 160px;
+                        }
+
+                        .b-data .energy-label {
+                            --h-pos: 100px;
+                        }
+
+                        /* Power Station 动力中心 */
+                        .b-power .b-label {
+                            --h-pos: 140px;
+                        }
+
+                        .b-power .energy-label {
+                            --h-pos: 80px;
+                        }
+
+                        /* Office Towers D-G 办公楼 */
+                        .b-off-d .b-label,
+                        .b-off-e .b-label,
+                        .b-off-f .b-label,
+                        .b-off-g .b-label {
+                            --h-pos: 200px;
+                        }
+
+                        .b-off-d .energy-label,
+                        .b-off-e .energy-label,
+                        .b-off-f .energy-label,
+                        .b-off-g .energy-label {
+                            --h-pos: 140px;
                         }
 
                         /* Data Points */
@@ -2551,6 +2989,8 @@
                         </div>
                     </div>
 
+
+
                     <!-- Surveillance Camera Module -->
                     <div class="cp-card">
                         <h4>📹 智能监控 (Surveillance)</h4>
@@ -2634,22 +3074,44 @@
                 <!-- Bottom: Quick Stats -->
                 <div class="cp-bottom-metrics">
                     <div class="cp-card"
-                        style="flex-direction: row; align-items: center; justify-content: space-between; padding: 0.5rem 1rem;">
-                        <div>
+                        style="flex-direction: column; align-items: flex-start; justify-content: flex-start; padding: 0.6rem 1rem; overflow: hidden;">
+                        <div
+                            style="display: flex; width: 100%; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                             <div style="font-size: 0.7rem; color: var(--text-muted);">项目管理 (Projects)</div>
                             <div style="font-size: 1.2rem; font-weight: bold;">12 <span
                                     style="font-size: 0.8rem; font-weight: normal;">进行中</span></div>
                         </div>
-                        <div style="font-size: 1.5rem;">🏗️</div>
+                        <div style="font-size: 0.65rem; color: #ffffff; opacity: 0.8; width: 100%;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                <span>• 园区二期景观工程</span><span style="color: #3b82f6;">65%</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                <span>• 5G工业平台部署</span><span style="color: #10b981;">90%</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>• 总部核心区绿化</span><span style="color: #fbbf24;">30%</span>
+                            </div>
+                        </div>
                     </div>
                     <div class="cp-card"
-                        style="flex-direction: row; align-items: center; justify-content: space-between; padding: 0.5rem 1rem;">
-                        <div>
+                        style="flex-direction: column; align-items: flex-start; justify-content: flex-start; padding: 0.6rem 1rem; overflow: hidden;">
+                        <div
+                            style="display: flex; width: 100%; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                             <div style="font-size: 0.7rem; color: var(--text-muted);">待办公文 (Docs)</div>
                             <div style="font-size: 1.2rem; font-weight: bold;">5 <span
                                     style="font-size: 0.8rem; font-weight: normal;">待审批</span></div>
                         </div>
-                        <div style="font-size: 1.5rem;">📑</div>
+                        <div style="font-size: 0.65rem; color: #ffffff; opacity: 0.8; width: 100%;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                <span>• 租户 A1-403 续租合同</span><span style="color: #60a5fa;">法务核中</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                                <span>• 园区Q1物业采购申请</span><span style="color: #60a5fa;">待总办签</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>• 企业入驻审核(腾飞科技)</span><span style="color: #60a5fa;">初审通过</span>
+                            </div>
+                        </div>
                     </div>
                     <div class="cp-card"
                         style="flex-direction: row; align-items: center; justify-content: space-between; padding: 0.5rem 1rem;">
@@ -2923,7 +3385,18 @@
             const labels = [
                 { id: '.el-hq .e-val', base: 450, variance: 15, unit: ' kW' },
                 { id: '.el-rda .e-val', base: 125, variance: 8, unit: ' kW' },
+                { id: '.el-rdb .e-val', base: 85, variance: 5, unit: ' kW' },
                 { id: '.el-mall .e-val', base: 310, variance: 20, unit: ' kW' },
+                { id: '.el-apt .e-val', base: 180, variance: 15, unit: ' kW' },
+                { id: '.el-gym .e-val', base: 45, variance: 5, unit: ' kW' },
+                { id: '.el-rdc .e-val', base: 95, variance: 8, unit: ' kW' },
+                { id: '.el-can .e-val', base: 65, variance: 6, unit: ' kW' },
+                { id: '.el-data .e-val', base: 520, variance: 30, unit: ' kW' },
+                { id: '.el-power .e-val', base: 880, variance: 40, unit: ' kW' },
+                { id: '.el-off-d .e-val', base: 145, variance: 12, unit: ' kW' },
+                { id: '.el-off-e .e-val', base: 160, variance: 15, unit: ' kW' },
+                { id: '.el-off-f .e-val', base: 110, variance: 10, unit: ' kW' },
+                { id: '.el-off-g .e-val', base: 125, variance: 11, unit: ' kW' },
                 { id: '.el-gate .e-val', type: 'status' } // Gate stays 'Live'
             ];
 
@@ -2976,6 +3449,7 @@
             rotZ: 0,
             scale: 1,
             isDragging: false,
+            autoRotate: true,
             startX: 0,
             startY: 0
         };
@@ -2989,60 +3463,75 @@
             maxRotX: 85
         };
 
+        const compassRing = document.querySelector('.compass-ring');
+
         function updateSceneTransform() {
-            // Stop CSS animation once interaction starts
-            scene3d.style.animation = 'none';
             scene3d.style.transform = `scale3d(${state.scale}, ${state.scale}, ${state.scale}) rotateX(${state.rotX}deg) rotateZ(${state.rotZ}deg)`;
+
+            // Sync Compass
+            if (compassRing) {
+                compassRing.style.transform = `rotate(${state.rotZ}deg)`;
+            }
+
+            // Billboard effect: negZ cancels park spin, negX stands the label up towards user
+            const labels = document.querySelectorAll('.b-label, .energy-label');
+            const negZ = -state.rotZ;
+            const negX = -state.rotX;
+            labels.forEach(el => {
+                const trans = el.classList.contains('b-label') ? 'translateX(-50%)' : 'translate(-50%, -50%)';
+                // Use the individual --h-pos variable defined in CSS
+                el.style.transform = `${trans} translateZ(var(--h-pos)) rotateZ(${negZ}deg) rotateX(${negX}deg)`;
+            });
         }
 
-        // Wheel Zoom
-        mapArea.addEventListener('wheel', (e) => {
-            // Prevent page scroll only if hovering over map
-            e.preventDefault();
-            e.stopPropagation();
-            const delta = -e.deltaY;
-            state.scale += delta * CFG.zoomSpeed;
-            // Clamp scale
-            state.scale = Math.min(Math.max(state.scale, CFG.minScale), CFG.maxScale);
-            updateSceneTransform();
-        }, { passive: false });
+        // JS Driven Animation Engine
+        function animate() {
+            if (state.autoRotate && !state.isDragging) {
+                state.rotZ += 0.15; // Slow ambient rotation
+                updateSceneTransform();
+            }
+            requestAnimationFrame(animate);
+        }
+        animate();
 
-        // Drag Rotate
+        // Interaction Logic
         mapArea.addEventListener('mousedown', (e) => {
             state.isDragging = true;
+            state.autoRotate = false; // Disable auto-pilot on interaction
             state.startX = e.clientX;
             state.startY = e.clientY;
             mapArea.style.cursor = 'grabbing';
-            // Stop animation on first click too
-            scene3d.style.animation = 'none';
         });
 
         window.addEventListener('mousemove', (e) => {
             if (!state.isDragging) return;
-
-            e.preventDefault();
             const deltaX = e.clientX - state.startX;
             const deltaY = e.clientY - state.startY;
 
-            // Rotate Z (Horizontal drag spins the scene)
             state.rotZ -= deltaX * CFG.rotSpeed;
-
-            // Rotate X (Vertical drag tilts the scene)
-            state.rotX -= deltaY * CFG.rotSpeed;
-
-            // Clamp tilt
-            state.rotX = Math.min(Math.max(state.rotX, CFG.minRotX), CFG.maxRotX);
+            state.rotX = Math.min(Math.max(state.rotX - deltaY * CFG.rotSpeed, CFG.minRotX), CFG.maxRotX);
 
             state.startX = e.clientX;
             state.startY = e.clientY;
-
             updateSceneTransform();
         });
 
         window.addEventListener('mouseup', () => {
             state.isDragging = false;
             mapArea.style.cursor = 'grab';
+            // Resume auto-rotate after 5 seconds of inactivity
+            clearTimeout(window._rotTimer);
+            window._rotTimer = setTimeout(() => { if (!state.isDragging) state.autoRotate = true; }, 5000);
         });
+
+        // Wheel Zoom
+        mapArea.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const delta = -e.deltaY;
+            state.scale = Math.min(Math.max(state.scale + delta * CFG.zoomSpeed, CFG.minScale), CFG.maxScale);
+            updateSceneTransform();
+        }, { passive: false });
 
     </script>
 </body>

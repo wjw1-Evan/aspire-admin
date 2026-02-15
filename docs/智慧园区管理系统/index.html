@@ -792,6 +792,8 @@
                         <div class="tree t-4"></div>
                         <div class="tree t-5"></div>
                         <div class="tree t-6"></div>
+                        <div class="tree t-7"></div>
+                        <div class="tree t-8"></div>
 
                         <!-- Main Gate (South) -->
                         <div class="building-group main-gate">
@@ -801,7 +803,9 @@
                                 <div class="face f-back"></div>
                                 <div class="face f-left"></div>
                                 <div class="face f-right"></div>
-                                <div class="face f-top"></div>
+                                <div class="face f-top"
+                                    style="width: 160px; height: 80px; transform: translateY(-40px) translateZ(50px);">
+                                </div>
                             </div>
                             <!-- Pillars -->
                             <div class="cube gate-pillar gp-left">
@@ -809,14 +813,18 @@
                                 <div class="face f-back"></div>
                                 <div class="face f-left"></div>
                                 <div class="face f-right"></div>
-                                <div class="face f-top"></div>
+                                <div class="face f-top"
+                                    style="width: 20px; height: 20px; transform: translateY(-10px) translateZ(50px);">
+                                </div>
                             </div>
                             <div class="cube gate-pillar gp-right">
                                 <div class="face f-front"></div>
                                 <div class="face f-back"></div>
                                 <div class="face f-left"></div>
                                 <div class="face f-right"></div>
-                                <div class="face f-top"></div>
+                                <div class="face f-top"
+                                    style="width: 20px; height: 20px; transform: translateY(-10px) translateZ(50px);">
+                                </div>
                             </div>
 
                             <!-- Vehicle Lane Barriers (Boom Gates) -->
@@ -981,7 +989,7 @@
                             <div class="b-label" style="transform: translateZ(120px) rotateX(-60deg);">人才公寓</div>
                         </div>
 
-                        <!-- 6. Sports Center (Stadium Shape - Approximate with faceted cylinder logic or wide box) -->
+                        <!-- 6. Sports Center -->
                         <div class="building-group b-gym">
                             <div class="cube b-gym-main">
                                 <div class="face f-front"></div>
@@ -990,7 +998,55 @@
                                 <div class="face f-right"></div>
                                 <div class="face f-top"></div>
                             </div>
-                            <div class="b-label" style="transform: translateZ(50px) rotateX(-60deg);">体育中心</div>
+                            <div class="b-label" style="transform: translateZ(50px) rotateX(-60deg);">体育中心 Gym</div>
+                        </div>
+
+                        <!-- 7. Research Center C (NEW) -->
+                        <div class="building-group b-rd-c">
+                            <div class="cube b-rdc-main">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="b-label" style="transform: translateZ(140px) rotateX(-60deg);">研发中心 C</div>
+                        </div>
+
+                        <!-- 8. Staff Canteen (NEW) -->
+                        <div class="building-group b-canteen">
+                            <div class="cube b-can-main">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="b-label" style="transform: translateZ(50px) rotateX(-60deg);">员工食堂</div>
+                        </div>
+
+                        <!-- 9. Data Center (NEW) -->
+                        <div class="building-group b-data">
+                            <div class="cube b-dat-main">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="b-label" style="transform: translateZ(70px) rotateX(-60deg);">数据中心</div>
+                        </div>
+
+                        <!-- 10. Power Station (NEW) -->
+                        <div class="building-group b-power">
+                            <div class="cube b-pow-main">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="b-label" style="transform: translateZ(40px) rotateX(-60deg);">变电站</div>
                         </div>
 
                         <!-- Floating Data Points -->
@@ -998,6 +1054,8 @@
                         <div class="data-point p-2"></div>
                         <div class="data-point p-3"></div>
                         <div class="data-point p-4"></div>
+                        <div class="data-point p-5"></div>
+                        <div class="data-point p-6"></div>
                     </div>
 
                     <!-- 3D Styles -->
@@ -1268,28 +1326,28 @@
                         .gate-canopy .f-back {
                             width: 160px;
                             height: 10px;
-                            transform: rotateX(90deg) translateZ(40px);
+                            transform: translate(-50%, -50%) translateZ(45px) rotateX(90deg) translateZ(40px);
                         }
 
                         .gate-canopy .f-back {
-                            transform: rotateX(90deg) translateZ(-40px);
+                            transform: translate(-50%, -50%) translateZ(45px) rotateX(90deg) translateZ(-40px);
                         }
 
                         .gate-canopy .f-left,
                         .gate-canopy .f-right {
                             width: 80px;
                             height: 10px;
-                            transform: rotateY(-90deg) rotateZ(-90deg) translateZ(80px);
+                            transform: translate(-50%, -50%) translateZ(45px) rotateY(-90deg) rotateZ(-90deg) translateZ(80px);
                         }
 
                         .gate-canopy .f-right {
-                            transform: rotateY(90deg) rotateZ(90deg) translateZ(80px);
+                            transform: translate(-50%, -50%) translateZ(45px) rotateY(90deg) rotateZ(90deg) translateZ(80px);
                         }
 
                         .gate-canopy .f-top {
                             width: 160px;
                             height: 80px;
-                            transform: translateZ(50px);
+                            transform: translate(-50%, -50%) translateZ(50px);
                             background: rgba(59, 130, 246, 0.8);
                             box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
                         }
@@ -1303,28 +1361,28 @@
                         .gate-pillar .f-back {
                             width: 20px;
                             height: 50px;
-                            transform: rotateX(90deg) translateZ(10px);
+                            transform: translate(-50%, -50%) translateZ(25px) rotateX(90deg) translateZ(10px);
                         }
 
                         .gate-pillar .f-back {
-                            transform: rotateX(90deg) translateZ(-10px);
+                            transform: translate(-50%, -50%) translateZ(25px) rotateX(90deg) translateZ(-10px);
                         }
 
                         .gate-pillar .f-left,
                         .gate-pillar .f-right {
                             width: 20px;
                             height: 50px;
-                            transform: rotateY(-90deg) rotateZ(-90deg) translateZ(10px);
+                            transform: translate(-50%, -50%) translateZ(25px) rotateY(-90deg) rotateZ(-90deg) translateZ(10px);
                         }
 
                         .gate-pillar .f-right {
-                            transform: rotateY(90deg) rotateZ(90deg) translateZ(10px);
+                            transform: translate(-50%, -50%) translateZ(25px) rotateY(90deg) rotateZ(90deg) translateZ(10px);
                         }
 
                         .gate-pillar .f-top {
                             width: 20px;
                             height: 20px;
-                            transform: translateZ(50px);
+                            transform: translate(-50%, -50%) translateZ(50px);
                             background: #64748b;
                         }
 
@@ -1401,27 +1459,35 @@
                         }
 
                         .t-1 {
-                            transform: translate(-300px, -300px) translateZ(30px);
+                            transform: translate(-450px, -450px) translateZ(30px);
                         }
 
                         .t-2 {
-                            transform: translate(300px, -300px) translateZ(40px);
+                            transform: translate(450px, -450px) translateZ(40px);
                         }
 
                         .t-3 {
-                            transform: translate(300px, 300px) translateZ(20px);
+                            transform: translate(450px, 450px) translateZ(20px);
                         }
 
                         .t-4 {
-                            transform: translate(-300px, 300px) translateZ(25px);
+                            transform: translate(-450px, 450px) translateZ(25px);
                         }
 
                         .t-5 {
-                            transform: translate(0px, 400px) translateZ(15px);
+                            transform: translate(0px, 500px) translateZ(15px);
                         }
 
                         .t-6 {
-                            transform: translate(0px, -400px) translateZ(35px);
+                            transform: translate(0px, -500px) translateZ(35px);
+                        }
+
+                        .t-7 {
+                            transform: translate(550px, 0px) translateZ(25px);
+                        }
+
+                        .t-8 {
+                            transform: translate(-550px, 0px) translateZ(20px);
                         }
 
                         .building-group {
@@ -1440,6 +1506,8 @@
                         /* Faces Generic */
                         .face {
                             position: absolute;
+                            top: 50%;
+                            left: 50%;
                             border: 1px solid rgba(255, 255, 255, 0.1);
                             /* Removed inset shadow for solid look */
                             backface-visibility: visible;
@@ -1460,28 +1528,28 @@
                         .b-hq-base .f-back {
                             width: 120px;
                             height: 30px;
-                            transform: translateZ(15px) rotateX(90deg) translateZ(50px);
+                            transform: translate(-50%, -50%) translateZ(15px) rotateX(90deg) translateZ(50px);
                         }
 
                         .b-hq-base .f-back {
-                            transform: translateZ(15px) rotateX(90deg) translateZ(-50px);
+                            transform: translate(-50%, -50%) translateZ(15px) rotateX(90deg) translateZ(-50px);
                         }
 
                         .b-hq-base .f-left,
                         .b-hq-base .f-right {
                             width: 100px;
                             height: 30px;
-                            transform: translateZ(15px) rotateY(-90deg) rotateZ(-90deg) translateZ(60px);
+                            transform: translate(-50%, -50%) translateZ(15px) rotateY(-90deg) rotateZ(-90deg) translateZ(60px);
                         }
 
                         .b-hq-base .f-right {
-                            transform: translateZ(15px) rotateY(90deg) rotateZ(90deg) translateZ(60px);
+                            transform: translate(-50%, -50%) translateZ(15px) rotateY(90deg) rotateZ(90deg) translateZ(60px);
                         }
 
                         .b-hq-base .f-top {
                             width: 120px;
                             height: 100px;
-                            transform: translateZ(30px);
+                            transform: translate(-50%, -50%) translateZ(30px);
                         }
 
                         /* HQ Base - Solid Podium */
@@ -1540,28 +1608,28 @@
                         .b-hq-tower .f-back {
                             width: 80px;
                             height: 140px;
-                            transform: translateZ(70px) rotateX(90deg) translateZ(30px);
+                            transform: translate(-50%, -50%) translateZ(70px) rotateX(90deg) translateZ(30px);
                         }
 
                         .b-hq-tower .f-back {
-                            transform: translateZ(70px) rotateX(90deg) translateZ(-30px);
+                            transform: translate(-50%, -50%) translateZ(70px) rotateX(90deg) translateZ(-30px);
                         }
 
                         .b-hq-tower .f-left,
                         .b-hq-tower .f-right {
                             width: 60px;
                             height: 140px;
-                            transform: translateZ(70px) rotateY(-90deg) rotateZ(-90deg) translateZ(40px);
+                            transform: translate(-50%, -50%) translateZ(70px) rotateY(-90deg) rotateZ(-90deg) translateZ(40px);
                         }
 
                         .b-hq-tower .f-right {
-                            transform: translateZ(70px) rotateY(90deg) rotateZ(90deg) translateZ(40px);
+                            transform: translate(-50%, -50%) translateZ(70px) rotateY(90deg) rotateZ(90deg) translateZ(40px);
                         }
 
                         .b-hq-tower .f-top {
                             width: 80px;
                             height: 60px;
-                            transform: translateZ(140px);
+                            transform: translate(-50%, -50%) translateZ(140px);
                             background: #22d3ee;
                             box-shadow: 0 0 40px rgba(6, 182, 212, 0.8);
                         }
@@ -1577,28 +1645,28 @@
                         .b-hq-top .f-back {
                             width: 30px;
                             height: 100px;
-                            transform: translateZ(50px) rotateX(90deg) translateZ(10px);
+                            transform: translate(-50%, -50%) translateZ(50px) rotateX(90deg) translateZ(10px);
                         }
 
                         .b-hq-top .f-back {
-                            transform: translateZ(50px) rotateX(90deg) translateZ(-10px);
+                            transform: translate(-50%, -50%) translateZ(50px) rotateX(90deg) translateZ(-10px);
                         }
 
                         .b-hq-top .f-left,
                         .b-hq-top .f-right {
                             width: 20px;
                             height: 100px;
-                            transform: translateZ(50px) rotateY(-90deg) rotateZ(-90deg) translateZ(15px);
+                            transform: translate(-50%, -50%) translateZ(50px) rotateY(-90deg) rotateZ(-90deg) translateZ(15px);
                         }
 
                         .b-hq-top .f-right {
-                            transform: translateZ(50px) rotateY(90deg) rotateZ(90deg) translateZ(15px);
+                            transform: translate(-50%, -50%) translateZ(50px) rotateY(90deg) rotateZ(90deg) translateZ(15px);
                         }
 
                         .b-hq-top .f-top {
                             width: 30px;
                             height: 20px;
-                            transform: translateZ(40px);
+                            transform: translate(-50%, -50%) translateZ(100px);
                         }
 
                         /* HQ Spire - Glowing Top */
@@ -1610,7 +1678,7 @@
 
                         /* 2. R&D A (Blue, L-Shape feel via 2 blocks) */
                         .b-rd-a {
-                            transform: translate(-120px, -80px);
+                            transform: translate(-300px, -150px);
                         }
 
                         /* R&D A with Office Windows */
@@ -1638,28 +1706,28 @@
                         .b-rda-main .f-back {
                             width: 50px;
                             height: 100px;
-                            transform: translateZ(50px) rotateX(90deg) translateZ(40px);
+                            transform: translate(-50%, -50%) translateZ(50px) rotateX(90deg) translateZ(40px);
                         }
 
                         .b-rda-main .f-back {
-                            transform: translateZ(50px) rotateX(90deg) translateZ(-40px);
+                            transform: translate(-50%, -50%) translateZ(50px) rotateX(90deg) translateZ(-40px);
                         }
 
                         .b-rda-main .f-left,
                         .b-rda-main .f-right {
                             width: 80px;
                             height: 100px;
-                            transform: translateZ(50px) rotateY(-90deg) rotateZ(-90deg) translateZ(25px);
+                            transform: translate(-50%, -50%) translateZ(50px) rotateY(-90deg) rotateZ(-90deg) translateZ(25px);
                         }
 
                         .b-rda-main .f-right {
-                            transform: translateZ(50px) rotateY(90deg) rotateZ(90deg) translateZ(25px);
+                            transform: translate(-50%, -50%) translateZ(50px) rotateY(90deg) rotateZ(90deg) translateZ(25px);
                         }
 
                         .b-rda-main .f-top {
                             width: 50px;
                             height: 80px;
-                            transform: translateZ(100px);
+                            transform: translate(-50%, -50%) translateZ(100px);
                             background: #60a5fa;
                         }
 
@@ -1674,22 +1742,28 @@
                         .b-rda-side .f-back {
                             width: 40px;
                             height: 60px;
-                            transform: translateZ(30px) rotateX(90deg) translateZ(30px);
+                            transform: translate(-50%, -50%) translateZ(30px) rotateX(90deg) translateZ(30px);
                         }
 
                         .b-rda-side .f-back {
-                            transform: translateZ(30px) rotateX(90deg) translateZ(-30px);
+                            transform: translate(-50%, -50%) translateZ(30px) rotateX(90deg) translateZ(-30px);
                         }
 
                         .b-rda-side .f-left,
                         .b-rda-side .f-right {
                             width: 60px;
                             height: 60px;
-                            transform: translateZ(30px) rotateY(-90deg) rotateZ(-90deg) translateZ(20px);
+                            transform: translate(-50%, -50%) translateZ(30px) rotateY(-90deg) rotateZ(-90deg) translateZ(20px);
                         }
 
                         .b-rda-side .f-right {
-                            transform: translateZ(30px) rotateY(90deg) rotateZ(90deg) translateZ(20px);
+                            transform: translate(-50%, -50%) translateZ(30px) rotateY(90deg) rotateZ(90deg) translateZ(20px);
+                        }
+
+                        .b-rda-side .f-top {
+                            width: 40px;
+                            height: 60px;
+                            transform: translate(-50%, -50%) translateZ(60px);
                         }
 
                         /* R&D A Side Wing */
@@ -1716,7 +1790,7 @@
                         /* 3. R&D B (Blue) Simple slab */
                         /* 3. R&D B (Blue) Simple slab */
                         .b-rd-b {
-                            transform: translate(120px, -80px);
+                            transform: translate(300px, -150px);
                         }
 
                         .b-rdb-main .face {
@@ -1738,36 +1812,36 @@
 
                         .b-rdb-main .f-front,
                         .b-rdb-main .f-back {
-                            width: 80px;
+                            width: 50px;
                             height: 80px;
-                            transform: translateZ(40px) rotateX(90deg) translateZ(25px);
+                            transform: translate(-50%, -50%) translateZ(40px) rotateX(90deg) translateZ(40px);
                         }
 
                         .b-rdb-main .f-back {
-                            transform: translateZ(40px) rotateX(90deg) translateZ(-25px);
+                            transform: translate(-50%, -50%) translateZ(40px) rotateX(90deg) translateZ(-40px);
                         }
 
                         .b-rdb-main .f-left,
                         .b-rdb-main .f-right {
-                            width: 50px;
+                            width: 80px;
                             height: 80px;
-                            transform: translateZ(40px) rotateY(-90deg) rotateZ(-90deg) translateZ(40px);
+                            transform: translate(-50%, -50%) translateZ(40px) rotateY(-90deg) rotateZ(-90deg) translateZ(25px);
                         }
 
                         .b-rdb-main .f-right {
-                            transform: translateZ(40px) rotateY(90deg) rotateZ(90deg) translateZ(40px);
+                            transform: translate(-50%, -50%) translateZ(40px) rotateY(90deg) rotateZ(90deg) translateZ(25px);
                         }
 
                         .b-rdb-main .f-top {
                             width: 50px;
                             height: 80px;
-                            transform: translateZ(100px);
+                            transform: translate(-50%, -50%) translateZ(80px);
                             background: #94a3b8;
                         }
 
                         /* 4. Commercial (Gold, Wide) */
                         .b-mall {
-                            transform: translate(-100px, 100px);
+                            transform: translate(-250px, 250px);
                         }
 
                         /* Mall with Commercial GlassFacade */
@@ -1795,28 +1869,28 @@
                         .b-mall-main .f-back {
                             width: 140px;
                             height: 50px;
-                            transform: translateZ(25px) rotateX(90deg) translateZ(50px);
+                            transform: translate(-50%, -50%) translateZ(25px) rotateX(90deg) translateZ(50px);
                         }
 
                         .b-mall-main .f-back {
-                            transform: translateZ(25px) rotateX(90deg) translateZ(-50px);
+                            transform: translate(-50%, -50%) translateZ(25px) rotateX(90deg) translateZ(-50px);
                         }
 
                         .b-mall-main .f-left,
                         .b-mall-main .f-right {
                             width: 100px;
                             height: 50px;
-                            transform: translateZ(25px) rotateY(-90deg) rotateZ(-90deg) translateZ(70px);
+                            transform: translate(-50%, -50%) translateZ(25px) rotateY(-90deg) rotateZ(-90deg) translateZ(70px);
                         }
 
                         .b-mall-main .f-right {
-                            transform: translateZ(25px) rotateY(90deg) rotateZ(90deg) translateZ(70px);
+                            transform: translate(-50%, -50%) translateZ(25px) rotateY(90deg) rotateZ(90deg) translateZ(70px);
                         }
 
                         .b-mall-main .f-top {
                             width: 140px;
                             height: 100px;
-                            transform: translateZ(50px);
+                            transform: translate(-50%, -50%) translateZ(50px);
                             background-color: #facc15;
                         }
 
@@ -1831,28 +1905,28 @@
                         .b-mall-atrium .f-back {
                             width: 50px;
                             height: 70px;
-                            transform: translateZ(35px) rotateX(90deg) translateZ(20px);
+                            transform: translate(-50%, -50%) translateZ(35px) rotateX(90deg) translateZ(20px);
                         }
 
                         .b-mall-atrium .f-back {
-                            transform: translateZ(35px) rotateX(90deg) translateZ(-20px);
+                            transform: translate(-50%, -50%) translateZ(35px) rotateX(90deg) translateZ(-20px);
                         }
 
                         .b-mall-atrium .f-left,
                         .b-mall-atrium .f-right {
                             width: 40px;
                             height: 70px;
-                            transform: translateZ(35px) rotateY(-90deg) rotateZ(-90deg) translateZ(25px);
+                            transform: translate(-50%, -50%) translateZ(35px) rotateY(-90deg) rotateZ(-90deg) translateZ(25px);
                         }
 
                         .b-mall-atrium .f-right {
-                            transform: translateZ(35px) rotateY(90deg) rotateZ(90deg) translateZ(25px);
+                            transform: translate(-50%, -50%) translateZ(35px) rotateY(90deg) rotateZ(90deg) translateZ(25px);
                         }
 
                         .b-mall-atrium .f-top {
                             width: 50px;
                             height: 40px;
-                            transform: translateZ(70px);
+                            transform: translate(-50%, -50%) translateZ(70px);
                         }
 
                         /* Mall Atrium - Glass Box */
@@ -1869,7 +1943,7 @@
 
                         /* 5. Apartments (Purple, Twin Towers) */
                         .b-apt {
-                            transform: translate(100px, 100px);
+                            transform: translate(250px, 250px);
                         }
 
                         /* Tower 1 - Solid Concrete */
@@ -1902,28 +1976,28 @@
                         .b-apt-1 .f-back {
                             width: 50px;
                             height: 110px;
-                            transform: translateZ(55px) rotateX(90deg) translateZ(20px);
+                            transform: translate(-50%, -50%) translateZ(55px) rotateX(90deg) translateZ(20px);
                         }
 
                         .b-apt-1 .f-back {
-                            transform: translateZ(55px) rotateX(90deg) translateZ(-20px);
+                            transform: translate(-50%, -50%) translateZ(55px) rotateX(90deg) translateZ(-20px);
                         }
 
                         .b-apt-1 .f-left,
                         .b-apt-1 .f-right {
                             width: 40px;
                             height: 110px;
-                            transform: translateZ(55px) rotateY(-90deg) rotateZ(-90deg) translateZ(25px);
+                            transform: translate(-50%, -50%) translateZ(55px) rotateY(-90deg) rotateZ(-90deg) translateZ(25px);
                         }
 
                         .b-apt-1 .f-right {
-                            transform: translateZ(55px) rotateY(90deg) rotateZ(90deg) translateZ(25px);
+                            transform: translate(-50%, -50%) translateZ(55px) rotateY(90deg) rotateZ(90deg) translateZ(25px);
                         }
 
                         .b-apt-1 .f-top {
                             width: 50px;
                             height: 40px;
-                            transform: translateZ(110px);
+                            transform: translate(-50%, -50%) translateZ(110px);
                             background-color: #c084fc;
                         }
 
@@ -2000,83 +2074,43 @@
                         .b-apt-2 .f-back {
                             width: 50px;
                             height: 110px;
-                            transform: translateZ(55px) rotateX(90deg) translateZ(20px);
+                            transform: translate(-50%, -50%) translateZ(55px) rotateX(90deg) translateZ(20px);
                         }
 
                         .b-apt-2 .f-back {
-                            transform: translateZ(55px) rotateX(90deg) translateZ(-20px);
+                            transform: translate(-50%, -50%) translateZ(55px) rotateX(90deg) translateZ(-20px);
                         }
 
                         .b-apt-2 .f-left,
                         .b-apt-2 .f-right {
                             width: 40px;
                             height: 110px;
-                            transform: translateZ(55px) rotateY(-90deg) rotateZ(-90deg) translateZ(25px);
+                            transform: translate(-50%, -50%) translateZ(55px) rotateY(-90deg) rotateZ(-90deg) translateZ(25px);
                         }
 
                         .b-apt-2 .f-right {
-                            transform: translateZ(55px) rotateY(90deg) rotateZ(90deg) translateZ(25px);
+                            transform: translate(-50%, -50%) translateZ(55px) rotateY(90deg) rotateZ(90deg) translateZ(25px);
                         }
 
                         .b-apt-2 .f-top {
                             width: 50px;
                             height: 40px;
-                            transform: translateZ(110px);
+                            transform: translate(-50%, -50%) translateZ(110px);
                             background-color: #c084fc;
                         }
 
                         /* 6. Gym (Cyan) */
-
-                        .b-gym .face {
-                            background-color: #06b6d4;
-                            /* Cyan-500 */
-                            border: 1px solid #0891b2;
-                        }
-
-                        .b-gym .f-top {
-                            background-color: #22d3ee;
-                        }
-
-                        .b-gym .f-left,
-                        .b-gym .f-right {
-                            background-color: #0891b2;
-                        }
-
-                        .b-gym .f-front,
-                        .b-gym .f-back {
-                            width: 80px;
-                            height: 40px;
-                            transform: translateZ(20px) rotateX(90deg) translateZ(60px);
-                        }
-
-                        .b-gym .f-back {
-                            transform: translateZ(20px) rotateX(90deg) translateZ(-60px);
-                        }
-
-                        .b-gym .f-left,
-                        .b-gym .f-right {
-                            width: 120px;
-                            height: 40px;
-                            transform: translateZ(20px) rotateY(-90deg) rotateZ(-90deg) translateZ(40px);
-                        }
-
-                        .b-gym .f-right {
-                            transform: translateZ(20px) rotateY(90deg) rotateZ(90deg) translateZ(40px);
-                        }
-
-                        .b-gym .f-top {
-                            width: 80px;
-                            height: 120px;
-                            transform: translateZ(40px);
+                        .b-gym {
+                            transform: translate(-350px, 50px);
                         }
 
                         /* 7. Facilities (Gray) */
                         .b-fac-1 {
-                            transform: translate(-140px, 0px);
+                            transform: translate(-200px, -350px);
                         }
 
                         .b-fac-2 {
-                            transform: translate(140px, 0px);
+                            transform: translate(200px, -350px);
                         }
 
                         .b-fac-1 .face,
@@ -2109,12 +2143,12 @@
                         .b-fac-2 .f-back {
                             width: 30px;
                             height: 20px;
-                            transform: translateZ(10px) rotateX(90deg) translateZ(15px);
+                            transform: translate(-50%, -50%) translateZ(10px) rotateX(90deg) translateZ(15px);
                         }
 
                         .b-fac-1 .f-back,
                         .b-fac-2 .f-back {
-                            transform: translateZ(10px) rotateX(90deg) translateZ(-15px);
+                            transform: translate(-50%, -50%) translateZ(10px) rotateX(90deg) translateZ(-15px);
                         }
 
                         .b-fac-1 .f-left,
@@ -2123,19 +2157,220 @@
                         .b-fac-2 .f-right {
                             width: 30px;
                             height: 20px;
-                            transform: translateZ(10px) rotateY(-90deg) rotateZ(-90deg) translateZ(15px);
+                            transform: translate(-50%, -50%) translateZ(10px) rotateY(-90deg) rotateZ(-90deg) translateZ(15px);
                         }
 
                         .b-fac-1 .f-right,
                         .b-fac-2 .f-right {
-                            transform: translateZ(10px) rotateY(90deg) rotateZ(90deg) translateZ(15px);
+                            transform: translate(-50%, -50%) translateZ(10px) rotateY(90deg) rotateZ(90deg) translateZ(15px);
                         }
 
                         .b-fac-1 .f-top,
                         .b-fac-2 .f-top {
                             width: 30px;
                             height: 30px;
-                            transform: translateZ(20px);
+                            transform: translate(-50%, -50%) translateZ(20px);
+                        }
+
+                        /* 7. Gym Faces */
+                        .b-gym .face {
+                            background-color: #06b6d4;
+                            /* Cyan-500 */
+                            border: 1px solid #0891b2;
+                        }
+
+                        .b-gym .f-top {
+                            background-color: #22d3ee;
+                        }
+
+                        .b-gym .f-front,
+                        .b-gym .f-back {
+                            width: 80px;
+                            height: 40px;
+                            transform: translate(-50%, -50%) translateZ(20px) rotateX(90deg) translateZ(60px);
+                        }
+
+                        .b-gym .f-back {
+                            transform: translate(-50%, -50%) translateZ(20px) rotateX(90deg) translateZ(-60px);
+                        }
+
+                        .b-gym .f-left,
+                        .b-gym .f-right {
+                            width: 120px;
+                            height: 40px;
+                            transform: translate(-50%, -50%) translateZ(20px) rotateY(-90deg) rotateZ(-90deg) translateZ(40px);
+                        }
+
+                        .b-gym .f-right {
+                            transform: translate(-50%, -50%) translateZ(20px) rotateY(90deg) rotateZ(90deg) translateZ(40px);
+                        }
+
+                        .b-gym .f-top {
+                            width: 80px;
+                            height: 120px;
+                            transform: translate(-50%, -50%) translateZ(40px);
+                        }
+
+                        /* 8. NEW BUILDINGS STYLES */
+
+                        /* R&D Center C (Slate/Gold tech tower) */
+                        .b-rd-c {
+                            transform: translate(0, -350px);
+                        }
+
+                        .b-rdc-main .face {
+                            background-color: #1e293b;
+                            border: 1px solid #f59e0b;
+                        }
+
+                        .b-rdc-main .f-front,
+                        .b-rdc-main .f-back {
+                            width: 60px;
+                            height: 140px;
+                            transform: translate(-50%, -50%) translateZ(70px) rotateX(90deg) translateZ(30px);
+                        }
+
+                        .b-rdc-main .f-back {
+                            transform: translate(-50%, -50%) translateZ(70px) rotateX(90deg) translateZ(-30px);
+                        }
+
+                        .b-rdc-main .f-left,
+                        .b-rdc-main .f-right {
+                            width: 60px;
+                            height: 140px;
+                            transform: translate(-50%, -50%) translateZ(70px) rotateY(-90deg) rotateZ(-90deg) translateZ(30px);
+                        }
+
+                        .b-rdc-main .f-right {
+                            transform: translate(-50%, -50%) translateZ(70px) rotateY(90deg) rotateZ(90deg) translateZ(30px);
+                        }
+
+                        .b-rdc-main .f-top {
+                            width: 60px;
+                            height: 60px;
+                            transform: translate(-50%, -50%) translateZ(140px);
+                            background: #f59e0b;
+                            box-shadow: 0 0 20px #f59e0b;
+                        }
+
+                        /* Staff Canteen (Orange/Red) */
+                        .b-canteen {
+                            transform: translate(350px, 50px);
+                        }
+
+                        .b-can-main .face {
+                            background-color: #f97316;
+                            border: 1px solid #c2410c;
+                        }
+
+                        .b-can-main .f-front,
+                        .b-can-main .f-back {
+                            width: 100px;
+                            height: 40px;
+                            transform: translate(-50%, -50%) translateZ(20px) rotateX(90deg) translateZ(30px);
+                        }
+
+                        .b-can-main .f-back {
+                            transform: translate(-50%, -50%) translateZ(20px) rotateX(90deg) translateZ(-30px);
+                        }
+
+                        .b-can-main .f-left,
+                        .b-can-main .f-right {
+                            width: 60px;
+                            height: 40px;
+                            transform: translate(-50%, -50%) translateZ(20px) rotateY(-90deg) rotateZ(-90deg) translateZ(50px);
+                        }
+
+                        .b-can-main .f-right {
+                            transform: translate(-50%, -50%) translateZ(20px) rotateY(90deg) rotateZ(90deg) translateZ(50px);
+                        }
+
+                        .b-can-main .f-top {
+                            width: 100px;
+                            height: 60px;
+                            transform: translate(-50%, -50%) translateZ(40px);
+                            background: #fdba74;
+                        }
+
+                        /* Data Center (Dark Slate with Cyan Glow) */
+                        .b-data {
+                            transform: translate(0, 350px);
+                        }
+
+                        .b-dat-main .face {
+                            background-color: #0f172a;
+                            border: 1px solid #06b6d4;
+                            background-image: linear-gradient(90deg, transparent 90%, #06b6d4 90%);
+                            background-size: 10px 10px;
+                        }
+
+                        .b-dat-main .f-front,
+                        .b-dat-main .f-back {
+                            width: 80px;
+                            height: 60px;
+                            transform: translate(-50%, -50%) translateZ(30px) rotateX(90deg) translateZ(40px);
+                        }
+
+                        .b-dat-main .f-back {
+                            transform: translate(-50%, -50%) translateZ(30px) rotateX(90deg) translateZ(-40px);
+                        }
+
+                        .b-dat-main .f-left,
+                        .b-dat-main .f-right {
+                            width: 80px;
+                            height: 60px;
+                            transform: translate(-50%, -50%) translateZ(30px) rotateY(-90deg) rotateZ(-90deg) translateZ(40px);
+                        }
+
+                        .b-dat-main .f-right {
+                            transform: translate(-50%, -50%) translateZ(30px) rotateY(90deg) rotateZ(90deg) translateZ(40px);
+                        }
+
+                        .b-dat-main .f-top {
+                            width: 80px;
+                            height: 80px;
+                            transform: translate(-50%, -50%) translateZ(60px);
+                            background: #0f172a;
+                            box-shadow: inset 0 0 20px #06b6d4;
+                        }
+
+                        /* Power Station (Green Industrial) */
+                        .b-power {
+                            transform: translate(400px, -400px);
+                        }
+
+                        .b-pow-main .face {
+                            background-color: #166534;
+                            border: 1px solid #14532d;
+                        }
+
+                        .b-pow-main .f-front,
+                        .b-pow-main .f-back {
+                            width: 40px;
+                            height: 40px;
+                            transform: translate(-50%, -50%) translateZ(20px) rotateX(90deg) translateZ(20px);
+                        }
+
+                        .b-pow-main .f-back {
+                            transform: translate(-50%, -50%) translateZ(20px) rotateX(90deg) translateZ(-20px);
+                        }
+
+                        .b-pow-main .f-left,
+                        .b-pow-main .f-right {
+                            width: 40px;
+                            height: 40px;
+                            transform: translate(-50%, -50%) translateZ(20px) rotateY(-90deg) rotateZ(-90deg) translateZ(20px);
+                        }
+
+                        .b-pow-main .f-right {
+                            transform: translate(-50%, -50%) translateZ(20px) rotateY(90deg) rotateZ(90deg) translateZ(20px);
+                        }
+
+                        .b-pow-main .f-top {
+                            width: 40px;
+                            height: 40px;
+                            transform: translate(-50%, -50%) translateZ(40px);
+                            background: #4ade80;
                         }
 
 
@@ -2168,21 +2403,21 @@
                         }
 
                         .p-1 {
-                            background: #4ade80;
+                            background: #60a5fa;
                             animation: floatData1 4s infinite;
-                            transform: translate(-100px, -80px) translateZ(90px);
+                            transform: translate(-250px, -180px) translateZ(100px);
                         }
 
                         .p-2 {
                             background: #facc15;
                             animation: floatData2 5s infinite;
-                            transform: translate(-80px, 80px) translateZ(70px);
+                            transform: translate(-180px, 180px) translateZ(70px);
                         }
 
                         .p-3 {
                             background: #8b5cf6;
                             animation: floatData3 6s infinite;
-                            transform: translate(80px, 80px) translateZ(110px);
+                            transform: translate(180px, 180px) translateZ(110px);
                         }
 
                         .p-4 {
@@ -2191,15 +2426,27 @@
                             transform: translate(0, 0) translateZ(160px);
                         }
 
+                        .p-5 {
+                            background: #4ade80;
+                            animation: floatData5 5.5s infinite;
+                            transform: translate(350px, -350px) translateZ(90px);
+                        }
+
+                        .p-6 {
+                            background: #f87171;
+                            animation: floatData6 6.5s infinite;
+                            transform: translate(-350px, -350px) translateZ(120px);
+                        }
+
                         @keyframes floatData1 {
 
                             0%,
                             100% {
-                                transform: translate(-100px, -80px) translateZ(90px);
+                                transform: translate(-250px, -180px) translateZ(90px);
                             }
 
                             50% {
-                                transform: translate(-100px, -80px) translateZ(110px);
+                                transform: translate(-250px, -180px) translateZ(110px);
                             }
                         }
 
@@ -2207,11 +2454,11 @@
 
                             0%,
                             100% {
-                                transform: translate(-80px, 80px) translateZ(70px);
+                                transform: translate(-180px, 180px) translateZ(70px);
                             }
 
                             50% {
-                                transform: translate(-80px, 80px) translateZ(90px);
+                                transform: translate(-180px, 180px) translateZ(90px);
                             }
                         }
 
@@ -2219,11 +2466,11 @@
 
                             0%,
                             100% {
-                                transform: translate(80px, 80px) translateZ(110px);
+                                transform: translate(180px, 180px) translateZ(110px);
                             }
 
                             50% {
-                                transform: translate(80px, 80px) translateZ(130px);
+                                transform: translate(180px, 180px) translateZ(130px);
                             }
                         }
 
@@ -2236,6 +2483,30 @@
 
                             50% {
                                 transform: translate(0, 0) translateZ(180px);
+                            }
+                        }
+
+                        @keyframes floatData5 {
+
+                            0%,
+                            100% {
+                                transform: translate(350px, -350px) translateZ(80px);
+                            }
+
+                            50% {
+                                transform: translate(350px, -350px) translateZ(100px);
+                            }
+                        }
+
+                        @keyframes floatData6 {
+
+                            0%,
+                            100% {
+                                transform: translate(-350px, -350px) translateZ(110px);
+                            }
+
+                            50% {
+                                transform: translate(-350px, -350px) translateZ(130px);
                             }
                         }
                     </style>

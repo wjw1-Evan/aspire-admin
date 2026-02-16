@@ -5,6 +5,11 @@ using Scalar.Aspire;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
+// 🔄 副本数配置：dotnet watch 模式下强制单实例（避免 IDE run session 冲突）
+// dotnet run / 生产环境使用配置值（默认 3）
+var isDotnetWatch = Environment.GetEnvironmentVariable("DOTNET_WATCH") == "1";
+var apiReplicas = isDotnetWatch ? 1 : int.Parse(builder.Configuration["ApiService:Replicas"] ?? "3");
+
 // Add Kubernetes environment
 //var k8s = builder.AddKubernetesEnvironment("k8s");
 // Add a Docker Compose environment 发布：aspire publish
@@ -37,7 +42,7 @@ var mongodb = mongo.AddDatabase("mongodb", "aspire-admin-db");
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
     .WaitFor(mongodb)
     .WithReference(mongodb)
-    .WithHttpEndpoint().PublishAsDockerComposeService((resource, service) =>
+    .PublishAsDockerComposeService((resource, service) =>
                    {
                        service.Name = "datainitializer";
                    });
@@ -50,7 +55,7 @@ var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDisco
         .WithReference(mongodb).WaitFor(mongodb)
         .WaitForCompletion(datainitializer)
         .WithHttpEndpoint()
-        .WithReplicas(1)
+        .WithReplicas(apiReplicas)
         .WithHttpHealthCheck("/health")
         .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
         .WithReference(chat)

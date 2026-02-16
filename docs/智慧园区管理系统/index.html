@@ -1327,6 +1327,12 @@
                         <div class="data-point p-4"></div>
                         <div class="data-point p-5"></div>
                         <div class="data-point p-6"></div>
+                        <!-- Running Vehicles -->
+                        <div class="car-moving cm-1"></div>
+                        <div class="car-moving cm-2"></div>
+                        <div class="car-moving cm-3"></div>
+                        <div class="car-moving cm-4"></div>
+                        <div class="car-moving cm-5"></div>
                     </div>
 
                     <!-- Compass UI -->
@@ -3429,6 +3435,95 @@
                             background: #f87171;
                             animation: floatData6 6.5s infinite;
                             transform: translate(-350px, -350px) translateZ(120px);
+                        }
+
+                        /* Moving Vehicles */
+                        .car-moving {
+                            position: absolute;
+                            width: 12px;
+                            height: 24px;
+                            background: #fff;
+                            border-radius: 2px;
+                            box-shadow: 0 0 5px white;
+                            z-index: 5;
+                            top: 50%;
+                            left: 50%;
+                            margin-top: -12px;
+                            margin-left: -6px;
+                        }
+
+                        .cm-1 {
+                            background: #ef4444;
+                            box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+                            animation: drive-n-e 10s linear infinite;
+                        }
+
+                        .cm-2 {
+                            background: #3b82f6;
+                            box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+                            animation: drive-s-w 12s linear infinite;
+                            animation-delay: 2s;
+                        }
+
+                        .cm-3 {
+                            background: #facc15;
+                            box-shadow: 0 0 8px rgba(250, 204, 21, 0.6);
+                            animation: drive-w-s 15s linear infinite;
+                            animation-delay: 5s;
+                        }
+
+                        .cm-4 {
+                            background: #10b981;
+                            box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+                            animation: drive-e-n 14s linear infinite;
+                            animation-delay: 1s;
+                        }
+
+                        .cm-5 {
+                            background: #ffffff;
+                            box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+                            animation: drive-n-e 13s linear infinite;
+                            animation-delay: 5s;
+                        }
+
+                        @keyframes drive-n-e {
+                            0% {
+                                transform: translate(-600px, -270px) rotate(90deg);
+                            }
+
+                            100% {
+                                transform: translate(600px, -270px) rotate(90deg);
+                            }
+                        }
+
+                        @keyframes drive-s-w {
+                            0% {
+                                transform: translate(600px, 280px) rotate(-90deg);
+                            }
+
+                            100% {
+                                transform: translate(-600px, 280px) rotate(-90deg);
+                            }
+                        }
+
+                        @keyframes drive-w-s {
+                            0% {
+                                transform: translate(-270px, -600px);
+                            }
+
+                            100% {
+                                transform: translate(-270px, 600px);
+                            }
+                        }
+
+                        @keyframes drive-e-n {
+                            0% {
+                                transform: translate(260px, 600px) rotate(180deg);
+                            }
+
+                            100% {
+                                transform: translate(260px, -600px) rotate(180deg);
+                            }
                         }
 
                         @keyframes floatData1 {

@@ -351,7 +351,8 @@
                 <p>重塑园区运营模式，打造高效、智能、可持续的现代化产业社区。</p>
                 <div style="margin-top: 3rem; display: flex; gap: 1.5rem; justify-content: center;">
                     <button class="btn" onclick="nextSlide()">立即探索 ➔</button>
-                    <button class="btn btn-outline" onclick="window.location.href='mailto:fsy_008@163.com'">联系我们</button>
+                    <button class="btn btn-outline"
+                        onclick="window.location.href='mailto:fsy_008@163.com'">联系我们</button>
                 </div>
             </div>
             <!-- Decorative circle behind -->
@@ -705,12 +706,8 @@
                             <span class="stat-label">跟进线索 (Leads)</span>
                             <span class="stat-value">34 个</span>
                         </div>
-                        <div class="mini-bar-chart">
-                            <div class="mini-bar" style="height: 30%"></div>
-                            <div class="mini-bar" style="height: 50%"></div>
-                            <div class="mini-bar" style="height: 80%"></div>
-                            <div class="mini-bar" style="height: 60%"></div>
-                            <div class="mini-bar" style="height: 90%; background: #facc15;"></div>
+                        <div id="demo-bars" class="mini-bar-chart">
+                            <!-- Dynamic bars will be injected here -->
                         </div>
                     </div>
 
@@ -806,8 +803,15 @@
                             <div class="road road-ring"></div>
                             <div class="road road-south-main"></div>
                             <div class="road road-parking-connect"></div>
-                            <!-- Park Zones -->
-                            <div class="zone-green"></div>
+                            <!-- Landscaping Removed -->
+
+                            <!-- Walkways -->
+                            <div class="walkway"
+                                style="position: absolute; width: 4px; height: 400px; background: rgba(255,255,255,0.1); transform: translate(-150px, -200px);">
+                            </div>
+                            <div class="walkway"
+                                style="position: absolute; width: 300px; height: 4px; background: rgba(255,255,255,0.1); transform: translate(-150px, -200px);">
+                            </div>
                         </div>
 
                         <!-- West Side with Gate -->
@@ -848,15 +852,7 @@
 
                         <!-- Green Zones & Landscape Removed -->
 
-                        <!-- Trees (Simplified as Green Markers) -->
-                        <div class="tree t-1"></div>
-                        <div class="tree t-2"></div>
-                        <div class="tree t-3"></div>
-                        <div class="tree t-4"></div>
-                        <div class="tree t-5"></div>
-                        <div class="tree t-6"></div>
-                        <div class="tree t-7"></div>
-                        <div class="tree t-8"></div>
+                        <!-- Trees Removed -->
 
                         <!-- Photovoltaic Power Generation (South) -->
                         <div class="solar-array">
@@ -1007,7 +1003,13 @@
                                 <div class="face f-back"></div>
                                 <div class="face f-left"></div>
                                 <div class="face f-right"></div>
-                                <div class="face f-top"></div>
+                                <div class="face f-top">
+                                    <!-- Roof Details -->
+                                    <div class="antenna" style="position: absolute; left: 20px; top: 20px;"></div>
+                                    <div class="antenna"
+                                        style="position: absolute; right: 20px; top: 20px; height: 60px;"></div>
+                                    <div class="roof-detail ac-unit" style="left: 40px; top: 40px;"></div>
+                                </div>
                             </div>
                             <!-- Top decoration removed -->
                             <div class="b-label" style="transform: translateZ(200px) rotateX(-60deg);">总部大厦 HQ</div>
@@ -1027,7 +1029,10 @@
                                 <div class="face f-back"></div>
                                 <div class="face f-left"></div>
                                 <div class="face f-right"></div>
-                                <div class="face f-top"></div>
+                                <div class="face f-top">
+                                    <div class="roof-detail ac-unit" style="left: 10px; top: 10px;"></div>
+                                    <div class="roof-detail ac-unit" style="right: 10px; top: 30px;"></div>
+                                </div>
                             </div>
                             <div class="cube b-rda-side">
                                 <div class="face f-front"></div>
@@ -1112,7 +1117,12 @@
                                 <div class="face f-back"></div>
                                 <div class="face f-left"></div>
                                 <div class="face f-right"></div>
-                                <div class="face f-top"></div>
+                                <div class="face f-top">
+                                    <!-- Helipad for Apartment -->
+                                    <div
+                                        style="position: absolute; width: 30px; height: 30px; border: 2px solid white; border-radius: 50%; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; color: white;">
+                                        H</div>
+                                </div>
                             </div>
                             <div class="b-label" style="transform: translateZ(120px) rotateX(-60deg);">人才公寓</div>
                             <div class="occupancy-label el-apt-occ">
@@ -1327,12 +1337,24 @@
                         <div class="data-point p-4"></div>
                         <div class="data-point p-5"></div>
                         <div class="data-point p-6"></div>
-                        <!-- Running Vehicles -->
-                        <div class="car-moving cm-1"></div>
-                        <div class="car-moving cm-2"></div>
-                        <div class="car-moving cm-3"></div>
-                        <div class="car-moving cm-4"></div>
                         <div class="car-moving cm-5"></div>
+
+                        <!-- Data Beams (Connected Park Effect) -->
+                        <div class="data-beam"
+                            style="left: 50%; top: 50%; transform: translate(-200px, -200px); animation-delay: 0s;">
+                        </div>
+                        <div class="data-beam"
+                            style="left: 50%; top: 50%; transform: translate(100px, 100px); animation-delay: 0.5s;">
+                        </div>
+                        <div class="data-beam"
+                            style="left: 50%; top: 50%; transform: translate(-50px, 150px); animation-delay: 1.2s;">
+                        </div>
+                        <div class="data-beam"
+                            style="left: 50%; top: 50%; transform: translate(250px, -100px); animation-delay: 2s;">
+                        </div>
+                        <div class="data-beam"
+                            style="left: 50%; top: 50%; transform: translate(0px, -300px); animation-delay: 0.8s;">
+                        </div>
                     </div>
 
                     <!-- Compass UI -->
@@ -1453,9 +1475,37 @@
                                 linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
                                 linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px);
                             background-size: 60px 60px;
-                            border: 1px solid rgba(59, 130, 246, 0.2);
+                            border: 1px solid rgba(59, 130, 246, 0.3);
                             border-radius: 40px;
-                            background-color: rgba(15, 23, 42, 0.4);
+                            background-color: rgba(15, 23, 42, 0.5);
+                            box-shadow: 0 0 100px rgba(0, 0, 0, 0.8), inset 0 0 50px rgba(59, 130, 246, 0.1);
+                        }
+
+                        /* Data Stream Animation */
+                        @keyframes dataStream {
+                            0% {
+                                transform: translateZ(0) translateY(0);
+                                opacity: 0;
+                            }
+
+                            50% {
+                                opacity: 0.8;
+                            }
+
+                            100% {
+                                transform: translateZ(200px) translateY(-100px);
+                                opacity: 0;
+                            }
+                        }
+
+                        .data-beam {
+                            position: absolute;
+                            width: 2px;
+                            height: 2px;
+                            background: var(--accent);
+                            box-shadow: 0 0 10px var(--accent), 0 0 20px var(--accent);
+                            border-radius: 50%;
+                            animation: dataStream 3s infinite linear;
                         }
 
                         /* Boundary Fence */
@@ -1952,49 +2002,7 @@
 
                         /* SW Corner */
 
-                        /* Trees */
-                        .tree {
-                            position: absolute;
-                            width: 15px;
-                            height: 15px;
-                            background: rgba(34, 197, 94, 0.8);
-                            border-radius: 50%;
-                            box-shadow: 0 0 10px #4ade80;
-                            top: 50%;
-                            left: 50%;
-                        }
-
-                        .t-1 {
-                            transform: translate(-550px, -500px) translateZ(30px);
-                        }
-
-                        .t-2 {
-                            transform: translate(450px, -450px) translateZ(40px);
-                        }
-
-                        .t-3 {
-                            transform: translate(450px, 450px) translateZ(20px);
-                        }
-
-                        .t-4 {
-                            transform: translate(-450px, 450px) translateZ(25px);
-                        }
-
-                        .t-5 {
-                            transform: translate(60px, 500px) translateZ(15px);
-                        }
-
-                        .t-6 {
-                            transform: translate(-60px, -500px) translateZ(35px);
-                        }
-
-                        .t-7 {
-                            transform: translate(550px, 60px) translateZ(25px);
-                        }
-
-                        .t-8 {
-                            transform: translate(-580px, 400px) translateZ(20px);
-                        }
+                        /* Trees Removed */
 
                         .building-group {
                             position: absolute;
@@ -2014,16 +2022,61 @@
                             position: absolute;
                             top: 50%;
                             left: 50%;
-                            border: 1px solid rgba(255, 255, 255, 0.12);
+                            border: 1px solid rgba(255, 255, 255, 0.15);
                             backface-visibility: visible;
                             background-color: #334155;
                             /* Global Surface Detail: Light Reflection + Micro Texture */
                             background-image:
-                                linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, transparent 40%),
-                                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+                                linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
                             background-size: 100% 100%, 4px 4px, 4px 4px;
-                            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.15);
+                            box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.3);
+                            transition: all 0.3s ease;
+                        }
+
+                        /* Night Window Glow Animation */
+                        @keyframes windowGlow {
+
+                            0%,
+                            100% {
+                                opacity: 0.3;
+                            }
+
+                            50% {
+                                opacity: 0.8;
+                            }
+                        }
+
+                        .window-light {
+                            position: absolute;
+                            background: #60a5fa;
+                            filter: blur(1px);
+                            box-shadow: 0 0 5px #60a5fa;
+                            opacity: 0.5;
+                        }
+
+                        /* Global Roof Details */
+                        .roof-detail {
+                            position: absolute;
+                            background: #475569;
+                            border: 1px solid rgba(255, 255, 255, 0.1);
+                            transform-style: preserve-3d;
+                        }
+
+                        .ac-unit {
+                            width: 10px;
+                            height: 10px;
+                            background: #64748b;
+                            transform: translateZ(5px);
+                            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+                        }
+
+                        .antenna {
+                            width: 2px;
+                            height: 40px;
+                            background: #94a3b8;
+                            transform: rotateX(-90deg) translateZ(20px);
                         }
 
                         /* Building Specific Styles */
@@ -2093,12 +2146,13 @@
                             background-color: #0891b2;
                             /* Premium Glass Facade: Interlocking grids + vertical ribs */
                             background-image:
-                                linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px, transparent 19px, rgba(255, 255, 255, 0.1) 19px),
-                                linear-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px),
-                                linear-gradient(90deg, rgba(0, 0, 0, 0.2) 2px, transparent 2px);
-                            background-size: 20px 20px, 20px 10px, 40px 100%;
+                                linear-gradient(90deg, rgba(255, 255, 255, 0.15) 1px, transparent 1px, transparent 19px, rgba(255, 255, 255, 0.15) 19px),
+                                linear-gradient(rgba(255, 255, 255, 0.2) 1px, transparent 1px),
+                                repeating-linear-gradient(90deg, rgba(0, 100, 255, 0.1) 0px, rgba(0, 100, 255, 0.1) 2px, transparent 2px, transparent 20px),
+                                linear-gradient(90deg, rgba(0, 0, 0, 0.3) 2px, transparent 2px);
+                            background-size: 20px 20px, 20px 8px, 20px 100%, 40px 100%;
                             border: 1px solid #155e75;
-                            box-shadow: inset 0 0 30px rgba(0, 255, 255, 0.1);
+                            box-shadow: inset 0 0 40px rgba(0, 255, 255, 0.15);
                         }
 
                         /* Directional Lighting for Tower */
@@ -2173,14 +2227,15 @@
                         .b-rda-main .face {
                             background-color: #1e40af;
                             /* Deep Royal Blue */
-                            /* Precise Horizontal Office Bands */
+                            /* Precise Horizontal Office Bands with glass effect */
                             background-image:
+                                linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.1) 50%, transparent 50%),
                                 linear-gradient(to bottom,
-                                    rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.15) 60%,
-                                    rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0.3) 100%);
-                            background-size: 100% 12px;
+                                    rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.2) 60%,
+                                    rgba(0, 0, 0, 0.4) 60%, rgba(0, 0, 0, 0.4) 100%);
+                            background-size: 15px 12px, 100% 12px;
                             border: 1px solid #1e3a8a;
-                            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+                            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.3);
                         }
 
                         .b-rda-main .f-top {
@@ -2440,7 +2495,10 @@
                         .b-apt-1 .face {
                             background-color: #9333ea;
                             /* Purple-600 */
-                            background-image: repeating-linear-gradient(transparent 0, transparent 10px, rgba(0, 0, 0, 0.2) 10px, rgba(0, 0, 0, 0.2) 12px);
+                            /* Balcony and window detail */
+                            background-image:
+                                repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.2) 0, rgba(0, 0, 0, 0.2) 8px, transparent 8px, transparent 20px),
+                                repeating-linear-gradient(transparent 0, transparent 10px, rgba(0, 0, 0, 0.3) 10px, rgba(0, 0, 0, 0.3) 12px);
                             border: 1px solid #7e22ce;
                         }
 
@@ -2949,11 +3007,14 @@
                         .b-office-tower .face {
                             background-color: #1e3a8a;
                             /* Blue-900 */
+                            /* Double-glazing effect with staggered windows */
                             background-image:
+                                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
                                 linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
-                                linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
-                            background-size: 15px 15px;
+                                linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+                            background-size: 12px 100%, 100% 20px, 100% 100%;
                             border: 1px solid #1e40af;
+                            box-shadow: inset 0 0 20px rgba(0, 50, 200, 0.2);
                         }
 
                         .b-office-tower .f-top {
@@ -3902,10 +3963,12 @@
             <div
                 style="margin-top: 3rem; display: flex; flex-direction: column; gap: 1.5rem; backdrop-filter: blur(10px); padding: 2rem; border: 1px solid var(--glass-border); border-radius: 1rem;">
                 <div style="display: flex; align-items: center; gap: 1rem; color: white; font-size: 1.2rem;">
-                    <span style="color: var(--primary);">📧</span> <a href="mailto:fsy_008@163.com" style="color: inherit; text-decoration: none;">fsy_008@163.com</a>
+                    <span style="color: var(--primary);">📧</span> <a href="mailto:fsy_008@163.com"
+                        style="color: inherit; text-decoration: none;">fsy_008@163.com</a>
                 </div>
                 <div style="display: flex; align-items: center; gap: 1rem; color: white; font-size: 1.2rem;">
-                    <span style="color: var(--primary);">🌐</span> <a href="https://www.rong-zhong.com" target="_blank" style="color: inherit; text-decoration: none;">https://www.rong-zhong.com</a>
+                    <span style="color: var(--primary);">🌐</span> <a href="https://www.rong-zhong.com" target="_blank"
+                        style="color: inherit; text-decoration: none;">https://www.rong-zhong.com</a>
                 </div>
             </div>
 
@@ -3928,11 +3991,12 @@
         const slides = document.querySelectorAll('.slide');
         const totalSlides = slides.length;
         const progressEl = document.getElementById('progress');
-        const demoBars = document.getElementById('demo-bars');
         let scrolling = false;
 
         // --- Demo Charts Animation ---
         function initDemoCharts() {
+            const demoBars = document.getElementById('demo-bars');
+            if (!demoBars) return; // Ensure demoBars element exists before proceeding
             demoBars.innerHTML = '';
             for (let i = 0; i < 12; i++) {
                 const h = Math.random() * 80 + 20;

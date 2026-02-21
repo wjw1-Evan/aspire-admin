@@ -67,6 +67,9 @@ public class DataInitializerService(
     {
         _logger.LogInformation("开始执行数据初始化...");
 
+        // 0. 初始化副本集 (Replica Set) - 只有副本集模式才支持事务
+        await InitializeReplicaSetAsync();
+
         // 1. 创建所有数据库索引
         await CreateIndexesAsync();
 
@@ -75,6 +78,49 @@ public class DataInitializerService(
 
 
         _logger.LogInformation("所有初始化操作执行完成");
+    }
+
+    /// <summary>
+    /// 初始化 MongoDB 副本集
+    /// </summary>
+    private async Task InitializeReplicaSetAsync()
+    {
+        try
+        {
+            _logger.LogInformation("正在检查 MongoDB 副本集状态...");
+
+            // 获取 admin 数据库以运行管理命令
+            var adminDb = _database.Client.GetDatabase("admin");
+
+            try
+            {
+                // 尝试获取副本集状态，如果已初始化则不会抛出特定错误
+                await adminDb.RunCommandAsync<BsonDocument>(new BsonDocument("replSetGetStatus", 1));
+                _logger.LogInformation("MongoDB 副本集已就绪。");
+            }
+            catch (MongoCommandException ex) when (ex.CodeName == "NotYetInitialized" || ex.ErrorMessage.Contains("no replset config has been received"))
+            {
+                _logger.LogInformation("发现未初始化的副本集，准备执行 rs.initiate()...");
+
+                // 执行初始化。在单节点模式下，显式指定 host 为 localhost:27017 
+                // 可以避免因容器 ID 变化（默认主机名）导致的副本集配置失效问题。
+                await adminDb.RunCommandAsync<BsonDocument>(new BsonDocument("replSetInitiate", new BsonDocument
+                {
+                    { "_id", "rs0" },
+                    { "members", new BsonArray { new BsonDocument { { "_id", 0 }, { "host", "localhost:27017" } } } }
+                }));
+
+                _logger.LogInformation("✅ MongoDB 副本集初始化命令已发送。");
+
+                // 等待副本集选举完成（短暂延迟）
+                await Task.Delay(5000);
+            }
+        }
+        catch (Exception ex)
+        {
+            // 如果是因为驱动还不支持或者网络抖动，记录警告但不中断流程
+            _logger.LogWarning("检查或初始化副本集时发生非致命错误: {Message}", ex.Message);
+        }
     }
 
     /// <summary>

@@ -1,7 +1,7 @@
-using Aspire.Hosting.Yarp;
-using Aspire.Hosting.Yarp.Transforms;
 using Microsoft.Extensions.Hosting;
 using Scalar.Aspire;
+using Aspire.Hosting.Yarp;
+using Aspire.Hosting.Yarp.Transforms;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
@@ -32,16 +32,16 @@ var chat = openai.AddModel("chat", "gpt-4o-mini");
 
 var mongo = builder.AddMongoDB("mongo")
     .WithMongoExpress()
+    .WithArgs("bash", "-c", "echo 'ReplicaSetSecureKey12345' > /tmp/mongo-keyfile && chmod 400 /tmp/mongo-keyfile && chown mongodb:mongodb /tmp/mongo-keyfile && exec /usr/local/bin/docker-entrypoint.sh mongod --replSet rs0 --keyFile /tmp/mongo-keyfile --bind_ip_all")
     .WithLifetime(ContainerLifetime.Persistent)
     .WithDataVolume();
 
 var mongodb = mongo.AddDatabase("mongodb", "aspire-admin-db");
 
-
 // 数据初始化服务（一次性任务，完成后自动停止）
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
-    .WaitFor(mongodb)
     .WithReference(mongodb)
+    .WaitFor(mongodb)
     .PublishAsDockerComposeService((resource, service) =>
                    {
                        service.Name = "datainitializer";
@@ -52,7 +52,8 @@ var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDisco
     // 核心业务服务（端口不暴露，仅供内部访问）
     // 🔒 通过环境变量传递 JWT 配置
     ["apiservice"] = builder.AddProject<Projects.Platform_ApiService>("apiservice")
-        .WithReference(mongodb).WaitFor(mongodb)
+        .WithReference(mongodb)
+        .WaitFor(mongodb)
         .WaitForCompletion(datainitializer)
         .WithHttpEndpoint()
         .WithReplicas(apiReplicas)

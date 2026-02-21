@@ -10,30 +10,18 @@ namespace Platform.ServiceDefaults.Services;
 /// <summary>
 /// 平台数据库上下文 - 基于 MongoDB Entity Framework Core (优化版本)
 /// </summary>
-public class PlatformDbContext : DbContext
+public class PlatformDbContext(DbContextOptions<PlatformDbContext> options, ITenantContext? tenantContext = null)
+    : DbContext(options)
 {
-    private readonly ITenantContext? _tenantContext;
-
-    public PlatformDbContext(DbContextOptions<PlatformDbContext> options, ITenantContext? tenantContext = null)
-        : base(options)
-    {
-        _tenantContext = tenantContext;
-
-        // 🧱 核心配置：禁用自动事务。
-        // 原因是 Standalone 模式的 MongoDB 不支持事务（需要 Replica Set）。
-        // 启用批量删除等操作时，EF Core 默认会开启事务导致报错。
-        Database.AutoTransactionBehavior = AutoTransactionBehavior.Never;
-    }
-
     public string? CurrentCompanyId
     {
         get
         {
-            if (_tenantContext == null) return null;
+            if (tenantContext == null) return null;
 
             // 🚀 性能优化：由于 EF Core 过滤器要求同步访问，此处使用同步阻塞。
             // 但通过 TenantContext 的 Scoped 缓存，后续调用将直接从内存返回，减少阻塞时间。
-            var task = _tenantContext.GetCurrentCompanyIdAsync();
+            var task = tenantContext.GetCurrentCompanyIdAsync();
             if (!task.IsCompleted)
             {
                 // _logger?.LogWarning("PlatformDbContext: 同步阻塞获取 CurrentCompanyId，请检查是否已在请求开始时预热缓存");
@@ -61,7 +49,7 @@ public class PlatformDbContext : DbContext
     private void ApplyAuditInfo()
     {
         // 同步版本保持不变，用于 SaveChanges()
-        var userId = _tenantContext?.GetCurrentUserId();
+        var userId = tenantContext?.GetCurrentUserId();
         var companyId = CurrentCompanyId;
 
         ApplyAuditInfoCore(userId, companyId);
@@ -70,8 +58,8 @@ public class PlatformDbContext : DbContext
     private async Task ApplyAuditInfoAsync()
     {
         // 🚀 性能优化：异步获取租户信息，避免 SaveChangesAsync 内部触发同步阻塞
-        var userId = _tenantContext?.GetCurrentUserId();
-        var companyId = _tenantContext != null ? await _tenantContext.GetCurrentCompanyIdAsync() : null;
+        var userId = tenantContext?.GetCurrentUserId();
+        var companyId = tenantContext != null ? await tenantContext.GetCurrentCompanyIdAsync() : null;
 
         ApplyAuditInfoCore(userId, companyId);
     }

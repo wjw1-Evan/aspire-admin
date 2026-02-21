@@ -175,6 +175,41 @@ public class IoTDevice : MultiTenantEntity
     [BsonElement("status")]
     public IoTDeviceStatus Status { get; set; } = IoTDeviceStatus.Offline;
 
+    /// <summary>设备类型</summary>
+    [Column("deviceType")]
+    [BsonElement("deviceType")]
+    public IoTDeviceType DeviceType { get; set; } = IoTDeviceType.Sensor;
+
+    /// <summary>设备描述</summary>
+    [StringLength(500)]
+    [Column("description")]
+    [BsonElement("description")]
+    public string? Description { get; set; }
+
+    /// <summary>物理位置（如楼栋/楼层/房间）</summary>
+    [StringLength(200)]
+    [Column("location")]
+    [BsonElement("location")]
+    public string? Location { get; set; }
+
+    /// <summary>设备标签（对标 Azure IoT Device Tags）</summary>
+    [Column("tags")]
+    [BsonElement("tags")]
+    [NotMapped]
+    public Dictionary<string, string>? Tags { get; set; }
+
+    /// <summary>设备 ApiKey（SHA-256 散列存储，用于设备端认证）</summary>
+    [StringLength(128)]
+    [Column("apiKey")]
+    [BsonElement("apiKey")]
+    public string? ApiKey { get; set; }
+
+    /// <summary>遥测数据保留天数（0=永久保留）</summary>
+    [Range(0, 3650)]
+    [Column("retentionDays")]
+    [BsonElement("retentionDays")]
+    public int RetentionDays { get; set; } = 0;
+
     /// <summary>最后上报时间</summary>
     [Column("lastReportedAt")]
     [BsonElement("lastReportedAt")]
@@ -404,3 +439,133 @@ public class IoTDeviceEvent : MultiTenantEntity
     public string? HandledRemarks { get; set; }
 }
 
+/// <summary>
+/// 云到设备命令状态枚举
+/// </summary>
+public enum CommandStatus
+{
+    /// <summary>待下发</summary>
+    Pending = 0,
+    /// <summary>已下发（设备已取走）</summary>
+    Delivered = 1,
+    /// <summary>已执行（设备已 Ack）</summary>
+    Executed = 2,
+    /// <summary>执行失败</summary>
+    Failed = 3,
+    /// <summary>已过期</summary>
+    Expired = 4
+}
+
+/// <summary>
+/// 设备孪生 - 对标 Azure IoT Hub Device Twin
+/// 存储云端期望状态（Desired）和设备实际状态（Reported）
+/// </summary>
+[BsonIgnoreExtraElements]
+[Table("iotDeviceTwins")]
+public class IoTDeviceTwin : MultiTenantEntity
+{
+    /// <summary>关联设备 ID</summary>
+    [Required]
+    [StringLength(100)]
+    [Column("deviceId")]
+    [BsonElement("deviceId")]
+    public string DeviceId { get; set; } = string.Empty;
+
+    /// <summary>云端期望属性（由管理端写入，设备读取并执行）</summary>
+    [Column("desiredProperties")]
+    [BsonElement("desiredProperties")]
+    [NotMapped]
+    public Dictionary<string, object> DesiredProperties { get; set; } = new();
+
+    /// <summary>设备上报属性（由设备写入，反映设备实际状态）</summary>
+    [Column("reportedProperties")]
+    [BsonElement("reportedProperties")]
+    [NotMapped]
+    public Dictionary<string, object> ReportedProperties { get; set; } = new();
+
+    /// <summary>期望属性版本号（每次云端更新 +1，设备可检测变更）</summary>
+    [Column("desiredVersion")]
+    [BsonElement("desiredVersion")]
+    public long DesiredVersion { get; set; } = 1;
+
+    /// <summary>上报属性版本号（每次设备上报 +1）</summary>
+    [Column("reportedVersion")]
+    [BsonElement("reportedVersion")]
+    public long ReportedVersion { get; set; } = 0;
+
+    /// <summary>ETag（乐观锁，每次更新重新生成）</summary>
+    [StringLength(64)]
+    [Column("etag")]
+    [BsonElement("etag")]
+    public string ETag { get; set; } = Guid.NewGuid().ToString("N");
+
+    /// <summary>最后期望属性更新时间</summary>
+    [Column("desiredUpdatedAt")]
+    [BsonElement("desiredUpdatedAt")]
+    public DateTime? DesiredUpdatedAt { get; set; }
+
+    /// <summary>最后上报时间</summary>
+    [Column("reportedUpdatedAt")]
+    [BsonElement("reportedUpdatedAt")]
+    public DateTime? ReportedUpdatedAt { get; set; }
+}
+
+/// <summary>
+/// 云到设备命令 - 对标 Azure IoT Hub Direct Method / C2D Messages
+/// </summary>
+[BsonIgnoreExtraElements]
+[Table("iotDeviceCommands")]
+public class IoTDeviceCommand : MultiTenantEntity
+{
+    /// <summary>目标设备 ID</summary>
+    [Required]
+    [StringLength(100)]
+    [Column("deviceId")]
+    [BsonElement("deviceId")]
+    public string DeviceId { get; set; } = string.Empty;
+
+    /// <summary>命令名称（如 restart、setThreshold、reboot）</summary>
+    [Required]
+    [StringLength(100)]
+    [Column("commandName")]
+    [BsonElement("commandName")]
+    public string CommandName { get; set; } = string.Empty;
+
+    /// <summary>命令参数（JSON 键值对）</summary>
+    [Column("payload")]
+    [BsonElement("payload")]
+    [NotMapped]
+    public Dictionary<string, object>? Payload { get; set; }
+
+    /// <summary>命令状态</summary>
+    [Column("status")]
+    [BsonElement("status")]
+    public CommandStatus Status { get; set; } = CommandStatus.Pending;
+
+    /// <summary>命令过期时间（TTL，默认 24 小时）</summary>
+    [Column("expiresAt")]
+    [BsonElement("expiresAt")]
+    public DateTime ExpiresAt { get; set; } = DateTime.UtcNow.AddHours(24);
+
+    /// <summary>设备取走命令的时间</summary>
+    [Column("deliveredAt")]
+    [BsonElement("deliveredAt")]
+    public DateTime? DeliveredAt { get; set; }
+
+    /// <summary>设备 Ack 的时间</summary>
+    [Column("executedAt")]
+    [BsonElement("executedAt")]
+    public DateTime? ExecutedAt { get; set; }
+
+    /// <summary>设备回复的执行结果</summary>
+    [Column("responsePayload")]
+    [BsonElement("responsePayload")]
+    [NotMapped]
+    public Dictionary<string, object>? ResponsePayload { get; set; }
+
+    /// <summary>错误信息（执行失败时填充）</summary>
+    [StringLength(1000)]
+    [Column("errorMessage")]
+    [BsonElement("errorMessage")]
+    public string? ErrorMessage { get; set; }
+}

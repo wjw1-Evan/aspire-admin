@@ -174,6 +174,7 @@ builder.Services.AddScoped<IoTGatewayStatusChecker>();
 builder.Services.AddHostedService<IoTDataCollectionHostedService>();
 builder.Services.AddHostedService<IoTGatewayStatusCheckHostedService>();
 builder.Services.AddHostedService<CloudStorageMaintenanceService>();
+builder.Services.AddHostedService<IoTDataRetentionHostedService>();
 
 // 自动扫描注册所有业务服务（接口 → 实现）
 builder.Services.AddBusinessServices();

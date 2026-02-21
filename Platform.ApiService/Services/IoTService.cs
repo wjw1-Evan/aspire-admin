@@ -15,6 +15,8 @@ public class IoTService : IIoTService
     private readonly IDataFactory<IoTDataPoint> _dataPointFactory;
     private readonly IDataFactory<IoTDataRecord> _dataRecordFactory;
     private readonly IDataFactory<IoTDeviceEvent> _eventFactory;
+    private readonly IDataFactory<IoTDeviceTwin> _twinFactory;
+    private readonly IDataFactory<IoTDeviceCommand> _commandFactory;
     private readonly ILogger<IoTService> _logger;
 
     /// <summary>
@@ -25,6 +27,8 @@ public class IoTService : IIoTService
     /// <param name="dataPointFactory">数据点数据操作工厂</param>
     /// <param name="dataRecordFactory">数据记录数据操作工厂</param>
     /// <param name="eventFactory">设备事件数据操作工厂</param>
+    /// <param name="twinFactory">设备孪生数据操作工厂</param>
+    /// <param name="commandFactory">云到设备命令数据操作工厂</param>
     /// <param name="logger">日志记录器</param>
     public IoTService(
         IDataFactory<IoTGateway> gatewayFactory,
@@ -32,6 +36,8 @@ public class IoTService : IIoTService
         IDataFactory<IoTDataPoint> dataPointFactory,
         IDataFactory<IoTDataRecord> dataRecordFactory,
         IDataFactory<IoTDeviceEvent> eventFactory,
+        IDataFactory<IoTDeviceTwin> twinFactory,
+        IDataFactory<IoTDeviceCommand> commandFactory,
         ILogger<IoTService> logger)
     {
         _gatewayFactory = gatewayFactory ?? throw new ArgumentNullException(nameof(gatewayFactory));
@@ -39,6 +45,8 @@ public class IoTService : IIoTService
         _dataPointFactory = dataPointFactory ?? throw new ArgumentNullException(nameof(dataPointFactory));
         _dataRecordFactory = dataRecordFactory ?? throw new ArgumentNullException(nameof(dataRecordFactory));
         _eventFactory = eventFactory ?? throw new ArgumentNullException(nameof(eventFactory));
+        _twinFactory = twinFactory ?? throw new ArgumentNullException(nameof(twinFactory));
+        _commandFactory = commandFactory ?? throw new ArgumentNullException(nameof(commandFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -274,7 +282,12 @@ public class IoTService : IIoTService
             Name = request.Name,
             Title = request.Title,
             DeviceId = deviceId,
-            GatewayId = request.GatewayId ?? string.Empty
+            GatewayId = request.GatewayId ?? string.Empty,
+            DeviceType = request.DeviceType,
+            Description = request.Description,
+            Location = request.Location,
+            Tags = request.Tags,
+            RetentionDays = request.RetentionDays
         };
 
         var result = await _deviceFactory.CreateAsync(device);
@@ -376,6 +389,16 @@ public class IoTService : IIoTService
                 entity.GatewayId = request.GatewayId;
             if (request.IsEnabled.HasValue)
                 entity.IsEnabled = request.IsEnabled.Value;
+            if (request.DeviceType.HasValue)
+                entity.DeviceType = request.DeviceType.Value;
+            if (request.Description != null)
+                entity.Description = request.Description;
+            if (request.Location != null)
+                entity.Location = request.Location;
+            if (request.Tags != null)
+                entity.Tags = request.Tags;
+            if (request.RetentionDays.HasValue)
+                entity.RetentionDays = request.RetentionDays.Value;
         });
 
         return result;
@@ -1043,7 +1066,7 @@ public class IoTService : IIoTService
         {
             "HighThreshold" => value > config.Threshold,
             "LowThreshold" => value < config.Threshold,
-            "RangeThreshold" => value < config.Threshold || value > (config.Threshold * 2), // Simple range check
+            "RangeThreshold" => value < config.Threshold || (config.ThresholdHigh.HasValue && value > config.ThresholdHigh.Value),
             _ => false
         };
     }
@@ -1057,6 +1080,210 @@ public class IoTService : IIoTService
 
         // 仅保留可序列化的字符串键值对
         return config.ToDictionary(kv => kv.Key, kv => kv.Value ?? string.Empty);
+    }
+
+    #endregion
+
+    #region Device Twin Operations
+
+    /// <inheritdoc/>
+    public async Task<IoTDeviceTwin> GetOrCreateDeviceTwinAsync(string deviceId)
+    {
+        var twins = await _twinFactory.FindAsync(t => t.DeviceId == deviceId && t.IsDeleted != true, limit: 1);
+        if (twins.Count > 0) return twins[0];
+
+        // 自动初始化孪生体
+        var twin = new IoTDeviceTwin { DeviceId = deviceId };
+        return await _twinFactory.CreateAsync(twin);
+    }
+
+    /// <inheritdoc/>
+    public async Task<IoTDeviceTwin?> UpdateDesiredPropertiesAsync(string deviceId, UpdateDesiredPropertiesRequest request)
+    {
+        if (!await ValidateDeviceExistsAsync(deviceId)) return null;
+
+        var twin = await GetOrCreateDeviceTwinAsync(deviceId);
+
+        // 增量 patch：null 值删除键，非 null 值更新或添加
+        var updated = new Dictionary<string, object>(twin.DesiredProperties);
+        foreach (var (key, value) in request.Properties)
+        {
+            if (value == null)
+                updated.Remove(key);
+            else
+                updated[key] = value;
+        }
+
+        var result = await _twinFactory.UpdateAsync(twin.Id, entity =>
+        {
+            entity.DesiredProperties = updated;
+            entity.DesiredVersion++;
+            entity.ETag = Guid.NewGuid().ToString("N");
+            entity.DesiredUpdatedAt = DateTime.UtcNow;
+        });
+
+        _logger.LogInformation("Device {DeviceId} desired properties updated to version {Version}", deviceId, (result?.DesiredVersion ?? 0));
+        return result;
+    }
+
+    /// <inheritdoc/>
+    public async Task<IoTDeviceTwin?> ReportPropertiesAsync(string deviceId, string apiKey, Dictionary<string, object> properties)
+    {
+        if (!await ValidateApiKeyAsync(deviceId, apiKey))
+            throw new UnauthorizedAccessException($"Invalid ApiKey for device {deviceId}");
+
+        var twin = await GetOrCreateDeviceTwinAsync(deviceId);
+
+        var updated = new Dictionary<string, object>(twin.ReportedProperties);
+        foreach (var (key, value) in properties)
+            updated[key] = value;
+
+        var result = await _twinFactory.UpdateAsync(twin.Id, entity =>
+        {
+            entity.ReportedProperties = updated;
+            entity.ReportedVersion++;
+            entity.ReportedUpdatedAt = DateTime.UtcNow;
+        });
+
+        return result;
+    }
+
+    private async Task<bool> ValidateDeviceExistsAsync(string deviceId)
+    {
+        var devices = await _deviceFactory.FindAsync(d => d.DeviceId == deviceId && d.IsDeleted != true, limit: 1);
+        return devices.Count > 0;
+    }
+
+    #endregion
+
+    #region C2D Command Operations
+
+    /// <inheritdoc/>
+    public async Task<IoTDeviceCommand> SendCommandAsync(string deviceId, SendCommandRequest request)
+    {
+        if (!await ValidateDeviceExistsAsync(deviceId))
+            throw new InvalidOperationException($"Device {deviceId} not found");
+
+        var command = new IoTDeviceCommand
+        {
+            DeviceId = deviceId,
+            CommandName = request.CommandName,
+            Payload = request.Payload,
+            ExpiresAt = DateTime.UtcNow.AddHours(Math.Max(1, request.TtlHours))
+        };
+
+        var result = await _commandFactory.CreateAsync(command);
+        _logger.LogInformation("Command {CommandName} sent to device {DeviceId}, CommandId={CommandId}", request.CommandName, deviceId, result.Id);
+        return result;
+    }
+
+    /// <inheritdoc/>
+    public async Task<List<IoTDeviceCommand>> GetPendingCommandsAsync(string deviceId, string apiKey)
+    {
+        if (!await ValidateApiKeyAsync(deviceId, apiKey))
+            throw new UnauthorizedAccessException($"Invalid ApiKey for device {deviceId}");
+
+        var now = DateTime.UtcNow;
+        var commands = await _commandFactory.FindAsync(
+            c => c.DeviceId == deviceId &&
+                 c.Status == CommandStatus.Pending &&
+                 c.ExpiresAt > now &&
+                 c.IsDeleted != true);
+
+        if (commands.Count > 0)
+        {
+            // 批量标记为 Delivered
+            foreach (var cmd in commands)
+            {
+                await _commandFactory.UpdateAsync(cmd.Id, entity =>
+                {
+                    entity.Status = CommandStatus.Delivered;
+                    entity.DeliveredAt = now;
+                });
+            }
+        }
+
+        return commands;
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> AckCommandAsync(string commandId, AckCommandRequest request)
+    {
+        var command = await _commandFactory.GetByIdAsync(commandId);
+        if (command == null) return false;
+
+        if (!await ValidateApiKeyAsync(command.DeviceId, request.ApiKey))
+            throw new UnauthorizedAccessException($"Invalid ApiKey for device {command.DeviceId}");
+
+        var result = await _commandFactory.UpdateAsync(commandId, entity =>
+        {
+            entity.Status = request.Success ? CommandStatus.Executed : CommandStatus.Failed;
+            entity.ExecutedAt = DateTime.UtcNow;
+            entity.ResponsePayload = request.ResponsePayload;
+            entity.ErrorMessage = request.ErrorMessage;
+        });
+
+        _logger.LogInformation("Command {CommandId} acked: success={Success}", commandId, request.Success);
+        return result != null;
+    }
+
+    /// <inheritdoc/>
+    public async Task<int> ExpireCommandsAsync()
+    {
+        var now = DateTime.UtcNow;
+        var expired = await _commandFactory.FindWithoutTenantFilterAsync(
+            c => c.Status == CommandStatus.Pending && c.ExpiresAt <= now && c.IsDeleted != true);
+
+        if (expired.Count == 0) return 0;
+
+        foreach (var cmd in expired)
+        {
+            await _commandFactory.UpdateAsync(cmd.Id, entity =>
+            {
+                entity.Status = CommandStatus.Expired;
+            });
+        }
+
+        _logger.LogInformation("Expired {Count} C2D commands", expired.Count);
+        return expired.Count;
+    }
+
+    #endregion
+
+    #region ApiKey Operations
+
+    /// <inheritdoc/>
+    public async Task<GenerateApiKeyResult> GenerateApiKeyAsync(string deviceId)
+    {
+        var device = await GetDeviceByDeviceIdAsync(deviceId);
+        if (device == null)
+            throw new InvalidOperationException($"Device {deviceId} not found");
+
+        // 生成随机明文 ApiKey
+        var rawKey = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
+
+        // SHA-256 散列后存储
+        var hash = Convert.ToHexString(
+            System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(rawKey)));
+
+        await _deviceFactory.UpdateAsync(device.Id, entity => { entity.ApiKey = hash; });
+
+        _logger.LogInformation("ApiKey regenerated for device {DeviceId}", deviceId);
+        return new GenerateApiKeyResult { DeviceId = deviceId, ApiKey = rawKey };
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> ValidateApiKeyAsync(string deviceId, string apiKey)
+    {
+        if (string.IsNullOrWhiteSpace(apiKey)) return false;
+
+        var device = await GetDeviceByDeviceIdAsync(deviceId);
+        if (device?.ApiKey == null) return false;
+
+        var hash = Convert.ToHexString(
+            System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(apiKey)));
+
+        return string.Equals(device.ApiKey, hash, StringComparison.OrdinalIgnoreCase);
     }
 
     #endregion

@@ -193,6 +193,63 @@ public interface IIoTService
 
     #endregion
 
+    #region Device Twin Operations
+
+    /// <summary>
+    /// 获取设备孪生（不存在时自动创建）
+    /// </summary>
+    Task<IoTDeviceTwin> GetOrCreateDeviceTwinAsync(string deviceId);
+
+    /// <summary>
+    /// 更新云端期望属性（管理端调用，版本号 +1）
+    /// </summary>
+    Task<IoTDeviceTwin?> UpdateDesiredPropertiesAsync(string deviceId, UpdateDesiredPropertiesRequest request);
+
+    /// <summary>
+    /// 设备上报实际属性（设备端调用，ApiKey 认证）
+    /// </summary>
+    Task<IoTDeviceTwin?> ReportPropertiesAsync(string deviceId, string apiKey, Dictionary<string, object> properties);
+
+    #endregion
+
+    #region C2D Command Operations
+
+    /// <summary>
+    /// 发送云到设备命令
+    /// </summary>
+    Task<IoTDeviceCommand> SendCommandAsync(string deviceId, SendCommandRequest request);
+
+    /// <summary>
+    /// 获取设备待执行命令列表（设备轮询，同时标记为 Delivered）
+    /// </summary>
+    Task<List<IoTDeviceCommand>> GetPendingCommandsAsync(string deviceId, string apiKey);
+
+    /// <summary>
+    /// 设备确认命令执行结果
+    /// </summary>
+    Task<bool> AckCommandAsync(string commandId, AckCommandRequest request);
+
+    /// <summary>
+    /// 将过期命令标记为 Expired
+    /// </summary>
+    Task<int> ExpireCommandsAsync();
+
+    #endregion
+
+    #region ApiKey Operations
+
+    /// <summary>
+    /// 生成/重置设备 ApiKey（明文仅此次返回）
+    /// </summary>
+    Task<GenerateApiKeyResult> GenerateApiKeyAsync(string deviceId);
+
+    /// <summary>
+    /// 校验设备 ApiKey
+    /// </summary>
+    Task<bool> ValidateApiKeyAsync(string deviceId, string apiKey);
+
+    #endregion
+
     #region Statistics Operations
 
     /// <summary>

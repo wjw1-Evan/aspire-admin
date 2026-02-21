@@ -457,6 +457,127 @@ public class IoTController : BaseApiController
     }
 
     #endregion
+
+    #region Device Twin
+
+    /// <summary>
+    /// 获取设备孪生（不存在时自动初始化）
+    /// </summary>
+    /// <param name="deviceId">设备 DeviceId</param>
+    [HttpGet("devices/{deviceId}/twin")]
+    public async Task<IActionResult> GetDeviceTwin(string deviceId)
+    {
+        var twin = await _iotService.GetOrCreateDeviceTwinAsync(deviceId);
+        return Success(twin);
+    }
+
+    /// <summary>
+    /// 更新设备期望属性（管理端写入）
+    /// </summary>
+    /// <param name="deviceId">设备 DeviceId</param>
+    /// <param name="request">期望属性补丁（null 值表示删除该键）</param>
+    [HttpPatch("devices/{deviceId}/twin/desired")]
+    public async Task<IActionResult> UpdateDesiredProperties(string deviceId, [FromBody] UpdateDesiredPropertiesRequest request)
+    {
+        var twin = await _iotService.UpdateDesiredPropertiesAsync(deviceId, request);
+        if (twin == null) return NotFound();
+        return Success(twin);
+    }
+
+    /// <summary>
+    /// 设备上报实际属性（设备端调用，需 ApiKey 认证）
+    /// </summary>
+    /// <param name="deviceId">设备 DeviceId</param>
+    /// <param name="request">上报属性和 ApiKey</param>
+    [HttpPatch("devices/{deviceId}/twin/reported")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ReportProperties(string deviceId, [FromBody] ReportPropertiesRequest request)
+    {
+        try
+        {
+            var twin = await _iotService.ReportPropertiesAsync(deviceId, request.ApiKey, request.Properties);
+            if (twin == null) return NotFound();
+            return Success(twin);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
+    }
+
+    #endregion
+
+    #region C2D Commands
+
+    /// <summary>
+    /// 发送云到设备命令（管理端）
+    /// </summary>
+    /// <param name="deviceId">目标设备 DeviceId</param>
+    /// <param name="request">命令请求</param>
+    [HttpPost("devices/{deviceId}/commands")]
+    public async Task<IActionResult> SendCommand(string deviceId, [FromBody] SendCommandRequest request)
+    {
+        var command = await _iotService.SendCommandAsync(deviceId, request);
+        return Success(command);
+    }
+
+    /// <summary>
+    /// 设备轮询待执行命令（设备端，需 ApiKey 认证）
+    /// </summary>
+    /// <param name="deviceId">设备 DeviceId</param>
+    /// <param name="apiKey">设备 ApiKey</param>
+    [HttpGet("devices/{deviceId}/commands/pending")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetPendingCommands(string deviceId, [FromQuery] string apiKey)
+    {
+        try
+        {
+            var commands = await _iotService.GetPendingCommandsAsync(deviceId, apiKey);
+            return Success(commands);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
+    }
+
+    /// <summary>
+    /// 设备确认命令执行结果（设备端，需 ApiKey 认证）
+    /// </summary>
+    /// <param name="commandId">命令 ID</param>
+    /// <param name="request">执行结果和 ApiKey</param>
+    [HttpPost("commands/{commandId}/ack")]
+    [AllowAnonymous]
+    public async Task<IActionResult> AckCommand(string commandId, [FromBody] AckCommandRequest request)
+    {
+        try
+        {
+            var ok = await _iotService.AckCommandAsync(commandId, request);
+            if (!ok) return NotFound();
+            return Success(ok);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
+    }
+
+    #endregion
+
+    #region ApiKey Management
+
+    /// <summary>
+    /// 生成/重置设备 ApiKey（管理端，明文仅返回一次）
+    /// </summary>
+    /// <param name="deviceId">设备 DeviceId</param>
+    [HttpPost("devices/{deviceId}/apikey")]
+    public async Task<IActionResult> GenerateApiKey(string deviceId)
+    {
+        var result = await _iotService.GenerateApiKeyAsync(deviceId);
+        return Success(result);
+    }
+
+    #endregion
 }
 
 /// <summary>

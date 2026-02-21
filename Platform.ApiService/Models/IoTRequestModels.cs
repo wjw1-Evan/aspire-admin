@@ -59,6 +59,16 @@ public class CreateIoTDeviceRequest
     public string? DeviceId { get; set; }
     /// <summary>所属网关ID（可选，设备可以独立存在）</summary>
     public string? GatewayId { get; set; }
+    /// <summary>设备类型</summary>
+    public IoTDeviceType DeviceType { get; set; } = IoTDeviceType.Sensor;
+    /// <summary>设备描述</summary>
+    public string? Description { get; set; }
+    /// <summary>物理位置</summary>
+    public string? Location { get; set; }
+    /// <summary>设备标签</summary>
+    public Dictionary<string, string>? Tags { get; set; }
+    /// <summary>遥测数据保留天数（0=永久）</summary>
+    public int RetentionDays { get; set; } = 0;
 }
 
 /// <summary>
@@ -74,6 +84,16 @@ public class UpdateIoTDeviceRequest
     public string? GatewayId { get; set; }
     /// <summary>是否启用</summary>
     public bool? IsEnabled { get; set; }
+    /// <summary>设备类型</summary>
+    public IoTDeviceType? DeviceType { get; set; }
+    /// <summary>设备描述</summary>
+    public string? Description { get; set; }
+    /// <summary>物理位置</summary>
+    public string? Location { get; set; }
+    /// <summary>设备标签</summary>
+    public Dictionary<string, string>? Tags { get; set; }
+    /// <summary>遥测数据保留天数（0=永久）</summary>
+    public int? RetentionDays { get; set; }
 }
 
 #endregion
@@ -241,6 +261,79 @@ public class DeviceDisconnectRequest
     public string DeviceId { get; set; } = string.Empty;
     /// <summary>断开原因</summary>
     public string? Reason { get; set; }
+}
+
+#endregion
+
+#region Device Twin Requests
+
+/// <summary>
+/// 更新设备孪生期望属性请求（管理端 → 云端写入）
+/// </summary>
+public class UpdateDesiredPropertiesRequest
+{
+    /// <summary>要更新的属性（JSON 键值，null 值表示删除该键）</summary>
+    public Dictionary<string, object?> Properties { get; set; } = new();
+}
+
+/// <summary>
+/// 设备上报属性请求（设备端 → 上报实际状态）
+/// </summary>
+public class ReportPropertiesRequest
+{
+    /// <summary>设备 ApiKey（鉴权）</summary>
+    public string ApiKey { get; set; } = string.Empty;
+    /// <summary>上报的属性键值</summary>
+    public Dictionary<string, object> Properties { get; set; } = new();
+}
+
+#endregion
+
+#region C2D Command Requests
+
+/// <summary>
+/// 发送云到设备命令请求
+/// </summary>
+public class SendCommandRequest
+{
+    /// <summary>命令名称（如 restart、setThreshold）</summary>
+    public string CommandName { get; set; } = string.Empty;
+    /// <summary>命令参数</summary>
+    public Dictionary<string, object>? Payload { get; set; }
+    /// <summary>命令过期时间（小时，默认 24）</summary>
+    public int TtlHours { get; set; } = 24;
+}
+
+/// <summary>
+/// 设备 Ack 命令执行结果请求
+/// </summary>
+public class AckCommandRequest
+{
+    /// <summary>设备 ApiKey（鉴权）</summary>
+    public string ApiKey { get; set; } = string.Empty;
+    /// <summary>是否执行成功</summary>
+    public bool Success { get; set; } = true;
+    /// <summary>执行结果</summary>
+    public Dictionary<string, object>? ResponsePayload { get; set; }
+    /// <summary>错误信息（失败时填充）</summary>
+    public string? ErrorMessage { get; set; }
+}
+
+#endregion
+
+#region ApiKey Requests
+
+/// <summary>
+/// 生成/重置设备 ApiKey 的结果
+/// </summary>
+public class GenerateApiKeyResult
+{
+    /// <summary>设备 ID</summary>
+    public string DeviceId { get; set; } = string.Empty;
+    /// <summary>明文 ApiKey（仅此次返回，之后无法查看）</summary>
+    public string ApiKey { get; set; } = string.Empty;
+    /// <summary>生成时间</summary>
+    public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
 }
 
 #endregion

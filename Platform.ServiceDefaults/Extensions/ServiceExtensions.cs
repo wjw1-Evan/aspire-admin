@@ -17,7 +17,6 @@ public static class ServiceExtensions
     ///   <item>IMongoClient + IMongoDatabase（Aspire 自动注册）</item>
     ///   <item>PlatformDbContext（EF Core + MongoDB Provider）</item>
     ///   <item>IDataFactory（泛型 CRUD 工厂）</item>
-    ///   <item>IAuditService（操作审计）</item>
     ///   <item>ITenantContext（多租户上下文）</item>
     ///   <item>IFileStorageFactory（文件存储 / GridFS）</item>
     ///   <item>MongoDB 全局约定（IgnoreExtraElements + CamelCase）</item>
@@ -51,7 +50,6 @@ public static class ServiceExtensions
 
         // ── 基础设施服务 ─────────────────────────────────
         builder.Services.AddHttpContextAccessor();
-        builder.Services.AddScoped<IAuditService, AuditService>();
         builder.Services.AddScoped(typeof(IDataFactory<>), typeof(EFCoreDataFactory<>));
         builder.Services.AddScoped<ITenantContext, TenantContext>();
         builder.Services.AddScoped<IFileStorageFactory, GridFSFileStorage>();

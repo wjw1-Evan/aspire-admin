@@ -18,6 +18,7 @@ public class NoticeService : INoticeService
     /// </summary>
     /// <param name="noticeFactory">通知数据操作工厂</param>
     /// <param name="userFactory">用户数据操作工厂</param>
+    /// <param name="tenantContext">租户上下文</param>
     public NoticeService(
         IDataFactory<NoticeIconItem> noticeFactory,
         Platform.ServiceDefaults.Services.IDataFactory<AppUser> userFactory,

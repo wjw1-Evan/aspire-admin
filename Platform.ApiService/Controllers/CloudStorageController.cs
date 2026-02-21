@@ -184,6 +184,11 @@ public class CloudStorageController : BaseApiController
         return Success(fileItem, "复制成功");
     }
 
+    /// <summary>
+    /// 删除文件或文件夹（移至回收站）
+    /// </summary>
+    /// <param name="id">文件项ID</param>
+    /// <returns>删除结果</returns>
     [HttpDelete("items/{id}")]
     [RequireMenu("cloud-storage-files")]
     public async Task<IActionResult> DeleteFileItem(string id)
@@ -200,6 +205,11 @@ public class CloudStorageController : BaseApiController
 
     #region 文件下载和预览
 
+    /// <summary>
+    /// 下载文件
+    /// </summary>
+    /// <param name="id">文件项ID</param>
+    /// <returns>文件流</returns>
     [HttpGet("items/{id}/download")]
     public async Task<IActionResult> DownloadFile(string id)
     {
@@ -216,6 +226,11 @@ public class CloudStorageController : BaseApiController
         return File(stream, fileItem.MimeType, fileItem.Name);
     }
 
+    /// <summary>
+    /// 下载文件夹（打包为ZIP）
+    /// </summary>
+    /// <param name="id">文件夹ID</param>
+    /// <returns>ZIP 文件流</returns>
     [HttpGet("folders/{id}/download")]
     [RequireMenu("cloud-storage-files")]
     public async Task<IActionResult> DownloadFolderAsZip(string id)
@@ -228,6 +243,11 @@ public class CloudStorageController : BaseApiController
         return File(stream, "application/zip", $"folder-{id}.zip");
     }
 
+    /// <summary>
+    /// 预览文件
+    /// </summary>
+    /// <param name="id">文件ID</param>
+    /// <returns>预览信息</returns>
     [HttpGet("items/{id}/preview")]
     public async Task<IActionResult> PreviewFile(string id)
     {
@@ -238,6 +258,11 @@ public class CloudStorageController : BaseApiController
         return Success(previewInfo);
     }
 
+    /// <summary>
+    /// 获取文件缩略图
+    /// </summary>
+    /// <param name="id">文件ID</param>
+    /// <returns>缩略图流</returns>
     [HttpGet("items/{id}/thumbnail")]
     public async Task<IActionResult> GetThumbnail(string id)
     {
@@ -371,6 +396,12 @@ public class CloudStorageController : BaseApiController
         return SuccessPaged(result.Data, result.Total, result.Page, result.PageSize);
     }
 
+    /// <summary>
+    /// 恢复文件项
+    /// </summary>
+    /// <param name="id">文件项ID</param>
+    /// <param name="request">恢复请求</param>
+    /// <returns>恢复的文件项</returns>
     [HttpPost("recycle-bin/{id}/restore")]
     [RequireMenu("cloud-storage-recycle")]
     public async Task<IActionResult> RestoreFileItem(string id, [FromBody] RestoreRequest request)
@@ -383,6 +414,11 @@ public class CloudStorageController : BaseApiController
         return Success(fileItem, "恢复成功");
     }
 
+    /// <summary>
+    /// 永久删除文件项
+    /// </summary>
+    /// <param name="id">文件项ID</param>
+    /// <returns>删除结果</returns>
     [HttpDelete("recycle-bin/{id}")]
     [RequireMenu("cloud-storage-recycle")]
     public async Task<IActionResult> PermanentDeleteFileItem(string id)
@@ -395,6 +431,10 @@ public class CloudStorageController : BaseApiController
         return Success(null, "文件已永久删除");
     }
 
+    /// <summary>
+    /// 清空回收站
+    /// </summary>
+    /// <returns>清理结果</returns>
     [HttpDelete("recycle-bin/empty")]
     [RequireMenu("cloud-storage-recycle")]
     public async Task<IActionResult> EmptyRecycleBin()
@@ -404,6 +444,11 @@ public class CloudStorageController : BaseApiController
         return Success(null, "回收站已清空");
     }
 
+    /// <summary>
+    /// 自动清理过期回收站项目
+    /// </summary>
+    /// <param name="expireDays">过期天数（可选，默认 30 天）</param>
+    /// <returns>清理结果</returns>
     [HttpPost("recycle-bin/auto-cleanup")]
     [RequireMenu("cloud-storage-recycle")]
     public async Task<IActionResult> AutoCleanupRecycleBin([FromQuery] int? expireDays = null)
@@ -419,7 +464,12 @@ public class CloudStorageController : BaseApiController
 
     #region 存储统计
 
-    [HttpGet("quota/usage")]
+    /// <summary>
+    /// 获取用户存储使用统计信息
+    /// </summary>
+    /// <param name="userId">可选的用户ID（管理员可用）</param>
+    /// <returns>存储使用情况</returns>
+    [HttpGet("usage")]
     [RequireMenu("cloud-storage-quota")]
     public async Task<IActionResult> GetStorageUsage([FromQuery] string? userId = null)
     {
@@ -431,6 +481,11 @@ public class CloudStorageController : BaseApiController
 
     #region 批量操作
 
+    /// <summary>
+    /// 批量永久删除文件项
+    /// </summary>
+    /// <param name="request">批量操作请求</param>
+    /// <returns>批量操作结果</returns>
     [HttpPost("recycle-bin/batch-permanent-delete")]
     [RequireMenu("cloud-storage-recycle")]
     public async Task<IActionResult> BatchPermanentDelete([FromBody] BatchOperationRequest request)
@@ -462,6 +517,11 @@ public class CloudStorageController : BaseApiController
             $"批量永久删除完成，成功 {successCount} 个，失败 {failureCount} 个");
     }
 
+    /// <summary>
+    /// 批量删除文件项（移至回收站）
+    /// </summary>
+    /// <param name="request">批量操作请求</param>
+    /// <returns>批量操作结果</returns>
     [HttpPost("items/batch-delete")]
     [RequireMenu("cloud-storage-files")]
     public async Task<IActionResult> BatchDelete([FromBody] BatchOperationRequest request)
@@ -474,6 +534,11 @@ public class CloudStorageController : BaseApiController
         return Success(result, $"批量删除完成，成功 {result.SuccessCount} 个，失败 {result.FailureCount} 个");
     }
 
+    /// <summary>
+    /// 批量移动文件项
+    /// </summary>
+    /// <param name="request">批量移动请求</param>
+    /// <returns>批量操作结果</returns>
     [HttpPost("items/batch-move")]
     [RequireMenu("cloud-storage-files")]
     public async Task<IActionResult> BatchMove([FromBody] BatchMoveRequest request)
@@ -486,6 +551,11 @@ public class CloudStorageController : BaseApiController
         return Success(result, $"批量移动完成，成功 {result.SuccessCount} 个，失败 {result.FailureCount} 个");
     }
 
+    /// <summary>
+    /// 批量复制文件项
+    /// </summary>
+    /// <param name="request">批量复制请求</param>
+    /// <returns>批量操作结果</returns>
     [HttpPost("items/batch-copy")]
     [RequireMenu("cloud-storage-files")]
     public async Task<IActionResult> BatchCopy([FromBody] BatchCopyRequest request)

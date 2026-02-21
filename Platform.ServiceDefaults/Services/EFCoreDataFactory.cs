@@ -11,9 +11,7 @@ namespace Platform.ServiceDefaults.Services;
 /// EF Core 数据工厂 - 提供类型安全的 CRUD 和分页查询
 /// 审计字段（时间戳、操作人、多租户等）统一由 PlatformDbContext.SaveChangesAsync 设置
 /// </summary>
-public class EFCoreDataFactory<T>(
-    DbContext context,
-    IAuditService auditService)
+public class EFCoreDataFactory<T>(DbContext context)
     : IDataFactory<T> where T : class, IEntity, ISoftDeletable, ITimestamped
 {
     private readonly DbSet<T> _dbSet = context.Set<T>();
@@ -55,13 +53,13 @@ public class EFCoreDataFactory<T>(
         IQueryable<T> baseQuery = _dbSet.AsNoTracking();
         if (filter != null) baseQuery = baseQuery.Where(filter);
 
-        // 并行执行计数和数据查询
-        var totalTask = baseQuery.CountAsync(cancellationToken);
-        var itemsQuery = BuildQuery(baseQuery, null, orderBy, includes);
-        var itemsTask = itemsQuery.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+        // 顺序执行查询，因为单一 DbContext 实例不支持多线程并发查询 (不能用 Task.WhenAll)
+        var total = await baseQuery.CountAsync(cancellationToken);
 
-        await Task.WhenAll(totalTask, itemsTask);
-        return (itemsTask.Result, totalTask.Result);
+        var itemsQuery = BuildQuery(baseQuery, null, orderBy, includes);
+        var items = await itemsQuery.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+
+        return (items, total);
     }
 
     public async Task<long> CountAsync(Expression<Func<T, bool>>? filter = null, CancellationToken cancellationToken = default)
@@ -96,7 +94,6 @@ public class EFCoreDataFactory<T>(
 
         await _dbSet.AddRangeAsync(entityList, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
-        await auditService.RecordOperationAsync("BATCH_CREATE", typeof(T).Name, $"count:{entityList.Count}", entityList.Count, $"Created {entityList.Count} entities");
         return entityList;
     }
 
@@ -129,7 +126,6 @@ public class EFCoreDataFactory<T>(
 
         foreach (var entity in entities) updateAction(entity);
         await context.SaveChangesAsync(cancellationToken);
-        await auditService.RecordOperationAsync("BATCH_UPDATE", typeof(T).Name, $"count:{entities.Count}", entities.Count, $"Updated {entities.Count} entities");
         return entities.Count;
     }
 
@@ -140,7 +136,6 @@ public class EFCoreDataFactory<T>(
 
         foreach (var entity in entities) await updateAction(entity);
         await context.SaveChangesAsync(cancellationToken);
-        await auditService.RecordOperationAsync("BATCH_UPDATE", typeof(T).Name, $"count:{entities.Count}", entities.Count, $"Updated {entities.Count} entities");
         return entities.Count;
     }
 
@@ -156,7 +151,6 @@ public class EFCoreDataFactory<T>(
         entity.IsDeleted = true;
         entity.DeletedReason = reason;
         await context.SaveChangesAsync(cancellationToken);
-        await auditService.RecordOperationAsync("SOFT_DELETE", typeof(T).Name, id, null, reason);
         return true;
     }
 
@@ -172,7 +166,6 @@ public class EFCoreDataFactory<T>(
         }
 
         await context.SaveChangesAsync(cancellationToken);
-        await auditService.RecordOperationAsync("BATCH_SOFT_DELETE", typeof(T).Name, $"count:{entities.Count}", entities.Count, reason);
         return entities.Count;
     }
 
@@ -193,7 +186,6 @@ public class EFCoreDataFactory<T>(
 
         _dbSet.RemoveRange(entities);
         await context.SaveChangesAsync(cancellationToken);
-        await auditService.RecordOperationAsync("BATCH_DELETE", typeof(T).Name, $"count:{entities.Count}", entities.Count, "Hard deleted entities");
         return entities.Count;
     }
 

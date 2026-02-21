@@ -228,6 +228,11 @@ public class IoTController : BaseApiController
         return Success<object?>(null, "Device disconnected successfully");
     }
 
+    /// <summary>
+    /// 获取设备统计信息
+    /// </summary>
+    /// <param name="deviceId">设备ID</param>
+    /// <returns>设备统计数据</returns>
     [HttpGet("devices/{deviceId}/statistics")]
     public async Task<IActionResult> GetDeviceStatistics(string deviceId)
     {
@@ -239,6 +244,11 @@ public class IoTController : BaseApiController
 
     #region DataPoint Endpoints
 
+    /// <summary>
+    /// 创建数据点
+    /// </summary>
+    /// <param name="request">创建数据点请求</param>
+    /// <returns>创建的数据点信息</returns>
     [HttpPost("datapoints")]
     public async Task<IActionResult> CreateDataPoint([FromBody] CreateIoTDataPointRequest request)
     {
@@ -246,6 +256,14 @@ public class IoTController : BaseApiController
         return Success(dataPoint);
     }
 
+    /// <summary>
+    /// 获取数据点列表
+    /// </summary>
+    /// <param name="deviceId">设备ID（可选）</param>
+    /// <param name="keyword">关键词搜索（可选）</param>
+    /// <param name="pageIndex">页码</param>
+    /// <param name="pageSize">每页大小</param>
+    /// <returns>分页数据点列表</returns>
     [HttpGet("datapoints")]
     public async Task<IActionResult> GetDataPoints([FromQuery] string? deviceId = null, [FromQuery] string? keyword = null, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20)
     {
@@ -253,6 +271,11 @@ public class IoTController : BaseApiController
         return SuccessPaged(items, total, pageIndex, pageSize);
     }
 
+    /// <summary>
+    /// 获取数据点详情
+    /// </summary>
+    /// <param name="id">数据点ID</param>
+    /// <returns>数据点详情</returns>
     [HttpGet("datapoints/{id}")]
     public async Task<IActionResult> GetDataPoint(string id)
     {
@@ -260,6 +283,12 @@ public class IoTController : BaseApiController
         return Success(dataPoint.EnsureFound("DataPoint", id));
     }
 
+    /// <summary>
+    /// 更新数据点
+    /// </summary>
+    /// <param name="id">数据点ID</param>
+    /// <param name="request">更新请求</param>
+    /// <returns>更新后的数据点</returns>
     [HttpPut("datapoints/{id}")]
     public async Task<IActionResult> UpdateDataPoint(string id, [FromBody] UpdateIoTDataPointRequest request)
     {
@@ -267,6 +296,11 @@ public class IoTController : BaseApiController
         return Success(dataPoint.EnsureFound("DataPoint", id));
     }
 
+    /// <summary>
+    /// 删除数据点
+    /// </summary>
+    /// <param name="id">数据点ID</param>
+    /// <returns>操作结果</returns>
     [HttpDelete("datapoints/{id}")]
     public async Task<IActionResult> DeleteDataPoint(string id)
     {
@@ -281,6 +315,11 @@ public class IoTController : BaseApiController
 
     #region Data Record Endpoints
 
+    /// <summary>
+    /// 上报单条设备数据
+    /// </summary>
+    /// <param name="request">数据上报请求</param>
+    /// <returns>操作结果</returns>
     [HttpPost("data/report")]
     [AllowAnonymous]
     public async Task<IActionResult> ReportData([FromBody] ReportIoTDataRequest request)
@@ -289,6 +328,11 @@ public class IoTController : BaseApiController
         return Success(record);
     }
 
+    /// <summary>
+    /// 批量上报设备数据
+    /// </summary>
+    /// <param name="request">批量数据上报请求</param>
+    /// <returns>操作结果</returns>
     [HttpPost("data/batch-report")]
     [AllowAnonymous]
     public async Task<IActionResult> BatchReportData([FromBody] BatchReportIoTDataRequest request)
@@ -297,6 +341,11 @@ public class IoTController : BaseApiController
         return Success(records);
     }
 
+    /// <summary>
+    /// 查询设备历史数据记录
+    /// </summary>
+    /// <param name="request">数据查询请求</param>
+    /// <returns>历史数据列表</returns>
     [HttpPost("data/query")]
     public async Task<IActionResult> QueryDataRecords([FromBody] QueryIoTDataRequest request)
     {
@@ -304,6 +353,11 @@ public class IoTController : BaseApiController
         return Success(new { Records = records, Total = total });
     }
 
+    /// <summary>
+    /// 获取指定数据点的最新值
+    /// </summary>
+    /// <param name="dataPointId">数据点ID</param>
+    /// <returns>最新数据记录</returns>
     [HttpGet("data/latest/{dataPointId}")]
     public async Task<IActionResult> GetLatestData(string dataPointId)
     {
@@ -336,6 +390,11 @@ public class IoTController : BaseApiController
 
     #region Event Endpoints
 
+    /// <summary>
+    /// 查询设备事件
+    /// </summary>
+    /// <param name="request">事件查询请求</param>
+    /// <returns>事件分页列表</returns>
     [HttpPost("events/query")]
     public async Task<IActionResult> QueryEvents([FromBody] QueryIoTEventRequest request)
     {
@@ -343,6 +402,12 @@ public class IoTController : BaseApiController
         return Success(new { Events = events, Total = total });
     }
 
+    /// <summary>
+    /// 处理指定的事件
+    /// </summary>
+    /// <param name="eventId">事件ID</param>
+    /// <param name="request">处理请求</param>
+    /// <returns>操作结果</returns>
     [HttpPost("events/{eventId}/handle")]
     public async Task<IActionResult> HandleEvent(string eventId, [FromBody] HandleEventRequest request)
     {
@@ -353,6 +418,11 @@ public class IoTController : BaseApiController
         return Success<object?>(null, "Event handled successfully");
     }
 
+    /// <summary>
+    /// 获取未处理事件数量
+    /// </summary>
+    /// <param name="deviceId">指定设备ID（可选）</param>
+    /// <returns>未处理事件数量</returns>
     [HttpGet("events/unhandled-count")]
     public async Task<IActionResult> GetUnhandledEventCount([FromQuery] string? deviceId = null)
     {
@@ -364,6 +434,10 @@ public class IoTController : BaseApiController
 
     #region Statistics Endpoints
 
+    /// <summary>
+    /// 获取平台总体统计信息
+    /// </summary>
+    /// <returns>平台统计数据</returns>
     [HttpGet("statistics/platform")]
     public async Task<IActionResult> GetPlatformStatistics()
     {
@@ -371,6 +445,10 @@ public class IoTController : BaseApiController
         return Success(stats);
     }
 
+    /// <summary>
+    /// 获取所有设备的状态分布统计
+    /// </summary>
+    /// <returns>状态统计数据</returns>
     [HttpGet("statistics/device-status")]
     public async Task<IActionResult> GetDeviceStatusStatistics()
     {

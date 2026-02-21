@@ -83,6 +83,7 @@ public class FriendService : IFriendService
     /// <param name="userFactory">用户数据操作工厂</param>
     /// <param name="aiAssistantCoordinator">AI 助手协调器</param>
     /// <param name="chatService">聊天服务</param>
+    /// <param name="tenantContext">租户上下文</param>
     /// <param name="logger">日志记录器</param>
     public FriendService(
         IDataFactory<Friendship> friendshipFactory,

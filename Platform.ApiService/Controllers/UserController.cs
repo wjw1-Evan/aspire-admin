@@ -336,15 +336,7 @@ public class UserController : BaseApiController
     /// <summary>
     /// 获取所有用户活动日志（需要权限）
     /// </summary>
-    /// <param name="page">页码</param>
-    /// <param name="pageSize">每页数量</param>
-    /// <param name="userId">用户ID（可选）</param>
-    /// <param name="action">操作类型（可选）</param>
-    /// <param name="httpMethod">HTTP请求方法（可选）</param>
-    /// <param name="statusCode">HTTP状态码（可选）</param>
-    /// <param name="ipAddress">IP地址（可选）</param>
-    /// <param name="startDate">开始日期（可选）</param>
-    /// <param name="endDate">结束日期（可选）</param>
+    /// <param name="query">活动日志查询参数</param>
     [HttpGet("activity-logs")]
     [RequireMenu("user-log")]
     public async Task<IActionResult> GetAllActivityLogs([FromQuery] ActivityLogQuery query)

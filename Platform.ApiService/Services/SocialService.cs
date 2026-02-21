@@ -68,6 +68,7 @@ public class SocialService : ISocialService
     /// <param name="logger">日志记录器。</param>
     /// <param name="serviceProvider">服务提供者（用于创建后台任务的作用域）。</param>
     /// <param name="configuration">配置对象（用于读取地理编码 API Key）。</param>
+    /// <param name="tenantContext">租户上下文。</param>
     public SocialService(
         IDataFactory<UserLocationBeacon> beaconFactory,
         IDataFactory<AppUser> userFactory,

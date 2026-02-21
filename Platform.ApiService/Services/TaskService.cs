@@ -27,8 +27,10 @@ public class TaskService : ITaskService
     /// <param name="taskFactory">任务数据工厂</param>
     /// <param name="executionLogFactory">任务执行日志数据工厂</param>
     /// <param name="userService">用户服务</param>
+    /// <param name="userActivityLogService">用户活动日志服务</param>
     /// <param name="notificationService">统一通知服务，用于在任务创建、分配、状态变更时发送通知</param>
     /// <param name="serviceProvider">服务提供者，用于获取其他服务实例</param>
+    /// <param name="tenantContext">租户上下文</param>
     public TaskService(
         IDataFactory<TaskModel> taskFactory,
         IDataFactory<TaskExecutionLog> executionLogFactory,

@@ -31,6 +31,7 @@ public class AiAssistantCoordinator : IAiAssistantCoordinator
     /// </summary>
     /// <param name="userFactory">用户数据操作工厂</param>
     /// <param name="sessionFactory">会话数据操作工厂</param>
+    /// <param name="tenantContext">租户上下文</param>
     /// <param name="logger">日志记录器</param>
     public AiAssistantCoordinator(
         IDataFactory<AppUser> userFactory,

@@ -20,7 +20,7 @@ public class BusinessException : Exception
     /// <summary>
     /// 额外的错误数据
     /// </summary>
-    public object? Data { get; }
+    public new object? Data { get; }
 
     public BusinessException(string message, string code = "BUSINESS_ERROR", int statusCode = 400)
         : base(message)

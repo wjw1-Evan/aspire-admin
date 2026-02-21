@@ -3,7 +3,6 @@ using MongoDB.EntityFrameworkCore.Extensions;
 using Platform.ServiceDefaults.Models;
 using System.Reflection;
 using System.Linq.Expressions;
-using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Platform.ServiceDefaults.Services;

@@ -27,6 +27,21 @@
 - **IoT 物联网平台**
   - **四位一体管理**：网关管理、设备状态监控、数据点实时采集与事件告警闭环。
   - 支持复杂场景下的设备关联关系维护与物联网监控仪表盘。
+- **全端协同体验 (Multi-terminal)**
+  - **Platform.App (iOS/Android)**：基于 Expo 54 打造的高性能跨端 App，内置实时通知推送与地理位置服务。
+  - **Platform.MiniApp (微信小程序)**：深度集成的轻量级入口，包含完整的园区管理（招商、资产、合同、走访）业务闭环。
+
+## 🛠️ 技术栈 (Technology Stack)
+
+| 层次 | 核心技术 | 描述 |
+| :--- | :--- | :--- |
+| **后端** | **.NET 10 + Aspire** | 最新代 C# 开发框架，支持云原生编排与服务治理。 |
+| **数据库** | **MongoDB + EF Core** | 采用 `MongoDB.EntityFrameworkCore` 实现强类型的 NoSQL 访问。 |
+| **管理端** | **React 19 + AntD 6** | 面向未来的 Web 开发架构，极致的渲染性能与 UI 细节。 |
+| **移动端** | **Expo 54 + RN 0.83** | 跨平台原生体验，支持 Reanimated 超流畅动画方案。 |
+| **小程序** | **Native WeChat** | 适配微信原生生态，确保低延时与高兼容性。 |
+| **观测性** | **OpenTelemetry** | 集成指标、日志与链路追踪，全链路健康监控。 |
+| **AI** | **OpenAI / MCP** | 对接全球顶级大模型与标准化模型上下文协议。 |
 
 ## 🏗 架构总览
 
@@ -58,6 +73,22 @@ graph TD
 - **Platform.AppHost**：负责服务发现、容器编排、数据库（MongoDB/Redis）自动拉起。
 - **Platform.ApiService**：核心业务逻辑承载者，采用 Clean Architecture 风格。
 - **Platform.Admin**：基于 Ant Design 6 打造，强调原生体验与高性能操作视图。
+- **Platform.MiniApp**：涵盖园区全生命周期管理的轻量化业务端。
+- **Platform.App**：提供一致性的原生移动端访问与消息触达。
+
+## 📂 项目结构 (Project Structure)
+
+```text
+aspire-admin
+├── Platform.AppHost           # .NET Aspire 编排项目，管理所有微服务与资源
+├── Platform.ApiService        # 核心业务 API (Workflow, IoT, AI, Park, Storage)
+├── Platform.ServiceDefaults   # 通用弹性配置、服务目录与公共实体定义
+├── Platform.DataInitializer   # 数据库索引初始化与基础数据种子填充
+├── Platform.Admin             # 管理后台 (React 19 + AntD 6)
+├── Platform.App               # 移动端应用 (Expo + React Native)
+├── Platform.MiniApp           # 微信小程序 (Native)
+└── docs                       # 详细设计文档、MCP 协议规范与业务手册
+```
 
 ## 🔙 后端服务 (Platform.ApiService)
 
@@ -132,8 +163,43 @@ dotnet run --project Platform.AppHost
 - **Aspire Dashboard**: <http://localhost:17091> (查看所有服务的实时日志、指标与分布式追踪)
 - **管理后台 (Admin)**: <http://localhost:15001>
 - **移动端预览 (Expo Web)**: <http://localhost:15002>
-- **API 定义 (Swagger/Scalar)**: 通过 Aspire 仪表盘对应的服务入口点击跳转。
+- **API 定义 (Swagger/Scalar)**：通过 Aspire 仪表盘对应的服务入口点击跳转。
+
+## 💡 核心设计理念 (Core Design)
+
+### 1. 声明式数据工厂 (IDataFactory)
+本项目核心逻辑完全解耦于具体的数据库驱动。通过 `IDataFactory<T>`，开发者仅需关注业务模型。该层级自动处理：
+- **多租户透明过滤**：根据操作上下文自动追加 `CompanyId` 过滤。
+- **审计追踪**：全自动记录实体创建、修改的时间与人员。
+- **原子化更新**：集成性能极佳的 Lambda 表达式更新，降低数据库并发冲突。
+
+### 2. 闭环工作流引擎
+不同于传统的线性审批，本项目支持：
+- **动态节点跳转**：基于条件表达式的自动分支。
+- **业务数据联动**：流程状态变更可实时触发表单数据更新、通知推送及第三方 Webhook 回调。
+
+### 3. 多端实时同步
+利用 **SSE (Server-Sent Events)** 实现后端到多端的极速状态同步，确保在管理端操作后，小程序及 App 能在秒级收到通知或状态更新。
+
+## 🔐 安全与合规 (Security)
+
+- **身份认证**：基于 **JWT (JSON Web Token)** 的无状态认证，配合双令牌刷新机制，平衡安全性与用户体验。
+- **存储安全**：
+  - **GridFS** 分片存储，文件碎片化分布，增强数据隐私。
+  - **AES-256-GCM** 加密应用于密码本（Password Book）等极敏感数据。
+- **传输安全**：原生支持全链路 HTTPS，自动适配 .NET Aspire 的开发/生产安全策略。
 
 ---
 
 项目致力于提供最前沿的企业级应用开发模版，结合了 .NET 生态最新的编排能力与现代前端的最佳实践。
+
+## 🤝 参与贡献 (Contribution)
+
+欢迎通过提交 Issue 或 Pull Request 来协助优化此项目。在提交代码前，请确保：
+- 遵循 **Clean Architecture** 架构规范。
+- UI 变更符合项目的 **高品质设计准则**。
+- 后端逻辑优先考虑 **多租户隔离** 与 **IDataFactory 兼容性**。
+
+## 📄 开源协议 (License)
+
+基于 [MIT License](LICENSE) 开源。

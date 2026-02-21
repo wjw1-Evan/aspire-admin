@@ -115,7 +115,7 @@ public class ActivityLogMiddleware
     /// <summary>
     /// 在请求线程中提取日志数据（避免后台线程访问 HttpContext）
     /// </summary>
-    private (string? userId, string? username, string httpMethod, string path, string? queryString, string scheme, string host, int statusCode, long durationMs, string? ipAddress, string? userAgent, string? responseBody, Dictionary<string, object>? metadata)? ExtractLogData(HttpContext context, long durationMs)
+    private (string? userId, string? username, string httpMethod, string path, string? queryString, string scheme, string host, int statusCode, long durationMs, string? ipAddress, string? userAgent, Dictionary<string, object>? metadata)? ExtractLogData(HttpContext context, long durationMs)
     {
         // 提取用户信息
         string? userId = null;
@@ -168,18 +168,16 @@ public class ActivityLogMiddleware
         // 响应状态码
         var statusCode = context.Response.StatusCode;
 
-        var responseBody = ExtractResponseBody(context);
-
         // 提取云存储操作的元数据
         var metadata = ExtractCloudStorageMetadata(context, httpMethod, path);
 
-        return (userId, username, httpMethod, path, queryString, scheme, host, statusCode, durationMs, ipAddress, userAgent, responseBody, metadata);
+        return (userId, username, httpMethod, path, queryString, scheme, host, statusCode, durationMs, ipAddress, userAgent, metadata);
     }
 
     /// <summary>
     /// 日志数据元组转请求对象的转换方法
     /// </summary>
-    private static LogHttpRequestRequest ToRequest((string? userId, string? username, string httpMethod, string path, string? queryString, string scheme, string host, int statusCode, long durationMs, string? ipAddress, string? userAgent, string? responseBody, Dictionary<string, object>? metadata) data)
+    private static LogHttpRequestRequest ToRequest((string? userId, string? username, string httpMethod, string path, string? queryString, string scheme, string host, int statusCode, long durationMs, string? ipAddress, string? userAgent, Dictionary<string, object>? metadata) data)
     {
         return new LogHttpRequestRequest
         {
@@ -194,69 +192,11 @@ public class ActivityLogMiddleware
             DurationMs = data.durationMs,
             IpAddress = data.ipAddress,
             UserAgent = data.userAgent,
-            ResponseBody = data.responseBody,
             Metadata = data.metadata ?? new Dictionary<string, object>()
         };
     }
 
-    /// <summary>
-    /// 提取响应体，过滤敏感信息（如密码）
-    /// </summary>
-    private static string? ExtractResponseBody(HttpContext context)
-    {
-        if (!context.Items.TryGetValue(ResponseFormattingMiddleware.ResponseBodyContextItemKey, out var value))
-        {
-            return null;
-        }
 
-        if (value is not string body || string.IsNullOrWhiteSpace(body))
-        {
-            return null;
-        }
-
-        // 🔒 安全修复：全局过滤响应中的敏感信息（如密码字段）
-        // 之前仅针对 /password-book，现在改为全局过滤以增强安全性
-        body = FilterSensitiveData(body);
-
-        return body;
-    }
-
-    /// <summary>
-    /// 过滤响应体中的敏感数据（密码等）
-    /// </summary>
-    private static string FilterSensitiveData(string body)
-    {
-        try
-        {
-            // 使用简单的字符串替换过滤密码字段
-            // 注意：这不是完美的解决方案，但对于 JSON 响应通常有效
-            var filtered = body;
-
-            // 过滤 "password" 字段（不区分大小写）
-            // 匹配模式：\"password\"\s*:\s*\"[^\"]*\"
-            filtered = System.Text.RegularExpressions.Regex.Replace(
-                filtered,
-                @"""password""\s*:\s*""[^""]*""",
-                @"""password"":""***FILTERED***""",
-                System.Text.RegularExpressions.RegexOptions.IgnoreCase
-            );
-
-            // 过滤 "Password" 字段（大写开头）
-            filtered = System.Text.RegularExpressions.Regex.Replace(
-                filtered,
-                @"""Password""\s*:\s*""[^""]*""",
-                @"""Password"":""***FILTERED***""",
-                System.Text.RegularExpressions.RegexOptions.None
-            );
-
-            return filtered;
-        }
-        catch
-        {
-            // 如果过滤失败，返回空字符串而不是原始内容（更安全）
-            return string.Empty;
-        }
-    }
 
     /// <summary>
     /// 提取云存储操作的元数据

@@ -121,7 +121,7 @@ public class GlobalAuthenticationMiddleware
         }
 
         // 验证JWT token
-        var validationResult = await ValidateTokenAsync(token, context);
+        var validationResult = ValidateToken(token, context);
 
         if (!validationResult.IsValid)
         {
@@ -150,7 +150,7 @@ public class GlobalAuthenticationMiddleware
     /// <summary>
     /// 验证JWT token
     /// </summary>
-    private async Task<TokenValidationResult> ValidateTokenAsync(string token, HttpContext context)
+    private TokenValidationResult ValidateToken(string token, HttpContext context)
     {
         try
         {

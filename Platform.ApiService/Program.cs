@@ -319,7 +319,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseGlobalAuthentication();
 app.UseMiddleware<ActivityLogMiddleware>();
-app.UseMiddleware<ResponseFormattingMiddleware>();
 
 // 端点映射
 app.MapControllers();

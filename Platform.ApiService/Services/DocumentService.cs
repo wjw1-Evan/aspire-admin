@@ -474,17 +474,16 @@ public class DocumentService : IDocumentService
         var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
 
-        await using var memoryStream = new MemoryStream();
-        await file.CopyToAsync(memoryStream);
-        memoryStream.Position = 0;
+        await using var fileStream = file.OpenReadStream();
 
         string checksum;
         using (var sha256 = SHA256.Create())
         {
-            checksum = Convert.ToHexString(sha256.ComputeHash(memoryStream));
+            var hashBytes = await sha256.ComputeHashAsync(fileStream);
+            checksum = Convert.ToHexString(hashBytes);
         }
 
-        memoryStream.Position = 0;
+        fileStream.Position = 0;
 
         var fileName = string.IsNullOrWhiteSpace(file.FileName)
             ? $"attachment-{Guid.NewGuid():N}"
@@ -500,7 +499,7 @@ public class DocumentService : IDocumentService
         };
 
         var gridFsId = await _fileStorageFactory.UploadAsync(
-            memoryStream,
+            fileStream,
             fileName,
             file.ContentType,
             metadata,

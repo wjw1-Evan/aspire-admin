@@ -456,11 +456,11 @@ public class IoTService : IIoTService
         var result = await _deviceFactory.UpdateAsync(device.Id, entity =>
         {
             entity.LastReportedAt = DateTime.UtcNow;
+            entity.Status = IoTDeviceStatus.Online;
         });
 
         if (result != null)
         {
-            // Create event
             await CreateEventAsync(request.DeviceId, "Connected", "Info", "Device connected");
             _logger.LogInformation("Device connected: {DeviceId} for company {CompanyId}", request.DeviceId, result.CompanyId);
             return true;
@@ -482,7 +482,10 @@ public class IoTService : IIoTService
         if (devices.Count > 0)
         {
             var device = devices[0];
-            // Create event
+            await _deviceFactory.UpdateAsync(device.Id, entity =>
+            {
+                entity.Status = IoTDeviceStatus.Offline;
+            });
             await CreateEventAsync(request.DeviceId, "Disconnected", "Warning", request.Reason ?? "Device disconnected");
             _logger.LogInformation("Device disconnected: {DeviceId} for company {CompanyId}", request.DeviceId, device.CompanyId);
             return true;
@@ -738,29 +741,76 @@ public class IoTService : IIoTService
         // 批量大小限制：防止数据洪水攻击
         const int maxBatchSize = 100;
         if (request.DataPoints == null || request.DataPoints.Count == 0)
-        {
             throw new ArgumentException("批量数据点列表不能为空", nameof(request));
-        }
-
         if (request.DataPoints.Count > maxBatchSize)
-        {
             throw new ArgumentException($"批量数据点数量不能超过 {maxBatchSize} 条", nameof(request));
-        }
 
+        // 一次性查出所有需要的数据点，避免 N+1
+        var requestedDataPointIds = request.DataPoints.Select(dp => dp.DataPointId).Distinct().ToList();
+        var allDataPoints = await _dataPointFactory.FindAsync(
+            dp => requestedDataPointIds.Contains(dp.DataPointId) && dp.IsDeleted != true);
+        var dpLookup = allDataPoints.ToDictionary(dp => dp.DataPointId);
+
+        var reportedAt = request.ReportedAt ?? DateTime.UtcNow;
         var records = new List<IoTDataRecord>();
 
-        foreach (var dataPoint in request.DataPoints)
+        foreach (var item in request.DataPoints)
         {
-            var reportRequest = new ReportIoTDataRequest
+            if (!dpLookup.TryGetValue(item.DataPointId, out var dataPoint))
+            {
+                _logger.LogWarning("BatchReport: DataPoint {DataPointId} not found, skipping", item.DataPointId);
+                continue;
+            }
+
+            var record = new IoTDataRecord
             {
                 DeviceId = request.DeviceId,
-                DataPointId = dataPoint.DataPointId,
-                Value = dataPoint.Value,
-                ReportedAt = request.ReportedAt
+                DataPointId = item.DataPointId,
+                Value = item.Value,
+                DataType = dataPoint.DataType,
+                SamplingInterval = dataPoint.SamplingInterval,
+                ReportedAt = reportedAt
             };
 
-            var record = await ReportDataAsync(reportRequest);
+            // 告警判断
+            if (dataPoint.AlarmConfig?.IsEnabled == true && double.TryParse(item.Value, out var numValue))
+            {
+                var isAlarm = CheckAlarm(numValue, dataPoint.AlarmConfig);
+                record.IsAlarm = isAlarm;
+                if (isAlarm) record.AlarmLevel = dataPoint.AlarmConfig.Level;
+            }
+
             records.Add(record);
+        }
+
+        if (records.Count == 0) return records;
+
+        // 批量写入
+        await _dataRecordFactory.CreateManyAsync(records);
+
+        // 批量更新各 DataPoint 最新值
+        foreach (var group in records.GroupBy(r => r.DataPointId))
+        {
+            var latest = group.OrderByDescending(r => r.ReportedAt).First();
+            if (dpLookup.TryGetValue(latest.DataPointId, out var dp))
+            {
+                await _dataPointFactory.UpdateAsync(dp.Id, entity =>
+                {
+                    entity.LastValue = latest.Value;
+                    entity.LastUpdatedAt = latest.ReportedAt;
+                });
+            }
+        }
+
+        // 更新设备最后上报时间
+        var device = await GetDeviceByDeviceIdAsync(request.DeviceId);
+        if (device != null)
+        {
+            await _deviceFactory.UpdateAsync(device.Id, entity =>
+            {
+                entity.LastReportedAt = reportedAt;
+                entity.Status = IoTDeviceStatus.Online;
+            });
         }
 
         return records;

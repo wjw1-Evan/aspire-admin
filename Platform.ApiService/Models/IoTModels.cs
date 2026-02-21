@@ -170,6 +170,11 @@ public class IoTDevice : MultiTenantEntity
     [BsonElement("isEnabled")]
     public bool IsEnabled { get; set; } = true;
 
+    /// <summary>设备在线状态</summary>
+    [Column("status")]
+    [BsonElement("status")]
+    public IoTDeviceStatus Status { get; set; } = IoTDeviceStatus.Offline;
+
     /// <summary>最后上报时间</summary>
     [Column("lastReportedAt")]
     [BsonElement("lastReportedAt")]
@@ -270,10 +275,15 @@ public class AlarmConfig
     [BsonElement("alarmType")]
     public string AlarmType { get; set; } = "HighThreshold";
 
-    /// <summary>告警阈值</summary>
+    /// <summary>告警阈值（HighThreshold/LowThreshold 用此字段；RangeThreshold 用此字段作为下界）</summary>
     [Column("threshold")]
     [BsonElement("threshold")]
     public double Threshold { get; set; }
+
+    /// <summary>告警上界阈值（仅 RangeThreshold 模式使用）</summary>
+    [Column("thresholdHigh")]
+    [BsonElement("thresholdHigh")]
+    public double? ThresholdHigh { get; set; }
 
     /// <summary>告警级别：Info, Warning, Error, Critical</summary>
     [StringLength(20)]

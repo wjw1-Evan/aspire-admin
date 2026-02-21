@@ -18,6 +18,7 @@ public class IoTDataCollector
     private readonly IDataFactory<IoTDevice> _deviceFactory;
     private readonly IDataFactory<IoTDataPoint> _dataPointFactory;
     private readonly IDataFactory<IoTDataRecord> _dataRecordFactory;
+    private readonly IDataFactory<IoTDeviceEvent> _eventFactory;
     private readonly IIoTDataFetchClient _fetchClient;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IOptionsMonitor<IoTDataCollectionOptions> _optionsMonitor;
@@ -31,6 +32,7 @@ public class IoTDataCollector
         IDataFactory<IoTDevice> deviceFactory,
         IDataFactory<IoTDataPoint> dataPointFactory,
         IDataFactory<IoTDataRecord> dataRecordFactory,
+        IDataFactory<IoTDeviceEvent> eventFactory,
         IIoTDataFetchClient fetchClient,
         IHttpClientFactory httpClientFactory,
         IOptionsMonitor<IoTDataCollectionOptions> optionsMonitor,
@@ -40,6 +42,7 @@ public class IoTDataCollector
         _deviceFactory = deviceFactory;
         _dataPointFactory = dataPointFactory;
         _dataRecordFactory = dataRecordFactory;
+        _eventFactory = eventFactory;
         _fetchClient = fetchClient;
         _httpClientFactory = httpClientFactory;
         _optionsMonitor = optionsMonitor;
@@ -360,6 +363,30 @@ public class IoTDataCollector
                 // 批量保存所有记录
                 await _dataRecordFactory.CreateManyAsync(uniqueRecords).ConfigureAwait(false);
 
+                // 批量创建告警事件（如有）
+                var alarmRecords = uniqueRecords.Where(r => r.IsAlarm).ToList();
+                if (alarmRecords.Count > 0)
+                {
+                    var alarmEvents = alarmRecords.Select(r => new IoTDeviceEvent
+                    {
+                        DeviceId = r.DeviceId,
+                        EventType = "Alarm",
+                        Level = r.AlarmLevel ?? "Warning",
+                        Description = $"数据点 {r.DataPointId} 触发告警，当前值: {r.Value}",
+                        EventData = new Dictionary<string, object>
+                        {
+                            { "dataPointId", r.DataPointId },
+                            { "value", r.Value },
+                            { "reportedAt", r.ReportedAt }
+                        },
+                        OccurredAt = r.ReportedAt,
+                        CompanyId = r.CompanyId
+                    }).ToList();
+                    await _eventFactory.CreateManyAsync(alarmEvents).ConfigureAwait(false);
+                    _logger.LogWarning("Device {DeviceId}: {AlarmCount} alarm event(s) created",
+                        device.DeviceId, alarmEvents.Count);
+                }
+
                 // 按数据点分组，每个数据点只更新一次（使用最新的记录）
                 var latestRecord = uniqueRecords.OrderByDescending(r => r.ReportedAt).First();
 
@@ -372,7 +399,7 @@ public class IoTDataCollector
                     }
                 }
 
-                // 更新设备最后上报时间
+                // 更新设备最后上报时间和状态
                 await UpdateDeviceAsync(device.CompanyId, device, latestRecord, cancellationToken).ConfigureAwait(false);
             }
         }
@@ -489,6 +516,7 @@ public class IoTDataCollector
         await _deviceFactory.UpdateAsync(device.Id, entity =>
         {
             entity.LastReportedAt = record.ReportedAt;
+            entity.Status = IoTDeviceStatus.Online;
         }).ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
     }
@@ -517,9 +545,11 @@ public class IoTDataCollector
         var config = dataPoint.AlarmConfig;
         return config.AlarmType switch
         {
-            "HighThreshold" => (numeric > config.Threshold, config.Level),
-            "LowThreshold" => (numeric < config.Threshold, config.Level),
-            "RangeThreshold" => (numeric < config.Threshold || numeric > (config.Threshold * 2), config.Level),
+            "HighThreshold" => (numeric > config.Threshold, numeric > config.Threshold ? config.Level : null),
+            "LowThreshold" => (numeric < config.Threshold, numeric < config.Threshold ? config.Level : null),
+            // RangeThreshold: Threshold 为下界, ThresholdHigh 为上界（不设上界时不判断超高）
+            "RangeThreshold" => (numeric < config.Threshold || (config.ThresholdHigh.HasValue && numeric > config.ThresholdHigh.Value),
+                                  (numeric < config.Threshold || (config.ThresholdHigh.HasValue && numeric > config.ThresholdHigh.Value)) ? config.Level : null),
             _ => (false, null)
         };
     }

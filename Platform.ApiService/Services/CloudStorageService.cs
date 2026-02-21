@@ -785,7 +785,7 @@ public class CloudStorageService : ICloudStorageService
         if (string.IsNullOrEmpty(fileItem.GridFSId))
             throw new InvalidOperationException("文件内容不存在");
 
-        var bytes = await _fileStorageFactory.DownloadAsBytesAsync(fileItem.GridFSId, "cloud_storage_files");
+        var stream = await _fileStorageFactory.GetDownloadStreamAsync(fileItem.GridFSId, "cloud_storage_files");
 
         await _fileItemFactory.UpdateAsync(id, entity =>
         {
@@ -793,7 +793,7 @@ public class CloudStorageService : ICloudStorageService
             entity.LastAccessedAt = DateTime.UtcNow;
         });
 
-        return new MemoryStream(bytes);
+        return stream;
     }
 
     /// <inheritdoc/>
@@ -806,8 +806,7 @@ public class CloudStorageService : ICloudStorageService
         if (string.IsNullOrEmpty(fileItem.ThumbnailGridFSId))
             throw new InvalidOperationException("缩略图不存在");
 
-        var bytes = await _fileStorageFactory.DownloadAsBytesAsync(fileItem.ThumbnailGridFSId, "cloud_storage_thumbnails");
-        return new MemoryStream(bytes);
+        return await _fileStorageFactory.GetDownloadStreamAsync(fileItem.ThumbnailGridFSId, "cloud_storage_thumbnails");
     }
 
     /// <inheritdoc/>

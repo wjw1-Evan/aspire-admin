@@ -37,10 +37,10 @@ export interface IoTDevice {
   deviceId: string;
   gatewayId: string;
   isEnabled: boolean;
-  /** 持久化状态字段（Online/Offline/Fault/Maintenance） */
-  status: IoTDeviceStatus;
-  /** 设备类型 */
-  deviceType: IoTDeviceType;
+  /** 持久化状态字段（Online/Offline/Fault/Maintenance，旧文档可能为 null） */
+  status?: IoTDeviceStatus;
+  /** 设备类型（旧文档可能为 null） */
+  deviceType?: IoTDeviceType;
   /** 设备描述 */
   description?: string;
   /** 物理位置 */
@@ -49,8 +49,8 @@ export interface IoTDevice {
   tags?: Record<string, string>;
   /** ApiKey 是否已设置（后端仅返回是否存在，不返回原文） */
   hasApiKey?: boolean;
-  /** 遥测数据保留天数（0=永久） */
-  retentionDays: number;
+  /** 遥测数据保留天数（null 或 0=永久） */
+  retentionDays?: number;
   lastReportedAt?: string;
   createdAt: string;
   updatedAt: string;

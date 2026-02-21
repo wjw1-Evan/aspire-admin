@@ -1017,7 +1017,7 @@ public class IoTService : IIoTService
         var onlineGateways = await _gatewayFactory.CountAsync(g => g.Status == IoTDeviceStatus.Online);
 
         var totalDevices = await _deviceFactory.CountAsync();
-        var onlineDevices = await _deviceFactory.CountAsync(d => d.LastReportedAt.HasValue && d.LastReportedAt.Value >= onlineThreshold);
+        var onlineDevices = await _deviceFactory.CountAsync(d => d.Status == IoTDeviceStatus.Online);
 
         var totalDataPoints = await _dataPointFactory.CountAsync();
         var recordCount = await _dataRecordFactory.CountAsync();
@@ -1042,17 +1042,17 @@ public class IoTService : IIoTService
     /// <returns>设备状态统计信息</returns>
     public async Task<DeviceStatusStatistics> GetDeviceStatusStatisticsAsync()
     {
-        var onlineThreshold = DateTime.UtcNow.AddMinutes(-5);
-
-        var totalDevices = await _deviceFactory.CountAsync();
-        var online = await _deviceFactory.CountAsync(d => d.LastReportedAt.HasValue && d.LastReportedAt.Value >= onlineThreshold);
+        var online = await _deviceFactory.CountAsync(d => d.Status == IoTDeviceStatus.Online);
+        var fault = await _deviceFactory.CountAsync(d => d.Status == IoTDeviceStatus.Fault);
+        var maintenance = await _deviceFactory.CountAsync(d => d.Status == IoTDeviceStatus.Maintenance);
+        var total = await _deviceFactory.CountAsync();
 
         return new DeviceStatusStatistics
         {
             Online = (int)online,
-            Offline = (int)(totalDevices - online),
-            Fault = 0,
-            Maintenance = 0
+            Offline = (int)(total - online - fault - maintenance),
+            Fault = (int)fault,
+            Maintenance = (int)maintenance
         };
     }
 

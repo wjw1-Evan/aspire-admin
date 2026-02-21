@@ -118,16 +118,19 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
 
   const fetchOverviewStats = useCallback(async () => {
     try {
-      const response = await iotService.getDevices(undefined, 1, 1000);
-      if (response.success && response.data) {
-        const list = Array.isArray(response.data.list) ? response.data.list : [];
-        setOverviewStats({
-          total: list.length,
-          online: list.filter((d: IoTDevice) => d.status === 'Online').length,
-          offline: list.filter((d: IoTDevice) => d.status === 'Offline').length,
-          fault: list.filter((d: IoTDevice) => d.status === 'Fault').length,
-        });
-      }
+      // 并发调用两个后端统计接口，避免前端拉取大量设备做客户端聚合
+      const [platformRes, statusRes] = await Promise.all([
+        iotService.getPlatformStatistics(),
+        iotService.getDeviceStatusStatistics(),
+      ]);
+      const total = platformRes.success ? (platformRes.data?.totalDevices ?? 0) : 0;
+      const status = statusRes.success ? statusRes.data : null;
+      setOverviewStats({
+        total,
+        online: status?.online ?? status?.Online ?? 0,
+        offline: status?.offline ?? status?.Offline ?? 0,
+        fault: status?.fault ?? status?.Fault ?? 0,
+      });
     } catch (error) {
       console.error('获取统计信息失败:', error);
     }
@@ -257,7 +260,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
   }, []);
 
   const getStatusTag = useCallback((device: IoTDevice) => {
-    const cfg = statusConfig[device.status] ?? statusConfig.Offline;
+    const cfg = statusConfig[device.status ?? 'Offline'] ?? statusConfig.Offline;
     return <Tag color={cfg.color}>{cfg.label}</Tag>;
   }, []);
 
@@ -276,9 +279,10 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
       dataIndex: 'deviceType',
       key: 'deviceType',
       width: 90,
-      render: (type: string) => (
-        <Tag color={deviceTypeColor[type] ?? 'default'}>{deviceTypeLabel[type] ?? type}</Tag>
-      ),
+      render: (type?: string) => {
+        const t = type ?? 'Sensor';
+        return <Tag color={deviceTypeColor[t] ?? 'default'}>{deviceTypeLabel[t] ?? t}</Tag>;
+      },
     },
     {
       title: '所属网关',
@@ -580,7 +584,9 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
                             <Text code copyable>{selectedDevice.deviceId}</Text>
                           </Descriptions.Item>
                           <Descriptions.Item label="设备类型">
-                            <Tag color={deviceTypeColor[selectedDevice.deviceType]}>{deviceTypeLabel[selectedDevice.deviceType] ?? selectedDevice.deviceType}</Tag>
+                            <Tag color={deviceTypeColor[selectedDevice.deviceType ?? 'Sensor']}>
+                              {deviceTypeLabel[selectedDevice.deviceType ?? 'Sensor'] ?? selectedDevice.deviceType}
+                            </Tag>
                           </Descriptions.Item>
                           <Descriptions.Item label="状态">{getStatusTag(selectedDevice)}</Descriptions.Item>
                           <Descriptions.Item label="启用">
@@ -600,7 +606,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
                               </Space>
                             ) : <Text type="secondary">无标签</Text>}
                           </Descriptions.Item>
-                          <Descriptions.Item label="数据保留">{selectedDevice.retentionDays === 0 ? '永久保留' : `${selectedDevice.retentionDays} 天`}</Descriptions.Item>
+                          <Descriptions.Item label="数据保留">{(!selectedDevice.retentionDays || selectedDevice.retentionDays === 0) ? '永久保留' : `${selectedDevice.retentionDays} 天`}</Descriptions.Item>
                           <Descriptions.Item label="最后上报">
                             {selectedDevice.lastReportedAt ? dayjs(selectedDevice.lastReportedAt).format('YYYY-MM-DD HH:mm:ss') : <Text type="secondary">-</Text>}
                           </Descriptions.Item>

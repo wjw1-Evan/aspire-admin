@@ -437,6 +437,44 @@ public class IoTService : IIoTService
     }
 
     /// <summary>
+    /// 批量删除设备
+    /// </summary>
+    /// <param name="ids">设备 ID 列表</param>
+    /// <returns>成功删除的数量</returns>
+    public async Task<int> BatchDeleteDevicesAsync(List<string> ids)
+    {
+        if (ids == null || ids.Count == 0) return 0;
+
+        // 1. 获取要删除的设备信息（用于更新网关计数）
+        var devices = await _deviceFactory.FindAsync(d => ids.Contains(d.Id));
+        if (devices.Count == 0) return 0;
+
+        // 2. 执行批量软删除
+        var deletedCount = await _deviceFactory.SoftDeleteManyAsync(d => ids.Contains(d.Id));
+
+        if (deletedCount > 0)
+        {
+            // 3. 按网关分组更新设备计数
+            var devicesByGateway = devices.GroupBy(d => d.GatewayId);
+            foreach (var group in devicesByGateway)
+            {
+                var gateway = await GetGatewayByGatewayIdAsync(group.Key);
+                if (gateway != null)
+                {
+                    await _gatewayFactory.UpdateAsync(gateway.Id, entity =>
+                    {
+                        entity.DeviceCount = Math.Max(0, entity.DeviceCount - group.Count());
+                    });
+                }
+            }
+
+            _logger.LogInformation("Batch deleted {Count} devices", deletedCount);
+        }
+
+        return deletedCount;
+    }
+
+    /// <summary>
     /// 更新设备状态
     /// </summary>
     /// <param name="deviceId">设备唯一标识符</param>

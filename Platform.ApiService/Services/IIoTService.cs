@@ -85,6 +85,11 @@ public interface IIoTService
     Task<bool> DeleteDeviceAsync(string id);
 
     /// <summary>
+    /// 批量删除设备（返回实际删除数量）
+    /// </summary>
+    Task<int> BatchDeleteDevicesAsync(List<string> ids);
+
+    /// <summary>
     /// 更新设备状态
     /// </summary>
     Task<bool> UpdateDeviceStatusAsync(string deviceId, IoTDeviceStatus status);

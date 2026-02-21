@@ -68,14 +68,14 @@ public class IoTDataRetentionHostedService : BackgroundService
         var iotService = scope.ServiceProvider.GetRequiredService<IIoTService>();
 
         // 1. 按设备保留策略清理过期遥测数据
-        var devices = await deviceFactory.FindWithoutTenantFilterAsync(d => d.RetentionDays > 0 && d.IsDeleted != true);
+        var devices = await deviceFactory.FindWithoutTenantFilterAsync(d => d.RetentionDays.HasValue && d.RetentionDays.Value > 0 && d.IsDeleted != true);
         int deletedRecords = 0;
 
         foreach (var device in devices)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var cutoff = DateTime.UtcNow.AddDays(-device.RetentionDays);
+            var cutoff = DateTime.UtcNow.AddDays(-device.RetentionDays!.Value);
             var expired = await recordFactory.FindWithoutTenantFilterAsync(
                 r => r.DeviceId == device.DeviceId && r.ReportedAt < cutoff && r.IsDeleted != true);
 

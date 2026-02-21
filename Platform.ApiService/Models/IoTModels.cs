@@ -170,15 +170,15 @@ public class IoTDevice : MultiTenantEntity
     [BsonElement("isEnabled")]
     public bool IsEnabled { get; set; } = true;
 
-    /// <summary>设备在线状态</summary>
+    /// <summary>设备在线状态（旧文档缺少此字段时为 null，等价于 Offline）</summary>
     [Column("status")]
     [BsonElement("status")]
-    public IoTDeviceStatus Status { get; set; } = IoTDeviceStatus.Offline;
+    public IoTDeviceStatus? Status { get; set; }
 
-    /// <summary>设备类型</summary>
+    /// <summary>设备类型（旧文档缺少此字段时为 null，等价于 Sensor）</summary>
     [Column("deviceType")]
     [BsonElement("deviceType")]
-    public IoTDeviceType DeviceType { get; set; } = IoTDeviceType.Sensor;
+    public IoTDeviceType? DeviceType { get; set; }
 
     /// <summary>设备描述</summary>
     [StringLength(500)]
@@ -204,11 +204,11 @@ public class IoTDevice : MultiTenantEntity
     [BsonElement("apiKey")]
     public string? ApiKey { get; set; }
 
-    /// <summary>遥测数据保留天数（0=永久保留）</summary>
+    /// <summary>遥测数据保留天数（null 或 0=永久保留）</summary>
     [Range(0, 3650)]
     [Column("retentionDays")]
     [BsonElement("retentionDays")]
-    public int RetentionDays { get; set; } = 0;
+    public int? RetentionDays { get; set; }
 
     /// <summary>最后上报时间</summary>
     [Column("lastReportedAt")]

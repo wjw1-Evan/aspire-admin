@@ -34,6 +34,10 @@ public class McpService : IMcpService
     private readonly IParkEnterpriseServiceService _parkEnterpriseService;
     private readonly IParkVisitService _parkVisitService;
     private readonly IPasswordBookService _passwordBookService;
+    private readonly IWorkflowEngine _workflowEngine;
+    private readonly IDataFactory<WorkflowDefinition> _workflowDefinitionFactory;
+    private readonly IDataFactory<WorkflowInstance> _workflowInstanceFactory;
+    private readonly IDataFactory<ApprovalRecord> _approvalRecordFactory;
     private readonly ILogger<McpService> _logger;
     private List<McpTool>? _cachedTools;
     private DateTime _toolsCacheTime = DateTime.MinValue;
@@ -66,6 +70,10 @@ public class McpService : IMcpService
     /// <param name="parkEnterpriseService">园区企业服务</param>
     /// <param name="parkVisitService">园区走访服务</param>
     /// <param name="passwordBookService">密码本服务</param>
+    /// <param name="workflowEngine">工作流引擎</param>
+    /// <param name="workflowDefinitionFactory">工作流定义数据工厂</param>
+    /// <param name="workflowInstanceFactory">工作流实例数据工厂</param>
+    /// <param name="approvalRecordFactory">审批记录数据工厂</param>
     /// <param name="logger">日志记录器</param>
     public McpService(
         IDataFactory<AppUser> userFactory,
@@ -92,6 +100,10 @@ public class McpService : IMcpService
         IParkEnterpriseServiceService parkEnterpriseService,
         IParkVisitService parkVisitService,
         IPasswordBookService passwordBookService,
+        IWorkflowEngine workflowEngine,
+        IDataFactory<WorkflowDefinition> workflowDefinitionFactory,
+        IDataFactory<WorkflowInstance> workflowInstanceFactory,
+        IDataFactory<ApprovalRecord> approvalRecordFactory,
         ILogger<McpService> logger)
     {
         _userFactory = userFactory;
@@ -118,6 +130,10 @@ public class McpService : IMcpService
         _parkEnterpriseService = parkEnterpriseService;
         _parkVisitService = parkVisitService;
         _passwordBookService = passwordBookService;
+        _workflowEngine = workflowEngine;
+        _workflowDefinitionFactory = workflowDefinitionFactory;
+        _workflowInstanceFactory = workflowInstanceFactory;
+        _approvalRecordFactory = approvalRecordFactory;
         _logger = logger;
     }
 
@@ -1159,6 +1175,69 @@ public class McpService : IMcpService
                     ["properties"] = new Dictionary<string, object>()
                 }
             },
+            // 工作流管理相关工具
+            new()
+            {
+                Name = "get_workflow_definitions",
+                Description = "获取工作流定义列表。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["keyword"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "搜索关键词" },
+                        ["page"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 1 },
+                        ["pageSize"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 20 }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "get_workflow_instances",
+                Description = "获取工作流实例列表。支持按状态过滤。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["status"] = new Dictionary<string, object> { ["type"] = "integer", ["description"] = "状态 (0=运行中, 1=已完成, 2=已取消, 3=已拒绝)" },
+                        ["page"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 1 },
+                        ["pageSize"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 20 }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "get_workflow_instance_detail",
+                Description = "获取工作流实例详情，包括审批历史。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["required"] = new[] { "instanceId" },
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["instanceId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "实例ID" }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "process_workflow_approval",
+                Description = "执行流程审批操作。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["required"] = new[] { "instanceId", "nodeId", "action" },
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["instanceId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "实例ID" },
+                        ["nodeId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "当前节点ID" },
+                        ["action"] = new Dictionary<string, object> { ["type"] = "integer", ["description"] = "动作 (0=同意, 1=拒绝, 2=退回, 3=转办)" },
+                        ["comment"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "审批意见" },
+                        ["delegateToUserId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "转办用户ID (动作时转办时必填)" }
+                    }
+                }
+            },
             // 物联网相关工具
             new()
             {
@@ -1196,6 +1275,36 @@ public class McpService : IMcpService
                 Name = "get_iot_platform_statistics",
                 Description = "获取物联网平台整体统计数据。",
                 InputSchema = new Dictionary<string, object> { ["type"] = "object", ["properties"] = new Dictionary<string, object>() }
+            },
+            new()
+            {
+                Name = "get_iot_datapoints",
+                Description = "获取指定设备的数据点列表。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["required"] = new[] { "deviceId" },
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["deviceId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "设备ID" },
+                        ["page"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 1 },
+                        ["pageSize"] = new Dictionary<string, object> { ["type"] = "integer", ["default"] = 50 }
+                    }
+                }
+            },
+            new()
+            {
+                Name = "get_latest_iot_data",
+                Description = "获取指定数据点的最新实时值。",
+                InputSchema = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["required"] = new[] { "dataPointId" },
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["dataPointId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "数据点ID" }
+                    }
+                }
             },
             // 园区管理相关工具
             new()
@@ -1393,6 +1502,14 @@ public class McpService : IMcpService
                 "get_park_visit_statistics" => await HandleGetParkVisitStatisticsAsync(arguments, currentUserId),
                 // 密码本相关
                 "get_password_book_entries" => await HandleGetPasswordBookEntriesAsync(arguments, currentUserId),
+                // 工作流相关
+                "get_workflow_definitions" => await HandleGetWorkflowDefinitionsAsync(arguments, currentUserId),
+                "get_workflow_instances" => await HandleGetWorkflowInstancesAsync(arguments, currentUserId),
+                "get_workflow_instance_detail" => await HandleGetWorkflowInstanceDetailAsync(arguments, currentUserId),
+                "process_workflow_approval" => await HandleProcessWorkflowApprovalAsync(arguments, currentUserId),
+                // 物联网新增
+                "get_iot_datapoints" => await HandleGetIoTDataPointsAsync(arguments, currentUserId),
+                "get_latest_iot_data" => await HandleGetLatestIoTDataAsync(arguments, currentUserId),
                 _ => throw new ArgumentException($"未知的工具: {toolName}")
             };
 
@@ -1567,23 +1684,31 @@ public class McpService : IMcpService
                     }), new JsonSerializerOptions { WriteIndented = true })
                 });
             }
-            else if (uri.StartsWith("session://"))
+            else if (uri.StartsWith("workflow://"))
             {
-                var sessionId = uri.Replace("session://", "");
-                var session = await _sessionFactory.GetByIdAsync(sessionId);
-                if (session != null)
+                var instanceId = uri.Replace("workflow://", "");
+                var instance = await _workflowInstanceFactory.GetByIdAsync(instanceId);
+                if (instance != null)
                 {
+                    var history = await _workflowEngine.GetApprovalHistoryAsync(instanceId);
                     contents.Add(new McpContent
                     {
                         Type = "text",
-                        Text = JsonSerializer.Serialize(new
-                        {
-                            id = session.Id,
-                            lastMessageExcerpt = session.LastMessageExcerpt,
-                            participants = session.Participants,
-                            lastMessageAt = session.LastMessageAt,
-                            createdAt = session.CreatedAt
-                        }, new JsonSerializerOptions { WriteIndented = true })
+                        Text = JsonSerializer.Serialize(new { instance, history }, new JsonSerializerOptions { WriteIndented = true })
+                    });
+                }
+            }
+            else if (uri.StartsWith("iot://"))
+            {
+                var deviceId = uri.Replace("iot://", "");
+                var device = await _iotService.GetDeviceByIdAsync(deviceId);
+                if (device != null)
+                {
+                    var stats = await _iotService.GetDeviceStatisticsAsync(device.DeviceId);
+                    contents.Add(new McpContent
+                    {
+                        Type = "text",
+                        Text = JsonSerializer.Serialize(new { device, stats }, new JsonSerializerOptions { WriteIndented = true })
                     });
                 }
             }
@@ -1643,6 +1768,24 @@ public class McpService : IMcpService
                         }
                     }
                 }
+            },
+            new()
+            {
+                Name = "workflow_analysis",
+                Description = "分析工作流实例的执行情况和审批效率。",
+                Arguments = new Dictionary<string, object>
+                {
+                    ["type"] = "object",
+                    ["properties"] = new Dictionary<string, object>
+                    {
+                        ["instanceId"] = new Dictionary<string, object>
+                        {
+                            ["type"] = "string",
+                            ["description"] = "流程实例ID"
+                        }
+                    },
+                    ["required"] = new[] { "instanceId" }
+                }
             }
         };
 
@@ -1691,6 +1834,15 @@ public class McpService : IMcpService
                 {
                     Type = "text",
                     Text = $"请帮我获取用户详细信息，用户ID是: {userId}。使用 get_user_info 工具查询。"
+                });
+                break;
+
+            case "workflow_analysis":
+                var instanceId = arguments.ContainsKey("instanceId") ? arguments["instanceId"]?.ToString() : "";
+                messages.Add(new McpContent
+                {
+                    Type = "text",
+                    Text = $"请分析工作流实例 {instanceId} 的审批历史和当前进度。重点关注是否存在审批瓶颈、审批人是否及时处理，并给出优化建议。"
                 });
                 break;
 
@@ -3288,6 +3440,93 @@ public class McpService : IMcpService
         };
         var (items, total) = await _passwordBookService.GetEntriesAsync(request);
         return new { items, total, page = page, pageSize = pageSize };
+    }
+
+    #endregion
+
+    #region 工作流相关工具处理方法
+
+    private async Task<object> HandleGetWorkflowDefinitionsAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var keyword = arguments.ContainsKey("keyword") ? arguments["keyword"]?.ToString() : null;
+        var (page, pageSize) = ParsePaginationArgs(arguments);
+
+        var (items, total) = await _workflowDefinitionFactory.FindPagedAsync(
+            d => string.IsNullOrEmpty(keyword) || (d.Name != null && d.Name.Contains(keyword)),
+            q => q.OrderByDescending(d => d.UpdatedAt),
+            page, pageSize);
+
+        return new { items, total, page, pageSize };
+    }
+
+    private async Task<object> HandleGetWorkflowInstancesAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        var (page, pageSize) = ParsePaginationArgs(arguments);
+        var status = arguments.ContainsKey("status") && int.TryParse(arguments["status"]?.ToString(), out var s) ? (WorkflowStatus)s : (WorkflowStatus?)null;
+
+        var (items, total) = await _workflowInstanceFactory.FindPagedAsync(
+            i => status == null || i.Status == status,
+            q => q.OrderByDescending(i => i.UpdatedAt),
+            page, pageSize);
+
+        return new { items, total, page, pageSize };
+    }
+
+    private async Task<object> HandleGetWorkflowInstanceDetailAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        if (!arguments.TryGetValue("instanceId", out var idObj) || idObj?.ToString() is not string instanceId)
+        {
+            return new { error = "缺少必需的参数: instanceId" };
+        }
+
+        var instance = await _workflowInstanceFactory.GetByIdAsync(instanceId);
+        if (instance == null) return new { error = "流程实例未找到" };
+
+        var history = await _workflowEngine.GetApprovalHistoryAsync(instanceId);
+        return new { instance, history };
+    }
+
+    private async Task<object> HandleProcessWorkflowApprovalAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        if (!arguments.TryGetValue("instanceId", out var instIdObj) || instIdObj?.ToString() is not string instanceId)
+            return new { error = "缺少必需的参数: instanceId" };
+        if (!arguments.TryGetValue("nodeId", out var nodeObj) || nodeObj?.ToString() is not string nodeId)
+            return new { error = "缺少必需的参数: nodeId" };
+        if (!arguments.TryGetValue("action", out var actObj) || !int.TryParse(actObj?.ToString(), out var actionInt))
+            return new { error = "缺少必需的参数: action (int)" };
+
+        var action = (ApprovalAction)actionInt;
+        var comment = arguments.ContainsKey("comment") ? arguments["comment"]?.ToString() : null;
+        var delegateToUserId = arguments.ContainsKey("delegateToUserId") ? arguments["delegateToUserId"]?.ToString() : null;
+
+        var result = await _workflowEngine.ProcessApprovalAsync(instanceId, nodeId, action, comment, delegateToUserId);
+        return new { success = result };
+    }
+
+    #endregion
+
+    #region 物联网相关工具扩展处理方法
+
+    private async Task<object> HandleGetIoTDataPointsAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        if (!arguments.TryGetValue("deviceId", out var idObj) || idObj?.ToString() is not string deviceId)
+        {
+            return new { error = "缺少必需的参数: deviceId" };
+        }
+
+        var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 50);
+        return await _iotService.GetDataPointsAsync(deviceId, null, page, pageSize);
+    }
+
+    private async Task<object> HandleGetLatestIoTDataAsync(Dictionary<string, object> arguments, string currentUserId)
+    {
+        if (!arguments.TryGetValue("dataPointId", out var idObj) || idObj?.ToString() is not string dataPointId)
+        {
+            return new { error = "缺少必需的参数: dataPointId" };
+        }
+
+        var record = await _iotService.GetLatestDataAsync(dataPointId);
+        return record ?? (object)new { message = "未找到实时观测数据" };
     }
 
     #endregion

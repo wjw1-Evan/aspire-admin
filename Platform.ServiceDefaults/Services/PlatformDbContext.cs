@@ -10,9 +10,21 @@ namespace Platform.ServiceDefaults.Services;
 /// <summary>
 /// 平台数据库上下文 - 基于 MongoDB Entity Framework Core (优化版本)
 /// </summary>
-public class PlatformDbContext(DbContextOptions<PlatformDbContext> options, ITenantContext? tenantContext = null)
-    : DbContext(options)
+public class PlatformDbContext : DbContext
 {
+    private readonly ITenantContext? _tenantContext;
+
+    public PlatformDbContext(DbContextOptions<PlatformDbContext> options, ITenantContext? tenantContext = null)
+        : base(options)
+    {
+        _tenantContext = tenantContext;
+
+        // 🧱 核心配置：禁用自动事务。
+        // 原因是 Standalone 模式的 MongoDB 不支持事务（需要 Replica Set）。
+        // 启用批量删除等操作时，EF Core 默认会开启事务导致报错。
+        Database.AutoTransactionBehavior = AutoTransactionBehavior.Never;
+    }
+
     public string? CurrentCompanyId
     {
         get
@@ -29,8 +41,6 @@ public class PlatformDbContext(DbContextOptions<PlatformDbContext> options, ITen
             return task.GetAwaiter().GetResult();
         }
     }
-
-    private readonly ITenantContext? _tenantContext = tenantContext;
 
     // 缓存实体类型扫描结果
     private static List<Type>? _cachedEntityTypes;

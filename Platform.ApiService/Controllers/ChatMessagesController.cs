@@ -132,7 +132,7 @@ public class ChatMessagesController : BaseApiController
         try
         {
             // 1. 保存用户消息（但不触发 AI 回复，因为我们要在同一个流中返回）
-            var currentUserId = _sessionFactory.GetRequiredUserId();
+            var currentUserId = GetRequiredUserId();
             var session = await _sessionFactory.GetByIdAsync(request.SessionId);
             if (session == null || !session.Participants.Contains(currentUserId))
             {

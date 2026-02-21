@@ -11,6 +11,7 @@ public class NoticeService : INoticeService
 {
     private readonly IDataFactory<NoticeIconItem> _noticeFactory;
     private readonly Platform.ServiceDefaults.Services.IDataFactory<AppUser> _userFactory;
+    private readonly ITenantContext _tenantContext;
 
     /// <summary>
     /// 初始化通知服务
@@ -19,10 +20,12 @@ public class NoticeService : INoticeService
     /// <param name="userFactory">用户数据操作工厂</param>
     public NoticeService(
         IDataFactory<NoticeIconItem> noticeFactory,
-        Platform.ServiceDefaults.Services.IDataFactory<AppUser> userFactory)
+        Platform.ServiceDefaults.Services.IDataFactory<AppUser> userFactory,
+        ITenantContext tenantContext)
     {
         _noticeFactory = noticeFactory;
         _userFactory = userFactory;
+        _tenantContext = tenantContext;
     }
 
     /// <summary>
@@ -60,8 +63,8 @@ public class NoticeService : INoticeService
     /// <returns>创建的通知信息</returns>
     public async Task<NoticeIconItem> CreateNoticeAsync(CreateNoticeRequest request)
     {
-        // 按规范：从数据库获取当前用户的企业ID（JWT 中不包含 companyId）
-        var currentUserId = _noticeFactory.GetRequiredUserId();
+        // 按规范：从 ITenantContext 获取当前用户的企业ID
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var currentUser = await _userFactory.GetByIdAsync(currentUserId)
             ?? throw new UnauthorizedAccessException("未找到当前用户信息");
         if (string.IsNullOrEmpty(currentUser.CurrentCompanyId))

@@ -23,6 +23,7 @@ public class AiAssistantCoordinator : IAiAssistantCoordinator
 {
     private readonly IDataFactory<AppUser> _userFactory;
     private readonly IDataFactory<ChatSession> _sessionFactory;
+    private readonly ITenantContext _tenantContext;
     private readonly ILogger<AiAssistantCoordinator> _logger;
 
     /// <summary>
@@ -34,17 +35,19 @@ public class AiAssistantCoordinator : IAiAssistantCoordinator
     public AiAssistantCoordinator(
         IDataFactory<AppUser> userFactory,
         IDataFactory<ChatSession> sessionFactory,
+        ITenantContext tenantContext,
         ILogger<AiAssistantCoordinator> logger)
     {
         _userFactory = userFactory;
         _sessionFactory = sessionFactory;
+        _tenantContext = tenantContext;
         _logger = logger;
     }
 
     /// <inheritdoc />
     public async Task<ChatSession> EnsureAssistantSessionForCurrentUserAsync()
     {
-        var currentUserId = _sessionFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var user = await _userFactory.GetByIdAsync(currentUserId)
             ?? throw new InvalidOperationException("未找到当前用户信息，无法创建 AI 助手会话。");
 

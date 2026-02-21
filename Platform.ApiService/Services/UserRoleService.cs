@@ -12,6 +12,7 @@ public class UserRoleService : IUserRoleService
     private readonly IDataFactory<AppUser> _userFactory;
     private readonly IDataFactory<Role> _roleFactory;
     private readonly IDataFactory<UserCompany> _userCompanyFactory;
+    private readonly ITenantContext _tenantContext;
 
     /// <summary>
     /// 初始化用户角色服务
@@ -19,14 +20,17 @@ public class UserRoleService : IUserRoleService
     /// <param name="userFactory">用户数据库工厂</param>
     /// <param name="roleFactory">角色数据库工厂</param>
     /// <param name="userCompanyFactory">用户企业关联数据库工厂</param>
+    /// <param name="tenantContext">租户上下文</param>
     public UserRoleService(
         IDataFactory<AppUser> userFactory,
         IDataFactory<Role> roleFactory,
-        IDataFactory<UserCompany> userCompanyFactory)
+        IDataFactory<UserCompany> userCompanyFactory,
+        ITenantContext tenantContext)
     {
         _userFactory = userFactory;
         _roleFactory = roleFactory;
         _userCompanyFactory = userCompanyFactory;
+        _tenantContext = tenantContext;
     }
 
     /// <inheritdoc/>
@@ -75,7 +79,7 @@ public class UserRoleService : IUserRoleService
             return new List<string>();
         }
 
-        var currentUserId = _userFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var currentUser = await _userFactory.GetByIdAsync(currentUserId);
         var companyId = currentUser?.CurrentCompanyId;
         if (string.IsNullOrEmpty(companyId))

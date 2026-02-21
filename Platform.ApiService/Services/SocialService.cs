@@ -57,6 +57,7 @@ public class SocialService : ISocialService
     private readonly ILogger<SocialService> _logger;
     private readonly IServiceProvider _serviceProvider;
     private readonly IConfiguration _configuration;
+    private readonly ITenantContext _tenantContext;
 
     /// <summary>
     /// 初始化社交服务。
@@ -73,7 +74,8 @@ public class SocialService : ISocialService
         IDataFactory<ChatSession> sessionFactory,
         ILogger<SocialService> logger,
         IServiceProvider serviceProvider,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        ITenantContext tenantContext)
     {
         _beaconFactory = beaconFactory;
         _userFactory = userFactory;
@@ -81,6 +83,7 @@ public class SocialService : ISocialService
         _logger = logger;
         _serviceProvider = serviceProvider;
         _configuration = configuration;
+        _tenantContext = tenantContext;
     }
 
     /// <inheritdoc />
@@ -90,7 +93,7 @@ public class SocialService : ISocialService
         ValidateCoordinates(request.Latitude, request.Longitude);
 
         // 允许在无 HttpContext（如后台任务）时通过 override 传入
-        var currentUserId = userIdOverride ?? _beaconFactory.GetCurrentUserId() ?? throw new UnauthorizedAccessException("未找到当前用户信息");
+        var currentUserId = userIdOverride ?? _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("未找到当前用户信息");
         string? companyId = companyIdOverride;
         if (string.IsNullOrEmpty(companyId))
         {
@@ -103,7 +106,7 @@ public class SocialService : ISocialService
             else
             {
                 // 尝试获取企业ID，如果没有企业则不强制要求
-                companyId = await _beaconFactory.GetCurrentCompanyIdAsync();
+                companyId = await _tenantContext.GetCurrentCompanyIdAsync();
             }
         }
         var now = DateTime.UtcNow;
@@ -193,7 +196,7 @@ public class SocialService : ISocialService
         request.Center.EnsureNotNull(nameof(request.Center));
         ValidateCoordinates(request.Center.Latitude, request.Center.Longitude);
 
-        var currentUserId = _beaconFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var radius = Math.Clamp(request.RadiusMeters ?? DefaultRadiusMeters, 100, 20000);
         var limit = Math.Clamp(request.Limit ?? DefaultLimit, 1, 50);
         var now = DateTime.UtcNow;
@@ -413,8 +416,8 @@ public class SocialService : ISocialService
     /// <inheritdoc />
     public async Task<UserLocationBeacon?> GetCurrentUserLocationAsync()
     {
-        var currentUserId = _beaconFactory.GetRequiredUserId();
-        var companyId = await _beaconFactory.GetRequiredCompanyIdAsync();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
 
         var beacons = await _beaconFactory.FindAsync(
             b => b.UserId == currentUserId && b.CompanyId == companyId,

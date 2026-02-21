@@ -64,50 +64,35 @@ public class TenantContext(
         logger.LogDebug("TenantContext: 缓存已清除: {UserId}", userId);
     }
 
-    // ── 核心加载逻辑（仅查 appusers 1 张表） ───────
-
     private async Task<string?> LoadCompanyIdAsync(string userId)
     {
-        var userDoc = await FindOneAsync("appusers", IdFilter(userId),
-            Builders<BsonDocument>.Projection
-                .Include("isActive").Include("currentCompanyId").Include("personalCompanyId"));
+        var collection = database.GetCollection<BsonDocument>("appusers");
 
-        if (userDoc == null) { logger.LogWarning("未找到用户: {UserId}", userId); return null; }
-        if (!userDoc.GetValue("isActive", false).AsBoolean) { logger.LogWarning("用户未激活: {UserId}", userId); return null; }
+        // 构建简单的过滤器
+        var filter = Builders<BsonDocument>.Filter.And(
+            Builders<BsonDocument>.Filter.Eq("_id", ObjectId.TryParse(userId, out var oid) ? (object)oid : userId),
+            Builders<BsonDocument>.Filter.Ne("isDeleted", true)
+        );
 
-        // 优先 currentCompanyId → 回退 personalCompanyId
-        return BsonId(userDoc, "currentCompanyId") ?? BsonId(userDoc, "personalCompanyId");
-    }
+        var projection = Builders<BsonDocument>.Projection
+            .Include("isActive").Include("currentCompanyId").Include("personalCompanyId");
 
-    // ── 通用工具 ────────────────────────────────────
+        var userDoc = await collection.Find(filter).Project(projection).FirstOrDefaultAsync();
 
-    /// <summary>兼容 string/ObjectId 的 _id 过滤器 + isDeleted != true</summary>
-    private static FilterDefinition<BsonDocument> IdFilter(string id)
-    {
-        var f = Builders<BsonDocument>.Filter;
-        var idMatch = ObjectId.TryParse(id, out var oid)
-            ? f.Or(f.Eq("_id", id), f.Eq("_id", oid))
-            : f.Eq("_id", id);
-        return f.And(idMatch, f.Ne("isDeleted", true));
-    }
+        if (userDoc == null || !userDoc.GetValue("isActive", false).AsBoolean) return null;
 
-    private async Task<BsonDocument?> FindOneAsync(string collection,
-        FilterDefinition<BsonDocument> filter, ProjectionDefinition<BsonDocument>? projection = null)
-    {
-        var query = database.GetCollection<BsonDocument>(collection).Find(filter);
-        if (projection != null) query = query.Project(projection);
-        return await query.FirstOrDefaultAsync();
-    }
-
-    /// <summary>从 BsonDocument 安全提取 ID（兼容 string/ObjectId）</summary>
-    private static string? BsonId(BsonDocument doc, string field)
-    {
-        var val = doc.GetValue(field, BsonNull.Value);
-        return val switch
+        // 获取 ID 的辅助方法
+        string? GetId(string field)
         {
-            { IsString: true } when !string.IsNullOrWhiteSpace(val.AsString) => val.AsString,
-            { IsObjectId: true } when val.AsObjectId != ObjectId.Empty => val.AsObjectId.ToString(),
-            _ => null
-        };
+            var val = userDoc.GetValue(field, BsonNull.Value);
+            return val switch
+            {
+                { IsString: true } => val.AsString,
+                { IsObjectId: true } => val.AsObjectId.ToString(),
+                _ => null
+            };
+        }
+
+        return GetId("currentCompanyId") ?? GetId("personalCompanyId");
     }
 }

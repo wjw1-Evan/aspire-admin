@@ -72,6 +72,7 @@ public class FriendService : IFriendService
     private readonly IDataFactory<AppUser> _userFactory;
     private readonly IAiAssistantCoordinator _aiAssistantCoordinator;
     private readonly IChatService _chatService;
+    private readonly ITenantContext _tenantContext;
     private readonly ILogger<FriendService> _logger;
 
     /// <summary>
@@ -89,6 +90,7 @@ public class FriendService : IFriendService
         IDataFactory<AppUser> userFactory,
         IAiAssistantCoordinator aiAssistantCoordinator,
         IChatService chatService,
+        ITenantContext tenantContext,
         ILogger<FriendService> logger)
     {
         _friendshipFactory = friendshipFactory;
@@ -96,13 +98,14 @@ public class FriendService : IFriendService
         _userFactory = userFactory;
         _aiAssistantCoordinator = aiAssistantCoordinator;
         _chatService = chatService;
+        _tenantContext = tenantContext;
         _logger = logger;
     }
 
     /// <inheritdoc />
     public async Task<List<FriendSummaryResponse>> GetFriendsAsync()
     {
-        var currentUserId = _friendshipFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
 
         var friendships = await _friendshipFactory.FindAsync(f => f.UserId == currentUserId);
 
@@ -153,7 +156,7 @@ public class FriendService : IFriendService
             throw new ArgumentException("手机号或关键字至少提供一个");
         }
 
-        var currentUserId = _friendshipFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var currentUser = await _userFactory.GetByIdAsync(currentUserId);
 
         // Build filter using LINQ expressions
@@ -222,7 +225,7 @@ public class FriendService : IFriendService
             throw new ArgumentException("目标用户不能为空", nameof(request.TargetUserId));
         }
 
-        var currentUserId = _friendRequestFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
 
         if (!MongoDB.Bson.ObjectId.TryParse(request.TargetUserId, out _))
         {
@@ -290,7 +293,7 @@ public class FriendService : IFriendService
     /// <inheritdoc />
     public async Task<List<FriendRequestResponse>> GetFriendRequestsAsync(FriendRequestDirection direction)
     {
-        var currentUserId = _friendRequestFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
 
         var requests = await _friendRequestFactory.FindAsync(r =>
             r.Status == FriendRequestStatus.Pending &&
@@ -359,7 +362,7 @@ public class FriendService : IFriendService
             throw new ArgumentException("好友标识不能为空", nameof(friendUserId));
         }
 
-        var currentUserId = _friendshipFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
 
         if (friendUserId == AiAssistantConstants.AssistantUserId)
         {
@@ -446,7 +449,7 @@ public class FriendService : IFriendService
             throw new ArgumentException("请求标识不能为空", nameof(requestId));
         }
 
-        var currentUserId = _friendRequestFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
 
         var request = await _friendRequestFactory.GetByIdAsync(requestId)
             ?? throw new KeyNotFoundException("未找到好友请求");

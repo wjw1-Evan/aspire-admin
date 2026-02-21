@@ -40,6 +40,7 @@ public class ChatService : IChatService
     private readonly AiCompletionOptions _aiOptions;
     private readonly IMcpService? _mcpService;
     private readonly IXiaokeConfigService? _xiaokeConfigService;
+    private readonly ITenantContext _tenantContext;
 
 
     /// <summary>
@@ -58,6 +59,7 @@ public class ChatService : IChatService
         IOptions<AiCompletionOptions> aiOptions,
         IMcpService? mcpService,
         IXiaokeConfigService? xiaokeConfigService,
+        ITenantContext tenantContext,
         ILogger<ChatService> logger)
     {
         _sessionFactory = sessionFactory ?? throw new ArgumentNullException(nameof(sessionFactory));
@@ -72,6 +74,7 @@ public class ChatService : IChatService
         _aiOptions = aiOptions?.Value ?? throw new ArgumentNullException(nameof(aiOptions));
         _mcpService = mcpService;
         _xiaokeConfigService = xiaokeConfigService;
+        _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -82,7 +85,7 @@ public class ChatService : IChatService
 
         request ??= new ChatSessionListRequest();
 
-        var currentUserId = _sessionFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
 
         Expression<Func<ChatSession, bool>> filter = session => session.Participants.Contains(currentUserId);
 
@@ -151,7 +154,7 @@ public class ChatService : IChatService
         messages.Reverse();
 
         // 计算每条消息的已读状态并添加到 metadata
-        var currentUserId = _sessionFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var lastReadMessageIds = session.LastReadMessageIds ?? new Dictionary<string, string>();
 
         // 批量查询所有最后已读消息，避免在循环中逐个查询（性能优化）
@@ -261,7 +264,7 @@ public class ChatService : IChatService
             throw new ArgumentException("会话标识格式不正确", nameof(request.SessionId));
         }
 
-        var currentUserId = _messageFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var session = await EnsureSessionAccessibleAsync(request.SessionId);
 
         if (!session.Participants.Contains(currentUserId))
@@ -438,7 +441,7 @@ public class ChatService : IChatService
     {
         // 1. 检查用户消息是否已存在（通过 ClientMessageId 或内容匹配）
         // 如果已存在，直接使用；否则创建新消息
-        var currentUserId = _messageFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var session = await EnsureSessionAccessibleAsync(request.SessionId);
 
         if (!session.Participants.Contains(currentUserId))
@@ -591,7 +594,7 @@ public class ChatService : IChatService
         }
 
         var session = await EnsureSessionAccessibleAsync(sessionId);
-        var currentUserId = _attachmentFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
 
         if (!session.Participants.Contains(currentUserId))
         {
@@ -680,7 +683,7 @@ public class ChatService : IChatService
         }
 
         var session = await EnsureSessionAccessibleAsync(sessionId);
-        var currentUserId = _attachmentFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
 
         if (!session.Participants.Contains(currentUserId))
         {
@@ -742,7 +745,7 @@ public class ChatService : IChatService
         }
 
         var session = await EnsureSessionAccessibleAsync(sessionId);
-        var currentUserId = _sessionFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
 
         if (!session.Participants.Contains(currentUserId))
         {
@@ -793,7 +796,7 @@ public class ChatService : IChatService
             throw new KeyNotFoundException("消息不存在或不属于当前会话");
         }
 
-        var currentUserId = _messageFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         if (message.SenderId != currentUserId)
         {
             throw new UnauthorizedAccessException("只能删除自己发送的消息");
@@ -823,13 +826,13 @@ public class ChatService : IChatService
             throw new ArgumentException("参与者标识格式不正确", nameof(participantUserId));
         }
 
-        var currentUserId = _sessionFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         if (currentUserId == participantUserId)
         {
             throw new InvalidOperationException("无法与自己创建会话");
         }
 
-        var companyId = await _sessionFactory.GetRequiredCompanyIdAsync();
+        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? throw new InvalidOperationException("COMPANY_NOT_FOUND");
 
         var participants = new[] { currentUserId, participantUserId };
 
@@ -892,7 +895,7 @@ public class ChatService : IChatService
             throw new KeyNotFoundException("会话不存在");
         }
 
-        var currentUserId = _sessionFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         if (!session.Participants.Contains(currentUserId))
         {
             throw new UnauthorizedAccessException("当前用户不属于该会话");

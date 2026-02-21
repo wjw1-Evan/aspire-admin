@@ -24,7 +24,8 @@ public class UserService(
     IOrganizationService organizationService,
     IUserActivityLogService userActivityLogService,
     IMenuAccessService menuAccessService,
-    IPasswordEncryptionService encryptionService) : IUserService
+    IPasswordEncryptionService encryptionService,
+    ITenantContext tenantContext) : IUserService
 {
     // private const string ACTIVE_STATUS = "active"; // Replaced by SystemConstants.UserStatus.Active
 
@@ -41,11 +42,12 @@ public class UserService(
     private readonly IUserActivityLogService _userActivityLogService = userActivityLogService;
     private readonly IMenuAccessService _menuAccessService = menuAccessService;
     private readonly IPasswordEncryptionService _encryptionService = encryptionService;
+    private readonly ITenantContext _tenantContext = tenantContext;
 
     /// <inheritdoc/>
     public async Task<List<AppUser>> GetAllUsersAsync()
     {
-        var currentUserId = _userFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var currentUser = await _userFactory.GetByIdAsync(currentUserId);
         if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
         {
@@ -117,9 +119,9 @@ public class UserService(
         // 1. 基本验证
         _validationService.ValidateUsername(request.Username);
 
-        var currentUserId = _userFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var currentUser = await _userFactory.GetByIdAsync(currentUserId);
-        var companyId = currentUser?.CurrentCompanyId;
+        var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
 
         if (string.IsNullOrEmpty(companyId))
         {
@@ -225,13 +227,17 @@ public class UserService(
 
         if (updatedUser != null && request.RoleIds != null)
         {
-            var currentUserId = _userFactory.GetRequiredUserId();
+            var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
             var currentUser = await _userFactory.GetByIdAsync(currentUserId);
-            if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
+            if (currentUser == null)
+            {
+                throw new UnauthorizedAccessException("CURRENT_USER_NOT_FOUND");
+            }
+            var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
+            if (string.IsNullOrEmpty(companyId))
             {
                 throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
             }
-            var companyId = currentUser.CurrentCompanyId;
 
             if (request.RoleIds.Any())
             {
@@ -271,9 +277,7 @@ public class UserService(
     /// <inheritdoc/>
     public async Task<bool> DeleteUserAsync(string id, string? reason = null)
     {
-        var currentUserId = _userFactory.GetRequiredUserId();
-        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
-        var currentCompanyId = currentUser?.CurrentCompanyId;
+        var currentCompanyId = await _tenantContext.GetCurrentCompanyIdAsync();
 
         if (string.IsNullOrEmpty(currentCompanyId))
         {
@@ -335,14 +339,13 @@ public class UserService(
     /// <inheritdoc/>
     public async Task<UserListWithRolesResponse> GetUsersWithRolesAsync(UserListRequest request)
     {
-        var currentUserId = _userFactory.GetRequiredUserId();
-        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
-        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var currentCompanyId = await _tenantContext.GetCurrentCompanyIdAsync();
+
+        if (string.IsNullOrEmpty(currentCompanyId))
         {
             throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
         }
-        var currentCompanyId = currentUser.CurrentCompanyId;
-
         var filter = await BuildUserListFilterAsync(request, currentCompanyId);
 
         Func<IQueryable<User>, IOrderedQueryable<User>>? orderBy = null;
@@ -470,14 +473,11 @@ public class UserService(
     /// <inheritdoc/>
     public async Task<UserStatisticsResponse> GetUserStatisticsAsync()
     {
-        var currentUserId = _userFactory.GetRequiredUserId();
-        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
-        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
+        var currentCompanyId = await _tenantContext.GetCurrentCompanyIdAsync();
+        if (string.IsNullOrEmpty(currentCompanyId))
         {
             throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
         }
-        var currentCompanyId = currentUser.CurrentCompanyId;
-
         // 获取该企业的所有活跃成员ID，用于统计
         var memberships = await _userCompanyFactory.FindAsync(uc => uc.CompanyId == currentCompanyId && uc.Status == SystemConstants.UserStatus.Active);
         var memberUserIds = memberships.Select(uc => uc.UserId).Distinct().ToList();
@@ -525,14 +525,12 @@ public class UserService(
     /// <inheritdoc/>
     public async Task<bool> BulkUpdateUsersAsync(BulkUserActionRequest request, string? reason = null)
     {
-        var currentUserId = _userFactory.GetRequiredUserId();
-        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
-        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var currentCompanyId = await _tenantContext.GetCurrentCompanyIdAsync();
+        if (string.IsNullOrEmpty(currentCompanyId))
         {
             throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
         }
-        var currentCompanyId = currentUser.CurrentCompanyId;
-
         // 验证这些用户确实属于该企业
         var memberships = await _userCompanyFactory.FindAsync(uc =>
             uc.CompanyId == currentCompanyId &&

@@ -128,8 +128,8 @@ public class WorkflowEngine : IWorkflowEngine
     /// </summary>
     public async Task<WorkflowInstance> StartWorkflowAsync(string definitionId, string documentId, Dictionary<string, object>? variables = null)
     {
-        var userId = _definitionFactory.GetRequiredUserId();
-        var companyId = await _definitionFactory.GetRequiredCompanyIdAsync();
+        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? throw new InvalidOperationException("COMPANY_NOT_FOUND");
 
         // 1. 获取流程定义
         var definition = await _definitionFactory.GetByIdAsync(definitionId);
@@ -280,8 +280,8 @@ public class WorkflowEngine : IWorkflowEngine
     /// </summary>
     public async Task<bool> ProcessApprovalAsync(string instanceId, string nodeId, ApprovalAction action, string? comment = null, string? delegateToUserId = null)
     {
-        var userId = _instanceFactory.GetRequiredUserId();
-        var companyId = await _instanceFactory.GetRequiredCompanyIdAsync();
+        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? throw new InvalidOperationException("COMPANY_NOT_FOUND");
 
         // 使用乐观锁防止并发问题
         const int maxRetries = 3;
@@ -848,7 +848,7 @@ public class WorkflowEngine : IWorkflowEngine
     /// </summary>
     public async Task<bool> ReturnToNodeAsync(string instanceId, string targetNodeId, string comment)
     {
-        var userId = _instanceFactory.GetRequiredUserId();
+        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
 
         var instance = await _instanceFactory.GetByIdAsync(instanceId);
         if (instance == null || instance.Status != WorkflowStatus.Running)
@@ -1674,7 +1674,7 @@ public class WorkflowEngine : IWorkflowEngine
     private async Task<List<string>> ResolveApproversAsync(WorkflowInstance instance, List<ApproverRule> rules)
     {
         var approvers = new List<string>();
-        var companyId = await _instanceFactory.GetRequiredCompanyIdAsync();
+        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? throw new InvalidOperationException("COMPANY_NOT_FOUND");
 
         foreach (var rule in rules)
         {

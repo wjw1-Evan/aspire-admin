@@ -14,70 +14,32 @@ public class UserActivityLogService : IUserActivityLogService
 {
     private readonly IDataFactory<UserActivityLog> _activityLogFactory;
     private readonly IDataFactory<AppUser> _userFactory;
+    private readonly ITenantContext _tenantContext;
 
     /// <summary>
     /// 初始化用户活动日志服务
     /// </summary>
-    /// <param name="activityLogFactory">活动日志数据操作工厂</param>
-    /// <param name="userFactory">用户数据操作工厂</param>
     public UserActivityLogService(
         IDataFactory<UserActivityLog> activityLogFactory,
-        IDataFactory<AppUser> userFactory)
+        IDataFactory<AppUser> userFactory,
+        ITenantContext tenantContext)
     {
         _activityLogFactory = activityLogFactory;
         _userFactory = userFactory;
+        _tenantContext = tenantContext;
     }
 
-    /// <summary>
-    /// 尝试获取用户实体（从数据库获取，不使用 JWT token）
-    /// </summary>
-    private async Task<AppUser?> TryGetUserAsync(string? userId)
-    {
-        if (string.IsNullOrEmpty(userId))
-        {
-            return null;
-        }
-
-        try
-        {
-            return await _userFactory.GetByIdAsync(userId);
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    /// <summary>
-    /// 记录用户活动（已弃用，请使用 LogUserActivityAsync）
-    /// </summary>
-    public async Task LogActivityAsync(string userId, string username, string action, string description)
-    {
-        var user = await TryGetUserAsync(userId);
-        var companyId = user?.CurrentCompanyId;
-
-        var log = new UserActivityLog
-        {
-            UserId = userId,
-            Username = username,
-            Action = action,
-            Description = description,
-            CompanyId = companyId ?? string.Empty,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-
-        await _activityLogFactory.CreateAsync(log);
-    }
 
     /// <summary>
     /// 记录用户活动
     /// </summary>
     public async Task LogUserActivityAsync(string userId, string action, string description, string? ipAddress = null, string? userAgent = null)
     {
-        // 获取用户信息（从数据库获取，不使用 JWT token）
-        var user = await TryGetUserAsync(userId);
-        var companyId = user?.CurrentCompanyId;
+        // 使用 ITenantContext 获取实时企业 ID
+        var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
+
+        // 获取用户信息用于显示名（仅在必要时查询）
+        var user = await _userFactory.GetByIdAsync(userId);
         var username = user?.Username ?? user?.Name;
 
         var log = new UserActivityLog
@@ -154,7 +116,7 @@ public class UserActivityLogService : IUserActivityLogService
         string? sortBy = null,
         string? sortOrder = null)
     {
-        var currentUserId = _userFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var actionLower = action?.ToLowerInvariant();
         var ipLower = ipAddress?.ToLowerInvariant();
         var httpMethodUpper = httpMethod?.ToUpperInvariant();
@@ -265,7 +227,7 @@ public class UserActivityLogService : IUserActivityLogService
     /// <inheritdoc/>
     public async Task<UserActivityLog?> GetCurrentUserActivityLogByIdAsync(string logId)
     {
-        var currentUserId = _userFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var log = await _activityLogFactory.GetByIdAsync(logId);
         if (log == null || log.UserId != currentUserId)
         {
@@ -383,8 +345,8 @@ public class UserActivityLogService : IUserActivityLogService
     /// </summary>
     public async Task LogHttpRequestAsync(LogHttpRequestRequest request)
     {
-        var user = await TryGetUserAsync(request.UserId);
-        var companyId = user?.CurrentCompanyId ?? "system";
+        // 使用 ITenantContext 获取实时企业 ID
+        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? "system";
         var pathWithQuery = string.IsNullOrEmpty(request.QueryString)
             ? request.Path
             : $"{request.Path}{request.QueryString}";

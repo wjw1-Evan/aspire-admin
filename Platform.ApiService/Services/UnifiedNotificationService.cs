@@ -11,16 +11,19 @@ public class UnifiedNotificationService : IUnifiedNotificationService
 {
     private readonly IDataFactory<NoticeIconItem> _noticeFactory;
     private readonly IDataFactory<AppUser> _userFactory;
+    private readonly ITenantContext _tenantContext;
 
     /// <summary>
     /// 初始化统一通知服务
     /// </summary>
     public UnifiedNotificationService(
         IDataFactory<NoticeIconItem> noticeFactory,
-        IDataFactory<AppUser> userFactory)
+        IDataFactory<AppUser> userFactory,
+        ITenantContext tenantContext)
     {
         _noticeFactory = noticeFactory;
         _userFactory = userFactory;
+        _tenantContext = tenantContext;
     }
 
     /// <summary>
@@ -32,7 +35,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
         string filterType = "all",
         string sortBy = "datetime")
     {
-        var currentUserId = _noticeFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var filterTypeLower = filterType?.ToLowerInvariant() ?? "all";
         var applyTaskVisibility = filterTypeLower is "all" or "unread";
         var onlyMyTasks = filterTypeLower == "task";
@@ -150,7 +153,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
         int page = 1,
         int pageSize = 10)
     {
-        var currentUserId = _noticeFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         System.Linq.Expressions.Expression<Func<NoticeIconItem, bool>> filter = n =>
             n.Type == NoticeIconItemType.Task && n.RelatedUserIds.Contains(currentUserId);
 
@@ -176,7 +179,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
     /// </summary>
     public async Task<NoticeIconItem> CreateTodoAsync(CreateTodoRequest request)
     {
-        var currentUserId = _noticeFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var currentUser = await _userFactory.GetByIdAsync(currentUserId)
             ?? throw new UnauthorizedAccessException("未找到当前用户信息");
         if (string.IsNullOrEmpty(currentUser.CurrentCompanyId))
@@ -266,7 +269,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
         IEnumerable<string>? relatedUserIds = null,
         string? remarks = null)
     {
-        var currentUserId = _noticeFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var currentUser = await _userFactory.GetByIdAsync(currentUserId)
             ?? throw new UnauthorizedAccessException("未找到当前用户信息");
         if (string.IsNullOrEmpty(currentUser.CurrentCompanyId))
@@ -352,7 +355,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
     /// </summary>
     public async Task<UnreadCountStatistics> GetUnreadCountStatisticsAsync()
     {
-        var uid = _noticeFactory.GetRequiredUserId();
+        var uid = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
 
         // 系统消息未读数（按租户/软删除自动过滤）
         var systemMessagesCount = (int)await _noticeFactory.CountAsync(n =>
@@ -405,7 +408,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
         }
         else
         {
-            var currentUserId = _noticeFactory.GetRequiredUserId();
+            var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
             var currentUser = await _userFactory.GetByIdAsync(currentUserId)
                 ?? throw new UnauthorizedAccessException("未找到当前用户信息");
             if (string.IsNullOrEmpty(currentUser.CurrentCompanyId))

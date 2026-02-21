@@ -41,24 +41,8 @@ public class CloudStorageController : BaseApiController
     [RequireMenu("cloud-storage")]
     public async Task<IActionResult> GetStatistics([FromQuery] string? userId = null)
     {
-        try
-        {
-            var stats = await _cloudStorageService.GetStorageUsageAsync(userId);
-            return Success(stats);
-        }
-        catch (ArgumentException ex)
-        {
-            return ValidationError(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return ValidationError(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取存储统计失败");
-            return ServerError("获取存储统计失败，请稍后重试");
-        }
+        var stats = await _cloudStorageService.GetStorageUsageAsync(userId);
+        return Success(stats);
     }
 
     /// <summary>
@@ -70,28 +54,9 @@ public class CloudStorageController : BaseApiController
     [RequireMenu("cloud-storage-files")]
     public async Task<IActionResult> CreateFolder([FromBody] CreateFolderRequest request)
     {
-        var validation = ValidateModelState();
-        if (validation != null) return validation;
-
-        try
-        {
-            var folder = await _cloudStorageService.CreateFolderAsync(request.Name, request.ParentId);
-            _logger.LogInformation("创建文件夹, FolderId: {FolderId}", folder.Id);
-            return Success(folder, "文件夹创建成功");
-        }
-        catch (ArgumentException ex)
-        {
-            return ValidationError(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return ValidationError(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "创建文件夹失败");
-            return ServerError("创建文件夹失败，请稍后重试");
-        }
+        var folder = await _cloudStorageService.CreateFolderAsync(request.Name, request.ParentId);
+        _logger.LogInformation("创建文件夹, FolderId: {FolderId}", folder.Id);
+        return Success(folder, "文件夹创建成功");
     }
 
     /// <summary>
@@ -102,28 +67,9 @@ public class CloudStorageController : BaseApiController
     [HttpPost("upload")]
     public async Task<IActionResult> UploadFile([FromForm] UploadFileRequest request)
     {
-        var validation = ValidateModelState();
-        if (validation != null) return validation;
-
-        try
-        {
-            var fileItem = await _cloudStorageService.UploadFileAsync(request.File, request.ParentId, request.Overwrite);
-            _logger.LogInformation("上传文件, FileId: {FileId}, FileName: {FileName}", fileItem.Id, request.File.FileName);
-            return Success(fileItem, "文件上传成功");
-        }
-        catch (ArgumentException ex)
-        {
-            return ValidationError(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return ValidationError(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "文件上传失败");
-            return ServerError("文件上传失败，请稍后重试");
-        }
+        var fileItem = await _cloudStorageService.UploadFileAsync(request.File, request.ParentId, request.Overwrite);
+        _logger.LogInformation("上传文件, FileId: {FileId}, FileName: {FileName}", fileItem.Id, request.File.FileName);
+        return Success(fileItem, "文件上传成功");
     }
 
     /// <summary>
@@ -139,25 +85,9 @@ public class CloudStorageController : BaseApiController
         if (files == null || files.Count == 0)
             return ValidationError("文件列表不能为空");
 
-        try
-        {
-            var result = await _cloudStorageService.UploadMultipleFilesAsync(files, parentId ?? string.Empty);
-            _logger.LogInformation("批量上传文件, Count: {Count}", files.Count);
-            return Success(result, "批量上传成功");
-        }
-        catch (ArgumentException ex)
-        {
-            return ValidationError(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return ValidationError(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "批量上传失败");
-            return ServerError("批量上传失败，请稍后重试");
-        }
+        var result = await _cloudStorageService.UploadMultipleFilesAsync(files, parentId ?? string.Empty);
+        _logger.LogInformation("批量上传文件, Count: {Count}", files.Count);
+        return Success(result, "批量上传成功");
     }
 
     /// <summary>
@@ -165,26 +95,17 @@ public class CloudStorageController : BaseApiController
     /// </summary>
     /// <param name="id">文件项ID</param>
     /// <returns>文件项详情</returns>
-    [HttpGet("{id}")]
-    [HttpGet("files/{id}")] // 兼容前端 /files/{id}
+    [HttpGet("files/{id}")]
     public async Task<IActionResult> GetFileItem(string id)
     {
         if (string.IsNullOrWhiteSpace(id))
             return ValidationError("文件项ID不能为空");
 
-        try
-        {
-            var fileItem = await _cloudStorageService.GetFileItemAsync(id);
-            if (fileItem == null)
-                return NotFoundError("文件项", id);
+        var fileItem = await _cloudStorageService.GetFileItemAsync(id);
+        if (fileItem == null)
+            return NotFoundError("文件项", id);
 
-            return Success(fileItem);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取文件项失败, Id: {Id}", id);
-            return ServerError("获取文件项失败，请稍后重试");
-        }
+        return Success(fileItem);
     }
 
     /// <summary>
@@ -205,16 +126,8 @@ public class CloudStorageController : BaseApiController
         if (query.PageSize < 1 || query.PageSize > 100)
             return ValidationError("每页数量必须在 1-100 之间");
 
-        try
-        {
-            var result = await _cloudStorageService.GetFileItemsAsync(parentId ?? string.Empty, query);
-            return SuccessPaged(result.Data, result.Total, result.Page, result.PageSize);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取文件列表失败");
-            return ServerError("获取文件列表失败，请稍后重试");
-        }
+        var result = await _cloudStorageService.GetFileItemsAsync(parentId ?? string.Empty, query);
+        return SuccessPaged(result.Data, result.Total, result.Page, result.PageSize);
     }
 
     /// <summary>
@@ -223,36 +136,16 @@ public class CloudStorageController : BaseApiController
     /// <param name="id">文件项ID</param>
     /// <param name="request">重命名请求</param>
     /// <returns>重命名后的文件项</returns>
-    [HttpPut("{id}/rename")]
-    [HttpPut("items/{id}/rename")] // 兼容前端 /items/{id}/rename
+    [HttpPut("items/{id}/rename")]
     [RequireMenu("cloud-storage-files")]
     public async Task<IActionResult> RenameFileItem(string id, [FromBody] RenameRequest request)
     {
         if (string.IsNullOrWhiteSpace(id))
             return ValidationError("文件项ID不能为空");
 
-        var validation = ValidateModelState();
-        if (validation != null) return validation;
-
-        try
-        {
-            var fileItem = await _cloudStorageService.RenameFileItemAsync(id, request.NewName);
-            _logger.LogInformation("重命名文件, Id: {Id}", id);
-            return Success(fileItem, "重命名成功");
-        }
-        catch (ArgumentException ex)
-        {
-            return ValidationError(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return ValidationError(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "重命名失败, Id: {Id}", id);
-            return ServerError("重命名失败，请稍后重试");
-        }
+        var fileItem = await _cloudStorageService.RenameFileItemAsync(id, request.NewName);
+        _logger.LogInformation("重命名文件, Id: {Id}", id);
+        return Success(fileItem, "重命名成功");
     }
 
     /// <summary>
@@ -261,36 +154,16 @@ public class CloudStorageController : BaseApiController
     /// <param name="id">文件项ID</param>
     /// <param name="request">移动请求</param>
     /// <returns>移动后的文件项</returns>
-    [HttpPut("{id}/move")]
-    [HttpPut("items/{id}/move")] // 兼容前端 /items/{id}/move
+    [HttpPut("items/{id}/move")]
     [RequireMenu("cloud-storage-files")]
     public async Task<IActionResult> MoveFileItem(string id, [FromBody] MoveRequest request)
     {
         if (string.IsNullOrWhiteSpace(id))
             return ValidationError("文件项ID不能为空");
 
-        var validation = ValidateModelState();
-        if (validation != null) return validation;
-
-        try
-        {
-            var fileItem = await _cloudStorageService.MoveFileItemAsync(id, request.NewParentId);
-            _logger.LogInformation("移动文件, Id: {Id}", id);
-            return Success(fileItem, "移动成功");
-        }
-        catch (ArgumentException ex)
-        {
-            return ValidationError(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return ValidationError(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "移动失败, Id: {Id}", id);
-            return ServerError("移动失败，请稍后重试");
-        }
+        var fileItem = await _cloudStorageService.MoveFileItemAsync(id, request.NewParentId);
+        _logger.LogInformation("移动文件, Id: {Id}", id);
+        return Success(fileItem, "移动成功");
     }
 
     /// <summary>
@@ -299,115 +172,50 @@ public class CloudStorageController : BaseApiController
     /// <param name="id">文件项ID</param>
     /// <param name="request">复制请求</param>
     /// <returns>复制后的文件项</returns>
-    [HttpPost("{id}/copy")]
-    [HttpPost("items/{id}/copy")] // 兼容前端 /items/{id}/copy
+    [HttpPost("items/{id}/copy")]
     [RequireMenu("cloud-storage-files")]
     public async Task<IActionResult> CopyFileItem(string id, [FromBody] CopyRequest request)
     {
         if (string.IsNullOrWhiteSpace(id))
             return ValidationError("文件项ID不能为空");
 
-        var validation = ValidateModelState();
-        if (validation != null) return validation;
-
-        try
-        {
-            var fileItem = await _cloudStorageService.CopyFileItemAsync(id, request.NewParentId, request.NewName);
-            _logger.LogInformation("复制文件, Id: {Id}", id);
-            return Success(fileItem, "复制成功");
-        }
-        catch (ArgumentException ex)
-        {
-            return ValidationError(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return ValidationError(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "复制失败, Id: {Id}", id);
-            return ServerError("复制失败，请稍后重试");
-        }
+        var fileItem = await _cloudStorageService.CopyFileItemAsync(id, request.NewParentId, request.NewName);
+        _logger.LogInformation("复制文件, Id: {Id}", id);
+        return Success(fileItem, "复制成功");
     }
 
-    /// <summary>
-    /// 删除文件或文件夹（移动到回收站）
-    /// </summary>
-    /// <param name="id">文件项ID</param>
-    /// <returns>删除结果</returns>
-    [HttpDelete("{id}")]
-    [HttpDelete("items/{id}")] // 兼容前端 /items/{id}
+    [HttpDelete("items/{id}")]
     [RequireMenu("cloud-storage-files")]
     public async Task<IActionResult> DeleteFileItem(string id)
     {
         if (string.IsNullOrWhiteSpace(id))
             return ValidationError("文件项ID不能为空");
 
-        try
-        {
-            await _cloudStorageService.DeleteFileItemAsync(id);
-            _logger.LogInformation("删除文件, Id: {Id}", id);
-            return Success("文件已移动到回收站");
-        }
-        catch (ArgumentException ex)
-        {
-            return ValidationError(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "删除失败, Id: {Id}", id);
-            return ServerError("删除失败，请稍后重试");
-        }
+        await _cloudStorageService.DeleteFileItemAsync(id);
+        _logger.LogInformation("删除文件项 (移动到回收站), Id: {Id}", id);
+        return Success(null, "已移动到回收站");
     }
 
     #endregion
 
     #region 文件下载和预览
 
-    /// <summary>
-    /// 下载文件
-    /// </summary>
-    /// <param name="id">文件ID</param>
-    /// <returns>文件流</returns>
-    [HttpGet("{id}/download")]
-    [HttpGet("files/{id}/download")] // 兼容前端 /files/{id}/download
+    [HttpGet("items/{id}/download")]
     public async Task<IActionResult> DownloadFile(string id)
     {
         if (string.IsNullOrWhiteSpace(id))
             return ValidationError("文件ID不能为空");
 
-        try
-        {
-            var fileItem = await _cloudStorageService.GetFileItemAsync(id);
-            if (fileItem == null)
-                return NotFoundError("文件", id);
+        var fileItem = await _cloudStorageService.GetFileItemAsync(id);
+        if (fileItem == null)
+            return NotFoundError("文件", id);
 
-            var stream = await _cloudStorageService.DownloadFileAsync(id);
-            _logger.LogInformation("下载文件, Id: {Id}", id);
+        var stream = await _cloudStorageService.DownloadFileAsync(id);
+        _logger.LogInformation("下载文件, Id: {Id}", id);
 
-            return File(stream, fileItem.MimeType, fileItem.Name);
-        }
-        catch (ArgumentException ex)
-        {
-            return ValidationError(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return ValidationError(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "下载失败, Id: {Id}", id);
-            return ServerError("下载失败，请稍后重试");
-        }
+        return File(stream, fileItem.MimeType, fileItem.Name);
     }
 
-    /// <summary>
-    /// 下载文件夹为 ZIP
-    /// </summary>
-    /// <param name="id">文件夹ID</param>
-    /// <returns>ZIP 文件流</returns>
     [HttpGet("folders/{id}/download")]
     [RequireMenu("cloud-storage-files")]
     public async Task<IActionResult> DownloadFolderAsZip(string id)
@@ -415,85 +223,29 @@ public class CloudStorageController : BaseApiController
         if (string.IsNullOrWhiteSpace(id))
             return ValidationError("文件夹ID不能为空");
 
-        try
-        {
-            var stream = await _cloudStorageService.DownloadFolderAsZipAsync(id);
-            _logger.LogInformation("下载文件夹ZIP, Id: {Id}", id);
-            return File(stream, "application/zip", $"folder-{id}.zip");
-        }
-        catch (ArgumentException ex)
-        {
-            return ValidationError(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return ValidationError(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "下载文件夹失败, Id: {Id}", id);
-            return ServerError("下载文件夹失败，请稍后重试");
-        }
+        var stream = await _cloudStorageService.DownloadFolderAsZipAsync(id);
+        _logger.LogInformation("下载文件夹ZIP, Id: {Id}", id);
+        return File(stream, "application/zip", $"folder-{id}.zip");
     }
 
-    /// <summary>
-    /// 获取文件预览信息
-    /// </summary>
-    /// <param name="id">文件ID</param>
-    /// <returns>预览信息</returns>
-    [HttpGet("{id}/preview")]
-    [HttpGet("files/{id}/preview")] // 兼容前端 /files/{id}/preview
+    [HttpGet("items/{id}/preview")]
     public async Task<IActionResult> PreviewFile(string id)
     {
         if (string.IsNullOrWhiteSpace(id))
             return ValidationError("文件ID不能为空");
 
-        try
-        {
-            var previewInfo = await _cloudStorageService.GetPreviewInfoAsync(id);
-            return Success(previewInfo);
-        }
-        catch (ArgumentException ex)
-        {
-            return ValidationError(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取预览信息失败, Id: {Id}", id);
-            return ServerError("获取预览信息失败，请稍后重试");
-        }
+        var previewInfo = await _cloudStorageService.GetPreviewInfoAsync(id);
+        return Success(previewInfo);
     }
 
-    /// <summary>
-    /// 获取文件缩略图
-    /// </summary>
-    /// <param name="id">文件ID</param>
-    /// <returns>缩略图流</returns>
-    [HttpGet("{id}/thumbnail")]
-    [HttpGet("files/{id}/thumbnail")] // 兼容前端 /files/{id}/thumbnail
+    [HttpGet("items/{id}/thumbnail")]
     public async Task<IActionResult> GetThumbnail(string id)
     {
         if (string.IsNullOrWhiteSpace(id))
             return ValidationError("文件ID不能为空");
 
-        try
-        {
-            var stream = await _cloudStorageService.GetThumbnailAsync(id);
-            return File(stream, "image/jpeg");
-        }
-        catch (ArgumentException ex)
-        {
-            return ValidationError(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return ValidationError(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取缩略图失败, Id: {Id}", id);
-            return ServerError("获取缩略图失败，请稍后重试");
-        }
+        var stream = await _cloudStorageService.GetThumbnailAsync(id);
+        return File(stream, "image/jpeg");
     }
 
     #endregion
@@ -577,14 +329,14 @@ public class CloudStorageController : BaseApiController
     }
 
     /// <summary>
-    /// 获取回收站文件列表（简化路径）
+    /// 获取回收站项目列表
     /// </summary>
     /// <param name="page">页码</param>
-    /// <param name="pageSize">每页数量</param>
+    /// <param name="pageSize">每页大小</param>
     /// <param name="sortBy">排序字段</param>
-    /// <param name="sortOrder">排序方向</param>
+    /// <param name="sortOrder">排序顺序</param>
     /// <param name="type">文件类型筛选</param>
-    /// <returns>回收站文件列表</returns>
+    /// <returns>分页回收站项目列表</returns>
     [HttpGet("recycle")]
     [RequireMenu("cloud-storage-recycle")]
     public async Task<IActionResult> GetRecycleItems(
@@ -594,226 +346,97 @@ public class CloudStorageController : BaseApiController
         [FromQuery] string sortOrder = "desc",
         [FromQuery] FileItemType? type = null)
     {
-        // 验证分页参数
-        if (page < 1 || page > 10000)
-            return ValidationError("页码必须在 1-10000 之间");
-
-        if (pageSize < 1 || pageSize > 100)
-            return ValidationError("每页数量必须在 1-100 之间");
-
-        // 验证排序参数
-        var validSortFields = new[] { "deletedAt", "name", "size", "type", "createdAt" };
-        if (!validSortFields.Contains(sortBy))
-            return ValidationError($"排序字段必须是以下之一: {string.Join(", ", validSortFields)}");
-
-        if (sortOrder != "asc" && sortOrder != "desc")
-            return ValidationError("排序方向必须是 asc 或 desc");
-
-        try
+        var query = new RecycleBinQuery
         {
-            var query = new RecycleBinQuery
-            {
-                Page = page,
-                PageSize = pageSize,
-                SortBy = sortBy,
-                SortOrder = sortOrder,
-                Type = type
-            };
-
-            var result = await _cloudStorageService.GetRecycleBinItemsAsync(query);
-            return SuccessPaged(result.Data, result.Total, result.Page, result.PageSize);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取回收站列表失败");
-            return ServerError("获取回收站列表失败，请稍后重试");
-        }
+            Page = page,
+            PageSize = pageSize,
+            SortBy = sortBy,
+            SortOrder = sortOrder,
+            Type = type
+        };
+        var result = await _cloudStorageService.GetRecycleBinItemsAsync(query);
+        return SuccessPaged(result.Data, result.Total, result.Page, result.PageSize);
     }
 
     /// <summary>
-    /// 获取回收站文件列表
+    /// 获取回收站项目 (通过查询对象)
     /// </summary>
     /// <param name="query">查询参数</param>
-    /// <returns>回收站文件列表</returns>
+    /// <returns>分页回收站项目列表</returns>
     [HttpGet("recycle-bin")]
     [RequireMenu("cloud-storage-recycle")]
     public async Task<IActionResult> GetRecycleBinItems([FromQuery] RecycleBinQuery query)
     {
-        // 验证分页参数
-        if (query.Page < 1 || query.Page > 10000)
-            return ValidationError("页码必须在 1-10000 之间");
-
-        if (query.PageSize < 1 || query.PageSize > 100)
-            return ValidationError("每页数量必须在 1-100 之间");
-
-        try
-        {
-            var result = await _cloudStorageService.GetRecycleBinItemsAsync(query);
-            return SuccessPaged(result.Data, result.Total, result.Page, result.PageSize);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取回收站列表失败");
-            return ServerError("获取回收站列表失败，请稍后重试");
-        }
+        var result = await _cloudStorageService.GetRecycleBinItemsAsync(query);
+        return SuccessPaged(result.Data, result.Total, result.Page, result.PageSize);
     }
 
-    /// <summary>
-    /// 从回收站恢复文件
-    /// </summary>
-    /// <param name="id">文件项ID</param>
-    /// <param name="request">恢复请求</param>
-    /// <returns>恢复后的文件项</returns>
-    [HttpPost("{id}/restore")]
+    [HttpPost("recycle-bin/{id}/restore")]
     [RequireMenu("cloud-storage-recycle")]
     public async Task<IActionResult> RestoreFileItem(string id, [FromBody] RestoreRequest request)
     {
         if (string.IsNullOrWhiteSpace(id))
             return ValidationError("文件项ID不能为空");
 
-        try
-        {
-            var fileItem = await _cloudStorageService.RestoreFileItemAsync(id, request?.NewParentId);
-            _logger.LogInformation("恢复文件, Id: {Id}", id);
-            return Success(fileItem, "恢复成功");
-        }
-        catch (ArgumentException ex)
-        {
-            return ValidationError(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return ValidationError(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "恢复失败, Id: {Id}", id);
-            return ServerError("恢复失败，请稍后重试");
-        }
+        var fileItem = await _cloudStorageService.RestoreFileItemAsync(id, request?.NewParentId);
+        _logger.LogInformation("恢复文件, Id: {Id}", id);
+        return Success(fileItem, "恢复成功");
     }
 
-    /// <summary>
-    /// 永久删除文件
-    /// </summary>
-    /// <param name="id">文件项ID</param>
-    /// <returns>删除结果</returns>
-    [HttpDelete("{id}/permanent")]
-    [HttpDelete("recycle/{id}/permanent-delete")] // 兼容前端路径
+    [HttpDelete("recycle-bin/{id}")]
     [RequireMenu("cloud-storage-recycle")]
     public async Task<IActionResult> PermanentDeleteFileItem(string id)
     {
         if (string.IsNullOrWhiteSpace(id))
             return ValidationError("文件项ID不能为空");
 
-        try
-        {
-            await _cloudStorageService.PermanentDeleteFileItemAsync(id);
-            _logger.LogInformation("永久删除文件, Id: {Id}", id);
-            return Success("文件已永久删除");
-        }
-        catch (ArgumentException ex)
-        {
-            return ValidationError(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "永久删除失败, Id: {Id}", id);
-            return ServerError("永久删除失败，请稍后重试");
-        }
+        await _cloudStorageService.PermanentDeleteFileItemAsync(id);
+        _logger.LogInformation("永久删除文件, Id: {Id}", id);
+        return Success(null, "文件已永久删除");
     }
 
-    /// <summary>
-    /// 清空回收站
-    /// </summary>
-    /// <returns>清空结果</returns>
     [HttpDelete("recycle-bin/empty")]
-    [HttpDelete("recycle/empty")] // 兼容前端旧路径
     [RequireMenu("cloud-storage-recycle")]
     public async Task<IActionResult> EmptyRecycleBin()
     {
-        try
-        {
-            await _cloudStorageService.EmptyRecycleBinAsync();
-            _logger.LogInformation("清空回收站");
-            return Success("回收站已清空");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "清空回收站失败");
-            return ServerError("清空回收站失败，请稍后重试");
-        }
+        await _cloudStorageService.EmptyRecycleBinAsync();
+        _logger.LogInformation("清空回收站");
+        return Success(null, "回收站已清空");
     }
 
-    /// <summary>
-    /// 自动清理过期回收站文件
-    /// </summary>
-    /// <param name="expireDays">过期天数（默认30天）</param>
-    /// <returns>清理结果</returns>
-    [HttpPost("recycle/auto-cleanup")]
+    [HttpPost("recycle-bin/auto-cleanup")]
     [RequireMenu("cloud-storage-recycle")]
     public async Task<IActionResult> AutoCleanupRecycleBin([FromQuery] int? expireDays = null)
     {
-        try
-        {
-            var days = expireDays ?? 30;
-            var result = await _cloudStorageService.CleanupExpiredRecycleBinItemsAsync(days);
-            _logger.LogInformation("自动清理回收站, Days: {Days}, Deleted: {Count}", days, result.deletedCount);
-            return Success(new { deletedCount = result.deletedCount, freedSpace = result.freedSpace },
-                $"自动清理完成，删除 {result.deletedCount} 个文件，释放 {result.freedSpace} 字节");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "自动清理失败");
-            return ServerError("自动清理失败，请稍后重试");
-        }
+        var days = expireDays ?? 30;
+        var result = await _cloudStorageService.CleanupExpiredRecycleBinItemsAsync(days);
+        _logger.LogInformation("自动清理回收站, Days: {Days}, Deleted: {Count}", days, result.deletedCount);
+        return Success(new { deletedCount = result.deletedCount, freedSpace = result.freedSpace },
+            $"自动清理完成，删除 {result.deletedCount} 个文件，释放 {result.freedSpace} 字节");
     }
 
     #endregion
 
     #region 存储统计
 
-    /// <summary>
-    /// 获取存储使用情况
-    /// </summary>
-    /// <param name="userId">用户ID（可选）</param>
-    /// <returns>存储使用信息</returns>
-    [HttpGet("storage/usage")]
+    [HttpGet("quota/usage")]
     [RequireMenu("cloud-storage-quota")]
     public async Task<IActionResult> GetStorageUsage([FromQuery] string? userId = null)
     {
-        try
-        {
-            var usage = await _cloudStorageService.GetStorageUsageAsync(userId);
-            return Success(usage);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取存储使用情况失败");
-            return ServerError("获取存储使用情况失败，请稍后重试");
-        }
+        var usage = await _cloudStorageService.GetStorageUsageAsync(userId);
+        return Success(usage);
     }
 
     #endregion
 
     #region 批量操作
 
-    /// <summary>
-    /// 批量永久删除（回收站）
-    /// </summary>
-    /// <param name="request">批量操作请求</param>
-    /// <returns>删除结果</returns>
-    [HttpPost("recycle/batch-permanent-delete")]
+    [HttpPost("recycle-bin/batch-permanent-delete")]
     [RequireMenu("cloud-storage-recycle")]
     public async Task<IActionResult> BatchPermanentDelete([FromBody] BatchOperationRequest request)
     {
-        var validation = ValidateModelState();
-        if (validation != null) return validation;
-
         if (request?.Ids == null || request.Ids.Count == 0)
             return ValidationError("文件项ID列表不能为空");
-
-        if (request.Ids.Count > 100)
-            return ValidationError("批量操作最多支持100个文件项");
 
         var successCount = 0;
         var failureCount = 0;
@@ -839,100 +462,40 @@ public class CloudStorageController : BaseApiController
             $"批量永久删除完成，成功 {successCount} 个，失败 {failureCount} 个");
     }
 
-    /// <summary>
-    /// 批量删除文件项
-    /// </summary>
-    /// <param name="request">批量操作请求</param>
-    /// <returns>删除结果</returns>
-    [HttpPost("batch/delete")]
-    [HttpPost("items/batch-delete")] // 兼容前端 /items/batch-delete
+    [HttpPost("items/batch-delete")]
     [RequireMenu("cloud-storage-files")]
     public async Task<IActionResult> BatchDelete([FromBody] BatchOperationRequest request)
     {
-        var validation = ValidateModelState();
-        if (validation != null) return validation;
-
         if (request.Ids == null || request.Ids.Count == 0)
             return ValidationError("文件项ID列表不能为空");
 
-        if (request.Ids.Count > 100)
-            return ValidationError("批量操作最多支持100个文件项");
-
-        try
-        {
-            var result = await _cloudStorageService.BatchDeleteAsync(request.Ids);
-            _logger.LogInformation("批量删除, Success: {SuccessCount}, Failure: {FailureCount}", result.SuccessCount, result.FailureCount);
-            return Success(result, $"批量删除完成，成功 {result.SuccessCount} 个，失败 {result.FailureCount} 个");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "批量删除失败");
-            return ServerError("批量删除失败，请稍后重试");
-        }
+        var result = await _cloudStorageService.BatchDeleteAsync(request.Ids);
+        _logger.LogInformation("批量删除, Success: {SuccessCount}, Failure: {FailureCount}", result.SuccessCount, result.FailureCount);
+        return Success(result, $"批量删除完成，成功 {result.SuccessCount} 个，失败 {result.FailureCount} 个");
     }
 
-    /// <summary>
-    /// 批量移动文件项
-    /// </summary>
-    /// <param name="request">批量移动请求</param>
-    /// <returns>移动结果</returns>
-    [HttpPost("batch/move")]
-    [HttpPost("items/batch-move")] // 兼容前端 /items/batch-move
+    [HttpPost("items/batch-move")]
     [RequireMenu("cloud-storage-files")]
     public async Task<IActionResult> BatchMove([FromBody] BatchMoveRequest request)
     {
-        var validation = ValidateModelState();
-        if (validation != null) return validation;
-
         if (request.Ids == null || request.Ids.Count == 0)
             return ValidationError("文件项ID列表不能为空");
 
-        if (request.Ids.Count > 100)
-            return ValidationError("批量操作最多支持100个文件项");
-
-        try
-        {
-            var result = await _cloudStorageService.BatchMoveAsync(request.Ids, request.TargetParentId);
-            _logger.LogInformation("批量移动, Success: {SuccessCount}, Failure: {FailureCount}", result.SuccessCount, result.FailureCount);
-            return Success(result, $"批量移动完成，成功 {result.SuccessCount} 个，失败 {result.FailureCount} 个");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "批量移动失败");
-            return ServerError("批量移动失败，请稍后重试");
-        }
+        var result = await _cloudStorageService.BatchMoveAsync(request.Ids, request.TargetParentId);
+        _logger.LogInformation("批量移动, Success: {SuccessCount}, Failure: {FailureCount}", result.SuccessCount, result.FailureCount);
+        return Success(result, $"批量移动完成，成功 {result.SuccessCount} 个，失败 {result.FailureCount} 个");
     }
 
-    /// <summary>
-    /// 批量复制文件项
-    /// </summary>
-    /// <param name="request">批量复制请求</param>
-    /// <returns>复制结果</returns>
-    [HttpPost("batch/copy")]
-    [HttpPost("items/batch-copy")] // 预留前端别名
+    [HttpPost("items/batch-copy")]
     [RequireMenu("cloud-storage-files")]
     public async Task<IActionResult> BatchCopy([FromBody] BatchCopyRequest request)
     {
-        var validation = ValidateModelState();
-        if (validation != null) return validation;
-
         if (request.Ids == null || request.Ids.Count == 0)
             return ValidationError("文件项ID列表不能为空");
 
-        if (request.Ids.Count > 100)
-            return ValidationError("批量操作最多支持100个文件项");
-
-        try
-        {
-            var result = await _cloudStorageService.BatchCopyAsync(request.Ids, request.TargetParentId);
-            _logger.LogInformation("批量复制, Success: {SuccessCount}, Failure: {FailureCount}", result.SuccessCount, result.FailureCount);
-            return Success(result, $"批量复制完成，成功 {result.SuccessCount} 个，失败 {result.FailureCount} 个");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "批量复制失败");
-            return ServerError("批量复制失败，请稍后重试");
-        }
+        var result = await _cloudStorageService.BatchCopyAsync(request.Ids, request.TargetParentId);
+        _logger.LogInformation("批量复制, Success: {SuccessCount}, Failure: {FailureCount}", result.SuccessCount, result.FailureCount);
+        return Success(null, $"批量复制完成，成功 {result.SuccessCount} 个，失败 {result.FailureCount} 个");
     }
 
     #endregion

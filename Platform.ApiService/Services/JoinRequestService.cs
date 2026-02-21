@@ -111,7 +111,7 @@ public class JoinRequestService : IJoinRequestService
     /// </summary>
     public async Task<CompanyJoinRequest> ApplyToJoinCompanyAsync(ApplyToJoinCompanyRequest request)
     {
-        var userId = _joinRequestFactory.GetRequiredUserId();
+        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var companyId = request.CompanyId;
 
         // 1. 验证企业存在且活跃
@@ -172,7 +172,7 @@ public class JoinRequestService : IJoinRequestService
     /// </summary>
     public async Task<List<JoinRequestDetail>> GetMyRequestsAsync(string? keyword = null)
     {
-        var userId = _joinRequestFactory.GetRequiredUserId();
+        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
 
         var requests = await _joinRequestFactory.FindAsync(
             jr => jr.UserId == userId,
@@ -197,7 +197,7 @@ public class JoinRequestService : IJoinRequestService
     /// </summary>
     public async Task<bool> CancelRequestAsync(string requestId)
     {
-        var userId = _joinRequestFactory.GetRequiredUserId();
+        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
 
         var requests = await _joinRequestFactory.FindAsync(jr =>
             jr.Id == requestId &&
@@ -224,7 +224,7 @@ public class JoinRequestService : IJoinRequestService
     public async Task<List<JoinRequestDetail>> GetPendingRequestsAsync(string companyId, string? keyword = null)
     {
         // 验证当前用户是否是该企业的管理员
-        var currentUserId = _joinRequestFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         if (!await _userCompanyService.IsUserAdminInCompanyAsync(currentUserId, companyId))
         {
             throw new UnauthorizedAccessException("只有企业管理员可以查看待审核申请");
@@ -254,7 +254,7 @@ public class JoinRequestService : IJoinRequestService
     /// </summary>
     public async Task<bool> ApproveRequestAsync(string requestId, ReviewJoinRequestRequest? reviewRequest = null)
     {
-        var adminUserId = _joinRequestFactory.GetRequiredUserId();
+        var adminUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
 
         // 1. 获取申请记录
         var request = await _joinRequestFactory.GetByIdAsync(requestId);
@@ -367,7 +367,7 @@ public class JoinRequestService : IJoinRequestService
     /// </summary>
     public async Task<bool> RejectRequestAsync(string requestId, string rejectReason)
     {
-        var adminUserId = _joinRequestFactory.GetRequiredUserId();
+        var adminUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
 
         // 1. 获取申请记录
         var request = await _joinRequestFactory.GetByIdAsync(requestId);

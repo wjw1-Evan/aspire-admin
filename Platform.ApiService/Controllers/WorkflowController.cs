@@ -241,7 +241,7 @@ public class WorkflowController : BaseApiController
             }
 
             var userId = GetRequiredUserId();
-            var companyId = await _definitionFactory.GetRequiredCompanyIdAsync();
+            var companyId = await GetRequiredCompanyIdAsync();
 
             var workflow = new WorkflowDefinition
             {

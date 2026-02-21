@@ -587,12 +587,51 @@ public class GetUserActivityLogsRequest
 }
 
 /// <summary>
+/// 活动日志查询参数
+/// </summary>
+public class ActivityLogQuery
+{
+    /// <summary>页码</summary>
+    public int Page { get; set; } = 1;
+
+    /// <summary>每页数量</summary>
+    public int PageSize { get; set; } = 20;
+
+    /// <summary>用户ID</summary>
+    public string? UserId { get; set; }
+
+    /// <summary>操作类型</summary>
+    public string? Action { get; set; }
+
+    /// <summary>HTTP方法</summary>
+    public string? HttpMethod { get; set; }
+
+    /// <summary>状态码</summary>
+    public int? StatusCode { get; set; }
+
+    /// <summary>IP地址</summary>
+    public string? IpAddress { get; set; }
+
+    /// <summary>开始日期</summary>
+    public DateTime? StartDate { get; set; }
+
+    /// <summary>结束日期</summary>
+    public DateTime? EndDate { get; set; }
+
+    /// <summary>排序字段</summary>
+    public string? SortBy { get; set; }
+
+    /// <summary>排序方向</summary>
+    public string? SortOrder { get; set; }
+}
+
+/// <summary>
 /// 用户活动日志分页响应
 /// </summary>
 public class UserActivityLogPagedResponse
 {
     /// <summary>
-    /// 日志数据列表
+    /// 日志数据
     /// </summary>
     public List<UserActivityLog> Data { get; set; } = new();
 
@@ -607,7 +646,7 @@ public class UserActivityLogPagedResponse
     public int Page { get; set; }
 
     /// <summary>
-    /// 每页大小
+    /// 每页数量
     /// </summary>
     public int PageSize { get; set; }
 

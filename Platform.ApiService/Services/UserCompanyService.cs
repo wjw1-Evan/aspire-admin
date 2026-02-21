@@ -196,7 +196,7 @@ public class UserCompanyService : IUserCompanyService
     public async Task<List<JoinRequestDetail>> GetJoinRequestsAsync(string companyId, string? status = null)
     {
         // 验证权限
-        var currentUserId = _userCompanyFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         await this.RequireAdminAsync(currentUserId, companyId, "只有管理员可以查看申请列表");
 
         // 构建过滤条件
@@ -365,7 +365,7 @@ public class UserCompanyService : IUserCompanyService
         }
 
         // 2. 验证权限 (管理员)
-        var currentUserId = _userCompanyFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         await this.RequireAdminAsync(currentUserId, request.CompanyId, "只有管理员可以审核申请");
 
         // 3. 处理状态变更
@@ -607,7 +607,7 @@ public class UserCompanyService : IUserCompanyService
     /// </summary>
     public async Task<SwitchCompanyResult> SwitchCompanyAsync(string targetCompanyId)
     {
-        var userId = _userCompanyFactory.GetRequiredUserId();
+        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
 
         // 1. 验证用户是该企业的成员
         var membership = await GetUserCompanyAsync(userId, targetCompanyId);
@@ -660,7 +660,7 @@ public class UserCompanyService : IUserCompanyService
     public async Task<List<CompanyMemberItem>> GetCompanyMembersAsync(string companyId)
     {
         // 验证当前用户是否是该企业的管理员
-        var currentUserId = _userCompanyFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         await this.RequireAdminAsync(currentUserId, companyId, "只有企业管理员可以查看成员列表");
 
         Expression<Func<UserCompany, bool>> filter = uc => uc.CompanyId == companyId && uc.Status == "active";
@@ -723,7 +723,7 @@ public class UserCompanyService : IUserCompanyService
     public async Task<bool> UpdateMemberRolesAsync(string companyId, string userId, List<string> roleIds)
     {
         // 验证当前用户是否是该企业的管理员
-        var currentUserId = _userCompanyFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         await this.RequireAdminAsync(currentUserId, companyId, "只有企业管理员可以分配角色");
 
         // 验证所有角色都属于该企业
@@ -756,7 +756,7 @@ public class UserCompanyService : IUserCompanyService
     public async Task<bool> SetMemberAsAdminAsync(string companyId, string userId, bool isAdmin)
     {
         // 验证当前用户是否是该企业的管理员
-        var currentUserId = _userCompanyFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         await this.RequireAdminAsync(currentUserId, companyId, "只有企业管理员可以设置管理员");
 
         // 不能修改自己的管理员权限
@@ -783,7 +783,7 @@ public class UserCompanyService : IUserCompanyService
     public async Task<bool> RemoveMemberAsync(string companyId, string userId)
     {
         // 验证当前用户是否是该企业的管理员
-        var currentUserId = _userCompanyFactory.GetRequiredUserId();
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         await this.RequireAdminAsync(currentUserId, companyId, "只有企业管理员可以移除成员");
 
         // 不能移除自己

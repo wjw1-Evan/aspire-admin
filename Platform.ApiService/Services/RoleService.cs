@@ -16,6 +16,7 @@ public class RoleService : IRoleService
     private readonly IDataFactory<UserCompany> _userCompanyFactory;
     private readonly IDataFactory<Menu> _menuFactory;
     private readonly ILogger<RoleService> _logger;
+    private readonly ITenantContext _tenantContext;
 
     /// <summary>
     /// 初始化角色服务
@@ -25,13 +26,15 @@ public class RoleService : IRoleService
         IDataFactory<AppUser> userFactory,
         IDataFactory<UserCompany> userCompanyFactory,
         IDataFactory<Menu> menuFactory,
-        ILogger<RoleService> logger)
+        ILogger<RoleService> logger,
+        ITenantContext tenantContext)
     {
         _roleFactory = roleFactory;
         _userFactory = userFactory;
         _userCompanyFactory = userCompanyFactory;
         _menuFactory = menuFactory;
         _logger = logger;
+        _tenantContext = tenantContext;
     }
 
 
@@ -125,14 +128,12 @@ public class RoleService : IRoleService
             throw new InvalidOperationException(string.Format(ErrorMessages.ResourceAlreadyExists, "角色名称"));
         }
 
-        // 获取当前企业ID（从数据库获取，不使用 JWT token）
-        var currentUserId = _roleFactory.GetRequiredUserId();
-        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
-        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
+        // 获取当前企业ID（通过 ITenantContext）
+        var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
+        if (string.IsNullOrEmpty(companyId))
         {
             throw new UnauthorizedAccessException("未找到当前企业信息");
         }
-        var companyId = currentUser.CurrentCompanyId;
 
         var role = new Role
         {

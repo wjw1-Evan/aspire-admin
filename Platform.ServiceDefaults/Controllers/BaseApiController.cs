@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ServiceDefaults.Models;
+using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Exceptions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Platform.ServiceDefaults.Controllers;
 
@@ -61,6 +64,32 @@ public abstract class BaseApiController : ControllerBase
     }
 
     /// <summary>
+    /// 异步获取当前登录用户的企业 ID (实时从数据库查询并缓存)
+    /// </summary>
+    protected async Task<string?> GetCurrentCompanyIdAsync()
+    {
+        var tenantContext = HttpContext.RequestServices.GetRequiredService<ITenantContext>();
+        return await tenantContext.GetCurrentCompanyIdAsync();
+    }
+
+    /// <summary>
+    /// 异步获取必需的企业 ID，如果未找到则抛出 BusinessException
+    /// </summary>
+    protected async Task<string> GetRequiredCompanyIdAsync()
+    {
+        var companyId = await GetCurrentCompanyIdAsync();
+        if (string.IsNullOrEmpty(companyId))
+            throw new BusinessException("未找到当前用户的企业信息", "NOT_FOUND", 404);
+        return companyId;
+    }
+
+    /// <summary>
+    /// 返回标准成功的 API 响应（含数据和可选消息）
+    /// </summary>
+    protected IActionResult Success(object? data = null, string? message = null)
+        => Ok(CreateResponse(true, "OK", data, message));
+
+    /// <summary>
     /// 返回标准成功的 API 响应（含数据和可选消息）
     /// </summary>
     protected IActionResult Success<T>(T data, string? message = null)
@@ -75,6 +104,21 @@ public abstract class BaseApiController : ControllerBase
     /// 返回仅包含成功消息的标准响应
     /// </summary>
     protected IActionResult SuccessMessage(string message) => Success<object>(null!, message);
+
+    /// <summary>
+    /// 返回标准分页成功的 API 响应
+    /// </summary>
+    protected IActionResult SuccessPaged(object data, long total, int page, int pageSize, string? message = null)
+    {
+        return Ok(CreateResponse(true, "OK", new
+        {
+            list = data,
+            total,
+            page,
+            pageSize,
+            totalPages = (int)Math.Ceiling((double)total / pageSize)
+        }, message));
+    }
 
     /// <summary>
     /// 返回标准分页成功的 API 响应
@@ -140,6 +184,7 @@ public abstract class BaseApiController : ControllerBase
 
         if (result.IsSuccess) return Ok(response);
 
+        // 如果 Result 返回的是特定的业务错误码，可以直接交由 Result 映射
         return result.Code switch
         {
             "NOT_FOUND" => NotFound(response),
@@ -147,6 +192,7 @@ public abstract class BaseApiController : ControllerBase
             "FORBIDDEN" => StatusCode(403, response),
             "VALIDATION_ERROR" => BadRequest(response),
             "ALREADY_EXISTS" => Conflict(response),
+            "INTERNAL_ERROR" => StatusCode(500, response),
             _ => BadRequest(response)
         };
     }

@@ -232,9 +232,8 @@ public class DocumentService : IDocumentService
     /// </summary>
     public async Task<Document> CreateDocumentAsync(CreateDocumentRequest request)
     {
-        var userId = _documentFactory.GetRequiredUserId();
-        var companyId = await _documentFactory.GetRequiredCompanyIdAsync();
-
+        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? throw new InvalidOperationException("COMPANY_NOT_FOUND");
         var sanitizedFormData = request.FormData != null ? SerializationExtensions.SanitizeDictionary(request.FormData) : new Dictionary<string, object>();
 
         var document = new Document
@@ -333,8 +332,8 @@ public class DocumentService : IDocumentService
     /// </summary>
     public async Task<(List<Document> items, long total)> GetDocumentsAsync(DocumentQueryParams query)
     {
-        var userId = _documentFactory.GetRequiredUserId();
-        var companyId = await _documentFactory.GetRequiredCompanyIdAsync();
+        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? throw new InvalidOperationException("COMPANY_NOT_FOUND");
 
         Expression<Func<Document, bool>> filter = d => d.CompanyId == companyId;
 
@@ -472,7 +471,7 @@ public class DocumentService : IDocumentService
             throw new ArgumentException("附件内容为空", nameof(file));
         }
 
-        var userId = _documentFactory.GetRequiredUserId();
+        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
 
         await using var memoryStream = new MemoryStream();
@@ -695,7 +694,7 @@ public class DocumentService : IDocumentService
     /// </summary>
     public async Task<DocumentStatisticsResponse> GetStatisticsAsync()
     {
-        var userId = _documentFactory.GetRequiredUserId();
+        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
 
         // 1. 总公文数
         var totalDocuments = await _documentFactory.CountAsync();

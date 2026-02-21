@@ -52,6 +52,7 @@ builder.Services.AddOutputCache();
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<Platform.ApiService.Filters.ApiResponseWrapperFilter>();
+    options.Filters.Add<Platform.ApiService.Filters.BusinessExceptionFilter>();
 })
     .ConfigureApiBehaviorOptions(options =>
     {

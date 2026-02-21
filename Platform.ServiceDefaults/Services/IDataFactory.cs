@@ -77,17 +77,4 @@ public interface IDataFactory<T> where T : class, IEntity, ISoftDeletable, ITime
         System.Linq.Expressions.Expression<Func<T, object>>[]? includes = null,
         CancellationToken cancellationToken = default);
 
-    // 🚀 用户信息获取（向后兼容）
-    string? GetCurrentUserId();
-    string GetRequiredUserId();
-
-    /// <summary>
-    /// 获取当前企业ID（可为空）
-    /// </summary>
-    Task<string?> GetCurrentCompanyIdAsync();
-
-    /// <summary>
-    /// 获取必需的企业ID（为空则抛异常）
-    /// </summary>
-    Task<string> GetRequiredCompanyIdAsync();
 }

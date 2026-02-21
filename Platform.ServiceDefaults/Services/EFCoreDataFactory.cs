@@ -13,14 +13,10 @@ namespace Platform.ServiceDefaults.Services;
 /// </summary>
 public class EFCoreDataFactory<T>(
     DbContext context,
-    IAuditService auditService,
-    IHttpContextAccessor? httpContextAccessor = null,
-    ITenantContext? tenantContext = null)
+    IAuditService auditService)
     : IDataFactory<T> where T : class, IEntity, ISoftDeletable, ITimestamped
 {
     private readonly DbSet<T> _dbSet = context.Set<T>();
-    private readonly string? _currentUserId = tenantContext?.GetCurrentUserId()
-        ?? httpContextAccessor?.HttpContext?.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
     #region 查询操作
 
@@ -88,7 +84,6 @@ public class EFCoreDataFactory<T>(
 
     public async Task<T> CreateAsync(T entity, CancellationToken cancellationToken = default)
     {
-        await SetCompanyIdAsync(entity);
         _dbSet.Add(entity);
         await context.SaveChangesAsync(cancellationToken);
         return entity;
@@ -98,16 +93,6 @@ public class EFCoreDataFactory<T>(
     {
         var entityList = entities.ToList();
         if (entityList.Count == 0) return entityList;
-
-        var companyId = await GetCurrentCompanyIdAsync();
-        if (!string.IsNullOrEmpty(companyId))
-        {
-            foreach (var entity in entityList)
-            {
-                if (entity is IMultiTenant mt && string.IsNullOrEmpty(mt.CompanyId))
-                    mt.CompanyId = companyId;
-            }
-        }
 
         await _dbSet.AddRangeAsync(entityList, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
@@ -238,25 +223,6 @@ public class EFCoreDataFactory<T>(
 
     #endregion
 
-    #region 用户与租户信息
-
-    public string? GetCurrentUserId() => _currentUserId;
-    public string GetRequiredUserId() => _currentUserId ?? throw new UnauthorizedAccessException("User not authenticated");
-
-    public async Task<string?> GetCurrentCompanyIdAsync()
-        => tenantContext != null ? await tenantContext.GetCurrentCompanyIdAsync().ConfigureAwait(false) : null;
-
-    public async Task<string> GetRequiredCompanyIdAsync()
-    {
-        if (tenantContext == null)
-            throw new UnauthorizedAccessException("Tenant context not available");
-
-        var companyId = await tenantContext.GetCurrentCompanyIdAsync().ConfigureAwait(false);
-        return !string.IsNullOrEmpty(companyId) ? companyId : throw new UnauthorizedAccessException("未找到当前企业信息");
-    }
-
-    #endregion
-
     #region 私有工具方法
 
     /// <summary>
@@ -284,19 +250,6 @@ public class EFCoreDataFactory<T>(
     /// </summary>
     private async Task<List<T>> LoadBatchAsync(Expression<Func<T, bool>> filter, CancellationToken cancellationToken)
         => await _dbSet.Where(filter).ToListAsync(cancellationToken);
-
-    /// <summary>
-    /// 异步获取并设置实体的企业 ID，避免 DbContext 内部同步阻塞
-    /// </summary>
-    private async Task SetCompanyIdAsync(T entity)
-    {
-        if (entity is IMultiTenant mt && string.IsNullOrEmpty(mt.CompanyId))
-        {
-            var companyId = await GetCurrentCompanyIdAsync();
-            if (!string.IsNullOrEmpty(companyId))
-                mt.CompanyId = companyId;
-        }
-    }
 
     #endregion
 }

@@ -43,7 +43,7 @@ public class BulkOperationService : IBulkOperationService
     /// <returns>创建的批量操作</returns>
     public async Task<BulkOperation> CreateBulkOperationAsync(BulkOperationType operationType, List<string> workflowIds, Dictionary<string, object>? parameters = null)
     {
-        var userId = _bulkOperationFactory.GetRequiredUserId();
+        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var companyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? throw new UnauthorizedAccessException("未找到当前企业信息");
 
         Expression<Func<WorkflowDefinition, bool>> filter = w =>
@@ -184,7 +184,7 @@ public class BulkOperationService : IBulkOperationService
     /// <returns>批量操作列表</returns>
     public async Task<List<BulkOperation>> GetUserBulkOperationsAsync(int page = 1, int pageSize = 20)
     {
-        var userId = _bulkOperationFactory.GetRequiredUserId();
+        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
 
         Expression<Func<BulkOperation, bool>> filter = b =>
             b.CreatedBy == userId &&

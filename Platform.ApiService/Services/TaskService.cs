@@ -19,6 +19,7 @@ public class TaskService : ITaskService
     private readonly IUserService _userService;
     private readonly IUnifiedNotificationService _notificationService;
     private readonly IServiceProvider _serviceProvider;
+    private readonly ITenantContext _tenantContext;
 
     /// <summary>
     /// 初始化 TaskService 实例
@@ -32,14 +33,17 @@ public class TaskService : ITaskService
         IDataFactory<TaskModel> taskFactory,
         IDataFactory<TaskExecutionLog> executionLogFactory,
         IUserService userService,
+        IUserActivityLogService userActivityLogService, // Added to match ITaskService if needed or just fix constructor
         IUnifiedNotificationService notificationService,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider,
+        ITenantContext tenantContext)
     {
         _taskFactory = taskFactory;
         _executionLogFactory = executionLogFactory;
         _userService = userService;
         _notificationService = notificationService;
         _serviceProvider = serviceProvider;
+        _tenantContext = tenantContext;
     }
 
     /// <summary>
@@ -749,7 +753,7 @@ public class TaskService : ITaskService
     {
         if (string.IsNullOrEmpty(companyId))
         {
-            companyId = await _executionLogFactory.GetRequiredCompanyIdAsync();
+            companyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
         }
 
         var log = new TaskExecutionLog

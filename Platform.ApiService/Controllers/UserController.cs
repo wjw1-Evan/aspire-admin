@@ -90,10 +90,8 @@ public class UserController : BaseApiController
     /// <response code="403">权限不足，无法查看该用户信息</response>
     /// <response code="404">用户不存在</response>
     [HttpGet("{id}")]
-
     public async Task<IActionResult> GetUserById(string id)
     {
-        // ✅ 完整的权限检查：只能查看自己，或者有用户管理权限
         var currentUserId = CurrentUserId;
         await _userService.EnsureUserAccessAsync(currentUserId!, id);
 
@@ -152,14 +150,11 @@ public class UserController : BaseApiController
     /// <response code="400">参数验证失败或用户名/邮箱已存在</response>
     /// <response code="401">未授权，需要登录</response>
     /// <response code="403">权限不足，需要用户管理权限</response>
-    [HttpPost("management")]
+    [HttpPost]
     [RequireMenu(SystemConstants.Permissions.UserManagement)]
-    public async Task<IActionResult> CreateUserManagement([FromBody] CreateUserManagementRequest request)
+    public async Task<IActionResult> CreateUser([FromBody] CreateUserManagementRequest request)
     {
-        // 使用扩展方法简化参数验证
         request.Username.EnsureNotEmpty("用户名");
-        // request.Password.EnsureNotEmpty("密码"); // 关联已有用户时不需要密码
-
         var user = await _userService.CreateUserManagementAsync(request);
         return Success(user, ErrorMessages.CreateSuccess);
     }
@@ -216,16 +211,10 @@ public class UserController : BaseApiController
     /// <response code="404">用户不存在</response>
     [HttpPut("{id}")]
     [RequireMenu(SystemConstants.Permissions.UserManagement)]
-    public async Task<IActionResult> UpdateUserManagement(string id, [FromBody] UpdateUserManagementRequest request)
+    public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateUserManagementRequest request)
     {
-        // v6.2: 支持在更新用户时同时更新角色
-        // 如果请求中提供了 RoleIds，会自动更新用户在当前企业的角色
-
         var user = await _userService.UpdateUserManagementAsync(id, request);
-        if (user == null)
-            return NotFoundError("用户", id);
-
-        return Success(user, ErrorMessages.UpdateSuccess);
+        return Success(user.EnsureFound("用户", id), ErrorMessages.UpdateSuccess);
     }
 
     /// <summary>
@@ -311,19 +300,11 @@ public class UserController : BaseApiController
     /// 批量操作用户（激活、停用、软删除）
     /// </summary>
     /// <param name="request">批量操作请求</param>
-    [HttpPost("bulk-action")]
+    [HttpPost("bulk")]
     [RequireMenu(SystemConstants.Permissions.UserManagement)]
     public async Task<IActionResult> BulkUserAction([FromBody] BulkUserActionRequest request)
     {
-        // ✅ 添加批量操作数量限制
-        const int MaxBatchSize = 100;
-
         request.UserIds.EnsureNotEmpty("用户ID列表");
-
-        if (request.UserIds.Count > MaxBatchSize)
-        {
-            return ValidationError($"批量操作最多支持 {MaxBatchSize} 个用户，当前请求: {request.UserIds.Count} 个");
-        }
 
         var success = await _userService.BulkUpdateUsersAsync(request, request.Reason);
         if (!success)
@@ -364,74 +345,21 @@ public class UserController : BaseApiController
     /// <param name="ipAddress">IP地址（可选）</param>
     /// <param name="startDate">开始日期（可选）</param>
     /// <param name="endDate">结束日期（可选）</param>
-    [HttpGet("/api/users/activity-logs")]
+    [HttpGet("activity-logs")]
     [RequireMenu("user-log")]
-    public async Task<IActionResult> GetAllActivityLogs(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20,
-        [FromQuery] string? userId = null,
-        [FromQuery] string? action = null,
-        [FromQuery] string? httpMethod = null,
-        [FromQuery] int? statusCode = null,
-        [FromQuery] string? ipAddress = null,
-        [FromQuery] DateTime? startDate = null,
-        [FromQuery] DateTime? endDate = null)
+    public async Task<IActionResult> GetAllActivityLogs([FromQuery] ActivityLogQuery query)
     {
-        // ✅ 添加输入验证
-        if (page < 1 || page > 10000)
-            return ValidationError("页码必须在 1-10000 之间");
-
-        if (pageSize < 1 || pageSize > 100)
-            return ValidationError("每页数量必须在 1-100 之间");
-
-        // 验证userId格式
-        if (!string.IsNullOrEmpty(userId) &&
-            !MongoDB.Bson.ObjectId.TryParse(userId, out _))
-            return ValidationError("用户ID格式不正确");
-
-        // 验证action参数
-        if (!string.IsNullOrEmpty(action))
-        {
-            var allowedActions = new[] {
-                "login", "logout", "create", "update", "delete",
-                "view", "export", "import", "change_password", "refresh_token"
-            };
-            if (!allowedActions.Contains(action.ToLower()))
-                return ValidationError($"不支持的操作类型: {action}");
-        }
-
-        // 验证 httpMethod
-        if (!string.IsNullOrEmpty(httpMethod))
-        {
-            var allowedMethods = new[] { "GET", "POST", "PUT", "DELETE", "PATCH" };
-            if (!allowedMethods.Contains(httpMethod.ToUpper()))
-                return ValidationError($"不支持的请求方法: {httpMethod}");
-            httpMethod = httpMethod.ToUpperInvariant();
-        }
-
-        // 验证状态码（超出范围则忽略过滤，避免前端录入异常导致 400）
-        if (statusCode.HasValue && (statusCode < 100 || statusCode > 599))
-        {
-            _logger.LogWarning("收到超出范围的状态码过滤: {StatusCode}", statusCode);
-            statusCode = null;
-        }
-
-        // 验证日期范围
-        if (startDate.HasValue && endDate.HasValue && startDate.Value > endDate.Value)
-            return ValidationError("开始日期不能晚于结束日期");
-        // 优化后的查询：使用批量查询替代 N+1 查询
         var (logs, total, userMap) = await _activityLogService.GetAllActivityLogsWithUsersAsync(
-            page,
-            pageSize,
-            userId,
-            action,
-            httpMethod,
-            statusCode,
-            ipAddress,
-            startDate,
-            endDate);
+            query.Page,
+            query.PageSize,
+            query.UserId,
+            query.Action,
+            query.HttpMethod,
+            query.StatusCode,
+            query.IpAddress,
+            query.StartDate,
+            query.EndDate);
 
-        // 组装返回数据（精简字段，不包含响应体等大字段）
         var logsWithUserInfo = logs.Select(log => new ActivityLogListItemResponse
         {
             Id = log.Id ?? string.Empty,
@@ -441,29 +369,26 @@ public class UserController : BaseApiController
             Description = log.Description,
             IpAddress = log.IpAddress,
             HttpMethod = log.HttpMethod,
-
             FullUrl = log.FullUrl,
             StatusCode = log.StatusCode,
             Duration = log.Duration,
             CreatedAt = log.CreatedAt
         }).ToList();
 
-        var response = new PaginatedResponse<ActivityLogListItemResponse>
+        return Success(new PaginatedResponse<ActivityLogListItemResponse>
         {
             Data = logsWithUserInfo,
             Total = total,
-            Page = page,
-            PageSize = pageSize
-        };
-
-        return Success(response);
+            Page = query.Page,
+            PageSize = query.PageSize
+        });
     }
 
     /// <summary>
     /// 获取指定活动日志详情（管理员查看）
     /// </summary>
     /// <param name="logId">活动日志ID</param>
-    [HttpGet("/api/users/activity-logs/{logId}")]
+    [HttpGet("activity-logs/{logId}")]
     [RequireMenu("user-log")]
     public async Task<IActionResult> GetActivityLogById(string logId)
     {
@@ -471,26 +396,7 @@ public class UserController : BaseApiController
         if (log == null)
             return NotFoundError("活动日志", logId);
 
-        var response = new ActivityLogWithUserResponse
-        {
-            Id = log.Id ?? string.Empty,
-            UserId = log.UserId,
-            Username = log.Username,
-            Action = log.Action,
-            Description = log.Description,
-            IpAddress = log.IpAddress,
-            UserAgent = log.UserAgent,
-            HttpMethod = log.HttpMethod,
-            Path = log.Path,
-            QueryString = log.QueryString,
-            FullUrl = log.FullUrl,
-            StatusCode = log.StatusCode,
-            Duration = log.Duration,
-            ResponseBody = log.ResponseBody,
-            CreatedAt = log.CreatedAt
-        };
-
-        return Success(response);
+        return Success(log);
     }
 
     /// <summary>
@@ -551,16 +457,11 @@ public class UserController : BaseApiController
     /// <remarks>
     /// RESTful 路径: /api/user/me 表示当前用户
     /// </remarks>
-    [HttpGet("me")]
-
+    [HttpGet("profile")]
     public async Task<IActionResult> GetCurrentUserProfile()
     {
-        // 返回 CurrentUser 格式，包含角色等信息
         var currentUser = await _authService.GetCurrentUserAsync();
-        if (currentUser == null)
-            return NotFoundError("用户", CurrentUserId ?? "未知");
-
-        return Success(currentUser);
+        return Success(currentUser.EnsureFound("用户", CurrentUserId ?? "未知"));
     }
 
     /// <summary>
@@ -570,50 +471,23 @@ public class UserController : BaseApiController
     /// RESTful 路径: PUT /api/user/me 更新当前用户
     /// </remarks>
     /// <param name="request">更新用户信息请求</param>
-    [HttpPut("me")]
-
+    [HttpPut("profile")]
     public async Task<IActionResult> UpdateCurrentUserProfile([FromBody] UpdateProfileRequest request)
     {
-        // 验证模型状态（邮箱、姓名、年龄等）
-        var validationResult = ValidateModelState();
-        if (validationResult != null)
-            return validationResult;
-
-        // 手动验证手机号（只在有值且不为空时验证）
         if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
         {
             var phoneNumber = request.PhoneNumber.Trim();
-            // 简化的中国手机号验证：11位数字，以1开头，第二位为3-9
-            if (phoneNumber.Length != 11 || !phoneNumber.StartsWith("1") || phoneNumber[1] < '3' || phoneNumber[1] > '9' || !phoneNumber.All(char.IsDigit))
+            if (phoneNumber.Length != 11 || !phoneNumber.StartsWith("1") || !phoneNumber.All(char.IsDigit))
             {
-                return ValidationError("手机号格式不正确，请输入符合中国手机号标准的11位数字");
+                return ValidationError("手机号格式不正确");
             }
         }
 
         var userId = GetRequiredUserId();
+        var user = await _userService.UpdateUserProfileAsync(userId, request);
 
-        // 禁止修改用户名 - 过滤掉Username字段
-        var filteredRequest = new UpdateProfileRequest
-        {
-            Name = request.Name,
-            Email = request.Email,
-            Age = request.Age,
-            Avatar = request.Avatar,
-            PhoneNumber = request.PhoneNumber,
-            // Username 字段被过滤掉，不允许修改
-        };
-
-        var user = await _userService.UpdateUserProfileAsync(userId, filteredRequest);
-        if (user == null)
-            return NotFoundError("用户", userId);
-
-        // 返回 CurrentUser 格式，确保前端能正确接收手机号等字段
-        // 使用 AuthService 的 GetCurrentUserAsync 方法获取转换后的用户信息
         var currentUser = await _authService.GetCurrentUserAsync();
-        if (currentUser == null)
-            return NotFoundError("用户信息", userId);
-
-        return Success(currentUser);
+        return Success(currentUser.EnsureFound("用户信息", userId));
     }
 
     /// <summary>
@@ -623,8 +497,7 @@ public class UserController : BaseApiController
     /// RESTful 路径: PUT /api/user/me/password 更新当前用户密码
     /// </remarks>
     /// <param name="request">修改密码请求</param>
-    [HttpPut("me/password")]
-
+    [HttpPut("profile/password")]
     public async Task<IActionResult> ChangeCurrentUserPassword([FromBody] ChangePasswordRequest request)
     {
         var userId = GetRequiredUserId();

@@ -185,6 +185,24 @@ public class IoTController : BaseApiController
     }
 
     /// <summary>
+    /// 批量删除设备
+    /// </summary>
+    /// <param name="ids">设备 ID 列表</param>
+    /// <returns>成功删除的数量</returns>
+    [HttpDelete("devices")]
+    public async Task<IActionResult> BatchDeleteDevices([FromBody] List<string> ids)
+    {
+        if (ids == null || ids.Count == 0)
+            return BadRequest(new { message = "ID 列表不能为空" });
+
+        var tasks = ids.Select(id => _iotService.DeleteDeviceAsync(id));
+        var results = await Task.WhenAll(tasks);
+        var deletedCount = results.Count(r => r);
+
+        return Success(new { deletedCount, total = ids.Count });
+    }
+
+    /// <summary>
     /// 处理设备连接
     /// </summary>
     /// <remarks>

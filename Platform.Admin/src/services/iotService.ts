@@ -241,6 +241,13 @@ export const iotService = {
   deleteDevice: (id: string) =>
     request<{ success: boolean }>(`${API_PREFIX}/devices/${id}`, { method: 'DELETE' }),
 
+  /** 批量删除设备（传入 id 数组） */
+  batchDeleteDevices: (ids: string[]) =>
+    request<{ success: boolean; data: { deletedCount: number; total: number } }>(`${API_PREFIX}/devices`, {
+      method: 'DELETE',
+      data: ids,
+    }),
+
   getDeviceStatistics: (deviceId: string) =>
     request<{ success: boolean; data: DeviceStatistics }>(`${API_PREFIX}/devices/${deviceId}/statistics`, { method: 'GET' }),
 

@@ -113,6 +113,9 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
   const [apiKeyResult, setApiKeyResult] = useState<GenerateApiKeyResult | null>(null);
   const [isApiKeyModalVisible, setIsApiKeyModalVisible] = useState(false);
   const [generatingKey, setGeneratingKey] = useState(false);
+  // 批量选择
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [batchDeleting, setBatchDeleting] = useState(false);
 
   const safeGateways = Array.isArray(gateways) ? gateways : [];
 
@@ -379,6 +382,30 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
     form.resetFields();
   }, [form]);
 
+  const handleBatchDelete = useCallback(async () => {
+    if (selectedRowKeys.length === 0) return;
+    confirm({
+      title: `批量删除设备`,
+      content: `确定要删除已选的 ${selectedRowKeys.length} 个设备吗？该操作不可恢复。`,
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        setBatchDeleting(true);
+        try {
+          const res = await iotService.batchDeleteDevices(selectedRowKeys as string[]);
+          if (res.success) {
+            message.success(`成功删除 ${res.data.deletedCount} 个设备`);
+            setSelectedRowKeys([]);
+            actionRef.current?.reload?.();
+            fetchOverviewStats();
+          }
+        } catch {
+          message.error('批量删除失败');
+        } finally {
+          setBatchDeleting(false);
+        }
+      },
+    });
+  }, [selectedRowKeys, confirm, fetchOverviewStats]);
   return (
     <>
       {/* 统计卡片 */}
@@ -415,6 +442,34 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
       </SearchFormCard>
 
       {/* 设备列表 */}
+      {selectedRowKeys.length > 0 && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '8px 16px',
+            marginBottom: 8,
+            background: '#e6f4ff',
+            border: '1px solid #91caff',
+            borderRadius: 8,
+          }}
+        >
+          <span style={{ color: '#1677ff', fontWeight: 500 }}>
+            已选择 <strong>{selectedRowKeys.length}</strong> 个设备
+          </span>
+          <Button
+            danger
+            size="small"
+            icon={<DeleteOutlined />}
+            loading={batchDeleting}
+            onClick={handleBatchDelete}
+          >
+            批量删除
+          </Button>
+          <Button size="small" onClick={() => setSelectedRowKeys([])}>取消选择</Button>
+        </div>
+      )}
       <DataTable<IoTDevice>
         actionRef={actionRef}
         columns={columns}
@@ -423,6 +478,11 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
         scroll={{ x: 'max-content' }}
         search={false}
         pagination={{ pageSize: 20, pageSizeOptions: [10, 20, 50, 100] }}
+        rowSelection={{
+          selectedRowKeys,
+          onChange: (keys) => setSelectedRowKeys(keys),
+          preserveSelectedRowKeys: true,
+        }}
       />
 
       {/* 新建/编辑弹窗 */}

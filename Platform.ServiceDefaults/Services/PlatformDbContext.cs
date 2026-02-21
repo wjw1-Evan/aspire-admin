@@ -127,15 +127,31 @@ public class PlatformDbContext(DbContextOptions<PlatformDbContext> options, ITen
         if (!isAdded && entity is ISoftDeletable softDeletable)
         {
             var isDeletedProp = entry.Property(nameof(ISoftDeletable.IsDeleted));
-            if (isDeletedProp.IsModified && softDeletable.IsDeleted)
+            if (isDeletedProp.IsModified)
             {
-                softDeletable.DeletedAt ??= now;
-                softDeletable.DeletedBy ??= userId;
-
-                if (entity is IOperationTrackable ot)
+                if (softDeletable.IsDeleted)
                 {
-                    ot.LastOperationType = "DELETE";
-                    ot.LastOperationAt = now;
+                    softDeletable.DeletedAt ??= now;
+                    softDeletable.DeletedBy ??= userId;
+
+                    if (entity is IOperationTrackable ot)
+                    {
+                        ot.LastOperationType = "DELETE";
+                        ot.LastOperationAt = now;
+                    }
+                }
+                else
+                {
+                    // 数据被恢复 (Undelete)：清除原有软删除记录
+                    softDeletable.DeletedAt = null;
+                    softDeletable.DeletedBy = null;
+                    softDeletable.DeletedReason = null;
+
+                    if (entity is IOperationTrackable ot)
+                    {
+                        ot.LastOperationType = "RESTORE";
+                        ot.LastOperationAt = now;
+                    }
                 }
             }
         }
@@ -204,11 +220,21 @@ public class PlatformDbContext(DbContextOptions<PlatformDbContext> options, ITen
             if (entryAssembly != null && entryAssembly != Assembly.GetExecutingAssembly())
                 assemblies.Add(entryAssembly);
 
-            _cachedEntityTypes = assemblies
-                .SelectMany(a => a.GetTypes())
+            _cachedEntityTypes = [.. assemblies
+                .SelectMany(a =>
+                {
+                    try
+                    {
+                        return a.GetTypes();
+                    }
+                    catch (ReflectionTypeLoadException ex)
+                    {
+                        // ASP.NET Core 环境中避免因某些依赖缺失导致整个扫描直接崩溃
+                        return ex.Types.OfType<Type>();
+                    }
+                })
                 .Where(t => t.IsClass && !t.IsAbstract && typeof(IEntity).IsAssignableFrom(t))
-                .Distinct()
-                .ToList();
+                .Distinct()];
 
             return _cachedEntityTypes;
         }

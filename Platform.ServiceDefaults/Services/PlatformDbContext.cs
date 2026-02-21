@@ -200,6 +200,30 @@ public class PlatformDbContext(DbContextOptions<PlatformDbContext> options, ITen
             {
                 entityBuilder.HasQueryFilter(Expression.Lambda(filterBody, parameter));
             }
+
+            // 🔧 向后兼容：为所有非空枚举和整数类型属性配置默认值（0）
+            // 防止旧 MongoDB 文档中缺少新增字段时抛出 InvalidOperationException
+            foreach (var prop in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            {
+                var propType = prop.PropertyType;
+                // 跳过可空类型（Nullable<T>）——它们缺失时自然返回 null
+                if (Nullable.GetUnderlyingType(propType) != null) continue;
+                // 仅处理枚举和整数值类型（不处理 string/bool/DateTime 等，避免影响其他语义）
+                if (propType.IsEnum || propType == typeof(int) || propType == typeof(long))
+                {
+                    // 跳过标记为 [NotMapped] 的属性
+                    if (prop.GetCustomAttribute<System.ComponentModel.DataAnnotations.Schema.NotMappedAttribute>() != null)
+                        continue;
+                    try
+                    {
+                        entityBuilder.Property(propType, prop.Name).HasDefaultValue(Activator.CreateInstance(propType));
+                    }
+                    catch
+                    {
+                        // 忽略无法配置的属性（如继承链中的虚属性等）
+                    }
+                }
+            }
         }
     }
 

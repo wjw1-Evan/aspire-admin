@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using System.Collections.Concurrent;
+using System.Reflection;
 
 namespace Platform.ApiService.Filters;
 
@@ -22,6 +24,9 @@ public class ApiResponseWrapperFilter : IAsyncResultFilter
         "/chat/sse",
         "/api/chat/sse"
     };
+
+    // 缓存类型的反射结果：Key 是对象的 Type，Value 是该类型是否包含了 success/data/errorCode 字段
+    private static readonly ConcurrentDictionary<Type, bool> _typeFormatCache = new();
 
     /// <summary>
     /// 在结果执行时拦截并包裹成功响应
@@ -60,12 +65,18 @@ public class ApiResponseWrapperFilter : IAsyncResultFilter
                 if (objectResult.Value != null)
                 {
                     var type = objectResult.Value.GetType();
-                    // 检查是否包含 success 和 (data 或 errorCode) 字段，不区分大小写
-                    var hasSuccess = type.GetProperty("success", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase) != null;
-                    var hasData = type.GetProperty("data", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase) != null;
-                    var hasErrorCode = type.GetProperty("errorCode", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase) != null;
 
-                    if (!(hasSuccess && (hasData || hasErrorCode)))
+                    // 使用缓存避免每次都进行昂贵的反射查询
+                    var isAlreadyFormatted = _typeFormatCache.GetOrAdd(type, t =>
+                    {
+                        var hasSuccess = t.GetProperty("success", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase) != null;
+                        var hasData = t.GetProperty("data", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase) != null;
+                        var hasErrorCode = t.GetProperty("errorCode", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase) != null;
+                        
+                        return hasSuccess && (hasData || hasErrorCode);
+                    });
+
+                    if (!isAlreadyFormatted)
                     {
                         objectResult.Value = new
                         {

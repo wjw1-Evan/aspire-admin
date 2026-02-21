@@ -35,7 +35,7 @@ public class PlatformDbContext(DbContextOptions<PlatformDbContext> options, ITen
 
     // 缓存实体类型扫描结果
     private static List<Type>? _cachedEntityTypes;
-    private static readonly object _cacheLock = new();
+    private static readonly System.Threading.Lock _cacheLock = new();
 
     public override int SaveChanges()
     {
@@ -54,12 +54,8 @@ public class PlatformDbContext(DbContextOptions<PlatformDbContext> options, ITen
         // 同步版本保持不变，用于 SaveChanges()
         var userId = _tenantContext?.GetCurrentUserId();
         var companyId = CurrentCompanyId;
-        var now = DateTime.UtcNow;
 
-        foreach (var entry in ChangeTracker.Entries())
-        {
-            ApplyEntryAuditInfo(entry, userId, companyId, now);
-        }
+        ApplyAuditInfoCore(userId, companyId);
     }
 
     private async Task ApplyAuditInfoAsync()
@@ -67,6 +63,12 @@ public class PlatformDbContext(DbContextOptions<PlatformDbContext> options, ITen
         // 🚀 性能优化：异步获取租户信息，避免 SaveChangesAsync 内部触发同步阻塞
         var userId = _tenantContext?.GetCurrentUserId();
         var companyId = _tenantContext != null ? await _tenantContext.GetCurrentCompanyIdAsync() : null;
+
+        ApplyAuditInfoCore(userId, companyId);
+    }
+
+    private void ApplyAuditInfoCore(string? userId, string? companyId)
+    {
         var now = DateTime.UtcNow;
 
         foreach (var entry in ChangeTracker.Entries())
@@ -75,7 +77,7 @@ public class PlatformDbContext(DbContextOptions<PlatformDbContext> options, ITen
         }
     }
 
-    private void ApplyEntryAuditInfo(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry, string? userId, string? companyId, DateTime now)
+    private static void ApplyEntryAuditInfo(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry, string? userId, string? companyId, DateTime now)
     {
         var state = entry.State;
         if (state != EntityState.Added && state != EntityState.Modified) return;
@@ -197,7 +199,7 @@ public class PlatformDbContext(DbContextOptions<PlatformDbContext> options, ITen
         {
             if (_cachedEntityTypes != null) return _cachedEntityTypes;
 
-            var assemblies = new List<Assembly> { Assembly.GetExecutingAssembly() };
+            List<Assembly> assemblies = [Assembly.GetExecutingAssembly()];
             var entryAssembly = Assembly.GetEntryAssembly();
             if (entryAssembly != null && entryAssembly != Assembly.GetExecutingAssembly())
                 assemblies.Add(entryAssembly);

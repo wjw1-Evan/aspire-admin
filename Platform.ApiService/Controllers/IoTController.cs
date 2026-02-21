@@ -195,9 +195,13 @@ public class IoTController : BaseApiController
         if (ids == null || ids.Count == 0)
             return BadRequest(new { message = "ID 列表不能为空" });
 
-        var tasks = ids.Select(id => _iotService.DeleteDeviceAsync(id));
-        var results = await Task.WhenAll(tasks);
-        var deletedCount = results.Count(r => r);
+        // DbContext 非线程安全，必须顺序执行，不能 Task.WhenAll 并发
+        int deletedCount = 0;
+        foreach (var id in ids)
+        {
+            if (await _iotService.DeleteDeviceAsync(id))
+                deletedCount++;
+        }
 
         return Success(new { deletedCount, total = ids.Count });
     }

@@ -64,7 +64,7 @@ var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDisco
 var yarp = builder.AddYarp("apigateway")
     .WithHostPort(15000).PublishAsDockerComposeService((resource, service) =>
                    {
-                       service.Ports = new List<string> { "15000:15000" };
+                       service.Ports = ["15000:15000"];
                    })
     .WithConfiguration(config =>
     {
@@ -78,7 +78,6 @@ var yarp = builder.AddYarp("apigateway")
 
 builder.AddNpmApp("admin", "../Platform.Admin")
     .WithReference(yarp)
-    .WaitFor(yarp)
     .WithEnvironment("BROWSER", "none") // Disable opening browser on npm start
                                         // 解决 npm 安装仅生产依赖导致 postinstall（max setup）失败的问题
                                         // 强制安装 devDependencies 并在开发模式下运行
@@ -88,13 +87,12 @@ builder.AddNpmApp("admin", "../Platform.Admin")
     .WithNpmPackageInstallation()
     .PublishAsDockerFile().PublishAsDockerComposeService((resource, service) =>
                    {
-                       service.Ports = new List<string> { "15001:8080" };
+                       service.Ports = ["15001:8080"];
                    });
 
 // 添加移动端应用 (Expo)
 builder.AddNpmApp("app", "../Platform.App")
     .WithReference(yarp)
-    .WaitFor(yarp)
     .WithEnvironment("BROWSER", "none")
     // 同样确保安装 devDependencies，避免前端依赖缺失
     .WithEnvironment("NPM_CONFIG_PRODUCTION", "false")
@@ -103,13 +101,12 @@ builder.AddNpmApp("app", "../Platform.App")
     .WithNpmPackageInstallation()
     .PublishAsDockerFile().PublishAsDockerComposeService((resource, service) =>
                    {
-                       service.Ports = new List<string> { "15002:8081" };
+                       service.Ports = ["15002:8081"];
                    });
 
 // 添加微信小程序 (WeChat Mini Program)
 builder.AddNpmApp("miniapp", "../Platform.MiniApp")
     .WithReference(yarp)
-    .WaitFor(yarp)
     .WithEnvironment("BROWSER", "none")
     .WithEnvironment("NODE_ENV", "development")
     .WithHttpEndpoint(env: "PORT", port: 15003, targetPort: 15004)

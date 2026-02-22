@@ -87,10 +87,19 @@ public class DataInitializerService(
     {
         try
         {
-            _logger.LogInformation("正在检查 MongoDB 副本集状态...");
+            _logger.LogInformation("正在检查 MongoDB 副本集状态 (使用直连模式)...");
 
-            // 获取 admin 数据库以运行管理命令
-            var adminDb = _database.Client.GetDatabase("admin");
+            // 🚀 核心逻辑：使用 directConnection=true。
+            // 副本集未初始化时，驱动程序会处于“等待拓扑发现”状态。
+            // 使用直连模式可以绕过等待，直接向单节点发送管理命令。
+            // 🚀 核心逻辑：使用 DirectConnection=true 克隆配置。
+            // 副本集未初始化时，驱动程序会因为监测不到 Primary 而阻塞。
+            // 显式直连允许我们连接到该“单节点”以执行初始化命令。
+            var settings = _database.Client.Settings.Clone();
+            settings.DirectConnection = true;
+
+            var directClient = new MongoClient(settings);
+            var adminDb = directClient.GetDatabase("admin");
 
             try
             {

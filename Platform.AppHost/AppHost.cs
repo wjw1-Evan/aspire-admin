@@ -32,7 +32,7 @@ var chat = openai.AddModel("chat", "gpt-4o-mini");
 
 var mongo = builder.AddMongoDB("mongo")
     .WithMongoExpress()
-    .WithArgs("bash", "-c", "echo 'ReplicaSetSecureKey12345' > /tmp/mongo-keyfile && chmod 400 /tmp/mongo-keyfile && chown mongodb:mongodb /tmp/mongo-keyfile && exec /usr/local/bin/docker-entrypoint.sh mongod --replSet rs0 --keyFile /tmp/mongo-keyfile --bind_ip_all")
+    .WithArgs("bash", "-c", "echo 'ReplicaSetSecureKey123456789' > /data/db/keyfile && chmod 400 /data/db/keyfile && (sleep 10 && mongosh --eval \"rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: 'localhost:27017' }] })\" & ) && exec /usr/local/bin/docker-entrypoint.sh mongod --replSet rs0 --keyFile /data/db/keyfile --bind_ip_all")
     .WithLifetime(ContainerLifetime.Persistent)
     .WithDataVolume();
 
@@ -41,11 +41,11 @@ var mongodb = mongo.AddDatabase("mongodb", "aspire-admin-db");
 // 数据初始化服务（一次性任务，完成后自动停止）
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
     .WithReference(mongodb)
-    .WaitFor(mongodb)
+    .WithEnvironment("ConnectionStrings__mongodb", $"{mongodb.Resource.ConnectionStringExpression}?replicaSet=rs0")
     .PublishAsDockerComposeService((resource, service) =>
-                   {
-                       service.Name = "datainitializer";
-                   });
+ {
+     service.Name = "datainitializer";
+ });
 
 var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDiscovery>>
 {
@@ -53,6 +53,7 @@ var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDisco
     // 🔒 通过环境变量传递 JWT 配置
     ["apiservice"] = builder.AddProject<Projects.Platform_ApiService>("apiservice")
         .WithReference(mongodb)
+        .WithEnvironment("ConnectionStrings__mongodb", $"{mongodb.Resource.ConnectionStringExpression}?replicaSet=rs0")
         .WaitFor(mongodb)
         .WaitForCompletion(datainitializer)
         .WithHttpEndpoint()

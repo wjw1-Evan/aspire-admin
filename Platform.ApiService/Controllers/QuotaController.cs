@@ -23,7 +23,7 @@ namespace Platform.ApiService.Controllers
         public async Task<IActionResult> AddQuota([FromQuery] string userId, [FromQuery] long amount)
         {
             var result = await storageQuotaService.SetUserQuotaAsync(userId, amount);
-            return Success<object>(result);
+            return Success(result);
         }
 
         /// <summary>
@@ -41,7 +41,7 @@ namespace Platform.ApiService.Controllers
             var current = await storageQuotaService.GetUserQuotaAsync(userId);
             var newQuota = Math.Max(0, current.TotalQuota - amount);
             var result = await storageQuotaService.SetUserQuotaAsync(userId, newQuota);
-            return Success<object>(result);
+            return Success(result);
         }
     }
 }

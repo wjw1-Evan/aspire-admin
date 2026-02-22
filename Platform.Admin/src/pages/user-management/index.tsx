@@ -184,7 +184,7 @@ const UserManagement: React.FC = () => {
         total: number;
         page?: number;
         pageSize?: number;
-      }>>('/api/user/list', {
+      }>>('/api/users/list', {
         method: 'POST',
         data: requestData,
       });
@@ -275,7 +275,7 @@ const UserManagement: React.FC = () => {
       okType: 'danger',
       onOk: async () => {
         try {
-          await request(`/api/user/${userId}`, {
+          await request(`/api/users/${userId}`, {
             method: 'DELETE',
             params: { reason: deleteReason },
           });
@@ -322,7 +322,7 @@ const UserManagement: React.FC = () => {
         okType: 'danger',
         onOk: async () => {
           try {
-            await request('/api/user/bulk-action', {
+            await request('/api/users/bulk-action', {
               method: 'POST',
               data: {
                 UserIds: selectedRows.map((user) => user.id),
@@ -347,7 +347,7 @@ const UserManagement: React.FC = () => {
     }
 
     try {
-      await request('/api/user/bulk-action', {
+      await request('/api/users/bulk-action', {
         method: 'POST',
         data: {
           UserIds: selectedRows.map((user) => user.id),
@@ -376,7 +376,7 @@ const UserManagement: React.FC = () => {
   const handleToggleStatus = useCallback(async (user: AppUser) => {
     try {
       const endpoint = user.isActive ? 'deactivate' : 'activate';
-      await request(`/api/user/${user.id}/${endpoint}`, {
+      await request(`/api/users/${user.id}/${endpoint}`, {
         method: 'PUT',
       });
 

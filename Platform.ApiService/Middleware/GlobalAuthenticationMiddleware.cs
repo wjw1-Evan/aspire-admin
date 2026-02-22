@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json;
 using Platform.ApiService.Attributes;
 using Platform.ApiService.Options;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Middleware;
 
@@ -285,17 +286,12 @@ public class GlobalAuthenticationMiddleware
         context.Response.StatusCode = 401;
         context.Response.ContentType = "application/json";
 
-        var response = new
-        {
-            success = false,
-            errorMessage = errorMessage,
-            errorCode = "UNAUTHORIZED",
-            timestamp = DateTime.UtcNow,
-            traceId = context.TraceIdentifier,
-            // 兼容旧代码的字段
-            error = "UNAUTHORIZED",
-            message = errorMessage
-        };
+        var response = new ApiResponse(
+            success: false,
+            code: "UNAUTHORIZED",
+            message: errorMessage,
+            traceId: context.TraceIdentifier
+        );
 
         var jsonResponse = JsonSerializer.Serialize(response, _jsonOptions);
         await context.Response.WriteAsync(jsonResponse);

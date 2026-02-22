@@ -11,7 +11,7 @@ export const userService = {
      * Get user by ID
      */
     async getUserById(userId: string): Promise<ApiResponse<User>> {
-        return await apiClient.get<any, ApiResponse<User>>(`/api/user/${userId}`);
+        return await apiClient.get<any, ApiResponse<User>>(`/api/users/${userId}`);
     },
 
     /**
@@ -19,7 +19,7 @@ export const userService = {
      */
     async updateProfile(request: UpdateProfileRequest): Promise<ApiResponse<User>> {
         return await apiClient.put<any, ApiResponse<User>>(
-            '/api/user/me',
+            '/api/users/me',
             {
                 Name: request.realName,
                 Email: request.email,
@@ -34,7 +34,7 @@ export const userService = {
      */
     async uploadAvatar(file: FormData): Promise<ApiResponse<{ url: string }>> {
         return await apiClient.post<any, ApiResponse<{ url: string }>>(
-            '/api/user/upload-avatar',
+            '/api/users/upload-avatar',
             file,
             {
                 headers: {

@@ -37,7 +37,7 @@ Page(withAuth(withI18n({
         this.setData({ loading: true });
         try {
             const res = await request({
-                url: '/api/user/me/password',
+                url: '/api/users/me/password',
                 method: 'PUT',
                 data: {
                     oldPassword: formData.oldPassword,

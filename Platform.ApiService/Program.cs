@@ -12,6 +12,7 @@ using Platform.ApiService.Options;
 using Platform.ApiService.Services;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Middleware;
+using Platform.ServiceDefaults.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -65,15 +66,15 @@ builder.Services.AddControllers(options =>
                     kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
                 );
 
-            return new Microsoft.AspNetCore.Mvc.BadRequestObjectResult(new
-            {
-                success = false,
-                errorMessage = errors.Values.FirstOrDefault()?.FirstOrDefault() ?? "请求参数验证失败",
-                errorCode = "VALIDATION_ERROR",
-                errors,
-                timestamp = DateTime.UtcNow,
-                traceId = context.HttpContext.TraceIdentifier
-            });
+            var errorResponse = new ApiResponse(
+                success: false,
+                code: "VALIDATION_ERROR",
+                message: errors.Values.FirstOrDefault()?.FirstOrDefault() ?? "请求参数验证失败",
+                traceId: context.HttpContext.TraceIdentifier,
+                errors: errors
+            );
+
+            return new Microsoft.AspNetCore.Mvc.BadRequestObjectResult(errorResponse);
         };
     })
     .AddJsonOptions(options =>
@@ -242,31 +243,26 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 context.Response.StatusCode = 401;
                 context.Response.ContentType = "application/json";
 
-                var errorMessage = "未提供有效的认证令牌或令牌已过期。请重新登录。";
-                return context.Response.WriteAsync(JsonSerializer.Serialize(new
-                {
-                    success = false,
-                    errorMessage,
-                    errorCode = "UNAUTHORIZED",
-                    timestamp = DateTime.UtcNow,
-                    traceId = context.HttpContext.TraceIdentifier,
-                    error = "UNAUTHORIZED",
-                    message = errorMessage
-                }, jsonOptions));
+                var errorResponse = new ApiResponse(
+                    success: false,
+                    code: "UNAUTHORIZED",
+                    message: "未提供有效的认证令牌或令牌已过期。请重新登录。",
+                    traceId: context.HttpContext.TraceIdentifier
+                );
+                return context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse, jsonOptions));
             },
             OnForbidden = context =>
             {
                 context.Response.StatusCode = 403;
                 context.Response.ContentType = "application/json";
 
-                return context.Response.WriteAsync(JsonSerializer.Serialize(new
-                {
-                    success = false,
-                    errorMessage = "您只是此资源的访问者，无权进行操作 (403 Forbidden)",
-                    errorCode = "FORBIDDEN",
-                    timestamp = DateTime.UtcNow,
-                    traceId = context.HttpContext.TraceIdentifier
-                }, jsonOptions));
+                var errorResponse = new ApiResponse(
+                    success: false,
+                    code: "FORBIDDEN",
+                    message: "您只是此资源的访问者，无权进行操作 (403 Forbidden)",
+                    traceId: context.HttpContext.TraceIdentifier
+                );
+                return context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse, jsonOptions));
             }
         };
     });
@@ -303,15 +299,15 @@ app.UseExceptionHandler(errorApp =>
         context.Response.StatusCode = 500;
         context.Response.ContentType = "application/json";
 
-        await context.Response.WriteAsync(JsonSerializer.Serialize(new
-        {
-            success = false,
-            errorMessage = "系统内部错误，请稍后重试",
-            errorCode = "INTERNAL_SERVER_ERROR",
-            details = app.Environment.IsDevelopment() ? exception?.Message : null,
-            timestamp = DateTime.UtcNow,
-            traceId = context.TraceIdentifier
-        }, jsonOptions));
+        var errorResponse = new ApiResponse(
+            success: false,
+            code: "INTERNAL_SERVER_ERROR",
+            message: "系统内部错误，请稍后重试",
+            traceId: context.TraceIdentifier,
+            details: app.Environment.IsDevelopment() ? exception?.Message : null
+        );
+
+        await context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse, jsonOptions));
     });
 });
 
@@ -332,14 +328,14 @@ app.MapFallback(async (HttpContext context) =>
     context.Response.StatusCode = 404;
     context.Response.ContentType = "application/json";
 
-    await context.Response.WriteAsync(JsonSerializer.Serialize(new
-    {
-        success = false,
-        errorMessage = $"未找到请求的资源: {context.Request.Path}",
-        errorCode = "NOT_FOUND",
-        timestamp = DateTime.UtcNow,
-        traceId = context.TraceIdentifier
-    }, jsonOptions));
+    var errorResponse = new ApiResponse(
+        success: false,
+        code: "NOT_FOUND",
+        message: $"未找到请求的资源: {context.Request.Path}",
+        traceId: context.TraceIdentifier
+    );
+
+    await context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse, jsonOptions));
 });
 
 await app.RunAsync();

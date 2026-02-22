@@ -140,7 +140,7 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(({
             <Image
               src={`data:image/png;base64,${imageData}`}
               alt={intl.formatMessage({ id: 'pages.captcha.alt' })}
-              width={120}
+              width={130}
               height={40}
               style={{ cursor: 'pointer' }}
               onClick={() => fetchCaptcha(true)}

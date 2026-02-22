@@ -33,13 +33,12 @@ public class BusinessExceptionFilter : IExceptionFilter
         // 处理已知的业务异常
         if (exception is BusinessException bizEx)
         {
-            var response = new
-            {
-                success = false,
-                code = bizEx.Code,
-                message = bizEx.Message,
-                traceId = context.HttpContext.TraceIdentifier
-            };
+            var response = new ApiResponse(
+                success: false,
+                code: bizEx.Code,
+                message: bizEx.Message,
+                traceId: context.HttpContext.TraceIdentifier
+            );
 
             context.Result = new ObjectResult(response)
             {
@@ -51,14 +50,12 @@ public class BusinessExceptionFilter : IExceptionFilter
 
         if (exception is ArgumentException || exception is InvalidOperationException)
         {
-            var response = new
-            {
-                success = false,
-                errorCode = "VALIDATION_ERROR",
-                errorMessage = exception.Message,
-                timestamp = DateTime.UtcNow,
-                traceId = context.HttpContext.TraceIdentifier
-            };
+            var response = new ApiResponse(
+                success: false,
+                code: "VALIDATION_ERROR",
+                message: exception.Message,
+                traceId: context.HttpContext.TraceIdentifier
+            );
 
             context.Result = new BadRequestObjectResult(response);
             context.ExceptionHandled = true;
@@ -68,14 +65,12 @@ public class BusinessExceptionFilter : IExceptionFilter
         // 可以添加更多异常类型处理，例如 UnauthorizedAccessException -> 401
         if (exception is UnauthorizedAccessException)
         {
-            var response = new
-            {
-                success = false,
-                errorCode = "UNAUTHORIZED",
-                errorMessage = exception.Message,
-                timestamp = DateTime.UtcNow,
-                traceId = context.HttpContext.TraceIdentifier
-            };
+            var response = new ApiResponse(
+                success: false,
+                code: "UNAUTHORIZED",
+                message: exception.Message,
+                traceId: context.HttpContext.TraceIdentifier
+            );
 
             context.Result = new UnauthorizedObjectResult(response);
             context.ExceptionHandled = true;

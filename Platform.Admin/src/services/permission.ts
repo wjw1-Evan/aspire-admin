@@ -12,7 +12,7 @@ interface UserPermissions {
  * 获取当前用户的权限信息
  */
 export async function getMyPermissions(options?: Record<string, any>) {
-  return request<API.ApiResponse<UserPermissions>>('/api/user/me/permissions', {
+  return request<API.ApiResponse<UserPermissions>>('/api/users/me/permissions', {
     method: 'GET',
     ...(options || {}),
   });
@@ -23,7 +23,7 @@ export async function getMyPermissions(options?: Record<string, any>) {
  * @param userId 用户ID
  */
 export async function getUserPermissions(userId: string, options?: Record<string, any>) {
-  return request<API.ApiResponse<UserPermissions>>(`/api/user/${userId}/permissions`, {
+  return request<API.ApiResponse<UserPermissions>>(`/api/users/${userId}/permissions`, {
     method: 'GET',
     ...(options || {}),
   });
@@ -39,7 +39,7 @@ export async function assignUserPermissions(
   permissions: any,
   options?: Record<string, any>,
 ) {
-  return request<API.ApiResponse<boolean>>(`/api/user/${userId}/custom-permissions`, {
+  return request<API.ApiResponse<boolean>>(`/api/users/${userId}/custom-permissions`, {
     method: 'POST',
     data: permissions,
     ...(options || {}),

@@ -280,7 +280,7 @@ public class AuthService : IAuthService
         if (user == null)
         {
             await RecordFailureAsync(clientId, "login");
-            return ServiceResult<LoginData>.Failure("LOGIN_FAILED", "INVALID_CREDENTIALS");
+            return ServiceResult<LoginData>.Failure("INVALID_CREDENTIALS", "用户名或密码错误");
         }
 
         // 🔒 安全增强：解密前端加密的密码
@@ -289,7 +289,7 @@ public class AuthService : IAuthService
         if (!_passwordHasher.VerifyPassword(rawPassword, user.PasswordHash))
         {
             await RecordFailureAsync(clientId, "login");
-            return ServiceResult<LoginData>.Failure("LOGIN_FAILED", "INVALID_CREDENTIALS");
+            return ServiceResult<LoginData>.Failure("INVALID_CREDENTIALS", "用户名或密码错误");
         }
 
         await ClearFailureAsync(clientId, "login");

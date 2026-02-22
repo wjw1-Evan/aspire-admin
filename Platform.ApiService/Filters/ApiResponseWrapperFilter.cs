@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.Collections.Concurrent;
 using System.Reflection;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Filters;
 
@@ -25,7 +26,7 @@ public class ApiResponseWrapperFilter : IAsyncResultFilter
         "/api/chat/sse"
     };
 
-    // 缓存类型的反射结果：Key 是对象的 Type，Value 是该类型是否包含了 success/data/errorCode 字段
+    // 缓存类型的反射结果：Key 是对象的 Type，Value 是该类型是否包含了 success/data/code 字段
     private static readonly ConcurrentDictionary<Type, bool> _typeFormatCache = new();
 
     /// <summary>
@@ -71,19 +72,21 @@ public class ApiResponseWrapperFilter : IAsyncResultFilter
                     {
                         var hasSuccess = t.GetProperty("success", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase) != null;
                         var hasData = t.GetProperty("data", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase) != null;
-                        var hasErrorCode = t.GetProperty("errorCode", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase) != null;
-                        
-                        return hasSuccess && (hasData || hasErrorCode);
+                        var hasCode = t.GetProperty("code", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase) != null;
+
+                        return hasSuccess && (hasData || hasCode);
                     });
 
                     if (!isAlreadyFormatted)
                     {
-                        objectResult.Value = new
-                        {
-                            success = true,
-                            data = objectResult.Value,
-                            timestamp = DateTime.UtcNow
-                        };
+                        // 使用 ApiResponse 来统一返回成功结构
+                        objectResult.Value = new ApiResponse(
+                            success: true,
+                            code: "OK",
+                            message: "操作成功",
+                            data: objectResult.Value,
+                            traceId: context.HttpContext.TraceIdentifier
+                        );
                     }
                 }
             }

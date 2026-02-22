@@ -41,7 +41,7 @@ export function useUserList() {
 
       try {
         const response = await request<{ success: boolean; data: any }>(
-          '/api/user/list',
+          '/api/users/list',
           {
             method: 'POST',
             data: requestData,

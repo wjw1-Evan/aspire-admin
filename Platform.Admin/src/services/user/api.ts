@@ -30,7 +30,7 @@ export interface UserListResponse {
  * 获取所有用户
  */
 export async function getAllUsers(options?: Record<string, any>) {
-  return request<ApiResponse<UserListResponse>>('/api/user/all', {
+  return request<ApiResponse<UserListResponse>>('/api/users/all', {
     method: 'GET',
     ...(options || {}),
   });
@@ -40,7 +40,7 @@ export async function getAllUsers(options?: Record<string, any>) {
  * 根据ID获取用户
  */
 export async function getUserById(id: string, options?: Record<string, any>) {
-  return request<ApiResponse<AppUser>>(`/api/user/${id}`, {
+  return request<ApiResponse<AppUser>>(`/api/users/${id}`, {
     method: 'GET',
     ...(options || {}),
   });
@@ -58,7 +58,7 @@ export async function getUserList(
   },
   options?: Record<string, any>,
 ) {
-  return request<ApiResponse<UserListResponse>>('/api/user/list', {
+  return request<ApiResponse<UserListResponse>>('/api/users/list', {
     method: 'POST',
     data: params,
     ...(options || {}),

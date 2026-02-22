@@ -68,17 +68,17 @@ export async function changePassword(body: API.ChangePasswordParams, options?: {
   });
 }
 
-/** 获取当前用户信息（个人中心） GET /api/user/me */
+/** 获取当前用户信息（个人中心） GET /api/users/me */
 export async function getCurrentUserProfile(options?: { [key: string]: any }) {
-  return request<ApiResponse<API.CurrentUser>>('/api/user/me', {
+  return request<ApiResponse<API.CurrentUser>>('/api/users/me', {
     method: 'GET',
     ...(options || {}),
   });
 }
 
-/** 更新当前用户信息（个人中心） PUT /api/user/me */
+/** 更新当前用户信息（个人中心） PUT /api/users/me */
 export async function updateUserProfile(body: API.UpdateProfileParams, options?: { [key: string]: any }) {
-  return request<ApiResponse<API.CurrentUser>>('/api/user/me', {
+  return request<ApiResponse<API.CurrentUser>>('/api/users/me', {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -88,9 +88,9 @@ export async function updateUserProfile(body: API.UpdateProfileParams, options?:
   });
 }
 
-/** 修改当前用户密码 PUT /api/user/me/password */
+/** 修改当前用户密码 PUT /api/users/me/password */
 export async function changeCurrentUserPassword(body: API.ChangePasswordParams, options?: { [key: string]: any }) {
-  return request<ApiResponse<{ message: string }>>('/api/user/me/password', {
+  return request<ApiResponse<{ message: string }>>('/api/users/me/password', {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -100,9 +100,9 @@ export async function changeCurrentUserPassword(body: API.ChangePasswordParams, 
   });
 }
 
-/** 获取当前用户活动日志 GET /api/user/me/activity-logs */
+/** 获取当前用户活动日志 GET /api/users/me/activity-logs */
 export async function getUserActivityLogs(params?: { limit?: number }, options?: { [key: string]: any }) {
-  return request<ApiResponse<API.UserActivityLog[]>>('/api/user/me/activity-logs', {
+  return request<ApiResponse<API.UserActivityLog[]>>('/api/users/me/activity-logs', {
     method: 'GET',
     params,
     ...(options || {}),
@@ -170,9 +170,9 @@ export async function removeRule(options?: { [key: string]: any }) {
   });
 }
 
-/** 获取用户统计信息 GET /api/user/statistics */
+/** 获取用户统计信息 GET /api/users/statistics */
 export async function getUserStatistics(options?: { [key: string]: any }) {
-  return request<ApiResponse<API.UserStatisticsResponse>>('/api/user/statistics', {
+  return request<ApiResponse<API.UserStatisticsResponse>>('/api/users/statistics', {
     method: 'GET',
     ...(options || {}),
   });
@@ -206,9 +206,9 @@ export async function verifyImageCaptcha(body: API.VerifyImageCaptchaRequest, op
   });
 }
 
-/** 检查用户名是否存在 GET /api/user/check-username */
+/** 检查用户名是否存在 GET /api/users/check-username */
 export async function checkUsernameExists(username: string, options?: { [key: string]: any }) {
-  return request<ApiResponse<{ exists: boolean }>>(`/api/user/check-username?username=${encodeURIComponent(username)}`, {
+  return request<ApiResponse<{ exists: boolean }>>(`/api/users/check-username?username=${encodeURIComponent(username)}`, {
     method: 'GET',
     ...(options || {}),
   });

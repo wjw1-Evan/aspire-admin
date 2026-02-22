@@ -24,15 +24,15 @@ declare namespace API {
     pageSize?: number;
     keyword?: string;
   }
-  
+
   // 统一响应格式
   interface Response<T = any> {
     success: boolean;
     data?: T;
-    errorCode?: string;
-    errorMessage?: string;
-    timestamp: string;
+    code?: string;
+    message?: string;
+    showType?: number;
     traceId?: string;
   }
-  
+
 }

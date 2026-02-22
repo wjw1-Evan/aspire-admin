@@ -21,7 +21,7 @@ Page(withAuth(withI18n({
     async fetchUserInfo() {
         try {
             const res = await request({
-                url: '/api/user/me',
+                url: '/api/users/me',
                 method: 'GET'
             });
             if (res.success) {

@@ -74,7 +74,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
     setSearchingUsers(true);
     try {
       // 使用更全局的用户搜索接口
-      const response = await request<ApiResponse<UserListResponse>>('/api/user/all', {
+      const response = await request<ApiResponse<UserListResponse>>('/api/users/all', {
         method: 'GET',
         params: { search: value },
       });
@@ -123,7 +123,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
         };
 
         const response = await request<ApiResponse<AppUser>>(
-          `/api/user/${user.id}`,
+          `/api/users/${user.id}`,
           {
             method: 'PUT',
             data: updateData,
@@ -148,7 +148,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
         };
 
         const response = await request<ApiResponse<AppUser>>(
-          '/api/user/management',
+          '/api/users/management',
           {
             method: 'POST',
             data: createData,

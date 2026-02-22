@@ -33,21 +33,6 @@ public abstract class BaseApiController : ControllerBase
     protected string? CurrentUserId => User.FindFirst("userId")?.Value;
 
     /// <summary>
-    /// 从 JWT Claim 中获取当前登录用户的用户名
-    /// </summary>
-    protected string? CurrentUsername => User.FindFirst("username")?.Value;
-
-    /// <summary>
-    /// 从 JWT Claim 中获取当前登录用户的角色标识
-    /// </summary>
-    protected string? CurrentUserRole => User.FindFirst("role")?.Value;
-
-    /// <summary>
-    /// 检查当前用户是否拥有管理员 (admin) 角色
-    /// </summary>
-    protected bool IsAdmin => CurrentUserRole == "admin";
-
-    /// <summary>
     /// 检查当前请求是否已通过身份验证
     /// </summary>
     protected bool IsAuthenticated => User.Identity?.IsAuthenticated == true;
@@ -57,20 +42,13 @@ public abstract class BaseApiController : ControllerBase
     /// </summary>
     /// <exception cref="UnauthorizedAccessException">当用户信息不存在时抛出</exception>
     protected string GetRequiredUserId()
-    {
-        if (string.IsNullOrEmpty(CurrentUserId))
-            throw new UnauthorizedAccessException("未找到用户信息");
-        return CurrentUserId;
-    }
+        => string.IsNullOrEmpty(CurrentUserId) ? throw new UnauthorizedAccessException("未找到用户信息") : CurrentUserId;
 
     /// <summary>
     /// 异步获取当前登录用户的企业 ID (实时从数据库查询并缓存)
     /// </summary>
-    protected async Task<string?> GetCurrentCompanyIdAsync()
-    {
-        var tenantContext = HttpContext.RequestServices.GetRequiredService<ITenantContext>();
-        return await tenantContext.GetCurrentCompanyIdAsync();
-    }
+    protected Task<string?> GetCurrentCompanyIdAsync()
+        => HttpContext.RequestServices.GetRequiredService<ITenantContext>().GetCurrentCompanyIdAsync();
 
     /// <summary>
     /// 异步获取必需的企业 ID，如果未找到则抛出 BusinessException
@@ -78,9 +56,7 @@ public abstract class BaseApiController : ControllerBase
     protected async Task<string> GetRequiredCompanyIdAsync()
     {
         var companyId = await GetCurrentCompanyIdAsync();
-        if (string.IsNullOrEmpty(companyId))
-            throw new BusinessException("未找到当前用户的企业信息", "NOT_FOUND", 404);
-        return companyId;
+        return string.IsNullOrEmpty(companyId) ? throw new BusinessException("未找到当前用户的企业信息", "NOT_FOUND", 404) : companyId;
     }
 
     /// <summary>
@@ -90,51 +66,24 @@ public abstract class BaseApiController : ControllerBase
         => Ok(CreateResponse(true, "OK", data, message));
 
     /// <summary>
-    /// 返回标准成功的 API 响应（含数据和可选消息）
-    /// </summary>
-    protected IActionResult Success<T>(T data, string? message = null)
-        => Ok(CreateResponse(true, "OK", data, message));
-
-    /// <summary>
-    /// 返回无具体数据的标准成功响应
-    /// </summary>
-    protected IActionResult Success() => Success<object>(null!);
-
-    /// <summary>
     /// 返回仅包含成功消息的标准响应
     /// </summary>
-    protected IActionResult SuccessMessage(string message) => Success<object>(null!, message);
+    protected IActionResult SuccessMessage(string message)
+        => Ok(CreateResponse(true, "OK", null, message));
 
     /// <summary>
-    /// 返回标准分页成功的 API 响应
+    /// 返回标准分页成功的 API 响应 (可附加复杂的统计报告或汇总数据)
     /// </summary>
-    protected IActionResult SuccessPaged(object data, long total, int page, int pageSize, string? message = null)
-    {
-        return Ok(CreateResponse(true, "OK", new
+    protected IActionResult SuccessPaged<T>(IEnumerable<T> data, long total, int page, int pageSize, object? summary = null, string? message = null)
+        => Ok(CreateResponse(true, "OK", new
         {
             list = data,
             total,
             page,
             pageSize,
-            totalPages = (int)Math.Ceiling((double)total / pageSize)
+            totalPages = (int)Math.Ceiling((double)total / pageSize),
+            summary
         }, message));
-    }
-
-    /// <summary>
-    /// 返回标准分页成功的 API 响应
-    /// </summary>
-    protected IActionResult SuccessPaged<T>(IEnumerable<T> data, long total, int page, int pageSize, string? message = null)
-    {
-        var pagedData = new
-        {
-            list = data.ToList(),
-            total,
-            page,
-            pageSize,
-            totalPages = (int)Math.Ceiling((double)total / pageSize)
-        };
-        return Ok(CreateResponse(true, "OK", pagedData, message));
-    }
 
     /// <summary>
     /// 返回自定义错误信息的标准响应
@@ -208,39 +157,23 @@ public abstract class BaseApiController : ControllerBase
     /// </code>
     /// </example>
     protected IActionResult? ValidateModelState()
-    {
-        if (!ModelState.IsValid)
-        {
-            var errorMessage = string.Join("; ", ModelState
-                .Where(x => x.Value?.Errors.Count > 0)
-                .SelectMany(x => x.Value!.Errors)
-                .Select(x => x.ErrorMessage));
-            return ValidationError(errorMessage);
-        }
-        return null;
-    }
+        => ModelState.IsValid ? null : ValidationError(string.Join("; ", ModelState
+            .Where(x => x.Value?.Errors.Count > 0)
+            .SelectMany(x => x.Value!.Errors)
+            .Select(x => x.ErrorMessage)));
 
     /// <summary>
     /// 获取客户端真实的 IP 地址，考虑了 X-Forwarded-For 和 X-Real-IP 等代理头
     /// </summary>
     protected string GetClientIpAddress()
-    {
-        return Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim()
-            ?? Request.Headers["X-Real-IP"].FirstOrDefault()
-            ?? HttpContext.Connection.RemoteIpAddress?.ToString()
-            ?? "Unknown";
-    }
+        => Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim()
+        ?? Request.Headers["X-Real-IP"].FirstOrDefault()
+        ?? HttpContext.Connection.RemoteIpAddress?.ToString()
+        ?? "Unknown";
 
     /// <summary>
     /// 创建统一的 API 响应载体
     /// </summary>
-    private object CreateResponse(bool success, string code, object? data, string? message) => new
-    {
-        success,
-        code,
-        data,
-        message,
-        timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
-        traceId = HttpContext.TraceIdentifier
-    };
+    private ApiResponse CreateResponse(bool success, string code, object? data, string? message)
+        => new(success, code, message, data, HttpContext.TraceIdentifier);
 }

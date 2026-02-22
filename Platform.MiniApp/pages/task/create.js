@@ -130,7 +130,7 @@ Page(withAuth(withI18n({
     async loadUsers() {
         try {
             const res = await request({
-                url: '/api/user/all',
+                url: '/api/users/all',
                 method: 'GET'
             });
             if (res.success) {

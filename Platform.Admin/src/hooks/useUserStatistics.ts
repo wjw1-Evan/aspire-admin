@@ -30,7 +30,7 @@ export function useUserStatistics() {
       const response = await request<{
         success: boolean;
         data: UserStatisticsResponse;
-      }>('/api/user/statistics', {
+      }>('/api/users/statistics', {
         method: 'GET',
       });
       setStatistics(response.data);

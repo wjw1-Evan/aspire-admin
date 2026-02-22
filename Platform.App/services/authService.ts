@@ -156,7 +156,7 @@ export const authService = {
      */
     async updatePassword(request: UpdatePasswordRequest): Promise<ApiResponse<void>> {
         return await apiClient.post<any, ApiResponse<void>>(
-            '/api/user/change-password',
+            '/api/users/change-password',
             request
         );
     },

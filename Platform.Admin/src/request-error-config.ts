@@ -76,12 +76,17 @@ export const errorConfig: RequestConfig = {
       }
 
       // 3. 检查是否是标准错误响应格式（有 success 字段但为 false）
-      const { success, data, code, message, showType } =
-        res as unknown as ResponseStructure;
+      const tempRes = res as any;
+      const success = tempRes.success;
+      const code = tempRes.code;
+      const message = tempRes.message;
+      const data = tempRes.data;
+      const showType = tempRes.showType;
+
       if (success === false) {
         const error: any = new Error(message || '请求失败');
         error.name = 'BizError';
-        error.info = { code, message, showType, data };
+        error.info = { code, message, showType, data, errors: tempRes.errors };
         throw error;
       }
 
@@ -130,7 +135,7 @@ export const errorConfig: RequestConfig = {
 
       // 2. 特殊处理登录错误：只显示友好的消息提示，不显示技术性错误页面
       // 注意：登录错误应该在登录页面中自己处理，这里只做兜底处理
-      if (isLoginRequest && (errorCode === 'LOGIN_FAILED' || errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED' || errorCode === 'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN' || error.name === 'BizError')) {
+      if (isLoginRequest && (errorCode === 'INVALID_CREDENTIALS' || errorCode === 'LOGIN_FAILED' || errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED' || errorCode === 'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN' || error.name === 'BizError')) {
         // 登录错误已经在登录页面中处理了，这里静默处理即可
         // 避免显示技术性错误页面
         return;

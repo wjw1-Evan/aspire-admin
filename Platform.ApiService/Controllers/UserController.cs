@@ -15,7 +15,7 @@ namespace Platform.ApiService.Controllers;
 /// 用户管理控制器 - 处理用户相关的 CRUD 操作
 /// </summary>
 [ApiController]
-[Route("api/user")]
+[Route("api/users")]
 public class UserController : BaseApiController
 {
     private readonly IUserService _userService;
@@ -66,7 +66,7 @@ public class UserController : BaseApiController
     ///
     /// 示例请求：
     /// ```
-    /// GET /api/user/{id}
+    /// GET /api/users/{id}
     /// Authorization: Bearer {token}
     /// ```
     ///
@@ -117,7 +117,7 @@ public class UserController : BaseApiController
     ///
     /// 示例请求：
     /// ```json
-    /// POST /api/user/management
+    /// POST /api/users/management
     /// Authorization: Bearer {token}
     /// Content-Type: application/json
     ///
@@ -176,7 +176,7 @@ public class UserController : BaseApiController
     ///
     /// 示例请求：
     /// ```json
-    /// PUT /api/user/{id}
+    /// PUT /api/users/{id}
     /// Authorization: Bearer {token}
     /// Content-Type: application/json
     ///
@@ -231,7 +231,7 @@ public class UserController : BaseApiController
     ///
     /// 示例请求：
     /// ```
-    /// DELETE /api/user/{id}?reason=违反公司规定
+    /// DELETE /api/users/{id}?reason=违反公司规定
     /// Authorization: Bearer {token}
     /// ```
     ///
@@ -274,7 +274,7 @@ public class UserController : BaseApiController
     }
 
     /// <summary>
-    /// 获取当前企业的所有用户（避免 /api/user/all 命中 /api/user/{id} 导致 ObjectId 解析错误）
+    /// 获取当前企业的所有用户（避免 /api/users/all 命中 /api/users/{id} 导致 ObjectId 解析错误）
     /// </summary>
     [HttpGet("all")]
 
@@ -447,7 +447,7 @@ public class UserController : BaseApiController
     /// 获取当前用户信息（个人中心）
     /// </summary>
     /// <remarks>
-    /// RESTful 路径: /api/user/me 表示当前用户
+    /// RESTful 路径: /api/users/me 表示当前用户
     /// </remarks>
     [HttpGet("profile")]
     public async Task<IActionResult> GetCurrentUserProfile()
@@ -460,7 +460,7 @@ public class UserController : BaseApiController
     /// 更新当前用户信息（个人中心）
     /// </summary>
     /// <remarks>
-    /// RESTful 路径: PUT /api/user/me 更新当前用户
+    /// RESTful 路径: PUT /api/users/me 更新当前用户
     /// </remarks>
     /// <param name="request">更新用户信息请求</param>
     [HttpPut("profile")]
@@ -486,7 +486,7 @@ public class UserController : BaseApiController
     /// 修改当前用户密码
     /// </summary>
     /// <remarks>
-    /// RESTful 路径: PUT /api/user/me/password 更新当前用户密码
+    /// RESTful 路径: PUT /api/users/me/password 更新当前用户密码
     /// </remarks>
     /// <param name="request">修改密码请求</param>
     [HttpPut("profile/password")]
@@ -504,7 +504,7 @@ public class UserController : BaseApiController
     /// 获取当前用户活动日志
     /// </summary>
     /// <remarks>
-    /// RESTful 路径: GET /api/user/me/activity-logs 获取当前用户的活动日志
+    /// RESTful 路径: GET /api/users/me/activity-logs 获取当前用户的活动日志
     /// </remarks>
     /// <param name="limit">限制数量</param>
     [HttpGet("me/activity-logs")]
@@ -540,7 +540,7 @@ public class UserController : BaseApiController
     ///
     /// 示例请求：
     /// ```
-    /// GET /api/user/my-activity-logs-paged?page=1&amp;pageSize=20&amp;action=login&amp;sortBy=createdAt&amp;sortOrder=desc
+    /// GET /api/users/my-activity-logs-paged?page=1&amp;pageSize=20&amp;action=login&amp;sortBy=createdAt&amp;sortOrder=desc
     /// Authorization: Bearer {token}
     /// ```
     ///
@@ -625,7 +625,7 @@ public class UserController : BaseApiController
     ///
     /// 示例请求：
     /// ```
-    /// GET /api/user/my-activity-logs/{logId}
+    /// GET /api/users/my-activity-logs/{logId}
     /// Authorization: Bearer {token}
     /// ```
     ///
@@ -642,9 +642,9 @@ public class UserController : BaseApiController
     ///     "ipAddress": "192.168.1.1",
     ///     "userAgent": "Mozilla/5.0...",
     ///     "httpMethod": "GET",
-    ///     "path": "/api/user/123",
+    ///     "path": "/api/users/123",
     ///     "queryString": "?page=1",
-    ///     "fullUrl": "https://example.com/api/user/123?page=1",
+    ///     "fullUrl": "https://example.com/api/users/123?page=1",
     ///     "statusCode": 200,
     ///     "duration": 45,
     ///     "responseBody": "{...}",
@@ -679,7 +679,7 @@ public class UserController : BaseApiController
     /// 获取当前用户的所有权限
     /// </summary>
     /// <remarks>
-    /// RESTful 路径: GET /api/user/me/permissions 获取当前用户的权限列表
+    /// RESTful 路径: GET /api/users/me/permissions 获取当前用户的权限列表
     /// </remarks>
     [HttpGet("me/permissions")]
 
@@ -700,7 +700,7 @@ public class UserController : BaseApiController
     ///
     /// 示例请求：
     /// ```
-    /// GET /api/user/profile/ai-role-definition
+    /// GET /api/users/profile/ai-role-definition
     /// Authorization: Bearer {token}
     /// ```
     ///
@@ -743,7 +743,7 @@ public class UserController : BaseApiController
     ///
     /// 示例请求：
     /// ```json
-    /// PUT /api/user/me/ai-role-definition
+    /// PUT /api/users/me/ai-role-definition
     /// Authorization: Bearer {token}
     /// Content-Type: application/json
     ///

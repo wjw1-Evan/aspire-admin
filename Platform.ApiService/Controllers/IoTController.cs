@@ -181,7 +181,7 @@ public class IoTController : BaseApiController
         if (!result)
             return NotFoundError("Device", id);
 
-        return Success<object?>(null, "Device deleted successfully");
+        return Success(null, "Device deleted successfully");
     }
 
     /// <summary>
@@ -218,7 +218,7 @@ public class IoTController : BaseApiController
         if (!result)
             return Error("DEVICE_NOT_FOUND", "Device not found");
 
-        return Success<object?>(null, "Device connected successfully");
+        return Success(null, "Device connected successfully");
     }
 
     /// <summary>
@@ -240,7 +240,7 @@ public class IoTController : BaseApiController
         if (!result)
             return Error("DEVICE_NOT_FOUND", "Device not found");
 
-        return Success<object?>(null, "Device disconnected successfully");
+        return Success(null, "Device disconnected successfully");
     }
 
     /// <summary>
@@ -323,7 +323,7 @@ public class IoTController : BaseApiController
         if (!result)
             return NotFoundError("DataPoint", id);
 
-        return Success<object?>(null, "DataPoint deleted successfully");
+        return Success(null, "DataPoint deleted successfully");
     }
 
     #endregion
@@ -430,7 +430,7 @@ public class IoTController : BaseApiController
         if (!result)
             return NotFoundError("Event", eventId);
 
-        return Success<object?>(null, "Event handled successfully");
+        return Success(null, "Event handled successfully");
     }
 
     /// <summary>

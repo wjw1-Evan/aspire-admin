@@ -40,7 +40,7 @@ public class ImageCaptchaService : IImageCaptchaService
 
     // 常量配置
     private const int EXPIRATION_MINUTES = 5;
-    private const int IMAGE_WIDTH = 120;
+    private const int IMAGE_WIDTH = 130;
     private const int IMAGE_HEIGHT = 40;
     private const int CHAR_WIDTH = 18;
     private const int CHAR_HEIGHT = 24;
@@ -48,8 +48,8 @@ public class ImageCaptchaService : IImageCaptchaService
     private const int NOISE_DOTS = 50;
     private const string ENCRYPTION_KEY = "CaptchaKey2024";
 
-    // 验证码字符集（排除容易混淆的字符）
-    private static readonly string[] CHARACTERS = { "A", "B", "C", "D", "E", "F", "G", "H", "J", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "2", "3", "4", "5", "6", "7", "8", "9" };
+    // 验证码字符集（全数字）
+    private static readonly string[] CHARACTERS = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
     /// <summary>
     /// 初始化图形验证码服务
@@ -153,7 +153,7 @@ public class ImageCaptchaService : IImageCaptchaService
     private static string GenerateRandomAnswer()
     {
         var random = Random.Shared;
-        var length = random.Next(4, 6); // 4-5位验证码
+        var length = 5; // 固定5位验证码
         var answer = new StringBuilder(length);
 
         for (int i = 0; i < length; i++)
@@ -392,6 +392,18 @@ public class ImageCaptchaService : IImageCaptchaService
                 DrawLine(image, x + 2, y + 2, x + CHAR_WIDTH - 2, y + 2, color);
                 DrawLine(image, x + CHAR_WIDTH - 2, y + 2, x + 2, y + CHAR_HEIGHT - 2, color);
                 DrawLine(image, x + 2, y + CHAR_HEIGHT - 2, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 2, color);
+                break;
+            case '0':
+                DrawLine(image, x + 2, y + 2, x + CHAR_WIDTH - 2, y + 2, color);
+                DrawLine(image, x + 2, y + 2, x + 2, y + CHAR_HEIGHT - 2, color);
+                DrawLine(image, x + CHAR_WIDTH - 2, y + 2, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 2, color);
+                DrawLine(image, x + 2, y + CHAR_HEIGHT - 2, x + CHAR_WIDTH - 2, y + CHAR_HEIGHT - 2, color);
+                DrawLine(image, x + CHAR_WIDTH - 2, y + 2, x + 2, y + CHAR_HEIGHT - 2, color); // diagonal for better readability
+                break;
+            case '1':
+                DrawLine(image, x + CHAR_WIDTH / 2, y + 2, x + CHAR_WIDTH / 2, y + CHAR_HEIGHT - 2, color);
+                DrawLine(image, x + CHAR_WIDTH / 2 - 3, y + 5, x + CHAR_WIDTH / 2, y + 2, color);
+                DrawLine(image, x + CHAR_WIDTH / 2 - 4, y + CHAR_HEIGHT - 2, x + CHAR_WIDTH / 2 + 4, y + CHAR_HEIGHT - 2, color);
                 break;
             case '2':
                 DrawLine(image, x + 3, y + 2, x + CHAR_WIDTH - 3, y + 2, color);

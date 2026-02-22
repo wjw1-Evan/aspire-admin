@@ -236,23 +236,21 @@ const Login: React.FC = () => {
 
       // 如果失败，处理业务逻辑（显示验证码），然后显示友好的错误提示
       const errorCode = response.code;
-      const backendErrorCode = response.message;
-      // 使用多语言转换后端错误码
-      const errorMsg = backendErrorCode
-        ? intl.formatMessage({
-            id: `pages.login.error.${backendErrorCode}`,
-            defaultMessage: intl.formatMessage({
-              id: 'pages.login.failure',
-              defaultMessage: '登录失败，请重试！',
-            }),
-          })
-        : intl.formatMessage({
-            id: 'pages.login.failure',
-            defaultMessage: '登录失败，请重试！',
-          });
+      const backendMessage = response.message;
+
+      const knownErrors = ['INVALID_CREDENTIALS', 'ACCOUNT_LOCKED', 'ACCOUNT_DISABLED', 'USER_NOT_FOUND', 'PASSWORD_EXPIRED', 'TOO_MANY_ATTEMPTS', 'UNKNOWN', 'CAPTCHA_INVALID', 'CAPTCHA_REQUIRED', 'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN', 'LOGIN_FAILED'];
+      let errorMsg = backendMessage;
+      if (errorCode && knownErrors.includes(errorCode)) {
+        errorMsg = intl.formatMessage({
+          id: `pages.login.error.${errorCode}`,
+          defaultMessage: backendMessage || intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }),
+        });
+      } else if (!errorMsg) {
+        errorMsg = intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' });
+      }
 
       // 登录失败后显示验证码（业务逻辑）
-      if (errorCode === 'LOGIN_FAILED' || errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED' || errorCode === 'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN') {
+      if (errorCode === 'INVALID_CREDENTIALS' || errorCode === 'LOGIN_FAILED' || errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED' || errorCode === 'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN') {
         setShowCaptcha(true);
         // 如果是验证码错误，自动刷新验证码
         if (errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED' || errorCode === 'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN') {
@@ -287,24 +285,22 @@ const Login: React.FC = () => {
         error?.code;
 
       // 设置错误状态（用于表单显示）
-      const backendErrorCode = error?.response?.data?.message || error?.info?.message;
-      const errorMsg = backendErrorCode
-        ? intl.formatMessage({
-            id: `pages.login.error.${backendErrorCode}`,
-            defaultMessage: intl.formatMessage({
-              id: 'pages.login.failure',
-              defaultMessage: '登录失败，请重试！',
-            }),
-          })
-        : error?.message ||
-          intl.formatMessage({
-            id: 'pages.login.failure',
-            defaultMessage: '登录失败，请重试！',
-          });
+      const backendMessage = error?.response?.data?.message || error?.info?.message || error?.message;
+
+      const knownErrors = ['INVALID_CREDENTIALS', 'ACCOUNT_LOCKED', 'ACCOUNT_DISABLED', 'USER_NOT_FOUND', 'PASSWORD_EXPIRED', 'TOO_MANY_ATTEMPTS', 'UNKNOWN', 'CAPTCHA_INVALID', 'CAPTCHA_REQUIRED', 'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN', 'LOGIN_FAILED'];
+      let errorMsg = backendMessage;
+      if (errorCode && knownErrors.includes(errorCode)) {
+        errorMsg = intl.formatMessage({
+          id: `pages.login.error.${errorCode}`,
+          defaultMessage: backendMessage || intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }),
+        });
+      } else if (!errorMsg) {
+        errorMsg = intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' });
+      }
       setUserLoginState({ status: 'error', message: errorMsg });
 
       // 登录失败后显示验证码（业务逻辑）
-      if (errorCode === 'LOGIN_FAILED' || errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED' || errorCode === 'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN') {
+      if (errorCode === 'INVALID_CREDENTIALS' || errorCode === 'LOGIN_FAILED' || errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED' || errorCode === 'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN') {
         setShowCaptcha(true);
         // 如果是验证码错误，自动刷新验证码
         if (errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED' || errorCode === 'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN') {

@@ -114,8 +114,8 @@ const ApprovalPage: React.FC = () => {
   const loadUsers = async () => {
     try {
       const response = await getUserList({ page: 1, pageSize: 100, isActive: true });
-      if (response.success && response.data?.users) {
-        setUsers(response.data.users);
+      if (response.success && response.data?.list) {
+        setUsers(response.data.list);
       }
     } catch (error) {
       // 静默处理
@@ -391,7 +391,7 @@ const ApprovalPage: React.FC = () => {
       const userResp = await getUserList({ page: 1, pageSize: 1000 });
       if (userResp.success && userResp.data) {
         const userData = userResp.data as any;
-        setUsers(userData.list || userData.users || userData.data || []);
+        setUsers(userData.list || userData.data || []);
       }
     } catch (e) {
       // 静默处理

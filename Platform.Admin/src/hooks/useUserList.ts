@@ -48,9 +48,9 @@ export function useUserList() {
           },
         );
 
-        // ✅ 兼容后端返回的数据结构（Users 或 users）
-        const users = response.data?.users || response.data?.Users || [];
-        const total = response.data?.total || response.data?.Total || 0;
+        // ✅ 适配标准化分页响应格式 (list 字段)
+        const users = response.data?.list || [];
+        const total = response.data?.total || 0;
 
         return {
           data: users,

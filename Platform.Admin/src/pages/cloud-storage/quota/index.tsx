@@ -275,7 +275,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                 search: keyword,
             });
             if (res.success && res.data) {
-                setUserOptions(res.data.users || []);
+                setUserOptions(res.data.list || []);
             }
         } catch (err) {
             console.error('Failed to load users:', err);

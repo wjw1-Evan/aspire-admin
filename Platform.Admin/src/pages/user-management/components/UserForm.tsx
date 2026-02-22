@@ -4,7 +4,7 @@ import { SearchOutlined } from '@ant-design/icons';
 import { request, useIntl } from '@umijs/max';
 import { getAllRoles } from '@/services/role/api';
 import type { ApiResponse } from '@/types/unified-api';
-import type { AppUser, CreateUserRequest, UpdateUserRequest, UserListResponse } from '../types';
+import type { AppUser, CreateUserRequest, UpdateUserRequest } from '../types';
 import type { Role } from '@/services/role/types';
 
 interface UserFormProps {
@@ -74,7 +74,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
     setSearchingUsers(true);
     try {
       // 使用更全局的用户搜索接口
-      const response = await request<ApiResponse<UserListResponse>>('/api/users/all', {
+      const response = await request<ApiResponse<{ users: AppUser[]; total: number }>>('/api/users/all', {
         method: 'GET',
         params: { search: value },
       });

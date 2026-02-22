@@ -345,8 +345,8 @@ public class UserActivityLogService : IUserActivityLogService
     /// </summary>
     public async Task LogHttpRequestAsync(LogHttpRequestRequest request)
     {
-        // 使用 ITenantContext 获取实时企业 ID
-        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? "system";
+        // 优先从请求对象中获取已捕获的企业 ID，如果为空（如匿名请求）再尝试从当前上下文获取
+        var companyId = request.CompanyId ?? await _tenantContext.GetCurrentCompanyIdAsync() ?? "system";
         var pathWithQuery = string.IsNullOrEmpty(request.QueryString)
             ? request.Path
             : $"{request.Path}{request.QueryString}";

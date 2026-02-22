@@ -10,7 +10,7 @@ export async function getUserActivityLogs(
 ) {
   return request<
     API.ApiResponse<{
-      data: UserActivityLog[];
+      list: UserActivityLog[];
       total: number;
       page: number;
       pageSize: number;
@@ -55,11 +55,11 @@ export async function getCurrentUserActivityLogs(
   options?: Record<string, any>,
 ) {
   return request<API.ApiResponse<{
-    data: UserActivityLog[];
+    list: UserActivityLog[];
     total: number;
     page: number;
     pageSize: number;
-    statistics: {
+    summary: {
       totalCount: number;
       successCount: number;
       errorCount: number;
@@ -85,4 +85,3 @@ export async function getCurrentUserActivityLogById(
     ...(options || {}),
   });
 }
-

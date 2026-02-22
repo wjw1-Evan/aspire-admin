@@ -545,9 +545,9 @@ const MyActivity: React.FC = () => {
         // 后端返回的数据结构：{ data: { data: [...], total: xxx, ... } }
 
         const result = response.data as any;
-        const list: UserActivityLog[] = result.data || [];
+        const list: UserActivityLog[] = result.list || [];
         const total: number = result.total || 0;
-        const stats = result.statistics || {};
+        const stats = result.summary || {};
 
         // 前端计算部分统计信息 (平均耗时, 操作类型数)
         // 成功和错误次数改为使用后端返回的全局统计

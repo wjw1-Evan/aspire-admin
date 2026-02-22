@@ -56,8 +56,8 @@ const TaskForm: React.FC<TaskFormProps> = ({
     setUsersLoading(true);
     try {
       const response = await getUserList({ page: 1, pageSize: 100, isActive: true });
-      if (response.success && response.data?.users) {
-        setUsers(response.data.users);
+      if (response.success && response.data?.list) {
+        setUsers(response.data.list);
       } else {
         setUsers([]);
       }

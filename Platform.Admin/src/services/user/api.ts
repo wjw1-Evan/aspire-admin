@@ -22,7 +22,7 @@ export interface AppUser {
  * 用户列表响应
  */
 export interface UserListResponse {
-  users: AppUser[];
+  list: AppUser[];
   total: number;
 }
 

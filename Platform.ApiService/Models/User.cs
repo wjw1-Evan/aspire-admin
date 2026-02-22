@@ -667,6 +667,11 @@ public class LogHttpRequestRequest
     public string? UserId { get; set; }
 
     /// <summary>
+    /// 企业ID
+    /// </summary>
+    public string? CompanyId { get; set; }
+
+    /// <summary>
     /// 用户名
     /// </summary>
     public string? Username { get; set; }

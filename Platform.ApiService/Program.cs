@@ -311,11 +311,11 @@ app.UseExceptionHandler(errorApp =>
     });
 });
 
+app.UseMiddleware<ActivityLogMiddleware>();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseGlobalAuthentication();
-app.UseMiddleware<ActivityLogMiddleware>();
 
 // 端点映射
 app.MapControllers();

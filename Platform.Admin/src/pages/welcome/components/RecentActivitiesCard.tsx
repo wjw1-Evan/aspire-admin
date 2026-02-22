@@ -59,7 +59,7 @@ const RecentActivitiesCard: React.FC<RecentActivitiesCardProps> = ({ currentUser
             });
 
             return {
-                list: res?.data?.data || [],
+                list: res?.data?.list || [],
                 total: res?.data?.total || 0,
             };
         },

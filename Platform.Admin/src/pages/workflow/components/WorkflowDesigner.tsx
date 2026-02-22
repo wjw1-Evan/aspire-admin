@@ -198,7 +198,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
           getAllRoles(),
         ]);
         if (usersResponse.success && usersResponse.data) {
-          setUsers(usersResponse.data.users);
+          setUsers(usersResponse.data.list);
         }
         if (rolesResponse.success && rolesResponse.data) {
           setRoles(rolesResponse.data.roles.filter((r) => r.isActive));

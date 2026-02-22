@@ -1,7 +1,9 @@
 using System;
+using System.Diagnostics;
+using System.Collections.Generic;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
-using System.Diagnostics;
+using Platform.ServiceDefaults.Services;
 
 namespace Platform.ApiService.Middleware;
 
@@ -52,7 +54,8 @@ public class ActivityLogMiddleware
     /// 执行中间件逻辑
     /// </summary>
     /// <param name="context">HTTP 上下文</param>
-    public async Task InvokeAsync(HttpContext context)
+    /// <param name="tenantContext">租户上下文</param>
+    public async Task InvokeAsync(HttpContext context, ITenantContext tenantContext)
     {
         // 检查是否启用日志记录
         var enabled = _configuration.GetValue<bool>("ActivityLog:Enabled", true);
@@ -72,20 +75,34 @@ public class ActivityLogMiddleware
         // 记录请求开始并计时
         var stopwatch = Stopwatch.StartNew();
 
-        // 执行请求
-        await _next(context);
-
-        // 停止计时
-        stopwatch.Stop();
-
-        // ⚠️ 关键修复：在请求线程中提取所有数据，避免在后台线程访问 HttpContext
-        var logData = ExtractLogData(context, stopwatch.ElapsedMilliseconds);
-
-        if (logData.HasValue)
+        try
         {
-            // ✅ 性能优化：将日志请求发送到异步队列，由后台 Worker 处理
-            // 这比直接 Task.Run 更节省资源，且具备背压处理能力
-            await _logQueue.EnqueueAsync(ToRequest(logData.Value), context.RequestAborted);
+            // 执行请求
+            await _next(context);
+        }
+        catch (Exception ex)
+        {
+            // 记录异常信息
+            context.Response.StatusCode = 500;
+            _logger.LogError(ex, "ActivityLogMiddleware: 执行请求时发生未捕获异常");
+            // 注意：不在这里 throw，因为后面还要记录日志。记录后再 throw。
+            // 或者记录完直接 re-throw
+            throw;
+        }
+        finally
+        {
+            // 停止计时
+            stopwatch.Stop();
+
+            // ⚠️ 关键修复：在请求线程中提取所有数据（包括企业 ID），避免在后台线程访问 HttpContext 或丢失 Scoped Context
+            var logData = await ExtractLogData(context, tenantContext, stopwatch.ElapsedMilliseconds);
+
+            if (logData.HasValue)
+            {
+                // ✅ 性能优化：将日志请求发送到异步队列，由后台 Worker 处理
+                // 使用 CancellationToken.None 确保即使请求取消，日志也能成功入队
+                await _logQueue.EnqueueAsync(ToRequest(logData.Value), CancellationToken.None);
+            }
         }
     }
 
@@ -115,22 +132,29 @@ public class ActivityLogMiddleware
     /// <summary>
     /// 在请求线程中提取日志数据（避免后台线程访问 HttpContext）
     /// </summary>
-    private (string? userId, string? username, string httpMethod, string path, string? queryString, string scheme, string host, int statusCode, long durationMs, string? ipAddress, string? userAgent, Dictionary<string, object>? metadata)? ExtractLogData(HttpContext context, long durationMs)
+    private async Task<(string? userId, string? companyId, string? username, string httpMethod, string path, string? queryString, string scheme, string host, int statusCode, long durationMs, string? ipAddress, string? userAgent, Dictionary<string, object>? metadata)?> ExtractLogData(HttpContext context, ITenantContext tenantContext, long durationMs)
     {
         // 提取用户信息
         string? userId = null;
         string? username = null;
+        string? companyId = null;
 
         if (context.User?.Identity?.IsAuthenticated == true)
         {
-            userId = context.User.FindFirst("userId")?.Value;
+            userId = context.User.FindFirst("userId")?.Value
+                    ?? context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                    ?? context.User.FindFirst("sub")?.Value;
+
             username = context.User.FindFirst("username")?.Value
-                      ?? context.User.FindFirst("name")?.Value
-                      ?? context.User.Identity.Name;
+                       ?? context.User.FindFirst("name")?.Value
+                       ?? context.User.Identity.Name;
+
+            // ⚠️ 核心修复：在请求作用域内提取当前企业 ID
+            companyId = await tenantContext.GetCurrentCompanyIdAsync();
         }
 
-        // 检查是否包含匿名用户
-        var includeAnonymous = _configuration.GetValue<bool>("ActivityLog:IncludeAnonymous", false);
+        // 检查是否包含匿名用户 (默认开启，确保记录)
+        var includeAnonymous = _configuration.GetValue<bool>("ActivityLog:IncludeAnonymous", true);
         if (string.IsNullOrEmpty(userId) && !includeAnonymous)
         {
             return null; // 不记录匿名请求
@@ -171,17 +195,18 @@ public class ActivityLogMiddleware
         // 提取云存储操作的元数据
         var metadata = ExtractCloudStorageMetadata(context, httpMethod, path);
 
-        return (userId, username, httpMethod, path, queryString, scheme, host, statusCode, durationMs, ipAddress, userAgent, metadata);
+        return (userId, companyId, username, httpMethod, path, queryString, scheme, host, statusCode, durationMs, ipAddress, userAgent, metadata);
     }
 
     /// <summary>
     /// 日志数据元组转请求对象的转换方法
     /// </summary>
-    private static LogHttpRequestRequest ToRequest((string? userId, string? username, string httpMethod, string path, string? queryString, string scheme, string host, int statusCode, long durationMs, string? ipAddress, string? userAgent, Dictionary<string, object>? metadata) data)
+    private static LogHttpRequestRequest ToRequest((string? userId, string? companyId, string? username, string httpMethod, string path, string? queryString, string scheme, string host, int statusCode, long durationMs, string? ipAddress, string? userAgent, Dictionary<string, object>? metadata) data)
     {
         return new LogHttpRequestRequest
         {
             UserId = data.userId,
+            CompanyId = data.companyId,
             Username = data.username,
             HttpMethod = data.httpMethod,
             Path = data.path,

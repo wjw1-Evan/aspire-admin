@@ -154,7 +154,7 @@ export interface UserListRequest {
 
 // 用户列表响应
 export interface UserListResponse {
-  users: AppUser[];
+  list: AppUser[];
   total: number;
   page: number;
   pageSize: number;

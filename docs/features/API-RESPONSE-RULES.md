@@ -40,15 +40,19 @@
   - 所有 API 控制器必须继承自 `BaseApiController`，而不是直接继承 `ControllerBase`。
   - 禁止在控制器中直接构造 `ApiResponse<T>` 或返回裸 JSON，统一通过基类方法。
 - **核心辅助方法**：
-  - `Success<T>(T data, string? message = null)`：返回 `ApiResponse<T>` 成功响应。
-  - `Success(string? message = null)`：无数据成功响应（`data` 为 `null`）。
-  - `SuccessPaged<T>(IEnumerable<T> data, long total, int page, int pageSize)`：分页成功响应。
+  - `SuccessPaged<T>(IEnumerable<T> data, long total, int page, int pageSize, object? summary = null)`：分页成功响应，支持附加汇总数据（如统计报告）。
+  - `SuccessMessage(string message)`：仅返回成功消息的响应。
+  - `Result<T>(ServiceResult<T> result)`：根据 ServiceResult 自动判定并返回对应 HTTP 状态码的响应（400/404/401/403/500等）。
   - `Error(string errorCode, string errorMessage)`：业务错误。
   - `ValidationError(string errorMessage)`：参数/模型验证错误。
+  - `ValidateModelState()`：验证控制器中的 ModelState，若有误直接返回 `ValidationError`。
   - `NotFoundError(string resource, string id)`：未找到资源。
   - `UnauthorizedError(string message = "未授权访问")`：未授权。
   - `ForbiddenError(string message = "禁止访问")`：403。
   - `ServerError(string message = "服务器内部错误")`：500。
+  - `GetClientIpAddress()`：获取客户端真实的 IP 地址（考虑了代理头）。
+  - `CurrentUserId` / `GetRequiredUserId()`：获取当前用户 ID。
+  - `GetCurrentCompanyIdAsync()` / `GetRequiredCompanyIdAsync()`：获取当前企业 ID。
 - **控制器示例**：
   ```csharp
   [ApiController]
@@ -66,7 +70,19 @@
       public async Task<IActionResult> GetById(string id)
       {
           var resource = await _service.GetByIdAsync(id);
-          return Success(resource.EnsureFound("资源", id));
+          if (resource == null) return NotFoundError("资源", id);
+
+          return Success(resource);
+      }
+
+      [HttpPost]
+      public async Task<IActionResult> Create([FromBody] CreateDto dto)
+      {
+          var validationResult = ValidateModelState();
+          if (validationResult != null) return validationResult;
+
+          var result = await _service.CreateAsync(dto, GetRequiredUserId());
+          return Result(result);
       }
   }
   ```

@@ -84,9 +84,9 @@ const UserLog: React.FC = () => {
       });
 
       if (response.success && response.data) {
-        // 后端返回的数据结构：{ data: { data: [...], total: xxx, ... } }
+        // 后端返回的数据结构：{ data: { list: [...], total: xxx, ... } }
         const result = response.data as any;
-        let list: UserActivityLog[] = result.data || [];
+        let list: UserActivityLog[] = result.list || [];
 
         if (filters.username) {
           const keyword = filters.username.trim().toLowerCase();

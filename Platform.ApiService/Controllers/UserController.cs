@@ -270,7 +270,7 @@ public class UserController : BaseApiController
     public async Task<IActionResult> GetUsersList([FromBody] UserListRequest request)
     {
         var result = await _userService.GetUsersWithRolesAsync(request);
-        return Success(result);
+        return SuccessPaged(result.Users, result.Total, result.Page, result.PageSize);
     }
 
     /// <summary>
@@ -367,13 +367,7 @@ public class UserController : BaseApiController
             CreatedAt = log.CreatedAt
         }).ToList();
 
-        return Success(new PaginatedResponse<ActivityLogListItemResponse>
-        {
-            Data = logsWithUserInfo,
-            Total = total,
-            Page = query.Page,
-            PageSize = query.PageSize
-        });
+        return SuccessPaged(logsWithUserInfo, total, query.Page, query.PageSize);
     }
 
     /// <summary>
@@ -612,7 +606,12 @@ public class UserController : BaseApiController
             sortBy,
             sortOrder);
 
-        return Success(response);
+        return SuccessPaged(
+            response.Data,
+            response.Total,
+            response.Page,
+            response.PageSize,
+            response.Statistics);
     }
 
     /// <summary>

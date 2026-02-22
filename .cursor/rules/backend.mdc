@@ -9,7 +9,7 @@ appliesTo:
 # 后端规则（API / ServiceDefaults / 数据初始化）
 
 ## 控制器与权限
-- 所有业务控制器必须继承 `BaseApiController`；统一使用 `Success<T>()`、`SuccessPaged<T>()`、`ValidationError()`、`NotFoundError()` 等构造 `ApiResponse<T>`。
+- **[强制]** 所有业务控制器必须继承 `BaseApiController`；统一使用 `Success<T>()`、`SuccessPaged<T>()`、`ValidationError()`、`NotFoundError()` 等构造 `ApiResponse<T>`。禁止直接继承 `ControllerBase` 或返回裸 JSON。
 - 敏感操作必须添加 `[RequireMenu("module:resource")]`（权限标识使用 `:` 分隔，如 `workflow:list`、`document:list`）；禁止在控制器或服务中使用废弃的 `HasPermission()` / `RequirePermission()`。
 - 禁止从 JWT 读取 `companyId` / `roles` 等扩展字段，需通过 `ITenantContext` 获取。
 

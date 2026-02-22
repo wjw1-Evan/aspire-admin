@@ -78,15 +78,7 @@ public class ChatSessionsController : BaseApiController
     public async Task<IActionResult> GetSessions([FromQuery] ChatSessionListRequest request)
     {
         var (sessions, total) = await _chatService.GetSessionsAsync(request);
-        var response = new PaginatedResponse<ChatSession>
-        {
-            Data = sessions,
-            Total = total,
-            Page = request.Page,
-            PageSize = request.PageSize
-        };
-
-        return Success(response);
+        return SuccessPaged(sessions, total, request.Page, request.PageSize);
     }
 
 }

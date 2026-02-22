@@ -356,7 +356,7 @@ public class UserActivityLogService : IUserActivityLogService
         {
             UserId = request.UserId ?? "anonymous",
             Username = request.Username ?? "匿名用户",
-            Action = $"{request.HttpMethod.ToLower()}_{request.Path.Replace("/", "_")}",
+            Action = DetermineActionCode(request.HttpMethod, request.Path),
             HttpMethod = request.HttpMethod,
             Path = request.Path,
             QueryString = request.QueryString,
@@ -378,5 +378,77 @@ public class UserActivityLogService : IUserActivityLogService
         if (string.IsNullOrEmpty(value)) return false;
         if (value.Length != 24) return false;
         return value.All(c => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
+    }
+
+    /// <summary>
+    /// 将后端路由映射为前端定义的标准动作码
+    /// </summary>
+    private static string DetermineActionCode(string httpMethod, string path)
+    {
+        var method = httpMethod.ToUpper();
+        var p = path.ToLower();
+
+        // 认证 Auth
+        if (p.EndsWith("/api/auth/login")) return "login";
+        if (p.EndsWith("/api/auth/logout")) return "logout";
+        if (p.EndsWith("/api/auth/refresh")) return "refresh_token";
+        if (p.EndsWith("/api/auth/register")) return "register";
+
+        // 用户 User
+        if (p.Contains("/api/users/me/activity-logs")) return "view_activity_logs";
+        if (p.EndsWith("/api/users/me/password") && method == "PUT") return "change_password";
+        if (p.EndsWith("/api/users/me") && method == "PUT") return "update_profile";
+        if (p.EndsWith("/api/users/me") && method == "GET") return "view_profile";
+        if (p.Contains("/activate") && method == "PUT") return "activate_user";
+        if (p.Contains("/deactivate") && method == "PUT") return "deactivate_user";
+        if (p.EndsWith("/api/users/bulk") && method == "POST") return "bulk_action";
+        if (p.EndsWith("/api/users/management") && method == "POST") return "create_user";
+        if ((p.EndsWith("/api/users/list") || p.EndsWith("/api/users/all")) && (method == "GET" || method == "POST")) return "view_users";
+        if (p.EndsWith("/api/users/statistics") && method == "GET") return "view_statistics";
+        if (p.StartsWith("/api/users/") && method == "GET") return "view_user";
+        if (p.StartsWith("/api/users/") && method == "PUT") return "update_user";
+        if (p.StartsWith("/api/users/") && method == "DELETE") return "delete_user";
+
+        // 角色 Role
+        if (p.Contains("/api/roles"))
+        {
+            if (method == "POST") return "create_role";
+            if (method == "PUT") return "update_role";
+            if (method == "DELETE") return "delete_role";
+            if (method == "GET") return "view_roles";
+        }
+
+        // 菜单/权限 Menu
+        if (p.Contains("/api/menus"))
+        {
+            if (method == "POST") return "create_menu";
+            if (method == "PUT") return "update_menu";
+            if (method == "DELETE") return "delete_menu";
+            if (method == "GET") return "view_menus";
+        }
+
+        // 字典 Dictionary
+        if (p.Contains("/api/dictionaries"))
+        {
+            if (method == "POST") return "create_dictionary";
+            if (method == "PUT") return "update_dictionary";
+            if (method == "DELETE") return "delete_dictionary";
+            if (method == "GET") return "view_dictionaries";
+        }
+
+        // 日志 Log (通用)
+        if (p.Contains("/api/activity-logs") && method == "GET") return "view_activity_logs";
+        if (p.Contains("/api/logs") && method == "GET") return "view_system_logs";
+
+        // 默认回退：按动作前缀动态映射（为了兼容前端 dynamic mapping，如 create_xxx, view_xxx）
+        var resource = p.Split('/', StringSplitOptions.RemoveEmptyEntries).LastOrDefault() ?? "resource";
+        return method switch
+        {
+            "POST" => $"create_{resource}",
+            "PUT" => $"update_{resource}",
+            "DELETE" => $"delete_{resource}",
+            "GET" => $"view_{resource}",
+            _ => $"{method.ToLower()}_{resource}"
+        };
     }
 }

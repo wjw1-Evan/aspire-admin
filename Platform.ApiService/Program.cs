@@ -338,4 +338,19 @@ app.MapFallback(async (HttpContext context) =>
     await context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse, jsonOptions));
 });
 
+// 初始化预置 AI 智能体
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        var agentService = scope.ServiceProvider.GetRequiredService<IAiAgentService>();
+        await agentService.InitializeSeedAgentsAsync();
+    }
+    catch (Exception ex)
+    {
+        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "初始化预置智能体失败");
+    }
+}
+
 await app.RunAsync();

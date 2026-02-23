@@ -1,10 +1,12 @@
+using Platform.ServiceDefaults.Services;
+
 namespace Platform.ApiService.Services;
 
 /// <summary>
 /// 密码传输加密服务接口
 /// 用于处理前端到后端的敏感数据（如密码）的非对称加密传输
 /// </summary>
-public interface IPasswordEncryptionService
+public interface IPasswordEncryptionService : ISingletonDependency
 {
     /// <summary>
     /// 获取 RSA 公钥（用于前端加密）

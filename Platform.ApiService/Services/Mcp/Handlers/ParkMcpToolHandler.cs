@@ -41,7 +41,7 @@ public class ParkMcpToolHandler : McpToolHandlerBase
         _logger = logger;
 
         // 楼议/资产
-        RegisterTool("get_park_buildings", "获取园区楼宇列表。",
+        RegisterTool("get_park_buildings", "获取园区楼宇资产列表。关键词：园区,楼宇,资产,建筑,房源,楼铺",
             ObjectSchema(MergeProperties(new Dictionary<string, object> { ["keyword"] = new Dictionary<string, object> { ["type"] = "string" } }, PaginationSchema())),
             async (args, uid) =>
             {
@@ -55,7 +55,7 @@ public class ParkMcpToolHandler : McpToolHandlerBase
             });
 
         // 招商线索
-        RegisterTool("get_park_leads", "获取园区招商线索列表。",
+        RegisterTool("get_park_leads", "获取园区招商线索列表。关键词：园区,招商,线索,潜在客户,商机,意向",
             ObjectSchema(MergeProperties(new Dictionary<string, object> { ["keyword"] = new Dictionary<string, object> { ["type"] = "string" } }, PaginationSchema())),
             async (args, uid) =>
             {
@@ -83,7 +83,7 @@ public class ParkMcpToolHandler : McpToolHandlerBase
             }));
 
         // 租户
-        RegisterTool("get_park_tenants", "获取园区租户列表。",
+        RegisterTool("get_park_tenants", "获取园区租户企业列表。关键词：园区,租户,企业,入驻,合同,租约",
             ObjectSchema(MergeProperties(new Dictionary<string, object> { ["keyword"] = new Dictionary<string, object> { ["type"] = "string" } }, PaginationSchema())),
             async (args, uid) =>
             {
@@ -97,7 +97,7 @@ public class ParkMcpToolHandler : McpToolHandlerBase
             });
 
         // 合同
-        RegisterTool("get_park_contracts", "获取园区租赁合同列表。",
+        RegisterTool("get_park_contracts", "获取园区租赁合同列表。关键词：园区,租赁,合同,到期,续租",
             ObjectSchema(MergeProperties(new Dictionary<string, object> { ["status"] = new Dictionary<string, object> { ["type"] = "string" } }, PaginationSchema())),
             async (args, uid) =>
             {
@@ -111,7 +111,7 @@ public class ParkMcpToolHandler : McpToolHandlerBase
             });
 
         // 走访
-        RegisterTool("get_park_visit_tasks", "获取园区走访任务列表。",
+        RegisterTool("get_park_visit_tasks", "获取园区经理走访任务列表。关键词：园区,走访,任务,巡检,反馈",
             ObjectSchema(MergeProperties(new Dictionary<string, object> { ["keyword"] = new Dictionary<string, object> { ["type"] = "string" } }, PaginationSchema())),
             async (args, uid) =>
             {
@@ -125,7 +125,7 @@ public class ParkMcpToolHandler : McpToolHandlerBase
             });
 
         // 企业服务
-        RegisterTool("get_park_service_requests", "获取园区企业服务申请列表。",
+        RegisterTool("get_park_service_requests", "获取园区企业服务申请列表。关键词：园区,企业服务,申请,报修,咨询",
             ObjectSchema(MergeProperties(new Dictionary<string, object> { ["status"] = new Dictionary<string, object> { ["type"] = "string" } }, PaginationSchema())),
             async (args, uid) =>
             {

@@ -107,7 +107,7 @@ aspire-admin
 
 ## 🧩 MCP 服务 (Model Context Protocol)
 
-本项目深度集成了 **MCP 协议**，使 AI 代理（Agent）能够安全地访问企业内部的核心业务逻辑。
+本项目深度集成了 **MCP 协议**，使 AI 助手能够安全地访问企业内部的核心业务逻辑。
 
 ### 核心工具集 (Toolsets)
 

@@ -1,15 +1,15 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { FloatButton, App, Input, Button, Card, Avatar, Spin } from 'antd';
-import { MessageOutlined, CloseOutlined, SendOutlined } from '@ant-design/icons';
+import { MessageOutlined, CloseOutlined, SendOutlined, AudioOutlined, AudioMutedOutlined } from '@ant-design/icons';
 import { useModel } from '@umijs/max';
 import { marked } from 'marked';
 import {
   getOrCreateAssistantSession,
   sendMessageWithStreaming,
   getMessages,
-  type ChatMessage,
-  type ChatSession,
 } from '@/services/chat/api';
+import { useSseConnection } from '@/hooks/useSseConnection';
+import type { ChatMessage, ChatSession } from '@/services/chat/api';
 import { AI_ASSISTANT_ID, AI_ASSISTANT_NAME, AI_ASSISTANT_AVATAR } from '@/constants/ai';
 
 const { TextArea } = Input;
@@ -112,9 +112,23 @@ const AiAssistant: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [sending, setSending] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const initialInputValueRef = useRef<string>('');
+  const currentTranscriptRef = useRef<string>('');
 
   // 对话框尺寸状态
   const [dialogSize, setDialogSize] = useState({ width: 400, height: 600 });
+
+  // 初始化全局 SSE 连接 (用于监听通知、会话更新等实时事件)
+  const sse = useSseConnection({
+    autoConnect: true,
+    onError: (err) => console.warn('[AiAssistant] 全局 SSE 异常:', err),
+  });
+
+  useEffect(() => {
+    if (!open) return;
+  }, [sse, open, session?.id]);
   const dialogRef = useRef<HTMLDivElement>(null);
 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -131,6 +145,9 @@ const AiAssistant: React.FC = () => {
       if ((window as any)._aiAssistantCleanup) (window as any)._aiAssistantCleanup();
       if ((window as any)._aiAssistantCleanupHeight) (window as any)._aiAssistantCleanupHeight();
       if ((window as any)._aiAssistantCleanupBoth) (window as any)._aiAssistantCleanupBoth();
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
     };
@@ -182,27 +199,26 @@ const AiAssistant: React.FC = () => {
   /**
    * 发送消息
    */
-  const handleSendMessage = useCallback(async () => {
+  const handleSendMessage = useCallback(async (contentOverride?: string) => {
+    const userMessage = (contentOverride ?? inputValue).trim();
+
     console.log('[AiAssistant] handleSendMessage 被调用', {
-      inputValue: inputValue.trim(),
+      userMessage,
       sending,
       currentUser: !!currentUser,
     });
 
     // 注意：用户ID由后端从token中获取，前端只需要检查用户是否登录
-    if (!inputValue.trim() || sending || !currentUser) {
+    if (!userMessage || sending || !currentUser) {
       console.log('[AiAssistant] 发送消息被阻止:', {
-        hasInput: !!inputValue.trim(),
+        hasInput: !!userMessage,
         isSending: sending,
         hasUser: !!currentUser,
       });
       return;
     }
 
-    const userMessage = inputValue.trim();
     setInputValue('');
-    setSending(true);
-
     console.log('[AiAssistant] 开始发送消息流程, userMessage:', userMessage);
     let currentSession = session;
 
@@ -393,16 +409,87 @@ const AiAssistant: React.FC = () => {
   }, [inputValue, sending, session, currentUser, message]);
 
   /**
+   * 处理录音
+   */
+  const handleToggleListen = useCallback(() => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      message.error('当前浏览器不支持语音识别');
+      return;
+    }
+
+    if (!recognitionRef.current) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'zh-CN';
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event: any) => {
+        let transcript = '';
+        // 关键修复：每次从头构建当前会话的完整转录
+        for (let i = 0; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        currentTranscriptRef.current = transcript;
+        // 将初始值与当前完整转录合并
+        setInputValue(initialInputValueRef.current + transcript);
+      };
+
+      recognition.onerror = (event: any) => {
+        console.error('语音识别错误:', event.error);
+        if (event.error === 'not-allowed') {
+          message.error('请允许访问麦克风以使用语音输入');
+        } else {
+          message.error('语音识别出错: ' + event.error);
+        }
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+        currentTranscriptRef.current = '';
+      };
+
+      recognitionRef.current = recognition;
+    }
+
+    try {
+      initialInputValueRef.current = inputValue; // 记录开始录音时的输入框内容
+      currentTranscriptRef.current = '';
+      recognitionRef.current.start();
+    } catch (e) {
+      console.error('启动语音识别失败:', e);
+      setIsListening(false);
+    }
+  }, [isListening, message]);
+
+  /**
    * 处理 Enter 键发送
    */
   const handleKeyPress = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
+        // 如果正在录音，先停止录音
+        if (isListening) {
+          recognitionRef.current?.stop();
+          setIsListening(false);
+        }
         handleSendMessage();
       }
     },
-    [handleSendMessage]
+    [handleSendMessage, isListening]
   );
 
   /**
@@ -726,6 +813,8 @@ const AiAssistant: React.FC = () => {
                     </div>
                   );
                 })}
+
+
               </>
             )}
           </div>
@@ -736,32 +825,59 @@ const AiAssistant: React.FC = () => {
               padding: '16px',
               borderTop: '1px solid #f0f0f0',
               display: 'flex',
+              flexDirection: 'column',
               gap: 8,
             }}
           >
-            <TextArea
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="输入消息..."
-              autoSize={{ minRows: 1, maxRows: 4 }}
-              disabled={sending}
-              style={{ flex: 1 }}
-            />
-            <Button
-              type="primary"
-              icon={<SendOutlined />}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('[AiAssistant] 发送按钮被点击');
-                handleSendMessage();
-              }}
-              loading={sending}
-              disabled={!inputValue.trim() || sending}
-            >
-              发送
-            </Button>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <TextArea
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder={isListening ? "正在聆听..." : "输入消息..."}
+                autoSize={{ minRows: 1, maxRows: 4 }}
+                disabled={sending}
+                style={{ flex: 1 }}
+              />
+              <Button
+                type={isListening ? "primary" : "default"}
+                danger={isListening}
+                icon={isListening ? <AudioMutedOutlined /> : <AudioOutlined />}
+                onClick={handleToggleListen}
+                disabled={sending}
+                title={isListening ? "停止录音" : "语音输入"}
+              />
+              <Button
+                type="primary"
+                icon={<SendOutlined />}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('[AiAssistant] 发送按钮被点击');
+                  if (isListening) {
+                    recognitionRef.current?.stop();
+                    setIsListening(false);
+                  }
+                  handleSendMessage();
+                }}
+                loading={sending}
+                disabled={!inputValue.trim() || sending}
+              >
+                发送
+              </Button>
+            </div>
+            {isListening && (
+              <div style={{ fontSize: '12px', color: '#ff4d4f', textAlign: 'center', animation: 'pulse 1.5s infinite' }}>
+                <style>{`
+                  @keyframes pulse {
+                    0% { opacity: 0.6; }
+                    50% { opacity: 1; }
+                    100% { opacity: 0.6; }
+                  }
+                `}</style>
+                正在录音，请说话...
+              </div>
+            )}
           </div>
         </Card>
       ) : (

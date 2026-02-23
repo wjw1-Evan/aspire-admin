@@ -172,6 +172,10 @@ export function useSseConnection(
         'SessionUpdated',
         'MessageDeleted',
         'SessionRead',
+        'agent_update',
+        'agent_track',
+        'agent_complete',
+        'agent_failed',
         'keepalive'
       ];
       eventNames.forEach(eventName => {
@@ -193,6 +197,16 @@ export function useSseConnection(
           }
         });
       });
+
+      // 监听默认的 'message' 事件 (没有任何 event 头的 data)
+      eventSource.onmessage = (event: MessageEvent) => {
+        try {
+          const data = event.data ? JSON.parse(event.data) : null;
+          // 如果 data 中有 type，则尝试寻找特定 type 的 handler，否则调用 'message' handler
+          const handlers = (data?.type && eventHandlersRef.current.get(data.type)) || eventHandlersRef.current.get('message');
+          handlers?.forEach((handler: (data: any) => void) => handler(data));
+        } catch (e) { }
+      };
     } catch (error) {
       setIsConnecting(false);
       setIsConnected(false);
@@ -227,7 +241,7 @@ export function useSseConnection(
       eventHandlersRef.current.set(eventName, new Set());
     }
     eventHandlersRef.current.get(eventName)!.add(handler as (data: any) => void);
-    
+
     // 返回清理函数
     return () => {
       const handlers = eventHandlersRef.current.get(eventName);
@@ -263,8 +277,8 @@ export function useSseConnection(
         clearTimeout(timer);
       };
     }
-    
-    return () => {}; // Return empty cleanup function when autoConnect is false
+
+    return () => { }; // Return empty cleanup function when autoConnect is false
   }, [autoConnect, connect]);
 
   // 组件卸载时清理

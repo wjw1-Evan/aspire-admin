@@ -1,12 +1,14 @@
 using System.Threading.Channels;
 using Platform.ApiService.Models;
 
+using Platform.ServiceDefaults.Services;
+
 namespace Platform.ApiService.Services;
 
 /// <summary>
 /// 用户活动日志异步队列接口
 /// </summary>
-public interface IUserActivityLogQueue
+public interface IUserActivityLogQueue : ISingletonDependency
 {
     /// <summary>
     /// 将日志请求入队

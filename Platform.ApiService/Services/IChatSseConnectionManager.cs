@@ -1,10 +1,12 @@
+using Platform.ServiceDefaults.Services;
+
 namespace Platform.ApiService.Services;
 
 /// <summary>
 /// SSE 连接管理器接口
-/// 管理 SSE 连接的生命周期和消息发送
+/// 管理 SSE 连接的生命周期 and 消息发送
 /// </summary>
-public interface IChatSseConnectionManager
+public interface IChatSseConnectionManager : ISingletonDependency
 {
     /// <summary>
     /// 注册连接

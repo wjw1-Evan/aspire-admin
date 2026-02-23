@@ -56,5 +56,15 @@ public interface IMcpService
     /// <param name="currentUserId">当前用户 ID</param>
     /// <returns>提示词内容</returns>
     Task<McpGetPromptResponse> GetPromptAsync(McpGetPromptRequest request, string currentUserId);
+
+    /// <summary>
+    /// 自动检测并调用相关的 MCP 工具（AI 助手前置处理）
+    /// </summary>
+    /// <param name="session">当前聊天会话</param>
+    /// <param name="userMessage">用户消息</param>
+    /// <param name="currentUserId">当前用户 ID</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>格式化的工具执行结果字符串，若未检测到工具则返回 null</returns>
+    Task<string?> DetectAndCallMcpToolsAsync(ChatSession session, ChatMessage userMessage, string currentUserId, CancellationToken cancellationToken);
 }
 

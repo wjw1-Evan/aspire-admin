@@ -38,8 +38,6 @@ public class ChatAiService : IChatAiService
     private readonly IChatBroadcaster _broadcaster;
     private readonly IChatSessionService _sessionService;
     private readonly IMcpService _mcpService;
-    private readonly IAiAgentService _agentService;
-    private readonly IAiAgentOrchestrator _orchestrator;
     private readonly IXiaokeConfigService? _xiaokeConfigService;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<ChatAiService> _logger;
@@ -57,8 +55,6 @@ public class ChatAiService : IChatAiService
     /// <param name="broadcaster">消息广播器</param>
     /// <param name="sessionService">会话管理服务</param>
     /// <param name="mcpService">MCP 协议工具服务</param>
-    /// <param name="agentService">智能体管理服务</param>
-    /// <param name="orchestrator">智能体编排器</param>
     /// <param name="xiaokeConfigService">Xiaoke 配置服务（可选）</param>
     /// <param name="tenantContext">租户上下文</param>
     /// <param name="logger">日志处理器</param>
@@ -73,8 +69,6 @@ public class ChatAiService : IChatAiService
         IChatBroadcaster broadcaster,
         IChatSessionService sessionService,
         IMcpService mcpService,
-        IAiAgentService agentService,
-        IAiAgentOrchestrator orchestrator,
         IXiaokeConfigService? xiaokeConfigService,
         ITenantContext tenantContext,
         ILogger<ChatAiService> logger)
@@ -89,8 +83,6 @@ public class ChatAiService : IChatAiService
         _broadcaster = broadcaster ?? throw new ArgumentNullException(nameof(broadcaster));
         _sessionService = sessionService ?? throw new ArgumentNullException(nameof(sessionService));
         _mcpService = mcpService ?? throw new ArgumentNullException(nameof(mcpService));
-        _agentService = agentService ?? throw new ArgumentNullException(nameof(agentService));
-        _orchestrator = orchestrator ?? throw new ArgumentNullException(nameof(orchestrator));
         _xiaokeConfigService = xiaokeConfigService;
         _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -159,13 +151,16 @@ public class ChatAiService : IChatAiService
         var conversationMessages = await BuildAssistantConversationMessagesAsync(session, triggerMessage, cancellationToken);
         if (conversationMessages.Count == 0) return null;
 
-        // string? toolResultContext = await _mcpService.DetectAndCallMcpToolsAsync(session, triggerMessage, triggerMessage.SenderId, cancellationToken);
-        string? toolResultContext = null; // 暂时保留变量以防后续引用，DetectAndCallMcpToolsAsync 已移除
+        // 尝试 MCP 直接调用（快速路径）
+        string? toolResultContext = await _mcpService.DetectAndCallMcpToolsAsync(session, triggerMessage, triggerMessage.SenderId, cancellationToken);
 
-        // 智能体调度逻辑
-        if (await DispatchToAgentIfNeededAsync(session, triggerMessage, onChunk))
+        if (!string.IsNullOrEmpty(toolResultContext))
         {
-            return null; // 已由专业智能体接管
+            _logger.LogInformation("[ChatAI] 已获取 MCP 数据，由小科基于数据直接回复。");
+        }
+        else
+        {
+            _logger.LogInformation("[ChatAI] 未匹配到实时工具，进入常规回复模式。");
         }
 
         var instructionBuilder = new StringBuilder();
@@ -188,6 +183,15 @@ public class ChatAiService : IChatAiService
         try
         {
             assistantMessage = await CreateAssistantMessageStreamingAsync(session, string.Empty, triggerMessage.SenderId, null, triggerMessage.Id, cancellationToken);
+
+            // 发送服务调用提示（关联到 assistantMessage.Id）
+            if (!string.IsNullOrEmpty(toolResultContext) && onChunk != null)
+            {
+                var tip = $"> [系统] 正在调用 MCP 工具获取实时信息...\n\n";
+                accumulatedContent.Append(tip);
+                await onChunk(session.Id, assistantMessage.Id, tip);
+            }
+
             var streamingResult = chatClient.CompleteChatStreamingAsync(messages, completionOptions, cancellationToken);
 
             await foreach (var update in streamingResult)
@@ -236,40 +240,6 @@ public class ChatAiService : IChatAiService
         catch (Exception ex) { _logger.LogError(ex, "流式生成异常"); if (assistantMessage != null) await _messageFactory.SoftDeleteAsync(assistantMessage.Id); return null; }
     }
 
-    private async Task<bool> DispatchToAgentIfNeededAsync(ChatSession session, ChatMessage triggerMessage, Func<string, string, string, Task>? onChunk)
-    {
-        if (string.IsNullOrWhiteSpace(triggerMessage.Content)) return false;
-        var input = triggerMessage.Content.ToLower();
-        string? targetAgentName = null;
-
-        // 简单的意图发现逻辑
-        if (Regex.IsMatch(input, "设备|网关|传感器|遥测|iot|数据点|趋势|观测|洞察")) targetAgentName = "物联专家";
-        else if (Regex.IsMatch(input, "项目|任务|进度|公文|审批|流程|实例|节点|统计|报表|分析|task-management")) targetAgentName = "项目管家";
-        else if (Regex.IsMatch(input, "文件|网盘|云存储|搜索|寻找|密码|记忆|待办|通知|提醒|未读|备忘|聊天|对话|历史|记录")) targetAgentName = "资产助手";
-        else if (Regex.IsMatch(input, "招商|线索|合同|租赁|意向|租约|楼宇|大厦")) targetAgentName = "招商顾问";
-        else if (Regex.IsMatch(input, "园区|租户|入驻|离场|报修|投诉|建议|走访|运营|企业服务")) targetAgentName = "园区运营专家";
-        else if (Regex.IsMatch(input, "用户|人员|权限|角色|配置|公司|企业|名单|行政|日志|审计|操作记录|附近|周围")) targetAgentName = "行政专家";
-
-        if (targetAgentName == null) return false;
-
-        var agents = await _agentService.GetAgentsAsync();
-        var agent = agents.FirstOrDefault(a => a.Name == targetAgentName);
-        if (agent == null) return false;
-
-        _logger.LogInformation("意图识别成功，正在委派任务给智能体: {AgentName}", targetAgentName);
-
-        // 模拟小科的反馈
-        if (onChunk != null)
-        {
-            await onChunk(session.Id, "system", $"我已经为您联系了**{targetAgentName}**，他正在帮您处理请求，请稍候...\n\n---\n");
-        }
-
-        // 创建 Run 并启动
-        var run = await _agentService.CreateRunAsync(agent.Id, triggerMessage.Content);
-        await _agentService.StartAgentRunAsync(run.Id, session.Id);
-
-        return true;
-    }
 
     private async Task<XiaokeConfigDto?> GetXiaokeConfig()
     {

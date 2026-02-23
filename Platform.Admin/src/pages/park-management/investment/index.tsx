@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState, useEffect } from 'react';
-import { Card, Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typography, Descriptions, InputNumber, Tabs, Progress, Popconfirm, DatePicker, Flex } from 'antd';
+import { Card, Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typography, Descriptions, InputNumber, Tabs, Progress, Popconfirm, DatePicker, Flex, Drawer } from 'antd';
 import { useIntl } from '@umijs/max';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, UserAddOutlined, ProjectOutlined, PhoneOutlined, MailOutlined, ReloadOutlined, SwapOutlined, TeamOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
@@ -29,6 +29,8 @@ const InvestmentManagement: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [leadModalVisible, setLeadModalVisible] = useState(false);
     const [projectModalVisible, setProjectModalVisible] = useState(false);
+    const [leadDetailVisible, setLeadDetailVisible] = useState(false);
+    const [projectDetailVisible, setProjectDetailVisible] = useState(false);
     const [currentLead, setCurrentLead] = useState<InvestmentLead | null>(null);
     const [currentProject, setCurrentProject] = useState<InvestmentProject | null>(null);
     const [isEdit, setIsEdit] = useState(false);
@@ -78,9 +80,9 @@ const InvestmentManagement: React.FC = () => {
             dataIndex: 'companyName',
             width: 180,
             render: (_, record) => (
-                <Space>
-                    <TeamOutlined style={{ color: '#1890ff' }} />
-                    <Text strong>{record.companyName}</Text>
+                <Space onClick={() => handleViewLead(record)} style={{ cursor: 'pointer', color: '#1890ff' }}>
+                    <TeamOutlined />
+                    <Text strong style={{ color: 'inherit' }}>{record.companyName}</Text>
                 </Space>
             ),
         },
@@ -186,9 +188,9 @@ const InvestmentManagement: React.FC = () => {
             dataIndex: 'projectName',
             width: 200,
             render: (_, record) => (
-                <Space>
-                    <ProjectOutlined style={{ color: '#52c41a' }} />
-                    <Text strong>{record.projectName}</Text>
+                <Space onClick={() => handleViewProject(record)} style={{ cursor: 'pointer', color: '#52c41a' }}>
+                    <ProjectOutlined />
+                    <Text strong style={{ color: 'inherit' }}>{record.projectName}</Text>
                 </Space>
             ),
         },
@@ -293,6 +295,16 @@ const InvestmentManagement: React.FC = () => {
         } catch (error) {
             return { data: [], total: 0, success: false };
         }
+    };
+
+    const handleViewLead = (lead: InvestmentLead) => {
+        setCurrentLead(lead);
+        setLeadDetailVisible(true);
+    };
+
+    const handleViewProject = (project: InvestmentProject) => {
+        setCurrentProject(project);
+        setProjectDetailVisible(true);
     };
 
     const handleEditLead = (lead: InvestmentLead) => {
@@ -746,6 +758,94 @@ const InvestmentManagement: React.FC = () => {
                     </Form.Item>
                 </Form>
             </Modal>
+            {/* 线索详情抽屉 */}
+            <Drawer
+                title="线索详情"
+                width={600}
+                open={leadDetailVisible}
+                onClose={() => setLeadDetailVisible(false)}
+            >
+                {currentLead && (
+                    <Descriptions column={1} bordered size="small">
+                        <Descriptions.Item label="企业名称">{currentLead.companyName}</Descriptions.Item>
+                        <Descriptions.Item label="行业">{currentLead.industry || '-'}</Descriptions.Item>
+                        <Descriptions.Item label="联系人">{currentLead.contactPerson || '-'}</Descriptions.Item>
+                        <Descriptions.Item label="电话">{currentLead.phone || '-'}</Descriptions.Item>
+                        <Descriptions.Item label="邮箱">{currentLead.email || '-'}</Descriptions.Item>
+                        <Descriptions.Item label="来源">
+                            {(() => {
+                                const sourceMap: Record<string, string> = {
+                                    Direct: '直接咨询',
+                                    Referral: '客户推荐',
+                                    Exhibition: '展会',
+                                    Website: '官网',
+                                    Other: '其他',
+                                };
+                                return sourceMap[currentLead.source] || currentLead.source;
+                            })()}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="意向面积">
+                            {currentLead.intendedArea ? `${currentLead.intendedArea} m²` : '-'}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="优先级">
+                            {(() => {
+                                const opt = priorityOptions.find(o => o.value === currentLead.priority);
+                                return <Tag color={opt?.color}>{opt?.label || currentLead.priority}</Tag>;
+                            })()}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="当前状态">
+                            {(() => {
+                                const opt = leadStatusOptions.find(o => o.value === currentLead.status);
+                                return <Tag color={opt?.color}>{opt?.label || currentLead.status}</Tag>;
+                            })()}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="下次跟进日期">
+                            {currentLead.nextFollowUpDate ? dayjs(currentLead.nextFollowUpDate).format('YYYY-MM-DD') : '-'}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="创建时间">
+                            {dayjs(currentLead.createdAt).format('YYYY-MM-DD HH:mm')}
+                        </Descriptions.Item>
+                    </Descriptions>
+                )}
+            </Drawer>
+
+            {/* 项目详情抽屉 */}
+            <Drawer
+                title="项目详情"
+                width={600}
+                open={projectDetailVisible}
+                onClose={() => setProjectDetailVisible(false)}
+            >
+                {currentProject && (
+                    <Descriptions column={1} bordered size="small">
+                        <Descriptions.Item label="项目名称">{currentProject.projectName}</Descriptions.Item>
+                        <Descriptions.Item label="企业名称">{currentProject.companyName}</Descriptions.Item>
+                        <Descriptions.Item label="联系人">{currentProject.contactPerson || '-'}</Descriptions.Item>
+                        <Descriptions.Item label="电话">{currentProject.phone || '-'}</Descriptions.Item>
+                        <Descriptions.Item label="意向面积">
+                            {currentProject.intendedArea ? `${currentProject.intendedArea} m²` : '-'}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="报价租金">
+                            {currentProject.proposedRent ? `¥${currentProject.proposedRent?.toLocaleString()}/月` : '-'}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="当前阶段">
+                            {(() => {
+                                const opt = projectStageOptions.find(o => o.value === currentProject.stage);
+                                return <Tag color={opt?.color}>{opt?.label || currentProject.stage}</Tag>;
+                            })()}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="成功率">
+                            <Progress percent={currentProject.probability as number} size="small" />
+                        </Descriptions.Item>
+                        <Descriptions.Item label="预计签约日期">
+                            {currentProject.expectedSignDate ? dayjs(currentProject.expectedSignDate).format('YYYY-MM-DD') : '-'}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="创建时间">
+                            {dayjs(currentProject.createdAt).format('YYYY-MM-DD HH:mm')}
+                        </Descriptions.Item>
+                    </Descriptions>
+                )}
+            </Drawer>
         </PageContainer>
     );
 };

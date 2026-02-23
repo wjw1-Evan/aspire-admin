@@ -154,43 +154,12 @@ builder.Services.AddOpenApi(options =>
 });
 
 // ──────────────────────────────────────────────
-// 6. 业务服务注册
+// 6. 业务服务注册 (全自动扫描)
 // ──────────────────────────────────────────────
 
-// Options
-builder.Services.Configure<AiCompletionOptions>(builder.Configuration.GetSection(AiCompletionOptions.SectionName));
-builder.Services.Configure<Platform.ApiService.Options.GlobalAuthenticationOptions>(builder.Configuration.GetSection(Platform.ApiService.Options.GlobalAuthenticationOptions.SectionName));
-builder.Services.Configure<IoTDataCollectionOptions>(builder.Configuration.GetSection(IoTDataCollectionOptions.SectionName));
+builder.Services.AddPlatformDiscovery(builder.Configuration);
 
-
-
-// IoT 数据采集
-builder.Services.AddSingleton<HttpIoTDataFetchClient>();
-builder.Services.AddSingleton<IIoTDataFetchClient>(sp => sp.GetRequiredService<HttpIoTDataFetchClient>());
-builder.Services.AddScoped<SimpleHttpDataCollector>();
-builder.Services.AddScoped<IoTDataCollector>();
-builder.Services.AddScoped<IoTGatewayStatusChecker>();
-
-// 后台任务
-builder.Services.AddHostedService<IoTDataCollectionHostedService>();
-builder.Services.AddHostedService<IoTGatewayStatusCheckHostedService>();
-builder.Services.AddHostedService<CloudStorageMaintenanceService>();
-builder.Services.AddHostedService<IoTDataRetentionHostedService>();
-
-// 自动扫描注册所有业务服务（接口 → 实现）
-builder.Services.AddBusinessServices();
-
-// 需要覆盖自动注册或使用特殊生命周期的服务
-builder.Services.AddSingleton<IUserActivityLogQueue, UserActivityLogQueue>();
-builder.Services.AddHostedService<Platform.ApiService.BackgroundServices.UserActivityLogBackgroundWorker>();
-builder.Services.AddScoped<IApproverResolver, UserApproverResolver>();
-builder.Services.AddScoped<IApproverResolver, RoleApproverResolver>();
-builder.Services.AddScoped<IApproverResolver, FormFieldApproverResolver>();
-builder.Services.AddScoped<IApproverResolverFactory, ApproverResolverFactory>();
-builder.Services.AddScoped<IWorkflowGraphValidator, WorkflowGraphValidator>();
-builder.Services.AddScoped<IFieldValidationService, FieldValidationService>();
-builder.Services.AddSingleton<IChatSseConnectionManager, ChatSseConnectionManager>();
-builder.Services.AddSingleton<IPasswordEncryptionService, PasswordEncryptionService>();
+// ──────────────────────────────────────────────
 
 // ──────────────────────────────────────────────
 // 7. 认证 & 授权
@@ -338,19 +307,5 @@ app.MapFallback(async (HttpContext context) =>
     await context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse, jsonOptions));
 });
 
-// 初始化预置 AI 智能体
-using (var scope = app.Services.CreateScope())
-{
-    try
-    {
-        var agentService = scope.ServiceProvider.GetRequiredService<IAiAgentService>();
-        await agentService.InitializeSeedAgentsAsync();
-    }
-    catch (Exception ex)
-    {
-        var logger = app.Services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "初始化预置智能体失败");
-    }
-}
-
+// 已移除 AI 智能体功能的初始化逻辑
 await app.RunAsync();

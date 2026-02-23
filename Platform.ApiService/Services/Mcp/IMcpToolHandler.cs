@@ -1,12 +1,14 @@
 using Platform.ApiService.Models;
 
+using Platform.ServiceDefaults.Services;
+
 namespace Platform.ApiService.Services.Mcp;
 
 /// <summary>
 /// MCP 工具处理器接口
 /// 每个实现负责一组内聚的工具定义和执行逻辑
 /// </summary>
-public interface IMcpToolHandler
+public interface IMcpToolHandler : IScopedDependency
 {
     /// <summary>
     /// 提供该 Handler 负责的所有工具定义

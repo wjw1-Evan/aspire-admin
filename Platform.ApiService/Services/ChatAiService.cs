@@ -1,4 +1,3 @@
-#pragma warning disable CS1591
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OpenAI;
@@ -22,6 +21,9 @@ using OpenAIChatMessage = OpenAI.Chat.ChatMessage;
 
 namespace Platform.ApiService.Services;
 
+/// <summary>
+/// 聊天 AI 服务实现 - 提供基于 LLM 的助手回复、流式输出、工具调用及记忆管理
+/// </summary>
 public class ChatAiService : IChatAiService
 {
     private const int AssistantContextMessageLimit = 24;
@@ -35,13 +37,31 @@ public class ChatAiService : IChatAiService
     private readonly IUserService _userService;
     private readonly IChatBroadcaster _broadcaster;
     private readonly IChatSessionService _sessionService;
-    private readonly IChatMcpService _mcpService;
+    private readonly IMcpService _mcpService;
     private readonly IAiAgentService _agentService;
     private readonly IAiAgentOrchestrator _orchestrator;
     private readonly IXiaokeConfigService? _xiaokeConfigService;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<ChatAiService> _logger;
 
+    /// <summary>
+    /// 初始化聊天 AI 服务
+    /// </summary>
+    /// <param name="openAiClient">OpenAI 客户端</param>
+    /// <param name="aiOptions">AI 补全配置选项</param>
+    /// <param name="messageFactory">聊天消息数据工厂</param>
+    /// <param name="sessionFactory">聊天会话数据工厂</param>
+    /// <param name="userFactory">用户数据工厂</param>
+    /// <param name="memoryFactory">用户记忆数据工厂</param>
+    /// <param name="userService">用户服务</param>
+    /// <param name="broadcaster">消息广播器</param>
+    /// <param name="sessionService">会话管理服务</param>
+    /// <param name="mcpService">MCP 协议工具服务</param>
+    /// <param name="agentService">智能体管理服务</param>
+    /// <param name="orchestrator">智能体编排器</param>
+    /// <param name="xiaokeConfigService">Xiaoke 配置服务（可选）</param>
+    /// <param name="tenantContext">租户上下文</param>
+    /// <param name="logger">日志处理器</param>
     public ChatAiService(
         OpenAIClient openAiClient,
         IOptions<AiCompletionOptions> aiOptions,
@@ -52,7 +72,7 @@ public class ChatAiService : IChatAiService
         IUserService userService,
         IChatBroadcaster broadcaster,
         IChatSessionService sessionService,
-        IChatMcpService mcpService,
+        IMcpService mcpService,
         IAiAgentService agentService,
         IAiAgentOrchestrator orchestrator,
         IXiaokeConfigService? xiaokeConfigService,
@@ -76,6 +96,7 @@ public class ChatAiService : IChatAiService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <inheritdoc />
     public async Task RespondAsAssistantAsync(ChatSession session, ChatMessage triggerMessage, CancellationToken cancellationToken)
     {
         if (!session.Participants.Contains(AiAssistantConstants.AssistantUserId)) return;
@@ -93,6 +114,7 @@ public class ChatAiService : IChatAiService
         }
     }
 
+    /// <inheritdoc />
     public async Task<ChatMessage?> GetOrGenerateAssistantReplyStreamAsync(
         ChatSession session,
         ChatMessage userMessage,
@@ -137,7 +159,8 @@ public class ChatAiService : IChatAiService
         var conversationMessages = await BuildAssistantConversationMessagesAsync(session, triggerMessage, cancellationToken);
         if (conversationMessages.Count == 0) return null;
 
-        string? toolResultContext = await _mcpService.DetectAndCallMcpToolsAsync(session, triggerMessage, triggerMessage.SenderId, cancellationToken);
+        // string? toolResultContext = await _mcpService.DetectAndCallMcpToolsAsync(session, triggerMessage, triggerMessage.SenderId, cancellationToken);
+        string? toolResultContext = null; // 暂时保留变量以防后续引用，DetectAndCallMcpToolsAsync 已移除
 
         // 智能体调度逻辑
         if (await DispatchToAgentIfNeededAsync(session, triggerMessage, onChunk))
@@ -423,6 +446,11 @@ public class ChatAiService : IChatAiService
         await _messageFactory.UpdateAsync(messageId, m => { m.Content = finalContent; m.UpdatedAt = DateTime.UtcNow; m.Metadata = meta; });
     }
 
+    /// <summary>
+    /// 检查是否应跳过自动助手回复。
+    /// </summary>
+    /// <param name="triggerMessage">触发回复的消息</param>
+    /// <returns>如果应跳过则返回 true</returns>
     public bool ShouldSkipAutomaticAssistantReply(ChatMessage triggerMessage)
     {
         if (triggerMessage.Metadata == null || !triggerMessage.Metadata.TryGetValue("assistantStreaming", out var value)) return false;

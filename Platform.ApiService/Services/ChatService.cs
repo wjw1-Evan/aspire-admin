@@ -8,6 +8,7 @@ using Platform.ApiService.Constants;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using System.ClientModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Security.Cryptography;
@@ -81,7 +82,18 @@ public class ChatService : IChatService
     /// <inheritdoc />
     public async Task<(List<ChatSession> sessions, long total)> GetSessionsAsync(ChatSessionListRequest request)
     {
+        var sw = System.Diagnostics.Stopwatch.StartNew();
         await _aiAssistantCoordinator.EnsureAssistantSessionForCurrentUserAsync();
+        sw.Stop();
+
+        if (sw.ElapsedMilliseconds > 500)
+        {
+            _logger.LogWarning("EnsureAssistantSessionForCurrentUserAsync 耗时较长: {ElapsedMs}ms", sw.ElapsedMilliseconds);
+        }
+        else
+        {
+            _logger.LogDebug("EnsureAssistantSessionForCurrentUserAsync 耗时: {ElapsedMs}ms", sw.ElapsedMilliseconds);
+        }
 
         request ??= new ChatSessionListRequest();
 
@@ -1419,6 +1431,8 @@ public class ChatService : IChatService
 
             // 流式生成 AI 回复：每个增量立即发送到前端
             var streamingResult = chatClient.CompleteChatStreamingAsync(messages, completionOptions, cancellationToken);
+            var chunkIndex = 0;
+            var startSw = Stopwatch.StartNew();
 
             await foreach (var update in streamingResult)
             {
@@ -1432,6 +1446,12 @@ public class ChatService : IChatService
                     {
                         var delta = contentPart.Text;
                         accumulatedContent.Append(delta);
+
+                        chunkIndex++;
+                        if (chunkIndex == 1)
+                        {
+                            _logger.LogInformation("AI 生成首个分块耗时: {ElapsedMs}ms, 内容: {Delta}", startSw.ElapsedMilliseconds, delta);
+                        }
 
                         // 立即发送到前端（不等待其他操作）
                         if (onChunk != null)

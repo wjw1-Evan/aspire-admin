@@ -58,7 +58,10 @@ public class AiAssistantCoordinator : IAiAssistantCoordinator
             throw new InvalidOperationException("当前用户尚未加入任何企业，无法建立 AI 助手会话。");
         }
 
-        return await EnsureAssistantSessionAsync(user, companyId);
+        _logger.LogDebug("开始为用户 {UserId} 确保 AI 助手会话", user.Id);
+        var session = await EnsureAssistantSessionAsync(user, companyId);
+        _logger.LogDebug("为用户 {UserId} 确保 AI 助手会话完成: {SessionId}", user.Id, session.Id);
+        return session;
     }
 
     /// <summary>
@@ -68,6 +71,7 @@ public class AiAssistantCoordinator : IAiAssistantCoordinator
     /// <param name="companyId">企业标识</param>
     private async Task<ChatSession> EnsureAssistantSessionAsync(AppUser user, string companyId)
     {
+        _logger.LogDebug("正在查找用户 {UserId} 的现有助手会话 (企业: {CompanyId})", user.Id, companyId);
         var existing = await _sessionFactory.FindAsync(session =>
             session.CompanyId == companyId &&
             session.Participants.Count == 2 &&
@@ -76,8 +80,11 @@ public class AiAssistantCoordinator : IAiAssistantCoordinator
             limit: 1);
         if (existing.Count > 0)
         {
+            _logger.LogDebug("找到现有助手会话: {SessionId}", existing[0].Id);
             return existing[0];
         }
+
+        _logger.LogInformation("未找到现有助手会话，正在为用户 {UserId} 创建新会话", user.Id);
 
         var participantNames = new Dictionary<string, string>
         {

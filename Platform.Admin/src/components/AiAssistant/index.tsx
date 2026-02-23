@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { FloatButton, App, Input, Button, Card, Avatar, Spin } from 'antd';
 import { MessageOutlined, CloseOutlined, SendOutlined } from '@ant-design/icons';
 import { useModel } from '@umijs/max';
+import { marked } from 'marked';
 import {
   getOrCreateAssistantSession,
   sendMessageWithStreaming,
@@ -17,6 +18,88 @@ const { TextArea } = Input;
  * AI 助手组件
  * 使用流式接口发送消息并接收 AI 回复（统一接口）
  */
+/**
+ * 打字机效果内容组件
+ */
+const TypewriterContent: React.FC<{ content: string; isStreaming: boolean; onUpdate?: () => void }> = ({
+  content,
+  isStreaming,
+  onUpdate,
+}) => {
+  const [displayContent, setDisplayContent] = useState('');
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Markdown 全局样式注入
+  useEffect(() => {
+    const styleId = 'ai-assistant-markdown-styles';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.innerHTML = `
+        .markdown-body p { margin-bottom: 8px; }
+        .markdown-body p:last-child { margin-bottom: 0; }
+        .markdown-body ul, .markdown-body ol { padding-left: 20px; margin-bottom: 8px; list-style: initial; }
+        .markdown-body code { background: #f0f0f0; padding: 2px 4px; border-radius: 4px; font-family: monospace; }
+        .markdown-body pre { background: #f0f0f0; padding: 12px; border-radius: 8px; overflow-x: auto; margin-bottom: 8px; }
+        .markdown-body h1, .markdown-body h2, .markdown-body h3 { margin-top: 12px; margin-bottom: 8px; }
+        .markdown-body blockquote { border-left: 4px solid #ddd; padding-left: 12px; color: #666; margin: 8px 0; }
+      `;
+      document.head.appendChild(style);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isStreaming) {
+      setDisplayContent(content);
+      return;
+    }
+
+    // 如果流式内容比当前显示的内容多，则逐步更新
+    if (content.length > displayContent.length) {
+      if (timerRef.current) clearInterval(timerRef.current);
+
+      timerRef.current = setInterval(() => {
+        setDisplayContent((prev) => {
+          if (prev.length < content.length) {
+            const next = content.slice(0, prev.length + 1);
+            return next;
+          }
+          if (timerRef.current) clearInterval(timerRef.current);
+          return prev;
+        });
+      }, 20); // 20ms 一个字符，比较平滑
+    }
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [content, isStreaming]);
+
+  // 当内容更新时通知父组件（用于滚动）
+  useEffect(() => {
+    onUpdate?.();
+  }, [displayContent, onUpdate]);
+
+  const html = useMemo(() => {
+    try {
+      return { __html: marked.parse(displayContent || '') as string };
+    } catch (e) {
+      return { __html: displayContent || '' };
+    }
+  }, [displayContent]);
+
+  return (
+    <div
+      className="markdown-body"
+      style={{
+        fontSize: '14px',
+        lineHeight: '1.6',
+      }}
+      dangerouslySetInnerHTML={html}
+    />
+  );
+};
+
 const AiAssistant: React.FC = () => {
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser;
@@ -116,28 +199,34 @@ const AiAssistant: React.FC = () => {
       return;
     }
 
-    console.log('[AiAssistant] 开始发送消息流程');
+    const userMessage = inputValue.trim();
+    setInputValue('');
+    setSending(true);
+
+    console.log('[AiAssistant] 开始发送消息流程, userMessage:', userMessage);
     let currentSession = session;
 
     if (!currentSession) {
       try {
+        console.log('[AiAssistant] 会话不存在，正在尝试获取或创建助手会话...');
         const assistantSession = await getOrCreateAssistantSession();
+        console.log('[AiAssistant] getOrCreateAssistantSession 结果:', assistantSession);
         if (assistantSession) {
           currentSession = assistantSession;
           setSession(assistantSession);
         } else {
+          console.error('[AiAssistant] 无法获取或创建助手会话');
           message.error('会话不存在，请刷新页面重试');
+          setSending(false);
           return;
         }
       } catch (error) {
+        console.error('[AiAssistant] 获取或创建助手会话异常:', error);
         message.error('无法发送消息：会话不存在');
+        setSending(false);
         return;
       }
     }
-
-    const userMessage = inputValue.trim();
-    setInputValue('');
-    setSending(true);
 
     // 先添加用户消息到界面（乐观更新）
     // 注意：senderId 用于前端显示，实际发送时后端会从token中获取用户ID
@@ -620,9 +709,17 @@ const AiAssistant: React.FC = () => {
                             wordBreak: 'break-word',
                           }}
                         >
-                          {msg.content || ''}
+                          {isAssistant ? (
+                            <TypewriterContent
+                              content={msg.content || ''}
+                              isStreaming={msg.id in streamingMessages}
+                              onUpdate={scrollToBottom}
+                            />
+                          ) : (
+                            msg.content || ''
+                          )}
                           {isAssistant && msg.id in streamingMessages && (
-                            <span style={{ opacity: 0.5 }}>▊</span>
+                            <span style={{ opacity: 0.5, marginLeft: 4 }}>▊</span>
                           )}
                         </div>
                       </div>

@@ -58,7 +58,7 @@ export interface ChatMessage {
  * 会话列表响应
  */
 export interface SessionListResponse {
-  data: ChatSession[];
+  list: ChatSession[];
   total: number;
   page: number;
   pageSize: number;
@@ -139,7 +139,7 @@ export async function getSessions(
 export async function getOrCreateAssistantSession(): Promise<ChatSession | null> {
   // 先尝试查找包含小科的会话
   const sessionsResponse = await getSessions({ page: 1, pageSize: 100 });
-  const assistantSession = sessionsResponse.data.find(
+  const assistantSession = sessionsResponse.list.find(
     (session) =>
       session.participants.includes(AI_ASSISTANT_ID) &&
       session.participants.length === 2
@@ -211,10 +211,10 @@ export async function sendMessageWithStreaming(
         } else if (line.startsWith('data: ')) {
           const data = line.substring(6).trim();
           if (!data || data === 'null') continue;
-          
+
           try {
             const payload = JSON.parse(data);
-            
+
             // 根据事件类型调用相应的回调
             switch (currentEventType) {
               case 'UserMessage':
@@ -278,9 +278,8 @@ export async function getMessages(
   if (params.limit) queryParams.append('limit', params.limit.toString());
 
   const query = queryParams.toString();
-  const url = `/api/chat/messages/${encodeURIComponent(sessionId)}${
-    query ? `?${query}` : ''
-  }`;
+  const url = `/api/chat/messages/${encodeURIComponent(sessionId)}${query ? `?${query}` : ''
+    }`;
 
   const response = await request<ApiResponse<MessageTimelineResponse>>(url, {
     method: 'GET',

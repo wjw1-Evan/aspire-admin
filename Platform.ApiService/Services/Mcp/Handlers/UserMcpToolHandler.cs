@@ -52,9 +52,24 @@ public class UserMcpToolHandler : McpToolHandlerBase
                 });
             });
 
-        RegisterTool("get_user_detail", "获取指定用户的详细信息。关键词：用户详情,个人资料",
-            ObjectSchema(new Dictionary<string, object> { ["id"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "用户ID" } }, ["id"]),
-            async (args, uid) => await _userService.GetUserByIdAsync(args["id"].ToString()!));
+        RegisterTool("get_user_detail", "获取指定用户的详细信息。支持通过 ID 或用户名查询。关键词：用户详情,个人资料",
+            ObjectSchema(new Dictionary<string, object>
+            {
+                ["id"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "用户ID" },
+                ["username"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "用户名" }
+            }),
+            async (args, uid) =>
+            {
+                var id = args.GetValueOrDefault("id")?.ToString();
+                var username = args.GetValueOrDefault("username")?.ToString();
+                if (!string.IsNullOrEmpty(id)) return await _userService.GetUserByIdAsync(id);
+                if (!string.IsNullOrEmpty(username))
+                {
+                    var list = await _userService.GetUsersWithPaginationAsync(new UserListRequest { Search = username, Page = 1, PageSize = 1 });
+                    if (list.Users.Any()) return await _userService.GetUserByIdAsync(list.Users.First().Id);
+                }
+                return new { error = "用户未找到" };
+            });
 
         RegisterTool("create_user", "创建新用户（管理后台）。关键词：新增用户,添加成员",
             ObjectSchema(new Dictionary<string, object>
@@ -69,6 +84,29 @@ public class UserMcpToolHandler : McpToolHandlerBase
                 Email = args.GetValueOrDefault("email")?.ToString(),
                 IsActive = true
             }));
+
+        RegisterTool("update_user", "更新指定用户的信息。关键词：修改用户,编辑成员",
+            ObjectSchema(new Dictionary<string, object>
+            {
+                ["id"] = new Dictionary<string, object> { ["type"] = "string" },
+                ["name"] = new Dictionary<string, object> { ["type"] = "string" },
+                ["email"] = new Dictionary<string, object> { ["type"] = "string" },
+                ["isActive"] = new Dictionary<string, object> { ["type"] = "boolean" }
+            }, ["id"]),
+            async (args, uid) =>
+            {
+                var id = args.GetValueOrDefault("id")?.ToString();
+                if (string.IsNullOrEmpty(id)) return new { error = "id is required" };
+                return await _userService.UpdateUserManagementAsync(id, new UpdateUserManagementRequest
+                {
+                    Email = args.GetValueOrDefault("email")?.ToString(),
+                    IsActive = args.ContainsKey("isActive") ? (bool)args["isActive"] : null
+                });
+            });
+
+        RegisterTool("delete_user", "从系统中软删除指定用户。关键词：删除用户,注销账号",
+            ObjectSchema(new Dictionary<string, object> { ["id"] = new Dictionary<string, object> { ["type"] = "string" } }, ["id"]),
+            async (args, uid) => await _userService.DeleteUserAsync(args.GetValueOrDefault("id")?.ToString() ?? ""));
 
         // --- 角色管理 ---
 

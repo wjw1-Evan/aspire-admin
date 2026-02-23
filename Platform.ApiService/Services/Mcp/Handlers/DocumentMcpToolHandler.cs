@@ -29,7 +29,7 @@ public class DocumentMcpToolHandler : McpToolHandlerBase
         _logger = logger;
 
         #region 公文管理
-        RegisterTool("get_documents", "获取公文列表。支持关键词、类型、分类和状态筛选。关键词：公文,摘要,文档",
+        RegisterTool("get_documents", "获取公文列表。支持关键词、类型、分类和状态筛选。关键词：公文,文件,文档,摘要,拟办,传阅",
             ObjectSchema(MergeProperties(new Dictionary<string, object>
             {
                 ["keyword"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "搜索关键词" },
@@ -45,12 +45,12 @@ public class DocumentMcpToolHandler : McpToolHandlerBase
                 {
                     Page = page,
                     PageSize = pageSize,
-                    Keyword = args.ContainsKey("keyword") ? args["keyword"]?.ToString() : null,
-                    DocumentType = args.ContainsKey("documentType") ? args["documentType"]?.ToString() : null,
-                    Category = args.ContainsKey("category") ? args["category"]?.ToString() : null,
-                    FilterType = args.ContainsKey("filterType") ? args["filterType"]?.ToString() : null
+                    Keyword = args.GetValueOrDefault("keyword")?.ToString(),
+                    DocumentType = args.GetValueOrDefault("documentType")?.ToString(),
+                    Category = args.GetValueOrDefault("category")?.ToString(),
+                    FilterType = args.GetValueOrDefault("filterType")?.ToString()
                 };
-                if (args.ContainsKey("status") && Enum.TryParse<DocumentStatus>(args["status"]?.ToString(), out var status)) request.Status = status;
+                if (args.ContainsKey("status") && Enum.TryParse<DocumentStatus>(args.GetValueOrDefault("status")?.ToString(), out var status)) request.Status = status;
                 var (items, total) = await _documentService.GetDocumentsAsync(request);
                 return new { documents = items.Select(d => new { d.Id, d.Title, d.DocumentType, d.Category, d.Status, d.CreatedBy, d.CreatedAt, d.WorkflowInstanceId }).ToList(), total, page, pageSize };
             });
@@ -59,7 +59,7 @@ public class DocumentMcpToolHandler : McpToolHandlerBase
             ObjectSchema(new Dictionary<string, object> { ["documentId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "公文ID" } }, ["documentId"]),
             async (args, uid) =>
             {
-                var documentId = args.ContainsKey("documentId") ? args["documentId"]?.ToString() : null;
+                var documentId = args.GetValueOrDefault("documentId")?.ToString();
                 if (string.IsNullOrEmpty(documentId)) return new { error = "未提供公文ID" };
                 var doc = await _documentService.GetDocumentAsync(documentId);
                 if (doc == null) return (object)new { error = "公文不存在" };
@@ -80,14 +80,14 @@ public class DocumentMcpToolHandler : McpToolHandlerBase
             }, PaginationSchema(50, 200))),
             HandleGetFileItemsAsync);
 
-        RegisterTool("search_cloud_files", "搜索云存储文件。",
+        RegisterTool("search_cloud_files", "全文搜索云存储中的文件内容或名称。关键词：搜索文件,查找文档",
             ObjectSchema(MergeProperties(new Dictionary<string, object>
             {
                 ["keyword"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "搜索关键词" }
             }, PaginationSchema())),
             HandleSearchFilesAsync);
 
-        RegisterTool("create_folder", "在云存储中创建文件夹。",
+        RegisterTool("create_folder", "在指定的云存储路径下创建新文件夹。关键词：新建文件夹,创建目录",
             ObjectSchema(new Dictionary<string, object>
             {
                 ["name"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "文件夹名称" },
@@ -95,8 +95,8 @@ public class DocumentMcpToolHandler : McpToolHandlerBase
             }, ["name"]),
             async (args, uid) =>
             {
-                var name = args.ContainsKey("name") ? args["name"]?.ToString() : null;
-                var parentId = args.ContainsKey("parentId") ? (args["parentId"]?.ToString() ?? "root") : "root";
+                var name = args.GetValueOrDefault("name")?.ToString();
+                var parentId = args.GetValueOrDefault("parentId")?.ToString() ?? "root";
                 if (string.IsNullOrEmpty(name)) return new { error = "文件夹名称必填" };
                 var folder = await _cloudStorageService.CreateFolderAsync(name, parentId);
                 return new { success = true, folderId = folder.Id, folderName = folder.Name };

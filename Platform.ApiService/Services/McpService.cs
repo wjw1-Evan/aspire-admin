@@ -3,8 +3,11 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Services;
+using Platform.ApiService.Services.Mcp;
+using Platform.ApiService.Services.Mcp.Handlers;
 
-namespace Platform.ApiService.Services.Mcp;
+namespace Platform.ApiService.Services;
 
 /// <summary>
 /// MCP 服务实现 - 协调者模式
@@ -13,22 +16,26 @@ namespace Platform.ApiService.Services.Mcp;
 public class McpService : IMcpService
 {
     private readonly IEnumerable<IMcpToolHandler> _handlers;
-    private readonly Handlers.RuleMcpToolHandler? _ruleHandler;
+    private readonly RuleMcpToolHandler? _ruleHandler;
+    private readonly IDataFactory<ChatMessage> _messageFactory;
     private readonly ILogger<McpService> _logger;
 
     /// <summary>
     /// 初始化 MCP 控制器服务
     /// </summary>
     /// <param name="handlers">已注册的 MCP 工具处理器集合</param>
+    /// <param name="messageFactory">消息数据工厂</param>
     /// <param name="logger">日志处理器</param>
     public McpService(
         IEnumerable<IMcpToolHandler> handlers,
+        IDataFactory<ChatMessage> messageFactory,
         ILogger<McpService> logger)
     {
         _handlers = handlers;
+        _messageFactory = messageFactory;
         _logger = logger;
         // 尝试从集合中找到 RuleHandler，用于资源和提示词
-        _ruleHandler = _handlers.OfType<Handlers.RuleMcpToolHandler>().FirstOrDefault();
+        _ruleHandler = _handlers.OfType<RuleMcpToolHandler>().FirstOrDefault();
     }
 
     /// <inheritdoc />
@@ -218,48 +225,145 @@ public class McpService : IMcpService
         .OrderByDescending(x => x.Score)
         .ToList();
 
+        // --- 增强：连续对话上下文扫描 ---
+        string? contextId = null;
+        string lastDomain = "";
+
+        try
+        {
+            // 获取最近 5 条历史消息（按时间倒序）
+            var history = await _messageFactory.FindAsync(
+                filter: m => m.SessionId == session.Id && m.Id != userMessage.Id,
+                orderBy: q => q.OrderByDescending(m => m.CreatedAt),
+                limit: 5);
+
+            foreach (var hMsg in history)
+            {
+                if (string.IsNullOrEmpty(hMsg.Content)) continue;
+
+                // 1. 从历史中嗅探最新的 ID
+                if (contextId == null)
+                {
+                    var hIdMatch = Regex.Match(hMsg.Content, @"\b([a-f0-9]{24}|[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\b", RegexOptions.IgnoreCase);
+                    if (hIdMatch.Success) contextId = hIdMatch.Value;
+                }
+
+                // 2. 从历史（特别是助手回复）中分析讨论领域
+                if (string.IsNullOrEmpty(lastDomain))
+                {
+                    if (hMsg.Content.Contains("线索") || hMsg.Content.Contains("招商")) lastDomain = "park_investment";
+                    else if (hMsg.Content.Contains("设备") || hMsg.Content.Contains("传感器")) lastDomain = "iot";
+                    else if (hMsg.Content.Contains("文件") || hMsg.Content.Contains("目录")) lastDomain = "file";
+                    else if (hMsg.Content.Contains("任务") || hMsg.Content.Contains("待办")) lastDomain = "task";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "[MCP Detect] 获取对话历史失败，跳过上下文分析。");
+        }
+
+        // --- 结束历史扫描 ---
+
         if (!scoredTools.Any()) return null;
 
-        // 提取最终匹配的工具
+        // 根据上下文领域对匹配结果进行微调加成
+        if (!string.IsNullOrEmpty(lastDomain))
+        {
+            scoredTools = scoredTools.Select(x =>
+            {
+                var toolName = x.Tool.Name.ToLower();
+                if (toolName.Contains(lastDomain.Replace("park_", "")))
+                    return new { Tool = x.Tool, Score = x.Score + 3.0 };
+                return x;
+            }).OrderByDescending(x => x.Score).ToList();
+        }
+
         var matchedTools = scoredTools.Select(x => x.Tool).DistinctBy(t => t.Name).Take(3).ToList();
 
-        _logger.LogInformation("检测到潜在匹配的 MCP 工具 (Top {Count}, 最高分 {Score}): {Tools}",
-            matchedTools.Count, scoredTools.First().Score, string.Join(", ", matchedTools.Select(t => t.Name)));
+        // 增强安全性：区分“查询”与“操作”（增删改）
+        // 只有当用户输入包含明显的动作意图时，才在检测阶段自动执行具有副作用的工具
+        var actionKeywords = new[] { "删", "建", "新", "改", "设", "转", "审", "批", "标记", "处", "退", "增", "加", "去", "撤" };
+        bool hasActionIntent = actionKeywords.Any(k => input.Contains(k));
+
+        _logger.LogInformation("检测到潜在匹配的 MCP 工具 (Top {Count}, 最高分 {Score}, 动作意图: {HasIntent}): {Tools}",
+            matchedTools.Count, scoredTools.First().Score, hasActionIntent, string.Join(", ", matchedTools.Select(t => t.Name)));
 
         var executionResult = new McpToolExecutionResult();
         var resultBuilder = new StringBuilder();
 
         foreach (var tool in matchedTools)
         {
+            var toolName = tool.Name.ToLower();
+            bool isCommand = toolName.StartsWith("create_") || toolName.StartsWith("delete_") || toolName.StartsWith("update_") ||
+                             toolName.StartsWith("mark_") || toolName.StartsWith("add_") || toolName.StartsWith("remove_") ||
+                             toolName.StartsWith("set_") || toolName.StartsWith("toggle_") || toolName.StartsWith("convert_") ||
+                             toolName.StartsWith("approve_") || toolName.StartsWith("reject_") || toolName.StartsWith("process_");
+
+            if (isCommand && !hasActionIntent)
+            {
+                _logger.LogInformation("[MCP Detect] 工具 {ToolName} 属于命令/操作类，但未检测到用户确切的操作意图，跳过自动执行以确保安全。", tool.Name);
+                executionResult.ToolDescriptions.Add($"[待确认指令] {Regex.Replace(tool.Description, "关键词：.*", "").Trim()}");
+                continue;
+            }
             try
             {
                 var displayDesc = Regex.Replace(tool.Description, "关键词：.*", "").Trim('。', ' ', '、');
                 executionResult.ToolDescriptions.Add(displayDesc);
 
                 var args = new Dictionary<string, object>();
-                var businessKeywords = new[] { "项目", "任务", "线索", "招商", "资产", "楼宇", "建筑", "房源", "租户", "合同", "走访", "报修", "申请", "园区", "物联网", "网关", "设备", "通知", "公告", "文件", "档案" };
                 var specificSearch = cleanInput;
-                foreach (var bk in businessKeywords) specificSearch = specificSearch.Replace(bk, "");
+                // 不再盲目剔除业务关键词，因为它们可能是名称的一部分（例如“智慧园区物业”）。
                 specificSearch = specificSearch.Trim();
 
                 // 1. 尝试从输入中提取 ID (Guid 或 MongoDB ObjectId)
                 var idMatch = Regex.Match(input, @"\b([a-f0-9]{24}|[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})\b", RegexOptions.IgnoreCase);
                 string? detectedId = idMatch.Success ? idMatch.Value : null;
 
-                // 2. 基于 Schema 智能填充参数
+                // 2. 尝试从输入中提取 标题/内容 模式
+                var titleMatch = Regex.Match(input, @"(标题|名称|叫|搜)[为：: ]\s*([^，。？！\s]+)");
+                var contentMatch = Regex.Match(input, @"(内容|描述|结果|详情)[为：: ]\s*([^，。？！\s]+)");
+
+                // 连续对话增强：如果当前没有提取到 ID，但用户使用了指代词 (Pronouns)，则使用上下文中的 ID
+                var referentialKeywords = new[] { "它", "那个", "此", "该", "刚才的", "上一个", "it", "that", "this" };
+                if (detectedId == null && (referentialKeywords.Any(k => input.Contains(k)) || input.Length <= 4) && contextId != null)
+                {
+                    _logger.LogInformation("[MCP Detect] 检测到指代性语境，自动从历史语境提取 ID: {ContextId}", contextId);
+                    detectedId = contextId;
+                }
+                else
+                {
+                    // 增加：支持“显示”、“打开”等更多动词，并优化对“详细信息”等结尾的过滤
+                    var prefixMatch = Regex.Match(input, @"(关于|查看|搜索|查询|关于|叫|名为|名为|显示|打开|详细|获取)\s*(.+)");
+                    if (prefixMatch.Success)
+                    {
+                        specificSearch = prefixMatch.Groups[2].Value;
+                        // 剔除常见的干扰后缀
+                        specificSearch = Regex.Replace(specificSearch, @"(的?(详细信息|详情|资料|内容|信息)|记录|。|？|！|\.|\!|\?)$", "").Trim();
+                    }
+                }
+                // 3. 基于 Schema 智能填充参数
                 if (tool.InputSchema != null && tool.InputSchema.TryGetValue("properties", out var props) && props is Dictionary<string, object> propMap)
                 {
                     foreach (var prop in propMap)
                     {
                         var key = prop.Key.ToLower();
+                        // ID 匹配
                         if ((key == "id" || key.EndsWith("id")) && detectedId != null) args[prop.Key] = detectedId;
-                        else if (key == "keyword" || key == "search" || key == "name") args[prop.Key] = specificSearch;
+                        // 搜索/关键字 匹配
+                        else if (key == "keyword" || key == "search") args[prop.Key] = specificSearch;
+                        // 标题/名称 匹配
+                        else if ((key == "title" || key == "name" || key == "companyname" || key == "taskname" || key == "username" || key == "filename") && titleMatch.Success) args[prop.Key] = titleMatch.Groups[2].Value;
+                        else if (key == "title" || key == "name" || key == "companyname" || key == "taskname" || key == "username" || key == "filename") args[prop.Key] = specificSearch; // 兜底使用搜索词
+                        // 内容/描述 匹配
+                        else if ((key == "description" || key == "content" || key == "resolution" || key == "requirements") && contentMatch.Success) args[prop.Key] = contentMatch.Groups[2].Value;
+                        // 状态匹配 (短词)
                         else if (key == "status" && !string.IsNullOrEmpty(specificSearch) && specificSearch.Length <= 4) args[prop.Key] = specificSearch;
                     }
                 }
 
-                // 兜底：如果没有填充核心参数但有搜索词且工具名匹配领域，使用通用 key
-                if (!args.ContainsKey("id") && !args.ContainsKey("keyword") && !args.ContainsKey("search") && !string.IsNullOrEmpty(specificSearch))
+                // 兜底：如果没有填充核心参数但有搜索词，使用通用键
+                if (args.Count == 0 && !string.IsNullOrEmpty(specificSearch))
                 {
                     args["keyword"] = specificSearch;
                     args["search"] = specificSearch;

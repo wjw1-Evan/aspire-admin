@@ -34,7 +34,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
 
         #region 任务工具注册
 
-        RegisterTool("get_tasks", "获取任务列表。支持按状态、优先级、负责人和项目筛选。关键词：任务",
+        RegisterTool("get_tasks", "获取任务列表。支持按状态、优先级、负责人和项目筛选。关键词：任务,待办,工单,事项,负责人",
             ObjectSchema(MergeProperties(
                 new Dictionary<string, object>
                 {
@@ -48,14 +48,15 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             )),
             HandleGetTasksAsync);
 
-        RegisterTool("get_task_detail", "获取任务详情。",
+        RegisterTool("get_task_detail", "获取任务的详细信息与备注。支持通过 ID 或任务名称查询。关键词：任务详情,查看任务",
             ObjectSchema(new Dictionary<string, object>
             {
-                ["taskId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "任务ID" }
-            }, ["taskId"]),
+                ["taskId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "任务ID" },
+                ["taskName"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "任务名称" }
+            }),
             HandleGetTaskDetailAsync);
 
-        RegisterTool("create_task", "创建新任务。",
+        RegisterTool("create_task", "创建新任务。关键词：新建任务,新增任务,添加任务,安排任务",
             ObjectSchema(new Dictionary<string, object>
             {
                 ["taskName"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "任务名称" },
@@ -73,7 +74,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             }, ["taskName", "taskType"]),
             HandleCreateTaskAsync);
 
-        RegisterTool("update_task", "更新任务信息。",
+        RegisterTool("update_task", "更新任务标题、描述、状态或优先级。关键词：修改任务,编辑任务,更新任务进度",
             ObjectSchema(new Dictionary<string, object>
             {
                 ["taskId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "任务ID" },
@@ -85,7 +86,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             }, ["taskId"]),
             HandleUpdateTaskAsync);
 
-        RegisterTool("assign_task", "分配任务给指定用户。",
+        RegisterTool("assign_task", "将任务重新分配给指定负责人。关键词：分配任务,指派任务,转交任务",
             ObjectSchema(new Dictionary<string, object>
             {
                 ["taskId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "任务ID" },
@@ -94,7 +95,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             }, ["taskId", "assignedTo"]),
             HandleAssignTaskAsync);
 
-        RegisterTool("complete_task", "完成任务。",
+        RegisterTool("complete_task", "标记任务为已完成并录入结果。关键词：完成任务,关闭任务,解决任务",
             ObjectSchema(new Dictionary<string, object>
             {
                 ["taskId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "任务ID" },
@@ -103,21 +104,21 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             }, ["taskId"]),
             HandleCompleteTaskAsync);
 
-        RegisterTool("get_task_statistics", "获取任务统计信息。",
+        RegisterTool("get_task_statistics", "获取任务概览与完成情况。关键词：任务统计,任务概览,执行情况",
             ObjectSchema(new Dictionary<string, object>
             {
                 ["userId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "用户ID（可选）" }
             }),
             HandleGetTaskStatisticsAsync);
 
-        RegisterTool("get_my_task_count", "获取当前用户的任务数量统计。",
+        RegisterTool("get_my_task_count", "获取我个人的任务数量汇总。关键词：我的任务数,未完成任务数",
             ObjectSchema(new Dictionary<string, object>
             {
                 ["includeCompleted"] = new Dictionary<string, object> { ["type"] = "boolean", ["description"] = "是否包含已完成任务" }
             }),
             HandleGetMyTaskCountAsync);
 
-        RegisterTool("get_my_tasks", "获取分配给当前用户的任务列表。",
+        RegisterTool("get_my_tasks", "获取分配给我的所有任务。关键词：我的任务,我的工单,我的待办",
             ObjectSchema(MergeProperties(
                 new Dictionary<string, object>
                 {
@@ -133,7 +134,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
 
         #region 项目工具注册
 
-        RegisterTool("get_projects", "获取项目列表。关键词：项目",
+        RegisterTool("get_projects", "获取所有项目列表。关键词：项目,计划,工程",
             ObjectSchema(MergeProperties(
                 new Dictionary<string, object>
                 {
@@ -144,14 +145,15 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             )),
             HandleGetProjectsAsync);
 
-        RegisterTool("get_project_detail", "获取项目详情（含成员）。",
+        RegisterTool("get_project_detail", "获取项目的详细规划与团队架构。支持通过 ID 或项目名称查询。关键词：项目详情,项目概览",
             ObjectSchema(new Dictionary<string, object>
             {
-                ["projectId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "项目ID" }
-            }, ["projectId"]),
+                ["projectId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "项目ID" },
+                ["name"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "项目名称" }
+            }),
             HandleGetProjectDetailAsync);
 
-        RegisterTool("create_project", "创建新项目。",
+        RegisterTool("create_project", "启动新项目并设定起止日期。关键词：新建项目,创建项目,启动项目",
             ObjectSchema(new Dictionary<string, object>
             {
                 ["name"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "项目名称" },
@@ -161,7 +163,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             }, ["name"]),
             HandleCreateProjectAsync);
 
-        RegisterTool("get_project_statistics", "获取项目统计信息。",
+        RegisterTool("get_project_statistics", "获取项目整体进度统计数据。关键词：项目统计",
             HandleGetProjectStatisticsAsync);
 
         #endregion
@@ -178,11 +180,11 @@ public class TaskMcpToolHandler : McpToolHandlerBase
         {
             Page = page,
             PageSize = pageSize,
-            Search = arguments.ContainsKey("search") ? arguments["search"]?.ToString() : null,
+            Search = arguments.GetValueOrDefault("search")?.ToString(),
             Status = arguments.ContainsKey("status") && int.TryParse(arguments["status"]?.ToString(), out var status) ? status : null,
             Priority = arguments.ContainsKey("priority") && int.TryParse(arguments["priority"]?.ToString(), out var priority) ? priority : null,
-            AssignedTo = arguments.ContainsKey("assignedTo") ? arguments["assignedTo"]?.ToString() : null,
-            ProjectId = arguments.ContainsKey("projectId") ? arguments["projectId"]?.ToString() : null
+            AssignedTo = arguments.GetValueOrDefault("assignedTo")?.ToString(),
+            ProjectId = arguments.GetValueOrDefault("projectId")?.ToString()
         };
 
         var response = await _taskService.QueryTasksAsync(request, currentUser.CurrentCompanyId);
@@ -212,8 +214,20 @@ public class TaskMcpToolHandler : McpToolHandlerBase
 
     private async Task<object?> HandleGetTaskDetailAsync(Dictionary<string, object> arguments, string currentUserId)
     {
-        if (!arguments.ContainsKey("taskId") || arguments["taskId"] is not string taskId)
-            return new { error = "缺少必需的参数: taskId" };
+        var taskId = arguments.GetValueOrDefault("taskId")?.ToString();
+        var taskName = arguments.GetValueOrDefault("taskName")?.ToString();
+
+        if (string.IsNullOrEmpty(taskId))
+        {
+            if (string.IsNullOrEmpty(taskName)) return new { error = "参数错误: taskId 或 taskName 必填" };
+
+            var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+            if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId)) return new { error = "无法确定当前企业" };
+
+            var searchResult = await _taskService.QueryTasksAsync(new TaskQueryRequest { Search = taskName, Page = 1, PageSize = 1 }, currentUser.CurrentCompanyId);
+            if (searchResult.Tasks.Any()) taskId = searchResult.Tasks.First().Id;
+            else return new { error = "未找到该任务" };
+        }
 
         var task = await _taskService.GetTaskByIdAsync(taskId);
         if (task == null) return new { error = "任务未找到" };
@@ -253,10 +267,10 @@ public class TaskMcpToolHandler : McpToolHandlerBase
 
     private async Task<object?> HandleCreateTaskAsync(Dictionary<string, object> arguments, string currentUserId)
     {
-        if (!arguments.ContainsKey("taskName") || arguments["taskName"] is not string taskName)
-            return new { error = "缺少必需的参数: taskName" };
-        if (!arguments.ContainsKey("taskType") || arguments["taskType"] is not string taskType)
-            return new { error = "缺少必需的参数: taskType" };
+        var taskName = arguments.GetValueOrDefault("taskName")?.ToString();
+        var taskType = arguments.GetValueOrDefault("taskType")?.ToString();
+        if (string.IsNullOrEmpty(taskName) || string.IsNullOrEmpty(taskType))
+            return new { error = "taskName 和 taskType 必填" };
 
         var currentUser = await _userFactory.GetByIdAsync(currentUserId);
         if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
@@ -266,16 +280,16 @@ public class TaskMcpToolHandler : McpToolHandlerBase
         {
             TaskName = taskName,
             TaskType = taskType,
-            Description = arguments.ContainsKey("description") ? arguments["description"]?.ToString() : null,
+            Description = arguments.GetValueOrDefault("description")?.ToString(),
             Priority = arguments.ContainsKey("priority") && int.TryParse(arguments["priority"]?.ToString(), out var priority) ? priority : (int)TaskPriority.Medium,
-            AssignedTo = arguments.ContainsKey("assignedTo") ? arguments["assignedTo"]?.ToString() : null,
+            AssignedTo = arguments.GetValueOrDefault("assignedTo")?.ToString(),
             EstimatedDuration = arguments.ContainsKey("estimatedDuration") && int.TryParse(arguments["estimatedDuration"]?.ToString(), out var duration) ? duration : null,
-            Tags = arguments.ContainsKey("tags") && arguments["tags"] is List<object> tags ? tags.Cast<string>().ToList() : new List<string>(),
+            Tags = arguments.GetValueOrDefault("tags") is List<object> tags ? tags.Cast<string>().ToList() : new List<string>(),
             PlannedStartTime = arguments.ContainsKey("plannedStartTime") && DateTime.TryParse(arguments["plannedStartTime"]?.ToString(), out var pst) ? pst : null,
             PlannedEndTime = arguments.ContainsKey("plannedEndTime") && DateTime.TryParse(arguments["plannedEndTime"]?.ToString(), out var pet) ? pet : null,
-            ParticipantIds = arguments.ContainsKey("participantIds") && arguments["participantIds"] is List<object> participants ? participants.Cast<string>().ToList() : new List<string>(),
-            Remarks = arguments.ContainsKey("remarks") ? arguments["remarks"]?.ToString() : null,
-            ProjectId = arguments.ContainsKey("projectId") ? arguments["projectId"]?.ToString() : null
+            ParticipantIds = arguments.GetValueOrDefault("participantIds") is List<object> participants ? participants.Cast<string>().ToList() : new List<string>(),
+            Remarks = arguments.GetValueOrDefault("remarks")?.ToString(),
+            ProjectId = arguments.GetValueOrDefault("projectId")?.ToString()
         };
 
         var task = await _taskService.CreateTaskAsync(request, currentUserId, currentUser.CurrentCompanyId);
@@ -303,16 +317,16 @@ public class TaskMcpToolHandler : McpToolHandlerBase
 
     private async Task<object?> HandleAssignTaskAsync(Dictionary<string, object> arguments, string currentUserId)
     {
-        if (!arguments.ContainsKey("taskId") || arguments["taskId"] is not string taskId)
-            return new { error = "缺少必需的参数: taskId" };
-        if (!arguments.ContainsKey("assignedTo") || arguments["assignedTo"] is not string assignedTo)
-            return new { error = "缺少必需的参数: assignedTo" };
+        var taskId = arguments.GetValueOrDefault("taskId")?.ToString();
+        var assignedTo = arguments.GetValueOrDefault("assignedTo")?.ToString();
+        if (string.IsNullOrEmpty(taskId) || string.IsNullOrEmpty(assignedTo))
+            return new { error = "taskId 和 assignedTo 必填" };
 
         var request = new AssignTaskRequest
         {
             TaskId = taskId,
             AssignedTo = assignedTo,
-            Remarks = arguments.ContainsKey("remarks") ? arguments["remarks"]?.ToString() : null
+            Remarks = arguments.GetValueOrDefault("remarks")?.ToString()
         };
 
         var task = await _taskService.AssignTaskAsync(request, currentUserId);
@@ -462,8 +476,20 @@ public class TaskMcpToolHandler : McpToolHandlerBase
 
     private async Task<object?> HandleGetProjectDetailAsync(Dictionary<string, object> arguments, string currentUserId)
     {
-        var projectId = arguments.ContainsKey("projectId") ? arguments["projectId"]?.ToString() : null;
-        if (string.IsNullOrEmpty(projectId)) return new { error = "未提供项目ID" };
+        var projectId = arguments.GetValueOrDefault("projectId")?.ToString();
+        var name = arguments.GetValueOrDefault("name")?.ToString();
+
+        if (string.IsNullOrEmpty(projectId))
+        {
+            if (string.IsNullOrEmpty(name)) return new { error = "未提供项目ID或名称" };
+
+            var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+            if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId)) return new { error = "无法确定当前企业" };
+
+            var searchResult = await _projectService.GetProjectsListAsync(new ProjectQueryRequest { Search = name, Page = 1, PageSize = 1 }, currentUser.CurrentCompanyId);
+            if (searchResult.Projects.Any()) projectId = searchResult.Projects.First().Id;
+            else return new { error = "未找到该项目" };
+        }
 
         var project = await _projectService.GetProjectByIdAsync(projectId);
         if (project == null) return new { error = "项目不存在" };

@@ -34,7 +34,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
 
         #region 任务工具注册
 
-        RegisterTool("get_tasks", "获取任务列表。支持按状态、优先级、负责人和项目筛选。",
+        RegisterTool("get_tasks", "获取任务列表。支持按状态、优先级、负责人和项目筛选。关键词：任务",
             ObjectSchema(MergeProperties(
                 new Dictionary<string, object>
                 {
@@ -133,7 +133,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
 
         #region 项目工具注册
 
-        RegisterTool("get_projects", "获取项目列表。",
+        RegisterTool("get_projects", "获取项目列表。关键词：项目",
             ObjectSchema(MergeProperties(
                 new Dictionary<string, object>
                 {

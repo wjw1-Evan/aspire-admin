@@ -22,7 +22,7 @@ public class FormMcpToolHandler : McpToolHandlerBase
         _formFactory = formFactory;
         _logger = logger;
 
-        RegisterTool("get_forms", "获取表单列表。",
+        RegisterTool("get_forms", "获取表单列表。关键词：表单设计,自定义表单",
             ObjectSchema(MergeProperties(new Dictionary<string, object>
             {
                 ["keyword"] = new Dictionary<string, object> { ["type"] = "string" },
@@ -34,14 +34,14 @@ public class FormMcpToolHandler : McpToolHandlerBase
                 var (page, pageSize) = ParsePaginationArgs(args);
                 var (items, total) = await _formFactory.FindPagedAsync(
                     filter: f => (string.IsNullOrEmpty(keyword) || f.Name.Contains(keyword)) &&
-                                (!args.ContainsKey("isActive") || f.IsActive == (bool)args["isActive"]),
+                                 (!args.ContainsKey("isActive") || f.IsActive == (args.GetValueOrDefault("isActive") as bool? ?? true)),
                     page: page,
                     pageSize: pageSize);
                 return new { items, total, page, pageSize };
             });
 
-        RegisterTool("get_form_detail", "获取表单详情。",
+        RegisterTool("get_form_detail", "获取表单详情。关键词：查看表单,表单字段",
             ObjectSchema(new Dictionary<string, object> { ["id"] = new Dictionary<string, object> { ["type"] = "string" } }, ["id"]),
-            async (args, uid) => await _formFactory.GetByIdAsync(args["id"].ToString()!));
+            async (args, uid) => { var id = args.GetValueOrDefault("id")?.ToString(); return string.IsNullOrEmpty(id) ? new { error = "id is required" } : await _formFactory.GetByIdAsync(id); });
     }
 }

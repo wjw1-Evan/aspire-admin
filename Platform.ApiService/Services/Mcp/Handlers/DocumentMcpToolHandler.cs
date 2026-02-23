@@ -29,7 +29,7 @@ public class DocumentMcpToolHandler : McpToolHandlerBase
         _logger = logger;
 
         #region 公文管理
-        RegisterTool("get_documents", "获取公文列表。支持关键词、类型、分类和状态筛选。",
+        RegisterTool("get_documents", "获取公文列表。支持关键词、类型、分类和状态筛选。关键词：公文,摘要,文档",
             ObjectSchema(MergeProperties(new Dictionary<string, object>
             {
                 ["keyword"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "搜索关键词" },
@@ -55,7 +55,7 @@ public class DocumentMcpToolHandler : McpToolHandlerBase
                 return new { documents = items.Select(d => new { d.Id, d.Title, d.DocumentType, d.Category, d.Status, d.CreatedBy, d.CreatedAt, d.WorkflowInstanceId }).ToList(), total, page, pageSize };
             });
 
-        RegisterTool("get_document_detail", "获取公文详情。",
+        RegisterTool("get_document_detail", "获取公文详情。关键词：公文,详情",
             ObjectSchema(new Dictionary<string, object> { ["documentId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "公文ID" } }, ["documentId"]),
             async (args, uid) =>
             {
@@ -66,12 +66,12 @@ public class DocumentMcpToolHandler : McpToolHandlerBase
                 return new { doc.Id, doc.Title, doc.Content, doc.DocumentType, doc.Category, doc.Status, doc.FormData, doc.AttachmentIds, doc.CreatedBy, doc.CreatedAt, doc.WorkflowInstanceId };
             });
 
-        RegisterTool("get_document_statistics", "获取公文统计信息。",
+        RegisterTool("get_document_statistics", "获取公文统计信息。关键词：公文,统计",
             async (args, uid) => await _documentService.GetStatisticsAsync());
         #endregion
 
         #region 云存储
-        RegisterTool("get_file_items", "获取云存储文件列表。",
+        RegisterTool("get_file_items", "获取云存储文件列表。关键词：文件,云硬盘,网盘,上传",
             ObjectSchema(MergeProperties(new Dictionary<string, object>
             {
                 ["parentId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "父目录ID", ["default"] = "root" },

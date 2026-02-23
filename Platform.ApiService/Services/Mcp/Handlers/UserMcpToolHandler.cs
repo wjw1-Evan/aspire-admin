@@ -34,7 +34,7 @@ public class UserMcpToolHandler : McpToolHandlerBase
 
         // --- 用户管理 ---
 
-        RegisterTool("get_users", "分页获取用户列表。",
+        RegisterTool("get_users", "分页获取用户列表。关键词：用户,账号,成员,同事",
             ObjectSchema(MergeProperties(new Dictionary<string, object>
             {
                 ["search"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "搜索关键词（用户名、邮箱）" },
@@ -52,11 +52,11 @@ public class UserMcpToolHandler : McpToolHandlerBase
                 });
             });
 
-        RegisterTool("get_user_detail", "获取指定用户的详细信息。",
+        RegisterTool("get_user_detail", "获取指定用户的详细信息。关键词：用户详情,个人资料",
             ObjectSchema(new Dictionary<string, object> { ["id"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "用户ID" } }, ["id"]),
             async (args, uid) => await _userService.GetUserByIdAsync(args["id"].ToString()!));
 
-        RegisterTool("create_user", "创建新用户（管理后台）。",
+        RegisterTool("create_user", "创建新用户（管理后台）。关键词：新增用户,添加成员",
             ObjectSchema(new Dictionary<string, object>
             {
                 ["username"] = new Dictionary<string, object> { ["type"] = "string" },
@@ -66,18 +66,18 @@ public class UserMcpToolHandler : McpToolHandlerBase
             async (args, uid) => await _userService.CreateUserManagementAsync(new CreateUserManagementRequest
             {
                 Username = args["username"].ToString()!,
-                Email = args["email"].ToString(),
+                Email = args.GetValueOrDefault("email")?.ToString(),
                 IsActive = true
             }));
 
         // --- 角色管理 ---
 
-        RegisterTool("get_roles", "获取所有可用角色列表。",
+        RegisterTool("get_roles", "获取所有可用角色列表。关键词：角色,权限组",
             async (args, uid) => await _roleService.GetAllRolesAsync());
 
         // --- 日志与活动 ---
 
-        RegisterTool("get_user_activity_logs", "获取指定用户的活动日志。",
+        RegisterTool("get_user_activity_logs", "获取指定用户的活动日志。关键词：操作日志,活动状态",
             ObjectSchema(new Dictionary<string, object>
             {
                 ["userId"] = new Dictionary<string, object> { ["type"] = "string" },
@@ -89,7 +89,7 @@ public class UserMcpToolHandler : McpToolHandlerBase
 
         // --- 社交/会话 ---
 
-        RegisterTool("get_my_chat_sessions", "获取我参与的所有聊天会话列表。",
+        RegisterTool("get_my_chat_sessions", "获取我参与的所有聊天会话列表。关键词：聊天记录,会话历史",
             async (args, uid) =>
             {
                 var sessions = await _sessionFactory.FindAsync(s => s.Participants.Contains(uid), q => q.OrderByDescending(s => s.LastMessageAt), 100);

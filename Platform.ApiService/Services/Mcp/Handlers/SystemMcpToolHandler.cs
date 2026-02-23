@@ -28,10 +28,10 @@ public class SystemMcpToolHandler : McpToolHandlerBase
         _logService = logService;
         _logger = logger;
 
-        RegisterTool("get_storage_usage", "获取当前用户的存储空间使用详情（总额、已用、剩余）。",
+        RegisterTool("get_storage_usage", "获取当前用户的存储空间使用详情。关键词：存储空间,云盘容量,使用情况",
             async (args, uid) => await _storageService.GetStorageUsageAsync(uid));
 
-        RegisterTool("get_system_logs", "获取系统级别的审计与活动日志（分页）。",
+        RegisterTool("get_system_logs", "获取系统级别的审计与活动日志。关键词：系统日志,操作记录",
             ObjectSchema(MergeProperties(new Dictionary<string, object>
             {
                 ["userId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "按用户筛选" },

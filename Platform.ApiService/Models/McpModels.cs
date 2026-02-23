@@ -389,3 +389,24 @@ public class McpInitializeResponse
     public Dictionary<string, object>? Capabilities { get; set; }
 }
 
+
+/// <summary>
+/// MCP 工具自动检测与执行的结果
+/// </summary>
+public class McpToolExecutionResult
+{
+    /// <summary>
+    /// 合并后的工具执行结果上下文
+    /// </summary>
+    public string? Context { get; set; }
+
+    /// <summary>
+    /// 被调用的工具名称/描述摘要
+    /// </summary>
+    public string? ToolSummary { get; set; }
+
+    /// <summary>
+    /// 被调用的工具完整描述列表
+    /// </summary>
+    public List<string> ToolDescriptions { get; set; } = new();
+}

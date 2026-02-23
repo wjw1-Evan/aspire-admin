@@ -64,7 +64,7 @@ public interface IMcpService
     /// <param name="userMessage">用户消息</param>
     /// <param name="currentUserId">当前用户 ID</param>
     /// <param name="cancellationToken">取消令牌</param>
-    /// <returns>格式化的工具执行结果字符串，若未检测到工具则返回 null</returns>
-    Task<string?> DetectAndCallMcpToolsAsync(ChatSession session, ChatMessage userMessage, string currentUserId, CancellationToken cancellationToken);
+    /// <returns>工具执行结果对象，若未检测到工具则返回 null</returns>
+    Task<McpToolExecutionResult?> DetectAndCallMcpToolsAsync(ChatSession session, ChatMessage userMessage, string currentUserId, CancellationToken cancellationToken);
 }
 

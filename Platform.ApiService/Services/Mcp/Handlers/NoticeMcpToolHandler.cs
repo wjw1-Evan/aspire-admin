@@ -22,18 +22,18 @@ public class NoticeMcpToolHandler : McpToolHandlerBase
         _noticeService = noticeService;
         _logger = logger;
 
-        RegisterTool("get_notices", "获取当前用户的通知公告列表。",
+        RegisterTool("get_notices", "获取当前用户的通知公告列表。关键词：通知,公告,消息",
             async (args, uid) => await _noticeService.GetNoticesAsync());
 
-        RegisterTool("get_notice_detail", "获取当前用户特定通知的详细内容。",
+        RegisterTool("get_notice_detail", "获取当前用户特定通知的详细内容。关键词：通知详情,公告内容",
             ObjectSchema(new Dictionary<string, object> { ["id"] = new Dictionary<string, object> { ["type"] = "string" } }, ["id"]),
-            async (args, uid) => await _noticeService.GetNoticeByIdAsync(args["id"].ToString()!));
+            async (args, uid) => { var id = args.GetValueOrDefault("id")?.ToString(); return string.IsNullOrEmpty(id) ? new { error = "id is required" } : await _noticeService.GetNoticeByIdAsync(id); });
 
-        RegisterTool("mark_notice_read", "将指定通知标记为已读。",
+        RegisterTool("mark_notice_read", "将指定通知标记为已读。关键词：已读通知",
             ObjectSchema(new Dictionary<string, object> { ["id"] = new Dictionary<string, object> { ["type"] = "string" } }, ["id"]),
-            async (args, uid) => await _noticeService.MarkAsReadAsync(args["id"].ToString()!));
+            async (args, uid) => { var id = args.GetValueOrDefault("id")?.ToString(); return string.IsNullOrEmpty(id) ? new { error = "id is required" } : await _noticeService.MarkAsReadAsync(id); });
 
-        RegisterTool("create_notice", "创建新的系统通知（管理员专用）。",
+        RegisterTool("create_notice", "创建新的系统通知（管理员专用）。关键词：发布通知,发布公告",
             ObjectSchema(new Dictionary<string, object>
             {
                 ["title"] = new Dictionary<string, object> { ["type"] = "string" },
@@ -41,26 +41,31 @@ public class NoticeMcpToolHandler : McpToolHandlerBase
             }, ["title", "description"]),
             async (args, uid) => await _noticeService.CreateNoticeAsync(new CreateNoticeRequest
             {
-                Title = args["title"].ToString()!,
-                Description = args["description"].ToString()!,
+                Title = args.GetValueOrDefault("title")?.ToString() ?? "",
+                Description = args.GetValueOrDefault("description")?.ToString() ?? "",
                 Type = NoticeIconItemType.Notification
             }));
 
-        RegisterTool("update_notice", "更新现有通知内容。",
+        RegisterTool("update_notice", "更新现有通知内容。关键词：修改通知,编辑公告",
             ObjectSchema(new Dictionary<string, object>
             {
                 ["id"] = new Dictionary<string, object> { ["type"] = "string" },
                 ["title"] = new Dictionary<string, object> { ["type"] = "string" },
                 ["description"] = new Dictionary<string, object> { ["type"] = "string" }
             }, ["id"]),
-            async (args, uid) => await _noticeService.UpdateNoticeAsync(args["id"].ToString()!, new UpdateNoticeRequest
+            async (args, uid) =>
             {
-                Title = args.GetValueOrDefault("title")?.ToString(),
-                Description = args.GetValueOrDefault("description")?.ToString()
-            }));
+                var id = args.GetValueOrDefault("id")?.ToString();
+                if (string.IsNullOrEmpty(id)) return new { error = "id is required" };
+                return await _noticeService.UpdateNoticeAsync(id, new UpdateNoticeRequest
+                {
+                    Title = args.GetValueOrDefault("title")?.ToString(),
+                    Description = args.GetValueOrDefault("description")?.ToString()
+                });
+            });
 
-        RegisterTool("delete_notice", "持久删除指定的通知公告。",
+        RegisterTool("delete_notice", "持久删除指定的通知公告。关键词：删除通知,撤回公告",
             ObjectSchema(new Dictionary<string, object> { ["id"] = new Dictionary<string, object> { ["type"] = "string" } }, ["id"]),
-            async (args, uid) => await _noticeService.DeleteNoticeAsync(args["id"].ToString()!));
+            async (args, uid) => { var id = args.GetValueOrDefault("id")?.ToString(); return string.IsNullOrEmpty(id) ? new { error = "id is required" } : await _noticeService.DeleteNoticeAsync(id); });
     }
 }

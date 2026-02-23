@@ -25,10 +25,10 @@ public class MenuMcpToolHandler : McpToolHandlerBase
         _roleService = roleService;
         _logger = logger;
 
-        RegisterTool("get_menu_tree", "获取系统完整的菜单树结构。",
+        RegisterTool("get_menu_tree", "获取系统完整的菜单树结构。关键词：菜单树,功能权限,目录",
             async (args, uid) => await _menuService.GetMenuTreeAsync());
 
-        RegisterTool("assign_role_menus", "为指定角色分配可访问的菜单项。",
+        RegisterTool("assign_role_menus", "为指定角色分配可访问的菜单项。关键词：分配权限,设置菜单",
             ObjectSchema(new Dictionary<string, object>
             {
                 ["roleId"] = new Dictionary<string, object> { ["type"] = "string" },
@@ -36,13 +36,16 @@ public class MenuMcpToolHandler : McpToolHandlerBase
             }, ["roleId", "menuIds"]),
             async (args, uid) =>
             {
-                var roleId = args["roleId"].ToString()!;
-                var menuIds = ((IEnumerable<object>)args["menuIds"]).Select(m => m.ToString()!).ToList();
+                var roleId = args.GetValueOrDefault("roleId")?.ToString();
+                if (string.IsNullOrEmpty(roleId)) return new { error = "roleId is required" };
+                var menuIdsObj = args.GetValueOrDefault("menuIds");
+                if (menuIdsObj is null) return new { error = "menuIds is required" };
+                var menuIds = ((IEnumerable<object>)menuIdsObj).Select(m => m.ToString()!).ToList();
                 return await _roleService.AssignMenusToRoleAsync(roleId, menuIds);
             });
 
-        RegisterTool("get_role_menu_ids", "获取指定角色已分配的菜单ID列表。",
+        RegisterTool("get_role_menu_ids", "获取指定角色已分配的菜单ID列表。关键词：拥有的菜单,角色权限",
             ObjectSchema(new Dictionary<string, object> { ["roleId"] = new Dictionary<string, object> { ["type"] = "string" } }, ["roleId"]),
-            async (args, uid) => await _roleService.GetRoleMenuIdsAsync(args["roleId"].ToString()!));
+            async (args, uid) => { var roleId = args.GetValueOrDefault("roleId")?.ToString(); return string.IsNullOrEmpty(roleId) ? new { error = "roleId is required" } : await _roleService.GetRoleMenuIdsAsync(roleId); });
     }
 }

@@ -22,14 +22,14 @@ public class OrganizationMcpToolHandler : McpToolHandlerBase
         _orgService = orgService;
         _logger = logger;
 
-        RegisterTool("get_organization_tree", "获取整个组织架构树。",
+        RegisterTool("get_organization_tree", "获取整个组织架构树。关键词：组织架构,部门树,架构图",
             async (args, uid) => await _orgService.GetTreeAsync());
 
-        RegisterTool("get_organization_node", "获取指定组织节点的详情。",
+        RegisterTool("get_organization_node", "获取指定组织节点的详情。关键词：部门详情",
             ObjectSchema(new Dictionary<string, object> { ["id"] = new Dictionary<string, object> { ["type"] = "string" } }, ["id"]),
-            async (args, uid) => await _orgService.GetByIdAsync(args["id"].ToString()!));
+            async (args, uid) => { var id = args.GetValueOrDefault("id")?.ToString(); return string.IsNullOrEmpty(id) ? new { error = "id is required" } : await _orgService.GetByIdAsync(id); });
 
-        RegisterTool("create_organization_node", "创建新的组织节点。",
+        RegisterTool("create_organization_node", "创建新的组织节点。关键词：新增部门,添加节点",
             ObjectSchema(new Dictionary<string, object>
             {
                 ["name"] = new Dictionary<string, object> { ["type"] = "string" },
@@ -38,26 +38,31 @@ public class OrganizationMcpToolHandler : McpToolHandlerBase
             }, ["name", "code"]),
             async (args, uid) => await _orgService.CreateAsync(new CreateOrganizationUnitRequest
             {
-                Name = args["name"].ToString()!,
-                Code = args["code"].ToString()!,
+                Name = args.GetValueOrDefault("name")?.ToString() ?? "",
+                Code = args.GetValueOrDefault("code")?.ToString() ?? "",
                 ParentId = args.GetValueOrDefault("parentId")?.ToString()
             }));
 
-        RegisterTool("update_organization_node", "更新现有组织节点。",
+        RegisterTool("update_organization_node", "更新现有组织节点。关键词：修改部门,编辑节点",
             ObjectSchema(new Dictionary<string, object>
             {
                 ["id"] = new Dictionary<string, object> { ["type"] = "string" },
                 ["name"] = new Dictionary<string, object> { ["type"] = "string" },
                 ["code"] = new Dictionary<string, object> { ["type"] = "string" }
             }, ["id"]),
-            async (args, uid) => await _orgService.UpdateAsync(args["id"].ToString()!, new UpdateOrganizationUnitRequest
+            async (args, uid) =>
             {
-                Name = args.GetValueOrDefault("name")?.ToString() ?? "",
-                Code = args.GetValueOrDefault("code")?.ToString() ?? ""
-            }));
+                var id = args.GetValueOrDefault("id")?.ToString();
+                if (string.IsNullOrEmpty(id)) return new { error = "id is required" };
+                return await _orgService.UpdateAsync(id, new UpdateOrganizationUnitRequest
+                {
+                    Name = args.GetValueOrDefault("name")?.ToString() ?? "",
+                    Code = args.GetValueOrDefault("code")?.ToString() ?? ""
+                });
+            });
 
-        RegisterTool("delete_organization_node", "删除指定的组织节点。",
+        RegisterTool("delete_organization_node", "删除指定的组织节点。关键词：删除部门",
             ObjectSchema(new Dictionary<string, object> { ["id"] = new Dictionary<string, object> { ["type"] = "string" } }, ["id"]),
-            async (args, uid) => await _orgService.DeleteAsync(args["id"].ToString()!));
+            async (args, uid) => { var id = args.GetValueOrDefault("id")?.ToString(); return string.IsNullOrEmpty(id) ? new { error = "id is required" } : await _orgService.DeleteAsync(id); });
     }
 }

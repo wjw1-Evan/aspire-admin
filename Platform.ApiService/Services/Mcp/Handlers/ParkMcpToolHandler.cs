@@ -68,7 +68,7 @@ public class ParkMcpToolHandler : McpToolHandlerBase
                 });
             });
 
-        RegisterTool("create_park_lead", "创建新的园区招商线索。",
+        RegisterTool("create_park_lead", "创建新的园区招商线索。关键词：创建线索,录入线索",
             ObjectSchema(new Dictionary<string, object>
             {
                 ["companyName"] = new Dictionary<string, object> { ["type"] = "string" },

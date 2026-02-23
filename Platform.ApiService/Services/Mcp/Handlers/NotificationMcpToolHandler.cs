@@ -41,7 +41,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
         _logger = logger;
 
         #region 通知中心
-        RegisterTool("get_unified_notifications", "获取统一通知列表（合并系统消息、通知、消息等）。",
+        RegisterTool("get_unified_notifications", "获取统一通知列表（合并系统消息、通知、消息等）。关键词：通知,消息,提醒",
             ObjectSchema(MergeProperties(
                 new Dictionary<string, object>
                 {
@@ -59,14 +59,14 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
                 return new { result.Items, result.Total, result.Page, result.PageSize, result.UnreadCount, result.Success };
             });
 
-        RegisterTool("get_unread_notification_stats", "获取未读通知统计信息（总数、系统、通知、消息、任务）",
+        RegisterTool("get_unread_notification_stats", "获取未读通知统计信息。关键词：未读统计,未读消息",
             async (args, uid) =>
             {
                 var stats = await _unifiedNotificationService.GetUnreadCountStatisticsAsync();
                 return new { stats.Total, stats.SystemMessages, stats.Notifications, stats.Messages, stats.TaskNotifications, stats.Todos };
             });
 
-        RegisterTool("mark_notification_read", "按通知ID标记为已读",
+        RegisterTool("mark_notification_read", "按通知ID标记为已读。关键词：已读通知",
             ObjectSchema(new Dictionary<string, object> { ["id"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "通知ID" } }, ["id"]),
             async (args, uid) =>
             {
@@ -75,7 +75,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
                 return new { success = ok };
             });
 
-        RegisterTool("get_task_notifications", "获取与当前用户相关的任务通知列表",
+        RegisterTool("get_task_notifications", "获取与当前用户相关的任务通知列表。关键词：任务消息,任务通知",
             ObjectSchema(PaginationSchema(10)),
             async (args, uid) =>
             {
@@ -84,7 +84,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
                 return new { items = result.Notifications, result.Total, result.Page, result.PageSize, result.Success };
             });
 
-        RegisterTool("get_todos", "获取待办事项列表。支持 sortBy: dueDate, priority, datetime",
+        RegisterTool("get_todos", "获取待办事项列表。关键词：待办,备忘,要做的事情",
             ObjectSchema(MergeProperties(
                 new Dictionary<string, object> { ["sortBy"] = new Dictionary<string, object> { ["type"] = "string", ["default"] = "dueDate" } },
                 PaginationSchema(10)
@@ -97,7 +97,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
                 return new { result.Todos, result.Total, result.Page, result.PageSize, result.Success };
             });
 
-        RegisterTool("create_todo", "创建一个新的待办事项",
+        RegisterTool("create_todo", "创建一个新的待办事项。关键词：新增待办,创建待办",
             ObjectSchema(new Dictionary<string, object>
             {
                 ["title"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "待办标题" },
@@ -119,7 +119,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
                 return new { success = true, id = todo.Id, title = todo.Title };
             });
 
-        RegisterTool("update_todo", "更新待办事项信息",
+        RegisterTool("update_todo", "更新待办事项信息。关键词：修改待办,编辑待办",
             ObjectSchema(new Dictionary<string, object>
             {
                 ["id"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "待办ID" },
@@ -145,15 +145,15 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
                 return new { success = todo != null, id = todo?.Id };
             });
 
-        RegisterTool("complete_todo", "将待办事项标记为已完成",
+        RegisterTool("complete_todo", "将待办事项标记为已完成。关键词：完成待办",
             ObjectSchema(new Dictionary<string, object> { ["id"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "待办ID" } }, ["id"]),
             async (args, uid) => { if (!args.ContainsKey("id") || args["id"] is null) return new { error = "缺少必需的参数: id" }; var ok = await _unifiedNotificationService.CompleteTodoAsync(args["id"]!.ToString()!); return new { success = ok }; });
 
-        RegisterTool("delete_todo", "删除指定的待办事项",
+        RegisterTool("delete_todo", "删除指定的待办事项。关键词：删除待办",
             ObjectSchema(new Dictionary<string, object> { ["id"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "待办ID" } }, ["id"]),
             async (args, uid) => { if (!args.ContainsKey("id") || args["id"] is null) return new { error = "缺少必需的参数: id" }; var ok = await _unifiedNotificationService.DeleteTodoAsync(args["id"]!.ToString()!); return new { success = ok }; });
 
-        RegisterTool("get_system_messages", "获取系统的所有消息通知列表",
+        RegisterTool("get_system_messages", "获取系统的所有消息通知列表。关键词：系统消息,系统通知",
             ObjectSchema(PaginationSchema(10)),
             async (args, uid) =>
             {
@@ -162,7 +162,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
                 return new { result.Messages, result.Total, result.Page, result.PageSize, result.Success };
             });
 
-        RegisterTool("mark_multiple_notifications_read", "批量将通知标记为已读",
+        RegisterTool("mark_multiple_notifications_read", "批量将通知标记为已读。关键词：批量已读",
             ObjectSchema(new Dictionary<string, object> { ["ids"] = new Dictionary<string, object> { ["type"] = "array", ["items"] = new Dictionary<string, object> { ["type"] = "string" }, ["description"] = "通知ID列表" } }, ["ids"]),
             async (args, uid) =>
             {
@@ -174,7 +174,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
         #endregion
 
         #region 小科配置
-        RegisterTool("get_xiaoke_configs", "获取小科配置列表。支持按名称、启用状态等条件查询配置。",
+        RegisterTool("get_xiaoke_configs", "获取小科配置列表。关键词：小科设置,模型配置",
             ObjectSchema(MergeProperties(
                 new Dictionary<string, object>
                 {
@@ -185,16 +185,16 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
             )),
             HandleGetXiaokeConfigsAsync);
 
-        RegisterTool("get_xiaoke_config", "获取小科配置详情。通过配置ID查询配置的详细信息。",
+        RegisterTool("get_xiaoke_config", "获取小科配置详情。关键词：配置详情",
             ObjectSchema(new Dictionary<string, object> { ["configId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "配置ID（必填）" } }, ["configId"]),
             HandleGetXiaokeConfigAsync);
 
-        RegisterTool("get_default_xiaoke_config", "获取当前企业的默认小科配置。返回当前企业设置的默认配置信息。",
+        RegisterTool("get_default_xiaoke_config", "获取当前企业的默认小科配置。关键词：默认配置",
             HandleGetDefaultXiaokeConfigAsync);
         #endregion
 
         #region 工作流
-        RegisterTool("get_workflow_definitions", "获取工作流定义列表。",
+        RegisterTool("get_workflow_definitions", "获取工作流定义列表。关键词：审批流程,工作流",
             ObjectSchema(MergeProperties(
                 new Dictionary<string, object> { ["keyword"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "搜索关键词" } },
                 PaginationSchema()
@@ -207,7 +207,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
                 return new { items, total, page, pageSize };
             });
 
-        RegisterTool("get_workflow_instances", "获取工作流实例列表。支持按状态过滤。",
+        RegisterTool("get_workflow_instances", "获取工作流实例列表。关键词：审批记录,流程状态",
             ObjectSchema(MergeProperties(
                 new Dictionary<string, object> { ["status"] = new Dictionary<string, object> { ["type"] = "integer", ["description"] = "状态 (0=运行中, 1=已完成, 2=已取消, 3=已拒绝)" } },
                 PaginationSchema()
@@ -220,7 +220,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
                 return new { items, total, page, pageSize };
             });
 
-        RegisterTool("get_workflow_instance_detail", "获取工作流实例详情，包括审批历史。",
+        RegisterTool("get_workflow_instance_detail", "获取工作流实例详情。关键词：审批详情",
             ObjectSchema(new Dictionary<string, object> { ["instanceId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "实例ID" } }, ["instanceId"]),
             async (args, uid) =>
             {
@@ -231,7 +231,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
                 return new { instance, history };
             });
 
-        RegisterTool("process_workflow_approval", "执行流程审批操作。",
+        RegisterTool("process_workflow_approval", "执行流程审批操作。关键词：办理审批,同意审批,拒绝审批",
             ObjectSchema(new Dictionary<string, object>
             {
                 ["instanceId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "实例ID" },

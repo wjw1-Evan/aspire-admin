@@ -23,14 +23,14 @@ public class IoTMcpToolHandler : McpToolHandlerBase
         _iotService = iotService;
         _logger = logger;
 
-        RegisterTool("get_iot_gateways", "获取物联网网关列表。",
+        RegisterTool("get_iot_gateways", "获取物联网网关列表。关键词：物联网,网关,网桥,gateway",
             ObjectSchema(MergeProperties(
                 new Dictionary<string, object> { ["keyword"] = new Dictionary<string, object> { ["type"] = "string" } },
                 PaginationSchema()
             )),
             async (args, uid) => { var keyword = args.ContainsKey("keyword") ? args["keyword"]?.ToString() : null; var (page, pageSize) = ParsePaginationArgs(args); var (items, total) = await _iotService.GetGatewaysAsync(keyword, null, page, pageSize); return new { items, total, page, pageSize }; });
 
-        RegisterTool("get_iot_devices", "获取物联网设备列表。",
+        RegisterTool("get_iot_devices", "获取物联网设备列表。关键词：物联网,设备,器械,传感器",
             ObjectSchema(MergeProperties(
                 new Dictionary<string, object>
                 {

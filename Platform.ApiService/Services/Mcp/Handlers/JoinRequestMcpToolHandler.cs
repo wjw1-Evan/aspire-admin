@@ -22,7 +22,7 @@ public class JoinRequestMcpToolHandler : McpToolHandlerBase
         _joinRequestService = joinRequestService;
         _logger = logger;
 
-        RegisterTool("apply_to_join_company", "申请加入指定的企业。",
+        RegisterTool("apply_to_join_company", "申请加入指定的企业。关键词：加入申请,申请入职",
             ObjectSchema(new Dictionary<string, object>
             {
                 ["companyId"] = new Dictionary<string, object> { ["type"] = "string" },
@@ -30,36 +30,42 @@ public class JoinRequestMcpToolHandler : McpToolHandlerBase
             }, ["companyId"]),
             async (args, uid) => await _joinRequestService.ApplyToJoinCompanyAsync(new ApplyToJoinCompanyRequest
             {
-                CompanyId = args["companyId"].ToString()!,
+                CompanyId = args.GetValueOrDefault("companyId")?.ToString() ?? "",
                 Reason = args.GetValueOrDefault("reason")?.ToString()
             }));
 
-        RegisterTool("get_my_join_requests", "获取我提交的所有加入企业申请。",
+        RegisterTool("get_my_join_requests", "获取我提交的所有加入企业申请。关键词：我的申请,历史申请",
             ObjectSchema(new Dictionary<string, object> { ["keyword"] = new Dictionary<string, object> { ["type"] = "string" } }),
             async (args, uid) => await _joinRequestService.GetMyRequestsAsync(args.GetValueOrDefault("keyword")?.ToString()));
 
-        RegisterTool("cancel_join_request", "取消我提交的待处理加入申请。",
+        RegisterTool("cancel_join_request", "取消我提交的待处理加入申请。关键词：取消申请",
             ObjectSchema(new Dictionary<string, object> { ["requestId"] = new Dictionary<string, object> { ["type"] = "string" } }, ["requestId"]),
-            async (args, uid) => await _joinRequestService.CancelRequestAsync(args["requestId"].ToString()!));
+            async (args, uid) => { var requestId = args.GetValueOrDefault("requestId")?.ToString(); return string.IsNullOrEmpty(requestId) ? new { error = "requestId is required" } : await _joinRequestService.CancelRequestAsync(requestId); });
 
-        RegisterTool("get_pending_join_requests", "获取企业待审核的加入申请（仅限管理员）。",
+        RegisterTool("get_pending_join_requests", "获取企业待审核的加入申请。关键词：待处理申请,审核申请",
             ObjectSchema(new Dictionary<string, object>
             {
                 ["companyId"] = new Dictionary<string, object> { ["type"] = "string" },
                 ["keyword"] = new Dictionary<string, object> { ["type"] = "string" }
             }, ["companyId"]),
-            async (args, uid) => await _joinRequestService.GetPendingRequestsAsync(args["companyId"].ToString()!, args.GetValueOrDefault("keyword")?.ToString()));
+            async (args, uid) => { var companyId = args.GetValueOrDefault("companyId")?.ToString(); return string.IsNullOrEmpty(companyId) ? new { error = "companyId is required" } : await _joinRequestService.GetPendingRequestsAsync(companyId, args.GetValueOrDefault("keyword")?.ToString()); });
 
-        RegisterTool("approve_join_request", "批准加入企业申请。",
+        RegisterTool("approve_join_request", "批准加入企业申请。关键词：通过申请,同意加入",
             ObjectSchema(new Dictionary<string, object> { ["requestId"] = new Dictionary<string, object> { ["type"] = "string" } }, ["requestId"]),
-            async (args, uid) => await _joinRequestService.ApproveRequestAsync(args["requestId"].ToString()!));
+            async (args, uid) => { var requestId = args.GetValueOrDefault("requestId")?.ToString(); return string.IsNullOrEmpty(requestId) ? new { error = "requestId is required" } : await _joinRequestService.ApproveRequestAsync(requestId); });
 
-        RegisterTool("reject_join_request", "拒绝加入企业申请。",
+        RegisterTool("reject_join_request", "拒绝加入企业申请。关键词：拒绝申请",
             ObjectSchema(new Dictionary<string, object>
             {
                 ["requestId"] = new Dictionary<string, object> { ["type"] = "string" },
                 ["reason"] = new Dictionary<string, object> { ["type"] = "string" }
             }, ["requestId", "reason"]),
-            async (args, uid) => await _joinRequestService.RejectRequestAsync(args["requestId"].ToString()!, args["reason"].ToString()!));
+            async (args, uid) =>
+            {
+                var requestId = args.GetValueOrDefault("requestId")?.ToString();
+                var reason = args.GetValueOrDefault("reason")?.ToString() ?? "";
+                if (string.IsNullOrEmpty(requestId)) return new { error = "requestId is required" };
+                return await _joinRequestService.RejectRequestAsync(requestId, reason);
+            });
     }
 }

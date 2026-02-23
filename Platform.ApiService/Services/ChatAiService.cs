@@ -152,11 +152,12 @@ public class ChatAiService : IChatAiService
         if (conversationMessages.Count == 0) return null;
 
         // 尝试 MCP 直接调用（快速路径）
-        string? toolResultContext = await _mcpService.DetectAndCallMcpToolsAsync(session, triggerMessage, triggerMessage.SenderId, cancellationToken);
+        var mcpResult = await _mcpService.DetectAndCallMcpToolsAsync(session, triggerMessage, triggerMessage.SenderId, cancellationToken);
+        var toolResultContext = mcpResult?.Context;
 
         if (!string.IsNullOrEmpty(toolResultContext))
         {
-            _logger.LogInformation("[ChatAI] 已获取 MCP 数据，由小科基于数据直接回复。");
+            _logger.LogInformation("[ChatAI] 已获取 MCP 数据: {Summary}", mcpResult?.ToolSummary);
         }
         else
         {
@@ -187,7 +188,7 @@ public class ChatAiService : IChatAiService
             // 发送服务调用提示（关联到 assistantMessage.Id）
             if (!string.IsNullOrEmpty(toolResultContext) && onChunk != null)
             {
-                var tip = $"> [系统] 正在调用 MCP 工具获取实时信息...\n\n";
+                var tip = $">  **{mcpResult?.ToolSummary}**  \n\n";
                 accumulatedContent.Append(tip);
                 await onChunk(session.Id, assistantMessage.Id, tip);
             }

@@ -32,7 +32,24 @@ public class PlatformDbContext(DbContextOptions<PlatformDbContext> options, ITen
 
     // 缓存实体类型扫描结果
     private static List<Type>? _cachedEntityTypes;
+    private static readonly List<Assembly> _extraEntityAssemblies = [];
     private static readonly System.Threading.Lock _cacheLock = new();
+
+    /// <summary>
+    /// 注册额外的实体程序集（主要用于单元测试）
+    /// </summary>
+    /// <param name="assembly"></param>
+    public static void RegisterEntityAssembly(Assembly assembly)
+    {
+        lock (_cacheLock)
+        {
+            if (!_extraEntityAssemblies.Contains(assembly))
+            {
+                _extraEntityAssemblies.Add(assembly);
+                _cachedEntityTypes = null; // 清除缓存以重新扫描
+            }
+        }
+    }
 
     public override int SaveChanges()
     {
@@ -176,9 +193,19 @@ public class PlatformDbContext(DbContextOptions<PlatformDbContext> options, ITen
         {
             if (_cachedEntityTypes != null) return _cachedEntityTypes;
 
-            var assemblies = new[] { Assembly.GetExecutingAssembly(), Assembly.GetEntryAssembly() }.Where(a => a != null).Distinct();
+            var assemblies = new List<Assembly>
+            {
+                Assembly.GetExecutingAssembly()
+            };
+
+            var entryAssembly = Assembly.GetEntryAssembly();
+            if (entryAssembly != null) assemblies.Add(entryAssembly);
+
+            assemblies.AddRange(_extraEntityAssemblies);
+
             _cachedEntityTypes = assemblies
-                .SelectMany(a => { try { return a!.GetTypes(); } catch { return Type.EmptyTypes; } })
+                .Distinct()
+                .SelectMany(a => { try { return a.GetTypes(); } catch { return Type.EmptyTypes; } })
                 .Where(t => t.IsClass && !t.IsAbstract && typeof(IEntity).IsAssignableFrom(t))
                 .ToList();
 

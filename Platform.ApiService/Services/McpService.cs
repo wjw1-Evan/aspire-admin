@@ -20,6 +20,11 @@ public class McpService : IMcpService
     private readonly IEnumerable<IMcpToolHandler> _handlers;
     private readonly ILogger<McpService> _logger;
 
+    /// <summary>
+    /// 初始化 MCP 服务
+    /// </summary>
+    /// <param name="handlers">工具处理器集合</param>
+    /// <param name="logger">日志对象</param>
     public McpService(
         IEnumerable<IMcpToolHandler> handlers,
         ILogger<McpService> logger)

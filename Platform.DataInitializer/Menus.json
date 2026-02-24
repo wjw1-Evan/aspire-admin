@@ -1,0 +1,397 @@
+[
+    {
+        "Name": "welcome",
+        "Title": "欢迎",
+        "Path": "/welcome",
+        "Component": "./Welcome",
+        "Icon": "smile",
+        "SortOrder": 1
+    },
+    {
+        "Name": "system",
+        "Title": "系统管理",
+        "Path": "/system",
+        "Icon": "setting",
+        "SortOrder": 99
+    },
+    {
+        "Name": "user-management",
+        "Title": "用户管理",
+        "Path": "/system/user-management",
+        "Component": "./user-management",
+        "Icon": "user",
+        "ParentId": "system",
+        "SortOrder": 1
+    },
+    {
+        "Name": "role-management",
+        "Title": "角色管理",
+        "Path": "/system/role-management",
+        "Component": "./role-management",
+        "Icon": "team",
+        "ParentId": "system",
+        "SortOrder": 2
+    },
+    {
+        "Name": "company-management",
+        "Title": "企业管理",
+        "Path": "/system/company-management",
+        "Component": "./company/settings",
+        "Icon": "bank",
+        "ParentId": "system",
+        "SortOrder": 3
+    },
+    {
+        "Name": "organization",
+        "Title": "组织架构",
+        "Path": "/system/organization",
+        "Component": "./organization",
+        "Icon": "apartment",
+        "ParentId": "system",
+        "SortOrder": 5
+    },
+    {
+        "Name": "my-activity",
+        "Title": "我的活动",
+        "Path": "/system/my-activity",
+        "Component": "./my-activity",
+        "Icon": "history",
+        "ParentId": "system",
+        "SortOrder": 4
+    },
+    {
+        "Name": "user-log",
+        "Title": "操作日志",
+        "Path": "/user-log",
+        "Component": "./user-log",
+        "Icon": "file-text",
+        "ParentId": "system",
+        "SortOrder": 6
+    },
+    {
+        "Name": "password-book",
+        "Title": "密码本",
+        "Path": "/password-book",
+        "Component": "./password-book",
+        "Icon": "lock",
+        "SortOrder": 7
+    },
+    {
+        "Name": "project-management",
+        "Title": "项目管理",
+        "Path": "/project-management",
+        "Icon": "project",
+        "SortOrder": 4
+    },
+    {
+        "Name": "project-management-task",
+        "Title": "任务管理",
+        "Path": "/task-management",
+        "Component": "./task-management",
+        "Icon": "schedule",
+        "ParentId": "project-management",
+        "SortOrder": 1
+    },
+    {
+        "Name": "project-management-project",
+        "Title": "项目列表",
+        "Path": "/project-management/project",
+        "Component": "./project-management",
+        "Icon": "project",
+        "ParentId": "project-management",
+        "SortOrder": 2
+    },
+    {
+        "Name": "project-management-statistics",
+        "Title": "统计报表",
+        "Path": "/project-management/statistics",
+        "Component": "./project-management/statistics",
+        "Icon": "bar-chart",
+        "ParentId": "project-management",
+        "SortOrder": 3
+    },
+    {
+        "Name": "iot-platform",
+        "Title": "物联网平台",
+        "Path": "/iot-platform",
+        "Component": "./iot-platform",
+        "Icon": "cloud-server",
+        "SortOrder": 5
+    },
+    {
+        "Name": "iot-platform-gateway",
+        "Title": "网关管理",
+        "Path": "/iot-platform/gateway-management",
+        "Component": "./iot-platform/gateway-management",
+        "Icon": "cloud-server",
+        "ParentId": "iot-platform",
+        "SortOrder": 1
+    },
+    {
+        "Name": "iot-platform-device",
+        "Title": "设备管理",
+        "Path": "/iot-platform/device-management",
+        "Component": "./iot-platform/device-management",
+        "Icon": "desktop",
+        "ParentId": "iot-platform",
+        "SortOrder": 2
+    },
+    {
+        "Name": "iot-platform-datapoint",
+        "Title": "数据点管理",
+        "Path": "/iot-platform/datapoint-management",
+        "Component": "./iot-platform/datapoint-management",
+        "Icon": "database",
+        "ParentId": "iot-platform",
+        "SortOrder": 3
+    },
+    {
+        "Name": "iot-platform-event",
+        "Title": "事件告警",
+        "Path": "/iot-platform/event-management",
+        "Component": "./iot-platform/event-management",
+        "Icon": "alert",
+        "ParentId": "iot-platform",
+        "SortOrder": 4
+    },
+    {
+        "Name": "iot-platform-data-center",
+        "Title": "数据中心",
+        "Path": "/iot-platform/data-center",
+        "Component": "./iot-platform/data-center",
+        "Icon": "bar-chart",
+        "ParentId": "iot-platform",
+        "SortOrder": 5
+    },
+    {
+        "Name": "xiaoke-management",
+        "Title": "小科管理",
+        "Path": "/xiaoke-management",
+        "Icon": "robot",
+        "SortOrder": 6
+    },
+    {
+        "Name": "xiaoke-management-config",
+        "Title": "配置管理",
+        "Path": "/xiaoke-management/config",
+        "Component": "./xiaoke-management/config",
+        "Icon": "setting",
+        "ParentId": "xiaoke-management",
+        "SortOrder": 1
+    },
+    {
+        "Name": "xiaoke-management-chat-history",
+        "Title": "聊天记录管理",
+        "Path": "/xiaoke-management/chat-history",
+        "Component": "./xiaoke-management/chat-history",
+        "Icon": "message",
+        "ParentId": "xiaoke-management",
+        "SortOrder": 2
+    },
+    {
+        "Name": "workflow",
+        "Title": "工作流管理",
+        "Path": "/workflow",
+        "Icon": "apartment",
+        "SortOrder": 80
+    },
+    {
+        "Name": "workflow-list",
+        "Title": "流程定义",
+        "Path": "/workflow/list",
+        "Component": "./workflow/list",
+        "Icon": "apartment",
+        "ParentId": "workflow",
+        "SortOrder": 1
+    },
+    {
+        "Name": "workflow-forms",
+        "Title": "表单定义",
+        "Path": "/workflow/forms",
+        "Component": "./workflow/forms",
+        "Icon": "form",
+        "ParentId": "workflow",
+        "SortOrder": 2
+    },
+    {
+        "Name": "workflow-monitor",
+        "Title": "流程监控",
+        "Path": "/workflow/monitor",
+        "Component": "./workflow/monitor",
+        "Icon": "monitor",
+        "ParentId": "workflow",
+        "SortOrder": 3
+    },
+    {
+        "Name": "document",
+        "Title": "公文管理",
+        "Path": "/document",
+        "Icon": "file-text",
+        "SortOrder": 3
+    },
+    {
+        "Name": "document-list",
+        "Title": "公文列表",
+        "Path": "/document/list",
+        "Component": "./document/list",
+        "Icon": "file-text",
+        "ParentId": "document",
+        "SortOrder": 1
+    },
+    {
+        "Name": "document-approval",
+        "Title": "我的审批",
+        "Path": "/document/approval",
+        "Component": "./document/approval",
+        "Icon": "check-circle",
+        "ParentId": "document",
+        "SortOrder": 2
+    },
+    {
+        "Name": "cloud-storage",
+        "Title": "网盘管理",
+        "Path": "/cloud-storage",
+        "Icon": "cloud",
+        "SortOrder": 8
+    },
+    {
+        "Name": "cloud-storage-files",
+        "Title": "我的文件",
+        "Path": "/cloud-storage/files",
+        "Component": "./cloud-storage/files",
+        "Icon": "folder",
+        "ParentId": "cloud-storage",
+        "SortOrder": 1
+    },
+    {
+        "Name": "cloud-storage-shared",
+        "Title": "共享文件",
+        "Path": "/cloud-storage/shared",
+        "Component": "./cloud-storage/shared",
+        "Icon": "share-alt",
+        "ParentId": "cloud-storage",
+        "SortOrder": 2
+    },
+    {
+        "Name": "cloud-storage-recycle",
+        "Title": "回收站",
+        "Path": "/cloud-storage/recycle",
+        "Component": "./cloud-storage/recycle",
+        "Icon": "delete",
+        "ParentId": "cloud-storage",
+        "SortOrder": 3
+    },
+    {
+        "Name": "cloud-storage-quota",
+        "Title": "存储管理",
+        "Path": "/cloud-storage/quota",
+        "Component": "./cloud-storage/quota",
+        "Icon": "pie-chart",
+        "ParentId": "cloud-storage",
+        "SortOrder": 4
+    },
+    {
+        "Name": "visit-management",
+        "Title": "走访管理",
+        "Path": "/visit-management",
+        "Icon": "schedule",
+        "SortOrder": 10
+    },
+    {
+        "Name": "park-management",
+        "Title": "园区管理",
+        "Path": "/park-management",
+        "Icon": "bank",
+        "SortOrder": 11
+    },
+    {
+        "Name": "park-management-asset",
+        "Title": "资产管理",
+        "Path": "/park-management/asset",
+        "Component": "./park-management/asset",
+        "Icon": "home",
+        "ParentId": "park-management",
+        "SortOrder": 1
+    },
+    {
+        "Name": "park-management-investment",
+        "Title": "招商管理",
+        "Path": "/park-management/investment",
+        "Component": "./park-management/investment",
+        "Icon": "fund",
+        "ParentId": "park-management",
+        "SortOrder": 2
+    },
+    {
+        "Name": "park-management-tenant",
+        "Title": "租户管理",
+        "Path": "/park-management/tenant",
+        "Component": "./park-management/tenant",
+        "Icon": "team",
+        "ParentId": "park-management",
+        "SortOrder": 3
+    },
+    {
+        "Name": "park-management-contract",
+        "Title": "合同管理",
+        "Path": "/park-management/contract",
+        "Component": "./park-management/contract",
+        "Icon": "file-done",
+        "ParentId": "park-management",
+        "SortOrder": 4
+    },
+    {
+        "Name": "park-management-enterprise-service",
+        "Title": "企业服务",
+        "Path": "/park-management/enterprise-service",
+        "Component": "./park-management/enterprise-service",
+        "Icon": "customer-service",
+        "ParentId": "park-management",
+        "SortOrder": 5
+    },
+    {
+        "Name": "park-management-statistics",
+        "Title": "统计报表",
+        "Path": "/park-management/statistics",
+        "Component": "./park-management/statistics",
+        "Icon": "bar-chart",
+        "ParentId": "park-management",
+        "SortOrder": 6
+    },
+    {
+        "Name": "park-management-visit-task",
+        "Title": "走访任务",
+        "Path": "/visit-management/task",
+        "Component": "./park-management/visit-task",
+        "Icon": "schedule",
+        "ParentId": "visit-management",
+        "SortOrder": 1
+    },
+    {
+        "Name": "park-management-visit-assessment",
+        "Title": "走访考核",
+        "Path": "/visit-management/assessment",
+        "Component": "./park-management/visit-assessment",
+        "Icon": "check-square",
+        "ParentId": "visit-management",
+        "SortOrder": 2
+    },
+    {
+        "Name": "park-management-visit-knowledge-base",
+        "Title": "走访知识库",
+        "Path": "/visit-management/knowledge-base",
+        "Component": "./park-management/visit-knowledge-base",
+        "Icon": "database",
+        "ParentId": "visit-management",
+        "SortOrder": 3
+    },
+    {
+        "Name": "park-management-visit-statistics",
+        "Title": "走访统计",
+        "Path": "/visit-management/statistics",
+        "Component": "./park-management/visit-statistics",
+        "Icon": "bar-chart",
+        "ParentId": "visit-management",
+        "SortOrder": 4
+    }
+]

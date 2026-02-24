@@ -16,6 +16,10 @@ public class McpController : BaseApiController
 {
     private readonly IMcpService _mcpService;
 
+    /// <summary>
+    /// 初始化 MCP 控制器
+    /// </summary>
+    /// <param name="mcpService">MCP 服务</param>
     public McpController(IMcpService mcpService)
     {
         _mcpService = mcpService ?? throw new ArgumentNullException(nameof(mcpService));

@@ -107,7 +107,7 @@ public class GlobalAuthenticationMiddleware
 
         // 检查Authorization头
         var authHeader = context.Request.Headers.Authorization.FirstOrDefault();
-        if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
+        if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
         {
             await WriteUnauthorizedResponse(context, "缺少Authorization头或格式错误");
             return;

@@ -141,9 +141,11 @@ public class EFCoreDataFactory<T>(DbContext context)
         var entities = await LoadBatchAsync(filter, cancellationToken);
         if (entities.Count == 0) return 0;
 
+        var now = DateTime.UtcNow;
         foreach (var entity in entities)
         {
             entity.IsDeleted = true;
+            entity.DeletedAt = now;
             entity.DeletedReason = reason;
         }
 
@@ -153,8 +155,12 @@ public class EFCoreDataFactory<T>(DbContext context)
 
     public async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
     {
-        var count = await DeleteManyAsync(e => e.Id == id, cancellationToken);
-        return count > 0;
+        var entity = await _dbSet.IgnoreQueryFilters().FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+        if (entity == null) return false;
+
+        _dbSet.Remove(entity);
+        await context.SaveChangesAsync(cancellationToken);
+        return true;
     }
 
     public async Task<int> DeleteManyAsync(Expression<Func<T, bool>> filter, CancellationToken cancellationToken = default)

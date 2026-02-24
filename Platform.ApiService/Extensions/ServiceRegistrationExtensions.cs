@@ -22,40 +22,51 @@ public static class ServiceRegistrationExtensions
     public static IServiceCollection AddPlatformDiscovery(this IServiceCollection services, IConfiguration configuration)
     {
         var types = typeof(ServiceRegistrationExtensions).Assembly.GetTypes()
-            .Where(t => t.IsClass && !t.IsAbstract && !t.IsSealed);
+            .Where(t => t.IsClass && !t.IsAbstract && !t.IsNested);
 
         foreach (var type in types)
         {
-            // 1. Options 绑定 (判断逻辑合并)
-            var section = type.GetField("SectionName", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
-            if (type.Name.EndsWith("Options") && section?.IsLiteral == true)
+            // 1. Options 绑定
+            if (type.Name.EndsWith("Options"))
             {
-                var cfgMethod = typeof(OptionsConfigurationServiceCollectionExtensions).GetMethods()
-                    .First(m => m.Name == "Configure" && m.GetParameters().Length == 2).MakeGenericMethod(type);
-                cfgMethod.Invoke(null, [services, configuration.GetSection(section.GetRawConstantValue()?.ToString()!)]);
+                var sectionField = type.GetField("SectionName", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
+                if (sectionField?.IsLiteral == true)
+                {
+                    var sectionName = sectionField.GetRawConstantValue()?.ToString();
+                    if (!string.IsNullOrEmpty(sectionName))
+                    {
+                        var method = typeof(OptionsConfigurationServiceCollectionExtensions).GetMethods()
+                            .First(m => m.Name == "Configure" && m.GetParameters().Length == 2).MakeGenericMethod(type);
+                        method.Invoke(null, [services, configuration.GetSection(sectionName)]);
+                    }
+                }
             }
 
             // 2. HostedService 注册
             if (typeof(IHostedService).IsAssignableFrom(type) && !type.Name.Contains("Base"))
             {
-                var method = typeof(ServiceCollectionHostedServiceExtensions).GetMethods()
-                    .First(m => m.Name == "AddHostedService" && m.IsGenericMethodDefinition && m.GetParameters().Length == 1);
-                method.MakeGenericMethod(type).Invoke(null, [services]);
+                services.AddSingleton(typeof(IHostedService), type);
             }
 
-            // 3. 业务逻辑注册 (命名空间过滤)
+            // 3. 业务逻辑接口自动注册
             if (Namespaces.Any(ns => type.Namespace?.StartsWith(ns) == true) && !typeof(IHostedService).IsAssignableFrom(type))
             {
-                var lifetime = typeof(ISingletonDependency).IsAssignableFrom(type) ? ServiceLifetime.Singleton :
-                               typeof(ITransientDependency).IsAssignableFrom(type) ? ServiceLifetime.Transient : ServiceLifetime.Scoped;
+                // 识别生命周期 (Singleton > Transient > Scoped)
+                var lifetime = ServiceLifetime.Scoped;
+                if (typeof(ISingletonDependency).IsAssignableFrom(type)) lifetime = ServiceLifetime.Singleton;
+                else if (typeof(ITransientDependency).IsAssignableFrom(type)) lifetime = ServiceLifetime.Transient;
+                else if (typeof(IScopedDependency).IsAssignableFrom(type)) lifetime = ServiceLifetime.Scoped;
 
-                var interfaces = type.GetInterfaces().Where(i => !i.Name.StartsWith("I") || (i.Namespace?.StartsWith("Platform") == true));
+                var interfaces = type.GetInterfaces()
+                    .Where(i => i.Namespace?.StartsWith("Platform") == true && i.Name != nameof(IScopedDependency) &&
+                                i.Name != nameof(ISingletonDependency) && i.Name != nameof(ITransientDependency))
+                    .ToList();
 
-                if (interfaces.Any())
+                if (interfaces.Count > 0)
                 {
                     foreach (var i in interfaces) services.Add(new ServiceDescriptor(i, type, lifetime));
                 }
-                else if (type.GetConstructors().Any(c => c.GetParameters().Length > 0))
+                else
                 {
                     services.Add(new ServiceDescriptor(type, type, lifetime));
                 }

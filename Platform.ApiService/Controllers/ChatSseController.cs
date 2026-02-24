@@ -1,3 +1,4 @@
+using Platform.ApiService.Attributes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +18,7 @@ namespace Platform.ApiService.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/chat")]
+[SkipGlobalAuthentication("SSE端点通过查询参数自主验证Token")]
 public class ChatSseController : BaseApiController
 {
     private readonly IChatSseConnectionManager _connectionManager;

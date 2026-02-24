@@ -76,51 +76,41 @@ public class PlatformDbContext(DbContextOptions<PlatformDbContext> options, ITen
 
     private static void ApplyEntryAuditInfo(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry, string? userId, string? companyId, DateTime now)
     {
-        var state = entry.State;
-        if (state != EntityState.Added && state != EntityState.Modified) return;
+        if (entry.State != EntityState.Added && entry.State != EntityState.Modified) return;
 
         var entity = entry.Entity;
-        var isAdded = state == EntityState.Added;
+        var isAdded = entry.State == EntityState.Added;
 
-        // 处理时间戳
+        // 1. 时间戳
         if (entity is ITimestamped timestamped)
         {
-            if (isAdded)
-            {
-                timestamped.CreatedAt = now;
-                timestamped.UpdatedAt = now;
-            }
-            else
-            {
-                timestamped.UpdatedAt = now;
-            }
+            if (isAdded) timestamped.CreatedAt = now;
+            timestamped.UpdatedAt = now;
         }
 
-        // 处理操作追踪
+        // 2. 操作追踪
         if (entity is IOperationTrackable trackable)
         {
+            trackable.UpdatedBy = userId;
+            trackable.LastOperationAt = now;
             if (isAdded)
             {
                 trackable.CreatedBy ??= userId;
-                trackable.UpdatedBy = userId;
-                trackable.LastOperationAt = now;
                 trackable.LastOperationType = "CREATE";
             }
             else
             {
-                trackable.UpdatedBy = userId;
-                trackable.LastOperationAt = now;
                 trackable.LastOperationType = "UPDATE";
             }
         }
 
-        // 处理多租户
+        // 3. 多租户
         if (isAdded && entity is IMultiTenant tenant && string.IsNullOrEmpty(tenant.CompanyId))
         {
             tenant.CompanyId = companyId ?? string.Empty;
         }
 
-        // 处理软删除审计（仅在修改状态时检查）
+        // 4. 软删除审计
         if (!isAdded && entity is ISoftDeletable softDeletable)
         {
             var isDeletedProp = entry.Property(nameof(ISoftDeletable.IsDeleted));
@@ -130,25 +120,14 @@ public class PlatformDbContext(DbContextOptions<PlatformDbContext> options, ITen
                 {
                     softDeletable.DeletedAt ??= now;
                     softDeletable.DeletedBy ??= userId;
-
-                    if (entity is IOperationTrackable ot)
-                    {
-                        ot.LastOperationType = "DELETE";
-                        ot.LastOperationAt = now;
-                    }
+                    if (entity is IOperationTrackable ot) ot.LastOperationType = "DELETE";
                 }
                 else
                 {
-                    // 数据被恢复 (Undelete)：清除原有软删除记录
                     softDeletable.DeletedAt = null;
                     softDeletable.DeletedBy = null;
                     softDeletable.DeletedReason = null;
-
-                    if (entity is IOperationTrackable ot)
-                    {
-                        ot.LastOperationType = "RESTORE";
-                        ot.LastOperationAt = now;
-                    }
+                    if (entity is IOperationTrackable ot) ot.LastOperationType = "RESTORE";
                 }
             }
         }
@@ -158,52 +137,37 @@ public class PlatformDbContext(DbContextOptions<PlatformDbContext> options, ITen
     {
         base.OnModelCreating(modelBuilder);
 
-        // 获取缓存的实体类型或扫描
-        var entityTypes = GetEntityTypes();
-
-        foreach (var type in entityTypes)
+        foreach (var type in GetEntityTypes())
         {
             var entityBuilder = modelBuilder.Entity(type);
 
-            // 配置集合名称：优先使用 BsonCollectionNameAttribute，其次是 TableAttribute，最后是类名复数
+            // 配置集合名称
             var bsonAttr = type.GetCustomAttribute<Attributes.BsonCollectionNameAttribute>();
             var tableAttr = type.GetCustomAttribute<TableAttribute>();
-            var collectionName = bsonAttr?.Name ?? tableAttr?.Name ?? type.Name.ToLowerInvariant() + "s";
-            entityBuilder.ToCollection(collectionName);
+            entityBuilder.ToCollection(bsonAttr?.Name ?? tableAttr?.Name ?? type.Name.ToLowerInvariant() + "s");
 
-            // 🚀 配置全局查询过滤器（软删除 + 多租户）
+            // 配置全局查询过滤器
             var parameter = Expression.Parameter(type, "e");
             Expression? filterBody = null;
 
-            // 1. 软删除过滤器 (静态部分)
             if (typeof(ISoftDeletable).IsAssignableFrom(type))
             {
                 var isDeleted = Expression.Property(parameter, nameof(ISoftDeletable.IsDeleted));
-                var nullableIsDeleted = Expression.Convert(isDeleted, typeof(bool?));
-                filterBody = Expression.NotEqual(nullableIsDeleted, Expression.Constant(true, typeof(bool?)));
+                filterBody = Expression.NotEqual(Expression.Convert(isDeleted, typeof(bool?)), Expression.Constant(true, typeof(bool?)));
             }
 
-            // 2. 多租户过滤器 (动态部分)
             if (typeof(IMultiTenant).IsAssignableFrom(type))
             {
-                // 获取当前上下文实例的 CurrentCompanyId 属性
                 var companyIdProperty = Expression.Property(parameter, nameof(IMultiTenant.CompanyId));
                 var currentCompanyIdProperty = Expression.Property(Expression.Constant(this), nameof(CurrentCompanyId));
-
                 var tenantFilter = Expression.Equal(companyIdProperty, currentCompanyIdProperty);
                 filterBody = filterBody == null ? tenantFilter : Expression.AndAlso(filterBody, tenantFilter);
             }
 
-            if (filterBody != null)
-            {
-                entityBuilder.HasQueryFilter(Expression.Lambda(filterBody, parameter));
-            }
+            if (filterBody != null) entityBuilder.HasQueryFilter(Expression.Lambda(filterBody, parameter));
         }
     }
 
-    /// <summary>
-    /// 获取所有实体类型（带缓存）
-    /// </summary>
     private static List<Type> GetEntityTypes()
     {
         if (_cachedEntityTypes != null) return _cachedEntityTypes;
@@ -212,26 +176,11 @@ public class PlatformDbContext(DbContextOptions<PlatformDbContext> options, ITen
         {
             if (_cachedEntityTypes != null) return _cachedEntityTypes;
 
-            List<Assembly> assemblies = [Assembly.GetExecutingAssembly()];
-            var entryAssembly = Assembly.GetEntryAssembly();
-            if (entryAssembly != null && entryAssembly != Assembly.GetExecutingAssembly())
-                assemblies.Add(entryAssembly);
-
-            _cachedEntityTypes = [.. assemblies
-                .SelectMany(a =>
-                {
-                    try
-                    {
-                        return a.GetTypes();
-                    }
-                    catch (ReflectionTypeLoadException ex)
-                    {
-                        // ASP.NET Core 环境中避免因某些依赖缺失导致整个扫描直接崩溃
-                        return ex.Types.OfType<Type>();
-                    }
-                })
+            var assemblies = new[] { Assembly.GetExecutingAssembly(), Assembly.GetEntryAssembly() }.Where(a => a != null).Distinct();
+            _cachedEntityTypes = assemblies
+                .SelectMany(a => { try { return a!.GetTypes(); } catch { return Type.EmptyTypes; } })
                 .Where(t => t.IsClass && !t.IsAbstract && typeof(IEntity).IsAssignableFrom(t))
-                .Distinct()];
+                .ToList();
 
             return _cachedEntityTypes;
         }

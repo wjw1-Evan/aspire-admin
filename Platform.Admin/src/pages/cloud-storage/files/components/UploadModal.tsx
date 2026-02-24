@@ -66,7 +66,7 @@ const UploadModal: React.FC<UploadModalProps> = ({
             {/* 上传进度 */}
             {Object.keys(uploadProgress).length > 0 && (
                 <div style={{ marginTop: 16 }}>
-                    <h4>{intl.formatMessage({ id: 'pages.cloud-storage.files.upload.progress' })}</h4>
+                    <h4>{intl.formatMessage({ id: 'pages.cloud-storage.files.upload.progressTitle' })}</h4>
                     {Object.entries(uploadProgress).map(([uploadId, info]) => {
                         const { percent, label } = info;
                         return (

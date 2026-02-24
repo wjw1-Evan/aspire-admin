@@ -229,6 +229,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             else return new { error = "未找到该任务" };
         }
 
+        if (string.IsNullOrEmpty(taskId)) return new { error = "任务未找到" };
         var task = await _taskService.GetTaskByIdAsync(taskId);
         if (task == null) return new { error = "任务未找到" };
 
@@ -491,6 +492,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             else return new { error = "未找到该项目" };
         }
 
+        if (string.IsNullOrEmpty(projectId)) return new { error = "项目不存在" };
         var project = await _projectService.GetProjectByIdAsync(projectId);
         if (project == null) return new { error = "项目不存在" };
 

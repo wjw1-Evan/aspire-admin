@@ -33,6 +33,11 @@ public class McpService : IMcpService
         _logger = logger;
     }
 
+    /// <summary>
+    /// 初始化 MCP 服务
+    /// </summary>
+    /// <param name="request">初始请求参数</param>
+    /// <returns>包含服务器功能和信息的响应</returns>
     public Task<McpInitializeResponse> InitializeAsync(McpInitializeRequest request)
     {
         _logger.LogInformation("MCP 服务初始化，共 {Count} 个 Handler", _handlers.Count());
@@ -47,12 +52,22 @@ public class McpService : IMcpService
         });
     }
 
+    /// <summary>
+    /// 获取所有可用的工具列表
+    /// </summary>
+    /// <returns>包含工具定义的响应</returns>
     public async Task<McpListToolsResponse> ListToolsAsync()
     {
         var tools = await GetAllToolsAsync();
         return new McpListToolsResponse { Tools = tools };
     }
 
+    /// <summary>
+    /// 调用指定的工具
+    /// </summary>
+    /// <param name="request">调用请求</param>
+    /// <param name="currentUserId">当前用户ID</param>
+    /// <returns>工具执行结果响应</returns>
     public async Task<McpCallToolResponse> CallToolAsync(McpCallToolRequest request, string currentUserId)
     {
         var toolName = request.Name;
@@ -82,6 +97,14 @@ public class McpService : IMcpService
         }
     }
 
+    /// <summary>
+    /// 检测并根据用户消息内容自动调用匹配的工具
+    /// </summary>
+    /// <param name="session">当前会话</param>
+    /// <param name="userMessage">用户消息</param>
+    /// <param name="currentUserId">当前用户ID</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>工具执行结果摘要，若无匹配则返回 null</returns>
     public async Task<McpToolExecutionResult?> DetectAndCallMcpToolsAsync(
         ChatSession session,
         ChatMessage userMessage,

@@ -16,7 +16,7 @@ public class EFCoreDataFactory<T>(DbContext context)
     #region 查询操作
 
     public async Task<T?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
-        => await _dbSet.FindAsync([id], cancellationToken);
+        => await _dbSet.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
 
     public async Task<bool> ExistsAsync(string id, CancellationToken cancellationToken = default)
         => await ExistsAsync(e => e.Id == id, cancellationToken);

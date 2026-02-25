@@ -51,7 +51,7 @@ public class ParkStatisticsService : IParkStatisticsService
         // 1. 获取所有模块统计数据
         object statsData;
         var periodDesc = startDate.HasValue && endDate.HasValue
-            ? $"{startDate:yyyy-MM-dd} 至 {endDate:yyyy-MM-dd}"
+            ? $"{startDate:yyyy-MM-dd} 至 {endDate.Value.AddDays(-1):yyyy-MM-dd}"
             : "本月";
 
         if (statisticsData != null)
@@ -83,12 +83,13 @@ public class ParkStatisticsService : IParkStatisticsService
         var statsJson = JsonSerializer.Serialize(statsData, new JsonSerializerOptions { WriteIndented = true });
 
         // 3. 构建 Prompt
-        var systemPrompt = "你是一个专业的园区运营数据分析师。请根据提供的园区各模块运营数据，通过 markdown 格式生成一份详细的运营分析报告。报告应重点关注数据背后的趋势和洞察。";
+        var systemPrompt = "你是一个专业的园区运营数据分析师。请根据提供的园区各模块运营数据，通过 markdown 格式生成一份详细的运营分析报告。报告应重点关注数据背后的趋势和洞察。报告第一行必须是：# 🏢 园区运营分析报告 (周期描述)";
         var userPrompt = $@"请基于以下统计数据生成运营分析报告：
 
 {statsJson}
 
 报告要求：
+0. **报告标题**：报告第一行必须是：# 🏢 园区运营分析报告 ({periodDesc})
 1. **总体概览**：简要总结本周期通过关键指标体现的园区运营状况，重点提及关键绩效指标的完成情况。
 2. **各模块详细分析**：
    - **资产管理**：重点分析出租率、空置率以及资产规模（物业总数）的 **同比/环比变化**，以及可能的原因。

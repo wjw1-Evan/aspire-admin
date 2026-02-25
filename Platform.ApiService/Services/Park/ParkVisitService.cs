@@ -541,7 +541,8 @@ public class ParkVisitService : IParkVisitService
             TasksByType = tasksByType,
             TasksByStatus = tasksByStatus,
             ManagerRanking = managerRanking,
-            MonthlyTrends = monthlyTrends
+            MonthlyTrends = monthlyTrends,
+            Period = startDate.HasValue && endDate.HasValue ? $"{startDate:yyyy-MM-dd} 至 {endDate.Value.AddDays(-1):yyyy-MM-dd}" : "本月"
         };
     }
 
@@ -558,6 +559,7 @@ public class ParkVisitService : IParkVisitService
 {statsJson}
 
 报告要求：
+0. **报告标题**：报告第一行必须是：# 🏢 园区走访调研报告 ({stats.Period ?? "本月"})
 1. **📊 走访执行概览**：
    - 总结本阶段走访任务的完成情况（完成数、平均完成率）。
    - 分析企管员的活跃度（活跃企管员数量）。

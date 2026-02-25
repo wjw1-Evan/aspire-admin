@@ -2137,6 +2137,7 @@ export default {
   'pages.park.statistics.yearRent': '年租金收入',
   'pages.park.statistics.aiReport': 'AI 分析报告',
   'pages.park.statistics.aiReportTitle': 'AI 运营分析报告',
+  'pages.park.statistics.reportPeriod': '报告周期',
   'pages.park.statistics.generatingReport': '正在生成报告，可能需要几十秒...',
 
 

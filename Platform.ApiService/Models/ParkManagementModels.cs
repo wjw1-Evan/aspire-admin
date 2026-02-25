@@ -2742,6 +2742,9 @@ public class VisitStatisticsDto
 
     /// <summary>最近6个月的走访趋势 (月份 -> 走访数)</summary>
     public Dictionary<string, int> MonthlyTrends { get; set; } = new();
+
+    /// <summary>统计周期描述</summary>
+    public string? Period { get; set; }
 }
 
 #endregion

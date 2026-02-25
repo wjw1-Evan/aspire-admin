@@ -331,9 +331,18 @@ const VisitStatisticsPage: React.FC = () => {
 
                 <Modal
                     title={
-                        <Space>
-                            <RobotOutlined style={{ color: '#1890ff' }} />
-                            {intl.formatMessage({ id: 'pages.park.visit.statistics.aiReport', defaultMessage: '走访 AI 分析报告' })}
+                        <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                            <Space>
+                                <RobotOutlined style={{ color: '#1890ff' }} />
+                                {intl.formatMessage({ id: 'pages.park.visit.statistics.aiReport', defaultMessage: '走访 AI 分析报告' })}
+                            </Space>
+                            <div style={{ fontSize: 12, fontWeight: 'normal', color: 'rgba(0, 0, 0, 0.45)', marginLeft: 24 }}>
+                                {intl.formatMessage({ id: 'pages.park.statistics.reportPeriod', defaultMessage: '报告周期' })}: {' '}
+                                <Tag color="blue" style={{ marginRight: 8 }}>
+                                    {period === 'month' ? '本月' : period === 'year' ? '本年' : period === 'custom' ? '自定义' : period}
+                                </Tag>
+                                {dateRange ? `${dateRange[0].format('YYYY-MM-DD')} ~ ${dateRange[1].format('YYYY-MM-DD')}` : '-'}
+                            </div>
                         </Space>
                     }
                     open={aiReportVisible}

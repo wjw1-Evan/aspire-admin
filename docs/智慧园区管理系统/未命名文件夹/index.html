@@ -1,0 +1,4332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智慧园区管理系统 | Smart Park OS</title>
+    <!-- Fonts (Domestic Mirror) -->
+    <link rel="preconnect" href="https://fonts.loli.net">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.loli.net/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@300;500;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #030712;
+            --primary: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.5);
+            --secondary: #8b5cf6;
+            --accent: #06b6d4;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* --- Canvas Background --- */
+        #particles-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* --- Layout & Slides --- */
+        .viewport {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 4rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: scale(1.1) translateY(20px);
+            filter: blur(10px);
+        }
+
+        .slide.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1) translateY(0);
+            filter: blur(0);
+        }
+
+        .slide.exit {
+            opacity: 0;
+            transform: scale(0.95) translateY(-20px);
+            filter: blur(5px);
+        }
+
+        /* --- Typography --- */
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            letter-spacing: -0.02em;
+        }
+
+        h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3rem;
+            margin-bottom: 3rem;
+            text-align: center;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            line-height: 1.7;
+            max-width: 800px;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        /* --- Components: Cards --- */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            width: 100%;
+            max-width: 1400px;
+        }
+
+        .card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(12px);
+            border-radius: 1.5rem;
+            padding: 2.5rem;
+            transition: transform 0.4s ease, box-shadow 0.4s ease, border-color 0.4s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.05), transparent 60%);
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .icon-box {
+            width: 3rem;
+            height: 3rem;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            color: var(--primary);
+        }
+
+        /* --- Components: Buttons --- */
+        .btn {
+            padding: 1rem 2.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 99px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            color: white;
+            box-shadow: 0 4px 15px var(--primary-glow);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 8px 25px var(--primary-glow);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            box-shadow: none;
+        }
+
+        .btn-outline:hover {
+            border-color: var(--text-main);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* --- Dashboard Simulation --- */
+        .dashboard-preview {
+            width: 1000px;
+            height: 600px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--glass-border);
+            border-radius: 1rem;
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            overflow: hidden;
+            box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.5);
+            transform: perspective(1000px) rotateX(5deg);
+            transition: transform 0.5s ease;
+        }
+
+        .dashboard-preview:hover {
+            transform: perspective(1000px) rotateX(0deg);
+        }
+
+        .sidebar {
+            border-right: 1px solid var(--glass-border);
+            padding: 1.5rem;
+        }
+
+        .sidebar-item {
+            height: 12px;
+            width: 60%;
+            background: linear-gradient(90deg, var(--glass-border), transparent);
+            margin-bottom: 2rem;
+            border-radius: 6px;
+        }
+
+        .main-content {
+            padding: 2rem;
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: 2rem;
+        }
+
+        .header-bar {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .stat-card {
+            height: 100px;
+            background: var(--glass-bg);
+            border-radius: 0.75rem;
+            flex: 1;
+        }
+
+        .chart-area {
+            background: var(--glass-bg);
+            border-radius: 0.75rem;
+            flex: 1;
+            display: flex;
+            align-items: flex-end;
+            padding: 2rem;
+            gap: 1rem;
+            justify-content: space-between;
+        }
+
+        .bar {
+            width: 100%;
+            background: linear-gradient(to top, var(--primary), var(--accent));
+            opacity: 0.7;
+            border-radius: 4px 4px 0 0;
+            transition: height 1s ease;
+        }
+
+        /* --- Progress & Controls --- */
+        .progress-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            width: 0%;
+            transition: width 0.5s;
+            z-index: 100;
+        }
+
+        .nav-controls {
+            position: fixed;
+            bottom: 3rem;
+            right: 3rem;
+            display: flex;
+            gap: 1rem;
+            z-index: 50;
+        }
+
+        .nav-btn {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="particles-canvas"></canvas>
+    <div class="progress-bar" id="progress"></div>
+
+    <div class="viewport">
+
+        <!-- Slide 1: Hero -->
+        <div class="slide active" id="slide-0">
+            <div style="position: relative; z-index: 2; text-align: center;">
+                <div
+                    style="font-size: 1.5rem; color: var(--accent); margin-bottom: 1rem; letter-spacing: 0.2rem; text-transform: uppercase; font-weight: 600;">
+                    Aspire Admin Pro</div>
+                <h1>智慧园区 • 数字未来<br><span
+                        style="background: linear-gradient(to right, #4ade80, #3b82f6); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Smart
+                        Park Management</span></h1>
+                <p>重塑园区运营模式，打造高效、智能、可持续的现代化产业社区。</p>
+                <div style="margin-top: 3rem; display: flex; gap: 1.5rem; justify-content: center;">
+                    <button class="btn" onclick="nextSlide()">立即探索 ➔</button>
+                    <button class="btn btn-outline"
+                        onclick="window.location.href='mailto:fsy_008@163.com'">联系我们</button>
+                </div>
+            </div>
+            <!-- Decorative circle behind -->
+            <div
+                style="position: absolute; width: 600px; height: 600px; background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%); border-radius: 50%; z-index: 1; filter: blur(50px);">
+            </div>
+        </div>
+
+        <!-- Slide 2: The Challenge (Why Us) -->
+        <div class="slide" id="slide-1">
+            <h2>传统园区 vs 智慧园区</h2>
+            <div class="grid-container" style="grid-template-columns: 1fr 1fr; max-width: 1000px;">
+                <div class="card" style="border-color: rgba(239, 68, 68, 0.2);">
+                    <h3 style="color: #f87171;">🚫 传统痛点 (Pain Points)</h3>
+                    <ul
+                        style="list-style: none; color: var(--text-muted); display: flex; flex-direction: column; gap: 1rem;">
+                        <li>• <strong>数据孤岛</strong>：各系统独立，数据无法互通</li>
+                        <li>• <strong>管理低效</strong>：依赖人工记录，流程繁琐</li>
+                        <li>• <strong>被动服务</strong>：响应滞后，租户体验差</li>
+                        <li>• <strong>能耗盲区</strong>：水电浪费严重，无法精细化管控</li>
+                    </ul>
+                </div>
+                <div class="card" style="border-color: rgba(59, 130, 246, 0.5); background: rgba(59, 130, 246, 0.05);">
+                    <h3 style="color: #60a5fa;">✅ 智慧解决方案 (Solution)</h3>
+                    <ul
+                        style="list-style: none; color: var(--text-main); display: flex; flex-direction: column; gap: 1rem;">
+                        <li>• <strong>万物互联</strong>：IoT设备实时接入，数据统一汇聚</li>
+                        <li>• <strong>智能决策</strong>：AI驱动的数据驾驶舱，辅助运营</li>
+                        <li>• <strong>主动服务</strong>：移动端工单系统，极速响应</li>
+                        <li>• <strong>绿色低碳</strong>：智能抄表与能耗分析，节能降耗</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: Dashboard Demo (High Fidelity & Module Aligned) -->
+        <div class="slide" id="slide-2">
+
+            <style>
+                /* Dashboard Specific Styles */
+                .cockpit-container {
+                    width: 95vw;
+                    height: 88vh;
+                    background: rgba(15, 23, 42, 0.9);
+                    border: 1px solid rgba(59, 130, 246, 0.3);
+                    border-radius: 1rem;
+                    display: grid;
+                    grid-template-columns: 300px 1fr 300px;
+                    grid-template-rows: 60px 1fr 150px;
+                    gap: 1rem;
+                    padding: 1rem;
+                    box-shadow: 0 0 50px rgba(59, 130, 246, 0.15);
+                    position: relative;
+                    overflow: hidden;
+                    backdrop-filter: blur(20px);
+                }
+
+                .cp-header {
+                    grid-column: 1 / -1;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                    padding-bottom: 0.5rem;
+                }
+
+                .cp-title {
+                    font-family: 'Outfit', sans-serif;
+                    font-weight: 700;
+                    letter-spacing: 2px;
+                    color: #fff;
+                    text-transform: uppercase;
+                    background: linear-gradient(to right, #fff, #94a3b8);
+                    -webkit-background-clip: text;
+                    background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                }
+
+                .cp-panel-side {
+                    grid-row: 2 / 4;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 1rem;
+                }
+
+                .cp-card {
+                    background: rgba(255, 255, 255, 0.03);
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                    border-radius: 0.5rem;
+                    padding: 1rem;
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                }
+
+                .cp-card h4 {
+                    font-size: 0.9rem;
+                    color: var(--accent);
+                    margin-bottom: 0.8rem;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                    border-left: 3px solid var(--accent);
+                    padding-left: 0.5rem;
+                }
+
+                .cp-stat-row {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 0.8rem;
+                    font-size: 0.85rem;
+                }
+
+                .stat-value {
+                    font-family: 'Outfit', monospace;
+                    font-weight: 600;
+                    color: #fff;
+                }
+
+                .stat-label {
+                    color: var(--text-muted);
+                }
+
+                /* Middle Map */
+                .cp-map-area {
+                    grid-column: 2;
+                    grid-row: 2;
+                    position: relative;
+                    border-radius: 0.5rem;
+                    background: radial-gradient(circle at center, rgba(59, 130, 246, 0.05) 0%, transparent 70%);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    overflow: hidden;
+                    perspective: 1200px;
+                    /* Critical for 3D effect */
+                }
+
+                /* Bottom Module Metrics */
+                .cp-bottom-metrics {
+                    grid-column: 2;
+                    grid-row: 3;
+                    display: grid;
+                    grid-template-columns: repeat(4, 1fr);
+                    gap: 1rem;
+                }
+
+                /* Charts */
+                .mini-bar-chart {
+                    display: flex;
+                    align-items: flex-end;
+                    justify-content: space-between;
+                    height: 40px;
+                    gap: 2px;
+                }
+
+                .mini-bar {
+                    flex: 1;
+                    background: var(--primary);
+                    opacity: 0.6;
+                    border-radius: 2px 2px 0 0;
+                }
+
+                .progress-item {
+                    margin-bottom: 0.5rem;
+                }
+
+                .progress-header {
+                    display: flex;
+                    justify-content: space-between;
+                    font-size: 0.75rem;
+                    margin-bottom: 2px;
+                }
+
+                .progress-track {
+                    height: 4px;
+                    background: rgba(255, 255, 255, 0.1);
+                    border-radius: 2px;
+                }
+
+                .progress-fill {
+                    height: 100%;
+                    border-radius: 2px;
+                }
+
+                /* Camera Feed Styles */
+                .cam-grid {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 0.5rem;
+                    height: 120px;
+                }
+
+                .cam-feed {
+                    background: #000;
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    position: relative;
+                    overflow: hidden;
+                    border-radius: 4px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+                .cam-feed img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    opacity: 0.6;
+                }
+
+                .cam-overlay {
+                    position: absolute;
+                    top: 5px;
+                    left: 5px;
+                    font-size: 8px;
+                    color: rgba(255, 255, 255, 0.7);
+                    font-family: monospace;
+                    background: rgba(0, 0, 0, 0.5);
+                    padding: 1px 3px;
+                }
+
+                .rec-dot {
+                    position: absolute;
+                    top: 5px;
+                    right: 5px;
+                    width: 6px;
+                    height: 6px;
+                    background: red;
+                    border-radius: 50%;
+                    animation: blink 1s infinite;
+                }
+
+                @keyframes blink {
+                    50% {
+                        opacity: 0;
+                    }
+                }
+
+                .cam-crosshair {
+                    position: absolute;
+                    width: 100%;
+                    height: 100%;
+                    pointer-events: none;
+                }
+
+                .cam-crosshair::before,
+                .cam-crosshair::after {
+                    content: '';
+                    position: absolute;
+                    background: rgba(255, 255, 255, 0.2);
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                }
+
+                .cam-crosshair::before {
+                    width: 10px;
+                    height: 1px;
+                }
+
+                .cam-crosshair::after {
+                    width: 1px;
+                    height: 10px;
+                }
+
+                /* Services & Activities */
+                .activity-item {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 0.6rem 0;
+                    font-size: 0.85rem;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                }
+
+                .activity-item:last-child {
+                    border-bottom: none;
+                }
+
+                .badge {
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                    font-size: 0.7rem;
+                    font-weight: 600;
+                }
+
+                .badge-info {
+                    color: #60a5fa;
+                    background: rgba(96, 165, 250, 0.15);
+                    border: 1px solid rgba(96, 165, 250, 0.3);
+                }
+
+                .badge-warn {
+                    color: #facc15;
+                    background: rgba(250, 204, 21, 0.15);
+                    border: 1px solid rgba(250, 204, 21, 0.3);
+                }
+            </style>
+
+            <div class="cockpit-container">
+                <!-- Header -->
+                <div class="cp-header">
+                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                        <div style="width:20px; height:20px; background:var(--primary); border-radius:4px;"></div>
+                        <div class="cp-title">全景数据驾驶舱 (Data Cockpit) 基于真实业务模块构建，打破数据孤岛，实现园区运营全可视化。</div>
+                    </div>
+                    <div style="display:flex; gap:1rem; font-size:0.8rem; color: var(--text-muted);">
+                        <span><span style="color: #4ade80;">●</span> System Normal</span>
+                        <span style="font-family: monospace;" id="clock">10:42:35</span>
+                    </div>
+                </div>
+
+                <!-- Left Panel: Core Operations -->
+                <div class="cp-panel-side">
+                    <!-- Asset Management -->
+                    <div class="cp-card">
+                        <h4>🏢 资产管理 (Assets)</h4>
+                        <div class="cp-stat-row">
+                            <span class="stat-label">总楼宇 (Buildings)</span>
+                            <span class="stat-value">12 栋</span>
+                        </div>
+                        <div class="cp-stat-row">
+                            <span class="stat-label">总面积 (GFA)</span>
+                            <span class="stat-value">150,000 ㎡</span>
+                        </div>
+                        <div class="cp-stat-row">
+                            <span class="stat-label">空置面积 (Available)</span>
+                            <span class="stat-value" style="color: #4ade80;">18,000 ㎡</span>
+                        </div>
+                        <div class="progress-item" style="margin-top: 0.5rem;">
+                            <div class="progress-header"><span>出租率 (Occupancy)</span><span>88%</span></div>
+                            <div class="progress-track">
+                                <div class="progress-fill" style="width: 88%; background: #4ade80;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Investment & Tenant -->
+                    <div class="cp-card">
+                        <h4>🤝 招商 & 租户 (CRM)</h4>
+                        <div class="cp-stat-row">
+                            <span class="stat-label">在租企业 (Tenants)</span>
+                            <span class="stat-value">145 家</span>
+                        </div>
+                        <div class="cp-stat-row">
+                            <span class="stat-label">本月新签 (New)</span>
+                            <span class="stat-value">+3 家</span>
+                        </div>
+                        <div class="cp-stat-row">
+                            <span class="stat-label">跟进线索 (Leads)</span>
+                            <span class="stat-value">34 个</span>
+                        </div>
+                        <div id="demo-bars" class="mini-bar-chart">
+                            <!-- Dynamic bars will be injected here -->
+                        </div>
+                    </div>
+
+                    <!-- Contract & Finance -->
+                    <div class="cp-card">
+                        <h4>💰 合同 & 财务 (Finance)</h4>
+                        <div class="cp-stat-row">
+                            <span class="stat-label">本月营收 (Revenue)</span>
+                            <div style="text-align: right;">
+                                <div class="stat-value">¥ 2.4M</div>
+                                <div style="font-size: 0.7rem; color: #4ade80;">▲ 12% YoY</div>
+                            </div>
+                        </div>
+                        <div class="cp-stat-row">
+                            <span class="stat-label">待收金额 (Pending)</span>
+                            <span class="stat-value" style="color: #facc15;">¥ 340k</span>
+                        </div>
+                        <div class="cp-stat-row">
+                            <span class="stat-label">合同预警 (Expiring)</span>
+                            <span class="badge badge-warn">5 份</span>
+                        </div>
+                        <div class="progress-item" style="margin-top: 0.5rem;">
+                            <div class="progress-header"><span>收缴率 (Collection)</span><span>95%</span></div>
+                            <div class="progress-track">
+                                <div class="progress-fill" style="width: 95%; background: #60a5fa;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Environment Health (NEW) -->
+                    <div class="cp-card">
+                        <h4>🌱 环境指标 (Environment)</h4>
+                        <div
+                            style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; margin-top: 0.8rem;">
+                            <div
+                                style="text-align: center; background: rgba(255,255,255,0.05); padding: 0.8rem; border-radius: 8px;">
+                                <div style="font-size: 1.1rem; color: #4ade80; font-weight: bold;" id="env-temp">24.5°C
+                                </div>
+                                <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">温度</div>
+                            </div>
+                            <div
+                                style="text-align: center; background: rgba(255,255,255,0.05); padding: 0.8rem; border-radius: 8px;">
+                                <div style="font-size: 1.1rem; color: #3b82f6; font-weight: bold;" id="env-hum">45%
+                                </div>
+                                <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">湿度</div>
+                            </div>
+                            <div
+                                style="text-align: center; background: rgba(255,255,255,0.05); padding: 0.8rem; border-radius: 8px;">
+                                <div style="font-size: 1.1rem; color: #fbbf24; font-weight: bold;" id="env-pm">18</div>
+                                <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">PM2.5</div>
+                            </div>
+                            <div
+                                style="text-align: center; background: rgba(255,255,255,0.05); padding: 0.8rem; border-radius: 8px;">
+                                <div style="font-size: 1.1rem; color: #f87171; font-weight: bold;" id="env-noise">45dB
+                                </div>
+                                <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">噪音</div>
+                            </div>
+                            <div
+                                style="text-align: center; background: rgba(255,255,255,0.05); padding: 0.8rem; border-radius: 8px;">
+                                <div style="font-size: 1.1rem; color: #a78bfa; font-weight: bold;" id="env-co2">420
+                                </div>
+                                <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">CO2</div>
+                            </div>
+                            <div
+                                style="text-align: center; background: rgba(255,255,255,0.05); padding: 0.8rem; border-radius: 8px;">
+                                <div style="font-size: 1.1rem; color: #22d3ee; font-weight: bold;" id="env-lux">12.5kLx
+                                </div>
+                                <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">光照</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Center: Digital Twin Map (CSS 3D) -->
+                <div class="cp-map-area"
+                    style="perspective: 1200px; overflow: hidden; background: radial-gradient(circle at center, rgba(15, 23, 42, 0.5) 0%, transparent 100%); cursor: grab;">
+                    <div class="scene-3d">
+                        <!-- Ground Grid -->
+                        <div class="ground">
+                            <!-- 1. Central Hub Ring (Around HQ) -->
+                            <div class="road road-h-inner-top"></div>
+                            <div class="road road-h-inner-bottom"></div>
+                            <div class="road road-v-inner-left"></div>
+                            <div class="road road-v-inner-right"></div>
+
+                            <!-- 2. Main Grid Lines -->
+                            <div class="road road-h-grid-n"></div>
+                            <div class="road road-h-grid-s"></div>
+                            <div class="road road-v-grid-w"></div>
+                            <div class="road road-v-grid-e"></div>
+
+                            <!-- 3. Perimeter & Special -->
+                            <div class="road road-ring"></div>
+                            <div class="road road-south-main"></div>
+                            <div class="road road-parking-connect"></div>
+                            <!-- Landscaping Removed -->
+
+                            <!-- Walkways -->
+                            <div class="walkway"
+                                style="position: absolute; width: 4px; height: 400px; background: rgba(255,255,255,0.1); transform: translate(-150px, -200px);">
+                            </div>
+                            <div class="walkway"
+                                style="position: absolute; width: 300px; height: 4px; background: rgba(255,255,255,0.1); transform: translate(-150px, -200px);">
+                            </div>
+                        </div>
+
+                        <!-- West Side with Gate -->
+                        <div class="building-group west-gate" style="transform: translateX(-600px) rotateZ(90deg);">
+                            <div class="cube gate-pillar gp-left">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="cube gate-pillar gp-right">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                        </div>
+
+                        <!-- East Side with Gate -->
+                        <div class="building-group east-gate" style="transform: translateX(600px) rotateZ(-90deg);">
+                            <div class="cube gate-pillar gp-left">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="cube gate-pillar gp-right">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                        </div>
+
+                        <!-- Green Zones & Landscape Removed -->
+
+                        <!-- Trees Removed -->
+
+                        <!-- Photovoltaic Power Generation (South) -->
+                        <div class="solar-array">
+                            <div class="solar-panel"></div>
+                            <div class="solar-panel"></div>
+                            <div class="solar-panel"></div>
+                            <div class="solar-panel"></div>
+                            <div class="solar-panel"></div>
+                            <div class="solar-panel"></div>
+
+                            <!-- 3D Wrappers to prevent label overlap while maintaining billboard effect -->
+                            <div
+                                style="transform: translateY(60px); transform-style: preserve-3d; position: absolute; left: 50%; top: 50%;">
+                                <div class="b-label" style="font-size: 10px;">光伏发电阵列 (PV Array)</div>
+                            </div>
+                            <div
+                                style="transform: translateY(-20px); transform-style: preserve-3d; position: absolute; left: 50%; top: 50%;">
+                                <div class="energy-label el-pv">
+                                    <div class="e-val" style="color: #4ade80;">+45kW</div>
+                                    <div class="e-line"
+                                        style="background: linear-gradient(to top, rgba(34,197,94,0.2), #4ade80); height: 30px; display: block;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Main Gate (South) -->
+                        <div class="building-group main-gate">
+                            <!-- Gate Canopy -->
+                            <div class="cube gate-canopy">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top">
+                                </div>
+                            </div>
+                            <!-- Pillars -->
+                            <div class="cube gate-pillar gp-left">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top">
+                                </div>
+                            </div>
+                            <div class="cube gate-pillar gp-right">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top">
+                                </div>
+                            </div>
+
+                            <!-- Vehicle Lane Barriers (Boom Gates) -->
+                            <div class="gate-barrier gb-in">
+                                <div class="gb-pole"></div>
+                                <div class="gb-arm"></div>
+                            </div>
+                            <div class="gate-barrier gb-out">
+                                <div class="gb-pole"></div>
+                                <div class="gb-arm"></div>
+                            </div>
+
+                            <!-- Pedestrian Tourniquets -->
+                            <div class="gate-turnstile gt-left"></div>
+                            <div class="gate-turnstile gt-right"></div>
+
+                            <div class="b-label" style="transform: translateZ(60px) rotateX(-60deg);">园区大门</div>
+                            <div class="energy-label el-gate">
+                                <div class="e-val">Live</div>
+                                <div class="e-line"
+                                    style="height: 40px; background: linear-gradient(to top, rgba(34,197,94,0.2), #22c55e);">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Parking Lot (West) - Enhanced -->
+                        <div class="parking-lot pl-west">
+                            <div class="car c-1"></div>
+                            <div class="car c-2"></div>
+                            <div class="car c-3"></div>
+                            <div class="car c-4"></div>
+                            <div class="car c-5"></div>
+                            <!-- Added Teslas -->
+                            <!-- Added 3D Teslas -->
+                            <div class="car-3d tesla c-tesla-1">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="car-3d tesla c-tesla-2">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="car-3d tesla c-tesla-3">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="parking-label">P</div>
+                            <div class="b-label" style="transform: translateZ(20px) rotateX(-60deg);">停车场</div>
+                            <div class="energy-label el-parking">
+                                <div class="e-val" id="map-val-parking">156 / 800</div>
+                                <div class="e-line"></div>
+                            </div>
+                        </div>
+
+                        <!-- Security Camera Poles -->
+                        <div class="camera-pole cp-1">
+                            <div class="cam-head"></div>
+                            <div class="cam-cone"></div>
+                        </div>
+                        <div class="camera-pole cp-2">
+                            <div class="cam-head"></div>
+                            <div class="cam-cone"></div>
+                        </div>
+                        <div class="camera-pole cp-3">
+                            <div class="cam-head"></div>
+                            <div class="cam-cone"></div>
+                        </div>
+                        <div class="camera-pole cp-4">
+                            <div class="cam-head"></div>
+                            <div class="cam-cone"></div>
+                        </div>
+
+                        <!-- 1. Central HQ Tower (Complex: Base + Main + Top) -->
+                        <div class="building-group b-hq">
+                            <!-- Base Podium -->
+                            <div class="cube b-hq-base">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <!-- Main Tower -->
+                            <div class="cube b-hq-tower">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top">
+                                    <!-- Roof Details -->
+                                    <div class="antenna" style="position: absolute; left: 20px; top: 20px;"></div>
+                                    <div class="antenna"
+                                        style="position: absolute; right: 20px; top: 20px; height: 60px;"></div>
+                                    <div class="roof-detail ac-unit" style="left: 40px; top: 40px;"></div>
+                                </div>
+                            </div>
+                            <!-- Top decoration removed -->
+                            <div class="b-label" style="transform: translateZ(200px) rotateX(-60deg);">总部大厦 HQ</div>
+                            <div class="occupancy-label el-hq-occ">
+                                <div class="occ-tag">入住率 92%</div>
+                            </div>
+                            <div class="energy-label el-hq">
+                                <div class="e-val">452 kW</div>
+                                <div class="e-line"></div>
+                            </div>
+                        </div>
+
+                        <!-- 2. R&D A (Modern Glass, Split Form) -->
+                        <div class="building-group b-rd-a">
+                            <div class="cube b-rda-main">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top">
+                                    <div class="roof-detail ac-unit" style="left: 10px; top: 10px;"></div>
+                                    <div class="roof-detail ac-unit" style="right: 10px; top: 30px;"></div>
+                                </div>
+                            </div>
+                            <div class="cube b-rda-side">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="b-label" style="transform: translateZ(120px) rotateX(-60deg);">研发中心 A</div>
+                            <div class="occupancy-label el-rda-occ">
+                                <div class="occ-tag">入住率 85%</div>
+                            </div>
+                            <div class="env-label el-rda-env">
+                                <div class="env-tag">55dB</div>
+                            </div>
+                            <div class="energy-label el-rda">
+                                <div class="e-val">128 kW</div>
+                                <div class="e-line"></div>
+                            </div>
+                        </div>
+
+                        <!-- 3. R&D B (Tech Style) -->
+                        <div class="building-group b-rd-b">
+                            <div class="cube b-rdb-main">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="b-label" style="transform: translateZ(100px) rotateX(-60deg);">研发中心 B</div>
+                            <div class="occupancy-label el-rdb-occ">
+                                <div class="occ-tag">入住率 78%</div>
+                            </div>
+                            <div class="energy-label el-rdb">
+                                <div class="e-val">85 kW</div>
+                                <div class="e-line"></div>
+                            </div>
+                        </div>
+
+                        <!-- 4. Commercial Mall (Low, Wide, Complex Roof) -->
+                        <div class="building-group b-mall">
+                            <div class="cube b-mall-main">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <!-- Mall Entrance/Atrium -->
+                            <div class="cube b-mall-atrium">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="b-label" style="transform: translateZ(80px) rotateX(-60deg);">商业广场</div>
+                            <div class="occupancy-label el-mall-occ">
+                                <div class="occ-tag">入住率 94%</div>
+                            </div>
+                            <div class="env-label el-mall-env">
+                                <div class="env-tag">45dB</div>
+                            </div>
+                            <div class="energy-label el-mall">
+                                <div class="e-val">310 kW</div>
+                                <div class="e-line"></div>
+                            </div>
+                        </div>
+
+                        <!-- 5. Apartment (Twin Towers) -->
+                        <div class="building-group b-apt">
+                            <div class="cube b-apt-1">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="cube b-apt-2">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top">
+                                    <!-- Helipad for Apartment -->
+                                    <div
+                                        style="position: absolute; width: 30px; height: 30px; border: 2px solid white; border-radius: 50%; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; color: white;">
+                                        H</div>
+                                </div>
+                            </div>
+                            <div class="b-label" style="transform: translateZ(120px) rotateX(-60deg);">人才公寓</div>
+                            <div class="occupancy-label el-apt-occ">
+                                <div class="occ-tag">入住率 98%</div>
+                            </div>
+                            <div class="energy-label el-apt">
+                                <div class="e-val">180 kW</div>
+                                <div class="e-line"></div>
+                            </div>
+                        </div>
+
+                        <!-- 6. Sports Center -->
+                        <div class="building-group b-gym">
+                            <div class="cube b-gym-main">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="b-label" style="transform: translateZ(50px) rotateX(-60deg);">体育中心 Gym</div>
+                            <div class="occupancy-label el-gym-occ">
+                                <div class="occ-tag">入住率 100%</div>
+                            </div>
+                            <div class="env-label el-gym-env">
+                                <div class="env-tag">60dB</div>
+                            </div>
+                            <div class="energy-label el-gym">
+                                <div class="e-val">45 kW</div>
+                                <div class="e-line"></div>
+                            </div>
+                        </div>
+
+                        <!-- 7. Research Center C (NEW) -->
+                        <div class="building-group b-rd-c">
+                            <div class="cube b-rdc-main">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="b-label" style="transform: translateZ(140px) rotateX(-60deg);">研发中心 C</div>
+                            <div class="occupancy-label el-rdc-occ">
+                                <div class="occ-tag">入住率 65%</div>
+                            </div>
+                            <div class="energy-label el-rdc">
+                                <div class="e-val">95 kW</div>
+                                <div class="e-line"></div>
+                            </div>
+                        </div>
+
+                        <!-- 8. Staff Canteen (NEW) -->
+                        <div class="building-group b-canteen">
+                            <div class="cube b-can-main">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="b-label" style="transform: translateZ(50px) rotateX(-60deg);">员工食堂</div>
+                            <div class="energy-label el-can">
+                                <div class="e-val">65 kW</div>
+                                <div class="e-line"></div>
+                            </div>
+                        </div>
+
+                        <!-- 9. Data Center (NEW) -->
+                        <div class="building-group b-data">
+                            <div class="cube b-dat-main">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="b-label" style="transform: translateZ(70px) rotateX(-60deg);">数据中心</div>
+                            <div class="env-label el-data-env">
+                                <div class="env-tag">50dB</div>
+                            </div>
+                            <div class="energy-label el-data">
+                                <div class="e-val">520 kW</div>
+                                <div class="e-line"></div>
+                            </div>
+                        </div>
+
+                        <!-- 10. Power Station (NEW) -->
+                        <div class="building-group b-power">
+                            <div class="cube b-pow-main">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="b-label" style="transform: translateZ(40px) rotateX(-60deg);">变电站</div>
+                            <div class="energy-label el-power">
+                                <div class="e-val">880 kW</div>
+                                <div class="e-line"></div>
+                            </div>
+                        </div>
+
+                        <!-- 11. Emerald Tea House (SE Corner) -->
+                        <div class="building-group b-teahouse">
+                            <!-- Tier 1: Base -->
+                            <div class="cube b-tea-base">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <!-- Tier 2: Upper Level -->
+                            <div class="cube b-tea-top">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="b-label">臻韵茶楼 (Teahouse)</div>
+                            <div class="occupancy-label el-tea-occ">
+                                <div class="occ-tag">入住率 82%</div>
+                            </div>
+                            <div class="energy-label el-tea">
+                                <div class="e-val">12 kW</div>
+                                <div class="e-line"></div>
+                            </div>
+                        </div>
+
+                        <!-- 11. Office Tower D (North-West) -->
+                        <div class="building-group b-off-d">
+                            <div class="cube b-off-main b-office-tower">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="b-label" style="transform: translateZ(100px) rotateX(-60deg);">写字楼 D</div>
+                            <div class="occupancy-label el-off-d-occ">
+                                <div class="occ-tag">入住率 88%</div>
+                            </div>
+                            <div class="energy-label el-off-d">
+                                <div class="e-val">145 kW</div>
+                                <div class="e-line"></div>
+                            </div>
+                        </div>
+
+                        <!-- 12. Office Tower E (North-East) -->
+                        <div class="building-group b-off-e">
+                            <div class="cube b-off-main b-office-tower">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="b-label" style="transform: translateZ(110px) rotateX(-60deg);">写字楼 E</div>
+                            <div class="occupancy-label el-off-e-occ">
+                                <div class="occ-tag">入住率 92%</div>
+                            </div>
+                            <div class="energy-label el-off-e">
+                                <div class="e-val">160 kW</div>
+                                <div class="e-line"></div>
+                            </div>
+                        </div>
+
+                        <!-- 13. Office Tower F (West) -->
+                        <div class="building-group b-off-f">
+                            <div class="cube b-off-main b-office-tower">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="b-label" style="transform: translateZ(100px) rotateX(-60deg);">写字楼 F</div>
+                            <div class="occupancy-label el-off-f-occ">
+                                <div class="occ-tag">入住率 75%</div>
+                            </div>
+                            <div class="energy-label el-off-f">
+                                <div class="e-val">110 kW</div>
+                                <div class="e-line"></div>
+                            </div>
+                        </div>
+
+                        <!-- 14. Office Tower G (South-East) -->
+                        <div class="building-group b-off-g">
+                            <div class="cube b-off-main b-office-tower">
+                                <div class="face f-front"></div>
+                                <div class="face f-back"></div>
+                                <div class="face f-left"></div>
+                                <div class="face f-right"></div>
+                                <div class="face f-top"></div>
+                            </div>
+                            <div class="b-label" style="transform: translateZ(100px) rotateX(-60deg);">写字楼 G</div>
+                            <div class="occupancy-label el-off-g-occ">
+                                <div class="occ-tag">入住率 90%</div>
+                            </div>
+                            <div class="energy-label el-off-g">
+                                <div class="e-val">125 kW</div>
+                                <div class="e-line"></div>
+                            </div>
+                        </div>
+
+                        <!-- Floating Data Points -->
+                        <div class="data-point p-1"></div>
+                        <div class="data-point p-2"></div>
+                        <div class="data-point p-3"></div>
+                        <div class="data-point p-4"></div>
+                        <div class="data-point p-5"></div>
+                        <div class="data-point p-6"></div>
+                        <div class="car-moving cm-5"></div>
+
+                        <!-- Data Beams (Connected Park Effect) -->
+                        <div class="data-beam"
+                            style="left: 50%; top: 50%; transform: translate(-200px, -200px); animation-delay: 0s;">
+                        </div>
+                        <div class="data-beam"
+                            style="left: 50%; top: 50%; transform: translate(100px, 100px); animation-delay: 0.5s;">
+                        </div>
+                        <div class="data-beam"
+                            style="left: 50%; top: 50%; transform: translate(-50px, 150px); animation-delay: 1.2s;">
+                        </div>
+                        <div class="data-beam"
+                            style="left: 50%; top: 50%; transform: translate(250px, -100px); animation-delay: 2s;">
+                        </div>
+                        <div class="data-beam"
+                            style="left: 50%; top: 50%; transform: translate(0px, -300px); animation-delay: 0.8s;">
+                        </div>
+                    </div>
+
+                    <!-- Compass UI -->
+                    <div class="map-compass" id="map-compass-ui">
+                        <div class="compass-ring">
+                            <span class="c-n">N</span>
+                            <span class="c-e">E</span>
+                            <span class="c-s">S</span>
+                            <span class="c-w">W</span>
+                        </div>
+                        <div class="compass-needle"></div>
+                    </div>
+
+                    <!-- 3D Styles -->
+                    <style>
+                        .scene-3d {
+                            width: 100%;
+                            height: 100%;
+                            position: relative;
+                            transform-style: preserve-3d;
+                            transform: rotateX(60deg) rotateZ(0deg);
+                        }
+
+                        /* Compass UI Styles */
+                        .map-compass {
+                            position: absolute;
+                            bottom: 30px;
+                            right: 30px;
+                            width: 80px;
+                            height: 80px;
+                            background: radial-gradient(circle, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+                            border: 2px solid rgba(59, 130, 246, 0.5);
+                            border-radius: 50%;
+                            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(59, 130, 246, 0.2);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            z-index: 1000;
+                            pointer-events: none;
+                        }
+
+                        .compass-ring {
+                            position: relative;
+                            width: 100%;
+                            height: 100%;
+                        }
+
+                        @keyframes rotateCompass {
+                            0% {
+                                transform: rotate(0deg);
+                            }
+
+                            100% {
+                                transform: rotate(360deg);
+                            }
+                        }
+
+                        .compass-ring span {
+                            position: absolute;
+                            font-size: 12px;
+                            font-weight: 900;
+                            color: rgba(255, 255, 255, 0.8);
+                            text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+                        }
+
+                        .c-n {
+                            top: 5px;
+                            left: 50%;
+                            transform: translateX(-50%);
+                            color: #ef4444 !important;
+                        }
+
+                        .c-e {
+                            right: 8px;
+                            top: 50%;
+                            transform: translateY(-50%);
+                        }
+
+                        .c-s {
+                            bottom: 5px;
+                            left: 50%;
+                            transform: translateX(-50%);
+                        }
+
+                        .c-w {
+                            left: 8px;
+                            top: 50%;
+                            transform: translateY(-50%);
+                        }
+
+                        .compass-needle {
+                            position: absolute;
+                            width: 4px;
+                            height: 40px;
+                            background: linear-gradient(to bottom, #ef4444 50%, #94a3b8 50%);
+                            border-radius: 2px;
+                            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+                        }
+
+                        @keyframes rotateScene {
+                            0% {
+                                transform: rotateX(60deg) rotateZ(0deg);
+                            }
+
+                            100% {
+                                transform: rotateX(60deg) rotateZ(360deg);
+                            }
+                        }
+
+                        .ground {
+                            position: absolute;
+                            width: 1200px;
+                            height: 1200px;
+                            top: 50%;
+                            left: 50%;
+                            transform: translate(-50%, -50%);
+                            background-image:
+                                linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+                                linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px);
+                            background-size: 60px 60px;
+                            border: 1px solid rgba(59, 130, 246, 0.3);
+                            border-radius: 40px;
+                            background-color: rgba(15, 23, 42, 0.5);
+                            box-shadow: 0 0 100px rgba(0, 0, 0, 0.8), inset 0 0 50px rgba(59, 130, 246, 0.1);
+                        }
+
+                        /* Data Stream Animation */
+                        @keyframes dataStream {
+                            0% {
+                                transform: translateZ(0) translateY(0);
+                                opacity: 0;
+                            }
+
+                            50% {
+                                opacity: 0.8;
+                            }
+
+                            100% {
+                                transform: translateZ(200px) translateY(-100px);
+                                opacity: 0;
+                            }
+                        }
+
+                        .data-beam {
+                            position: absolute;
+                            width: 2px;
+                            height: 2px;
+                            background: var(--accent);
+                            box-shadow: 0 0 10px var(--accent), 0 0 20px var(--accent);
+                            border-radius: 50%;
+                            animation: dataStream 3s infinite linear;
+                        }
+
+                        /* Boundary Fence */
+
+
+                        /* Road System - Aligned with Buildings */
+                        .road {
+                            position: absolute;
+                            top: 50%;
+                            left: 50%;
+                            background-color: rgba(30, 41, 59, 0.6);
+                            border: 1px solid rgba(255, 255, 255, 0.05);
+                            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+                        }
+
+                        /* --- NEW ROAD SYSTEM: Grid & Block Design --- */
+
+                        /* Inner Hub (Surrounding HQ) */
+                        .road-h-inner-top,
+                        .road-h-inner-bottom {
+                            width: 250px;
+                            height: 30px;
+                            transform: translate(-50%, -90px);
+                        }
+
+                        .road-h-inner-bottom {
+                            transform: translate(-50%, 60px);
+                        }
+
+                        .road-v-inner-left,
+                        .road-v-inner-right {
+                            width: 30px;
+                            height: 250px;
+                            transform: translate(-100px, -50%);
+                        }
+
+                        .road-v-inner-right {
+                            transform: translate(70px, -50%);
+                        }
+
+                        /* Main Grid Lines (Cross-Park) */
+                        .road-h-grid-n {
+                            width: 1200px;
+                            height: 25px;
+                            transform: translate(-50%, -275px);
+                            background-image: linear-gradient(0deg, transparent 45%, rgba(255, 255, 255, 0.08) 45%, rgba(255, 255, 255, 0.08) 55%, transparent 55%);
+                        }
+
+                        .road-h-grid-s {
+                            width: 1200px;
+                            height: 25px;
+                            transform: translate(-50%, 275px);
+                        }
+
+                        .road-v-grid-w {
+                            width: 25px;
+                            height: 1200px;
+                            transform: translate(-275px, -50%);
+                            background-image: linear-gradient(90deg, transparent 45%, rgba(255, 255, 255, 0.08) 45%, rgba(255, 255, 255, 0.08) 55%, transparent 55%);
+                        }
+
+                        .road-v-grid-e {
+                            width: 25px;
+                            height: 1200px;
+                            transform: translate(250px, -50%);
+                        }
+
+                        /* Perimeter Loop */
+                        .road-ring {
+                            width: 1000px;
+                            height: 1000px;
+                            transform: translate(-50%, -50%);
+                            background: transparent;
+                            border: 35px solid rgba(30, 41, 59, 0.5);
+                            border-radius: 80px;
+                            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8), 0 0 10px rgba(59, 130, 246, 0.1);
+                        }
+
+                        /* Connectivity */
+                        .road-parking-connect {
+                            width: 180px;
+                            height: 25px;
+                            transform: translate(-450px, 480px);
+                        }
+
+                        /* Secondary Access Roads */
+                        .road-mall-apt {
+                            width: 800px;
+                            height: 30px;
+                            transform: translate(-50%, 250px) translateX(0);
+                            /* Aligns with Mall and Apt at y=250 */
+                        }
+
+                        .road-parking {
+                            width: 150px;
+                            height: 30px;
+                            transform: translate(-525px, 480px);
+                            /* Connects to new SW parking location */
+                        }
+
+                        /* Central Axis Boulevard (South Gate to HQ) - Standard Style */
+                        .road-south-main {
+                            width: 80px;
+                            height: 500px;
+                            /* Exactly Connects South Gate (500) to HQ Center (0) */
+                            transform: translate(-50%, 60px);
+                            background-image: linear-gradient(90deg, transparent 48%, rgba(255, 255, 255, 0.1) 48%, rgba(255, 255, 255, 0.1) 52%, transparent 52%);
+                        }
+
+                        /* Landscape Zones */
+                        /* Landscape Zones: High-Detail Turf */
+                        /* Landscape Zones (Removed) */
+
+                        /* Photovoltaic (PV) Array Styles */
+                        .solar-array {
+                            position: absolute;
+                            top: 50%;
+                            left: 50%;
+                            /* Positioned further North, next to the road corridor */
+                            transform: translate(calc(350px - 50%), -250px);
+                            transform-style: preserve-3d;
+                            display: grid;
+                            grid-template-columns: repeat(3, 50px);
+                            gap: 10px;
+                            justify-content: center;
+                        }
+
+                        .solar-panel {
+                            width: 50px;
+                            height: 40px;
+                            background: #1e293b;
+                            border: 1px solid #3b82f6;
+                            transform: rotateX(-25deg);
+                            background-image:
+                                linear-gradient(90deg, rgba(59, 130, 246, 0.3) 1px, transparent 1px),
+                                linear-gradient(rgba(59, 130, 246, 0.3) 1px, transparent 1px);
+                            background-size: 8px 8px;
+                            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(59, 130, 246, 0.4);
+                            position: relative;
+                        }
+
+                        .solar-panel::after {
+                            content: '';
+                            position: absolute;
+                            top: 0;
+                            left: 0;
+                            right: 0;
+                            bottom: 0;
+                            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+                        }
+
+
+                        /* Parking Lot */
+                        .parking-lot {
+                            position: absolute;
+                            width: 280px;
+                            height: 160px;
+                            background: rgba(15, 23, 42, 0.6);
+                            border: 1px solid rgba(255, 255, 255, 0.15);
+                            top: 50%;
+                            left: 50%;
+                            transform: translate(-420px, 480px);
+                            transform-style: preserve-3d;
+                            /* Precision Markings: 80px spots | 120px driveway | 80px spots */
+                            background-image:
+                                /* Horizontal separators between cars (every 30px, offset by 15px) */
+                                repeating-linear-gradient(0deg, transparent 0, transparent 14px, rgba(255, 255, 255, 0.15) 14px, rgba(255, 255, 255, 0.15) 16px, transparent 16px, transparent 30px),
+                                /* Vertical lines defining the parking rows */
+                                linear-gradient(90deg,
+                                    transparent 80px, rgba(255, 255, 255, 0.2) 80px, rgba(255, 255, 255, 0.2) 82px,
+                                    transparent 82px, transparent 198px,
+                                    rgba(255, 255, 255, 0.2) 198px, rgba(255, 255, 255, 0.2) 200px, transparent 200px);
+                        }
+
+                        .parking-label {
+                            position: absolute;
+                            top: -40px;
+                            left: 50%;
+                            transform: translateX(-50%) rotateX(-90deg);
+                            background: #3b82f6;
+                            color: white;
+                            padding: 5px 10px;
+                            border-radius: 4px;
+                            font-weight: bold;
+                            font-size: 16px;
+                            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+                        }
+
+                        .car {
+                            position: absolute;
+                            width: 12px;
+                            height: 24px;
+                            background: rgba(255, 255, 255, 0.8);
+                            border-radius: 2px;
+                            box-shadow: 0 0 5px white;
+                        }
+
+                        .c-1 {
+                            top: 18px;
+                            left: 34px;
+                            background: #e2e8f0;
+                        }
+
+                        .c-2 {
+                            top: 48px;
+                            left: 34px;
+                            background: #cbd5e1;
+                        }
+
+                        .c-3 {
+                            top: 78px;
+                            left: 34px;
+                            background: #94a3b8;
+                        }
+
+                        .c-4 {
+                            top: 18px;
+                            right: 34px;
+                            background: #f8fafc;
+                        }
+
+                        .c-5 {
+                            top: 108px;
+                            right: 34px;
+                            background: #e2e8f0;
+                        }
+
+                        /* Tesla Vehicles: Red Multi-Coat & Pearl White */
+                        .car-3d.tesla {
+                            position: absolute;
+                            transform-style: preserve-3d;
+                        }
+
+                        .car-3d.tesla .face {
+                            position: absolute;
+                            background: inherit;
+                            border: 1px solid rgba(0, 0, 0, 0.2);
+                        }
+
+                        /* Car Dimensions: 12 wide, 24 long, 6 high */
+                        .car-3d.tesla .f-front,
+                        .car-3d.tesla .f-back {
+                            width: 12px;
+                            height: 6px;
+                            transform: translate(-50%, -50%) rotateX(90deg) translateZ(12px);
+                        }
+
+                        .car-3d.tesla .f-back {
+                            transform: translate(-50%, -50%) rotateX(90deg) translateZ(-12px);
+                        }
+
+                        .car-3d.tesla .f-left,
+                        .car-3d.tesla .f-right {
+                            width: 24px;
+                            height: 6px;
+                            transform: translate(-50%, -50%) rotateY(90deg) rotateZ(90deg) translateZ(6px);
+                        }
+
+                        .car-3d.tesla .f-right {
+                            transform: translate(-50%, -50%) rotateY(-90deg) rotateZ(-90deg) translateZ(6px);
+                        }
+
+                        .car-3d.tesla .f-top {
+                            width: 12px;
+                            height: 24px;
+                            transform: translate(-50%, -50%) translateZ(6px);
+                            /* Tesla Glass Roof Effect */
+                            background-image: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8));
+                            background-size: 8px 16px;
+                            background-position: center;
+                            background-repeat: no-repeat;
+                        }
+
+                        .c-tesla-1 {
+                            top: 48px;
+                            right: 34px;
+                            background: #cc0000;
+                            box-shadow: 0 0 8px rgba(204, 0, 0, 0.4);
+                        }
+
+                        .c-tesla-2 {
+                            top: 78px;
+                            right: 34px;
+                            background: #ffffff;
+                            box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+                        }
+
+                        .c-tesla-3 {
+                            top: 108px;
+                            left: 34px;
+                            background: #cc0000;
+                            box-shadow: 0 0 8px rgba(204, 0, 0, 0.4);
+                        }
+
+
+                        /* Security Cameras */
+                        .camera-pole {
+                            position: absolute;
+                            width: 4px;
+                            height: 4px;
+                            background: #64748b;
+                            top: 50%;
+                            left: 50%;
+                            transform-style: preserve-3d;
+                        }
+
+                        .camera-pole::after {
+                            /* Pole vertical part */
+                            content: '';
+                            position: absolute;
+                            width: 100%;
+                            height: 60px;
+                            background: #475569;
+                            transform: rotateX(90deg) translateZ(30px);
+                        }
+
+                        .cam-head {
+                            position: absolute;
+                            width: 12px;
+                            height: 6px;
+                            background: #ef4444;
+                            /* Red indicator */
+                            transform: translateZ(60px) translateX(-4px);
+                            box-shadow: 0 0 5px #ef4444;
+                            border-radius: 2px;
+                        }
+
+                        .cam-cone {
+                            position: absolute;
+                            width: 0;
+                            height: 0;
+                            border-left: 20px solid transparent;
+                            border-right: 20px solid transparent;
+                            border-top: 80px solid rgba(239, 68, 68, 0.1);
+                            transform: translateZ(60px) rotateY(180deg) rotateX(45deg);
+                            transform-origin: top center;
+                            pointer-events: none;
+                        }
+
+                        /* Camera Positions */
+                        .cp-1 {
+                            transform: translate(-550px, -550px);
+                        }
+
+                        /* NW Corner */
+                        .cp-2 {
+                            transform: translate(550px, -550px);
+                        }
+
+                        /* NE Corner */
+                        .cp-3 {
+                            transform: translate(550px, 550px);
+                        }
+
+                        /* SE Corner */
+                        .cp-4 {
+                            transform: translate(-550px, 550px);
+                        }
+
+                        /* Main Gate */
+                        .main-gate {
+                            transform: translate(0, 500px);
+                        }
+
+                        /* Position at South Entrance */
+
+                        /* Canopy: Wide roof */
+                        .gate-canopy .face {
+                            background: rgba(30, 41, 59, 0.9);
+                            border: 1px solid rgba(148, 163, 184, 0.5);
+                        }
+
+                        .gate-canopy .f-front,
+                        .gate-canopy .f-back {
+                            width: 160px;
+                            height: 10px;
+                            transform: translate(-50%, -50%) translateZ(45px) rotateX(90deg) translateZ(40px);
+                        }
+
+                        .gate-canopy .f-back {
+                            transform: translate(-50%, -50%) translateZ(45px) rotateX(90deg) translateZ(-40px);
+                        }
+
+                        .gate-canopy .f-left,
+                        .gate-canopy .f-right {
+                            width: 80px;
+                            height: 10px;
+                            transform: translate(-50%, -50%) translateZ(45px) rotateY(-90deg) rotateZ(-90deg) translateZ(80px);
+                        }
+
+                        .gate-canopy .f-right {
+                            transform: translate(-50%, -50%) translateZ(45px) rotateY(90deg) rotateZ(90deg) translateZ(80px);
+                        }
+
+                        .gate-canopy .f-top {
+                            width: 160px;
+                            height: 80px;
+                            transform: translate(-50%, -50%) translateZ(50px);
+                            background: rgba(59, 130, 246, 0.8);
+                            box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+                        }
+
+                        /* Pillars */
+                        .gate-pillar .face {
+                            background: #475569;
+                        }
+
+                        .gate-pillar .f-front,
+                        .gate-pillar .f-back {
+                            width: 20px;
+                            height: 50px;
+                            transform: translate(-50%, -50%) translateZ(25px) rotateX(90deg) translateZ(10px);
+                        }
+
+                        .gate-pillar .f-back {
+                            transform: translate(-50%, -50%) translateZ(25px) rotateX(90deg) translateZ(-10px);
+                        }
+
+                        .gate-pillar .f-left,
+                        .gate-pillar .f-right {
+                            width: 20px;
+                            height: 50px;
+                            transform: translate(-50%, -50%) translateZ(25px) rotateY(-90deg) rotateZ(-90deg) translateZ(10px);
+                        }
+
+                        .gate-pillar .f-right {
+                            transform: translate(-50%, -50%) translateZ(25px) rotateY(90deg) rotateZ(90deg) translateZ(10px);
+                        }
+
+                        .gate-pillar .f-top {
+                            width: 20px;
+                            height: 20px;
+                            transform: translate(-50%, -50%) translateZ(50px);
+                            background: #64748b;
+                        }
+
+                        .gp-left {
+                            transform: translate(-60px, 0);
+                        }
+
+                        .gp-right {
+                            transform: translate(60px, 0);
+                        }
+
+                        /* Barriers (Boom Gates) */
+                        .gate-barrier {
+                            position: absolute;
+                            transform-style: preserve-3d;
+                        }
+
+                        .gb-pole {
+                            position: absolute;
+                            width: 4px;
+                            height: 20px;
+                            background: #eab308;
+                            transform: rotateX(-90deg) translateY(-10px);
+                        }
+
+                        .gb-arm {
+                            position: absolute;
+                            width: 40px;
+                            height: 2px;
+                            background: repeating-linear-gradient(90deg, white 0, white 5px, #ef4444 5px, #ef4444 10px);
+                            top: 0;
+                            left: 2px;
+                            transform: translateZ(18px);
+                        }
+
+                        .gb-in {
+                            transform: translate(-30px, 10px);
+                        }
+
+                        .gb-out {
+                            transform: translate(30px, 10px);
+                        }
+
+                        /* Turnstiles (Pedestrian) */
+                        .gate-turnstile {
+                            position: absolute;
+                            width: 10px;
+                            height: 20px;
+                            background: rgba(255, 255, 255, 0.2);
+                            border: 1px solid rgba(255, 255, 255, 0.5);
+                            box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+                        }
+
+                        .gt-left {
+                            transform: translate(-90px, 0);
+                        }
+
+                        .gt-right {
+                            transform: translate(90px, 0);
+                        }
+
+                        /* SW Corner */
+
+                        /* Trees Removed */
+
+                        .building-group {
+                            position: absolute;
+                            top: 50%;
+                            left: 50%;
+                            transform-style: preserve-3d;
+                        }
+
+                        .cube {
+                            position: absolute;
+                            transform-style: preserve-3d;
+                        }
+
+                        /* Faces Generic */
+                        /* Faces Generic */
+                        .face {
+                            position: absolute;
+                            top: 50%;
+                            left: 50%;
+                            border: 1px solid rgba(255, 255, 255, 0.15);
+                            backface-visibility: visible;
+                            background-color: #334155;
+                            /* Global Surface Detail: Light Reflection + Micro Texture */
+                            background-image:
+                                linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+                            background-size: 100% 100%, 4px 4px, 4px 4px;
+                            box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.3);
+                            transition: all 0.3s ease;
+                        }
+
+                        /* Night Window Glow Animation */
+                        @keyframes windowGlow {
+
+                            0%,
+                            100% {
+                                opacity: 0.3;
+                            }
+
+                            50% {
+                                opacity: 0.8;
+                            }
+                        }
+
+                        .window-light {
+                            position: absolute;
+                            background: #60a5fa;
+                            filter: blur(1px);
+                            box-shadow: 0 0 5px #60a5fa;
+                            opacity: 0.5;
+                        }
+
+                        /* Global Roof Details */
+                        .roof-detail {
+                            position: absolute;
+                            background: #475569;
+                            border: 1px solid rgba(255, 255, 255, 0.1);
+                            transform-style: preserve-3d;
+                        }
+
+                        .ac-unit {
+                            width: 10px;
+                            height: 10px;
+                            background: #64748b;
+                            transform: translateZ(5px);
+                            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+                        }
+
+                        .antenna {
+                            width: 2px;
+                            height: 40px;
+                            background: #94a3b8;
+                            transform: rotateX(-90deg) translateZ(20px);
+                        }
+
+                        /* Building Specific Styles */
+
+                        /* 1. HQ TOWER (Tall, Cyan, Multi-part) */
+                        .b-hq {
+                            transform: translate(0, 0);
+                        }
+
+                        /* Base Podium: 120x100, 30 tall */
+
+                        .b-hq-base .f-front,
+                        .b-hq-base .f-back {
+                            width: 120px;
+                            height: 30px;
+                            transform: translate(-50%, -50%) translateZ(15px) rotateX(90deg) translateZ(50px);
+                        }
+
+                        .b-hq-base .f-back {
+                            transform: translate(-50%, -50%) translateZ(15px) rotateX(90deg) translateZ(-50px);
+                        }
+
+                        .b-hq-base .f-left,
+                        .b-hq-base .f-right {
+                            width: 100px;
+                            height: 30px;
+                            transform: translate(-50%, -50%) translateZ(15px) rotateY(-90deg) rotateZ(-90deg) translateZ(60px);
+                        }
+
+                        .b-hq-base .f-right {
+                            transform: translate(-50%, -50%) translateZ(15px) rotateY(90deg) rotateZ(90deg) translateZ(60px);
+                        }
+
+                        .b-hq-base .f-top {
+                            width: 120px;
+                            height: 100px;
+                            transform: translate(-50%, -50%) translateZ(30px);
+                        }
+
+                        /* HQ Base - Solid Podium */
+                        .b-hq-base .face {
+                            background-color: #0e7490;
+                            /* Cyan-700 Darker Base */
+                            border: 1px solid #155e75;
+                        }
+
+                        .b-hq-base .f-top {
+                            background-color: #06b6d4;
+                        }
+
+                        /* Lighter Top */
+                        .b-hq-base .f-left,
+                        .b-hq-base .f-right {
+                            background-color: #155e75;
+                        }
+
+                        /* Darker Sides */
+
+                        /* Main Tower: 60x60, 140 tall, starts at Z=30 */
+                        .b-hq-tower {
+                            transform: translateZ(30px);
+                        }
+
+                        /* HQ Tower with Grid Windows */
+                        /* HQ Tower with Grid Windows */
+                        .b-hq-tower .face {
+                            background-color: #0891b2;
+                            /* Premium Glass Facade: Interlocking grids + vertical ribs */
+                            background-image:
+                                linear-gradient(90deg, rgba(255, 255, 255, 0.15) 1px, transparent 1px, transparent 19px, rgba(255, 255, 255, 0.15) 19px),
+                                linear-gradient(rgba(255, 255, 255, 0.2) 1px, transparent 1px),
+                                repeating-linear-gradient(90deg, rgba(0, 100, 255, 0.1) 0px, rgba(0, 100, 255, 0.1) 2px, transparent 2px, transparent 20px),
+                                linear-gradient(90deg, rgba(0, 0, 0, 0.3) 2px, transparent 2px);
+                            background-size: 20px 20px, 20px 8px, 20px 100%, 40px 100%;
+                            border: 1px solid #155e75;
+                            box-shadow: inset 0 0 40px rgba(0, 255, 255, 0.15);
+                        }
+
+                        /* Directional Lighting for Tower */
+                        .b-hq-tower .f-top {
+                            background-color: #22d3ee;
+                            background-image: none;
+                            box-shadow: 0 0 20px rgba(6, 182, 212, 0.5);
+                        }
+
+                        .b-hq-tower .f-left,
+                        .b-hq-tower .f-right {
+                            background-color: #0e7490;
+                        }
+
+                        /* Darker Sides */
+
+                        .b-hq-tower .f-front,
+                        .b-hq-tower .f-back {
+                            width: 80px;
+                            height: 280px;
+                            transform: translate(-50%, -50%) translateZ(140px) rotateX(90deg) translateZ(30px);
+                        }
+
+                        .b-hq-tower .f-back {
+                            transform: translate(-50%, -50%) translateZ(140px) rotateX(90deg) translateZ(-30px);
+                        }
+
+                        .b-hq-tower .f-left,
+                        .b-hq-tower .f-right {
+                            width: 60px;
+                            height: 280px;
+                            transform: translate(-50%, -50%) translateZ(140px) rotateY(-90deg) rotateZ(-90deg) translateZ(40px);
+                        }
+
+                        .b-hq-tower .f-right {
+                            transform: translate(-50%, -50%) translateZ(140px) rotateY(90deg) rotateZ(90deg) translateZ(40px);
+                        }
+
+                        .b-hq-tower .f-top {
+                            width: 80px;
+                            height: 60px;
+                            transform: translate(-50%, -50%) translateZ(280.1px);
+                            background-color: #334155;
+                            /* Dark Concrete */
+                            /* Helipad Markings: Circle + H + Safety Perimeter */
+                            background-image:
+                                /* The 'H' - Horizontal bar */
+                                linear-gradient(90deg, transparent 40%, #fff 40%, #fff 60%, transparent 60%),
+                                /* The 'H' - Vertical bars */
+                                linear-gradient(0deg, transparent 25%, #fff 25%, #fff 75%, transparent 75%),
+                                /* The 'H' - Side rails */
+                                linear-gradient(90deg, transparent 33%, #fff 33%, #fff 38%, transparent 38%, transparent 62%, #fff 62%, #fff 67%, transparent 67%),
+                                /* Landing Circle */
+                                radial-gradient(circle, transparent 44%, #fff 45%, #fff 51%, transparent 52%),
+                                /* Outer Yellow Safety Ring */
+                                radial-gradient(circle, transparent 72%, #fbbf24 73%, #fbbf24 81%, transparent 82%),
+                                /* Concrete Texture */
+                                radial-gradient(circle, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+                            background-size: 30px 40px, 30px 40px, 30px 40px, 45px 45px, 55px 55px, 4px 4px;
+                            background-position: center, center, center, center, center, 0 0;
+                            background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, repeat;
+                            border: 2px solid #475569;
+                            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 0, 0, 0.4);
+                        }
+
+                        /* 2. R&D A (Blue, L-Shape feel via 2 blocks) */
+                        .b-rd-a {
+                            transform: translate(-200px, -200px);
+                        }
+
+                        /* R&D A with Office Windows */
+                        .b-rda-main .face {
+                            background-color: #1e40af;
+                            /* Deep Royal Blue */
+                            /* Precise Horizontal Office Bands with glass effect */
+                            background-image:
+                                linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.1) 50%, transparent 50%),
+                                linear-gradient(to bottom,
+                                    rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.2) 60%,
+                                    rgba(0, 0, 0, 0.4) 60%, rgba(0, 0, 0, 0.4) 100%);
+                            background-size: 15px 12px, 100% 12px;
+                            border: 1px solid #1e3a8a;
+                            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.3);
+                        }
+
+                        .b-rda-main .f-top {
+                            background-color: #60a5fa;
+                            background-image: none;
+                        }
+
+                        .b-rda-main .f-left,
+                        .b-rda-main .f-right {
+                            background-color: #1d4ed8;
+                        }
+
+                        .b-rda-main .f-front,
+                        .b-rda-main .f-back {
+                            width: 50px;
+                            height: 100px;
+                            transform: translate(-50%, -50%) translateZ(50px) rotateX(90deg) translateZ(40px);
+                        }
+
+                        .b-rda-main .f-back {
+                            transform: translate(-50%, -50%) translateZ(50px) rotateX(90deg) translateZ(-40px);
+                        }
+
+                        .b-rda-main .f-left,
+                        .b-rda-main .f-right {
+                            width: 80px;
+                            height: 100px;
+                            transform: translate(-50%, -50%) translateZ(50px) rotateY(-90deg) rotateZ(-90deg) translateZ(25px);
+                        }
+
+                        .b-rda-main .f-right {
+                            transform: translate(-50%, -50%) translateZ(50px) rotateY(90deg) rotateZ(90deg) translateZ(25px);
+                        }
+
+                        .b-rda-main .f-top {
+                            width: 50px;
+                            height: 80px;
+                            transform: translate(-50%, -50%) translateZ(100px);
+                            background: #60a5fa;
+                        }
+
+                        /* Side Block: 40x60, 60 tall, Offset */
+                        .b-rda-side {
+                            transform: translate(45px, 10px);
+                        }
+
+                        /* (removed duplicate - solid style below) */
+
+                        .b-rda-side .f-front,
+                        .b-rda-side .f-back {
+                            width: 40px;
+                            height: 60px;
+                            transform: translate(-50%, -50%) translateZ(30px) rotateX(90deg) translateZ(30px);
+                        }
+
+                        .b-rda-side .f-back {
+                            transform: translate(-50%, -50%) translateZ(30px) rotateX(90deg) translateZ(-30px);
+                        }
+
+                        .b-rda-side .f-left,
+                        .b-rda-side .f-right {
+                            width: 60px;
+                            height: 60px;
+                            transform: translate(-50%, -50%) translateZ(30px) rotateY(-90deg) rotateZ(-90deg) translateZ(20px);
+                        }
+
+                        .b-rda-side .f-right {
+                            transform: translate(-50%, -50%) translateZ(30px) rotateY(90deg) rotateZ(90deg) translateZ(20px);
+                        }
+
+                        .b-rda-side .f-top {
+                            width: 40px;
+                            height: 60px;
+                            transform: translate(-50%, -50%) translateZ(60px);
+                        }
+
+                        /* R&D A Side Wing */
+                        .b-rda-side .face {
+                            background-color: #3b82f6;
+                            /* Blue-500 */
+                            background-image:
+                                linear-gradient(#1e293b 1px, transparent 1px),
+                                linear-gradient(90deg, #1e293b 1px, transparent 1px);
+                            background-size: 10px 10px;
+                            border: 1px solid #1e3a8a;
+                        }
+
+                        .b-rda-side .f-top {
+                            background-color: #93c5fd;
+                            background-image: none;
+                        }
+
+                        .b-rda-side .f-left,
+                        .b-rda-side .f-right {
+                            background-color: #2563eb;
+                        }
+
+                        /* 3. R&D B (Blue) Simple slab */
+                        /* 3. R&D B (Blue) Simple slab */
+                        .b-rd-b {
+                            transform: translate(200px, -200px);
+                        }
+
+                        .b-rdb-main .face {
+                            background-color: #475569;
+                            /* Slate-600 */
+                            background-image: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0, rgba(255, 255, 255, 0.1) 1px, transparent 1px, transparent 10px);
+                            border: 1px solid #334155;
+                        }
+
+                        .b-rdb-main .f-top {
+                            background-color: #94a3b8;
+                            background-image: none;
+                        }
+
+                        .b-rdb-main .f-left,
+                        .b-rdb-main .f-right {
+                            background-color: #334155;
+                        }
+
+                        .b-rdb-main .f-front,
+                        .b-rdb-main .f-back {
+                            width: 50px;
+                            height: 80px;
+                            transform: translate(-50%, -50%) translateZ(40px) rotateX(90deg) translateZ(40px);
+                        }
+
+                        .b-rdb-main .f-back {
+                            transform: translate(-50%, -50%) translateZ(40px) rotateX(90deg) translateZ(-40px);
+                        }
+
+                        .b-rdb-main .f-left,
+                        .b-rdb-main .f-right {
+                            width: 80px;
+                            height: 80px;
+                            transform: translate(-50%, -50%) translateZ(40px) rotateY(-90deg) rotateZ(-90deg) translateZ(25px);
+                        }
+
+                        .b-rdb-main .f-right {
+                            transform: translate(-50%, -50%) translateZ(40px) rotateY(90deg) rotateZ(90deg) translateZ(25px);
+                        }
+
+                        .b-rdb-main .f-top {
+                            width: 50px;
+                            height: 80px;
+                            transform: translate(-50%, -50%) translateZ(80px);
+                            background: #94a3b8;
+                        }
+
+                        /* 4. Commercial (Gold, Wide) */
+                        .b-mall {
+                            transform: translate(-350px, 0);
+                        }
+
+                        /* Mall with Commercial GlassFacade */
+                        .b-mall-main .face {
+                            background-color: #eab308;
+                            /* Yellow-500 */
+                            background-image:
+                                linear-gradient(rgba(255, 255, 255, 0.4) 1px, transparent 1px),
+                                linear-gradient(90deg, rgba(255, 255, 255, 0.4) 1px, transparent 1px);
+                            background-size: 25px 15px;
+                            border: 1px solid #ca8a04;
+                        }
+
+                        .b-mall-main .f-top {
+                            background-color: #facc15;
+                            background-image: none;
+                        }
+
+                        .b-mall-main .f-left,
+                        .b-mall-main .f-right {
+                            background-color: #ca8a04;
+                        }
+
+                        .b-mall-main .f-front,
+                        .b-mall-main .f-back {
+                            width: 140px;
+                            height: 50px;
+                            transform: translate(-50%, -50%) translateZ(25px) rotateX(90deg) translateZ(50px);
+                        }
+
+                        .b-mall-main .f-back {
+                            transform: translate(-50%, -50%) translateZ(25px) rotateX(90deg) translateZ(-50px);
+                        }
+
+                        .b-mall-main .f-left,
+                        .b-mall-main .f-right {
+                            width: 100px;
+                            height: 50px;
+                            transform: translate(-50%, -50%) translateZ(25px) rotateY(-90deg) rotateZ(-90deg) translateZ(70px);
+                        }
+
+                        .b-mall-main .f-right {
+                            transform: translate(-50%, -50%) translateZ(25px) rotateY(90deg) rotateZ(90deg) translateZ(70px);
+                        }
+
+                        .b-mall-main .f-top {
+                            width: 140px;
+                            height: 100px;
+                            transform: translate(-50%, -50%) translateZ(50px);
+                            background-color: #facc15;
+                        }
+
+                        /* Atrium: 40x40, 70 tall glass box */
+                        .b-mall-atrium {
+                            transform: translate(30px, 20px);
+                        }
+
+                        .b-mall-atrium .face {
+                            background: rgba(147, 197, 253, 0.9);
+                            /* Light Blue Glass */
+                            border: 1px solid rgba(255, 255, 255, 0.6);
+                            box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+                        }
+
+                        .b-mall-atrium .f-front,
+                        .b-mall-atrium .f-back {
+                            width: 40px;
+                            height: 70px;
+                            transform: translate(-50%, -50%) translateZ(35px) rotateX(90deg) translateZ(20px);
+                        }
+
+                        .b-mall-atrium .f-back {
+                            transform: translate(-50%, -50%) translateZ(35px) rotateX(90deg) translateZ(-20px);
+                        }
+
+                        .b-mall-atrium .f-left,
+                        .b-mall-atrium .f-right {
+                            width: 40px;
+                            height: 70px;
+                            transform: translate(-50%, -50%) translateZ(35px) rotateY(-90deg) rotateZ(-90deg) translateZ(20px);
+                        }
+
+                        .b-mall-atrium .f-right {
+                            transform: translate(-50%, -50%) translateZ(35px) rotateY(90deg) rotateZ(90deg) translateZ(20px);
+                        }
+
+                        .b-mall-atrium .f-top {
+                            width: 40px;
+                            height: 40px;
+                            transform: translate(-50%, -50%) translateZ(70px);
+                            background: #60a5fa;
+                        }
+
+                        /* 5. Apartments (Purple, Twin Towers) */
+                        .b-apt {
+                            transform: translate(350px, 150px);
+                        }
+
+                        /* Tower 1 - Solid Concrete */
+                        .b-apt-1 {
+                            transform: translate(-20px, -20px);
+                        }
+
+                        /* Apartments with Balconies/Windows */
+                        .b-apt-1 .face {
+                            background-color: #9333ea;
+                            /* Purple-600 */
+                            /* Balcony and window detail */
+                            background-image:
+                                repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.2) 0, rgba(0, 0, 0, 0.2) 8px, transparent 8px, transparent 20px),
+                                repeating-linear-gradient(transparent 0, transparent 10px, rgba(0, 0, 0, 0.3) 10px, rgba(0, 0, 0, 0.3) 12px);
+                            border: 1px solid #7e22ce;
+                        }
+
+                        .b-apt-1 .f-top {
+                            background-color: #c084fc;
+                            background-image: none;
+                        }
+
+                        .b-apt-1 .f-left,
+                        .b-apt-1 .f-right {
+                            background-color: #7e22ce;
+                        }
+
+                        .b-apt-1 .f-front,
+                        .b-apt-1 .f-back {
+                            width: 50px;
+                            height: 110px;
+                            transform: translate(-50%, -50%) translateZ(55px) rotateX(90deg) translateZ(20px);
+                        }
+
+                        .b-apt-1 .f-back {
+                            transform: translate(-50%, -50%) translateZ(55px) rotateX(90deg) translateZ(-20px);
+                        }
+
+                        .b-apt-1 .f-left,
+                        .b-apt-1 .f-right {
+                            width: 40px;
+                            height: 110px;
+                            transform: translate(-50%, -50%) translateZ(55px) rotateY(-90deg) rotateZ(-90deg) translateZ(25px);
+                        }
+
+                        .b-apt-1 .f-right {
+                            transform: translate(-50%, -50%) translateZ(55px) rotateY(90deg) rotateZ(90deg) translateZ(25px);
+                        }
+
+                        .b-apt-1 .f-top {
+                            width: 50px;
+                            height: 40px;
+                            transform: translate(-50%, -50%) translateZ(110px);
+                            background-color: #c084fc;
+                        }
+
+                        /* Energy Labels */
+                        .energy-label {
+                            position: absolute;
+                            transform-style: preserve-3d;
+                            pointer-events: none;
+                        }
+
+                        /* Removed e-line to avoid vertical clutter */
+                        .e-line {
+                            display: none;
+                        }
+
+                        /* The Label Content - Centered in container */
+                        .e-val {
+                            position: absolute;
+                            left: 50%;
+                            top: 50%;
+                            transform: translate(-50%, -50%);
+                            background: rgba(15, 23, 42, 0.8);
+                            border: 1px solid #3b82f6;
+                            padding: 4px 8px;
+                            border-radius: 4px;
+                            font-size: 14px;
+                            color: #3b82f6;
+                            font-weight: bold;
+                            white-space: nowrap;
+                            box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+                        }
+
+                        /* Building Elevation Mapping (Calculated Tops) */
+                        .b-hq {
+                            --h: 300px;
+                        }
+
+                        /* Calibrated closer to building top (actual spire is 270px) */
+
+                        /* Removed old buffers */
+
+                        .b-rd-a {
+                            --h: 120px;
+                        }
+
+                        .b-rd-b {
+                            --h: 100px;
+                        }
+
+                        .b-mall {
+                            --h: 130px;
+                        }
+
+                        .b-apt {
+                            --h: 140px;
+                        }
+
+                        .b-gym {
+                            --h: 80px;
+                        }
+
+                        .b-rd-c {
+                            --h: 170px;
+                        }
+
+                        .b-canteen {
+                            --h: 80px;
+                        }
+
+                        .b-data {
+                            --h: 100px;
+                        }
+
+                        .b-power {
+                            --h: 80px;
+                        }
+
+                        .b-off-d,
+                        .b-off-e,
+                        .b-off-f,
+                        .b-off-g {
+                            --h: 130px;
+                        }
+
+                        /* Tower 2 */
+
+                        .b-apt-2 {
+                            transform: translate(20px, 20px);
+                        }
+
+                        .b-mall-main .face {
+                            background-color: #7c3aed;
+                            /* Modern Retail Facade: Large window panes */
+                            background-image:
+                                linear-gradient(rgba(255, 255, 255, 0.2) 1px, transparent 1px),
+                                linear-gradient(90deg, rgba(255, 255, 255, 0.2) 1px, transparent 1px);
+                            background-size: 30px 40px;
+                            border: 1px solid #6d28d9;
+                        }
+
+                        .b-apt-2 .face {
+                            background-color: #9333ea;
+                            /* Purple-600 */
+                            border: 1px solid #7e22ce;
+                        }
+
+                        .b-apt-2 .f-top {
+                            background-color: #c084fc;
+                        }
+
+                        .b-apt-2 .f-left,
+                        .b-apt-2 .f-right {
+                            background-color: #7e22ce;
+                        }
+
+                        .b-apt-2 .f-front,
+                        .b-apt-2 .f-back {
+                            width: 50px;
+                            height: 110px;
+                            transform: translate(-50%, -50%) translateZ(55px) rotateX(90deg) translateZ(20px);
+                        }
+
+                        .b-apt-2 .f-back {
+                            transform: translate(-50%, -50%) translateZ(55px) rotateX(90deg) translateZ(-20px);
+                        }
+
+                        .b-apt-2 .f-left,
+                        .b-apt-2 .f-right {
+                            width: 40px;
+                            height: 110px;
+                            transform: translate(-50%, -50%) translateZ(55px) rotateY(-90deg) rotateZ(-90deg) translateZ(25px);
+                        }
+
+                        .b-apt-2 .f-right {
+                            transform: translate(-50%, -50%) translateZ(55px) rotateY(90deg) rotateZ(90deg) translateZ(25px);
+                        }
+
+                        .b-apt-2 .f-top {
+                            width: 50px;
+                            height: 40px;
+                            transform: translate(-50%, -50%) translateZ(110px);
+                            background-color: #c084fc;
+                        }
+
+                        /* 6. Gym (Cyan) */
+                        .b-gym {
+                            transform: translate(-350px, 350px);
+                        }
+
+                        /* 7. Facilities (Gray) */
+                        .b-fac-1 {
+                            transform: translate(-520px, -480px);
+                        }
+
+                        .b-fac-2 {
+                            transform: translate(520px, -200px);
+                        }
+
+                        .b-fac-1 .face,
+                        .b-fac-2 .face {
+                            border: 1px solid #475569;
+                            background-color: #64748b;
+                            /* Slate-500 */
+                        }
+
+                        .b-fac-1 .f-top,
+                        .b-fac-2 .f-top {
+                            background-color: #94a3b8;
+                        }
+
+                        .b-fac-1 .f-left,
+                        .b-fac-1 .f-right,
+                        .b-fac-2 .f-left,
+                        .b-fac-2 .f-right {
+                            background-color: #475569;
+                        }
+
+                        .b-fac-1 .f-top,
+                        .b-fac-2 .f-top {
+                            background: #94a3b8;
+                        }
+
+                        .b-fac-1 .f-front,
+                        .b-fac-1 .f-back,
+                        .b-fac-2 .f-front,
+                        .b-fac-2 .f-back {
+                            width: 30px;
+                            height: 20px;
+                            transform: translate(-50%, -50%) translateZ(10px) rotateX(90deg) translateZ(15px);
+                        }
+
+                        .b-fac-1 .f-back,
+                        .b-fac-2 .f-back {
+                            transform: translate(-50%, -50%) translateZ(10px) rotateX(90deg) translateZ(-15px);
+                        }
+
+                        .b-fac-1 .f-left,
+                        .b-fac-1 .f-right,
+                        .b-fac-2 .f-left,
+                        .b-fac-2 .f-right {
+                            width: 30px;
+                            height: 20px;
+                            transform: translate(-50%, -50%) translateZ(10px) rotateY(-90deg) rotateZ(-90deg) translateZ(15px);
+                        }
+
+                        .b-fac-1 .f-right,
+                        .b-fac-2 .f-right {
+                            transform: translate(-50%, -50%) translateZ(10px) rotateY(90deg) rotateZ(90deg) translateZ(15px);
+                        }
+
+                        .b-fac-1 .f-top,
+                        .b-fac-2 .f-top {
+                            width: 30px;
+                            height: 30px;
+                            transform: translate(-50%, -50%) translateZ(20px);
+                            background-image: linear-gradient(to top right, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 70%);
+                        }
+
+                        /* R&D A Facade */
+                        .b-rda-main .face {
+                            background-color: #0d9488;
+                            /* Teal-600 */
+                            /* Modern Ribbon Window Style */
+                            background-image:
+                                linear-gradient(rgba(255, 255, 255, 0.1) 2px, transparent 2px),
+                                linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+                            background-size: 100% 15px, 20px 100%;
+                            border: 1px solid #0f766e;
+                        }
+
+                        /* R&D B Facade */
+                        .b-rdb-main .face {
+                            background-color: #0d9488;
+                            /* Teal-600 */
+                            /* Modern Ribbon Window Style */
+                            background-image:
+                                linear-gradient(rgba(255, 255, 255, 0.1) 2px, transparent 2px),
+                                linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+                            background-size: 100% 15px, 20px 100%;
+                            border: 1px solid #0f766e;
+                        }
+
+                        /* 7. Gym Faces */
+                        .b-gym .face {
+                            background-color: #06b6d4;
+                            /* Cyan-500 */
+                            border: 1px solid #0891b2;
+                        }
+
+                        .b-gym .f-top {
+                            background-color: #22d3ee;
+                            background-image: linear-gradient(to top right, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 70%);
+                        }
+
+                        .b-gym .f-front,
+                        .b-gym .f-back {
+                            width: 80px;
+                            height: 40px;
+                            transform: translate(-50%, -50%) translateZ(20px) rotateX(90deg) translateZ(60px);
+                        }
+
+                        .b-gym .f-back {
+                            transform: translate(-50%, -50%) translateZ(20px) rotateX(90deg) translateZ(-60px);
+                        }
+
+                        .b-gym .f-left,
+                        .b-gym .f-right {
+                            width: 120px;
+                            height: 40px;
+                            transform: translate(-50%, -50%) translateZ(20px) rotateY(-90deg) rotateZ(-90deg) translateZ(40px);
+                        }
+
+                        .b-gym .f-right {
+                            transform: translate(-50%, -50%) translateZ(20px) rotateY(90deg) rotateZ(90deg) translateZ(40px);
+                        }
+
+                        .b-gym .f-top {
+                            width: 80px;
+                            height: 120px;
+                            transform: translate(-50%, -50%) translateZ(40px);
+                        }
+
+                        /* 8. NEW BUILDINGS STYLES */
+
+                        /* R&D Center C (Slate/Gold tech tower) */
+                        .b-rd-c {
+                            transform: translate(0, -400px);
+                        }
+
+                        .b-rdc-main .face {
+                            background-color: #1e293b;
+                            border: 1px solid #f59e0b;
+                        }
+
+                        .b-rdc-main .f-front,
+                        .b-rdc-main .f-back {
+                            width: 60px;
+                            height: 140px;
+                            transform: translate(-50%, -50%) translateZ(70px) rotateX(90deg) translateZ(30px);
+                        }
+
+                        .b-rdc-main .f-back {
+                            transform: translate(-50%, -50%) translateZ(70px) rotateX(90deg) translateZ(-30px);
+                        }
+
+                        .b-rdc-main .f-left,
+                        .b-rdc-main .f-right {
+                            width: 60px;
+                            height: 140px;
+                            transform: translate(-50%, -50%) translateZ(70px) rotateY(-90deg) rotateZ(-90deg) translateZ(30px);
+                        }
+
+                        .b-rdc-main .f-right {
+                            transform: translate(-50%, -50%) translateZ(70px) rotateY(90deg) rotateZ(90deg) translateZ(30px);
+                        }
+
+                        .b-rdc-main .f-top {
+                            width: 60px;
+                            height: 60px;
+                            transform: translate(-50%, -50%) translateZ(140px);
+                            background: #f59e0b;
+                            box-shadow: 0 0 20px #f59e0b;
+                        }
+
+                        /* Staff Canteen (Orange/Red) */
+                        .b-canteen {
+                            /* Moved to the North side of Talent Apartments */
+                            transform: translate(350px, -50px);
+                        }
+
+                        .b-can-main .face {
+                            background-color: #f97316;
+                            border: 1px solid #c2410c;
+                        }
+
+                        .b-can-main .f-front,
+                        .b-can-main .f-back {
+                            width: 100px;
+                            height: 40px;
+                            transform: translate(-50%, -50%) translateZ(20px) rotateX(90deg) translateZ(30px);
+                        }
+
+                        .b-can-main .f-back {
+                            transform: translate(-50%, -50%) translateZ(20px) rotateX(90deg) translateZ(-30px);
+                        }
+
+                        .b-can-main .f-left,
+                        .b-can-main .f-right {
+                            width: 60px;
+                            height: 40px;
+                            transform: translate(-50%, -50%) translateZ(20px) rotateY(-90deg) rotateZ(-90deg) translateZ(50px);
+                        }
+
+                        .b-can-main .f-right {
+                            transform: translate(-50%, -50%) translateZ(20px) rotateY(90deg) rotateZ(90deg) translateZ(50px);
+                        }
+
+                        .b-can-main .f-top {
+                            width: 100px;
+                            height: 60px;
+                            transform: translate(-50%, -50%) translateZ(40px);
+                            background: #fdba74;
+                        }
+
+                        /* Data Center (Dark Slate with Cyan Glow) */
+                        .b-data {
+                            transform: translate(0, -200px);
+                        }
+
+                        .b-dat-main .face {
+                            background-color: #0f172a;
+                            border: 1px solid #06b6d4;
+                            /* High-Tech Data Center Pattern: Hex-like grid or small digital dots */
+                            background-image:
+                                radial-gradient(#06b6d4 1px, transparent 1px),
+                                linear-gradient(rgba(6, 182, 212, 0.05) 1px, transparent 1px);
+                            background-size: 10px 10px, 100% 5px;
+                            box-shadow: inset 0 0 15px rgba(6, 182, 212, 0.2);
+                        }
+
+                        .b-dat-main .f-front,
+                        .b-dat-main .f-back {
+                            width: 80px;
+                            height: 60px;
+                            transform: translate(-50%, -50%) translateZ(30px) rotateX(90deg) translateZ(40px);
+                        }
+
+                        .b-dat-main .f-back {
+                            transform: translate(-50%, -50%) translateZ(30px) rotateX(90deg) translateZ(-40px);
+                        }
+
+                        .b-dat-main .f-left,
+                        .b-dat-main .f-right {
+                            width: 80px;
+                            height: 60px;
+                            transform: translate(-50%, -50%) translateZ(30px) rotateY(-90deg) rotateZ(-90deg) translateZ(40px);
+                        }
+
+                        .b-dat-main .f-right {
+                            transform: translate(-50%, -50%) translateZ(30px) rotateY(90deg) rotateZ(90deg) translateZ(40px);
+                        }
+
+                        .b-dat-main .f-top {
+                            width: 80px;
+                            height: 80px;
+                            transform: translate(-50%, -50%) translateZ(60px);
+                            background: #0f172a;
+                            box-shadow: inset 0 0 20px #06b6d4;
+                        }
+
+                        /* Power Station (Green Industrial) */
+                        .b-power {
+                            transform: translate(520px, -480px);
+                        }
+
+                        .b-pow-main .face {
+                            background-color: #166534;
+                            border: 1px solid #14532d;
+                        }
+
+                        .b-pow-main .f-front,
+                        .b-pow-main .f-back {
+                            width: 40px;
+                            height: 40px;
+                            transform: translate(-50%, -50%) translateZ(20px) rotateX(90deg) translateZ(20px);
+                        }
+
+                        .b-pow-main .f-back {
+                            transform: translate(-50%, -50%) translateZ(20px) rotateX(90deg) translateZ(-20px);
+                        }
+
+                        .b-pow-main .f-left,
+                        .b-pow-main .f-right {
+                            width: 40px;
+                            height: 40px;
+                            transform: translate(-50%, -50%) translateZ(20px) rotateY(-90deg) rotateZ(-90deg) translateZ(20px);
+                        }
+
+                        .b-pow-main .f-right {
+                            transform: translate(-50%, -50%) translateZ(20px) rotateY(90deg) rotateZ(90deg) translateZ(20px);
+                        }
+
+                        .b-pow-main .f-top {
+                            width: 40px;
+                            height: 40px;
+                            transform: translate(-50%, -50%) translateZ(40px);
+                            background: #4ade80;
+                        }
+
+                        /* Office Buildings Style */
+                        .b-off-d {
+                            transform: translate(-350px, -350px);
+                        }
+
+                        .b-off-e {
+                            transform: translate(350px, -350px);
+                        }
+
+                        .b-off-f {
+                            transform: translate(-200px, 200px);
+                        }
+
+                        .b-off-g {
+                            transform: translate(200px, 200px);
+                        }
+
+                        .b-office-tower .face {
+                            background-color: #1e3a8a;
+                            /* Blue-900 */
+                            /* Double-glazing effect with staggered windows */
+                            background-image:
+                                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                                linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+                                linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+                            background-size: 12px 100%, 100% 20px, 100% 100%;
+                            border: 1px solid #1e40af;
+                            box-shadow: inset 0 0 20px rgba(0, 50, 200, 0.2);
+                        }
+
+                        .b-office-tower .f-top {
+                            background-color: #3b82f6;
+                            background-image: none;
+                        }
+
+                        .b-off-main .f-front,
+                        .b-off-main .f-back {
+                            width: 60px;
+                            height: 100px;
+                            transform: translate(-50%, -50%) translateZ(50px) rotateX(90deg) translateZ(30px);
+                        }
+
+                        .b-off-main .f-back {
+                            transform: translate(-50%, -50%) translateZ(50px) rotateX(90deg) translateZ(-30px);
+                        }
+
+                        .b-off-main .f-left,
+                        .b-off-main .f-right {
+                            width: 60px;
+                            height: 100px;
+                            transform: translate(-50%, -50%) translateZ(50px) rotateY(-90deg) rotateZ(-90deg) translateZ(30px);
+                        }
+
+                        .b-off-main .f-right {
+                            transform: translate(-50%, -50%) translateZ(50px) rotateY(90deg) rotateZ(90deg) translateZ(30px);
+                        }
+
+                        .b-off-main .f-top {
+                            width: 60px;
+                            height: 60px;
+                            transform: translate(-50%, -50%) translateZ(100px);
+                        }
+
+                        /* Group heights already defined above */
+
+
+                        /* Labels Master Styles */
+                        .b-label,
+                        .energy-label {
+                            --h-pos: 100px;
+                            /* Global Fallback */
+                            position: absolute;
+                            left: 50%;
+                            top: 50%;
+                            pointer-events: none;
+                            z-index: 10;
+                            transition: transform 0.05s linear;
+                        }
+
+                        .b-label {
+                            color: #ffffff;
+                            font-size: 11px;
+                            font-weight: 800;
+                            white-space: nowrap;
+                            padding: 2px 10px;
+                            background: rgba(15, 23, 42, 0.9);
+                            border: 1px solid #3b82f6;
+                            border-radius: 4px;
+                            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+                            text-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+                        }
+
+                        /* NEW: Occupancy Label Style */
+                        .occupancy-label {
+                            position: absolute;
+                            transform-style: preserve-3d;
+                            pointer-events: none;
+                            z-index: 11;
+                        }
+
+                        .occ-tag {
+                            position: absolute;
+                            left: 50%;
+                            top: 50%;
+                            transform: translate(-50%, -50%);
+                            background: rgba(15, 23, 42, 0.85);
+                            border: 1px solid #f59e0b;
+                            /* Amber-500 */
+                            padding: 2px 8px;
+                            border-radius: 20px;
+                            color: #fbbf24;
+                            font-size: 9px;
+                            font-weight: bold;
+                            white-space: nowrap;
+                            box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+                            display: flex;
+                            align-items: center;
+                            gap: 3px;
+                        }
+
+                        .occ-tag::before {
+                            content: '';
+                            display: inline-block;
+                            width: 5px;
+                            height: 5px;
+                            background: #4ade80;
+                            border-radius: 50%;
+                            box-shadow: 0 0 5px #4ade80;
+                        }
+
+                        /* NEW: Environment Label Style */
+                        .env-label {
+                            position: absolute;
+                            transform-style: preserve-3d;
+                            pointer-events: none;
+                            z-index: 11;
+                        }
+
+                        .env-tag {
+                            position: absolute;
+                            left: 50%;
+                            top: 50%;
+                            transform: translate(-50%, -50%);
+                            background: rgba(15, 23, 42, 0.85);
+                            border: 1px solid #f87171;
+                            /* Red-400 */
+                            padding: 2px 8px;
+                            border-radius: 20px;
+                            color: #f87171;
+                            font-size: 9px;
+                            font-weight: bold;
+                            white-space: nowrap;
+                            box-shadow: 0 0 10px rgba(248, 113, 113, 0.4);
+                            display: flex;
+                            align-items: center;
+                            gap: 3px;
+                        }
+
+                        .env-tag::before {
+                            content: '🔊';
+                            font-size: 8px;
+                        }
+
+                        .energy-label {
+                            margin-top: 0;
+                        }
+
+                        /* ============================================================
+                           INDIVIDUAL POSITIONING (Adjust these for each building)
+                           ============================================================ */
+
+                        /* Headquarters 总部 */
+                        .b-hq .b-label {
+                            --h-pos: 420px;
+                        }
+
+                        .b-hq .energy-label {
+                            --h-pos: 350px;
+                        }
+
+                        .b-hq .occupancy-label {
+                            --h-pos: 385px;
+                        }
+
+                        /* R&D A 研发A */
+                        .b-rd-a .b-label {
+                            --h-pos: 200px;
+                        }
+
+                        .b-rd-a .energy-label {
+                            --h-pos: 140px;
+                        }
+
+                        .b-rd-a .occupancy-label {
+                            --h-pos: 170px;
+                        }
+
+                        .b-rd-a .env-label {
+                            --h-pos: 100px;
+                        }
+
+                        /* R&D B 研发B */
+                        .b-rd-b .b-label {
+                            --h-pos: 180px;
+                        }
+
+                        .b-rd-b .energy-label {
+                            --h-pos: 120px;
+                        }
+
+                        .b-rd-b .occupancy-label {
+                            --h-pos: 150px;
+                        }
+
+                        /* R&D C 研发C */
+                        .b-rd-c .b-label {
+                            --h-pos: 240px;
+                        }
+
+                        .b-rd-c .energy-label {
+                            --h-pos: 180px;
+                        }
+
+                        .b-rd-c .occupancy-label {
+                            --h-pos: 210px;
+                        }
+
+                        /* Commercial Mall 商业中心 */
+                        .b-mall .b-label {
+                            --h-pos: 210px;
+                        }
+
+                        .b-mall .energy-label {
+                            --h-pos: 150px;
+                        }
+
+                        .b-mall .occupancy-label {
+                            --h-pos: 180px;
+                        }
+
+                        .b-mall .env-label {
+                            --h-pos: 120px;
+                        }
+
+                        /* Apartments 人才公寓 */
+                        .b-apt .b-label {
+                            --h-pos: 210px;
+                        }
+
+                        .b-apt .energy-label {
+                            --h-pos: 150px;
+                        }
+
+                        .b-apt .occupancy-label {
+                            --h-pos: 180px;
+                        }
+
+                        /* Gym 体育中心 */
+                        .b-gym .b-label {
+                            --h-pos: 140px;
+                        }
+
+                        .b-gym .occupancy-label {
+                            --h-pos: 110px;
+                        }
+
+                        .b-gym .env-label {
+                            --h-pos: 50px;
+                        }
+
+                        /* PV Array 光伏阵列 */
+                        .el-pv {
+                            --h-pos: 120px;
+                        }
+
+                        .solar-array .b-label {
+                            --h-pos: 80px;
+                        }
+
+                        .b-gym .energy-label {
+                            --h-pos: 80px;
+                        }
+
+                        /* Staff Canteen 职工食堂 */
+                        .b-canteen .b-label {
+                            --h-pos: 140px;
+                        }
+
+                        .b-canteen .energy-label {
+                            --h-pos: 80px;
+                        }
+
+                        /* Data Center 数据中心 */
+                        .b-data .b-label {
+                            --h-pos: 160px;
+                        }
+
+                        .b-data .env-label {
+                            --h-pos: 130px;
+                        }
+
+                        .b-data .energy-label {
+                            --h-pos: 100px;
+                        }
+
+                        /* Parking Lot 停车场 */
+                        .parking-lot .b-label {
+                            --h-pos: 80px;
+                        }
+
+                        .parking-lot .energy-label {
+                            --h-pos: 40px;
+                        }
+
+                        /* Power Station 动力中心 */
+                        .b-power .b-label {
+                            --h-pos: 140px;
+                        }
+
+                        .b-power .energy-label {
+                            --h-pos: 80px;
+                        }
+
+                        /* Tea House 茶楼 */
+                        .b-teahouse {
+                            transform: translate(350px, 360px);
+                        }
+
+                        .b-teahouse .b-label {
+                            --h-pos: 100px;
+                        }
+
+                        .b-teahouse .energy-label {
+                            --h-pos: 60px;
+                        }
+
+                        .b-teahouse .occupancy-label {
+                            --h-pos: 80px;
+                        }
+
+                        /* Tea House Style: Huizhou Architecture (White Walls, Grey Tiles) */
+                        .b-tea-base .face,
+                        .b-tea-top .face {
+                            background-color: #f8fafc;
+                            /* Powder White Walls */
+                            background-image:
+                                /* Traditional Lattice Windows */
+                                linear-gradient(to bottom, transparent 30%, #334155 30%, #334155 32%, transparent 32%, transparent 50%, #334155 50%, #334155 52%, transparent 52%),
+                                linear-gradient(to right, transparent 40%, rgba(51, 65, 85, 0.3) 40%, rgba(51, 65, 85, 0.3) 60%, transparent 60%);
+                            background-size: 15px 15px, 100% 100%;
+                            border: 1px solid #e2e8f0;
+                        }
+
+                        /* Horse-Head Walls (Ma-Tou-Qiang) */
+                        .b-tea-base .f-left::before,
+                        .b-tea-base .f-right::before,
+                        .b-tea-top .f-left::before,
+                        .b-tea-top .f-right::before {
+                            content: '';
+                            position: absolute;
+                            bottom: 100%;
+                            left: 0;
+                            width: 100%;
+                            height: 15px;
+                            background: #f8fafc;
+                            /* Step-like shape */
+                            clip-path: polygon(0 100%, 0 0, 30% 0, 30% 30%, 70% 30%, 70% 60%, 100% 60%, 100% 100%);
+                            border-top: 2px solid #1e293b;
+                        }
+
+                        .b-tea-base .f-front,
+                        .b-tea-base .f-back {
+                            width: 60px;
+                            height: 30px;
+                            transform: translate(-50%, -50%) translateZ(15px) rotateX(90deg) translateZ(30px);
+                        }
+
+                        .b-tea-base .f-back {
+                            transform: translate(-50%, -50%) translateZ(15px) rotateX(90deg) translateZ(-30px);
+                        }
+
+                        .b-tea-base .f-left,
+                        .b-tea-base .f-right {
+                            width: 60px;
+                            height: 30px;
+                            transform: translate(-50%, -50%) translateZ(15px) rotateY(-90deg) rotateZ(-90deg) translateZ(30px);
+                            overflow: visible;
+                        }
+
+                        .b-tea-base .f-right {
+                            transform: translate(-50%, -50%) translateZ(15px) rotateY(90deg) rotateZ(90deg) translateZ(30px);
+                        }
+
+                        .b-tea-base .f-top {
+                            width: 74px;
+                            /* Eaves */
+                            height: 74px;
+                            transform: translate(-50%, -50%) translateZ(30px);
+                            background-color: #1e293b;
+                            /* Dark Grey Tiles */
+                            background-image: repeating-linear-gradient(0deg, #0f172a 0, #0f172a 2px, transparent 2px, transparent 6px);
+                            border: 1px solid #0f172a;
+                        }
+
+                        /* Upper Level */
+                        .b-tea-top .f-front,
+                        .b-tea-top .f-back {
+                            width: 40px;
+                            height: 25px;
+                            transform: translate(-50%, -50%) translateZ(42.5px) rotateX(90deg) translateZ(20px);
+                        }
+
+                        .b-tea-top .f-back {
+                            transform: translate(-50%, -50%) translateZ(42.5px) rotateX(90deg) translateZ(-20px);
+                        }
+
+                        .b-tea-top .f-left,
+                        .b-tea-top .f-right {
+                            width: 40px;
+                            height: 25px;
+                            transform: translate(-50%, -50%) translateZ(42.5px) rotateY(-90deg) rotateZ(-90deg) translateZ(20px);
+                            overflow: visible;
+                        }
+
+                        .b-tea-top .f-right {
+                            transform: translate(-50%, -50%) translateZ(42.5px) rotateY(90deg) rotateZ(90deg) translateZ(20px);
+                        }
+
+                        .b-tea-top .f-top {
+                            width: 54px;
+                            height: 54px;
+                            transform: translate(-50%, -50%) translateZ(55px);
+                            background-color: #0f172a;
+                            /* Darker Slate Tiles */
+                            background-image:
+                                repeating-linear-gradient(90deg, #1e293b 0, #1e293b 2px, transparent 2px, transparent 8px),
+                                radial-gradient(circle, #334155 1px, transparent 1px);
+                            background-size: 100% 100%, 8px 8px;
+                            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+                        }
+
+                        /* Office Towers D-G 办公楼 */
+                        .b-off-d .b-label,
+                        .b-off-e .b-label,
+                        .b-off-f .b-label,
+                        .b-off-g .b-label {
+                            --h-pos: 200px;
+                        }
+
+                        .b-off-d .energy-label,
+                        .b-off-e .energy-label,
+                        .b-off-f .energy-label,
+                        .b-off-g .energy-label {
+                            --h-pos: 140px;
+                        }
+
+                        .b-off-d .occupancy-label,
+                        .b-off-e .occupancy-label,
+                        .b-off-f .occupancy-label,
+                        .b-off-g .occupancy-label {
+                            --h-pos: 170px;
+                        }
+
+                        /* Data Points */
+                        .data-point {
+                            position: absolute;
+                            width: 6px;
+                            height: 6px;
+                            background: white;
+                            border-radius: 50%;
+                            box-shadow: 0 0 10px white;
+                            top: 50%;
+                            left: 50%;
+                        }
+
+                        .p-1 {
+                            background: #60a5fa;
+                            animation: floatData1 4s infinite;
+                            transform: translate(-250px, -180px) translateZ(100px);
+                        }
+
+                        .p-2 {
+                            background: #facc15;
+                            animation: floatData2 5s infinite;
+                            transform: translate(-180px, 180px) translateZ(70px);
+                        }
+
+                        .p-3 {
+                            background: #8b5cf6;
+                            animation: floatData3 6s infinite;
+                            transform: translate(180px, 180px) translateZ(110px);
+                        }
+
+                        .p-4 {
+                            background: #06b6d4;
+                            animation: floatDataTower 7s infinite;
+                            transform: translate(0, 0) translateZ(160px);
+                        }
+
+                        .p-5 {
+                            background: #4ade80;
+                            animation: floatData5 5.5s infinite;
+                            transform: translate(350px, -350px) translateZ(90px);
+                        }
+
+                        .p-6 {
+                            background: #f87171;
+                            animation: floatData6 6.5s infinite;
+                            transform: translate(-350px, -350px) translateZ(120px);
+                        }
+
+                        /* Moving Vehicles */
+                        .car-moving {
+                            position: absolute;
+                            width: 12px;
+                            height: 24px;
+                            background: #fff;
+                            border-radius: 2px;
+                            box-shadow: 0 0 5px white;
+                            z-index: 5;
+                            top: 50%;
+                            left: 50%;
+                            margin-top: -12px;
+                            margin-left: -6px;
+                        }
+
+                        .cm-1 {
+                            background: #ef4444;
+                            box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+                            animation: drive-n-e 10s linear infinite;
+                        }
+
+                        .cm-2 {
+                            background: #3b82f6;
+                            box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+                            animation: drive-s-w 12s linear infinite;
+                            animation-delay: 2s;
+                        }
+
+                        .cm-3 {
+                            background: #facc15;
+                            box-shadow: 0 0 8px rgba(250, 204, 21, 0.6);
+                            animation: drive-w-s 15s linear infinite;
+                            animation-delay: 5s;
+                        }
+
+                        .cm-4 {
+                            background: #10b981;
+                            box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+                            animation: drive-e-n 14s linear infinite;
+                            animation-delay: 1s;
+                        }
+
+                        .cm-5 {
+                            background: #ffffff;
+                            box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+                            animation: drive-n-e 13s linear infinite;
+                            animation-delay: 5s;
+                        }
+
+                        @keyframes drive-n-e {
+                            0% {
+                                transform: translate(-600px, -270px) rotate(90deg);
+                            }
+
+                            100% {
+                                transform: translate(600px, -270px) rotate(90deg);
+                            }
+                        }
+
+                        @keyframes drive-s-w {
+                            0% {
+                                transform: translate(600px, 280px) rotate(-90deg);
+                            }
+
+                            100% {
+                                transform: translate(-600px, 280px) rotate(-90deg);
+                            }
+                        }
+
+                        @keyframes drive-w-s {
+                            0% {
+                                transform: translate(-270px, -600px);
+                            }
+
+                            100% {
+                                transform: translate(-270px, 600px);
+                            }
+                        }
+
+                        @keyframes drive-e-n {
+                            0% {
+                                transform: translate(260px, 600px) rotate(180deg);
+                            }
+
+                            100% {
+                                transform: translate(260px, -600px) rotate(180deg);
+                            }
+                        }
+
+                        @keyframes floatData1 {
+
+                            0%,
+                            100% {
+                                transform: translate(-250px, -180px) translateZ(90px);
+                            }
+
+                            50% {
+                                transform: translate(-250px, -180px) translateZ(110px);
+                            }
+                        }
+
+                        @keyframes floatData2 {
+
+                            0%,
+                            100% {
+                                transform: translate(-180px, 180px) translateZ(70px);
+                            }
+
+                            50% {
+                                transform: translate(-180px, 180px) translateZ(90px);
+                            }
+                        }
+
+                        @keyframes floatData3 {
+
+                            0%,
+                            100% {
+                                transform: translate(180px, 180px) translateZ(110px);
+                            }
+
+                            50% {
+                                transform: translate(180px, 180px) translateZ(130px);
+                            }
+                        }
+
+                        @keyframes floatDataTower {
+
+                            0%,
+                            100% {
+                                transform: translate(0, 0) translateZ(160px);
+                            }
+
+                            50% {
+                                transform: translate(0, 0) translateZ(180px);
+                            }
+                        }
+
+                        @keyframes floatData5 {
+
+                            0%,
+                            100% {
+                                transform: translate(350px, -350px) translateZ(80px);
+                            }
+
+                            50% {
+                                transform: translate(350px, -350px) translateZ(100px);
+                            }
+                        }
+
+                        @keyframes floatData6 {
+
+                            0%,
+                            100% {
+                                transform: translate(-350px, -350px) translateZ(110px);
+                            }
+
+                            50% {
+                                transform: translate(-350px, -350px) translateZ(130px);
+                            }
+                        }
+                    </style>
+
+                    <div
+                        style="position: absolute; bottom: 20px; left: 20px; font-family: monospace; color: var(--accent); font-size: 0.8rem; z-index: 10;">
+                        DIGITAL_TWIN: ONLINE<br>
+                        SYNC_LATENCY: 12ms
+                    </div>
+                </div>
+
+                <!-- Right Panel: Services & IoT -->
+                <div class="cp-panel-side">
+                    <!-- Enterprise Services -->
+                    <div class="cp-card">
+                        <h4>📱 企业服务 (Services)</h4>
+                        <div class="activity-item">
+                            <span style="color: #fff;">会议室预定</span>
+                            <span class="badge badge-info">2 待审</span>
+                        </div>
+                        <div class="activity-item">
+                            <span style="color: #fff;">物业报修</span>
+                            <span class="badge badge-warn">1 处理中</span>
+                        </div>
+                        <div class="activity-item">
+                            <span style="color: #fff;">入驻申请</span>
+                            <span class="badge badge-info">新申请</span>
+                        </div>
+                    </div>
+
+                    <!-- Visit Management -->
+                    <div class="cp-card">
+                        <h4>📋 走访管理 (Visits)</h4>
+                        <div class="progress-item">
+                            <div class="progress-header"><span>本月任务完成率</span><span>78%</span></div>
+                            <div class="progress-track">
+                                <div class="progress-fill" style="width: 78%; background: #f472b6;"></div>
+                            </div>
+                        </div>
+                        <div class="cp-stat-row" style="margin-top: 1rem;">
+                            <span class="stat-label">重点企业走访</span>
+                            <span class="stat-value">12 / 15</span>
+                        </div>
+                        <div class="cp-stat-row" style="margin-bottom: 0;">
+                            <span class="stat-label">满意度调查</span>
+                            <span class="stat-value">45 / 50</span>
+                        </div>
+                    </div>
+
+
+
+                    <!-- Surveillance Camera Module -->
+                    <div class="cp-card">
+                        <h4>📹 智能监控 (Surveillance)</h4>
+                        <div class="cam-grid">
+                            <div class="cam-feed">
+                                <div class="cam-overlay">CAM_01 MAIN_GATE</div>
+                                <div class="rec-dot"></div>
+                                <div class="cam-crosshair"></div>
+                                <div
+                                    style="width:100%; height:100%; background: repeating-linear-gradient(45deg, #111 0, #111 10px, #222 10px, #222 20px);">
+                                </div>
+                            </div>
+                            <div class="cam-feed">
+                                <div class="cam-overlay">CAM_02 LOBBY</div>
+                                <div class="rec-dot"></div>
+                                <div class="cam-crosshair"></div>
+                                <div
+                                    style="width:100%; height:100%; background: radial-gradient(circle, #222 0%, #000 100%);">
+                                </div>
+                            </div>
+                            <div class="cam-feed">
+                                <div class="cam-overlay">CAM_03 PARKING</div>
+                                <div class="rec-dot"></div>
+                                <div class="cam-crosshair"></div>
+                                <div
+                                    style="width:100%; height:100%; background: linear-gradient(to bottom, #1e293b, #0f172a);">
+                                </div>
+                            </div>
+                            <div class="cam-feed">
+                                <div class="cam-overlay">CAM_04 PERIMETER</div>
+                                <div class="rec-dot"></div>
+                                <div class="cam-crosshair"></div>
+                                <div style="width:100%; height:100%; background: #000;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- IoT Platform -->
+                    <div class="cp-card">
+                        <h4>⚡ 物联网平台 (IoT)</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; text-align: center;">
+                            <div style="background: rgba(255,255,255,0.05); padding: 0.5rem; border-radius: 4px;">
+                                <div style="font-size: 1.2rem; color: #4ade80; font-weight: bold;">524</div>
+                                <div style="font-size: 0.6rem;">在线设备</div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.05); padding: 0.5rem; border-radius: 4px;">
+                                <div style="font-size: 1.2rem; color: #facc15; font-weight: bold;">3</div>
+                                <div style="font-size: 0.6rem;">实时告警</div>
+                            </div>
+                        </div>
+                        <div
+                            style="margin-top: 0.5rem; font-size: 0.7rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 0.5rem;">
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>今日能耗</span>
+                                <span style="color: #fff;">4,230 kWh</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+                                <span>光伏发电</span>
+                                <span style="color: #4ade80;">+450 kWh</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Logistics/Vehicles (NEW) -->
+                    <div class="cp-card">
+                        <h4>🚗 通行管理 (Logistics)</h4>
+                        <div class="cp-stat-row">
+                            <span class="stat-label">今日访客 (Visitors)</span>
+                            <span class="stat-value" id="val-visitors" style="color: #3b82f6;">86</span>
+                        </div>
+                        <div class="cp-stat-row">
+                            <span class="stat-label">进出压力 (Flow)</span>
+                            <div class="progress-track" style="width: 100px; height: 4px;">
+                                <div class="progress-fill" id="flow-fill" style="width: 45%; background: #60a5fa;">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="cp-stat-row">
+                            <span class="stat-label">空余/总位 (Parking)</span>
+                            <span class="stat-value" id="val-parking" style="color: #4ade80;">156 / 800</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom: Quick Stats -->
+                <div class="cp-bottom-metrics">
+                    <div class="cp-card"
+                        style="flex-direction: column; align-items: flex-start; justify-content: flex-start; padding: 0.6rem 1rem; overflow: hidden;">
+                        <div
+                            style="display: flex; width: 100%; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <div style="font-size: 0.9rem; color: var(--text-muted);">项目管理 (Projects)</div>
+                            <div style="font-size: 1.4rem; font-weight: bold;">12 <span
+                                    style="font-size: 0.8rem; font-weight: normal;">进行中</span></div>
+                        </div>
+                        <div style="font-size: 0.8rem; color: #ffffff; opacity: 0.9; width: 100%;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span>• 园区二期景观工程</span><span style="color: #3b82f6;">65%</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span>• 5G工业平台部署</span><span style="color: #10b981;">90%</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>• 总部核心区绿化</span><span style="color: #fbbf24;">30%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="cp-card"
+                        style="flex-direction: column; align-items: flex-start; justify-content: flex-start; padding: 0.6rem 1rem; overflow: hidden;">
+                        <div
+                            style="display: flex; width: 100%; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <div style="font-size: 0.9rem; color: var(--text-muted);">待办公文 (Docs)</div>
+                            <div style="font-size: 1.4rem; font-weight: bold;">5 <span
+                                    style="font-size: 0.8rem; font-weight: normal;">待审批</span></div>
+                        </div>
+                        <div style="font-size: 0.8rem; color: #ffffff; opacity: 0.9; width: 100%;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span>• 租户 A1-403 续租合同</span><span style="color: #60a5fa;">法务核中</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span>• 园区Q1物业采购申请</span><span style="color: #60a5fa;">待总办签</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span>• 企业入驻审核(腾飞科技)</span><span style="color: #60a5fa;">初审通过</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="cp-card"
+                        style="flex-direction: row; align-items: center; justify-content: space-between; padding: 0.5rem 1rem;">
+                        <div>
+                            <div style="font-size: 0.9rem; color: var(--text-muted);">智能小科 (AI)</div>
+                            <div style="font-size: 1.4rem; font-weight: bold;">Online <span
+                                    style="font-size: 0.8rem; font-weight: normal;">助手</span></div>
+                        </div>
+                        <div style="font-size: 2rem;">🤖</div>
+                    </div>
+                    <div class="cp-card"
+                        style="flex-direction: column; align-items: flex-start; justify-content: flex-start; padding: 0.6rem 1rem; overflow: hidden;">
+                        <div
+                            style="display: flex; width: 100%; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <div style="font-size: 0.9rem; color: var(--text-muted);">服务器状态 (Server)</div>
+                            <div style="font-size: 0.8rem; color: #4ade80;">Running 🟢</div>
+                        </div>
+                        <div style="font-size: 0.75rem; color: #ffffff; opacity: 0.9; width: 100%;">
+                            <div
+                                style="display: flex; justify-content: space-between; margin-bottom: 4px; align-items: center;">
+                                <span style="width: 35px;">CPU</span>
+                                <div
+                                    style="flex: 1; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin: 0 8px;">
+                                    <div style="width: 12%; height: 100%; background: #4ade80; border-radius: 2px;">
+                                    </div>
+                                </div>
+                                <span style="width: 25px; text-align: right; color: #4ade80;">12%</span>
+                            </div>
+                            <div
+                                style="display: flex; justify-content: space-between; margin-bottom: 4px; align-items: center;">
+                                <span style="width: 35px;">MEM</span>
+                                <div
+                                    style="flex: 1; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin: 0 8px;">
+                                    <div style="width: 48%; height: 100%; background: #60a5fa; border-radius: 2px;">
+                                    </div>
+                                </div>
+                                <span style="width: 25px; text-align: right; color: #60a5fa;">48%</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="width: 35px;">DISK</span>
+                                <div
+                                    style="flex: 1; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin: 0 8px;">
+                                    <div style="width: 32%; height: 100%; background: #facc15; border-radius: 2px;">
+                                    </div>
+                                </div>
+                                <span style="width: 25px; text-align: right; color: #facc15;">32%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <script>
+                // Clock for Dashboard
+                setInterval(() => {
+                    const now = new Date();
+                    document.getElementById('clock').innerText = now.toLocaleTimeString('en-US', { hour12: false });
+                }, 1000);
+            </script>
+        </div>
+
+        <!-- Slide 4: Core Modules -->
+        <div class="slide" id="slide-3">
+            <h2>六大核心模块</h2>
+            <div class="grid-container">
+                <div class="card">
+                    <div class="icon-box">🏢</div>
+                    <h3>资源管理</h3>
+                    <p style="font-size: 0.9rem; text-align: left;">楼宇、房源、车位全生命周期管理，可视化剖面图，一键掌握空置率。</p>
+                </div>
+                <div class="card">
+                    <div class="icon-box">🤝</div>
+                    <h3>招商租赁</h3>
+                    <p style="font-size: 0.9rem; text-align: left;">线索跟进、合同管理、财务账单自动生成，打造闭环招商体系。</p>
+                </div>
+                <div class="card">
+                    <div class="icon-box">🔧</div>
+                    <h3>物业服务</h3>
+                    <p style="font-size: 0.9rem; text-align: left;">报修、投诉、巡检标准化流程，移动端实时接单，提升服务品质。</p>
+                </div>
+                <div class="card">
+                    <div class="icon-box">⚡</div>
+                    <h3>智慧能耗</h3>
+                    <p style="font-size: 0.9rem; text-align: left;">远程抄表，异常预警，分项计量，为园区节能减排提供数据支撑。</p>
+                </div>
+                <div class="card">
+                    <div class="icon-box">🚗</div>
+                    <h3>智慧通行</h3>
+                    <p style="font-size: 0.9rem; text-align: left;">人脸门禁、车牌识别、访客预约，打造无感通行的安全园区。</p>
+                </div>
+                <div class="card">
+                    <div class="icon-box">📱</div>
+                    <h3>企业服务</h3>
+                    <p style="font-size: 0.9rem; text-align: left;">会议室预定、政策申报、活动报名，构建活跃的产业社群。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: Tech Stack (Updated) -->
+        <div class="slide" id="slide-4">
+            <h2>现代技术架构</h2>
+            <p>基于云原生架构设计，安全、稳定、极速扩展。</p>
+            <div style="display: flex; gap: 4rem; flex-wrap: wrap; justify-content: center; margin-top: 2rem;">
+                <div style="text-align: center;">
+                    <div style="font-size: 3rem; color: #512bd4; margin-bottom: 1rem;">.NET 10</div>
+                    <div style="color: var(--text-muted);">高性能后端核心</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 3rem; color: #61dafb; margin-bottom: 1rem;">React</div>
+                    <div style="color: var(--text-muted);">极致交互体验</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 3rem; color: #13aa52; margin-bottom: 1rem;">MongoDB</div>
+                    <div style="color: var(--text-muted);">灵活数据存储</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 3rem; color: #2496ed; margin-bottom: 1rem;">Docker</div>
+                    <div style="color: var(--text-muted);">容器化部署</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: Contact -->
+        <div class="slide" id="slide-5">
+            <h1 style="font-size: 4rem;">Ready to Transform?</h1>
+            <p>开启您的智慧园区之旅</p>
+
+            <div
+                style="margin-top: 3rem; display: flex; flex-direction: column; gap: 1.5rem; backdrop-filter: blur(10px); padding: 2rem; border: 1px solid var(--glass-border); border-radius: 1rem;">
+                <div style="display: flex; align-items: center; gap: 1rem; color: white; font-size: 1.2rem;">
+                    <span style="color: var(--primary);">📧</span> <a href="mailto:fsy_008@163.com"
+                        style="color: inherit; text-decoration: none;">fsy_008@163.com</a>
+                </div>
+                <div style="display: flex; align-items: center; gap: 1rem; color: white; font-size: 1.2rem;">
+                    <span style="color: var(--primary);">🌐</span> <a href="https://www.rong-zhong.com" target="_blank"
+                        style="color: inherit; text-decoration: none;">https://www.rong-zhong.com</a>
+                </div>
+            </div>
+
+            <button class="btn" onclick="goToSlide(0)" style="margin-top: 3rem;">
+                ↻ Replay Presentation
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Navigation -->
+    <div class="nav-controls">
+        <button class="nav-btn" onclick="prevSlide()">↑</button>
+        <button class="nav-btn" onclick="nextSlide()">↓</button>
+    </div>
+
+    <script>
+        // --- State ---
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        const progressEl = document.getElementById('progress');
+        let scrolling = false;
+
+        // --- Demo Charts Animation ---
+        function initDemoCharts() {
+            const demoBars = document.getElementById('demo-bars');
+            if (!demoBars) return; // Ensure demoBars element exists before proceeding
+            demoBars.innerHTML = '';
+            for (let i = 0; i < 12; i++) {
+                const h = Math.random() * 80 + 20;
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                bar.style.height = '0%';
+                demoBars.appendChild(bar);
+                // Animate to height
+                setTimeout(() => {
+                    bar.style.height = h + '%';
+                }, 100 + i * 50);
+            }
+        }
+
+        // --- Slide Logic ---
+        function updateSlide(index) {
+            slides.forEach((slide, i) => {
+                slide.classList.remove('active', 'exit');
+                if (i === index) {
+                    slide.classList.add('active');
+                    // Reset Chart animation if entering slide 2
+                    if (index === 2) {
+                        setTimeout(initDemoCharts, 500);
+                    }
+                } else if (i < index) {
+                    slide.classList.add('exit'); // Previous slides go up/fade out
+                }
+            });
+            progressEl.style.width = ((index + 1) / totalSlides) * 100 + '%';
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                updateSlide(currentSlide);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide(currentSlide);
+            }
+        }
+
+        function goToSlide(index) {
+            currentSlide = index;
+            updateSlide(currentSlide);
+        }
+
+        // --- Event Listeners ---
+        window.addEventListener('wheel', (e) => {
+            if (scrolling) return;
+            // Skip page scroll if interacting with 3D map
+            if (e.target.closest('.cp-map-area')) return;
+
+            scrolling = true;
+            if (e.deltaY > 0) nextSlide();
+            else prevSlide();
+
+            setTimeout(() => { scrolling = false; }, 1000); // Debounce scroll
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                prevSlide();
+            }
+        });
+
+        // --- Particle Background (Canvas) ---
+        const canvas = document.getElementById('particles-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.size = Math.random() * 2;
+                this.color = Math.random() > 0.5 ? 'rgba(59, 130, 246, ' : 'rgba(139, 92, 246, '; // Blue or Purple
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color + (Math.random() * 0.5 + 0.2) + ')';
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            for (let i = 0; i < 50; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw connections
+            particles.forEach((p, index) => {
+                p.update();
+                p.draw();
+
+                for (let j = index + 1; j < particles.length; j++) {
+                    const p2 = particles[j];
+                    const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+                    if (dist < 150) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${0.1 - dist / 1500})`;
+                        ctx.lineWidth = 1;
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
+                }
+            });
+            requestAnimationFrame(animateParticles);
+        }
+
+        initParticles();
+        animateParticles();
+
+        // --- Init ---
+        // 支持通过 URL hash 指定初始幻灯片（如 index.html#slide=2 直接进入驾驶舱）
+        const hashMatch = location.hash.match(/#slide=(\d+)/);
+        const initSlide = hashMatch ? parseInt(hashMatch[1]) : 0;
+        updateSlide(initSlide);
+
+        // Live Data Simulation for Energy Labels
+        function updateEnergyLabels() {
+            const labels = [
+                { id: '.el-hq .e-val', base: 450, variance: 15, unit: ' kW' },
+                { id: '.el-rda .e-val', base: 125, variance: 8, unit: ' kW' },
+                { id: '.el-rdb .e-val', base: 85, variance: 5, unit: ' kW' },
+                { id: '.el-mall .e-val', base: 310, variance: 20, unit: ' kW' },
+                { id: '.el-apt .e-val', base: 180, variance: 15, unit: ' kW' },
+                { id: '.el-gym .e-val', base: 45, variance: 5, unit: ' kW' },
+                { id: '.el-rdc .e-val', base: 95, variance: 8, unit: ' kW' },
+                { id: '.el-can .e-val', base: 65, variance: 6, unit: ' kW' },
+                { id: '.el-data .e-val', base: 520, variance: 30, unit: ' kW' },
+                { id: '.el-power .e-val', base: 880, variance: 40, unit: ' kW' },
+                { id: '.el-off-d .e-val', base: 145, variance: 12, unit: ' kW' },
+                { id: '.el-off-e .e-val', base: 160, variance: 15, unit: ' kW' },
+                { id: '.el-off-f .e-val', base: 110, variance: 10, unit: ' kW' },
+                { id: '.el-off-g .e-val', base: 125, variance: 11, unit: ' kW' },
+                { id: '.el-tea .e-val', base: 12, variance: 3, unit: ' kW' },
+                /* Occupancy Data */
+                { id: '.el-hq-occ .occ-tag', base: 92, variance: 1, unit: '%', prefix: '入住率 ' },
+                { id: '.el-rda-occ .occ-tag', base: 85, variance: 2, unit: '%', prefix: '入住率 ' },
+                { id: '.el-rdb-occ .occ-tag', base: 78, variance: 1, unit: '%', prefix: '入住率 ' },
+                { id: '.el-mall-occ .occ-tag', base: 94, variance: 2, unit: '%', prefix: '入住率 ' },
+                { id: '.el-apt-occ .occ-tag', base: 98, variance: 1, unit: '%', prefix: '入住率 ' },
+                { id: '.el-gym-occ .occ-tag', base: 100, variance: 0, unit: '%', prefix: '入住率 ' },
+                { id: '.el-rdc-occ .occ-tag', base: 65, variance: 2, unit: '%', prefix: '入住率 ' },
+                { id: '.el-off-d-occ .occ-tag', base: 88, variance: 1, unit: '%', prefix: '入住率 ' },
+                { id: '.el-off-e-occ .occ-tag', base: 92, variance: 1, unit: '%', prefix: '入住率 ' },
+                { id: '.el-off-f-occ .occ-tag', base: 75, variance: 3, unit: '%', prefix: '入住率 ' },
+                { id: '.el-off-g-occ .occ-tag', base: 90, variance: 1, unit: '%', prefix: '入住率 ' },
+                { id: '.el-tea-occ .occ-tag', base: 82, variance: 4, unit: '%', prefix: '入住率 ' },
+                /* Environment Data */
+                { id: '.el-rda-env .env-tag', base: 55, variance: 5, unit: 'dB' },
+                { id: '.el-mall-env .env-tag', base: 45, variance: 10, unit: 'dB' },
+                { id: '.el-gym-env .env-tag', base: 60, variance: 8, unit: 'dB' },
+                { id: '.el-data-env .env-tag', base: 50, variance: 2, unit: 'dB' },
+                { id: '.el-gate .e-val', type: 'status' } // Gate stays 'Live'
+            ];
+
+            labels.forEach(item => {
+                if (item.type === 'status') return;
+                const el = document.querySelector(item.id);
+                if (el) {
+                    const randomVal = item.base + Math.floor(Math.random() * item.variance * 2) - item.variance;
+                    el.innerText = (item.prefix || '') + randomVal + item.unit;
+                }
+            });
+
+            // Update Environmental Metrics
+            const temp = 22 + Math.random() * 4;
+            const hum = 40 + Math.random() * 10;
+            const pm = 15 + Math.random() * 15;
+
+            if (document.getElementById('env-temp')) document.getElementById('env-temp').innerText = temp.toFixed(1) + '°C';
+            if (document.getElementById('env-hum')) document.getElementById('env-hum').innerText = hum.toFixed(0) + '%';
+            if (document.getElementById('env-pm')) document.getElementById('env-pm').innerText = pm.toFixed(0);
+
+            const noise = 40 + Math.random() * 10;
+            const co2 = 400 + Math.random() * 50;
+            const lux = 10000 + Math.floor(Math.random() * 5000);
+            if (document.getElementById('env-noise')) document.getElementById('env-noise').innerText = noise.toFixed(0) + 'dB';
+            if (document.getElementById('env-co2')) document.getElementById('env-co2').innerText = co2.toFixed(0);
+            if (document.getElementById('env-lux')) document.getElementById('env-lux').innerText = (lux / 1000).toFixed(1) + 'kLx';
+
+            // Update Parking & Logistics
+            if (document.getElementById('val-parking')) {
+                const total = 800;
+                const p = 150 + Math.floor(Math.random() * 10);
+                const txt = p + ' / ' + total;
+                document.getElementById('val-parking').innerText = txt;
+                if (document.getElementById('map-val-parking')) {
+                    document.getElementById('map-val-parking').innerText = txt;
+                }
+            }
+            if (document.getElementById('val-visitors')) {
+                const v = 80 + Math.floor(Math.random() * 20);
+                document.getElementById('val-visitors').innerText = v;
+            }
+            if (document.getElementById('flow-fill')) {
+                const f = 30 + Math.random() * 40;
+                document.getElementById('flow-fill').style.width = f + '%';
+            }
+        }
+
+        // Update every 2 seconds
+        setInterval(updateEnergyLabels, 2000);
+
+        // --- 3D Scene Interaction ---
+        const mapArea = document.querySelector('.cp-map-area');
+        const scene3d = document.querySelector('.scene-3d');
+
+        // Initial State
+        let state = {
+            rotX: 60,
+            rotZ: 0,
+            scale: 1,
+            isDragging: false,
+            autoRotate: true,
+            startX: 0,
+            startY: 0
+        };
+
+        const CFG = {
+            zoomSpeed: 0.001,
+            rotSpeed: 0.5,
+            minScale: 0.5,
+            maxScale: 3.0,
+            minRotX: 0,
+            maxRotX: 85
+        };
+
+        const compassRing = document.querySelector('.compass-ring');
+
+        function updateSceneTransform() {
+            scene3d.style.transform = `scale3d(${state.scale}, ${state.scale}, ${state.scale}) rotateX(${state.rotX}deg) rotateZ(${state.rotZ}deg)`;
+
+            // Sync Compass
+            if (compassRing) {
+                compassRing.style.transform = `rotate(${state.rotZ}deg)`;
+            }
+
+            // Billboard effect: negZ cancels park spin, negX stands the label up towards user
+            const labels = document.querySelectorAll('.b-label, .energy-label, .occupancy-label, .env-label');
+            const negZ = -state.rotZ;
+            const negX = -state.rotX;
+            labels.forEach(el => {
+                const trans = el.classList.contains('b-label') ? 'translateX(-50%)' : 'translate(-50%, -50%)';
+                // Use the individual --h-pos variable defined in CSS
+                el.style.transform = `${trans} translateZ(var(--h-pos)) rotateZ(${negZ}deg) rotateX(${negX}deg)`;
+            });
+        }
+
+        // JS Driven Animation Engine
+        function animate() {
+            if (state.autoRotate && !state.isDragging) {
+                state.rotZ += 0.15; // Slow ambient rotation
+                updateSceneTransform();
+            }
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // Interaction Logic
+        mapArea.addEventListener('mousedown', (e) => {
+            state.isDragging = true;
+            state.autoRotate = false; // Disable auto-pilot on interaction
+            state.startX = e.clientX;
+            state.startY = e.clientY;
+            mapArea.style.cursor = 'grabbing';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!state.isDragging) return;
+            const deltaX = e.clientX - state.startX;
+            const deltaY = e.clientY - state.startY;
+
+            state.rotZ -= deltaX * CFG.rotSpeed;
+            state.rotX = Math.min(Math.max(state.rotX - deltaY * CFG.rotSpeed, CFG.minRotX), CFG.maxRotX);
+
+            state.startX = e.clientX;
+            state.startY = e.clientY;
+            updateSceneTransform();
+        });
+
+        window.addEventListener('mouseup', () => {
+            state.isDragging = false;
+            mapArea.style.cursor = 'grab';
+            // Resume auto-rotate after 5 seconds of inactivity
+            clearTimeout(window._rotTimer);
+            window._rotTimer = setTimeout(() => { if (!state.isDragging) state.autoRotate = true; }, 5000);
+        });
+
+        // Wheel Zoom
+        mapArea.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const delta = -e.deltaY;
+            state.scale = Math.min(Math.max(state.scale + delta * CFG.zoomSpeed, CFG.minScale), CFG.maxScale);
+            updateSceneTransform();
+        }, { passive: false });
+
+    </script>
+</body>
+
+</html>

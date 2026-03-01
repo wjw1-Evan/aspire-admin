@@ -4,27 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智慧园区管理系统 | Smart Park OS</title>
-    <!-- Fonts (Domestic Mirror) -->
-    <link rel="preconnect" href="https://fonts.loli.net">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.loli.net/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@300;500;700&display=swap"
-        rel="stylesheet">
-
+    <title>智慧园区管理系统 - 产品介绍</title>
     <style>
-        :root {
-            --bg-color: #030712;
-            --primary: #3b82f6;
-            --primary-glow: rgba(59, 130, 246, 0.5);
-            --secondary: #8b5cf6;
-            --accent: #06b6d4;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --glass-bg: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-        }
+        @import url('https://fonts.loli.net/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;900&display=swap');
 
         * {
             margin: 0;
@@ -33,364 +15,1921 @@
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            height: 100vh;
-            overflow: hidden;
+            font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: #fff;
+            color: #1a1a2e;
+            line-height: 1.6;
+            overflow-x: hidden;
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+
+        /* ===== 封面页 ===== */
+        .cover {
+            width: 100%;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0d1b4b 0%, #0a3d62 40%, #1a6fa8 100%);
             position: relative;
-        }
-
-        /* --- Canvas Background --- */
-        #particles-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            pointer-events: none;
-        }
-
-        /* --- Layout & Slides --- */
-        .viewport {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            z-index: 10;
-        }
-
-        .slide {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 4rem;
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-            transform: scale(1.1) translateY(20px);
-            filter: blur(10px);
+            overflow: hidden;
+            page-break-after: always;
         }
 
-        .slide.active {
-            opacity: 1;
-            pointer-events: auto;
-            transform: scale(1) translateY(0);
-            filter: blur(0);
+        .cover::before {
+            content: '';
+            position: absolute;
+            top: -200px;
+            right: -200px;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(0, 200, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
         }
 
-        .slide.exit {
-            opacity: 0;
-            transform: scale(0.95) translateY(-20px);
-            filter: blur(5px);
+        .cover::after {
+            content: '';
+            position: absolute;
+            bottom: -150px;
+            left: -150px;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(100, 100, 255, 0.12) 0%, transparent 70%);
+            border-radius: 50%;
         }
 
-        /* --- Typography --- */
-        h1 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 5rem;
-            font-weight: 800;
-            line-height: 1.1;
-            margin-bottom: 1.5rem;
-            background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+        .cover-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        .cover-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            padding: 60px 40px;
+            max-width: 900px;
+        }
+
+        .cover-badge {
+            display: inline-block;
+            background: rgba(0, 200, 255, 0.15);
+            border: 1px solid rgba(0, 200, 255, 0.4);
+            color: #00c8ff;
+            padding: 8px 24px;
+            border-radius: 30px;
+            font-size: 13px;
+            letter-spacing: 3px;
+            margin-bottom: 40px;
+            text-transform: uppercase;
+        }
+
+        .cover-title {
+            font-size: 58px;
+            font-weight: 900;
+            color: #fff;
+            line-height: 1.2;
+            margin-bottom: 20px;
+            text-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .cover-title span {
+            background: linear-gradient(90deg, #00c8ff, #7b68ee);
             -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-align: center;
-            letter-spacing: -0.02em;
-        }
-
-        h2 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 3rem;
-            margin-bottom: 3rem;
-            text-align: center;
-            background: linear-gradient(to right, var(--primary), var(--accent));
-            -webkit-background-clip: text;
-            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
-        p {
-            font-size: 1.25rem;
-            color: var(--text-muted);
-            line-height: 1.7;
-            max-width: 800px;
-            text-align: center;
-            margin-bottom: 2rem;
+        .cover-subtitle {
+            font-size: 22px;
+            color: rgba(255, 255, 255, 0.75);
+            margin-bottom: 50px;
+            font-weight: 300;
+            letter-spacing: 1px;
         }
 
-        /* --- Components: Cards --- */
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 2rem;
+        .cover-tags {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 70px;
+        }
+
+        .cover-tag {
+            padding: 10px 22px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+        }
+
+        .cover-stats {
+            display: flex;
+            gap: 60px;
+            justify-content: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            padding-top: 50px;
+        }
+
+        .cover-stat-item {
+            text-align: center;
+        }
+
+        .cover-stat-num {
+            font-size: 42px;
+            font-weight: 900;
+            color: #00c8ff;
+            line-height: 1;
+        }
+
+        .cover-stat-label {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 6px;
+            letter-spacing: 1px;
+        }
+
+        .cover-footer {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 12px;
+            z-index: 2;
+        }
+
+        /* ===== 通用页面样式 ===== */
+        .page {
             width: 100%;
-            max-width: 1400px;
+            min-height: 100vh;
+            padding: 70px 80px;
+            page-break-after: always;
+            position: relative;
         }
 
-        .card {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            backdrop-filter: blur(12px);
-            border-radius: 1.5rem;
-            padding: 2.5rem;
-            transition: transform 0.4s ease, box-shadow 0.4s ease, border-color 0.4s;
+        .page-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 50px;
+        }
+
+        .page-num {
+            font-size: 80px;
+            font-weight: 900;
+            color: #f0f4ff;
+            line-height: 1;
+            margin-right: 24px;
+            user-select: none;
+        }
+
+        .page-title-block {}
+
+        .page-label {
+            font-size: 12px;
+            color: #1a6fa8;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .page-title {
+            font-size: 32px;
+            font-weight: 800;
+            color: #0d1b4b;
+        }
+
+        .section-divider {
+            width: 50px;
+            height: 3px;
+            background: linear-gradient(90deg, #1a6fa8, #7b68ee);
+            border-radius: 2px;
+            margin: 16px 0 40px;
+        }
+
+        /* ===== 痛点页 ===== */
+        .pain-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 50px;
+        }
+
+        .pain-card {
+            padding: 28px;
+            border-radius: 16px;
+            border: 1px solid #e8edf5;
+            background: linear-gradient(135deg, #f8faff 0%, #fff 100%);
             position: relative;
             overflow: hidden;
         }
 
-        .card::before {
+        .pain-card::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
+            width: 4px;
             height: 100%;
-            background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.05), transparent 60%);
-            opacity: 0;
-            transition: opacity 0.4s;
+            background: linear-gradient(180deg, #e74c3c, #c0392b);
+            border-radius: 4px 0 0 4px;
         }
 
-        .card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-            border-color: rgba(59, 130, 246, 0.3);
+        .pain-icon {
+            font-size: 32px;
+            margin-bottom: 14px;
         }
 
-        .card:hover::before {
-            opacity: 1;
+        .pain-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: #0d1b4b;
+            margin-bottom: 8px;
         }
 
-        .card h3 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            color: white;
+        .pain-desc {
+            font-size: 14px;
+            color: #6b7280;
+            line-height: 1.7;
+        }
+
+        .solution-banner {
+            background: linear-gradient(135deg, #0d1b4b, #1a6fa8);
+            border-radius: 16px;
+            padding: 36px 48px;
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 30px;
+            color: #fff;
         }
 
-        .icon-box {
-            width: 3rem;
-            height: 3rem;
-            background: rgba(59, 130, 246, 0.1);
-            border-radius: 0.75rem;
+        .solution-text {
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 1.5;
+        }
+
+        .solution-arrow {
+            font-size: 40px;
+            color: #00c8ff;
+            flex-shrink: 0;
+        }
+
+        /* ===== 功能模块页 ===== */
+        .module-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+
+        .module-card {
+            border-radius: 16px;
+            padding: 28px 24px;
+            background: #fff;
+            border: 1px solid #e8edf5;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .module-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+
+        .module-card.color-blue::after {
+            background: linear-gradient(90deg, #1a6fa8, #00c8ff);
+        }
+
+        .module-card.color-purple::after {
+            background: linear-gradient(90deg, #7b68ee, #a855f7);
+        }
+
+        .module-card.color-green::after {
+            background: linear-gradient(90deg, #10b981, #34d399);
+        }
+
+        .module-card.color-orange::after {
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
+        }
+
+        .module-card.color-red::after {
+            background: linear-gradient(90deg, #ef4444, #f87171);
+        }
+
+        .module-card.color-teal::after {
+            background: linear-gradient(90deg, #06b6d4, #22d3ee);
+        }
+
+        .module-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.25rem;
-            color: var(--primary);
+            font-size: 24px;
+            margin-bottom: 16px;
         }
 
-        /* --- Components: Buttons --- */
-        .btn {
-            padding: 1rem 2.5rem;
-            font-size: 1.1rem;
-            font-weight: 600;
-            border-radius: 99px;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border: none;
-            color: white;
-            box-shadow: 0 4px 15px var(--primary-glow);
-            text-decoration: none;
-            display: inline-flex;
+        .module-icon.blue {
+            background: rgba(26, 111, 168, 0.1);
+        }
+
+        .module-icon.purple {
+            background: rgba(123, 104, 238, 0.1);
+        }
+
+        .module-icon.green {
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .module-icon.orange {
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .module-icon.red {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .module-icon.teal {
+            background: rgba(6, 182, 212, 0.1);
+        }
+
+        .module-name {
+            font-size: 17px;
+            font-weight: 700;
+            color: #0d1b4b;
+            margin-bottom: 10px;
+        }
+
+        .module-desc {
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .module-features {
+            list-style: none;
+        }
+
+        .module-features li {
+            font-size: 12px;
+            color: #374151;
+            padding: 3px 0;
+            display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 6px;
         }
 
-        .btn:hover {
-            transform: translateY(-2px) scale(1.05);
-            box-shadow: 0 8px 25px var(--primary-glow);
+        .module-features li::before {
+            content: '✓';
+            color: #10b981;
+            font-weight: 700;
+            font-size: 11px;
+            flex-shrink: 0;
         }
 
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--glass-border);
-            box-shadow: none;
+        /* ===== 架构页 ===== */
+        .arch-page {
+            background: #f8faff;
         }
 
-        .btn-outline:hover {
-            border-color: var(--text-main);
-            background: rgba(255, 255, 255, 0.05);
-        }
-
-        /* --- Dashboard Simulation --- */
-        .dashboard-preview {
-            width: 1000px;
-            height: 600px;
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid var(--glass-border);
-            border-radius: 1rem;
-            display: grid;
-            grid-template-columns: 250px 1fr;
-            overflow: hidden;
-            box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.5);
-            transform: perspective(1000px) rotateX(5deg);
-            transition: transform 0.5s ease;
-        }
-
-        .dashboard-preview:hover {
-            transform: perspective(1000px) rotateX(0deg);
-        }
-
-        .sidebar {
-            border-right: 1px solid var(--glass-border);
-            padding: 1.5rem;
-        }
-
-        .sidebar-item {
-            height: 12px;
-            width: 60%;
-            background: linear-gradient(90deg, var(--glass-border), transparent);
-            margin-bottom: 2rem;
-            border-radius: 6px;
-        }
-
-        .main-content {
-            padding: 2rem;
-            display: grid;
-            grid-template-rows: auto 1fr;
-            gap: 2rem;
-        }
-
-        .header-bar {
+        .arch-diagram {
             display: flex;
-            gap: 1rem;
+            flex-direction: column;
+            gap: 20px;
         }
 
-        .stat-card {
-            height: 100px;
-            background: var(--glass-bg);
-            border-radius: 0.75rem;
-            flex: 1;
+        .arch-layer {
+            border-radius: 16px;
+            padding: 24px 32px;
         }
 
-        .chart-area {
-            background: var(--glass-bg);
-            border-radius: 0.75rem;
-            flex: 1;
-            display: flex;
-            align-items: flex-end;
-            padding: 2rem;
-            gap: 1rem;
-            justify-content: space-between;
-        }
-
-        .bar {
-            width: 100%;
-            background: linear-gradient(to top, var(--primary), var(--accent));
+        .arch-layer-title {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
             opacity: 0.7;
-            border-radius: 4px 4px 0 0;
-            transition: height 1s ease;
         }
 
-        /* --- Progress & Controls --- */
-        .progress-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            height: 3px;
-            background: linear-gradient(to right, var(--primary), var(--secondary));
-            width: 0%;
-            transition: width 0.5s;
-            z-index: 100;
-        }
-
-        .nav-controls {
-            position: fixed;
-            bottom: 3rem;
-            right: 3rem;
+        .arch-layer-items {
             display: flex;
-            gap: 1rem;
-            z-index: 50;
+            gap: 12px;
+            flex-wrap: wrap;
         }
 
-        .nav-btn {
-            width: 3rem;
-            height: 3rem;
+        .arch-item {
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .arch-layer.frontend {
+            background: linear-gradient(135deg, rgba(123, 104, 238, 0.12), rgba(123, 104, 238, 0.06));
+            border: 1px solid rgba(123, 104, 238, 0.2);
+        }
+
+        .arch-layer.frontend .arch-layer-title {
+            color: #7b68ee;
+        }
+
+        .arch-layer.frontend .arch-item {
+            color: #7b68ee;
+            border-color: rgba(123, 104, 238, 0.3);
+        }
+
+        .arch-layer.backend {
+            background: linear-gradient(135deg, rgba(26, 111, 168, 0.12), rgba(26, 111, 168, 0.06));
+            border: 1px solid rgba(26, 111, 168, 0.2);
+        }
+
+        .arch-layer.backend .arch-layer-title {
+            color: #1a6fa8;
+        }
+
+        .arch-layer.backend .arch-item {
+            color: #1a6fa8;
+            border-color: rgba(26, 111, 168, 0.3);
+        }
+
+        .arch-layer.data {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(16, 185, 129, 0.06));
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .arch-layer.data .arch-layer-title {
+            color: #10b981;
+        }
+
+        .arch-layer.data .arch-item {
+            color: #10b981;
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .arch-layer.infra {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.06));
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .arch-layer.infra .arch-layer-title {
+            color: #d97706;
+        }
+
+        .arch-layer.infra .arch-item {
+            color: #d97706;
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .arch-arrow {
+            text-align: center;
+            color: #cbd5e1;
+            font-size: 20px;
+            margin: -8px 0;
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-top: 30px;
+        }
+
+        .tech-item {
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            background: #fff;
+            border: 1px solid #e8edf5;
+        }
+
+        .tech-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .tech-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: #0d1b4b;
+            margin-bottom: 4px;
+        }
+
+        .tech-desc {
+            font-size: 11px;
+            color: #9ca3af;
+        }
+
+        /* ===== 安全页 ===== */
+        .security-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .security-card {
+            padding: 28px;
+            border-radius: 16px;
+            background: #fff;
+            border: 1px solid #e8edf5;
+            display: flex;
+            gap: 20px;
+        }
+
+        .security-icon-wrap {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #0d1b4b, #1a6fa8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            flex-shrink: 0;
+            color: #fff;
+        }
+
+        .security-content {}
+
+        .security-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0d1b4b;
+            margin-bottom: 8px;
+        }
+
+        .security-desc {
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.7;
+        }
+
+        /* ===== AI页 ===== */
+        .ai-hero {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            border-radius: 20px;
+            padding: 48px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 48px;
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ai-hero::before {
+            content: '🤖';
+            position: absolute;
+            right: 48px;
+            font-size: 120px;
+            opacity: 0.1;
+        }
+
+        .ai-title {
+            font-size: 30px;
+            font-weight: 800;
+            margin-bottom: 14px;
+        }
+
+        .ai-subtitle {
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.7;
+            max-width: 500px;
+        }
+
+        .ai-badge {
+            display: inline-block;
+            background: rgba(0, 200, 255, 0.15);
+            border: 1px solid rgba(0, 200, 255, 0.4);
+            color: #00c8ff;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-bottom: 16px;
+        }
+
+        .ai-features-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 18px;
+        }
+
+        .ai-feature {
+            padding: 22px;
+            border-radius: 14px;
+            background: #fff;
+            border: 1px solid #e8edf5;
+            text-align: center;
+        }
+
+        .ai-feature-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .ai-feature-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: #0d1b4b;
+            margin-bottom: 8px;
+        }
+
+        .ai-feature-desc {
+            font-size: 12px;
+            color: #6b7280;
+            line-height: 1.6;
+        }
+
+        /* ===== 价值页 ===== */
+        .value-hero {
+            background: linear-gradient(135deg, #0d1b4b, #1a6fa8);
+            border-radius: 20px;
+            padding: 48px;
+            text-align: center;
+            color: #fff;
+            margin-bottom: 40px;
+        }
+
+        .value-hero-title {
+            font-size: 34px;
+            font-weight: 900;
+            margin-bottom: 16px;
+        }
+
+        .value-hero-desc {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.75);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .value-metrics {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .metric-card {
+            text-align: center;
+            padding: 30px 20px;
+            border-radius: 16px;
+            background: #fff;
+            border: 1px solid #e8edf5;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #1a6fa8, #00c8ff);
+        }
+
+        .metric-num {
+            font-size: 42px;
+            font-weight: 900;
+            color: #1a6fa8;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .metric-unit {
+            font-size: 20px;
+        }
+
+        .metric-label {
+            font-size: 13px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .value-points {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .value-point {
+            display: flex;
+            gap: 20px;
+            padding: 24px;
+            border-radius: 14px;
+            background: #f8faff;
+            border: 1px solid #e8edf5;
+            align-items: flex-start;
+        }
+
+        .value-point-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #1a6fa8, #00c8ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .value-point-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0d1b4b;
+            margin-bottom: 6px;
+        }
+
+        .value-point-desc {
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.6;
+        }
+
+        /* ===== 结尾CTA页 ===== */
+        .cta-page {
+            background: linear-gradient(135deg, #0d1b4b 0%, #0a3d62 50%, #1a6fa8 100%);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            gap: 0;
+            position: relative;
+            overflow: hidden;
+            page-break-after: avoid;
+        }
+
+        .cta-page::before {
+            content: '';
+            position: absolute;
+            top: -100px;
+            right: -100px;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(0, 200, 255, 0.12) 0%, transparent 70%);
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: white;
-            cursor: pointer;
-            backdrop-filter: blur(4px);
-            transition: all 0.2s;
         }
 
-        .nav-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
+        .cta-grid-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        .cta-content {
+            position: relative;
+            z-index: 2;
+            max-width: 800px;
+        }
+
+        .cta-badge {
+            display: inline-block;
+            background: rgba(0, 200, 255, 0.15);
+            border: 1px solid rgba(0, 200, 255, 0.4);
+            color: #00c8ff;
+            padding: 8px 24px;
+            border-radius: 30px;
+            font-size: 13px;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+        }
+
+        .cta-title {
+            font-size: 46px;
+            font-weight: 900;
+            line-height: 1.3;
+            margin-bottom: 20px;
+        }
+
+        .cta-title span {
+            background: linear-gradient(90deg, #00c8ff, #7b68ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .cta-subtitle {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 40px;
+            line-height: 1.7;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .contact-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+            margin-bottom: 50px;
+            backdrop-filter: blur(10px);
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .contact-info {
+            text-align: center;
+            display: flex;
+            flex-direction: row;
+            gap: 60px;
+        }
+
+        .contact-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .contact-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .contact-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .cta-contacts-bottom {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .cta-contact-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .cta-contact-icon {
+            font-size: 18px;
+        }
+
+        .cta-contact-label {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .cta-contact-value {
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .cta-footer {
+            position: absolute;
+            bottom: 40px;
+            left: 0;
+            right: 0;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 11px;
+            letter-spacing: 1px;
+        }
+
+        /* 打印/PDF样式 */
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .page,
+            .cover,
+            .cta-page {
+                page-break-after: always;
+            }
+        }
+
+        /* ===== 手机竖屏响应式（≤768px）===== */
+        @media (max-width: 768px) {
+
+            /* 封面 */
+            .cover-content {
+                padding: 32px 18px;
+                max-width: 100%;
+            }
+
+            .cover-badge {
+                font-size: 11px;
+                letter-spacing: 2px;
+                padding: 6px 16px;
+                margin-bottom: 28px;
+            }
+
+            .cover-title {
+                font-size: 34px;
+                margin-bottom: 14px;
+            }
+
+            .cover-subtitle {
+                font-size: 14px;
+                margin-bottom: 24px;
+                letter-spacing: 0.5px;
+            }
+
+            .cover-tags {
+                gap: 8px;
+                margin-bottom: 32px;
+            }
+
+            .cover-tag {
+                padding: 7px 12px;
+                font-size: 12px;
+            }
+
+            .cover-stats {
+                gap: 16px 28px;
+                flex-wrap: wrap;
+                padding-top: 24px;
+                justify-content: center;
+            }
+
+            .cover-stat-item {
+                min-width: 72px;
+            }
+
+            .cover-stat-num {
+                font-size: 28px;
+            }
+
+            .cover-stat-label {
+                font-size: 11px;
+            }
+
+            /* 通用页面 */
+            .page {
+                padding: 36px 16px;
+                min-height: auto;
+            }
+
+            .page-header {
+                margin-bottom: 20px;
+                align-items: flex-start;
+            }
+
+            /* 手机上页码数字太占位，缩小并弱化 */
+            .page-num {
+                font-size: 36px;
+                margin-right: 10px;
+                color: #e8edf5;
+                line-height: 1.1;
+                flex-shrink: 0;
+            }
+
+            .page-label {
+                font-size: 10px;
+            }
+
+            .page-title {
+                font-size: 20px;
+            }
+
+            .section-divider {
+                margin: 10px 0 24px;
+            }
+
+            /* 痛点页 */
+            .pain-grid {
+                grid-template-columns: 1fr;
+                gap: 14px;
+                margin-bottom: 24px;
+            }
+
+            .pain-card {
+                padding: 20px 18px 20px 22px;
+            }
+
+            .pain-icon {
+                font-size: 26px;
+                margin-bottom: 10px;
+            }
+
+            .pain-title {
+                font-size: 15px;
+            }
+
+            .pain-desc {
+                font-size: 13px;
+            }
+
+            .solution-banner {
+                flex-direction: column;
+                padding: 20px 18px;
+                gap: 12px;
+                text-align: center;
+            }
+
+            .solution-arrow {
+                font-size: 28px;
+            }
+
+            .solution-text {
+                font-size: 14px;
+            }
+
+            /* 功能模块页 */
+            .module-grid {
+                grid-template-columns: 1fr;
+                gap: 14px;
+            }
+
+            .module-card {
+                padding: 20px 18px;
+            }
+
+            .module-icon {
+                width: 44px;
+                height: 44px;
+                font-size: 20px;
+                margin-bottom: 12px;
+            }
+
+            .module-name {
+                font-size: 15px;
+            }
+
+            .module-desc {
+                font-size: 12px;
+            }
+
+            /* 架构页 */
+            .arch-layer {
+                padding: 14px 16px;
+            }
+
+            .arch-layer-title {
+                font-size: 11px;
+                margin-bottom: 12px;
+            }
+
+            .arch-layer-items {
+                gap: 8px;
+            }
+
+            .arch-item {
+                padding: 7px 12px;
+                font-size: 11px;
+            }
+
+            .arch-item small {
+                font-size: 10px;
+                display: block;
+                opacity: 0.8;
+                margin-top: 2px;
+            }
+
+            .tech-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+                margin-top: 20px;
+            }
+
+            .tech-icon {
+                font-size: 22px;
+            }
+
+            .tech-name {
+                font-size: 12px;
+            }
+
+            .tech-desc {
+                font-size: 10px;
+            }
+
+            /* AI页 */
+            .ai-hero {
+                flex-direction: column;
+                padding: 24px 18px;
+                gap: 0;
+                margin-bottom: 20px;
+            }
+
+            /* 手机上隐藏大背景机器人 emoji */
+            .ai-hero::before {
+                display: none;
+            }
+
+            .ai-badge {
+                font-size: 10px;
+                padding: 4px 10px;
+            }
+
+            .ai-title {
+                font-size: 22px;
+                margin-bottom: 10px;
+            }
+
+            .ai-subtitle {
+                font-size: 13px;
+                max-width: 100%;
+            }
+
+            .ai-features-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+
+            .ai-feature {
+                padding: 16px 12px;
+            }
+
+            .ai-feature-icon {
+                font-size: 26px;
+                margin-bottom: 8px;
+            }
+
+            .ai-feature-name {
+                font-size: 13px;
+                margin-bottom: 6px;
+            }
+
+            .ai-feature-desc {
+                font-size: 11px;
+            }
+
+            /* 安全页 */
+            .security-grid {
+                grid-template-columns: 1fr;
+                gap: 14px;
+            }
+
+            .security-card {
+                padding: 18px 16px;
+                gap: 14px;
+            }
+
+            .security-icon-wrap {
+                width: 46px;
+                height: 46px;
+                font-size: 22px;
+                border-radius: 12px;
+                flex-shrink: 0;
+            }
+
+            .security-title {
+                font-size: 14px;
+            }
+
+            .security-desc {
+                font-size: 12px;
+            }
+
+            /* 价值页 */
+            .value-hero {
+                padding: 28px 18px;
+                margin-bottom: 20px;
+                border-radius: 16px;
+            }
+
+            .value-hero-title {
+                font-size: 22px;
+                margin-bottom: 10px;
+            }
+
+            .value-hero-desc {
+                font-size: 13px;
+            }
+
+            .value-metrics {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                margin-bottom: 20px;
+            }
+
+            .metric-card {
+                padding: 22px 12px;
+            }
+
+            .metric-num {
+                font-size: 28px;
+                margin-bottom: 6px;
+            }
+
+            .metric-unit {
+                font-size: 16px;
+            }
+
+            .metric-label {
+                font-size: 11px;
+            }
+
+            .value-points {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .value-point {
+                padding: 18px 16px;
+                gap: 14px;
+            }
+
+            .value-point-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+                border-radius: 10px;
+            }
+
+            .value-point-title {
+                font-size: 14px;
+            }
+
+            .value-point-desc {
+                font-size: 12px;
+            }
+
+            /* CTA结尾页 */
+            .cta-page {
+                padding: 48px 18px;
+            }
+
+            .cta-content {
+                max-width: 100%;
+                padding: 0;
+            }
+
+            .cta-badge {
+                font-size: 11px;
+                padding: 6px 16px;
+                margin-bottom: 20px;
+            }
+
+            .cta-title {
+                font-size: 28px;
+                margin-bottom: 14px;
+            }
+
+            .cta-desc {
+                font-size: 14px;
+                margin-bottom: 28px;
+                line-height: 1.6;
+            }
+
+            .cta-contacts {
+                flex-direction: column;
+                gap: 20px;
+                align-items: center;
+                margin-bottom: 28px;
+            }
+
+            .cta-contact-icon {
+                width: 48px;
+                height: 48px;
+                font-size: 20px;
+            }
+
+            .cta-contact-value {
+                font-size: 13px;
+            }
+
+            .cta-bottom {
+                flex-wrap: wrap;
+                gap: 8px;
+                justify-content: center;
+                padding-top: 20px;
+                font-size: 11px;
+            }
+        }
+
+        /* ===== 超小屏（≤480px）===== */
+        @media (max-width: 480px) {
+            .cover-title {
+                font-size: 28px;
+            }
+
+            .cover-stats {
+                /* 4个统计项在极小屏保持2列布局 */
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 16px 10px;
+                text-align: center;
+            }
+
+            .cover-stat-item {
+                min-width: unset;
+                width: 100%;
+            }
+
+            .page {
+                padding: 28px 14px;
+            }
+
+            .page-num {
+                font-size: 28px;
+            }
+
+            .page-title {
+                font-size: 18px;
+            }
+
+            .ai-features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .value-metrics {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .cta-title {
+                font-size: 24px;
+            }
+
+            .tech-grid {
+                grid-template-columns: 1fr 1fr;
+            }
         }
     </style>
 </head>
 
 <body>
 
-    <canvas id="particles-canvas"></canvas>
-    <div class="progress-bar" id="progress"></div>
-
-    <div class="viewport">
-
-        <!-- Slide 1: Hero -->
-        <div class="slide active" id="slide-0">
-            <div style="position: relative; z-index: 2; text-align: center;">
-                <div
-                    style="font-size: 1.5rem; color: var(--accent); margin-bottom: 1rem; letter-spacing: 0.2rem; text-transform: uppercase; font-weight: 600;">
-                    Aspire Admin Pro</div>
-                <h1>智慧园区 • 数字未来<br><span
-                        style="background: linear-gradient(to right, #4ade80, #3b82f6); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Smart
-                        Park Management</span></h1>
-                <p>重塑园区运营模式，打造高效、智能、可持续的现代化产业社区。</p>
-                <div style="margin-top: 3rem; display: flex; gap: 1.5rem; justify-content: center;">
-                    <button class="btn" onclick="nextSlide()">立即探索 ➔</button>
-                    <button class="btn btn-outline"
-                        onclick="window.location.href='mailto:fsy_008@163.com'">联系我们</button>
-                </div>
+    <!-- ==================== 封面 ==================== -->
+    <div class="cover">
+        <div class="cover-grid"></div>
+        <div class="cover-content">
+            <div class="cover-badge">SMART PARK PLATFORM</div>
+            <h1 class="cover-title">
+                智慧园区<br><span>全栈管理平台</span>
+            </h1>
+            <p class="cover-subtitle">数字化转型 · 全域感控 · AI 驱动管理新范式</p>
+            <div class="cover-tags">
+                <span class="cover-tag">&#127970; 资产管理</span>
+                <span class="cover-tag">&#129309; 招商管理</span>
+                <span class="cover-tag">&#128225; IoT 物联网</span>
+                <span class="cover-tag">&#129302; AI 助手</span>
+                <span class="cover-tag">&#9889; 工作流引擎</span>
+                <span class="cover-tag">&#128241; 全端协同</span>
             </div>
-            <!-- Decorative circle behind -->
-            <div
-                style="position: absolute; width: 600px; height: 600px; background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%); border-radius: 50%; z-index: 1; filter: blur(50px);">
-            </div>
-        </div>
-
-        <!-- Slide 2: The Challenge (Why Us) -->
-        <div class="slide" id="slide-1">
-            <h2>传统园区 vs 智慧园区</h2>
-            <div class="grid-container" style="grid-template-columns: 1fr 1fr; max-width: 1000px;">
-                <div class="card" style="border-color: rgba(239, 68, 68, 0.2);">
-                    <h3 style="color: #f87171;">🚫 传统痛点 (Pain Points)</h3>
-                    <ul
-                        style="list-style: none; color: var(--text-muted); display: flex; flex-direction: column; gap: 1rem;">
-                        <li>• <strong>数据孤岛</strong>：各系统独立，数据无法互通</li>
-                        <li>• <strong>管理低效</strong>：依赖人工记录，流程繁琐</li>
-                        <li>• <strong>被动服务</strong>：响应滞后，租户体验差</li>
-                        <li>• <strong>能耗盲区</strong>：水电浪费严重，无法精细化管控</li>
-                    </ul>
+            <div class="cover-stats">
+                <div class="cover-stat-item">
+                    <div class="cover-stat-num">18+</div>
+                    <div class="cover-stat-label">语言支持</div>
                 </div>
-                <div class="card" style="border-color: rgba(59, 130, 246, 0.5); background: rgba(59, 130, 246, 0.05);">
-                    <h3 style="color: #60a5fa;">✅ 智慧解决方案 (Solution)</h3>
-                    <ul
-                        style="list-style: none; color: var(--text-main); display: flex; flex-direction: column; gap: 1rem;">
-                        <li>• <strong>万物互联</strong>：IoT设备实时接入，数据统一汇聚</li>
-                        <li>• <strong>智能决策</strong>：AI驱动的数据驾驶舱，辅助运营</li>
-                        <li>• <strong>主动服务</strong>：移动端工单系统，极速响应</li>
-                        <li>• <strong>绿色低碳</strong>：智能抄表与能耗分析，节能降耗</li>
-                    </ul>
+                <div class="cover-stat-item">
+                    <div class="cover-stat-num">15+</div>
+                    <div class="cover-stat-label">AI 工具集</div>
+                </div>
+                <div class="cover-stat-item">
+                    <div class="cover-stat-num">3端</div>
+                    <div class="cover-stat-label">跨端协同</div>
+                </div>
+                <div class="cover-stat-item">
+                    <div class="cover-stat-num">100%</div>
+                    <div class="cover-stat-label">多租户隔离</div>
                 </div>
             </div>
         </div>
+        <div class="cover-footer">
+            密级：内部公开 · 2026 © 天津融众信息技术有限公司 · 版权所有
+        </div>
+    </div>
 
-        <!-- Slide 3: Dashboard Demo (High Fidelity & Module Aligned) -->
-        <div class="slide" id="slide-2">
+    <!-- ==================== 第1页：行业痛点 ==================== -->
+    <div class="page">
+        <div class="page-header">
+            <div class="page-num">01</div>
+            <div class="page-title-block">
+                <div class="page-label">CHALLENGE</div>
+                <div class="page-title">传统园区管理的困境</div>
+            </div>
+        </div>
+        <div class="section-divider"></div>
 
+        <div class="pain-grid">
+            <div class="pain-card">
+                <div class="pain-icon">&#128203;</div>
+                <div class="pain-title">信息孤岛，架构僵化</div>
+                <div class="pain-desc">多业态数据分散在遗留系统中，无法形成统一全景视图。决策高度依赖人工汇总，效率不仅低下且存在严重的数据一致性隐患。</div>
+            </div>
+            <div class="pain-card">
+                <div class="pain-icon">&#128225;</div>
+                <div class="pain-title">设备监控“感而不传”</div>
+                <div class="pain-desc">大量底层设备缺乏标准化统一接入，监控盲区多。传感器数据无法实时转化为运营洞察，导致维护成本高、故障响应慢。</div>
+            </div>
+            <div class="pain-card">
+                <div class="pain-icon">&#128260;</div>
+                <div class="pain-title">业务协同链条断裂</div>
+                <div class="pain-desc">审批流程黑盒化，进度不可追溯。部门间协同依然依赖线下沟通，导致招商、服务与资产管理之间存在严重的执行断层。</div>
+            </div>
+            <div class="pain-card">
+                <div class="pain-icon">&#128241;</div>
+                <div class="pain-title">移动办公体验脱节</div>
+                <div class="pain-desc">现场走访记录依赖纸面，管理人员在移动中无法即时调度资源，对突发事件的感知滞后，服务品质难以标准化。</div>
+            </div>
+            <div class="pain-card">
+                <div class="pain-icon">&#127970;</div>
+                <div class="pain-title">招商全过程管控缺失</div>
+                <div class="pain-desc">客户公海池缺乏精细化漏斗分析，线索流失率高。合同条款合规性、租金递增逻辑等核心规则全凭经验，管控风险巨大。</div>
+            </div>
+            <div class="pain-card">
+                <div class="pain-icon">&#128274;</div>
+                <div class="pain-title">合规与安全边界模糊</div>
+                <div class="pain-desc">多租户混合运营下数据隔离标准不一，敏感资产访问缺乏细粒度审计日志。数字化转型的同时面临日益严峻的合规审计压力。</div>
+            </div>
+        </div>
+
+        <div class="solution-banner">
+            <div class="solution-arrow">&#128161;</div>
+            <div class="solution-text">
+                <strong>智慧园区管理系统</strong>以AI驱动为核心，打造覆盖<strong>资产管理、招商运营、IoT监控、工作流自动化</strong>的全栈闭环解决方案，彻底解决上述痛点。
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 第2页：核心功能模块 ==================== -->
+    <div class="page">
+        <div class="page-header">
+            <div class="page-num">02</div>
+            <div class="page-title-block">
+                <div class="page-label">CORE FEATURES</div>
+                <div class="page-title">六大核心功能模块</div>
+            </div>
+        </div>
+        <div class="section-divider"></div>
+
+        <div class="module-grid">
+            <div class="module-card color-blue">
+                <div class="module-icon blue">&#127970;</div>
+                <div class="module-name">全生命周期资产管理</div>
+                <div class="module-desc">通过数字化手段拉通“房-人-合同”，实现资产价值的最大化利用。</div>
+                <ul class="module-features">
+                    <li>3D 楼栋/房源画像精细化管理</li>
+                    <li>招商公海池与全过程线索跟踪</li>
+                    <li>多级阶梯规则的合同生命周期管理</li>
+                    <li>多业态租户静态档案与走访轨迹</li>
+                    <li>入驻/退租环节全自动线上化办理</li>
+                </ul>
+            </div>
+
+            <div class="module-card color-teal">
+                <div class="module-icon teal">&#128225;</div>
+                <div class="module-name">通用 IoT 感知中台</div>
+                <div class="module-desc">多协议接入，让园区每一个传感器都能实时“发声”，驱动自动运营。</div>
+                <ul class="module-features">
+                    <li>工业级网关与各种协议适配接入</li>
+                    <li>高频传感器数据点分布式采集引擎</li>
+                    <li>场景化可配置的设备状态监控仪表盘</li>
+                    <li>策略驱动的事件告警与工单联动闭环</li>
+                    <li>基于 AI 的设备健康度预测与故障分析</li>
+                </ul>
+            </div>
+
+            <div class="module-card color-purple">
+                <div class="module-icon purple">&#9889;</div>
+                <div class="module-name">低代码工作流引擎</div>
+                <div class="module-desc">用业务逻辑驱动流程，让每一项审批都有迹可循，满足复杂场景诉求。</div>
+                <ul class="module-features">
+                    <li>工业级可视化拖拽流程设计面板</li>
+                    <li>独家支持动态公文与业务变量混合模式</li>
+                    <li>深度集成的 AI 智能审批执行器</li>
+                    <li>支持全链路快照的精确审计追溯</li>
+                    <li>灵活的版本控制与一键流程回滚机制</li>
+                </ul>
+            </div>
+
+            <div class="module-card color-orange">
+                <div class="module-icon orange">&#129302;</div>
+                <div class="module-name">AI 小科·智能助手</div>
+                <div class="module-desc">基于独有 MCP 协议，让 AI 深入业务骨髓，成为园区的“数字管家”。</div>
+                <ul class="module-features">
+                    <li>毫秒级响应的 SSE 沉浸式对话体验</li>
+                    <li>内置 15+ 涵盖全业务链条的工具集</li>
+                    <li>AI 辅助式审批与智能工作流分发</li>
+                    <li>设备运行状态的实时语义化分析</li>
+                    <li>多维度的园区运营 AI 生成式报告</li>
+                </ul>
+            </div>
+
+            <div class="module-card color-green">
+                <div class="module-icon green">&#9729;&#65039;</div>
+                <div class="module-name">安全文件协同共享</div>
+                <div class="module-desc">不仅是存储，更是基于权限的数字化凭证中心。</div>
+                <ul class="module-features">
+                    <li>基于 GridFS 的分布式冗余存储架构</li>
+                    <li>秒传技术与智能多版本并发冲突管理</li>
+                    <li>自动化的生命周期管理与回收站策略</li>
+                    <li>精细到项目维度的多维存储配额审计</li>
+                    <li>安全的外链分享权限控制与全量审计</li>
+                </ul>
+            </div>
+
+            <div class="module-card color-red">
+                <div class="module-icon red">&#128276;</div>
+                <div class="module-name">统一协同通知中心</div>
+                <div class="module-desc">打破沟通壁垒，确保核心业务指令在 Web、移动端精准送达。</div>
+                <ul class="module-features">
+                    <li>全场景通知推送与公告分类管理</li>
+                    <li>业务指令的多渠道冗余触达响应机制</li>
+                    <li>集成的看板视图与任务依赖关系管理</li>
+                    <li>三端高度协同的实时状态同步技术</li>
+                    <li>工业级心跳监测与自动静默重连机制</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 第3页：技术架构 ==================== -->
+    <div class="page arch-page">
+        <div class="page-header">
+            <div class="page-num">03</div>
+            <div class="page-title-block">
+                <div class="page-label">ARCHITECTURE</div>
+                <div class="page-title">高可靠·可扩展的技术架构</div>
+            </div>
+        </div>
+        <div class="section-divider"></div>
+        <p style="font-size: 14px; color: #6b7280; margin-bottom: 30px; line-height: 1.6;">本平台采用 <strong>Clean
+                Architecture (核心业务逻辑与基础设施完全解耦)</strong> 设计理念，基于最新的 <strong>.NET 10</strong> 开发。通过 <strong>.NET
+                Aspire</strong> 实现云原生分布式编排，确保系统在面对大规模并发与复杂业务逻辑时，依然保持极致的稳定性与响应速度。</p>
+
+        <div class="arch-diagram">
+            <div class="arch-layer frontend">
+                <div class="arch-layer-title">&#128421; 前端接入层（Multi-Terminal）</div>
+                <div class="arch-layer-items">
+                    <div class="arch-item">Platform.Admin<br><small>React 19 + Ant Design 6</small></div>
+                    <div class="arch-item">Platform.App<br><small>Expo 54 + React Native</small></div>
+                    <div class="arch-item">Platform.MiniApp<br><small>微信原生小程序</small></div>
+                </div>
+            </div>
+            <div class="arch-arrow">&#11015;</div>
+            <div class="arch-layer backend">
+                <div class="arch-layer-title">&#9881;&#65039; 后端服务层（.NET 10 + Aspire）</div>
+                <div class="arch-layer-items">
+                    <div class="arch-item">YARP API 网关</div>
+                    <div class="arch-item">Platform.ApiService（核心业务）</div>
+                    <div class="arch-item">MCP 服务（AI 集成）</div>
+                    <div class="arch-item">SSE 实时推送</div>
+                    <div class="arch-item">工作流引擎</div>
+                    <div class="arch-item">IoT 平台</div>
+                </div>
+            </div>
+            <div class="arch-arrow">&#11015;</div>
+            <div class="arch-layer data">
+                <div class="arch-layer-title">&#128452; 数据访问层（IDataFactory）</div>
+                <div class="arch-layer-items">
+                    <div class="arch-item">IDataFactory&lt;T&gt;（统一抽象）</div>
+                    <div class="arch-item">多租户全局过滤</div>
+                    <div class="arch-item">软删除 + 审计追踪</div>
+                    <div class="arch-item">原子化 Lambda 更新</div>
+                </div>
+            </div>
+            <div class="arch-arrow">&#11015;</div>
+            <div class="arch-layer infra">
+                <div class="arch-layer-title">&#127959; 基础设施层（Cloud Native）</div>
+                <div class="arch-layer-items">
+                    <div class="arch-item">MongoDB（主数据库）</div>
+                    <div class="arch-item">Redis（缓存层）</div>
+                    <div class="arch-item">GridFS（文件存储）</div>
+                    <div class="arch-item">OpenTelemetry（可观测）</div>
+                    <div class="arch-item">Docker 容器化</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tech-grid">
+            <div class="tech-item">
+                <div class="tech-icon">&#128311;</div>
+                <div class="tech-name">.NET 10 / Aspire</div>
+                <div class="tech-desc">工业级运行时与云原生分布式编轨</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-icon">&#9883;&#65039;</div>
+                <div class="tech-name">React 19 / Vite</div>
+                <div class="tech-desc">极致渲染性能与零负载状态流转</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-icon">&#128202;</div>
+                <div class="tech-name">OpenTelemetry</div>
+                <div class="tech-desc">全链路分布式追踪与可观测性</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-icon">&#128272;</div>
+                <div class="tech-name">AES-256-GCM</div>
+                <div class="tech-desc">军工级数据端到端落盘加密</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 第4页：AI能力 ==================== -->
+    <div class="page">
+        <div class="page-header">
+            <div class="page-num">04</div>
+            <div class="page-title-block">
+                <div class="page-label">AI CAPABILITY</div>
+                <div class="page-title">全栈 AI 协同能力</div>
+            </div>
+        </div>
+        <div class="section-divider"></div>
+
+        <div class="ai-hero">
+            <div>
+                <div class="ai-badge">MCP · MODEL CONTEXT PROTOCOL</div>
+                <div class="ai-title">小科 AI 助手：不只是对话，更是行动</div>
+                <div class="ai-subtitle">
+                    业界领先的 <strong>MCP 协议</strong> 深度集成模式。它不再是被动的知识库，而是拥有“手脚”的智能代理。通过标准化的上下文协议，AI
+                    助理可以<strong>实时读取业务数据库、精准操作工作流、并自动感知底层 IoT 设备状态</strong>。支持无缝切换 OpenAI、DeepSeek、Azure 等全球主流大模型。
+                </div>
+            </div>
+        </div>
+
+        <div class="ai-features-grid">
+            <div class="ai-feature">
+                <div class="ai-feature-icon">&#9889;</div>
+                <div class="ai-feature-name">工作流自动化</div>
+                <div class="ai-feature-desc">AI 可直接执行审批、驳回、转办操作，检索流程状态，获取完整审批历史轨迹</div>
+            </div>
+            <div class="ai-feature">
+                <div class="ai-feature-icon">&#128225;</div>
+                <div class="ai-feature-name">IoT 智能监控</div>
+                <div class="ai-feature-desc">实时拉取设备传感器数据，自动生成分析报表，及时预警设备异常事件</div>
+            </div>
+            <div class="ai-feature">
+                <div class="ai-feature-icon">&#127970;</div>
+                <div class="ai-feature-name">园区数据检索</div>
+                <div class="ai-feature-desc">房源状态、招商线索、租户档案、走访记录，AI 一键查询企业级数据</div>
+            </div>
+            <div class="ai-feature">
+                <div class="ai-feature-icon">&#128203;</div>
+                <div class="ai-feature-name">任务智能管理</div>
+                <div class="ai-feature-desc">自动化创建任务、指派负责人、更新进度看板，项目管理效率翻倍提升</div>
+            </div>
+            <div class="ai-feature">
+                <div class="ai-feature-icon">&#128200;</div>
+                <div class="ai-feature-name">运营分析报告</div>
+                <div class="ai-feature-desc">AI 自动生成园区运营分析报告，涵盖园区统计、访客分析、收益趋势等维度</div>
+            </div>
+            <div class="ai-feature">
+                <div class="ai-feature-icon">&#128274;</div>
+                <div class="ai-feature-name">安全审计追踪</div>
+                <div class="ai-feature-desc">所有 AI 工具执行操作均记录审计日志，防注入攻击，合规可追溯</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 第5页：安全与合规 ==================== -->
+    <div class="page" style="background:#f8faff;">
+        <div class="page-header">
+            <div class="page-num">05</div>
+            <div class="page-title-block">
+                <div class="page-label">SECURITY & COMPLIANCE</div>
+                <div class="page-title">三级等保与国家密评合规体系</div>
+            </div>
+        </div>
+        <div class="section-divider"></div>
+        <p style="font-size: 14px; color: #6b7280; margin-bottom: 30px; line-height: 1.6;">本平台严格遵循<strong>网络安全等级保护 2.0
+                (三级等保)</strong> 与 <strong>国家密码应用安全性评估 (国家密评)</strong> 标准。从系统底层即内嵌了符合国家商用密码管理局要求的 <strong>SM2、SM3、SM4
+                核心加密组件</strong>，在身份鉴别、访问控制及全生命周期数据保护等方面均建立了行业顶尖的深度防御体系。通过多维隔离与细粒度审计日志，确保每一层级业务逻辑都在极致安全的“围墙”内可靠运行。</p>
+        </p>
+
+        <div class="security-grid">
+            <div class="security-card">
+                <div class="security-icon-wrap">&#128272;</div>
+                <div class="security-content">
+                    <div class="security-title">JWT 双令牌认证</div>
+                    <div class="security-desc">基于 JSON Web Token 的无状态认证机制，配合 Access Token + Refresh Token
+                        双令牌刷新策略，在安全性与用户体验之间取得最优平衡。</div>
+                </div>
+            </div>
+
+            <div class="security-card">
+                <div class="security-icon-wrap">&#127970;</div>
+                <div class="security-content">
+                    <div class="security-title">多租户数据隔离</div>
+                    <div class="security-desc">通过 EF Core 全局查询过滤器自动注入 CompanyId，确保不同企业的数据在物理和逻辑层面严格隔离，彻底消除数据泄露风险。</div>
+                </div>
+            </div>
+
+            <div class="security-card">
+                <div class="security-icon-wrap">&#128274;</div>
+                <div class="security-content">
+                    <div class="security-title">国密商用密码算法 (密评)</div>
+                    <div class="security-desc">深度集成 <strong>SM2 非对称加密、SM3 杂凑、SM4 对称加密</strong>
+                        等国产密码算法标准，满足“密评”对核心资产加密、数字签名以及链路加密的严苛技术要求。同时向下兼容国际主流算法，实现全方位的敏感信息加固。</div>
+                </div>
+            </div>
+
+            <div class="security-card">
+                <div class="security-icon-wrap">&#128737;&#65039;</div>
+                <div class="security-content">
+                    <div class="security-title">输入安全防护</div>
+                    <div class="security-desc">内置防 SQL/NoSQL 注入、XSS 跨站脚本攻击检测，参数长度限制，多层安全验证，有效抵御常见网络攻击，保障系统稳定运行。</div>
+                </div>
+            </div>
+
+            <div class="security-card">
+                <div class="security-icon-wrap">&#128203;</div>
+                <div class="security-content">
+                    <div class="security-title">全链路审计日志</div>
+                    <div class="security-desc">所有敏感操作自动记录审计日志，包含操作人、时间戳、请求参数、执行结果和响应耗时，满足等保 2.0 等合规审查要求。</div>
+                </div>
+            </div>
+
+            <div class="security-card">
+                <div class="security-icon-wrap">&#128242;</div>
+                <div class="security-content">
+                    <div class="security-title">多因素身份验证 (MFA)</div>
+                    <div class="security-desc">针对管理后台关键操作，强制开启 TOTP 或短信二次校验。通过多维度的身份确权，即便账号泄露也能确保业务执行环境的绝对安全。</div>
+                </div>
+            </div>
+
+            <div class="security-card">
+                <div class="security-icon-wrap">&#9749;</div>
+                <div class="security-content">
+                    <div class="security-title">高可用冗余架构</div>
+                    <div class="security-desc">基于 .NET Aspire 的分布式部署方案，支持服务级多副本负载均衡。配合数据库定时自动备份与异地容灾策略，确保园区业务核心永不宕机。
+                    </div>
+                </div>
+            </div>
+
+            <div class="security-card">
+                <div class="security-icon-wrap">&#128065;</div>
+                <div class="security-content">
+                    <div class="security-title">物理环境安全感知</div>
+                    <div class="security-desc">深度集成园区监控与红外感知系统，AI 自动识别非法闯入与越界行为。将物理空间的安全动态实时转化为系统告警，构建数字与现实的立体防线。</div>
+                </div>
+            </div>
+            <div class="security-card">
+                <div class="security-icon-wrap">&#127760;</div>
+                <div class="security-content">
+                    <div class="security-title">传输与存储安全</div>
+                    <div class="security-desc">全链路 HTTPS 加密传输，GridFS 文件碎片化分布存储增强隐私保护，完整支持 .NET Aspire 自动化开发/生产安全策略适配。
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 第6页：客户价值 ==================== -->
+    <div class="page">
+        <div class="page-header">
+            <div class="page-num">06</div>
+            <div class="page-title-block">
+                <div class="page-label">BUSINESS VALUE</div>
+                <div class="page-title">为您的业务创造实际价值</div>
+            </div>
+        </div>
+        <div class="section-divider"></div>
+
+        <div class="value-metrics">
+            <div class="metric-card">
+                <div class="metric-num">60<span class="metric-unit">%</span></div>
+                <div class="metric-label">管理效率提升</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-num">40<span class="metric-unit">%</span></div>
+                <div class="metric-label">运营成本降低</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-num">3×</div>
+                <div class="metric-label">招商转化提速</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-num">24/7</div>
+                <div class="metric-label">AI 智能值守</div>
+            </div>
+        </div>
+
+        <div class="value-points">
+            <div class="value-point">
+                <div class="value-point-icon">&#127919;</div>
+                <div>
+                    <div class="value-point-title">极致工程效率：3天快速上线</div>
+                    <div class="value-point-desc">基于 .NET Aspire 的强大服务编排能力，彻底告别复杂的环境调试。支持一键容器化部署及自动化数据初始化，最短 72
+                        小时即可交付生产级运行环境。</div>
+                </div>
+            </div>
+            <div class="value-point">
+                <div class="value-point-icon">&#127757;</div>
+                <div>
+                    <div class="value-point-title">全球化拓展能力</div>
+                    <div class="value-point-desc">内置 18 种语言支持，完善的 RTL 布局适配，助力园区业务快速拓展至东南亚、中东等国际市场，无需额外本地化投入。</div>
+                </div>
+            </div>
+            <div class="value-point">
+                <div class="value-point-icon">&#128200;</div>
+                <div>
+                    <div class="value-point-title">数据驱动决策</div>
+                    <div class="value-point-desc">AI 自动生成园区运营报告，可视化呈现招商入驻率、设备运行状态、收益趋势等核心指标，让管理者随时掌握园区运营全貌。</div>
+                </div>
+            </div>
+            <div class="value-point">
+                <div class="value-point-icon">&#128295;</div>
+                <div>
+                    <div class="value-point-title">灵活可扩展架构</div>
+                    <div class="value-point-desc">Clean Architecture 设计，IDataFactory
+                        数据层抽象，业务逻辑与基础设施完全解耦，轻松接入新业务模块，保护长期技术投资。</div>
+                </div>
+            </div>
+            <div class="value-point">
+                <div class="value-point-icon">&#128241;</div>
+                <div>
+                    <div class="value-point-title">三端无缝协同</div>
+                    <div class="value-point-desc">Web 管理后台、iOS/Android App、微信小程序三端数据实时同步，让管理干部在路上、在现场、在会议室都能高效处理业务。
+                    </div>
+                </div>
+            </div>
+            <div class="value-point">
+                <div class="value-point-icon">&#129309;</div>
+                <div>
+                    <div class="value-point-title">降低人员依赖</div>
+                    <div class="value-point-desc">AI 工作流自动化显著减少人工干预，审批提醒、设备告警、合同到期等自动触达，让有限人员管理更大规模园区资产。</div>
+                </div>
+            </div>
+
+            <div class="value-point">
+                <div class="value-point-icon">&#10024;</div>
+                <div>
+                    <div class="value-point-title">数字化品牌溢价</div>
+                    <div class="value-point-desc">通过 3D 数字孪生与 AI 智能运营，提升园区的科技感与高端形象，在招商引资中形成差异化竞争优势，直接带动租金与资产估值的双向提升。
+                    </div>
+                </div>
+            </div>
+
+            <div class="value-point">
+                <div class="value-point-icon">&#128101;</div>
+                <div>
+                    <div class="value-point-title">全场景协同生态</div>
+                    <div class="value-point-desc">不仅是内部管理，更通过标准化 API 接口拉通周边配套服务，构建涵盖政务、金融、孵化、生活的全闭环园区生态系统，增强企业粘性。</div>
+                </div>
+            </div>
+
+            <div class="value-point">
+                <div class="value-point-icon">&#128142;</div>
+                <div>
+                    <div class="value-point-title">数据驱动的长效增值</div>
+                    <div class="value-point-desc">沉淀园区运营全量底层数据，通过深度学习模型挖掘潜在盈利点与能效优化空间，将纯粹的物管模式转变为数据驱动的增值运营模式。</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 第7页：数据展示大屏 ==================== -->
+    <div class="page dashboard-page" id="dashboard-page">
+        <div class="page-header">
+            <div class="page-num">07</div>
+            <div class="page-title-block">
+                <div class="page-label">DATA COCKPIT</div>
+                <div class="page-title">全景 3D 数据驾驶舱</div>
+            </div>
+        </div>
+        <div class="section-divider"></div>
+        <p style="font-size: 14px; color: #6b7280; margin-bottom: 24px; line-height: 1.6;"><strong>全要素数字孪生：</strong> 通过
+            3D 渲染技术实时还原园区物理世界，将复杂的资产分布、能耗动态及安防态势转化为直观的视觉语言。数据毫秒级同步，支持多层级下钻分析，让每一项运营指标都清晰可见，实现“一屏感知全域”。</p>
+
+        <!-- 驾驶舱内联内容 -->
+        <div class="cockpit-page-wrap">
             <style>
                 /* Dashboard Specific Styles */
                 .cockpit-container {
@@ -3893,437 +5432,516 @@
                 }, 1000);
             </script>
         </div>
-
-        <!-- Slide 4: Core Modules -->
-        <div class="slide" id="slide-3">
-            <h2>六大核心模块</h2>
-            <div class="grid-container">
-                <div class="card">
-                    <div class="icon-box">🏢</div>
-                    <h3>资源管理</h3>
-                    <p style="font-size: 0.9rem; text-align: left;">楼宇、房源、车位全生命周期管理，可视化剖面图，一键掌握空置率。</p>
-                </div>
-                <div class="card">
-                    <div class="icon-box">🤝</div>
-                    <h3>招商租赁</h3>
-                    <p style="font-size: 0.9rem; text-align: left;">线索跟进、合同管理、财务账单自动生成，打造闭环招商体系。</p>
-                </div>
-                <div class="card">
-                    <div class="icon-box">🔧</div>
-                    <h3>物业服务</h3>
-                    <p style="font-size: 0.9rem; text-align: left;">报修、投诉、巡检标准化流程，移动端实时接单，提升服务品质。</p>
-                </div>
-                <div class="card">
-                    <div class="icon-box">⚡</div>
-                    <h3>智慧能耗</h3>
-                    <p style="font-size: 0.9rem; text-align: left;">远程抄表，异常预警，分项计量，为园区节能减排提供数据支撑。</p>
-                </div>
-                <div class="card">
-                    <div class="icon-box">🚗</div>
-                    <h3>智慧通行</h3>
-                    <p style="font-size: 0.9rem; text-align: left;">人脸门禁、车牌识别、访客预约，打造无感通行的安全园区。</p>
-                </div>
-                <div class="card">
-                    <div class="icon-box">📱</div>
-                    <h3>企业服务</h3>
-                    <p style="font-size: 0.9rem; text-align: left;">会议室预定、政策申报、活动报名，构建活跃的产业社群。</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Slide 5: Tech Stack (Updated) -->
-        <div class="slide" id="slide-4">
-            <h2>现代技术架构</h2>
-            <p>基于云原生架构设计，安全、稳定、极速扩展。</p>
-            <div style="display: flex; gap: 4rem; flex-wrap: wrap; justify-content: center; margin-top: 2rem;">
-                <div style="text-align: center;">
-                    <div style="font-size: 3rem; color: #512bd4; margin-bottom: 1rem;">.NET 10</div>
-                    <div style="color: var(--text-muted);">高性能后端核心</div>
-                </div>
-                <div style="text-align: center;">
-                    <div style="font-size: 3rem; color: #61dafb; margin-bottom: 1rem;">React</div>
-                    <div style="color: var(--text-muted);">极致交互体验</div>
-                </div>
-                <div style="text-align: center;">
-                    <div style="font-size: 3rem; color: #13aa52; margin-bottom: 1rem;">MongoDB</div>
-                    <div style="color: var(--text-muted);">灵活数据存储</div>
-                </div>
-                <div style="text-align: center;">
-                    <div style="font-size: 3rem; color: #2496ed; margin-bottom: 1rem;">Docker</div>
-                    <div style="color: var(--text-muted);">容器化部署</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Slide 6: Contact -->
-        <div class="slide" id="slide-5">
-            <h1 style="font-size: 4rem;">Ready to Transform?</h1>
-            <p>开启您的智慧园区之旅</p>
-
-            <div
-                style="margin-top: 3rem; display: flex; flex-direction: column; gap: 1.5rem; backdrop-filter: blur(10px); padding: 2rem; border: 1px solid var(--glass-border); border-radius: 1rem;">
-                <div style="display: flex; align-items: center; gap: 1rem; color: white; font-size: 1.2rem;">
-                    <span style="color: var(--primary);">📧</span> <a href="mailto:fsy_008@163.com"
-                        style="color: inherit; text-decoration: none;">fsy_008@163.com</a>
-                </div>
-                <div style="display: flex; align-items: center; gap: 1rem; color: white; font-size: 1.2rem;">
-                    <span style="color: var(--primary);">🌐</span> <a href="https://www.rong-zhong.com" target="_blank"
-                        style="color: inherit; text-decoration: none;">https://www.rong-zhong.com</a>
-                </div>
-            </div>
-
-            <button class="btn" onclick="goToSlide(0)" style="margin-top: 3rem;">
-                ↻ Replay Presentation
-            </button>
-        </div>
-
     </div>
 
-    <!-- Navigation -->
-    <div class="nav-controls">
-        <button class="nav-btn" onclick="prevSlide()">↑</button>
-        <button class="nav-btn" onclick="nextSlide()">↓</button>
+    <style>
+        /* ===== 驾驶舱根 CSS 变量 ===== */
+        :root {
+            --bg-color: #030712;
+            --primary: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.5);
+            --secondary: #8b5cf6;
+            --accent: #06b6d4;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        /* ===== dashboard-page 布局 ===== */
+        .dashboard-page {
+            background: #030712;
+            padding: 36px 24px 0;
+            height: 100vh;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dashboard-page .page-num {
+            color: rgba(59, 130, 246, 0.15);
+        }
+
+        .dashboard-page .page-label {
+            color: #3b82f6;
+        }
+
+        .dashboard-page .page-title {
+            color: #f8fafc;
+        }
+
+        .dashboard-page .section-divider {
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            margin-bottom: 12px;
+        }
+
+        /* 驾驶舱容器占满剩余空间 */
+        .cockpit-page-wrap {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* 覆盖 cockpit-container 原始视口尺寸，改为填充父容器 */
+        .cockpit-page-wrap .cockpit-container {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* slide 容器本身不需要全屏定位 */
+        .cockpit-page-wrap>div {
+            width: 100%;
+            height: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-page {
+                padding: 24px 12px 0;
+            }
+        }
+    </style>
+
+    <script>
+        /* ===== 驾驶舱内联 JS ===== */
+        // 等 DOM 就绪后初始化驾驶舱
+        (function initCockpit() {
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', _cockpitInit);
+            } else {
+                _cockpitInit();
+            }
+
+            function _cockpitInit() {
+                // initDemoCharts 需要驾驶舱内的 .demo-bars 元素
+                var demoBars = document.querySelector('.demo-bars');
+                if (demoBars) {
+                    for (var i = 0; i < 12; i++) {
+                        var h = Math.random() * 80 + 20;
+                        var bar = document.createElement('div');
+                        bar.className = 'bar';
+                        bar.style.height = '0%';
+                        demoBars.appendChild(bar);
+                        (function (b, height) {
+                            setTimeout(function () { b.style.height = height + '%'; }, 100 + i * 50);
+                        })(bar, h);
+                    }
+                }
+
+                // Live Data Simulation for Energy Labels
+                function updateEnergyLabels() {
+                    const labels = [
+                        { id: '.el-hq .e-val', base: 450, variance: 15, unit: ' kW' },
+                        { id: '.el-rda .e-val', base: 125, variance: 8, unit: ' kW' },
+                        { id: '.el-rdb .e-val', base: 85, variance: 5, unit: ' kW' },
+                        { id: '.el-mall .e-val', base: 310, variance: 20, unit: ' kW' },
+                        { id: '.el-apt .e-val', base: 180, variance: 15, unit: ' kW' },
+                        { id: '.el-gym .e-val', base: 45, variance: 5, unit: ' kW' },
+                        { id: '.el-rdc .e-val', base: 95, variance: 8, unit: ' kW' },
+                        { id: '.el-can .e-val', base: 65, variance: 6, unit: ' kW' },
+                        { id: '.el-data .e-val', base: 520, variance: 30, unit: ' kW' },
+                        { id: '.el-power .e-val', base: 880, variance: 40, unit: ' kW' },
+                        { id: '.el-off-d .e-val', base: 145, variance: 12, unit: ' kW' },
+                        { id: '.el-off-e .e-val', base: 160, variance: 15, unit: ' kW' },
+                        { id: '.el-off-f .e-val', base: 110, variance: 10, unit: ' kW' },
+                        { id: '.el-off-g .e-val', base: 125, variance: 11, unit: ' kW' },
+                        { id: '.el-tea .e-val', base: 12, variance: 3, unit: ' kW' },
+                        /* Occupancy Data */
+                        { id: '.el-hq-occ .occ-tag', base: 92, variance: 1, unit: '%', prefix: '入住率 ' },
+                        { id: '.el-rda-occ .occ-tag', base: 85, variance: 2, unit: '%', prefix: '入住率 ' },
+                        { id: '.el-rdb-occ .occ-tag', base: 78, variance: 1, unit: '%', prefix: '入住率 ' },
+                        { id: '.el-mall-occ .occ-tag', base: 94, variance: 2, unit: '%', prefix: '入住率 ' },
+                        { id: '.el-apt-occ .occ-tag', base: 98, variance: 1, unit: '%', prefix: '入住率 ' },
+                        { id: '.el-gym-occ .occ-tag', base: 100, variance: 0, unit: '%', prefix: '入住率 ' },
+                        { id: '.el-rdc-occ .occ-tag', base: 65, variance: 2, unit: '%', prefix: '入住率 ' },
+                        { id: '.el-off-d-occ .occ-tag', base: 88, variance: 1, unit: '%', prefix: '入住率 ' },
+                        { id: '.el-off-e-occ .occ-tag', base: 92, variance: 1, unit: '%', prefix: '入住率 ' },
+                        { id: '.el-off-f-occ .occ-tag', base: 75, variance: 3, unit: '%', prefix: '入住率 ' },
+                        { id: '.el-off-g-occ .occ-tag', base: 90, variance: 1, unit: '%', prefix: '入住率 ' },
+                        { id: '.el-tea-occ .occ-tag', base: 82, variance: 4, unit: '%', prefix: '入住率 ' },
+                        /* Environment Data */
+                        { id: '.el-rda-env .env-tag', base: 55, variance: 5, unit: 'dB' },
+                        { id: '.el-mall-env .env-tag', base: 45, variance: 10, unit: 'dB' },
+                        { id: '.el-gym-env .env-tag', base: 60, variance: 8, unit: 'dB' },
+                        { id: '.el-data-env .env-tag', base: 50, variance: 2, unit: 'dB' },
+                        { id: '.el-gate .e-val', type: 'status' } // Gate stays 'Live'
+                    ];
+
+                    labels.forEach(item => {
+                        if (item.type === 'status') return;
+                        const el = document.querySelector(item.id);
+                        if (el) {
+                            const randomVal = item.base + Math.floor(Math.random() * item.variance * 2) - item.variance;
+                            el.innerText = (item.prefix || '') + randomVal + item.unit;
+                        }
+                    });
+
+                    // Update Environmental Metrics
+                    const temp = 22 + Math.random() * 4;
+                    const hum = 40 + Math.random() * 10;
+                    const pm = 15 + Math.random() * 15;
+
+                    if (document.getElementById('env-temp')) document.getElementById('env-temp').innerText = temp.toFixed(1) + '°C';
+                    if (document.getElementById('env-hum')) document.getElementById('env-hum').innerText = hum.toFixed(0) + '%';
+                    if (document.getElementById('env-pm')) document.getElementById('env-pm').innerText = pm.toFixed(0);
+
+                    const noise = 40 + Math.random() * 10;
+                    const co2 = 400 + Math.random() * 50;
+                    const lux = 10000 + Math.floor(Math.random() * 5000);
+                    if (document.getElementById('env-noise')) document.getElementById('env-noise').innerText = noise.toFixed(0) + 'dB';
+                    if (document.getElementById('env-co2')) document.getElementById('env-co2').innerText = co2.toFixed(0);
+                    if (document.getElementById('env-lux')) document.getElementById('env-lux').innerText = (lux / 1000).toFixed(1) + 'kLx';
+
+                    // Update Parking & Logistics
+                    if (document.getElementById('val-parking')) {
+                        const total = 800;
+                        const p = 150 + Math.floor(Math.random() * 10);
+                        const txt = p + ' / ' + total;
+                        document.getElementById('val-parking').innerText = txt;
+                        if (document.getElementById('map-val-parking')) {
+                            document.getElementById('map-val-parking').innerText = txt;
+                        }
+                    }
+                    if (document.getElementById('val-visitors')) {
+                        const v = 80 + Math.floor(Math.random() * 20);
+                        document.getElementById('val-visitors').innerText = v;
+                    }
+                    if (document.getElementById('flow-fill')) {
+                        const f = 30 + Math.random() * 40;
+                        document.getElementById('flow-fill').style.width = f + '%';
+                    }
+                }
+
+                // Update every 2 seconds
+                setInterval(updateEnergyLabels, 2000);
+
+                // --- 3D Scene Interaction ---
+                const mapArea = document.querySelector('.cp-map-area');
+                const scene3d = document.querySelector('.scene-3d');
+
+                // Initial State
+                let state = {
+                    rotX: 60,
+                    rotZ: 0,
+                    scale: 1,
+                    isDragging: false,
+                    autoRotate: true,
+                    startX: 0,
+                    startY: 0
+                };
+
+                const CFG = {
+                    zoomSpeed: 0.001,
+                    rotSpeed: 0.5,
+                    minScale: 0.5,
+                    maxScale: 3.0,
+                    minRotX: 0,
+                    maxRotX: 85
+                };
+
+                const compassRing = document.querySelector('.compass-ring');
+
+                function updateSceneTransform() {
+                    scene3d.style.transform = `scale3d(${state.scale}, ${state.scale}, ${state.scale}) rotateX(${state.rotX}deg) rotateZ(${state.rotZ}deg)`;
+
+                    // Sync Compass
+                    if (compassRing) {
+                        compassRing.style.transform = `rotate(${state.rotZ}deg)`;
+                    }
+
+                    // Billboard effect: negZ cancels park spin, negX stands the label up towards user
+                    const labels = document.querySelectorAll('.b-label, .energy-label, .occupancy-label, .env-label');
+                    const negZ = -state.rotZ;
+                    const negX = -state.rotX;
+                    labels.forEach(el => {
+                        const trans = el.classList.contains('b-label') ? 'translateX(-50%)' : 'translate(-50%, -50%)';
+                        // Use the individual --h-pos variable defined in CSS
+                        el.style.transform = `${trans} translateZ(var(--h-pos)) rotateZ(${negZ}deg) rotateX(${negX}deg)`;
+                    });
+                }
+
+                // JS Driven Animation Engine
+                function animate() {
+                    if (state.autoRotate && !state.isDragging) {
+                        state.rotZ += 0.15; // Slow ambient rotation
+                        updateSceneTransform();
+                    }
+                    requestAnimationFrame(animate);
+                }
+                animate();
+
+                // Interaction Logic
+                mapArea.addEventListener('mousedown', (e) => {
+                    state.isDragging = true;
+                    state.autoRotate = false; // Disable auto-pilot on interaction
+                    state.startX = e.clientX;
+                    state.startY = e.clientY;
+                    mapArea.style.cursor = 'grabbing';
+                });
+
+                window.addEventListener('mousemove', (e) => {
+                    if (!state.isDragging) return;
+                    const deltaX = e.clientX - state.startX;
+                    const deltaY = e.clientY - state.startY;
+
+                    state.rotZ -= deltaX * CFG.rotSpeed;
+                    state.rotX = Math.min(Math.max(state.rotX - deltaY * CFG.rotSpeed, CFG.minRotX), CFG.maxRotX);
+
+                    state.startX = e.clientX;
+                    state.startY = e.clientY;
+                    updateSceneTransform();
+                });
+
+                window.addEventListener('mouseup', () => {
+                    state.isDragging = false;
+                    mapArea.style.cursor = 'grab';
+                    // Resume auto-rotate after 5 seconds of inactivity
+                    clearTimeout(window._rotTimer);
+                    window._rotTimer = setTimeout(() => { if (!state.isDragging) state.autoRotate = true; }, 5000);
+                });
+
+                // Wheel Zoom
+                mapArea.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const delta = -e.deltaY;
+                    state.scale = Math.min(Math.max(state.scale + delta * CFG.zoomSpeed, CFG.minScale), CFG.maxScale);
+                    updateSceneTransform();
+                }, { passive: false });
+            }
+        })();
+    </script>
+
+    <!-- ==================== 结尾CTA页 ==================== -->
+    <div class="page cta-page">
+        <div class="cta-grid-bg"></div>
+        <div class="cta-content">
+            <div class="cta-badge">立即开启数字化转型</div>
+            <h2 class="cta-title">让智慧园区<br><span>为您的未来赋能</span></h2>
+            <p class="cta-subtitle">立刻联系我们，获取专属于您的智慧园区全栈解决方案与技术白皮书。</p>
+
+            <div class="contact-card">
+                <div class="contact-info">
+                    <div class="contact-item" style="text-align: center;">
+                        <span class="contact-label">官方网站</span>
+                        <div class="contact-value">www.rong-zhong.com</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cta-contacts-bottom">
+                <div class="cta-contact-item">
+                    <span class="cta-contact-icon">&#128222;</span>
+                    <span class="cta-contact-label">销售热线：</span>
+                    <span class="cta-contact-value">15332108886</span>
+                </div>
+                <div class="cta-contact-item">
+                    <span class="cta-contact-icon">&#128231;</span>
+                    <span class="cta-contact-label">商务邮箱：</span>
+                    <span class="cta-contact-value">fsy_008@msn.com</span>
+                </div>
+                <div class="cta-contact-item">
+                    <span class="cta-contact-icon">&#128172;</span>
+                    <span class="cta-contact-label">微信咨询：</span>
+                    <span class="cta-contact-value">微信同手机号</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="cta-footer">
+            <span>&#127970; 智慧园区管理系统</span>
+            <span>·</span>
+            <span>全栈数字化解决方案</span>
+            <span>·</span>
+            <span>2026 版权所有 天津融众信息技术有限公司</span>
+        </div>
     </div>
 
     <script>
-        // --- State ---
-        let currentSlide = 0;
-        const slides = document.querySelectorAll('.slide');
-        const totalSlides = slides.length;
-        const progressEl = document.getElementById('progress');
-        let scrolling = false;
+        /* =====================================================
+         * 整页滚动吸附 + 阻尼动画
+         * - 监听 wheel / touch 事件
+         * - 使用 cubic-bezier easing 实现弹性阻尼过渡
+         * - 数据大屏（iframe）区域允许内部滚动，不拦截
+         * ===================================================== */
+        (function () {
+            const DURATION = 900;   // 过渡动画时长 ms（越大越缓）
+            const DEBOUNCE = 1200;  // 两次翻页最小间隔 ms（防止滑太快）
+            const THRESHOLD = 30;    // 触发翻页的最小 deltaY 绝对值
+            const TOUCH_MIN = 40;    // 触发翻页的最小触摸滑动距离 px
 
-        // --- Demo Charts Animation ---
-        function initDemoCharts() {
-            const demoBars = document.getElementById('demo-bars');
-            if (!demoBars) return; // Ensure demoBars element exists before proceeding
-            demoBars.innerHTML = '';
-            for (let i = 0; i < 12; i++) {
-                const h = Math.random() * 80 + 20;
-                const bar = document.createElement('div');
-                bar.className = 'bar';
-                bar.style.height = '0%';
-                demoBars.appendChild(bar);
-                // Animate to height
-                setTimeout(() => {
-                    bar.style.height = h + '%';
-                }, 100 + i * 50);
-            }
-        }
-
-        // --- Slide Logic ---
-        function updateSlide(index) {
-            slides.forEach((slide, i) => {
-                slide.classList.remove('active', 'exit');
-                if (i === index) {
-                    slide.classList.add('active');
-                    // Reset Chart animation if entering slide 2
-                    if (index === 2) {
-                        setTimeout(initDemoCharts, 500);
-                    }
-                } else if (i < index) {
-                    slide.classList.add('exit'); // Previous slides go up/fade out
-                }
-            });
-            progressEl.style.width = ((index + 1) / totalSlides) * 100 + '%';
-        }
-
-        function nextSlide() {
-            if (currentSlide < totalSlides - 1) {
-                currentSlide++;
-                updateSlide(currentSlide);
-            }
-        }
-
-        function prevSlide() {
-            if (currentSlide > 0) {
-                currentSlide--;
-                updateSlide(currentSlide);
-            }
-        }
-
-        function goToSlide(index) {
-            currentSlide = index;
-            updateSlide(currentSlide);
-        }
-
-        // --- Event Listeners ---
-        window.addEventListener('wheel', (e) => {
-            if (scrolling) return;
-            // Skip page scroll if interacting with 3D map
-            if (e.target.closest('.cp-map-area')) return;
-
-            scrolling = true;
-            if (e.deltaY > 0) nextSlide();
-            else prevSlide();
-
-            setTimeout(() => { scrolling = false; }, 1000); // Debounce scroll
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ') {
-                nextSlide();
-            } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
-                prevSlide();
-            }
-        });
-
-        // --- Particle Background (Canvas) ---
-        const canvas = document.getElementById('particles-canvas');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        class Particle {
-            constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.vx = (Math.random() - 0.5) * 0.5;
-                this.vy = (Math.random() - 0.5) * 0.5;
-                this.size = Math.random() * 2;
-                this.color = Math.random() > 0.5 ? 'rgba(59, 130, 246, ' : 'rgba(139, 92, 246, '; // Blue or Purple
+            // ---- Easing: easeInOutQuart（强阻尼感） ----
+            function easeInOutQuart(t) {
+                return t < 0.5
+                    ? 8 * t * t * t * t
+                    : 1 - Math.pow(-2 * t + 2, 4) / 2;
             }
 
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-
-                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
-                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+            // ---- 获取所有一级页面 ----
+            function getPages() {
+                return Array.from(document.querySelectorAll(
+                    '.cover, .page, .cta-page, .dashboard-page'
+                )).filter(el => !el.closest('.cover ~ .page .page'));
             }
 
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fillStyle = this.color + (Math.random() * 0.5 + 0.2) + ')';
-                ctx.fill();
-            }
-        }
+            let isAnimating = false;
+            let lastScrollTime = 0;
+            let momentum = 0;        // 累积滚动量
 
-        function initParticles() {
-            for (let i = 0; i < 50; i++) {
-                particles.push(new Particle());
-            }
-        }
+            // ---- 核心滚动动画 ----
+            function scrollToPage(targetY) {
+                if (isAnimating) return;
+                isAnimating = true;
 
-        function animateParticles() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                const startY = window.scrollY;
+                const distance = targetY - startY;
+                const startTime = performance.now();
 
-            // Draw connections
-            particles.forEach((p, index) => {
-                p.update();
-                p.draw();
+                function step(currentTime) {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / DURATION, 1);
+                    const eased = easeInOutQuart(progress);
 
-                for (let j = index + 1; j < particles.length; j++) {
-                    const p2 = particles[j];
-                    const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
-                    if (dist < 150) {
-                        ctx.beginPath();
-                        ctx.strokeStyle = `rgba(255, 255, 255, ${0.1 - dist / 1500})`;
-                        ctx.lineWidth = 1;
-                        ctx.moveTo(p.x, p.y);
-                        ctx.lineTo(p2.x, p2.y);
-                        ctx.stroke();
+                    window.scrollTo(0, startY + distance * eased);
+
+                    if (progress < 1) {
+                        requestAnimationFrame(step);
+                    } else {
+                        window.scrollTo(0, targetY); // 精确落点
+                        isAnimating = false;
+                        momentum = 0;
                     }
                 }
-            });
-            requestAnimationFrame(animateParticles);
-        }
 
-        initParticles();
-        animateParticles();
+                requestAnimationFrame(step);
+            }
 
-        // --- Init ---
-        updateSlide(0);
+            // ---- 找到目标页索引 ----
+            function findCurrentPageIndex(pages) {
+                const mid = window.scrollY + window.innerHeight / 2;
+                let best = 0;
+                let bestDist = Infinity;
+                pages.forEach((p, i) => {
+                    const d = Math.abs(p.getBoundingClientRect().top + window.scrollY + p.offsetHeight / 2 - mid);
+                    if (d < bestDist) { bestDist = d; best = i; }
+                });
+                return best;
+            }
 
-        // Live Data Simulation for Energy Labels
-        function updateEnergyLabels() {
-            const labels = [
-                { id: '.el-hq .e-val', base: 450, variance: 15, unit: ' kW' },
-                { id: '.el-rda .e-val', base: 125, variance: 8, unit: ' kW' },
-                { id: '.el-rdb .e-val', base: 85, variance: 5, unit: ' kW' },
-                { id: '.el-mall .e-val', base: 310, variance: 20, unit: ' kW' },
-                { id: '.el-apt .e-val', base: 180, variance: 15, unit: ' kW' },
-                { id: '.el-gym .e-val', base: 45, variance: 5, unit: ' kW' },
-                { id: '.el-rdc .e-val', base: 95, variance: 8, unit: ' kW' },
-                { id: '.el-can .e-val', base: 65, variance: 6, unit: ' kW' },
-                { id: '.el-data .e-val', base: 520, variance: 30, unit: ' kW' },
-                { id: '.el-power .e-val', base: 880, variance: 40, unit: ' kW' },
-                { id: '.el-off-d .e-val', base: 145, variance: 12, unit: ' kW' },
-                { id: '.el-off-e .e-val', base: 160, variance: 15, unit: ' kW' },
-                { id: '.el-off-f .e-val', base: 110, variance: 10, unit: ' kW' },
-                { id: '.el-off-g .e-val', base: 125, variance: 11, unit: ' kW' },
-                { id: '.el-tea .e-val', base: 12, variance: 3, unit: ' kW' },
-                /* Occupancy Data */
-                { id: '.el-hq-occ .occ-tag', base: 92, variance: 1, unit: '%', prefix: '入住率 ' },
-                { id: '.el-rda-occ .occ-tag', base: 85, variance: 2, unit: '%', prefix: '入住率 ' },
-                { id: '.el-rdb-occ .occ-tag', base: 78, variance: 1, unit: '%', prefix: '入住率 ' },
-                { id: '.el-mall-occ .occ-tag', base: 94, variance: 2, unit: '%', prefix: '入住率 ' },
-                { id: '.el-apt-occ .occ-tag', base: 98, variance: 1, unit: '%', prefix: '入住率 ' },
-                { id: '.el-gym-occ .occ-tag', base: 100, variance: 0, unit: '%', prefix: '入住率 ' },
-                { id: '.el-rdc-occ .occ-tag', base: 65, variance: 2, unit: '%', prefix: '入住率 ' },
-                { id: '.el-off-d-occ .occ-tag', base: 88, variance: 1, unit: '%', prefix: '入住率 ' },
-                { id: '.el-off-e-occ .occ-tag', base: 92, variance: 1, unit: '%', prefix: '入住率 ' },
-                { id: '.el-off-f-occ .occ-tag', base: 75, variance: 3, unit: '%', prefix: '入住率 ' },
-                { id: '.el-off-g-occ .occ-tag', base: 90, variance: 1, unit: '%', prefix: '入住率 ' },
-                { id: '.el-tea-occ .occ-tag', base: 82, variance: 4, unit: '%', prefix: '入住率 ' },
-                /* Environment Data */
-                { id: '.el-rda-env .env-tag', base: 55, variance: 5, unit: 'dB' },
-                { id: '.el-mall-env .env-tag', base: 45, variance: 10, unit: 'dB' },
-                { id: '.el-gym-env .env-tag', base: 60, variance: 8, unit: 'dB' },
-                { id: '.el-data-env .env-tag', base: 50, variance: 2, unit: 'dB' },
-                { id: '.el-gate .e-val', type: 'status' } // Gate stays 'Live'
-            ];
+            // ---- Wheel 处理 ----
+            window.addEventListener('wheel', function (e) {
+                // 数据大屏 iframe 遮罩激活后 & 在驾驶舱区域内，不拦截
+                const dashWrap = document.getElementById('dashWrap');
+                if (dashWrap && dashWrap.classList.contains('active') && dashWrap.contains(e.target)) return;
+                // iframe 内部本身不会冒泡，但保险起见过滤
+                if (e.target && e.target.tagName === 'IFRAME') return;
 
-            labels.forEach(item => {
-                if (item.type === 'status') return;
-                const el = document.querySelector(item.id);
-                if (el) {
-                    const randomVal = item.base + Math.floor(Math.random() * item.variance * 2) - item.variance;
-                    el.innerText = (item.prefix || '') + randomVal + item.unit;
+                const pages = getPages();
+                if (!pages.length) return;
+
+                const now = Date.now();
+                // 积累动量
+                if (!isAnimating) {
+                    momentum += e.deltaY;
+                }
+
+                // 阻尼：必须累积到阈值才触发
+                if (Math.abs(momentum) < THRESHOLD) {
+                    e.preventDefault();
+                    return;
+                }
+
+                // 节流
+                if (now - lastScrollTime < DEBOUNCE) {
+                    e.preventDefault();
+                    return;
+                }
+
+                e.preventDefault();
+                lastScrollTime = now;
+
+                const dir = momentum > 0 ? 1 : -1;
+                momentum = 0;
+
+                const cur = findCurrentPageIndex(pages);
+                const next = Math.max(0, Math.min(pages.length - 1, cur + dir));
+                if (next === cur && dir === 1 && window.scrollY + window.innerHeight >= document.body.scrollHeight - 2) return;
+                if (next === cur && dir === -1 && window.scrollY <= 2) return;
+
+                const targetY = pages[next].getBoundingClientRect().top + window.scrollY;
+                scrollToPage(targetY);
+
+            }, { passive: false });
+
+            // ---- Touch 处理 ----
+            let touchStartY = 0;
+
+            window.addEventListener('touchstart', function (e) {
+                touchStartY = e.touches[0].clientY;
+            }, { passive: true });
+
+            window.addEventListener('touchend', function (e) {
+                // 数据大屏激活时不处理
+                const dashWrap = document.getElementById('dashWrap');
+                if (dashWrap && dashWrap.classList.contains('active') && dashWrap.contains(e.target)) return;
+
+                const dy = touchStartY - e.changedTouches[0].clientY;
+                if (Math.abs(dy) < TOUCH_MIN) return;
+
+                const pages = getPages();
+                if (!pages.length) return;
+
+                const now = Date.now();
+                if (now - lastScrollTime < DEBOUNCE) return;
+                lastScrollTime = now;
+
+                const dir = dy > 0 ? 1 : -1;
+                const cur = findCurrentPageIndex(pages);
+                const next = Math.max(0, Math.min(pages.length - 1, cur + dir));
+                if (next === cur) return;
+
+                const targetY = pages[next].getBoundingClientRect().top + window.scrollY;
+                scrollToPage(targetY);
+
+            }, { passive: true });
+
+            // ---- 键盘箭头键支持 ----
+            window.addEventListener('keydown', function (e) {
+                if (['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', ' '].includes(e.key)) {
+                    const pages = getPages();
+                    if (!pages.length) return;
+
+                    const now = Date.now();
+                    if (now - lastScrollTime < DEBOUNCE / 2) return;
+                    lastScrollTime = now;
+
+                    const dir = ['ArrowDown', 'PageDown', ' '].includes(e.key) ? 1 : -1;
+                    const cur = findCurrentPageIndex(pages);
+                    const next = Math.max(0, Math.min(pages.length - 1, cur + dir));
+                    if (next === cur) return;
+
+                    e.preventDefault();
+                    const targetY = pages[next].getBoundingClientRect().top + window.scrollY;
+                    scrollToPage(targetY);
                 }
             });
 
-            // Update Environmental Metrics
-            const temp = 22 + Math.random() * 4;
-            const hum = 40 + Math.random() * 10;
-            const pm = 15 + Math.random() * 15;
-
-            if (document.getElementById('env-temp')) document.getElementById('env-temp').innerText = temp.toFixed(1) + '°C';
-            if (document.getElementById('env-hum')) document.getElementById('env-hum').innerText = hum.toFixed(0) + '%';
-            if (document.getElementById('env-pm')) document.getElementById('env-pm').innerText = pm.toFixed(0);
-
-            const noise = 40 + Math.random() * 10;
-            const co2 = 400 + Math.random() * 50;
-            const lux = 10000 + Math.floor(Math.random() * 5000);
-            if (document.getElementById('env-noise')) document.getElementById('env-noise').innerText = noise.toFixed(0) + 'dB';
-            if (document.getElementById('env-co2')) document.getElementById('env-co2').innerText = co2.toFixed(0);
-            if (document.getElementById('env-lux')) document.getElementById('env-lux').innerText = (lux / 1000).toFixed(1) + 'kLx';
-
-            // Update Parking & Logistics
-            if (document.getElementById('val-parking')) {
-                const total = 800;
-                const p = 150 + Math.floor(Math.random() * 10);
-                const txt = p + ' / ' + total;
-                document.getElementById('val-parking').innerText = txt;
-                if (document.getElementById('map-val-parking')) {
-                    document.getElementById('map-val-parking').innerText = txt;
+            // ---- 初始对齐到最近页 ----
+            window.addEventListener('load', function () {
+                const pages = getPages();
+                if (!pages.length) return;
+                const cur = findCurrentPageIndex(pages);
+                const targetY = pages[cur].getBoundingClientRect().top + window.scrollY;
+                if (Math.abs(window.scrollY - targetY) > 10) {
+                    window.scrollTo(0, targetY);
                 }
-            }
-            if (document.getElementById('val-visitors')) {
-                const v = 80 + Math.floor(Math.random() * 20);
-                document.getElementById('val-visitors').innerText = v;
-            }
-            if (document.getElementById('flow-fill')) {
-                const f = 30 + Math.random() * 40;
-                document.getElementById('flow-fill').style.width = f + '%';
-            }
-        }
-
-        // Update every 2 seconds
-        setInterval(updateEnergyLabels, 2000);
-
-        // --- 3D Scene Interaction ---
-        const mapArea = document.querySelector('.cp-map-area');
-        const scene3d = document.querySelector('.scene-3d');
-
-        // Initial State
-        let state = {
-            rotX: 60,
-            rotZ: 0,
-            scale: 1,
-            isDragging: false,
-            autoRotate: true,
-            startX: 0,
-            startY: 0
-        };
-
-        const CFG = {
-            zoomSpeed: 0.001,
-            rotSpeed: 0.5,
-            minScale: 0.5,
-            maxScale: 3.0,
-            minRotX: 0,
-            maxRotX: 85
-        };
-
-        const compassRing = document.querySelector('.compass-ring');
-
-        function updateSceneTransform() {
-            scene3d.style.transform = `scale3d(${state.scale}, ${state.scale}, ${state.scale}) rotateX(${state.rotX}deg) rotateZ(${state.rotZ}deg)`;
-
-            // Sync Compass
-            if (compassRing) {
-                compassRing.style.transform = `rotate(${state.rotZ}deg)`;
-            }
-
-            // Billboard effect: negZ cancels park spin, negX stands the label up towards user
-            const labels = document.querySelectorAll('.b-label, .energy-label, .occupancy-label, .env-label');
-            const negZ = -state.rotZ;
-            const negX = -state.rotX;
-            labels.forEach(el => {
-                const trans = el.classList.contains('b-label') ? 'translateX(-50%)' : 'translate(-50%, -50%)';
-                // Use the individual --h-pos variable defined in CSS
-                el.style.transform = `${trans} translateZ(var(--h-pos)) rotateZ(${negZ}deg) rotateX(${negX}deg)`;
             });
-        }
-
-        // JS Driven Animation Engine
-        function animate() {
-            if (state.autoRotate && !state.isDragging) {
-                state.rotZ += 0.15; // Slow ambient rotation
-                updateSceneTransform();
-            }
-            requestAnimationFrame(animate);
-        }
-        animate();
-
-        // Interaction Logic
-        mapArea.addEventListener('mousedown', (e) => {
-            state.isDragging = true;
-            state.autoRotate = false; // Disable auto-pilot on interaction
-            state.startX = e.clientX;
-            state.startY = e.clientY;
-            mapArea.style.cursor = 'grabbing';
-        });
-
-        window.addEventListener('mousemove', (e) => {
-            if (!state.isDragging) return;
-            const deltaX = e.clientX - state.startX;
-            const deltaY = e.clientY - state.startY;
-
-            state.rotZ -= deltaX * CFG.rotSpeed;
-            state.rotX = Math.min(Math.max(state.rotX - deltaY * CFG.rotSpeed, CFG.minRotX), CFG.maxRotX);
-
-            state.startX = e.clientX;
-            state.startY = e.clientY;
-            updateSceneTransform();
-        });
-
-        window.addEventListener('mouseup', () => {
-            state.isDragging = false;
-            mapArea.style.cursor = 'grab';
-            // Resume auto-rotate after 5 seconds of inactivity
-            clearTimeout(window._rotTimer);
-            window._rotTimer = setTimeout(() => { if (!state.isDragging) state.autoRotate = true; }, 5000);
-        });
-
-        // Wheel Zoom
-        mapArea.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const delta = -e.deltaY;
-            state.scale = Math.min(Math.max(state.scale + delta * CFG.zoomSpeed, CFG.minScale), CFG.maxScale);
-            updateSceneTransform();
-        }, { passive: false });
-
+        })();
     </script>
+
 </body>
 
 </html>

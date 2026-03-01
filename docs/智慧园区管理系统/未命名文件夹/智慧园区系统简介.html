@@ -1,0 +1,2313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智慧园区管理系统 - 产品介绍</title>
+    <style>
+        @import url('https://fonts.loli.net/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: #fff;
+            color: #1a1a2e;
+            line-height: 1.6;
+            overflow-x: hidden;
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+
+        /* ===== 封面页 ===== */
+        .cover {
+            width: 100%;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0d1b4b 0%, #0a3d62 40%, #1a6fa8 100%);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            page-break-after: always;
+        }
+
+        .cover::before {
+            content: '';
+            position: absolute;
+            top: -200px;
+            right: -200px;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(0, 200, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cover::after {
+            content: '';
+            position: absolute;
+            bottom: -150px;
+            left: -150px;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(100, 100, 255, 0.12) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cover-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        .cover-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            padding: 60px 40px;
+            max-width: 900px;
+        }
+
+        .cover-badge {
+            display: inline-block;
+            background: rgba(0, 200, 255, 0.15);
+            border: 1px solid rgba(0, 200, 255, 0.4);
+            color: #00c8ff;
+            padding: 8px 24px;
+            border-radius: 30px;
+            font-size: 13px;
+            letter-spacing: 3px;
+            margin-bottom: 40px;
+            text-transform: uppercase;
+        }
+
+        .cover-title {
+            font-size: 58px;
+            font-weight: 900;
+            color: #fff;
+            line-height: 1.2;
+            margin-bottom: 20px;
+            text-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .cover-title span {
+            background: linear-gradient(90deg, #00c8ff, #7b68ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .cover-subtitle {
+            font-size: 22px;
+            color: rgba(255, 255, 255, 0.75);
+            margin-bottom: 50px;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .cover-tags {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 70px;
+        }
+
+        .cover-tag {
+            padding: 10px 22px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+        }
+
+        .cover-stats {
+            display: flex;
+            gap: 60px;
+            justify-content: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            padding-top: 50px;
+        }
+
+        .cover-stat-item {
+            text-align: center;
+        }
+
+        .cover-stat-num {
+            font-size: 42px;
+            font-weight: 900;
+            color: #00c8ff;
+            line-height: 1;
+        }
+
+        .cover-stat-label {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 6px;
+            letter-spacing: 1px;
+        }
+
+        .cover-footer {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 12px;
+            z-index: 2;
+        }
+
+        /* ===== 通用页面样式 ===== */
+        .page {
+            width: 100%;
+            min-height: 100vh;
+            padding: 70px 80px;
+            page-break-after: always;
+            position: relative;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 50px;
+        }
+
+        .page-num {
+            font-size: 80px;
+            font-weight: 900;
+            color: #f0f4ff;
+            line-height: 1;
+            margin-right: 24px;
+            user-select: none;
+        }
+
+        .page-title-block {}
+
+        .page-label {
+            font-size: 12px;
+            color: #1a6fa8;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .page-title {
+            font-size: 32px;
+            font-weight: 800;
+            color: #0d1b4b;
+        }
+
+        .section-divider {
+            width: 50px;
+            height: 3px;
+            background: linear-gradient(90deg, #1a6fa8, #7b68ee);
+            border-radius: 2px;
+            margin: 16px 0 40px;
+        }
+
+        /* ===== 痛点页 ===== */
+        .pain-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 50px;
+        }
+
+        .pain-card {
+            padding: 28px;
+            border-radius: 16px;
+            border: 1px solid #e8edf5;
+            background: linear-gradient(135deg, #f8faff 0%, #fff 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pain-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, #e74c3c, #c0392b);
+            border-radius: 4px 0 0 4px;
+        }
+
+        .pain-icon {
+            font-size: 32px;
+            margin-bottom: 14px;
+        }
+
+        .pain-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: #0d1b4b;
+            margin-bottom: 8px;
+        }
+
+        .pain-desc {
+            font-size: 14px;
+            color: #6b7280;
+            line-height: 1.7;
+        }
+
+        .solution-banner {
+            background: linear-gradient(135deg, #0d1b4b, #1a6fa8);
+            border-radius: 16px;
+            padding: 36px 48px;
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            color: #fff;
+        }
+
+        .solution-text {
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 1.5;
+        }
+
+        .solution-arrow {
+            font-size: 40px;
+            color: #00c8ff;
+            flex-shrink: 0;
+        }
+
+        /* ===== 功能模块页 ===== */
+        .module-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+
+        .module-card {
+            border-radius: 16px;
+            padding: 28px 24px;
+            background: #fff;
+            border: 1px solid #e8edf5;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .module-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+
+        .module-card.color-blue::after {
+            background: linear-gradient(90deg, #1a6fa8, #00c8ff);
+        }
+
+        .module-card.color-purple::after {
+            background: linear-gradient(90deg, #7b68ee, #a855f7);
+        }
+
+        .module-card.color-green::after {
+            background: linear-gradient(90deg, #10b981, #34d399);
+        }
+
+        .module-card.color-orange::after {
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
+        }
+
+        .module-card.color-red::after {
+            background: linear-gradient(90deg, #ef4444, #f87171);
+        }
+
+        .module-card.color-teal::after {
+            background: linear-gradient(90deg, #06b6d4, #22d3ee);
+        }
+
+        .module-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+
+        .module-icon.blue {
+            background: rgba(26, 111, 168, 0.1);
+        }
+
+        .module-icon.purple {
+            background: rgba(123, 104, 238, 0.1);
+        }
+
+        .module-icon.green {
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .module-icon.orange {
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .module-icon.red {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .module-icon.teal {
+            background: rgba(6, 182, 212, 0.1);
+        }
+
+        .module-name {
+            font-size: 17px;
+            font-weight: 700;
+            color: #0d1b4b;
+            margin-bottom: 10px;
+        }
+
+        .module-desc {
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .module-features {
+            list-style: none;
+        }
+
+        .module-features li {
+            font-size: 12px;
+            color: #374151;
+            padding: 3px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .module-features li::before {
+            content: '✓';
+            color: #10b981;
+            font-weight: 700;
+            font-size: 11px;
+            flex-shrink: 0;
+        }
+
+        /* ===== 架构页 ===== */
+        .arch-page {
+            background: #f8faff;
+        }
+
+        .arch-diagram {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .arch-layer {
+            border-radius: 16px;
+            padding: 24px 32px;
+        }
+
+        .arch-layer-title {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+            opacity: 0.7;
+        }
+
+        .arch-layer-items {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .arch-item {
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .arch-layer.frontend {
+            background: linear-gradient(135deg, rgba(123, 104, 238, 0.12), rgba(123, 104, 238, 0.06));
+            border: 1px solid rgba(123, 104, 238, 0.2);
+        }
+
+        .arch-layer.frontend .arch-layer-title {
+            color: #7b68ee;
+        }
+
+        .arch-layer.frontend .arch-item {
+            color: #7b68ee;
+            border-color: rgba(123, 104, 238, 0.3);
+        }
+
+        .arch-layer.backend {
+            background: linear-gradient(135deg, rgba(26, 111, 168, 0.12), rgba(26, 111, 168, 0.06));
+            border: 1px solid rgba(26, 111, 168, 0.2);
+        }
+
+        .arch-layer.backend .arch-layer-title {
+            color: #1a6fa8;
+        }
+
+        .arch-layer.backend .arch-item {
+            color: #1a6fa8;
+            border-color: rgba(26, 111, 168, 0.3);
+        }
+
+        .arch-layer.data {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(16, 185, 129, 0.06));
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .arch-layer.data .arch-layer-title {
+            color: #10b981;
+        }
+
+        .arch-layer.data .arch-item {
+            color: #10b981;
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .arch-layer.infra {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.06));
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .arch-layer.infra .arch-layer-title {
+            color: #d97706;
+        }
+
+        .arch-layer.infra .arch-item {
+            color: #d97706;
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .arch-arrow {
+            text-align: center;
+            color: #cbd5e1;
+            font-size: 20px;
+            margin: -8px 0;
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-top: 30px;
+        }
+
+        .tech-item {
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            background: #fff;
+            border: 1px solid #e8edf5;
+        }
+
+        .tech-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .tech-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: #0d1b4b;
+            margin-bottom: 4px;
+        }
+
+        .tech-desc {
+            font-size: 11px;
+            color: #9ca3af;
+        }
+
+        /* ===== 安全页 ===== */
+        .security-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .security-card {
+            padding: 28px;
+            border-radius: 16px;
+            background: #fff;
+            border: 1px solid #e8edf5;
+            display: flex;
+            gap: 20px;
+        }
+
+        .security-icon-wrap {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #0d1b4b, #1a6fa8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            flex-shrink: 0;
+            color: #fff;
+        }
+
+        .security-content {}
+
+        .security-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0d1b4b;
+            margin-bottom: 8px;
+        }
+
+        .security-desc {
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.7;
+        }
+
+        /* ===== AI页 ===== */
+        .ai-hero {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            border-radius: 20px;
+            padding: 48px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 48px;
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ai-hero::before {
+            content: '🤖';
+            position: absolute;
+            right: 48px;
+            font-size: 120px;
+            opacity: 0.1;
+        }
+
+        .ai-title {
+            font-size: 30px;
+            font-weight: 800;
+            margin-bottom: 14px;
+        }
+
+        .ai-subtitle {
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.7;
+            max-width: 500px;
+        }
+
+        .ai-badge {
+            display: inline-block;
+            background: rgba(0, 200, 255, 0.15);
+            border: 1px solid rgba(0, 200, 255, 0.4);
+            color: #00c8ff;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-bottom: 16px;
+        }
+
+        .ai-features-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 18px;
+        }
+
+        .ai-feature {
+            padding: 22px;
+            border-radius: 14px;
+            background: #fff;
+            border: 1px solid #e8edf5;
+            text-align: center;
+        }
+
+        .ai-feature-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .ai-feature-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: #0d1b4b;
+            margin-bottom: 8px;
+        }
+
+        .ai-feature-desc {
+            font-size: 12px;
+            color: #6b7280;
+            line-height: 1.6;
+        }
+
+        /* ===== 价值页 ===== */
+        .value-hero {
+            background: linear-gradient(135deg, #0d1b4b, #1a6fa8);
+            border-radius: 20px;
+            padding: 48px;
+            text-align: center;
+            color: #fff;
+            margin-bottom: 40px;
+        }
+
+        .value-hero-title {
+            font-size: 34px;
+            font-weight: 900;
+            margin-bottom: 16px;
+        }
+
+        .value-hero-desc {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.75);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .value-metrics {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .metric-card {
+            text-align: center;
+            padding: 30px 20px;
+            border-radius: 16px;
+            background: #fff;
+            border: 1px solid #e8edf5;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #1a6fa8, #00c8ff);
+        }
+
+        .metric-num {
+            font-size: 42px;
+            font-weight: 900;
+            color: #1a6fa8;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .metric-unit {
+            font-size: 20px;
+        }
+
+        .metric-label {
+            font-size: 13px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .value-points {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .value-point {
+            display: flex;
+            gap: 20px;
+            padding: 24px;
+            border-radius: 14px;
+            background: #f8faff;
+            border: 1px solid #e8edf5;
+            align-items: flex-start;
+        }
+
+        .value-point-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #1a6fa8, #00c8ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .value-point-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0d1b4b;
+            margin-bottom: 6px;
+        }
+
+        .value-point-desc {
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.6;
+        }
+
+        /* ===== 结尾CTA页 ===== */
+        .cta-page {
+            background: linear-gradient(135deg, #0d1b4b 0%, #0a3d62 50%, #1a6fa8 100%);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            gap: 0;
+            position: relative;
+            overflow: hidden;
+            page-break-after: avoid;
+        }
+
+        .cta-page::before {
+            content: '';
+            position: absolute;
+            top: -100px;
+            right: -100px;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(0, 200, 255, 0.12) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cta-grid-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        .cta-content {
+            position: relative;
+            z-index: 2;
+            max-width: 800px;
+        }
+
+        .cta-badge {
+            display: inline-block;
+            background: rgba(0, 200, 255, 0.15);
+            border: 1px solid rgba(0, 200, 255, 0.4);
+            color: #00c8ff;
+            padding: 8px 24px;
+            border-radius: 30px;
+            font-size: 13px;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+        }
+
+        .cta-title {
+            font-size: 46px;
+            font-weight: 900;
+            line-height: 1.3;
+            margin-bottom: 20px;
+        }
+
+        .cta-title span {
+            background: linear-gradient(90deg, #00c8ff, #7b68ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .cta-desc {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 50px;
+            line-height: 1.7;
+        }
+
+        .cta-contacts {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            margin-bottom: 50px;
+        }
+
+        .cta-contact {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .cta-contact-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .cta-contact-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .cta-contact-value {
+            font-size: 15px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .cta-bottom {
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            padding-top: 30px;
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 12px;
+        }
+
+        /* 打印/PDF样式 */
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .page,
+            .cover,
+            .cta-page {
+                page-break-after: always;
+            }
+        }
+
+        /* ===== 手机竖屏响应式（≤768px）===== */
+        @media (max-width: 768px) {
+
+            /* 封面 */
+            .cover-content {
+                padding: 32px 18px;
+                max-width: 100%;
+            }
+
+            .cover-badge {
+                font-size: 11px;
+                letter-spacing: 2px;
+                padding: 6px 16px;
+                margin-bottom: 28px;
+            }
+
+            .cover-title {
+                font-size: 34px;
+                margin-bottom: 14px;
+            }
+
+            .cover-subtitle {
+                font-size: 14px;
+                margin-bottom: 24px;
+                letter-spacing: 0.5px;
+            }
+
+            .cover-tags {
+                gap: 8px;
+                margin-bottom: 32px;
+            }
+
+            .cover-tag {
+                padding: 7px 12px;
+                font-size: 12px;
+            }
+
+            .cover-stats {
+                gap: 16px 28px;
+                flex-wrap: wrap;
+                padding-top: 24px;
+                justify-content: center;
+            }
+
+            .cover-stat-item {
+                min-width: 72px;
+            }
+
+            .cover-stat-num {
+                font-size: 28px;
+            }
+
+            .cover-stat-label {
+                font-size: 11px;
+            }
+
+            /* 通用页面 */
+            .page {
+                padding: 36px 16px;
+                min-height: auto;
+            }
+
+            .page-header {
+                margin-bottom: 20px;
+                align-items: flex-start;
+            }
+
+            /* 手机上页码数字太占位，缩小并弱化 */
+            .page-num {
+                font-size: 36px;
+                margin-right: 10px;
+                color: #e8edf5;
+                line-height: 1.1;
+                flex-shrink: 0;
+            }
+
+            .page-label {
+                font-size: 10px;
+            }
+
+            .page-title {
+                font-size: 20px;
+            }
+
+            .section-divider {
+                margin: 10px 0 24px;
+            }
+
+            /* 痛点页 */
+            .pain-grid {
+                grid-template-columns: 1fr;
+                gap: 14px;
+                margin-bottom: 24px;
+            }
+
+            .pain-card {
+                padding: 20px 18px 20px 22px;
+            }
+
+            .pain-icon {
+                font-size: 26px;
+                margin-bottom: 10px;
+            }
+
+            .pain-title {
+                font-size: 15px;
+            }
+
+            .pain-desc {
+                font-size: 13px;
+            }
+
+            .solution-banner {
+                flex-direction: column;
+                padding: 20px 18px;
+                gap: 12px;
+                text-align: center;
+            }
+
+            .solution-arrow {
+                font-size: 28px;
+            }
+
+            .solution-text {
+                font-size: 14px;
+            }
+
+            /* 功能模块页 */
+            .module-grid {
+                grid-template-columns: 1fr;
+                gap: 14px;
+            }
+
+            .module-card {
+                padding: 20px 18px;
+            }
+
+            .module-icon {
+                width: 44px;
+                height: 44px;
+                font-size: 20px;
+                margin-bottom: 12px;
+            }
+
+            .module-name {
+                font-size: 15px;
+            }
+
+            .module-desc {
+                font-size: 12px;
+            }
+
+            /* 架构页 */
+            .arch-layer {
+                padding: 14px 16px;
+            }
+
+            .arch-layer-title {
+                font-size: 11px;
+                margin-bottom: 12px;
+            }
+
+            .arch-layer-items {
+                gap: 8px;
+            }
+
+            .arch-item {
+                padding: 7px 12px;
+                font-size: 11px;
+            }
+
+            .arch-item small {
+                font-size: 10px;
+                display: block;
+                opacity: 0.8;
+                margin-top: 2px;
+            }
+
+            .tech-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+                margin-top: 20px;
+            }
+
+            .tech-icon {
+                font-size: 22px;
+            }
+
+            .tech-name {
+                font-size: 12px;
+            }
+
+            .tech-desc {
+                font-size: 10px;
+            }
+
+            /* AI页 */
+            .ai-hero {
+                flex-direction: column;
+                padding: 24px 18px;
+                gap: 0;
+                margin-bottom: 20px;
+            }
+
+            /* 手机上隐藏大背景机器人 emoji */
+            .ai-hero::before {
+                display: none;
+            }
+
+            .ai-badge {
+                font-size: 10px;
+                padding: 4px 10px;
+            }
+
+            .ai-title {
+                font-size: 22px;
+                margin-bottom: 10px;
+            }
+
+            .ai-subtitle {
+                font-size: 13px;
+                max-width: 100%;
+            }
+
+            .ai-features-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+
+            .ai-feature {
+                padding: 16px 12px;
+            }
+
+            .ai-feature-icon {
+                font-size: 26px;
+                margin-bottom: 8px;
+            }
+
+            .ai-feature-name {
+                font-size: 13px;
+                margin-bottom: 6px;
+            }
+
+            .ai-feature-desc {
+                font-size: 11px;
+            }
+
+            /* 安全页 */
+            .security-grid {
+                grid-template-columns: 1fr;
+                gap: 14px;
+            }
+
+            .security-card {
+                padding: 18px 16px;
+                gap: 14px;
+            }
+
+            .security-icon-wrap {
+                width: 46px;
+                height: 46px;
+                font-size: 22px;
+                border-radius: 12px;
+                flex-shrink: 0;
+            }
+
+            .security-title {
+                font-size: 14px;
+            }
+
+            .security-desc {
+                font-size: 12px;
+            }
+
+            /* 价值页 */
+            .value-hero {
+                padding: 28px 18px;
+                margin-bottom: 20px;
+                border-radius: 16px;
+            }
+
+            .value-hero-title {
+                font-size: 22px;
+                margin-bottom: 10px;
+            }
+
+            .value-hero-desc {
+                font-size: 13px;
+            }
+
+            .value-metrics {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                margin-bottom: 20px;
+            }
+
+            .metric-card {
+                padding: 22px 12px;
+            }
+
+            .metric-num {
+                font-size: 28px;
+                margin-bottom: 6px;
+            }
+
+            .metric-unit {
+                font-size: 16px;
+            }
+
+            .metric-label {
+                font-size: 11px;
+            }
+
+            .value-points {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .value-point {
+                padding: 18px 16px;
+                gap: 14px;
+            }
+
+            .value-point-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+                border-radius: 10px;
+            }
+
+            .value-point-title {
+                font-size: 14px;
+            }
+
+            .value-point-desc {
+                font-size: 12px;
+            }
+
+            /* CTA结尾页 */
+            .cta-page {
+                padding: 48px 18px;
+            }
+
+            .cta-content {
+                max-width: 100%;
+                padding: 0;
+            }
+
+            .cta-badge {
+                font-size: 11px;
+                padding: 6px 16px;
+                margin-bottom: 20px;
+            }
+
+            .cta-title {
+                font-size: 28px;
+                margin-bottom: 14px;
+            }
+
+            .cta-desc {
+                font-size: 14px;
+                margin-bottom: 28px;
+                line-height: 1.6;
+            }
+
+            .cta-contacts {
+                flex-direction: column;
+                gap: 20px;
+                align-items: center;
+                margin-bottom: 28px;
+            }
+
+            .cta-contact-icon {
+                width: 48px;
+                height: 48px;
+                font-size: 20px;
+            }
+
+            .cta-contact-value {
+                font-size: 13px;
+            }
+
+            .cta-bottom {
+                flex-wrap: wrap;
+                gap: 8px;
+                justify-content: center;
+                padding-top: 20px;
+                font-size: 11px;
+            }
+        }
+
+        /* ===== 超小屏（≤480px）===== */
+        @media (max-width: 480px) {
+            .cover-title {
+                font-size: 28px;
+            }
+
+            .cover-stats {
+                /* 4个统计项在极小屏保持2列布局 */
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 16px 10px;
+                text-align: center;
+            }
+
+            .cover-stat-item {
+                min-width: unset;
+                width: 100%;
+            }
+
+            .page {
+                padding: 28px 14px;
+            }
+
+            .page-num {
+                font-size: 28px;
+            }
+
+            .page-title {
+                font-size: 18px;
+            }
+
+            .ai-features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .value-metrics {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .cta-title {
+                font-size: 24px;
+            }
+
+            .tech-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ==================== 封面 ==================== -->
+    <div class="cover">
+        <div class="cover-grid"></div>
+        <div class="cover-content">
+            <div class="cover-badge">SMART PARK PLATFORM</div>
+            <h1 class="cover-title">
+                智慧园区<br><span>管理系统</span>
+            </h1>
+            <p class="cover-subtitle">数字化转型 · 全栈闭环 · AI 驱动管理新范式</p>
+            <div class="cover-tags">
+                <span class="cover-tag">&#127970; 资产管理</span>
+                <span class="cover-tag">&#129309; 招商管理</span>
+                <span class="cover-tag">&#128225; IoT 物联网</span>
+                <span class="cover-tag">&#129302; AI 助手</span>
+                <span class="cover-tag">&#9889; 工作流引擎</span>
+                <span class="cover-tag">&#128241; 全端协同</span>
+            </div>
+            <div class="cover-stats">
+                <div class="cover-stat-item">
+                    <div class="cover-stat-num">18+</div>
+                    <div class="cover-stat-label">语言支持</div>
+                </div>
+                <div class="cover-stat-item">
+                    <div class="cover-stat-num">15+</div>
+                    <div class="cover-stat-label">AI 工具集</div>
+                </div>
+                <div class="cover-stat-item">
+                    <div class="cover-stat-num">3端</div>
+                    <div class="cover-stat-label">跨端协同</div>
+                </div>
+                <div class="cover-stat-item">
+                    <div class="cover-stat-num">100%</div>
+                    <div class="cover-stat-label">多租户隔离</div>
+                </div>
+            </div>
+        </div>
+        <div class="cover-footer">
+            保密文件 · 2026 © 智慧园区管理系统 · 版权所有
+        </div>
+    </div>
+
+    <!-- ==================== 第1页：行业痛点 ==================== -->
+    <div class="page">
+        <div class="page-header">
+            <div class="page-num">01</div>
+            <div class="page-title-block">
+                <div class="page-label">CHALLENGE</div>
+                <div class="page-title">传统园区管理的困境</div>
+            </div>
+        </div>
+        <div class="section-divider"></div>
+
+        <div class="pain-grid">
+            <div class="pain-card">
+                <div class="pain-icon">&#128203;</div>
+                <div class="pain-title">信息孤岛，数据割裂</div>
+                <div class="pain-desc">租户信息、合同数据、资产台账分散在多个系统，无法形成统一视图，决策依赖人工汇总，效率低下且易出错。</div>
+            </div>
+            <div class="pain-card">
+                <div class="pain-icon">&#128225;</div>
+                <div class="pain-title">设备监控缺乏智能</div>
+                <div class="pain-desc">园区设备依赖人工巡检，故障发现滞后；传感器数据无法实时聚合分析，运营成本居高不下。</div>
+            </div>
+            <div class="pain-card">
+                <div class="pain-icon">&#128260;</div>
+                <div class="pain-title">审批流程繁琐冗长</div>
+                <div class="pain-desc">纸质公文流转流程不透明，审批周期长，无法追溯历史记录，合规风险难以管控。</div>
+            </div>
+            <div class="pain-card">
+                <div class="pain-icon">&#128241;</div>
+                <div class="pain-title">移动端体验缺失</div>
+                <div class="pain-desc">管理人员无法随时随地获取园区实时状态，现场走访记录仍依赖纸质，服务响应速度慢。</div>
+            </div>
+            <div class="pain-card">
+                <div class="pain-icon">&#127970;</div>
+                <div class="pain-title">招商管理低效</div>
+                <div class="pain-desc">客户线索跟进缺乏系统化工具，商机转化率低，合同签署和归档流程繁琐，影响招商效率。</div>
+            </div>
+            <div class="pain-card">
+                <div class="pain-icon">&#128274;</div>
+                <div class="pain-title">数据安全合规隐患</div>
+                <div class="pain-desc">多家企业共用平台时，数据隔离难以保障；敏感信息加密缺乏标准化，面临合规审查压力。</div>
+            </div>
+        </div>
+
+        <div class="solution-banner">
+            <div class="solution-arrow">&#128161;</div>
+            <div class="solution-text">
+                <strong>智慧园区管理系统</strong>以AI驱动为核心，打造覆盖<strong>资产管理、招商运营、IoT监控、工作流自动化</strong>的全栈闭环解决方案，彻底解决上述痛点。
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 第2页：核心功能模块 ==================== -->
+    <div class="page">
+        <div class="page-header">
+            <div class="page-num">02</div>
+            <div class="page-title-block">
+                <div class="page-label">CORE FEATURES</div>
+                <div class="page-title">六大核心功能模块</div>
+            </div>
+        </div>
+        <div class="section-divider"></div>
+
+        <div class="module-grid">
+            <div class="module-card color-blue">
+                <div class="module-icon blue">&#127970;</div>
+                <div class="module-name">园区资产管理</div>
+                <div class="module-desc">全生命周期的资产数字化管理，从房源画像到合同归档一站贯通。</div>
+                <ul class="module-features">
+                    <li>楼栋 / 房源画像管理</li>
+                    <li>招商线索库与商机跟踪</li>
+                    <li>合同全生命周期监控</li>
+                    <li>租户档案与走访记录</li>
+                    <li>入驻 / 退租流程自动化</li>
+                </ul>
+            </div>
+
+            <div class="module-card color-teal">
+                <div class="module-icon teal">&#128225;</div>
+                <div class="module-name">IoT 物联网平台</div>
+                <div class="module-desc">四位一体设备管控，实时感知园区物理世界，智能告警快速响应。</div>
+                <ul class="module-features">
+                    <li>网关设备统一管理</li>
+                    <li>传感器数据点实时采集</li>
+                    <li>设备状态监控仪表盘</li>
+                    <li>事件告警与闭环处理</li>
+                    <li>AI 智能故障分析</li>
+                </ul>
+            </div>
+
+            <div class="module-card color-purple">
+                <div class="module-icon purple">&#9889;</div>
+                <div class="module-name">智能工作流引擎</div>
+                <div class="module-desc">可视化拖拽设计，复杂分支条件、多级审批一步到位。</div>
+                <ul class="module-features">
+                    <li>拖拽式流程可视化设计</li>
+                    <li>支持公文与变量两种模式</li>
+                    <li>AI 自动化审批执行</li>
+                    <li>完整审批历史追溯</li>
+                    <li>版本管理与流程回滚</li>
+                </ul>
+            </div>
+
+            <div class="module-card color-orange">
+                <div class="module-icon orange">&#129302;</div>
+                <div class="module-name">AI 智能助手</div>
+                <div class="module-desc">小科 AI 助手基于 MCP 协议深度集成业务，让 AI 真正参与园区运营。</div>
+                <ul class="module-features">
+                    <li>SSE 流式对话体验</li>
+                    <li>15+ 专业业务工具</li>
+                    <li>AI 自动审批工作流</li>
+                    <li>设备状态智能分析</li>
+                    <li>园区运营 AI 报告</li>
+                </ul>
+            </div>
+
+            <div class="module-card color-green">
+                <div class="module-icon green">&#9729;&#65039;</div>
+                <div class="module-name">企业云硬盘协作</div>
+                <div class="module-desc">分布式文件系统，大文件秒传，多版本管理，精细配额控制。</div>
+                <ul class="module-features">
+                    <li>GridFS 分布式存储</li>
+                    <li>大文件秒传与多版本</li>
+                    <li>回收站 30 天自动清理</li>
+                    <li>精细化存储配额控制</li>
+                    <li>外链分享与审计分析</li>
+                </ul>
+            </div>
+
+            <div class="module-card color-red">
+                <div class="module-icon red">&#128276;</div>
+                <div class="module-name">统一通知与协作</div>
+                <div class="module-desc">WebSocket + SSE 全端覆盖，消息秒达，任务看板实时同步。</div>
+                <ul class="module-features">
+                    <li>系统公告 / 站内信推送</li>
+                    <li>业务提醒多渠道触达</li>
+                    <li>任务看板与依赖管理</li>
+                    <li>三端（Web/App/小程序）同步</li>
+                    <li>自动重连心跳机制</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 第3页：技术架构 ==================== -->
+    <div class="page arch-page">
+        <div class="page-header">
+            <div class="page-num">03</div>
+            <div class="page-title-block">
+                <div class="page-label">ARCHITECTURE</div>
+                <div class="page-title">先进技术架构</div>
+            </div>
+        </div>
+        <div class="section-divider"></div>
+
+        <div class="arch-diagram">
+            <div class="arch-layer frontend">
+                <div class="arch-layer-title">&#128421; 前端接入层（Multi-Terminal）</div>
+                <div class="arch-layer-items">
+                    <div class="arch-item">Platform.Admin<br><small>React 19 + Ant Design 6</small></div>
+                    <div class="arch-item">Platform.App<br><small>Expo 54 + React Native</small></div>
+                    <div class="arch-item">Platform.MiniApp<br><small>微信原生小程序</small></div>
+                </div>
+            </div>
+            <div class="arch-arrow">&#11015;</div>
+            <div class="arch-layer backend">
+                <div class="arch-layer-title">&#9881;&#65039; 后端服务层（.NET 10 + Aspire）</div>
+                <div class="arch-layer-items">
+                    <div class="arch-item">YARP API 网关</div>
+                    <div class="arch-item">Platform.ApiService（核心业务）</div>
+                    <div class="arch-item">MCP 服务（AI 集成）</div>
+                    <div class="arch-item">SSE 实时推送</div>
+                    <div class="arch-item">工作流引擎</div>
+                    <div class="arch-item">IoT 平台</div>
+                </div>
+            </div>
+            <div class="arch-arrow">&#11015;</div>
+            <div class="arch-layer data">
+                <div class="arch-layer-title">&#128452; 数据访问层（IDataFactory）</div>
+                <div class="arch-layer-items">
+                    <div class="arch-item">IDataFactory&lt;T&gt;（统一抽象）</div>
+                    <div class="arch-item">多租户全局过滤</div>
+                    <div class="arch-item">软删除 + 审计追踪</div>
+                    <div class="arch-item">原子化 Lambda 更新</div>
+                </div>
+            </div>
+            <div class="arch-arrow">&#11015;</div>
+            <div class="arch-layer infra">
+                <div class="arch-layer-title">&#127959; 基础设施层（Cloud Native）</div>
+                <div class="arch-layer-items">
+                    <div class="arch-item">MongoDB（主数据库）</div>
+                    <div class="arch-item">Redis（缓存层）</div>
+                    <div class="arch-item">GridFS（文件存储）</div>
+                    <div class="arch-item">OpenTelemetry（可观测）</div>
+                    <div class="arch-item">Docker 容器化</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tech-grid">
+            <div class="tech-item">
+                <div class="tech-icon">&#128311;</div>
+                <div class="tech-name">.NET 10</div>
+                <div class="tech-desc">最新代 C# 运行时</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-icon">&#9883;&#65039;</div>
+                <div class="tech-name">React 19</div>
+                <div class="tech-desc">极致渲染性能</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-icon">&#128202;</div>
+                <div class="tech-name">OpenTelemetry</div>
+                <div class="tech-desc">全链路可观测性</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-icon">&#128272;</div>
+                <div class="tech-name">AES-256-GCM</div>
+                <div class="tech-desc">军工级数据加密</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 第4页：AI能力 ==================== -->
+    <div class="page">
+        <div class="page-header">
+            <div class="page-num">04</div>
+            <div class="page-title-block">
+                <div class="page-label">AI CAPABILITY</div>
+                <div class="page-title">全栈 AI 协同能力</div>
+            </div>
+        </div>
+        <div class="section-divider"></div>
+
+        <div class="ai-hero">
+            <div>
+                <div class="ai-badge">MCP MODEL CONTEXT PROTOCOL</div>
+                <div class="ai-title">小科 AI 助手</div>
+                <div class="ai-subtitle">
+                    基于标准化 MCP 协议深度集成 AI 能力，让 AI 助手不只是聊天机器人，而是真正能读取数据、执行操作、驱动业务的智能代理。支持接入 OpenAI、Azure OpenAI 等全球顶级大模型。
+                </div>
+            </div>
+        </div>
+
+        <div class="ai-features-grid">
+            <div class="ai-feature">
+                <div class="ai-feature-icon">&#9889;</div>
+                <div class="ai-feature-name">工作流自动化</div>
+                <div class="ai-feature-desc">AI 可直接执行审批、驳回、转办操作，检索流程状态，获取完整审批历史轨迹</div>
+            </div>
+            <div class="ai-feature">
+                <div class="ai-feature-icon">&#128225;</div>
+                <div class="ai-feature-name">IoT 智能监控</div>
+                <div class="ai-feature-desc">实时拉取设备传感器数据，自动生成分析报表，及时预警设备异常事件</div>
+            </div>
+            <div class="ai-feature">
+                <div class="ai-feature-icon">&#127970;</div>
+                <div class="ai-feature-name">园区数据检索</div>
+                <div class="ai-feature-desc">房源状态、招商线索、租户档案、走访记录，AI 一键查询企业级数据</div>
+            </div>
+            <div class="ai-feature">
+                <div class="ai-feature-icon">&#128203;</div>
+                <div class="ai-feature-name">任务智能管理</div>
+                <div class="ai-feature-desc">自动化创建任务、指派负责人、更新进度看板，项目管理效率翻倍提升</div>
+            </div>
+            <div class="ai-feature">
+                <div class="ai-feature-icon">&#128200;</div>
+                <div class="ai-feature-name">运营分析报告</div>
+                <div class="ai-feature-desc">AI 自动生成园区运营分析报告，涵盖园区统计、访客分析、收益趋势等维度</div>
+            </div>
+            <div class="ai-feature">
+                <div class="ai-feature-icon">&#128274;</div>
+                <div class="ai-feature-name">安全审计追踪</div>
+                <div class="ai-feature-desc">所有 AI 工具执行操作均记录审计日志，防注入攻击，合规可追溯</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 第5页：安全与合规 ==================== -->
+    <div class="page" style="background:#f8faff;">
+        <div class="page-header">
+            <div class="page-num">05</div>
+            <div class="page-title-block">
+                <div class="page-label">SECURITY & COMPLIANCE</div>
+                <div class="page-title">企业级安全与合规保障</div>
+            </div>
+        </div>
+        <div class="section-divider"></div>
+
+        <div class="security-grid">
+            <div class="security-card">
+                <div class="security-icon-wrap">&#128272;</div>
+                <div class="security-content">
+                    <div class="security-title">JWT 双令牌认证</div>
+                    <div class="security-desc">基于 JSON Web Token 的无状态认证机制，配合 Access Token + Refresh Token
+                        双令牌刷新策略，在安全性与用户体验之间取得最优平衡。</div>
+                </div>
+            </div>
+
+            <div class="security-card">
+                <div class="security-icon-wrap">&#127970;</div>
+                <div class="security-content">
+                    <div class="security-title">多租户数据隔离</div>
+                    <div class="security-desc">通过 EF Core 全局查询过滤器自动注入 CompanyId，确保不同企业的数据在物理和逻辑层面严格隔离，彻底消除数据泄露风险。</div>
+                </div>
+            </div>
+
+            <div class="security-card">
+                <div class="security-icon-wrap">&#128274;</div>
+                <div class="security-content">
+                    <div class="security-title">AES-256-GCM 加密</div>
+                    <div class="security-desc">密码本等极敏感数据采用军工级 AES-256-GCM 算法加密存储，支持动态密钥管理与密码强度审计，全面保护企业核心资产。</div>
+                </div>
+            </div>
+
+            <div class="security-card">
+                <div class="security-icon-wrap">&#128737;&#65039;</div>
+                <div class="security-content">
+                    <div class="security-title">输入安全防护</div>
+                    <div class="security-desc">内置防 SQL/NoSQL 注入、XSS 跨站脚本攻击检测，参数长度限制，多层安全验证，有效抵御常见网络攻击，保障系统稳定运行。</div>
+                </div>
+            </div>
+
+            <div class="security-card">
+                <div class="security-icon-wrap">&#128203;</div>
+                <div class="security-content">
+                    <div class="security-title">全链路审计日志</div>
+                    <div class="security-desc">所有敏感操作自动记录审计日志，包含操作人、时间戳、请求参数、执行结果和响应耗时，满足等保 2.0 等合规审查要求。</div>
+                </div>
+            </div>
+
+            <div class="security-card">
+                <div class="security-icon-wrap">&#127760;</div>
+                <div class="security-content">
+                    <div class="security-title">传输与存储安全</div>
+                    <div class="security-desc">全链路 HTTPS 加密传输，GridFS 文件碎片化分布存储增强隐私保护，完整支持 .NET Aspire 自动化开发/生产安全策略适配。
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 第6页：客户价值 ==================== -->
+    <div class="page">
+        <div class="page-header">
+            <div class="page-num">06</div>
+            <div class="page-title-block">
+                <div class="page-label">BUSINESS VALUE</div>
+                <div class="page-title">为您的业务创造实际价值</div>
+            </div>
+        </div>
+        <div class="section-divider"></div>
+
+        <div class="value-metrics">
+            <div class="metric-card">
+                <div class="metric-num">60<span class="metric-unit">%</span></div>
+                <div class="metric-label">管理效率提升</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-num">40<span class="metric-unit">%</span></div>
+                <div class="metric-label">运营成本降低</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-num">3×</div>
+                <div class="metric-label">招商转化提速</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-num">24/7</div>
+                <div class="metric-label">AI 智能值守</div>
+            </div>
+        </div>
+
+        <div class="value-points">
+            <div class="value-point">
+                <div class="value-point-icon">&#127919;</div>
+                <div>
+                    <div class="value-point-title">快速落地，立竿见影</div>
+                    <div class="value-point-desc">基于 .NET Aspire 云原生编排，一键启动所有服务。内置数据初始化与标准化流程，最短 3
+                        天即可完成部署上线，让业务快速享受数字化红利。</div>
+                </div>
+            </div>
+            <div class="value-point">
+                <div class="value-point-icon">&#127757;</div>
+                <div>
+                    <div class="value-point-title">全球化拓展能力</div>
+                    <div class="value-point-desc">内置 18 种语言支持，完善的 RTL 布局适配，助力园区业务快速拓展至东南亚、中东等国际市场，无需额外本地化投入。</div>
+                </div>
+            </div>
+            <div class="value-point">
+                <div class="value-point-icon">&#128200;</div>
+                <div>
+                    <div class="value-point-title">数据驱动决策</div>
+                    <div class="value-point-desc">AI 自动生成园区运营报告，可视化呈现招商入驻率、设备运行状态、收益趋势等核心指标，让管理者随时掌握园区运营全貌。</div>
+                </div>
+            </div>
+            <div class="value-point">
+                <div class="value-point-icon">&#128295;</div>
+                <div>
+                    <div class="value-point-title">灵活可扩展架构</div>
+                    <div class="value-point-desc">Clean Architecture 设计，IDataFactory
+                        数据层抽象，业务逻辑与基础设施完全解耦，轻松接入新业务模块，保护长期技术投资。</div>
+                </div>
+            </div>
+            <div class="value-point">
+                <div class="value-point-icon">&#128241;</div>
+                <div>
+                    <div class="value-point-title">三端无缝协同</div>
+                    <div class="value-point-desc">Web 管理后台、iOS/Android App、微信小程序三端数据实时同步，让管理干部在路上、在现场、在会议室都能高效处理业务。
+                    </div>
+                </div>
+            </div>
+            <div class="value-point">
+                <div class="value-point-icon">&#129309;</div>
+                <div>
+                    <div class="value-point-title">降低人员依赖</div>
+                    <div class="value-point-desc">AI 工作流自动化显著减少人工干预，审批提醒、设备告警、合同到期等自动触达，让有限人员管理更大规模园区资产。</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 第7页：数据展示大屏 ==================== -->
+    <div class="page dashboard-page">
+        <div class="page-header">
+            <div class="page-num">07</div>
+            <div class="page-title-block">
+                <div class="page-label">DATA COCKPIT</div>
+                <div class="page-title">全景数据驾驶舱</div>
+            </div>
+            <button class="dashboard-fullscreen-btn" onclick="window.open('index.html','_blank')" title="全屏查看大屏">
+                &#9974; 全屏体验
+            </button>
+        </div>
+        <div class="section-divider"></div>
+
+        <p class="dashboard-desc">
+            基于真实业务模块构建的实时数据驾驶舱，整合资产管理、招商运营、IoT监控、智能通行、AI助手等核心业务数据，打破信息孤岛，实现园区运营全可视化。支持 3D 数字孪生地图交互（拖拽旋转 · 滚轮缩放）。
+        </p>
+
+        <div class="dashboard-iframe-wrap" id="dashWrap">
+            <iframe id="dashboardFrame" src="index.html#slide=2" frameborder="0" scrolling="no" allowfullscreen
+                title="智慧园区数据驾驶舱" width="1920" height="1080"
+                style="transform-origin: top left; display: block;"></iframe>
+            <div class="dashboard-overlay" id="dashOverlay" onclick="activateDashboard()">
+                <div class="dash-play-hint">
+                    <div class="dash-play-icon">&#9654;</div>
+                    <div class="dash-play-text">点击进入交互驾驶舱</div>
+                    <div class="dash-play-sub">支持拖拽旋转 3D 地图 · 滚轮缩放</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* ===== 数据大屏页 ===== */
+        .dashboard-page {
+            background: #030712;
+            padding: 40px 40px 24px;
+            /* 锁定满屏高，flex 列布局让 iframe 自动撑满剩余空间 */
+            height: 100vh;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dashboard-page .page-num {
+            color: rgba(59, 130, 246, 0.15);
+        }
+
+        .dashboard-page .page-label {
+            color: #3b82f6;
+        }
+
+        .dashboard-page .page-title {
+            color: #f8fafc;
+        }
+
+        .dashboard-page .section-divider {
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+        }
+
+        .dashboard-fullscreen-btn {
+            margin-left: auto;
+            padding: 8px 18px;
+            background: rgba(59, 130, 246, 0.12);
+            border: 1px solid rgba(59, 130, 246, 0.35);
+            color: #60a5fa;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            font-family: inherit;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .dashboard-fullscreen-btn:hover {
+            background: rgba(59, 130, 246, 0.25);
+            color: #93c5fd;
+        }
+
+        .dashboard-desc {
+            font-size: 13px;
+            color: #94a3b8;
+            line-height: 1.7;
+            margin-bottom: 20px;
+            max-width: 100%;
+            text-align: left;
+        }
+
+        .dashboard-iframe-wrap {
+            position: relative;
+            width: 100%;
+            /* flex:1 填满剩余高度，去掉 aspect-ratio */
+            flex: 1;
+            min-height: 0;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            box-shadow: 0 0 40px rgba(59, 130, 246, 0.1), 0 20px 60px rgba(0, 0, 0, 0.5);
+            background: #030712;
+        }
+
+        .dashboard-iframe-wrap iframe {
+            /* 固定原始尺寸，由 JS scale 控制缩放，不用 width/height 100% */
+            display: block;
+            pointer-events: none;
+            /* width/height 由 HTML 属性（1920×1080）决定 */
+        }
+
+        .dashboard-iframe-wrap.active iframe {
+            pointer-events: auto;
+        }
+
+        .dashboard-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(3, 7, 18, 0.6);
+            backdrop-filter: blur(2px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: opacity 0.4s;
+            z-index: 10;
+        }
+
+        .dashboard-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .dash-play-hint {
+            text-align: center;
+            color: #fff;
+        }
+
+        .dash-play-icon {
+            font-size: 36px;
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: rgba(59, 130, 246, 0.18);
+            border: 2px solid rgba(59, 130, 246, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 14px;
+            transition: all 0.3s;
+        }
+
+        .dashboard-overlay:hover .dash-play-icon {
+            background: rgba(59, 130, 246, 0.32);
+            transform: scale(1.1);
+        }
+
+        .dash-play-text {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .dash-play-sub {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.45);
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-page {
+                padding: 36px 16px 24px;
+            }
+
+            .dashboard-desc {
+                font-size: 12px;
+                margin-bottom: 12px;
+            }
+
+            .dashboard-fullscreen-btn {
+                padding: 6px 12px;
+                font-size: 11px;
+            }
+
+            .dashboard-iframe-wrap {
+                min-height: 200px;
+                /* 防塔降，flex:1 自动占满剩余高度 */
+            }
+
+            .dash-play-icon {
+                width: 56px;
+                height: 56px;
+                font-size: 28px;
+            }
+
+            .dash-play-text {
+                font-size: 13px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .dashboard-iframe-wrap {
+                min-height: 160px;
+            }
+        }
+    </style>
+
+    <script>
+        /* ===== iframe 自动缩放 ===== */
+        const IFRAME_W = 1920; // 大屏原始设计宽
+        const IFRAME_H = 1080; // 大屏原始设计高
+
+        function scaleDashboard() {
+            const wrap = document.getElementById('dashWrap');
+            const frame = document.getElementById('dashboardFrame');
+            if (!wrap || !frame) return;
+
+            const cw = wrap.clientWidth;
+            const ch = wrap.clientHeight;
+            // 取宽/高各自的缩放比，取较小值保证完整显示
+            const scale = Math.min(cw / IFRAME_W, ch / IFRAME_H);
+
+            frame.style.width = IFRAME_W + 'px';
+            frame.style.height = IFRAME_H + 'px';
+            frame.style.transform = `scale(${scale})`;
+            frame.style.transformOrigin = 'top left';
+
+            // 让容器高度跟随缩放后实际高度，避免空白
+            wrap.style.height = (IFRAME_H * scale) + 'px';
+        }
+
+        // 页面加载 & 窗口 resize 时重算
+        window.addEventListener('resize', scaleDashboard);
+        window.addEventListener('load', scaleDashboard);
+        // DOM ready 时也触发一次
+        if (document.readyState !== 'loading') {
+            scaleDashboard();
+        } else {
+            document.addEventListener('DOMContentLoaded', scaleDashboard);
+        }
+
+        /* ===== 激活驾驶舱交互 ===== */
+        function activateDashboard() {
+            const wrap = document.getElementById('dashWrap');
+            const overlay = document.getElementById('dashOverlay');
+            const frame = document.getElementById('dashboardFrame');
+            wrap.classList.add('active');
+            overlay.classList.add('hidden');
+            function jumpToSlide() {
+                try { frame.contentWindow.goToSlide(2); } catch (_) { }
+            }
+            if (frame.contentDocument && frame.contentDocument.readyState === 'complete') {
+                jumpToSlide();
+            } else {
+                frame.addEventListener('load', jumpToSlide, { once: true });
+            }
+        }
+
+        // iframe 加载完成后自动跳到驾驶舱幻灯片
+        document.getElementById('dashboardFrame').addEventListener('load', function () {
+            try { this.contentWindow.goToSlide(2); } catch (_) { }
+            scaleDashboard(); // 加载完再校正一次
+        });
+    </script>
+
+    <!-- ==================== 结尾CTA页 ==================== -->
+    <div class="page cta-page">
+        <div class="cta-grid-bg"></div>
+        <div class="cta-content">
+            <div class="cta-badge">立即开启数字化转型</div>
+            <h2 class="cta-title">让智慧园区<br><span>为您的未来赋能</span></h2>
+            <p class="cta-desc">
+                从今天开始，用 AI 驱动的智慧园区管理系统<br>
+                重新定义您的园区运营管理方式
+            </p>
+            <div class="cta-contacts">
+                <div class="cta-contact">
+                    <div class="cta-contact-icon">&#128100;</div>
+                    <div class="cta-contact-label">联系人</div>
+                    <div class="cta-contact-value">樊书译</div>
+                </div>
+                <div class="cta-contact">
+                    <div class="cta-contact-icon">&#128222;</div>
+                    <div class="cta-contact-label">销售热线</div>
+                    <div class="cta-contact-value">15332108886</div>
+                </div>
+                <div class="cta-contact">
+                    <div class="cta-contact-icon">&#128231;</div>
+                    <div class="cta-contact-label">商务邮箱</div>
+                    <div class="cta-contact-value">fsy_008@msn.com</div>
+                </div>
+                <div class="cta-contact">
+                    <div class="cta-contact-icon">&#128172;</div>
+                    <div class="cta-contact-label">微信咨询</div>
+                    <div class="cta-contact-value">微信同手机号</div>
+                </div>
+            </div>
+            <div class="cta-bottom">
+                <span>&#127970; 智慧园区管理系统</span>
+                <span>·</span>
+                <span>全栈数字化解决方案</span>
+                <span>·</span>
+                <span>2026 版权所有 天津融众信息技术有限公司</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* =====================================================
+         * 整页滚动吸附 + 阻尼动画
+         * - 监听 wheel / touch 事件
+         * - 使用 cubic-bezier easing 实现弹性阻尼过渡
+         * - 数据大屏（iframe）区域允许内部滚动，不拦截
+         * ===================================================== */
+        (function () {
+            const DURATION = 900;   // 过渡动画时长 ms（越大越缓）
+            const DEBOUNCE = 1200;  // 两次翻页最小间隔 ms（防止滑太快）
+            const THRESHOLD = 30;    // 触发翻页的最小 deltaY 绝对值
+            const TOUCH_MIN = 40;    // 触发翻页的最小触摸滑动距离 px
+
+            // ---- Easing: easeInOutQuart（强阻尼感） ----
+            function easeInOutQuart(t) {
+                return t < 0.5
+                    ? 8 * t * t * t * t
+                    : 1 - Math.pow(-2 * t + 2, 4) / 2;
+            }
+
+            // ---- 获取所有一级页面 ----
+            function getPages() {
+                return Array.from(document.querySelectorAll(
+                    '.cover, .page, .cta-page, .dashboard-page'
+                )).filter(el => !el.closest('.cover ~ .page .page'));
+            }
+
+            let isAnimating = false;
+            let lastScrollTime = 0;
+            let momentum = 0;        // 累积滚动量
+
+            // ---- 核心滚动动画 ----
+            function scrollToPage(targetY) {
+                if (isAnimating) return;
+                isAnimating = true;
+
+                const startY = window.scrollY;
+                const distance = targetY - startY;
+                const startTime = performance.now();
+
+                function step(currentTime) {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / DURATION, 1);
+                    const eased = easeInOutQuart(progress);
+
+                    window.scrollTo(0, startY + distance * eased);
+
+                    if (progress < 1) {
+                        requestAnimationFrame(step);
+                    } else {
+                        window.scrollTo(0, targetY); // 精确落点
+                        isAnimating = false;
+                        momentum = 0;
+                    }
+                }
+
+                requestAnimationFrame(step);
+            }
+
+            // ---- 找到目标页索引 ----
+            function findCurrentPageIndex(pages) {
+                const mid = window.scrollY + window.innerHeight / 2;
+                let best = 0;
+                let bestDist = Infinity;
+                pages.forEach((p, i) => {
+                    const d = Math.abs(p.getBoundingClientRect().top + window.scrollY + p.offsetHeight / 2 - mid);
+                    if (d < bestDist) { bestDist = d; best = i; }
+                });
+                return best;
+            }
+
+            // ---- Wheel 处理 ----
+            window.addEventListener('wheel', function (e) {
+                // 数据大屏 iframe 遮罩激活后 & 在驾驶舱区域内，不拦截
+                const dashWrap = document.getElementById('dashWrap');
+                if (dashWrap && dashWrap.classList.contains('active') && dashWrap.contains(e.target)) return;
+                // iframe 内部本身不会冒泡，但保险起见过滤
+                if (e.target && e.target.tagName === 'IFRAME') return;
+
+                const pages = getPages();
+                if (!pages.length) return;
+
+                const now = Date.now();
+                // 积累动量
+                if (!isAnimating) {
+                    momentum += e.deltaY;
+                }
+
+                // 阻尼：必须累积到阈值才触发
+                if (Math.abs(momentum) < THRESHOLD) {
+                    e.preventDefault();
+                    return;
+                }
+
+                // 节流
+                if (now - lastScrollTime < DEBOUNCE) {
+                    e.preventDefault();
+                    return;
+                }
+
+                e.preventDefault();
+                lastScrollTime = now;
+
+                const dir = momentum > 0 ? 1 : -1;
+                momentum = 0;
+
+                const cur = findCurrentPageIndex(pages);
+                const next = Math.max(0, Math.min(pages.length - 1, cur + dir));
+                if (next === cur && dir === 1 && window.scrollY + window.innerHeight >= document.body.scrollHeight - 2) return;
+                if (next === cur && dir === -1 && window.scrollY <= 2) return;
+
+                const targetY = pages[next].getBoundingClientRect().top + window.scrollY;
+                scrollToPage(targetY);
+
+            }, { passive: false });
+
+            // ---- Touch 处理 ----
+            let touchStartY = 0;
+
+            window.addEventListener('touchstart', function (e) {
+                touchStartY = e.touches[0].clientY;
+            }, { passive: true });
+
+            window.addEventListener('touchend', function (e) {
+                // 数据大屏激活时不处理
+                const dashWrap = document.getElementById('dashWrap');
+                if (dashWrap && dashWrap.classList.contains('active') && dashWrap.contains(e.target)) return;
+
+                const dy = touchStartY - e.changedTouches[0].clientY;
+                if (Math.abs(dy) < TOUCH_MIN) return;
+
+                const pages = getPages();
+                if (!pages.length) return;
+
+                const now = Date.now();
+                if (now - lastScrollTime < DEBOUNCE) return;
+                lastScrollTime = now;
+
+                const dir = dy > 0 ? 1 : -1;
+                const cur = findCurrentPageIndex(pages);
+                const next = Math.max(0, Math.min(pages.length - 1, cur + dir));
+                if (next === cur) return;
+
+                const targetY = pages[next].getBoundingClientRect().top + window.scrollY;
+                scrollToPage(targetY);
+
+            }, { passive: true });
+
+            // ---- 键盘箭头键支持 ----
+            window.addEventListener('keydown', function (e) {
+                if (['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', ' '].includes(e.key)) {
+                    const pages = getPages();
+                    if (!pages.length) return;
+
+                    const now = Date.now();
+                    if (now - lastScrollTime < DEBOUNCE / 2) return;
+                    lastScrollTime = now;
+
+                    const dir = ['ArrowDown', 'PageDown', ' '].includes(e.key) ? 1 : -1;
+                    const cur = findCurrentPageIndex(pages);
+                    const next = Math.max(0, Math.min(pages.length - 1, cur + dir));
+                    if (next === cur) return;
+
+                    e.preventDefault();
+                    const targetY = pages[next].getBoundingClientRect().top + window.scrollY;
+                    scrollToPage(targetY);
+                }
+            });
+
+            // ---- 初始对齐到最近页 ----
+            window.addEventListener('load', function () {
+                const pages = getPages();
+                if (!pages.length) return;
+                const cur = findCurrentPageIndex(pages);
+                const targetY = pages[cur].getBoundingClientRect().top + window.scrollY;
+                if (Math.abs(window.scrollY - targetY) > 10) {
+                    window.scrollTo(0, targetY);
+                }
+            });
+        })();
+    </script>
+
+</body>
+
+</html>

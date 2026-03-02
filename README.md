@@ -300,6 +300,9 @@ dotnet run --project Platform.AppHost
 
 - [MCP 服务设计问题分析报告](Platform.ApiService/docs/MCP服务设计问题分析报告.md)
 - [MCP 服务简化版本说明](Platform.ApiService/docs/MCP服务简化版本说明.md)
+- [MCP 处理器详尽指南](docs/features/MCP-HANDLERS-GUIDE.md)
+- [工作流引擎设计指南](docs/features/WORKFLOW-ENGINE.md)
+- [物联网平台开发指南](docs/features/IOT-PLATFORM-GUIDE.md)
 - [Ant Design 6 迁移总结](Platform.Admin/docs/ANTD_MIGRATION_SUMMARY.md)
 
 ## 📄 开源协议 (License)

@@ -4,8 +4,8 @@
 
 - **全面拥抱 LINQ**：所有数据库查询、分页和更新条件均采用标准的 C# LINQ 表达式。严格禁止在业务代码中使用 MongoDB 特定的 API (如 `FilterBuilder`、`UpdateBuilder`)。
 - **分页参数统一范围**：`page` 1–10000，`pageSize` 1–100；查询时直接传参数给 `FindPagedAsync`，由工厂处理底层分页逻辑。
-- **审计字段赋值策略**：工厂自动维护 `CreatedAt/UpdatedAt/CreatedBy/UpdatedBy` 等字段。业务代码应优先通过实现 `IOperationTrackable` 等接口来确保审计字段的自动填充，逐步淘汰反射，提升性能。
-- **数据库无关性**：`IDataFactory` 抽象层确保了业务逻辑不再绑定到特定的数据库驱动，为未来数据库迁移 (如转向 EF Core) 扫清障碍。
+- **审计字段赋值策略**：审计字段（`CreatedAt/UpdatedAt/CreatedBy/UpdatedBy`）由 `PlatformDbContext.SaveChangesAsync` 自动维护。业务代码应通过实现 `ITimestamped`、`IOperationTrackable` 等接口来确保审计字段的自动填充，这通过 EF Core 的拦截机制实现，性能更佳且逻辑集中。
+- **数据库无关性**：`IDataFactory` 抽象层及其 EF Core 实现确保了业务逻辑不再绑定到特定的数据库驱动，实现了真正的数据库无关性。
 
 > 本文档是对 `.cursor/rules/rule.mdc` 后端相关总纲的展开说明，**以此文档为准**，总纲只保留硬规则与索引。
 
@@ -81,18 +81,17 @@
 ### 4. 审计字段与数据库操作工厂协作
 
 - **审计字段来源**：
-  - `IDataFactory<T>` 在 `CreateAsync` / `UpdateAsync` / `DeleteAsync` 相关方法中，自动维护：
+  - `IDataFactory<T>` 的操作最终通过 `PlatformDbContext.SaveChangesAsync` 触发审计逻辑，自动维护：
     - 时间戳：`CreatedAt`、`UpdatedAt`
     - 软删除：`IsDeleted`、`DeletedAt`、`DeletedBy`
     - 审计人：`CreatedBy`、`CreatedByUsername`、`UpdatedBy`、`UpdatedByUsername`
-  - 它通过 `ITenantContext` 获取当前用户信息来填充上述字段。
+  - 审计逻辑通过 `ITenantContext` 获取当前用户信息来填充上述字段。
 - **规则**：
   - 实现了 `ISoftDeletable` / `ITimestamped` 的实体，**禁止**在业务代码中手工设置上述审计字段。
   - 所有创建、更新、删除操作必须通过 `IDatabaseOperationFactory<T>` 的原子方法完成，避免绕过审计逻辑。
 
 - **统一注册扩展**（`Platform.ServiceDefaults.Extensions.ServiceExtensions`）：
-  - `AddDataFactory<T>()`：为指定实体类型 `T` 注册 `IDataFactory<T>`。
-  - `AddDatabaseFactory()`：推荐方式，统一注册 `IAuditService` 与开放泛型的 `IDataFactory<>` / `EFCoreDataFactory<>` 等实现。
+  - `AddPlatformDatabase()`：推荐方式，一键注册 `PlatformDbContext`、`IDataFactory<>` 的 EF Core 实现及相关基础设施。
 - **服务启动约定**：
   - 每个微服务在 `Program.cs` 必须调用 `services.AddDatabaseFactory()` 一次。
   - 业务层只能通过构造函数注入 `IDataFactory<T>` 使用工厂：

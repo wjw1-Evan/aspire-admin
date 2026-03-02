@@ -8,7 +8,7 @@
 - **简化 API**：移除了繁琐的 `FilterBuilder/UpdateBuilder`，改用标准的 Lambda 表达式。
 - **分页与排序**：`FindPagedAsync` 集成了排序逻辑；排序统一使用 `Func<IQueryable<T>, IOrderedQueryable<T>>`。
 - **类型安全更新**：`UpdateAsync` 接受 `Action<T>`，在实体对象上直接操作，由工厂自动检测变更并执行审计字段更新。
-- **自动审计与租户**：依然保留对 `IMultiTenant`、`ISoftDeletable`、`ITimestamped` 的自动处理。
+- **自动审计与租户**：保留对 `IMultiTenant`、`ISoftDeletable`、`ITimestamped` 的自动处理，逻辑集中在 `PlatformDbContext` 中。
 
 > 本文档说明如何使用 `IDataFactory<T>` 进行数据库操作，这是平台统一且未来兼容（如迁移 EF Core）的数据访问方式。
 
@@ -18,7 +18,7 @@
 
 - **多租户隔离**：自动为实现了 `IMultiTenant` 的实体附加 `CompanyId` 过滤
 - **软删除支持**：自动处理软删除逻辑，查询时自动过滤已删除记录
-- **审计字段维护**：自动维护 `CreatedAt`、`UpdatedAt`、`CreatedBy`、`UpdatedBy` 等审计字段
+- **审计字段维护**：由 `PlatformDbContext` 自动维护 `CreatedAt`、`UpdatedAt`、`CreatedBy`、`UpdatedBy` 等审计字段
 - **原子操作**：所有操作都是原子性的，确保数据一致性
 
 ## 🚫 禁止行为
@@ -59,8 +59,8 @@
 在 `Program.cs` 中注册数据库工厂：
 
 ```csharp
-// 推荐方式：统一注册
-services.AddDatabaseFactory();
+// 推荐方式：一键注册平台数据库与基础设施
+builder.AddPlatformDatabase();
 ```
 
 ### 2. 服务注入

@@ -44,49 +44,43 @@
 
 ## 📝 菜单同步机制
 
-### 菜单定义
+### 1. 菜单定义
 
-菜单在 `DataInitializerService.GetExpectedMenus()` 方法中定义：
+菜单不再硬编码在 C# 中，而是从 `Platform.DataInitializer/Menus.json` 加载。
 
-```csharp
-private List<Menu> GetExpectedMenus(DateTime now)
-{
-    var menus = new List<Menu>();
-    
-    // 顶级菜单
-    menus.Add(new Menu
+**Menus.json 结构示例**：
+```json
+[
     {
-        Name = "welcome",
-        Title = "欢迎",
-        Path = "/welcome",
-        Component = "./Welcome",
-        Icon = "smile",
-        SortOrder = 1,
-        IsEnabled = true
-    });
-    
-    // 子菜单
-    menus.Add(new Menu
+        "Name": "welcome",
+        "Title": "欢迎",
+        "Path": "/welcome",
+        "Component": "./Welcome",
+        "Icon": "smile",
+        "SortOrder": 1
+    },
     {
-        Name = "user-management",
-        Title = "用户管理",
-        Path = "/system/user-management",
-        Component = "./user-management",
-        Icon = "user",
-        ParentId = "system", // 父菜单名称
-        SortOrder = 1
-    });
-    
-    return menus;
-}
+        "Name": "user-management",
+        "Title": "用户管理",
+        "Path": "/system/user-management",
+        "Component": "./user-management",
+        "Icon": "user",
+        "ParentId": "system",
+        "SortOrder": 1
+    }
+]
 ```
 
-### 同步逻辑
+### 2. 同步逻辑
 
-1. **处理顶级菜单**：先创建所有无 `ParentId` 的菜单
-2. **建立映射关系**：记录菜单名称到ID的映射
-3. **处理子菜单**：使用父菜单名称查找ID，设置 `ParentId`
-4. **增量更新**：已存在的菜单检查 `ParentId` 是否正确，必要时更新
+`DataInitializerService.SyncMenusAsync()` 执行以下操作：
+1. **加载数据**: 从 `Menus.json` 反序列化菜单列表。
+2. **第一遍：同步基础信息**:
+   - 根据 `Name` 查找现有菜单。
+   - 如果不存在，则插入新记录；如果存在，则更新 `Title`、`Path`、`Icon` 和 `SortOrder`。
+   - 建立 `Name` 到数据库 `Id` 的映射。
+3. **第二遍：建立父子关联**:
+   - 对于有 `ParentId` (名称) 的菜单，使用映射表查找对应的数据库 `Id` 并更新。
 
 ### 菜单特性
 
@@ -140,43 +134,20 @@ dotnet run
 
 ### 步骤
 
-1. **编辑 `DataInitializerService.cs`**
-2. **在 `GetExpectedMenus()` 方法中添加菜单定义**
-3. **重启服务**：服务会自动检测并创建新菜单
+1. **编辑 `Menus.json`**
+2. **添加菜单对象**: 确保 `Name` 全局唯一，`ParentId` 指向已存在的菜单 `Name`。
+3. **重启服务**: 服务会自动检测并同步变更。
 
-### 示例
-
-```csharp
-// 添加新的顶级菜单
-menus.Add(new Menu
+### 示例 (Menus.json)
+```json
 {
-    Name = "new-feature",
-    Title = "新功能",
-    Path = "/new-feature",
-    Component = "./NewFeature",
-    Icon = "star",
-    SortOrder = 10,
-    IsEnabled = true,
-    IsDeleted = false,
-    CreatedAt = now,
-    UpdatedAt = now
-});
-
-// 添加子菜单
-menus.Add(new Menu
-{
-    Name = "new-feature-sub",
-    Title = "子功能",
-    Path = "/new-feature/sub",
-    Component = "./NewFeature/Sub",
-    Icon = "sub",
-    ParentId = "new-feature", // 父菜单名称
-    SortOrder = 1,
-    IsEnabled = true,
-    IsDeleted = false,
-    CreatedAt = now,
-    UpdatedAt = now
-});
+    "Name": "new-feature",
+    "Title": "新功能",
+    "Path": "/new-feature",
+    "Component": "./NewFeature",
+    "Icon": "star",
+    "SortOrder": 10
+}
 ```
 
 ## 📊 索引管理

@@ -303,6 +303,7 @@ dotnet run --project Platform.AppHost
 - [MCP 处理器详尽指南](docs/features/MCP-HANDLERS-GUIDE.md)
 - [工作流引擎设计指南](docs/features/WORKFLOW-ENGINE.md)
 - [物联网平台开发指南](docs/features/IOT-PLATFORM-GUIDE.md)
+- [移动端应用开发指南](docs/features/MOBILE-APPS-GUIDE.md)
 - [Ant Design 6 迁移总结](Platform.Admin/docs/ANTD_MIGRATION_SUMMARY.md)
 
 ## 📄 开源协议 (License)

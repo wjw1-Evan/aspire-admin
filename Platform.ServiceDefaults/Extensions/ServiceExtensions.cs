@@ -55,6 +55,9 @@ public static class ServiceExtensions
         builder.Services.AddScoped<ITenantContext, TenantContext>();
         builder.Services.AddScoped<IFileStorageFactory, GridFSFileStorage>();
 
+        // ── 国密安全支持 ─────────────────────────────────
+        builder.Services.AddSingleton<ISM4EncryptionProvider, SM4EncryptionProvider>();
+
         return builder;
     }
 }

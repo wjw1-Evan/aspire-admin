@@ -18,6 +18,7 @@ import Toast from 'react-native-toast-message';
 import { authService } from '../../services/authService';
 import { LoginRequest } from '../../types/auth';
 import { reportUserLocation } from '../../utils/locationReporter';
+import PasswordEncryption from '../../utils/encryption';
 
 export default function LoginScreen() {
     const [username, setUsername] = useState('');
@@ -73,9 +74,12 @@ export default function LoginScreen() {
         setLoading(true);
 
         try {
+            // 🔒 使用国密 SM2 加密密码
+            const encryptedPassword = await PasswordEncryption.encrypt(password);
+
             const request: LoginRequest = {
                 username: username.trim(),
-                password: password,
+                password: encryptedPassword,
                 captchaId: needCaptcha ? captchaId : undefined,
                 captchaAnswer: needCaptcha ? captchaAnswer.trim() : undefined,
             };
@@ -161,11 +165,11 @@ export default function LoginScreen() {
                             styles.inputWrapper,
                             usernameFocused && styles.inputWrapperFocused
                         ]}>
-                            <Ionicons 
-                                name="person-outline" 
-                                size={20} 
-                                color={usernameFocused ? '#667eea' : '#999'} 
-                                style={styles.inputIcon} 
+                            <Ionicons
+                                name="person-outline"
+                                size={20}
+                                color={usernameFocused ? '#667eea' : '#999'}
+                                style={styles.inputIcon}
                             />
                             <TextInput
                                 style={styles.input}
@@ -188,11 +192,11 @@ export default function LoginScreen() {
                             styles.inputWrapper,
                             passwordFocused && styles.inputWrapperFocused
                         ]}>
-                            <Ionicons 
-                                name="lock-closed-outline" 
-                                size={20} 
-                                color={passwordFocused ? '#667eea' : '#999'} 
-                                style={styles.inputIcon} 
+                            <Ionicons
+                                name="lock-closed-outline"
+                                size={20}
+                                color={passwordFocused ? '#667eea' : '#999'}
+                                style={styles.inputIcon}
                             />
                             <TextInput
                                 style={styles.input}
@@ -211,10 +215,10 @@ export default function LoginScreen() {
                                 style={styles.eyeIcon}
                                 disabled={loading}
                             >
-                                <Ionicons 
-                                    name={showPassword ? 'eye-outline' : 'eye-off-outline'} 
-                                    size={20} 
-                                    color="#999" 
+                                <Ionicons
+                                    name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                                    size={20}
+                                    color="#999"
                                 />
                             </TouchableOpacity>
                         </View>
@@ -225,15 +229,15 @@ export default function LoginScreen() {
                             <Text style={styles.label}>验证码</Text>
                             <View style={styles.captchaContainer}>
                                 <View style={[
-                                    styles.inputWrapper, 
+                                    styles.inputWrapper,
                                     { flex: 1 },
                                     captchaFocused && styles.inputWrapperFocused
                                 ]}>
-                                    <Ionicons 
-                                        name="shield-outline" 
-                                        size={20} 
-                                        color={captchaFocused ? '#667eea' : '#999'} 
-                                        style={styles.inputIcon} 
+                                    <Ionicons
+                                        name="shield-outline"
+                                        size={20}
+                                        color={captchaFocused ? '#667eea' : '#999'}
+                                        style={styles.inputIcon}
                                     />
                                     <TextInput
                                         style={styles.input}

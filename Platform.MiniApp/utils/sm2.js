@@ -1,9 +1,9 @@
-const RSA = require('./wx_rsa.js');
+const sm2 = require('sm-crypto').sm2;
 const { request } = require('./request.js');
 
 /**
  * 密码加密服务
- * 使用 RSA 非对称加密前端敏感数据
+ * 使用 SM2 非对称加密前端敏感数据
  */
 class PasswordEncryption {
     static publicKey = null;
@@ -20,8 +20,6 @@ class PasswordEncryption {
         }
 
         try {
-            // 注意：此时可能形成循环依赖，如果 request.js 引用了 auth.js，而 auth.js 引用了 rsa.js
-            // 但 request 函数本身是独立的。
             const res = await request({
                 url: '/api/auth/public-key',
                 method: 'GET'
@@ -34,7 +32,7 @@ class PasswordEncryption {
             }
             throw new Error('获取公钥失败');
         } catch (error) {
-            console.error('RSA公钥获取异常:', error);
+            console.error('SM2公钥获取异常:', error);
             throw error;
         }
     }
@@ -47,27 +45,24 @@ class PasswordEncryption {
         if (!password) return '';
 
         try {
-            const key = await this.getValidPublicKey();
+            const pubKey = await this.getValidPublicKey();
 
-            // 🔧 修复：使用 KEYUTIL.getKey 直接从 PEM 字符串加载公钥
-            // 原来的 setPublic(key, '10001') 无法解析 PEM 标头
-            const encryptor = RSA.KEYUTIL.getKey(key);
+            // 使用 sm-crypto 进行 SM2 加密，cipherMode = 1 (C1C3C2)
+            let encrypted = sm2.doEncrypt(password, pubKey, 1);
 
-            let encrypted = encryptor.encrypt(password);
             if (!encrypted) {
-                console.error('RSA 加密失败');
+                console.error('SM2 加密失败');
                 return password;
             }
 
-            // 🔧 适配：有些版本的 RSA 库返回 hex 字符串，后端需要的是 Base64
-            // jsrsasign 的 RSAKey.encrypt 通常返回 hex
-            if (/^[0-9a-fA-F]+$/.test(encrypted)) {
-                encrypted = RSA.hex2b64(encrypted);
+            // 国密标准要求明确加上 04 前缀表示未压缩格式
+            if (!encrypted.startsWith('04')) {
+                encrypted = '04' + encrypted;
             }
 
             return encrypted;
         } catch (err) {
-            console.error('RSA 加密过程异常:', err);
+            console.error('SM2 加密过程异常:', err);
             return password;
         }
     }

@@ -58,21 +58,26 @@ public class DataInitializerService(
         var menuMap = new Dictionary<string, string>(); // Name -> Id
         var now = DateTime.UtcNow;
 
-        // 第一遍：创建或获取顶级菜单，建立 ID 映射
+        // 第一遍：创建或获取菜单，建立 ID 映射
         foreach (var menu in expectedMenus)
         {
+            // 🔒 修复：暂时保存并清空 ParentId。
+            // JSON 中的 ParentId 是父菜单的 Name 字符串，直接插入会导致 MongoDB ObjectId 序列化失败
+            var parentName = menu.ParentId;
+            menu.ParentId = null;
+
             var existing = await menusCollection.Find(m => m.Name == menu.Name && !m.IsDeleted).FirstOrDefaultAsync();
             if (existing == null)
             {
                 menu.CreatedAt = menu.UpdatedAt = now;
                 await menusCollection.InsertOneAsync(menu);
                 menuMap[menu.Name] = menu.Id;
-                _logger.LogInformation("✅ 创建顶级菜单: {Title}", menu.Title);
+                _logger.LogInformation("✅ 创建菜单: {Title}", menu.Title);
             }
             else
             {
                 menuMap[menu.Name] = existing.Id;
-                // 可选：更新菜单基本信息
+                // 更新菜单基本信息
                 var update = Builders<Menu>.Update
                     .Set(m => m.Title, menu.Title)
                     .Set(m => m.Path, menu.Path)
@@ -81,6 +86,9 @@ public class DataInitializerService(
                     .Set(m => m.UpdatedAt, now);
                 await menusCollection.UpdateOneAsync(m => m.Id == existing.Id, update);
             }
+
+            // 还原 ParentId 用于第二遍关联映射
+            menu.ParentId = parentName;
         }
 
         // 第二遍：建立父子关联（ParentId 在数据库中存的是 ObjectId，但在 JSON 中是父菜单 Name）

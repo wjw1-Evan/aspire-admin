@@ -1,3 +1,7 @@
+using Org.BouncyCastle.Crypto.Digests;
+using Org.BouncyCastle.Utilities.Encoders;
+using System.Text;
+
 namespace Platform.ApiService.Services;
 
 /// <summary>
@@ -17,10 +21,13 @@ public interface IPasswordHasher
 }
 
 /// <summary>
-/// 基于 BCrypt 的密码散列实现
+/// 基于国密 SM3 的密码散列实现
+/// 格式: {salt}${hash}
 /// </summary>
-public class BCryptPasswordHasher : IPasswordHasher
+public class SM3PasswordHasher : IPasswordHasher
 {
+    private const int SaltSize = 16;
+
     /// <summary>
     /// 散列密码
     /// </summary>
@@ -28,7 +35,18 @@ public class BCryptPasswordHasher : IPasswordHasher
     /// <returns>散列后的密码</returns>
     public string HashPassword(string password)
     {
-        return BCrypt.Net.BCrypt.HashPassword(password);
+        if (string.IsNullOrEmpty(password)) throw new ArgumentNullException(nameof(password));
+
+        // 生成随机盐
+        var salt = new byte[SaltSize];
+        System.Security.Cryptography.RandomNumberGenerator.Fill(salt);
+        var saltHex = Hex.ToHexString(salt);
+
+        // 计算 SM3(password + salt)
+        var hashHex = ComputeSM3Hash(password, saltHex);
+
+        // 返回包含盐的字符串
+        return $"{saltHex}${hashHex}";
     }
 
     /// <summary>
@@ -39,7 +57,34 @@ public class BCryptPasswordHasher : IPasswordHasher
     /// <returns>是否匹配</returns>
     public bool VerifyPassword(string password, string hashedPassword)
     {
-        return BCrypt.Net.BCrypt.Verify(password, hashedPassword);
+        if (string.IsNullOrEmpty(password) || string.IsNullOrEmpty(hashedPassword))
+            return false;
+
+        var parts = hashedPassword.Split('$');
+        if (parts.Length != 2) return false;
+
+        var saltHex = parts[0];
+        var expectedHashHex = parts[1];
+
+        var actualHashHex = ComputeSM3Hash(password, saltHex);
+
+        // 固定时间比较防止时序攻击 (Constant-time comparison)
+        return System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(expectedHashHex),
+            Encoding.UTF8.GetBytes(actualHashHex)
+        );
+    }
+
+    private string ComputeSM3Hash(string password, string saltHex)
+    {
+        var digest = new SM3Digest();
+        var inputBytes = Encoding.UTF8.GetBytes(password + saltHex);
+
+        digest.BlockUpdate(inputBytes, 0, inputBytes.Length);
+        var result = new byte[digest.GetDigestSize()];
+        digest.DoFinal(result, 0);
+
+        return Hex.ToHexString(result);
     }
 }
 

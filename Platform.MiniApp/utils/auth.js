@@ -1,6 +1,6 @@
 const { request, post } = require('./request.js');
 const tokenUtils = require('./token.js');
-const PasswordEncryption = require('./rsa.js');
+const PasswordEncryption = require('./sm2.js');
 
 /**
  * 用户登录

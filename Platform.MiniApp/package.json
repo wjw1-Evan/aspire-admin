@@ -5,6 +5,7 @@
     "scripts": {
         "start": "npx -y http-server . -p $PORT"
     },
-    "dependencies": {},
-    "devDependencies": {}
+    "dependencies": {
+        "sm-crypto": "^0.4.0"
+    }
 }

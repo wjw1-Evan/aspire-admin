@@ -1,9 +1,9 @@
-import JSEncrypt from 'jsencrypt';
+import { sm2 } from 'sm-crypto';
 import { getPublicKey } from '@/services/ant-design-pro/api';
 
 /**
  * 密码加密服务
- * 使用 RSA 非对称加密前端敏感数据
+ * 使用国密 SM2 非对称加密前端敏感数据
  */
 export class PasswordEncryption {
     private static publicKey: string | null = null;
@@ -22,13 +22,15 @@ export class PasswordEncryption {
         try {
             const response = await getPublicKey();
             if (response.success && response.data) {
+                // sm-crypto 期望的公钥一般是不带 prefix/suffix 的 hex 字符串（长度 130，包含 '04' 前缀）
+                // 后端将配合返回 130 字符 Hex
                 this.publicKey = response.data;
                 this.lastFetchTime = now;
                 return this.publicKey;
             }
             throw new Error('获取公钥失败');
         } catch (error) {
-            console.error('RSA公钥获取异常:', error);
+            console.error('SM2公钥获取异常:', error);
             throw error;
         }
     }
@@ -40,16 +42,16 @@ export class PasswordEncryption {
     public static async encrypt(password: string): Promise<string> {
         if (!password) return '';
 
-        const key = await this.getValidPublicKey();
-        const encryptor = new JSEncrypt();
-        encryptor.setPublicKey(key);
+        try {
+            const keyHex = await this.getValidPublicKey();
+            // 采用 1 作为 cipherMode (C1C3C2)
+            const encryptedData = sm2.doEncrypt(password, keyHex, 1);
 
-        const encrypted = encryptor.encrypt(password);
-        if (encrypted === false) {
-            console.error('RSA 加密失败');
-            return password; // 加密失败回退明文，后端会处理
+            // 为了兼顾传输规范，加上 '04' 前缀 (标准 SM2 密文前缀)
+            return '04' + encryptedData;
+        } catch (error) {
+            console.error('SM2 加密失败', error);
+            return password; // 加密失败回退明文，后端会处理兼容
         }
-
-        return encrypted as string;
     }
 }

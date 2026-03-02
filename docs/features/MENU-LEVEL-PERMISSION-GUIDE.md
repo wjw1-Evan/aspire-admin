@@ -68,8 +68,9 @@
   - **注意**：权限标识与菜单名称是不同的概念，两者通过 `Menu.Permissions` 字段建立映射关系
 
 - **菜单定义位置**：
-  - 所有系统菜单在 `Platform.DataInitializer/Services/DataInitializerService.cs` 的 `GetExpectedMenus` 方法中定义
-  - 新增菜单时需要在 `GetParentMenuNameByChildName` 方法中添加映射，并更新前端翻译文件
+  - 所有系统菜单在 `Platform.DataInitializer/Menus.json` 文件中集中定义。
+  - `DataInitializerService` 会自动读取此 JSON 文件并在系统启动时动态同步菜单及其权限映射。
+  - 新增菜单时，只需在 `Menus.json` 中添加配置并更新前端语言翻译文件即可，无需修改任何 C# 代码。
 - **前后端统一**：
   - 后端的菜单标识应与前端路由配置/菜单 key 保持可映射关系，方便在前端展示“你拥有哪些菜单”。
   - 前端 `convertMenuTreeToProLayout` 函数会根据菜单路径和名称自动生成 locale 键，格式为 `menu.模块.资源`（使用 `.` 分隔）

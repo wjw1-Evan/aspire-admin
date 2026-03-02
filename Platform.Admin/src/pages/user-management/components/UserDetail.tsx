@@ -9,6 +9,7 @@ import {
   Button,
   Spin,
   Flex,
+  Timeline,
 } from 'antd';
 import {
   UserOutlined,
@@ -296,33 +297,90 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
       >
         <Spin spinning={loading}>
           {activityLogs.length > 0 ? (
-            <div>
-              {activityLogs.map((log) => (
-                <div
-                  key={log.id}
-                  style={{
-                    padding: '12px 16px',
-                    borderBottom: '1px solid #f0f0f0',
-                  }}
-                >
-                  <Flex vertical gap={4}>
-                    <Space>
-                      <Tag color={getActionColor(log.action)}>
-                        {getActionText(log.action)}
-                      </Tag>
-                      <Text type="secondary">
-                        {dayjs(log.createdAt).format('YYYY-MM-DD HH:mm:ss')}
-                      </Text>
-                    </Space>
-                    <div>{log.description}</div>
-                    {log.ipAddress && (
-                      <Text type="secondary" style={{ fontSize: '12px' }}>
-                        {intl.formatMessage({ id: 'pages.userDetail.ipPrefix' }, { ip: log.ipAddress })}
-                      </Text>
-                    )}
-                  </Flex>
-                </div>
-              ))}
+            <div style={{ padding: '16px 8px 0' }}>
+              <Timeline
+                items={activityLogs.map((log) => ({
+                  color:
+                    log.statusCode && log.statusCode >= 400
+                      ? 'red'
+                      : log.statusCode && log.statusCode < 300
+                        ? 'green'
+                        : 'blue',
+                  content: (
+                    <Flex vertical gap={4}>
+                      <Space wrap>
+                        <Tag color={getActionColor(log.action)}>
+                          {getActionText(log.action)}
+                        </Tag>
+                        {log.httpMethod && (
+                          <Tag
+                            color={
+                              log.httpMethod === 'GET'
+                                ? 'cyan'
+                                : log.httpMethod === 'POST'
+                                  ? 'blue'
+                                  : 'orange'
+                            }
+                          >
+                            {log.httpMethod}
+                          </Tag>
+                        )}
+                        <Text strong style={{ fontSize: '13px' }}>
+                          {log.description}
+                        </Text>
+                        <Text type="secondary" style={{ fontSize: '12px' }}>
+                          {dayjs(log.createdAt).format('YYYY-MM-DD HH:mm:ss')}
+                        </Text>
+                      </Space>
+
+                      <Space
+                        separator={<Text type="secondary">|</Text>}
+                        wrap
+                        style={{ fontSize: '12px' }}
+                      >
+                        {log.statusCode && (
+                          <Text
+                            type={log.statusCode >= 400 ? 'danger' : 'secondary'}
+                          >
+                            {intl.formatMessage({ id: 'pages.logDetail.responseStatus' })}: {log.statusCode}
+                          </Text>
+                        )}
+                        {log.duration && (
+                          <Text type="secondary">
+                            {intl.formatMessage(
+                              { id: 'pages.logDetail.durationMs' },
+                              { ms: log.duration },
+                            )}
+                          </Text>
+                        )}
+                        {log.ipAddress && (
+                          <Text type="secondary">
+                            {intl.formatMessage(
+                              { id: 'pages.userDetail.ipPrefix' },
+                              { ip: log.ipAddress },
+                            )}
+                          </Text>
+                        )}
+                      </Space>
+                      {log.path && (
+                        <Text
+                          type="secondary"
+                          style={{
+                            fontSize: '11px',
+                            wordBreak: 'break-all',
+                            fontFamily: 'monospace',
+                            backgroundColor: '#f5f5f5',
+                            padding: '2px 4px',
+                            borderRadius: '4px',
+                          }}
+                        >
+                          {log.path}
+                        </Text>
+                      )}
+                    </Flex>
+                  ),
+                }))}
+              />
             </div>
           ) : (
             <div

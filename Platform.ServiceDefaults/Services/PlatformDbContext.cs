@@ -1,5 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using MongoDB.EntityFrameworkCore.Extensions;
+using Org.BouncyCastle.Security;
+using Org.BouncyCastle.Utilities.Encoders;
+using Org.BouncyCastle.Crypto.Digests;
+using Org.BouncyCastle.Crypto.Macs;
 using Platform.ServiceDefaults.Models;
 using System.Reflection;
 using System.Linq.Expressions;
@@ -153,25 +157,15 @@ public class PlatformDbContext(DbContextOptions<PlatformDbContext> options, ITen
         // 5. 数据防篡改 (MAC 生成)
         if (entity is IAntiTamper antiTamper)
         {
-            // 此处提取实体的所有状态来生成包含主键、所有数据的 HMAC 签名
-            // 为了安全起见，通常选取一些核心的不亦发生二次变更的列或者全量参与计算
-            // 此处使用简易版全量 JSON 序列化参与 HMAC
-            // 使用 BouncyCastle 的 HMac 结合 SM3
-            var keyBytes = System.Text.Encoding.UTF8.GetBytes("YOUR_GLOBAL_SM3_HMAC_KEY_REPLACE_ME"); // Ideally from config
-            var hmac = new Org.BouncyCastle.Crypto.Macs.HMac(new Org.BouncyCastle.Crypto.Digests.SM3Digest());
+            var keyBytes = System.Text.Encoding.UTF8.GetBytes("YOUR_GLOBAL_SM3_HMAC_KEY_REPLACE_ME");
+            var hmac = new HMac(new SM3Digest());
             hmac.Init(new Org.BouncyCastle.Crypto.Parameters.KeyParameter(keyBytes));
 
-            // 对除了 Sm3Mac 以外的其他字段进行拼接计算
             var properties = entry.CurrentValues.Properties.Where(p => p.Name != nameof(IAntiTamper.Sm3Mac));
             var payloadStr = string.Join("|", properties.Select(p => entry.CurrentValues[p]?.ToString() ?? ""));
 
             var payloadBytes = System.Text.Encoding.UTF8.GetBytes(payloadStr);
-            hmac.BlockUpdate(payloadBytes, 0, payloadBytes.Length);
-
-            var result = new byte[hmac.GetMacSize()];
-            hmac.DoFinal(result, 0);
-
-            antiTamper.Sm3Mac = Org.BouncyCastle.Utilities.Encoders.Hex.ToHexString(result);
+            antiTamper.Sm3Mac = Hex.ToHexString(MacUtilities.DoFinal(hmac, payloadBytes));
         }
     }
 

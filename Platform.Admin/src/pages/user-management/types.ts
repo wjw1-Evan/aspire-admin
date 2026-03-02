@@ -90,6 +90,10 @@ export interface UserActivityLog {
   description: string;
   ipAddress?: string;
   userAgent?: string;
+  httpMethod?: string;
+  path?: string;
+  statusCode?: number;
+  duration?: number;
   createdAt: string;
 }
 

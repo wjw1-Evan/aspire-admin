@@ -1,4 +1,5 @@
 using Org.BouncyCastle.Crypto.Digests;
+using Org.BouncyCastle.Security;
 using Org.BouncyCastle.Utilities.Encoders;
 using System.Text;
 
@@ -77,14 +78,8 @@ public class SM3PasswordHasher : IPasswordHasher
 
     private string ComputeSM3Hash(string password, string saltHex)
     {
-        var digest = new SM3Digest();
         var inputBytes = Encoding.UTF8.GetBytes(password + saltHex);
-
-        digest.BlockUpdate(inputBytes, 0, inputBytes.Length);
-        var result = new byte[digest.GetDigestSize()];
-        digest.DoFinal(result, 0);
-
-        return Hex.ToHexString(result);
+        return Hex.ToHexString(DigestUtilities.CalculateDigest("SM3", inputBytes));
     }
 }
 

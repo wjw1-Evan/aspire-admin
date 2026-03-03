@@ -448,7 +448,9 @@ const CloudStorageFilesPage: React.FC = () => {
         try {
             setUserLoading(true);
             const resp = await getAllUsers();
+
             if (resp.success && resp.data?.users) {
+
                 setUserOptions(resp.data.users);
             }
         } catch (e) {

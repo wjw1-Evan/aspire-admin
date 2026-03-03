@@ -205,7 +205,7 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
       footer={null}
       width={600}
     >
-      <Space orientation="vertical" style={{ width: '100%' }} size="large">
+      <Space direction="vertical" style={{ width: '100%' }} size="large">
         {/* 搜索框 */}
         <div>
           <Space.Compact style={{ width: '100%' }}>
@@ -286,7 +286,7 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
                             <Tag color="gold" style={{ margin: 0 }}>我的企业</Tag>
                           )}
                         </Space>
-                        <Space orientation="vertical" size={0}>
+                        <Space direction="vertical" size={0}>
                           <span style={{ fontSize: 12, color: '#8c8c8c' }}>
                             企业代码: {item.company.code}
                           </span>
@@ -397,7 +397,7 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
                       >
                         <Flex vertical gap={4} style={{ flex: 1, minWidth: 0 }}>
                           <span style={{ fontWeight: 500 }}>{item.company.name}</span>
-                          <Space orientation="vertical" size={0}>
+                          <Space direction="vertical" size={0}>
                             <span style={{ fontSize: 12, color: '#8c8c8c' }}>
                               企业代码: {item.company.code}
                             </span>

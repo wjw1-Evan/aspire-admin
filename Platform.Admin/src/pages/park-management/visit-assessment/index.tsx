@@ -300,7 +300,7 @@ const VisitAssessmentList: React.FC = () => {
                             </Descriptions.Item>
                         </Descriptions>
 
-                        <Divider orientation={"left" as any} plain>
+                        <Divider titlePlacement="left" plain>
                             <Text type="secondary" style={{ fontSize: 12 }}>
                                 {intl.formatMessage({ id: 'pages.park.visit.taskInfo', defaultMessage: '走访任务信息' })}
                             </Text>
@@ -313,7 +313,7 @@ const VisitAssessmentList: React.FC = () => {
                             </div>
                         </div>
 
-                        <Divider orientation={"left" as any} plain>
+                        <Divider titlePlacement="left" plain>
                             <Text type="secondary" style={{ fontSize: 12 }}>
                                 {intl.formatMessage({ id: 'pages.park.visit.assessmentComments', defaultMessage: '评价与建议' })}
                             </Text>

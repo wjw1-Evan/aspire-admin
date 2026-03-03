@@ -69,6 +69,7 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
 
   const normalizeStatus = (status?: string) => (status || '').toLowerCase() as IoTDeviceStatus;
   const statusMap: Record<IoTDeviceStatus, { color: string; label: string }> = {
+
     online: { color: 'green', label: '在线' },
     offline: { color: 'default', label: '离线' },
     fault: { color: 'red', label: '故障' },
@@ -86,8 +87,11 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
           const list = Array.isArray(allResponse.data.list) ? allResponse.data.list : [];
           setOverviewStats({
             total: list.length,
+
             online: list.filter((g: IoTGateway) => normalizeStatus(g.status) === 'online').length,
+
             offline: list.filter((g: IoTGateway) => normalizeStatus(g.status) === 'offline').length,
+
             fault: list.filter((g: IoTGateway) => normalizeStatus(g.status) === 'fault').length,
           });
         }

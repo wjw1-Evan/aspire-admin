@@ -123,6 +123,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
         tags: task.tags,
         remarks: task.remarks,
         projectId: task.projectId,
+
         parentTaskId: task.parentTaskId,
       });
     } else if (open) {

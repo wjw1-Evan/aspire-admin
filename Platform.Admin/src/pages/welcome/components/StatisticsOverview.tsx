@@ -69,6 +69,7 @@ const StatisticsOverview: React.FC<StatisticsOverviewProps> = ({ statistics, loa
                         title={intl.formatMessage({ id: 'pages.welcome.stats.totalRoles', defaultMessage: '角色总数' })}
                         value={statistics?.totalRoles || 0}
                         icon={<BlockOutlined />}
+
                         color={token.colorGeekblue}
                         loading={loading}
                         token={token}
@@ -79,6 +80,7 @@ const StatisticsOverview: React.FC<StatisticsOverviewProps> = ({ statistics, loa
                         title={intl.formatMessage({ id: 'pages.welcome.stats.totalOrganizations', defaultMessage: '组织节点' })}
                         value={statistics?.totalOrganizations || 0}
                         icon={<ClusterOutlined />}
+
                         color={token.colorPurple}
                         loading={loading}
                         token={token}

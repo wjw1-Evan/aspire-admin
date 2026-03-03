@@ -445,8 +445,10 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
               </Card>
 
               {/* 备注 */}
+
               {selectedRecord.remarks && (
                 <Card title="备注" className={styles.card} style={{ marginBottom: 16 }}>
+
                   <p>{selectedRecord.remarks}</p>
                 </Card>
               )}

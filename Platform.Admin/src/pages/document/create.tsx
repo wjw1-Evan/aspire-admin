@@ -20,6 +20,7 @@ const CreateDocument: React.FC = () => {
   React.useEffect(() => {
     (async () => {
       try {
+
         const resp = await getWorkflowList({ current: 1, pageSize: 100 });
         if (resp.success && resp.data) {
           const options = (resp.data.list || []).map((wf) => ({ label: wf.name, value: wf.id! }));
@@ -104,6 +105,7 @@ const CreateDocument: React.FC = () => {
             label={intl.formatMessage({ id: 'pages.workflow.select', defaultMessage: '选择流程' })}
             rules={[{ required: true, message: intl.formatMessage({ id: 'pages.workflow.select.definition', defaultMessage: '请选择流程定义' }) }]}
           >
+
             <Select options={workflowOptions} placeholder={intl.formatMessage({ id: 'pages.workflow.select.placeholder', defaultMessage: '请选择流程定义' })} />
           </Form.Item>
 

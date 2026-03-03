@@ -381,7 +381,7 @@ public class InvestmentProject : MultiTenantEntity
 /// </summary>
 [BsonIgnoreExtraElements]
 [Table("investmentFollowUps")]
-public class InvestmentFollowUp : BaseEntity
+public class InvestmentFollowUp : MultiTenantEntity
 {
     /// <summary>线索ID</summary>
     [StringLength(100)]

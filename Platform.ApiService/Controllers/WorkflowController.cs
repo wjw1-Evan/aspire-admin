@@ -450,12 +450,13 @@ public class WorkflowController : BaseApiController
                 binding = nodeWithDocForm?.Config?.Form;
             }
 
-            if (binding == null)
+            if (binding == null || string.IsNullOrEmpty(binding.FormDefinitionId))
             {
                 return Success(new { form = (FormDefinition?)null, dataScopeKey = (string?)null, initialValues = (object?)null });
             }
 
             var form = await _formFactory.GetByIdAsync(binding.FormDefinitionId);
+
             if (form == null)
             {
                 return NotFoundError("表单定义", binding.FormDefinitionId);
@@ -628,7 +629,7 @@ public class WorkflowController : BaseApiController
             }
 
             var binding = node.Config.Form;
-            if (binding == null)
+            if (binding == null || string.IsNullOrEmpty(binding.FormDefinitionId))
             {
                 return Success(new { form = (FormDefinition?)null, initialValues = (object?)null });
             }
@@ -712,9 +713,9 @@ public class WorkflowController : BaseApiController
             }
 
             var binding = node.Config.Form;
-            if (binding == null)
+            if (binding == null || string.IsNullOrEmpty(binding.FormDefinitionId))
             {
-                return ValidationError("该节点未绑定表单");
+                return ValidationError("该节点未绑定完整表单定义");
             }
 
             FormDefinition? form = null;

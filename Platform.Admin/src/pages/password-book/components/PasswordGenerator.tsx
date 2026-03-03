@@ -92,7 +92,7 @@ const PasswordGenerator: React.FC<PasswordGeneratorProps> = ({
       ]}
       width={500}
     >
-      <Space orientation="vertical" style={{ width: '100%' }} size="large">
+      <Space direction="vertical" style={{ width: '100%' }} size="large">
         {/* 长度设置 */}
         <div>
           <Text strong>密码长度：{length}</Text>
@@ -108,7 +108,7 @@ const PasswordGenerator: React.FC<PasswordGeneratorProps> = ({
         {/* 字符类型选项 */}
         <div>
           <Text strong>字符类型：</Text>
-          <Space orientation="vertical" style={{ marginTop: 8 }}>
+          <Space direction="vertical" style={{ marginTop: 8 }}>
             <Checkbox
               checked={includeUppercase}
               onChange={(e) => setIncludeUppercase(e.target.checked)}

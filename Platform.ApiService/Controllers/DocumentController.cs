@@ -495,8 +495,12 @@ public class DocumentController : BaseApiController
             }
             else
             {
+                if (string.IsNullOrEmpty(binding.FormDefinitionId))
+                {
+                    return ValidationError("流程节点未配置表单定义ID");
+                }
                 // 如果没有快照，使用最新定义（向后兼容）
-                form = await _formFactory.GetByIdAsync(binding.FormDefinitionId);
+                form = await _formFactory.GetByIdAsync(binding.FormDefinitionId!);
                 if (form == null)
                 {
                     return NotFoundError("表单定义", binding.FormDefinitionId);

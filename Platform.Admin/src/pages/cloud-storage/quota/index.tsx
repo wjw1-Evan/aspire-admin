@@ -669,7 +669,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                                 </Space>
                             ),
                             children: usageStats ? (
-                                <Space orientation="vertical" style={{ width: '100%' }} size="large">
+                                <Space direction="vertical" style={{ width: '100%' }} size="large">
                                     <Row gutter={[16, 16]}>
                                         <Col xs={24} sm={12} md={6}>
                                             <StatCard

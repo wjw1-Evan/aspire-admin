@@ -662,13 +662,16 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
               </Card>
 
               {/* 数值范围 */}
+
               {(selectedDataPoint.minValue !== undefined || selectedDataPoint.maxValue !== undefined) && (
                 <Card title="数值范围" className={styles.card} style={{ marginBottom: 16 }}>
                   <Descriptions column={isMobile ? 1 : 2} size="small">
                     <Descriptions.Item label="最小值">
+
                       {selectedDataPoint.minValue !== undefined ? selectedDataPoint.minValue : '-'}
                     </Descriptions.Item>
                     <Descriptions.Item label="最大值">
+
                       {selectedDataPoint.maxValue !== undefined ? selectedDataPoint.maxValue : '-'}
                     </Descriptions.Item>
                   </Descriptions>

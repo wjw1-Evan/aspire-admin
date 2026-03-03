@@ -183,7 +183,8 @@ const WorkflowExportModal: React.FC<WorkflowExportModalProps> = ({
                     </Col>
                 </Row>
 
-                <Divider orientation="left">
+
+                <Divider titlePlacement="left">
                     {intl.formatMessage({ id: 'pages.workflow.export.options' })}
                 </Divider>
 

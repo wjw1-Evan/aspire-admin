@@ -875,7 +875,8 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                             <Select.Option value={2}>{intl.formatMessage({ id: 'pages.workflow.designer.approvalType.sequential' })}</Select.Option>
                           </Select>
                         </Form.Item>
-                        <Divider orientation="left" plain>审批人设置</Divider>
+    
+                        <Divider titlePlacement="left" plain>审批人设置</Divider>
                         <Form.Item name="approvers">
                           <Form.List name="approvers">
                             {(fields, { add, remove }) => (

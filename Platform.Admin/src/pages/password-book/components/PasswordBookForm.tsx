@@ -298,7 +298,7 @@ const PasswordBookForm: React.FC<PasswordBookFormProps> = ({
         {/* 密码强度指示器 */}
         {strength && (
           <div style={{ marginBottom: 16 }}>
-            <Space orientation="vertical" style={{ width: '100%' }} size="small">
+            <Space direction="vertical" style={{ width: '100%' }} size="small">
               <Space>
                 <Text type="secondary">密码强度：</Text>
                 <Text strong style={{ color: getStrengthColor(strength.level) }}>

@@ -99,7 +99,7 @@ const VisitKnowledgeBase: React.FC = () => {
     }, [loadStatistics]);
 
     const handleSearch = () => {
-        actionRef.current?.reload();
+        actionRef.current?.reload?.();
     };
 
     const handleReset = () => {
@@ -219,7 +219,7 @@ const VisitKnowledgeBase: React.FC = () => {
                     const res = await visitService.deleteQuestion(id);
                     if (res.success) {
                         message.success('删除成功');
-                        actionRef.current?.reload();
+                        actionRef.current?.reload?.();
                     }
                 } catch (error) {
                     message.error('删除失败');
@@ -241,7 +241,7 @@ const VisitKnowledgeBase: React.FC = () => {
                     const res = await visitService.deleteQuestionnaire(id);
                     if (res.success) {
                         message.success('删除成功');
-                        actionRef.current?.reload();
+                        actionRef.current?.reload?.();
                     }
                 } catch (error) {
                     message.error('删除失败');
@@ -266,7 +266,7 @@ const VisitKnowledgeBase: React.FC = () => {
             title="走访知识库"
             extra={
                 <Space>
-                    <Button icon={<ReloadOutlined />} onClick={() => { actionRef.current?.reload(); loadStatistics(); }}>
+                    <Button icon={<ReloadOutlined />} onClick={() => { actionRef.current?.reload?.(); loadStatistics(); }}>
                         刷新
                     </Button>
                     {activeTab === 'questions' ? (
@@ -377,7 +377,7 @@ const VisitKnowledgeBase: React.FC = () => {
                         if (res.success) {
                             message.success('保存成功');
                             setIsQuestionModalVisible(false);
-                            actionRef.current?.reload();
+                            actionRef.current?.reload?.();
                         }
                     } finally {
                         setLoading(false);
@@ -426,7 +426,7 @@ const VisitKnowledgeBase: React.FC = () => {
                         if (res.success) {
                             message.success('保存成功');
                             setIsQuestionnaireModalVisible(false);
-                            actionRef.current?.reload();
+                            actionRef.current?.reload?.();
                         }
                     } finally {
                         setLoading(false);

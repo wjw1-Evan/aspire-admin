@@ -177,7 +177,7 @@ export async function previewRecycleItem(id: string) {
  * 下载回收站文件
  */
 export async function downloadRecycleItem(id: string, filename?: string) {
-    const response = await request<Blob>(`/api/cloud-storage/recycle/${id}/download`, {
+    const response = await request<any>(`/api/cloud-storage/recycle/${id}/download`, {
         method: 'GET',
         responseType: 'blob',
         getResponse: true,
@@ -189,6 +189,7 @@ export async function downloadRecycleItem(id: string, filename?: string) {
     link.href = url;
 
     // 尝试从响应头获取文件名
+
     const contentDisposition = response.response.headers.get('content-disposition');
     let downloadFilename = filename || 'download';
     if (contentDisposition) {

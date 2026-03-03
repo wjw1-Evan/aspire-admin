@@ -32,6 +32,7 @@ const CreateAndStartByWorkflow: React.FC = () => {
     useEffect(() => {
         (async () => {
             try {
+
                 const resp = await getWorkflowList({ current: 1, pageSize: 100 });
                 if (resp.success && resp.data) {
                     const options = (resp.data.list || []).map((wf) => ({ label: wf.name, value: wf.id! }));

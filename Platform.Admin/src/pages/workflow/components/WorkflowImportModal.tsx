@@ -34,6 +34,7 @@ import {
 import type { UploadFile } from 'antd/es/upload/interface';
 
 const { Text, Title } = Typography;
+
 const { Step } = Steps;
 
 interface WorkflowImportModalProps {
@@ -146,6 +147,7 @@ const WorkflowImportModal: React.FC<WorkflowImportModalProps> = ({
             formData.append('overwriteExisting', overwriteExisting.toString());
 
             let response;
+
             if (validationResult?.conflicts.length > 0) {
                 // 有冲突，使用冲突解决
                 formData.append('resolutions', JSON.stringify(conflictResolutions));
@@ -378,6 +380,7 @@ const WorkflowImportModal: React.FC<WorkflowImportModalProps> = ({
             footer={null}
             width={800}
         >
+
             <Steps current={currentStep} style={{ marginBottom: 24 }}>
                 <Step
                     title={intl.formatMessage({ id: 'pages.workflow.import.step.upload' })}
@@ -425,6 +428,7 @@ const WorkflowImportModal: React.FC<WorkflowImportModalProps> = ({
                         type="primary"
                         onClick={handleImport}
                         loading={loading}
+
                         disabled={validationResult?.errors.length > 0}
                     >
                         {intl.formatMessage({ id: 'pages.workflow.import.start' })}

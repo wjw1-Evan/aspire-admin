@@ -126,7 +126,7 @@ const TaskOverviewCard: React.FC<TaskOverviewCardProps> = ({ taskStatistics, tod
                                 }}
                                 onClick={() => history.push(`/task-management?taskId=${task.id}`)}
                             >
-                                <Space orientation="vertical" size={2} style={{ width: '100%' }}>
+                                <Space direction="vertical" size={2} style={{ width: '100%' }}>
                                     <Space>
                                         <Text strong>{task.taskName}</Text>
                                         {task.priorityName && (

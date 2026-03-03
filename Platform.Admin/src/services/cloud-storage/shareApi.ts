@@ -187,7 +187,7 @@ export async function accessShare(data: ShareAccessRequest) {
 export async function downloadSharedFile(shareToken: string, password?: string, fallbackName?: string) {
     const qs = password ? `?password=${encodeURIComponent(password)}` : '';
     try {
-        const response = await request<Blob>(`/api/file-share/public/${encodeURIComponent(shareToken)}/download${qs}`, {
+        const response = await request<any>(`/api/file-share/public/${encodeURIComponent(shareToken)}/download${qs}`, {
             method: 'GET',
             responseType: 'blob',
             getResponse: true,
@@ -201,6 +201,7 @@ export async function downloadSharedFile(shareToken: string, password?: string, 
         link.href = url;
 
         // 尝试从响应头获取文件名
+
         const contentDisposition = response?.response?.headers?.get?.('content-disposition');
         let filename = fallbackName || 'download';
         if (contentDisposition) {

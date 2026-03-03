@@ -493,7 +493,7 @@ const UserManagement: React.FC = () => {
           );
         }
         return (
-          <Space orientation="vertical" size={4} wrap>
+          <Space direction="vertical" size={4} wrap>
             {orgs.map((org) => (
               <Space key={org.id || org.fullPath || org.name} size={4} wrap>
                 <span>{org.fullPath || org.name || '-'}</span>

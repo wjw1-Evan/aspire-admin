@@ -127,7 +127,7 @@ export async function deleteVersion(id: string) {
  * 下载指定版本
  */
 export async function downloadVersion(id: string, filename?: string) {
-    const response = await request<Blob>(`/api/file-version/${id}/download`, {
+    const response = await request<any>(`/api/file-version/${id}/download`, {
         method: 'GET',
         responseType: 'blob',
         getResponse: true,
@@ -139,6 +139,7 @@ export async function downloadVersion(id: string, filename?: string) {
     link.href = url;
 
     // 尝试从响应头获取文件名
+
     const contentDisposition = response.response.headers.get('content-disposition');
     let downloadFilename = filename || 'download';
     if (contentDisposition) {

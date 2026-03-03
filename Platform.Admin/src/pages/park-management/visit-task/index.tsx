@@ -230,7 +230,7 @@ const VisitTask: React.FC = () => {
             const res = await visitService.deleteTask(id);
             if (res.success) {
                 message.success('删除成功');
-                actionRef.current?.reload();
+                actionRef.current?.reload?.();
                 loadStatistics();
             }
         } catch (error) {
@@ -271,7 +271,7 @@ const VisitTask: React.FC = () => {
                 setIsModalVisible(false);
                 setEditingTask(null);
                 form.resetFields();
-                actionRef.current?.reload();
+                actionRef.current?.reload?.();
                 loadStatistics();
             }
         } catch (error) {
@@ -282,7 +282,7 @@ const VisitTask: React.FC = () => {
     };
 
     const handleSearch = () => {
-        actionRef.current?.reload();
+        actionRef.current?.reload?.();
     };
 
     const handleReset = () => {
@@ -296,7 +296,7 @@ const VisitTask: React.FC = () => {
             title="走访任务管理"
             extra={
                 <Space>
-                    <Button icon={<ReloadOutlined />} onClick={() => { actionRef.current?.reload(); loadStatistics(); }}>
+                    <Button icon={<ReloadOutlined />} onClick={() => { actionRef.current?.reload?.(); loadStatistics(); }}>
                         刷新
                     </Button>
                     <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingTask(null); setIsModalVisible(true); }}>

@@ -120,13 +120,13 @@ const RoleManagement: FC = () => {
 
   // 处理搜索
   const handleSearch = useCallback(() => {
-    actionRef.current?.reload();
+    actionRef.current?.reload?.();
   }, []);
 
   // 重置搜索
   const handleReset = useCallback(() => {
     searchForm.resetFields();
-    actionRef.current?.reload();
+    actionRef.current?.reload?.();
   }, [searchForm]);
 
   /**

@@ -283,7 +283,7 @@ const FieldEditor: React.FC<{
                             </Space>
                         </Space>
 
-                        <Space orientation="vertical" style={{ width: '100%' }}>
+                        <Space direction="vertical" style={{ width: '100%' }}>
                             <Space wrap>
                                 <Input
                                     style={{ width: 200 }}
@@ -317,7 +317,7 @@ const FieldEditor: React.FC<{
 
                             {isOptionType(f.type) && (
                                 <div style={{ padding: 8, background: '#fff', borderRadius: 6, border: '1px dashed #e5e5e5' }}>
-                                    <Space orientation="vertical" style={{ width: '100%' }}>
+                                    <Space direction="vertical" style={{ width: '100%' }}>
                                         {(f.options || []).map((opt, optIdx) => (
                                             <Space key={optIdx} align="baseline">
                                                 <Input
@@ -345,7 +345,7 @@ const FieldEditor: React.FC<{
             </div>
 
             <div style={{ gridColumn: '1 / span 2' }}>
-                <Divider orientation="left" style={{ margin: '12px 0' }}>实时预览</Divider>
+                <Divider style={{ margin: '12px 0' }}>实时预览</Divider>
                 <Card size="small" bordered bodyStyle={{ background: '#fff' }}>
                     {fields.length === 0 ? (
                         <div style={{ color: '#999' }}>暂无字段，添加后可即时预览表单效果</div>
@@ -420,7 +420,7 @@ const FormsPage: React.FC = () => {
                             const res = await deleteForm(record.id!);
                             if (res.success) {
                                 message.success('已删除');
-                                actionRef.current?.reload();
+                                actionRef.current?.reload?.();
                             } else {
                                 message.error('删除失败');
                             }
@@ -469,7 +469,7 @@ const FormsPage: React.FC = () => {
         searchParamsRef.current = newParams;
         setSearchParams(newParams);
         // 手动触发重新加载
-        actionRef.current?.reload();
+        actionRef.current?.reload?.();
     }, []);
 
     const handleReset = useCallback(() => {
@@ -484,11 +484,11 @@ const FormsPage: React.FC = () => {
         searchParamsRef.current = resetParams;
         setSearchParams(resetParams);
         // 手动触发重新加载
-        actionRef.current?.reload();
+        actionRef.current?.reload?.();
     }, [searchForm]);
 
     const handleRefresh = useCallback(() => {
-        actionRef.current?.reload();
+        actionRef.current?.reload?.();
     }, []);
 
     return (
@@ -590,7 +590,7 @@ const FormsPage: React.FC = () => {
                             if (res.success) {
                                 message.success('已保存');
                                 setOpen(false);
-                                actionRef.current?.reload();
+                                actionRef.current?.reload?.();
                             } else {
                                 message.error('保存失败');
                             }

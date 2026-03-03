@@ -569,9 +569,9 @@ public class DocumentService : IDocumentService
             binding = nodeWithDocForm?.Config?.Form;
         }
 
-        if (binding == null)
+        if (binding == null || string.IsNullOrEmpty(binding.FormDefinitionId))
         {
-            throw new InvalidOperationException("该流程未配置用于创建公文的文档表单");
+            throw new InvalidOperationException("该流程未配置完整用于创建公文的文档表单");
         }
 
         var form = await _formFactory.GetByIdAsync(binding.FormDefinitionId);

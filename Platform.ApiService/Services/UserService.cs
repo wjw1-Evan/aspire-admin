@@ -25,6 +25,7 @@ public class UserService(
     IUserActivityLogService userActivityLogService,
     IMenuAccessService menuAccessService,
     IPasswordEncryptionService encryptionService,
+    IPasswordHasher passwordHasher,
     ITenantContext tenantContext) : IUserService
 {
     // private const string ACTIVE_STATUS = "active"; // Replaced by SystemConstants.UserStatus.Active
@@ -42,6 +43,7 @@ public class UserService(
     private readonly IUserActivityLogService _userActivityLogService = userActivityLogService;
     private readonly IMenuAccessService _menuAccessService = menuAccessService;
     private readonly IPasswordEncryptionService _encryptionService = encryptionService;
+    private readonly IPasswordHasher _passwordHasher = passwordHasher;
     private readonly ITenantContext _tenantContext = tenantContext;
 
     /// <inheritdoc/>
@@ -697,9 +699,9 @@ public class UserService(
         var rawCurrentPassword = _encryptionService.TryDecryptPassword(request.CurrentPassword);
         var rawNewPassword = _encryptionService.TryDecryptPassword(request.NewPassword);
 
-        if (!BCrypt.Net.BCrypt.Verify(rawCurrentPassword, user.PasswordHash)) return false;
+        if (!_passwordHasher.VerifyPassword(rawCurrentPassword, user.PasswordHash)) return false;
 
-        var newPasswordHash = BCrypt.Net.BCrypt.HashPassword(rawNewPassword);
+        var newPasswordHash = _passwordHasher.HashPassword(rawNewPassword);
         var updatedUser = await _userFactory.UpdateAsync(user.Id!, u => u.PasswordHash = newPasswordHash);
         return updatedUser != null;
     }

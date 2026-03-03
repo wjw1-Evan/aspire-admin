@@ -761,7 +761,7 @@ const InvestmentManagement: React.FC = () => {
             {/* 线索详情抽屉 */}
             <Drawer
                 title="线索详情"
-                width={600}
+                size={600}
                 open={leadDetailVisible}
                 onClose={() => setLeadDetailVisible(false)}
             >
@@ -812,7 +812,7 @@ const InvestmentManagement: React.FC = () => {
             {/* 项目详情抽屉 */}
             <Drawer
                 title="项目详情"
-                width={600}
+                size={600}
                 open={projectDetailVisible}
                 onClose={() => setProjectDetailVisible(false)}
             >

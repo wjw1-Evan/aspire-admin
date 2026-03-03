@@ -462,6 +462,8 @@ export default {
   'pages.bulkAction.selectedItems': '{count} items selected',
   'pages.bulkAction.reasonPlaceholder': 'Please enter operation reason (optional, max 200 characters)',
   // Image captcha
+  'pages.login.imageCaptcha.placeholder': 'Please enter the image captcha',
+  'pages.login.imageCaptcha.required': 'Please enter the image captcha',
   'pages.captcha.placeholder': 'Please enter the image captcha',
   'pages.captcha.refreshSuccess': 'Captcha refreshed',
   'pages.captcha.fetchFailed': 'Failed to get captcha',

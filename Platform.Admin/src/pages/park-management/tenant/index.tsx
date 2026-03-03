@@ -316,7 +316,7 @@ const TenantManagement: React.FC = () => {
                 title={currentTenant?.tenantName || '租户详情'}
                 open={detailDrawerVisible}
                 onClose={() => { setDetailDrawerVisible(false); setTenantServiceRequests([]); setTenantPayments([]); setTenantContracts([]); }}
-                width={720}
+                size={720}
                 loading={detailLoading}
             >
                 {currentTenant && (

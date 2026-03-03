@@ -444,6 +444,7 @@ public class UserController : BaseApiController
     /// RESTful 路径: /api/users/me 表示当前用户
     /// </remarks>
     [HttpGet("profile")]
+    [HttpGet("me")]
     public async Task<IActionResult> GetCurrentUserProfile()
     {
         var currentUser = await _authService.GetCurrentUserAsync();

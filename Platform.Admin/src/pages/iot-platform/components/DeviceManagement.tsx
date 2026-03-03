@@ -624,7 +624,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
         placement="right"
         onClose={handleCloseDetail}
         open={isDetailDrawerVisible}
-        width={isMobile ? '100%' : 900}
+        size={isMobile ? '100%' : 900}
         destroyOnClose
       >
         <Spin spinning={false}>

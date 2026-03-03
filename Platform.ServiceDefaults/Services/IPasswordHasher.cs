@@ -3,7 +3,7 @@ using Org.BouncyCastle.Security;
 using Org.BouncyCastle.Utilities.Encoders;
 using System.Text;
 
-namespace Platform.ApiService.Services;
+namespace Platform.ServiceDefaults.Services;
 
 /// <summary>
 /// 密码散列服务接口
@@ -23,11 +23,12 @@ public interface IPasswordHasher
 
 /// <summary>
 /// 基于国密 SM3 的密码散列实现
-/// 格式: {salt}${hash}
+/// 格式: $sm3${salt}${hash}
 /// </summary>
 public class SM3PasswordHasher : IPasswordHasher
 {
     private const int SaltSize = 16;
+    private const string SM3_PREFIX = "$sm3$";
 
     /// <summary>
     /// 散列密码
@@ -46,8 +47,8 @@ public class SM3PasswordHasher : IPasswordHasher
         // 计算 SM3(password + salt)
         var hashHex = ComputeSM3Hash(password, saltHex);
 
-        // 返回包含盐的字符串
-        return $"{saltHex}${hashHex}";
+        // 返回包含算法前缀和盐的字符串
+        return $"{SM3_PREFIX}{saltHex}${hashHex}";
     }
 
     /// <summary>
@@ -61,12 +62,27 @@ public class SM3PasswordHasher : IPasswordHasher
         if (string.IsNullOrEmpty(password) || string.IsNullOrEmpty(hashedPassword))
             return false;
 
-        var parts = hashedPassword.Split('$');
+        // 检查前缀
+        if (!hashedPassword.StartsWith(SM3_PREFIX))
+        {
+            // 兼容之前没有前缀的格式 {salt}${hash}
+            var legacyParts = hashedPassword.Split('$');
+            if (legacyParts.Length == 2)
+            {
+                return VerifyInternal(password, legacyParts[0], legacyParts[1]);
+            }
+            return false;
+        }
+
+        var content = hashedPassword.Substring(SM3_PREFIX.Length);
+        var parts = content.Split('$');
         if (parts.Length != 2) return false;
 
-        var saltHex = parts[0];
-        var expectedHashHex = parts[1];
+        return VerifyInternal(password, parts[0], parts[1]);
+    }
 
+    private bool VerifyInternal(string password, string saltHex, string expectedHashHex)
+    {
         var actualHashHex = ComputeSM3Hash(password, saltHex);
 
         // 固定时间比较防止时序攻击 (Constant-time comparison)
@@ -82,4 +98,3 @@ public class SM3PasswordHasher : IPasswordHasher
         return Hex.ToHexString(DigestUtilities.CalculateDigest("SM3", inputBytes));
     }
 }
-

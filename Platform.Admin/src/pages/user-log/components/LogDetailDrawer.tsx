@@ -146,7 +146,7 @@ export default function LogDetailDrawer({
   return (
     <Drawer
       title={intl.formatMessage({ id: 'pages.logDetail.title' })}
-      size={isMobile ? 'large' : 720}
+      size={isMobile ? '100%' : 720}
       open={open}
       onClose={onClose}
     >

@@ -482,6 +482,8 @@ export default {
   'pages.register.subTitle': '注册即自动创建您的个人企业',
 
   // 图形验证码
+  'pages.login.imageCaptcha.placeholder': '请输入图形验证码',
+  'pages.login.imageCaptcha.required': '请输入图形验证码',
   'pages.captcha.placeholder': '请输入图形验证码',
   'pages.captcha.refreshSuccess': '验证码已刷新',
   'pages.captcha.fetchFailed': '获取验证码失败',

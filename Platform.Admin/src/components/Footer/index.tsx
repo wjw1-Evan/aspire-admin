@@ -15,12 +15,12 @@ const Footer: React.FC = () => {
     >
       <div style={{ marginBottom: 8 }}>
         <a
-          href="https://learn.microsoft.com/zh-cn/dotnet/aspire/"
+          href="https://www.rong-zhong.com/"
           target="_blank"
           rel="noopener noreferrer"
           style={{ marginRight: 16 }}
         >
-          Aspire Admin
+          天津融众信息技术有限公司
         </a>
         <a
           href="https://github.com/wjw1-Evan/aspire-admin"

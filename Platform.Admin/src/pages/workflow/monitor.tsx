@@ -155,9 +155,9 @@ const WorkflowMonitor: React.FC = () => {
                   setTimeout(() => {
                     setNodeFormVisible(true);
                   }, 50);
-                    } else {
-                      console.error('获取节点表单失败:', res.message);
-                    }
+                } else {
+                  console.error('获取节点表单失败:', res.message);
+                }
               } catch (error) {
                 console.error('获取节点表单失败:', error);
               } finally {
@@ -579,7 +579,7 @@ const WorkflowMonitor: React.FC = () => {
         <div>
           {history.map((record, index) => (
             <Card key={index} style={{ marginBottom: 8 }}>
-              <Space orientation="vertical" style={{ width: '100%' }}>
+              <Space direction="vertical" style={{ width: '100%' }}>
                 <div>
                   <strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.approver' })}:</strong>{' '}
                   {record.approverName || record.approverId}

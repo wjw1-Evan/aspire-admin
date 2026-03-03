@@ -16,9 +16,12 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import './WorkflowDesigner.less';
+import { NODE_CONFIGS, nodeTypes, edgeTypes } from './WorkflowDesignerConstants';
 
-import { Button, Card, Drawer, Form, Input, Select, Switch, Space, Divider, Modal } from 'antd';
+import { Button, Card, Drawer, Form, Input, Select, Switch, Space, Divider, Modal, Tabs } from 'antd';
 import {
+  MenuUnfoldOutlined,
+  MenuFoldOutlined,
   PlusOutlined,
   SaveOutlined,
   CheckCircleOutlined,
@@ -32,8 +35,11 @@ import {
   UserOutlined,
   NodeIndexOutlined,
   CloudUploadOutlined,
-  RobotOutlined,
   BellOutlined,
+  CloudSyncOutlined,
+  HistoryOutlined,
+  EditOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import { useMessage } from '@/hooks/useMessage';
@@ -66,105 +72,6 @@ interface WorkflowDesignerProps {
   readOnly?: boolean;
 }
 
-// 节点类型配置
-const NODE_CONFIGS = {
-  start: {
-    color: '#52c41a',
-    backgroundColor: '#f6ffed',
-    borderColor: '#b7eb8f',
-    icon: <PlayCircleOutlined />,
-  },
-  end: {
-    color: '#ff4d4f',
-    backgroundColor: '#fff1f0',
-    borderColor: '#ffa39e',
-    icon: <StopOutlined />,
-  },
-  approval: {
-    color: '#1890ff',
-    backgroundColor: '#e6f7ff',
-    borderColor: '#91d5ff',
-    icon: <CheckOutlined />,
-  },
-  condition: {
-    color: '#fa8c16',
-    backgroundColor: '#fff7e6',
-    borderColor: '#ffd591',
-    icon: <ApartmentOutlined />,
-  },
-  parallel: {
-    color: '#722ed1',
-    backgroundColor: '#f9f0ff',
-    borderColor: '#d3adf7',
-    icon: <BranchesOutlined />,
-  },
-  ai: {
-    color: '#eb2f96',
-    backgroundColor: '#fff0f6',
-    borderColor: '#ffadd2',
-    icon: <RobotOutlined />,
-  },
-  notification: {
-    color: '#faad14',
-    backgroundColor: '#fffbe6',
-    borderColor: '#ffe58f',
-    icon: <BellOutlined />,
-  },
-};
-
-const CustomNode: React.FC<NodeProps> = ({ data, selected }) => {
-  const nodeType = data.nodeType as keyof typeof NODE_CONFIGS;
-  const config = NODE_CONFIGS[nodeType] || NODE_CONFIGS.approval;
-
-  return (
-    <div
-      style={{
-        padding: '10px 14px',
-        borderRadius: '8px',
-        background: config.backgroundColor,
-        border: `2px solid ${selected ? '#1890ff' : config.borderColor}`,
-        boxShadow: selected ? '0 0 10px rgba(24, 144, 255, 0.3)' : '0 2px 4px rgba(0,0,0,0.05)',
-        minWidth: '150px',
-        position: 'relative',
-        transition: 'all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1)',
-      }}
-    >
-      <Handle type="target" position={Position.Top} style={{ background: config.borderColor }} />
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
-        <span style={{ fontSize: '18px', marginRight: '8px', color: config.color, display: 'flex', alignItems: 'center' }}>
-          {config.icon}
-        </span>
-        <span style={{ fontWeight: 600, color: config.color, fontSize: '13px' }}>
-          {data.typeLabel}
-        </span>
-      </div>
-      <div style={{ color: '#262626', fontSize: '12px', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {data.label || <span style={{ color: '#bfbfbf', fontStyle: 'italic' }}>无名称</span>}
-      </div>
-      {data.jumpLabel && (
-        <div style={{
-          marginTop: 6,
-          paddingTop: 6,
-          borderTop: '1px dashed #d9d9d9',
-          fontSize: '10px',
-          color: '#8c8c8c',
-          display: 'flex',
-          alignItems: 'center'
-        }}>
-          <InfoCircleOutlined style={{ marginRight: 4 }} />
-          <span>跳转至: </span>
-          <span style={{ color: '#1890ff', marginLeft: 2, fontWeight: 500 }}>{data.jumpLabel}</span>
-        </div>
-      )}
-      <Handle type="source" position={Position.Bottom} style={{ background: config.borderColor }} />
-    </div>
-  );
-};
-
-const nodeTypes = {
-  workflowNode: CustomNode,
-};
-
 // 节点类型显示名称
 const getTypeLabels = (intl: any) => ({
   start: intl.formatMessage({ id: 'pages.workflow.designer.addStart' }),
@@ -174,11 +81,54 @@ const getTypeLabels = (intl: any) => ({
   ai: intl.formatMessage({ id: 'pages.workflow.designer.addAi' }),
   notification: intl.formatMessage({ id: 'pages.workflow.designer.addNotification' }),
   parallel: intl.formatMessage({ id: 'pages.workflow.designer.addParallel' }),
+  httpRequest: intl.formatMessage({ id: 'pages.workflow.designer.addHttpRequest' }),
+  timer: intl.formatMessage({ id: 'pages.workflow.designer.addTimer' }),
+  setVariable: intl.formatMessage({ id: 'pages.workflow.designer.addSetVariable' }),
+  log: intl.formatMessage({ id: 'pages.workflow.designer.addLog' }),
 });
 
 const defaultNodeStyle = {
   borderRadius: '8px',
   minWidth: '120px',
+};
+
+/**
+ * 递归清理对象中的空字符串 ID 字段，防止 MongoDB ObjectId 格式错误
+ */
+const deepCleanIdFields = (obj: any): any => {
+  if (!obj || typeof obj !== 'object') return obj;
+
+  if (Array.isArray(obj)) {
+    return obj.map(deepCleanIdFields);
+  }
+
+  const newObj: any = {};
+  Object.keys(obj).forEach((key) => {
+    const value = obj[key];
+
+    // 如果字段名以 Id 结尾且值为空字符串，则丢弃
+    if (typeof value === 'string' && value.trim() === '' && (key.endsWith('Id') || key === 'id')) {
+      return;
+    }
+
+    // 处理特殊的 ID 数组字段
+    if (Array.isArray(value) && (key === 'userIds' || key === 'roleIds' || key === 'departmentIds')) {
+      const cleanedArray = value.filter(v => typeof v === 'string' && v.trim() !== '');
+      if (cleanedArray.length > 0) {
+        newObj[key] = cleanedArray;
+      }
+      return;
+    }
+
+    if (typeof value === 'object' && value !== null) {
+      const cleaned = deepCleanIdFields(value);
+      // 如果清理后对象为空，且不是配置根节点，可以选择保留或丢弃。这里保留以维持结构。
+      newObj[key] = cleaned;
+    } else {
+      newObj[key] = value;
+    }
+  });
+  return newObj;
 };
 
 const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
@@ -202,6 +152,95 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
   const [loadingRoles, setLoadingRoles] = useState(false);
   const [forms, setForms] = useState<FormDefinition[]>([]);
   const [loadingForms, setLoadingForms] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // 稳定状态引用，防止回调循环热更新
+  const nodesRef = React.useRef(nodes);
+  const edgesRef = React.useRef(edges);
+  const typeLabels = useMemo(() => getTypeLabels(intl), [intl]);
+
+  useEffect(() => { nodesRef.current = nodes; }, [nodes]);
+  useEffect(() => { edgesRef.current = edges; }, [edges]);
+
+  // 在连线中间插入节点 (稳定引用版)
+  const onInsertNode = useCallback((edgeId: string) => {
+    const edge = edgesRef.current.find(e => e.id === edgeId);
+    if (!edge) return;
+
+    const newNodeId = `approval-${Date.now()}`;
+
+    // 计算新节点位置 (源节点和目标节点的中间)
+    const sourceNode = nodesRef.current.find(n => n.id === edge.source);
+    const targetNode = nodesRef.current.find(n => n.id === edge.target);
+    const position = { x: 0, y: 0 };
+    if (sourceNode && targetNode) {
+      position.x = (sourceNode.position.x + targetNode.position.x) / 2;
+      position.y = (sourceNode.position.y + targetNode.position.y) / 2;
+    } else {
+      position.x = Math.random() * 400 + 100;
+      position.y = Math.random() * 300 + 100;
+    }
+
+    const newNode: Node = {
+      id: newNodeId,
+      type: 'workflowNode',
+      position,
+      data: {
+        label: `新${typeLabels.approval}`,
+        typeLabel: typeLabels.approval,
+        nodeType: 'approval',
+        config: {},
+      },
+    };
+
+    // 删除旧边，添加两个新边
+    const edge1: Edge = {
+      id: `edge-${Date.now()}-1`,
+      source: edge.source,
+      target: newNodeId,
+      type: 'smoothstep',
+      animated: true,
+      markerEnd: { type: MarkerType.ArrowClosed, color: '#94a3b8' },
+    };
+    const edge2: Edge = {
+      id: `edge-${Date.now()}-2`,
+      source: newNodeId,
+      target: edge.target,
+      type: 'smoothstep',
+      animated: true,
+      markerEnd: { type: MarkerType.ArrowClosed, color: '#94a3b8' },
+    };
+
+    setNodes(nds => [...nds, newNode]);
+    setEdges(eds => {
+      const filtered = eds.filter(e => e.id !== edgeId);
+      return [...filtered, edge1, edge2];
+    });
+
+    // 自动打开新节点配置
+    setTimeout(() => {
+      setSelectedNode(newNode);
+      setConfigDrawerVisible(true);
+      configForm.resetFields();
+      configForm.setFieldsValue({
+        label: newNode.data.label,
+        nodeType: 'approval',
+      });
+    }, 100);
+  }, [intl, setNodes, setEdges, configForm, typeLabels]);
+
+  const defaultEdgeOptions = useMemo(() => ({
+    type: 'workflowEdge',
+    style: { stroke: '#94a3b8', strokeWidth: 2 },
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      color: '#94a3b8',
+    },
+    data: {
+      onInsertNode,
+      readOnly,
+    },
+  }), [onInsertNode, readOnly]);
 
   // 加载用户和角色列表
   useEffect(() => {
@@ -247,15 +286,16 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
     loadForms();
   }, []);
 
-  // 初始化节点和边
-  React.useEffect(() => {
-    if (graph) {
-      const typeLabels = getTypeLabels(intl);
+  const hasInitializedRef = React.useRef(false);
+
+  // 初始化节点和边 (优化版：移除易变依赖，增加初始化标记)
+  useEffect(() => {
+    if (graph && !hasInitializedRef.current) {
       const initialNodes: Node[] = graph.nodes.map((node) => {
         const config = node.config || {};
         let jumpLabel = '';
         if (node.type === 'condition' && config.condition?.targetNodeId) {
-          const targetNode = graph.nodes.find(n => n.id === config.condition?.targetNodeId);
+          const targetNode = graph.nodes.find((n) => n.id === config.condition?.targetNodeId);
           if (targetNode) {
             jumpLabel = targetNode.label || targetNode.id;
           }
@@ -279,55 +319,60 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
         id: edge.id,
         source: edge.source,
         target: edge.target,
+        type: 'workflowEdge',
         label: edge.label,
-        labelStyle: { fill: '#666', fontWeight: 600 },
+        labelStyle: { fill: '#64748b', fontWeight: 600 },
         markerEnd: {
           type: MarkerType.ArrowClosed,
+          color: '#94a3b8',
         },
         data: {
           condition: edge.condition,
+          onInsertNode,
+          readOnly,
         },
       }));
 
       setNodes(initialNodes);
       setEdges(initialEdges);
-    } else {
-      // 默认创建一个开始节点
-      const typeLabels = getTypeLabels(intl);
+      hasInitializedRef.current = true;
+    } else if (!graph && nodesRef.current.length === 0 && !hasInitializedRef.current) {
+      // 仅在画布为空且无 graph 输入时，默认创建一个开始节点
       setNodes([
         {
-          id: 'start-1',
+          id: 'start',
           type: 'workflowNode',
-          position: { x: 250, y: 100 },
-          data: {
-            label: '开始',
-            typeLabel: typeLabels.start,
-            nodeType: 'start',
-            config: {},
-          },
+          position: { x: 250, y: 50 },
+          data: { label: typeLabels.start, typeLabel: typeLabels.start, nodeType: 'start' },
         },
       ]);
-      setEdges([]);
+      hasInitializedRef.current = true;
     }
-  }, [graph, setNodes, setEdges, intl]);
+  }, [graph, onInsertNode, readOnly, setNodes, setEdges, typeLabels]);
 
   const onConnect = useCallback(
     (params: Connection) => {
-      const newEdge = {
+      const newEdge: Edge = {
         id: `edge-${Date.now()}`,
-        source: params.source,
-        target: params.target,
+        source: params.source!,
+        target: params.target!,
         sourceHandle: params.sourceHandle,
         targetHandle: params.targetHandle,
-        labelStyle: { fill: '#666', fontWeight: 600 },
+        type: 'workflowEdge',
+        animated: true,
+        labelStyle: { fill: '#64748b', fontWeight: 600 },
         markerEnd: {
           type: MarkerType.ArrowClosed,
+          color: '#94a3b8',
         },
-        data: {},
+        data: {
+          onInsertNode,
+          readOnly,
+        },
       };
       setEdges((eds) => addEdge(newEdge, eds));
     },
-    [setEdges]
+    [setEdges, onInsertNode, readOnly]
   );
 
   const addNode = useCallback(
@@ -402,6 +447,16 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
         if (r.type === 3) return { type: 3, formFieldKey: r.formFieldKey };
         return r;
       }) || [],
+      httpMethod: config.http?.method || 'GET',
+      httpUrl: config.http?.url,
+      httpHeaders: config.http?.headers,
+      httpBody: config.http?.body,
+      timerWaitDuration: config.timer?.waitDuration,
+      timerCron: config.timer?.cron,
+      variableName: config.variable?.name,
+      variableValue: config.variable?.value,
+      logLevel: config.log?.level || 'Information',
+      logMessage: config.log?.message,
     });
   }, [configForm]);
 
@@ -418,11 +473,13 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
               return (rules || []).flatMap((rule: any) => {
                 if (rule.type === 0) {
                   const userIds: string[] = Array.isArray(rule.userIds) ? rule.userIds : rule.userId ? [rule.userId] : [];
-                  return userIds.map((uid) => ({ type: ApproverType.User, userId: uid } as ApproverRule));
+                  const validUserIds = userIds.filter(id => id && id.trim() !== '');
+                  return validUserIds.map((uid) => ({ type: ApproverType.User, userId: uid } as ApproverRule));
                 }
                 if (rule.type === 1) {
                   const roleIds: string[] = Array.isArray(rule.roleIds) ? rule.roleIds : rule.roleId ? [rule.roleId] : [];
-                  return roleIds.map((rid) => ({ type: ApproverType.Role, roleId: rid } as ApproverRule));
+                  const validRoleIds = roleIds.filter(id => id && id.trim() !== '');
+                  return validRoleIds.map((rid) => ({ type: ApproverType.Role, roleId: rid } as ApproverRule));
                 }
                 if (rule.type === 2) {
                   return { type: ApproverType.Department, departmentId: rule.departmentId };
@@ -449,12 +506,12 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
           } else if (values.nodeType === 'condition') {
             config.condition = {
               expression: values.expression || '',
-              targetNodeId: values.targetNodeId,
+              targetNodeId: values.targetNodeId && values.targetNodeId.trim() !== '' ? values.targetNodeId : undefined,
             };
           }
 
           // Bug 26 修复：form、ai、notification 配置独立保存，不互斥
-          if (values.formDefinitionId) {
+          if (values.formDefinitionId && values.formDefinitionId.trim() !== '') {
             config.form = {
               formDefinitionId: values.formDefinitionId,
               target: (values.formTarget as FormTarget) || FormTarget.Document,
@@ -479,11 +536,13 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
               return (rules || []).flatMap((rule: any) => {
                 if (rule.type === 0) {
                   const userIds: string[] = Array.isArray(rule.userIds) ? rule.userIds : rule.userId ? [rule.userId] : [];
-                  return userIds.map((uid) => ({ type: ApproverType.User, userId: uid } as ApproverRule));
+                  const validUserIds = userIds.filter(id => id && id.trim() !== '');
+                  return validUserIds.map((uid) => ({ type: ApproverType.User, userId: uid } as ApproverRule));
                 }
                 if (rule.type === 1) {
                   const roleIds: string[] = Array.isArray(rule.roleIds) ? rule.roleIds : rule.roleId ? [rule.roleId] : [];
-                  return roleIds.map((rid) => ({ type: ApproverType.Role, roleId: rid } as ApproverRule));
+                  const validRoleIds = roleIds.filter(id => id && id.trim() !== '');
+                  return validRoleIds.map((rid) => ({ type: ApproverType.Role, roleId: rid } as ApproverRule));
                 }
                 if (rule.type === 2) {
                   return { type: ApproverType.Department, departmentId: rule.departmentId };
@@ -499,6 +558,36 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
               actionType: values.notificationActionType || 'workflow_notification',
               remarksTemplate: values.notificationRemarks,
               recipients: formatRecipients(values.notificationRecipients),
+            };
+          }
+
+          if (values.nodeType === 'httpRequest') {
+            config.http = {
+              method: values.httpMethod,
+              url: values.httpUrl,
+              headers: values.httpHeaders,
+              body: values.httpBody,
+            };
+          }
+
+          if (values.nodeType === 'timer') {
+            config.timer = {
+              waitDuration: values.timerWaitDuration,
+              cron: values.timerCron,
+            };
+          }
+
+          if (values.nodeType === 'setVariable') {
+            config.variable = {
+              name: values.variableName,
+              value: values.variableValue,
+            };
+          }
+
+          if (values.nodeType === 'log') {
+            config.log = {
+              level: values.logLevel || 'Information',
+              message: values.logMessage,
             };
           }
 
@@ -577,13 +666,13 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
       nodes: nodes.map((node) => {
         return {
           id: node.id,
-          type: node.data.nodeType as 'start' | 'end' | 'approval' | 'condition' | 'ai' | 'notification' | 'parallel',
+          type: node.data.nodeType as 'start' | 'end' | 'approval' | 'condition' | 'ai' | 'notification' | 'parallel' | 'httpRequest' | 'timer' | 'setVariable' | 'log',
           label: node.data.label || '',
           position: {
             x: node.position.x,
             y: node.position.y,
           },
-          config: node.data.config || {},
+          config: deepCleanIdFields(node.data.config || {}),
         };
       }),
       edges: edges.map((edge) => ({
@@ -598,7 +687,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
     onSave?.(workflowGraph);
   }, [nodes, edges, validateWorkflow, onSave]);
 
-  const handleDeleteSelectedNode = useCallback(() => {
+  const handleDeleteNode = useCallback(() => {
     if (!selectedNode) {
       message.warning('请先选择要删除的节点');
       return;
@@ -621,73 +710,56 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
     });
   }, [selectedNode, setNodes, setEdges]);
 
+  const activityCategories = useMemo(() => {
+    const categories: Record<string, any[]> = {};
+    Object.entries(NODE_CONFIGS).forEach(([key, config]) => {
+      const cat = (config as any).category || '其他';
+      if (!categories[cat]) categories[cat] = [];
+      categories[cat].push({ type: key, ...config });
+    });
+    return categories;
+  }, []);
+
   return (
-    <div className="workflow-designer-container" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {!readOnly && (
-        <Card
-          className="workflow-toolbar"
-          style={{ marginBottom: 16, backgroundColor: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(8px)', zIndex: 10, borderBottom: '1px solid #f0f0f0' }}
-          styles={{ body: { padding: '12px' } }}
-        >
-          <Space>
-            <Button
-              icon={<PlayCircleOutlined style={{ color: '#52c41a' }} />}
-              onClick={() => addNode('start')}
-              size="small"
-            >
-              {intl.formatMessage({ id: 'pages.workflow.designer.addStart' })}
-            </Button>
-            <Button
-              icon={<UserOutlined style={{ color: '#1890ff' }} />}
-              onClick={() => addNode('approval')}
-              size="small"
-            >
-              {intl.formatMessage({ id: 'pages.workflow.designer.addApproval' })}
-            </Button>
-            <Button
-              icon={<BranchesOutlined style={{ color: '#fa8c16' }} />}
-              onClick={() => addNode('condition')}
-              size="small"
-            >
-              {intl.formatMessage({ id: 'pages.workflow.designer.addCondition' })}
-            </Button>
-            <Button
-              icon={<NodeIndexOutlined style={{ color: '#722ed1' }} />}
-              onClick={() => addNode('parallel')}
-              size="small"
-            >
-              {intl.formatMessage({ id: 'pages.workflow.designer.addParallel' })}
-            </Button>
-            <Button
-              icon={<RobotOutlined style={{ color: '#eb2f96' }} />}
-              onClick={() => addNode('ai')}
-              size="small"
-            >
-              {intl.formatMessage({ id: 'pages.workflow.designer.addAi' })}
-            </Button>
-            <Button
-              icon={<BellOutlined style={{ color: '#faad14' }} />}
-              onClick={() => addNode('notification')}
-              size="small"
-            >
-              {intl.formatMessage({ id: 'pages.workflow.designer.addNotification' })}
-            </Button>
-            <Button
-              icon={<StopOutlined style={{ color: '#ff4d4f' }} />}
-              onClick={() => addNode('end')}
-              size="small"
-            >
-              {intl.formatMessage({ id: 'pages.workflow.designer.addEnd' })}
-            </Button>
-            <Divider orientation="vertical" />
-            <Divider orientation="vertical" />
+    <div className="workflow-designer-container" style={{ width: '100%', height: '100%' }}>
+      <div className="workflow-main-layout">
+        {!readOnly && (
+          <>
+            <div className={`elsa-activity-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
+              <div className="sidebar-header">
+                <span>组件库</span>
+              </div>
+              <div className="sidebar-content">
+                {Object.entries(activityCategories).map(([category, items]) => (
+                  <div className="category-group" key={category}>
+                    <div className="category-title">{category}</div>
+                    {items.map((item) => (
+                      <div className="activity-item" key={item.type} onClick={() => addNode(item.type)}>
+                        <div className="activity-icon" style={{ backgroundColor: item.backgroundColor, color: item.color }}>
+                          {item.icon}
+                        </div>
+                        <div className="activity-info">
+                          <div className="activity-label">
+                            {intl.formatMessage({ id: `pages.workflow.designer.add${item.type.charAt(0).toUpperCase() + item.type.slice(1)}` })}
+                          </div>
+                          <div className="activity-desc">{item.description}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className={`sidebar-toggle-btn ${sidebarCollapsed ? 'collapsed' : ''}`} onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
+              {sidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            </div>
+          </>
+        )}
+
+        <div className="workflow-canvas-container">
+          <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 10, display: 'flex', gap: 8 }}>
             {onSave && (
-              <Button
-                type="primary"
-                icon={<SaveOutlined />}
-                onClick={handleSave}
-                size="small"
-              >
+              <Button type="primary" icon={<SaveOutlined />} onClick={handleSave} size="middle">
                 {intl.formatMessage({ id: 'pages.workflow.designer.save' })}
               </Button>
             )}
@@ -698,641 +770,254 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                   message.success(intl.formatMessage({ id: 'pages.message.success' }));
                 }
               }}
-              size="small"
             >
-              {intl.formatMessage({ id: 'pages.workflow.designer.validate' })}
+              验证
             </Button>
-            {onClose && (
-              <Button onClick={onClose} size="small">
-                {intl.formatMessage({ id: 'pages.button.cancel' })}
-              </Button>
-            )}
-          </Space>
-        </Card>
-      )}
+            {onClose && <Button onClick={onClose}>退出</Button>}
+          </div>
 
-      <div style={{ flex: 1, border: '1px solid #d9d9d9', borderRadius: '4px' }}>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={nodeTypes}
-          onNodesChange={readOnly ? undefined : onNodesChange}
-          onEdgesChange={readOnly ? undefined : onEdgesChange}
-          onConnect={readOnly ? undefined : onConnect}
-          onNodeClick={onNodeClick}
-          nodesDraggable={!readOnly}
-          nodesConnectable={!readOnly}
-          elementsSelectable={!readOnly}
-          fitView
-        >
-          <Background />
-          <Controls />
-          <MiniMap />
-        </ReactFlow>
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
+            onNodesChange={readOnly ? undefined : onNodesChange}
+            onEdgesChange={readOnly ? undefined : onEdgesChange}
+            onConnect={readOnly ? undefined : onConnect}
+            onNodeClick={onNodeClick}
+            nodesDraggable={!readOnly}
+            nodesConnectable={!readOnly}
+            elementsSelectable={!readOnly}
+            fitView
+            fitViewOptions={{ padding: 0.2 }}
+            proOptions={{ hideAttribution: true }}
+            defaultEdgeOptions={defaultEdgeOptions}
+          >
+            <Background color="#cbd5e1" gap={24} size={1} />
+            <Controls />
+            <MiniMap
+              nodeColor={(n) => {
+                const config = NODE_CONFIGS[n.data.nodeType as keyof typeof NODE_CONFIGS];
+                return config?.color || '#eee';
+              }}
+              maskStrokeColor="#3b82f6"
+              style={{ borderRadius: 12 }}
+            />
+          </ReactFlow>
+        </div>
       </div>
 
       <Drawer
         title={
           <Space>
-            <InfoCircleOutlined style={{ color: '#1890ff' }} />
+            <InfoCircleOutlined style={{ color: '#3b82f6' }} />
             <span>{intl.formatMessage({ id: 'pages.workflow.designer.nodeConfig' })}</span>
           </Space>
         }
         open={configDrawerVisible}
         onClose={() => setConfigDrawerVisible(false)}
-        size={450}
-      >
-        <Form form={configForm} layout="vertical">
-          <Form.Item name="nodeType" label={intl.formatMessage({ id: 'pages.workflow.designer.nodeType' })}>
-            <Select disabled>
-              <Select.Option value="start">{intl.formatMessage({ id: 'pages.workflow.designer.addStart' })}</Select.Option>
-              <Select.Option value="end">{intl.formatMessage({ id: 'pages.workflow.designer.addEnd' })}</Select.Option>
-              <Select.Option value="approval">{intl.formatMessage({ id: 'pages.workflow.designer.addApproval' })}</Select.Option>
-              <Select.Option value="condition">{intl.formatMessage({ id: 'pages.workflow.designer.addCondition' })}</Select.Option>
-              <Select.Option value="parallel">{intl.formatMessage({ id: 'pages.workflow.designer.addParallel' })}</Select.Option>
-              {/* Bug 27 修复：补充 ai 和 notification 选项 */}
-              <Select.Option value="ai">{intl.formatMessage({ id: 'pages.workflow.designer.addAi' })}</Select.Option>
-              <Select.Option value="notification">{intl.formatMessage({ id: 'pages.workflow.designer.addNotification' })}</Select.Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item name="label" label={intl.formatMessage({ id: 'pages.workflow.designer.nodeLabel' })}>
-            <Input placeholder={intl.formatMessage({ id: 'pages.workflow.designer.nodeLabel' })} />
-          </Form.Item>
-
-          {selectedNode?.data.nodeType === 'approval' && (
-            <>
-              <Form.Item
-                name="approvalType"
-                label={intl.formatMessage({ id: 'pages.workflow.designer.approvalType' })}
-                tooltip="会签：所有审批人同意；或签：任意一人同意即可"
-              >
-                <Select>
-                  <Select.Option value={0}>{intl.formatMessage({ id: 'pages.workflow.designer.approvalType.all' })}</Select.Option>
-                  <Select.Option value={1}>{intl.formatMessage({ id: 'pages.workflow.designer.approvalType.any' })}</Select.Option>
-                  <Select.Option value={2}>{intl.formatMessage({ id: 'pages.workflow.designer.approvalType.sequential' })}</Select.Option>
-                </Select>
-              </Form.Item>
-              <Form.Item
-                name="approvers"
-                label={intl.formatMessage({ id: 'pages.workflow.designer.approverRules' })}
-                rules={[{ required: true, message: '请至少添加一条审批人规则' }]}
-              >
-                <Form.List name="approvers">
-                  {(fields, { add, remove }) => (
-                    <>
-                      {fields.map(({ key, name, ...restField }) => (
-                        <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
-                          <Form.Item
-                            {...restField}
-                            name={[name, 'type']}
-                            rules={[{ required: true, message: '选择类型' }]}
-                          >
-                            <Select style={{ width: 100 }} placeholder={intl.formatMessage({ id: 'pages.workflow.designer.approverType' })}>
-                              <Select.Option value={0}>{intl.formatMessage({ id: 'pages.workflow.designer.approverType.user' })}</Select.Option>
-                              <Select.Option value={1}>{intl.formatMessage({ id: 'pages.workflow.designer.approverType.role' })}</Select.Option>
-                              <Select.Option value={2}>部门</Select.Option>
-                              <Select.Option value={3}>{intl.formatMessage({ id: 'pages.workflow.designer.approverType.formField' })}</Select.Option>
-                            </Select>
-                          </Form.Item>
-                          <Form.Item
-                            noStyle
-                            shouldUpdate={(prevValues, curValues) =>
-                              (prevValues as any).approvers?.[name]?.type !== (curValues as any).approvers?.[name]?.type
-                            }
-                          >
-                            {({ getFieldValue }) => {
-                              const approverType = getFieldValue(['approvers', name, 'type']);
-                              if (approverType === 0) {
-                                return (
-                                  <Form.Item
-                                    {...restField}
-                                    name={[name, 'userIds']}
-                                    rules={[{ required: true, message: '请选择用户' }]}
-                                  >
-                                    <Select
-                                      mode="multiple"
-                                      style={{ width: 260 }}
-                                      placeholder={intl.formatMessage({ id: 'pages.workflow.designer.selectUser' })}
-                                      loading={loadingUsers}
-                                      showSearch
-                                      filterOption={(input, option) =>
-                                        (option?.label as string ?? '').toLowerCase().includes(input.toLowerCase())
-                                      }
-                                    >
-                                      {users.map((user) => (
-                                        <Select.Option key={user.id} value={user.id} label={user.username}>
-                                          {user.username}
-                                        </Select.Option>
-                                      ))}
-                                    </Select>
-                                  </Form.Item>
-                                );
-                              }
-                              if (approverType === 1) {
-                                return (
-                                  <Form.Item
-                                    {...restField}
-                                    name={[name, 'roleIds']}
-                                    rules={[{ required: true, message: '请选择角色' }]}
-                                  >
-                                    <Select
-                                      mode="multiple"
-                                      style={{ width: 260 }}
-                                      placeholder={intl.formatMessage({ id: 'pages.workflow.designer.selectRole' })}
-                                      loading={loadingRoles}
-                                      showSearch
-                                      filterOption={(input, option) =>
-                                        (option?.label as string ?? '').toLowerCase().includes(input.toLowerCase())
-                                      }
-                                    >
-                                      {roles.map((role) => (
-                                        <Select.Option key={role.id} value={role.id} label={role.name}>
-                                          {role.name}
-                                        </Select.Option>
-                                      ))}
-                                    </Select>
-                                  </Form.Item>
-                                );
-                              }
-                              if (approverType === 2) {
-                                return (
-                                  <Form.Item
-                                    {...restField}
-                                    name={[name, 'departmentId']}
-                                    rules={[{ required: true, message: '请选择部门' }]}
-                                  >
-                                    <Input style={{ width: 200 }} placeholder="输入部门ID" />
-                                  </Form.Item>
-                                );
-                              }
-                              return null;
-                            }}
-                          </Form.Item>
-                          <Button
-                            type="text"
-                            danger
-                            icon={<DeleteOutlined />}
-                            onClick={() => remove(name)}
-                          >
-                            {intl.formatMessage({ id: 'pages.button.delete' })}
-                          </Button>
-                        </Space>
-                      ))}
-                      <Form.Item>
-                        <Button type="dashed" onClick={() => add({ type: 0, userIds: [] })} block icon={<PlusOutlined />}>
-                          {intl.formatMessage({ id: 'pages.workflow.designer.addApproverRule' })}
-                        </Button>
-                      </Form.Item>
-                    </>
-                  )}
-                </Form.List>
-              </Form.Item>
-
-              <Form.Item
-                name="ccRules"
-                label={intl.formatMessage({ id: 'pages.workflow.designer.ccRules' })}
-              >
-                <Form.List name="ccRules">
-                  {(fields, { add, remove }) => (
-                    <>
-                      {fields.map(({ key, name, ...restField }) => (
-                        <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
-                          <Form.Item
-                            {...restField}
-                            name={[name, 'type']}
-                            rules={[{ required: true, message: '选择类型' }]}
-                          >
-                            <Select style={{ width: 100 }} placeholder={intl.formatMessage({ id: 'pages.workflow.designer.approverType' })}>
-                              <Select.Option value={0}>{intl.formatMessage({ id: 'pages.workflow.designer.approverType.user' })}</Select.Option>
-                              <Select.Option value={1}>{intl.formatMessage({ id: 'pages.workflow.designer.approverType.role' })}</Select.Option>
-                              <Select.Option value={2}>部门</Select.Option>
-                              <Select.Option value={3}>{intl.formatMessage({ id: 'pages.workflow.designer.approverType.formField' })}</Select.Option>
-                            </Select>
-                          </Form.Item>
-                          <Form.Item
-                            noStyle
-                            shouldUpdate={(prevValues, curValues) =>
-                              (prevValues as any).ccRules?.[name]?.type !== (curValues as any).ccRules?.[name]?.type
-                            }
-                          >
-                            {({ getFieldValue }) => {
-                              const approverType = getFieldValue(['ccRules', name, 'type']);
-                              if (approverType === 0) {
-                                return (
-                                  <Form.Item
-                                    {...restField}
-                                    name={[name, 'userIds']}
-                                    rules={[{ required: true, message: '请选择用户' }]}
-                                  >
-                                    <Select
-                                      mode="multiple"
-                                      style={{ width: 230 }}
-                                      placeholder={intl.formatMessage({ id: 'pages.workflow.designer.selectUser' })}
-                                      loading={loadingUsers}
-                                      showSearch
-                                      filterOption={(input, option) =>
-                                        (option?.label as string ?? '').toLowerCase().includes(input.toLowerCase())
-                                      }
-                                    >
-                                      {users.map((user) => (
-                                        <Select.Option key={user.id} value={user.id} label={user.username}>
-                                          {user.username}
-                                        </Select.Option>
-                                      ))}
-                                    </Select>
-                                  </Form.Item>
-                                );
-                              }
-                              if (approverType === 1) {
-                                return (
-                                  <Form.Item
-                                    {...restField}
-                                    name={[name, 'roleIds']}
-                                    rules={[{ required: true, message: '请选择角色' }]}
-                                  >
-                                    <Select
-                                      mode="multiple"
-                                      style={{ width: 230 }}
-                                      placeholder={intl.formatMessage({ id: 'pages.workflow.designer.selectRole' })}
-                                      loading={loadingRoles}
-                                      showSearch
-                                      filterOption={(input, option) =>
-                                        (option?.label as string ?? '').toLowerCase().includes(input.toLowerCase())
-                                      }
-                                    >
-                                      {roles.map((role) => (
-                                        <Select.Option key={role.id} value={role.id} label={role.name}>
-                                          {role.name}
-                                        </Select.Option>
-                                      ))}
-                                    </Select>
-                                  </Form.Item>
-                                );
-                              }
-                              if (approverType === 2) {
-                                return (
-                                  <Form.Item
-                                    {...restField}
-                                    name={[name, 'departmentId']}
-                                    rules={[{ required: true, message: '请选择部门' }]}
-                                  >
-                                    <Input style={{ width: 180 }} placeholder="输入部门ID" />
-                                  </Form.Item>
-                                );
-                              }
-                              if (approverType === 3) {
-                                return (
-                                  <Form.Item
-                                    {...restField}
-                                    name={[name, 'formFieldKey']}
-                                    rules={[{ required: true, message: intl.formatMessage({ id: 'pages.workflow.designer.selectFormField' }) }]}
-                                  >
-                                    <Select style={{ width: 230 }} placeholder={intl.formatMessage({ id: 'pages.workflow.designer.selectFormField' })}>
-                                      {forms.flatMap(f => f.fields).map(field => (
-                                        <Select.Option key={field.dataKey} value={field.dataKey}>
-                                          {field.label} ({field.dataKey})
-                                        </Select.Option>
-                                      ))}
-                                    </Select>
-                                  </Form.Item>
-                                );
-                              }
-                              return null;
-                            }}
-                          </Form.Item>
-                          <Button
-                            type="text"
-                            danger
-                            icon={<DeleteOutlined />}
-                            onClick={() => remove(name)}
-                          >
-                            {intl.formatMessage({ id: 'pages.button.delete' })}
-                          </Button>
-                        </Space>
-                      ))}
-                      <Form.Item>
-                        <Button type="dashed" onClick={() => add({ type: 0, userIds: [] })} block icon={<PlusOutlined />}>
-                          {intl.formatMessage({ id: 'pages.workflow.designer.addCCRule' })}
-                        </Button>
-                      </Form.Item>
-                    </>
-                  )}
-                </Form.List>
-              </Form.Item>
-              <Space wrap>
-                <Form.Item name="allowDelegate" valuePropName="checked" label="允许转办">
-                  <Switch
-                    checkedChildren={intl.formatMessage({ id: 'pages.workflow.designer.allowDelegate' })}
-                    unCheckedChildren={intl.formatMessage({ id: 'pages.workflow.designer.notAllowDelegate' })}
-                  />
-                </Form.Item>
-                <Form.Item name="allowReject" valuePropName="checked" label="允许拒绝">
-                  <Switch
-                    checkedChildren={intl.formatMessage({ id: 'pages.workflow.designer.allowReject' })}
-                    unCheckedChildren={intl.formatMessage({ id: 'pages.workflow.designer.notAllowReject' })}
-                  />
-                </Form.Item>
-                <Form.Item name="allowReturn" valuePropName="checked" label="允许退回">
-                  <Switch
-                    checkedChildren={intl.formatMessage({ id: 'pages.workflow.designer.allowReturn' })}
-                    unCheckedChildren={intl.formatMessage({ id: 'pages.workflow.designer.notAllowReturn' })}
-                  />
-                </Form.Item>
-              </Space>
-              <Form.Item name="timeoutHours" label="超时时长（小时）" tooltip="为空表示不限时">
-                <Input type="number" min={0} placeholder="可选" />
-              </Form.Item>
-            </>
-          )}
-
-          {selectedNode?.data.nodeType === 'condition' && (
-            <>
-              <Form.Item label={intl.formatMessage({ id: 'pages.workflow.designer.variables.placeholder' })}>
-                <Space direction="vertical" style={{ width: '100%' }}>
-                  <Space wrap>
-                    <Select
-                      placeholder={intl.formatMessage({ id: 'pages.workflow.designer.variables.business' })}
-                      style={{ width: 160 }}
-                      onChange={(val) => {
-                        const current = configForm.getFieldValue('expression') || '';
-                        configForm.setFieldsValue({ expression: `${current}{business.${val}}` });
-                      }}
-                    >
-                      <Select.Option value="amount">金额 (amount)</Select.Option>
-                      <Select.Option value="title">标题 (title)</Select.Option>
-                      <Select.Option value="priority">优先级 (priority)</Select.Option>
-                      <Select.Option value="initiator">发起人 (initiator)</Select.Option>
-                      <Select.Option value="department">部门 (department)</Select.Option>
-                    </Select>
-                    <Select
-                      placeholder={intl.formatMessage({ id: 'pages.workflow.designer.variables.form' })}
-                      style={{ width: 160 }}
-                      onChange={(val) => {
-                        const current = configForm.getFieldValue('expression') || '';
-                        configForm.setFieldsValue({ expression: `${current}{form.${val}}` });
-                      }}
-                    >
-                      {forms.flatMap(f => f.fields).map(field => (
-                        <Select.Option key={field.dataKey} value={field.dataKey}>
-                          {field.label} ({field.dataKey})
-                        </Select.Option>
-                      ))}
-                    </Select>
-                  </Space>
-                  <Space wrap size={[4, 4]}>
-                    {['==', '!=', '>', '<', '>=', '<=', '&&', '||', '(', ')'].map(op => (
-                      <Button
-                        key={op}
-                        size="small"
-                        onClick={() => {
-                          const current = configForm.getFieldValue('expression') || '';
-                          configForm.setFieldsValue({ expression: `${current} ${op} ` });
-                        }}
-                      >
-                        {op}
-                      </Button>
-                    ))}
-                    <Button
-                      size="small"
-                      danger
-                      onClick={() => configForm.setFieldsValue({ expression: '' })}
-                    >
-                      {intl.formatMessage({ id: 'pages.common.reset' })}
-                    </Button>
-                  </Space>
-                </Space>
-              </Form.Item>
-              <Form.Item
-                name="expression"
-                label={intl.formatMessage({ id: 'pages.workflow.designer.conditionExpression' })}
-                extra={intl.formatMessage({ id: 'pages.workflow.designer.conditionExample' })}
-              >
-                <Input.TextArea
-                  placeholder={intl.formatMessage({ id: 'pages.workflow.designer.conditionExpressionPlaceholder' })}
-                  rows={3}
-                />
-              </Form.Item>
-              <Form.Item
-                name="targetNodeId"
-                label={intl.formatMessage({ id: 'pages.workflow.designer.conditionJumpTarget' })}
-                tooltip={intl.formatMessage({ id: 'pages.workflow.designer.conditionJumpTargetPlaceholder' })}
-              >
-                <Select placeholder={intl.formatMessage({ id: 'pages.workflow.designer.conditionJumpTargetPlaceholder' })} allowClear>
-                  {nodes
-                    .filter((n) => n.id !== selectedNode.id && n.data.nodeType !== 'start')
-                    .map((n) => {
-                      const typeLabels = getTypeLabels(intl);
-                      const typeLabel = typeLabels[n.data.nodeType as keyof typeof typeLabels] || n.data.nodeType;
-                      const labelText = n.data.label || n.id;
-                      return (
-                        <Select.Option key={n.id} value={n.id}>
-                          {`[${typeLabel}] ${labelText}`}
-                        </Select.Option>
-                      );
-                    })}
-                </Select>
-              </Form.Item>
-            </>
-          )}
-
-          {selectedNode?.data.nodeType === 'notification' && (
-            <>
-              <Form.Item
-                name="notificationActionType"
-                label={intl.formatMessage({ id: 'pages.workflow.designer.notification.actionType' })}
-                rules={[{ required: true, message: '请选择通知类型' }]}
-              >
-                <Select placeholder="选择通知类型">
-                  <Select.Option value="workflow_approval_required">待审批 (Approval Required)</Select.Option>
-                  <Select.Option value="workflow_approved">已通过 (Approved)</Select.Option>
-                  <Select.Option value="workflow_rejected">已拒绝 (Rejected)</Select.Option>
-                  <Select.Option value="workflow_notification">系统通知 (General Notification)</Select.Option>
-                </Select>
-              </Form.Item>
-              <Form.Item
-                name="notificationRemarks"
-                label={intl.formatMessage({ id: 'pages.workflow.designer.notification.remarksTemplate' })}
-                tooltip="支持使用 {{variable}} 语法引用流程变量"
-              >
-                <Input.TextArea
-                  placeholder="请输入通知备注内容模板"
-                  rows={3}
-                />
-              </Form.Item>
-              <Form.Item
-                name="notificationRecipients"
-                label={intl.formatMessage({ id: 'pages.workflow.designer.notification.recipients' })}
-                rules={[{ required: true, message: '请配置接收人规则' }]}
-              >
-                <Form.List name="notificationRecipients">
-                  {(fields, { add, remove }) => (
-                    <>
-                      {fields.map(({ key, name, ...restField }) => (
-                        <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
-                          <Form.Item
-                            {...restField}
-                            name={[name, 'type']}
-                            rules={[{ required: true, message: '类型' }]}
-                          >
-                            <Select style={{ width: 100 }}>
-                              <Select.Option value={0}>用户</Select.Option>
-                              <Select.Option value={1}>角色</Select.Option>
-                              <Select.Option value={2}>部门</Select.Option>
-                              <Select.Option value={3}>表单字段</Select.Option>
-                            </Select>
-                          </Form.Item>
-                          <Form.Item
-                            noStyle
-                            shouldUpdate={(prevValues, curValues) =>
-                              (prevValues as any).notificationRecipients?.[name]?.type !== (curValues as any).notificationRecipients?.[name]?.type
-                            }
-                          >
-                            {({ getFieldValue }) => {
-                              const type = getFieldValue(['notificationRecipients', name, 'type']);
-                              if (type === 0) {
-                                return (
-                                  <Form.Item {...restField} name={[name, 'userIds']} rules={[{ required: true, message: '选用户' }]}>
-                                    <Select mode="multiple" style={{ width: 230 }} placeholder="选择用户" loading={loadingUsers} showSearch>
-                                      {users.map((u) => <Select.Option key={u.id} value={u.id}>{u.username}</Select.Option>)}
-                                    </Select>
-                                  </Form.Item>
-                                );
-                              }
-                              if (type === 1) {
-                                return (
-                                  <Form.Item {...restField} name={[name, 'roleIds']} rules={[{ required: true, message: '选角色' }]}>
-                                    <Select mode="multiple" style={{ width: 230 }} placeholder="选择角色" loading={loadingRoles} showSearch>
-                                      {roles.map((r) => <Select.Option key={r.id} value={r.id}>{r.name}</Select.Option>)}
-                                    </Select>
-                                  </Form.Item>
-                                );
-                              }
-                              if (type === 2) {
-                                return <Form.Item {...restField} name={[name, 'departmentId']} rules={[{ required: true, message: '填部门' }]}><Input style={{ width: 180 }} placeholder="部门ID" /></Form.Item>;
-                              }
-                              if (type === 3) {
-                                return (
-                                  <Form.Item {...restField} name={[name, 'formFieldKey']} rules={[{ required: true, message: '选字段' }]}>
-                                    <Select style={{ width: 230 }} placeholder="选择表单字段">
-                                      {forms.flatMap(f => f.fields).map(field => (
-                                        <Select.Option key={field.dataKey} value={field.dataKey}>{field.label}</Select.Option>
-                                      ))}
-                                    </Select>
-                                  </Form.Item>
-                                );
-                              }
-                              return null;
-                            }}
-                          </Form.Item>
-                          <Button type="text" danger icon={<DeleteOutlined />} onClick={() => remove(name)} />
-                        </Space>
-                      ))}
-                      <Button type="dashed" onClick={() => add({ type: 0, userIds: [] })} block icon={<PlusOutlined />}>添加规则</Button>
-                    </>
-                  )}
-                </Form.List>
-              </Form.Item>
-            </>
-          )}
-
-          {selectedNode?.data.nodeType === 'ai' && (
-            <>
-              <Form.Item
-                name="promptTemplate"
-                label={intl.formatMessage({ id: 'pages.workflow.designer.ai.promptTemplate' })}
-                rules={[{ required: true, message: '请输入提示词模板' }]}
-                tooltip="支持使用 {{variable}} 语法引用流程变量"
-              >
-                <Input.TextArea
-                  placeholder="例如: 请总结以下内容: {{content}}"
-                  rows={4}
-                />
-              </Form.Item>
-              <Form.Item
-                name="outputVariable"
-                label={intl.formatMessage({ id: 'pages.workflow.designer.ai.outputVariable' })}
-                rules={[{ required: true, message: '请输入输出变量名' }]}
-              >
-                <Input placeholder="ai_result" />
-              </Form.Item>
-              <Form.Item
-                name="aiModel"
-                label={intl.formatMessage({ id: 'pages.workflow.designer.ai.model' })}
-              >
-                <Select placeholder="默认模型" allowClear>
-                  <Select.Option value="gpt-4o">gpt-4o</Select.Option>
-                  <Select.Option value="gpt-4-turbo">gpt-4-turbo</Select.Option>
-                  <Select.Option value="gpt-3.5-turbo">gpt-3.5-turbo</Select.Option>
-                </Select>
-              </Form.Item>
-              <Form.Item
-                name="systemPrompt"
-                label={intl.formatMessage({ id: 'pages.workflow.designer.ai.systemPrompt' })}
-              >
-                <Input.TextArea placeholder="可选" rows={2} />
-              </Form.Item>
-              <Space>
-                <Form.Item
-                  name="maxTokens"
-                  label={intl.formatMessage({ id: 'pages.workflow.designer.ai.maxTokens' })}
-                >
-                  <Input type="number" style={{ width: 120 }} placeholder="可选" />
-                </Form.Item>
-                <Form.Item
-                  name="temperature"
-                  label={intl.formatMessage({ id: 'pages.workflow.designer.ai.temperature' })}
-                >
-                  <Input type="number" step={0.1} min={0} max={2} style={{ width: 120 }} placeholder="可选" />
-                </Form.Item>
-              </Space>
-            </>
-          )}
-
-          {/* 节点表单绑定配置：在开始节点与审批节点上最常用，其它业务节点也可选 */}
-          {selectedNode && selectedNode.data && selectedNode.data.nodeType !== 'end' && (
-            <>
-              <Divider>节点表单绑定</Divider>
-              <Form.Item name="formDefinitionId" label="选择表单">
-                <Select
-                  placeholder="请选择要绑定的表单"
-                  loading={loadingForms}
-                  showSearch
-                  allowClear
-                  filterOption={(input, option) => ((option?.label as string) || '').toLowerCase().includes(input.toLowerCase())}
-                >
-                  {forms.map((f) => (
-                    <Select.Option key={f.id} value={f.id} label={f.name}>
-                      {f.name}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-              <Form.Item name="formTarget" label="存储目标">
-                <Select placeholder="请选择表单数据存储位置">
-                  <Select.Option value={FormTarget.Document}>文档数据（Document）</Select.Option>
-                  <Select.Option value={FormTarget.Instance}>实例变量（Instance）</Select.Option>
-                </Select>
-              </Form.Item>
-              <Form.Item name="formDataScopeKey" label="数据范围键">
-                <Input placeholder="例如：approvalForm 或 startForm（可选）" />
-              </Form.Item>
-              <Form.Item name="formRequired" valuePropName="checked" label="是否必填">
-                <Switch checkedChildren="必填" unCheckedChildren="可选" />
-              </Form.Item>
-            </>
-          )}
-
-          <Space style={{ width: '100%' }}>
-            {selectedNode && selectedNode.data.nodeType !== 'start' && (
-              <Button danger onClick={handleDeleteSelectedNode} style={{ flex: 1 }}>
-                {intl.formatMessage({ id: 'pages.button.delete' })}
+        size="large"
+        className="node-drawer"
+        extra={
+          <Space>
+            {selectedNode?.data.nodeType !== 'start' && selectedNode?.data.nodeType !== 'end' && !readOnly && (
+              <Button danger icon={<DeleteOutlined />} onClick={handleDeleteNode}>
+                {intl.formatMessage({ id: 'pages.workflow.designer.delete' })}
               </Button>
             )}
-            <Button type="primary" onClick={handleSaveConfig} style={{ flex: 1 }}>
-              {intl.formatMessage({ id: 'pages.button.save' })}
+            <Button onClick={() => setConfigDrawerVisible(false)}>{intl.formatMessage({ id: 'pages.workflow.designer.cancel' })}</Button>
+            <Button type="primary" onClick={handleSaveConfig} icon={<SaveOutlined />} disabled={readOnly}>
+              {intl.formatMessage({ id: 'pages.workflow.designer.save' })}
             </Button>
           </Space>
+        }
+      >
+        <Form form={configForm} layout="vertical" disabled={readOnly}>
+          <Tabs
+            defaultActiveKey="basic"
+            className="config-tabs"
+            items={[
+              {
+                key: 'basic',
+                label: '基础信息',
+                children: (
+                  <>
+                    <Form.Item name="nodeType" label={intl.formatMessage({ id: 'pages.workflow.designer.nodeType' })}>
+                      <Select disabled>
+                        {Object.keys(NODE_CONFIGS).map(key => (
+                          <Select.Option key={key} value={key}>
+                            {intl.formatMessage({ id: `pages.workflow.designer.add${key.charAt(0).toUpperCase() + key.slice(1)}` })}
+                          </Select.Option>
+                        ))}
+                      </Select>
+                    </Form.Item>
+
+                    <Form.Item name="label" label={intl.formatMessage({ id: 'pages.workflow.designer.nodeLabel' })} rules={[{ required: true }]}>
+                      <Input placeholder={intl.formatMessage({ id: 'pages.workflow.designer.nodeLabel' })} />
+                    </Form.Item>
+                  </>
+                ),
+              },
+              {
+                key: 'business',
+                label: '业务规则',
+                children: (
+                  <>
+                    {selectedNode?.data.nodeType === 'approval' && (
+                      <>
+                        <Form.Item
+                          name="approvalType"
+                          label={intl.formatMessage({ id: 'pages.workflow.designer.approvalType' })}
+                        >
+                          <Select>
+                            <Select.Option value={0}>{intl.formatMessage({ id: 'pages.workflow.designer.approvalType.all' })}</Select.Option>
+                            <Select.Option value={1}>{intl.formatMessage({ id: 'pages.workflow.designer.approvalType.any' })}</Select.Option>
+                            <Select.Option value={2}>{intl.formatMessage({ id: 'pages.workflow.designer.approvalType.sequential' })}</Select.Option>
+                          </Select>
+                        </Form.Item>
+                        <Divider orientation="left" plain>审批人设置</Divider>
+                        <Form.Item name="approvers">
+                          <Form.List name="approvers">
+                            {(fields, { add, remove }) => (
+                              <>
+                                {fields.map(({ key, name, ...restField }) => (
+                                  <Card size="small" styles={{ body: { marginBottom: 12, background: '#f8fafc' } }} key={key} extra={<DeleteOutlined onClick={() => remove(name)} style={{ color: '#ff4d4f' }} />}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                      <Form.Item {...restField} name={[name, 'type']} rules={[{ required: true }]} style={{ marginBottom: 8 }}>
+                                        <Select placeholder="审批方式">
+                                          <Select.Option value={0}>指定用户</Select.Option>
+                                          <Select.Option value={1}>指定角色</Select.Option>
+                                          <Select.Option value={3}>表单字段</Select.Option>
+                                        </Select>
+                                      </Form.Item>
+                                      <Form.Item noStyle shouldUpdate={(prev, curr) => prev.approvers?.[name]?.type !== curr.approvers?.[name]?.type}>
+                                        {({ getFieldValue }) => {
+                                          const type = getFieldValue(['approvers', name, 'type']);
+                                          if (type === 0) return <Form.Item {...restField} name={[name, 'userIds']} rules={[{ required: true }]}><Select mode="multiple" placeholder="选择用户" options={users.map(u => ({ label: u.name || u.username, value: u.id }))} /></Form.Item>;
+                                          if (type === 1) return <Form.Item {...restField} name={[name, 'roleIds']} rules={[{ required: true }]}><Select mode="multiple" placeholder="选择角色" options={roles.map(r => ({ label: r.name, value: r.id }))} /></Form.Item>;
+                                          if (type === 3) return <Form.Item {...restField} name={[name, 'formFieldKey']} rules={[{ required: true }]}><Input placeholder="输入表单字段 Key" /></Form.Item>;
+                                          return null;
+                                        }}
+                                      </Form.Item>
+                                    </div>
+                                  </Card>
+                                ))}
+                                <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>添加审批人</Button>
+                              </>
+                            )}
+                          </Form.List>
+                        </Form.Item>
+                      </>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'condition' && (
+                      <Form.Item name="expression" label="条件表达式 (C#)">
+                        <Input.TextArea rows={4} placeholder="例如: Request.Amount > 1000" />
+                      </Form.Item>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'ai' && (
+                      <>
+                        <Form.Item name="systemPrompt" label="系统设定 (System Prompt)">
+                          <Input.TextArea rows={3} />
+                        </Form.Item>
+                        <Form.Item name="promptTemplate" label="提示词模板 (User Prompt)">
+                          <Input.TextArea rows={5} />
+                        </Form.Item>
+                      </>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'notification' && (
+                      <Form.Item name="notificationRemarks" label="通知内容模板">
+                        <Input.TextArea rows={4} />
+                      </Form.Item>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'httpRequest' && (
+                      <>
+                        <Form.Item name="httpMethod" label="请求方法" initialValue="GET">
+                          <Select>
+                            <Select.Option value="GET">GET</Select.Option>
+                            <Select.Option value="POST">POST</Select.Option>
+                            <Select.Option value="PUT">PUT</Select.Option>
+                            <Select.Option value="DELETE">DELETE</Select.Option>
+                          </Select>
+                        </Form.Item>
+                        <Form.Item name="httpUrl" label="请求 URL" rules={[{ required: true }]}>
+                          <Input placeholder="https://api.example.com/v1/..." />
+                        </Form.Item>
+                        <Form.Item name="httpHeaders" label="请求头 (JSON)">
+                          <Input.TextArea rows={3} placeholder='{"Authorization": "BearerToken"}' />
+                        </Form.Item>
+                        <Form.Item name="httpBody" label="消息体 (Body)">
+                          <Input.TextArea rows={4} />
+                        </Form.Item>
+                      </>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'timer' && (
+                      <>
+                        <Form.Item name="timerWaitDuration" label="等待时长 (TimeSpan)" tooltip="如: 00:01:00 表示等待 1 分钟">
+                          <Input placeholder="00:00:00" />
+                        </Form.Item>
+                        <Form.Item name="timerCron" label="Cron 表达式" tooltip="在特定时间点执行">
+                          <Input placeholder="0 0/1 * * * ?" />
+                        </Form.Item>
+                      </>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'setVariable' && (
+                      <>
+                        <Form.Item name="variableName" label="变量名称" rules={[{ required: true }]}>
+                          <Input placeholder="my_variable" />
+                        </Form.Item>
+                        <Form.Item name="variableValue" label="变量值/表达式">
+                          <Input.TextArea rows={2} />
+                        </Form.Item>
+                      </>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'log' && (
+                      <>
+                        <Form.Item name="logLevel" label="日志级别" initialValue="Information">
+                          <Select>
+                            <Select.Option value="Information">Information</Select.Option>
+                            <Select.Option value="Warning">Warning</Select.Option>
+                            <Select.Option value="Error">Error</Select.Option>
+                            <Select.Option value="Debug">Debug</Select.Option>
+                          </Select>
+                        </Form.Item>
+                        <Form.Item name="logMessage" label="日志消息模板" rules={[{ required: true }]}>
+                          <Input.TextArea rows={3} />
+                        </Form.Item>
+                      </>
+                    )}
+                  </>
+                ),
+              },
+              {
+                key: 'advanced',
+                label: '高级设置',
+                children: (
+                  <>
+                    {selectedNode?.data.nodeType === 'approval' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        <Form.Item name="allowDelegate" label="允许委托申请" valuePropName="checked"><Switch /></Form.Item>
+                        <Form.Item name="allowReject" label="允许驳回" valuePropName="checked"><Switch /></Form.Item>
+                        <Form.Item name="allowReturn" label="允许退回" valuePropName="checked"><Switch /></Form.Item>
+                        <Form.Item name="timeoutHours" label="审批超时设置 (小时)"><Input type="number" /></Form.Item>
+                      </div>
+                    )}
+                    {selectedNode?.data.nodeType === 'start' && (
+                      <Form.Item name="formDefinitionId" label="绑定启动表单">
+                        <Select placeholder="选择流程启动时需要填写的表单" allowClear options={forms.map(f => ({ label: f.name, value: f.id }))} />
+                      </Form.Item>
+                    )}
+                  </>
+                ),
+              },
+            ]}
+          />
         </Form>
       </Drawer>
     </div>

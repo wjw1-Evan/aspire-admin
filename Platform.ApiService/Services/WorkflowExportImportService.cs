@@ -76,8 +76,7 @@ public class WorkflowExportImportService : IWorkflowExportImportService
                     IsActive = workflow.IsActive,
                     CreatedAt = workflow.CreatedAt,
                     UpdatedAt = workflow.UpdatedAt,
-                    CreatedBy = workflow.CreatedBy,
-                    CreatedByUsername = workflow.CreatedByUsername
+                    CreatedBy = workflow.CreatedBy
                 };
 
                 // 包含分析数据
@@ -692,11 +691,6 @@ public class WorkflowExportItem
     /// 创建人ID
     /// </summary>
     public string? CreatedBy { get; set; }
-
-    /// <summary>
-    /// 创建人用户名
-    /// </summary>
-    public string? CreatedByUsername { get; set; }
 }
 
 /// <summary>

@@ -39,6 +39,10 @@ const DocumentDetailDrawer: React.FC<DocumentDetailDrawerProps> = ({
                 case 'parallel': return intl.formatMessage({ id: 'pages.workflow.node.parallel', defaultMessage: '并行' });
                 case 'ai': return intl.formatMessage({ id: 'pages.workflow.node.ai', defaultMessage: 'AI' });
                 case 'notification': return intl.formatMessage({ id: 'pages.workflow.node.notification', defaultMessage: '通知' });
+                case 'httpRequest': return intl.formatMessage({ id: 'pages.workflow.node.httpRequest', defaultMessage: 'HTTP请求' });
+                case 'timer': return intl.formatMessage({ id: 'pages.workflow.node.timer', defaultMessage: '计时器' });
+                case 'setVariable': return intl.formatMessage({ id: 'pages.workflow.node.setVariable', defaultMessage: '变量设置' });
+                case 'log': return intl.formatMessage({ id: 'pages.workflow.node.log', defaultMessage: '日志' });
                 default: return intl.formatMessage({ id: 'pages.workflow.node.unknown', defaultMessage: '节点' });
             }
         };
@@ -51,6 +55,10 @@ const DocumentDetailDrawer: React.FC<DocumentDetailDrawerProps> = ({
             parallel: { background: '#f9f0ff', border: '1px solid #d3adf7', color: '#722ed1' },
             ai: { background: '#f0f5ff', border: '1px solid #adc6ff', color: '#2f54eb' },
             notification: { background: '#fffbe6', border: '1px solid #ffe58f', color: '#faad14' },
+            httpRequest: { background: '#f0faff', border: '1px solid #91d5ff', color: '#0050b3' },
+            timer: { background: '#fff7e6', border: '1px solid #ffd591', color: '#d46b08' },
+            setVariable: { background: '#f6ffed', border: '1px solid #b7eb8f', color: '#389e0d' },
+            log: { background: '#f5f5f5', border: '1px solid #d9d9d9', color: '#595959' },
         };
 
         const workflowInstance = detailData?.workflowInstance;
@@ -129,6 +137,10 @@ const DocumentDetailDrawer: React.FC<DocumentDetailDrawerProps> = ({
             case 'gateway': return intl.formatMessage({ id: 'pages.workflow.node.type.gateway', defaultMessage: '网关' });
             case 'ai': return intl.formatMessage({ id: 'pages.workflow.node.type.ai', defaultMessage: 'AI' });
             case 'notification': return intl.formatMessage({ id: 'pages.workflow.node.type.notification', defaultMessage: '通知' });
+            case 'httpRequest': return intl.formatMessage({ id: 'pages.workflow.node.type.httpRequest', defaultMessage: 'HTTP请求' });
+            case 'timer': return intl.formatMessage({ id: 'pages.workflow.node.type.timer', defaultMessage: '计时器' });
+            case 'setVariable': return intl.formatMessage({ id: 'pages.workflow.node.type.setVariable', defaultMessage: '变量设置' });
+            case 'log': return intl.formatMessage({ id: 'pages.workflow.node.type.log', defaultMessage: '日志' });
             default: return type || intl.formatMessage({ id: 'pages.workflow.node.type.unknown', defaultMessage: '节点' });
         }
     };
@@ -138,7 +150,7 @@ const DocumentDetailDrawer: React.FC<DocumentDetailDrawerProps> = ({
             title={intl.formatMessage({ id: 'pages.document.modal.detailTitle' })}
             open={open}
             onClose={onClose}
-            size={800}
+            size="large"
         >
             {/* 基本信息 */}
             <Card style={{ marginBottom: 16 }}>
@@ -283,6 +295,7 @@ const DocumentDetailDrawer: React.FC<DocumentDetailDrawerProps> = ({
                                                     <div style={{ fontSize: 12, color: '#666', paddingLeft: 8 }}>
                                                         {nodeHistory.map((record: any, idx: number) => {
                                                             const actionMeta = getStatusMeta(intl, record.action as ApprovalAction, approvalActionMap);
+                                                            const isAutomated = !record.approverId && !record.approverName;
                                                             return (
                                                                 <div key={idx} style={{
                                                                     marginBottom: 12,
@@ -292,7 +305,13 @@ const DocumentDetailDrawer: React.FC<DocumentDetailDrawerProps> = ({
                                                                     borderLeft: `3px solid ${actionMeta.color}`
                                                                 }}>
                                                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                                        <span style={{ fontWeight: 600, color: '#262626' }}>{record.approverName || record.approverId}</span>
+                                                                        <span style={{ fontWeight: 600, color: '#262626' }}>
+                                                                            {isAutomated ? (
+                                                                                <Tag color="blue">系统自动执行</Tag>
+                                                                            ) : (
+                                                                                record.approverName || record.approverId
+                                                                            )}
+                                                                        </span>
                                                                         <Tag color={actionMeta.color} style={{ fontSize: 10, borderRadius: 10 }}>{actionMeta.text}</Tag>
                                                                     </div>
                                                                     {record.comment && (

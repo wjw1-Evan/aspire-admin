@@ -368,15 +368,8 @@ public class WorkflowEdge
 /// </summary>
 [BsonIgnoreExtraElements]
 [BsonCollectionName("workflow_definitions")]
-public class WorkflowDefinition : IEntity, ISoftDeletable, ITimestamped, IMultiTenant
+public class WorkflowDefinition : MultiTenantEntity
 {
-    /// <summary>
-    /// 实体ID
-    /// </summary>
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
-    public string Id { get; set; } = string.Empty;
-
     /// <summary>
     /// 流程名称
     /// </summary>
@@ -429,6 +422,7 @@ public class WorkflowDefinition : IEntity, ISoftDeletable, ITimestamped, IMultiT
     /// 基于的模板ID（如果从模板创建）
     /// </summary>
     [BsonElement("templateId")]
+    [BsonRepresentation(BsonType.ObjectId)]
     public string? TemplateId { get; set; }
 
     /// <summary>
@@ -436,75 +430,4 @@ public class WorkflowDefinition : IEntity, ISoftDeletable, ITimestamped, IMultiT
     /// </summary>
     [BsonElement("templateVersion")]
     public string? TemplateVersion { get; set; }
-
-    /// <summary>
-    /// 企业ID（多租户）
-    /// </summary>
-    [BsonElement("companyId")]
-    public string CompanyId { get; set; } = string.Empty;
-
-    // IEntity
-    // Id 已定义
-
-    // ISoftDeletable
-    /// <summary>
-    /// 是否已删除
-    /// </summary>
-    [BsonElement("isDeleted")]
-    public bool IsDeleted { get; set; } = false;
-
-    /// <summary>
-    /// 删除时间
-    /// </summary>
-    [BsonElement("deletedAt")]
-    public DateTime? DeletedAt { get; set; }
-
-    /// <summary>
-    /// 删除人ID
-    /// </summary>
-    [BsonElement("deletedBy")]
-    public string? DeletedBy { get; set; }
-
-    /// <summary>
-    /// 删除原因
-    /// </summary>
-    [BsonElement("deletedReason")]
-    public string? DeletedReason { get; set; }
-
-    // ITimestamped
-    /// <summary>
-    /// 创建时间
-    /// </summary>
-    [BsonElement("createdAt")]
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-    /// <summary>
-    /// 更新时间
-    /// </summary>
-    [BsonElement("updatedAt")]
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
-    /// <summary>
-    /// 创建人ID
-    /// </summary>
-    [BsonElement("createdBy")]
-    public string? CreatedBy { get; set; }
-
-    /// <summary>
-    /// 创建人用户名
-    /// </summary>
-    [BsonElement("createdByUsername")]
-    public string? CreatedByUsername { get; set; }
-
-    /// <summary>
-    /// 更新人ID
-    /// </summary>
-    [BsonElement("updatedBy")]
-    public string? UpdatedBy { get; set; }
-
-    /// <summary>
-    /// 更新人用户名
-    /// </summary>
-    [BsonElement("updatedByUsername")]
-    public string? UpdatedByUsername { get; set; }
 }

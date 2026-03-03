@@ -52,22 +52,6 @@ public class Role : MultiTenantEntity
     [Column("isActive")]
     [BsonElement("isActive")]
     public bool IsActive { get; set; } = true;
-
-    /// <summary>
-    /// 创建者用户名
-    /// </summary>
-    [StringLength(50)]
-    [Column("createdByUsername")]
-    [BsonElement("createdByUsername")]
-    public string? CreatedByUsername { get; set; }
-
-    /// <summary>
-    /// 更新者用户名
-    /// </summary>
-    [StringLength(50)]
-    [Column("updatedByUsername")]
-    [BsonElement("updatedByUsername")]
-    public string? UpdatedByUsername { get; set; }
 }
 
 /// <summary>
@@ -81,18 +65,18 @@ public class CreateRoleRequest
     [Required(ErrorMessage = "角色名称不能为空")]
     [StringLength(50, MinimumLength = 2, ErrorMessage = "角色名称长度必须在2-50个字符之间")]
     public string Name { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 角色描述
     /// </summary>
     [StringLength(200, ErrorMessage = "描述长度不能超过200个字符")]
     public string? Description { get; set; }
-    
+
     /// <summary>
     /// 关联的菜单ID列表
     /// </summary>
     public List<string> MenuIds { get; set; } = new();
-    
+
     /// <summary>
     /// 是否激活（默认true）
     /// </summary>
@@ -109,18 +93,18 @@ public class UpdateRoleRequest
     /// </summary>
     [StringLength(50, MinimumLength = 2, ErrorMessage = "角色名称长度必须在2-50个字符之间")]
     public string? Name { get; set; }
-    
+
     /// <summary>
     /// 角色描述
     /// </summary>
     [StringLength(200, ErrorMessage = "描述长度不能超过200个字符")]
     public string? Description { get; set; }
-    
+
     /// <summary>
     /// 关联的菜单ID列表
     /// </summary>
     public List<string>? MenuIds { get; set; }
-    
+
     /// <summary>
     /// 是否激活
     /// </summary>
@@ -147,7 +131,7 @@ public class RoleListResponse
     /// 角色列表
     /// </summary>
     public List<Role> Roles { get; set; } = new();
-    
+
     /// <summary>
     /// 总记录数
     /// </summary>
@@ -163,42 +147,42 @@ public class RoleWithStats
     /// 角色ID
     /// </summary>
     public string? Id { get; set; }
-    
+
     /// <summary>
     /// 角色名称
     /// </summary>
     public string Name { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 角色描述
     /// </summary>
     public string? Description { get; set; }
-    
+
     /// <summary>
     /// 关联的菜单ID列表
     /// </summary>
     public List<string> MenuIds { get; set; } = new();
-    
+
     /// <summary>
     /// 是否激活
     /// </summary>
     public bool IsActive { get; set; }
-    
+
     /// <summary>
     /// 创建时间
     /// </summary>
     public DateTime CreatedAt { get; set; }
-    
+
     /// <summary>
     /// 更新时间
     /// </summary>
     public DateTime UpdatedAt { get; set; }
-    
+
     /// <summary>
     /// 使用此角色的用户数量
     /// </summary>
     public int UserCount { get; set; }
-    
+
     /// <summary>
     /// 菜单数量
     /// </summary>
@@ -214,7 +198,7 @@ public class RoleListWithStatsResponse
     /// 角色列表（包含统计信息）
     /// </summary>
     public List<RoleWithStats> Roles { get; set; } = new();
-    
+
     /// <summary>
     /// 总记录数
     /// </summary>

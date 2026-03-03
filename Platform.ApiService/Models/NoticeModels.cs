@@ -9,15 +9,8 @@ namespace Platform.ApiService.Models;
 /// 通知图标项实体
 /// </summary>
 [BsonIgnoreExtraElements]
-public class NoticeIconItem : ISoftDeletable, IEntity, ITimestamped, IMultiTenant
+public class NoticeIconItem : MultiTenantEntity
 {
-    /// <summary>
-    /// 实体ID（MongoDB ObjectId）
-    /// </summary>
-    [BsonId]
-    [BsonRepresentation(BsonType.ObjectId)]
-    public string Id { get; set; } = string.Empty;
-
     /// <summary>
     /// 额外信息
     /// </summary>
@@ -79,48 +72,6 @@ public class NoticeIconItem : ISoftDeletable, IEntity, ITimestamped, IMultiTenan
     /// </summary>
     [BsonElement("clickClose")]
     public bool ClickClose { get; set; }
-
-    /// <summary>
-    /// 企业ID（多租户隔离）
-    /// </summary>
-    [BsonElement("companyId")]
-    public string CompanyId { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 创建时间
-    /// </summary>
-    [BsonElement("createdAt")]
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-    /// <summary>
-    /// 更新时间
-    /// </summary>
-    [BsonElement("updatedAt")]
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
-    /// <summary>
-    /// 是否已删除（软删除）
-    /// </summary>
-    [BsonElement("isDeleted")]
-    public bool IsDeleted { get; set; } = false;
-
-    /// <summary>
-    /// 删除时间
-    /// </summary>
-    [BsonElement("deletedAt")]
-    public DateTime? DeletedAt { get; set; }
-
-    /// <summary>
-    /// 删除人ID
-    /// </summary>
-    [BsonElement("deletedBy")]
-    public string? DeletedBy { get; set; }
-
-    /// <summary>
-    /// 删除原因
-    /// </summary>
-    [BsonElement("deletedReason")]
-    public string? DeletedReason { get; set; }
 
     /// <summary>
     /// 关联的任务ID（用于任务相关通知）
@@ -192,22 +143,22 @@ public enum NoticeIconItemType
     /// 通知
     /// </summary>
     Notification,
-    
+
     /// <summary>
     /// 消息
     /// </summary>
     Message,
-    
+
     /// <summary>
     /// 事件/待办
     /// </summary>
     Event,
-    
+
     /// <summary>
     /// 任务相关
     /// </summary>
     Task,
-    
+
     /// <summary>
     /// 系统消息
     /// </summary>
@@ -223,12 +174,12 @@ public class NoticeIconListResponse
     /// 通知图标数据列表
     /// </summary>
     public List<NoticeIconItem> Data { get; set; } = new();
-    
+
     /// <summary>
     /// 总数
     /// </summary>
     public int Total { get; set; }
-    
+
     /// <summary>
     /// 是否成功
     /// </summary>
@@ -244,37 +195,37 @@ public class CreateNoticeRequest
     /// 标题
     /// </summary>
     public string? Title { get; set; }
-    
+
     /// <summary>
     /// 描述
     /// </summary>
     public string? Description { get; set; }
-    
+
     /// <summary>
     /// 头像/图标
     /// </summary>
     public string? Avatar { get; set; }
-    
+
     /// <summary>
     /// 状态
     /// </summary>
     public string? Status { get; set; }
-    
+
     /// <summary>
     /// 额外信息
     /// </summary>
     public string? Extra { get; set; }
-    
+
     /// <summary>
     /// 通知类型
     /// </summary>
     public NoticeIconItemType Type { get; set; }
-    
+
     /// <summary>
     /// 点击后是否关闭
     /// </summary>
     public bool ClickClose { get; set; }
-    
+
     /// <summary>
     /// 日期时间
     /// </summary>
@@ -340,42 +291,42 @@ public class UpdateNoticeRequest
     /// 标题
     /// </summary>
     public string? Title { get; set; }
-    
+
     /// <summary>
     /// 描述
     /// </summary>
     public string? Description { get; set; }
-    
+
     /// <summary>
     /// 头像/图标
     /// </summary>
     public string? Avatar { get; set; }
-    
+
     /// <summary>
     /// 状态
     /// </summary>
     public string? Status { get; set; }
-    
+
     /// <summary>
     /// 额外信息
     /// </summary>
     public string? Extra { get; set; }
-    
+
     /// <summary>
     /// 通知类型
     /// </summary>
     public NoticeIconItemType? Type { get; set; }
-    
+
     /// <summary>
     /// 点击后是否关闭
     /// </summary>
     public bool? ClickClose { get; set; }
-    
+
     /// <summary>
     /// 是否已读
     /// </summary>
     public bool? Read { get; set; }
-    
+
     /// <summary>
     /// 日期时间
     /// </summary>

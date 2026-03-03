@@ -93,18 +93,6 @@ public class BulkOperation : MultiTenantEntity
     /// </summary>
     [BsonElement("cancellable")]
     public bool Cancellable { get; set; } = true;
-
-    /// <summary>
-    /// 创建人用户名
-    /// </summary>
-    [BsonElement("createdByUsername")]
-    public string? CreatedByUsername { get; set; }
-
-    /// <summary>
-    /// 更新人用户名
-    /// </summary>
-    [BsonElement("updatedByUsername")]
-    public string? UpdatedByUsername { get; set; }
 }
 
 /// <summary>

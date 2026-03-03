@@ -31,7 +31,7 @@ appliesTo:
   - `FindOneAndUpdateAsync`：查找并更新（自动设置 `UpdatedAt`、`UpdatedBy` 等）
   - `FindOneAndSoftDeleteAsync` / `SoftDeleteManyAsync`：软删除（自动设置 `IsDeleted`、`DeletedAt`、`DeletedBy` 等）
   - `FindOneAndReplaceAsync`：查找并替换（原子替换整个文档）
-- **审计字段自动维护**：`CreatedAt`、`UpdatedAt`、`IsDeleted`、`DeletedAt`、`DeletedBy`、`CreatedBy`、`CreatedByUsername`、`UpdatedBy`、`UpdatedByUsername` 等字段由工厂自动维护，业务代码不得手动赋值。
+- **审计字段自动维护**：`CreatedAt`、`UpdatedAt`、`IsDeleted`、`DeletedAt`、`DeletedBy`、`CreatedBy`、`UpdatedBy` 等字段由工厂自动维护，业务代码不得手动赋值。废弃 `CreatedByUsername` 和 `UpdatedByUsername`，应统一使用用户 ID。
 - **跨租户访问**：仅在极少数运维/平台级场景下才允许使用 `FindWithoutTenantFilterAsync` / `GetByIdWithoutTenantFilterAsync` / `FindOneAndUpdateWithoutTenantFilterAsync` 等 *WithoutTenantFilter* 方法，且必须：
   - 拥有明确的运维/平台级菜单权限
   - 在上层服务中记录详细审计日志（谁、何时、对哪些企业做了什么操作）
@@ -43,7 +43,7 @@ appliesTo:
 - **接口要求**：所有 MongoDB 实体必须实现 `IEntity`、`ISoftDeletable`、`ITimestamped`。多租户实体需实现 `IMultiTenant` 或继承 `MultiTenantEntity`，工厂会自动附加 `CompanyId` 过滤。
 - **集合命名**：优先使用 `[BsonCollectionName("xxx")]` 特性指定集合名，否则使用类型名的复数形式（小写）。
 - **字段名映射**：实体字段优先使用 `[BsonElement("fieldName")]` 特性指定 BSON 字段名，构建器会自动识别并使用正确的字段名。
-- **操作跟踪接口**：实体实现 `IOperationTrackable` 接口时，工厂会直接赋值 `CreatedBy`/`CreatedByUsername` 和 `UpdatedBy`/`UpdatedByUsername`，避免反射开销。
+- **操作跟踪接口**：实体实现 `IOperationTrackable` 接口时，工厂会直接赋值 `CreatedBy` 和 `UpdatedBy`，避免反射开销。
 
 ## 查询/更新构建器（强制使用）
 - **FilterBuilder<T>**：通过 `factory.CreateFilterBuilder()` 创建，支持链式调用：

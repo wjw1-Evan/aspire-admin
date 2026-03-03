@@ -168,6 +168,40 @@ export interface NotificationConfig {
 }
 
 /**
+ * HTTP节点配置
+ */
+export interface HttpConfig {
+  method: string;
+  url: string;
+  headers?: string;
+  body?: string;
+}
+
+/**
+ * 计时器节点配置
+ */
+export interface TimerConfig {
+  waitDuration?: string;
+  cron?: string;
+}
+
+/**
+ * 变量设置节点配置
+ */
+export interface VariableConfig {
+  name: string;
+  value?: string;
+}
+
+/**
+ * 日志节点配置
+ */
+export interface LogConfig {
+  level: string;
+  message: string;
+}
+
+/**
  * 节点配置
  */
 export interface NodeConfig {
@@ -177,6 +211,10 @@ export interface NodeConfig {
   notification?: NotificationConfig;
   parallel?: ParallelConfig;
   form?: FormBinding;
+  http?: HttpConfig;
+  timer?: TimerConfig;
+  variable?: VariableConfig;
+  log?: LogConfig;
 }
 
 /**
@@ -184,7 +222,7 @@ export interface NodeConfig {
  */
 export interface WorkflowNode {
   id: string;
-  type: 'start' | 'end' | 'approval' | 'condition' | 'ai' | 'notification' | 'parallel';
+  type: 'start' | 'end' | 'approval' | 'condition' | 'ai' | 'notification' | 'parallel' | 'httpRequest' | 'timer' | 'setVariable' | 'log';
   label?: string;
   position: NodePosition;
   config: NodeConfig;

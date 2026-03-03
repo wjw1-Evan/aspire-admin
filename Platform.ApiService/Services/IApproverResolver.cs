@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Platform.ApiService.Models;
+using Platform.ApiService.Models.Workflow;
 
 using Platform.ServiceDefaults.Services;
 

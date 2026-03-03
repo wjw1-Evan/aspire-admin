@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Platform.ApiService.Models;
+using Platform.ApiService.Models.Workflow;
 
 namespace Platform.ApiService.Services;
 

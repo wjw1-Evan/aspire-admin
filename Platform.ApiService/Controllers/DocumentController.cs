@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
+using Platform.ApiService.Models.Workflow;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
 using Platform.ServiceDefaults.Services;

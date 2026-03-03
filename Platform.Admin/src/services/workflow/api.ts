@@ -67,7 +67,8 @@ export enum ApprovalAction {
   Reject = 1,       // 拒绝
   Return = 2,       // 退回
   Delegate = 3,     // 转办
-  CC = 4            // 抄送
+  CC = 4,           // 抄送
+  AutoSystem = 10   // 系统自动执行
 }
 
 /**
@@ -146,11 +147,34 @@ export interface ParallelConfig {
 }
 
 /**
+ * AI节点配置
+ */
+export interface AiConfig {
+  promptTemplate: string;
+  systemPrompt?: string;
+  model?: string;
+  outputVariable: string;
+  maxTokens?: number;
+  temperature?: number;
+}
+
+/**
+ * 通知节点配置
+ */
+export interface NotificationConfig {
+  actionType: string;
+  remarksTemplate?: string;
+  recipients: ApproverRule[];
+}
+
+/**
  * 节点配置
  */
 export interface NodeConfig {
   approval?: ApprovalConfig;
   condition?: ConditionConfig;
+  ai?: AiConfig;
+  notification?: NotificationConfig;
   parallel?: ParallelConfig;
   form?: FormBinding;
 }
@@ -160,7 +184,7 @@ export interface NodeConfig {
  */
 export interface WorkflowNode {
   id: string;
-  type: 'start' | 'end' | 'approval' | 'condition' | 'parallel';
+  type: 'start' | 'end' | 'approval' | 'condition' | 'ai' | 'notification' | 'parallel';
   label?: string;
   position: NodePosition;
   config: NodeConfig;

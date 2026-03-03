@@ -1,4 +1,5 @@
 using Platform.ApiService.Models;
+using Platform.ApiService.Models.Workflow;
 using Platform.ServiceDefaults.Services;
 using Microsoft.Extensions.Logging;
 

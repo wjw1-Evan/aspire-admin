@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Platform.ApiService.Models;
+using Platform.ApiService.Models.Workflow;
 
 namespace Platform.ApiService.Services;
 
@@ -132,7 +133,9 @@ public class WorkflowGraphValidator : IWorkflowGraphValidator
             else if (node.Type == "parallel")
             {
                 var outgoing = edges.Where(e => e.Source == node.Id).ToList();
-                if (outgoing.Count < 2)
+                var incoming = edges.Where(e => e.Target == node.Id).ToList();
+                // Bug 19 修复：仅分叉型（入边<=1）要求 >=2 出边，汇聚型（多入边）允许少出边
+                if (incoming.Count <= 1 && outgoing.Count < 2)
                     return (false, $"并行网关 {node.Label ?? node.Id} 至少需要两个出边");
                 // 若配置了 Parallel.Branches，需与出边目标一致（宽松校验）
                 var branches = node.Config?.Parallel?.Branches ?? new List<string>();

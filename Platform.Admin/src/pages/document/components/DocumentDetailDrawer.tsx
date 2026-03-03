@@ -37,6 +37,8 @@ const DocumentDetailDrawer: React.FC<DocumentDetailDrawerProps> = ({
                 case 'approval': return intl.formatMessage({ id: 'pages.workflow.node.approval', defaultMessage: '审批' });
                 case 'condition': return intl.formatMessage({ id: 'pages.workflow.node.condition', defaultMessage: '条件' });
                 case 'parallel': return intl.formatMessage({ id: 'pages.workflow.node.parallel', defaultMessage: '并行' });
+                case 'ai': return intl.formatMessage({ id: 'pages.workflow.node.ai', defaultMessage: 'AI' });
+                case 'notification': return intl.formatMessage({ id: 'pages.workflow.node.notification', defaultMessage: '通知' });
                 default: return intl.formatMessage({ id: 'pages.workflow.node.unknown', defaultMessage: '节点' });
             }
         };
@@ -47,6 +49,8 @@ const DocumentDetailDrawer: React.FC<DocumentDetailDrawerProps> = ({
             approval: { background: '#e6f7ff', border: '1px solid #91d5ff', color: '#1890ff' },
             condition: { background: '#fff7e6', border: '1px solid #ffd591', color: '#fa8c16' },
             parallel: { background: '#f9f0ff', border: '1px solid #d3adf7', color: '#722ed1' },
+            ai: { background: '#f0f5ff', border: '1px solid #adc6ff', color: '#2f54eb' },
+            notification: { background: '#fffbe6', border: '1px solid #ffe58f', color: '#faad14' },
         };
 
         const workflowInstance = detailData?.workflowInstance;
@@ -123,6 +127,8 @@ const DocumentDetailDrawer: React.FC<DocumentDetailDrawerProps> = ({
             case 'approval': return intl.formatMessage({ id: 'pages.workflow.node.type.approval', defaultMessage: '审批' });
             case 'form': return intl.formatMessage({ id: 'pages.workflow.node.type.form', defaultMessage: '表单' });
             case 'gateway': return intl.formatMessage({ id: 'pages.workflow.node.type.gateway', defaultMessage: '网关' });
+            case 'ai': return intl.formatMessage({ id: 'pages.workflow.node.type.ai', defaultMessage: 'AI' });
+            case 'notification': return intl.formatMessage({ id: 'pages.workflow.node.type.notification', defaultMessage: '通知' });
             default: return type || intl.formatMessage({ id: 'pages.workflow.node.type.unknown', defaultMessage: '节点' });
         }
     };

@@ -1,4 +1,5 @@
 using Platform.ApiService.Models;
+using Platform.ApiService.Models.Workflow;
 using Platform.ServiceDefaults.Services;
 using Microsoft.Extensions.Logging;
 
@@ -238,7 +239,8 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
                 ["nodeId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "当前节点ID" },
                 ["action"] = new Dictionary<string, object> { ["type"] = "integer", ["description"] = "动作 (0=同意, 1=拒绝, 2=退回, 3=转办)" },
                 ["comment"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "审批意见" },
-                ["delegateToUserId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "转办用户ID (动作时转办时必填)" }
+                ["delegateToUserId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "转办用户ID (动作为转办时必填)" },
+                ["targetNodeId"] = new Dictionary<string, object> { ["type"] = "string", ["description"] = "退回目标节点ID (动作为退回时必填)" }
             }, ["instanceId", "nodeId", "action"]),
             async (args, uid) =>
             {
@@ -247,6 +249,16 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
                 if (!args.TryGetValue("action", out var actObj) || !int.TryParse(actObj?.ToString(), out var actionInt)) return new { error = "缺少必需的参数: action (int)" };
                 var action = (ApprovalAction)actionInt;
                 var comment = args.ContainsKey("comment") ? args["comment"]?.ToString() : null;
+
+                // Bug 14 修复：退回操作调用 ReturnToNodeAsync 而非 ProcessApprovalAsync
+                if (action == ApprovalAction.Return)
+                {
+                    var targetNodeId = args.ContainsKey("targetNodeId") ? args["targetNodeId"]?.ToString() : null;
+                    if (string.IsNullOrEmpty(targetNodeId)) return (object)new { error = "退回操作需要提供 targetNodeId" };
+                    var returnResult = await _workflowEngine.ReturnToNodeAsync(instanceId, targetNodeId, comment ?? "退回");
+                    return new { success = returnResult };
+                }
+
                 var delegateToUserId = args.ContainsKey("delegateToUserId") ? args["delegateToUserId"]?.ToString() : null;
                 var result = await _workflowEngine.ProcessApprovalAsync(instanceId, nodeId, action, comment, delegateToUserId);
                 return new { success = result };

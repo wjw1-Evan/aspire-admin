@@ -1,4 +1,5 @@
 using Platform.ApiService.Models;
+using Platform.ApiService.Models.Workflow;
 using Platform.ServiceDefaults.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -378,7 +379,7 @@ public class DocumentService : IDocumentService
                     break;
 
                 case "pending":
-                    filter = filter.And(d => d.Status == DocumentStatus.Pending);
+                    filter = filter.And(d => d.Status == DocumentStatus.Approving);
                     var pendingInstances = await _instanceFactory.FindAsync(i =>
                         i.Status == WorkflowStatus.Running &&
                         i.CurrentApproverIds.Contains(userId));

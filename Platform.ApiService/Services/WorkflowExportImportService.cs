@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Platform.ApiService.Models;
+using Platform.ApiService.Models.Workflow;
 using Platform.ServiceDefaults.Services;
 using System.Linq.Expressions;
 using System.Text.Json;

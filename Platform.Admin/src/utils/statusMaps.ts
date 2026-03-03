@@ -22,6 +22,7 @@ export const approvalActionMap: Record<string, StatusMeta> = {
     [ApprovalAction.Reject]: { color: 'error', text: 'pages.workflow.monitor.history.action.reject' },
     [ApprovalAction.Return]: { color: 'warning', text: 'pages.workflow.monitor.history.action.return' },
     [ApprovalAction.Delegate]: { color: 'purple', text: 'pages.workflow.monitor.history.action.delegate' },
+    [ApprovalAction.AutoSystem]: { color: 'cyan', text: 'pages.workflow.monitor.history.action.auto' },
 };
 
 export const getStatusMeta = (

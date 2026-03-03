@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
+using Platform.ApiService.Models.Workflow;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
 using Platform.ServiceDefaults.Services;
@@ -98,14 +99,14 @@ public class WorkflowController : BaseApiController
             {
                 var categories = request.Categories;
                 Expression<Func<WorkflowDefinition, bool>> categoryFilter = w => categories.Contains(w.Category);
-                filter = filter == null ? categoryFilter : w => filter.Compile()(w) && categoryFilter.Compile()(w);
+                filter = filter == null ? categoryFilter : filter.And(categoryFilter);
             }
 
             if (request.Statuses != null && request.Statuses.Any())
             {
                 var statusValues = request.Statuses.Select(s => s == "active").ToList();
                 Expression<Func<WorkflowDefinition, bool>> statusFilter = w => statusValues.Contains(w.IsActive);
-                filter = filter == null ? statusFilter : w => filter.Compile()(w) && statusFilter.Compile()(w);
+                filter = filter == null ? statusFilter : filter.And(statusFilter);
             }
 
             if (request.DateRange != null)
@@ -134,7 +135,7 @@ public class WorkflowController : BaseApiController
                             dateFilter = w => w.Analytics.LastUsedAt <= request.DateRange.End.Value;
                         break;
                 }
-                filter = filter == null ? dateFilter : w => filter.Compile()(w) && dateFilter.Compile()(w);
+                filter = filter == null ? dateFilter : filter.And(dateFilter);
             }
 
             if (request.UsageRange != null)
@@ -144,14 +145,14 @@ public class WorkflowController : BaseApiController
                     usageFilter = w => w.Analytics.UsageCount >= request.UsageRange.Min.Value;
                 if (request.UsageRange.Max.HasValue)
                     usageFilter = w => w.Analytics.UsageCount <= request.UsageRange.Max.Value;
-                filter = filter == null ? usageFilter : w => filter.Compile()(w) && usageFilter.Compile()(w);
+                filter = filter == null ? usageFilter : filter.And(usageFilter);
             }
 
             if (request.CreatedBy != null && request.CreatedBy.Any())
             {
                 var createdByList = request.CreatedBy;
                 Expression<Func<WorkflowDefinition, bool>> createdByFilter = w => w.CreatedBy != null && createdByList.Contains(w.CreatedBy);
-                filter = filter == null ? createdByFilter : w => filter.Compile()(w) && createdByFilter.Compile()(w);
+                filter = filter == null ? createdByFilter : filter.And(createdByFilter);
             }
 
             Func<IQueryable<WorkflowDefinition>, IOrderedQueryable<WorkflowDefinition>> sort = q =>
@@ -401,15 +402,16 @@ public class WorkflowController : BaseApiController
         {
             Expression<Func<WorkflowInstance, bool>> filter = i => true;
 
+            // Bug 17 修复：使用 .And() 组合条件而非赋值覆盖
             if (!string.IsNullOrEmpty(workflowDefinitionId))
             {
-                filter = i => i.WorkflowDefinitionId == workflowDefinitionId;
+                filter = filter.And(i => i.WorkflowDefinitionId == workflowDefinitionId);
             }
 
             if (status.HasValue)
             {
                 var statusValue = status.Value;
-                filter = filter == null ? i => i.Status == statusValue : i => filter.Compile()(i) && i.Status == statusValue;
+                filter = filter.And(i => i.Status == statusValue);
             }
 
             Func<IQueryable<WorkflowInstance>, IOrderedQueryable<WorkflowInstance>> sort = q => q.OrderByDescending(i => i.CreatedAt);
@@ -747,20 +749,20 @@ public class WorkflowController : BaseApiController
 
             if (binding.Target == FormTarget.Document)
             {
+                // Bug 15 修复：提前 await 获取 document，避免 GetAwaiter().GetResult() 同步阻塞
+                var existingDoc = await _documentFactory.GetByIdAsync(instance.DocumentId);
                 Action<Document> updateAction = d =>
                 {
                     var scopedValues = values;
                     if (!string.IsNullOrWhiteSpace(binding.DataScopeKey))
                     {
-                        var document = _documentFactory.GetByIdAsync(instance.DocumentId).GetAwaiter().GetResult();
-                        var formData = document?.FormData ?? new Dictionary<string, object>();
+                        var formData = existingDoc?.FormData ?? new Dictionary<string, object>();
                         formData[binding.DataScopeKey] = scopedValues;
                         d.FormData = formData;
                     }
                     else
                     {
-                        var document = _documentFactory.GetByIdAsync(instance.DocumentId).GetAwaiter().GetResult();
-                        var existingFormData = document?.FormData ?? new Dictionary<string, object>();
+                        var existingFormData = existingDoc?.FormData ?? new Dictionary<string, object>();
                         foreach (var kvp in scopedValues)
                         {
                             existingFormData[kvp.Key] = kvp.Value;

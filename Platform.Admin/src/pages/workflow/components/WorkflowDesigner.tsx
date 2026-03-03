@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState, useEffect } from 'react';
+import dagre from 'dagre';
 import ReactFlow, {
   Node,
   Edge,
@@ -131,12 +132,52 @@ const deepCleanIdFields = (obj: any): any => {
   return newObj;
 };
 
+// 布局引擎配置
+const dagreGraph = new dagre.graphlib.Graph();
+dagreGraph.setDefaultEdgeLabel(() => ({}));
+
+const nodeWidth = 250;
+const nodeHeight = 100;
+
+const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'TB') => {
+  const isHorizontal = direction === 'LR';
+  dagreGraph.setGraph({ rankdir: direction });
+
+  nodes.forEach((node) => {
+    dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
+  });
+
+  edges.forEach((edge) => {
+    dagreGraph.setEdge(edge.source, edge.target);
+  });
+
+  dagre.layout(dagreGraph);
+
+  const newNodes = nodes.map((node) => {
+    const nodeWithPosition = dagreGraph.node(node.id);
+    const newNode = {
+      ...node,
+      targetPosition: isHorizontal ? Position.Left : Position.Top,
+      sourcePosition: isHorizontal ? Position.Right : Position.Bottom,
+      // 偏移节点使其中心点能够和 dagre 计算出来的中心点重合
+      position: {
+        x: nodeWithPosition.x - nodeWidth / 2,
+        y: nodeWithPosition.y - nodeHeight / 2,
+      },
+    };
+
+    return newNode;
+  });
+
+  return { nodes: newNodes, edges };
+};
+
 const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
   open = false,
   graph,
   onSave,
   onClose,
-  readOnly,
+  readOnly = false,
 }) => {
   const intl = useIntl();
   const message = useMessage();
@@ -229,6 +270,20 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
     }, 100);
   }, [intl, setNodes, setEdges, configForm, typeLabels]);
 
+  const onDeleteEdge = useCallback((edgeId: string) => {
+    confirm({
+      title: '确认删除连线',
+      content: '确定要删除这条流程连线吗？',
+      okText: '删除',
+      cancelText: '取消',
+      okButtonProps: { danger: true },
+      onOk: () => {
+        setEdges(eds => eds.filter(e => e.id !== edgeId));
+        message.success('连线已删除');
+      }
+    });
+  }, [setEdges, message, confirm]);
+
   const defaultEdgeOptions = useMemo(() => ({
     type: 'workflowEdge',
     style: { stroke: '#94a3b8', strokeWidth: 2 },
@@ -238,9 +293,10 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
     },
     data: {
       onInsertNode,
+      onDeleteEdge,
       readOnly,
     },
-  }), [onInsertNode, readOnly]);
+  }), [onInsertNode, onDeleteEdge, readOnly]);
 
   // 加载用户和角色列表
   useEffect(() => {
@@ -567,6 +623,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
               url: values.httpUrl,
               headers: values.httpHeaders,
               body: values.httpBody,
+              outputVariable: values.outputVariable,
             };
           }
 
@@ -764,6 +821,17 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
               </Button>
             )}
             <Button
+              icon={<BranchesOutlined />}
+              onClick={() => {
+                const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nodes, edges);
+                setNodes([...layoutedNodes]);
+                setEdges([...layoutedEdges]);
+                message.success('已自动重新排版');
+              }}
+            >
+              自动排版
+            </Button>
+            <Button
               icon={<CheckCircleOutlined />}
               onClick={() => {
                 if (validateWorkflow()) {
@@ -875,7 +943,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                             <Select.Option value={2}>{intl.formatMessage({ id: 'pages.workflow.designer.approvalType.sequential' })}</Select.Option>
                           </Select>
                         </Form.Item>
-    
+
                         <Divider titlePlacement="left" plain>审批人设置</Divider>
                         <Form.Item name="approvers">
                           <Form.List name="approvers">
@@ -952,6 +1020,9 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                         </Form.Item>
                         <Form.Item name="httpBody" label="消息体 (Body)">
                           <Input.TextArea rows={4} />
+                        </Form.Item>
+                        <Form.Item name="outputVariable" label="保存响应到变量" tooltip="将 HTTP 接口的响应结果保存为流程变量，供后续节点使用">
+                          <Input placeholder="例如: api_result" />
                         </Form.Item>
                       </>
                     )}

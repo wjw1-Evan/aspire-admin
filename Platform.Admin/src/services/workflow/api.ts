@@ -171,10 +171,11 @@ export interface NotificationConfig {
  * HTTP节点配置
  */
 export interface HttpConfig {
-  method: string;
-  url: string;
+  method?: string;
+  url?: string;
   headers?: string;
   body?: string;
+  outputVariable?: string;
 }
 
 /**

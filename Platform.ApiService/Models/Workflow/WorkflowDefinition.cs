@@ -143,6 +143,48 @@ public class NodeConfig
     /// </summary>
     [BsonElement("form")]
     public FormBinding? Form { get; set; }
+
+    /// <summary>
+    /// HTTP 节点配置
+    /// </summary>
+    [BsonElement("http")]
+    public HttpConfig? Http { get; set; }
+}
+
+/// <summary>
+/// HTTP 请求节点配置
+/// </summary>
+public class HttpConfig
+{
+    /// <summary>
+    /// 请求方法 (如 GET, POST)
+    /// </summary>
+    [BsonElement("method")]
+    public string? Method { get; set; }
+
+    /// <summary>
+    /// 请求 URL
+    /// </summary>
+    [BsonElement("url")]
+    public string? Url { get; set; }
+
+    /// <summary>
+    /// 请求头信息 (JSON)
+    /// </summary>
+    [BsonElement("headers")]
+    public string? Headers { get; set; }
+
+    /// <summary>
+    /// 请求体内容
+    /// </summary>
+    [BsonElement("body")]
+    public string? Body { get; set; }
+
+    /// <summary>
+    /// 保存响应结果到的变量名称
+    /// </summary>
+    [BsonElement("outputVariable")]
+    public string? OutputVariable { get; set; }
 }
 
 /// <summary>

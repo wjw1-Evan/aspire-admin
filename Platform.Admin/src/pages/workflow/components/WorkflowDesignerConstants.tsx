@@ -184,7 +184,7 @@ export const nodeTypes = {
 
 // 自定义 Edge 组件 (Elsa 风格：带中间插入按钮)
 import { getSmoothStepPath, EdgeProps } from 'reactflow';
-import { PlusCircleFilled } from '@ant-design/icons';
+import { PlusCircleFilled, CloseCircleFilled } from '@ant-design/icons';
 
 export const WorkflowEdge: React.FC<EdgeProps> = ({
     id,
@@ -197,6 +197,7 @@ export const WorkflowEdge: React.FC<EdgeProps> = ({
     style = {},
     markerEnd,
     data,
+    selected,
 }) => {
     const [edgePath, labelX, labelY] = getSmoothStepPath({
         sourceX,
@@ -215,26 +216,40 @@ export const WorkflowEdge: React.FC<EdgeProps> = ({
         }
     };
 
+    const onDeleteEdge = (evt: React.MouseEvent) => {
+        evt.stopPropagation();
+        if (data?.onDeleteEdge) {
+            data.onDeleteEdge(id);
+        }
+    };
+
     return (
         <>
             <path
                 id={id}
-                style={style}
+                style={{ ...style, stroke: selected ? '#3b82f6' : style.stroke, strokeWidth: selected ? 3 : style.strokeWidth }}
                 className="react-flow__edge-path"
                 d={edgePath}
                 markerEnd={markerEnd}
             />
             {!data?.readOnly && (
                 <foreignObject
-                    width={24}
-                    height={24}
-                    x={labelX - 12}
-                    y={labelY - 12}
+                    width={56}
+                    height={28}
+                    x={labelX - 28}
+                    y={labelY - 14}
                     className="elsa-edge-insert-object"
                     requiredExtensions="http://www.w3.org/1999/xhtml"
                 >
-                    <div className="elsa-edge-insert-button" onClick={onEdgeClick}>
-                        <PlusCircleFilled />
+                    <div style={{ display: 'flex', gap: '4px', background: 'rgba(255, 255, 255, 0.9)', padding: '2px 4px', borderRadius: '12px', border: selected ? '1px solid #3b82f6' : '1px solid #e2e8f0', alignItems: 'center', justifyContent: 'center', pointerEvents: 'all' }}>
+                        <div className="elsa-edge-insert-button" onClick={onEdgeClick} title="插入节点" style={{ display: 'flex' }}>
+                            <PlusCircleFilled style={{ color: '#3b82f6', fontSize: '16px', cursor: 'pointer', transition: 'transform 0.2s', ...{ ':hover': { transform: 'scale(1.1)' } } as any }} />
+                        </div>
+                        {selected && (
+                            <div className="elsa-edge-delete-button" onClick={onDeleteEdge} title="删除连线" style={{ display: 'flex' }}>
+                                <CloseCircleFilled style={{ color: '#ef4444', fontSize: '16px', cursor: 'pointer', transition: 'transform 0.2s', ...{ ':hover': { transform: 'scale(1.1)' } } as any }} />
+                            </div>
+                        )}
                     </div>
                 </foreignObject>
             )}

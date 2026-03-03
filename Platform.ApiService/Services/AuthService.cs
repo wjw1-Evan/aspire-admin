@@ -28,7 +28,6 @@ public class AuthService : IAuthService
     private readonly IFieldValidationService _validationService;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IImageCaptchaService _imageCaptchaService;
-    private readonly IPhoneValidationService _phoneValidationService;
     private readonly IDataFactory<LoginFailureRecord> _failureRecordFactory;
     private readonly ISocialService _socialService;
     private readonly IDataFactory<RefreshToken> _refreshTokenFactory;
@@ -51,7 +50,6 @@ public class AuthService : IAuthService
     /// <param name="validationService">字段校验服务</param>
     /// <param name="passwordHasher">密码哈希服务</param>
     /// <param name="imageCaptchaService">图形验证码服务</param>
-    /// <param name="phoneValidationService">手机号校验服务</param>
     /// <param name="failureRecordFactory">登录失败记录工厂</param>
     /// <param name="socialService">社交服务</param>
     /// <param name="refreshTokenFactory">刷新令牌工厂</param>
@@ -71,7 +69,6 @@ public class AuthService : IAuthService
         IFieldValidationService validationService,
         IPasswordHasher passwordHasher,
         IImageCaptchaService imageCaptchaService,
-        IPhoneValidationService phoneValidationService,
         IDataFactory<LoginFailureRecord> failureRecordFactory,
         ISocialService socialService,
         IDataFactory<RefreshToken> refreshTokenFactory,
@@ -92,7 +89,6 @@ public class AuthService : IAuthService
         _passwordHasher = passwordHasher;
         _imageCaptchaService = imageCaptchaService;
         _failureRecordFactory = failureRecordFactory;
-        _phoneValidationService = phoneValidationService;
         _socialService = socialService;
         _refreshTokenFactory = refreshTokenFactory;
         _configuration = configuration;
@@ -413,10 +409,6 @@ public class AuthService : IAuthService
         _validationService.ValidateUsername(request.Username);
         _validationService.ValidatePassword(request.Password);
         _validationService.ValidateEmail(request.Email);
-        if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
-        {
-            _phoneValidationService.ValidatePhone(request.PhoneNumber.Trim());
-        }
 
         try
         {

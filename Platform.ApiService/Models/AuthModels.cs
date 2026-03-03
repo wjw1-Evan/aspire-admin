@@ -509,23 +509,6 @@ public class RefreshTokenResult
     public string? ErrorMessage { get; set; }
 }
 
-/// <summary>
-/// 验证验证码请求
-/// </summary>
-public class VerifyCaptchaRequest
-{
-    /// <summary>
-    /// 手机号
-    /// </summary>
-    [Required(ErrorMessage = "手机号不能为空")]
-    public string Phone { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 验证码
-    /// </summary>
-    [Required(ErrorMessage = "验证码不能为空")]
-    public string Code { get; set; } = string.Empty;
-}
 
 /// <summary>
 /// 刷新 Token 实体

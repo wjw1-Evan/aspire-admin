@@ -18,30 +18,22 @@ namespace Platform.ApiService.Controllers;
 public class AuthController : BaseApiController
 {
     private readonly IAuthService _authService;
-    private readonly ICaptchaService _captchaService;
     private readonly IImageCaptchaService _imageCaptchaService;
-    private readonly IPhoneValidationService _phoneValidationService;
     private readonly IPasswordEncryptionService _encryptionService;
 
     /// <summary>
     /// 初始化认证控制器
     /// </summary>
     /// <param name="authService">认证服务</param>
-    /// <param name="captchaService">验证码服务</param>
     /// <param name="imageCaptchaService">图形验证码服务</param>
-    /// <param name="phoneValidationService">手机号验证服务</param>
     /// <param name="encryptionService">密码加密服务</param>
     public AuthController(
         IAuthService authService,
-        ICaptchaService captchaService,
         IImageCaptchaService imageCaptchaService,
-        IPhoneValidationService phoneValidationService,
         IPasswordEncryptionService encryptionService)
     {
         _authService = authService ?? throw new ArgumentNullException(nameof(authService));
-        _captchaService = captchaService ?? throw new ArgumentNullException(nameof(captchaService));
         _imageCaptchaService = imageCaptchaService ?? throw new ArgumentNullException(nameof(imageCaptchaService));
-        _phoneValidationService = phoneValidationService ?? throw new ArgumentNullException(nameof(phoneValidationService));
         _encryptionService = encryptionService ?? throw new ArgumentNullException(nameof(encryptionService));
     }
 
@@ -185,44 +177,6 @@ public class AuthController : BaseApiController
         return Success("登出成功");
     }
 
-    /// <summary>
-    /// 获取验证码
-    /// </summary>
-    /// <param name="phone">手机号</param>
-    /// <remarks>
-    /// 为指定手机号生成验证码，用于登录验证。
-    /// 
-    /// 示例请求：
-    /// ```
-    /// GET /api/auth/captcha?phone=13800138000
-    /// ```
-    /// 
-    /// 示例响应：
-    /// ```json
-    /// {
-    ///   "success": true,
-    ///   "data": {
-    ///     "captcha": "123456",
-    ///     "expiresIn": 300
-    ///   }
-    /// }
-    /// ```
-    /// </remarks>
-    /// <returns>验证码信息</returns>
-    /// <response code="200">验证码生成成功</response>
-    /// <response code="400">手机号格式不正确</response>
-    [HttpGet("captcha")]
-    public async Task<IActionResult> GetCaptcha([FromQuery] string phone)
-    {
-        _phoneValidationService.ValidatePhone(phone);
-        var result = await _captchaService.GenerateCaptchaAsync(phone);
-
-        return Success(new
-        {
-            captcha = result.Code,
-            expiresIn = result.ExpiresIn
-        });
-    }
 
     /// <summary>
     /// 获取图形验证码
@@ -312,47 +266,6 @@ public class AuthController : BaseApiController
         return SuccessMessage("验证码正确");
     }
 
-    /// <summary>
-    /// 验证验证码（可选 - 用于测试）
-    /// </summary>
-    /// <param name="request">验证码验证请求</param>
-    /// <remarks>
-    /// 验证手机号和验证码是否匹配，主要用于测试环境。
-    /// 
-    /// 示例请求：
-    /// ```json
-    /// POST /api/auth/verify-captcha
-    /// Content-Type: application/json
-    /// 
-    /// {
-    ///   "phone": "13800138000",
-    ///   "code": "123456"
-    /// }
-    /// ```
-    /// 
-    /// 示例响应：
-    /// ```json
-    /// {
-    ///   "success": true,
-    ///   "data": {
-    ///     "valid": true
-    ///   }
-    /// }
-    /// ```
-    /// </remarks>
-    /// <returns>验证结果</returns>
-    /// <response code="200">验证完成</response>
-    /// <response code="400">手机号或验证码格式不正确</response>
-    [HttpPost("verify-captcha")]
-    public async Task<IActionResult> VerifyCaptcha([FromBody] VerifyCaptchaRequest request)
-    {
-        _phoneValidationService.ValidatePhone(request.Phone);
-        _phoneValidationService.ValidateCaptchaCode(request.Code);
-
-        var isValid = await _captchaService.ValidateCaptchaAsync(request.Phone, request.Code);
-
-        return Success(new { valid = isValid });
-    }
 
     /// <summary>
     /// 用户注册

@@ -1,6 +1,5 @@
 import {
   LockOutlined,
-  MobileOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import {
@@ -18,7 +17,6 @@ import { flushSync } from 'react-dom';
 import { Footer } from '@/components';
 import ImageCaptcha, { type ImageCaptchaRef } from '@/components/ImageCaptcha';
 import { login } from '@/services/ant-design-pro/api';
-import { getFakeCaptcha } from '@/services/ant-design-pro/login';
 import { tokenUtils } from '@/utils/token';
 import { PasswordEncryption } from '@/utils/encryption';
 import Settings from '../../../../config/defaultSettings';
@@ -180,7 +178,7 @@ const LoginMessage: React.FC<{
 
 const Login: React.FC = () => {
   const [userLoginState, setUserLoginState] = useState<API.LoginResult>({});
-  const [type, setType] = useState<string>('account');
+  const type = 'account'; // 仅保留账号模式
   const [captchaId, setCaptchaId] = useState<string>('');
   const [captchaAnswer, setCaptchaAnswer] = useState<string>('');
   const [showCaptcha, setShowCaptcha] = useState<boolean>(false); // 控制验证码显示
@@ -345,46 +343,13 @@ const Login: React.FC = () => {
   };
   const { status, type: loginType } = userLoginState;
   const [form] = Form.useForm();
-  const [captchaCountdown, setCaptchaCountdown] = useState(0);
 
   const pageTitle = intl.formatMessage({
     id: 'menu.login',
     defaultMessage: '登录页',
   }) + (Settings.title ? ` - ${Settings.title}` : '');
 
-  // 获取验证码
-  const handleGetCaptcha = async () => {
-    try {
-      const mobile = form.getFieldValue('mobile');
-      if (!mobile) {
-        message.error('请先输入手机号');
-        return;
-      }
 
-      const result = await getFakeCaptcha({ phone: mobile });
-      if (result.success && result.data) {
-        message.success(
-          `验证码已生成：${result.data.captcha}（${result.data.expiresIn}秒内有效）`,
-          5,
-        );
-        setCaptchaCountdown(result.data.expiresIn || 60);
-        // 倒计时
-        const timer = setInterval(() => {
-          setCaptchaCountdown((prev) => {
-            if (prev <= 1) {
-              clearInterval(timer);
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
-      } else {
-        throw new Error(result.message || '获取验证码失败');
-      }
-    } catch (error) {
-      throw error;
-    }
-  };
 
   return (
     <>
@@ -426,27 +391,7 @@ const Login: React.FC = () => {
                 }}
                 layout="vertical"
               >
-                <Tabs
-                  activeKey={type}
-                  onChange={setType}
-                  centered
-                  items={[
-                    {
-                      key: 'account',
-                      label: intl.formatMessage({
-                        id: 'pages.login.accountLogin.tab',
-                        defaultMessage: '账户密码登录',
-                      }),
-                    },
-                    {
-                      key: 'mobile',
-                      label: intl.formatMessage({
-                        id: 'pages.login.phoneLogin.tab',
-                        defaultMessage: '手机号登录',
-                      }),
-                    },
-                  ]}
-                />
+
 
                 {status === 'error' && loginType === 'account' && (
                   <LoginMessage
@@ -539,90 +484,7 @@ const Login: React.FC = () => {
                   </>
                 )}
 
-                {status === 'error' && loginType === 'mobile' && (
-                  <LoginMessage
-                    content={intl.formatMessage({
-                      id: 'pages.login.phoneLogin.errorMessage',
-                      defaultMessage: '验证码错误',
-                    })}
-                  />
-                )}
-                {type === 'mobile' && (
-                  <>
-                    <Form.Item
-                      name="mobile"
-                      rules={[
-                        {
-                          required: true,
-                          message: (
-                            <FormattedMessage
-                              id="pages.login.phoneNumber.required"
-                              defaultMessage="请输入手机号！"
-                            />
-                          ),
-                        },
-                        {
-                          pattern: /^1\d{10}$/,
-                          message: (
-                            <FormattedMessage
-                              id="pages.login.phoneNumber.invalid"
-                              defaultMessage="手机号格式错误！"
-                            />
-                          ),
-                        },
-                      ]}
-                    >
-                      <Input
-                        size="large"
-                        prefix={<MobileOutlined />}
-                        placeholder={intl.formatMessage({
-                          id: 'pages.login.phoneNumber.placeholder',
-                          defaultMessage: '手机号',
-                        })}
-                      />
-                    </Form.Item>
-                    <Form.Item
-                      name="captcha"
-                      rules={[
-                        {
-                          required: true,
-                          message: (
-                            <FormattedMessage
-                              id="pages.login.captcha.required"
-                              defaultMessage="请输入验证码！"
-                            />
-                          ),
-                        },
-                      ]}
-                    >
-                      <Space.Compact style={{ width: '100%' }}>
-                        <Input
-                          size="large"
-                          prefix={<LockOutlined />}
-                          placeholder={intl.formatMessage({
-                            id: 'pages.login.captcha.placeholder',
-                            defaultMessage: '请输入验证码',
-                          })}
-                        />
-                        <Button
-                          size="large"
-                          onClick={handleGetCaptcha}
-                          disabled={captchaCountdown > 0}
-                        >
-                          {captchaCountdown > 0
-                            ? `${captchaCountdown} ${intl.formatMessage({
-                              id: 'pages.getCaptchaSecondText',
-                              defaultMessage: '获取验证码',
-                            })}`
-                            : intl.formatMessage({
-                              id: 'pages.login.phoneLogin.getVerificationCode',
-                              defaultMessage: '获取验证码',
-                            })}
-                        </Button>
-                      </Space.Compact>
-                    </Form.Item>
-                  </>
-                )}
+
                 <div style={{ marginBottom: 24 }}>
                   <Form.Item name="autoLogin" valuePropName="checked" style={{ marginBottom: 0 }}>
                     <Checkbox>

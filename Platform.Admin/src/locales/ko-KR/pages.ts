@@ -9,7 +9,7 @@ export default {
   'pages.login.success': '로그인 성공!',
   'pages.login.username.placeholder': '사용자 이름: admin 또는 user',
   'pages.login.username.required': '사용자 이름을 입력해 주세요!',
-  'pages.login.password.placeholder': '비밀번호: ant.design',
+  'pages.login.password.placeholder': '비밀번호',
   'pages.login.password.required': '비밀번호를 입력해 주세요!',
   'pages.login.phoneLogin.tab': '휴대폰 로그인',
   'pages.login.phoneLogin.errorMessage': '인증 번호 오류',

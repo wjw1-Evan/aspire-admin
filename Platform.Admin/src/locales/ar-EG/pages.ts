@@ -9,7 +9,7 @@ export default {
   'pages.login.success': 'تم تسجيل الدخول بنجاح!',
   'pages.login.username.placeholder': 'اسم المستخدم: admin أو user',
   'pages.login.username.required': 'يرجى إدخال اسم المستخدم!',
-  'pages.login.password.placeholder': 'كلمة المرور: ant.design',
+  'pages.login.password.placeholder': 'كلمة المرور',
   'pages.login.password.required': 'يرجى إدخال كلمة المرور!',
   'pages.login.phoneLogin.tab': 'تسجيل الدخول بالهاتف',
   'pages.login.phoneLogin.errorMessage': 'خطأ في رمز التحقق',

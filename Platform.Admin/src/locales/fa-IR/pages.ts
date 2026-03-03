@@ -11,7 +11,7 @@ export default {
   'pages.login.success': 'ورود موفق!',
   'pages.login.username.placeholder': 'نام کاربری: مدیر یا کاربر',
   'pages.login.username.required': 'لطفا نام کاربری خود را وارد کنید!',
-  'pages.login.password.placeholder': 'رمز عبور: ant.design',
+  'pages.login.password.placeholder': 'رمز عبور',
   'pages.login.password.required': 'لطفاً رمز ورود خود را وارد کنید!',
   'pages.login.phoneLogin.tab': 'ورود به سیستم تلفن',
   'pages.login.phoneLogin.errorMessage': 'خطای کد تأیید',

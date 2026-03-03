@@ -9,7 +9,7 @@ export default {
   'pages.login.success': 'Đăng nhập thành công!',
   'pages.login.username.placeholder': 'Tên đăng nhập: admin hoặc user',
   'pages.login.username.required': 'Vui lòng nhập tên đăng nhập!',
-  'pages.login.password.placeholder': 'Mật khẩu: ant.design',
+  'pages.login.password.placeholder': 'Mật khẩu',
   'pages.login.password.required': 'Vui lòng nhập mật khẩu!',
   'pages.login.phoneLogin.tab': 'Đăng nhập số điện thoại',
   'pages.login.phoneLogin.errorMessage': 'Lỗi mã xác nhận',

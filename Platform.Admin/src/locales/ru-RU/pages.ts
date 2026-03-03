@@ -9,7 +9,7 @@ export default {
   'pages.login.success': 'Вход выполнен успешно!',
   'pages.login.username.placeholder': 'Имя пользователя: admin или user',
   'pages.login.username.required': 'Пожалуйста, введите имя пользователя!',
-  'pages.login.password.placeholder': 'Пароль: ant.design',
+  'pages.login.password.placeholder': 'Пароль',
   'pages.login.password.required': 'Пожалуйста, введите пароль!',
   'pages.login.phoneLogin.tab': 'Вход по телефону',
   'pages.login.phoneLogin.errorMessage': 'Ошибка кода подтверждения',

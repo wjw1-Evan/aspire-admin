@@ -9,7 +9,7 @@ export default {
   'pages.login.success': 'Giriş başarılı!',
   'pages.login.username.placeholder': 'Kullanıcı adı: admin veya user',
   'pages.login.username.required': 'Lütfen kullanıcı adınızı girin!',
-  'pages.login.password.placeholder': 'Şifre: ant.design',
+  'pages.login.password.placeholder': 'Şifre',
   'pages.login.password.required': 'Lütfen şifrenizi girin!',
   'pages.login.phoneLogin.tab': 'Telefonla Giriş',
   'pages.login.phoneLogin.errorMessage': 'Doğrulama Kodu Hatası',

@@ -143,14 +143,38 @@ const LoginMessage: React.FC<{
   content: string;
 }> = ({ content }) => {
   return (
-    <Alert
+    <div
       style={{
-        marginBottom: 24,
+        animation: 'ant-pro-form-login-message-fade-in 0.3s cubic-bezier(0.215, 0.61, 0.355, 1)',
       }}
-      message={content}
-      type="error"
-      showIcon
-    />
+    >
+      <Alert
+        style={{
+          marginBottom: 24,
+          borderRadius: '8px',
+          backgroundColor: 'rgba(255, 77, 79, 0.1)',
+          border: '1px solid rgba(255, 77, 79, 0.2)',
+          backdropFilter: 'blur(10px)',
+        }}
+        message={
+          <span style={{ color: '#ff4d4f', fontWeight: 500 }}>{content}</span>
+        }
+        type="error"
+        showIcon
+      />
+      <style>{`
+        @keyframes ant-pro-form-login-message-fade-in {
+          0% {
+            opacity: 0;
+            transform: translateY(-8px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
+    </div>
   );
 };
 
@@ -476,7 +500,7 @@ const Login: React.FC = () => {
                         prefix={<LockOutlined />}
                         placeholder={intl.formatMessage({
                           id: 'pages.login.password.placeholder',
-                          defaultMessage: '密码: ant.design',
+                          defaultMessage: '密码',
                         })}
                       />
                     </Form.Item>
@@ -516,7 +540,12 @@ const Login: React.FC = () => {
                 )}
 
                 {status === 'error' && loginType === 'mobile' && (
-                  <LoginMessage content="验证码错误" />
+                  <LoginMessage
+                    content={intl.formatMessage({
+                      id: 'pages.login.phoneLogin.errorMessage',
+                      defaultMessage: '验证码错误',
+                    })}
+                  />
                 )}
                 {type === 'mobile' && (
                   <>

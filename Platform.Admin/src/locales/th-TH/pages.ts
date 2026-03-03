@@ -9,7 +9,7 @@ export default {
   'pages.login.success': 'เข้าสู่ระบบสำเร็จ!',
   'pages.login.username.placeholder': 'ชื่อผู้ใช้: admin หรือ user',
   'pages.login.username.required': 'กรุณากรอกชื่อผู้ใช้!',
-  'pages.login.password.placeholder': 'รหัสผ่าน: ant.design',
+  'pages.login.password.placeholder': 'รหัสผ่าน',
   'pages.login.password.required': 'กรุณากรอกรหัสผ่าน!',
   'pages.login.phoneLogin.tab': 'เข้าสู่ระบบด้วยเบอร์โทรศัพท์',
   'pages.login.phoneLogin.errorMessage': 'รหัสยืนยันไม่ถูกต้อง',

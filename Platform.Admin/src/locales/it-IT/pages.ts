@@ -9,7 +9,7 @@ export default {
   'pages.login.success': 'Accesso riuscito!',
   'pages.login.username.placeholder': 'Nome utente: admin o user',
   'pages.login.username.required': 'Inserire il nome utente!',
-  'pages.login.password.placeholder': 'Password: ant.design',
+  'pages.login.password.placeholder': 'Password',
   'pages.login.password.required': 'Inserire la password!',
   'pages.login.phoneLogin.tab': 'Accesso con telefono',
   'pages.login.phoneLogin.errorMessage': 'Errore nel codice di verifica',

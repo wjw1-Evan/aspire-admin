@@ -9,7 +9,7 @@ export default {
   'pages.login.success': '¡Inicio de sesión con éxito!',
   'pages.login.username.placeholder': 'Usuario: admin o user',
   'pages.login.username.required': '¡Por favor, introduzca su nombre de usuario!',
-  'pages.login.password.placeholder': 'Contraseña: ant.design',
+  'pages.login.password.placeholder': 'Contraseña',
   'pages.login.password.required': '¡Por favor, introduzca su contraseña!',
   'pages.login.phoneLogin.tab': 'Inicio de sesión con teléfono',
   'pages.login.phoneLogin.errorMessage': 'Error en el código de verificación',

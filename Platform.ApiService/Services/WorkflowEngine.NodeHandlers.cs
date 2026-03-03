@@ -31,7 +31,17 @@ public partial class WorkflowEngine
         switch (node.Type)
         {
             case "start":
-                await MoveToNextNodeAsync(instanceId, nodeId);
+                // Bug 24 修复：退回到 start 节点时，如果有表单绑定则等待用户重新提交
+                if (node.Config?.Form != null)
+                {
+                    // 有表单绑定，通知发起人重新填写
+                    await UpdateCurrentApproverIdsAsync(instanceId, new List<string> { instance.StartedBy });
+                    await SendReturnToStartNotificationAsync(instanceId, node, instance.StartedBy);
+                }
+                else
+                {
+                    await MoveToNextNodeAsync(instanceId, nodeId);
+                }
                 break;
             case "end":
                 await CompleteWorkflowAsync(instanceId, WorkflowStatus.Completed);
@@ -162,6 +172,13 @@ public partial class WorkflowEngine
         {
             await SetCurrentNodeAsync(instanceId, defaultEdge.Target);
             await ProcessNodeAsync(instanceId, defaultEdge.Target);
+        }
+        else
+        {
+            // Bug 23 修复：所有条件边均不匹配且无默认边时，记录警告并完成流程，避免卡死
+            _logger.LogWarning("条件节点无匹配边，流程将终止: InstanceId={InstanceId}, NodeId={NodeId}",
+                instanceId, node.Id);
+            await CompleteWorkflowAsync(instanceId, WorkflowStatus.Completed);
         }
     }
 

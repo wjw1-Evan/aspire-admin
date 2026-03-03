@@ -453,7 +453,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
             };
           }
 
-          // 节点表单绑定（适用于大多数业务节点，例如开始、审批等）
+          // Bug 26 修复：form、ai、notification 配置独立保存，不互斥
           if (values.formDefinitionId) {
             config.form = {
               formDefinitionId: values.formDefinitionId,
@@ -461,7 +461,9 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
               dataScopeKey: values.formDataScopeKey || undefined,
               required: values.formRequired || false,
             };
-          } else if (values.nodeType === 'ai') {
+          }
+
+          if (values.nodeType === 'ai') {
             config.ai = {
               promptTemplate: values.promptTemplate || '',
               systemPrompt: values.systemPrompt,
@@ -470,7 +472,9 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
               maxTokens: values.maxTokens,
               temperature: values.temperature,
             };
-          } else if (values.nodeType === 'notification') {
+          }
+
+          if (values.nodeType === 'notification') {
             const formatRecipients = (rules: any[]) => {
               return (rules || []).flatMap((rule: any) => {
                 if (rule.type === 0) {
@@ -496,8 +500,6 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
               remarksTemplate: values.notificationRemarks,
               recipients: formatRecipients(values.notificationRecipients),
             };
-          } else {
-            config.form = undefined;
           }
 
           let jumpLabel = '';
@@ -748,6 +750,9 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
               <Select.Option value="approval">{intl.formatMessage({ id: 'pages.workflow.designer.addApproval' })}</Select.Option>
               <Select.Option value="condition">{intl.formatMessage({ id: 'pages.workflow.designer.addCondition' })}</Select.Option>
               <Select.Option value="parallel">{intl.formatMessage({ id: 'pages.workflow.designer.addParallel' })}</Select.Option>
+              {/* Bug 27 修复：补充 ai 和 notification 选项 */}
+              <Select.Option value="ai">{intl.formatMessage({ id: 'pages.workflow.designer.addAi' })}</Select.Option>
+              <Select.Option value="notification">{intl.formatMessage({ id: 'pages.workflow.designer.addNotification' })}</Select.Option>
             </Select>
           </Form.Item>
 

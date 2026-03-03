@@ -252,6 +252,12 @@ public class DocumentController : BaseApiController
                 return NotFoundError("流程实例", document.WorkflowInstanceId);
             }
 
+            // Bug 25 修复：检查 CurrentNodeId
+            if (string.IsNullOrEmpty(instance.CurrentNodeId))
+            {
+                return ValidationError("流程实例当前无待处理节点");
+            }
+
             var result = await _workflowEngine.ProcessApprovalAsync(
                 document.WorkflowInstanceId,
                 instance.CurrentNodeId,
@@ -302,6 +308,12 @@ public class DocumentController : BaseApiController
             if (instance == null)
             {
                 return NotFoundError("流程实例", document.WorkflowInstanceId);
+            }
+
+            // Bug 25 修复：检查 CurrentNodeId
+            if (string.IsNullOrEmpty(instance.CurrentNodeId))
+            {
+                return ValidationError("流程实例当前无待处理节点");
             }
 
             var result = await _workflowEngine.ProcessApprovalAsync(
@@ -382,6 +394,12 @@ public class DocumentController : BaseApiController
             if (instance == null)
             {
                 return NotFoundError("流程实例", document.WorkflowInstanceId);
+            }
+
+            // Bug 25 修复：检查 CurrentNodeId
+            if (string.IsNullOrEmpty(instance.CurrentNodeId))
+            {
+                return ValidationError("流程实例当前无待处理节点");
             }
 
             var result = await _workflowEngine.ProcessApprovalAsync(

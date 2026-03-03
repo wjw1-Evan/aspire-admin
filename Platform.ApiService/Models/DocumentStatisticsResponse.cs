@@ -16,7 +16,12 @@ public class DocumentStatisticsResponse
     public long DraftCount { get; set; }
 
     /// <summary>
-    /// 待审批数量
+    /// 审批中数量（全部）
+    /// </summary>
+    public long ApprovingCount { get; set; }
+
+    /// <summary>
+    /// 待审批数量（待我审批）
     /// </summary>
     public long PendingCount { get; set; }
 

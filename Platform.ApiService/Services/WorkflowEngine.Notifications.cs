@@ -113,4 +113,32 @@ public partial class WorkflowEngine
             await MoveToNextNodeAsync(instanceId, node.Id);
         }
     }
+
+    /// <summary>
+    /// Bug 24 修复：退回到开始节点时通知发起人重新提交
+    /// </summary>
+    private async Task SendReturnToStartNotificationAsync(string instanceId, WorkflowNode startNode, string startedBy)
+    {
+        try
+        {
+            var instance = await _instanceFactory.GetByIdAsync(instanceId);
+            if (instance == null) return;
+
+            var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
+            if (document == null) return;
+
+            await _notificationService.CreateWorkflowNotificationAsync(
+                instanceId,
+                document.Title,
+                "workflow_returned_to_start",
+                new List<string> { startedBy },
+                $"您的流程已被退回至起始节点，请重新填写并提交：{startNode.Label ?? startNode.Id}",
+                instance.CompanyId
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "发送退回开始节点通知失败: InstanceId={InstanceId}", instanceId);
+        }
+    }
 }

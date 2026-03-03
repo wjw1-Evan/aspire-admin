@@ -1017,17 +1017,29 @@ public class WorkflowController : BaseApiController
                 return NotFoundError("过滤器偏好", id);
             }
 
+            // Bug 21 修复：将异步操作提到 lambda 外部，避免 GetAwaiter().GetResult() 死锁
+            if (!string.IsNullOrEmpty(request.Name) && request.Name != preference.Name)
+            {
+                Expression<Func<UserWorkflowFilterPreference, bool>> nameFilter = pref =>
+                    pref.UserId == userId && pref.Name == request.Name && pref.Id != id;
+                var existingWithName = (await preferencesFactory.FindAsync(nameFilter, limit: 1)).FirstOrDefault();
+                if (existingWithName != null)
+                {
+                    return ValidationError("已存在同名的过滤器偏好");
+                }
+            }
+
+            if (request.IsDefault.HasValue && request.IsDefault.Value && !preference.IsDefault)
+            {
+                Expression<Func<UserWorkflowFilterPreference, bool>> defaultFilter = pref =>
+                    pref.UserId == userId && pref.IsDefault == true && pref.Id != id;
+                await preferencesFactory.UpdateManyAsync(defaultFilter, pref => pref.IsDefault = false);
+            }
+
             Action<UserWorkflowFilterPreference> updateAction = p =>
             {
-                if (!string.IsNullOrEmpty(request.Name) && request.Name != preference.Name)
+                if (!string.IsNullOrEmpty(request.Name))
                 {
-                    Expression<Func<UserWorkflowFilterPreference, bool>> nameFilter = pref =>
-                        pref.UserId == userId && pref.Name == request.Name && pref.Id != id;
-                    var existingWithName = (preferencesFactory.FindAsync(nameFilter, limit: 1).GetAwaiter().GetResult()).FirstOrDefault();
-                    if (existingWithName != null)
-                    {
-                        throw new ArgumentException("已存在同名的过滤器偏好");
-                    }
                     p.Name = request.Name;
                 }
 
@@ -1036,14 +1048,8 @@ public class WorkflowController : BaseApiController
                     p.FilterConfig = request.FilterConfig;
                 }
 
-                if (request.IsDefault.HasValue && request.IsDefault.Value != preference.IsDefault)
+                if (request.IsDefault.HasValue)
                 {
-                    if (request.IsDefault.Value)
-                    {
-                        Expression<Func<UserWorkflowFilterPreference, bool>> defaultFilter = pref =>
-                            pref.UserId == userId && pref.IsDefault == true && pref.Id != id;
-                        preferencesFactory.UpdateManyAsync(defaultFilter, pref => pref.IsDefault = false).GetAwaiter().GetResult();
-                    }
                     p.IsDefault = request.IsDefault.Value;
                 }
             };

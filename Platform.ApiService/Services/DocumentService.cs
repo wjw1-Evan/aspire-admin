@@ -708,6 +708,9 @@ public class DocumentService : IDocumentService
         // 4. 已驳回
         var rejectedCount = await _documentFactory.CountAsync(d => d.Status == DocumentStatus.Rejected);
 
+        // Bug 22 修复：统计审批中文档总数
+        var approvingCount = await _documentFactory.CountAsync(d => d.Status == DocumentStatus.Approving);
+
         // 5. 我发起的
         var myCreatedCount = await _documentFactory.CountAsync(d => d.CreatedBy == userId);
 
@@ -734,6 +737,7 @@ public class DocumentService : IDocumentService
         {
             TotalDocuments = (int)totalDocuments,
             DraftCount = (int)draftCount,
+            ApprovingCount = (int)approvingCount,
             PendingCount = pendingCount,
             ApprovedCount = (int)approvedCount,
             RejectedCount = (int)rejectedCount,

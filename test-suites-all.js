@@ -512,11 +512,12 @@ async function main() {
     try {
         await Auth.login('admin', 'admin123');
         
-        if (mode === 'all' || mode === 'synergy') await runSynergyTests();
+        // 顺序：验证 → 基础流程 → 全节点 → 表单集成 → 多用户协作 → Mongo 诊断
         if (mode === 'all' || mode === 'design') await runDesignTests();
-        if (mode === 'all' || mode === 'multiuser') await runMultiUserTests();
+        if (mode === 'all' || mode === 'synergy') await runSynergyTests();
         if (mode === 'all' || mode === 'allnodes') await runAllNodesTests();
         if (mode === 'all' || mode === 'form') await runFormIntegratedTests();
+        if (mode === 'all' || mode === 'multiuser') await runMultiUserTests();
         if (mode === 'all' || mode === 'mongo') await runMongoTests();
 
         console.log('\n🌟 Unified Test Run Finished.');

@@ -1,4 +1,6 @@
 using Platform.ApiService.Models;
+using Microsoft.Extensions.DependencyInjection;
+using Platform.ServiceDefaults.Services;
 using Platform.ApiService.Models.Workflow;
 using System.Collections.Generic;
 using System.Linq;
@@ -407,8 +409,13 @@ public partial class WorkflowEngine
             _ = Task.Run(async () =>
             {
                 await Task.Delay(delay);
-                await _instanceFactory.UpdateAsync(instanceId, i => i.Status = WorkflowStatus.Running);
-                await MoveToNextNodeAsync(instanceId, node.Id);
+
+                using var scope = _scopeFactory.CreateScope();
+                var scopedInstanceFactory = scope.ServiceProvider.GetRequiredService<IDataFactory<WorkflowInstance>>();
+                var scopedEngine = scope.ServiceProvider.GetRequiredService<IWorkflowEngine>();
+
+                await scopedInstanceFactory.UpdateAsync(instanceId, i => i.Status = WorkflowStatus.Running);
+                await scopedEngine.ProceedAsync(instanceId, node.Id);
             });
         }
         else

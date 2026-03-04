@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Workflow;
 using Platform.ServiceDefaults.Services;
@@ -65,6 +66,11 @@ public interface IWorkflowEngine
     /// 取消流程
     /// </summary>
     Task<bool> CancelWorkflowAsync(string instanceId, string reason);
+
+    /// <summary>
+    /// 继续流程执行（用于后台任务或延迟任务恢复）
+    /// </summary>
+    Task<bool> ProceedAsync(string instanceId, string nodeId);
 }
 
 /// <summary>
@@ -86,6 +92,7 @@ public partial class WorkflowEngine : IWorkflowEngine
     private readonly OpenAIClient _openAiClient;
     private readonly AiCompletionOptions _aiOptions;
     private readonly ILogger<WorkflowEngine> _logger;
+    private readonly IServiceScopeFactory _scopeFactory;
 
     /// <summary>
     /// 初始化工作流引擎
@@ -104,7 +111,8 @@ public partial class WorkflowEngine : IWorkflowEngine
         IWorkflowExpressionEvaluator expressionEvaluator,
         OpenAIClient openAiClient,
         IOptions<AiCompletionOptions> aiOptions,
-        ILogger<WorkflowEngine> logger)
+        ILogger<WorkflowEngine> logger,
+        IServiceScopeFactory scopeFactory)
     {
         _definitionFactory = definitionFactory;
         _instanceFactory = instanceFactory;
@@ -120,6 +128,7 @@ public partial class WorkflowEngine : IWorkflowEngine
         _openAiClient = openAiClient;
         _aiOptions = aiOptions.Value;
         _logger = logger;
+        _scopeFactory = scopeFactory;
     }
 
     /// <summary>
@@ -189,5 +198,17 @@ public partial class WorkflowEngine : IWorkflowEngine
         }
 
         return instance;
+    }
+
+    /// <summary>
+    /// 继续流程执行（用于后台任务或延迟任务恢复）
+    /// </summary>
+    public async Task<bool> ProceedAsync(string instanceId, string nodeId)
+    {
+        var instance = await _instanceFactory.GetByIdAsync(instanceId);
+        if (instance == null || instance.Status != WorkflowStatus.Running) return false;
+
+        await MoveToNextNodeAsync(instanceId, nodeId);
+        return true;
     }
 }

@@ -541,31 +541,30 @@ async function runFormIntegratedTests() {
  */
 async function runMongoTests() {
     console.log('\n=== RUNNING MONGODB DIRECT QUERY ===');
-    let MongoClient;
-    try {
-        ({ MongoClient } = require('mongodb'));
-    } catch {
-        console.log('  ⚠️ mongodb 模块未安装，跳过。运行 npm install mongodb 后重试。');
-        return;
-    }
-
+    
     // Aspire 动态端口，默认 57428，可通过环境变量覆盖
     const port = process.env.MONGO_PORT || '57428';
-    const uri = `mongodb://admin:admin123@localhost:${port}/aspire-admin-db?authSource=admin`;
-    const client = new MongoClient(uri);
+    const dbName = 'aspire-admin-db';
+    const uri = `mongodb://admin:admin123@localhost:${port}/${dbName}?authSource=admin`;
+    
     try {
-        await client.connect();
-        const db = client.db('aspire-admin-db');
-        const docs = await db.collection('documents').find({}).sort({ _id: -1 }).limit(3).toArray();
-        console.log(`  查询到 ${docs.length} 条最新文档：`);
+        const { execSync } = require('child_process');
+        console.log(`- Connection to ${uri} via mongosh...`);
+        
+        const query = 'db.documents.find({}).sort({_id: -1}).limit(3).toArray()';
+        const cmd = `mongosh "${uri}" --quiet --eval 'JSON.stringify(${query})'`;
+        
+        const output = execSync(cmd).toString();
+        const docs = JSON.parse(output);
+        
+        console.log(`  ✅ 查询到 ${docs.length} 条最新文档：`);
         for (const d of docs) {
-            console.log(`  - _id: ${d._id}, title: ${d.title}, formData keys: ${Object.keys(d.formData || {}).join(', ') || '(empty)'}`);
+            console.log(`  - _id: ${d._id.$oid || d._id}, title: ${d.title}, formData keys: ${Object.keys(d.formData || {}).join(', ') || '(empty)'}`);
             if (d.formData) console.log(`    formData: ${JSON.stringify(d.formData)}`);
         }
     } catch (err) {
-        console.log(`  ❌ MongoDB 连接失败: ${err.message}`);
-    } finally {
-        await client.close();
+        console.log(`  ❌ MongoDB 查询失败: ${err.message}`);
+        console.log('  (确保系统中安装了 mongosh 且 Aspire 容器正在运行)');
     }
 }
 

@@ -22,6 +22,7 @@
     <PackageReference Include="Scalar.Aspire" Version="0.9.0" />
     <PackageReference Include="Aspire.Hosting.NodeJs" Version="9.5.2" />
     <PackageReference Include="Aspire.Hosting.OpenAI" Version="13.1.2" />
+    <PackageReference Include="CommunityToolkit.Aspire.Hosting.MongoDB.Extensions" Version="13.1.1" />
 
   </ItemGroup>
 

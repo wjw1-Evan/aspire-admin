@@ -455,6 +455,7 @@ public class DocumentService : IDocumentService
 
         if (sanitizedVars != null && sanitizedVars.Count > 0)
         {
+            _logger.LogInformation("DEBUG_SUBMIT: Merging {Count} variables into Document {DocumentId} FormData", sanitizedVars.Count, documentId);
             await _documentFactory.UpdateAsync(documentId, d =>
             {
                 d.FormData ??= new Dictionary<string, object>();

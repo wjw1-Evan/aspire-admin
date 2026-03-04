@@ -134,6 +134,8 @@ public partial class WorkflowEngine
         var instance = await _instanceFactory.GetByIdAsync(instanceId);
         if (instance == null) return;
 
+        _logger.LogInformation("DEBUG_WORKFLOW: Completing Workflow {InstanceId} with Status {Status}", instanceId, status);
+
         await _instanceFactory.UpdateAsync(instanceId, i =>
         {
             i.Status = status;

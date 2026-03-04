@@ -30,6 +30,7 @@ var chat = openai.AddModel("chat", "gpt-4o-mini");
 
 var mongo = builder.AddMongoDB("mongo")
     .WithMongoExpress()
+    .WithDbGate()
     .WithLifetime(ContainerLifetime.Persistent)
     .WithDataVolume();
 

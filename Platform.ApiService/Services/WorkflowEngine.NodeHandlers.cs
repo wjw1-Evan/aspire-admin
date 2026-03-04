@@ -21,6 +21,8 @@ public partial class WorkflowEngine
         var instance = await _instanceFactory.GetByIdAsync(instanceId);
         if (instance == null) return;
 
+        _logger.LogInformation("DEBUG_WORKFLOW: Processing Node {NodeId} for Instance {InstanceId}", nodeId, instanceId);
+
         var definition = instance.WorkflowDefinitionSnapshot ?? await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
         if (definition == null) return;
 
@@ -46,6 +48,7 @@ public partial class WorkflowEngine
                 }
                 break;
             case "end":
+                _logger.LogInformation("DEBUG_WORKFLOW: End node reached for Instance {InstanceId}", instanceId);
                 await CompleteWorkflowAsync(instanceId, WorkflowStatus.Completed);
                 break;
             case "approval":
@@ -221,6 +224,7 @@ public partial class WorkflowEngine
     /// </summary>
     private async Task MoveToNextNodeAsync(string instanceId, string currentNodeId)
     {
+        _logger.LogInformation("DEBUG_WORKFLOW: Moving from {NodeId} for Instance {InstanceId}", currentNodeId, instanceId);
         await ClearNodeApproversAsync(instanceId, currentNodeId); // 清除已完成节点的待办人员，避免残留
 
         var instance = await _instanceFactory.GetByIdAsync(instanceId);

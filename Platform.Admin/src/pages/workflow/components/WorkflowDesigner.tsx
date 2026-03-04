@@ -203,100 +203,17 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
   useEffect(() => { nodesRef.current = nodes; }, [nodes]);
   useEffect(() => { edgesRef.current = edges; }, [edges]);
 
-  // 在连线中间插入节点 (稳定引用版)
-  const onInsertNode = useCallback((edgeId: string) => {
-    const edge = edgesRef.current.find(e => e.id === edgeId);
-    if (!edge) return;
 
-    const newNodeId = `approval-${Date.now()}`;
-
-    // 计算新节点位置 (源节点和目标节点的中间)
-    const sourceNode = nodesRef.current.find(n => n.id === edge.source);
-    const targetNode = nodesRef.current.find(n => n.id === edge.target);
-    const position = { x: 0, y: 0 };
-    if (sourceNode && targetNode) {
-      position.x = (sourceNode.position.x + targetNode.position.x) / 2;
-      position.y = (sourceNode.position.y + targetNode.position.y) / 2;
-    } else {
-      position.x = Math.random() * 400 + 100;
-      position.y = Math.random() * 300 + 100;
-    }
-
-    const newNode: Node = {
-      id: newNodeId,
-      type: 'workflowNode',
-      position,
-      data: {
-        label: `新${typeLabels.approval}`,
-        typeLabel: typeLabels.approval,
-        nodeType: 'approval',
-        config: {},
-      },
-    };
-
-    // 删除旧边，添加两个新边
-    const edge1: Edge = {
-      id: `edge-${Date.now()}-1`,
-      source: edge.source,
-      target: newNodeId,
-      type: 'smoothstep',
-      animated: true,
-      markerEnd: { type: MarkerType.ArrowClosed, color: '#94a3b8' },
-    };
-    const edge2: Edge = {
-      id: `edge-${Date.now()}-2`,
-      source: newNodeId,
-      target: edge.target,
-      type: 'smoothstep',
-      animated: true,
-      markerEnd: { type: MarkerType.ArrowClosed, color: '#94a3b8' },
-    };
-
-    setNodes(nds => [...nds, newNode]);
-    setEdges(eds => {
-      const filtered = eds.filter(e => e.id !== edgeId);
-      return [...filtered, edge1, edge2];
-    });
-
-    // 自动打开新节点配置
-    setTimeout(() => {
-      setSelectedNode(newNode);
-      setConfigDrawerVisible(true);
-      configForm.resetFields();
-      configForm.setFieldsValue({
-        label: newNode.data.label,
-        nodeType: 'approval',
-      });
-    }, 100);
-  }, [intl, setNodes, setEdges, configForm, typeLabels]);
-
-  const onDeleteEdge = useCallback((edgeId: string) => {
-    confirm({
-      title: '确认删除连线',
-      content: '确定要删除这条流程连线吗？',
-      okText: '删除',
-      cancelText: '取消',
-      okButtonProps: { danger: true },
-      onOk: () => {
-        setEdges(eds => eds.filter(e => e.id !== edgeId));
-        message.success('连线已删除');
-      }
-    });
-  }, [setEdges, message, confirm]);
 
   const defaultEdgeOptions = useMemo(() => ({
     type: 'workflowEdge',
+    animated: true,
     style: { stroke: '#94a3b8', strokeWidth: 2 },
     markerEnd: {
       type: MarkerType.ArrowClosed,
       color: '#94a3b8',
     },
-    data: {
-      onInsertNode,
-      onDeleteEdge,
-      readOnly,
-    },
-  }), [onInsertNode, onDeleteEdge, readOnly]);
+  }), []);
 
   // 加载用户和角色列表
   useEffect(() => {
@@ -384,8 +301,6 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
         },
         data: {
           condition: edge.condition,
-          onInsertNode,
-          readOnly,
         },
       }));
 
@@ -404,7 +319,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
       ]);
       hasInitializedRef.current = true;
     }
-  }, [graph, onInsertNode, readOnly, setNodes, setEdges, typeLabels]);
+  }, [graph, readOnly, setNodes, setEdges, typeLabels]);
 
   const onConnect = useCallback(
     (params: Connection) => {
@@ -414,21 +329,11 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
         target: params.target!,
         sourceHandle: params.sourceHandle,
         targetHandle: params.targetHandle,
-        type: 'workflowEdge',
-        animated: true,
-        labelStyle: { fill: '#64748b', fontWeight: 600 },
-        markerEnd: {
-          type: MarkerType.ArrowClosed,
-          color: '#94a3b8',
-        },
-        data: {
-          onInsertNode,
-          readOnly,
-        },
+        ...defaultEdgeOptions,
       };
       setEdges((eds) => addEdge(newEdge, eds));
     },
-    [setEdges, onInsertNode, readOnly]
+    [setEdges, defaultEdgeOptions]
   );
 
   const addNode = useCallback(
@@ -460,6 +365,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
     const config = node.data.config || {};
     const labelText = node.data.label || '';
 
+    configForm.resetFields();
     configForm.setFieldsValue({
       label: labelText,
       nodeType: node.data.nodeType,
@@ -507,6 +413,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
       httpUrl: config.http?.url,
       httpHeaders: config.http?.headers,
       httpBody: config.http?.body,
+      httpOutputVariable: config.http?.outputVariable,
       timerWaitDuration: config.timer?.waitDuration,
       timerCron: config.timer?.cron,
       variableName: config.variable?.name,
@@ -623,7 +530,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
               url: values.httpUrl,
               headers: values.httpHeaders,
               body: values.httpBody,
-              outputVariable: values.outputVariable,
+              outputVariable: values.httpOutputVariable,
             };
           }
 
@@ -1021,7 +928,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                         <Form.Item name="httpBody" label="消息体 (Body)">
                           <Input.TextArea rows={4} />
                         </Form.Item>
-                        <Form.Item name="outputVariable" label="保存响应到变量" tooltip="将 HTTP 接口的响应结果保存为流程变量，供后续节点使用">
+                        <Form.Item name="httpOutputVariable" label="保存响应到变量" tooltip="将 HTTP 接口的响应结果保存为流程变量，供后续节点使用">
                           <Input placeholder="例如: api_result" />
                         </Form.Item>
                       </>

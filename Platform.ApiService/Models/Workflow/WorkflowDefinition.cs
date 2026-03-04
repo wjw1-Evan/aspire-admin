@@ -149,6 +149,24 @@ public class NodeConfig
     /// </summary>
     [BsonElement("http")]
     public HttpConfig? Http { get; set; }
+
+    /// <summary>
+    /// 计时器节点配置
+    /// </summary>
+    [BsonElement("timer")]
+    public TimerConfig? Timer { get; set; }
+
+    /// <summary>
+    /// 变量设置节点配置
+    /// </summary>
+    [BsonElement("variable")]
+    public VariableConfig? Variable { get; set; }
+
+    /// <summary>
+    /// 日志节点配置
+    /// </summary>
+    [BsonElement("log")]
+    public LogConfig? Log { get; set; }
 }
 
 /// <summary>
@@ -185,6 +203,60 @@ public class HttpConfig
     /// </summary>
     [BsonElement("outputVariable")]
     public string? OutputVariable { get; set; }
+}
+
+/// <summary>
+/// 计时器节点配置
+/// </summary>
+public class TimerConfig
+{
+    /// <summary>
+    /// 等待时长 (TimeSpan 格式)
+    /// </summary>
+    [BsonElement("waitDuration")]
+    public string? WaitDuration { get; set; }
+
+    /// <summary>
+    /// Cron 表达式
+    /// </summary>
+    [BsonElement("cron")]
+    public string? Cron { get; set; }
+}
+
+/// <summary>
+/// 变量设置节点配置
+/// </summary>
+public class VariableConfig
+{
+    /// <summary>
+    /// 变量名称
+    /// </summary>
+    [BsonElement("name")]
+    public string? Name { get; set; }
+
+    /// <summary>
+    /// 变量值/表达式
+    /// </summary>
+    [BsonElement("value")]
+    public string? Value { get; set; }
+}
+
+/// <summary>
+/// 日志节点配置
+/// </summary>
+public class LogConfig
+{
+    /// <summary>
+    /// 日志级别
+    /// </summary>
+    [BsonElement("level")]
+    public string Level { get; set; } = "Information";
+
+    /// <summary>
+    /// 日志消息模板
+    /// </summary>
+    [BsonElement("message")]
+    public string? Message { get; set; }
 }
 
 /// <summary>

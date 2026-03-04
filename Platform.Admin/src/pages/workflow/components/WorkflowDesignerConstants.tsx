@@ -182,9 +182,8 @@ export const nodeTypes = {
     workflowNode: CustomNode,
 };
 
-// 自定义 Edge 组件 (Elsa 风格：带中间插入按钮)
-import { getSmoothStepPath, EdgeProps } from 'reactflow';
-import { PlusCircleFilled, CloseCircleFilled } from '@ant-design/icons';
+// 自定义 Edge 组件：选中时高亮并显示删除按钮
+import { getSmoothStepPath, EdgeProps, useReactFlow } from 'reactflow';
 
 export const WorkflowEdge: React.FC<EdgeProps> = ({
     id,
@@ -196,9 +195,9 @@ export const WorkflowEdge: React.FC<EdgeProps> = ({
     targetPosition,
     style = {},
     markerEnd,
-    data,
     selected,
 }) => {
+    const { setEdges } = useReactFlow();
     const [edgePath, labelX, labelY] = getSmoothStepPath({
         sourceX,
         sourceY,
@@ -209,49 +208,30 @@ export const WorkflowEdge: React.FC<EdgeProps> = ({
         borderRadius: 16,
     });
 
-    const onEdgeClick = (evt: React.MouseEvent) => {
+    const onDelete = (evt: React.MouseEvent) => {
         evt.stopPropagation();
-        if (data?.onInsertNode) {
-            data.onInsertNode(id);
-        }
-    };
-
-    const onDeleteEdge = (evt: React.MouseEvent) => {
-        evt.stopPropagation();
-        if (data?.onDeleteEdge) {
-            data.onDeleteEdge(id);
-        }
+        setEdges((eds) => eds.filter((e) => e.id !== id));
     };
 
     return (
         <>
             <path
                 id={id}
-                style={{ ...style, stroke: selected ? '#3b82f6' : style.stroke, strokeWidth: selected ? 3 : style.strokeWidth }}
+                style={{
+                    ...style,
+                    stroke: selected ? '#3b82f6' : style.stroke,
+                    strokeWidth: selected ? 3 : style.strokeWidth,
+                }}
                 className="react-flow__edge-path"
                 d={edgePath}
                 markerEnd={markerEnd}
             />
-            {!data?.readOnly && (
-                <foreignObject
-                    width={56}
-                    height={28}
-                    x={labelX - 28}
-                    y={labelY - 14}
-                    className="elsa-edge-insert-object"
-                    requiredExtensions="http://www.w3.org/1999/xhtml"
-                >
-                    <div style={{ display: 'flex', gap: '4px', background: 'rgba(255, 255, 255, 0.9)', padding: '2px 4px', borderRadius: '12px', border: selected ? '1px solid #3b82f6' : '1px solid #e2e8f0', alignItems: 'center', justifyContent: 'center', pointerEvents: 'all' }}>
-                        <div className="elsa-edge-insert-button" onClick={onEdgeClick} title="插入节点" style={{ display: 'flex' }}>
-                            <PlusCircleFilled style={{ color: '#3b82f6', fontSize: '16px', cursor: 'pointer', transition: 'transform 0.2s', ...{ ':hover': { transform: 'scale(1.1)' } } as any }} />
-                        </div>
-                        {selected && (
-                            <div className="elsa-edge-delete-button" onClick={onDeleteEdge} title="删除连线" style={{ display: 'flex' }}>
-                                <CloseCircleFilled style={{ color: '#ef4444', fontSize: '16px', cursor: 'pointer', transition: 'transform 0.2s', ...{ ':hover': { transform: 'scale(1.1)' } } as any }} />
-                            </div>
-                        )}
-                    </div>
-                </foreignObject>
+            {selected && (
+                <g transform={`translate(${labelX}, ${labelY})`} onClick={onDelete} style={{ cursor: 'pointer' }}>
+                    <circle r={10} fill="#ef4444" stroke="#fff" strokeWidth={1.5} />
+                    <line x1={-4} y1={-4} x2={4} y2={4} stroke="#fff" strokeWidth={2} strokeLinecap="round" />
+                    <line x1={4} y1={-4} x2={-4} y2={4} stroke="#fff" strokeWidth={2} strokeLinecap="round" />
+                </g>
             )}
         </>
     );

@@ -38,7 +38,7 @@ async function startWorkflow(token, definitionId) {
     const docRes = await request('/documents', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
-        body: { title: "Test Doc", content: "..." }
+        body: { title: "测试公文", content: "这是测试公文的内容..." }
     });
     if (!docRes.data) throw new Error("Failed to create document");
     const docId = docRes.data.id;
@@ -204,12 +204,12 @@ async function runScenarioA(token, adminId, companyId) {
     console.log('\n--- Running Scenario A: Simple Reject ---');
     const headers = { 'Authorization': `Bearer ${token}` };
     const definition = {
-        name: "Test Reject",
+        name: "测试驳回流程",
         graph: {
             nodes: [
-                { id: "start", type: "start" },
-                { id: "app1", type: "approval", config: { approval: { type: 1, approvers: [{ type: 0, userId: adminId }] } } },
-                { id: "end", type: "end" }
+                { id: "start", type: "start", name: "开始" },
+                { id: "app1", type: "approval", name: "审批节点", config: { approval: { type: 1, approvers: [{ type: 0, userId: adminId }] } } },
+                { id: "end", type: "end", name: "结束" }
             ],
             edges: [
                 { id: "e1", source: "start", target: "app1" },
@@ -225,7 +225,7 @@ async function runScenarioA(token, adminId, companyId) {
     const res = await request(`/workflows/instances/${instanceId}/nodes/app1/action`, {
         method: 'POST',
         headers,
-        body: { action: 'reject', comment: 'Rejected by test' }
+        body: { action: 'reject', comment: '测试驳回' }
     });
 
     console.log(`  Performing REJECT action on node app1...`);
@@ -248,13 +248,13 @@ async function runScenarioB(token, adminId, companyId) {
     console.log('\n--- Running Scenario B: Return to Start ---');
     const headers = { 'Authorization': `Bearer ${token}` };
     const definition = {
-        name: "Test Return",
+        name: "测试退回流程",
         graph: {
             nodes: [
-                { id: "start", type: "start" },
-                { id: "app1", type: "approval", config: { approval: { type: 1, approvers: [{ type: 0, userId: adminId }] } } },
-                { id: "app2", type: "approval", config: { approval: { type: 1, approvers: [{ type: 0, userId: adminId }] } } },
-                { id: "end", type: "end" }
+                { id: "start", type: "start", name: "开始" },
+                { id: "app1", type: "approval", name: "第一级审批", config: { approval: { type: 1, approvers: [{ type: 0, userId: adminId }] } } },
+                { id: "app2", type: "approval", name: "第二级审批", config: { approval: { type: 1, approvers: [{ type: 0, userId: adminId }] } } },
+                { id: "end", type: "end", name: "结束" }
             ],
             edges: [
                 { id: "e1", source: "start", target: "app1" },
@@ -281,7 +281,7 @@ async function runScenarioB(token, adminId, companyId) {
     const res = await request(`/workflows/instances/${instanceId}/nodes/app2/action`, {
         method: 'POST',
         headers,
-        body: { action: 'return', targetNodeId: 'start', comment: 'Return to start' }
+        body: { action: 'return', targetNodeId: 'start', comment: '退回到开始节点' }
     });
 
     if (res.success) {
@@ -305,12 +305,12 @@ async function runScenarioC(token, adminId, companyId, user2Id) {
     console.log('\n--- Running Scenario C: Delegate Task ---');
     const headers = { 'Authorization': `Bearer ${token}` };
     const definition = {
-        name: "Test Delegate",
+        name: "测试转办流程",
         graph: {
             nodes: [
-                { id: "start", type: "start" },
-                { id: "app1", type: "approval", config: { approval: { type: 1, approvers: [{ type: 0, userId: adminId }] } } },
-                { id: "end", type: "end" }
+                { id: "start", type: "start", name: "开始" },
+                { id: "app1", type: "approval", name: "转办审批", config: { approval: { type: 1, approvers: [{ type: 0, userId: adminId }] } } },
+                { id: "end", type: "end", name: "结束" }
             ],
             edges: [
                 { id: "e1", source: "start", target: "app1" },
@@ -327,7 +327,7 @@ async function runScenarioC(token, adminId, companyId, user2Id) {
     const res = await request(`/workflows/instances/${instanceId}/nodes/app1/action`, {
         method: 'POST',
         headers,
-        body: { action: 'delegate', delegateToUserId: user2Id, comment: 'Delegated task' }
+        body: { action: 'delegate', delegateToUserId: user2Id, comment: '转办任务给 User2' }
     });
 
     if (res.success) {
@@ -353,12 +353,12 @@ async function runScenarioD(token, adminId, user2Id, companyId) {
     console.log('\n--- Running Scenario D: Sequential Approval ---');
     const headers = { 'Authorization': `Bearer ${token}` };
     const definition = {
-        name: "Test Sequential",
+        name: "测试串行审批",
         graph: {
             nodes: [
-                { id: "start", type: "start" },
+                { id: "start", type: "start", name: "开始" },
                 {
-                    id: "app1", type: "approval", config: {
+                    id: "app1", type: "approval", name: "顺序审批节点", config: {
                         approval: {
                             type: 2,
                             approvers: [
@@ -368,7 +368,7 @@ async function runScenarioD(token, adminId, user2Id, companyId) {
                         }
                     }
                 },
-                { id: "end", type: "end" }
+                { id: "end", type: "end", name: "结束" }
             ],
             edges: [
                 { id: "e1", source: "start", target: "app1" },
@@ -434,12 +434,12 @@ async function runScenarioE(token, adminId, user2Id, companyId) {
     console.log('\n--- Running Scenario E: Multisign (All) ---');
     const headers = { 'Authorization': `Bearer ${token}` };
     const definition = {
-        name: "Test Multisign All",
+        name: "测试会签流程",
         graph: {
             nodes: [
-                { id: "start", type: "start" },
+                { id: "start", type: "start", name: "开始" },
                 {
-                    id: "app1", type: "approval", config: {
+                    id: "app1", type: "approval", name: "会签节点", config: {
                         approval: {
                             type: 0,
                             approvers: [
@@ -449,7 +449,7 @@ async function runScenarioE(token, adminId, user2Id, companyId) {
                         }
                     }
                 },
-                { id: "end", type: "end" }
+                { id: "end", type: "end", name: "结束" }
             ],
             edges: [
                 { id: "e1", source: "start", target: "app1" },
@@ -480,12 +480,12 @@ async function runScenarioF(token, adminId, user2Id, companyId) {
     console.log('\n--- Running Scenario F: Or-sign (Any) ---');
     const headers = { 'Authorization': `Bearer ${token}` };
     const definition = {
-        name: "Test Or-sign Any",
+        name: "测试或签流程",
         graph: {
             nodes: [
-                { id: "start", type: "start" },
+                { id: "start", type: "start", name: "开始" },
                 {
-                    id: "app1", type: "approval", config: {
+                    id: "app1", type: "approval", name: "或签节点", config: {
                         approval: {
                             type: 1,
                             approvers: [
@@ -495,7 +495,7 @@ async function runScenarioF(token, adminId, user2Id, companyId) {
                         }
                     }
                 },
-                { id: "end", type: "end" }
+                { id: "end", type: "end", name: "结束" }
             ],
             edges: [
                 { id: "e1", source: "start", target: "app1" },

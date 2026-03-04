@@ -366,8 +366,9 @@ public partial class WorkflowEngine
                 catch { /* 忽略头解析错误 */ }
             }
 
-            var response = await _sharedHttpClient.SendAsync(requestMessage);
-            var responseContent = await response.Content.ReadAsStringAsync();
+            using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var response = await _sharedHttpClient.SendAsync(requestMessage, cts.Token);
+            var responseContent = await response.Content.ReadAsStringAsync(cts.Token);
 
             if (!string.IsNullOrWhiteSpace(config.OutputVariable))
             {

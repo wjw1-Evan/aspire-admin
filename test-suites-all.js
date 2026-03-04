@@ -1,4 +1,5 @@
 const fs = require('fs');
+const { spawn } = require('child_process');
 
 /**
  * --- Aspire Admin Unified API Test Suite ---
@@ -134,11 +135,59 @@ const Utils = {
     }
 };
 
-// --- Test Suites ---
+// --- Test Suites (L0 → L6: 从基础到应用) ---
 
 /**
- * Synergy Tests (Original test-workflows.js)
- * Focus: Core IO, HTTP, AI, Timer, Parallel Approval
+ * [L0] 用户注册测试 (Register)
+ * 注册 → 登录 → 用户信息验证 → 重复注册拦截
+ */
+async function runRegisterTests() {
+    console.log('\n=== RUNNING USER REGISTRATION TESTS ===');
+
+    const ts = Date.now().toString().slice(-6);
+    const username = `testuser_${ts}`;
+    const password = 'Password123!';
+    const email = `${username}@example.com`;
+    const phone = '138' + Math.floor(Math.random() * 100000000).toString().padStart(8, '0');
+
+    // 1. 注册新用户
+    console.log(`- Registering user: ${username}...`);
+    const regRes = await request('/auth/register', {
+        method: 'POST',
+        body: { username, password, email, phoneNumber: phone }
+    });
+    if (!regRes.success) throw new Error(`Registration failed: ${regRes.message || JSON.stringify(regRes)}`);
+    const userId = regRes.data.id || regRes.data;
+    console.log(`  ✅ Registered. UserID: ${userId}`);
+
+    // 2. 用新用户登录
+    console.log('- Logging in with new user...');
+    const loginRes = await request('/auth/login', {
+        method: 'POST',
+        body: { username, password, autoLogin: false }
+    });
+    if (!loginRes.success) throw new Error(`Login failed: ${loginRes.message}`);
+    console.log('  ✅ Login successful.');
+
+    // 3. 获取当前用户信息
+    const userHeaders = { 'Authorization': `Bearer ${loginRes.data.token}` };
+    const meRes = await request('/auth/current-user', { headers: userHeaders });
+    if (!meRes.success) throw new Error(`Get current-user failed: ${meRes.message}`);
+    const match = meRes.data.username === username || meRes.data.userName === username;
+    console.log(`  ${match ? '✅' : '❌'} current-user.username === '${username}'`);
+
+    // 4. 重复注册应失败
+    console.log('- Testing duplicate registration...');
+    const dupRes = await request('/auth/register', {
+        method: 'POST',
+        body: { username, password, email, phoneNumber: phone }
+    });
+    console.log(`  ${!dupRes.success ? '✅ Duplicate rejected' : '❌ Duplicate NOT rejected'}: ${dupRes.message || ''}`);
+}
+
+/**
+ * [L2] 基础节点能力测试 (Synergy)
+ * IO / HTTP / SetVar / Log / Timer / AI / AiJudge / Condition
  */
 async function runSynergyTests() {
     console.log('\n=== RUNNING SYNERGY TESTS ===');
@@ -204,21 +253,30 @@ async function runSynergyTests() {
         const startRes = await request(`/workflows/${defId}/start`, { method: 'POST', headers: Auth.headers, body: { documentId: docId } });
         const instId = startRes.data.id || startRes.data;
 
-        let status = '';
-        for (let i = 0; i < 10; i++) {
+        let status = 'running';
+        for (let i = 0; i < 30; i++) { // Increased to 60s (30 * 2s) for AI/HTTP latency
             await new Promise(r => setTimeout(r, 2000));
             const instRes = await request(`/workflows/instances/${instId}`, { headers: Auth.headers });
-            status = instRes.data.status === 1 ? 'completed' : 'running';
-            process.stdout.write(`  [${i+1}] ${status} `);
-            if (status === 'completed') break;
+            if (!instRes.success) continue;
+            // WorkflowStatus enum: Running = 0, Completed = 1, Failed = 2, Terminated = 3
+            if (instRes.data.status === 1) {
+                status = 'completed';
+                break;
+            }
+            if (instRes.data.status === 2 || instRes.data.status === 3) {
+                status = 'failed';
+                break;
+            }
+            process.stdout.write(`.`);
         }
-        console.log(`\n  Result: ${status === 'completed' ? 'PASS' : 'FAIL (STUCK)'}`);
+        process.stdout.write(` [${status}] `);
+        console.log(`\n  Result: ${status === 'completed' ? 'PASS' : 'FAIL (' + status.toUpperCase() + ')'}`);
     }
 }
 
 /**
- * Design & Validation Tests (Original test-workflow-design.js)
- * Focus: Graph validation, condition branching
+ * [L1] 图结构验证 & 条件分支 (Design)
+ * 纯定义校验，无运行时依赖
  */
 async function runDesignTests() {
     console.log('\n=== RUNNING DESIGN & VALIDATION TESTS ===');
@@ -251,16 +309,18 @@ async function runDesignTests() {
     const testCases = [{ amt: 5000, expected: 'h' }, { amt: 100, expected: 'l' }];
     for (const tc of testCases) {
         const docRes = await request('/documents', { method: 'POST', headers: Auth.headers, body: { title: `Branching ${tc.amt}`, content: "." } });
-        await request(`/workflows/${defId}/start`, { method: 'POST', headers: Auth.headers, body: { documentId: docRes.data.id, variables: { amount: tc.amt } } });
-        const instRes = await request(`/workflows/instances?skip=0&take=1&definitionId=${defId}`, { headers: Auth.headers });
-        const finalNode = instRes.data.list[0].currentNodeId;
+        const startRes = await request(`/workflows/${defId}/start`, { method: 'POST', headers: Auth.headers, body: { documentId: docRes.data.id, variables: { amount: tc.amt } } });
+        const instId = startRes.data?.id || startRes.data;
+        await new Promise(r => setTimeout(r, 2000)); // 等待工作流执行完成
+        const instRes = await request(`/workflows/instances/${instId}`, { headers: Auth.headers });
+        const finalNode = instRes.data?.currentNodeId || '(unknown)';
         console.log(`  Amount ${tc.amt} -> Landed on ${finalNode}: ${finalNode === tc.expected ? '✅' : '❌'}`);
     }
 }
 
 /**
- * Multi-User & Enterprise Tests (Original test-multi-user-enterprise.js)
- * Focus: Tenant isolation, roles, multi-user approval
+ * [L5] 多用户协作测试 (Multi-User)
+ * 租户隔离 / 角色分配 / 多人审批
  */
 async function runMultiUserTests() {
     console.log('\n=== RUNNING MULTI-USER COLLABORATION TESTS ===');
@@ -272,9 +332,14 @@ async function runMultiUserTests() {
         throw new Error("Registration failed");
     }
     
+    // Switch admin to the new company to ensure correct context for roles and user additions
+    await Auth.switchCompany(company.id);
+    
     // Add them to company
     const rolesRes = await request('/role', { headers: Auth.headers });
+    if (!rolesRes.success) throw new Error("Failed to get roles");
     const adminRole = rolesRes.data.roles.find(r => r.name === '管理员');
+    if (!adminRole) throw new Error("Admin role not found in new company");
     
     for (const u of [app1, app2]) {
         await request('/users', { method: 'POST', headers: Auth.headers, body: { username: u.username, roleIds: [adminRole.id], isActive: true } });
@@ -322,7 +387,8 @@ async function runMultiUserTests() {
 }
 
 /**
- * All Nodes Components Test (Original test-workflow-all-nodes.js)
+ * [L3] 全节点组合测试 (All-Components)
+ * 将各节点串入单条工作流一次性验证
  */
 async function runAllNodesTests() {
      console.log('\n=== RUNNING ALL-COMPONENT WORKFLOW TEST ===');
@@ -356,8 +422,8 @@ async function runAllNodesTests() {
 }
 
 /**
- * Form Integrated Tests (NEW)
- * Focus: Form definition, validation, and form-driven workflow execution
+ * [L4] 表单集成测试 (Form)
+ * 表单定义 ➜ 字段校验 ➜ 工作流绑定 ➜ 数据持久化
  */
 async function runFormIntegratedTests() {
     console.log('\n=== RUNNING FORM INTEGRATED TESTS ===');
@@ -470,8 +536,8 @@ async function runFormIntegratedTests() {
 }
 
 /**
- * MongoDB Direct Query (Original test-mongo.js)
- * Focus: 直连 MongoDB 查询最新文档，用于调试数据持久化
+ * [L6] 数据层诊断 (MongoDB)
+ * 直连 MongoDB 查询最新文档，验证端到端数据持久化
  */
 async function runMongoTests() {
     console.log('\n=== RUNNING MONGODB DIRECT QUERY ===');
@@ -503,6 +569,73 @@ async function runMongoTests() {
     }
 }
 
+// --- Aspire Service Manager ---
+
+const Aspire = {
+    proc: null,
+    APPHOST_DIR: 'Platform.AppHost',
+    HEALTH_URL: 'http://127.0.0.1:15000/apiservice/api/auth/current-user',
+    MAX_WAIT_SEC: 90,
+
+    /** 检测 API 是否已可用 */
+    async isApiReady() {
+        try {
+            const res = await fetch(this.HEALTH_URL, { signal: AbortSignal.timeout(3000) });
+            return res.status < 500; // 401 也算就绪
+        } catch {
+            return false;
+        }
+    },
+
+    /** 启动 AppHost 并等待 API 就绪 */
+    async ensureRunning() {
+        if (await this.isApiReady()) {
+            console.log('✅ Aspire API 已在运行，跳过启动。');
+            return;
+        }
+
+        console.log('🚀 启动 Aspire AppHost...');
+        this.proc = spawn('dotnet', ['run', '--project', this.APPHOST_DIR], {
+            cwd: process.cwd(),
+            stdio: ['ignore', 'pipe', 'pipe'],
+        });
+
+        // 收集日志用于调试
+        this.proc.stdout.on('data', d => {
+            const line = d.toString().trim();
+            if (line) process.stdout.write(`  [AppHost] ${line}\n`);
+        });
+        this.proc.stderr.on('data', d => {
+            const line = d.toString().trim();
+            if (line) process.stderr.write(`  [AppHost:err] ${line}\n`);
+        });
+        this.proc.on('exit', code => {
+            if (code && code !== 0) console.error(`  ⚠️ AppHost exited with code ${code}`);
+        });
+
+        // 轮询等待 API 就绪
+        const start = Date.now();
+        while ((Date.now() - start) / 1000 < this.MAX_WAIT_SEC) {
+            process.stdout.write('.');
+            await new Promise(r => setTimeout(r, 3000));
+            if (await this.isApiReady()) {
+                console.log('\n✅ Aspire API 就绪！');
+                return;
+            }
+        }
+        throw new Error(`Aspire API 在 ${this.MAX_WAIT_SEC}s 内未就绪，请检查 AppHost 日志。`);
+    },
+
+    /** 关闭 AppHost 进程 */
+    shutdown() {
+        if (this.proc) {
+            console.log('🛑 关闭 Aspire AppHost...');
+            this.proc.kill('SIGTERM');
+            this.proc = null;
+        }
+    }
+};
+
 // --- Main Runner ---
 
 async function main() {
@@ -510,20 +643,35 @@ async function main() {
     const mode = args[0] || 'all';
 
     try {
+        // 确保 Aspire 服务已运行
+        await Aspire.ensureRunning();
+
         await Auth.login('admin', 'admin123');
-        
-        // 顺序：验证 → 基础流程 → 全节点 → 表单集成 → 多用户协作 → Mongo 诊断
-        if (mode === 'all' || mode === 'design') await runDesignTests();
-        if (mode === 'all' || mode === 'synergy') await runSynergyTests();
-        if (mode === 'all' || mode === 'allnodes') await runAllNodesTests();
-        if (mode === 'all' || mode === 'form') await runFormIntegratedTests();
+
+        // 测试执行顺序（从基础到应用）
+        // ─────────────────────────────────────────
+        //  L0  register   用户注册                  (注册 / 登录 / 重复校验)
+        //  L1  design     图结构验证 & 条件分支    (纯定义校验，无运行时依赖)
+        //  L2  synergy    基础节点能力              (HTTP / SetVar / Log / Timer / AI)
+        //  L3  allnodes   全节点组合                (将各节点串入单条工作流)
+        //  L4  form       表单集成                  (表单定义 ➜ 校验 ➜ 数据持久化)
+        //  L5  multiuser  多用户协作                (租户隔离 / 角色 / 多人审批)
+        //  L6  mongo      数据层诊断                (MongoDB 直查，验证持久化)
+        // ─────────────────────────────────────────
+        if (mode === 'all' || mode === 'register')  await runRegisterTests();
+        if (mode === 'all' || mode === 'design')    await runDesignTests();
+        if (mode === 'all' || mode === 'synergy')   await runSynergyTests();
+        if (mode === 'all' || mode === 'allnodes')  await runAllNodesTests();
+        if (mode === 'all' || mode === 'form')      await runFormIntegratedTests();
         if (mode === 'all' || mode === 'multiuser') await runMultiUserTests();
-        if (mode === 'all' || mode === 'mongo') await runMongoTests();
+        if (mode === 'all' || mode === 'mongo')     await runMongoTests();
 
         console.log('\n🌟 Unified Test Run Finished.');
     } catch (err) {
         console.error('\n💥 FATAL ERROR during test run:', err.message);
         process.exit(1);
+    } finally {
+        Aspire.shutdown();
     }
 }
 

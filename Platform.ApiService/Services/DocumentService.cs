@@ -452,6 +452,19 @@ public class DocumentService : IDocumentService
         var sanitizedVars = variables != null
             ? SerializationExtensions.SanitizeDictionary(variables)
             : null;
+
+        if (sanitizedVars != null && sanitizedVars.Count > 0)
+        {
+            await _documentFactory.UpdateAsync(documentId, d =>
+            {
+                d.FormData ??= new Dictionary<string, object>();
+                foreach (var v in sanitizedVars)
+                {
+                    d.FormData[v.Key] = v.Value;
+                }
+            });
+        }
+
         var instance = await _workflowEngine.StartWorkflowAsync(workflowDefinitionId, documentId, sanitizedVars);
 
         _logger.LogInformation("公文已提交: DocumentId={DocumentId}, WorkflowInstanceId={InstanceId}",

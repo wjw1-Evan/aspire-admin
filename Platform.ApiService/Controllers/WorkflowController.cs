@@ -664,21 +664,32 @@ public class WorkflowController : BaseApiController
                 if (document != null)
                 {
                     var sourceFormData = document.FormData ?? new Dictionary<string, object>();
-                    _logger.LogInformation("DEBUG_FORM_DATA: DocId={DocId}, Keys={Keys}, Values={Values}", 
-                        instance.DocumentId, 
-                        string.Join(",", sourceFormData.Keys),
-                        System.Text.Json.JsonSerializer.Serialize(sourceFormData));
                     
+                    // L4 Bug Fix: merge top-level document properties into form data for initialValues
+                    var mergedData = new Dictionary<string, object>(sourceFormData);
+                    if (!mergedData.ContainsKey("title"))
+                    {
+                        mergedData["title"] = document.Title;
+                    }
+                    if (!mergedData.ContainsKey("content") && document.Content != null)
+                    {
+                        mergedData["content"] = document.Content;
+                    }
+
                     if (!string.IsNullOrWhiteSpace(binding.DataScopeKey))
                     {
-                        if (sourceFormData.TryGetValue(binding.DataScopeKey, out var scopedData) && scopedData is Dictionary<string, object> scopedDict)
+                        if (mergedData.TryGetValue(binding.DataScopeKey, out var scopedData) && scopedData is Dictionary<string, object> scopedDict)
                         {
                             initialValues = scopedDict;
+                        }
+                        else if (mergedData.TryGetValue(binding.DataScopeKey, out var jsonElement) && jsonElement is JsonElement element && element.ValueKind == JsonValueKind.Object)
+                        {
+                            initialValues = JsonSerializer.Deserialize<Dictionary<string, object>>(element.GetRawText());
                         }
                     }
                     else
                     {
-                        initialValues = sourceFormData;
+                        initialValues = mergedData;
                     }
                 }
             }

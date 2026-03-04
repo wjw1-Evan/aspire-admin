@@ -18,7 +18,7 @@ public partial class WorkflowEngine
         var instance = await _instanceFactory.GetByIdAsync(instanceId);
         if (instance == null) return new Dictionary<string, object>();
 
-        var variables = new Dictionary<string, object>(instance.Variables);
+        var variables = instance.GetVariablesDict();
 
         var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
         if (document != null)
@@ -37,9 +37,11 @@ public partial class WorkflowEngine
     /// </summary>
     public async Task<List<ApprovalRecord>> GetApprovalHistoryAsync(string instanceId)
     {
-        return await _approvalRecordFactory.FindAsync(
+        var history = await _approvalRecordFactory.FindWithoutTenantFilterAsync(
             r => r.WorkflowInstanceId == instanceId,
             query => query.OrderBy(r => r.Sequence));
+        _logger.LogInformation("获取实例 {InstanceId} 的审批历史, 发现 {Count} 条记录 (忽略租户过滤器)", instanceId, history.Count);
+        return history;
     }
 
     /// <summary>
@@ -47,7 +49,7 @@ public partial class WorkflowEngine
     /// </summary>
     public async Task<WorkflowInstance?> GetInstanceAsync(string instanceId)
     {
-        return await _instanceFactory.GetByIdAsync(instanceId);
+        return await _instanceFactory.GetByIdWithoutTenantFilterAsync(instanceId);
     }
 
     /// <summary>
@@ -64,6 +66,7 @@ public partial class WorkflowEngine
             i.Status = WorkflowStatus.Cancelled;
             i.CompletedAt = DateTime.UtcNow;
             i.CurrentApproverIds = new List<string>(); // 清空待审批人
+            i.ActiveApprovals = new List<NodeApprovalEntry>(); // 清除所有活跃审批节点
         });
 
         await _documentFactory.UpdateAsync(instance.DocumentId, d =>
@@ -136,6 +139,7 @@ public partial class WorkflowEngine
             i.Status = status;
             i.CompletedAt = DateTime.UtcNow;
             i.CurrentApproverIds = new List<string>(); // Bug 6: 流程结束清空审批人
+            i.ActiveApprovals = new List<NodeApprovalEntry>(); // 清除任务映射
         });
 
         // Bug 2/8 修复：使用完全限定名，区分 Completed/Rejected
@@ -185,12 +189,37 @@ public partial class WorkflowEngine
     /// <summary>
     /// Bug 6: 更新流程实例的待审批人列表
     /// </summary>
-    private async Task UpdateCurrentApproverIdsAsync(string instanceId, List<string> approverIds)
+    private async Task UpdateCurrentApproverIdsAsync(string instanceId, string nodeId, List<string> approverIds)
     {
         await _instanceFactory.UpdateAsync(instanceId, i =>
         {
-            i.CurrentApproverIds = approverIds.Distinct().ToList();
+            if (approverIds == null || approverIds.Count == 0)
+            {
+                i.RemoveActiveApprovers(nodeId);
+            }
+            else
+            {
+                i.SetActiveApprovers(nodeId, approverIds.Distinct().ToList());
+            }
+
+            i.CurrentApproverIds = i.ActiveApprovals.SelectMany(x => x.ApproverIds).Distinct().ToList();
             i.UpdatedAt = DateTime.UtcNow;
+        });
+    }
+
+    /// <summary>
+    /// 清除节点的待审批人（当节点退出时）
+    /// </summary>
+    private async Task ClearNodeApproversAsync(string instanceId, string nodeId)
+    {
+        await _instanceFactory.UpdateAsync(instanceId, i =>
+        {
+            if (i.ActiveApprovals.Any(a => a.NodeId == nodeId))
+            {
+                i.RemoveActiveApprovers(nodeId);
+                i.CurrentApproverIds = i.ActiveApprovals.SelectMany(x => x.ApproverIds).Distinct().ToList();
+                i.UpdatedAt = DateTime.UtcNow;
+            }
         });
     }
 }

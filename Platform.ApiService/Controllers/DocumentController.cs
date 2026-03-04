@@ -489,9 +489,9 @@ public class DocumentController : BaseApiController
             // 优先使用实例中的表单定义快照（使用起始节点ID或第一个文档表单节点ID）
             FormDefinition? form = null;
             var formNodeId = startNode?.Id ?? definition.Graph.Nodes.FirstOrDefault(n => n.Config?.Form?.Target == FormTarget.Document)?.Id;
-            if (!string.IsNullOrEmpty(formNodeId) && instance.FormDefinitionSnapshots != null && instance.FormDefinitionSnapshots.TryGetValue(formNodeId, out var snapshotForm))
+            if (!string.IsNullOrEmpty(formNodeId))
             {
-                form = snapshotForm;
+                form = instance.FormDefinitionSnapshots?.FirstOrDefault(s => s.NodeId == formNodeId)?.FormDefinition;
             }
             else
             {

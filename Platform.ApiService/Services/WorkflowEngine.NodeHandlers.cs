@@ -35,7 +35,7 @@ public partial class WorkflowEngine
                 if (node.Config?.Form != null)
                 {
                     // 有表单绑定，通知发起人重新填写
-                    await UpdateCurrentApproverIdsAsync(instanceId, new List<string> { instance.StartedBy });
+                    await UpdateCurrentApproverIdsAsync(instanceId, nodeId, new List<string> { instance.StartedBy });
                     await SendReturnToStartNotificationAsync(instanceId, node, instance.StartedBy);
                 }
                 else
@@ -86,29 +86,36 @@ public partial class WorkflowEngine
     private async Task ProcessParallelGatewayAsync(string instanceId, string nodeId, WorkflowDefinition definition)
     {
         var outgoingEdges = definition.Graph.Edges.Where(e => e.Source == nodeId).ToList();
+        _logger.LogInformation("=== 并行网关 {NodeId}: 出边数={Count}, Targets=[{Targets}] ===",
+            nodeId, outgoingEdges.Count, string.Join(", ", outgoingEdges.Select(e => e.Target)));
+
         if (outgoingEdges.Count == 0)
         {
             // 没有出边的并行节点作为汇聚点，直接推进到下一个节点
+            _logger.LogInformation("并行网关 {NodeId} 无出边，作为汇聚点推进", nodeId);
             await MoveToNextNodeAsync(instanceId, nodeId);
             return;
         }
 
         // 初始化并行分支跟踪
         var branchTargets = outgoingEdges.Select(e => e.Target).ToList();
+        // 初始化并行分支跟踪
         await _instanceFactory.UpdateAsync(instanceId, i =>
         {
             // 记录当前并行分支需要完成的目标
-            if (!i.ParallelBranches.ContainsKey(nodeId))
+            if (!i.GetParallelBranches(nodeId).Any())
             {
-                i.ParallelBranches[nodeId] = new List<string>();
+                i.AddParallelBranch(nodeId, "INITIAL_MARKER"); // 确保节点条目存在
             }
         });
 
         // 分别处理每个分支（不修改 CurrentNodeId，因为并行执行没有单一"当前节点"）
         foreach (var edge in outgoingEdges)
         {
+            _logger.LogInformation("并行网关 {NodeId}: 启动分支 -> {Target}", nodeId, edge.Target);
             await ProcessNodeAsync(instanceId, edge.Target);
         }
+        _logger.LogInformation("=== 并行网关 {NodeId}: 所有分支已启动 ===", nodeId);
     }
 
     /// <summary>
@@ -154,7 +161,7 @@ public partial class WorkflowEngine
 
             await _instanceFactory.UpdateAsync(instanceId, i =>
             {
-                i.Variables[config.OutputVariable] = result;
+                i.SetVariable(config.OutputVariable, result);
             });
 
             await MoveToNextNodeAsync(instanceId, node.Id);
@@ -212,6 +219,8 @@ public partial class WorkflowEngine
     /// </summary>
     private async Task MoveToNextNodeAsync(string instanceId, string currentNodeId)
     {
+        await ClearNodeApproversAsync(instanceId, currentNodeId); // 清除已完成节点的待办人员，避免残留
+
         var instance = await _instanceFactory.GetByIdAsync(instanceId);
         if (instance == null) return;
 
@@ -260,8 +269,7 @@ public partial class WorkflowEngine
 
         await _instanceFactory.UpdateAsync(instanceId, i =>
         {
-            if (!i.ParallelBranches.ContainsKey(nodeId)) i.ParallelBranches[nodeId] = new List<string>();
-            if (!i.ParallelBranches[nodeId].Contains(branchId)) i.ParallelBranches[nodeId].Add(branchId);
+            i.AddParallelBranch(nodeId, branchId);
         });
 
         instance = await _instanceFactory.GetByIdAsync(instanceId);
@@ -272,7 +280,7 @@ public partial class WorkflowEngine
         {
             var allBranches = definition.Graph.Edges.Where(e => e.Target == nodeId).Select(e => e.Source).ToList();
 
-            var completedBranches = instance.ParallelBranches.GetValueOrDefault(nodeId, new List<string>());
+            var completedBranches = instance.GetParallelBranches(nodeId);
             if (allBranches.All(b => completedBranches.Contains(b)))
             {
                 // 所有分支完成，推进到汇聚点的下一个节点
@@ -294,7 +302,7 @@ public partial class WorkflowEngine
 
         await _instanceFactory.UpdateAsync(instanceId, i =>
         {
-            foreach (var v in variables) i.Variables[v.Key] = v.Value;
+            foreach (var v in variables) i.SetVariable(v.Key, v.Value);
             i.UpdatedAt = DateTime.UtcNow;
         });
 
@@ -363,7 +371,7 @@ public partial class WorkflowEngine
             {
                 await _instanceFactory.UpdateAsync(instanceId, i =>
                 {
-                    i.Variables[config.OutputVariable] = responseContent;
+                    i.SetVariable(config.OutputVariable, responseContent);
                 });
             }
 
@@ -433,7 +441,7 @@ public partial class WorkflowEngine
 
             await _instanceFactory.UpdateAsync(instanceId, i =>
             {
-                i.Variables[config.Name] = val;
+                i.SetVariable(config.Name, val);
             });
         }
         catch (Exception ex)
@@ -512,17 +520,13 @@ public partial class WorkflowEngine
 
             var finalResult = (result.Contains("true") && !result.Contains("false")) ? "true" : "false";
 
-            await _instanceFactory.UpdateAsync(instanceId, i =>
-            {
-                i.Variables[config.OutputVariable] = finalResult;
-            });
-
+            await _instanceFactory.UpdateAsync(instanceId, i => i.SetVariable(config.OutputVariable, finalResult));
             await MoveToNextNodeAsync(instanceId, node.Id);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "AI 判断节点执行失败: InstanceId={InstanceId}, NodeId={NodeId}", instanceId, node.Id);
-            await _instanceFactory.UpdateAsync(instanceId, i => i.Variables[node.Config.AiJudge.OutputVariable] = "false");
+            await _instanceFactory.UpdateAsync(instanceId, i => i.SetVariable(node.Config.AiJudge.OutputVariable, "false"));
             await MoveToNextNodeAsync(instanceId, node.Id);
         }
     }

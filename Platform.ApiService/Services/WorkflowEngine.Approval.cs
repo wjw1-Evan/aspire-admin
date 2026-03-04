@@ -52,6 +52,8 @@ public partial class WorkflowEngine
             }
         }
 
+        var history = await GetApprovalHistoryAsync(instanceId);
+
         var record = new ApprovalRecord
         {
             Id = GenerateSafeId(),
@@ -63,7 +65,7 @@ public partial class WorkflowEngine
             Comment = comment,
             DelegateToUserId = delegateToUserId,
             ApprovedAt = DateTime.UtcNow,
-            Sequence = instance.ApprovalRecords.Count + 1,
+            Sequence = history.Count + 1,
             CompanyId = companyId ?? string.Empty
         };
 
@@ -102,14 +104,15 @@ public partial class WorkflowEngine
     private async Task HandleDelegateAsync(string instanceId, string nodeId, string delegateToUserId, WorkflowInstance instance)
     {
         // 更新待审批人：移除原审批人，添加被转办人
-        var currentApprovers = instance.CurrentApproverIds.ToList();
+        var currentApprovers = instance.GetActiveApprovers(nodeId);
+
         var userId = _tenantContext.GetCurrentUserId()!;
         currentApprovers.Remove(userId);
         if (!currentApprovers.Contains(delegateToUserId))
         {
             currentApprovers.Add(delegateToUserId);
         }
-        await UpdateCurrentApproverIdsAsync(instanceId, currentApprovers);
+        await UpdateCurrentApproverIdsAsync(instanceId, nodeId, currentApprovers);
 
         // 发送通知给被转办人
         try
@@ -146,14 +149,26 @@ public partial class WorkflowEngine
         if (node.Config.Approval == null) return false;
 
         // Bug 3 修复：所有审批类型都阻止重复审批
-        var hasApproved = instance.ApprovalRecords.Any(r =>
-            r.NodeId == node.Id && r.ApproverId == userId && r.Action == ApprovalAction.Approve);
+        var history = await GetApprovalHistoryAsync(instance.Id);
+        
+        var currentCompId = await _tenantContext.GetCurrentCompanyIdAsync();
+        _logger.LogInformation("CanApproveAsync: 用户 {UserId}, 当前公司 {CompanyId}, 历史记录数: {Count}", 
+            userId, currentCompId, history.Count);
+
+        var hasApproved = history.Any(r =>
+            r.NodeId.Trim().Equals(node.Id.Trim(), StringComparison.OrdinalIgnoreCase) && 
+            r.ApproverId.Trim().Equals(userId.Trim(), StringComparison.OrdinalIgnoreCase) && 
+            r.Action == ApprovalAction.Approve);
+        
         if (hasApproved)
         {
+            _logger.LogWarning("用户 {UserId} 已审批过节点 {NodeId}", userId, node.Id);
             return false;
         }
 
         var approvers = await GetNodeApproversAsync(instance.Id, node.Id);
+        _logger.LogInformation("节点 {NodeId} 候选审批人: {Approvers}, 当前用户: {UserId}", 
+            node.Id, string.Join(",", approvers), userId);
 
         // Bug 4：Sequential 模式下，只有轮到的人才能审批
         if (node.Config.Approval.Type == ApprovalType.Sequential)
@@ -168,15 +183,20 @@ public partial class WorkflowEngine
     /// <summary>
     /// Bug 4：获取顺序审批中下一个应审批的人
     /// </summary>
-    private Task<string?> GetNextSequentialApproverAsync(WorkflowInstance instance, WorkflowNode node, List<string> allApprovers)
+    private async Task<string?> GetNextSequentialApproverAsync(WorkflowInstance instance, WorkflowNode node, List<string> allApprovers)
     {
-        var completedApprovers = instance.ApprovalRecords
+        var history = await GetApprovalHistoryAsync(instance.Id);
+        var completedApprovers = history
             .Where(r => r.NodeId == node.Id && r.Action == ApprovalAction.Approve)
             .Select(r => r.ApproverId)
             .ToList();
 
+        _logger.LogInformation("节点 {NodeId} 已完成审批的人: {Completed}", node.Id, string.Join(",", completedApprovers));
+
         // 按原始顺序找到第一个还没审批的人
-        return Task.FromResult(allApprovers.FirstOrDefault(a => !completedApprovers.Contains(a)));
+        var next = allApprovers.FirstOrDefault(a => !completedApprovers.Contains(a));
+        _logger.LogInformation("节点 {NodeId} 下一个应审批的人: {Next}", node.Id, next ?? "None");
+        return next;
     }
 
     /// <summary>
@@ -200,7 +220,8 @@ public partial class WorkflowEngine
         var config = node.Config.Approval;
         var allApprovers = await GetNodeApproversAsync(instanceId, nodeId);
 
-        var completedApprovals = instance.ApprovalRecords
+        var history = await GetApprovalHistoryAsync(instanceId);
+        var completedApprovals = history
             .Where(r => r.NodeId == nodeId && r.Action == ApprovalAction.Approve)
             .Select(r => r.ApproverId)
             .Distinct()
@@ -230,7 +251,7 @@ public partial class WorkflowEngine
                 else
                 {
                     // 还有下一人，更新 CurrentApproverIds 为下一个审批人
-                    await UpdateCurrentApproverIdsAsync(instanceId, new List<string> { nextApprover });
+                    await UpdateCurrentApproverIdsAsync(instanceId, nodeId, new List<string> { nextApprover });
 
                     // 发送通知给下一个审批人
                     await SendApprovalNotificationsAsync(instanceId, node);
@@ -280,7 +301,8 @@ public partial class WorkflowEngine
             throw new InvalidOperationException("目标节点不存在");
         }
 
-        var hasPassedTargetNode = instance.ApprovalRecords.Any(r => r.NodeId == targetNodeId);
+        var history = await GetApprovalHistoryAsync(instanceId);
+        var hasPassedTargetNode = history.Any(r => r.NodeId == targetNodeId);
         if (!hasPassedTargetNode && targetNode.Type != "start")
         {
             throw new InvalidOperationException("只能退回到已经经过的节点或开始节点");
@@ -299,7 +321,7 @@ public partial class WorkflowEngine
             Action = ApprovalAction.Return,
             Comment = comment,
             ApprovedAt = DateTime.UtcNow,
-            Sequence = instance.ApprovalRecords.Count + 1,
+            Sequence = history.Count + 1,
             CompanyId = companyId ?? string.Empty
         };
         await _approvalRecordFactory.CreateAsync(approvalRecord);
@@ -308,7 +330,8 @@ public partial class WorkflowEngine
         {
             i.CurrentNodeId = targetNodeId;
             i.ApprovalRecords.Add(approvalRecord);
-            i.ParallelBranches = new Dictionary<string, List<string>>();
+            i.ParallelBranches = new List<ParallelBranchEntry>();
+            i.ActiveApprovals = new List<NodeApprovalEntry>();
             i.CurrentApproverIds = new List<string>(); // 清空审批人
             i.UpdatedAt = DateTime.UtcNow;
         });

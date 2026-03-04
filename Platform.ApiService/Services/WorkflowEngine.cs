@@ -144,10 +144,31 @@ public partial class WorkflowEngine : IWorkflowEngine
             Status = WorkflowStatus.Running,
             StartedBy = userId,
             StartedAt = DateTime.UtcNow,
-            Variables = variables ?? new Dictionary<string, object>(),
             WorkflowDefinitionSnapshot = definition, // 🔧 保存快照以保证流程稳定性
             CompanyId = companyId ?? string.Empty
         };
+
+        // 初始化变量
+        instance.ResetVariables(variables ?? new Dictionary<string, object>());
+
+        // 🔧 Bug Fix: 保存流程涉及的所有表单定义快照
+        var formNodes = definition.Graph.Nodes.Where(n => n.Config?.Form != null).ToList();
+        foreach (var node in formNodes)
+        {
+            var formDefId = node.Config?.Form?.FormDefinitionId;
+            if (!string.IsNullOrEmpty(formDefId))
+            {
+                var formDef = await _formFactory.GetByIdAsync(formDefId);
+                if (formDef != null)
+                {
+                    instance.FormDefinitionSnapshots.Add(new FormSnapshotEntry
+                    {
+                        NodeId = node.Id,
+                        FormDefinition = formDef
+                    });
+                }
+            }
+        }
 
         await _instanceFactory.CreateAsync(instance);
 

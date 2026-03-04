@@ -22,16 +22,23 @@ public partial class WorkflowEngine
 
         var approvers = await GetNodeApproversAsync(instanceId, node.Id);
 
+        _logger.LogInformation("=== 审批通知 Node={NodeId}: 解析出审批人={Approvers} ===",
+            node.Id, string.Join(", ", approvers));
+
         // Bug 4：Sequential 模式仅通知当前轮到的人
         if (node.Config.Approval?.Type == ApprovalType.Sequential)
         {
-            var nextApprover = approvers.FirstOrDefault(a =>
-                !instance.ApprovalRecords.Any(r => r.NodeId == node.Id && r.ApproverId == a && r.Action == ApprovalAction.Approve));
+            var history = await GetApprovalHistoryAsync(instanceId);
+            var nextApprover = approvers.FirstOrDefault(a => 
+                !history.Any(r => r.NodeId == node.Id && r.ApproverId == a && r.Action == ApprovalAction.Approve));
             approvers = nextApprover != null ? new List<string> { nextApprover } : new List<string>();
         }
 
         // Bug 6 修复：同步更新 CurrentApproverIds 用于待办查询
-        await UpdateCurrentApproverIdsAsync(instanceId, approvers);
+        await UpdateCurrentApproverIdsAsync(instanceId, node.Id, approvers);
+
+        _logger.LogInformation("=== 审批通知 Node={NodeId}: 已更新 ActiveApprovals, 审批人数={Count} ===",
+            node.Id, approvers.Count);
 
         // 计算超时时间
         if (node.Config.Approval?.TimeoutHours != null)

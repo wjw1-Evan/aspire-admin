@@ -508,44 +508,48 @@ public class WorkflowController : BaseApiController
                 var definition = instance.WorkflowDefinitionSnapshot ?? await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
                 if (definition == null) continue;
 
-                var currentNode = definition.Graph.Nodes.FirstOrDefault(n => n.Id == instance.CurrentNodeId);
-                if (currentNode == null || currentNode.Type != "approval" || currentNode.Config.Approval == null)
-                {
-                    continue;
-                }
-
-                var approvers = await _workflowEngine.GetNodeApproversAsync(instance.Id, instance.CurrentNodeId);
-                if (!approvers.Contains(userId))
-                {
-                    continue;
-                }
+                if (instance.ActiveApprovals == null || instance.ActiveApprovals.Count == 0) continue;
 
                 var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
 
-                todos.Add(new
+                foreach (var activeApproval in instance.ActiveApprovals)
                 {
-                    instance.Id,
-                    instance.WorkflowDefinitionId,
-                    instance.DocumentId,
-                    instance.Status,
-                    instance.CurrentNodeId,
-                    instance.StartedBy,
-                    instance.StartedAt,
-                    instance.TimeoutAt,
-                    DefinitionName = definition.Name,
-                    DefinitionCategory = definition.Category,
-                    CurrentNode = new { currentNode.Id, currentNode.Label, currentNode.Type },
-                    Document = document == null ? null : new
+                    var nodeId = activeApproval.NodeId;
+                    var approvers = activeApproval.ApproverIds;
+
+                    if (!approvers.Contains(userId)) continue;
+
+                    var currentNode = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
+                    if (currentNode == null || currentNode.Type != "approval" || currentNode.Config.Approval == null)
                     {
-                        document.Id,
-                        document.Title,
-                        document.Status,
-                        document.DocumentType,
-                        document.Category,
-                        document.CreatedAt,
-                        document.CreatedBy
+                        continue;
                     }
-                });
+
+                    todos.Add(new
+                    {
+                        instance.Id,
+                        instance.WorkflowDefinitionId,
+                        instance.DocumentId,
+                        instance.Status,
+                        CurrentNodeId = nodeId,
+                        instance.StartedBy,
+                        instance.StartedAt,
+                        instance.TimeoutAt,
+                        DefinitionName = definition.Name,
+                        DefinitionCategory = definition.Category,
+                        CurrentNode = new { currentNode.Id, currentNode.Label, currentNode.Type },
+                        Document = document == null ? null : new
+                        {
+                            document.Id,
+                            document.Title,
+                            document.Status,
+                            document.DocumentType,
+                            document.Category,
+                            document.CreatedAt,
+                            document.CreatedBy
+                        }
+                    });
+                }
             }
 
             return SuccessPaged(todos, result.total, current, pageSize);
@@ -634,12 +638,8 @@ public class WorkflowController : BaseApiController
                 return Success(new { form = (FormDefinition?)null, initialValues = (object?)null });
             }
 
-            FormDefinition? form = null;
-            if (instance.FormDefinitionSnapshots != null && instance.FormDefinitionSnapshots.TryGetValue(nodeId, out var snapshotForm))
-            {
-                form = snapshotForm;
-            }
-            else
+            FormDefinition? form = instance.FormDefinitionSnapshots?.FirstOrDefault(s => s.NodeId == nodeId)?.FormDefinition;
+            if (form == null)
             {
                 form = await _formFactory.GetByIdAsync(binding.FormDefinitionId);
                 if (form == null)
@@ -670,7 +670,7 @@ public class WorkflowController : BaseApiController
             }
             else
             {
-                initialValues = instance.Variables;
+                initialValues = instance.GetVariablesDict();
             }
 
             return Success(new { form, initialValues });
@@ -718,12 +718,8 @@ public class WorkflowController : BaseApiController
                 return ValidationError("该节点未绑定完整表单定义");
             }
 
-            FormDefinition? form = null;
-            if (instance.FormDefinitionSnapshots != null && instance.FormDefinitionSnapshots.TryGetValue(nodeId, out var snapshotForm))
-            {
-                form = snapshotForm;
-            }
-            else
+            FormDefinition? form = instance.FormDefinitionSnapshots?.FirstOrDefault(s => s.NodeId == nodeId)?.FormDefinition;
+            if (form == null)
             {
                 form = await _formFactory.GetByIdAsync(binding.FormDefinitionId);
                 if (form == null)
@@ -782,18 +778,16 @@ public class WorkflowController : BaseApiController
                     var scopedValues = values;
                     if (!string.IsNullOrWhiteSpace(binding.DataScopeKey))
                     {
-                        var vars = i.Variables ?? new Dictionary<string, object>();
-                        vars[binding.DataScopeKey] = scopedValues;
-                        i.Variables = vars;
+                        i.SetVariable(binding.DataScopeKey, scopedValues);
                     }
                     else
                     {
-                        i.Variables = scopedValues;
+                        i.ResetVariables(scopedValues);
                     }
                 };
 
                 var updated = await _instanceFactory.UpdateAsync(id, updateAction);
-                return Success(updated?.Variables ?? values);
+                return Success(updated?.GetVariablesDict() ?? values);
             }
         }
         catch (Exception ex)

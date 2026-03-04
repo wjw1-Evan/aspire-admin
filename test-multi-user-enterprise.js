@@ -55,10 +55,10 @@ async function runTest() {
     console.log(`Company created. ID: ${companyId}, Code: ${companyCode}`);
 
     console.log('Switching admin context to the new company...');
-    await request('/auth/switch-company', {
+    await request('/company/switch', {
         method: 'POST',
         headers: adminHeaders,
-        body: { companyId }
+        body: { targetCompanyId: companyId }
     });
 
     // Fetch the auto-created Admin role ID for this company
@@ -68,7 +68,7 @@ async function runTest() {
         console.error('FAILED: roles fetch failed', rolesRes);
         process.exit(1);
     }
-    const adminRole = rolesRes.data.Roles.find(r => r.name === '管理员');
+    const adminRole = rolesRes.data.roles.find(r => r.name === '管理员');
     if (!adminRole) {
         console.error('FAILED: could not find "管理员" role', rolesRes.data);
         process.exit(1);
@@ -76,10 +76,11 @@ async function runTest() {
     console.log(`Found Admin Role ID: ${adminRole.id}`);
 
     console.log('\n--- Step 3: Register and Provision members ---');
+    const shortCode = companyCode.slice(-6); // Last 6 chars of company code
     const userProfiles = [
-        { username: `app1_${companyCode}`, name: 'Approver One', email: `app1_${companyCode}@example.com`, phone: `138${Math.floor(Math.random() * 100000000).toString().padStart(8, '0')}` },
-        { username: `app2_${companyCode}`, name: 'Approver Two', email: `app2_${companyCode}@example.com`, phone: `139${Math.floor(Math.random() * 100000000).toString().padStart(8, '0')}` },
-        { username: `sub_${companyCode}`, name: 'Workflow Submitter', email: `sub_${companyCode}@example.com`, phone: `137${Math.floor(Math.random() * 100000000).toString().padStart(8, '0')}` }
+        { username: `u1_${shortCode}`, name: 'Approver One', email: `u1_${shortCode}@example.com`, phone: `138${Math.floor(Math.random() * 100000000).toString().padStart(8, '0')}` },
+        { username: `u2_${shortCode}`, name: 'Approver Two', email: `u2_${shortCode}@example.com`, phone: `139${Math.floor(Math.random() * 100000000).toString().padStart(8, '0')}` },
+        { username: `s1_${shortCode}`, name: 'Workflow Submitter', email: `s1_${shortCode}@example.com`, phone: `137${Math.floor(Math.random() * 100000000).toString().padStart(8, '0')}` }
     ];
 
     const provisionedUsers = [];
@@ -124,10 +125,30 @@ async function runTest() {
         category: 'Document',
         graph: {
             nodes: [
-                { id: 'start', type: 'start', name: 'Start' },
-                { id: 'node1', type: 'task', name: 'First Approval', config: { approverType: 'user', approverIds: [provisionedUsers[0].id] } },
-                { id: 'node2', type: 'task', name: 'Second Approval', config: { approverType: 'user', approverIds: [provisionedUsers[1].id] } },
-                { id: 'end', type: 'end', name: 'End' }
+                { id: 'start', type: 'start', label: 'Start' },
+                {
+                    id: 'node1',
+                    type: 'approval',
+                    label: 'First Approval',
+                    config: {
+                        approval: {
+                            type: 'any',
+                            approvers: [{ type: 'user', userId: provisionedUsers[0].id }]
+                        }
+                    }
+                },
+                {
+                    id: 'node2',
+                    type: 'approval',
+                    label: 'Second Approval',
+                    config: {
+                        approval: {
+                            type: 'any',
+                            approvers: [{ type: 'user', userId: provisionedUsers[1].id }]
+                        }
+                    }
+                },
+                { id: 'end', type: 'end', label: 'End' }
             ],
             edges: [
                 { id: 'e1', source: 'start', target: 'node1' },
@@ -162,6 +183,13 @@ async function runTest() {
     }
     const subHeaders = { 'Authorization': `Bearer ${subLoginRes.data.token}` };
 
+    console.log(`Switching context for user ${provisionedUsers[2].username}...`);
+    await request('/company/switch', {
+        method: 'POST',
+        headers: subHeaders,
+        body: { targetCompanyId: companyId }
+    });
+
     console.log('Creating document for approval...');
     const docRes = await request('/documents', {
         method: 'POST',
@@ -195,6 +223,13 @@ async function runTest() {
     });
     const app1Headers = { 'Authorization': `Bearer ${app1LoginRes.data.token}` };
 
+    console.log(`Switching context for user ${provisionedUsers[0].username}...`);
+    await request('/company/switch', {
+        method: 'POST',
+        headers: app1Headers,
+        body: { targetCompanyId: companyId }
+    });
+
     console.log('Approving at Node 1...');
     const app1Res = await request(`/documents/${docId}/approve`, {
         method: 'POST',
@@ -214,6 +249,13 @@ async function runTest() {
         body: { username: provisionedUsers[1].username, password: 'password123', autoLogin: false }
     });
     const app2Headers = { 'Authorization': `Bearer ${app2LoginRes.data.token}` };
+
+    console.log(`Switching context for user ${provisionedUsers[1].username}...`);
+    await request('/company/switch', {
+        method: 'POST',
+        headers: app2Headers,
+        body: { targetCompanyId: companyId }
+    });
 
     console.log('Approving at Node 2...');
     const app2Res = await request(`/documents/${docId}/approve`, {

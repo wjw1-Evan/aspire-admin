@@ -28,9 +28,11 @@ var openai = builder.AddOpenAI("openai").WithEndpoint(openAiEndpoint);
 
 var chat = openai.AddModel("chat", "gpt-4o-mini");
 
+var redis = builder.AddRedis("redis");
+                 
+
 var mongo = builder.AddMongoDB("mongo")
     .WithMongoExpress()
-    .WithDbGate()
     .WithLifetime(ContainerLifetime.Persistent)
     .WithDataVolume();
 

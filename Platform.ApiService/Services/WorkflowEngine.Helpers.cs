@@ -65,8 +65,8 @@ public partial class WorkflowEngine
         {
             i.Status = WorkflowStatus.Cancelled;
             i.CompletedAt = DateTime.UtcNow;
-            i.CurrentApproverIds = new List<string>(); // 清空待审批人
-            i.ActiveApprovals = new List<NodeApprovalEntry>(); // 清除所有活跃审批节点
+            i.CurrentApproverIds.Clear(); // 清空待审批人
+            i.ActiveApprovals.Clear(); // 清除所有活跃审批节点
         });
 
         await _documentFactory.UpdateAsync(instance.DocumentId, d =>
@@ -121,7 +121,7 @@ public partial class WorkflowEngine
         await _instanceFactory.UpdateAsync(instanceId, i =>
         {
             i.CurrentNodeId = nodeId;
-            i.CurrentApproverIds = new List<string>(); // Bug 6: 切换节点时清空审批人
+            i.CurrentApproverIds.Clear(); // Bug 6: 切换节点时清空审批人
             i.UpdatedAt = DateTime.UtcNow;
         });
     }
@@ -138,8 +138,8 @@ public partial class WorkflowEngine
         {
             i.Status = status;
             i.CompletedAt = DateTime.UtcNow;
-            i.CurrentApproverIds = new List<string>(); // Bug 6: 流程结束清空审批人
-            i.ActiveApprovals = new List<NodeApprovalEntry>(); // 清除任务映射
+            i.CurrentApproverIds.Clear(); // Bug 6: 流程结束清空审批人
+            i.ActiveApprovals.Clear(); // 清除任务映射
         });
 
         // Bug 2/8 修复：使用完全限定名，区分 Completed/Rejected

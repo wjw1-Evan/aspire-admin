@@ -150,16 +150,16 @@ public partial class WorkflowEngine
 
         // Bug 3 修复：所有审批类型都阻止重复审批
         var history = await GetApprovalHistoryAsync(instance.Id);
-        
+
         var currentCompId = await _tenantContext.GetCurrentCompanyIdAsync();
-        _logger.LogInformation("CanApproveAsync: 用户 {UserId}, 当前公司 {CompanyId}, 历史记录数: {Count}", 
+        _logger.LogInformation("CanApproveAsync: 用户 {UserId}, 当前公司 {CompanyId}, 历史记录数: {Count}",
             userId, currentCompId, history.Count);
 
         var hasApproved = history.Any(r =>
-            r.NodeId.Trim().Equals(node.Id.Trim(), StringComparison.OrdinalIgnoreCase) && 
-            r.ApproverId.Trim().Equals(userId.Trim(), StringComparison.OrdinalIgnoreCase) && 
+            r.NodeId.Trim().Equals(node.Id.Trim(), StringComparison.OrdinalIgnoreCase) &&
+            r.ApproverId.Trim().Equals(userId.Trim(), StringComparison.OrdinalIgnoreCase) &&
             r.Action == ApprovalAction.Approve);
-        
+
         if (hasApproved)
         {
             _logger.LogWarning("用户 {UserId} 已审批过节点 {NodeId}", userId, node.Id);
@@ -167,7 +167,7 @@ public partial class WorkflowEngine
         }
 
         var approvers = await GetNodeApproversAsync(instance.Id, node.Id);
-        _logger.LogInformation("节点 {NodeId} 候选审批人: {Approvers}, 当前用户: {UserId}", 
+        _logger.LogInformation("节点 {NodeId} 候选审批人: {Approvers}, 当前用户: {UserId}",
             node.Id, string.Join(",", approvers), userId);
 
         // Bug 4：Sequential 模式下，只有轮到的人才能审批
@@ -330,9 +330,9 @@ public partial class WorkflowEngine
         {
             i.CurrentNodeId = targetNodeId;
             i.ApprovalRecords.Add(approvalRecord);
-            i.ParallelBranches = new List<ParallelBranchEntry>();
-            i.ActiveApprovals = new List<NodeApprovalEntry>();
-            i.CurrentApproverIds = new List<string>(); // 清空审批人
+            i.ParallelBranches.Clear();
+            i.ActiveApprovals.Clear();
+            i.CurrentApproverIds.Clear(); // 清空审批人
             i.UpdatedAt = DateTime.UtcNow;
         });
 

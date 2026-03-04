@@ -23,7 +23,7 @@ async function runTests() {
     console.log('1. Logging in as admin...');
     const loginRes = await request('/auth/login', {
         method: 'POST',
-        body: { username: 'admin', password: 'admin123', autoLogin: false }
+        body: { username: 'admin', password: 'password1', autoLogin: false }
     });
 
     if (!loginRes.success) {
@@ -101,6 +101,12 @@ async function runTests() {
 
     console.log('\n--- 阶段 3: 并行网关同步测试 (Parallel Gateway Join) ---');
     await testParallelJoin(token, adminId);
+
+    console.log('\n--- 阶段 4: 顺序多签审批测试 (Sequential Approval) ---');
+    await testSequentialApproval(token, adminId);
+
+    console.log('\n--- 阶段 5: 退回与拒绝测试 (Return and Reject) ---');
+    await testRejectAndReturn(token, adminId);
 
     console.log('\n--- 所有设计测试完成 ---');
 }
@@ -189,7 +195,7 @@ async function testParallelJoin(token, adminId) {
     await request(`/workflows/instances/${instanceId}/nodes/p1/action`, { method: 'POST', headers, body: { action: 'approve' } });
     let inst = await request(`/workflows/instances/${instanceId}`, { headers });
     console.log(`  当前状态: ${inst.data.status}, 汇聚点分支已完成列表: ${JSON.stringify(inst.data.parallelBranches?.join || [])}`);
-    
+
     if (inst.data.status !== 1) { // 1 = Completed, it should NOT be completed yet
         console.log('  ✅ 流程未结束，符合预期（等待 p2）');
     } else {
@@ -199,11 +205,141 @@ async function testParallelJoin(token, adminId) {
     console.log('测试 3.2: 审批第二个分支 p2');
     await request(`/workflows/instances/${instanceId}/nodes/p2/action`, { method: 'POST', headers, body: { action: 'approve' } });
     inst = await request(`/workflows/instances/${instanceId}`, { headers });
-    console.log(`  当前状态: ${inst.data.status} (1=Completed)`);
-    if (inst.data.status === 1) {
+    console.log(`  当前状态: ${inst.data.status}`);
+    if (inst.data.status === 1 || inst.data.status === 'completed') {
         console.log('  ✅ 流程顺利通过汇聚点并结束');
     } else {
         console.error('  ❌ 流程未能结束');
+        console.log(JSON.stringify(inst.data, null, 2));
+    }
+}
+
+async function testSequentialApproval(token, adminId) {
+    const headers = { 'Authorization': `Bearer ${token}` };
+
+    // Create or login as second user for sequential test
+    let secondToken = '';
+    let secondUserId = '';
+    const regRes = await request('/auth/register', { method: 'POST', body: { username: 'wf_tester', password: 'password1', email: 'test@wf.com' } });
+
+    const loginRes2 = await request('/auth/login', { method: 'POST', body: { username: 'wf_tester', password: 'password1', autoLogin: false } });
+    if (loginRes2.success) {
+        secondToken = loginRes2.data.token;
+        const profile2 = await request('/auth/current-user', { headers: { 'Authorization': `Bearer ${secondToken}` } });
+        secondUserId = profile2.data?.id;
+    }
+
+    if (!secondUserId || secondUserId === adminId) {
+        console.log('  ⚠️ 无法获取第二个独立用户，跳过顺序审批真实多签测试');
+        return;
+    }
+
+    const definition = {
+        name: "顺序审批测试",
+        graph: {
+            nodes: [
+                { id: "start", type: "start", name: "开始" },
+                {
+                    id: "seq1",
+                    type: "approval",
+                    name: "顺序多签",
+                    config: {
+                        approval: {
+                            type: 2, // Sequential
+                            approvers: [
+                                { type: 0, userId: adminId },
+                                { type: 0, userId: secondUserId }
+                            ]
+                        }
+                    }
+                },
+                { id: "end", type: "end", name: "结束" }
+            ],
+            edges: [
+                { id: "e1", source: "start", target: "seq1" },
+                { id: "e2", source: "seq1", target: "end" }
+            ]
+        }
+    };
+
+    const defRes = await request('/workflows', { method: 'POST', headers, body: definition });
+    const defId = defRes.data.id;
+    const docRes = await request('/documents', { method: 'POST', headers, body: { title: "顺序审批", content: "..." } });
+    const instRes = await request(`/workflows/${defId}/start`, { method: 'POST', headers, body: { documentId: docRes.data.id } });
+    const instanceId = instRes.data.id;
+
+    console.log('测试 4.1: 第一人次审批 (Admin)');
+    await request(`/workflows/instances/${instanceId}/nodes/seq1/action`, { method: 'POST', headers, body: { action: 'approve' } });
+    let inst = await request(`/workflows/instances/${instanceId}`, { headers });
+
+    if (inst.data.status !== 'completed' && inst.data.status !== 1) {
+        console.log('  ✅ 流程未结束，正在等待第二人次审批');
+    } else {
+        console.error('  ❌ 流程意外结束！');
+        return;
+    }
+
+    console.log('测试 4.2: 第二人次审批 (WF_Tester)');
+    const headers2 = { 'Authorization': `Bearer ${secondToken}` };
+    await request(`/workflows/instances/${instanceId}/nodes/seq1/action`, { method: 'POST', headers: headers2, body: { action: 'approve' } });
+    inst = await request(`/workflows/instances/${instanceId}`, { headers });
+    if (inst.data.status === 'completed' || inst.data.status === 1) {
+        console.log('  ✅ 流程顺利完成全部顺序审批阶段并结束');
+    } else {
+        console.error('  ❌ 流程未能结束:', inst.data.status);
+    }
+}
+
+async function testRejectAndReturn(token, adminId) {
+    const headers = { 'Authorization': `Bearer ${token}` };
+    const definition = {
+        name: "退回与拒绝测试",
+        graph: {
+            nodes: [
+                { id: "start", type: "start", name: "开始" },
+                { id: "app1", type: "approval", name: "第一环节", config: { approval: { type: 1, approvers: [{ type: 0, userId: adminId }] } } },
+                { id: "app2", type: "approval", name: "第二环节", config: { approval: { type: 1, approvers: [{ type: 0, userId: adminId }] } } },
+                { id: "end", type: "end", name: "结束" }
+            ],
+            edges: [
+                { id: "e1", source: "start", target: "app1" },
+                { id: "e2", source: "app1", target: "app2" },
+                { id: "e3", source: "app2", target: "end" }
+            ]
+        }
+    };
+
+    const defRes = await request('/workflows', { method: 'POST', headers, body: definition });
+    const defId = defRes.data.id;
+
+    // Case 1: Return
+    console.log('测试 5.1: 退回节点');
+    let docRes = await request('/documents', { method: 'POST', headers, body: { title: "退回测试", content: "..." } });
+    let instRes = await request(`/workflows/${defId}/start`, { method: 'POST', headers, body: { documentId: docRes.data.id } });
+    let instanceId = instRes.data.id;
+
+    await request(`/workflows/instances/${instanceId}/nodes/app1/action`, { method: 'POST', headers, body: { action: 'approve' } }); // pass app1
+
+    const returnRes = await request(`/workflows/instances/${instanceId}/nodes/app2/action`, { method: 'POST', headers, body: { action: 'return', comment: '打回重做', targetNodeId: 'app1' } });
+    let inst = await request(`/workflows/instances/${instanceId}`, { headers });
+    if (inst.data.currentNodeId === 'app1') {
+        console.log('  ✅ 流程成功退回到第一环节');
+    } else {
+        console.error('  ❌ 退回失败，当前节点:', inst.data.currentNodeId);
+    }
+
+    // Case 2: Reject
+    console.log('测试 5.2: 拒绝流程');
+    docRes = await request('/documents', { method: 'POST', headers, body: { title: "拒绝测试", content: "..." } });
+    instRes = await request(`/workflows/${defId}/start`, { method: 'POST', headers, body: { documentId: docRes.data.id } });
+    instanceId = instRes.data.id;
+
+    const rejectRes = await request(`/workflows/instances/${instanceId}/nodes/app1/action`, { method: 'POST', headers, body: { action: 'reject', comment: '不同意' } });
+    inst = await request(`/workflows/instances/${instanceId}`, { headers });
+    if (inst.data.status === 'rejected' || inst.data.status === 2) {
+        console.log('  ✅ 流程成功变为拒绝状态');
+    } else {
+        console.error('  ❌ 拒绝失败，当前状态:', inst.data.status);
     }
 }
 

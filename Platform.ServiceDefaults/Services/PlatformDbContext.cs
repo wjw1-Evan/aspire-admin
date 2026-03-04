@@ -13,7 +13,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Platform.ServiceDefaults.Services;
 
 /// <summary>
-/// 平台数据库上下文 - 基于 MongoDB Entity Framework Core (优化版本)
+/// 平台数据库上下文 - 基于 MongoDB Entity Framework Core (优化版本) 不允许修改该文件
 /// </summary>
 public class PlatformDbContext(DbContextOptions<PlatformDbContext> options, ITenantContext? tenantContext = null)
     : DbContext(options)

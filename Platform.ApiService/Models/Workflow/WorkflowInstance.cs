@@ -80,11 +80,15 @@ public class WorkflowInstance : MultiTenantEntity
     }
 
     /// <summary>
-    /// 移除指定节点的活跃审批人
+    /// 移除指定节点的活跃审批人 (改为清空列表而不是移除对象，防止 EF Core / MongoDB 追踪错误)
     /// </summary>
     public void RemoveActiveApprovers(string nodeId)
     {
-        ActiveApprovals.RemoveAll(a => a.NodeId == nodeId);
+        var entry = ActiveApprovals.FirstOrDefault(a => a.NodeId == nodeId);
+        if (entry != null)
+        {
+            entry.ApproverIds.Clear();
+        }
     }
 
     /// <summary>

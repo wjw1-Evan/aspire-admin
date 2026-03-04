@@ -80,9 +80,37 @@ public class WorkflowGraphValidator : IWorkflowGraphValidator
             }
         }
 
-        // 3. 检查是否有孤立节点（除了开始或结束节点外，其他节点必须有进有出）
-        // 实际上可以用可达性分析更准确
+        // 4. 连通性检查 (从开始节点到所有节点是否可达)
+        var reachable = new HashSet<string>();
+        var queue = new Queue<string>();
+        queue.Enqueue(startNode.Id);
+        reachable.Add(startNode.Id);
         var edges = graph.Edges ?? new List<WorkflowEdge>();
+        while (queue.Count > 0)
+        {
+            var current = queue.Dequeue();
+            var nextTargets = edges.Where(e => e.Source == current).Select(e => e.Target);
+            foreach (var t in nextTargets)
+            {
+                if (!reachable.Contains(t))
+                {
+                    reachable.Add(t);
+                    queue.Enqueue(t);
+                }
+            }
+        }
+
+        var unreachableNodes = graph.Nodes.Where(n => !reachable.Contains(n.Id)).Select(n => n.Label ?? n.Id).ToList();
+        if (unreachableNodes.Any())
+            return (false, $"存在从开始节点不可达的节点: {string.Join(", ", unreachableNodes)}");
+
+        // 4.1 至少存在一条通往结束节点的路径
+        var endNodeIds = graph.Nodes.Where(n => n.Type == "end").Select(n => n.Id).ToList();
+        var hasReachableEnd = endNodeIds.Any(id => reachable.Contains(id));
+        if (!hasReachableEnd)
+            return (false, "从开始节点无法到达任何结束节点");
+
+        // 3. 检查是否有孤立节点（已经过可达性分析处理）
         foreach (var node in graph.Nodes)
         {
             if (node.Type == "start")
@@ -148,35 +176,6 @@ public class WorkflowGraphValidator : IWorkflowGraphValidator
                 }
             }
         }
-
-        // 4. 连通性检查 (从开始节点到所有节点是否可达)
-        var reachable = new HashSet<string>();
-        var queue = new Queue<string>();
-        queue.Enqueue(startNode.Id);
-        reachable.Add(startNode.Id);
-        while (queue.Count > 0)
-        {
-            var current = queue.Dequeue();
-            var nextTargets = edges.Where(e => e.Source == current).Select(e => e.Target);
-            foreach (var t in nextTargets)
-            {
-                if (!reachable.Contains(t))
-                {
-                    reachable.Add(t);
-                    queue.Enqueue(t);
-                }
-            }
-        }
-
-        var unreachableNodes = graph.Nodes.Where(n => !reachable.Contains(n.Id)).Select(n => n.Label ?? n.Id).ToList();
-        if (unreachableNodes.Any())
-            return (false, $"存在从开始节点不可达的节点: {string.Join(", ", unreachableNodes)}");
-
-        // 4.1 至少存在一条通往结束节点的路径
-        var endNodeIds = graph.Nodes.Where(n => n.Type == "end").Select(n => n.Id).ToList();
-        var hasReachableEnd = endNodeIds.Any(id => reachable.Contains(id));
-        if (!hasReachableEnd)
-            return (false, "从开始节点无法到达任何结束节点");
 
         // 5. 循环检查 (可选，某些流程允许循环，但典型的审批流应该是 DAG)
 

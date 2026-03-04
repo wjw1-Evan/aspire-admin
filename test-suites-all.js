@@ -469,6 +469,40 @@ async function runFormIntegratedTests() {
     console.log(`  Final Workflow Status: ${finalInst.data.status === 1 ? "✅ COMPLETED" : "❌ " + finalInst.data.status}`);
 }
 
+/**
+ * MongoDB Direct Query (Original test-mongo.js)
+ * Focus: 直连 MongoDB 查询最新文档，用于调试数据持久化
+ */
+async function runMongoTests() {
+    console.log('\n=== RUNNING MONGODB DIRECT QUERY ===');
+    let MongoClient;
+    try {
+        ({ MongoClient } = require('mongodb'));
+    } catch {
+        console.log('  ⚠️ mongodb 模块未安装，跳过。运行 npm install mongodb 后重试。');
+        return;
+    }
+
+    // Aspire 动态端口，默认 57428，可通过环境变量覆盖
+    const port = process.env.MONGO_PORT || '57428';
+    const uri = `mongodb://admin:admin123@localhost:${port}/aspire-admin-db?authSource=admin`;
+    const client = new MongoClient(uri);
+    try {
+        await client.connect();
+        const db = client.db('aspire-admin-db');
+        const docs = await db.collection('documents').find({}).sort({ _id: -1 }).limit(3).toArray();
+        console.log(`  查询到 ${docs.length} 条最新文档：`);
+        for (const d of docs) {
+            console.log(`  - _id: ${d._id}, title: ${d.title}, formData keys: ${Object.keys(d.formData || {}).join(', ') || '(empty)'}`);
+            if (d.formData) console.log(`    formData: ${JSON.stringify(d.formData)}`);
+        }
+    } catch (err) {
+        console.log(`  ❌ MongoDB 连接失败: ${err.message}`);
+    } finally {
+        await client.close();
+    }
+}
+
 // --- Main Runner ---
 
 async function main() {
@@ -483,6 +517,7 @@ async function main() {
         if (mode === 'all' || mode === 'multiuser') await runMultiUserTests();
         if (mode === 'all' || mode === 'allnodes') await runAllNodesTests();
         if (mode === 'all' || mode === 'form') await runFormIntegratedTests();
+        if (mode === 'all' || mode === 'mongo') await runMongoTests();
 
         console.log('\n🌟 Unified Test Run Finished.');
     } catch (err) {

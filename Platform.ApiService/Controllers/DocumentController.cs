@@ -8,6 +8,7 @@ using Platform.ServiceDefaults.Controllers;
 using Platform.ServiceDefaults.Services;
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Platform.ApiService.Controllers;
@@ -491,7 +492,11 @@ public class DocumentController : BaseApiController
             var formNodeId = startNode?.Id ?? definition.Graph.Nodes.FirstOrDefault(n => n.Config?.Form?.Target == FormTarget.Document)?.Id;
             if (!string.IsNullOrEmpty(formNodeId))
             {
-                form = instance.FormDefinitionSnapshots?.FirstOrDefault(s => s.NodeId == formNodeId)?.FormDefinition;
+                var snapshot = instance.FormDefinitionSnapshots?.FirstOrDefault(s => s.NodeId == formNodeId);
+                if (!string.IsNullOrEmpty(snapshot?.FormDefinitionJson))
+                {
+                    form = JsonSerializer.Deserialize<FormDefinition>(snapshot.FormDefinitionJson);
+                }
             }
             else
             {

@@ -104,6 +104,33 @@ const Utils = {
         }
         console.log("Done");
         return { username, password, userId: res.data.id || res.data };
+    },
+
+    async createForm(name, fields = []) {
+        console.log(`Creating form definition: ${name}...`);
+        const res = await request('/forms', {
+            method: 'POST',
+            headers: Auth.headers,
+            body: { name, key: `form_${Date.now()}`, fields }
+        });
+        if (!res.success) throw new Error(`Failed to create form: ${res.message}`);
+        console.log(`Form created. ID: ${res.data.id}`);
+        return res.data;
+    },
+
+    async submitNodeForm(instanceId, nodeId, values) {
+        process.stdout.write(`  Submitting form for node ${nodeId}... `);
+        const res = await request(`/workflows/instances/${instanceId}/nodes/${nodeId}/form`, {
+            method: 'POST',
+            headers: Auth.headers,
+            body: values
+        });
+        if (!res.success) {
+            console.log(`❌ Error: ${res.message}`);
+            return res;
+        }
+        console.log("Done");
+        return res;
     }
 };
 
@@ -328,6 +355,118 @@ async function runAllNodesTests() {
     console.log(`  Final Status: ${listRes.data.workflowInstance.status === 'completed' ? '✅ COMPLETED' : '❌ ' + listRes.data.workflowInstance.status}`);
 }
 
+/**
+ * Form Integrated Tests (NEW)
+ * Focus: Form definition, validation, and form-driven workflow execution
+ */
+async function runFormIntegratedTests() {
+    console.log('\n=== RUNNING FORM INTEGRATED TESTS ===');
+
+    // 1. Create a Form Definition with various fields
+    const fields = [
+        { label: "Title", dataKey: "title", type: "Text", required: true },
+        { label: "Amount", dataKey: "amount", type: "Number", required: true, rules: [{ type: "min", min: 100, message: "Min 100" }] },
+        { label: "Reason", dataKey: "reason", type: "TextArea", required: false }
+    ];
+    const formDefRaw = await Utils.createForm("Reimbursement Form", fields);
+    const formDef = await request(`/forms/${formDefRaw.id}`, { headers: Auth.headers });
+    console.log(`Form created and re-fetched. ID: ${formDef.data.id}`);
+    console.log("Form Fields from direct GET:", JSON.stringify(formDef.data.fields || []));
+    if (!formDef.data.fields || formDef.data.fields.length === 0) {
+        console.warn("  ⚠️ Warning: Form created with no fields! Check field naming conventions.");
+    }
+    const formId = formDef.data.id;
+
+    // 2. Create Workflow with Form Binding on Start and Approval nodes
+    console.log("- Creating Workflow with Form Binding...");
+    const wfBody = {
+        name: "Form-Driven-Workflow",
+        category: "Test",
+        isActive: true,
+        graph: {
+            nodes: [
+                { id: "start", type: "start", label: "Start", config: { form: { formDefinitionId: formId, target: "Document", required: true } } },
+                { id: "approval", type: "approval", label: "Manager Review", config: { 
+                    approval: { type: "Any", approvers: [{ type: "User", userId: Auth.userId }] },
+                    form: { formDefinitionId: formId, target: "Document" } 
+                } },
+                { id: "end", type: "end", label: "End" }
+            ],
+            edges: [
+                { id: "e1", source: "start", target: "approval" },
+                { id: "e2", source: "approval", target: "end", label: "Approve", condition: "default" }
+            ]
+        }
+    };
+    const wfRes = await request('/workflows', { method: 'POST', headers: Auth.headers, body: wfBody });
+    const wfDefId = wfRes.data.id;
+
+    // 3. Test Validation Failure (Missing Required Field)
+    console.log("- Testing Form Validation (Missing Required Field)...");
+    const createDocFailRes = await request(`/workflows/${wfDefId}/documents`, {
+        method: 'POST',
+        headers: Auth.headers,
+        body: { values: { reason: "Budget excess" } } // Reverting to lowercase 'values'
+    });
+    const errorMsg = createDocFailRes.message || (typeof createDocFailRes.data === 'string' ? createDocFailRes.data : '');
+    if (!createDocFailRes.success && errorMsg.includes("必填字段缺失")) { // Correctly using back-end error message
+        console.log("  ✅ Validation Intercepted: Missing required fields (PASS)");
+    } else {
+        console.log("  ❌ Validation Failed to intercept missing fields.", JSON.stringify(createDocFailRes));
+    }
+
+    // 4. Create Document with Correct Form Data
+    console.log("- Creating Document with valid Form Data...");
+    const validData = { title: "Trip Reimbursement", amount: 250, reason: "Client Visit" };
+    const createDocRes = await request(`/workflows/${wfDefId}/documents`, {
+        method: 'POST',
+        headers: Auth.headers,
+        body: { values: validData } // Reverting to lowercase 'values'
+    });
+    if (!createDocRes.success) throw new Error("Document creation failed with form data: " + (createDocRes.message || JSON.stringify(createDocRes)));
+    const docId = createDocRes.data.id;
+    console.log(`  Document created: ${docId}`);
+
+    // 5. Submit Document to Start Workflow
+    console.log("- Submitting Document to start workflow...");
+    const submitRes = await request(`/documents/${docId}/submit`, {
+        method: 'POST',
+        headers: Auth.headers,
+        body: { workflowDefinitionId: wfDefId }
+    });
+    console.log("  Submit Document Response:", JSON.stringify(submitRes));
+    if (!submitRes.success) throw new Error("Workflow start failed: " + (submitRes.message || JSON.stringify(submitRes)));
+    const instId = submitRes.data.id;
+    console.log(`  Workflow started. Instance ID: ${instId}`);
+
+    // 6. Verify Form Data Persistence in Node 
+    console.log("- Verifying Form Data at Approval Node...");
+    const nodeFormRes = await request(`/workflows/instances/${instId}/nodes/approval/form`, { headers: Auth.headers });
+    console.log("  Node Form Response initialValues:", JSON.stringify(nodeFormRes.data?.initialValues || {}));
+    if (nodeFormRes.success && nodeFormRes.data.initialValues && nodeFormRes.data.initialValues.title === "Trip Reimbursement") {
+        console.log("  ✅ Form Data persisted to workflow node (PASS)");
+    } else {
+        console.log("  ❌ Form Data missing or incorrect at node.", JSON.stringify(nodeFormRes));
+    }
+
+    // 7. Complete Approval with Additional Form Data (manager_feedback)
+    console.log("- Submitting additional data at Approval Node...");
+    const feedback = { title: "TR Updated", amount: 250, manager_comment: "Approved" };
+    const submitNodeRes = await Utils.submitNodeForm(instId, "approval", feedback);
+    
+    // Complete the node
+    await request(`/workflows/instances/${instId}/approve`, {
+        method: 'POST',
+        headers: Auth.headers,
+        body: { nodeId: "approval", remark: "OK" }
+    });
+
+    // 8. Final check
+    await new Promise(r => setTimeout(r, 2000));
+    const finalInst = await request(`/workflows/instances/${instId}`, { headers: Auth.headers });
+    console.log(`  Final Workflow Status: ${finalInst.data.status === 1 ? "✅ COMPLETED" : "❌ " + finalInst.data.status}`);
+}
+
 // --- Main Runner ---
 
 async function main() {
@@ -341,6 +480,7 @@ async function main() {
         if (mode === 'all' || mode === 'design') await runDesignTests();
         if (mode === 'all' || mode === 'multiuser') await runMultiUserTests();
         if (mode === 'all' || mode === 'allnodes') await runAllNodesTests();
+        if (mode === 'all' || mode === 'form') await runFormIntegratedTests();
 
         console.log('\n🌟 Unified Test Run Finished.');
     } catch (err) {

@@ -10,6 +10,7 @@ using Platform.ServiceDefaults.Controllers;
 using Platform.ServiceDefaults.Services;
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
@@ -455,7 +456,8 @@ public class WorkflowController : BaseApiController
                 return Success(new { form = (FormDefinition?)null, dataScopeKey = (string?)null, initialValues = (object?)null });
             }
 
-            var form = await _formFactory.GetByIdAsync(binding.FormDefinitionId);
+            var forms = await _formFactory.FindAsync(f => f.Id == binding.FormDefinitionId, includes: [f => f.Fields]);
+            var form = forms.FirstOrDefault();
 
             if (form == null)
             {
@@ -638,23 +640,34 @@ public class WorkflowController : BaseApiController
                 return Success(new { form = (FormDefinition?)null, initialValues = (object?)null });
             }
 
-            FormDefinition? form = instance.FormDefinitionSnapshots?.FirstOrDefault(s => s.NodeId == nodeId)?.FormDefinition;
+            FormDefinition? form = null;
+            var snapshot = instance.FormDefinitionSnapshots?.FirstOrDefault(s => s.NodeId == nodeId);
+            if (!string.IsNullOrEmpty(snapshot?.FormDefinitionJson))
+            {
+                form = JsonSerializer.Deserialize<FormDefinition>(snapshot.FormDefinitionJson);
+            }
+
             if (form == null)
             {
-                form = await _formFactory.GetByIdAsync(binding.FormDefinitionId);
+                var forms = await _formFactory.FindAsync(f => f.Id == binding.FormDefinitionId, includes: [f => f.Fields]);
+                form = forms.FirstOrDefault();
                 if (form == null)
                 {
                     return NotFoundError("表单定义", binding.FormDefinitionId);
                 }
             }
 
+            Console.WriteLine($"[DEBUG] GetNodeForm: binding.Target={binding.Target}, DataScopeKey={binding.DataScopeKey}");
             object? initialValues = null;
             if (binding.Target == FormTarget.Document)
             {
                 var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
+                Console.WriteLine($"[DEBUG] GetNodeForm: DocumentId={instance.DocumentId}, FoundDoc={document != null}");
                 if (document != null)
                 {
                     var sourceFormData = document.FormData ?? new Dictionary<string, object>();
+                    Console.WriteLine($"[DEBUG] GetNodeForm: FormData count={sourceFormData.Count}");
+                    foreach(var k in sourceFormData.Keys) Console.WriteLine($"[DEBUG] FormData Key: {k}");
                     if (!string.IsNullOrWhiteSpace(binding.DataScopeKey))
                     {
                         if (sourceFormData.TryGetValue(binding.DataScopeKey, out var scopedData) && scopedData is Dictionary<string, object> scopedDict)
@@ -718,10 +731,17 @@ public class WorkflowController : BaseApiController
                 return ValidationError("该节点未绑定完整表单定义");
             }
 
-            FormDefinition? form = instance.FormDefinitionSnapshots?.FirstOrDefault(s => s.NodeId == nodeId)?.FormDefinition;
+            FormDefinition? form = null;
+            var snapshot = instance.FormDefinitionSnapshots?.FirstOrDefault(s => s.NodeId == nodeId);
+            if (!string.IsNullOrEmpty(snapshot?.FormDefinitionJson))
+            {
+                form = JsonSerializer.Deserialize<FormDefinition>(snapshot.FormDefinitionJson);
+            }
+
             if (form == null)
             {
-                form = await _formFactory.GetByIdAsync(binding.FormDefinitionId);
+                var forms = await _formFactory.FindAsync(f => f.Id == binding.FormDefinitionId, includes: [f => f.Fields]);
+                form = forms.FirstOrDefault();
                 if (form == null)
                 {
                     return NotFoundError("表单定义", binding.FormDefinitionId);

@@ -284,8 +284,8 @@ public class FormSnapshotEntry
     public string NodeId { get; set; } = string.Empty;
 
     /// <summary>
-    /// 表单定义
+    /// 表单定义 JSON
     /// </summary>
-    [BsonElement("formDefinition")]
-    public FormDefinition FormDefinition { get; set; } = new();
+    [BsonElement("formDefinitionJson")]
+    public string FormDefinitionJson { get; set; } = string.Empty;
 }

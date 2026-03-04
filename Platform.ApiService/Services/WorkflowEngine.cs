@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Text.Json;
 using Platform.ApiService.Extensions;
 using UserCompany = Platform.ApiService.Models.UserCompany;
 using OpenAI;
@@ -162,18 +163,25 @@ public partial class WorkflowEngine : IWorkflowEngine
 
         // 🔧 Bug Fix: 保存流程涉及的所有表单定义快照
         var formNodes = definition.Graph.Nodes.Where(n => n.Config?.Form != null).ToList();
+        var formCache = new Dictionary<string, FormDefinition>();
         foreach (var node in formNodes)
         {
             var formDefId = node.Config?.Form?.FormDefinitionId;
             if (!string.IsNullOrEmpty(formDefId))
             {
-                var formDef = await _formFactory.GetByIdAsync(formDefId);
+                if (!formCache.TryGetValue(formDefId, out var formDef))
+                {
+                    var formDefs = await _formFactory.FindAsync(f => f.Id == formDefId, includes: [f => f.Fields]);
+                    formDef = formDefs.FirstOrDefault();
+                    if (formDef != null) formCache[formDefId] = formDef;
+                }
+
                 if (formDef != null)
                 {
                     instance.FormDefinitionSnapshots.Add(new FormSnapshotEntry
                     {
                         NodeId = node.Id,
-                        FormDefinition = formDef
+                        FormDefinitionJson = JsonSerializer.Serialize(formDef)
                     });
                 }
             }

@@ -635,8 +635,10 @@ public class DocumentService : IDocumentService
             CompanyId = companyId ?? string.Empty
         };
 
+        _logger.LogInformation("DEBUG_PRE_CREATE: FormData: {Data}", System.Text.Json.JsonSerializer.Serialize(document.FormData));
         document = await _documentFactory.CreateAsync(document);
         _logger.LogInformation("基于流程表单创建公文: DocumentId={DocumentId}, WorkflowDefinitionId={DefinitionId}", document.Id, workflowDefinitionId);
+        _logger.LogInformation("DEBUG_CREATE_DOC: FormData: {Data}", System.Text.Json.JsonSerializer.Serialize(document.FormData));
         return document;
     }
 

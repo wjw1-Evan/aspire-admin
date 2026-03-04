@@ -406,7 +406,7 @@ async function runFormIntegratedTests() {
     const createDocFailRes = await request(`/workflows/${wfDefId}/documents`, {
         method: 'POST',
         headers: Auth.headers,
-        body: { values: { reason: "Budget excess" } } // Reverting to lowercase 'values'
+        body: { values: { reason: "Budget excess" } } // Using camelCase 'values'
     });
     const errorMsg = createDocFailRes.message || (typeof createDocFailRes.data === 'string' ? createDocFailRes.data : '');
     if (!createDocFailRes.success && errorMsg.includes("必填字段缺失")) { // Correctly using back-end error message
@@ -421,9 +421,11 @@ async function runFormIntegratedTests() {
     const createDocRes = await request(`/workflows/${wfDefId}/documents`, {
         method: 'POST',
         headers: Auth.headers,
-        body: { values: validData } // Reverting to lowercase 'values'
+        body: { values: validData } // Using camelCase 'values'
     });
+    console.log("  Document creation response:", JSON.stringify(createDocRes));
     if (!createDocRes.success) throw new Error("Document creation failed with form data: " + (createDocRes.message || JSON.stringify(createDocRes)));
+    console.log("  Document created:", createDocRes.data.id, "FormData:", JSON.stringify(createDocRes.data.formData));
     const docId = createDocRes.data.id;
     console.log(`  Document created: ${docId}`);
 

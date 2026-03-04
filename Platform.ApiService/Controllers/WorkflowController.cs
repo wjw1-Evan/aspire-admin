@@ -657,17 +657,18 @@ public class WorkflowController : BaseApiController
                 }
             }
 
-            Console.WriteLine($"[DEBUG] GetNodeForm: binding.Target={binding.Target}, DataScopeKey={binding.DataScopeKey}");
             object? initialValues = null;
             if (binding.Target == FormTarget.Document)
             {
                 var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
-                Console.WriteLine($"[DEBUG] GetNodeForm: DocumentId={instance.DocumentId}, FoundDoc={document != null}");
                 if (document != null)
                 {
                     var sourceFormData = document.FormData ?? new Dictionary<string, object>();
-                    Console.WriteLine($"[DEBUG] GetNodeForm: FormData count={sourceFormData.Count}");
-                    foreach(var k in sourceFormData.Keys) Console.WriteLine($"[DEBUG] FormData Key: {k}");
+                    _logger.LogInformation("DEBUG_FORM_DATA: DocId={DocId}, Keys={Keys}, Values={Values}", 
+                        instance.DocumentId, 
+                        string.Join(",", sourceFormData.Keys),
+                        System.Text.Json.JsonSerializer.Serialize(sourceFormData));
+                    
                     if (!string.IsNullOrWhiteSpace(binding.DataScopeKey))
                     {
                         if (sourceFormData.TryGetValue(binding.DataScopeKey, out var scopedData) && scopedData is Dictionary<string, object> scopedDict)

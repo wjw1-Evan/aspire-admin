@@ -133,6 +133,12 @@ public class NodeConfig
     public AiConfig? Ai { get; set; }
 
     /// <summary>
+    /// AI 判断节点配置
+    /// </summary>
+    [BsonElement("aiJudge")]
+    public AiJudgeConfig? AiJudge { get; set; }
+
+    /// <summary>
     /// 通知配置
     /// </summary>
     [BsonElement("notification")]
@@ -369,6 +375,12 @@ public class ConditionConfig
 public class AiConfig
 {
     /// <summary>
+    /// 输入变量名（读取该流程变量作为 AI 输入上下文）
+    /// </summary>
+    [BsonElement("inputVariable")]
+    public string? InputVariable { get; set; }
+
+    /// <summary>
     /// 提示词模板
     /// </summary>
     [BsonElement("promptTemplate")]
@@ -403,6 +415,42 @@ public class AiConfig
     /// </summary>
     [BsonElement("temperature")]
     public double? Temperature { get; set; }
+}
+
+/// <summary>
+/// AI 判断节点配置（利用 AI 做出 true/false 决策）
+/// </summary>
+public class AiJudgeConfig
+{
+    /// <summary>
+    /// 输入变量名（读取该流程变量作为判断依据）
+    /// </summary>
+    [BsonElement("inputVariable")]
+    public string? InputVariable { get; set; }
+
+    /// <summary>
+    /// 判断提示词模板
+    /// </summary>
+    [BsonElement("judgePrompt")]
+    public string JudgePrompt { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 系统提示词
+    /// </summary>
+    [BsonElement("systemPrompt")]
+    public string? SystemPrompt { get; set; }
+
+    /// <summary>
+    /// 模型名称
+    /// </summary>
+    [BsonElement("model")]
+    public string? Model { get; set; }
+
+    /// <summary>
+    /// 输出变量名（存储判断结果 true/false）
+    /// </summary>
+    [BsonElement("outputVariable")]
+    public string OutputVariable { get; set; } = "judge_result";
 }
 
 /// <summary>

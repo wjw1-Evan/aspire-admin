@@ -13,6 +13,7 @@ import {
     HistoryOutlined,
     EditOutlined,
     FileTextOutlined,
+    ThunderboltOutlined,
 } from '@ant-design/icons';
 
 // 节点类型配置 (Elsa 风格：包含分类信息)
@@ -105,6 +106,14 @@ export const NODE_CONFIGS = {
         category: '调试',
         description: '记录执行日志信息',
     },
+    aiJudge: {
+        color: '#d946ef',
+        backgroundColor: '#fdf4ff',
+        borderColor: '#d946ef',
+        icon: <ThunderboltOutlined />,
+        category: '自动化',
+        description: 'AI 智能判断分支',
+    },
 };
 
 export const CustomNode: React.FC<NodeProps> = ({ data, selected }) => {
@@ -140,6 +149,8 @@ export const CustomNode: React.FC<NodeProps> = ({ data, selected }) => {
                 return data.config?.variable?.name ? `设置: ${data.config.variable.name}` : '未指定变量';
             case 'log':
                 return data.config?.log?.message ? `日志: ${data.config.log.message.substring(0, 20)}...` : '空日志';
+            case 'aiJudge':
+                return data.config?.aiJudge?.judgePrompt ? `判断: ${data.config.aiJudge.judgePrompt.substring(0, 20)}...` : '待配置判断规则';
             default:
                 return '无更多描述';
         }

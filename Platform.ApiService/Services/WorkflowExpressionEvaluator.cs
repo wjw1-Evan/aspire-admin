@@ -45,38 +45,73 @@ public class WorkflowExpressionEvaluator : IWorkflowExpressionEvaluator
         {
             expression = expression.Trim();
 
-            // Bug 10 修复：更精确的运算符匹配，使用带空格边界的检测
-            var (foundOp, leftKey, rightValueStr) = ParseExpression(expression);
-
-            if (foundOp != null && leftKey != null && rightValueStr != null)
+            // 处理复合逻辑的简单且实用实现：按顺序计算（目前不处理复杂括号优先级嵌套）
+            if (expression.Contains("||"))
             {
-                if (variables.TryGetValue(leftKey, out var leftValue))
+                var parts = expression.Split("||", StringSplitOptions.RemoveEmptyEntries);
+                foreach (var part in parts)
                 {
-                    return CompareValues(leftValue, rightValueStr, foundOp);
+                    if (EvaluateSingle(part, variables)) return true;
                 }
-
-                // Bug 11 修复：变量不存在时，!= 返回 true，== 返回 false
-                if (foundOp == "!=") return true;
-                if (foundOp == "==") return false;
-
-                _logger.LogWarning("表达式变量不存在: Variable={Variable}, Expression={Expression}", leftKey, expression);
                 return false;
             }
-            else
+
+            if (expression.Contains("&&"))
             {
-                // 布尔变量直接判断
-                if (variables.TryGetValue(expression, out var boolValue))
+                var parts = expression.Split("&&", StringSplitOptions.RemoveEmptyEntries);
+                foreach (var part in parts)
                 {
-                    if (boolValue is bool b) return b;
-                    if (bool.TryParse(boolValue?.ToString(), out var parsedBool)) return parsedBool;
+                    if (!EvaluateSingle(part, variables)) return false;
                 }
+                return true;
             }
 
-            _logger.LogWarning("无法解析表达式: {Expression}", expression);
+            return EvaluateSingle(expression, variables);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "表达式评估失败: {Expression}", expression);
+            return false;
+        }
+    }
+
+    private bool EvaluateSingle(string expression, Dictionary<string, object> variables)
+    {
+        expression = expression.Trim();
+        var (foundOp, leftKeyRaw, rightValueStr) = ParseExpression(expression);
+
+        if (foundOp != null && leftKeyRaw != null && rightValueStr != null)
+        {
+            // 清洗变量键，移除前端插值符号的大括号
+            var leftKeyClean = leftKeyRaw.Replace("{", "").Replace("}", "").Trim();
+
+            if (variables.TryGetValue(leftKeyClean, out var leftValue))
+            {
+                return CompareValues(leftValue, rightValueStr, foundOp);
+            }
+
+            // 变量不存在时的宽容处理
+            if (foundOp == "!=") return true;
+            if (foundOp == "==") return false;
+
+            _logger.LogWarning("表达式变量不存在: Variable={Variable}, Expression={Expression}", leftKeyClean, expression);
+            return false;
+        }
+        else
+        {
+            // 单独布尔变量或单一字面量
+            var singleKeyClean = expression.Replace("{", "").Replace("}", "").Trim();
+
+            // 是否字面布尔值
+            if (bool.TryParse(singleKeyClean, out var literalBool)) return literalBool;
+
+            if (variables.TryGetValue(singleKeyClean, out var boolValue))
+            {
+                if (boolValue is bool b) return b;
+                if (bool.TryParse(boolValue?.ToString(), out var parsedBool)) return parsedBool;
+                var strVal = boolValue?.ToString()?.Trim().ToLower();
+                return strVal == "true" || strVal == "1" || strVal == "yes";
+            }
         }
 
         return false;

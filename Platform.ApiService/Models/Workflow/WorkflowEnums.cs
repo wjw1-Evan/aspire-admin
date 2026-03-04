@@ -105,7 +105,10 @@ public enum WorkflowStatus
     Cancelled = 2,
 
     /// <summary>已拒绝</summary>
-    Rejected = 3
+    Rejected = 3,
+
+    /// <summary>挂起等待</summary>
+    Waiting = 4
 }
 
 /// <summary>

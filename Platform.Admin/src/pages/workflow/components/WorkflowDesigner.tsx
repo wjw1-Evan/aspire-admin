@@ -86,6 +86,7 @@ const getTypeLabels = (intl: any) => ({
   timer: intl.formatMessage({ id: 'pages.workflow.designer.addTimer' }),
   setVariable: intl.formatMessage({ id: 'pages.workflow.designer.addSetVariable' }),
   log: intl.formatMessage({ id: 'pages.workflow.designer.addLog' }),
+  aiJudge: intl.formatMessage({ id: 'pages.workflow.designer.addAiJudge' }),
 });
 
 const defaultNodeStyle = {
@@ -397,6 +398,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
       promptTemplate: config.ai?.promptTemplate,
       systemPrompt: config.ai?.systemPrompt,
       aiModel: config.ai?.model,
+      aiInputVariable: config.ai?.inputVariable,
       outputVariable: config.ai?.outputVariable,
       maxTokens: config.ai?.maxTokens,
       temperature: config.ai?.temperature,
@@ -420,6 +422,11 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
       variableValue: config.variable?.value,
       logLevel: config.log?.level || 'Information',
       logMessage: config.log?.message,
+      judgeInputVariable: config.aiJudge?.inputVariable,
+      judgePrompt: config.aiJudge?.judgePrompt,
+      judgeSystemPrompt: config.aiJudge?.systemPrompt,
+      judgeModel: config.aiJudge?.model,
+      judgeOutputVariable: config.aiJudge?.outputVariable || 'judge_result',
     });
   }, [configForm]);
 
@@ -485,6 +492,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
 
           if (values.nodeType === 'ai') {
             config.ai = {
+              inputVariable: values.aiInputVariable,
               promptTemplate: values.promptTemplate || '',
               systemPrompt: values.systemPrompt,
               model: values.aiModel,
@@ -552,6 +560,16 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
             config.log = {
               level: values.logLevel || 'Information',
               message: values.logMessage,
+            };
+          }
+
+          if (values.nodeType === 'aiJudge') {
+            config.aiJudge = {
+              inputVariable: values.judgeInputVariable,
+              judgePrompt: values.judgePrompt || '',
+              systemPrompt: values.judgeSystemPrompt,
+              model: values.judgeModel,
+              outputVariable: values.judgeOutputVariable || 'judge_result',
             };
           }
 
@@ -894,11 +912,17 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
 
                     {selectedNode?.data.nodeType === 'ai' && (
                       <>
+                        <Form.Item name="aiInputVariable" label="输入变量" tooltip="读取此流程变量作为 AI 的输入上下文">
+                          <Input placeholder="例如: form_data, http_result" />
+                        </Form.Item>
                         <Form.Item name="systemPrompt" label="系统设定 (System Prompt)">
                           <Input.TextArea rows={3} />
                         </Form.Item>
                         <Form.Item name="promptTemplate" label="提示词模板 (User Prompt)">
-                          <Input.TextArea rows={5} />
+                          <Input.TextArea rows={5} placeholder="可使用 {{inputVariable}} 引用输入变量" />
+                        </Form.Item>
+                        <Form.Item name="outputVariable" label="输出变量" tooltip="将 AI 的输出结果保存到此流程变量" initialValue="ai_result">
+                          <Input placeholder="例如: ai_result" />
                         </Form.Item>
                       </>
                     )}
@@ -968,6 +992,23 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                         </Form.Item>
                         <Form.Item name="logMessage" label="日志消息模板" rules={[{ required: true }]}>
                           <Input.TextArea rows={3} />
+                        </Form.Item>
+                      </>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'aiJudge' && (
+                      <>
+                        <Form.Item name="judgeInputVariable" label="输入变量" tooltip="读取此流程变量作为判断依据">
+                          <Input placeholder="例如: ai_result, form_data" />
+                        </Form.Item>
+                        <Form.Item name="judgeSystemPrompt" label="系统设定" tooltip="告诉 AI 判断的角色和规则">
+                          <Input.TextArea rows={2} placeholder="你是一个判断引擎，根据输入内容返回 true 或 false" />
+                        </Form.Item>
+                        <Form.Item name="judgePrompt" label="判断提示词" rules={[{ required: true, message: '请输入判断提示词' }]}>
+                          <Input.TextArea rows={4} placeholder="根据以下内容判断是否符合规定：{{inputVariable}}。符合输出 true，不符合输出 false" />
+                        </Form.Item>
+                        <Form.Item name="judgeOutputVariable" label="输出变量" tooltip="保存判断结果 (true/false) 到此变量" initialValue="judge_result">
+                          <Input placeholder="judge_result" />
                         </Form.Item>
                       </>
                     )}

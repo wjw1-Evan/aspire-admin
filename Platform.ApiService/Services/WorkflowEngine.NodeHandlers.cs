@@ -59,8 +59,23 @@ public partial class WorkflowEngine
             case "ai":
                 await ProcessAiNodeAsync(instanceId, node);
                 break;
+            case "aiJudge":
+                await ProcessAiJudgeNodeAsync(instanceId, node);
+                break;
             case "notification":
                 await ProcessNotificationNodeAsync(instanceId, node);
+                break;
+            case "httpRequest":
+                await ProcessHttpRequestNodeAsync(instanceId, node);
+                break;
+            case "timer":
+                await ProcessTimerNodeAsync(instanceId, node);
+                break;
+            case "setVariable":
+                await ProcessSetVariableNodeAsync(instanceId, node);
+                break;
+            case "log":
+                await ProcessLogNodeAsync(instanceId, node);
                 break;
         }
     }
@@ -112,6 +127,16 @@ public partial class WorkflowEngine
             var config = node.Config.Ai;
             var variables = await GetDocumentVariablesAsync(instanceId);
             var prompt = config.PromptTemplate;
+
+            // 获取指定的 InputVariable 上下文
+            if (!string.IsNullOrEmpty(config.InputVariable))
+            {
+                if (variables.TryGetValue(config.InputVariable, out var inputVal))
+                {
+                    prompt = prompt.Replace("{{inputVariable}}", inputVal?.ToString() ?? "");
+                }
+            }
+
             foreach (var v in variables)
             {
                 prompt = prompt.Replace($"{{{v.Key}}}", v.Value?.ToString());
@@ -281,5 +306,224 @@ public partial class WorkflowEngine
 
         await EvaluateConditionAndMoveAsync(instanceId, node);
         return true;
+    }
+
+    private static readonly System.Net.Http.HttpClient _sharedHttpClient = new();
+
+    /// <summary>
+    /// 处理 HTTP 请求节点
+    /// </summary>
+    private async Task ProcessHttpRequestNodeAsync(string instanceId, WorkflowNode node)
+    {
+        if (node.Config.Http == null || string.IsNullOrWhiteSpace(node.Config.Http.Url))
+        {
+            await MoveToNextNodeAsync(instanceId, node.Id);
+            return;
+        }
+
+        try
+        {
+            var config = node.Config.Http;
+            var variables = await GetDocumentVariablesAsync(instanceId);
+
+            // 替换 URL 中的变量
+            var url = config.Url;
+            foreach (var v in variables) url = url.Replace($"{{{v.Key}}}", v.Value?.ToString());
+
+            var requestMessage = new System.Net.Http.HttpRequestMessage(
+                new System.Net.Http.HttpMethod(config.Method?.ToUpper() ?? "GET"), url);
+
+            if (!string.IsNullOrWhiteSpace(config.Body))
+            {
+                var body = config.Body;
+                foreach (var v in variables) body = body.Replace($"{{{v.Key}}}", v.Value?.ToString());
+                requestMessage.Content = new System.Net.Http.StringContent(body, System.Text.Encoding.UTF8, "application/json");
+            }
+
+            if (!string.IsNullOrWhiteSpace(config.Headers))
+            {
+                try
+                {
+                    var headersDict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(config.Headers);
+                    if (headersDict != null)
+                    {
+                        foreach (var header in headersDict)
+                        {
+                            requestMessage.Headers.TryAddWithoutValidation(header.Key, header.Value);
+                        }
+                    }
+                }
+                catch { /* 忽略头解析错误 */ }
+            }
+
+            var response = await _sharedHttpClient.SendAsync(requestMessage);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (!string.IsNullOrWhiteSpace(config.OutputVariable))
+            {
+                await _instanceFactory.UpdateAsync(instanceId, i =>
+                {
+                    i.Variables[config.OutputVariable] = responseContent;
+                });
+            }
+
+            await MoveToNextNodeAsync(instanceId, node.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "HTTP节点执行失败: InstanceId={InstanceId}, NodeId={NodeId}", instanceId, node.Id);
+            await MoveToNextNodeAsync(instanceId, node.Id); // 失败也继续前进，或者挂起（此处选择前进以防死锁）
+        }
+    }
+
+    /// <summary>
+    /// 处理计时器节点
+    /// </summary>
+    private async Task ProcessTimerNodeAsync(string instanceId, WorkflowNode node)
+    {
+        if (node.Config.Timer == null || string.IsNullOrWhiteSpace(node.Config.Timer.WaitDuration))
+        {
+            await MoveToNextNodeAsync(instanceId, node.Id);
+            return;
+        }
+
+        if (TimeSpan.TryParse(node.Config.Timer.WaitDuration, out var delay))
+        {
+            await _instanceFactory.UpdateAsync(instanceId, i =>
+            {
+                i.Status = WorkflowStatus.Waiting;
+            });
+
+            // ⚠️ 理想情况应该借助 Hangfire/Quartz 加入延迟队列，此处使用简单的后台延迟模拟
+            // 实际生产环境应用定时任务轮询处理 Waiting 状态
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(delay);
+                await _instanceFactory.UpdateAsync(instanceId, i => i.Status = WorkflowStatus.Running);
+                await MoveToNextNodeAsync(instanceId, node.Id);
+            });
+        }
+        else
+        {
+            await MoveToNextNodeAsync(instanceId, node.Id);
+        }
+    }
+
+    /// <summary>
+    /// 处理设置变量节点
+    /// </summary>
+    private async Task ProcessSetVariableNodeAsync(string instanceId, WorkflowNode node)
+    {
+        if (node.Config.Variable == null || string.IsNullOrWhiteSpace(node.Config.Variable.Name))
+        {
+            await MoveToNextNodeAsync(instanceId, node.Id);
+            return;
+        }
+
+        try
+        {
+            var config = node.Config.Variable;
+            var variables = await GetDocumentVariablesAsync(instanceId);
+            var val = config.Value ?? string.Empty;
+
+            foreach (var v in variables)
+            {
+                val = val.Replace($"{{{v.Key}}}", v.Value?.ToString());
+            }
+
+            await _instanceFactory.UpdateAsync(instanceId, i =>
+            {
+                i.Variables[config.Name] = val;
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "SetVariable节点执行失败: Node={NodeId}", node.Id);
+        }
+
+        await MoveToNextNodeAsync(instanceId, node.Id);
+    }
+
+    /// <summary>
+    /// 处理日志节点
+    /// </summary>
+    private async Task ProcessLogNodeAsync(string instanceId, WorkflowNode node)
+    {
+        if (node.Config.Log != null && !string.IsNullOrWhiteSpace(node.Config.Log.Message))
+        {
+            var variables = await GetDocumentVariablesAsync(instanceId);
+            var msg = node.Config.Log.Message;
+            foreach (var v in variables)
+            {
+                msg = msg.Replace($"{{{v.Key}}}", v.Value?.ToString());
+            }
+
+            switch (node.Config.Log.Level?.ToLower())
+            {
+                case "warning": _logger.LogWarning("Workflow Log [Instance {InstanceId}]: {Message}", instanceId, msg); break;
+                case "error": _logger.LogError("Workflow Log [Instance {InstanceId}]: {Message}", instanceId, msg); break;
+                case "debug": _logger.LogDebug("Workflow Log [Instance {InstanceId}]: {Message}", instanceId, msg); break;
+                default: _logger.LogInformation("Workflow Log [Instance {InstanceId}]: {Message}", instanceId, msg); break;
+            }
+        }
+        await MoveToNextNodeAsync(instanceId, node.Id);
+    }
+
+    /// <summary>
+    /// 处理 AI 判断节点
+    /// </summary>
+    private async Task ProcessAiJudgeNodeAsync(string instanceId, WorkflowNode node)
+    {
+        if (node.Config.AiJudge == null || _openAiClient == null)
+        {
+            await MoveToNextNodeAsync(instanceId, node.Id);
+            return;
+        }
+
+        try
+        {
+            var config = node.Config.AiJudge;
+            var variables = await GetDocumentVariablesAsync(instanceId);
+            var prompt = config.JudgePrompt;
+
+            if (!string.IsNullOrEmpty(config.InputVariable) && variables.TryGetValue(config.InputVariable, out var inputVal))
+            {
+                prompt = prompt.Replace("{{inputVariable}}", inputVal?.ToString() ?? "");
+            }
+
+            foreach (var v in variables)
+            {
+                prompt = prompt.Replace($"{{{v.Key}}}", v.Value?.ToString());
+            }
+
+            var messages = new List<OpenAI.Chat.ChatMessage>();
+            if (!string.IsNullOrEmpty(config.SystemPrompt))
+            {
+                messages.Add(OpenAI.Chat.ChatMessage.CreateSystemMessage(config.SystemPrompt));
+            }
+            else
+            {
+                messages.Add(OpenAI.Chat.ChatMessage.CreateSystemMessage("你是一个逻辑判断引擎。根据用户的描述判断真假，且只允许输出 'true' 或 'false'。不要输出任何其他字符。"));
+            }
+            messages.Add(OpenAI.Chat.ChatMessage.CreateUserMessage(prompt));
+
+            var response = await _openAiClient.GetChatClient(config.Model ?? "gpt-4o").CompleteChatAsync(messages);
+            var result = response.Value.Content[0].Text.Trim().ToLower();
+
+            var finalResult = (result.Contains("true") && !result.Contains("false")) ? "true" : "false";
+
+            await _instanceFactory.UpdateAsync(instanceId, i =>
+            {
+                i.Variables[config.OutputVariable] = finalResult;
+            });
+
+            await MoveToNextNodeAsync(instanceId, node.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "AI 判断节点执行失败: InstanceId={InstanceId}, NodeId={NodeId}", instanceId, node.Id);
+            await _instanceFactory.UpdateAsync(instanceId, i => i.Variables[node.Config.AiJudge.OutputVariable] = "false");
+            await MoveToNextNodeAsync(instanceId, node.Id);
+        }
     }
 }

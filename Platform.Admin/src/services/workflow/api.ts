@@ -150,12 +150,24 @@ export interface ParallelConfig {
  * AI节点配置
  */
 export interface AiConfig {
+  inputVariable?: string;
   promptTemplate: string;
   systemPrompt?: string;
   model?: string;
   outputVariable: string;
   maxTokens?: number;
   temperature?: number;
+}
+
+/**
+ * AI判断节点配置
+ */
+export interface AiJudgeConfig {
+  inputVariable?: string;
+  judgePrompt: string;
+  systemPrompt?: string;
+  model?: string;
+  outputVariable: string;
 }
 
 /**
@@ -209,6 +221,7 @@ export interface NodeConfig {
   approval?: ApprovalConfig;
   condition?: ConditionConfig;
   ai?: AiConfig;
+  aiJudge?: AiJudgeConfig;
   notification?: NotificationConfig;
   parallel?: ParallelConfig;
   form?: FormBinding;
@@ -223,7 +236,7 @@ export interface NodeConfig {
  */
 export interface WorkflowNode {
   id: string;
-  type: 'start' | 'end' | 'approval' | 'condition' | 'ai' | 'notification' | 'parallel' | 'httpRequest' | 'timer' | 'setVariable' | 'log';
+  type: 'start' | 'end' | 'approval' | 'condition' | 'ai' | 'aiJudge' | 'notification' | 'parallel' | 'httpRequest' | 'timer' | 'setVariable' | 'log';
   label?: string;
   position: NodePosition;
   config: NodeConfig;

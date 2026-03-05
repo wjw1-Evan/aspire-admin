@@ -3,7 +3,7 @@ const { spawn } = require('child_process');
 
 /**
  * --- Aspire Admin Unified API Test Suite ---
- * Consolidates:
+ * Consolidates: 运行测试并检查后端有没有异常
  * - test-workflows.js (Synergy)
  * - test-workflow-all-nodes.js (All-Components)
  * - test-workflow-design.js (Design/Validation)
@@ -132,6 +132,39 @@ const Utils = {
         }
         console.log("Done");
         return res;
+    },
+
+    async waitForInstanceStatus(instanceId, expectedStatus, maxRetries = 60) {
+        for (let i = 0; i < maxRetries; i++) {
+            const res = await request(`/workflows/instances/${instanceId}`, { headers: Auth.headers });
+            if (res.success) {
+                const currentStatus = res.data.status.toLowerCase();
+                const targetStatus = expectedStatus.toString().toLowerCase();
+                if (currentStatus === targetStatus || 
+                    (targetStatus === '1' && currentStatus === 'completed') ||
+                    (targetStatus === 'completed' && currentStatus === '1')) {
+                    return res.data;
+                }
+                if (currentStatus === 'rejected' || currentStatus === 'cancelled' || currentStatus === 'failed') {
+                    if (currentStatus !== targetStatus) {
+                        throw new Error(`Workflow failed/terminated: ${res.data.status}`);
+                    }
+                }
+            }
+            process.stdout.write(".");
+            await new Promise(r => setTimeout(r, 2000));
+        }
+        throw new Error(`Timeout waiting for workflow instance ${instanceId} status ${expectedStatus}`);
+    },
+
+    async waitForDocumentStatus(docId, expectedStatus, maxRetries = 60) {
+        for (let i = 0; i < maxRetries; i++) {
+            const res = await request(`/documents/${docId}`, { headers: Auth.headers });
+            if (res.success && res.data.document.status === expectedStatus) return res.data;
+            process.stdout.write(".");
+            await new Promise(r => setTimeout(r, 2000));
+        }
+        throw new Error(`Timeout waiting for document ${docId} status ${expectedStatus}`);
     }
 };
 
@@ -254,16 +287,17 @@ async function runSynergyTests() {
         const instId = startRes.data.id || startRes.data;
 
         let status = 'running';
-        for (let i = 0; i < 30; i++) { // Increased to 60s (30 * 2s) for AI/HTTP latency
+        for (let i = 0; i < 60; i++) { // Increased to 120s (60 * 2s) for AI/HTTP latency
             await new Promise(r => setTimeout(r, 2000));
             const instRes = await request(`/workflows/instances/${instId}`, { headers: Auth.headers });
             if (!instRes.success) continue;
-            // WorkflowStatus enum: Running = 0, Completed = 1, Failed = 2, Terminated = 3
-            if (instRes.data.status === 1) {
+            // WorkflowStatus enum via JsonStringEnumConverter (camelCase)
+            const currentStatus = instRes.data.status.toLowerCase();
+            if (currentStatus === 'completed') {
                 status = 'completed';
                 break;
             }
-            if (instRes.data.status === 2 || instRes.data.status === 3) {
+            if (currentStatus === 'failed' || currentStatus === 'rejected' || currentStatus === 'cancelled') {
                 status = 'failed';
                 break;
             }
@@ -350,8 +384,8 @@ async function runMultiUserTests() {
         graph: {
             nodes: [
                 { id: 's', type: 'start' },
-                { id: 'n1', type: 'approval', config: { approval: { type: 'any', approvers: [{ type: 'user', userId: app1.id }] } } },
-                { id: 'n2', type: 'approval', config: { approval: { type: 'any', approvers: [{ type: 'user', userId: app2.id }] } } },
+                { id: 'n1', type: 'approval', config: { approval: { type: 'any', approvers: [{ type: 'user', userId: app1.userId }] } } },
+                { id: 'n2', type: 'approval', config: { approval: { type: 'any', approvers: [{ type: 'user', userId: app2.userId }] } } },
                 { id: 'e', type: 'end' }
             ],
             edges: [{ source: 's', target: 'n1' }, { source: 'n1', target: 'n2' }, { source: 'n2', target: 'e' }]
@@ -368,22 +402,34 @@ async function runMultiUserTests() {
     // Login and approve as App1
     const login1 = await request('/auth/login', { method: 'POST', body: { username: app1.username, password: 'Password123!', autoLogin: false } });
     if (!login1.success) throw new Error(`App1 login failed: ${login1.message}`);
-    const head1 = { 'Authorization': `Bearer ${login1.data.token}` };
-    await request('/company/switch', { method: 'POST', headers: head1, body: { targetCompanyId: company.id } });
-    await request(`/documents/${docId}/approve`, { method: 'POST', headers: head1, body: { comment: "First OK" } });
+    let head1 = { 'Authorization': `Bearer ${login1.data.token}` };
+    const switch1 = await request('/company/switch', { method: 'POST', headers: head1, body: { targetCompanyId: company.id } });
+    if (switch1.data && switch1.data.token) head1 = { 'Authorization': `Bearer ${switch1.data.token}` };
+    
+    // We get instance ID for node-level approval as well to be safe
+    const listRes1 = await request(`/documents/${docId}`, { headers: head1 });
+    const instId = listRes1.data?.workflowInstance?.id;
+    
+    // Approve
+    const app1Res = await request(`/workflows/instances/${instId}/nodes/n1/action`, { method: 'POST', headers: head1, body: { action: "approve", comment: "First OK" } });
+    if (!app1Res.success) throw new Error(`App1 approve failed: ${app1Res.message || JSON.stringify(app1Res)}`);
     console.log('  Approver 1 approved.');
 
     // Login and approve as App2
     const login2 = await request('/auth/login', { method: 'POST', body: { username: app2.username, password: 'Password123!', autoLogin: false } });
     if (!login2.success) throw new Error(`App2 login failed: ${login2.message}`);
-    const head2 = { 'Authorization': `Bearer ${login2.data.token}` };
-    await request('/company/switch', { method: 'POST', headers: head2, body: { targetCompanyId: company.id } });
-    await request(`/documents/${docId}/approve`, { method: 'POST', headers: head2, body: { comment: "Second OK" } });
+    let head2 = { 'Authorization': `Bearer ${login2.data.token}` };
+    const switch2 = await request('/company/switch', { method: 'POST', headers: head2, body: { targetCompanyId: company.id } });
+    if (switch2.data && switch2.data.token) head2 = { 'Authorization': `Bearer ${switch2.data.token}` };
+    
+    const app2Res = await request(`/workflows/instances/${instId}/nodes/n2/action`, { method: 'POST', headers: head2, body: { action: "approve", comment: "Second OK" } });
+    if (!app2Res.success) throw new Error(`App2 approve failed: ${app2Res.message || JSON.stringify(app2Res)}`);
     console.log('  Approver 2 approved.');
 
-    await new Promise(r => setTimeout(r, 2000));
+    process.stdout.write('  Waiting for approval completion ');
+    await Utils.waitForDocumentStatus(docId, 'approved');
     const finalRes = await request(`/documents/${docId}`, { headers: Auth.headers });
-    console.log(`  Document Status: ${finalRes.data.document.status} - ${finalRes.data.document.status === 'approved' ? '✅' : '❌'}`);
+    console.log(`\n  Document Status: ${finalRes.data.document.status} - ${finalRes.data.document.status === 'approved' ? '✅' : '❌'}`);
 }
 
 /**
@@ -523,27 +569,97 @@ async function runFormIntegratedTests() {
     const submitNodeRes = await Utils.submitNodeForm(instId, "approval", feedback);
     
     // Complete the node
-    await request(`/workflows/instances/${instId}/approve`, {
+    console.log("- Executing Approval Action...");
+    const approveRes = await request(`/workflows/instances/${instId}/nodes/approval/action`, {
         method: 'POST',
         headers: Auth.headers,
-        body: { nodeId: "approval", remark: "OK" }
+        body: { action: "approve", comment: "OK" }
     });
+    if (!approveRes.success) throw new Error("Approval action failed: " + (approveRes.message || JSON.stringify(approveRes)));
+    console.log("  ✅ Approval action submitted.");
 
     // 8. Final check
-    await new Promise(r => setTimeout(r, 2000));
+    process.stdout.write('  Waiting for final workflow completion ');
+    await Utils.waitForInstanceStatus(instId, 'completed');
     const finalInst = await request(`/workflows/instances/${instId}`, { headers: Auth.headers });
-    console.log(`  Final Workflow Status: ${finalInst.data.status === 1 ? "✅ COMPLETED" : "❌ " + finalInst.data.status}`);
+    console.log(`\n  Final Workflow Status: ${finalInst.data.status === 'completed' ? "✅ COMPLETED" : "❌ " + finalInst.data.status}`);
 }
 
 /**
- * [L6] 数据层诊断 (MongoDB)
- * 直连 MongoDB 查询最新文档，验证端到端数据持久化
+ * [L7] 审批拒绝测试 (Rejection)
+ * 测试流程在审批节点被拒绝时的状态流转
  */
+async function runRejectTests() {
+    console.log('\n=== RUNNING REJECTION TESTS ===');
+    const company = await Utils.createCompany(`RejectCorp-${Date.now().toString().slice(-4)}`);
+    const app1 = await Utils.registerUser(`rejector_${company.code.slice(-4)}`);
+    if (!app1) throw new Error("Registration failed");
+    
+    await Auth.switchCompany(company.id);
+    const rolesRes = await request('/role', { headers: Auth.headers });
+    const adminRole = rolesRes.data.roles.find(r => r.name === '管理员');
+    await request('/users', { method: 'POST', headers: Auth.headers, body: { username: app1.username, roleIds: [adminRole.id], isActive: true } });
+
+    const workflowDef = {
+        name: `Rejection WF ${company.code}`,
+        category: 'Test',
+        isActive: true,
+        graph: {
+            nodes: [
+                { id: 'start', type: 'start' },
+                { id: 'approval', type: 'approval', config: { approval: { type: 'any', approvers: [{ type: 'user', userId: app1.userId }], allowReject: true } } },
+                { id: 'end', type: 'end' }
+            ],
+            edges: [
+                { source: 'start', target: 'approval' },
+                { source: 'approval', target: 'end', label: 'Approve', condition: 'default' }
+            ]
+        }
+    };
+    const defRes = await request('/workflows', { method: 'POST', headers: Auth.headers, body: workflowDef });
+    const defId = defRes.data.id;
+    
+    const docRes = await request('/documents', { method: 'POST', headers: Auth.headers, body: { title: "Bad Request", content: "..." } });
+    const docId = docRes.data.id;
+    const submitRes = await request(`/documents/${docId}/submit`, { method: 'POST', headers: Auth.headers, body: { workflowDefinitionId: defId } });
+    const instId = submitRes.data.id;
+    console.log(`  Workflow started. Instance ID: ${instId}`);
+
+    // Login and reject as app1
+    const login1 = await request('/auth/login', { method: 'POST', body: { username: app1.username, password: 'Password123!', autoLogin: false } });
+    let head1 = { 'Authorization': `Bearer ${login1.data.token}` };
+    const switchRes = await request('/company/switch', { method: 'POST', headers: head1, body: { targetCompanyId: company.id } });
+    if (switchRes.data && switchRes.data.token) {
+        head1 = { 'Authorization': `Bearer ${switchRes.data.token}` };
+    }
+    
+    console.log('- Executing Reject Action...');
+    const rejectRes = await request(`/workflows/instances/${instId}/nodes/approval/action`, {
+        method: 'POST', headers: head1, body: { action: "reject", comment: "Not approved" }
+    });
+    if (!rejectRes.success) throw new Error("Reject action failed: " + (rejectRes.message || JSON.stringify(rejectRes)));
+    console.log('  ✅ Reject action submitted.');
+
+    process.stdout.write('  Waiting for rejection completion ');
+    await Utils.waitForInstanceStatus(instId, 'rejected');
+    const finalInst = await request(`/workflows/instances/${instId}`, { headers: Auth.headers });
+    console.log(`\n  Final Workflow Status: ${finalInst.data.status === 'rejected' ? '✅ REJECTED' : '❌ ' + finalInst.data.status}`);
+}
+
 async function runMongoTests() {
     console.log('\n=== RUNNING MONGODB DIRECT QUERY ===');
     
-    // Aspire 动态端口，默认 57428，可通过环境变量覆盖
-    const port = process.env.MONGO_PORT || '57428';
+    // Try to detect port from logs if possible, else fallback to common Aspire range or env
+    let port = process.env.MONGO_PORT || '55341'; // Updated fallback to the confirmed dynamic port
+    
+    if (Aspire.lastLogs) {
+        const match = Aspire.lastLogs.match(/mongodb:\/\/.*:(\d+)/) || Aspire.lastLogs.match(/tcp:\/\/localhost:(\d+)/);
+        if (match) {
+            port = match[1];
+            console.log(`- Detected dynamic MongoDB port from logs: ${port}`);
+        }
+    }
+
     const dbName = 'aspire-admin-db';
     const uri = `mongodb://admin:admin123@localhost:${port}/${dbName}?authSource=admin`;
     
@@ -564,7 +680,7 @@ async function runMongoTests() {
         }
     } catch (err) {
         console.log(`  ❌ MongoDB 查询失败: ${err.message}`);
-        console.log('  (确保系统中安装了 mongosh 且 Aspire 容器正在运行)');
+        console.log('  (由于 Aspire 容器是在此进程中启动的，直连 localhost 可能会因网络模式而受限，建议在本地环境手动验证或检查 AppHost 指标)');
     }
 }
 
@@ -600,13 +716,20 @@ const Aspire = {
         });
 
         // 收集日志用于调试
+        this.lastLogs = '';
         this.proc.stdout.on('data', d => {
             const line = d.toString().trim();
-            if (line) process.stdout.write(`  [AppHost] ${line}\n`);
+            if (line) {
+                process.stdout.write(`  [AppHost] ${line}\n`);
+                this.lastLogs += line + '\n';
+            }
         });
         this.proc.stderr.on('data', d => {
             const line = d.toString().trim();
-            if (line) process.stderr.write(`  [AppHost:err] ${line}\n`);
+            if (line) {
+                process.stderr.write(`  [AppHost:err] ${line}\n`);
+                this.lastLogs += line + '\n';
+            }
         });
         this.proc.on('exit', code => {
             if (code && code !== 0) console.error(`  ⚠️ AppHost exited with code ${code}`);
@@ -656,6 +779,7 @@ async function main() {
         //  L4  form       表单集成                  (表单定义 ➜ 校验 ➜ 数据持久化)
         //  L5  multiuser  多用户协作                (租户隔离 / 角色 / 多人审批)
         //  L6  mongo      数据层诊断                (MongoDB 直查，验证持久化)
+        //  L7  reject     审批拒绝测试              (测试审批节点被拒绝时的行为)
         // ─────────────────────────────────────────
         if (mode === 'all' || mode === 'register')  await runRegisterTests();
         if (mode === 'all' || mode === 'design')    await runDesignTests();
@@ -663,6 +787,7 @@ async function main() {
         if (mode === 'all' || mode === 'allnodes')  await runAllNodesTests();
         if (mode === 'all' || mode === 'form')      await runFormIntegratedTests();
         if (mode === 'all' || mode === 'multiuser') await runMultiUserTests();
+        if (mode === 'all' || mode === 'reject')    await runRejectTests();
         if (mode === 'all' || mode === 'mongo')     await runMongoTests();
 
         console.log('\n🌟 Unified Test Run Finished.');

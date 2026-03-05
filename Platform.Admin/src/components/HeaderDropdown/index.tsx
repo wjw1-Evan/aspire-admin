@@ -55,11 +55,11 @@ const HeaderDropdown: React.FC<HeaderDropdownProps> = ({
 
   return (
     <Dropdown
-      overlayClassName={classNames(cls)}
-      overlayStyle={style}
+      classNames={{ root: classNames(cls) }}
+      styles={{ root: style }}
       arrow={{ pointAtCenter: true }}
       transitionName=""
-      dropdownRender={(menu) => (
+      popupRender={(menu) => (
         <div className={styles.popupWrapper}>
           {dropdownRender ? dropdownRender(menu) : menu}
         </div>

@@ -646,43 +646,6 @@ async function runRejectTests() {
     console.log(`\n  Final Workflow Status: ${finalInst.data.status === 'rejected' ? '✅ REJECTED' : '❌ ' + finalInst.data.status}`);
 }
 
-async function runMongoTests() {
-    console.log('\n=== RUNNING MONGODB DIRECT QUERY ===');
-    
-    // Try to detect port from logs if possible, else fallback to common Aspire range or env
-    let port = process.env.MONGO_PORT || '55341'; // Updated fallback to the confirmed dynamic port
-    
-    if (Aspire.lastLogs) {
-        const match = Aspire.lastLogs.match(/mongodb:\/\/.*:(\d+)/) || Aspire.lastLogs.match(/tcp:\/\/localhost:(\d+)/);
-        if (match) {
-            port = match[1];
-            console.log(`- Detected dynamic MongoDB port from logs: ${port}`);
-        }
-    }
-
-    const dbName = 'aspire-admin-db';
-    const uri = `mongodb://admin:admin123@localhost:${port}/${dbName}?authSource=admin`;
-    
-    try {
-        const { execSync } = require('child_process');
-        console.log(`- Connection to ${uri} via mongosh...`);
-        
-        const query = 'db.documents.find({}).sort({_id: -1}).limit(3).toArray()';
-        const cmd = `mongosh "${uri}" --quiet --eval 'JSON.stringify(${query})'`;
-        
-        const output = execSync(cmd).toString();
-        const docs = JSON.parse(output);
-        
-        console.log(`  ✅ 查询到 ${docs.length} 条最新文档：`);
-        for (const d of docs) {
-            console.log(`  - _id: ${d._id.$oid || d._id}, title: ${d.title}, formData keys: ${Object.keys(d.formData || {}).join(', ') || '(empty)'}`);
-            if (d.formData) console.log(`    formData: ${JSON.stringify(d.formData)}`);
-        }
-    } catch (err) {
-        console.log(`  ❌ MongoDB 查询失败: ${err.message}`);
-        console.log('  (由于 Aspire 容器是在此进程中启动的，直连 localhost 可能会因网络模式而受限，建议在本地环境手动验证或检查 AppHost 指标)');
-    }
-}
 
 // --- Aspire Service Manager ---
 
@@ -778,7 +741,7 @@ async function main() {
         //  L3  allnodes   全节点组合                (将各节点串入单条工作流)
         //  L4  form       表单集成                  (表单定义 ➜ 校验 ➜ 数据持久化)
         //  L5  multiuser  多用户协作                (租户隔离 / 角色 / 多人审批)
-        //  L6  mongo      数据层诊断                (MongoDB 直查，验证持久化)
+        //  L6  (Reserved)                
         //  L7  reject     审批拒绝测试              (测试审批节点被拒绝时的行为)
         // ─────────────────────────────────────────
         if (mode === 'all' || mode === 'register')  await runRegisterTests();
@@ -788,7 +751,6 @@ async function main() {
         if (mode === 'all' || mode === 'form')      await runFormIntegratedTests();
         if (mode === 'all' || mode === 'multiuser') await runMultiUserTests();
         if (mode === 'all' || mode === 'reject')    await runRejectTests();
-        if (mode === 'all' || mode === 'mongo')     await runMongoTests();
 
         console.log('\n🌟 Unified Test Run Finished.');
     } catch (err) {

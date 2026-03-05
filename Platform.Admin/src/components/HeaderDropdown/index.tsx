@@ -26,25 +26,32 @@ export type HeaderDropdownProps = {
   | 'topLeft'
   | 'topCenter'
   | 'topRight'
-  | 'bottomCenter';
+  | 'bottomCenter'
+  | 'bottom';
   /** 传递给 antd Dropdown 的 classNames */
   classNames?: DropDownProps['classNames'];
+  /** 支持复杂内容的渲染 */
+  dropdownRender?: DropDownProps['dropdownRender'];
 } & Omit<DropDownProps, 'overlay'>;
 
 const HeaderDropdown: React.FC<HeaderDropdownProps> = ({
   overlayClassName: cls,
   classNames: customClassNames,
+  dropdownRender,
   ...restProps
 }) => {
   const { styles } = useStyles();
-  // 合并旧的 overlayClassName 到新的 classNames.root
-  const mergedClassNames = {
-    ...customClassNames,
 
-    root: classNames(styles.dropdown, customClassNames?.root, cls),
-  } as DropDownProps['classNames'];
-
-  return <Dropdown classNames={mergedClassNames} {...restProps} />;
+  return (
+    <Dropdown
+      overlayClassName={classNames('premium-popup', styles.dropdown, cls)}
+      classNames={customClassNames}
+      arrow={{ pointAtCenter: true }}
+      transitionName=""
+      dropdownRender={dropdownRender}
+      {...restProps}
+    />
+  );
 };
 
 export default HeaderDropdown;

@@ -161,7 +161,7 @@ public partial class WorkflowEngine
             }
             messages.Add(OpenAI.Chat.ChatMessage.CreateUserMessage(prompt));
 
-            var response = await _openAiClient.GetChatClient(config.Model ?? "gpt-4o").CompleteChatAsync(messages);
+            var response = await _openAiClient.GetChatClient(config.Model ?? "gpt-4o-mini").CompleteChatAsync(messages);
             var result = response.Value.Content[0].Text;
 
             await _instanceFactory.UpdateAsync(instanceId, i =>
@@ -527,7 +527,7 @@ public partial class WorkflowEngine
             }
             messages.Add(OpenAI.Chat.ChatMessage.CreateUserMessage(prompt));
 
-            var response = await _openAiClient.GetChatClient(config.Model ?? "gpt-4o").CompleteChatAsync(messages);
+            var response = await _openAiClient.GetChatClient(config.Model ?? "gpt-4o-mini").CompleteChatAsync(messages);
             var result = response.Value.Content[0].Text.Trim().ToLower();
 
             var finalResult = (result.Contains("true") && !result.Contains("false")) ? "true" : "false";

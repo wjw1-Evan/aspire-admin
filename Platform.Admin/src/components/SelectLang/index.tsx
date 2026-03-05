@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dropdown } from 'antd';
+import HeaderDropdown from '@/components/HeaderDropdown';
 import type { MenuProps } from 'antd';
 import { setLocale, getLocale } from '@umijs/max';
 import styles from './index.less';
@@ -56,7 +56,7 @@ const SelectLang: React.FC = () => {
         locales[0];
 
     return (
-        <Dropdown
+        <HeaderDropdown
             menu={{
                 items: menuItems,
                 onClick: handleMenuClick,
@@ -72,7 +72,7 @@ const SelectLang: React.FC = () => {
                     </span>
                 )}
             </span>
-        </Dropdown>
+        </HeaderDropdown>
     );
 };
 

@@ -67,63 +67,74 @@ const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({ currentUser, companyInfo 
                 borderRadius: '50%',
             }} />
 
-            <Row align="middle" gutter={32}>
-                <Col>
-                    <Avatar
-                        size={88}
-                        icon={<UserOutlined />}
-                        src={getUserAvatar(currentUser?.avatar)}
-                        style={{
-                            backgroundColor: 'rgba(255,255,255,0.2)',
-                            border: '4px solid rgba(255,255,255,0.3)',
-                            boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
-                        }}
-                    />
-                </Col>
-                <Col flex={1}>
-                    <Title level={1} style={{ color: 'white', margin: 0, fontSize: '28px', fontWeight: 700 }}>
-                        {getGreeting(intl)}，{currentUser?.name || currentUser?.userid || intl.formatMessage({ id: 'pages.welcome.user' })}！
-                    </Title>
-                    <Paragraph style={{ color: 'rgba(255,255,255,0.85)', margin: '12px 0 20px 0', fontSize: '16px' }}>
-                        {intl.formatMessage({ id: 'pages.welcome.welcomeText' }, { title: Settings.title })}
-                        {(companyInfo?.displayName || companyInfo?.name) && (
-                            <Tag style={{ marginLeft: 8, background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white' }}>
-                                {companyInfo.displayName || companyInfo.name}
-                            </Tag>
-                        )}
-                    </Paragraph>
-                    <Space wrap size={12}>
-                        {getUserRoleTags()}
-                        <Tag
-                            color="green"
-                            variant="filled"
-                            icon={<GlobalOutlined />}
-                            style={{ borderRadius: '6px', border: 'none' }}
-                        >
-                            {intl.formatMessage({ id: 'pages.welcome.online' })}
-                        </Tag>
-                    </Space>
-                </Col>
-                <Col>
-                    <div style={{
-                        textAlign: 'right',
-                        background: 'rgba(255,255,255,0.1)',
-                        padding: '16px 24px',
-                        borderRadius: '16px',
-                        backdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(255,255,255,0.2)'
-                    }}>
-                        <div style={{ fontSize: '24px', fontWeight: 800 }}>
-                            {new Date().toLocaleDateString(intl.locale === 'zh-CN' ? 'zh-CN' : 'en-US', {
-                                day: 'numeric'
-                            })}
-                        </div>
-                        <div style={{ fontSize: '14px', fontWeight: 500, opacity: 0.9 }}>
-                            {new Date().toLocaleDateString(intl.locale === 'zh-CN' ? 'zh-CN' : 'en-US', { month: 'short', weekday: 'short' })}
-                        </div>
-                    </div>
-                </Col>
-            </Row>
+      <Row align="middle" gutter={[32, 24]}>
+        <Col xs={24} sm={24} md={3}>
+          <div style={{ textAlign: 'center' }}>
+            <Avatar
+              size={{ xs: 80, sm: 80, md: 88, lg: 88, xl: 100, xxl: 110 }}
+              icon={<UserOutlined />}
+              src={getUserAvatar(currentUser?.avatar)}
+              style={{
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                border: '4px solid rgba(255,255,255,0.3)',
+                boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
+              }}
+            />
+          </div>
+        </Col>
+        <Col xs={24} sm={24} md={15}>
+          <div className="welcome-header-text">
+            <style>{`
+              @media (max-width: 768px) {
+                .welcome-header-text { text-align: center; }
+                .welcome-header-text h1 { font-size: 24px !important; }
+                .welcome-header-tags { justify-content: center; }
+              }
+            `}</style>
+            <Title level={1} style={{ color: 'white', margin: 0, fontSize: '28px', fontWeight: 700 }}>
+              {getGreeting(intl)}，{currentUser?.name || currentUser?.userid || intl.formatMessage({ id: 'pages.welcome.user' })}！
+            </Title>
+            <Paragraph style={{ color: 'rgba(255,255,255,0.85)', margin: '12px 0 20px 0', fontSize: '16px' }}>
+              {intl.formatMessage({ id: 'pages.welcome.welcomeText' }, { title: Settings.title })}
+              {(companyInfo?.displayName || companyInfo?.name) && (
+                <Tag style={{ marginLeft: 8, background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white' }}>
+                  {companyInfo.displayName || companyInfo.name}
+                </Tag>
+              )}
+            </Paragraph>
+            <Space wrap size={12} className="welcome-header-tags">
+              {getUserRoleTags()}
+              <Tag
+                color="green"
+                variant="filled"
+                icon={<GlobalOutlined />}
+                style={{ borderRadius: '6px', border: 'none' }}
+              >
+                {intl.formatMessage({ id: 'pages.welcome.online' })}
+              </Tag>
+            </Space>
+          </div>
+        </Col>
+        <Col xs={24} sm={24} md={6}>
+          <div style={{
+            textAlign: 'center',
+            background: 'rgba(255,255,255,0.1)',
+            padding: '16px 24px',
+            borderRadius: '16px',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255,255,255,0.2)'
+          }}>
+            <div style={{ fontSize: '24px', fontWeight: 800 }}>
+              {new Date().toLocaleDateString(intl.locale === 'zh-CN' ? 'zh-CN' : 'en-US', {
+                day: 'numeric'
+              })}
+            </div>
+            <div style={{ fontSize: '14px', fontWeight: 500, opacity: 0.9 }}>
+              {new Date().toLocaleDateString(intl.locale === 'zh-CN' ? 'zh-CN' : 'en-US', { month: 'short', weekday: 'short' })}
+            </div>
+          </div>
+        </Col>
+      </Row>
         </Card>
     );
 };

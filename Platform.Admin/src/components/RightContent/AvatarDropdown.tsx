@@ -43,10 +43,10 @@ const useStyles = createStyles(({ token }) => {
       alignItems: 'center',
       justifyContent: 'center',
       height: '44px',
-      padding: '0 12px',
+      padding: '0 16px', // 稍微增加间距
       margin: '0 4px',
       cursor: 'pointer',
-      borderRadius: '22px', // 药丸形以对齐圆形按钮
+      borderRadius: '22px', 
       transition: 'all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1)',
       lineHeight: 1,
       background: '#ffffff',
@@ -57,12 +57,20 @@ const useStyles = createStyles(({ token }) => {
       '&:hover': {
         background: '#fafafa',
         borderColor: '#1890ff',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-        transform: 'translateY(-1px) scale(1.02)',
+        boxShadow: '0 6px 16px rgba(0, 0, 0, 0.12)',
+        transform: 'translateY(-2px) scale(1.05)',
+
+        '.ant-avatar': {
+          transform: 'scale(1.1)',
+        },
       },
 
       '&:active': {
-        transform: 'scale(0.98)',
+        transform: 'scale(0.95)',
+      },
+
+      '.ant-avatar': {
+        transition: 'transform 0.3s cubic-bezier(0.645, 0.045, 0.355, 1)',
       },
     },
     name: {
@@ -360,6 +368,8 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
   return (
     <>
       <HeaderDropdown
+        placement="bottomRight"
+        overlayStyle={{ minWidth: 200 }}
         menu={{
           selectedKeys: [],
           onClick: onMenuClick,

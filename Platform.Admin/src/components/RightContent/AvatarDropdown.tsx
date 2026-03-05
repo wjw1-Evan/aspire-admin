@@ -10,7 +10,7 @@ import {
 } from '@ant-design/icons';
 import { history, useModel, useIntl, request } from '@umijs/max';
 import type { MenuProps } from 'antd';
-import { Spin, Avatar, App as AntApp } from 'antd';
+import { Spin, Avatar, App as AntApp, Tag } from 'antd';
 import { createStyles } from 'antd-style';
 import React, { useState, useEffect, useCallback } from 'react';
 import { flushSync } from 'react-dom';
@@ -49,15 +49,15 @@ const useStyles = createStyles(({ token }) => {
       borderRadius: '22px', 
       transition: 'all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1)',
       lineHeight: 1,
-      background: '#ffffff',
-      border: '1px solid #e8e8e8',
-      color: '#333',
-      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+      background: token.colorBgContainer,
+      border: `1px solid ${token.colorBorderSecondary}`,
+      color: token.colorText,
+      boxShadow: token.boxShadowTertiary,
 
       '&:hover': {
-        background: '#fafafa',
-        borderColor: '#1890ff',
-        boxShadow: '0 6px 16px rgba(0, 0, 0, 0.12)',
+        background: token.colorFillTertiary,
+        borderColor: token.colorPrimary,
+        boxShadow: token.boxShadowSecondary,
         transform: 'translateY(-2px) scale(1.05)',
 
         '.ant-avatar': {
@@ -281,21 +281,21 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
             <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>
               {company.companyName}
               {company.isPersonal && (
-                <span style={{ marginLeft: 8, padding: '0 6px', fontSize: 12, background: '#e6f7ff', color: '#1890ff', borderRadius: 2 }}>
+                <Tag color="blue" style={{ marginLeft: 8 }}>
                   {intl.formatMessage({ id: 'pages.company.personal' })}
-                </span>
+                </Tag>
               )}
               {company.isAdmin && (
-                <span style={{ marginLeft: 8, padding: '0 6px', fontSize: 12, background: '#fff7e6', color: '#fa8c16', borderRadius: 2 }}>
+                <Tag color="orange" style={{ marginLeft: 8 }}>
                   {intl.formatMessage({ id: 'pages.company.admin' })}
-                </span>
+                </Tag>
               )}
             </div>
-            <div style={{ fontSize: 12, color: '#666' }}>
+            <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
               {company.roleNames.join(intl.formatMessage({ id: 'pages.company.roleSeparator' })) || intl.formatMessage({ id: 'pages.company.noRole' })}
             </div>
           </div>
-          {company.isCurrent && <CheckOutlined style={{ marginLeft: 12, color: '#52c41a', fontSize: 16 }} />}
+          {company.isCurrent && <CheckOutlined style={{ marginLeft: 12, color: 'var(--ant-color-success)', fontSize: 16 }} />}
         </div>
       ),
     })),
@@ -305,7 +305,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
     {
       key: 'create-company',
       label: (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#1890ff', fontWeight: 500 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--ant-color-primary)', fontWeight: 500 }}>
           <PlusOutlined /> {intl.formatMessage({ id: 'pages.company.createNew' })}
         </div>
       ),
@@ -313,7 +313,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
     {
       key: 'join-company',
       label: (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#1890ff', fontWeight: 500 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--ant-color-primary)', fontWeight: 500 }}>
           <PlusOutlined /> {intl.formatMessage({ id: 'pages.company.joinNew' })}
         </div>
       ),
@@ -369,7 +369,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
     <>
       <HeaderDropdown
         placement="bottomRight"
-        overlayStyle={{ minWidth: 200 }}
+        styles={{ root: { minWidth: 200 } }}
         menu={{
           selectedKeys: [],
           onClick: onMenuClick,

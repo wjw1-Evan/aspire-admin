@@ -4,13 +4,20 @@ import { createStyles } from 'antd-style';
 import classNames from 'classnames';
 import React from 'react';
 
-const useStyles = createStyles(({ token }) => {
+const useStyles = createStyles(({ token, css }) => {
   return {
-    dropdown: {
-      [`@media screen and (max-width: ${token.screenXS}px)`]: {
-        width: '100%',
-      },
-    },
+    dropdown: css`
+      @media screen and (max-width: ${token.screenXS}px) {
+        width: 100% !important;
+      }
+    `,
+    popupWrapper: css`
+      background-color: ${token.colorBgElevated};
+      border-radius: ${token.borderRadiusLG}px;
+      box-shadow: ${token.boxShadowSecondary};
+      border: 1px solid ${token.colorBorderSecondary};
+      overflow: hidden;
+    `,
   };
 });
 
@@ -20,6 +27,11 @@ export type HeaderDropdownProps = {
    * 为兼容旧代码，保留该属性并映射到 classNames.root
    */
   overlayClassName?: string;
+  /**
+   * antd v6: overlayStyle 已弃用，改用 styles.root
+   * 为兼容旧代码，保留该属性并映射到 styles.root
+   */
+  overlayStyle?: React.CSSProperties;
   placement?:
   | 'bottomLeft'
   | 'bottomRight'
@@ -30,13 +42,17 @@ export type HeaderDropdownProps = {
   | 'bottom';
   /** 传递给 antd Dropdown 的 classNames */
   classNames?: DropDownProps['classNames'];
+  /** 传递给 antd Dropdown 的 styles */
+  styles?: DropDownProps['styles'];
   /** 支持复杂内容的渲染 */
   dropdownRender?: DropDownProps['dropdownRender'];
 } & Omit<DropDownProps, 'overlay'>;
 
 const HeaderDropdown: React.FC<HeaderDropdownProps> = ({
   overlayClassName: cls,
+  overlayStyle: style,
   classNames: customClassNames,
+  styles: customStyles,
   dropdownRender,
   ...restProps
 }) => {
@@ -44,10 +60,15 @@ const HeaderDropdown: React.FC<HeaderDropdownProps> = ({
 
   return (
     <Dropdown
-      classNames={{ ...customClassNames, root: classNames('premium-popup', styles.dropdown, cls) }}
+      classNames={{ ...customClassNames, root: classNames(styles.dropdown, cls) }}
+      styles={{ ...customStyles, root: { ...style, ...customStyles?.root } }}
       arrow={{ pointAtCenter: true }}
       transitionName=""
-      popupRender={dropdownRender}
+      popupRender={(menu) => (
+        <div className={styles.popupWrapper}>
+          {dropdownRender ? dropdownRender(menu) : menu}
+        </div>
+      )}
       {...restProps}
     />
   );

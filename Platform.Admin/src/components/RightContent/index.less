@@ -3,26 +3,22 @@
   align-items: center;
   justify-content: center;
   width: 44px;
-  /* 固定宽度 */
   height: 44px;
-  /* 固定高度，确保正方形 */
   padding: 0;
-  /* 移除 padding 以保证正中 */
   margin: 0 4px;
   cursor: pointer;
   border-radius: 50%;
-  /* 改为圆形更统一 */
   font-size: 20px;
-  color: #333;
+  color: var(--ant-color-text);
   transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
   line-height: 1;
-  background: #ffffff;
-  border: 1px solid #e8e8e8;
+  background: var(--ant-color-bg-container);
+  border: 1px solid var(--ant-color-border-secondary);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 
   &:hover {
-    background: #fafafa;
-    border-color: #1890ff;
+    background: var(--ant-color-fill-tertiary);
+    border-color: var(--ant-color-primary);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
     transform: translateY(-2px) scale(1.08);
 
@@ -40,62 +36,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-}
-
-/* 统一的高阶弹出菜单样式 (实色背景 + 统一动画) */
-:global(.premium-popup) {
-  animation: premiumPopupSlideIn 0.25s cubic-bezier(0.23, 1, 0.32, 1) !important;
-
-  :global(.ant-dropdown-menu),
-  :global(.ant-popover-inner),
-  .noticePopover {
-    padding: 8px !important;
-    border-radius: 12px !important;
-    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.12) !important;
-    background: #ffffff !important;
-    border: 1px solid rgba(0, 0, 0, 0.06) !important;
-  }
-
-  /* 统一菜单项样式 */
-  :global(.ant-dropdown-menu-item),
-  :global(.ant-dropdown-menu-submenu-title) {
-    border-radius: 8px !important;
-    padding: 8px 12px !important;
-    margin: 2px 0 !important;
-    transition: all 0.2s !important;
-
-    &:hover {
-      background: rgba(24, 144, 255, 0.05) !important;
-      transform: translateX(4px);
-    }
-  }
-
-  /* NoticeIcon 特有的 Popover 内部清理 */
-  :global(.ant-popover-content),
-  :global(.ant-popover-inner-content) {
-    background: transparent !important;
-    padding: 0 !important;
-    box-shadow: none !important;
-    
-    /* 针对内部 UnifiedNotificationList 的强制清理 */
-    :global(.notificationItem) {
-      margin: 4px 8px !important;
-      background: #fbfbfb !important; /* 使用浅实色 */
-      border: 1px solid rgba(0, 0, 0, 0.03) !important;
-      box-shadow: none !important;
-
-      &:hover {
-        background: #f0f7ff !important;
-        transform: translateX(4px);
-      }
-    }
-  }
-
-  /* 统一箭头样式 (实色) */
-  :global(.ant-popover-arrow)::before,
-  :global(.ant-dropdown-arrow)::before {
-    background: #ffffff !important;
   }
 }
 

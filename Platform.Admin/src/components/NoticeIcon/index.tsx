@@ -72,7 +72,7 @@ export default function NoticeIcon() {
     <>
       <HeaderDropdown
         dropdownRender={() => (
-          <div className={headerStyles.noticePopover}>
+          <div>
             {popoverContent}
           </div>
         )}

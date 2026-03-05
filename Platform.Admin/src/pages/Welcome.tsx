@@ -69,26 +69,31 @@ const Welcome: React.FC = () => {
         setTodoTasks(todoTasksRes.data);
       }
 
-      // 获取审批统计和待处理公文（如果有权限）
-      if (canAccessApproval) {
+      // 🚀 优化：审批统计和待处理公文尝试获取
+      // 不再严格依赖 canAccessPath，只要是登录状态就尝试请求。
+      // 这里的 canAccessApproval 仅用于 UI 模块的显隐。
+      try {
         const [docStatsRes, pendingDocsRes] = await Promise.all([
           getDocumentStatistics(),
           getPendingDocuments({ page: 1, pageSize: 5 })
         ]);
 
-        if (docStatsRes && docStatsRes.data) {
+        if (docStatsRes?.success && docStatsRes.data) {
           setDocStatistics(docStatsRes.data);
         }
-        if (pendingDocsRes && pendingDocsRes.data && pendingDocsRes.data.list) {
+        if (pendingDocsRes?.success && pendingDocsRes.data?.list) {
           setPendingDocs(pendingDocsRes.data.list);
         }
+      } catch (docError) {
+        // 对于非核心数据的失败，只记录日志不中断流程
+        console.warn('Welcome: 获取审批统计失败', docError);
       }
     } catch (error) {
       console.error('获取统计数据失败:', error);
     } finally {
       setLoading(false);
     }
-  }, [canAccessApproval]);
+  }, []);
 
   // 获取系统资源数据
   const fetchSystemResources = useCallback(async () => {

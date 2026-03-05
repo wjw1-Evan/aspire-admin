@@ -189,11 +189,6 @@ const SystemResourcesCard: React.FC<SystemResourcesCardProps> = ({
                                 </div>
                             </Col>
                         ))}
-                        <Col xs={24} sm={12} md={6}>
-                            <Tag variant="filled" color="blue" style={{ borderRadius: '4px', marginTop: 4 }}>
-                                64-Bit Process: {systemResources.system?.is64BitProcess ? 'Yes' : 'No'}
-                            </Tag>
-                        </Col>
                     </Row>
                     <div style={{
                         marginTop: 12,

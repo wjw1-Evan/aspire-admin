@@ -526,9 +526,6 @@ export default function Register() {
                     <FormattedMessage id="pages.register.info.item1" />
                   </div>
                   <div className="info-item">
-                    <FormattedMessage id="pages.register.info.item2" />
-                  </div>
-                  <div className="info-item">
                     <FormattedMessage id="pages.register.info.item3" />
                   </div>
                 </div>

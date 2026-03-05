@@ -474,7 +474,6 @@ export default {
   'pages.register.captcha.placeholder': '请输入图形验证码',
   'pages.register.info.title': '💡 注册成功后系统将为您：',
   'pages.register.info.item1': '✅ 自动创建个人企业（您是管理员）',
-  'pages.register.info.item2': '✅ 配置默认权限和菜单',
   'pages.register.info.item3': '✅ 您可以邀请成员或申请加入其他企业',
   'pages.register.submit': '立即注册',
   'pages.register.login': '已有账号？立即登录',

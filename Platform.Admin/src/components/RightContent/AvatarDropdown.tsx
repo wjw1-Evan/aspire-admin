@@ -2,28 +2,25 @@ import {
   LogoutOutlined,
   UserOutlined,
   LockOutlined,
-  SettingOutlined,
   QuestionCircleOutlined,
   BankOutlined,
   CheckOutlined,
   PlusOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import { history, useModel, useIntl, request } from '@umijs/max';
 import type { MenuProps } from 'antd';
 import { Spin, Avatar, App as AntApp, Tag } from 'antd';
-import { createStyles } from 'antd-style';
 import React, { useState, useEffect, useCallback } from 'react';
 import { flushSync } from 'react-dom';
 import { outLogin } from '@/services/ant-design-pro/api';
 import { tokenUtils } from '@/utils/token';
-import { getUserAvatar } from '@/utils/avatar';
 import HeaderDropdown from '../HeaderDropdown';
 import HelpModal from '../HelpModal';
 import { ThemeSettingsDrawer } from './ThemeSettingsDrawer';
 import { JoinCompanyModal } from '../JoinCompanyModal';
 import { CreateCompanyModal } from '../CreateCompanyModal';
-
-
+import headerStyles from './index.less';
 
 export type GlobalHeaderRightProps = {
   menu?: boolean;
@@ -33,72 +30,34 @@ export type GlobalHeaderRightProps = {
 export const AvatarName = () => {
   const { initialState } = useModel('@@initialState');
   const { currentUser } = initialState || {};
-  return <span className="anticon">{currentUser?.name}</span>;
+  return <span>{currentUser?.name}</span>;
 };
-
-const useStyles = createStyles(({ token }) => {
-  return {
-    action: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      height: '44px',
-      padding: '0 16px', // 稍微增加间距
-      margin: '0 4px',
-      cursor: 'pointer',
-      borderRadius: '22px', 
-      transition: 'all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1)',
-      lineHeight: 1,
-      background: token.colorBgContainer,
-      border: `1px solid ${token.colorBorderSecondary}`,
-      color: token.colorText,
-      boxShadow: token.boxShadowTertiary,
-
-      '&:hover': {
-        background: token.colorFillTertiary,
-        borderColor: token.colorPrimary,
-        boxShadow: token.boxShadowSecondary,
-        transform: 'translateY(-2px) scale(1.05)',
-
-        '.ant-avatar': {
-          transform: 'scale(1.1)',
-        },
-      },
-
-      '&:active': {
-        transform: 'scale(0.95)',
-      },
-
-      '.ant-avatar': {
-        transition: 'transform 0.3s cubic-bezier(0.645, 0.045, 0.355, 1)',
-      },
-    },
-    name: {
-      marginLeft: '8px',
-      fontWeight: '500',
-    }
-  };
-});
 
 export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
   menu,
   children,
 }) => {
-  /**
-   * 退出登录，并且将当前的 url 保存
-   */
+  const { initialState, setInitialState } = useModel('@@initialState');
+  const { currentUser } = initialState || {};
+  const intl = useIntl();
+  const { message } = AntApp.useApp();
+
+  const [helpModalOpen, setHelpModalOpen] = useState(false);
+  const [settingsDrawerOpen, setSettingsDrawerOpen] = useState(false);
+  const [joinModalOpen, setJoinModalOpen] = useState(false);
+  const [createCompanyModalOpen, setCreateCompanyModalOpen] = useState(false);
+  const [companies, setCompanies] = useState<any[]>([]);
+  const [companiesLoading, setCompaniesLoading] = useState(false);
+
   const loginOut = async () => {
     await outLogin();
-    // 清除本地存储的 token
     tokenUtils.removeToken();
     const { search, pathname } = window.location;
     const urlParams = new URL(window.location.href).searchParams;
     const searchParams = new URLSearchParams({
       redirect: pathname + search,
     });
-    /** 此方法会跳转到 redirect 参数所在的位置 */
     const redirect = urlParams.get('redirect');
-    // Note: There may be security issues, please note
     if (window.location.pathname !== '/user/login' && !redirect) {
       history.replace({
         pathname: '/user/login',
@@ -106,84 +65,40 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
       });
     }
   };
-  const { styles } = useStyles();
 
-  const { initialState, setInitialState } = useModel('@@initialState');
-  const intl = useIntl();
-  const { message } = AntApp.useApp();
-  const [settingsDrawerOpen, setSettingsDrawerOpen] = useState(false);
-  const [helpModalOpen, setHelpModalOpen] = useState(false);
-  const [companies, setCompanies] = useState<API.UserCompanyItem[]>([]);
-  const [companiesLoading, setCompaniesLoading] = useState(false);
-  const [switching, setSwitching] = useState(false);
-  const [joinModalOpen, setJoinModalOpen] = useState(false);
-  const [createCompanyModalOpen, setCreateCompanyModalOpen] = useState(false);
-
-  // 加载用户的企业列表
   const loadCompanies = useCallback(async () => {
+    if (!currentUser) return;
     setCompaniesLoading(true);
     try {
-      // 添加时间戳参数防止缓存
-      const response = await request<API.ApiResponse<API.UserCompanyItem[]>>(
-        '/api/company/my-companies',
-        {
-          method: 'GET',
-          params: {
-            _t: Date.now(),
-          },
-        },
-      );
-
-      if (response.success && response.data) {
-        // 确保更新状态
-        setCompanies(response.data);
-
-      } else {
-        message.error(response.message || intl.formatMessage({ id: 'pages.company.loadFailed' }));
+      const res = await request('/api/company/my-companies');
+      if (res.success) {
+        setCompanies(res.data || []);
       }
-    } catch (error: any) {
-      console.error('加载企业列表失败:', error);
-      message.error(error.message || intl.formatMessage({ id: 'pages.company.loadFailed' }));
+    } catch (e) {
+      console.error(e);
     } finally {
       setCompaniesLoading(false);
     }
-  }, [intl, message]);
+  }, [currentUser]);
 
-  // 在组件挂载时加载企业列表
   useEffect(() => {
-    if (initialState?.currentUser) {
-      loadCompanies();
-    }
-  }, [initialState?.currentUser, loadCompanies]);
+    loadCompanies();
+  }, [loadCompanies]);
 
-  // 切换企业
   const handleSwitchCompany = async (targetCompanyId: string) => {
     const currentCompany = companies.find((c) => c.isCurrent);
     if (currentCompany?.companyId === targetCompanyId) {
       return;
     }
 
-    setSwitching(true);
     try {
-      const response = await request<API.ApiResponse<API.SwitchCompanyResult>>(
-        '/api/company/switch',
-        {
-          method: 'POST',
-          data: {
-            targetCompanyId,
-          },
-        },
-      );
+      const response = await request('/api/company/switch', {
+        method: 'POST',
+        data: { targetCompanyId },
+      });
 
-      if (response.success && response.data) {
-        message.success(
-          intl.formatMessage({ id: 'pages.company.switchSuccess' }, { name: response.data.companyName })
-        );
-
-        if (response.data.token) {
-          localStorage.setItem('token', response.data.token);
-        }
-
+      if (response.success) {
+        message.success(intl.formatMessage({ id: 'pages.company.switchSuccess' }));
         if (initialState?.fetchUserInfo) {
           const userInfo = await initialState.fetchUserInfo();
           setInitialState((s: any) => ({
@@ -191,19 +106,10 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
             currentUser: userInfo,
           }));
         }
-
-        await loadCompanies();
-
-        setTimeout(() => {
-          window.location.reload();
-        }, 500);
-      } else {
-        message.error(response.message || intl.formatMessage({ id: 'pages.company.switchFailed' }));
+        window.location.reload();
       }
     } catch (error: any) {
       message.error(error.message || intl.formatMessage({ id: 'pages.company.switchFailed' }));
-    } finally {
-      setSwitching(false);
     }
   };
 
@@ -224,10 +130,6 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
       history.push('/account/center');
       return;
     }
-    if (key === 'settings') {
-      setSettingsDrawerOpen(true);
-      return;
-    }
     if (key === 'help') {
       setHelpModalOpen(true);
       return;
@@ -240,38 +142,27 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
       setJoinModalOpen(true);
       return;
     }
+    if (key === 'settings') {
+      setSettingsDrawerOpen(true);
+      return;
+    }
 
-    // 处理企业切换
     if (companies.some((company) => company.companyId === key)) {
       handleSwitchCompany(key);
       return;
     }
+
     history.push(`/account/${key}`);
   };
 
-  const loading = (
-    <span className={styles.action}>
-      <Spin
-        size="small"
-        style={{
-          marginLeft: 8,
-          marginRight: 8,
-        }}
-      />
-    </span>
-  );
-
-  if (!initialState) {
-    return loading;
-  }
-
-  const { currentUser } = initialState;
-
   if (!currentUser?.name) {
-    return loading;
+    return (
+      <span className={headerStyles.headerActionButton}>
+        <Spin size="small" />
+      </span>
+    );
   }
 
-  // 构建企业切换子菜单项
   const companyMenuItems: MenuProps['items'] = [
     ...companies.map((company) => ({
       key: company.companyId,
@@ -320,7 +211,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
     },
   ];
 
-  const menuItems = [
+  const menuItems: MenuProps['items'] = [
     ...(menu
       ? [
         {
@@ -345,15 +236,14 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
       children: companiesLoading ? [{ key: 'loading', label: <Spin size="small" />, disabled: true }] : companyMenuItems,
     },
     {
-      key: 'settings',
-      icon: <SettingOutlined />,
-      label: intl.formatMessage({ id: 'menu.account.settings' }),
-    },
-
-    {
       key: 'help',
       icon: <QuestionCircleOutlined />,
       label: intl.formatMessage({ id: 'menu.account.help' }),
+    },
+    {
+      key: 'settings',
+      icon: <SettingOutlined />,
+      label: intl.formatMessage({ id: 'menu.account.settings' }),
     },
     {
       type: 'divider' as const,
@@ -376,7 +266,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
           items: menuItems,
         }}
       >
-        <span className={styles.action}>
+        <span className={headerStyles.headerActionButton}>
           {children}
         </span>
       </HeaderDropdown>
@@ -391,17 +281,12 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
       <JoinCompanyModal
         open={joinModalOpen}
         onClose={() => setJoinModalOpen(false)}
-        onSuccess={async () => {
-          // 加入企业成功后刷新企业列表
-          await loadCompanies();
-        }}
+        onSuccess={loadCompanies}
       />
       <CreateCompanyModal
         open={createCompanyModalOpen}
         onClose={() => setCreateCompanyModalOpen(false)}
         onSuccess={async () => {
-          // 创建企业成功后，刷新用户信息和企业列表
-          // 因为新创建的企业会被设置为当前企业
           if (initialState?.fetchUserInfo) {
             const userInfo = await initialState.fetchUserInfo();
             setInitialState((s: any) => ({

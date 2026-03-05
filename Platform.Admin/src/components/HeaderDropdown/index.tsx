@@ -6,11 +6,6 @@ import React from 'react';
 
 const useStyles = createStyles(({ token, css }) => {
   return {
-    dropdown: css`
-      @media screen and (max-width: ${token.screenXS}px) {
-        width: 100% !important;
-      }
-    `,
     popupWrapper: css`
       background-color: ${token.colorBgElevated};
       border-radius: ${token.borderRadiusLG}px;
@@ -60,11 +55,11 @@ const HeaderDropdown: React.FC<HeaderDropdownProps> = ({
 
   return (
     <Dropdown
-      classNames={{ ...customClassNames, root: classNames(styles.dropdown, cls) }}
-      styles={{ ...customStyles, root: { ...style, ...customStyles?.root } }}
+      overlayClassName={classNames(cls)}
+      overlayStyle={style}
       arrow={{ pointAtCenter: true }}
       transitionName=""
-      popupRender={(menu) => (
+      dropdownRender={(menu) => (
         <div className={styles.popupWrapper}>
           {dropdownRender ? dropdownRender(menu) : menu}
         </div>

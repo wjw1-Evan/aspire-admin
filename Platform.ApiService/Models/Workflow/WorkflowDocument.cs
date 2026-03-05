@@ -78,5 +78,6 @@ public class Document : MultiTenantEntity
     /// 表单数据
     /// </summary>
     [BsonElement("formData")]
-    public Dictionary<string, object> FormData { get; set; } = new();
+    [BsonIgnoreIfNull]
+    public Dictionary<string, object>? FormData { get; set; }
 }

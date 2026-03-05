@@ -2,21 +2,22 @@ import { PageContainer } from '@/components';
 import { useModel, useIntl, useAccess } from '@umijs/max';
 import { useRequest } from 'ahooks';
 import React, { useState, useEffect, useCallback } from 'react';
-import { theme } from 'antd';
+import { theme, Row, Col, Space } from 'antd';
 import { getUserStatistics, getUserActivityLogs } from '@/services/ant-design-pro/api';
 import { getTaskStatistics, getMyTodoTasks } from '@/services/task/api';
 import { getCurrentCompany } from '@/services/company';
 import { getSystemResources } from '@/services/system/api';
 import type { SystemResources } from '@/services/system/api';
+import { getDocumentStatistics, getPendingDocuments } from '@/services/document/api';
 import useCommonStyles from '@/hooks/useCommonStyles';
 
 import {
   WelcomeHeader,
   QuickActionsPanel,
   TaskOverviewCard,
-  RecentActivitiesCard,
   StatisticsOverview,
-  SystemResourcesCard
+  SystemResourcesCard,
+  ApprovalOverviewCard
 } from './welcome/components';
 
 const Welcome: React.FC = () => {
@@ -31,6 +32,13 @@ const Welcome: React.FC = () => {
   const [companyInfo, setCompanyInfo] = useState<any>(null);
   const [systemResources, setSystemResources] = useState<SystemResources | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // 审批相关
+  const [docStatistics, setDocStatistics] = useState<import('@/services/document/api').DocumentStatistics | null>(null);
+  const [pendingDocs, setPendingDocs] = useState<import('@/services/document/api').Document[]>([]);
+
+  const access = useAccess();
+  const canAccessApproval = access.canAccessPath('/document/approval');
 
   // Resource History for Charts
   const [cpuHistory, setCpuHistory] = useState<{ value: number; time: string }[]>([]);
@@ -60,12 +68,27 @@ const Welcome: React.FC = () => {
       if (todoTasksRes && todoTasksRes.data) {
         setTodoTasks(todoTasksRes.data);
       }
+
+      // 获取审批统计和待处理公文（如果有权限）
+      if (canAccessApproval) {
+        const [docStatsRes, pendingDocsRes] = await Promise.all([
+          getDocumentStatistics(),
+          getPendingDocuments({ page: 1, pageSize: 5 })
+        ]);
+
+        if (docStatsRes && docStatsRes.data) {
+          setDocStatistics(docStatsRes.data);
+        }
+        if (pendingDocsRes && pendingDocsRes.data && pendingDocsRes.data.list) {
+          setPendingDocs(pendingDocsRes.data.list);
+        }
+      }
     } catch (error) {
       console.error('获取统计数据失败:', error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [canAccessApproval]);
 
   // 获取系统资源数据
   const fetchSystemResources = useCallback(async () => {
@@ -179,38 +202,44 @@ const Welcome: React.FC = () => {
         />
 
         <div style={{ marginTop: '16px' }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', margin: '-8px' }}>
-            {/* 任务概览与待办任务 */}
-            <div style={{ flex: '1 1 50%', minWidth: '300px', padding: '8px' }}>
-              <TaskOverviewCard
-                taskStatistics={taskStatistics}
-                todoTasks={todoTasks}
-                loading={loading}
-                currentUser={currentUser}
-              />
-            </div>
+          <Row gutter={[16, 16]}>
+            {/* 左侧列 */}
+            <Col xs={24} lg={12}>
+              <Space direction="vertical" size={16} style={{ width: '100%' }}>
+                <TaskOverviewCard
+                  taskStatistics={taskStatistics}
+                  todoTasks={todoTasks}
+                  loading={loading}
+                  currentUser={currentUser}
+                />
+                <StatisticsOverview
+                  statistics={statistics}
+                  loading={loading}
+                />
+              </Space>
+            </Col>
 
-            {/* 最近活动 */}
-            <div style={{ flex: '1 1 50%', minWidth: '300px', padding: '8px' }}>
-              <RecentActivitiesCard
-                currentUser={currentUser}
-              />
-            </div>
-          </div>
+            {/* 右侧列 */}
+            <Col xs={24} lg={12}>
+              <Space direction="vertical" size={16} style={{ width: '100%' }}>
+                {canAccessApproval && (
+                  <ApprovalOverviewCard
+                    statistics={docStatistics}
+                    pendingDocuments={pendingDocs}
+                    loading={loading}
+                  />
+                )}
+                <SystemResourcesCard
+                  systemResources={systemResources}
+                  loading={loading}
+                  memoryHistory={memoryHistory}
+                  cpuHistory={cpuHistory}
+                  diskHistory={diskHistory}
+                />
+              </Space>
+            </Col>
+          </Row>
         </div>
-
-        <StatisticsOverview
-          statistics={statistics}
-          loading={loading}
-        />
-
-        <SystemResourcesCard
-          systemResources={systemResources}
-          loading={loading}
-          memoryHistory={memoryHistory}
-          cpuHistory={cpuHistory}
-          diskHistory={diskHistory}
-        />
       </div>
     </PageContainer>
   );

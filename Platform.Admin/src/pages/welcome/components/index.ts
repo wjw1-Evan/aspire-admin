@@ -8,3 +8,4 @@ export { default as TinyAreaChart } from './TinyAreaChart';
 export { default as ResourceCard } from './ResourceCard';
 export { default as StatCard } from './StatCard';
 export { default as QuickAction } from './QuickAction';
+export { default as ApprovalOverviewCard } from './ApprovalOverviewCard';

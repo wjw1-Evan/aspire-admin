@@ -711,24 +711,25 @@ public class DocumentService : IDocumentService
     public async Task<DocumentStatisticsResponse> GetStatisticsAsync()
     {
         var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? throw new InvalidOperationException("COMPANY_NOT_FOUND");
 
         // 1. 总公文数
-        var totalDocuments = await _documentFactory.CountAsync();
+        var totalDocuments = await _documentFactory.CountAsync(d => d.CompanyId == companyId);
 
         // 2. 草稿箱
-        var draftCount = await _documentFactory.CountAsync(d => d.Status == DocumentStatus.Draft);
+        var draftCount = await _documentFactory.CountAsync(d => d.CompanyId == companyId && d.Status == DocumentStatus.Draft);
 
         // 3. 已审批（通过）
-        var approvedCount = await _documentFactory.CountAsync(d => d.Status == DocumentStatus.Approved);
+        var approvedCount = await _documentFactory.CountAsync(d => d.CompanyId == companyId && d.Status == DocumentStatus.Approved);
 
         // 4. 已驳回
-        var rejectedCount = await _documentFactory.CountAsync(d => d.Status == DocumentStatus.Rejected);
+        var rejectedCount = await _documentFactory.CountAsync(d => d.CompanyId == companyId && d.Status == DocumentStatus.Rejected);
 
         // Bug 22 修复：统计审批中文档总数
-        var approvingCount = await _documentFactory.CountAsync(d => d.Status == DocumentStatus.Approving);
+        var approvingCount = await _documentFactory.CountAsync(d => d.CompanyId == companyId && d.Status == DocumentStatus.Approving);
 
         // 5. 我发起的
-        var myCreatedCount = await _documentFactory.CountAsync(d => d.CreatedBy == userId);
+        var myCreatedCount = await _documentFactory.CountAsync(d => d.CompanyId == companyId && d.CreatedBy == userId);
 
         // 6. 待审批
         long pendingCount = 0;
@@ -741,7 +742,11 @@ public class DocumentService : IDocumentService
             var instanceIds = pendingInstances.Select(i => i.Id).ToList();
             if (instanceIds.Any())
             {
-                pendingCount = await _documentFactory.CountAsync(d => d.WorkflowInstanceId != null && instanceIds.Contains(d.WorkflowInstanceId));
+                pendingCount = await _documentFactory.CountAsync(d => 
+                    d.CompanyId == companyId && 
+                    d.Status == DocumentStatus.Approving && 
+                    d.WorkflowInstanceId != null && 
+                    instanceIds.Contains(d.WorkflowInstanceId));
             }
         }
         catch (Exception ex)

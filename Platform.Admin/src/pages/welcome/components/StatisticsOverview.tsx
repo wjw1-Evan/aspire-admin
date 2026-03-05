@@ -21,10 +21,10 @@ const StatisticsOverview: React.FC<StatisticsOverviewProps> = ({ statistics, loa
                     <span>{intl.formatMessage({ id: 'pages.welcome.overview' })}</span>
                 </Space>
             }
-            style={{ marginTop: '16px', marginBottom: '16px', borderRadius: '12px' }}
+            style={{ height: '100%', borderRadius: '12px' }}
         >
             <Row gutter={[12, 12]}>
-                <Col xs={24} sm={12} md={4}>
+                <Col xs={24} sm={12} md={12} lg={12} xl={8}>
                     <StatCard
                         title={intl.formatMessage({ id: 'pages.welcome.stats.totalUsers' })}
                         value={statistics?.totalUsers || 0}
@@ -34,7 +34,7 @@ const StatisticsOverview: React.FC<StatisticsOverviewProps> = ({ statistics, loa
                         token={token}
                     />
                 </Col>
-                <Col xs={24} sm={12} md={4}>
+                <Col xs={24} sm={12} md={12} lg={12} xl={8}>
                     <StatCard
                         title={intl.formatMessage({ id: 'pages.welcome.stats.activeUsers' })}
                         value={statistics?.activeUsers || 0}
@@ -44,7 +44,7 @@ const StatisticsOverview: React.FC<StatisticsOverviewProps> = ({ statistics, loa
                         token={token}
                     />
                 </Col>
-                <Col xs={24} sm={12} md={4}>
+                <Col xs={24} sm={12} md={12} lg={12} xl={8}>
                     <StatCard
                         title={intl.formatMessage({ id: 'pages.welcome.stats.adminUsers' })}
                         value={statistics?.adminUsers || 0}
@@ -54,7 +54,7 @@ const StatisticsOverview: React.FC<StatisticsOverviewProps> = ({ statistics, loa
                         token={token}
                     />
                 </Col>
-                <Col xs={24} sm={12} md={4}>
+                <Col xs={24} sm={12} md={12} lg={12} xl={8}>
                     <StatCard
                         title={intl.formatMessage({ id: 'pages.welcome.stats.newUsersToday' })}
                         value={statistics?.newUsersToday || 0}
@@ -64,24 +64,22 @@ const StatisticsOverview: React.FC<StatisticsOverviewProps> = ({ statistics, loa
                         token={token}
                     />
                 </Col>
-                <Col xs={24} sm={12} md={4}>
+                <Col xs={24} sm={12} md={12} lg={12} xl={8}>
                     <StatCard
                         title={intl.formatMessage({ id: 'pages.welcome.stats.totalRoles', defaultMessage: '角色总数' })}
                         value={statistics?.totalRoles || 0}
                         icon={<BlockOutlined />}
-
-                        color={token.colorGeekblue}
+                        color={token.geekblue}
                         loading={loading}
                         token={token}
                     />
                 </Col>
-                <Col xs={24} sm={12} md={4}>
+                <Col xs={24} sm={12} md={12} lg={12} xl={8}>
                     <StatCard
                         title={intl.formatMessage({ id: 'pages.welcome.stats.totalOrganizations', defaultMessage: '组织节点' })}
                         value={statistics?.totalOrganizations || 0}
                         icon={<ClusterOutlined />}
-
-                        color={token.colorPurple}
+                        color={token.purple}
                         loading={loading}
                         token={token}
                     />

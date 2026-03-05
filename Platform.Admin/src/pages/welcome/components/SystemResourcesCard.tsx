@@ -57,7 +57,7 @@ const SystemResourcesCard: React.FC<SystemResourcesCardProps> = ({
                     <span>{intl.formatMessage({ id: 'pages.welcome.systemResources' })}</span>
                 </Space>
             }
-            style={{ marginTop: '16px', borderRadius: '12px' }}
+            style={{ height: '100%', borderRadius: '12px' }}
         >
             <Row gutter={[12, 12]}>
                 {/* 系统内存使用率 */}

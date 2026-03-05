@@ -44,11 +44,10 @@ const HeaderDropdown: React.FC<HeaderDropdownProps> = ({
 
   return (
     <Dropdown
-      overlayClassName={classNames('premium-popup', styles.dropdown, cls)}
-      classNames={customClassNames}
+      classNames={{ ...customClassNames, root: classNames('premium-popup', styles.dropdown, cls) }}
       arrow={{ pointAtCenter: true }}
       transitionName=""
-      dropdownRender={dropdownRender}
+      popupRender={dropdownRender}
       {...restProps}
     />
   );

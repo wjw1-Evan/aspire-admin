@@ -106,7 +106,7 @@ const ApprovalOverviewCard: React.FC<ApprovalOverviewCardProps> = ({
         {pendingDocuments.length === 0 ? (
           <Alert
             type="info"
-            message={intl.formatMessage({ id: 'pages.welcome.myTodoTasks.empty', defaultMessage: '当前没有待办任务' })}
+            title={intl.formatMessage({ id: 'pages.welcome.myTodoTasks.empty', defaultMessage: '当前没有待办任务' })}
             showIcon
           />
         ) : (

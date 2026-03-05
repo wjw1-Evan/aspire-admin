@@ -67,7 +67,7 @@ const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({ currentUser, companyInfo 
                 borderRadius: '50%',
             }} />
 
-      <Row align="middle" gutter={[32, 16]}>
+      <Row align="middle" gutter={[24, 12]}>
         <Col xs={24} sm={24} md={5} lg={4} xl={4} xxl={3}>
           <div style={{ textAlign: 'center' }}>
             <Avatar
@@ -76,10 +76,9 @@ const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({ currentUser, companyInfo 
               src={getUserAvatar(currentUser?.avatar)}
               style={{
                 backgroundColor: 'rgba(255,255,255,0.2)',
-                border: '3px solid rgba(255,255,255,0.3)',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                border: '2px solid rgba(255,255,255,0.3)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                 display: 'inline-block' 
-                
               }}
             />
           </div>

@@ -210,7 +210,7 @@ const Welcome: React.FC = () => {
           <Row gutter={[16, 16]}>
             {/* 左侧列 */}
             <Col xs={24} lg={12}>
-              <Space direction="vertical" size={16} style={{ width: '100%' }}>
+              <Space orientation="vertical" size={16} style={{ width: '100%' }}>
                 <TaskOverviewCard
                   taskStatistics={taskStatistics}
                   todoTasks={todoTasks}
@@ -223,10 +223,9 @@ const Welcome: React.FC = () => {
                 />
               </Space>
             </Col>
-
             {/* 右侧列 */}
             <Col xs={24} lg={12}>
-              <Space direction="vertical" size={16} style={{ width: '100%' }}>
+              <Space orientation="vertical" size={16} style={{ width: '100%' }}>
                 {canAccessApproval && (
                   <ApprovalOverviewCard
                     statistics={docStatistics}

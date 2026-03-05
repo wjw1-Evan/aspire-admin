@@ -1051,5 +1051,19 @@ export default {
   'pages.cloud-storage.quota.total': '総容量',
   'pages.cloud-storage.quota.used': '使用量',
   'pages.cloud-storage.quota.status': '容量ステータス',
+
+  'pages.forgotPassword.sendCodeSuccess': 'Verification code sent to your email',
+  'pages.forgotPassword.sendCodeFailed': 'Failed to send code, please check if the email is correct',
+  'pages.forgotPassword.resetSuccess': 'Password reset successful, please login with your new password',
+  'pages.forgotPassword.resetFailed': 'Password reset failed, code is incorrect or expired',
+  'pages.forgotPassword.step1': 'Enter Email',
+  'pages.forgotPassword.step2': 'Reset Password',
+  'pages.forgotPassword.step3': 'Finish',
+  'pages.forgotPassword.emailPlaceholder': 'Email used during registration',
+  'pages.forgotPassword.codePlaceholder': '6-digit verification code',
+  'pages.forgotPassword.resendCode': 'Resend',
+  'pages.forgotPassword.newPasswordPlaceholder': 'New Password',
+  'pages.forgotPassword.passwordMismatch': 'The two passwords do not match!',
+  'pages.forgotPassword.confirmPasswordPlaceholder': 'Confirm New Password',
 };
 

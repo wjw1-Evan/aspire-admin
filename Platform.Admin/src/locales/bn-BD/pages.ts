@@ -496,4 +496,18 @@ export default {
   'pages.captcha.alt': 'ক্যাপচা',
   'pages.captcha.refreshTitle': 'ক্যাপচা রিফ্রেশ করুন',
   'pages.captcha.getCaptcha': 'ক্যাপচা পান',
+
+  'pages.forgotPassword.sendCodeSuccess': 'Verification code sent to your email',
+  'pages.forgotPassword.sendCodeFailed': 'Failed to send code, please check if the email is correct',
+  'pages.forgotPassword.resetSuccess': 'Password reset successful, please login with your new password',
+  'pages.forgotPassword.resetFailed': 'Password reset failed, code is incorrect or expired',
+  'pages.forgotPassword.step1': 'Enter Email',
+  'pages.forgotPassword.step2': 'Reset Password',
+  'pages.forgotPassword.step3': 'Finish',
+  'pages.forgotPassword.emailPlaceholder': 'Email used during registration',
+  'pages.forgotPassword.codePlaceholder': '6-digit verification code',
+  'pages.forgotPassword.resendCode': 'Resend',
+  'pages.forgotPassword.newPasswordPlaceholder': 'New Password',
+  'pages.forgotPassword.passwordMismatch': 'The two passwords do not match!',
+  'pages.forgotPassword.confirmPasswordPlaceholder': 'Confirm New Password',
 };

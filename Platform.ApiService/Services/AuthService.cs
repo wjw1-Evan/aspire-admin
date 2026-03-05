@@ -7,6 +7,7 @@ using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using System.Security.Claims;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Platform.ApiService.Services;
 
@@ -33,6 +34,8 @@ public class AuthService : IAuthService
     private readonly IDataFactory<RefreshToken> _refreshTokenFactory;
     private readonly IConfiguration _configuration;
     private readonly IPasswordEncryptionService _encryptionService;
+    private readonly Microsoft.Extensions.Caching.Memory.IMemoryCache _memoryCache;
+    private readonly IEmailService _emailService;
 
     /// <summary>
     /// 初始化认证服务
@@ -55,6 +58,8 @@ public class AuthService : IAuthService
     /// <param name="refreshTokenFactory">刷新令牌工厂</param>
     /// <param name="configuration">配置</param>
     /// <param name="encryptionService">密码加密服务</param>
+    /// <param name="memoryCache">缓存</param>
+    /// <param name="emailService">邮件服务</param>
     public AuthService(
         IDataFactory<User> userFactory,
         IDataFactory<UserCompany> userCompanyFactory,
@@ -73,7 +78,9 @@ public class AuthService : IAuthService
         ISocialService socialService,
         IDataFactory<RefreshToken> refreshTokenFactory,
         IConfiguration configuration,
-        IPasswordEncryptionService encryptionService)
+        IPasswordEncryptionService encryptionService,
+        Microsoft.Extensions.Caching.Memory.IMemoryCache memoryCache,
+        IEmailService emailService)
     {
         _userFactory = userFactory;
         _userCompanyFactory = userCompanyFactory;
@@ -93,6 +100,8 @@ public class AuthService : IAuthService
         _refreshTokenFactory = refreshTokenFactory;
         _configuration = configuration;
         _encryptionService = encryptionService;
+        _memoryCache = memoryCache;
+        _emailService = emailService;
     }
 
     private async Task<int> GetFailureCountAsync(string clientId, string type)
@@ -879,5 +888,89 @@ public class AuthService : IAuthService
         };
 
         return ServiceResult<RefreshTokenResult>.Success(refreshTokenResult);
+    }
+
+    /// <summary>
+    /// 发送密码重置验证码
+    /// </summary>
+    /// <param name="request">请求数据</param>
+    /// <returns>操作结果</returns>
+    public async Task<ServiceResult<bool>> SendPasswordResetCodeAsync(SendResetCodeRequest request)
+    {
+        var users = await _userFactory.FindAsync(u => u.Email == request.Email && u.IsActive == true);
+        var user = users.FirstOrDefault();
+        if (user == null)
+            return ServiceResult<bool>.Failure("USER_NOT_FOUND", "该邮箱未绑定任何活动账户，或账户已被禁用");
+
+        // 生成6位验证码
+        var random = new Random();
+        var code = random.Next(100000, 999999).ToString();
+
+        // 存入缓存，5分钟有效
+        var cacheKey = $"PasswordResetCode_{request.Email}";
+        _memoryCache.Set(cacheKey, code, TimeSpan.FromMinutes(5));
+
+        var htmlBody = $@"
+<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;'>
+    <h2 style='color: #1890ff;'>找回密码</h2>
+    <p>您好，{user.Username}：</p>
+    <p>您正在申请重置密码，您的验证码是：</p>
+    <div style='background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 24px; letter-spacing: 5px; font-weight: bold; color: #333; border-radius: 4px; margin: 20px 0;'>
+        {code}
+    </div>
+    <p>此验证码在 5 分钟内有效。如果这不是您的操作，请忽略此邮件。</p>
+    <br/>
+    <p style='color: #999; font-size: 12px; border-top: 1px solid #eee; padding-top: 10px;'>此为系统自动发送的邮件，请勿直接回复。</p>
+</div>";
+
+        try
+        {
+            await _emailService.SendEmailAsync(request.Email, "找回密码验证码", htmlBody);
+            _logger.LogInformation("【重置密码】为用户 {Username}({Email}) 发送了验证码邮件: {Code}", user.Username, request.Email, code);
+            return ServiceResult<bool>.Success(true, "验证码已发送至您的邮箱");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "发送重置密码邮件失败: {Email}", request.Email);
+            return ServiceResult<bool>.Failure("SEND_EMAIL_FAILED", "发送邮件失败，请稍后再试");
+        }
+    }
+
+    /// <summary>
+    /// 通过验证码重置密码
+    /// </summary>
+    /// <param name="request">重置密码请求</param>
+    /// <returns>操作结果</returns>
+    public async Task<ServiceResult<bool>> ResetPasswordAsync(ResetPasswordRequest request)
+    {
+        var cacheKey = $"PasswordResetCode_{request.Email}";
+        if (!_memoryCache.TryGetValue(cacheKey, out string? cachedCode))
+            return ServiceResult<bool>.Failure("CODE_EXPIRED", "验证码已过期，请重新获取");
+
+        if (cachedCode != request.Code)
+            return ServiceResult<bool>.Failure("INVALID_CODE", "验证码不正确");
+
+        var users = await _userFactory.FindAsync(u => u.Email == request.Email && u.IsActive == true);
+        var user = users.FirstOrDefault();
+        if (user == null)
+            return ServiceResult<bool>.Failure("USER_NOT_FOUND", "该邮箱未绑定任何活动账户");
+
+        var newPassword = _encryptionService.TryDecryptPassword(request.NewPassword);
+        _validationService.ValidatePassword(newPassword);
+
+        // 如果配置了加密服务并且收到了前端原样传来的加密密码（而没有用RSA），解密可能会返回原字符串。
+        // 所以，我们需要确保解密后的密码也进行相同的安全校验。
+        
+        await _userFactory.UpdateAsync(user.Id!, u =>
+        {
+            u.PasswordHash = _passwordHasher.HashPassword(newPassword);
+        });
+
+        // 重置成功后，清除验证码
+        _memoryCache.Remove(cacheKey);
+
+        _logger.LogInformation("用户 {Username} 通过邮箱找回密码成功", user.Username);
+
+        return ServiceResult<bool>.Success(true, "密码重置成功");
     }
 }

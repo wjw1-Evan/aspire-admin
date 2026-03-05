@@ -61,6 +61,7 @@ public class GlobalAuthenticationOptions
                 "/api/auth/captcha/image",
                 "/api/auth/verify-captcha",
                 "/api/auth/forgot-password",
+                "/api/auth/send-reset-code",
                 "/api/auth/reset-password",
                 "/api/auth/refresh-token",
 

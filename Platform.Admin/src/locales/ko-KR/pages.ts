@@ -1966,5 +1966,19 @@ export default {
   'pages.park.visit.statistics.generatingReport': '보고서를 생성 중입니다. 잠시만 기다려 주세요...',
   'pages.park.common.createdAt': '생성 시간',
   'pages.park.common.submit': '제출',
+
+  'pages.forgotPassword.sendCodeSuccess': 'Verification code sent to your email',
+  'pages.forgotPassword.sendCodeFailed': 'Failed to send code, please check if the email is correct',
+  'pages.forgotPassword.resetSuccess': 'Password reset successful, please login with your new password',
+  'pages.forgotPassword.resetFailed': 'Password reset failed, code is incorrect or expired',
+  'pages.forgotPassword.step1': 'Enter Email',
+  'pages.forgotPassword.step2': 'Reset Password',
+  'pages.forgotPassword.step3': 'Finish',
+  'pages.forgotPassword.emailPlaceholder': 'Email used during registration',
+  'pages.forgotPassword.codePlaceholder': '6-digit verification code',
+  'pages.forgotPassword.resendCode': 'Resend',
+  'pages.forgotPassword.newPasswordPlaceholder': 'New Password',
+  'pages.forgotPassword.passwordMismatch': 'The two passwords do not match!',
+  'pages.forgotPassword.confirmPasswordPlaceholder': 'Confirm New Password',
 };
 

@@ -388,4 +388,34 @@ public class AuthController : BaseApiController
         var result = await _authService.RefreshTokenAsync(request);
         return Result(result);
     }
+
+    /// <summary>
+    /// 发送重置密码验证码
+    /// </summary>
+    /// <param name="request">请求数据</param>
+    /// <returns>发送结果</returns>
+    /// <response code="200">发送成功</response>
+    /// <response code="400">邮箱格式错误或未找到绑定邮箱</response>
+    [HttpPost("send-reset-code")]
+    [AllowAnonymous]
+    public async Task<IActionResult> SendResetCode([FromBody] SendResetCodeRequest request)
+    {
+        var result = await _authService.SendPasswordResetCodeAsync(request);
+        return Result(result);
+    }
+
+    /// <summary>
+    /// 重置密码
+    /// </summary>
+    /// <param name="request">重置密码请求</param>
+    /// <returns>重置结果</returns>
+    /// <response code="200">重置成功</response>
+    /// <response code="400">验证码错误或过期、密码格式错误</response>
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    {
+        var result = await _authService.ResetPasswordAsync(request);
+        return Result(result);
+    }
 }

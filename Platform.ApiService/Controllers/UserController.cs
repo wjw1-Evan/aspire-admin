@@ -443,7 +443,6 @@ public class UserController : BaseApiController
     /// <remarks>
     /// RESTful 路径: /api/users/me 表示当前用户
     /// </remarks>
-    [HttpGet("profile")]
     [HttpGet("me")]
     public async Task<IActionResult> GetCurrentUserProfile()
     {
@@ -458,7 +457,7 @@ public class UserController : BaseApiController
     /// RESTful 路径: PUT /api/users/me 更新当前用户
     /// </remarks>
     /// <param name="request">更新用户信息请求</param>
-    [HttpPut("profile")]
+    [HttpPut("me")]
     public async Task<IActionResult> UpdateCurrentUserProfile([FromBody] UpdateProfileRequest request)
     {
         if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
@@ -484,7 +483,7 @@ public class UserController : BaseApiController
     /// RESTful 路径: PUT /api/users/me/password 更新当前用户密码
     /// </remarks>
     /// <param name="request">修改密码请求</param>
-    [HttpPut("profile/password")]
+    [HttpPut("me/password")]
     public async Task<IActionResult> ChangeCurrentUserPassword([FromBody] ChangePasswordRequest request)
     {
         var userId = GetRequiredUserId();

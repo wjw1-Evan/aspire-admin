@@ -48,5 +48,19 @@ public interface IAuthService
     /// <param name="request">刷新 Token 请求</param>
     /// <returns>新的 Token 信息</returns>
     Task<ServiceResult<RefreshTokenResult>> RefreshTokenAsync(RefreshTokenRequest request);
+
+    /// <summary>
+    /// 发送密码重置验证码
+    /// </summary>
+    /// <param name="request">请求数据</param>
+    /// <returns>操作结果</returns>
+    Task<ServiceResult<bool>> SendPasswordResetCodeAsync(SendResetCodeRequest request);
+
+    /// <summary>
+    /// 通过验证码重置密码
+    /// </summary>
+    /// <param name="request">重置密码请求</param>
+    /// <returns>操作结果</returns>
+    Task<ServiceResult<bool>> ResetPasswordAsync(ResetPasswordRequest request);
 }
 

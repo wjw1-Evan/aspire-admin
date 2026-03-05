@@ -105,10 +105,10 @@ public class GlobalAuthenticationMiddleware
             return;
         }
 
-        // 检查Authorization头
         var authHeader = context.Request.Headers.Authorization.FirstOrDefault();
         if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
         {
+            _logger.LogWarning($"【AUTH_DEBUG】Path {path} not in public paths: {string.Join(", ", _options.PublicPaths)}");
             await WriteUnauthorizedResponse(context, "缺少Authorization头或格式错误");
             return;
         }

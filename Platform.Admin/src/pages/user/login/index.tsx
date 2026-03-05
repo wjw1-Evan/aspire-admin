@@ -494,24 +494,19 @@ const Login: React.FC = () => {
                       />
                     </Checkbox>
                   </Form.Item>
-                  <Button
-                    type="link"
+                  <Link
+                    to="/user/forgot-password"
                     style={{
                       float: 'right',
                       padding: 0,
-                      height: 'auto',
-                    }}
-                    disabled
-                    onClick={() => {
-                      // 忘记密码功能待实现
-                      message.info('忘记密码功能开发中');
+                      lineHeight: '22px',
                     }}
                   >
                     <FormattedMessage
                       id="pages.login.forgotPassword"
                       defaultMessage="忘记密码"
                     />
-                  </Button>
+                  </Link>
                 </div>
                 <Form.Item>
                   <Button type="primary" htmlType="submit" size="large" block>

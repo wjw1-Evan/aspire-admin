@@ -1370,5 +1370,19 @@ export default {
   'pages.park.visit.assess': '評價',
   'pages.park.visit.statistics.failed': '生成報告失敗，請稍後重試。',
   'pages.park.visit.statistics.generatingReport': '正在生成報告，可能需要幾十秒...',
+
+  'pages.forgotPassword.sendCodeSuccess': '验证码已发送至您的邮箱',
+  'pages.forgotPassword.sendCodeFailed': '验证码发送失败，请检查邮箱是否正确',
+  'pages.forgotPassword.resetSuccess': '重置密码成功，请使用新密码重新登录',
+  'pages.forgotPassword.resetFailed': '重置密码失败，验证码错误或已过期',
+  'pages.forgotPassword.step1': '填写邮箱',
+  'pages.forgotPassword.step2': '重置密码',
+  'pages.forgotPassword.step3': '完成',
+  'pages.forgotPassword.emailPlaceholder': '注册时使用的邮箱',
+  'pages.forgotPassword.codePlaceholder': '6位邮箱验证码',
+  'pages.forgotPassword.resendCode': '重新获取',
+  'pages.forgotPassword.newPasswordPlaceholder': '新密码',
+  'pages.forgotPassword.passwordMismatch': '两次输入的密码不匹配！',
+  'pages.forgotPassword.confirmPasswordPlaceholder': '确认新密码',
 };
 

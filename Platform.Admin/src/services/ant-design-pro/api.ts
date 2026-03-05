@@ -213,3 +213,27 @@ export async function checkUsernameExists(username: string, options?: { [key: st
     ...(options || {}),
   });
 }
+
+/** 发送找回密码验证码 POST /api/auth/send-reset-code */
+export async function sendResetCode(body: API.SendResetCodeParams, options?: { [key: string]: any }) {
+  return request<ApiResponse<boolean>>('/api/auth/send-reset-code', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 重置密码 POST /api/auth/reset-password */
+export async function resetPassword(body: API.ResetPasswordParams, options?: { [key: string]: any }) {
+  return request<ApiResponse<boolean>>('/api/auth/reset-password', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}

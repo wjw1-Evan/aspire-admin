@@ -205,6 +205,17 @@ declare namespace API {
     refreshToken: string;
   };
 
+  type SendResetCodeParams = {
+    email: string;
+  };
+
+  type ResetPasswordParams = {
+    email?: string;
+    code?: string;
+    newPassword?: string;
+    confirmPassword?: string;
+  };
+
   type POST_API_REFRESH_TOKEN_RES = {
     status?: string;
     token?: string;

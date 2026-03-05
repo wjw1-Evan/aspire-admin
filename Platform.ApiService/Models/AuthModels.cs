@@ -580,3 +580,50 @@ public class RefreshToken : BaseEntity
     [BsonElement("revokedReason")]
     public string? RevokedReason { get; set; }
 }
+
+/// <summary>
+/// 发送重置密码验证码请求
+/// </summary>
+public class SendResetCodeRequest
+{
+    /// <summary>
+    /// 邮箱地址
+    /// </summary>
+    [Required(ErrorMessage = "邮箱不能为空")]
+    [EmailAddress(ErrorMessage = "邮箱格式不正确")]
+    public string Email { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// 重置密码请求
+/// </summary>
+public class ResetPasswordRequest
+{
+    /// <summary>
+    /// 邮箱地址
+    /// </summary>
+    [Required(ErrorMessage = "邮箱不能为空")]
+    [EmailAddress(ErrorMessage = "邮箱格式不正确")]
+    public string Email { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 验证码
+    /// </summary>
+    [Required(ErrorMessage = "验证码不能为空")]
+    [StringLength(6, MinimumLength = 6, ErrorMessage = "验证码必须为6位")]
+    public string Code { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 新密码
+    /// </summary>
+    [Required(ErrorMessage = "新密码不能为空")]
+    [StringLength(2000, MinimumLength = 6, ErrorMessage = "新密码长度不符合要求")]
+    public string NewPassword { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 确认密码
+    /// </summary>
+    [Required(ErrorMessage = "确认密码不能为空")]
+    [Compare("NewPassword", ErrorMessage = "新密码和确认密码不一致")]
+    public string ConfirmPassword { get; set; } = string.Empty;
+}

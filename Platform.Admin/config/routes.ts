@@ -21,6 +21,11 @@ export default [
         component: './user/login',
       },
       {
+        name: 'forgot-password',
+        path: '/user/forgot-password',
+        component: './user/forgot-password',
+      },
+      {
         name: 'register',
         path: '/user/register',
         component: './user/register',

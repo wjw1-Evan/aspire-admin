@@ -49,6 +49,7 @@ builder.AddOpenAIClient(connectionName: "chat");    // OpenAI 客户端
 builder.Services.AddProblemDetails();
 builder.Services.AddResponseCompression(o => o.EnableForHttps = true);
 builder.Services.AddOutputCache();
+builder.Services.AddMemoryCache(); // 添加内存缓存服务
 
 builder.Services.AddControllers(options =>
 {
@@ -158,6 +159,12 @@ builder.Services.AddOpenApi(options =>
 // ──────────────────────────────────────────────
 
 builder.Services.AddPlatformDiscovery(builder.Configuration);
+
+builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection("Smtp"));
+builder.Services.AddSingleton<IEmailBackgroundQueue, EmailBackgroundQueue>();
+builder.Services.AddHostedService<Platform.ApiService.BackgroundServices.EmailBackgroundWorker>();
+builder.Services.AddScoped<ISmtpEmailService, SmtpEmailService>();
+builder.Services.AddScoped<IEmailService>(sp => sp.GetRequiredService<ISmtpEmailService>());
 
 // ──────────────────────────────────────────────
 

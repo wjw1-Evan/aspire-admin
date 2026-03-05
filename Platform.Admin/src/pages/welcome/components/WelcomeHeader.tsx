@@ -67,31 +67,26 @@ const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({ currentUser, companyInfo 
                 borderRadius: '50%',
             }} />
 
-      <Row align="middle" gutter={[32, 24]}>
-        <Col xs={24} sm={24} md={3}>
+      <Row align="middle" gutter={[32, 16]}>
+        <Col xs={24} sm={24} md={5} lg={4} xl={4} xxl={3}>
           <div style={{ textAlign: 'center' }}>
             <Avatar
-              size={{ xs: 80, sm: 80, md: 88, lg: 88, xl: 100, xxl: 110 }}
+              size={100}  
               icon={<UserOutlined />}
               src={getUserAvatar(currentUser?.avatar)}
               style={{
                 backgroundColor: 'rgba(255,255,255,0.2)',
-                border: '4px solid rgba(255,255,255,0.3)',
-                boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
+                border: '3px solid rgba(255,255,255,0.3)',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                display: 'inline-block' 
+                
               }}
             />
           </div>
         </Col>
-        <Col xs={24} sm={24} md={15}>
+        <Col xs={24} sm={24} md={13} lg={14} xl={14} xxl={15}>
           <div className="welcome-header-text">
-            <style>{`
-              @media (max-width: 768px) {
-                .welcome-header-text { text-align: center; }
-                .welcome-header-text h1 { font-size: 24px !important; }
-                .welcome-header-tags { justify-content: center; }
-              }
-            `}</style>
-            <Title level={1} style={{ color: 'white', margin: 0, fontSize: '28px', fontWeight: 700 }}>
+            <Title level={1} style={{ color: 'white', margin: 0, fontSize: '24px', fontWeight: 700, letterSpacing: '-0.5px' }}>
               {getGreeting(intl)}，{currentUser?.name || currentUser?.userid || intl.formatMessage({ id: 'pages.welcome.user' })}！
             </Title>
             <Paragraph style={{ color: 'rgba(255,255,255,0.85)', margin: '12px 0 20px 0', fontSize: '16px' }}>

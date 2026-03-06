@@ -143,6 +143,7 @@ export interface ConditionConfig {
  * 并行网关配置
  */
 export interface ParallelConfig {
+  mode?: 'parallel' | 'condition';
   branches: string[];
 }
 
@@ -393,6 +394,59 @@ export interface LogConfig {
 }
 
 /**
+ * 语音转文本 (STT) 节点配置
+ */
+export interface SpeechToTextConfig {
+  inputVariable?: string;
+  provider?: string;
+  language?: string;
+  outputVariable: string;
+}
+
+/**
+ * 文本转语音 (TTS) 节点配置
+ */
+export interface TextToSpeechConfig {
+  inputVariable?: string;
+  provider?: string;
+  voice?: string;
+  language?: string;
+  outputVariable: string;
+}
+
+/**
+ * 邮件发送节点配置
+ */
+export interface EmailConfig {
+  to?: string;
+  cc?: string;
+  subject?: string;
+  body?: string;
+  isHtml?: boolean;
+  attachments?: string[];
+}
+
+/**
+ * 视觉分析节点配置
+ */
+export interface VisionConfig {
+  imageVariable?: string;
+  prompt?: string;
+  model?: string;
+  outputVariable: string;
+}
+
+/**
+ * 变量聚合节点配置
+ */
+export interface VariableAggregatorConfig {
+  inputVariables: string[];
+  outputVariable: string;
+  format?: 'json' | 'text' | 'template';
+  template?: string;
+}
+
+/**
  * 节点配置
  */
 export interface NodeConfig {
@@ -421,6 +475,11 @@ export interface NodeConfig {
   humanInput?: HumanInputConfig;
   code?: CodeConfig;
   template?: TemplateConfig;
+  speechToText?: SpeechToTextConfig;
+  textToSpeech?: TextToSpeechConfig;
+  email?: EmailConfig;
+  vision?: VisionConfig;
+  variableAggregator?: VariableAggregatorConfig;
 }
 
 /**
@@ -467,7 +526,8 @@ export interface NodeHandles {
 export interface WorkflowNode {
   id: string;
   type: string;
-  data: NodeData;
+  label?: string;
+  config: NodeConfig;
   position: NodePosition;
   parentId?: string;
   handleIds?: NodeHandles;
@@ -501,6 +561,7 @@ export interface WorkflowEdge {
   targetHandle?: string;
   type?: string;
   label?: string;
+  condition?: string;
   data?: EdgeData;
   animated?: boolean;
   style?: EdgeStyle;
@@ -724,6 +785,7 @@ export interface StartWorkflowRequest {
  */
 export async function getWorkflowList(params: {
   page?: number;
+  current?: number;
   pageSize?: number;
   keyword?: string;
   category?: string;

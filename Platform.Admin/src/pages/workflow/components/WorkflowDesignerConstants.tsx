@@ -27,6 +27,11 @@ import {
   MessageOutlined,
   DatabaseOutlined,
   AimOutlined,
+  AudioOutlined,
+  SoundOutlined,
+  MailOutlined,
+  EyeOutlined,
+  MergeCellsOutlined,
 } from '@ant-design/icons';
 
 export const NODE_CATEGORIES = {
@@ -215,9 +220,9 @@ export const NODE_CONFIGS = {
     color: '#0d9488',
     backgroundColor: '#f0fdfa',
     borderColor: '#14b8a6',
-    icon: <UnorderedListOutlined />,
+    icon: <MergeCellsOutlined />,
     category: 'data',
-    description: '变量聚合',
+    description: '将多个变量聚合为一个',
     version: '1.0.0',
   },
   listOperator: {
@@ -283,6 +288,42 @@ export const NODE_CONFIGS = {
     description: '返回响应结果',
     version: '1.0.0',
   },
+  speechToText: {
+    color: '#7c3aed',
+    backgroundColor: '#f5f3ff',
+    borderColor: '#8b5cf6',
+    icon: <AudioOutlined />,
+    category: 'ai',
+    description: '语音转文本 (STT)',
+    version: '1.0.0',
+  },
+  textToSpeech: {
+    color: '#7c3aed',
+    backgroundColor: '#f5f3ff',
+    borderColor: '#8b5cf6',
+    icon: <SoundOutlined />,
+    category: 'ai',
+    description: '文本转语音 (TTS)',
+    version: '1.0.0',
+  },
+  vision: {
+    color: '#db2777',
+    backgroundColor: '#fdf2f8',
+    borderColor: '#ec4899',
+    icon: <EyeOutlined />,
+    category: 'ai',
+    description: '图像理解与视觉分析',
+    version: '1.0.0',
+  },
+  email: {
+    color: '#ea580c',
+    backgroundColor: '#fff7ed',
+    borderColor: '#f97316',
+    icon: <MailOutlined />,
+    category: 'integration',
+    description: '发送电子邮件',
+    version: '1.0.0',
+  },
 };
 
 export const NODE_TYPE_LABELS: Record<string, string> = {
@@ -313,6 +354,10 @@ export const NODE_TYPE_LABELS: Record<string, string> = {
   setVariable: '设置变量',
   log: '日志',
   answer: '回复',
+  speechToText: '语音转文本',
+  textToSpeech: '文本转语音',
+  email: '邮件发送',
+  vision: '视觉分析',
 };
 
 export const NODE_DESCRIPTIONS: Record<string, string> = {
@@ -341,8 +386,12 @@ export const NODE_DESCRIPTIONS: Record<string, string> = {
   notification: '发送通知消息',
   timer: '定时触发或延时',
   setVariable: '设置流程变量',
-  log: '记录日志',
+  log: '记录执行日志',
   answer: '向用户返回响应',
+  speechToText: '将音频转换为文本内容',
+  textToSpeech: '将文本转换为语音音频',
+  email: '通过 SMTP 发送电子邮件',
+  vision: '分析图片内容并提取信息',
 };
 
 export const DEFAULT_NODE_CONFIGS: Partial<Record<string, any>> = {
@@ -466,6 +515,17 @@ export const CustomNode: React.FC<NodeProps> = ({ data, selected }) => {
           : '等待配置知识库...';
       case 'tool':
         return data.config?.tool?.tool ? `工具: ${data.config.tool.tool}` : '等待配置工具...';
+      case 'speechToText':
+        return data.config?.speechToText?.provider ? `提供商: ${data.config.speechToText.provider}` : '语音转文本';
+      case 'textToSpeech':
+        return data.config?.textToSpeech?.voice ? `声音: ${data.config.textToSpeech.voice}` : '文本转语音';
+      case 'email':
+        return data.config?.email?.to ? `收件人: ${data.config.email.to}` : '待配置邮件';
+      case 'vision':
+        return data.config?.vision?.model ? `模型: ${data.config.vision.model}` : '图像分析';
+      case 'variableAggregator':
+        const varsCount = data.config?.variableAggregator?.inputVariables?.length || 0;
+        return varsCount > 0 ? `聚合: ${varsCount} 个变量` : '等待配置聚合...';
       default:
         return data.description || '未配置';
     }

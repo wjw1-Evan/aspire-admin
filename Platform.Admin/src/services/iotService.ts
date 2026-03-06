@@ -79,6 +79,8 @@ export interface IoTDataPoint {
   lastUpdatedAt?: string;
   isEnabled: boolean;
   alarmConfig?: AlarmConfig;
+  minValue?: number;
+  maxValue?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -93,6 +95,7 @@ export interface IoTDataRecord {
   reportedAt: string;
   isAlarm: boolean;
   alarmLevel?: string;
+  remarks?: string;
   createdAt: string;
 }
 

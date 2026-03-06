@@ -73,6 +73,7 @@ export interface TaskDto {
   duration?: number;
   projectId?: string;
   projectName?: string;
+  parentTaskId?: string;
   children?: TaskDto[];
 }
 
@@ -160,6 +161,7 @@ export interface CompleteTaskRequest {
   executionResult?: number;
   remarks?: string;
   message?: string;
+  errorMessage?: string;
 }
 
 /**

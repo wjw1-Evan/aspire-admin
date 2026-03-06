@@ -140,7 +140,7 @@ export async function downloadVersion(id: string, filename?: string) {
 
     // 尝试从响应头获取文件名
 
-    const contentDisposition = response.response.headers.get('content-disposition');
+    const contentDisposition = response.headers['content-disposition'];
     let downloadFilename = filename || 'download';
     if (contentDisposition) {
         const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);

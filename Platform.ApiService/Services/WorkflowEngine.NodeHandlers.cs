@@ -116,6 +116,20 @@ public partial class WorkflowEngine
             case "approval":
                 if (node.Data.Config?.Approval == null) throw new InvalidOperationException($"Approval node {node.Id} missing config");
                 return new ApprovalExecutor(node.Data.Config.Approval, _instanceFactory);
+            case "speechToText":
+                if (node.Data.Config?.SpeechToText == null) throw new InvalidOperationException($"STT node {node.Id} missing config");
+                return new SpeechToTextExecutor(node.Data.Config.SpeechToText);
+            case "textToSpeech":
+                if (node.Data.Config?.TextToSpeech == null) throw new InvalidOperationException($"TTS node {node.Id} missing config");
+                return new TextToSpeechExecutor(node.Data.Config.TextToSpeech);
+            case "email":
+                if (node.Data.Config?.Email == null) throw new InvalidOperationException($"Email node {node.Id} missing config");
+                return new EmailExecutor(_emailService, node.Data.Config.Email);
+            case "vision":
+                if (node.Data.Config?.Vision == null) throw new InvalidOperationException($"Vision node {node.Id} missing config");
+                var visionChatClient = _openAiClient.GetChatClient(node.Data.Config.Vision.Model ?? "gpt-4o-mini").AsIChatClient();
+                var visionAgent = new ChatClientAgent(visionChatClient, "VisionAgent");
+                return new VisionExecutor(visionAgent, node.Data.Config.Vision);
             // 其他节点类型...
             default:
                 // 默认使用一个透传执行器或基础逻辑执行器
@@ -174,10 +188,11 @@ public partial class WorkflowEngine
                 await ProcessParallelGatewayAsync(instanceId, nodeId, definition);
                 break;
             case "ai":
-                await ProcessAiNodeAsync(instanceId, node);
+            case "llm":
+                await ProcessNodeViaExecutorAsync(instanceId, node);
                 break;
             case "aiJudge":
-                await ProcessAiJudgeNodeAsync(instanceId, node);
+                await ProcessNodeViaExecutorAsync(instanceId, node);
                 break;
             case "notification":
                 await ProcessNotificationNodeAsync(instanceId, node);
@@ -195,31 +210,43 @@ public partial class WorkflowEngine
                 await ProcessLogNodeAsync(instanceId, node);
                 break;
             case "knowledgeSearch":
-                await ProcessKnowledgeSearchNodeAsync(instanceId, node);
+                await ProcessNodeViaExecutorAsync(instanceId, node);
                 break;
             case "code":
-                await ProcessCodeNodeAsync(instanceId, node);
+                await ProcessNodeViaExecutorAsync(instanceId, node);
                 break;
             case "template":
-                await ProcessTemplateNodeAsync(instanceId, node);
+                await ProcessNodeViaExecutorAsync(instanceId, node);
                 break;
             case "variableAggregator":
-                await ProcessVariableAggregatorNodeAsync(instanceId, node);
+                await ProcessNodeViaExecutorAsync(instanceId, node);
                 break;
             case "questionClassifier":
-                await ProcessQuestionClassifierNodeAsync(instanceId, node);
-            break;
+                await ProcessNodeViaExecutorAsync(instanceId, node);
+                break;
             case "parameterExtractor":
-                await ProcessParameterExtractorNodeAsync(instanceId, node);
+                await ProcessNodeViaExecutorAsync(instanceId, node);
                 break;
             case "iteration":
-                await ProcessIterationNodeAsync(instanceId, node);
+                await ProcessNodeViaExecutorAsync(instanceId, node);
                 break;
             case "answer":
-                await ProcessAnswerNodeAsync(instanceId, node);
+                await ProcessNodeViaExecutorAsync(instanceId, node);
                 break;
             case "tool":
-                await ProcessToolNodeAsync(instanceId, node);
+                await ProcessNodeViaExecutorAsync(instanceId, node);
+                break;
+            case "speechToText":
+                await ProcessNodeViaExecutorAsync(instanceId, node);
+                break;
+            case "textToSpeech":
+                await ProcessNodeViaExecutorAsync(instanceId, node);
+                break;
+            case "email":
+                await ProcessNodeViaExecutorAsync(instanceId, node);
+                break;
+            case "vision":
+                await ProcessNodeViaExecutorAsync(instanceId, node);
                 break;
         }
     }
@@ -703,12 +730,45 @@ public partial class WorkflowEngine
             }
 
             // 构造参数: input, context, cancellationToken
-            var task = (Task)handleMethod.Invoke(executor, new object?[] { input, null, default(CancellationToken) })!;
-            await task;
+            var invokeResult = handleMethod.Invoke(executor, new object?[] { input, null, default(CancellationToken) });
+            if (invokeResult == null)
+            {
+                await MoveToNextNodeAsync(instanceId, node.Id);
+                return;
+            }
 
-            // 获取结果
-            var resultProperty = task.GetType().GetProperty("Result");
-            var result = resultProperty?.GetValue(task);
+            // 使用反射或 dynamic 处理可等待对象
+            _logger.LogInformation("DEBUG_RELOAD: Node={NodeId}, InvokeResultType={Type}", node.Id, invokeResult.GetType().Namespace + "." + invokeResult.GetType().Name);
+            object? result = null;
+
+            var resultType = invokeResult.GetType();
+            if (invokeResult is Task task)
+            {
+                await task;
+                var resultProperty = resultType.GetProperty("Result");
+                result = resultProperty?.GetValue(task);
+            }
+            else if (resultType.IsGenericType && resultType.GetGenericTypeDefinition().Name.StartsWith("ValueTask"))
+            {
+                // 处理 ValueTask<T>
+                var asTaskMethod = resultType.GetMethod("AsTask");
+                if (asTaskMethod != null)
+                {
+                    var taskObj = (Task)asTaskMethod.Invoke(invokeResult, null)!;
+                    await taskObj;
+                    var resultProperty = taskObj.GetType().GetProperty("Result");
+                    result = resultProperty?.GetValue(taskObj);
+                }
+            }
+            else
+            {
+                // 最后的兜底：尝试使用 dynamic
+                try {
+                    result = await (dynamic)invokeResult;
+                } catch (Exception ex) {
+                    _logger.LogWarning(ex, "兜底 dynamic await 失败: NodeId={NodeId}", node.Id);
+                }
+            }
 
             // 更新输出变量
             await UpdateNodeOutputVariablesAsync(instanceId, node, result);
@@ -730,6 +790,8 @@ public partial class WorkflowEngine
         switch (node.Type)
         {
             case "ai": outputVar = node.Data.Config?.Ai?.OutputVariable; break;
+            case "llm": outputVar = node.Data.Config?.Ai?.OutputVariable; break;
+            case "aiJudge": outputVar = node.Data.Config?.AiJudge?.OutputVariable; break;
             case "knowledgeSearch": outputVar = node.Data.Config?.Knowledge?.OutputVariable; break;
             case "code": outputVar = node.Data.Config?.Code?.OutputVariable; break;
             case "template": outputVar = node.Data.Config?.Template?.OutputVariable; break;
@@ -740,6 +802,11 @@ public partial class WorkflowEngine
             case "answer": outputVar = "last_answer"; break;
             case "tool": outputVar = node.Data.Config?.Tool?.OutputVariable; break;
             case "httpRequest": outputVar = node.Data.Config?.Http?.OutputVariable; break;
+            case "speechToText": outputVar = node.Data.Config?.SpeechToText?.OutputVariable; break;
+            case "textToSpeech": outputVar = node.Data.Config?.TextToSpeech?.OutputVariable; break;
+            case "vision": outputVar = node.Data.Config?.Vision?.OutputVariable; break;
+            case "agent": outputVar = node.Data.Config?.Agent?.OutputVariable; break;
+            case "email": outputVar = "email_result"; break;
         }
 
         if (!string.IsNullOrEmpty(outputVar))
@@ -754,7 +821,11 @@ public partial class WorkflowEngine
     private Task ProcessVariableAggregatorNodeAsync(string instanceId, WorkflowNode node) => ProcessNodeViaExecutorAsync(instanceId, node);
     private Task ProcessQuestionClassifierNodeAsync(string instanceId, WorkflowNode node) => ProcessNodeViaExecutorAsync(instanceId, node);
     private Task ProcessParameterExtractorNodeAsync(string instanceId, WorkflowNode node) => ProcessNodeViaExecutorAsync(instanceId, node);
-    private Task ProcessIterationNodeAsync(string instanceId, WorkflowNode node) => ProcessNodeViaExecutorAsync(instanceId, node);
-    private Task ProcessAnswerNodeAsync(string instanceId, WorkflowNode node) => ProcessNodeViaExecutorAsync(instanceId, node);
     private Task ProcessToolNodeAsync(string instanceId, WorkflowNode node) => ProcessNodeViaExecutorAsync(instanceId, node);
+    private Task ProcessSpeechToTextNodeAsync(string instanceId, WorkflowNode node) => ProcessNodeViaExecutorAsync(instanceId, node);
+    private Task ProcessTextToSpeechNodeAsync(string instanceId, WorkflowNode node) => ProcessNodeViaExecutorAsync(instanceId, node);
+    private Task ProcessEmailNodeAsync(string instanceId, WorkflowNode node) => ProcessNodeViaExecutorAsync(instanceId, node);
+    private Task ProcessVisionNodeAsync(string instanceId, WorkflowNode node) => ProcessNodeViaExecutorAsync(instanceId, node);
+    private Task ProcessAnswerNodeAsync(string instanceId, WorkflowNode node) => ProcessNodeViaExecutorAsync(instanceId, node);
+    private Task ProcessIterationNodeAsync(string instanceId, WorkflowNode node) => ProcessNodeViaExecutorAsync(instanceId, node);
 }

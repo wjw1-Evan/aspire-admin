@@ -783,17 +783,16 @@ public class WorkflowController : BaseApiController
                 var existingDoc = await _documentFactory.GetByIdAsync(instance.DocumentId);
                 Action<Document> updateAction = d =>
                 {
-                    var scopedValues = values;
                     if (!string.IsNullOrWhiteSpace(binding.DataScopeKey))
                     {
-                        var formData = existingDoc?.FormData ?? new Dictionary<string, object>();
-                        formData[binding.DataScopeKey] = scopedValues;
+                        var formData = d.FormData ?? new Dictionary<string, object>();
+                        formData[binding.DataScopeKey] = sanitizedValues;
                         d.FormData = formData;
                     }
                     else
                     {
-                        var existingFormData = existingDoc?.FormData ?? new Dictionary<string, object>();
-                        foreach (var kvp in scopedValues)
+                        var existingFormData = d.FormData ?? new Dictionary<string, object>();
+                        foreach (var kvp in sanitizedValues)
                         {
                             existingFormData[kvp.Key] = kvp.Value;
                         }
@@ -802,20 +801,19 @@ public class WorkflowController : BaseApiController
                 };
 
                 var updated = await _documentFactory.UpdateAsync(instance.DocumentId, updateAction);
-                return Success(updated?.FormData ?? values);
+                return Success(updated?.FormData ?? (object)sanitizedValues);
             }
             else
             {
                 Action<WorkflowInstance> updateAction = i =>
                 {
-                    var scopedValues = values;
                     if (!string.IsNullOrWhiteSpace(binding.DataScopeKey))
                     {
-                        i.SetVariable(binding.DataScopeKey, scopedValues);
+                        i.SetVariable(binding.DataScopeKey, valuesWithNulls);
                     }
                     else
                     {
-                        i.ResetVariables((Dictionary<string, object?>)(object)scopedValues);
+                        i.ResetVariables(valuesWithNulls);
                     }
                 };
 

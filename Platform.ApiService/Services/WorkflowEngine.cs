@@ -94,6 +94,7 @@ public partial class WorkflowEngine : IWorkflowEngine
     private readonly IApproverResolverFactory _approverResolverFactory;
     private readonly IWorkflowExpressionEvaluator _expressionEvaluator;
     private readonly IKnowledgeService _knowledgeService;
+    private readonly IEmailService _emailService;
     private readonly OpenAIClient _openAiClient;
     private readonly AiCompletionOptions _aiOptions;
     private readonly ILogger<WorkflowEngine> _logger;
@@ -115,6 +116,7 @@ public partial class WorkflowEngine : IWorkflowEngine
         IApproverResolverFactory approverResolverFactory,
         IWorkflowExpressionEvaluator expressionEvaluator,
         IKnowledgeService knowledgeService,
+        IEmailService emailService,
         OpenAIClient openAiClient,
         IOptions<AiCompletionOptions> aiOptions,
         ILogger<WorkflowEngine> logger,
@@ -132,6 +134,7 @@ public partial class WorkflowEngine : IWorkflowEngine
         _approverResolverFactory = approverResolverFactory;
         _expressionEvaluator = expressionEvaluator;
         _knowledgeService = knowledgeService;
+        _emailService = emailService;
         _openAiClient = openAiClient;
         _aiOptions = aiOptions.Value;
         _logger = logger;

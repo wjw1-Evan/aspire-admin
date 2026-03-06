@@ -67,13 +67,13 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
   });
   const [searchForm] = Form.useForm();
 
-  const normalizeStatus = (status?: string) => (status || '').toLowerCase() as IoTDeviceStatus;
+  const normalizeStatus = (status?: string) => (status ? (status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()) : '') as IoTDeviceStatus;
   const statusMap: Record<IoTDeviceStatus, { color: string; label: string }> = {
 
-    online: { color: 'green', label: '在线' },
-    offline: { color: 'default', label: '离线' },
-    fault: { color: 'red', label: '故障' },
-    maintenance: { color: 'orange', label: '维护中' },
+    Online: { color: 'green', label: '在线' },
+    Offline: { color: 'default', label: '离线' },
+    Fault: { color: 'red', label: '故障' },
+    Maintenance: { color: 'orange', label: '维护中' },
   };
 
   // 获取概览统计
@@ -88,11 +88,11 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
           setOverviewStats({
             total: list.length,
 
-            online: list.filter((g: IoTGateway) => normalizeStatus(g.status) === 'online').length,
+            online: list.filter((g: IoTGateway) => g.status === 'Online').length,
 
-            offline: list.filter((g: IoTGateway) => normalizeStatus(g.status) === 'offline').length,
+            offline: list.filter((g: IoTGateway) => g.status === 'Offline').length,
 
-            fault: list.filter((g: IoTGateway) => normalizeStatus(g.status) === 'fault').length,
+            fault: list.filter((g: IoTGateway) => g.status === 'Fault').length,
           });
         }
       }
@@ -415,9 +415,9 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
               style={{ width: 120 }}
               onChange={() => actionRef.current?.reload?.()}
             >
-              <Select.Option value="online">{intl.formatMessage({ id: 'pages.iotPlatform.status.onlineGateways' })}</Select.Option>
-              <Select.Option value="offline">{intl.formatMessage({ id: 'pages.iotPlatform.status.offlineGateways' })}</Select.Option>
-              <Select.Option value="fault">{intl.formatMessage({ id: 'pages.iotPlatform.status.faultGateways' })}</Select.Option>
+              <Select.Option value="Online">{intl.formatMessage({ id: 'pages.iotPlatform.status.onlineGateways' })}</Select.Option>
+              <Select.Option value="Offline">{intl.formatMessage({ id: 'pages.iotPlatform.status.offlineGateways' })}</Select.Option>
+              <Select.Option value="Fault">{intl.formatMessage({ id: 'pages.iotPlatform.status.faultGateways' })}</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item style={{ marginBottom: 0 }}>

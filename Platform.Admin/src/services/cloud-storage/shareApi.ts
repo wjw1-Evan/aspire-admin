@@ -202,7 +202,7 @@ export async function downloadSharedFile(shareToken: string, password?: string, 
 
         // 尝试从响应头获取文件名
 
-        const contentDisposition = response?.response?.headers?.get?.('content-disposition');
+        const contentDisposition = response.headers['content-disposition'];
         let filename = fallbackName || 'download';
         if (contentDisposition) {
             // 优先解析 RFC 5987 的 filename*

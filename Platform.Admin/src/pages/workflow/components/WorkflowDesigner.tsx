@@ -495,8 +495,35 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
       documentExtractorVariable: config.documentExtractor?.variable,
       documentExtractorExtractions: config.documentExtractor?.extractions || [],
       documentExtractorOutputVariable: config.documentExtractor?.outputVariable || 'extracted_data',
+      // STT 节点配置
+      sttInputVariable: config.speechToText?.inputVariable,
+      sttProvider: config.speechToText?.provider,
+      sttLanguage: config.speechToText?.language,
+      sttOutputVariable: config.speechToText?.outputVariable || 'stt_result',
+      // TTS 节点配置
+      ttsInputVariable: config.textToSpeech?.inputVariable,
+      ttsProvider: config.textToSpeech?.provider,
+      ttsVoice: config.textToSpeech?.voice,
+      ttsLanguage: config.textToSpeech?.language,
+      ttsOutputVariable: config.textToSpeech?.outputVariable || 'tts_result',
+      // Email 节点配置
+      emailTo: config.email?.to,
+      emailCc: config.email?.cc,
+      emailSubject: config.email?.subject,
+      emailBody: config.email?.body,
+      emailIsHtml: config.email?.isHtml || false,
+      // Vision 节点配置
+      visionImageVariable: config.vision?.imageVariable,
+      visionPrompt: config.vision?.prompt,
+      visionModel: config.vision?.model,
+      visionOutputVariable: config.vision?.outputVariable || 'vision_result',
+      // Variable Aggregator 节点配置
+      aggregatorInputVariables: config.variableAggregator?.inputVariables || [],
+      aggregatorOutputVariable: config.variableAggregator?.outputVariable || 'aggregator_result',
+      aggregatorFormat: config.variableAggregator?.format || 'json',
+      aggregatorTemplate: config.variableAggregator?.template,
     });
-  }, [configForm]);
+  }, [configForm, users, roles, forms]);
 
   const handleSaveConfig = useCallback(() => {
     if (!selectedNode) return;
@@ -798,6 +825,53 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
             config.tool = {
               toolName: values.toolName,
               parameters: values.toolParameters,
+            };
+          }
+
+          if (values.nodeType === 'speechToText') {
+            config.speechToText = {
+              inputVariable: values.sttInputVariable,
+              provider: values.sttProvider,
+              language: values.sttLanguage,
+              outputVariable: values.sttOutputVariable || 'stt_result',
+            };
+          }
+
+          if (values.nodeType === 'textToSpeech') {
+            config.textToSpeech = {
+              inputVariable: values.ttsInputVariable,
+              provider: values.ttsProvider,
+              voice: values.ttsVoice,
+              language: values.ttsLanguage,
+              outputVariable: values.ttsOutputVariable || 'tts_result',
+            };
+          }
+
+          if (values.nodeType === 'email') {
+            config.email = {
+              to: values.emailTo,
+              cc: values.emailCc,
+              subject: values.emailSubject,
+              body: values.emailBody,
+              isHtml: values.emailIsHtml || false,
+            };
+          }
+
+          if (values.nodeType === 'vision') {
+            config.vision = {
+              imageVariable: values.visionImageVariable,
+              prompt: values.visionPrompt,
+              model: values.visionModel,
+              outputVariable: values.visionOutputVariable || 'vision_result',
+            };
+          }
+
+          if (values.nodeType === 'variableAggregator') {
+            config.variableAggregator = {
+              inputVariables: values.aggregatorInputVariables || [],
+              outputVariable: values.aggregatorOutputVariable || 'aggregator_result',
+              format: values.aggregatorFormat || 'json',
+              template: values.aggregatorTemplate,
             };
           }
 
@@ -1223,11 +1297,13 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                         <Form.Item name="agentMemoryEnabled" label="启用记忆" valuePropName="checked">
                           <Switch />
                         </Form.Item>
-                        {values.agentMemoryEnabled && (
-                          <Form.Item name="agentMemoryMaxMessages" label="记忆消息数">
-                            <Input type="number" placeholder="10" />
-                          </Form.Item>
-                        )}
+                        <Form.Item noStyle shouldUpdate={(prev, curr) => prev.agentMemoryEnabled !== curr.agentMemoryEnabled}>
+                          {({ getFieldValue }) => getFieldValue('agentMemoryEnabled') && (
+                            <Form.Item name="agentMemoryMaxMessages" label="记忆消息数">
+                              <Input type="number" placeholder="10" />
+                            </Form.Item>
+                          )}
+                        </Form.Item>
                         <Form.Item name="agentOutputVariable" label="输出变量" initialValue="agent_result">
                           <Input placeholder="agent_result" />
                         </Form.Item>
@@ -1505,6 +1581,112 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                         </Form.Item>
                         <Form.Item name="toolParameters" label="工具参数 (JSON)">
                           <Input.TextArea rows={4} placeholder='{"city": "{{city}}", "date": "today"}' />
+                        </Form.Item>
+                      </>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'speechToText' && (
+                      <>
+                        <Form.Item name="sttInputVariable" label="输入变量" tooltip="包含音频内容的变量">
+                          <Input placeholder="音频文件 URL 或 Base64" />
+                        </Form.Item>
+                        <Form.Item name="sttProvider" label="服务提供商">
+                          <Select defaultValue="openai">
+                            <Select.Option value="openai">OpenAI Whisper</Select.Option>
+                            <Select.Option value="azure">Azure Speech</Select.Option>
+                            <Select.Option value="google">Google Cloud Speech</Select.Option>
+                          </Select>
+                        </Form.Item>
+                        <Form.Item name="sttLanguage" label="识别语言" tooltip="留空则自动检测">
+                          <Input placeholder="例如: zh-CN, en-US" />
+                        </Form.Item>
+                        <Form.Item name="sttOutputVariable" label="输出变量" initialValue="stt_result">
+                          <Input placeholder="stt_result" />
+                        </Form.Item>
+                      </>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'textToSpeech' && (
+                      <>
+                        <Form.Item name="ttsInputVariable" label="文本变量" tooltip="需要转音频的文本">
+                          <Input placeholder="例如: ai_result" />
+                        </Form.Item>
+                        <Form.Item name="ttsProvider" label="服务提供商">
+                          <Select defaultValue="openai">
+                            <Select.Option value="openai">OpenAI TTS</Select.Option>
+                            <Select.Option value="azure">Azure Cognitive Speech</Select.Option>
+                          </Select>
+                        </Form.Item>
+                        <Form.Item name="ttsVoice" label="语音名称">
+                          <Input placeholder="例如: alloy, echo, fable, onyx, nova, shimmer" />
+                        </Form.Item>
+                        <Form.Item name="ttsOutputVariable" label="输出变量" initialValue="tts_result">
+                          <Input placeholder="tts_result" />
+                        </Form.Item>
+                      </>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'email' && (
+                      <>
+                        <Form.Item name="emailTo" label="收件人" rules={[{ required: true }]}>
+                          <Input placeholder="example@mail.com 或 {{user_email}}" />
+                        </Form.Item>
+                        <Form.Item name="emailCc" label="抄送">
+                          <Input placeholder="多个邮箱用分号隔开" />
+                        </Form.Item>
+                        <Form.Item name="emailSubject" label="邮件主题" rules={[{ required: true }]}>
+                          <Input />
+                        </Form.Item>
+                        <Form.Item name="emailBody" label="邮件正文" rules={[{ required: true }]}>
+                          <Input.TextArea rows={5} />
+                        </Form.Item>
+                        <Form.Item name="emailIsHtml" label="HTML 格式" valuePropName="checked">
+                          <Switch />
+                        </Form.Item>
+                      </>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'vision' && (
+                      <>
+                        <Form.Item name="visionImageVariable" label="图像变量" tooltip="包含图像数据的变量" rules={[{ required: true }]}>
+                          <Input placeholder="图像 URL 或 Base64" />
+                        </Form.Item>
+                        <Form.Item name="visionModel" label="模型">
+                          <Select defaultValue="gpt-4o">
+                            <Select.Option value="gpt-4o">GPT-4o (Vision)</Select.Option>
+                            <Select.Option value="claude-3-opus">Claude 3 Opus</Select.Option>
+                          </Select>
+                        </Form.Item>
+                        <Form.Item name="visionPrompt" label="分析指令" initialValue="请详细描述图片内容">
+                          <Input.TextArea rows={3} />
+                        </Form.Item>
+                        <Form.Item name="visionOutputVariable" label="输出变量" initialValue="vision_result">
+                          <Input placeholder="vision_result" />
+                        </Form.Item>
+                      </>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'variableAggregator' && (
+                      <>
+                        <Form.Item name="aggregatorInputVariables" label="输入变量列表" rules={[{ required: true }]}>
+                          <Select mode="tags" placeholder="输入并回车添加变量名" />
+                        </Form.Item>
+                        <Form.Item name="aggregatorFormat" label="聚合格式" initialValue="json">
+                          <Select>
+                            <Select.Option value="json">JSON 对象</Select.Option>
+                            <Select.Option value="text">纯文本列表</Select.Option>
+                            <Select.Option value="template">自定义模板</Select.Option>
+                          </Select>
+                        </Form.Item>
+                        <Form.Item noStyle shouldUpdate={(prev, curr) => prev.aggregatorFormat !== curr.aggregatorFormat}>
+                          {({ getFieldValue }) => getFieldValue('aggregatorFormat') === 'template' && (
+                            <Form.Item name="aggregatorTemplate" label="聚合模板" rules={[{ required: true }]}>
+                              <Input.TextArea rows={4} placeholder="例如: 姓名: {{name}}, 分数: {{score}}" />
+                            </Form.Item>
+                          )}
+                        </Form.Item>
+                        <Form.Item name="aggregatorOutputVariable" label="输出变量" initialValue="aggregator_result">
+                          <Input placeholder="aggregator_result" />
                         </Form.Item>
                       </>
                     )}

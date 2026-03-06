@@ -260,6 +260,18 @@ public class NodeConfig
     [BsonElement("tool")]
     public ToolConfig? Tool { get; set; }
 
+    [BsonElement("speechToText")]
+    public SpeechToTextConfig? SpeechToText { get; set; }
+
+    [BsonElement("textToSpeech")]
+    public TextToSpeechConfig? TextToSpeech { get; set; }
+
+    [BsonElement("email")]
+    public EmailConfig? Email { get; set; }
+
+    [BsonElement("vision")]
+    public VisionConfig? Vision { get; set; }
+
     [BsonElement("agent")]
     public AgentConfig? Agent { get; set; }
 
@@ -283,6 +295,7 @@ public class NodeConfig
 
     [BsonElement("script")]
     public ScriptConfig? Script { get; set; }
+
 }
 
 public class KnowledgeConfig
@@ -647,6 +660,75 @@ public class ToolConfig
 
     [BsonElement("outputVariable")]
     public string OutputVariable { get; set; } = "tool_result";
+}
+
+public class SpeechToTextConfig
+{
+    [BsonElement("inputVariable")]
+    public string? InputVariable { get; set; }
+
+    [BsonElement("provider")]
+    public string? Provider { get; set; }
+
+    [BsonElement("language")]
+    public string? Language { get; set; }
+
+    [BsonElement("outputVariable")]
+    public string OutputVariable { get; set; } = "stt_result";
+}
+
+public class TextToSpeechConfig
+{
+    [BsonElement("inputVariable")]
+    public string? InputVariable { get; set; }
+
+    [BsonElement("provider")]
+    public string? Provider { get; set; }
+
+    [BsonElement("voice")]
+    public string? Voice { get; set; }
+
+    [BsonElement("language")]
+    public string? Language { get; set; }
+
+    [BsonElement("outputVariable")]
+    public string OutputVariable { get; set; } = "tts_result";
+}
+
+public class EmailConfig
+{
+    [BsonElement("to")]
+    public string? To { get; set; }
+
+    [BsonElement("cc")]
+    public string? Cc { get; set; }
+
+    [BsonElement("subject")]
+    public string? Subject { get; set; }
+
+    [BsonElement("body")]
+    public string? Body { get; set; }
+
+    [BsonElement("isHtml")]
+    public bool IsHtml { get; set; } = false;
+
+    [BsonElement("attachments")]
+    public List<string> Attachments { get; set; } = new();
+}
+
+public class VisionConfig
+{
+    [BsonElement("imageVariable")]
+    public string? ImageVariable { get; set; }
+
+    [BsonElement("prompt")]
+    public string? Prompt { get; set; }
+
+    [BsonElement("model")]
+    public string? Model { get; set; }
+
+    [BsonElement("outputVariable")]
+    public string OutputVariable { get; set; } = "vision_result";
 }
 
 public class HttpConfig

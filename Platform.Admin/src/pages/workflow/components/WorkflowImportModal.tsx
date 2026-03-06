@@ -35,7 +35,7 @@ import type { UploadFile } from 'antd/es/upload/interface';
 
 const { Text, Title } = Typography;
 
-const { Step } = Steps;
+
 
 interface WorkflowImportModalProps {
     open: boolean;
@@ -148,7 +148,7 @@ const WorkflowImportModal: React.FC<WorkflowImportModalProps> = ({
 
             let response;
 
-            if (validationResult?.conflicts.length > 0) {
+            if (validationResult && validationResult.conflicts.length > 0) {
                 // 有冲突，使用冲突解决
                 formData.append('resolutions', JSON.stringify(conflictResolutions));
                 response = await resolveImportConflicts(formData);
@@ -303,7 +303,7 @@ const WorkflowImportModal: React.FC<WorkflowImportModalProps> = ({
                     </Card>
                 )}
 
-                {!hasErrors && (
+                {(!validationResult || (validationResult && validationResult.errors.length === 0)) && (
                     <Checkbox
                         checked={overwriteExisting}
                         onChange={(e) => setOverwriteExisting(e.target.checked)}
@@ -381,23 +381,24 @@ const WorkflowImportModal: React.FC<WorkflowImportModalProps> = ({
             width={800}
         >
 
-            <Steps current={currentStep} style={{ marginBottom: 24 }}>
-                <Step
-                    title={intl.formatMessage({ id: 'pages.workflow.import.step.upload' })}
-                    icon={<FileTextOutlined />}
-                    status={getStepStatus(0)}
-                />
-                <Step
-                    title={intl.formatMessage({ id: 'pages.workflow.import.step.validate' })}
-                    icon={<ExclamationCircleOutlined />}
-                    status={getStepStatus(1)}
-                />
-                <Step
-                    title={intl.formatMessage({ id: 'pages.workflow.import.step.complete' })}
-                    icon={<CheckCircleOutlined />}
-                    status={getStepStatus(2)}
-                />
-            </Steps>
+            <Steps
+                current={currentStep}
+                style={{ marginBottom: 24 }}
+                items={[
+                    {
+                        title: intl.formatMessage({ id: 'pages.workflow.import.step.upload' }),
+                        icon: <FileTextOutlined />,
+                    },
+                    {
+                        title: intl.formatMessage({ id: 'pages.workflow.import.step.validate' }),
+                        icon: <ExclamationCircleOutlined />,
+                    },
+                    {
+                        title: intl.formatMessage({ id: 'pages.workflow.import.step.complete' }),
+                        icon: <CheckCircleOutlined />,
+                    },
+                ]}
+            />
 
             {currentStep === 0 && renderFileUpload()}
             {currentStep === 1 && renderValidationResult()}
@@ -429,7 +430,7 @@ const WorkflowImportModal: React.FC<WorkflowImportModalProps> = ({
                         onClick={handleImport}
                         loading={loading}
 
-                        disabled={validationResult?.errors.length > 0}
+                        disabled={!validationResult || validationResult.errors.length > 0}
                     >
                         {intl.formatMessage({ id: 'pages.workflow.import.start' })}
                     </Button>

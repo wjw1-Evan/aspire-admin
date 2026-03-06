@@ -23,6 +23,7 @@ export interface AppUser {
  */
 export interface UserListResponse {
   list: AppUser[];
+  users: AppUser[];
   total: number;
 }
 

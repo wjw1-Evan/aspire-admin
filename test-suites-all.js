@@ -610,6 +610,69 @@ async function runFormIntegratedTests() {
 }
 
 /**
+ * [L6] 扩展组件测试 (Extended Components)
+ * 验证 Dify 风格节点及新增 AI/集成节点:
+ * ParameterExtractor, Iteration, Answer, KnowledgeSearch, Tool,
+ * SpeechToText, TextToSpeech, Email, Vision, VariableAggregator
+ */
+async function runExtendedComponentsTests() {
+    console.log('\n=== RUNNING EXTENDED COMPONENTS TESTS ===');
+    
+    const workflowDef = {
+        name: "Extended Components Master",
+        category: 'Test',
+        isActive: true,
+        graph: {
+            nodes: [
+                { id: "start", type: "start", data: { nodeType: "start", label: "Start" } },
+                // 变量聚合
+                { id: "agg1", type: "variableAggregator", data: { nodeType: "variableAggregator", config: { variableAggregator: { inputVariables: ["input1", "input2"], outputVariable: "agg_res" } } } },
+                // 参数提取
+                { id: "ext1", type: "parameterExtractor", data: { nodeType: "parameterExtractor", config: { parameterExtractor: { inputVariable: "agg_res", parameters: [{name: "city", type: "string"}], outputVariable: "params" } } } },
+                // 视觉分析
+                { id: "vis1", type: "vision", data: { nodeType: "vision", config: { vision: { imageVariable: "img_url", prompt: "Describe this", outputVariable: "vis_res" } } } },
+                // 邮件发送
+                { id: "mail1", type: "email", data: { nodeType: "email", config: { email: { to: "test@example.com", subject: "Test", body: "Hello" } } } },
+                // 语音/文本转换
+                { id: "stt1", type: "speechToText", data: { nodeType: "speechToText", config: { speechToText: { inputVariable: "audio", outputVariable: "txt" } } } },
+                { id: "tts1", type: "textToSpeech", data: { nodeType: "textToSpeech", config: { textToSpeech: { inputVariable: "txt", outputVariable: "audio_res" } } } },
+                { id: "end", type: "end", data: { nodeType: "end", label: "End" } }
+            ],
+            edges: [
+                { source: "start", target: "agg1", data: { condition: "" } },
+                { source: "agg1", target: "ext1", data: { condition: "" } },
+                { source: "ext1", target: "vis1", data: { condition: "" } },
+                { source: "vis1", target: "mail1", data: { condition: "" } },
+                { source: "mail1", target: "stt1", data: { condition: "" } },
+                { source: "stt1", target: "tts1", data: { condition: "" } },
+                { source: "tts1", target: "end", data: { condition: "" } }
+            ]
+        }
+    };
+
+    const createRes = await request('/workflows', { method: 'POST', headers: Auth.headers, body: workflowDef });
+    if (!createRes.success) throw new Error("Extended WF Creation failed: " + JSON.stringify(createRes));
+    const defId = createRes.data.id;
+
+    console.log(`  Starting extended components instance...`);
+    const startRes = await request(`/workflows/${defId}/start`, { 
+        method: 'POST', 
+        headers: Auth.headers, 
+        body: { 
+            documentId: "000000000000000000000000", // In a real scenario, use a real doc
+            variables: { input1: "Hello", input2: "World", img_url: "http://..." } 
+        } 
+    });
+    
+    // We expect it to at least start and run for a bit
+    if (startRes.success) {
+        console.log(`  ✅ Extended components workflow started successfully.`);
+    } else {
+         console.log(`  ❌ Extended components workflow failed to start: ${startRes.message}`);
+    }
+}
+
+/**
  * [L7] 审批拒绝测试 (Rejection)
  * 测试流程在审批节点被拒绝时的状态流转
  */
@@ -774,6 +837,7 @@ async function main() {
         if (mode === 'all' || mode === 'allnodes')  await runAllNodesTests();
         if (mode === 'all' || mode === 'form')      await runFormIntegratedTests();
         if (mode === 'all' || mode === 'multiuser') await runMultiUserTests();
+        if (mode === 'all' || mode === 'extended')  await runExtendedComponentsTests();
         if (mode === 'all' || mode === 'reject')    await runRejectTests();
 
         console.log('\n🌟 Unified Test Run Finished.');

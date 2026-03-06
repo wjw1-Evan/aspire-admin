@@ -9,7 +9,7 @@ namespace Platform.ApiService.Workflows.Utilities;
 /// </summary>
 public static class DifyVariableResolver
 {
-    private static readonly Regex VariableRegex = new(@"\{\{(#?[\w\._-]+)\}\}", RegexOptions.Compiled);
+    private static readonly Regex VariableRegex = new(@"\{\{(.+?)\}\}", RegexOptions.Compiled);
 
     /// <summary>
     /// 解析字符串中的所有变量占位符
@@ -20,9 +20,63 @@ public static class DifyVariableResolver
 
         return VariableRegex.Replace(template, match =>
         {
-            var path = match.Groups[1].Value;
+            if (match.Groups.Count < 2) return match.Value;
+            var rawContent = match.Groups[1].Value.Trim();
+            // System.Console.WriteLine($"[DifyVariableResolver] Resolve found match: '{rawContent}'");
+            
+            // 1. 处理默认值语法: {{var || 'default'}}
+            string path;
+            string defaultValue = string.Empty;
+            
+            if (rawContent.Contains("||"))
+            {
+                var orParts = rawContent.Split("||", 2);
+                path = orParts[0].Trim();
+                if (orParts.Length > 1) 
+                {
+                    defaultValue = orParts[1].Trim('\'', '\"', ' ');
+                }
+            }
+            else
+            {
+                path = rawContent;
+            }
+
+            // 2. 处理 Filter 语法: path | filter
+            string? filter = null;
+            if (path.Contains("|"))
+            {
+                var filterParts = path.Split('|', 2);
+                path = filterParts[0].Trim();
+                if (filterParts.Length > 1)
+                {
+                    filter = filterParts[1].Trim().ToLowerInvariant();
+                }
+            }
+
             var value = GetValueByPath(path, variables);
-            return value?.ToString() ?? string.Empty;
+
+            if (value == null || (value is string s && string.IsNullOrEmpty(s)))
+            {
+                // System.Console.WriteLine($"[DifyVariableResolver]   Value for '{path}' is null/empty, returning default: '{defaultValue}'");
+                return defaultValue;
+            }
+
+            // 执行 Filter
+            if (filter == "json")
+            {
+                try 
+                {
+                    return JsonSerializer.Serialize(value, new JsonSerializerOptions { WriteIndented = false });
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine($"[DifyVariableResolver]   JSON filter failed for '{path}': {ex.Message}");
+                    return value?.ToString() ?? defaultValue;
+                }
+            }
+
+            return value?.ToString() ?? defaultValue;
         });
     }
 
@@ -34,33 +88,43 @@ public static class DifyVariableResolver
     public static object? GetValueByPath(string path, Dictionary<string, object?> variables)
     {
         if (string.IsNullOrEmpty(path)) return null;
+        
+        // System.Console.WriteLine($"[DifyVariableResolver] Resolving path: '{path}'");
 
-        // 处理 Dify 格式: #node_id.field (或者 #node_id.output)
-        if (path.StartsWith("#"))
+        try 
         {
-            var parts = path.TrimStart('#').Split('.');
-            if (parts.Length < 2) return null;
+            // 处理 Dify 格式: #node_id.field (或者 #node_id.output)
+            if (path.StartsWith("#"))
+            {
+                var difyParts = path.TrimStart('#').Split('.');
+                if (difyParts.Length >= 2)
+                {
+                    var nodeId = difyParts[0];
+                    var field = difyParts[1];
 
-            var nodeId = parts[0];
-            var field = parts[1];
+                    // 1. 尝试直接从变量字典查找完整路径 (引擎现在会同步存储此路径)
+                    if (variables.TryGetValue(path, out var val)) return val;
+                    
+                    // 2. 尝试查找 nodes.{nodeId}.{field} (由引擎标准化存储)
+                    if (variables.TryGetValue($"nodes.{nodeId}.{field}", out var standardizedVal)) return standardizedVal;
+                    
+                    // 3. 回退兼容性查找: 如果 field 是 "output", 尝试查找 node_id.output
+                    if (variables.TryGetValue($"{nodeId}.{field}", out var nodeVal)) return nodeVal;
+                }
+            }
 
-            // 1. 尝试直接从变量字典查找完整路径 (引擎现在会同步存储此路径)
-            if (variables.TryGetValue(path, out var val)) return val;
-            
-            // 2. 尝试查找 nodes.{nodeId}.{field} (由引擎标准化存储)
-            if (variables.TryGetValue($"nodes.{nodeId}.{field}", out var standardizedVal)) return standardizedVal;
-            
-            // 3. 回退兼容性查找: 如果 field 是 "output", 尝试查找 node_id.output
-            if (variables.TryGetValue($"{nodeId}.{field}", out var nodeVal)) return nodeVal;
+            // 处理普通格式
+            if (variables.TryGetValue(path, out var simpleVal)) return simpleVal;
+
+            // 支持深层次解析 (如 user.name)
+            if (path.Contains("."))
+            {
+                return GetDeepValue(path, variables);
+            }
         }
-
-        // 处理普通格式
-        if (variables.TryGetValue(path, out var simpleVal)) return simpleVal;
-
-        // 支持深层次解析 (如 user.name)
-        if (path.Contains("."))
+        catch (Exception ex)
         {
-            return GetDeepValue(path, variables);
+            System.Console.WriteLine($"[DifyVariableResolver] Fatal error in GetValueByPath for path '{path}': {ex.Message}");
         }
 
         return null;
@@ -68,40 +132,59 @@ public static class DifyVariableResolver
 
     private static object? GetDeepValue(string path, Dictionary<string, object?> variables)
     {
-        var parts = path.Split('.');
-        if (parts.Length == 0) return null;
-
-        if (!variables.TryGetValue(parts[0], out var current)) return null;
-
-        for (int i = 1; i < parts.Length; i++)
+        try 
         {
-            if (current == null) return null;
-            
-            var part = parts[i];
-            
-            // 尝试作为 JSON 元素处理
-            if (current is JsonElement element)
+            var parts = path.Split('.');
+            if (parts.Length == 0) return null;
+
+            if (!variables.TryGetValue(parts[0], out var current)) return null;
+
+            for (int i = 1; i < parts.Length; i++)
             {
-                if (element.ValueKind == JsonValueKind.Object && element.TryGetProperty(part, out var nextElement))
+                if (current == null) return null;
+                
+                var part = parts[i];
+                
+                // 尝试作为 JSON 元素处理
+                if (current is JsonElement element)
                 {
-                    current = nextElement;
-                    continue;
+                    if (element.ValueKind == JsonValueKind.Object && element.TryGetProperty(part, out var nextElement))
+                    {
+                        current = nextElement;
+                        continue;
+                    }
+                    
+                    // 支持数组索引，例如 items.0
+                    if (element.ValueKind == JsonValueKind.Array && int.TryParse(part, out var arrayIndex))
+                    {
+                        if (arrayIndex >= 0 && arrayIndex < element.GetArrayLength())
+                        {
+                            current = element[arrayIndex];
+                            continue;
+                        }
+                    }
+                    return null;
                 }
-                return null;
+
+                // 尝试通过反射获取属性 (如果是普通对象)
+                var property = current.GetType().GetProperty(part);
+                if (property != null)
+                {
+                    current = property.GetValue(current);
+                }
+                else
+                {
+                    return null;
+                }
             }
 
-            // 尝试通过反射获取属性 (如果是普通对象)
-            var property = current.GetType().GetProperty(part);
-            if (property != null)
-            {
-                current = property.GetValue(current);
-            }
-            else
-            {
-                return null;
-            }
+            return current;
         }
-
-        return current;
+        catch (Exception ex)
+        {
+            // 防止崩溃，记录日志或直接返回 null
+            System.Console.WriteLine($"[DifyVariableResolver] Error resolving deep path '{path}': {ex.Message}");
+            return null;
+        }
     }
 }

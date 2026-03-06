@@ -1,6 +1,11 @@
 using Microsoft.Agents.AI.Workflows;
 using Platform.ApiService.Models.Workflow;
+using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Services;
+using System.Linq;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Platform.ApiService.Workflows.Executors;
 
@@ -11,28 +16,33 @@ internal sealed partial class ApprovalExecutor : Executor
 {
     private readonly ApprovalConfig _config;
     private readonly IDataFactory<WorkflowInstance> _instanceFactory;
+    private readonly IWorkflowExpressionEvaluator _expressionEvaluator;
 
-    public ApprovalExecutor(ApprovalConfig config, IDataFactory<WorkflowInstance> instanceFactory) : base("ApprovalExecutor")
+    public ApprovalExecutor(ApprovalConfig config, IDataFactory<WorkflowInstance> instanceFactory, IWorkflowExpressionEvaluator expressionEvaluator) : base("ApprovalExecutor")
     {
         _config = config;
         _instanceFactory = instanceFactory;
+        _expressionEvaluator = expressionEvaluator;
     }
 
-    protected override ProtocolBuilder ConfigureProtocol(ProtocolBuilder builder)
-    {
-        return builder;
-    }
+    protected override ProtocolBuilder ConfigureProtocol(ProtocolBuilder builder) => builder;
 
     [MessageHandler]
-    private async ValueTask HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
+    private async ValueTask<object?> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
         // 审批节点通常需要挂起等待人工干预
-        // 这里我们可以设置流程实例的状态为 "WaitingForApproval"
-        // 并通过 context.YieldOutputAsync 或类似机制通知系统
+        // 引擎会识别 __sourceHandle = "waiting" 并处理挂起逻辑
         
-        await context.YieldOutputAsync($"Approval required for node: {_config.Approvers}");
+        var approvers = string.Join(", ", _config.Approvers.Select(a => a.UserId ?? a.RoleId ?? "Unknown"));
         
-        // 注意：在实际实现中，这里可能需要调用 context.QueueStateUpdateAsync 
-        // 记录当前节点状态，然后结束当前 superstep。
+        // 返回特殊指令，由引擎后续调用 SendApprovalNotificationsAsync
+        return await Task.FromResult<object?>(new Dictionary<string, object?>
+        {
+            ["__sourceHandle"] = "waiting",
+            ["__status"] = "WaitingForApproval",
+            ["__trigger_notifications"] = true, // 指示引擎发送通知
+            ["approvers"] = approvers,
+            ["message"] = $"Approval required for {approvers}"
+        });
     }
 }

@@ -19,7 +19,8 @@ import 'reactflow/dist/style.css';
 import './WorkflowDesigner.less';
 import { NODE_CONFIGS, nodeTypes, edgeTypes } from './WorkflowDesignerConstants';
 
-import { Button, Card, Drawer, Form, Input, Select, Switch, Space, Divider, Modal, Tabs } from 'antd';
+import { Button, Card, Drawer, Form, Input, Select, Switch, Space, Divider, Modal, Tabs, Mentions } from 'antd';
+const { Option } = Mentions;
 import {
   MenuUnfoldOutlined,
   MenuFoldOutlined,
@@ -94,10 +95,32 @@ const getTypeLabels = (intl: any) => ({
   tool: intl.formatMessage({ id: 'pages.workflow.designer.addTool' }),
 });
 
-const defaultNodeStyle = {
-  borderRadius: '8px',
-  minWidth: '120px',
-};
+  const defaultNodeStyle = {
+    borderRadius: '8px',
+    minWidth: '120px',
+  };
+
+  // 获取工作流中可引用的变量列表
+  const useWorkflowVariables = (nodes: Node[]) => {
+    return useMemo(() => {
+      const vars = [
+        { label: '实例 ID', value: '__instanceId' },
+        { label: '文档标题', value: '__documentTitle' },
+        { label: '发起人', value: 'startedBy' },
+      ];
+
+      nodes.forEach(node => {
+        if (node.data?.nodeType && node.data?.nodeType !== 'start') {
+          vars.push({
+            label: `节点: ${node.data.label || node.id}`,
+            value: `#${node.id}.output#`
+          });
+        }
+      });
+
+      return vars;
+    }, [nodes]);
+  };
 
 /**
  * 递归清理对象中的空字符串 ID 字段，防止 MongoDB ObjectId 格式错误
@@ -200,6 +223,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
   const [forms, setForms] = useState<FormDefinition[]>([]);
   const [loadingForms, setLoadingForms] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const availableVariables = useWorkflowVariables(nodes);
 
   // 稳定状态引用，防止回调循环热更新
   const nodesRef = React.useRef(nodes);
@@ -628,13 +652,22 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
           }
 
           if (values.nodeType === 'httpRequest') {
-            config.http = {
-              method: values.httpMethod,
-              url: values.httpUrl,
-              headers: values.httpHeaders,
-              body: values.httpBody,
-              outputVariable: values.httpOutputVariable,
-            };
+            try {
+              config.http = {
+                method: values.httpMethod || 'GET',
+                url: values.httpUrl,
+                headers: typeof values.httpHeaders === 'string' && values.httpHeaders.trim() !== '' 
+                  ? JSON.parse(values.httpHeaders) 
+                  : values.httpHeaders,
+                body: typeof values.httpBody === 'string' && values.httpBody.trim() !== '' 
+                  ? JSON.parse(values.httpBody) 
+                  : values.httpBody,
+                outputVariable: values.httpOutputVariable || 'http_result',
+              };
+            } catch (e) {
+              message.error('HTTP：Header 或 Body 不是有效的 JSON');
+              return node;
+            }
           }
 
           if (values.nodeType === 'timer') {
@@ -767,14 +800,6 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
             };
           }
 
-          if (values.nodeType === 'variableAggregator') {
-            config.variableAggregator = {
-              inputVariables: values.aggregatorVariables || [],
-              template: values.aggregatorTemplate,
-              outputVariable: values.aggregatorOutputVariable || 'aggregator_result',
-              format: values.aggregatorFormat || 'json',
-            };
-          }
 
           if (values.nodeType === 'code') {
             config.code = {
@@ -831,10 +856,17 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
           }
 
           if (values.nodeType === 'tool') {
-            config.tool = {
-              toolName: values.toolName,
-              parameters: values.toolParameters,
-            };
+            try {
+              config.tool = {
+                toolName: values.toolName,
+                parameters: typeof values.toolParameters === 'string' && values.toolParameters.trim() !== '' 
+                  ? JSON.parse(values.toolParameters) 
+                  : values.toolParameters,
+              };
+            } catch (e) {
+              message.error('工具：参数定义不是有效的 JSON');
+              return node;
+            }
           }
 
           if (values.nodeType === 'speechToText') {
@@ -1228,10 +1260,18 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                           <Input placeholder="例如: form_data, http_result" />
                         </Form.Item>
                         <Form.Item name="systemPrompt" label="系统设定 (System Prompt)">
-                          <Input.TextArea rows={3} />
+                          <Mentions rows={3} prefix={['{{']}>
+                            {availableVariables.map(v => (
+                              <Option key={v.value} value={v.value}>{v.label}</Option>
+                            ))}
+                          </Mentions>
                         </Form.Item>
                         <Form.Item name="promptTemplate" label="提示词模板 (User Prompt)">
-                          <Input.TextArea rows={5} placeholder="可使用 {{inputVariable}} 引用输入变量" />
+                          <Mentions rows={5} placeholder="可使用 {{variable}} 引用输入变量" prefix={['{{']}>
+                            {availableVariables.map(v => (
+                              <Option key={v.value} value={v.value}>{v.label}</Option>
+                            ))}
+                          </Mentions>
                         </Form.Item>
                         <Form.Item name="outputVariable" label="输出变量" tooltip="将 AI 的输出结果保存到此流程变量" initialValue="ai_result">
                           <Input placeholder="例如: ai_result" />
@@ -1259,10 +1299,18 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                           </Select>
                         </Form.Item>
                         <Form.Item name="llmSystemPrompt" label="系统提示词">
-                          <Input.TextArea rows={3} placeholder="设定 AI 的角色和行为" />
+                          <Mentions rows={3} placeholder="设定 AI 的角色和行为" prefix={['{{']}>
+                            {availableVariables.map(v => (
+                              <Option key={v.value} value={v.value}>{v.label}</Option>
+                            ))}
+                          </Mentions>
                         </Form.Item>
                         <Form.Item name="llmPrompt" label="用户提示词">
-                          <Input.TextArea rows={4} placeholder="可使用 {{variable}} 引用变量" />
+                          <Mentions rows={4} placeholder="可使用 {{variable}} 引用变量" prefix={['{{']}>
+                            {availableVariables.map(v => (
+                              <Option key={v.value} value={v.value}>{v.label}</Option>
+                            ))}
+                          </Mentions>
                         </Form.Item>
                         <div style={{ display: 'flex', gap: 16 }}>
                           <Form.Item name="llmTemperature" label="Temperature" style={{ flex: 1 }}>
@@ -1298,7 +1346,11 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                           <Input placeholder="例如: gpt-4o" />
                         </Form.Item>
                         <Form.Item name="agentSystemPrompt" label="系统提示词">
-                          <Input.TextArea rows={4} placeholder="设定 Agent 的角色、目标和行为规则" />
+                          <Mentions rows={4} placeholder="设定 Agent 的角色、目标和行为规则" prefix={['{{']}>
+                            {availableVariables.map(v => (
+                              <Option key={v.value} value={v.value}>{v.label}</Option>
+                            ))}
+                          </Mentions>
                         </Form.Item>
                         <Form.Item name="agentMaxIterations" label="最大迭代次数" tooltip="Agent 最大思考和行动次数">
                           <Input type="number" placeholder="10" />
@@ -1323,7 +1375,11 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                     {selectedNode?.data.nodeType === 'retrieval' && (
                       <>
                         <Form.Item name="retrievalQuery" label="检索查询" tooltip="搜索词，支持变量引用">
-                          <Input.TextArea rows={2} placeholder="{{query}}" />
+                          <Mentions rows={2} placeholder="{{query}}" prefix={['{{']}>
+                            {availableVariables.map(v => (
+                              <Option key={v.value} value={v.value}>{v.label}</Option>
+                            ))}
+                          </Mentions>
                         </Form.Item>
                         <Form.Item name="retrievalKnowledgeBaseId" label="知识库 ID">
                           <Input placeholder="知识库 ID" />
@@ -1352,7 +1408,11 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                     {selectedNode?.data.nodeType === 'knowledge' && (
                       <>
                         <Form.Item name="knowledgeQuery" label="检索查询" rules={[{ required: true }]}>
-                          <Input.TextArea rows={2} placeholder="搜索词，支持变量引用" />
+                          <Mentions rows={2} placeholder="搜索词，支持变量引用" prefix={['{{']}>
+                            {availableVariables.map(v => (
+                              <Option key={v.value} value={v.value}>{v.label}</Option>
+                            ))}
+                          </Mentions>
                         </Form.Item>
                         <Form.Item name="knowledgeQueryVariable" label="查询变量" tooltip="如果不设置，则使用当前输入数据">
                           <Input placeholder="例如: user_query" />
@@ -1408,17 +1468,18 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
 
                     {selectedNode?.data.nodeType === 'speechToText' && (
                       <>
-                        <Form.Item name="sttProvider" label="提供商" initialValue="openai">
-                          <Select>
-                            <Select.Option value="openai">OpenAI (Whisper)</Select.Option>
-                            <Select.Option value="azure">Azure</Select.Option>
+                        <Form.Item name="sttInputVariable" label="输入变量" tooltip="包含音频内容的变量">
+                          <Input placeholder="音频文件 URL 或 Base64" />
+                        </Form.Item>
+                        <Form.Item name="sttProvider" label="服务提供商">
+                          <Select defaultValue="openai">
+                            <Select.Option value="openai">OpenAI Whisper</Select.Option>
+                            <Select.Option value="azure">Azure Speech</Select.Option>
+                            <Select.Option value="google">Google Cloud Speech</Select.Option>
                           </Select>
                         </Form.Item>
-                        <Form.Item name="sttInputVariable" label="输入变量" tooltip="包含音频文件链接或二进制数据的变量" rules={[{ required: true }]}>
-                          <Input placeholder="audio_url" />
-                        </Form.Item>
-                        <Form.Item name="sttLanguage" label="识别语言 (可选)">
-                          <Input placeholder="zh, en, ja" />
+                        <Form.Item name="sttLanguage" label="识别语言" tooltip="留空则自动检测">
+                          <Input placeholder="例如: zh-CN, en-US" />
                         </Form.Item>
                         <Form.Item name="sttOutputVariable" label="输出变量" initialValue="stt_result">
                           <Input placeholder="stt_result" />
@@ -1428,27 +1489,23 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
 
                     {selectedNode?.data.nodeType === 'textToSpeech' && (
                       <>
-                        <Form.Item name="ttsProvider" label="提供商" initialValue="openai">
-                          <Select>
-                            <Select.Option value="openai">OpenAI (TTS)</Select.Option>
-                            <Select.Option value="azure">Azure</Select.Option>
-                          </Select>
+                        <Form.Item name="ttsInputVariable" label="文本变量" tooltip="需要转音频的文本">
+                          <Input placeholder="例如: ai_result" />
                         </Form.Item>
-                        <Form.Item name="ttsInputVariable" label="输入文本变量" tooltip="要转换为语音的文本内容" rules={[{ required: true }]}>
-                          <Input placeholder="text_to_read" />
+                        <Form.Item name="ttsProvider" label="服务提供商">
+                          <Select defaultValue="openai">
+                            <Select.Option value="openai">OpenAI TTS</Select.Option>
+                            <Select.Option value="azure">Azure Cognitive Speech</Select.Option>
+                          </Select>
                         </Form.Item>
                         <Form.Item name="ttsVoice" label="声音" initialValue="alloy">
-                          <Select>
-                            <Select.Option value="alloy">Alloy</Select.Option>
-                            <Select.Option value="echo">Echo</Select.Option>
-                            <Select.Option value="fable">Fable</Select.Option>
-                            <Select.Option value="onyx">Onyx</Select.Option>
-                            <Select.Option value="nova">Nova</Select.Option>
-                            <Select.Option value="shimmer">Shimmer</Select.Option>
-                          </Select>
+                          <Input placeholder="例如: alloy, echo, fable, onyx, nova, shimmer" />
                         </Form.Item>
-                        <Form.Item name="ttsOutputVariable" label="输出变量" initialValue="tts_audio_url">
-                          <Input placeholder="tts_audio_url" />
+                        <Form.Item name="ttsLanguage" label="语言" initialValue="zh-CN">
+                          <Input placeholder="例如: zh-CN, en-US" />
+                        </Form.Item>
+                        <Form.Item name="ttsOutputVariable" label="输出变量" initialValue="tts_result">
+                          <Input placeholder="tts_result" />
                         </Form.Item>
                       </>
                     )}
@@ -1462,7 +1519,11 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                           <Input placeholder="image_url" />
                         </Form.Item>
                         <Form.Item name="visionPrompt" label="提示词模板" rules={[{ required: true }]}>
-                          <Input.TextArea rows={4} placeholder="描述此图像中看到了什么..." />
+                          <Mentions rows={4} placeholder="描述此图像中看到了什么..." prefix={['{{']}>
+                            {availableVariables.map(v => (
+                              <Option key={v.value} value={v.value}>{v.label}</Option>
+                            ))}
+                          </Mentions>
                         </Form.Item>
                         <Form.Item name="visionOutputVariable" label="输出变量" initialValue="vision_result">
                           <Input placeholder="vision_result" />
@@ -1473,13 +1534,23 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                     {selectedNode?.data.nodeType === 'email' && (
                       <>
                         <Form.Item name="emailTo" label="收件人" rules={[{ required: true }]}>
-                          <Input placeholder="example@domain.com (可以用 {{variable}})" />
+                          <Input placeholder="example@mail.com 或 {{user_email}}" />
                         </Form.Item>
-                        <Form.Item name="emailSubject" label="主题" rules={[{ required: true }]}>
-                          <Input placeholder="邮件主题" />
+                        <Form.Item name="emailCc" label="抄送">
+                          <Input placeholder="多个邮箱用分号隔开" />
                         </Form.Item>
-                        <Form.Item name="emailBody" label="正文模板" rules={[{ required: true }]}>
-                          <Input.TextArea rows={6} placeholder="支持 HTML 和 {{variable}}" />
+                        <Form.Item name="emailSubject" label="邮件主题" rules={[{ required: true }]}>
+                          <Input />
+                        </Form.Item>
+                        <Form.Item name="emailBody" label="邮件正文" rules={[{ required: true }]}>
+                          <Mentions rows={5} placeholder="支持 HTML 和 {{variable}} 变量" prefix={['{{']}>
+                            {availableVariables.map(v => (
+                              <Option key={v.value} value={v.value}>{v.label}</Option>
+                            ))}
+                          </Mentions>
+                        </Form.Item>
+                        <Form.Item name="emailIsHtml" label="HTML 格式" valuePropName="checked" initialValue={true}>
+                          <Switch />
                         </Form.Item>
                         <Form.Item name="emailAttachments" label="附件变量 (可选)">
                           <Input placeholder="file_url1, file_url2" />
@@ -1489,15 +1560,29 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
 
                     {selectedNode?.data.nodeType === 'variableAggregator' && (
                       <>
-                        <Divider>变量聚合设置</Divider>
-                        <Form.Item name="aggregatorVariables" label="输入变量列表">
-                          <Select mode="tags" placeholder="输入变量并回车" />
+                        <Form.Item name="aggregatorInputVariables" label="输入变量列表" rules={[{ required: true }]}>
+                          <Select mode="tags" placeholder="输入并回车添加变量名" />
                         </Form.Item>
-                        <Form.Item name="aggregatorTemplate" label="聚合模板 (JSON)">
-                          <Input.TextArea rows={5} placeholder="{ 'result': '{{var1}}', 'status': '{{var2}}' }" />
+                        <Form.Item name="aggregatorFormat" label="聚合格式" initialValue="json">
+                          <Select>
+                            <Select.Option value="json">JSON 对象</Select.Option>
+                            <Select.Option value="text">纯文本列表</Select.Option>
+                            <Select.Option value="template">自定义模板</Select.Option>
+                          </Select>
                         </Form.Item>
-                        <Form.Item name="aggregatorOutputVariable" label="输出变量" initialValue="aggregated_data">
-                          <Input placeholder="aggregated_data" />
+                        <Form.Item noStyle shouldUpdate={(prev, curr) => prev.aggregatorFormat !== curr.aggregatorFormat}>
+                          {({ getFieldValue }) => getFieldValue('aggregatorFormat') === 'template' && (
+                            <Form.Item name="aggregatorTemplate" label="聚合模板" rules={[{ required: true }]}>
+                              <Mentions rows={4} placeholder="例如: 姓名: {{name}}, 分数: {{score}}" prefix={['{{']}>
+                                {availableVariables.map(v => (
+                                  <Option key={v.value} value={v.value}>{v.label}</Option>
+                                ))}
+                              </Mentions>
+                            </Form.Item>
+                          )}
+                        </Form.Item>
+                        <Form.Item name="aggregatorOutputVariable" label="输出变量" initialValue="aggregator_result">
+                          <Input placeholder="aggregator_result" />
                         </Form.Item>
                       </>
                     )}
@@ -1526,7 +1611,11 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                     {selectedNode?.data.nodeType === 'template' && (
                       <>
                         <Form.Item name="templateContent" label="模板内容" rules={[{ required: true }]}>
-                          <Input.TextArea rows={4} placeholder="你好, {{name}}, 今天是 {{date}}" />
+                          <Mentions rows={4} placeholder="你好, {{name}}, 今天是 {{date}}" prefix={['{{']}>
+                            {availableVariables.map(v => (
+                              <Option key={v.value} value={v.value}>{v.label}</Option>
+                            ))}
+                          </Mentions>
                         </Form.Item>
                         <Form.Item name="templateOutputVariable" label="输出变量" initialValue="template_result">
                           <Input placeholder="template_result" />
@@ -1547,7 +1636,11 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
 
                     {selectedNode?.data.nodeType === 'notification' && (
                       <Form.Item name="notificationRemarks" label="通知内容模板">
-                        <Input.TextArea rows={4} />
+                        <Mentions rows={4} prefix={['{{']}>
+                          {availableVariables.map(v => (
+                            <Option key={v.value} value={v.value}>{v.label}</Option>
+                          ))}
+                        </Mentions>
                       </Form.Item>
                     )}
 
@@ -1609,7 +1702,11 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                           </Select>
                         </Form.Item>
                         <Form.Item name="logMessage" label="日志消息模板" rules={[{ required: true }]}>
-                          <Input.TextArea rows={3} />
+                          <Mentions rows={3} prefix={['{{']}>
+                            {availableVariables.map(v => (
+                              <Option key={v.value} value={v.value}>{v.label}</Option>
+                            ))}
+                          </Mentions>
                         </Form.Item>
                       </>
                     )}
@@ -1620,10 +1717,18 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                           <Input placeholder="例如: ai_result, form_data" />
                         </Form.Item>
                         <Form.Item name="judgeSystemPrompt" label="系统设定" tooltip="告诉 AI 判断的角色和规则">
-                          <Input.TextArea rows={2} placeholder="你是一个判断引擎，根据输入内容返回 true 或 false" />
+                          <Mentions rows={2} placeholder="你是一个判断引擎，根据输入内容返回 true 或 false" prefix={['{{']}>
+                            {availableVariables.map(v => (
+                              <Option key={v.value} value={v.value}>{v.label}</Option>
+                            ))}
+                          </Mentions>
                         </Form.Item>
                         <Form.Item name="judgePrompt" label="判断提示词" rules={[{ required: true, message: '请输入判断提示词' }]}>
-                          <Input.TextArea rows={4} placeholder="根据以下内容判断是否符合规定：{{inputVariable}}。符合输出 true，不符合输出 false" />
+                          <Mentions rows={4} placeholder="根据以下内容判断是否符合规定：{{inputVariable}}。符合输出 true，不符合输出 false" prefix={['{{']}>
+                            {availableVariables.map(v => (
+                              <Option key={v.value} value={v.value}>{v.label}</Option>
+                            ))}
+                          </Mentions>
                         </Form.Item>
                         <Form.Item name="judgeOutputVariable" label="输出变量" tooltip="保存判断结果 (true/false) 到此变量" initialValue="judge_result">
                           <Input placeholder="judge_result" />
@@ -1680,122 +1785,11 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                       </>
                     )}
 
-                    {selectedNode?.data.nodeType === 'tool' && (
-                      <>
-                        <Form.Item name="toolName" label="工具名称" rules={[{ required: true }]}>
-                          <Input placeholder="工具标识符，如: get_weather" />
-                        </Form.Item>
-                        <Form.Item name="toolParameters" label="工具参数 (JSON)">
-                          <Input.TextArea rows={4} placeholder='{"city": "{{city}}", "date": "today"}' />
-                        </Form.Item>
-                      </>
-                    )}
 
-                    {selectedNode?.data.nodeType === 'speechToText' && (
-                      <>
-                        <Form.Item name="sttInputVariable" label="输入变量" tooltip="包含音频内容的变量">
-                          <Input placeholder="音频文件 URL 或 Base64" />
-                        </Form.Item>
-                        <Form.Item name="sttProvider" label="服务提供商">
-                          <Select defaultValue="openai">
-                            <Select.Option value="openai">OpenAI Whisper</Select.Option>
-                            <Select.Option value="azure">Azure Speech</Select.Option>
-                            <Select.Option value="google">Google Cloud Speech</Select.Option>
-                          </Select>
-                        </Form.Item>
-                        <Form.Item name="sttLanguage" label="识别语言" tooltip="留空则自动检测">
-                          <Input placeholder="例如: zh-CN, en-US" />
-                        </Form.Item>
-                        <Form.Item name="sttOutputVariable" label="输出变量" initialValue="stt_result">
-                          <Input placeholder="stt_result" />
-                        </Form.Item>
-                      </>
-                    )}
 
-                    {selectedNode?.data.nodeType === 'textToSpeech' && (
-                      <>
-                        <Form.Item name="ttsInputVariable" label="文本变量" tooltip="需要转音频的文本">
-                          <Input placeholder="例如: ai_result" />
-                        </Form.Item>
-                        <Form.Item name="ttsProvider" label="服务提供商">
-                          <Select defaultValue="openai">
-                            <Select.Option value="openai">OpenAI TTS</Select.Option>
-                            <Select.Option value="azure">Azure Cognitive Speech</Select.Option>
-                          </Select>
-                        </Form.Item>
-                        <Form.Item name="ttsVoice" label="语音名称">
-                          <Input placeholder="例如: alloy, echo, fable, onyx, nova, shimmer" />
-                        </Form.Item>
-                        <Form.Item name="ttsOutputVariable" label="输出变量" initialValue="tts_result">
-                          <Input placeholder="tts_result" />
-                        </Form.Item>
-                      </>
-                    )}
 
-                    {selectedNode?.data.nodeType === 'email' && (
-                      <>
-                        <Form.Item name="emailTo" label="收件人" rules={[{ required: true }]}>
-                          <Input placeholder="example@mail.com 或 {{user_email}}" />
-                        </Form.Item>
-                        <Form.Item name="emailCc" label="抄送">
-                          <Input placeholder="多个邮箱用分号隔开" />
-                        </Form.Item>
-                        <Form.Item name="emailSubject" label="邮件主题" rules={[{ required: true }]}>
-                          <Input />
-                        </Form.Item>
-                        <Form.Item name="emailBody" label="邮件正文" rules={[{ required: true }]}>
-                          <Input.TextArea rows={5} />
-                        </Form.Item>
-                        <Form.Item name="emailIsHtml" label="HTML 格式" valuePropName="checked">
-                          <Switch />
-                        </Form.Item>
-                      </>
-                    )}
 
-                    {selectedNode?.data.nodeType === 'vision' && (
-                      <>
-                        <Form.Item name="visionImageVariable" label="图像变量" tooltip="包含图像数据的变量" rules={[{ required: true }]}>
-                          <Input placeholder="图像 URL 或 Base64" />
-                        </Form.Item>
-                        <Form.Item name="visionModel" label="模型">
-                          <Select defaultValue="gpt-4o">
-                            <Select.Option value="gpt-4o">GPT-4o (Vision)</Select.Option>
-                            <Select.Option value="claude-3-opus">Claude 3 Opus</Select.Option>
-                          </Select>
-                        </Form.Item>
-                        <Form.Item name="visionPrompt" label="分析指令" initialValue="请详细描述图片内容">
-                          <Input.TextArea rows={3} />
-                        </Form.Item>
-                        <Form.Item name="visionOutputVariable" label="输出变量" initialValue="vision_result">
-                          <Input placeholder="vision_result" />
-                        </Form.Item>
-                      </>
-                    )}
 
-                    {selectedNode?.data.nodeType === 'variableAggregator' && (
-                      <>
-                        <Form.Item name="aggregatorInputVariables" label="输入变量列表" rules={[{ required: true }]}>
-                          <Select mode="tags" placeholder="输入并回车添加变量名" />
-                        </Form.Item>
-                        <Form.Item name="aggregatorFormat" label="聚合格式" initialValue="json">
-                          <Select>
-                            <Select.Option value="json">JSON 对象</Select.Option>
-                            <Select.Option value="text">纯文本列表</Select.Option>
-                            <Select.Option value="template">自定义模板</Select.Option>
-                          </Select>
-                        </Form.Item>
-                        <Form.Item noStyle shouldUpdate={(prev, curr) => prev.aggregatorFormat !== curr.aggregatorFormat}>
-                          {({ getFieldValue }) => getFieldValue('aggregatorFormat') === 'template' && (
-                            <Form.Item name="aggregatorTemplate" label="聚合模板" rules={[{ required: true }]}>
-                              <Input.TextArea rows={4} placeholder="例如: 姓名: {{name}}, 分数: {{score}}" />
-                            </Form.Item>
-                          )}
-                        </Form.Item>
-                        <Form.Item name="aggregatorOutputVariable" label="输出变量" initialValue="aggregator_result">
-                          <Input placeholder="aggregator_result" />
-                        </Form.Item>
-                      </>
-                    )}
                   </>
                 ),
               },

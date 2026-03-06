@@ -238,7 +238,7 @@ export const NODE_CONFIGS = {
     color: '#475569',
     backgroundColor: '#f8fafc',
     borderColor: '#64748b',
-    icon: <FileTextOutlined />,
+    icon: <DatabaseOutlined />,
     category: 'data',
     description: '文档提取器',
     version: '1.0.0',

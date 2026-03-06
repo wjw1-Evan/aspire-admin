@@ -25,7 +25,7 @@ internal sealed partial class ToolExecutor : Executor
     }
 
     [MessageHandler]
-    private async ValueTask<string> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
+    private async ValueTask<object?> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
         // 反序列化变量
         var variables = JsonSerializer.Deserialize<Dictionary<string, object?>>(input) ?? new();
@@ -55,6 +55,17 @@ internal sealed partial class ToolExecutor : Executor
         }
 
         await Task.CompletedTask;
-        return result;
+
+        // 构造结果字典，包含 __variables__ 以便引擎自动合并
+        var finalResult = new Dictionary<string, object?>
+        {
+            ["result"] = result,
+            ["__variables__"] = new Dictionary<string, object?>
+            {
+                [_config.OutputVariable ?? "tool_result"] = result
+            }
+        };
+
+        return finalResult;
     }
 }

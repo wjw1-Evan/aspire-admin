@@ -22,13 +22,19 @@ internal sealed partial class TimerExecutor : Executor
     protected override ProtocolBuilder ConfigureProtocol(ProtocolBuilder builder) => builder;
 
     [MessageHandler]
-    private async ValueTask<Dictionary<string, object?>> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
+    private async ValueTask<object?> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
+        // 反序列化变量
+        var variables = JsonSerializer.Deserialize<Dictionary<string, object?>>(input) ?? new();
+
+        // 解析等待时长 (支持变量引用)
+        var resolvedDuration = Utilities.DifyVariableResolver.Resolve(_config.WaitDuration ?? "00:00:10", variables);
+
         // 计时器节点返回一个特殊的指令，指示引擎进入等待状态
-        return await Task.FromResult(new Dictionary<string, object?>
+        return await Task.FromResult<object?>(new Dictionary<string, object?>
         {
             ["__sourceHandle"] = "waiting",
-            ["waitDuration"] = _config.WaitDuration ?? "00:00:10"
+            ["waitDuration"] = resolvedDuration
         });
     }
 }

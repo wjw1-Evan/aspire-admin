@@ -26,7 +26,7 @@ internal sealed partial class LogExecutor : Executor
     protected override ProtocolBuilder ConfigureProtocol(ProtocolBuilder builder) => builder;
 
     [MessageHandler]
-    private async ValueTask<string> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
+    private async ValueTask<object?> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
         var variables = JsonSerializer.Deserialize<Dictionary<string, object?>>(input) ?? new();
 
@@ -41,6 +41,10 @@ internal sealed partial class LogExecutor : Executor
         }
 
         await Task.CompletedTask;
-        return message;
+        return new Dictionary<string, object?>
+        {
+            ["log_result"] = message,
+            ["level"] = _config.Level ?? "info"
+        };
     }
 }

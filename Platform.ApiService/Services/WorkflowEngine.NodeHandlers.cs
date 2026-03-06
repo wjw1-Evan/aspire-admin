@@ -40,15 +40,21 @@ public partial class WorkflowEngine
         // 2. 添加边 (Edges)
         foreach (var edge in definition.Graph.Edges)
         {
+            if (string.IsNullOrEmpty(edge.Source) || string.IsNullOrEmpty(edge.Target))
+            {
+                System.Console.WriteLine($"[WorkflowEngine] Warning: Edge missing source or target. EdgeID: {edge.Id}");
+                continue;
+            }
+
             if (nodeToExecutor.TryGetValue(edge.Source, out var source) && 
                 nodeToExecutor.TryGetValue(edge.Target, out var target))
             {
+                // System.Console.WriteLine($"[WorkflowEngine] Adding edge: {edge.Source} -> {edge.Target}");
                 if (!string.IsNullOrEmpty(edge.Data?.Condition) && edge.Data.Condition != "default")
                 {
                     // 添加带条件的边
                     builder.AddEdge<object>(source, target, condition: (msg) => 
                     {
-                        // 逻辑：评估 edge.Data.Condition
                         return true; // 占位实现
                     });
                 }
@@ -57,6 +63,10 @@ public partial class WorkflowEngine
                     // 普通边
                     builder.AddEdge(source, target);
                 }
+            }
+            else
+            {
+                System.Console.WriteLine($"[WorkflowEngine] ERROR: Could not find executor for source '{edge.Source}' or target '{edge.Target}'");
             }
         }
 
@@ -117,7 +127,7 @@ public partial class WorkflowEngine
                 return new ToolExecutor(node.Data.Config.Tool);
             case "approval":
                 if (node.Data.Config?.Approval == null) throw new InvalidOperationException($"Approval node {node.Id} missing config");
-                return new ApprovalExecutor(node.Data.Config.Approval, _instanceFactory);
+                return new ApprovalExecutor(node.Data.Config.Approval, _instanceFactory, _expressionEvaluator);
             case "speechToText":
                 if (node.Data.Config?.SpeechToText == null) throw new InvalidOperationException($"STT node {node.Id} missing config");
                 return new SpeechToTextExecutor(node.Data.Config.SpeechToText);
@@ -132,6 +142,17 @@ public partial class WorkflowEngine
                 var visionChatClient = _openAiClient.GetChatClient(node.Data.Config.Vision.Model ?? "gpt-4o-mini").AsIChatClient();
                 var visionAgent = new ChatClientAgent(visionChatClient, "VisionAgent");
                 return new VisionExecutor(visionAgent, node.Data.Config.Vision);
+            case "condition":
+                if (node.Data.Config?.Condition == null) throw new InvalidOperationException($"Condition node {node.Id} missing config");
+                return new ConditionExecutor(node.Data.Config.Condition, _expressionEvaluator);
+            case "log":
+                return new LogExecutor(_logger as ILogger<LogExecutor> ?? throw new InvalidCastException(), node.Data.Config?.Log ?? new LogConfig());
+            case "setVariable":
+                return new SetVariableExecutor(node.Data.Config?.Variable ?? new VariableConfig());
+            case "timer":
+                return new TimerExecutor(node.Data.Config?.Timer ?? new TimerConfig());
+            case "notification":
+                return new NotificationExecutor(_notificationService, node.Data.Config?.Notification ?? new NotificationConfig());
             // 其他节点类型...
             default:
                 // 默认使用一个透传执行器或基础逻辑执行器
@@ -180,11 +201,7 @@ public partial class WorkflowEngine
                 await CompleteWorkflowAsync(instanceId, WorkflowStatus.Completed);
                 break;
             case "approval":
-                await SendApprovalNotificationsAsync(instanceId, node);
-                break;
             case "condition":
-                await EvaluateConditionAndMoveAsync(instanceId, node);
-                break;
             case "parallel":
                 // Bug 7 修复：并行网关不覆盖 CurrentNodeId，而是为每个分支独立处理
                 await ProcessParallelGatewayAsync(instanceId, nodeId, definition);
@@ -253,49 +270,6 @@ public partial class WorkflowEngine
         _logger.LogInformation("=== 并行网关 {NodeId}: 所有分支已启动 ===", nodeId);
     }
 
-
-    /// <summary>
-    /// 条件节点评估
-    /// </summary>
-    private async Task EvaluateConditionAndMoveAsync(string instanceId, WorkflowNode node)
-    {
-        var instance = await _instanceFactory.GetByIdAsync(instanceId);
-        if (instance == null) return;
-
-        var definition = instance.WorkflowDefinitionSnapshot ?? await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
-        if (definition == null) return;
-
-        var variables = await GetDocumentVariablesAsync(instanceId);
-        var outgoingEdges = definition.Graph.Edges.Where(e => e.Source == node.Id).ToList();
-
-        foreach (var edge in outgoingEdges)
-        {
-            var condition = edge.Data?.Condition;
-            if (string.IsNullOrEmpty(condition) || condition == "default") continue;
-
-            if (_expressionEvaluator.Evaluate(condition, variables))
-            {
-                await SetCurrentNodeAsync(instanceId, edge.Target);
-                await ProcessNodeAsync(instanceId, edge.Target);
-                return;
-            }
-        }
-
-        var defaultEdge = outgoingEdges.FirstOrDefault(e => e.Data?.Condition == "default" || string.IsNullOrEmpty(e.Data?.Condition));
-        if (defaultEdge != null)
-        {
-            await SetCurrentNodeAsync(instanceId, defaultEdge.Target);
-            await ProcessNodeAsync(instanceId, defaultEdge.Target);
-        }
-        else
-        {
-            // Bug 23 修复：所有条件边均不匹配且无默认边时，记录警告并完成流程，避免卡死
-            _logger.LogWarning("条件节点无匹配边，流程将终止: InstanceId={InstanceId}, NodeId={NodeId}",
-                instanceId, node.Id);
-            await CompleteWorkflowAsync(instanceId, WorkflowStatus.Completed);
-        }
-    }
-
     /// <summary>
     /// 推进到下一节点
     /// </summary>
@@ -325,8 +299,16 @@ public partial class WorkflowEngine
             }
             else
             {
-                _logger.LogWarning("节点 {NodeId} 返回了句柄 {Handle}，但未找到匹配的出边", currentNodeId, sourceHandle);
-                // 如果没找到匹配的且有"默认"边，可以考虑回退或直接结束
+                // 特殊逻辑：如果是 condition 节点且返回了 "true"/"false" 字符串，尝试匹配 Handle
+                var handleEdges = outgoingEdges.Where(e => e.SourceHandle == sourceHandle).ToList();
+                if (handleEdges.Any())
+                {
+                    outgoingEdges = handleEdges;
+                }
+                else
+                {
+                    _logger.LogWarning("节点 {NodeId} 返回了句柄 {Handle}，但未找到匹配的出边", currentNodeId, sourceHandle);
+                }
             }
         }
 
@@ -390,125 +372,6 @@ public partial class WorkflowEngine
         }
 
         return true;
-    }
-
-    /// <summary>
-    /// 处理条件节点
-    /// </summary>
-    public async Task<bool> ProcessConditionAsync(string instanceId, string nodeId, Dictionary<string, object?> variables)
-    {
-        var instance = await _instanceFactory.GetByIdAsync(instanceId);
-        if (instance == null || instance.Status != WorkflowStatus.Running) return false;
-
-        await _instanceFactory.UpdateAsync(instanceId, i =>
-        {
-            foreach (var v in variables) i.SetVariable(v.Key, v.Value);
-            i.UpdatedAt = DateTime.UtcNow;
-        });
-
-        var definition = instance.WorkflowDefinitionSnapshot ?? await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
-        if (definition == null) return false;
-
-        var node = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
-        if (node == null) return false;
-
-        await EvaluateConditionAndMoveAsync(instanceId, node);
-        return true;
-    }
-
-
-    /// <summary>
-    /// 处理计时器节点
-    /// </summary>
-    private async Task ProcessTimerNodeAsync(string instanceId, WorkflowNode node)
-    {
-        if (node.Data.Config.Timer == null || string.IsNullOrWhiteSpace(node.Data.Config.Timer.WaitDuration))
-        {
-            await MoveToNextNodeAsync(instanceId, node.Id);
-            return;
-        }
-
-        if (TimeSpan.TryParse(node.Data.Config.Timer.WaitDuration, out var delay))
-        {
-            await _instanceFactory.UpdateAsync(instanceId, i =>
-            {
-                i.Status = WorkflowStatus.Waiting;
-            });
-
-            // ⚠️ 理想情况应该借助 Hangfire/Quartz 加入延迟队列，此处使用简单的后台延迟模拟
-            // 实际生产环境应用定时任务轮询处理 Waiting 状态
-            _ = Task.Run(async () =>
-            {
-                await Task.Delay(delay);
-
-                using var scope = _scopeFactory.CreateScope();
-                var scopedInstanceFactory = scope.ServiceProvider.GetRequiredService<IDataFactory<WorkflowInstance>>();
-                var scopedEngine = scope.ServiceProvider.GetRequiredService<IWorkflowEngine>();
-
-                await scopedInstanceFactory.UpdateAsync(instanceId, i => i.Status = WorkflowStatus.Running);
-                await scopedEngine.ProceedAsync(instanceId, node.Id);
-            });
-        }
-        else
-        {
-            await MoveToNextNodeAsync(instanceId, node.Id);
-        }
-    }
-
-    /// <summary>
-    /// 处理设置变量节点
-    /// </summary>
-    private async Task ProcessSetVariableNodeAsync(string instanceId, WorkflowNode node)
-    {
-        if (node.Data.Config.Variable == null || string.IsNullOrWhiteSpace(node.Data.Config.Variable.Name))
-        {
-            await MoveToNextNodeAsync(instanceId, node.Id);
-            return;
-        }
-
-        try
-        {
-            var config = node.Data.Config.Variable;
-            var variables = await GetDocumentVariablesAsync(instanceId);
-            var val = config.Value ?? string.Empty;
-
-            foreach (var v in variables)
-            {
-                val = val.Replace($"{{{v.Key}}}", v.Value?.ToString());
-            }
-
-            await _instanceFactory.UpdateAsync(instanceId, i =>
-            {
-                i.SetVariable(config.Name, val);
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "SetVariable节点执行失败: Node={NodeId}", node.Id);
-        }
-
-        await MoveToNextNodeAsync(instanceId, node.Id);
-    }
-
-    /// <summary>
-    /// 处理日志节点
-    /// </summary>
-    private async Task ProcessLogNodeAsync(string instanceId, WorkflowNode node)
-    {
-        if (node.Data.Config?.Log != null)
-        {
-            var variables = await GetDocumentVariablesAsync(instanceId);
-            var msg = DifyVariableResolver.Resolve(node.Data.Config.Log.Message ?? string.Empty, variables);
-
-            switch (node.Data.Config.Log.Level?.ToLower())
-            {
-                case "warning": _logger.LogWarning("Workflow Log [Instance {InstanceId}]: {Message}", instanceId, msg); break;
-                case "error": _logger.LogError("Workflow Log [Instance {InstanceId}]: {Message}", instanceId, msg); break;
-                case "debug": _logger.LogDebug("Workflow Log [Instance {InstanceId}]: {Message}", instanceId, msg); break;
-                default: _logger.LogInformation("Workflow Log [Instance {InstanceId}]: {Message}", instanceId, msg); break;
-            }
-        }
-        await MoveToNextNodeAsync(instanceId, node.Id);
     }
 
 
@@ -591,8 +454,14 @@ public partial class WorkflowEngine
             if (result is Dictionary<string, object?> dict && dict.TryGetValue("__sourceHandle", out var handle))
             {
                 sourceHandle = handle?.ToString();
+                
+                // 处理审批通知触发
+                if (dict.ContainsKey("__trigger_notifications"))
+                {
+                    await SendApprovalNotificationsAsync(instanceId, node);
+                }
             }
-            else if (node.Type == "questionClassifier")
+            else if (node.Type == "questionClassifier" || node.Type == "condition")
             {
                 sourceHandle = result?.ToString();
             }
@@ -629,6 +498,14 @@ public partial class WorkflowEngine
         catch (Exception ex)
         {
             _logger.LogError(ex, "执行器节点处理失败: NodeId={NodeId}, InstanceId={InstanceId}", node.Id, instanceId);
+            
+            // 记录错误到节点输出
+            await _instanceFactory.UpdateAsync(instanceId, i => 
+            {
+                i.SetVariable($"nodes.{node.Id}.error", ex.Message);
+                i.SetVariable($"nodes.{node.Id}.status", "failed");
+            });
+
             await MoveToNextNodeAsync(instanceId, node.Id);
         }
     }

@@ -25,7 +25,7 @@ internal sealed partial class VariableAggregatorExecutor : Executor
     }
 
     [MessageHandler]
-    private async ValueTask<string> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
+    private async ValueTask<object?> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
         await Task.CompletedTask;
 

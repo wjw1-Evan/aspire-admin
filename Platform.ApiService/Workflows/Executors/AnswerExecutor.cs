@@ -24,7 +24,7 @@ internal sealed partial class AnswerExecutor : Executor
     }
 
     [MessageHandler]
-    private async ValueTask<string> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
+    private async ValueTask<object?> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
         // 反序列化变量
         var variables = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(input) ?? new();
@@ -34,6 +34,9 @@ internal sealed partial class AnswerExecutor : Executor
         var resolvedAnswer = Utilities.DifyVariableResolver.Resolve(_config.Answer ?? string.Empty, variables);
 
         await Task.CompletedTask;
-        return resolvedAnswer;
+        return new Dictionary<string, object?>
+        {
+            ["answer"] = resolvedAnswer
+        };
     }
 }

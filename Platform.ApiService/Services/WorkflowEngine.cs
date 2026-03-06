@@ -41,10 +41,6 @@ public interface IWorkflowEngine
     /// </summary>
     Task<List<string>> GetNodeApproversAsync(string instanceId, string nodeId);
 
-    /// <summary>
-    /// 处理条件节点
-    /// </summary>
-    Task<bool> ProcessConditionAsync(string instanceId, string nodeId, Dictionary<string, object?> variables);
 
     /// <summary>
     /// 完成并行分支

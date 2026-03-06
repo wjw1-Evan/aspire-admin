@@ -24,7 +24,7 @@ internal sealed partial class IterationExecutor : Executor
     }
 
     [MessageHandler]
-    private async ValueTask<Dictionary<string, object?>> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
+    private async ValueTask<object?> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
         // 反序列化变量
         var variables = JsonSerializer.Deserialize<Dictionary<string, object?>>(input) ?? new();
@@ -71,7 +71,7 @@ internal sealed partial class IterationExecutor : Executor
                 outputs = listObj;
         }
 
-        // 如果 index > 0，说明刚完成上一轮，记录上一轮的最后结果
+        // 如果 index > 0，说明刚完成前一轮，记录前一轮的最后结果
         if (index > 0 && variables.TryGetValue("last_node_result", out var lastResult))
         {
             outputs.Add(lastResult);
@@ -82,14 +82,19 @@ internal sealed partial class IterationExecutor : Executor
         if (index < list.Count)
         {
             // 继续循环
-            result["item"] = list[index];
+            var currentItem = list[index];
+            result["item"] = currentItem;
             result["index"] = index;
             result["__sourceHandle"] = "loop";
             
-            result["__variables__"] = new Dictionary<string, object?> {
+            // 将当前项也存入全局变量，方便子节点通过 {{item}} 引用
+            var extraVars = new Dictionary<string, object?> {
                 [indexKey] = index + 1,
-                [outputsKey] = outputs
+                [outputsKey] = outputs,
+                ["item"] = currentItem
             };
+            
+            result["__variables__"] = extraVars;
         }
         else
         {

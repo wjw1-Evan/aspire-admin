@@ -26,7 +26,7 @@ internal sealed partial class QuestionClassifierExecutor : Executor
     }
 
     [MessageHandler]
-    private async ValueTask<string> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
+    private async ValueTask<object?> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
         // 反序列化变量
         var variables = JsonSerializer.Deserialize<Dictionary<string, object?>>(input) ?? new();

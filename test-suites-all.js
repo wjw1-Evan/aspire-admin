@@ -733,6 +733,89 @@ async function runRejectTests() {
     console.log(`\n  Final Workflow Status: ${finalInst.data.status === 'rejected' ? '✅ REJECTED' : '❌ ' + finalInst.data.status}`);
 }
 
+/**
+ * [L8] 变量解析与错误边界测试 (Variable Resolution & Error Boundary)
+ * 验证: 默认值 {{var || 'def'}}, 过滤器 {{var | json}}, 深层路径 {{item.0.name}}, 错误捕获 nodes.id.error
+ */
+async function runVariableResolutionTests() {
+    console.log('\n=== RUNNING VARIABLE RESOLUTION & ERROR BOUNDARY TESTS ===');
+    
+    // 1. 测试高级变量解析
+    console.log('- Testing Advanced Variable Resolution (Defaults, Filters, Deep Paths)...');
+    const resolutionWf = {
+        name: "Variable resolution test",
+        isActive: true,
+        graph: {
+            nodes: [
+                { id: "s", type: "start", data: { nodeType: "start" } },
+                { id: "v", type: "setVariable", data: { nodeType: "setVariable", config: { variable: { name: "input_obj", value: "{\"items\": [{\"name\": \"item1\"}], \"status\": \"ok\"}" } } } },
+                { id: "tmpl", type: "template", data: { nodeType: "template", config: { template: { content: "Default: {{missing || 'FALLBACK'}}, JSON: {{input_obj | json}}, Deep: {{input_obj.items.0.name}}", outputVariable: "rendered" } } } },
+                { id: "e", type: "end", data: { nodeType: "end" } }
+            ],
+            edges: [
+                { source: "s", target: "v", data: { condition: "" } },
+                { source: "v", target: "tmpl", data: { condition: "" } },
+                { source: "tmpl", target: "e", data: { condition: "" } }
+            ]
+        }
+    };
+    const res1 = await request('/workflows', { method: 'POST', headers: Auth.headers, body: resolutionWf });
+    if (!res1.success) {
+        console.error("  ❌ WF Creation failed:", JSON.stringify(res1, null, 2));
+        throw new Error("WF Creation failed");
+    }
+    const defId1 = res1.data.id;
+    const startRes1 = await request(`/workflows/${defId1}/start`, { method: 'POST', headers: Auth.headers });
+    if (!startRes1.success) {
+        console.error("  ❌ WF Start failed:", JSON.stringify(startRes1, null, 2));
+        throw new Error("WF Start failed");
+    }
+    const instId1 = startRes1.data.id || startRes1.data;
+    
+    await Utils.waitForInstanceStatus(instId1, 'completed');
+    const inst1 = await request(`/workflows/instances/${instId1}`, { headers: Auth.headers });
+    const rendered = inst1.data.variables.rendered;
+    console.log(`  Rendered Result: "${rendered}"`);
+    
+    const passDefault = rendered.includes('FALLBACK');
+    const passJson = rendered.includes('"status":"ok"');
+    const passDeep = rendered.includes('item1');
+    console.log(`  Default Value: ${passDefault ? '✅' : '❌'}`);
+    console.log(`  JSON Filter: ${passJson ? '✅' : '❌'}`);
+    console.log(`  Deep Path: ${passDeep ? '✅' : '❌'}`);
+
+    // 2. 测试错误边界捕获
+    console.log('\n- Testing Error Boundary Capture...');
+    const errorWf = {
+        name: "Error boundary test",
+        isActive: true,
+        graph: {
+            nodes: [
+                { id: "s", type: "start", data: { nodeType: "start" } },
+                { id: "err_node", type: "httpRequest", data: { nodeType: "httpRequest", config: { http: { method: "GET", url: "http://invalid-domain-that-does-not-exist.local", outputVariable: "res" } } } },
+                { id: "e", type: "end", data: { nodeType: "end" } }
+            ],
+            edges: [
+                { source: "s", target: "err_node", data: { condition: "" } },
+                { source: "err_node", target: "e", data: { condition: "default" } }
+            ]
+        }
+    };
+    const res2 = await request('/workflows', { method: 'POST', headers: Auth.headers, body: errorWf });
+    const defId2 = res2.data.id;
+    const startRes2 = await request(`/workflows/${defId2}/start`, { method: 'POST', headers: Auth.headers });
+    const instId2 = startRes2.data.id;
+    
+    await new Promise(r => setTimeout(r, 5000)); // 等待执行失败
+    const inst2 = await request(`/workflows/instances/${instId2}`, { headers: Auth.headers });
+    const nodeError = inst2.data.variables[`nodes.err_node.error`];
+    const nodeStatus = inst2.data.variables[`nodes.err_node.status`];
+    
+    console.log(`  Node Status: ${nodeStatus}`);
+    console.log(`  Error Message: ${nodeError ? (nodeError.substring(0, 50) + '...') : 'NULL'}`);
+    console.log(`  Error Captured: ${nodeError && nodeStatus === 'failed' ? '✅' : '❌'}`);
+}
+
 
 // --- Aspire Service Manager ---
 
@@ -838,6 +921,7 @@ async function main() {
         if (mode === 'all' || mode === 'form')      await runFormIntegratedTests();
         if (mode === 'all' || mode === 'multiuser') await runMultiUserTests();
         if (mode === 'all' || mode === 'extended')  await runExtendedComponentsTests();
+        if (mode === 'all' || mode === 'variable')  await runVariableResolutionTests();
         if (mode === 'all' || mode === 'reject')    await runRejectTests();
 
         console.log('\n🌟 Unified Test Run Finished.');

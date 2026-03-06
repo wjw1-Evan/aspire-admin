@@ -27,17 +27,17 @@ internal sealed partial class VariableAggregatorExecutor : Executor
     [MessageHandler]
     private async ValueTask<string> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
+        await Task.CompletedTask;
+
         // 反序列化变量
         var variables = JsonSerializer.Deserialize<Dictionary<string, object?>>(input) ?? new();
 
         // 1. 提取指定的变量
-        var result = new Dictionary<string, object?>();
+        var extractedData = new Dictionary<string, object?>();
         foreach (var varName in _config.InputVariables)
         {
-            if (variables.TryGetValue(varName, out var val))
-            {
-                result[varName] = val;
-            }
+            var value = DifyVariableResolver.GetValueByPath(varName, variables);
+            extractedData[varName] = value;
         }
 
         // 2. 如果提供了模板，则进行解析
@@ -47,8 +47,19 @@ internal sealed partial class VariableAggregatorExecutor : Executor
             return resolvedTemplate;
         }
 
-        // 3. 否则返回 JSON 字符串
-        return JsonSerializer.Serialize(result);
+        // 3. 否则返回 JSON 字符串，并携带 __variables__ 以便合并
+        var jsonResult = JsonSerializer.Serialize(extractedData);
+        var finalResult = new Dictionary<string, object?>
+        {
+            ["data"] = extractedData,
+            ["json"] = jsonResult,
+            ["__variables__"] = new Dictionary<string, object?>
+            {
+                [_config.OutputVariable ?? "aggregated_result"] = extractedData
+            }
+        };
+
+        return finalResult;
     }
 
     private Task<object?> GetVariableValueAsync(IWorkflowContext context, string path)

@@ -2,6 +2,8 @@ using Microsoft.Agents.AI.Workflows;
 using Platform.ApiService.Models.Workflow;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Text.Json;
+using System.Linq;
 
 namespace Platform.ApiService.Workflows.Executors;
 
@@ -25,16 +27,20 @@ internal sealed partial class CodeExecutor : Executor
     [MessageHandler]
     private async ValueTask<object?> HandleAsync(object input, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
-        // 逻辑：在沙箱中执行 _config.Code
-        // 初步实现：由于实现完整的沙箱逻辑比较复杂，这里先做一个模拟或简单的逻辑映射
-        // 对于 Dify 而言，这里通常会使用 Pyodide (Python) 或 Node.js vm2 (JS)
+        // 反序列化变量
+        var variables = JsonSerializer.Deserialize<Dictionary<string, object?>>(input?.ToString() ?? "{}") ?? new();
+        
+        // 提取输入变量的值
+        var inputs = new Dictionary<string, object?>();
+        foreach (var varName in _config.InputVariables)
+        {
+            inputs[varName] = Utilities.DifyVariableResolver.GetValueByPath(varName, variables);
+        }
 
-        return await ExecuteScriptAsync(_config.Code ?? string.Empty, _config.InputVariables ?? new List<string>(), context);
-    }
+        // 模拟执行逻辑: 拼接输入变量
+        var inputSummary = string.Join(", ", inputs.Select(kv => $"{kv.Key}={kv.Value}"));
+        var result = $"Executed {_config.Language} code. Inputs: [{inputSummary}]. Code length: {_config.Code.Length}";
 
-    private Task<object?> ExecuteScriptAsync(string code, List<string> inputVariables, IWorkflowContext context)
-    {
-        // 模拟执行结果
-        return Task.FromResult<object?>($"Code execution result for logic: {code.Length} chars");
+        return await Task.FromResult<object?>(result);
     }
 }

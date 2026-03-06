@@ -24,33 +24,85 @@ internal sealed partial class IterationExecutor : Executor
     }
 
     [MessageHandler]
-    private async ValueTask<List<object?>> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
+    private async ValueTask<Dictionary<string, object?>> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
         // 反序列化变量
-        var variables = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(input) ?? new();
+        var variables = JsonSerializer.Deserialize<Dictionary<string, object?>>(input) ?? new();
 
-        // 使用 DifyVariableResolver 获取迭代对象 (应该是列表)
+        // 获取列表对象
         var listObject = Utilities.DifyVariableResolver.GetValueByPath(_config.IteratorVariable ?? string.Empty, variables);
-        
-        var results = new List<object?>();
+        var list = new List<object?>();
 
         if (listObject is IEnumerable<object> enumerable)
         {
-            foreach (var item in enumerable)
-            {
-                // TODO: 在子流程中执行逻辑
-                // 这里暂时模拟结果
-                results.Add(new { original = item, processed = true });
-            }
+            list = enumerable.Cast<object?>().ToList();
         }
         else if (listObject is JsonElement element && element.ValueKind == JsonValueKind.Array)
         {
             foreach (var item in element.EnumerateArray())
             {
-                results.Add(new { original = item, processed = true });
+                list.Add(item);
             }
         }
 
-        return await Task.FromResult(results);
+        // 获取当前索引 (从变量中读取)
+        var indexKey = $"iter_{_config.OutputVariable}_index";
+        var outputsKey = $"iter_{_config.OutputVariable}_outputs";
+        
+        var index = 0;
+        if (variables.TryGetValue(indexKey, out var indexObj))
+        {
+            index = indexObj switch
+            {
+                JsonElement el when el.ValueKind == JsonValueKind.Number => el.GetInt32(),
+                int i => i,
+                long l => (int)l,
+                _ => 0
+            };
+        }
+
+        // 获取并累加结果 (如果不是第一轮)
+        var outputs = new List<object?>();
+        if (variables.TryGetValue(outputsKey, out var outputsObj))
+        {
+            if (outputsObj is JsonElement el && el.ValueKind == JsonValueKind.Array)
+                outputs = el.EnumerateArray().Select(e => (object?)e).ToList();
+            else if (outputsObj is List<object?> listObj)
+                outputs = listObj;
+        }
+
+        // 如果 index > 0，说明刚完成上一轮，记录上一轮的最后结果
+        if (index > 0 && variables.TryGetValue("last_node_result", out var lastResult))
+        {
+            outputs.Add(lastResult);
+        }
+
+        var result = new Dictionary<string, object?>();
+
+        if (index < list.Count)
+        {
+            // 继续循环
+            result["item"] = list[index];
+            result["index"] = index;
+            result["__sourceHandle"] = "loop";
+            
+            result["__variables__"] = new Dictionary<string, object?> {
+                [indexKey] = index + 1,
+                [outputsKey] = outputs
+            };
+        }
+        else
+        {
+            // 循环结束
+            result["__sourceHandle"] = "done";
+            result["final_list"] = outputs; // 供后续节点参考
+            
+            result["__variables__"] = new Dictionary<string, object?> {
+                [indexKey] = 0,
+                [outputsKey] = new List<object?>() // 清空以便下次使用
+            };
+        }
+
+        return await Task.FromResult(result);
     }
 }

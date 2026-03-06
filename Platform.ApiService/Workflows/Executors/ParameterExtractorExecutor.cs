@@ -31,17 +31,25 @@ internal sealed partial class ParameterExtractorExecutor : Executor
     [MessageHandler]
     private async ValueTask<Dictionary<string, object?>> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
+        // 反序列化变量
+        var variables = JsonSerializer.Deserialize<Dictionary<string, object?>>(input) ?? new();
+        
+        // 解析输入变量
+        var query = _config.InputVariable != null 
+            ? Utilities.DifyVariableResolver.Resolve($"{{{{{_config.InputVariable}}}}}", variables)
+            : input;
+
         // 构建提示词来引导 AI 进行参数提取
         var paramSchema = string.Join("\n", _config.Parameters.Select(p => 
             $"- {p.Name} ({p.Type}): {p.Description} (Required: {p.Required})"));
         
         var extractionPrompt = $@"Task: Extract parameters from the input based on the following schema. 
-Return only a valid JSON object. If a parameter is not found and is not required, omit it.
+Return ONLY a valid JSON object. 
 
 Schema:
 {paramSchema}
 
-Input: {input}";
+Input: {query}";
 
         var response = await _agent.RunAsync(extractionPrompt, cancellationToken: cancellationToken);
         var jsonText = response.Text.Trim();
@@ -49,23 +57,37 @@ Input: {input}";
         // 尝试解析 JSON
         try
         {
-            // 处理 AI 可能包裹的 ```json 代码块
-            if (jsonText.StartsWith("```json"))
+            // 移除可能存在的 Markdown 代码块标记
+            if (jsonText.Contains("```json"))
             {
-                jsonText = jsonText.Substring(7, jsonText.Length - 10).Trim();
+                var start = jsonText.IndexOf("```json") + 7;
+                var end = jsonText.LastIndexOf("```");
+                jsonText = jsonText.Substring(start, end - start).Trim();
             }
-            else if (jsonText.StartsWith("```"))
+            else if (jsonText.Contains("```"))
             {
-                jsonText = jsonText.Substring(3, jsonText.Length - 6).Trim();
+                var start = jsonText.IndexOf("```") + 3;
+                var end = jsonText.LastIndexOf("```");
+                jsonText = jsonText.Substring(start, end - start).Trim();
             }
 
-            var result = JsonSerializer.Deserialize<Dictionary<string, object?>>(jsonText);
-            return result ?? new Dictionary<string, object?>();
+            var extracted = JsonSerializer.Deserialize<Dictionary<string, object?>>(jsonText) ?? new();
+            
+            // 构造结果字典，包含 __variables__ 以便引擎自动合并到全局变量
+            var finalResult = new Dictionary<string, object?>(extracted);
+            if (!string.IsNullOrEmpty(_config.OutputVariable))
+            {
+                finalResult["__variables__"] = new Dictionary<string, object?>
+                {
+                    [_config.OutputVariable] = extracted
+                };
+            }
+            
+            return finalResult;
         }
-        catch
+        catch (Exception ex)
         {
-            // 解析失败返回空字典
-            return new Dictionary<string, object?>();
+            return new Dictionary<string, object?> { ["error"] = ex.Message };
         }
     }
 }

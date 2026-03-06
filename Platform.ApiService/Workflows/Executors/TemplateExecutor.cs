@@ -24,23 +24,13 @@ internal sealed partial class TemplateExecutor : Executor
     [MessageHandler]
     private async ValueTask<string> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
-        var result = _config.Template;
+        // 反序列化变量
+        var variables = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(input) ?? new();
 
-        // 简单的变量替换逻辑 {{variable}}
-        foreach (var mapping in _config.Variables)
-        {
-            // 逻辑上这里应该从 context 获取变量
-            // 由于 IWorkflowContext 的具体 API 还在探索中，先占位实现
-            var value = await GetVariableValueAsync(context, mapping.Value);
-            result = result.Replace("{{" + mapping.Key + "}}", value ?? string.Empty);
-        }
+        // 使用 DifyVariableResolver 解析模板
+        var result = Utilities.DifyVariableResolver.Resolve(_config.Template ?? string.Empty, variables);
 
+        await Task.CompletedTask;
         return result;
-    }
-
-    private Task<string?> GetVariableValueAsync(IWorkflowContext context, string path)
-    {
-        // 占位实现：未来需要从 WorkflowContext 中获取状态数据
-        return Task.FromResult<string?>(null);
     }
 }

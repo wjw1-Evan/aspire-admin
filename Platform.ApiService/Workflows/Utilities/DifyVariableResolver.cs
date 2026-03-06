@@ -35,7 +35,7 @@ public static class DifyVariableResolver
     {
         if (string.IsNullOrEmpty(path)) return null;
 
-        // 处理 Dify 格式: #node_id.field
+        // 处理 Dify 格式: #node_id.field (或者 #node_id.output)
         if (path.StartsWith("#"))
         {
             var parts = path.TrimStart('#').Split('.');
@@ -44,11 +44,13 @@ public static class DifyVariableResolver
             var nodeId = parts[0];
             var field = parts[1];
 
-            // 查找 node_id 对应的输出 (通常 Dify 会将节点输出存为变量，或者需要专门的节点结果查找逻辑)
-            // 这里假设变量字典中已经按规范存储了节点结果，或者路径直接匹配
+            // 1. 尝试直接从变量字典查找完整路径 (引擎现在会同步存储此路径)
             if (variables.TryGetValue(path, out var val)) return val;
             
-            // 尝试查找 node_id.output
+            // 2. 尝试查找 nodes.{nodeId}.{field} (由引擎标准化存储)
+            if (variables.TryGetValue($"nodes.{nodeId}.{field}", out var standardizedVal)) return standardizedVal;
+            
+            // 3. 回退兼容性查找: 如果 field 是 "output", 尝试查找 node_id.output
             if (variables.TryGetValue($"{nodeId}.{field}", out var nodeVal)) return nodeVal;
         }
 

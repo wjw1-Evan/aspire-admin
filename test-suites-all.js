@@ -224,40 +224,54 @@ async function runRegisterTests() {
  */
 async function runSynergyTests() {
     console.log('\n=== RUNNING SYNERGY TESTS ===');
-    const workflows = [
-        {
-            name: "Synergy 1: IO & External (HTTP, SetVar, Log)",
+    const workflowDef = {
+        name: "Synergy 1: IO & External (HTTP, SetVar, Log)",
+        category: 'Synergy',
+        isActive: true,
+        graph: {
             nodes: [
-                { id: "start1", type: "start", label: "Start" },
-                { id: "http1", type: "httpRequest", label: "HTTP Node", config: { http: { method: "GET", url: "https://httpbin.org/get", outputVariable: "fetch_res" } } },
-                { id: "setVar1", type: "setVariable", label: "Set Variable", config: { variable: { name: "processed_res", value: "HTTP said: {fetch_res}" } } },
-                { id: "log1", type: "log", label: "Log Msg", config: { log: { level: "info", message: "Result: {processed_res}" } } },
-                { id: "end1", type: "end", label: "End" }
+                { id: "start1", type: "start", data: { nodeType: "start", label: "Start" } },
+                { id: "http1", type: "httpRequest", data: { nodeType: "httpRequest", label: "HTTP Node", config: { http: { method: "GET", url: "https://httpbin.org/get", outputVariable: "fetch_res" } } } },
+                { id: "setVar1", type: "setVariable", data: { nodeType: "setVariable", label: "Set Variable", config: { variable: { name: "processed_res", value: "HTTP said: {fetch_res}" } } } },
+                { id: "log1", type: "log", data: { nodeType: "log", label: "Log Msg", config: { log: { level: "info", message: "Result: {processed_res}" } } } },
+                { id: "end1", type: "end", data: { nodeType: "end", label: "End" } }
             ],
             edges: [
-                { id: "e1", source: "start1", target: "http1" }, { id: "e2", source: "http1", target: "setVar1" },
-                { id: "e3", source: "setVar1", target: "log1" }, { id: "e4", source: "log1", target: "end1" }
+                { id: "e1", source: "start1", target: "http1", data: { condition: "" } },
+                { id: "e2", source: "http1", target: "setVar1", data: { condition: "" } },
+                { id: "e3", source: "setVar1", target: "log1", data: { condition: "" } },
+                { id: "e4", source: "log1", target: "end1", data: { condition: "" } }
             ]
-        },
+        }
+    };
+
+    const workflows = [
+        workflowDef,
         {
             name: "Synergy 2: AI & Timer (AI, Judge, Cond, Timer)",
-            nodes: [
-                { id: "s1", type: "start", label: "Start" },
-                { id: "sv1", type: "setVariable", label: "Inputs", config: { variable: { name: "user_input", value: "Translate 'Hello' to French" } } },
-                { id: "ai1", type: "ai", label: "AI", config: { ai: { inputVariable: "user_input", promptTemplate: "Answer: {{inputVariable}}", outputVariable: "translated" } } },
-                { id: "aj1", type: "aiJudge", label: "Judge", config: { aiJudge: { inputVariable: "translated", judgePrompt: "Contains Bonjour?", outputVariable: "is_correct" } } },
-                { id: "c1", type: "condition", label: "Decision" },
-                { id: "t1", type: "timer", label: "Timer", config: { timer: { waitDuration: "00:00:02" } } },
-                { id: "e-ok", type: "end", label: "End True" },
-                { id: "e-fail", type: "end", label: "End False" }
-            ],
-            edges: [
-                { id: "e1", source: "s1", target: "sv1" }, { id: "e2", source: "sv1", target: "ai1" },
-                { id: "e3", source: "ai1", target: "aj1" }, { id: "e4", source: "aj1", target: "c1" },
-                { id: "e5", source: "c1", target: "t1", condition: "{is_correct} == 'true'" },
-                { id: "e6", source: "c1", target: "e-fail", condition: "default" },
-                { id: "e7", source: "t1", target: "e-ok" }
-            ]
+            category: 'Synergy',
+            isActive: true,
+            graph: {
+                nodes: [
+                    { id: "s1", type: "start", data: { nodeType: "start", label: "Start" } },
+                    { id: "sv1", type: "setVariable", data: { nodeType: "setVariable", label: "Inputs", config: { variable: { name: "user_input", value: "Translate 'Hello' to French" } } } },
+                    { id: "ai1", type: "llm", data: { nodeType: "llm", label: "AI", config: { llm: { inputVariable: "user_input", promptTemplate: "Answer: {{inputVariable}}", outputVariable: "translated" } } } },
+                    { id: "aj1", type: "llm", data: { nodeType: "llm", label: "Judge", config: { llm: { inputVariable: "translated", promptTemplate: "Contains Bonjour?", outputVariable: "is_correct" } } } },
+                    { id: "c1", type: "condition", data: { nodeType: "condition", label: "Decision", config: { condition: {} } } },
+                    { id: "t1", type: "timer", data: { nodeType: "timer", label: "Timer", config: { timer: { waitDuration: "00:00:02" } } } },
+                    { id: "e-ok", type: "end", data: { nodeType: "end", label: "End True" } },
+                    { id: "e-fail", type: "end", data: { nodeType: "end", label: "End False" } }
+                ],
+                edges: [
+                    { id: "e1", source: "s1", target: "sv1", data: { condition: "" } },
+                    { id: "e2", source: "sv1", target: "ai1", data: { condition: "" } },
+                    { id: "e3", source: "ai1", target: "aj1", data: { condition: "" } },
+                    { id: "e4", source: "aj1", target: "c1", data: { condition: "" } },
+                    { id: "e5", source: "c1", target: "t1", data: { condition: "{is_correct} == 'true'" } },
+                    { id: "e6", source: "c1", target: "e-fail", data: { condition: "default" } },
+                    { id: "e7", source: "t1", target: "e-ok", data: { condition: "" } }
+                ]
+            }
         }
     ];
 
@@ -265,12 +279,9 @@ async function runSynergyTests() {
         console.log(`\n- Workflow: ${wf.name}`);
         const body = {
             name: wf.name,
-            category: 'Synergy',
+            category: wf.category || 'Synergy',
             isActive: true,
-            graph: {
-                nodes: wf.nodes,
-                edges: wf.edges
-            }
+            graph: wf.graph
         };
         const createRes = await request('/workflows', { method: 'POST', headers: Auth.headers, body });
         if (!createRes.success) {
@@ -318,22 +329,26 @@ async function runDesignTests() {
     console.log('- Testing Duplicate Node IDs...');
     const res1 = await request('/workflows', {
         method: 'POST', headers: Auth.headers,
-        body: { name: "DupID", graph: { nodes: [{ id: "n1", type: "start" }, { id: "n1", type: "end" }], edges: [] } }
+        body: { name: "DupID", graph: { nodes: [{ id: "n1", type: "start", data: { nodeType: "start" } }, { id: "n1", type: "end", data: { nodeType: "end" } }], edges: [] } }
     });
     console.log(res1.message.includes("重复") ? "  ✅ Expected Error Caught" : "  ❌ Validation Failed");
 
     console.log('- Testing Condition Branching (Amount Logic)...');
     const def = {
         name: "Condition Test",
+        category: "Test",
+        isActive: true,
         graph: {
             nodes: [
-                { id: "s", type: "start" }, { id: "c", type: "condition" },
-                { id: "h", type: "end", label: "High" }, { id: "l", type: "end", label: "Low" }
+                { id: "s", type: "start", data: { nodeType: "start" } },
+                { id: "c", type: "condition", data: { nodeType: "condition", config: { condition: {} } } },
+                { id: "h", type: "end", data: { nodeType: "end", label: "High" } },
+                { id: "l", type: "end", data: { nodeType: "end", label: "Low" } }
             ],
             edges: [
-                { source: "s", target: "c" },
-                { source: "c", target: "h", condition: "amount > 1000" },
-                { source: "c", target: "l", condition: "default" }
+                { source: "s", target: "c", data: { condition: "" } },
+                { source: "c", target: "h", data: { condition: "amount > 1000" } },
+                { source: "c", target: "l", data: { condition: "default" } }
             ]
         }
     };
@@ -381,14 +396,20 @@ async function runMultiUserTests() {
 
     const workflowDef = {
         name: `Collaboration WF ${company.code}`,
+        category: 'Test',
+        isActive: true,
         graph: {
             nodes: [
-                { id: 's', type: 'start' },
-                { id: 'n1', type: 'approval', config: { approval: { type: 'any', approvers: [{ type: 'user', userId: app1.userId }] } } },
-                { id: 'n2', type: 'approval', config: { approval: { type: 'any', approvers: [{ type: 'user', userId: app2.userId }] } } },
-                { id: 'e', type: 'end' }
+                { id: 's', type: 'start', data: { nodeType: 'start' } },
+                { id: 'n1', type: 'approval', data: { nodeType: 'approval', config: { approval: { type: 'any', approvers: [{ type: 'user', userId: app1.userId }] } } } },
+                { id: 'n2', type: 'approval', data: { nodeType: 'approval', config: { approval: { type: 'any', approvers: [{ type: 'user', userId: app2.userId }] } } } },
+                { id: 'e', type: 'end', data: { nodeType: 'end' } }
             ],
-            edges: [{ source: 's', target: 'n1' }, { source: 'n1', target: 'n2' }, { source: 'n2', target: 'e' }]
+            edges: [
+                { source: 's', target: 'n1', data: { condition: '' } },
+                { source: 'n1', target: 'n2', data: { condition: '' } },
+                { source: 'n2', target: 'e', data: { condition: '' } }
+            ]
         }
     };
     const defRes = await request('/workflows', { method: 'POST', headers: Auth.headers, body: workflowDef });
@@ -438,22 +459,25 @@ async function runMultiUserTests() {
  */
 async function runAllNodesTests() {
      console.log('\n=== RUNNING ALL-COMPONENT WORKFLOW TEST ===');
-     // Reuse logic from Synergy but combine into one massive WF
      const workflowDef = {
         name: `All-Components-Master`,
+        category: 'Test',
+        isActive: true,
         graph: {
             nodes: [
-                { id: 'start', type: 'start' },
-                { id: 'log', type: 'log', config: { log: { message: 'Master WF Started' } } },
-                { id: 'setVar', type: 'setVariable', config: { variable: { name: 'score', value: '100' } } },
-                { id: 'http', type: 'httpRequest', config: { http: { method: 'GET', url: 'https://httpbin.org/get', outputVariable: 'res' } } },
-                { id: 'ai', type: 'ai', config: { ai: { promptTemplate: 'Analyze {score}', outputVariable: 'analysis' } } },
-                { id: 'end', type: 'end' }
+                { id: 'start', type: 'start', data: { nodeType: 'start' } },
+                { id: 'log', type: 'log', data: { nodeType: 'log', config: { log: { message: 'Master WF Started' } } } },
+                { id: 'setVar', type: 'setVariable', data: { nodeType: 'setVariable', config: { variable: { name: 'score', value: '100' } } } },
+                { id: 'http', type: 'httpRequest', data: { nodeType: 'httpRequest', config: { http: { method: 'GET', url: 'https://httpbin.org/get', outputVariable: 'res' } } } },
+                { id: 'ai', type: 'llm', data: { nodeType: 'llm', config: { llm: { promptTemplate: 'Analyze {score}', outputVariable: 'analysis' } } } },
+                { id: 'end', type: 'end', data: { nodeType: 'end' } }
             ],
             edges: [
-                { source: 'start', target: 'log' }, { source: 'log', target: 'setVar' },
-                { source: 'setVar', target: 'http' }, { source: 'http', target: 'ai' },
-                { source: 'ai', target: 'end' }
+                { source: 'start', target: 'log', data: { condition: '' } },
+                { source: 'log', target: 'setVar', data: { condition: '' } },
+                { source: 'setVar', target: 'http', data: { condition: '' } },
+                { source: 'http', target: 'ai', data: { condition: '' } },
+                { source: 'ai', target: 'end', data: { condition: '' } }
             ]
         }
     };
@@ -497,16 +521,16 @@ async function runFormIntegratedTests() {
         isActive: true,
         graph: {
             nodes: [
-                { id: "start", type: "start", label: "Start", config: { form: { formDefinitionId: formId, target: "Document", required: true } } },
-                { id: "approval", type: "approval", label: "Manager Review", config: { 
+                { id: "start", type: "start", data: { nodeType: "start", label: "Start", config: { form: { formDefinitionId: formId, target: "Document", required: true } } } },
+                { id: "approval", type: "approval", data: { nodeType: "approval", label: "Manager Review", config: { 
                     approval: { type: "Any", approvers: [{ type: "User", userId: Auth.userId }] },
                     form: { formDefinitionId: formId, target: "Document" } 
-                } },
-                { id: "end", type: "end", label: "End" }
+                } } },
+                { id: "end", type: "end", data: { nodeType: "end", label: "End" } }
             ],
             edges: [
-                { id: "e1", source: "start", target: "approval" },
-                { id: "e2", source: "approval", target: "end", label: "Approve", condition: "default" }
+                { id: "e1", source: "start", target: "approval", data: { condition: "" } },
+                { id: "e2", source: "approval", target: "end", data: { label: "Approve", condition: "default" } }
             ]
         }
     };
@@ -606,13 +630,13 @@ async function runRejectTests() {
         isActive: true,
         graph: {
             nodes: [
-                { id: 'start', type: 'start' },
-                { id: 'approval', type: 'approval', config: { approval: { type: 'any', approvers: [{ type: 'user', userId: app1.userId }], allowReject: true } } },
-                { id: 'end', type: 'end' }
+                { id: 'start', type: 'start', data: { nodeType: 'start' } },
+                { id: 'approval', type: 'approval', data: { nodeType: 'approval', config: { approval: { type: 'any', approvers: [{ type: 'user', userId: app1.userId }], allowReject: true } } } },
+                { id: 'end', type: 'end', data: { nodeType: 'end' } }
             ],
             edges: [
-                { source: 'start', target: 'approval' },
-                { source: 'approval', target: 'end', label: 'Approve', condition: 'default' }
+                { id: 'e1', source: 'start', target: 'approval', data: { condition: '' } },
+                { id: 'e2', source: 'approval', target: 'end', data: { label: 'Approve', condition: 'default' } }
             ]
         }
     };

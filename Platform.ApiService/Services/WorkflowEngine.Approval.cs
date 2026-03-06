@@ -146,7 +146,7 @@ public partial class WorkflowEngine
             return instance.StartedBy == userId;
         }
 
-        if (node.Config.Approval == null) return false;
+        if (node.Data.Config.Approval == null) return false;
 
         // Bug 3 修复：所有审批类型都阻止重复审批
         var history = await GetApprovalHistoryAsync(instance.Id);
@@ -171,7 +171,7 @@ public partial class WorkflowEngine
             node.Id, string.Join(",", approvers), userId);
 
         // Bug 4：Sequential 模式下，只有轮到的人才能审批
-        if (node.Config.Approval.Type == ApprovalType.Sequential)
+        if (node.Data.Config.Approval.Type == ApprovalType.Sequential)
         {
             var nextApprover = await GetNextSequentialApproverAsync(instance, node, approvers);
             return nextApprover == userId;
@@ -211,13 +211,13 @@ public partial class WorkflowEngine
         if (definition == null) return;
 
         var node = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
-        if (node == null || node.Config.Approval == null)
+        if (node == null || node.Data.Config.Approval == null)
         {
             await MoveToNextNodeAsync(instanceId, nodeId);
             return;
         }
 
-        var config = node.Config.Approval;
+        var config = node.Data.Config.Approval;
         var allApprovers = await GetNodeApproversAsync(instanceId, nodeId);
 
         var history = await GetApprovalHistoryAsync(instanceId);

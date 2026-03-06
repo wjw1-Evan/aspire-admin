@@ -15,6 +15,9 @@ using OpenAI;
 using OpenAI.Chat;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
+using Microsoft.Agents.AI;
+using Microsoft.Agents.AI.Workflows;
+using Platform.ApiService.Workflows.Executors;
 
 namespace Platform.ApiService.Services;
 
@@ -26,7 +29,7 @@ public interface IWorkflowEngine
     /// <summary>
     /// 启动工作流
     /// </summary>
-    Task<WorkflowInstance> StartWorkflowAsync(string definitionId, string documentId, Dictionary<string, object>? variables = null);
+    Task<WorkflowInstance> StartWorkflowAsync(string definitionId, string documentId, Dictionary<string, object?>? variables = null);
 
     /// <summary>
     /// 处理审批操作
@@ -41,7 +44,7 @@ public interface IWorkflowEngine
     /// <summary>
     /// 处理条件节点
     /// </summary>
-    Task<bool> ProcessConditionAsync(string instanceId, string nodeId, Dictionary<string, object> variables);
+    Task<bool> ProcessConditionAsync(string instanceId, string nodeId, Dictionary<string, object?> variables);
 
     /// <summary>
     /// 完成并行分支
@@ -90,6 +93,7 @@ public partial class WorkflowEngine : IWorkflowEngine
     private readonly ITenantContext _tenantContext;
     private readonly IApproverResolverFactory _approverResolverFactory;
     private readonly IWorkflowExpressionEvaluator _expressionEvaluator;
+    private readonly IKnowledgeService _knowledgeService;
     private readonly OpenAIClient _openAiClient;
     private readonly AiCompletionOptions _aiOptions;
     private readonly ILogger<WorkflowEngine> _logger;
@@ -110,6 +114,7 @@ public partial class WorkflowEngine : IWorkflowEngine
         ITenantContext tenantContext,
         IApproverResolverFactory approverResolverFactory,
         IWorkflowExpressionEvaluator expressionEvaluator,
+        IKnowledgeService knowledgeService,
         OpenAIClient openAiClient,
         IOptions<AiCompletionOptions> aiOptions,
         ILogger<WorkflowEngine> logger,
@@ -126,6 +131,7 @@ public partial class WorkflowEngine : IWorkflowEngine
         _tenantContext = tenantContext;
         _approverResolverFactory = approverResolverFactory;
         _expressionEvaluator = expressionEvaluator;
+        _knowledgeService = knowledgeService;
         _openAiClient = openAiClient;
         _aiOptions = aiOptions.Value;
         _logger = logger;
@@ -135,7 +141,7 @@ public partial class WorkflowEngine : IWorkflowEngine
     /// <summary>
     /// 启动工作流
     /// </summary>
-    public async Task<WorkflowInstance> StartWorkflowAsync(string definitionId, string documentId, Dictionary<string, object>? variables = null)
+    public async Task<WorkflowInstance> StartWorkflowAsync(string definitionId, string documentId, Dictionary<string, object?>? variables = null)
     {
         var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
@@ -159,14 +165,14 @@ public partial class WorkflowEngine : IWorkflowEngine
         };
 
         // 初始化变量
-        instance.ResetVariables(variables ?? new Dictionary<string, object>());
+        instance.ResetVariables(variables ?? new Dictionary<string, object?>());
 
         // 🔧 Bug Fix: 保存流程涉及的所有表单定义快照
-        var formNodes = definition.Graph.Nodes.Where(n => n.Config?.Form != null).ToList();
+        var formNodes = definition.Graph.Nodes.Where(n => n.Data.Config?.Form != null).ToList();
         var formCache = new Dictionary<string, FormDefinition>();
         foreach (var node in formNodes)
         {
-            var formDefId = node.Config?.Form?.FormDefinitionId;
+            var formDefId = node.Data.Config?.Form?.FormDefinitionId;
             if (!string.IsNullOrEmpty(formDefId))
             {
                 if (!formCache.TryGetValue(formDefId, out var formDef))
@@ -198,7 +204,7 @@ public partial class WorkflowEngine : IWorkflowEngine
         });
 
         // 查找开始节点并处理
-        var startNode = definition.Graph.Nodes.FirstOrDefault(n => n.Type == "start");
+        var startNode = definition.Graph.Nodes.FirstOrDefault(n => n.Data.NodeType == "start");
         if (startNode != null)
         {
             await SetCurrentNodeAsync(instance.Id, startNode.Id);

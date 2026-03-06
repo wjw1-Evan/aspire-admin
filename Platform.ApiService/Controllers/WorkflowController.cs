@@ -359,13 +359,13 @@ public class WorkflowController : BaseApiController
     {
         try
         {
-            Dictionary<string, object>? sanitizedVars = null;
+            Dictionary<string, object?>? sanitizedVars = null;
 
             if (request.Variables != null)
             {
                 try
                 {
-                    sanitizedVars = Platform.ApiService.Extensions.SerializationExtensions.SanitizeDictionary(request.Variables);
+                    sanitizedVars = (Dictionary<string, object?>)(object)Platform.ApiService.Extensions.SerializationExtensions.SanitizeDictionary(request.Variables);
                 }
                 catch (Exception ex)
                 {
@@ -441,14 +441,14 @@ public class WorkflowController : BaseApiController
                 return NotFoundError("流程定义", id);
             }
 
-            var startNode = definition.Graph.Nodes.FirstOrDefault(n => n.Type == "start");
-            FormBinding? binding = startNode?.Config?.Form;
+            var startNode = definition.Graph.Nodes.FirstOrDefault(n => n.Data.NodeType == "start");
+            FormBinding? binding = startNode?.Data.Config?.Form;
 
             if (binding == null || binding.Target != FormTarget.Document)
             {
                 var nodeWithDocForm = definition.Graph.Nodes
-                    .FirstOrDefault(n => n.Config?.Form?.Target == FormTarget.Document);
-                binding = nodeWithDocForm?.Config?.Form;
+                    .FirstOrDefault(n => n.Data.Config?.Form?.Target == FormTarget.Document);
+                binding = nodeWithDocForm?.Data.Config?.Form;
             }
 
             if (binding == null || string.IsNullOrEmpty(binding.FormDefinitionId))
@@ -522,7 +522,7 @@ public class WorkflowController : BaseApiController
                     if (!approvers.Contains(userId)) continue;
 
                     var currentNode = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
-                    if (currentNode == null || currentNode.Type != "approval" || currentNode.Config.Approval == null)
+                    if (currentNode == null || currentNode.Type != "approval" || currentNode.Data.Config.Approval == null)
                     {
                         continue;
                     }
@@ -539,7 +539,7 @@ public class WorkflowController : BaseApiController
                         instance.TimeoutAt,
                         DefinitionName = definition.Name,
                         DefinitionCategory = definition.Category,
-                        CurrentNode = new { currentNode.Id, currentNode.Label, currentNode.Type },
+                        CurrentNode = new { currentNode.Id, currentNode.Data.Label, currentNode.Data.NodeType },
                         Document = document == null ? null : new
                         {
                             document.Id,
@@ -634,7 +634,7 @@ public class WorkflowController : BaseApiController
                 return ValidationError("节点不存在");
             }
 
-            var binding = node.Config.Form;
+            var binding = node.Data.Config.Form;
             if (binding == null || string.IsNullOrEmpty(binding.FormDefinitionId))
             {
                 return Success(new { form = (FormDefinition?)null, initialValues = (object?)null });
@@ -737,7 +737,7 @@ public class WorkflowController : BaseApiController
                 return ValidationError("节点不存在");
             }
 
-            var binding = node.Config.Form;
+            var binding = node.Data.Config.Form;
             if (binding == null || string.IsNullOrEmpty(binding.FormDefinitionId))
             {
                 return ValidationError("该节点未绑定完整表单定义");
@@ -774,7 +774,8 @@ public class WorkflowController : BaseApiController
                 }
             }
 
-            values = Platform.ApiService.Extensions.SerializationExtensions.SanitizeDictionary(values ?? new Dictionary<string, object>());
+            var sanitizedValues = Platform.ApiService.Extensions.SerializationExtensions.SanitizeDictionary(values ?? new Dictionary<string, object>());
+            var valuesWithNulls = (Dictionary<string, object?>)(object)sanitizedValues;
 
             if (binding.Target == FormTarget.Document)
             {
@@ -814,12 +815,12 @@ public class WorkflowController : BaseApiController
                     }
                     else
                     {
-                        i.ResetVariables(scopedValues);
+                        i.ResetVariables((Dictionary<string, object?>)(object)scopedValues);
                     }
                 };
 
                 var updated = await _instanceFactory.UpdateAsync(id, updateAction);
-                return Success(updated?.GetVariablesDict() ?? values);
+                return Success(updated?.GetVariablesDict() ?? valuesWithNulls);
             }
         }
         catch (Exception ex)
@@ -1174,7 +1175,7 @@ public class WorkflowController : BaseApiController
                 }
             }
 
-            var instance = await _workflowEngine.StartWorkflowAsync(id, document.Id, mergedVariables);
+            var instance = await _workflowEngine.StartWorkflowAsync(id, document.Id, (Dictionary<string, object?>)(object)mergedVariables);
 
             return Success(new { document, workflowInstance = instance });
         }

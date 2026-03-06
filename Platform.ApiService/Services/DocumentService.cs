@@ -466,7 +466,7 @@ public class DocumentService : IDocumentService
             });
         }
 
-        var instance = await _workflowEngine.StartWorkflowAsync(workflowDefinitionId, documentId, sanitizedVars);
+        var instance = await _workflowEngine.StartWorkflowAsync(workflowDefinitionId, documentId, (Dictionary<string, object?>?)(object?)sanitizedVars);
 
         _logger.LogInformation("公文已提交: DocumentId={DocumentId}, WorkflowInstanceId={InstanceId}",
             documentId, instance.Id);
@@ -576,11 +576,11 @@ public class DocumentService : IDocumentService
         }
 
         // 查找创建用的文档表单绑定：优先 start 节点，否则第一个绑定文档表单的节点
-        FormBinding? binding = definition.Graph.Nodes.FirstOrDefault(n => n.Type == "start")?.Config?.Form;
+        FormBinding? binding = definition.Graph.Nodes.FirstOrDefault(n => n.Data.NodeType == "start")?.Data.Config?.Form;
         if (binding == null || binding.Target != FormTarget.Document)
         {
-            var nodeWithDocForm = definition.Graph.Nodes.FirstOrDefault(n => n.Config?.Form?.Target == FormTarget.Document);
-            binding = nodeWithDocForm?.Config?.Form;
+            var nodeWithDocForm = definition.Graph.Nodes.FirstOrDefault(n => n.Data.Config?.Form?.Target == FormTarget.Document);
+            binding = nodeWithDocForm?.Data.Config?.Form;
         }
 
         if (binding == null || string.IsNullOrEmpty(binding.FormDefinitionId))

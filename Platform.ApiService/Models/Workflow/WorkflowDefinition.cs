@@ -3,593 +3,948 @@ using MongoDB.Bson.Serialization.Attributes;
 using Platform.ServiceDefaults.Attributes;
 using Platform.ServiceDefaults.Models;
 using System.ComponentModel.DataAnnotations.Schema;
-using Platform.ApiService.Models;
 
 namespace Platform.ApiService.Models.Workflow;
 
-/// <summary>
-/// 工作流版本信息
-/// </summary>
 public class WorkflowVersion
 {
-    /// <summary>
-    /// 主版本号
-    /// </summary>
     [BsonElement("major")]
     public int Major { get; set; } = 1;
 
-    /// <summary>
-    /// 次版本号
-    /// </summary>
     [BsonElement("minor")]
     public int Minor { get; set; } = 0;
 
-    /// <summary>
-    /// 创建时间
-    /// </summary>
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
 
-/// <summary>
-/// 工作流图形定义
-/// </summary>
 public class WorkflowGraph
 {
-    /// <summary>
-    /// 节点列表
-    /// </summary>
     [BsonElement("nodes")]
     public List<WorkflowNode> Nodes { get; set; } = new();
 
-    /// <summary>
-    /// 边列表（连接线）
-    /// </summary>
     [BsonElement("edges")]
     public List<WorkflowEdge> Edges { get; set; } = new();
+
+    [BsonElement("viewport")]
+    public Viewport? Viewport { get; set; }
 }
 
-/// <summary>
-/// 工作流节点
-/// </summary>
-public class WorkflowNode
+public class Viewport
 {
-    /// <summary>
-    /// 节点ID
-    /// </summary>
-    [BsonElement("id")]
-    public string Id { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 节点类型：start/end/approval/condition/parallel
-    /// </summary>
-    [BsonElement("type")]
-    public string Type { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 节点标签
-    /// </summary>
-    [BsonElement("label")]
-    public string? Label { get; set; }
-
-    /// <summary>
-    /// 节点位置
-    /// </summary>
-    [BsonElement("position")]
-    public NodePosition Position { get; set; } = new();
-
-    /// <summary>
-    /// 节点配置
-    /// </summary>
-    [BsonElement("config")]
-    public NodeConfig Config { get; set; } = new();
-}
-
-/// <summary>
-/// 节点位置
-/// </summary>
-public class NodePosition
-{
-    /// <summary>
-    /// X坐标
-    /// </summary>
     [BsonElement("x")]
     public double X { get; set; }
 
-    /// <summary>
-    /// Y坐标
-    /// </summary>
+    [BsonElement("y")]
+    public double Y { get; set; }
+
+    [BsonElement("zoom")]
+    public double Zoom { get; set; } = 1.0;
+}
+
+public class WorkflowNode
+{
+    [BsonElement("id")]
+    public string Id { get; set; } = string.Empty;
+
+    [BsonElement("type")]
+    public string Type { get; set; } = string.Empty;
+
+    [BsonElement("data")]
+    public NodeData Data { get; set; } = new();
+
+    [BsonElement("position")]
+    public NodePosition Position { get; set; } = new();
+
+    [BsonElement("parentId")]
+    public string? ParentId { get; set; }
+
+    [BsonElement("handleIds")]
+    public NodeHandles? HandleIds { get; set; }
+}
+
+public class NodeHandles
+{
+    [BsonElement("top")]
+    public string? Top { get; set; }
+
+    [BsonElement("right")]
+    public string? Right { get; set; }
+
+    [BsonElement("bottom")]
+    public string? Bottom { get; set; }
+
+    [BsonElement("left")]
+    public string? Left { get; set; }
+
+    [BsonElement("source")]
+    public List<string>? Source { get; set; }
+
+    [BsonElement("target")]
+    public List<string>? Target { get; set; }
+}
+
+public class NodeData
+{
+    [BsonElement("label")]
+    public string? Label { get; set; }
+
+    [BsonElement("description")]
+    public string? Description { get; set; }
+
+    [BsonElement("nodeType")]
+    public string NodeType { get; set; } = string.Empty;
+
+    [BsonElement("version")]
+    public string? Version { get; set; }
+
+    [BsonElement("config")]
+    public NodeConfig Config { get; set; } = new();
+
+    [BsonElement("credentials")]
+    public string? Credentials { get; set; }
+
+    [BsonElement("isDisabled")]
+    public bool IsDisabled { get; set; } = false;
+
+    [BsonElement("retry")]
+    public RetryConfig? Retry { get; set; }
+
+    [BsonElement("timeout")]
+    public TimeoutConfig? Timeout { get; set; }
+}
+
+public class RetryConfig
+{
+    [BsonElement("enabled")]
+    public bool Enabled { get; set; } = false;
+
+    [BsonElement("maxAttempts")]
+    public int MaxAttempts { get; set; } = 3;
+
+    [BsonElement("interval")]
+    public int Interval { get; set; } = 1;
+}
+
+public class TimeoutConfig
+{
+    [BsonElement("enabled")]
+    public bool Enabled { get; set; } = false;
+
+    [BsonElement("maxTimeout")]
+    public int MaxTimeout { get; set; } = 300;
+}
+
+public class NodePosition
+{
+    [BsonElement("x")]
+    public double X { get; set; }
+
     [BsonElement("y")]
     public double Y { get; set; }
 }
 
-/// <summary>
-/// 节点配置
-/// </summary>
+public class WorkflowEdge
+{
+    [BsonElement("id")]
+    public string Id { get; set; } = string.Empty;
+
+    [BsonElement("source")]
+    public string Source { get; set; } = string.Empty;
+
+    [BsonElement("target")]
+    public string Target { get; set; } = string.Empty;
+
+    [BsonElement("sourceHandle")]
+    public string? SourceHandle { get; set; }
+
+    [BsonElement("targetHandle")]
+    public string? TargetHandle { get; set; }
+
+    [BsonElement("type")]
+    public string Type { get; set; } = "edge";
+
+    [BsonElement("label")]
+    public string? Label { get; set; }
+
+    [BsonElement("data")]
+    public EdgeData? Data { get; set; }
+
+    [BsonElement("animated")]
+    public bool Animated { get; set; } = false;
+
+    [BsonElement("style")]
+    public EdgeStyle? Style { get; set; }
+}
+
+public class EdgeData
+{
+    [BsonElement("condition")]
+    public string? Condition { get; set; }
+
+    [BsonElement("branchId")]
+    public string? BranchId { get; set; }
+
+    [BsonElement("isMemory")]
+    public bool IsMemory { get; set; } = false;
+}
+
+public class EdgeStyle
+{
+    [BsonElement("stroke")]
+    public string? Stroke { get; set; }
+
+    [BsonElement("strokeWidth")]
+    public int StrokeWidth { get; set; } = 2;
+}
+
 public class NodeConfig
 {
-    /// <summary>
-    /// 审批节点配置
-    /// </summary>
     [BsonElement("approval")]
     public ApprovalConfig? Approval { get; set; }
 
-    /// <summary>
-    /// 条件节点配置
-    /// </summary>
     [BsonElement("condition")]
     public ConditionConfig? Condition { get; set; }
 
-    /// <summary>
-    /// 并行网关配置
-    /// </summary>
     [BsonElement("parallel")]
     public ParallelConfig? Parallel { get; set; }
 
-    /// <summary>
-    /// AI节点配置
-    /// </summary>
     [BsonElement("ai")]
     public AiConfig? Ai { get; set; }
 
-    /// <summary>
-    /// AI 判断节点配置
-    /// </summary>
     [BsonElement("aiJudge")]
     public AiJudgeConfig? AiJudge { get; set; }
 
-    /// <summary>
-    /// 通知配置
-    /// </summary>
     [BsonElement("notification")]
     public NotificationConfig? Notification { get; set; }
 
-    /// <summary>
-    /// 表单绑定配置（用于起始节点或审批节点收集数据）
-    /// </summary>
     [BsonElement("form")]
     public FormBinding? Form { get; set; }
 
-    /// <summary>
-    /// HTTP 节点配置
-    /// </summary>
     [BsonElement("http")]
     public HttpConfig? Http { get; set; }
 
-    /// <summary>
-    /// 计时器节点配置
-    /// </summary>
     [BsonElement("timer")]
     public TimerConfig? Timer { get; set; }
 
-    /// <summary>
-    /// 变量设置节点配置
-    /// </summary>
     [BsonElement("variable")]
     public VariableConfig? Variable { get; set; }
 
-    /// <summary>
-    /// 日志节点配置
-    /// </summary>
     [BsonElement("log")]
     public LogConfig? Log { get; set; }
+
+    [BsonElement("knowledge")]
+    public KnowledgeConfig? Knowledge { get; set; }
+
+    [BsonElement("code")]
+    public CodeConfig? Code { get; set; }
+
+    [BsonElement("template")]
+    public TemplateConfig? Template { get; set; }
+
+    [BsonElement("variableAggregator")]
+    public VariableAggregatorConfig? VariableAggregator { get; set; }
+
+    [BsonElement("questionClassifier")]
+    public QuestionClassifierConfig? QuestionClassifier { get; set; }
+
+    [BsonElement("parameterExtractor")]
+    public ParameterExtractorConfig? ParameterExtractor { get; set; }
+
+    [BsonElement("iteration")]
+    public IterationConfig? Iteration { get; set; }
+
+    [BsonElement("answer")]
+    public AnswerConfig? Answer { get; set; }
+
+    [BsonElement("tool")]
+    public ToolConfig? Tool { get; set; }
+
+    [BsonElement("agent")]
+    public AgentConfig? Agent { get; set; }
+
+    [BsonElement("llm")]
+    public LlmConfig? Llm { get; set; }
+
+    [BsonElement("retrieval")]
+    public RetrievalConfig? Retrieval { get; set; }
+
+    [BsonElement("documentExtractor")]
+    public DocumentExtractorConfig? DocumentExtractor { get; set; }
+
+    [BsonElement("listOperator")]
+    public ListOperatorConfig? ListOperator { get; set; }
+
+    [BsonElement("variableAssigner")]
+    public VariableAssignerConfig? VariableAssigner { get; set; }
+
+    [BsonElement("humanInput")]
+    public HumanInputConfig? HumanInput { get; set; }
+
+    [BsonElement("script")]
+    public ScriptConfig? Script { get; set; }
 }
 
-/// <summary>
-/// HTTP 请求节点配置
-/// </summary>
-public class HttpConfig
+public class KnowledgeConfig
 {
-    /// <summary>
-    /// 请求方法 (如 GET, POST)
-    /// </summary>
-    [BsonElement("method")]
-    public string? Method { get; set; }
+    [BsonElement("query")]
+    public string? Query { get; set; }
 
-    /// <summary>
-    /// 请求 URL
-    /// </summary>
-    [BsonElement("url")]
-    public string? Url { get; set; }
+    [BsonElement("queryVariable")]
+    public string? QueryVariable { get; set; }
 
-    /// <summary>
-    /// 请求头信息 (JSON)
-    /// </summary>
-    [BsonElement("headers")]
-    public string? Headers { get; set; }
+    [BsonElement("knowledgeBaseIds")]
+    public List<string> KnowledgeBaseIds { get; set; } = new();
 
-    /// <summary>
-    /// 请求体内容
-    /// </summary>
-    [BsonElement("body")]
-    public string? Body { get; set; }
+    [BsonElement("retrievalMode")]
+    public string RetrievalMode { get; set; } = "hybrid";
 
-    /// <summary>
-    /// 保存响应结果到的变量名称
-    /// </summary>
+    [BsonElement("topK")]
+    public int TopK { get; set; } = 3;
+
+    [BsonElement("scoreThreshold")]
+    public double? ScoreThreshold { get; set; }
+
     [BsonElement("outputVariable")]
-    public string? OutputVariable { get; set; }
+    public string OutputVariable { get; set; } = "search_results";
 }
 
-/// <summary>
-/// 计时器节点配置
-/// </summary>
-public class TimerConfig
+public class LlmConfig
 {
-    /// <summary>
-    /// 等待时长 (TimeSpan 格式)
-    /// </summary>
-    [BsonElement("waitDuration")]
-    public string? WaitDuration { get; set; }
+    [BsonElement("model")]
+    public string? Model { get; set; }
 
-    /// <summary>
-    /// Cron 表达式
-    /// </summary>
-    [BsonElement("cron")]
-    public string? Cron { get; set; }
+    [BsonElement("provider")]
+    public string? Provider { get; set; }
+
+    [BsonElement("mode")]
+    public string Mode { get; set; } = "chat";
+
+    [BsonElement("systemPrompt")]
+    public string? SystemPrompt { get; set; }
+
+    [BsonElement("prompt")]
+    public string? Prompt { get; set; }
+
+    [BsonElement("variables")]
+    public List<Variable> Variables { get; set; } = new();
+
+    [BsonElement("maxTokens")]
+    public int? MaxTokens { get; set; }
+
+    [BsonElement("temperature")]
+    public double? Temperature { get; set; }
+
+    [BsonElement("topP")]
+    public double? TopP { get; set; }
+
+    [BsonElement("responseFormat")]
+    public string? ResponseFormat { get; set; }
+
+    [BsonElement("outputVariable")]
+    public string OutputVariable { get; set; } = "llm_result";
 }
 
-/// <summary>
-/// 变量设置节点配置
-/// </summary>
-public class VariableConfig
+public class AgentConfig
 {
-    /// <summary>
-    /// 变量名称
-    /// </summary>
-    [BsonElement("name")]
-    public string? Name { get; set; }
+    [BsonElement("strategy")]
+    public string Strategy { get; set; } = "react";
 
-    /// <summary>
-    /// 变量值/表达式
-    /// </summary>
+    [BsonElement("model")]
+    public string? Model { get; set; }
+
+    [BsonElement("provider")]
+    public string? Provider { get; set; }
+
+    [BsonElement("systemPrompt")]
+    public string? SystemPrompt { get; set; }
+
+    [BsonElement("tools")]
+    public List<ToolDefinition> Tools { get; set; } = new();
+
+    [BsonElement("maxIterations")]
+    public int MaxIterations { get; set; } = 10;
+
+    [BsonElement("maxTokens")]
+    public int? MaxTokens { get; set; }
+
+    [BsonElement("temperature")]
+    public double? Temperature { get; set; }
+
+    [BsonElement("memory")]
+    public AgentMemoryConfig? Memory { get; set; }
+
+    [BsonElement("outputVariable")]
+    public string OutputVariable { get; set; } = "agent_result";
+}
+
+public class AgentMemoryConfig
+{
+    [BsonElement("enabled")]
+    public bool Enabled { get; set; } = false;
+
+    [BsonElement("maxMessages")]
+    public int MaxMessages { get; set; } = 10;
+}
+
+public class ToolDefinition
+{
+    [BsonElement("toolName")]
+    public string ToolName { get; set; } = string.Empty;
+
+    [BsonElement("provider")]
+    public string Provider { get; set; } = string.Empty;
+
+    [BsonElement("parameters")]
+    public Dictionary<string, object> Parameters { get; set; } = new();
+}
+
+public class RetrievalConfig
+{
+    [BsonElement("query")]
+    public string? Query { get; set; }
+
+    [BsonElement("knowledgeBaseId")]
+    public string? KnowledgeBaseId { get; set; }
+
+    [BsonElement("retrievalStrategy")]
+    public string RetrievalStrategy { get; set; } = "semantic_search";
+
+    [BsonElement("topK")]
+    public int TopK { get; set; } = 3;
+
+    [BsonElement("scoreThreshold")]
+    public double? ScoreThreshold { get; set; }
+
+    [BsonElement("outputVariable")]
+    public string OutputVariable { get; set; } = "retrieved_documents";
+}
+
+public class DocumentExtractorConfig
+{
+    [BsonElement("variable")]
+    public string? Variable { get; set; }
+
+    [BsonElement("extractions")]
+    public List<ExtractionRule> Extractions { get; set; } = new();
+
+    [BsonElement("outputVariable")]
+    public string OutputVariable { get; set; } = "extracted_data";
+}
+
+public class ExtractionRule
+{
+    [BsonElement("field")]
+    public string Field { get; set; } = string.Empty;
+
+    [BsonElement("type")]
+    public string Type { get; set; } = "text";
+
+    [BsonElement("description")]
+    public string? Description { get; set; }
+}
+
+public class ListOperatorConfig
+{
+    [BsonElement("operator")]
+    public string Operator { get; set; } = "transform";
+
+    [BsonElement("inputVariable")]
+    public string? InputVariable { get; set; }
+
+    [BsonElement("outputVariable")]
+    public string OutputVariable { get; set; } = "list_result";
+}
+
+public class VariableAssignerConfig
+{
+    [BsonElement("assignments")]
+    public List<VariableAssignment> Assignments { get; set; } = new();
+
+    [BsonElement("outputVariable")]
+    public string OutputVariable { get; set; } = "assigned_value";
+}
+
+public class VariableAssignment
+{
+    [BsonElement("variable")]
+    public string Variable { get; set; } = string.Empty;
+
     [BsonElement("value")]
     public string? Value { get; set; }
 }
 
-/// <summary>
-/// 日志节点配置
-/// </summary>
+public class HumanInputConfig
+{
+    [BsonElement("inputLabel")]
+    public string InputLabel { get; set; } = "请输入";
+
+    [BsonElement("inputType")]
+    public string InputType { get; set; } = "text";
+
+    [BsonElement("description")]
+    public string? Description { get; set; }
+
+    [BsonElement("timeout")]
+    public int? Timeout { get; set; }
+
+    [BsonElement("defaultValue")]
+    public string? DefaultValue { get; set; }
+}
+
+public class ScriptConfig
+{
+    [BsonElement("language")]
+    public string Language { get; set; } = "python";
+
+    [BsonElement("code")]
+    public string Code { get; set; } = string.Empty;
+
+    [BsonElement("inputVariables")]
+    public List<string> InputVariables { get; set; } = new();
+
+    [BsonElement("outputVariable")]
+    public string OutputVariable { get; set; } = "script_result";
+}
+
+public class Variable
+{
+    [BsonElement("name")]
+    public string Name { get; set; } = string.Empty;
+
+    [BsonElement("type")]
+    public string Type { get; set; } = "string";
+
+    [BsonElement("default")]
+    public string? Default { get; set; }
+}
+
+public class CodeConfig
+{
+    [BsonElement("language")]
+    public string Language { get; set; } = "python";
+
+    [BsonElement("code")]
+    public string Code { get; set; } = string.Empty;
+
+    [BsonElement("inputVariables")]
+    public List<string> InputVariables { get; set; } = new();
+
+    [BsonElement("outputVariable")]
+    public string OutputVariable { get; set; } = "code_result";
+}
+
+public class TemplateConfig
+{
+    [BsonElement("template")]
+    public string Template { get; set; } = string.Empty;
+
+    [BsonElement("variables")]
+    public Dictionary<string, string> Variables { get; set; } = new();
+
+    [BsonElement("outputVariable")]
+    public string OutputVariable { get; set; } = "template_result";
+}
+
+public class VariableAggregatorConfig
+{
+    [BsonElement("variables")]
+    public List<string> Variables { get; set; } = new();
+
+    [BsonElement("outputVariable")]
+    public string OutputVariable { get; set; } = "aggregated_result";
+}
+
+public class QuestionClassifierConfig
+{
+    [BsonElement("inputVariable")]
+    public string? InputVariable { get; set; }
+
+    [BsonElement("model")]
+    public string? Model { get; set; }
+
+    [BsonElement("classes")]
+    public List<ClassifierClass> Classes { get; set; } = new();
+
+    [BsonElement("outputVariable")]
+    public string OutputVariable { get; set; } = "class_name";
+}
+
+public class ClassifierClass
+{
+    [BsonElement("id")]
+    public string Id { get; set; } = string.Empty;
+
+    [BsonElement("name")]
+    public string Name { get; set; } = string.Empty;
+
+    [BsonElement("description")]
+    public string? Description { get; set; }
+}
+
+public class ParameterExtractorConfig
+{
+    [BsonElement("model")]
+    public string? Model { get; set; }
+
+    [BsonElement("inputVariable")]
+    public string? InputVariable { get; set; }
+
+    [BsonElement("parameters")]
+    public List<ParameterDefinition> Parameters { get; set; } = new();
+
+    [BsonElement("outputVariable")]
+    public string OutputVariable { get; set; } = "extracted_params";
+}
+
+public class ParameterDefinition
+{
+    [BsonElement("name")]
+    public string Name { get; set; } = string.Empty;
+
+    [BsonElement("type")]
+    public string Type { get; set; } = "string";
+
+    [BsonElement("description")]
+    public string Description { get; set; } = string.Empty;
+
+    [BsonElement("required")]
+    public bool Required { get; set; } = false;
+}
+
+public class IterationConfig
+{
+    [BsonElement("iteratorVariable")]
+    public string? IteratorVariable { get; set; }
+
+    [BsonElement("graph")]
+    [NotMapped]
+    public WorkflowGraph Graph { get; set; } = new();
+
+    [BsonElement("outputVariable")]
+    public string OutputVariable { get; set; } = "iteration_results";
+}
+
+public class AnswerConfig
+{
+    [BsonElement("answer")]
+    public string Answer { get; set; } = string.Empty;
+
+    [BsonElement("variables")]
+    public Dictionary<string, string> Variables { get; set; } = new();
+}
+
+public class ToolConfig
+{
+    [BsonElement("provider")]
+    public string Provider { get; set; } = string.Empty;
+
+    [BsonElement("tool")]
+    public string Tool { get; set; } = string.Empty;
+
+    [BsonElement("params")]
+    public Dictionary<string, string> Params { get; set; } = new();
+
+    [BsonElement("outputVariable")]
+    public string OutputVariable { get; set; } = "tool_result";
+}
+
+public class HttpConfig
+{
+    [BsonElement("method")]
+    public string? Method { get; set; }
+
+    [BsonElement("url")]
+    public string? Url { get; set; }
+
+    [BsonElement("headers")]
+    public Dictionary<string, string>? Headers { get; set; }
+
+    [BsonElement("body")]
+    public string? Body { get; set; }
+
+    [BsonElement("timeout")]
+    public int Timeout { get; set; } = 30;
+
+    [BsonElement("outputVariable")]
+    public string? OutputVariable { get; set; }
+}
+
+public class TimerConfig
+{
+    [BsonElement("waitDuration")]
+    public string? WaitDuration { get; set; }
+
+    [BsonElement("cron")]
+    public string? Cron { get; set; }
+}
+
+public class VariableConfig
+{
+    [BsonElement("name")]
+    public string? Name { get; set; }
+
+    [BsonElement("value")]
+    public string? Value { get; set; }
+}
+
 public class LogConfig
 {
-    /// <summary>
-    /// 日志级别
-    /// </summary>
     [BsonElement("level")]
     public string Level { get; set; } = "Information";
 
-    /// <summary>
-    /// 日志消息模板
-    /// </summary>
     [BsonElement("message")]
     public string? Message { get; set; }
 }
 
-/// <summary>
-/// 审批节点配置
-/// </summary>
 public class ApprovalConfig
 {
-    /// <summary>
-    /// 审批类型：会签或或签
-    /// </summary>
     [BsonElement("type")]
     [BsonRepresentation(BsonType.String)]
     public ApprovalType Type { get; set; } = ApprovalType.All;
 
-    /// <summary>
-    /// 审批人规则列表
-    /// </summary>
     [BsonElement("approvers")]
     public List<ApproverRule> Approvers { get; set; } = new();
 
-    /// <summary>
-    /// 抄送规则列表
-    /// </summary>
     [BsonElement("ccRules")]
     public List<ApproverRule>? CcRules { get; set; }
 
-    /// <summary>
-    /// 是否允许转办
-    /// </summary>
     [BsonElement("allowDelegate")]
     public bool AllowDelegate { get; set; } = false;
 
-    /// <summary>
-    /// 是否允许拒绝
-    /// </summary>
     [BsonElement("allowReject")]
     public bool AllowReject { get; set; } = true;
 
-    /// <summary>
-    /// 是否允许退回
-    /// </summary>
     [BsonElement("allowReturn")]
     public bool AllowReturn { get; set; } = false;
 
-    /// <summary>
-    /// 超时时间（小时）
-    /// </summary>
     [BsonElement("timeoutHours")]
     public int? TimeoutHours { get; set; }
 }
 
-/// <summary>
-/// 审批人规则
-/// </summary>
 public class ApproverRule
 {
-    /// <summary>
-    /// 审批人类型：用户/角色/部门
-    /// </summary>
     [BsonElement("type")]
     [BsonRepresentation(BsonType.String)]
     public ApproverType Type { get; set; }
 
-    /// <summary>
-    /// 用户ID（当Type为User时使用）
-    /// </summary>
     [BsonElement("userId")]
     public string? UserId { get; set; }
 
-    /// <summary>
-    /// 角色ID（当Type为Role时使用）
-    /// </summary>
     [BsonElement("roleId")]
     public string? RoleId { get; set; }
 
-    /// <summary>
-    /// 部门ID（当Type为Department时使用）
-    /// </summary>
     [BsonElement("departmentId")]
     public string? DepartmentId { get; set; }
 
-    /// <summary>
-    /// 表单字段Key（当Type为FormField时使用）
-    /// </summary>
     [BsonElement("formFieldKey")]
     public string? FormFieldKey { get; set; }
 }
 
-/// <summary>
-/// 条件节点配置
-/// </summary>
 public class ConditionConfig
 {
-    /// <summary>
-    /// 条件表达式，如：amount > 10000
-    /// </summary>
-    [BsonElement("expression")]
-    public string Expression { get; set; } = string.Empty;
+    [BsonElement("conditions")]
+    public List<ConditionRule> Conditions { get; set; } = new();
 
-    /// <summary>
-    /// 跳转目标节点ID（如果是简单跳转）
-    /// </summary>
+    [BsonElement("logicalOperator")]
+    public string LogicalOperator { get; set; } = "and";
+}
+
+public class ConditionRule
+{
+    [BsonElement("variable")]
+    public string Variable { get; set; } = string.Empty;
+
+    [BsonElement("operator")]
+    public string Operator { get; set; } = "equals";
+
+    [BsonElement("value")]
+    public string? Value { get; set; }
+
     [BsonElement("targetNodeId")]
     public string? TargetNodeId { get; set; }
 }
 
-/// <summary>
-/// AI节点配置
-/// </summary>
 public class AiConfig
 {
-    /// <summary>
-    /// 输入变量名（读取该流程变量作为 AI 输入上下文）
-    /// </summary>
     [BsonElement("inputVariable")]
     public string? InputVariable { get; set; }
 
-    /// <summary>
-    /// 提示词模板
-    /// </summary>
     [BsonElement("promptTemplate")]
     public string PromptTemplate { get; set; } = string.Empty;
 
-    /// <summary>
-    /// 系统提示词
-    /// </summary>
     [BsonElement("systemPrompt")]
     public string? SystemPrompt { get; set; }
 
-    /// <summary>
-    /// 模型名称
-    /// </summary>
     [BsonElement("model")]
     public string? Model { get; set; }
 
-    /// <summary>
-    /// 输出变量名
-    /// </summary>
     [BsonElement("outputVariable")]
     public string OutputVariable { get; set; } = "ai_result";
 
-    /// <summary>
-    /// 最大生成 Token 数
-    /// </summary>
     [BsonElement("maxTokens")]
     public int? MaxTokens { get; set; }
 
-    /// <summary>
-    /// 温度（Temperature）
-    /// </summary>
     [BsonElement("temperature")]
     public double? Temperature { get; set; }
 }
 
-/// <summary>
-/// AI 判断节点配置（利用 AI 做出 true/false 决策）
-/// </summary>
 public class AiJudgeConfig
 {
-    /// <summary>
-    /// 输入变量名（读取该流程变量作为判断依据）
-    /// </summary>
     [BsonElement("inputVariable")]
     public string? InputVariable { get; set; }
 
-    /// <summary>
-    /// 判断提示词模板
-    /// </summary>
     [BsonElement("judgePrompt")]
     public string JudgePrompt { get; set; } = string.Empty;
 
-    /// <summary>
-    /// 系统提示词
-    /// </summary>
     [BsonElement("systemPrompt")]
     public string? SystemPrompt { get; set; }
 
-    /// <summary>
-    /// 模型名称
-    /// </summary>
     [BsonElement("model")]
     public string? Model { get; set; }
 
-    /// <summary>
-    /// 输出变量名（存储判断结果 true/false）
-    /// </summary>
     [BsonElement("outputVariable")]
     public string OutputVariable { get; set; } = "judge_result";
 }
 
-/// <summary>
-/// 通知节点配置
-/// </summary>
 public class NotificationConfig
 {
-    /// <summary>
-    /// 通知操作类型
-    /// </summary>
     [BsonElement("actionType")]
     public string ActionType { get; set; } = "workflow_notification";
 
-    /// <summary>
-    /// 备注内容模板（支持动态变量）
-    /// </summary>
     [BsonElement("remarksTemplate")]
     public string? RemarksTemplate { get; set; }
 
-    /// <summary>
-    /// 接收人规则列表
-    /// </summary>
     [BsonElement("recipients")]
     public List<ApproverRule> Recipients { get; set; } = new();
 }
 
-/// <summary>
-/// 并行网关配置
-/// </summary>
 public class ParallelConfig
 {
-    /// <summary>
-    /// 分支节点ID列表
-    /// </summary>
     [BsonElement("branches")]
     public List<string> Branches { get; set; } = new();
+
+    [BsonElement("mode")]
+    public string Mode { get; set; } = "parallel";
 }
 
-/// <summary>
-/// 工作流边（连接线）
-/// </summary>
-public class WorkflowEdge
-{
-    /// <summary>
-    /// 边ID
-    /// </summary>
-    [BsonElement("id")]
-    public string Id { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 源节点ID
-    /// </summary>
-    [BsonElement("source")]
-    public string Source { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 目标节点ID
-    /// </summary>
-    [BsonElement("target")]
-    public string Target { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 边标签
-    /// </summary>
-    [BsonElement("label")]
-    public string? Label { get; set; }
-
-    /// <summary>
-    /// 条件分支表达式
-    /// </summary>
-    [BsonElement("condition")]
-    public string? Condition { get; set; }
-}
-
-/// <summary>
-/// 工作流定义实体
-/// </summary>
 [BsonIgnoreExtraElements]
 [BsonCollectionName("workflow_definitions")]
 public class WorkflowDefinition : MultiTenantEntity
 {
-    /// <summary>
-    /// 流程名称
-    /// </summary>
     [BsonElement("name")]
     public string Name { get; set; } = string.Empty;
 
-    /// <summary>
-    /// 流程描述
-    /// </summary>
     [BsonElement("description")]
     public string? Description { get; set; }
 
-    /// <summary>
-    /// 流程分类
-    /// </summary>
     [BsonElement("category")]
     public string Category { get; set; } = string.Empty;
 
-    /// <summary>
-    /// 版本信息
-    /// </summary>
     [BsonElement("version")]
     public WorkflowVersion Version { get; set; } = new();
 
-    /// <summary>
-    /// 流程图形定义
-    /// </summary>
     [BsonElement("graph")]
     public WorkflowGraph Graph { get; set; } = new();
 
-    /// <summary>
-    /// 是否启用
-    /// </summary>
     [BsonElement("isActive")]
     public bool IsActive { get; set; } = true;
 
-    /// <summary>
-    /// 分析数据
-    /// </summary>
+    [BsonElement("mode")]
+    public WorkflowMode Mode { get; set; } = WorkflowMode.Workflow;
+
+    [BsonElement("trigger")]
+    public WorkflowTrigger? Trigger { get; set; }
+
+    [BsonElement("inputs")]
+    public List<WorkflowInput> Inputs { get; set; } = new();
+
+    [BsonElement("outputs")]
+    public List<WorkflowOutput> Outputs { get; set; } = new();
+
     [BsonElement("analytics")]
     public WorkflowAnalytics Analytics { get; set; } = new();
 
-    /// <summary>
-    /// 验证结果
-    /// </summary>
     [BsonElement("validationResult")]
     public WorkflowValidationResult? ValidationResult { get; set; }
 
-    /// <summary>
-    /// 基于的模板ID（如果从模板创建）
-    /// </summary>
     [BsonElement("templateId")]
     [BsonRepresentation(BsonType.ObjectId)]
     public string? TemplateId { get; set; }
 
-    /// <summary>
-    /// 模板版本（如果从模板创建）
-    /// </summary>
     [BsonElement("templateVersion")]
     public string? TemplateVersion { get; set; }
+
+    [BsonElement("conversationId")]
+    public string? ConversationId { get; set; }
+}
+
+public enum WorkflowMode
+{
+    Workflow,
+    ChatFlow,
+    Agent
+}
+
+public class WorkflowTrigger
+{
+    [BsonElement("type")]
+    public string Type { get; set; } = "manual";
+
+    [BsonElement("cron")]
+    public string? Cron { get; set; }
+
+    [BsonElement("webhook")]
+    public WebhookConfig? Webhook { get; set; }
+
+    [BsonElement("event")]
+    public EventConfig? Event { get; set; }
+}
+
+public class WebhookConfig
+{
+    [BsonElement("enabled")]
+    public bool Enabled { get; set; } = true;
+
+    [BsonElement("method")]
+    public string Method { get; set; } = "POST";
+
+    [BsonElement("url")]
+    public string? Url { get; set; }
+}
+
+public class EventConfig
+{
+    [BsonElement("provider")]
+    public string Provider { get; set; } = string.Empty;
+
+    [BsonElement("eventType")]
+    public string EventType { get; set; } = string.Empty;
+}
+
+public class WorkflowInput
+{
+    [BsonElement("variable")]
+    public string Variable { get; set; } = string.Empty;
+
+    [BsonElement("type")]
+    public string Type { get; set; } = "text";
+
+    [BsonElement("required")]
+    public bool Required { get; set; } = true;
+
+    [BsonElement("default")]
+    public string? Default { get; set; }
+
+    [BsonElement("maxLength")]
+    public int? MaxLength { get; set; }
+}
+
+public class WorkflowOutput
+{
+    [BsonElement("variable")]
+    public string Variable { get; set; } = string.Empty;
+
+    [BsonElement("type")]
+    public string Type { get; set; } = "text";
 }

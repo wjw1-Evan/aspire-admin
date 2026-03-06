@@ -11,7 +11,7 @@
 - **现代化数据模型 (IDataFactory)**
   - 核心逻辑基于 **IDataFactory<T>** 接口，完全屏蔽底层数据库 API（如 MongoDB 驱动）。
   - 全面支持 **LINQ 表达式**，实现业务逻辑在内存与数据库间的透明映射。
-  - **Security & Efficiency**：内置多租户隔离、软删除、字段级自动审计及原子化 Lambda 更新。
+  - **Security & Efficiency**：内置多租户隔离（通过继承 `MultiTenantEntity`）、软删除、字段级自动审计及原子化 Lambda 更新。
 - **国产密码算法支持 (Guomi Support)**
   - 全面适配国家密码管理局标准（GB/T 39786-2021）。
   - **SM2**：用于多端登录的非对称加密传输。
@@ -154,6 +154,7 @@ aspire-admin
 - ✅ **配置化**：通过 `McpScoringOptions` 支持灵活配置
 - ✅ **性能优化**：倒排索引实现 O(1) 关键词查找
 - ✅ **并行执行**：使用 `Task.WhenAll` 并行执行多个工具
+- ✅ **多租户继承**：业务实体 **必须** 继承 `MultiTenantEntity` 以实现自动隔离
 
 ### 核心工具集 (15+ Handlers)
 
@@ -299,7 +300,7 @@ dotnet run --project Platform.AppHost
 
 - 遵循 **Clean Architecture** 架构规范
 - UI 变更符合项目的 **高品质设计准则**
-- 后端逻辑优先考虑 **多租户隔离** 与 **IDataFactory 兼容性**
+- 后端逻辑优先考虑 **多租户隔离**（业务实体必须继承 `MultiTenantEntity`） 与 **IDataFactory 兼容性**
 - 代码通过编译且无警告
 - 添加必要的单元测试
 - 更新相关文档

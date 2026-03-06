@@ -42,9 +42,9 @@ public class WorkflowInstance : MultiTenantEntity
     /// <summary>
     /// 获取所有变量的字典副本
     /// </summary>
-    public Dictionary<string, object> GetVariablesDict()
+    public Dictionary<string, object?> GetVariablesDict()
     {
-        var dict = new Dictionary<string, object>();
+        var dict = new Dictionary<string, object?>();
         foreach (var entry in Variables)
         {
             if (entry.ValueJson != null)
@@ -116,7 +116,7 @@ public class WorkflowInstance : MultiTenantEntity
     /// <summary>
     /// 重置所有变量
     /// </summary>
-    public void ResetVariables(Dictionary<string, object> dictionary)
+    public void ResetVariables(Dictionary<string, object?> dictionary)
     {
         Variables.Clear();
         foreach (var kv in dictionary)

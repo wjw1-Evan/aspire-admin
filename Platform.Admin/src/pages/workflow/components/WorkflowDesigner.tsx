@@ -87,6 +87,11 @@ const getTypeLabels = (intl: any) => ({
   setVariable: intl.formatMessage({ id: 'pages.workflow.designer.addSetVariable' }),
   log: intl.formatMessage({ id: 'pages.workflow.designer.addLog' }),
   aiJudge: intl.formatMessage({ id: 'pages.workflow.designer.addAiJudge' }),
+  parameterExtractor: intl.formatMessage({ id: 'pages.workflow.designer.addParameterExtractor' }),
+  iteration: intl.formatMessage({ id: 'pages.workflow.designer.addIteration' }),
+  answer: intl.formatMessage({ id: 'pages.workflow.designer.addAnswer' }),
+  knowledgeSearch: intl.formatMessage({ id: 'pages.workflow.designer.addKnowledgeSearch' }),
+  tool: intl.formatMessage({ id: 'pages.workflow.designer.addTool' }),
 });
 
 const defaultNodeStyle = {
@@ -427,6 +432,69 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
       judgeSystemPrompt: config.aiJudge?.systemPrompt,
       judgeModel: config.aiJudge?.model,
       judgeOutputVariable: config.aiJudge?.outputVariable || 'judge_result',
+      // LLM 节点配置
+      llmModel: config.llm?.model,
+      llmProvider: config.llm?.provider,
+      llmMode: config.llm?.mode || 'chat',
+      llmSystemPrompt: config.llm?.systemPrompt,
+      llmPrompt: config.llm?.prompt,
+      llmMaxTokens: config.llm?.maxTokens,
+      llmTemperature: config.llm?.temperature,
+      llmTopP: config.llm?.topP,
+      llmResponseFormat: config.llm?.responseFormat,
+      llmOutputVariable: config.llm?.outputVariable || 'llm_result',
+      // Agent 节点配置
+      agentStrategy: config.agent?.strategy || 'react',
+      agentModel: config.agent?.model,
+      agentProvider: config.agent?.provider,
+      agentSystemPrompt: config.agent?.systemPrompt,
+      agentMaxIterations: config.agent?.maxIterations || 10,
+      agentMaxTokens: config.agent?.maxTokens,
+      agentTemperature: config.agent?.temperature,
+      agentMemoryEnabled: config.agent?.memory?.enabled || false,
+      agentMemoryMaxMessages: config.agent?.memory?.maxMessages || 10,
+      agentOutputVariable: config.agent?.outputVariable || 'agent_result',
+      // Retrieval 节点配置
+      retrievalQuery: config.retrieval?.query,
+      retrievalKnowledgeBaseId: config.retrieval?.knowledgeBaseId,
+      retrievalStrategy: config.retrieval?.retrievalStrategy || 'semantic_search',
+      retrievalTopK: config.retrieval?.topK || 3,
+      retrievalScoreThreshold: config.retrieval?.scoreThreshold || 0.5,
+      retrievalOutputVariable: config.retrieval?.outputVariable || 'retrieved_documents',
+      // Knowledge 节点配置
+      knowledgeQuery: config.knowledge?.query,
+      knowledgeQueryVariable: config.knowledge?.queryVariable,
+      knowledgeBaseIds: config.knowledge?.knowledgeBaseIds || [],
+      knowledgeRetrievalMode: config.knowledge?.retrievalMode || 'hybrid',
+      knowledgeTopK: config.knowledge?.topK || 3,
+      knowledgeScoreThreshold: config.knowledge?.scoreThreshold,
+      knowledgeOutputVariable: config.knowledge?.outputVariable || 'search_results',
+      // HumanInput 节点配置
+      humanInputLabel: config.humanInput?.inputLabel,
+      humanInputType: config.humanInput?.inputType || 'text',
+      humanInputDescription: config.humanInput?.description,
+      humanInputTimeout: config.humanInput?.timeout,
+      // Loop 节点配置
+      loopIteratorVariable: config.iteration?.iteratorVariable,
+      loopOutputVariable: config.iteration?.outputVariable || 'iteration_results',
+      // 代码节点配置
+      codeLanguage: config.code?.language || 'python',
+      codeInputVariables: config.code?.inputVariables || [],
+      codeOutputVariable: config.code?.outputVariable || 'code_result',
+      // 模板节点配置
+      templateContent: config.template?.template,
+      templateVariables: config.template?.variables || {},
+      templateOutputVariable: config.template?.outputVariable || 'template_result',
+      // Variable Assigner 配置
+      variableAssignments: config.variableAssigner?.assignments || [],
+      // List Operator 配置
+      listOperator: config.listOperator?.operator || 'transform',
+      listInputVariable: config.listOperator?.inputVariable,
+      listOutputVariable: config.listOperator?.outputVariable || 'list_result',
+      // Document Extractor 配置
+      documentExtractorVariable: config.documentExtractor?.variable,
+      documentExtractorExtractions: config.documentExtractor?.extractions || [],
+      documentExtractorOutputVariable: config.documentExtractor?.outputVariable || 'extracted_data',
     });
   }, [configForm]);
 
@@ -573,6 +641,166 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
             };
           }
 
+          if (values.nodeType === 'parameterExtractor') {
+            try {
+              config.parameterExtractor = {
+                inputVariable: values.extractorInputVariable,
+                parameters: typeof values.extractorParameters === 'string' ? JSON.parse(values.extractorParameters) : values.extractorParameters,
+                model: values.extractorModel,
+                outputVariable: values.extractorOutputVariable,
+              };
+            } catch (e) {
+              message.error('参数提取：参数定义不是有效的 JSON 数组');
+              return node;
+            }
+          }
+
+          if (values.nodeType === 'iteration') {
+            config.iteration = {
+              iteratorVariable: values.iterationIteratorVariable,
+              outputVariable: values.iterationOutputVariable,
+            };
+          }
+
+          if (values.nodeType === 'answer') {
+            config.answer = {
+              answer: values.answerContent,
+            };
+          }
+
+          if (values.nodeType === 'knowledgeSearch') {
+            config.knowledge = {
+              query: values.knowledgeQuery,
+              queryVariable: values.knowledgeQueryVariable,
+              knowledgeBaseIds: values.knowledgeBaseIds || [],
+              retrievalMode: values.knowledgeRetrievalMode || 'hybrid',
+              topK: parseInt(values.knowledgeTopK || '3'),
+              scoreThreshold: values.knowledgeScoreThreshold ? parseFloat(values.knowledgeScoreThreshold) : undefined,
+              outputVariable: values.knowledgeOutputVariable || 'search_results',
+            };
+          }
+
+          if (values.nodeType === 'llm') {
+            config.llm = {
+              model: values.llmModel,
+              provider: values.llmProvider,
+              mode: values.llmMode || 'chat',
+              systemPrompt: values.llmSystemPrompt,
+              prompt: values.llmPrompt,
+              maxTokens: values.llmMaxTokens,
+              temperature: values.llmTemperature,
+              topP: values.llmTopP,
+              responseFormat: values.llmResponseFormat,
+              outputVariable: values.llmOutputVariable || 'llm_result',
+            };
+          }
+
+          if (values.nodeType === 'agent') {
+            config.agent = {
+              strategy: values.agentStrategy || 'react',
+              model: values.agentModel,
+              provider: values.agentProvider,
+              systemPrompt: values.agentSystemPrompt,
+              maxIterations: values.agentMaxIterations || 10,
+              maxTokens: values.agentMaxTokens,
+              temperature: values.agentTemperature,
+              memory: {
+                enabled: values.agentMemoryEnabled || false,
+                maxMessages: values.agentMemoryMaxMessages || 10,
+              },
+              outputVariable: values.agentOutputVariable || 'agent_result',
+            };
+          }
+
+          if (values.nodeType === 'retrieval') {
+            config.retrieval = {
+              query: values.retrievalQuery,
+              knowledgeBaseId: values.retrievalKnowledgeBaseId,
+              retrievalStrategy: values.retrievalStrategy || 'semantic_search',
+              topK: parseInt(values.retrievalTopK || '3'),
+              scoreThreshold: values.retrievalScoreThreshold ? parseFloat(values.retrievalScoreThreshold) : undefined,
+              outputVariable: values.retrievalOutputVariable || 'retrieved_documents',
+            };
+          }
+
+          if (values.nodeType === 'humanInput') {
+            config.humanInput = {
+              inputLabel: values.humanInputLabel || '请输入',
+              inputType: values.humanInputType || 'text',
+              description: values.humanInputDescription,
+              timeout: values.humanInputTimeout,
+              defaultValue: values.humanInputDefaultValue,
+            };
+          }
+
+          if (values.nodeType === 'loop' || values.nodeType === 'iteration') {
+            config.iteration = {
+              iteratorVariable: values.loopIteratorVariable,
+              outputVariable: values.loopOutputVariable || 'iteration_results',
+            };
+          }
+
+          if (values.nodeType === 'code') {
+            config.code = {
+              language: values.codeLanguage || 'python',
+              inputVariables: values.codeInputVariables || [],
+              code: values.codeCode,
+              outputVariable: values.codeOutputVariable || 'code_result',
+            };
+          }
+
+          if (values.nodeType === 'template') {
+            config.template = {
+              template: values.templateContent || '',
+              variables: values.templateVariables || {},
+              outputVariable: values.templateOutputVariable || 'template_result',
+            };
+          }
+
+          if (values.nodeType === 'variableAssigner') {
+            config.variableAssigner = {
+              assignments: values.variableAssignments || [],
+              outputVariable: values.variableAssignerOutputVariable || 'assigned_value',
+            };
+          }
+
+          if (values.nodeType === 'listOperator') {
+            config.listOperator = {
+              operator: values.listOperator || 'transform',
+              inputVariable: values.listInputVariable,
+              outputVariable: values.listOutputVariable || 'list_result',
+            };
+          }
+
+          if (values.nodeType === 'documentExtractor') {
+            try {
+              config.documentExtractor = {
+                variable: values.documentExtractorVariable,
+                extractions: typeof values.documentExtractorExtractions === 'string' 
+                  ? JSON.parse(values.documentExtractorExtractions) 
+                  : values.documentExtractorExtractions || [],
+                outputVariable: values.documentExtractorOutputVariable || 'extracted_data',
+              };
+            } catch (e) {
+              message.error('文档提取：提取规则不是有效的 JSON 数组');
+              return node;
+            }
+          }
+
+          if (values.nodeType === 'parallel') {
+            config.parallel = {
+              mode: values.parallelMode || 'parallel',
+              branches: values.parallelBranches || [],
+            };
+          }
+
+          if (values.nodeType === 'tool') {
+            config.tool = {
+              toolName: values.toolName,
+              parameters: values.toolParameters,
+            };
+          }
+
           let jumpLabel = '';
           if (values.nodeType === 'condition' && config.condition?.targetNodeId) {
             const targetNode = nodes.find((n) => n.id === config.condition?.targetNodeId);
@@ -648,7 +876,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
       nodes: nodes.map((node) => {
         return {
           id: node.id,
-          type: node.data.nodeType as 'start' | 'end' | 'approval' | 'condition' | 'ai' | 'notification' | 'parallel' | 'httpRequest' | 'timer' | 'setVariable' | 'log',
+          type: node.data.nodeType as 'start' | 'end' | 'approval' | 'condition' | 'ai' | 'aiJudge' | 'notification' | 'parallel' | 'httpRequest' | 'timer' | 'setVariable' | 'log' | 'parameterExtractor' | 'iteration' | 'answer' | 'knowledgeSearch' | 'tool',
           label: node.data.label || '',
           position: {
             x: node.position.x,
@@ -927,6 +1155,214 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                       </>
                     )}
 
+                    {selectedNode?.data.nodeType === 'llm' && (
+                      <>
+                        <Form.Item name="llmModel" label="模型" tooltip="选择要使用的 LLM 模型">
+                          <Input placeholder="例如: gpt-4o, gpt-4o-mini" />
+                        </Form.Item>
+                        <Form.Item name="llmProvider" label="模型提供商">
+                          <Select placeholder="选择提供商">
+                            <Select.Option value="openai">OpenAI</Select.Option>
+                            <Select.Option value="azure">Azure OpenAI</Select.Option>
+                            <Select.Option value="anthropic">Anthropic</Select.Option>
+                            <Select.Option value="custom">自定义</Select.Option>
+                          </Select>
+                        </Form.Item>
+                        <Form.Item name="llmMode" label="模式">
+                          <Select>
+                            <Select.Option value="chat">对话</Select.Option>
+                            <Select.Option value="completion">补全</Select.Option>
+                          </Select>
+                        </Form.Item>
+                        <Form.Item name="llmSystemPrompt" label="系统提示词">
+                          <Input.TextArea rows={3} placeholder="设定 AI 的角色和行为" />
+                        </Form.Item>
+                        <Form.Item name="llmPrompt" label="用户提示词">
+                          <Input.TextArea rows={4} placeholder="可使用 {{variable}} 引用变量" />
+                        </Form.Item>
+                        <div style={{ display: 'flex', gap: 16 }}>
+                          <Form.Item name="llmTemperature" label="Temperature" style={{ flex: 1 }}>
+                            <Input type="number" step="0.1" min={0} max={2} placeholder="0.7" />
+                          </Form.Item>
+                          <Form.Item name="llmMaxTokens" label="最大 Token" style={{ flex: 1 }}>
+                            <Input type="number" placeholder="2000" />
+                          </Form.Item>
+                        </div>
+                        <Form.Item name="llmResponseFormat" label="响应格式">
+                          <Select>
+                            <Select.Option value="text">文本</Select.Option>
+                            <Select.Option value="json">JSON</Select.Option>
+                          </Select>
+                        </Form.Item>
+                        <Form.Item name="llmOutputVariable" label="输出变量" initialValue="llm_result">
+                          <Input placeholder="llm_result" />
+                        </Form.Item>
+                      </>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'agent' && (
+                      <>
+                        <Form.Item name="agentStrategy" label="策略" tooltip="Agent 的推理策略">
+                          <Select>
+                            <Select.Option value="react">ReAct</Select.Option>
+                            <Select.Option value="function_calling">Function Calling</Select.Option>
+                            <Select.Option value="cot">Chain of Thought</Select.Option>
+                            <Select.Option value="tot">Tree of Thought</Select.Option>
+                          </Select>
+                        </Form.Item>
+                        <Form.Item name="agentModel" label="模型">
+                          <Input placeholder="例如: gpt-4o" />
+                        </Form.Item>
+                        <Form.Item name="agentSystemPrompt" label="系统提示词">
+                          <Input.TextArea rows={4} placeholder="设定 Agent 的角色、目标和行为规则" />
+                        </Form.Item>
+                        <Form.Item name="agentMaxIterations" label="最大迭代次数" tooltip="Agent 最大思考和行动次数">
+                          <Input type="number" placeholder="10" />
+                        </Form.Item>
+                        <Divider>记忆设置</Divider>
+                        <Form.Item name="agentMemoryEnabled" label="启用记忆" valuePropName="checked">
+                          <Switch />
+                        </Form.Item>
+                        {values.agentMemoryEnabled && (
+                          <Form.Item name="agentMemoryMaxMessages" label="记忆消息数">
+                            <Input type="number" placeholder="10" />
+                          </Form.Item>
+                        )}
+                        <Form.Item name="agentOutputVariable" label="输出变量" initialValue="agent_result">
+                          <Input placeholder="agent_result" />
+                        </Form.Item>
+                      </>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'retrieval' && (
+                      <>
+                        <Form.Item name="retrievalQuery" label="检索查询" tooltip="搜索词，支持变量引用">
+                          <Input.TextArea rows={2} placeholder="{{query}}" />
+                        </Form.Item>
+                        <Form.Item name="retrievalKnowledgeBaseId" label="知识库 ID">
+                          <Input placeholder="知识库 ID" />
+                        </Form.Item>
+                        <Form.Item name="retrievalStrategy" label="检索策略">
+                          <Select>
+                            <Select.Option value="semantic_search">语义搜索</Select.Option>
+                            <Select.Option value="full_text_search">全文搜索</Select.Option>
+                            <Select.Option value="hybrid_search">混合搜索</Select.Option>
+                          </Select>
+                        </Form.Item>
+                        <div style={{ display: 'flex', gap: 16 }}>
+                          <Form.Item name="retrievalTopK" label="Top K" initialValue={3} style={{ flex: 1 }}>
+                            <Input type="number" />
+                          </Form.Item>
+                          <Form.Item name="retrievalScoreThreshold" label="分数阈值" initialValue={0.5} style={{ flex: 1 }}>
+                            <Input type="number" step="0.1" />
+                          </Form.Item>
+                        </div>
+                        <Form.Item name="retrievalOutputVariable" label="输出变量" initialValue="retrieved_documents">
+                          <Input placeholder="retrieved_documents" />
+                        </Form.Item>
+                      </>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'knowledge' && (
+                      <>
+                        <Form.Item name="knowledgeQuery" label="检索查询" rules={[{ required: true }]}>
+                          <Input.TextArea rows={2} placeholder="搜索词，支持变量引用" />
+                        </Form.Item>
+                        <Form.Item name="knowledgeQueryVariable" label="查询变量" tooltip="如果不设置，则使用当前输入数据">
+                          <Input placeholder="例如: user_query" />
+                        </Form.Item>
+                        <Form.Item name="knowledgeBaseIds" label="知识库 ID 列表">
+                          <Select mode="multiple" placeholder="选择知识库">
+                            <Select.Option value="kb1">知识库 1</Select.Option>
+                            <Select.Option value="kb2">知识库 2</Select.Option>
+                          </Select>
+                        </Form.Item>
+                        <Form.Item name="knowledgeRetrievalMode" label="检索模式">
+                          <Select>
+                            <Select.Option value="semantic_search">语义搜索</Select.Option>
+                            <Select.Option value="full_text_search">全文搜索</Select.Option>
+                            <Select.Option value="hybrid_search">混合搜索</Select.Option>
+                          </Select>
+                        </Form.Item>
+                        <div style={{ display: 'flex', gap: 16 }}>
+                          <Form.Item name="knowledgeTopK" label="Top K" initialValue={3} style={{ flex: 1 }}>
+                            <Input type="number" />
+                          </Form.Item>
+                          <Form.Item name="knowledgeScoreThreshold" label="分数阈值" style={{ flex: 1 }}>
+                            <Input type="number" step="0.1" />
+                          </Form.Item>
+                        </div>
+                        <Form.Item name="knowledgeOutputVariable" label="输出变量" initialValue="search_results">
+                          <Input placeholder="search_results" />
+                        </Form.Item>
+                      </>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'humanInput' && (
+                      <>
+                        <Form.Item name="humanInputLabel" label="输入标签" initialValue="请输入">
+                          <Input placeholder="请输入" />
+                        </Form.Item>
+                        <Form.Item name="humanInputType" label="输入类型">
+                          <Select>
+                            <Select.Option value="text">文本</Select.Option>
+                            <Select.Option value="textarea">多行文本</Select.Option>
+                            <Select.Option value="number">数字</Select.Option>
+                            <Select.Option value="select">选择</Select.Option>
+                          </Select>
+                        </Form.Item>
+                        <Form.Item name="humanInputDescription" label="说明文字">
+                          <Input.TextArea rows={2} placeholder="描述输入的用途或要求" />
+                        </Form.Item>
+                        <Form.Item name="humanInputTimeout" label="超时时间（秒）">
+                          <Input type="number" placeholder="不超时" />
+                        </Form.Item>
+                      </>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'code' && (
+                      <>
+                        <Form.Item name="codeLanguage" label="编程语言">
+                          <Select>
+                            <Select.Option value="python">Python</Select.Option>
+                            <Select.Option value="javascript">JavaScript</Select.Option>
+                          </Select>
+                        </Form.Item>
+                        <Form.Item name="codeInputVariables" label="输入变量" tooltip="声明需要使用的输入变量名">
+                          <Select mode="tags" placeholder="输入变量名">
+                          </Select>
+                        </Form.Item>
+                        <Form.Item name="codeCode" label="代码" rules={[{ required: true }]}>
+                          <Input.TextArea rows={8} placeholder="def main(variables):&#10;    # 你的代码&#10;    return {'result': 'output'}" />
+                        </Form.Item>
+                        <Form.Item name="codeOutputVariable" label="输出变量" initialValue="code_result">
+                          <Input placeholder="code_result" />
+                        </Form.Item>
+                      </>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'template' && (
+                      <>
+                        <Form.Item name="templateContent" label="模板内容" rules={[{ required: true }]}>
+                          <Input.TextArea rows={4} placeholder="你好, {{name}}, 今天是 {{date}}" />
+                        </Form.Item>
+                        <Form.Item name="templateOutputVariable" label="输出变量" initialValue="template_result">
+                          <Input placeholder="template_result" />
+                        </Form.Item>
+                      </>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'loop' && (
+                      <>
+                        <Form.Item name="loopIteratorVariable" label="迭代变量" tooltip="需要遍历的列表变量 (JSON 数组)">
+                          <Input placeholder="例如: items_to_process" />
+                        </Form.Item>
+                        <Form.Item name="loopOutputVariable" label="输出变量" initialValue="iteration_results">
+                          <Input placeholder="iteration_results" />
+                        </Form.Item>
+                      </>
+                    )}
+
                     {selectedNode?.data.nodeType === 'notification' && (
                       <Form.Item name="notificationRemarks" label="通知内容模板">
                         <Input.TextArea rows={4} />
@@ -1009,6 +1445,66 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                         </Form.Item>
                         <Form.Item name="judgeOutputVariable" label="输出变量" tooltip="保存判断结果 (true/false) 到此变量" initialValue="judge_result">
                           <Input placeholder="judge_result" />
+                        </Form.Item>
+                      </>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'parameterExtractor' && (
+                      <>
+                        <Form.Item name="extractorInputVariable" label="输入变量" tooltip="从中提取参数的文本变量">
+                          <Input placeholder="例如: user_query, email_content" />
+                        </Form.Item>
+                        <Form.Item name="extractorParameters" label="参数定义 (JSON Array)" tooltip='例如: [{"name": "location", "type": "string", "description": "城市名称"}]'>
+                          <Input.TextArea rows={4} placeholder='[{"name": "param1", "type": "string", "description": "..."}]' />
+                        </Form.Item>
+                        <Form.Item name="extractorOutputVariable" label="输出变量" tooltip="将提取出的参数保存到此变量">
+                          <Input placeholder="extracted_params" />
+                        </Form.Item>
+                      </>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'iteration' && (
+                      <>
+                        <Form.Item name="iterationIteratorVariable" label="迭代变量" tooltip="需要遍历的列表变量 (JSON 数组)">
+                          <Input placeholder="例如: items_to_process" />
+                        </Form.Item>
+                        <Form.Item name="iterationOutputVariable" label="单项变量名" tooltip="在循环内部引用的当前项变量名" initialValue="item">
+                          <Input placeholder="item" />
+                        </Form.Item>
+                      </>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'answer' && (
+                      <>
+                        <Form.Item name="answerContent" label="回答内容" rules={[{ required: true }]}>
+                          <Input.TextArea rows={6} placeholder="支持使用 {{variable}} 或 {{#node_id.field#}} 引用变量" />
+                        </Form.Item>
+                      </>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'knowledgeSearch' && (
+                      <>
+                        <Form.Item name="knowledgeQuery" label="搜索查询" rules={[{ required: true }]}>
+                          <Input.TextArea rows={3} placeholder="搜索词，支持变量引用" />
+                        </Form.Item>
+                        <div style={{ display: 'flex', gap: 16 }}>
+                          <Form.Item name="knowledgeTopK" label="Top K" initialValue="3" style={{ flex: 1 }}>
+                            <Input type="number" />
+                          </Form.Item>
+                          <Form.Item name="knowledgeScoreThreshold" label="分数阈值" initialValue="0.5" style={{ flex: 1 }}>
+                            <Input type="number" step="0.1" />
+                          </Form.Item>
+                        </div>
+                      </>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'tool' && (
+                      <>
+                        <Form.Item name="toolName" label="工具名称" rules={[{ required: true }]}>
+                          <Input placeholder="工具标识符，如: get_weather" />
+                        </Form.Item>
+                        <Form.Item name="toolParameters" label="工具参数 (JSON)">
+                          <Input.TextArea rows={4} placeholder='{"city": "{{city}}", "date": "today"}' />
                         </Form.Item>
                       </>
                     )}

@@ -167,7 +167,7 @@ public class FormFieldApproverResolver : IApproverResolver
             return new List<string>();
         }
 
-        if (document.FormData.TryGetValue(rule.FormFieldKey, out var value) && value != null)
+        if (document.FormData != null && document.FormData.TryGetValue(rule.FormFieldKey, out var value) && value != null)
         {
             var userId = value.ToString();
             if (!string.IsNullOrEmpty(userId))

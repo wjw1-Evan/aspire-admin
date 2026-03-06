@@ -15,7 +15,7 @@ public interface IWorkflowExpressionEvaluator
     /// <param name="expression">表达式字符串（支持 &gt;, &lt;, &gt;=, &lt;=, ==, != 及布尔变量）</param>
     /// <param name="variables">变量字典</param>
     /// <returns>表达式是否为真</returns>
-    bool Evaluate(string expression, Dictionary<string, object> variables);
+    bool Evaluate(string expression, Dictionary<string, object?> variables);
 }
 
 /// <summary>
@@ -37,7 +37,7 @@ public class WorkflowExpressionEvaluator : IWorkflowExpressionEvaluator
     /// <summary>
     /// 评估表达式在给定变量集下是否成立
     /// </summary>
-    public bool Evaluate(string expression, Dictionary<string, object> variables)
+    public bool Evaluate(string expression, Dictionary<string, object?> variables)
     {
         if (string.IsNullOrWhiteSpace(expression)) return true;
 
@@ -75,7 +75,7 @@ public class WorkflowExpressionEvaluator : IWorkflowExpressionEvaluator
         }
     }
 
-    private bool EvaluateSingle(string expression, Dictionary<string, object> variables)
+    private bool EvaluateSingle(string expression, Dictionary<string, object?> variables)
     {
         expression = expression.Trim();
         var (foundOp, leftKeyRaw, rightValueStr) = ParseExpression(expression);

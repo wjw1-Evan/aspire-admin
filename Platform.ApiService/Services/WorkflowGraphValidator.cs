@@ -42,14 +42,14 @@ public class WorkflowGraphValidator : IWorkflowGraphValidator
             return (false, $"存在重复的节点ID: {string.Join(", ", duplicateNodeIds)}");
 
         // 1. 必须有且仅有一个开始节点
-        var startNodes = graph.Nodes.Where(n => n.Type == "start").ToList();
+        var startNodes = graph.Nodes.Where(n => n.Data.NodeType == "start").ToList();
         if (startNodes.Count == 0) return (false, "流程必须包含开始节点");
         if (startNodes.Count > 1) return (false, "流程只能包含一个开始节点");
 
         var startNode = startNodes[0];
 
         // 2. 必须至少有一个结束节点
-        if (!graph.Nodes.Any(n => n.Type == "end"))
+        if (!graph.Nodes.Any(n => n.Data.NodeType == "end"))
             return (false, "流程必须包含结束节点");
 
         // 2.1 边引用合法性检查
@@ -70,7 +70,7 @@ public class WorkflowGraphValidator : IWorkflowGraphValidator
 
             // 不允许重复的 Source->Target 边（相同条件时）
             var duplicateEdges = graph.Edges
-                .GroupBy(e => new { e.Source, e.Target, Condition = e.Condition?.Trim() ?? string.Empty })
+                .GroupBy(e => new { e.Source, e.Target, Condition = e.Data?.Condition?.Trim() ?? string.Empty })
                 .Where(g => g.Count() > 1)
                 .ToList();
             if (duplicateEdges.Any())
@@ -100,12 +100,12 @@ public class WorkflowGraphValidator : IWorkflowGraphValidator
             }
         }
 
-        var unreachableNodes = graph.Nodes.Where(n => !reachable.Contains(n.Id)).Select(n => n.Label ?? n.Id).ToList();
+        var unreachableNodes = graph.Nodes.Where(n => !reachable.Contains(n.Id)).Select(n => n.Data.Label ?? n.Id).ToList();
         if (unreachableNodes.Any())
             return (false, $"存在从开始节点不可达的节点: {string.Join(", ", unreachableNodes)}");
 
         // 4.1 至少存在一条通往结束节点的路径
-        var endNodeIds = graph.Nodes.Where(n => n.Type == "end").Select(n => n.Id).ToList();
+        var endNodeIds = graph.Nodes.Where(n => n.Data.NodeType == "end").Select(n => n.Id).ToList();
         var hasReachableEnd = endNodeIds.Any(id => reachable.Contains(id));
         if (!hasReachableEnd)
             return (false, "从开始节点无法到达任何结束节点");
@@ -126,9 +126,9 @@ public class WorkflowGraphValidator : IWorkflowGraphValidator
             else
             {
                 if (!edges.Any(e => e.Source == node.Id))
-                    return (false, $"节点 {node.Label ?? node.Id} 没有出边");
+                    return (false, $"节点 {node.Data.Label ?? node.Id} 没有出边");
                 if (!edges.Any(e => e.Target == node.Id))
-                    return (false, $"节点 {node.Label ?? node.Id} 没有入边");
+                    return (false, $"节点 {node.Data.Label ?? node.Id} 没有入边");
             }
         }
 
@@ -138,25 +138,25 @@ public class WorkflowGraphValidator : IWorkflowGraphValidator
             if (node.Type == "approval")
             {
                 // 审批节点必须配置审批信息且审批人规则非空
-                var approval = node.Config?.Approval;
+                var approval = node.Data.Config?.Approval;
                 if (approval == null)
-                    return (false, $"审批节点 {node.Label ?? node.Id} 缺少审批配置");
+                    return (false, $"审批节点 {node.Data.Label ?? node.Id} 缺少审批配置");
                 if (approval.Approvers == null || !approval.Approvers.Any())
-                    return (false, $"审批节点 {node.Label ?? node.Id} 的审批人规则不能为空");
+                    return (false, $"审批节点 {node.Data.Label ?? node.Id} 的审批人规则不能为空");
                 if (approval.TimeoutHours.HasValue && approval.TimeoutHours.Value < 0)
-                    return (false, $"审批节点 {node.Label ?? node.Id} 的超时时间必须为非负数");
+                    return (false, $"审批节点 {node.Data.Label ?? node.Id} 的超时时间必须为非负数");
             }
             else if (node.Type == "condition")
             {
                 var outgoing = edges.Where(e => e.Source == node.Id).ToList();
                 if (outgoing.Count == 0)
-                    return (false, $"条件节点 {node.Label ?? node.Id} 缺少出边");
+                    return (false, $"条件节点 {node.Data.Label ?? node.Id} 缺少出边");
                 // 若所有出边都有条件表达式，则节点配置的表达式可以为空；
                 // 否则至少需要一个默认（无条件）出边
-                var hasDefault = outgoing.Any(e => string.IsNullOrWhiteSpace(e.Condition));
-                var hasConditional = outgoing.Any(e => !string.IsNullOrWhiteSpace(e.Condition));
+                var hasDefault = outgoing.Any(e => string.IsNullOrWhiteSpace(e.Data?.Condition));
+                var hasConditional = outgoing.Any(e => !string.IsNullOrWhiteSpace(e.Data?.Condition));
                 if (!hasConditional && !hasDefault)
-                    return (false, $"条件节点 {node.Label ?? node.Id} 的出边需包含条件或默认路径");
+                    return (false, $"条件节点 {node.Data.Label ?? node.Id} 的出边需包含条件或默认路径");
             }
             else if (node.Type == "parallel")
             {
@@ -164,15 +164,15 @@ public class WorkflowGraphValidator : IWorkflowGraphValidator
                 var incoming = edges.Where(e => e.Target == node.Id).ToList();
                 // Bug 19 修复：仅分叉型（入边<=1）要求 >=2 出边，汇聚型（多入边）允许少出边
                 if (incoming.Count <= 1 && outgoing.Count < 2)
-                    return (false, $"并行网关 {node.Label ?? node.Id} 至少需要两个出边");
+                    return (false, $"并行网关 {node.Data.Label ?? node.Id} 至少需要两个出边");
                 // 若配置了 Parallel.Branches，需与出边目标一致（宽松校验）
-                var branches = node.Config?.Parallel?.Branches ?? new List<string>();
+                var branches = node.Data.Config?.Parallel?.Branches ?? new List<string>();
                 if (branches.Any())
                 {
                     var edgeTargets = outgoing.Select(e => e.Target).Distinct().ToList();
                     var missing = branches.Where(b => !edgeTargets.Contains(b)).ToList();
                     if (missing.Any())
-                        return (false, $"并行网关 {node.Label ?? node.Id} 的分支配置与出边不一致，缺少: {string.Join(", ", missing)}");
+                        return (false, $"并行网关 {node.Data.Label ?? node.Id} 的分支配置与出边不一致，缺少: {string.Join(", ", missing)}");
                 }
             }
         }

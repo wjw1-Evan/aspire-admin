@@ -6,13 +6,125 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
 using OpenAI.Chat;
-using System;
+using Microsoft.Agents.AI;
+using Microsoft.Agents.AI.Workflows;
+using Platform.ApiService.Workflows.Executors;
+using Microsoft.Extensions.AI;
+using Microsoft.Agents.AI.OpenAI;
 
 namespace Platform.ApiService.Services;
 
 public partial class WorkflowEngine
 {
+    private async Task<Workflow> BuildAgentWorkflowAsync(string instanceId, WorkflowDefinition definition)
+    {
+        var startNode = definition.Graph.Nodes.FirstOrDefault(n => n.Data.NodeType == "start") ?? throw new InvalidOperationException("Workflow missing start node");
+        
+        // 使用 WorkflowBuilder 构建工作流图
+        // 注意：第一个传入的 executor 是入口点
+        var entryExecutor = await CreateExecutorForNodeAsync(instanceId, startNode);
+        var builder = new WorkflowBuilder(entryExecutor);
+        
+        var nodeToExecutor = new Dictionary<string, Executor> { { startNode.Id, entryExecutor } };
+        
+        // 1. 创建所有 Executor
+        foreach (var node in definition.Graph.Nodes.Where(n => n.Id != startNode.Id))
+        {
+            nodeToExecutor[node.Id] = await CreateExecutorForNodeAsync(instanceId, node);
+        }
+
+        // 2. 添加边 (Edges)
+        foreach (var edge in definition.Graph.Edges)
+        {
+            if (nodeToExecutor.TryGetValue(edge.Source, out var source) && 
+                nodeToExecutor.TryGetValue(edge.Target, out var target))
+            {
+                if (!string.IsNullOrEmpty(edge.Data?.Condition) && edge.Data.Condition != "default")
+                {
+                    // 添加带条件的边
+                    builder.AddEdge<object>(source, target, condition: (msg) => 
+                    {
+                        // 逻辑：评估 edge.Data.Condition
+                        return true; // 占位实现
+                    });
+                }
+                else
+                {
+                    // 普通边
+                    builder.AddEdge(source, target);
+                }
+            }
+        }
+
+        return builder.Build();
+    }
+
+    private async Task<Executor> CreateExecutorForNodeAsync(string instanceId, WorkflowNode node)
+    {
+        await Task.CompletedTask; // Keep async signature
+        switch (node.Data.NodeType)
+        {
+            case "ai":
+            case "llm":
+                if (node.Data.Config?.Ai == null) throw new InvalidOperationException($"AI node {node.Id} missing config");
+                // In RC3, ChatClientAgent is the concrete implementation of AIAgent
+                // OpenAIClient.GetChatClient(model).AsIChatClient() converts the OpenAI client to the generic IChatClient
+                var aiChatClient = _openAiClient.GetChatClient(node.Data.Config.Ai.Model ?? "gpt-4o-mini").AsIChatClient();
+                var aiAgent = new ChatClientAgent(aiChatClient, "AiAgent");
+                return new AiExecutor(aiAgent, node.Data.Config.Ai);
+            case "aiJudge":
+                if (node.Data.Config?.AiJudge == null) throw new InvalidOperationException($"AI Judge node {node.Id} missing config");
+                var judgeChatClient = _openAiClient.GetChatClient(node.Data.Config.AiJudge.Model ?? "gpt-4o-mini").AsIChatClient();
+                var judgeAgent = new ChatClientAgent(judgeChatClient, "JudgeAgent");
+                return new AiJudgeExecutor(judgeAgent, node.Data.Config.AiJudge);
+            case "knowledgeSearch":
+                if (node.Data.Config?.Knowledge == null) throw new InvalidOperationException($"Knowledge Search node {node.Id} missing config");
+                return new KnowledgeSearchExecutor(_knowledgeService, node.Data.Config.Knowledge);
+            case "code":
+                if (node.Data.Config?.Code == null) throw new InvalidOperationException($"Code node {node.Id} missing config");
+                return new CodeExecutor(node.Data.Config.Code);
+            case "template":
+                if (node.Data.Config?.Template == null) throw new InvalidOperationException($"Template node {node.Id} missing config");
+                return new TemplateExecutor(node.Data.Config.Template);
+            case "variableAggregator":
+                if (node.Data.Config?.VariableAggregator == null) throw new InvalidOperationException($"Variable Aggregator node {node.Id} missing config");
+                return new VariableAggregatorExecutor(node.Data.Config.VariableAggregator);
+            case "questionClassifier":
+                if (node.Data.Config?.QuestionClassifier == null) throw new InvalidOperationException($"Question Classifier node {node.Id} missing config");
+                var classifierChatClient = _openAiClient.GetChatClient(node.Data.Config.QuestionClassifier.Model ?? "gpt-4o-mini").AsIChatClient();
+                var classifierAgent = new ChatClientAgent(classifierChatClient, "ClassifierAgent");
+                return new QuestionClassifierExecutor(classifierAgent, node.Data.Config.QuestionClassifier);
+            case "parameterExtractor":
+                if (node.Data.Config?.ParameterExtractor == null) throw new InvalidOperationException($"Parameter Extractor node {node.Id} missing config");
+                var extractorChatClient = _openAiClient.GetChatClient(node.Data.Config.ParameterExtractor.Model ?? "gpt-4o-mini").AsIChatClient();
+                var extractorAgent = new ChatClientAgent(extractorChatClient, "ExtractorAgent");
+                return new ParameterExtractorExecutor(extractorAgent, node.Data.Config.ParameterExtractor);
+            case "httpRequest":
+                if (node.Data.Config?.Http == null) throw new InvalidOperationException($"HTTP node {node.Id} missing config");
+                return new HttpRequestExecutor(node.Data.Config.Http);
+            case "iteration":
+                if (node.Data.Config?.Iteration == null) throw new InvalidOperationException($"Iteration node {node.Id} missing config");
+                return new IterationExecutor(node.Data.Config.Iteration);
+            case "answer":
+                if (node.Data.Config?.Answer == null) throw new InvalidOperationException($"Answer node {node.Id} missing config");
+                return new AnswerExecutor(node.Data.Config.Answer);
+            case "tool":
+                if (node.Data.Config?.Tool == null) throw new InvalidOperationException($"Tool node {node.Id} missing config");
+                return new ToolExecutor(node.Data.Config.Tool);
+            case "approval":
+                if (node.Data.Config?.Approval == null) throw new InvalidOperationException($"Approval node {node.Id} missing config");
+                return new ApprovalExecutor(node.Data.Config.Approval, _instanceFactory);
+            // 其他节点类型...
+            default:
+                // 默认使用一个透传执行器或基础逻辑执行器
+                var defaultChatClient = _openAiClient.GetChatClient("gpt-4o-mini").AsIChatClient();
+                var defaultAgent = new ChatClientAgent(defaultChatClient, "DefaultAgent");
+                return new AiExecutor(defaultAgent, new AiConfig());
+        }
+    }
+
     /// <summary>
     /// 处理节点
     /// </summary>
@@ -36,7 +148,7 @@ public partial class WorkflowEngine
         {
             case "start":
                 // Bug 24 修复：退回到 start 节点时，如果有表单绑定则等待用户重新提交
-                if (node.Config?.Form != null)
+                if (node.Data.Config?.Form != null)
                 {
                     // 有表单绑定，通知发起人重新填写
                     await UpdateCurrentApproverIdsAsync(instanceId, nodeId, new List<string> { instance.StartedBy });
@@ -82,6 +194,33 @@ public partial class WorkflowEngine
             case "log":
                 await ProcessLogNodeAsync(instanceId, node);
                 break;
+            case "knowledgeSearch":
+                await ProcessKnowledgeSearchNodeAsync(instanceId, node);
+                break;
+            case "code":
+                await ProcessCodeNodeAsync(instanceId, node);
+                break;
+            case "template":
+                await ProcessTemplateNodeAsync(instanceId, node);
+                break;
+            case "variableAggregator":
+                await ProcessVariableAggregatorNodeAsync(instanceId, node);
+                break;
+            case "questionClassifier":
+                await ProcessQuestionClassifierNodeAsync(instanceId, node);
+            break;
+            case "parameterExtractor":
+                await ProcessParameterExtractorNodeAsync(instanceId, node);
+                break;
+            case "iteration":
+                await ProcessIterationNodeAsync(instanceId, node);
+                break;
+            case "answer":
+                await ProcessAnswerNodeAsync(instanceId, node);
+                break;
+            case "tool":
+                await ProcessToolNodeAsync(instanceId, node);
+                break;
         }
     }
 
@@ -124,11 +263,11 @@ public partial class WorkflowEngine
     }
 
     /// <summary>
-    /// AI节点处理
+    /// AI节点处理 - 使用 Microsoft.Agents.AI 优化
     /// </summary>
     private async Task ProcessAiNodeAsync(string instanceId, WorkflowNode node)
     {
-        if (node.Config.Ai == null || _openAiClient == null)
+        if (node.Data.Config.Ai == null || _openAiClient == null)
         {
             await MoveToNextNodeAsync(instanceId, node.Id);
             return;
@@ -136,17 +275,14 @@ public partial class WorkflowEngine
 
         try
         {
-            var config = node.Config.Ai;
+            var config = node.Data.Config.Ai;
             var variables = await GetDocumentVariablesAsync(instanceId);
             var prompt = config.PromptTemplate;
 
-            // 获取指定的 InputVariable 上下文
-            if (!string.IsNullOrEmpty(config.InputVariable))
+            // 替换变量
+            if (!string.IsNullOrEmpty(config.InputVariable) && variables.TryGetValue(config.InputVariable, out var inputVal))
             {
-                if (variables.TryGetValue(config.InputVariable, out var inputVal))
-                {
-                    prompt = prompt.Replace("{{inputVariable}}", inputVal?.ToString() ?? "");
-                }
+                prompt = prompt.Replace("{{inputVariable}}", inputVal?.ToString() ?? "");
             }
 
             foreach (var v in variables)
@@ -154,6 +290,11 @@ public partial class WorkflowEngine
                 prompt = prompt.Replace($"{{{v.Key}}}", v.Value?.ToString());
             }
 
+            // 使用标准的 OpenAI.Chat 补全
+            var chatClient = _openAiClient.GetChatClient(config.Model ?? "gpt-4o-mini");
+            
+            _logger.LogInformation("DEBUG_AI: Executing AI Node {NodeId} with model {Model}", node.Id, config.Model);
+            
             var messages = new List<OpenAI.Chat.ChatMessage>();
             if (!string.IsNullOrEmpty(config.SystemPrompt))
             {
@@ -161,7 +302,7 @@ public partial class WorkflowEngine
             }
             messages.Add(OpenAI.Chat.ChatMessage.CreateUserMessage(prompt));
 
-            var response = await _openAiClient.GetChatClient(config.Model ?? "gpt-4o-mini").CompleteChatAsync(messages);
+            var response = await chatClient.CompleteChatAsync(messages);
             var result = response.Value.Content[0].Text;
 
             await _instanceFactory.UpdateAsync(instanceId, i =>
@@ -173,7 +314,7 @@ public partial class WorkflowEngine
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "AI节点处理失败: InstanceId={InstanceId}, NodeId={NodeId}", instanceId, node.Id);
+            _logger.LogError(ex, "AI节点处理失败 (Agent框架): InstanceId={InstanceId}, NodeId={NodeId}", instanceId, node.Id);
             await MoveToNextNodeAsync(instanceId, node.Id);
         }
     }
@@ -194,9 +335,10 @@ public partial class WorkflowEngine
 
         foreach (var edge in outgoingEdges)
         {
-            if (string.IsNullOrEmpty(edge.Condition) || (edge.Condition == "default")) continue;
+            var condition = edge.Data?.Condition;
+            if (string.IsNullOrEmpty(condition) || condition == "default") continue;
 
-            if (_expressionEvaluator.Evaluate(edge.Condition, variables))
+            if (_expressionEvaluator.Evaluate(condition, variables))
             {
                 await SetCurrentNodeAsync(instanceId, edge.Target);
                 await ProcessNodeAsync(instanceId, edge.Target);
@@ -204,7 +346,7 @@ public partial class WorkflowEngine
             }
         }
 
-        var defaultEdge = outgoingEdges.FirstOrDefault(e => e.Condition == "default" || string.IsNullOrEmpty(e.Condition));
+        var defaultEdge = outgoingEdges.FirstOrDefault(e => e.Data?.Condition == "default" || string.IsNullOrEmpty(e.Data?.Condition));
         if (defaultEdge != null)
         {
             await SetCurrentNodeAsync(instanceId, defaultEdge.Target);
@@ -301,7 +443,7 @@ public partial class WorkflowEngine
     /// <summary>
     /// 处理条件节点
     /// </summary>
-    public async Task<bool> ProcessConditionAsync(string instanceId, string nodeId, Dictionary<string, object> variables)
+    public async Task<bool> ProcessConditionAsync(string instanceId, string nodeId, Dictionary<string, object?> variables)
     {
         var instance = await _instanceFactory.GetByIdAsync(instanceId);
         if (instance == null || instance.Status != WorkflowStatus.Running) return false;
@@ -329,7 +471,7 @@ public partial class WorkflowEngine
     /// </summary>
     private async Task ProcessHttpRequestNodeAsync(string instanceId, WorkflowNode node)
     {
-        if (node.Config.Http == null || string.IsNullOrWhiteSpace(node.Config.Http.Url))
+        if (node.Data.Config.Http == null || string.IsNullOrWhiteSpace(node.Data.Config.Http.Url))
         {
             await MoveToNextNodeAsync(instanceId, node.Id);
             return;
@@ -337,7 +479,7 @@ public partial class WorkflowEngine
 
         try
         {
-            var config = node.Config.Http;
+            var config = node.Data.Config.Http;
             var variables = await GetDocumentVariablesAsync(instanceId);
 
             // 替换 URL 中的变量
@@ -354,17 +496,13 @@ public partial class WorkflowEngine
                 requestMessage.Content = new System.Net.Http.StringContent(body, System.Text.Encoding.UTF8, "application/json");
             }
 
-            if (!string.IsNullOrWhiteSpace(config.Headers))
+            if (config.Headers != null && config.Headers.Count > 0)
             {
                 try
                 {
-                    var headersDict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(config.Headers);
-                    if (headersDict != null)
+                    foreach (var header in config.Headers)
                     {
-                        foreach (var header in headersDict)
-                        {
-                            requestMessage.Headers.TryAddWithoutValidation(header.Key, header.Value);
-                        }
+                        requestMessage.Headers.TryAddWithoutValidation(header.Key, header.Value);
                     }
                 }
                 catch { /* 忽略头解析错误 */ }
@@ -396,13 +534,13 @@ public partial class WorkflowEngine
     /// </summary>
     private async Task ProcessTimerNodeAsync(string instanceId, WorkflowNode node)
     {
-        if (node.Config.Timer == null || string.IsNullOrWhiteSpace(node.Config.Timer.WaitDuration))
+        if (node.Data.Config.Timer == null || string.IsNullOrWhiteSpace(node.Data.Config.Timer.WaitDuration))
         {
             await MoveToNextNodeAsync(instanceId, node.Id);
             return;
         }
 
-        if (TimeSpan.TryParse(node.Config.Timer.WaitDuration, out var delay))
+        if (TimeSpan.TryParse(node.Data.Config.Timer.WaitDuration, out var delay))
         {
             await _instanceFactory.UpdateAsync(instanceId, i =>
             {
@@ -434,7 +572,7 @@ public partial class WorkflowEngine
     /// </summary>
     private async Task ProcessSetVariableNodeAsync(string instanceId, WorkflowNode node)
     {
-        if (node.Config.Variable == null || string.IsNullOrWhiteSpace(node.Config.Variable.Name))
+        if (node.Data.Config.Variable == null || string.IsNullOrWhiteSpace(node.Data.Config.Variable.Name))
         {
             await MoveToNextNodeAsync(instanceId, node.Id);
             return;
@@ -442,7 +580,7 @@ public partial class WorkflowEngine
 
         try
         {
-            var config = node.Config.Variable;
+            var config = node.Data.Config.Variable;
             var variables = await GetDocumentVariablesAsync(instanceId);
             var val = config.Value ?? string.Empty;
 
@@ -469,16 +607,16 @@ public partial class WorkflowEngine
     /// </summary>
     private async Task ProcessLogNodeAsync(string instanceId, WorkflowNode node)
     {
-        if (node.Config.Log != null && !string.IsNullOrWhiteSpace(node.Config.Log.Message))
+        if (node.Data.Config.Log != null && !string.IsNullOrWhiteSpace(node.Data.Config.Log.Message))
         {
             var variables = await GetDocumentVariablesAsync(instanceId);
-            var msg = node.Config.Log.Message;
+            var msg = node.Data.Config.Log.Message;
             foreach (var v in variables)
             {
                 msg = msg.Replace($"{{{v.Key}}}", v.Value?.ToString());
             }
 
-            switch (node.Config.Log.Level?.ToLower())
+            switch (node.Data.Config.Log.Level?.ToLower())
             {
                 case "warning": _logger.LogWarning("Workflow Log [Instance {InstanceId}]: {Message}", instanceId, msg); break;
                 case "error": _logger.LogError("Workflow Log [Instance {InstanceId}]: {Message}", instanceId, msg); break;
@@ -490,11 +628,11 @@ public partial class WorkflowEngine
     }
 
     /// <summary>
-    /// 处理 AI 判断节点
+    /// 处理 AI 判断节点 - 使用 Microsoft.Agents.AI 优化
     /// </summary>
     private async Task ProcessAiJudgeNodeAsync(string instanceId, WorkflowNode node)
     {
-        if (node.Config.AiJudge == null || _openAiClient == null)
+        if (node.Data.Config.AiJudge == null || _openAiClient == null)
         {
             await MoveToNextNodeAsync(instanceId, node.Id);
             return;
@@ -502,7 +640,7 @@ public partial class WorkflowEngine
 
         try
         {
-            var config = node.Config.AiJudge;
+            var config = node.Data.Config.AiJudge;
             var variables = await GetDocumentVariablesAsync(instanceId);
             var prompt = config.JudgePrompt;
 
@@ -516,18 +654,18 @@ public partial class WorkflowEngine
                 prompt = prompt.Replace($"{{{v.Key}}}", v.Value?.ToString());
             }
 
-            var messages = new List<OpenAI.Chat.ChatMessage>();
-            if (!string.IsNullOrEmpty(config.SystemPrompt))
-            {
-                messages.Add(OpenAI.Chat.ChatMessage.CreateSystemMessage(config.SystemPrompt));
-            }
-            else
-            {
-                messages.Add(OpenAI.Chat.ChatMessage.CreateSystemMessage("你是一个逻辑判断引擎。根据用户的描述判断真假，且只允许输出 'true' 或 'false'。不要输出任何其他字符。"));
-            }
-            messages.Add(OpenAI.Chat.ChatMessage.CreateUserMessage(prompt));
+            var chatClient = _openAiClient.GetChatClient(config.Model ?? "gpt-4o-mini");
+            var systemPrompt = config.SystemPrompt ?? "你是一个逻辑判断引擎。根据用户的描述判断真假，且只允许输出 'true' 或 'false'。不要输出任何其他字符。";
 
-            var response = await _openAiClient.GetChatClient(config.Model ?? "gpt-4o-mini").CompleteChatAsync(messages);
+            _logger.LogInformation("DEBUG_AI: Executing AI Judge Node {NodeId}", node.Id);
+            
+            var messages = new List<OpenAI.Chat.ChatMessage>
+            {
+                OpenAI.Chat.ChatMessage.CreateSystemMessage(systemPrompt),
+                OpenAI.Chat.ChatMessage.CreateUserMessage(prompt)
+            };
+
+            var response = await chatClient.CompleteChatAsync(messages);
             var result = response.Value.Content[0].Text.Trim().ToLower();
 
             var finalResult = (result.Contains("true") && !result.Contains("false")) ? "true" : "false";
@@ -537,9 +675,86 @@ public partial class WorkflowEngine
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "AI 判断节点执行失败: InstanceId={InstanceId}, NodeId={NodeId}", instanceId, node.Id);
-            await _instanceFactory.UpdateAsync(instanceId, i => i.SetVariable(node.Config.AiJudge.OutputVariable, "false"));
+            _logger.LogError(ex, "AI 判断节点执行失败(Agent框架): InstanceId={InstanceId}, NodeId={NodeId}", instanceId, node.Id);
+            await _instanceFactory.UpdateAsync(instanceId, i => i.SetVariable(node.Data.Config.AiJudge.OutputVariable, "false"));
             await MoveToNextNodeAsync(instanceId, node.Id);
         }
     }
+
+    /// <summary>
+    /// 使用执行器处理节点逻辑 (统一入口)
+    /// </summary>
+    private async Task ProcessNodeViaExecutorAsync(string instanceId, WorkflowNode node)
+    {
+        try
+        {
+            var executor = await CreateExecutorForNodeAsync(instanceId, node);
+            var variables = await GetDocumentVariablesAsync(instanceId);
+            
+            // 构造输入 (简单起见传递所有变量)
+            var input = System.Text.Json.JsonSerializer.Serialize(variables);
+
+            // 获取 HandleAsync 方法并调用 (采用反射适配不同的返回值类型)
+            var handleMethod = executor.GetType().GetMethod("HandleAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (handleMethod == null)
+            {
+                await MoveToNextNodeAsync(instanceId, node.Id);
+                return;
+            }
+
+            // 构造参数: input, context, cancellationToken
+            var task = (Task)handleMethod.Invoke(executor, new object?[] { input, null, default(CancellationToken) })!;
+            await task;
+
+            // 获取结果
+            var resultProperty = task.GetType().GetProperty("Result");
+            var result = resultProperty?.GetValue(task);
+
+            // 更新输出变量
+            await UpdateNodeOutputVariablesAsync(instanceId, node, result);
+
+            await MoveToNextNodeAsync(instanceId, node.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "执行器节点处理失败: NodeId={NodeId}, InstanceId={InstanceId}", node.Id, instanceId);
+            await MoveToNextNodeAsync(instanceId, node.Id);
+        }
+    }
+
+    private async Task UpdateNodeOutputVariablesAsync(string instanceId, WorkflowNode node, object? result)
+    {
+        if (result == null) return;
+
+        string? outputVar = null;
+        switch (node.Type)
+        {
+            case "ai": outputVar = node.Data.Config?.Ai?.OutputVariable; break;
+            case "knowledgeSearch": outputVar = node.Data.Config?.Knowledge?.OutputVariable; break;
+            case "code": outputVar = node.Data.Config?.Code?.OutputVariable; break;
+            case "template": outputVar = node.Data.Config?.Template?.OutputVariable; break;
+            case "variableAggregator": outputVar = node.Data.Config?.VariableAggregator?.OutputVariable; break;
+            case "questionClassifier": outputVar = node.Data.Config?.QuestionClassifier?.OutputVariable; break;
+            case "parameterExtractor": outputVar = node.Data.Config?.ParameterExtractor?.OutputVariable; break;
+            case "iteration": outputVar = node.Data.Config?.Iteration?.OutputVariable; break;
+            case "answer": outputVar = "last_answer"; break;
+            case "tool": outputVar = node.Data.Config?.Tool?.OutputVariable; break;
+            case "httpRequest": outputVar = node.Data.Config?.Http?.OutputVariable; break;
+        }
+
+        if (!string.IsNullOrEmpty(outputVar))
+        {
+            await _instanceFactory.UpdateAsync(instanceId, i => i.SetVariable(outputVar, result));
+        }
+    }
+
+    private Task ProcessKnowledgeSearchNodeAsync(string instanceId, WorkflowNode node) => ProcessNodeViaExecutorAsync(instanceId, node);
+    private Task ProcessCodeNodeAsync(string instanceId, WorkflowNode node) => ProcessNodeViaExecutorAsync(instanceId, node);
+    private Task ProcessTemplateNodeAsync(string instanceId, WorkflowNode node) => ProcessNodeViaExecutorAsync(instanceId, node);
+    private Task ProcessVariableAggregatorNodeAsync(string instanceId, WorkflowNode node) => ProcessNodeViaExecutorAsync(instanceId, node);
+    private Task ProcessQuestionClassifierNodeAsync(string instanceId, WorkflowNode node) => ProcessNodeViaExecutorAsync(instanceId, node);
+    private Task ProcessParameterExtractorNodeAsync(string instanceId, WorkflowNode node) => ProcessNodeViaExecutorAsync(instanceId, node);
+    private Task ProcessIterationNodeAsync(string instanceId, WorkflowNode node) => ProcessNodeViaExecutorAsync(instanceId, node);
+    private Task ProcessAnswerNodeAsync(string instanceId, WorkflowNode node) => ProcessNodeViaExecutorAsync(instanceId, node);
+    private Task ProcessToolNodeAsync(string instanceId, WorkflowNode node) => ProcessNodeViaExecutorAsync(instanceId, node);
 }

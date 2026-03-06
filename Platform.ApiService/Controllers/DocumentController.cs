@@ -471,15 +471,15 @@ public class DocumentController : BaseApiController
             }
 
             // 优先起始节点
-            var startNode = definition.Graph.Nodes.FirstOrDefault(n => n.Type == "start");
-            FormBinding? binding = startNode?.Config?.Form;
+            var startNode = definition.Graph.Nodes.FirstOrDefault(n => n.Data.NodeType == "start");
+            FormBinding? binding = startNode?.Data.Config?.Form;
 
             if (binding == null || binding.Target != FormTarget.Document)
             {
                 // 取第一个绑定了文档表单的节点
                 var nodeWithDocForm = definition.Graph.Nodes
-                    .FirstOrDefault(n => n.Config?.Form?.Target == FormTarget.Document);
-                binding = nodeWithDocForm?.Config?.Form;
+                    .FirstOrDefault(n => n.Data.Config?.Form?.Target == FormTarget.Document);
+                binding = nodeWithDocForm?.Data.Config?.Form;
             }
 
             if (binding == null)
@@ -489,7 +489,7 @@ public class DocumentController : BaseApiController
 
             // 优先使用实例中的表单定义快照（使用起始节点ID或第一个文档表单节点ID）
             FormDefinition? form = null;
-            var formNodeId = startNode?.Id ?? definition.Graph.Nodes.FirstOrDefault(n => n.Config?.Form?.Target == FormTarget.Document)?.Id;
+            var formNodeId = startNode?.Id ?? definition.Graph.Nodes.FirstOrDefault(n => n.Data.Config?.Form?.Target == FormTarget.Document)?.Id;
             if (!string.IsNullOrEmpty(formNodeId))
             {
                 var snapshot = instance.FormDefinitionSnapshots?.FirstOrDefault(s => s.NodeId == formNodeId);

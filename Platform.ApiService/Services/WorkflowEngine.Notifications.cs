@@ -26,7 +26,7 @@ public partial class WorkflowEngine
             node.Id, string.Join(", ", approvers));
 
         // Bug 4：Sequential 模式仅通知当前轮到的人
-        if (node.Config.Approval?.Type == ApprovalType.Sequential)
+        if (node.Data.Config.Approval?.Type == ApprovalType.Sequential)
         {
             var history = await GetApprovalHistoryAsync(instanceId);
             var nextApprover = approvers.FirstOrDefault(a => 
@@ -41,11 +41,11 @@ public partial class WorkflowEngine
             node.Id, approvers.Count);
 
         // 计算超时时间
-        if (node.Config.Approval?.TimeoutHours != null)
+        if (node.Data.Config.Approval?.TimeoutHours != null)
         {
             await _instanceFactory.UpdateAsync(instanceId, i =>
             {
-                i.TimeoutAt = DateTime.UtcNow.AddHours(node.Config.Approval.TimeoutHours.Value);
+                i.TimeoutAt = DateTime.UtcNow.AddHours(node.Data.Config.Approval.TimeoutHours.Value);
             });
         }
 
@@ -56,7 +56,7 @@ public partial class WorkflowEngine
                 document.Title,
                 "workflow_pending_approval",
                 approvers,
-                $"您有一个待处理的审批节点：{node.Label ?? node.Id}",
+                $"您有一个待处理的审批节点：{node.Data.Label ?? node.Id}",
                 instance.CompanyId
             );
         }
@@ -67,7 +67,7 @@ public partial class WorkflowEngine
     /// </summary>
     private async Task ProcessNotificationNodeAsync(string instanceId, WorkflowNode node)
     {
-        if (node.Config.Notification == null)
+        if (node.Data.Config.Notification == null)
         {
             await MoveToNextNodeAsync(instanceId, node.Id);
             return;
@@ -82,7 +82,7 @@ public partial class WorkflowEngine
             if (document == null) return;
 
             var recipients = new List<string>();
-            foreach (var rule in node.Config.Notification.Recipients)
+            foreach (var rule in node.Data.Config.Notification.Recipients)
             {
                 var resolved = await ResolveApproverAsync(instance, rule);
                 recipients.AddRange(resolved);
@@ -93,7 +93,7 @@ public partial class WorkflowEngine
             if (recipients.Any())
             {
                 var variables = await GetDocumentVariablesAsync(instanceId);
-                var remarks = node.Config.Notification.RemarksTemplate;
+                var remarks = node.Data.Config.Notification.RemarksTemplate;
                 if (!string.IsNullOrEmpty(remarks))
                 {
                     foreach (var v in variables)
@@ -105,7 +105,7 @@ public partial class WorkflowEngine
                 await _notificationService.CreateWorkflowNotificationAsync(
                     instanceId,
                     document.Title,
-                    node.Config.Notification.ActionType,
+                    node.Data.Config.Notification.ActionType,
                     recipients,
                     remarks ?? "系统流程通知",
                     instance.CompanyId
@@ -139,7 +139,7 @@ public partial class WorkflowEngine
                 document.Title,
                 "workflow_returned_to_start",
                 new List<string> { startedBy },
-                $"您的流程已被退回至起始节点，请重新填写并提交：{startNode.Label ?? startNode.Id}",
+                $"您的流程已被退回至起始节点，请重新填写并提交：{startNode.Data.Label ?? startNode.Id}",
                 instance.CompanyId
             );
         }

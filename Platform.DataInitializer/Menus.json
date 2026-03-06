@@ -223,6 +223,15 @@
         "SortOrder": 3
     },
     {
+        "Name": "workflow-knowledge-base",
+        "Title": "知识库管理",
+        "Path": "/workflow/knowledge-base",
+        "Component": "./workflow/knowledge-base",
+        "Icon": "book",
+        "ParentId": "workflow",
+        "SortOrder": 4
+    },
+    {
         "Name": "document",
         "Title": "公文管理",
         "Path": "/document",

@@ -191,6 +191,184 @@ export interface HttpConfig {
 }
 
 /**
+ * 参数提取节点配置
+ */
+export interface ParameterExtractorConfig {
+  inputVariable?: string;
+  parameters: any[];
+  model?: string;
+  outputVariable: string;
+}
+
+/**
+ * 迭代节点配置
+ */
+export interface IterationConfig {
+  iteratorVariable: string;
+  outputVariable: string;
+}
+
+/**
+ * 回答节点配置
+ */
+export interface AnswerConfig {
+  answer: string;
+}
+
+/**
+ * 知识库检索配置
+ */
+export interface KnowledgeConfig {
+  query?: string;
+  queryVariable?: string;
+  knowledgeBaseIds: string[];
+  retrievalMode?: string;
+  topK?: number;
+  scoreThreshold?: number;
+  outputVariable?: string;
+}
+
+/**
+ * LLM 节点配置
+ */
+export interface LlmConfig {
+  model?: string;
+  provider?: string;
+  mode?: string;
+  systemPrompt?: string;
+  prompt?: string;
+  variables?: Variable[];
+  maxTokens?: number;
+  temperature?: number;
+  topP?: number;
+  responseFormat?: string;
+  outputVariable?: string;
+}
+
+/**
+ * Agent 节点配置
+ */
+export interface AgentConfig {
+  strategy?: string;
+  model?: string;
+  provider?: string;
+  systemPrompt?: string;
+  tools?: ToolDefinition[];
+  maxIterations?: number;
+  maxTokens?: number;
+  temperature?: number;
+  memory?: AgentMemoryConfig;
+  outputVariable?: string;
+}
+
+export interface AgentMemoryConfig {
+  enabled: boolean;
+  maxMessages: number;
+}
+
+export interface ToolDefinition {
+  toolName: string;
+  provider: string;
+  parameters?: Record<string, any>;
+}
+
+/**
+ * 变量定义
+ */
+export interface Variable {
+  name: string;
+  type: string;
+  default?: any;
+}
+
+/**
+ * 知识检索配置
+ */
+export interface RetrievalConfig {
+  query?: string;
+  knowledgeBaseId?: string;
+  retrievalStrategy?: string;
+  topK?: number;
+  scoreThreshold?: number;
+  outputVariable?: string;
+}
+
+/**
+ * 文档提取配置
+ */
+export interface DocumentExtractorConfig {
+  variable?: string;
+  extractions: ExtractionRule[];
+  outputVariable?: string;
+}
+
+export interface ExtractionRule {
+  field: string;
+  type: string;
+  description?: string;
+}
+
+/**
+ * 列表操作配置
+ */
+export interface ListOperatorConfig {
+  operator?: string;
+  inputVariable?: string;
+  outputVariable?: string;
+}
+
+/**
+ * 变量赋值配置
+ */
+export interface VariableAssignerConfig {
+  assignments: VariableAssignment[];
+  outputVariable?: string;
+}
+
+export interface VariableAssignment {
+  variable: string;
+  value?: any;
+}
+
+/**
+ * 人工输入配置
+ */
+export interface HumanInputConfig {
+  inputLabel?: string;
+  inputType?: string;
+  description?: string;
+  timeout?: number;
+  defaultValue?: any;
+}
+
+/**
+ * 代码执行配置
+ */
+export interface CodeConfig {
+  language?: string;
+  code?: string;
+  inputVariables?: string[];
+  outputVariable?: string;
+}
+
+/**
+ * 模板配置
+ */
+export interface TemplateConfig {
+  template?: string;
+  variables?: Record<string, string>;
+  outputVariable?: string;
+}
+
+/**
+ * 工具调用配置
+ */
+export interface ToolConfig {
+  toolName: string;
+  parameters?: string;
+}
+
+/**
  * 计时器节点配置
  */
 export interface TimerConfig {
@@ -229,6 +407,58 @@ export interface NodeConfig {
   timer?: TimerConfig;
   variable?: VariableConfig;
   log?: LogConfig;
+  parameterExtractor?: ParameterExtractorConfig;
+  iteration?: IterationConfig;
+  answer?: AnswerConfig;
+  knowledge?: KnowledgeConfig;
+  tool?: ToolConfig;
+  llm?: LlmConfig;
+  agent?: AgentConfig;
+  retrieval?: RetrievalConfig;
+  documentExtractor?: DocumentExtractorConfig;
+  listOperator?: ListOperatorConfig;
+  variableAssigner?: VariableAssignerConfig;
+  humanInput?: HumanInputConfig;
+  code?: CodeConfig;
+  template?: TemplateConfig;
+}
+
+/**
+ * 节点数据
+ */
+export interface NodeData {
+  label?: string;
+  description?: string;
+  nodeType: string;
+  version?: string;
+  config: NodeConfig;
+  credentials?: string;
+  isDisabled?: boolean;
+  retry?: RetryConfig;
+  timeout?: TimeoutConfig;
+}
+
+export interface RetryConfig {
+  enabled: boolean;
+  maxAttempts: number;
+  interval: number;
+}
+
+export interface TimeoutConfig {
+  enabled: boolean;
+  maxTimeout: number;
+}
+
+/**
+ * 节点句柄
+ */
+export interface NodeHandles {
+  top?: string;
+  right?: string;
+  bottom?: string;
+  left?: string;
+  source?: string[];
+  target?: string[];
 }
 
 /**
@@ -236,10 +466,28 @@ export interface NodeConfig {
  */
 export interface WorkflowNode {
   id: string;
-  type: 'start' | 'end' | 'approval' | 'condition' | 'ai' | 'aiJudge' | 'notification' | 'parallel' | 'httpRequest' | 'timer' | 'setVariable' | 'log';
-  label?: string;
+  type: string;
+  data: NodeData;
   position: NodePosition;
-  config: NodeConfig;
+  parentId?: string;
+  handleIds?: NodeHandles;
+}
+
+/**
+ * 边数据
+ */
+export interface EdgeData {
+  condition?: string;
+  branchId?: string;
+  isMemory?: boolean;
+}
+
+/**
+ * 边样式
+ */
+export interface EdgeStyle {
+  stroke?: string;
+  strokeWidth?: number;
 }
 
 /**
@@ -249,8 +497,22 @@ export interface WorkflowEdge {
   id: string;
   source: string;
   target: string;
+  sourceHandle?: string;
+  targetHandle?: string;
+  type?: string;
   label?: string;
-  condition?: string;
+  data?: EdgeData;
+  animated?: boolean;
+  style?: EdgeStyle;
+}
+
+/**
+ * 视口
+ */
+export interface Viewport {
+  x: number;
+  y: number;
+  zoom: number;
 }
 
 /**
@@ -259,6 +521,7 @@ export interface WorkflowEdge {
 export interface WorkflowGraph {
   nodes: WorkflowNode[];
   edges: WorkflowEdge[];
+  viewport?: Viewport;
 }
 
 /**
@@ -326,6 +589,51 @@ export interface FormBinding {
 }
 
 /**
+ * 工作流触发器
+ */
+export interface WorkflowTrigger {
+  type: string;
+  cron?: string;
+  webhook?: WebhookConfig;
+  event?: EventConfig;
+}
+
+export interface WebhookConfig {
+  enabled: boolean;
+  method: string;
+  url?: string;
+}
+
+export interface EventConfig {
+  provider: string;
+  eventType: string;
+}
+
+/**
+ * 工作流输入
+ */
+export interface WorkflowInput {
+  variable: string;
+  type: string;
+  required: boolean;
+  default?: any;
+  maxLength?: number;
+}
+
+/**
+ * 工作流输出
+ */
+export interface WorkflowOutput {
+  variable: string;
+  type: string;
+}
+
+/**
+ * 工作流模式
+ */
+export type WorkflowMode = 'Workflow' | 'ChatFlow' | 'Agent';
+
+/**
  * 工作流定义
  */
 export interface WorkflowDefinition {
@@ -336,6 +644,10 @@ export interface WorkflowDefinition {
   version: WorkflowVersion;
   graph: WorkflowGraph;
   isActive: boolean;
+  mode?: WorkflowMode;
+  trigger?: WorkflowTrigger;
+  inputs?: WorkflowInput[];
+  outputs?: WorkflowOutput[];
   companyId: string;
   createdAt: string;
   updatedAt: string;

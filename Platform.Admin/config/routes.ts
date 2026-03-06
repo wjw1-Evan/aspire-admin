@@ -191,6 +191,11 @@ export default [
         component: './workflow/monitor',
         hideInMenu: true,
       },
+      {
+        path: '/workflow/knowledge-base',
+        component: './workflow/knowledge-base',
+        hideInMenu: true,
+      },
     ],
   },
   {

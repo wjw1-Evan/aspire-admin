@@ -13,10 +13,10 @@ public partial class WorkflowEngine
     /// <summary>
     /// 从流程实例和关联公文中获取变量字典
     /// </summary>
-    private async Task<Dictionary<string, object>> GetDocumentVariablesAsync(string instanceId)
+    private async Task<Dictionary<string, object?>> GetDocumentVariablesAsync(string instanceId)
     {
         var instance = await _instanceFactory.GetByIdAsync(instanceId);
-        if (instance == null) return new Dictionary<string, object>();
+        if (instance == null) return new Dictionary<string, object?>();
 
         var variables = instance.GetVariablesDict();
 
@@ -168,10 +168,10 @@ public partial class WorkflowEngine
         if (definition == null) return new List<string>();
 
         var node = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
-        if (node == null || node.Config.Approval == null) return new List<string>();
+        if (node == null || node.Data.Config.Approval == null) return new List<string>();
 
         var approvers = new List<string>();
-        foreach (var rule in node.Config.Approval.Approvers)
+        foreach (var rule in node.Data.Config.Approval.Approvers)
         {
             var resolvedApprovers = await ResolveApproverAsync(instance, rule);
             approvers.AddRange(resolvedApprovers);

@@ -1,0 +1,105 @@
+using System.Text.RegularExpressions;
+using System.Text.Json;
+using Platform.ApiService.Models.Workflow;
+
+namespace Platform.ApiService.Workflows.Utilities;
+
+/// <summary>
+/// Dify 风格变量解析器 - 支持 {{#node_id.field#}} 和 {{variable}} 格式
+/// </summary>
+public static class DifyVariableResolver
+{
+    private static readonly Regex VariableRegex = new(@"\{\{(#?[\w\._-]+)\}\}", RegexOptions.Compiled);
+
+    /// <summary>
+    /// 解析字符串中的所有变量占位符
+    /// </summary>
+    public static string Resolve(string template, Dictionary<string, object?> variables)
+    {
+        if (string.IsNullOrEmpty(template)) return template;
+
+        return VariableRegex.Replace(template, match =>
+        {
+            var path = match.Groups[1].Value;
+            var value = GetValueByPath(path, variables);
+            return value?.ToString() ?? string.Empty;
+        });
+    }
+
+    /// <summary>
+    /// 根据路径从变量字典中提取值
+    /// </summary>
+    /// <param name="path">支持 #node_id.field 或 simple_var</param>
+    /// <param name="variables">当前的变量上下文</param>
+    public static object? GetValueByPath(string path, Dictionary<string, object?> variables)
+    {
+        if (string.IsNullOrEmpty(path)) return null;
+
+        // 处理 Dify 格式: #node_id.field
+        if (path.StartsWith("#"))
+        {
+            var parts = path.TrimStart('#').Split('.');
+            if (parts.Length < 2) return null;
+
+            var nodeId = parts[0];
+            var field = parts[1];
+
+            // 查找 node_id 对应的输出 (通常 Dify 会将节点输出存为变量，或者需要专门的节点结果查找逻辑)
+            // 这里假设变量字典中已经按规范存储了节点结果，或者路径直接匹配
+            if (variables.TryGetValue(path, out var val)) return val;
+            
+            // 尝试查找 node_id.output
+            if (variables.TryGetValue($"{nodeId}.{field}", out var nodeVal)) return nodeVal;
+        }
+
+        // 处理普通格式
+        if (variables.TryGetValue(path, out var simpleVal)) return simpleVal;
+
+        // 支持深层次解析 (如 user.name)
+        if (path.Contains("."))
+        {
+            return GetDeepValue(path, variables);
+        }
+
+        return null;
+    }
+
+    private static object? GetDeepValue(string path, Dictionary<string, object?> variables)
+    {
+        var parts = path.Split('.');
+        if (parts.Length == 0) return null;
+
+        if (!variables.TryGetValue(parts[0], out var current)) return null;
+
+        for (int i = 1; i < parts.Length; i++)
+        {
+            if (current == null) return null;
+            
+            var part = parts[i];
+            
+            // 尝试作为 JSON 元素处理
+            if (current is JsonElement element)
+            {
+                if (element.ValueKind == JsonValueKind.Object && element.TryGetProperty(part, out var nextElement))
+                {
+                    current = nextElement;
+                    continue;
+                }
+                return null;
+            }
+
+            // 尝试通过反射获取属性 (如果是普通对象)
+            var property = current.GetType().GetProperty(part);
+            if (property != null)
+            {
+                current = property.GetValue(current);
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        return current;
+    }
+}

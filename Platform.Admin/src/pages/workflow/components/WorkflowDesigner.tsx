@@ -767,6 +767,15 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
             };
           }
 
+          if (values.nodeType === 'variableAggregator') {
+            config.variableAggregator = {
+              inputVariables: values.aggregatorVariables || [],
+              template: values.aggregatorTemplate,
+              outputVariable: values.aggregatorOutputVariable || 'aggregator_result',
+              format: values.aggregatorFormat || 'json',
+            };
+          }
+
           if (values.nodeType === 'code') {
             config.code = {
               language: values.codeLanguage || 'python',
@@ -847,6 +856,15 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
             };
           }
 
+          if (values.nodeType === 'vision') {
+            config.vision = {
+              model: values.visionModel,
+              imageVariable: values.visionImageVariable,
+              prompt: values.visionPrompt,
+              outputVariable: values.visionOutputVariable || 'vision_result',
+            };
+          }
+
           if (values.nodeType === 'email') {
             config.email = {
               to: values.emailTo,
@@ -854,15 +872,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
               subject: values.emailSubject,
               body: values.emailBody,
               isHtml: values.emailIsHtml || false,
-            };
-          }
-
-          if (values.nodeType === 'vision') {
-            config.vision = {
-              imageVariable: values.visionImageVariable,
-              prompt: values.visionPrompt,
-              model: values.visionModel,
-              outputVariable: values.visionOutputVariable || 'vision_result',
+              attachments: values.emailAttachments,
             };
           }
 
@@ -1392,6 +1402,102 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                         </Form.Item>
                         <Form.Item name="humanInputTimeout" label="超时时间（秒）">
                           <Input type="number" placeholder="不超时" />
+                        </Form.Item>
+                      </>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'speechToText' && (
+                      <>
+                        <Form.Item name="sttProvider" label="提供商" initialValue="openai">
+                          <Select>
+                            <Select.Option value="openai">OpenAI (Whisper)</Select.Option>
+                            <Select.Option value="azure">Azure</Select.Option>
+                          </Select>
+                        </Form.Item>
+                        <Form.Item name="sttInputVariable" label="输入变量" tooltip="包含音频文件链接或二进制数据的变量" rules={[{ required: true }]}>
+                          <Input placeholder="audio_url" />
+                        </Form.Item>
+                        <Form.Item name="sttLanguage" label="识别语言 (可选)">
+                          <Input placeholder="zh, en, ja" />
+                        </Form.Item>
+                        <Form.Item name="sttOutputVariable" label="输出变量" initialValue="stt_result">
+                          <Input placeholder="stt_result" />
+                        </Form.Item>
+                      </>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'textToSpeech' && (
+                      <>
+                        <Form.Item name="ttsProvider" label="提供商" initialValue="openai">
+                          <Select>
+                            <Select.Option value="openai">OpenAI (TTS)</Select.Option>
+                            <Select.Option value="azure">Azure</Select.Option>
+                          </Select>
+                        </Form.Item>
+                        <Form.Item name="ttsInputVariable" label="输入文本变量" tooltip="要转换为语音的文本内容" rules={[{ required: true }]}>
+                          <Input placeholder="text_to_read" />
+                        </Form.Item>
+                        <Form.Item name="ttsVoice" label="声音" initialValue="alloy">
+                          <Select>
+                            <Select.Option value="alloy">Alloy</Select.Option>
+                            <Select.Option value="echo">Echo</Select.Option>
+                            <Select.Option value="fable">Fable</Select.Option>
+                            <Select.Option value="onyx">Onyx</Select.Option>
+                            <Select.Option value="nova">Nova</Select.Option>
+                            <Select.Option value="shimmer">Shimmer</Select.Option>
+                          </Select>
+                        </Form.Item>
+                        <Form.Item name="ttsOutputVariable" label="输出变量" initialValue="tts_audio_url">
+                          <Input placeholder="tts_audio_url" />
+                        </Form.Item>
+                      </>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'vision' && (
+                      <>
+                        <Form.Item name="visionModel" label="模型" initialValue="gpt-4o">
+                          <Input placeholder="gpt-4o" />
+                        </Form.Item>
+                        <Form.Item name="visionImageVariable" label="图像变量" tooltip="包含图像 URL 或 base64 的变量" rules={[{ required: true }]}>
+                          <Input placeholder="image_url" />
+                        </Form.Item>
+                        <Form.Item name="visionPrompt" label="提示词模板" rules={[{ required: true }]}>
+                          <Input.TextArea rows={4} placeholder="描述此图像中看到了什么..." />
+                        </Form.Item>
+                        <Form.Item name="visionOutputVariable" label="输出变量" initialValue="vision_result">
+                          <Input placeholder="vision_result" />
+                        </Form.Item>
+                      </>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'email' && (
+                      <>
+                        <Form.Item name="emailTo" label="收件人" rules={[{ required: true }]}>
+                          <Input placeholder="example@domain.com (可以用 {{variable}})" />
+                        </Form.Item>
+                        <Form.Item name="emailSubject" label="主题" rules={[{ required: true }]}>
+                          <Input placeholder="邮件主题" />
+                        </Form.Item>
+                        <Form.Item name="emailBody" label="正文模板" rules={[{ required: true }]}>
+                          <Input.TextArea rows={6} placeholder="支持 HTML 和 {{variable}}" />
+                        </Form.Item>
+                        <Form.Item name="emailAttachments" label="附件变量 (可选)">
+                          <Input placeholder="file_url1, file_url2" />
+                        </Form.Item>
+                      </>
+                    )}
+
+                    {selectedNode?.data.nodeType === 'variableAggregator' && (
+                      <>
+                        <Divider>变量聚合设置</Divider>
+                        <Form.Item name="aggregatorVariables" label="输入变量列表">
+                          <Select mode="tags" placeholder="输入变量并回车" />
+                        </Form.Item>
+                        <Form.Item name="aggregatorTemplate" label="聚合模板 (JSON)">
+                          <Input.TextArea rows={5} placeholder="{ 'result': '{{var1}}', 'status': '{{var2}}' }" />
+                        </Form.Item>
+                        <Form.Item name="aggregatorOutputVariable" label="输出变量" initialValue="aggregated_data">
+                          <Input placeholder="aggregated_data" />
                         </Form.Item>
                       </>
                     )}

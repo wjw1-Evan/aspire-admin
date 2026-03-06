@@ -40,7 +40,7 @@ internal sealed partial class KnowledgeSearchExecutor : Executor
         }
 
         // 2. 执行检索
-        var snippets = await _knowledgeService.SearchAsync(query, _config.KnowledgeBaseIds, _config.TopK);
+        var snippets = await _knowledgeService.SearchAsync(query, _config.KnowledgeBaseIds, _config.TopK ?? 3);
 
         // 3. 结果合并为文本块供下游 AI 节点使用
         var contextText = string.Join("\n\n", snippets.Select(s => $"Source: {s.Source}\nContent: {s.Content}"));

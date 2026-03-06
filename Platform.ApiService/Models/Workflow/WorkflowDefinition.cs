@@ -313,7 +313,7 @@ public class KnowledgeConfig
     public string RetrievalMode { get; set; } = "hybrid";
 
     [BsonElement("topK")]
-    public int TopK { get; set; } = 3;
+    public int? TopK { get; set; } = 3;
 
     [BsonElement("scoreThreshold")]
     public double? ScoreThreshold { get; set; }
@@ -561,8 +561,14 @@ public class TemplateConfig
 
 public class VariableAggregatorConfig
 {
-    [BsonElement("variables")]
-    public List<string> Variables { get; set; } = new();
+    [BsonElement("inputVariables")]
+    public List<string> InputVariables { get; set; } = new();
+
+    [BsonElement("template")]
+    public string? Template { get; set; }
+
+    [BsonElement("format")]
+    public string Format { get; set; } = "json";
 
     [BsonElement("outputVariable")]
     public string OutputVariable { get; set; } = "aggregated_result";

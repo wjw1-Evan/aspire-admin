@@ -34,6 +34,12 @@ internal sealed partial class AiExecutor : Executor
         // 解析 Prompt 模板
         var resolvedPrompt = Utilities.DifyVariableResolver.Resolve(_config.PromptTemplate ?? string.Empty, variables);
 
+        // 如果有输入变量，进行替换
+        if (!string.IsNullOrEmpty(_config.InputVariable) && variables.TryGetValue(_config.InputVariable, out var inputVal))
+        {
+            resolvedPrompt = resolvedPrompt.Replace("{{inputVariable}}", inputVal?.ToString() ?? "");
+        }
+
         // 执行 Agent 运行逻辑
         var response = await _agent.RunAsync(resolvedPrompt, cancellationToken: cancellationToken);
         var result = response.Text;

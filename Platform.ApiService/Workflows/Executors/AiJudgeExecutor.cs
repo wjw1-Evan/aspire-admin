@@ -26,7 +26,19 @@ internal sealed partial class AiJudgeExecutor : Executor
     [MessageHandler]
     private async ValueTask<bool> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
-        var response = await _agent.RunAsync(input, cancellationToken: cancellationToken);
+        // 反序列化变量
+        var variables = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(input) ?? new();
+
+        // 解析 Judge Prompt
+        var resolvedPrompt = Utilities.DifyVariableResolver.Resolve(_config.JudgePrompt ?? string.Empty, variables);
+
+        // 如果有输入变量，进行替换
+        if (!string.IsNullOrEmpty(_config.InputVariable) && variables.TryGetValue(_config.InputVariable, out var inputVal))
+        {
+            resolvedPrompt = resolvedPrompt.Replace("{{inputVariable}}", inputVal?.ToString() ?? "");
+        }
+
+        var response = await _agent.RunAsync(resolvedPrompt, cancellationToken: cancellationToken);
         var text = response.Text.ToLowerInvariant();
         
         // 简单的逻辑判断解析

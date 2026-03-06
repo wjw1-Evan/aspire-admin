@@ -1,7 +1,9 @@
 using Microsoft.Agents.AI.Workflows;
 using Platform.ApiService.Models.Workflow;
+using Platform.ApiService.Workflows.Utilities;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 
 namespace Platform.ApiService.Workflows.Executors;
 
@@ -23,18 +25,30 @@ internal sealed partial class VariableAggregatorExecutor : Executor
     }
 
     [MessageHandler]
-    private async ValueTask<Dictionary<string, object?>> HandleAsync(object input, IWorkflowContext context, CancellationToken cancellationToken = default)
+    private async ValueTask<string> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
-        var result = new Dictionary<string, object?>();
+        // 反序列化变量
+        var variables = JsonSerializer.Deserialize<Dictionary<string, object?>>(input) ?? new();
 
-        foreach (var varPath in _config.Variables)
+        // 1. 提取指定的变量
+        var result = new Dictionary<string, object?>();
+        foreach (var varName in _config.InputVariables)
         {
-            // 逻辑上这里聚合来自不同节点的输出
-            var value = await GetVariableValueAsync(context, varPath);
-            result[varPath] = value;
+            if (variables.TryGetValue(varName, out var val))
+            {
+                result[varName] = val;
+            }
         }
 
-        return result;
+        // 2. 如果提供了模板，则进行解析
+        if (!string.IsNullOrEmpty(_config.Template))
+        {
+            var resolvedTemplate = DifyVariableResolver.Resolve(_config.Template, variables);
+            return resolvedTemplate;
+        }
+
+        // 3. 否则返回 JSON 字符串
+        return JsonSerializer.Serialize(result);
     }
 
     private Task<object?> GetVariableValueAsync(IWorkflowContext context, string path)

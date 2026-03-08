@@ -92,8 +92,11 @@ public partial class WorkflowEngine
                 var judgeAgent = new ChatClientAgent(judgeChatClient, "JudgeAgent");
                 return new AiJudgeExecutor(judgeAgent, node.Data.Config.AiJudge);
             case "knowledgeSearch":
-                if (node.Data.Config?.Knowledge == null) throw new InvalidOperationException($"Knowledge Search node {node.Id} missing config");
-                return new KnowledgeSearchExecutor(_knowledgeService, node.Data.Config.Knowledge);
+            case "retrieval":
+            case "knowledge":
+                var knowledgeConfig = ResolveKnowledgeConfig(node);
+                if (knowledgeConfig == null) throw new InvalidOperationException($"Knowledge/Retrieval node {node.Id} missing config");
+                return new KnowledgeSearchExecutor(_knowledgeService, knowledgeConfig);
             case "code":
                 if (node.Data.Config?.Code == null) throw new InvalidOperationException($"Code node {node.Id} missing config");
                 return new CodeExecutor(node.Data.Config.Code);
@@ -119,6 +122,9 @@ public partial class WorkflowEngine
             case "iteration":
                 if (node.Data.Config?.Iteration == null) throw new InvalidOperationException($"Iteration node {node.Id} missing config");
                 return new IterationExecutor(node.Data.Config.Iteration);
+            case "loop":
+                if (node.Data.Config?.Iteration == null) throw new InvalidOperationException($"Loop node {node.Id} missing config");
+                return new IterationExecutor(node.Data.Config.Iteration);
             case "answer":
                 if (node.Data.Config?.Answer == null) throw new InvalidOperationException($"Answer node {node.Id} missing config");
                 return new AnswerExecutor(node.Data.Config.Answer);
@@ -143,7 +149,8 @@ public partial class WorkflowEngine
                 var visionAgent = new ChatClientAgent(visionChatClient, "VisionAgent");
                 return new VisionExecutor(visionAgent, node.Data.Config.Vision);
             case "condition":
-                if (node.Data.Config?.Condition == null) throw new InvalidOperationException($"Condition node {node.Id} missing config");
+            case "ifElse":
+                if (node.Data.Config?.Condition == null) throw new InvalidOperationException($"Condition/IfElse node {node.Id} missing config");
                 return new ConditionExecutor(node.Data.Config.Condition, _expressionEvaluator);
             case "log":
                 return new LogExecutor(_logger as ILogger<LogExecutor> ?? throw new InvalidCastException(), node.Data.Config?.Log ?? new LogConfig());
@@ -153,7 +160,23 @@ public partial class WorkflowEngine
                 return new TimerExecutor(node.Data.Config?.Timer ?? new TimerConfig());
             case "notification":
                 return new NotificationExecutor(_notificationService, node.Data.Config?.Notification ?? new NotificationConfig());
-            // 其他节点类型...
+            case "agent":
+                if (node.Data.Config?.Agent == null) throw new InvalidOperationException($"Agent node {node.Id} missing config");
+                var agentChatClient = _openAiClient.GetChatClient(node.Data.Config.Agent.Model ?? "gpt-4o-mini").AsIChatClient();
+                var agentAgent = new ChatClientAgent(agentChatClient, "Agent");
+                return new AiExecutor(agentAgent, MapAgentToAiConfig(node.Data.Config.Agent));
+            case "variableAssigner":
+                if (node.Data.Config?.VariableAssigner == null) throw new InvalidOperationException($"VariableAssigner node {node.Id} missing config");
+                return new VariableAssignerExecutor(node.Data.Config.VariableAssigner);
+            case "listOperator":
+                if (node.Data.Config?.ListOperator == null) throw new InvalidOperationException($"ListOperator node {node.Id} missing config");
+                return new ListOperatorExecutor(node.Data.Config.ListOperator);
+            case "documentExtractor":
+                if (node.Data.Config?.DocumentExtractor == null) throw new InvalidOperationException($"DocumentExtractor node {node.Id} missing config");
+                return new DocumentExtractorExecutor(node.Data.Config.DocumentExtractor);
+            case "humanInput":
+                if (node.Data.Config?.HumanInput == null) throw new InvalidOperationException($"HumanInput node {node.Id} missing config");
+                return new HumanInputExecutor(node.Data.Config.HumanInput);
             default:
                 // 默认使用一个透传执行器或基础逻辑执行器
                 var defaultChatClient = _openAiClient.GetChatClient("gpt-4o-mini").AsIChatClient();
@@ -205,9 +228,11 @@ public partial class WorkflowEngine
                 await ProcessParallelGatewayAsync(instanceId, nodeId, definition);
                 break;
             case "condition":
+            case "ifElse":
             case "approval":
             case "ai":
             case "llm":
+            case "agent":
             case "aiJudge":
             case "notification":
             case "httpRequest":
@@ -215,13 +240,20 @@ public partial class WorkflowEngine
             case "setVariable":
             case "log":
             case "knowledgeSearch":
+            case "retrieval":
+            case "knowledge":
             case "code":
             case "template":
             case "variableAggregator":
             case "questionClassifier":
             case "parameterExtractor":
             case "iteration":
+            case "loop":
             case "answer":
+            case "variableAssigner":
+            case "listOperator":
+            case "documentExtractor":
+            case "humanInput":
             case "tool":
             case "speechToText":
             case "textToSpeech":
@@ -383,6 +415,7 @@ public partial class WorkflowEngine
     {
         try
         {
+            _logger.LogInformation("EXEC_DEBUG: Node={NodeId} Type={Type} - 开始处理", node.Id, node.Type);
             var instance = await _instanceFactory.GetByIdAsync(instanceId);
             var definition = instance != null ? await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId) : null;
             
@@ -392,7 +425,9 @@ public partial class WorkflowEngine
             variables["__instanceId"] = instanceId;
             variables["__documentTitle"] = definition?.Name ?? "Untitled Document";
 
+            _logger.LogInformation("EXEC_DEBUG: Node={NodeId} - 创建执行器", node.Id);
             var executor = await CreateExecutorForNodeAsync(instanceId, node);
+            _logger.LogInformation("EXEC_DEBUG: Node={NodeId} - 执行器已创建: {ExecutorType}", node.Id, executor.GetType().Name);
 
             // 构造输入 (简单起见传递所有变量)
             var input = System.Text.Json.JsonSerializer.Serialize(variables);
@@ -401,52 +436,59 @@ public partial class WorkflowEngine
             var handleMethod = executor.GetType().GetMethod("HandleAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             if (handleMethod == null)
             {
+                _logger.LogWarning("EXEC_DEBUG: Node={NodeId} - HandleAsync 未找到，跳过", node.Id);
                 await MoveToNextNodeAsync(instanceId, node.Id);
                 return;
             }
 
             // 构造参数: input, context, cancellationToken
+            _logger.LogInformation("EXEC_DEBUG: Node={NodeId} - 调用 HandleAsync", node.Id);
             var invokeResult = handleMethod.Invoke(executor, new object?[] { input, null, default(CancellationToken) });
             if (invokeResult == null)
             {
+                _logger.LogWarning("EXEC_DEBUG: Node={NodeId} - HandleAsync 返回 null", node.Id);
                 await MoveToNextNodeAsync(instanceId, node.Id);
                 return;
             }
 
-            // 使用反射或 dynamic 处理可等待对象
-            _logger.LogInformation("DEBUG_RELOAD: Node={NodeId}, InvokeResultType={Type}", node.Id, invokeResult.GetType().Namespace + "." + invokeResult.GetType().Name);
+            // 显式处理 Task/ValueTask 返回值，避免 dynamic await 对 ValueTask 的兼容性问题
             object? result = null;
-
             var resultType = invokeResult.GetType();
-            if (invokeResult is Task task)
+            _logger.LogInformation("EXEC_DEBUG: Node={NodeId} - 等待 HandleAsync 返回, InvokeResultType={Type}", node.Id, resultType.Name);
+            try
             {
-                await task;
-                var resultProperty = resultType.GetProperty("Result");
-                result = resultProperty?.GetValue(task);
-            }
-            else if (resultType.IsGenericType && resultType.GetGenericTypeDefinition().Name.StartsWith("ValueTask"))
-            {
-                // 处理 ValueTask<T>
-                var asTaskMethod = resultType.GetMethod("AsTask");
-                if (asTaskMethod != null)
+                if (invokeResult is Task task)
                 {
-                    var taskObj = (Task)asTaskMethod.Invoke(invokeResult, null)!;
-                    await taskObj;
-                    var resultProperty = taskObj.GetType().GetProperty("Result");
-                    result = resultProperty?.GetValue(taskObj);
+                    await task;
+                    var resultProperty = resultType.GetProperty("Result");
+                    result = resultProperty?.GetValue(task);
                 }
-            }
-            else
-            {
-                // 最后的兜底：尝试使用 dynamic
-                try {
+                else if (resultType.IsGenericType && resultType.GetGenericTypeDefinition().Name.StartsWith("ValueTask"))
+                {
+                    var asTaskMethod = resultType.GetMethod("AsTask", Type.EmptyTypes);
+                    if (asTaskMethod != null)
+                    {
+                        var taskObj = asTaskMethod.Invoke(invokeResult, null);
+                        if (taskObj is Task t)
+                        {
+                            await t;
+                            result = t.GetType().GetProperty("Result")?.GetValue(t);
+                        }
+                    }
+                }
+                else
+                {
                     result = await (dynamic)invokeResult;
-                } catch (Exception ex) {
-                    _logger.LogWarning(ex, "兜底 dynamic await 失败: NodeId={NodeId}", node.Id);
                 }
+                _logger.LogInformation("EXEC_DEBUG: Node={NodeId} - HandleAsync 已返回", node.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "执行器 HandleAsync 等待失败: NodeId={NodeId}, Type={Type}", node.Id, resultType.Name);
             }
 
             // 更新输出变量
+            _logger.LogInformation("EXEC_DEBUG: Node={NodeId} - 更新输出变量", node.Id);
             await UpdateNodeOutputVariablesAsync(instanceId, node, result);
 
             // 确定 sourceHandle (对于分类器等节点)
@@ -498,7 +540,9 @@ public partial class WorkflowEngine
                 return; // 挂起，不继续执行
             }
 
+            _logger.LogInformation("EXEC_DEBUG: Node={NodeId} - 调用 MoveToNextNodeAsync sourceHandle={Handle}", node.Id, sourceHandle ?? "(null)");
             await MoveToNextNodeAsync(instanceId, node.Id, sourceHandle);
+            _logger.LogInformation("EXEC_DEBUG: Node={NodeId} - ProcessNodeViaExecutorAsync 完成", node.Id);
         }
         catch (Exception ex)
         {
@@ -525,14 +569,22 @@ public partial class WorkflowEngine
             case "ai": outputVar = node.Data.Config?.Ai?.OutputVariable; break;
             case "llm": outputVar = node.Data.Config?.Ai?.OutputVariable; break;
             case "aiJudge": outputVar = node.Data.Config?.AiJudge?.OutputVariable; break;
-            case "knowledgeSearch": outputVar = node.Data.Config?.Knowledge?.OutputVariable; break;
+            case "knowledgeSearch":
+            case "retrieval":
+            case "knowledge":
+                outputVar = node.Data.Config?.Knowledge?.OutputVariable ?? node.Data.Config?.Retrieval?.OutputVariable ?? "retrieved_documents";
+                break;
             case "code": outputVar = node.Data.Config?.Code?.OutputVariable; break;
             case "template": outputVar = node.Data.Config?.Template?.OutputVariable; break;
             case "variableAggregator": outputVar = node.Data.Config?.VariableAggregator?.OutputVariable; break;
             case "questionClassifier": outputVar = node.Data.Config?.QuestionClassifier?.OutputVariable; break;
             case "parameterExtractor": outputVar = node.Data.Config?.ParameterExtractor?.OutputVariable; break;
-            case "iteration": outputVar = node.Data.Config?.Iteration?.OutputVariable; break;
+            case "iteration":
+            case "loop": outputVar = node.Data.Config?.Iteration?.OutputVariable; break;
             case "answer": outputVar = "last_answer"; break;
+            case "variableAssigner": outputVar = node.Data.Config?.VariableAssigner?.OutputVariable; break;
+            case "listOperator": outputVar = node.Data.Config?.ListOperator?.OutputVariable; break;
+            case "documentExtractor": outputVar = node.Data.Config?.DocumentExtractor?.OutputVariable; break;
             case "tool": outputVar = node.Data.Config?.Tool?.OutputVariable; break;
             case "httpRequest": outputVar = node.Data.Config?.Http?.OutputVariable; break;
             case "speechToText": outputVar = node.Data.Config?.SpeechToText?.OutputVariable; break;
@@ -605,4 +657,40 @@ public partial class WorkflowEngine
     private Task ProcessVisionNodeAsync(string instanceId, WorkflowNode node) => ProcessNodeViaExecutorAsync(instanceId, node);
     private Task ProcessAnswerNodeAsync(string instanceId, WorkflowNode node) => ProcessNodeViaExecutorAsync(instanceId, node);
     private Task ProcessIterationNodeAsync(string instanceId, WorkflowNode node) => ProcessNodeViaExecutorAsync(instanceId, node);
+
+    /// <summary>
+    /// 将 retrieval/knowledge 配置统一为 KnowledgeConfig，供 KnowledgeSearchExecutor 使用
+    /// </summary>
+    private static KnowledgeConfig? ResolveKnowledgeConfig(WorkflowNode node)
+    {
+        if (node.Data.Config?.Knowledge != null) return node.Data.Config.Knowledge;
+        if (node.Data.Config?.Retrieval != null)
+        {
+            var r = node.Data.Config.Retrieval;
+            return new KnowledgeConfig
+            {
+                Query = r.Query,
+                TopK = r.TopK,
+                ScoreThreshold = r.ScoreThreshold,
+                OutputVariable = r.OutputVariable ?? "retrieved_documents",
+                KnowledgeBaseIds = string.IsNullOrEmpty(r.KnowledgeBaseId) ? new List<string>() : new List<string> { r.KnowledgeBaseId }
+            };
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// 将 AgentConfig 映射为 AiConfig，供 AiExecutor 使用
+    /// </summary>
+    private static AiConfig MapAgentToAiConfig(AgentConfig a)
+    {
+        return new AiConfig
+        {
+            Model = a.Model,
+            SystemPrompt = a.SystemPrompt,
+            OutputVariable = a.OutputVariable ?? "agent_result",
+            MaxTokens = a.MaxTokens,
+            Temperature = a.Temperature
+        };
+    }
 }

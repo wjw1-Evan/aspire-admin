@@ -22,11 +22,12 @@ public partial class WorkflowEngine
 
         var approvers = await GetNodeApproversAsync(instanceId, node.Id);
 
-        _logger.LogInformation("=== 审批通知 Node={NodeId}: 解析出审批人={Approvers} ===",
+        _logger.LogInformation("=== 审批/人工输入通知 Node={NodeId}: 解析出审批人={Approvers} ===",
             node.Id, string.Join(", ", approvers));
 
+        // humanInput 节点无 Approval 配置，跳过 Sequential 逻辑
         // Bug 4：Sequential 模式仅通知当前轮到的人
-        if (node.Data.Config.Approval?.Type == ApprovalType.Sequential)
+        if (node.Data.Config?.Approval != null && node.Data.Config.Approval.Type == ApprovalType.Sequential)
         {
             var history = await GetApprovalHistoryAsync(instanceId);
             var nextApprover = approvers.FirstOrDefault(a => 
@@ -40,8 +41,8 @@ public partial class WorkflowEngine
         _logger.LogInformation("=== 审批通知 Node={NodeId}: 已更新 ActiveApprovals, 审批人数={Count} ===",
             node.Id, approvers.Count);
 
-        // 计算超时时间
-        if (node.Data.Config.Approval?.TimeoutHours != null)
+        // 计算超时时间（仅审批节点）
+        if (node.Data.Config?.Approval?.TimeoutHours != null)
         {
             await _instanceFactory.UpdateAsync(instanceId, i =>
             {
@@ -51,12 +52,16 @@ public partial class WorkflowEngine
 
         if (approvers.Any())
         {
+            var isHumanInput = node.Type == "humanInput";
+            var message = isHumanInput
+                ? $"请完成人工输入：{node.Data.Config?.HumanInput?.InputLabel ?? node.Data.Label ?? node.Id}"
+                : $"您有一个待处理的审批节点：{node.Data.Label ?? node.Id}";
             await _notificationService.CreateWorkflowNotificationAsync(
                 instanceId,
                 document.Title,
-                "workflow_pending_approval",
+                isHumanInput ? "workflow_pending_human_input" : "workflow_pending_approval",
                 approvers,
-                $"您有一个待处理的审批节点：{node.Data.Label ?? node.Id}",
+                message,
                 instance.CompanyId
             );
         }

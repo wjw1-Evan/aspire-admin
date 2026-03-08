@@ -72,6 +72,11 @@ public interface IWorkflowEngine
     /// 继续流程执行（用于后台任务或延迟任务恢复）
     /// </summary>
     Task<bool> ProceedAsync(string instanceId, string nodeId);
+
+    /// <summary>
+    /// 处理人工输入提交 - 验证用户后继续流程
+    /// </summary>
+    Task<bool> ProcessHumanInputSubmitAsync(string instanceId, string nodeId);
 }
 
 /// <summary>

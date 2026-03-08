@@ -99,6 +99,47 @@ public partial class WorkflowEngine
     }
 
     /// <summary>
+    /// 处理人工输入提交 - 验证用户后继续流程
+    /// </summary>
+    public async Task<bool> ProcessHumanInputSubmitAsync(string instanceId, string nodeId)
+    {
+        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+
+        var instance = await _instanceFactory.GetByIdAsync(instanceId);
+        if (instance == null)
+        {
+            throw new InvalidOperationException("流程实例不存在");
+        }
+
+        if (instance.Status != WorkflowStatus.Running && instance.Status != WorkflowStatus.Waiting)
+        {
+            throw new InvalidOperationException("流程已结束");
+        }
+
+        var definition = instance.WorkflowDefinitionSnapshot ?? await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
+        if (definition == null)
+        {
+            throw new InvalidOperationException("流程定义不存在");
+        }
+
+        var node = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
+        if (node == null || node.Type != "humanInput")
+        {
+            throw new InvalidOperationException("节点类型无效或非人工输入节点");
+        }
+
+        var approvers = await GetNodeApproversAsync(instanceId, nodeId);
+        if (!approvers.Contains(userId))
+        {
+            throw new UnauthorizedAccessException("无权提交此人工输入");
+        }
+
+        await _instanceFactory.UpdateAsync(instanceId, i => i.Status = WorkflowStatus.Running);
+        await MoveToNextNodeAsync(instanceId, nodeId);
+        return true;
+    }
+
+    /// <summary>
     /// Bug 5 修复：处理转办逻辑
     /// </summary>
     private async Task HandleDelegateAsync(string instanceId, string nodeId, string delegateToUserId, WorkflowInstance instance)

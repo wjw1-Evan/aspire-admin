@@ -32,6 +32,24 @@ public static class HttpClientExtensions
     }
 
     /// <summary>
+    /// Sends a PUT request with JSON content to the specified URI.
+    /// </summary>
+    /// <typeparam name="T">The type of the content to serialize.</typeparam>
+    /// <param name="client">The HttpClient instance.</param>
+    /// <param name="requestUri">The URI to send the request to.</param>
+    /// <param name="content">The content to serialize as JSON.</param>
+    /// <returns>The HTTP response message.</returns>
+    public static async Task<HttpResponseMessage> PutAsJsonAsync<T>(
+        this HttpClient client,
+        string requestUri,
+        T content)
+    {
+        var json = JsonSerializer.Serialize(content, JsonOptions);
+        var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
+        return await client.PutAsync(requestUri, httpContent);
+    }
+
+    /// <summary>
     /// Reads the HTTP content as JSON and deserializes it to the specified type.
     /// </summary>
     /// <typeparam name="T">The type to deserialize to.</typeparam>

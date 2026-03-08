@@ -1,3 +1,5 @@
+using Platform.AppHost.Tests.Models;
+
 namespace Platform.AppHost.Tests.Helpers;
 
 /// <summary>
@@ -50,6 +52,477 @@ public static class TestDataGenerator
             InvalidationType.ShortPassword => valid with { Password = "123" },
             InvalidationType.InvalidEmail => valid with { Email = "not-an-email" },
             _ => throw new ArgumentException($"Unknown validation type: {type}", nameof(type))
+        };
+    }
+
+    /// <summary>
+    /// Generates a valid form definition with unique name and 2-3 default fields.
+    /// Uses timestamp + GUID to ensure uniqueness across test runs.
+    /// Format: "form_{timestamp}_{guid}"
+    /// </summary>
+    /// <returns>A valid FormDefinitionRequest with unique name and fields.</returns>
+    public static FormDefinitionRequest GenerateValidFormDefinition()
+    {
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var guid = Guid.NewGuid().ToString("N")[..8];
+        var formName = $"form_{timestamp}_{guid}";
+
+        return new FormDefinitionRequest
+        {
+            Name = formName,
+            Key = $"key_{timestamp}_{guid}",
+            Description = $"Test form created at {DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm:ss}",
+            Fields = new List<FormFieldRequest>
+            {
+                new FormFieldRequest
+                {
+                    Label = "Name",
+                    Type = "Text",
+                    Required = true,
+                    DataKey = $"name_{timestamp}_{guid}"
+                },
+                new FormFieldRequest
+                {
+                    Label = "Email",
+                    Type = "Text",  // Changed from "Email" to "Text" - Email is not a valid FormFieldType
+                    Required = true,
+                    DataKey = $"email_{timestamp}_{guid}"
+                },
+                new FormFieldRequest
+                {
+                    Label = "Comments",
+                    Type = "TextArea",
+                    Required = false,
+                    DataKey = $"comments_{timestamp}_{guid}"
+                }
+            },
+            IsActive = true
+        };
+    }
+
+    /// <summary>
+    /// Generates a form definition with a specified number of fields.
+    /// Each field has a unique name using timestamp + GUID pattern.
+    /// </summary>
+    /// <param name="fieldCount">The number of fields to generate.</param>
+    /// <returns>A FormDefinitionRequest with the specified number of fields.</returns>
+    public static FormDefinitionRequest GenerateFormDefinitionWithFields(int fieldCount)
+    {
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var guid = Guid.NewGuid().ToString("N")[..8];
+        var formName = $"form_{timestamp}_{guid}";
+
+        var fields = new List<FormFieldRequest>();
+        var fieldTypes = new[] { "Text", "Number", "Date", "TextArea", "Checkbox", "Select" };
+
+        for (int i = 0; i < fieldCount; i++)
+        {
+            var fieldGuid = Guid.NewGuid().ToString("N")[..6];
+            fields.Add(new FormFieldRequest
+            {
+                Label = $"Field {i + 1}",
+                Type = fieldTypes[i % fieldTypes.Length],
+                Required = i % 2 == 0, // Alternate between required and optional
+                DataKey = $"field_{i}_{timestamp}_{fieldGuid}"
+            });
+        }
+
+        return new FormDefinitionRequest
+        {
+            Name = formName,
+            Key = $"key_{timestamp}_{guid}",
+            Description = $"Test form with {fieldCount} fields",
+            Fields = fields,
+            IsActive = true
+        };
+    }
+
+    /// <summary>
+    /// Generates a valid knowledge base with unique name and default category.
+    /// Uses timestamp + GUID to ensure uniqueness across test runs.
+    /// Format: "kb_{timestamp}_{guid}"
+    /// </summary>
+    /// <returns>A valid KnowledgeBaseRequest with unique name and category.</returns>
+    public static KnowledgeBaseRequest GenerateValidKnowledgeBase()
+    {
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var guid = Guid.NewGuid().ToString("N")[..8];
+        var kbName = $"kb_{timestamp}_{guid}";
+
+        return new KnowledgeBaseRequest
+        {
+            Name = kbName,
+            Description = $"Test knowledge base created at {DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm:ss}",
+            Category = "测试分类",
+            IsActive = true
+        };
+    }
+
+    /// <summary>
+    /// Generates a knowledge base with a specified category.
+    /// Uses timestamp + GUID to ensure uniqueness across test runs.
+    /// </summary>
+    /// <param name="category">The category to assign to the knowledge base.</param>
+    /// <returns>A KnowledgeBaseRequest with the specified category.</returns>
+    public static KnowledgeBaseRequest GenerateKnowledgeBaseWithCategory(string category)
+    {
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var guid = Guid.NewGuid().ToString("N")[..8];
+        var kbName = $"kb_{timestamp}_{guid}";
+
+        return new KnowledgeBaseRequest
+        {
+            Name = kbName,
+            Description = $"Test knowledge base in category '{category}'",
+            Category = category,
+            IsActive = true
+        };
+    }
+
+    /// <summary>
+    /// Generates a valid workflow definition with unique name and minimal valid graph.
+    /// The graph contains a start node and an end node connected by an edge.
+    /// Uses timestamp + GUID to ensure uniqueness across test runs.
+    /// Format: "workflow_{timestamp}_{guid}"
+    /// </summary>
+    /// <returns>A valid WorkflowDefinitionRequest with unique name and minimal graph.</returns>
+    public static WorkflowDefinitionRequest GenerateValidWorkflowDefinition()
+    {
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var guid = Guid.NewGuid().ToString("N")[..8];
+        var workflowName = $"workflow_{timestamp}_{guid}";
+
+        var graph = GenerateMinimalValidGraph();
+
+        return new WorkflowDefinitionRequest
+        {
+            Name = workflowName,
+            Description = $"Test workflow created at {DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm:ss}",
+            Category = "测试分类",
+            Graph = graph,
+            IsActive = true
+        };
+    }
+
+    /// <summary>
+    /// Generates a minimal valid workflow graph containing a start node and an end node.
+    /// The nodes are connected by a single edge.
+    /// </summary>
+    /// <returns>A WorkflowGraphRequest with start and end nodes.</returns>
+    public static WorkflowGraphRequest GenerateMinimalValidGraph()
+    {
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var startNodeId = $"start_{timestamp}";
+        var endNodeId = $"end_{timestamp}";
+
+        return new WorkflowGraphRequest
+        {
+            Nodes = new List<WorkflowNodeRequest>
+            {
+                new WorkflowNodeRequest
+                {
+                    Id = startNodeId,
+                    Type = NodeTypes.Start,
+                    Data = new NodeDataRequest
+                    {
+                        Label = "开始",
+                        NodeType = NodeTypes.Start,
+                        Config = null
+                    },
+                    Position = new NodePositionRequest { X = 100, Y = 100 }
+                },
+                new WorkflowNodeRequest
+                {
+                    Id = endNodeId,
+                    Type = NodeTypes.End,
+                    Data = new NodeDataRequest
+                    {
+                        Label = "结束",
+                        NodeType = NodeTypes.End,
+                        Config = null
+                    },
+                    Position = new NodePositionRequest { X = 300, Y = 100 }
+                }
+            },
+            Edges = new List<WorkflowEdgeRequest>
+            {
+                new WorkflowEdgeRequest
+                {
+                    Id = $"edge_{timestamp}",
+                    Source = startNodeId,
+                    Target = endNodeId
+                }
+            }
+        };
+    }
+
+    /// <summary>
+    /// Generates a workflow definition with a specified number of nodes.
+    /// The workflow starts with a start node, followed by the specified number of intermediate nodes,
+    /// and ends with an end node. All nodes are connected sequentially.
+    /// </summary>
+    /// <param name="nodeCount">The number of intermediate nodes to generate (excluding start and end nodes).</param>
+    /// <returns>A WorkflowDefinitionRequest with the specified number of nodes.</returns>
+    public static WorkflowDefinitionRequest GenerateWorkflowWithNodes(int nodeCount)
+    {
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var guid = Guid.NewGuid().ToString("N")[..8];
+        var workflowName = $"workflow_{timestamp}_{guid}";
+
+        var nodes = new List<WorkflowNodeRequest>();
+        var edges = new List<WorkflowEdgeRequest>();
+
+        // Add start node
+        var startNodeId = $"start_{timestamp}";
+        nodes.Add(new WorkflowNodeRequest
+        {
+            Id = startNodeId,
+            Type = NodeTypes.Start,
+            Data = new NodeDataRequest
+            {
+                Label = "开始",
+                NodeType = NodeTypes.Start,
+                Config = null
+            },
+            Position = new NodePositionRequest { X = 100, Y = 100 }
+        });
+
+        var previousNodeId = startNodeId;
+
+        // Add intermediate nodes
+        for (int i = 0; i < nodeCount; i++)
+        {
+            var nodeId = $"node_{i}_{timestamp}_{Guid.NewGuid().ToString("N")[..6]}";
+            nodes.Add(new WorkflowNodeRequest
+            {
+                Id = nodeId,
+                Type = NodeTypes.Log,
+                Data = new NodeDataRequest
+                {
+                    Label = $"节点 {i + 1}",
+                    NodeType = NodeTypes.Log,
+                    Config = new { message = $"Log message {i + 1}" }
+                },
+                Position = new NodePositionRequest { X = 100 + (i + 1) * 200, Y = 100 }
+            });
+
+            // Connect previous node to current node
+            edges.Add(new WorkflowEdgeRequest
+            {
+                Id = $"edge_{i}_{timestamp}",
+                Source = previousNodeId,
+                Target = nodeId
+            });
+
+            previousNodeId = nodeId;
+        }
+
+        // Add end node
+        var endNodeId = $"end_{timestamp}";
+        nodes.Add(new WorkflowNodeRequest
+        {
+            Id = endNodeId,
+            Type = NodeTypes.End,
+            Data = new NodeDataRequest
+            {
+                Label = "结束",
+                NodeType = NodeTypes.End,
+                Config = null
+            },
+            Position = new NodePositionRequest { X = 100 + (nodeCount + 1) * 200, Y = 100 }
+        });
+
+        // Connect last intermediate node to end node
+        edges.Add(new WorkflowEdgeRequest
+        {
+            Id = $"edge_end_{timestamp}",
+            Source = previousNodeId,
+            Target = endNodeId
+        });
+
+        return new WorkflowDefinitionRequest
+        {
+            Name = workflowName,
+            Description = $"Test workflow with {nodeCount} intermediate nodes",
+            Category = "测试分类",
+            Graph = new WorkflowGraphRequest
+            {
+                Nodes = nodes,
+                Edges = edges
+            },
+            IsActive = true
+        };
+    }
+
+    /// <summary>
+    /// Generates a workflow definition containing a specific node type.
+    /// The workflow contains a start node, the specified node type, and an end node.
+    /// All nodes are connected sequentially.
+    /// </summary>
+    /// <param name="nodeType">The type of node to include (e.g., NodeTypes.Approval, NodeTypes.Ai).</param>
+    /// <returns>A WorkflowDefinitionRequest containing the specified node type.</returns>
+    public static WorkflowDefinitionRequest GenerateWorkflowWithNodeType(string nodeType)
+    {
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var guid = Guid.NewGuid().ToString("N")[..8];
+        var workflowName = $"workflow_{nodeType}_{timestamp}_{guid}";
+
+        var startNodeId = $"start_{timestamp}";
+        var targetNodeId = $"{nodeType}_{timestamp}";
+        var endNodeId = $"end_{timestamp}";
+
+        var nodes = new List<WorkflowNodeRequest>
+        {
+            new WorkflowNodeRequest
+            {
+                Id = startNodeId,
+                Type = NodeTypes.Start,
+                Data = new NodeDataRequest
+                {
+                    Label = "开始",
+                    NodeType = NodeTypes.Start,
+                    Config = null
+                },
+                Position = new NodePositionRequest { X = 100, Y = 100 }
+            },
+            new WorkflowNodeRequest
+            {
+                Id = targetNodeId,
+                Type = nodeType,
+                Data = new NodeDataRequest
+                {
+                    Label = $"{nodeType} 节点",
+                    NodeType = nodeType,
+                    Config = GenerateNodeConfig(nodeType)
+                },
+                Position = new NodePositionRequest { X = 300, Y = 100 }
+            },
+            new WorkflowNodeRequest
+            {
+                Id = endNodeId,
+                Type = NodeTypes.End,
+                Data = new NodeDataRequest
+                {
+                    Label = "结束",
+                    NodeType = NodeTypes.End,
+                    Config = null
+                },
+                Position = new NodePositionRequest { X = 500, Y = 100 }
+            }
+        };
+
+        var edges = new List<WorkflowEdgeRequest>
+        {
+            new WorkflowEdgeRequest
+            {
+                Id = $"edge_start_{timestamp}",
+                Source = startNodeId,
+                Target = targetNodeId
+            },
+            new WorkflowEdgeRequest
+            {
+                Id = $"edge_end_{timestamp}",
+                Source = targetNodeId,
+                Target = endNodeId
+            }
+        };
+
+        return new WorkflowDefinitionRequest
+        {
+            Name = workflowName,
+            Description = $"Test workflow with {nodeType} node",
+            Category = "测试分类",
+            Graph = new WorkflowGraphRequest
+            {
+                Nodes = nodes,
+                Edges = edges
+            },
+            IsActive = true
+        };
+    }
+
+    /// <summary>
+    /// Generates a valid document with unique title and default content.
+    /// Uses timestamp + GUID to ensure uniqueness across test runs.
+    /// Format: "doc_{timestamp}_{guid}"
+    /// </summary>
+    /// <returns>A valid DocumentRequest with unique title and content.</returns>
+    public static DocumentRequest GenerateValidDocument()
+    {
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var guid = Guid.NewGuid().ToString("N")[..8];
+        var docTitle = $"doc_{timestamp}_{guid}";
+
+        return new DocumentRequest
+        {
+            Title = docTitle,
+            Content = $"Test document content created at {DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm:ss}",
+            DocumentType = "公文",
+            Category = "测试分类"
+        };
+    }
+
+    /// <summary>
+    /// Generates a document with specified form data.
+    /// Uses timestamp + GUID to ensure uniqueness across test runs.
+    /// </summary>
+    /// <param name="formData">The form data to include in the document.</param>
+    /// <returns>A DocumentRequest with the specified form data.</returns>
+    public static DocumentRequest GenerateDocumentWithFormData(Dictionary<string, object> formData)
+    {
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var guid = Guid.NewGuid().ToString("N")[..8];
+        var docTitle = $"doc_{timestamp}_{guid}";
+
+        return new DocumentRequest
+        {
+            Title = docTitle,
+            Content = $"Test document with form data created at {DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm:ss}",
+            DocumentType = "公文",
+            Category = "测试分类",
+            FormData = formData
+        };
+    }
+
+    /// <summary>
+    /// Generates appropriate configuration object for different node types.
+    /// Returns null for node types that don't require configuration (start, end).
+    /// </summary>
+    /// <param name="nodeType">The type of node to generate configuration for.</param>
+    /// <returns>A configuration object appropriate for the node type, or null if no config is needed.</returns>
+    private static object? GenerateNodeConfig(string nodeType)
+    {
+        return nodeType switch
+        {
+            NodeTypes.Start => null,
+            NodeTypes.End => null,
+            NodeTypes.Ai => new { prompt = "Test AI prompt", model = "gpt-4" },
+            NodeTypes.AiJudge => new { criteria = "Test criteria", model = "gpt-4" },
+            NodeTypes.Answer => new { message = "Test answer message" },
+            NodeTypes.Approval => new { approvers = new[] { "user1", "user2" }, approvalType = "sequential" },
+            NodeTypes.Code => new { code = "console.log('test');", language = "javascript" },
+            NodeTypes.Condition => new { expression = "{{variable}} > 0" },
+            NodeTypes.DocumentExtractor => new { fields = new[] { "title", "content" } },
+            NodeTypes.Email => new { to = "test@example.com", subject = "Test Email", body = "Test body" },
+            NodeTypes.HttpRequest => new { url = "https://api.example.com/test", method = "GET" },
+            NodeTypes.HumanInput => new { prompt = "Please provide input", fields = new[] { "field1" } },
+            NodeTypes.Iteration => new { collection = "{{items}}", itemVariable = "item" },
+            NodeTypes.KnowledgeSearch => new { query = "{{searchQuery}}", knowledgeBaseId = "kb123" },
+            NodeTypes.ListOperator => new { operation = "filter", expression = "{{item}} > 0" },
+            NodeTypes.Log => new { message = "Test log message", level = "info" },
+            NodeTypes.Notification => new { message = "Test notification", channel = "system" },
+            NodeTypes.ParameterExtractor => new { parameters = new[] { "param1", "param2" } },
+            NodeTypes.QuestionClassifier => new { categories = new[] { "category1", "category2" } },
+            NodeTypes.SetVariable => new { variableName = "testVar", value = "testValue" },
+            NodeTypes.SpeechToText => new { audioSource = "{{audioUrl}}", language = "zh-CN" },
+            NodeTypes.Template => new { template = "Hello {{name}}", variables = new { name = "World" } },
+            NodeTypes.TextToSpeech => new { text = "{{textToSpeak}}", voice = "zh-CN-XiaoxiaoNeural" },
+            NodeTypes.Timer => new { duration = 5000, unit = "milliseconds" },
+            NodeTypes.Tool => new { toolName = "testTool", parameters = new { param1 = "value1" } },
+            NodeTypes.VariableAggregator => new { variables = new[] { "var1", "var2" }, operation = "concat" },
+            NodeTypes.VariableAssigner => new { assignments = new { var1 = "value1", var2 = "value2" } },
+            NodeTypes.Vision => new { imageSource = "{{imageUrl}}", prompt = "Describe this image" },
+            _ => new { message = $"Default config for {nodeType}" }
         };
     }
 }

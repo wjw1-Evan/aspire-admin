@@ -196,6 +196,11 @@ export default [
         component: './workflow/knowledge-base',
         hideInMenu: true,
       },
+      {
+        path: '/workflow/knowledge-base/documents/:knowledgeBaseId',
+        component: './workflow/knowledge-base/documents',
+        hideInMenu: true,
+      },
     ],
   },
   {

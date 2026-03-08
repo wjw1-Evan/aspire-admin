@@ -80,6 +80,8 @@ export default {
   'menu.workflow.forms.desc': 'Manage forms bound to workflow nodes',
   'menu.workflow.monitor': 'Workflow Monitor',
   'menu.workflow.monitor.desc': 'Monitor workflow instance execution',
+  'menu.workflow.knowledge-base': 'Knowledge Base',
+  'menu.workflow.knowledge-base.desc': 'Manage workflow knowledge bases',
   'menu.workflow.workflow:list': 'Workflow Definitions',
   'menu.workflow.workflow:create': 'Create Workflow',
   'menu.workflow.workflow:monitor': 'Workflow Monitor',

@@ -78,6 +78,8 @@ export default {
   'menu.workflow.forms.desc': '管理流程关联表单',
   'menu.workflow.monitor': '流程监控',
   'menu.workflow.monitor.desc': '监控工作流实例执行情况',
+  'menu.workflow.knowledge-base': '知识库管理',
+  'menu.workflow.knowledge-base.desc': '管理工作流知识库',
   // 公文管理
   'menu.document': '公文管理',
   'menu.document.list': '公文列表',

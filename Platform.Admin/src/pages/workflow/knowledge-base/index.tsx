@@ -17,8 +17,9 @@ import {
   EditOutlined,
   DeleteOutlined,
   BookOutlined,
+  FolderOpenOutlined,
 } from '@ant-design/icons';
-import { useIntl } from '@umijs/max';
+import { useIntl, history } from '@umijs/max';
 import PageContainer from '@/components/PageContainer';
 import DataTable from '@/components/DataTable';
 import SearchFormCard from '@/components/SearchFormCard';
@@ -119,10 +120,18 @@ const KnowledgeBaseManagement: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      width: 160,
+      width: 240,
       fixed: 'right',
       render: (_: any, record: KnowledgeBase) => (
         <Space>
+          <Button
+            type="link"
+            size="small"
+            icon={<FolderOpenOutlined />}
+            onClick={() => history.push(`/workflow/knowledge-base/documents/${record.id}`)}
+          >
+            管理内容
+          </Button>
           <Button
             type="link"
             size="small"

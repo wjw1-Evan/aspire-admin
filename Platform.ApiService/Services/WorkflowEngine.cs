@@ -228,7 +228,9 @@ public partial class WorkflowEngine : IWorkflowEngine
                     if (val is string s && s == string.Empty)
                     {
                         var attr = p.GetCustomAttribute<MongoDB.Bson.Serialization.Attributes.BsonRepresentationAttribute>();
-                        _logger.LogError("[DIAGNOSTIC] Empty string found: {Path}.{Prop} (HasObjectIdAttr: {HasAttr})", path, p.Name, attr?.Representation == MongoDB.Bson.BsonType.ObjectId);
+                        // 仅对 ObjectId 映射字段报告空字符串（可能导致 MongoDB 写入异常），Condition 等业务空串为合法
+                        if (attr?.Representation == MongoDB.Bson.BsonType.ObjectId)
+                            _logger.LogError("[DIAGNOSTIC] Empty string in ObjectId field: {Path}.{Prop}", path, p.Name);
                     }
                     else if (val != null && p.PropertyType.IsClass && p.PropertyType != typeof(string))
                     {

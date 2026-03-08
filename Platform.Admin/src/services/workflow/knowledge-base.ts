@@ -66,3 +66,82 @@ export async function deleteKnowledgeBase(id: string): Promise<ApiResponse<void>
     method: 'DELETE',
   });
 }
+
+// ─────────────────────────────────────────────────────────────────
+// 知识库文档 API
+// ─────────────────────────────────────────────────────────────────
+
+export interface KnowledgeDocument {
+  id: string;
+  knowledgeBaseId: string;
+  title: string;
+  content: string;
+  summary?: string;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * 分页获取知识库文档列表
+ */
+export async function getKnowledgeDocuments(
+  knowledgeBaseId: string,
+  params: { page?: number; pageSize?: number; keyword?: string }
+): Promise<ApiResponse<{ list: KnowledgeDocument[]; total: number; page: number; pageSize: number }>> {
+  return request(`/api/workflow/knowledge-bases/${knowledgeBaseId}/documents`, {
+    method: 'GET',
+    params,
+  });
+}
+
+/**
+ * 获取文档详情
+ */
+export async function getKnowledgeDocument(
+  knowledgeBaseId: string,
+  id: string
+): Promise<ApiResponse<KnowledgeDocument>> {
+  return request(`/api/workflow/knowledge-bases/${knowledgeBaseId}/documents/${id}`, {
+    method: 'GET',
+  });
+}
+
+/**
+ * 创建文档
+ */
+export async function createKnowledgeDocument(
+  knowledgeBaseId: string,
+  data: { title: string; content: string; summary?: string; sortOrder?: number }
+): Promise<ApiResponse<KnowledgeDocument>> {
+  return request(`/api/workflow/knowledge-bases/${knowledgeBaseId}/documents`, {
+    method: 'POST',
+    data,
+  });
+}
+
+/**
+ * 更新文档
+ */
+export async function updateKnowledgeDocument(
+  knowledgeBaseId: string,
+  id: string,
+  data: Partial<{ title: string; content: string; summary?: string; sortOrder?: number }>
+): Promise<ApiResponse<KnowledgeDocument>> {
+  return request(`/api/workflow/knowledge-bases/${knowledgeBaseId}/documents/${id}`, {
+    method: 'PUT',
+    data,
+  });
+}
+
+/**
+ * 删除文档
+ */
+export async function deleteKnowledgeDocument(
+  knowledgeBaseId: string,
+  id: string
+): Promise<ApiResponse<void>> {
+  return request(`/api/workflow/knowledge-bases/${knowledgeBaseId}/documents/${id}`, {
+    method: 'DELETE',
+  });
+}

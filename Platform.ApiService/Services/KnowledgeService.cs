@@ -14,39 +14,63 @@ namespace Platform.ApiService.Services;
 public class KnowledgeService : IKnowledgeService, IScopedDependency
 {
     private readonly IDataFactory<KnowledgeBase> _knowledgeBaseFactory;
+    private readonly IDataFactory<KnowledgeDocument> _documentFactory;
 
-    public KnowledgeService(IDataFactory<KnowledgeBase> knowledgeBaseFactory)
+    public KnowledgeService(
+        IDataFactory<KnowledgeBase> knowledgeBaseFactory,
+        IDataFactory<KnowledgeDocument> documentFactory)
     {
         _knowledgeBaseFactory = knowledgeBaseFactory;
+        _documentFactory = documentFactory;
     }
 
-    private readonly List<KnowledgeSnippet> _mockData = new()
-    {
-        new KnowledgeSnippet { Content = "Aspire Admin 是一个基于 .NET Aspire 的企业级管理后台框架。", Source = "Doc-001", Score = 0.95 },
-        new KnowledgeSnippet { Content = "工作流引擎支持 Microsoft Agent Framework 的集成，支持多种 AI 节点。", Source = "Doc-002", Score = 0.88 },
-        new KnowledgeSnippet { Content = "Dify 是一个流行的开源 LLM 应用开发平台，提供可视化工作流设计。", Source = "Doc-003", Score = 0.82 }
-    };
-
     /// <summary>
-    /// 搜索知识库
+    /// 搜索知识库 - 基于真实文档的文本匹配
     /// </summary>
-    public Task<List<KnowledgeSnippet>> SearchAsync(string query, List<string> knowledgeBaseIds, int topK = 3)
+    public async Task<List<KnowledgeSnippet>> SearchAsync(string query, List<string> knowledgeBaseIds, int topK = 3)
     {
-        // 简单模拟匹配逻辑：检查内容是否包含查询词中的某些部分
-        var keywords = query.Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
-        var results = _mockData
-            .Where(s => keywords.Any(k => s.Content.Contains(k, System.StringComparison.OrdinalIgnoreCase)))
+        if (knowledgeBaseIds == null || knowledgeBaseIds.Count == 0)
+            return new List<KnowledgeSnippet>();
+
+        var q = (query ?? "").Trim();
+        if (string.IsNullOrEmpty(q))
+        {
+            // 无查询词时返回最近更新的文档
+            Expression<Func<KnowledgeDocument, bool>> filterAll = d => knowledgeBaseIds.Contains(d.KnowledgeBaseId);
+            var docs = await _documentFactory.FindAsync(
+                filterAll,
+                q => q.OrderByDescending(d => d.UpdatedAt),
+                limit: topK);
+            return docs.Select(d => new KnowledgeSnippet
+            {
+                Content = d.Content.Length > 500 ? d.Content[..500] + "..." : d.Content,
+                Source = d.Title,
+                Score = 0.8
+            }).ToList();
+        }
+
+        // 简单文本包含匹配
+        Expression<Func<KnowledgeDocument, bool>> filter = d =>
+            knowledgeBaseIds.Contains(d.KnowledgeBaseId) &&
+            (d.Title.Contains(q) || d.Content.Contains(q) || (d.Summary != null && d.Summary.Contains(q)));
+
+        var documents = await _documentFactory.FindAsync(
+            filter,
+            q => q.OrderByDescending(d => d.UpdatedAt),
+            limit: topK * 2);
+
+        var results = documents
+            .Select(d =>
+            {
+                var content = d.Content.Length > 500 ? d.Content[..500] + "..." : d.Content;
+                var score = d.Title.Contains(q, StringComparison.OrdinalIgnoreCase) ? 0.95 : 0.85;
+                return new KnowledgeSnippet { Content = content, Source = d.Title, Score = score };
+            })
             .OrderByDescending(s => s.Score)
             .Take(topK)
             .ToList();
 
-        // 如果没有匹配，返回前 topK 条
-        if (!results.Any())
-        {
-            results = _mockData.Take(topK).ToList();
-        }
-
-        return Task.FromResult(results);
+        return results;
     }
 
     public async Task<(List<KnowledgeBase> items, long total)> FindPagedAsync(int page, int pageSize, string? keyword = null)

@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+    BookOutlined,
     UserOutlined,
     TeamOutlined,
     CrownOutlined,
@@ -95,6 +96,8 @@ import {
  * 这里显式列出管理系统中常用的图标。
  */
 export const CORE_ICON_MAP: Record<string, React.ReactNode> = {
+    book: <BookOutlined />,
+    BookOutlined: <BookOutlined />,
     UserOutlined: <UserOutlined />,
     TeamOutlined: <TeamOutlined />,
     CrownOutlined: <CrownOutlined />,

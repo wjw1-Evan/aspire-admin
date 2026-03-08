@@ -227,7 +227,7 @@ public static class TestDataGenerator
                     {
                         Label = "开始",
                         NodeType = NodeTypes.Start,
-                        Config = null
+                        Config = new { } // Empty object instead of null
                     },
                     Position = new NodePositionRequest { X = 100, Y = 100 }
                 },
@@ -239,7 +239,7 @@ public static class TestDataGenerator
                     {
                         Label = "结束",
                         NodeType = NodeTypes.End,
-                        Config = null
+                        Config = new { } // Empty object instead of null
                     },
                     Position = new NodePositionRequest { X = 300, Y = 100 }
                 }

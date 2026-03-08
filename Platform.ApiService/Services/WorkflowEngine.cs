@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Text.Json;
 using Platform.ApiService.Extensions;
@@ -155,13 +156,16 @@ public partial class WorkflowEngine : IWorkflowEngine
         var instance = new WorkflowInstance
         {
             WorkflowDefinitionId = definitionId,
-            DocumentId = documentId,
+            DocumentId = string.IsNullOrEmpty(documentId) ? null : documentId,
             Status = WorkflowStatus.Running,
             StartedBy = userId,
             StartedAt = DateTime.UtcNow,
             WorkflowDefinitionSnapshot = definition, // 🔧 保存快照以保证流程稳定性
             CompanyId = companyId ?? string.Empty
         };
+
+        _logger.LogInformation("Creating workflow instance: DefinitionId={DefinitionId}, DocumentId={DocumentId}, CompanyId={CompanyId}, UserId={UserId}",
+            instance.WorkflowDefinitionId, instance.DocumentId, instance.CompanyId, userId);
 
         // 初始化变量
         instance.ResetVariables(variables ?? new Dictionary<string, object?>());
@@ -192,15 +196,56 @@ public partial class WorkflowEngine : IWorkflowEngine
             }
         }
 
+        // 🔍 Diagnostic Audit: Find any empty strings in ObjectId fields
+        void AuditObject(object? obj, string path)
+        {
+            if (obj == null) return;
+            
+            // Handle Collections
+            if (obj is System.Collections.IEnumerable enumerable && !(obj is string))
+            {
+                int i = 0;
+                foreach (var item in enumerable)
+                {
+                    AuditObject(item, $"{path}[{i++}]");
+                }
+                return;
+            }
+
+            var type = obj.GetType();
+            if (type.FullName?.StartsWith("System.") == true) return;
+
+            foreach (var p in type.GetProperties())
+            {
+                try {
+                    if (p.GetIndexParameters().Length > 0) continue;
+                    var val = p.GetValue(obj);
+                    if (val is string s && s == string.Empty)
+                    {
+                        var attr = p.GetCustomAttribute<MongoDB.Bson.Serialization.Attributes.BsonRepresentationAttribute>();
+                        _logger.LogError("[DIAGNOSTIC] Empty string found: {Path}.{Prop} (HasObjectIdAttr: {HasAttr})", path, p.Name, attr?.Representation == MongoDB.Bson.BsonType.ObjectId);
+                    }
+                    else if (val != null && p.PropertyType.IsClass && p.PropertyType != typeof(string))
+                    {
+                        AuditObject(val, $"{path}.{p.Name}");
+                    }
+                } catch {}
+            }
+        }
+        AuditObject(instance, "WorkflowInstance");
+
         await _instanceFactory.CreateAsync(instance);
 
         // 更新公文状态
-        await _documentFactory.UpdateAsync(documentId, d =>
+        if (!string.IsNullOrEmpty(documentId))
         {
-            d.Status = Models.Workflow.DocumentStatus.Approving;
-            d.WorkflowInstanceId = instance.Id;
-            d.UpdatedAt = DateTime.UtcNow;
-        });
+            await _documentFactory.UpdateAsync(documentId, d =>
+            {
+                d.Status = Models.Workflow.DocumentStatus.Approving;
+                d.WorkflowInstanceId = instance.Id;
+                d.UpdatedAt = DateTime.UtcNow;
+            });
+        }
 
         // 查找开始节点并处理
         var startNode = definition.Graph.Nodes.FirstOrDefault(n => n.Data.NodeType == "start");

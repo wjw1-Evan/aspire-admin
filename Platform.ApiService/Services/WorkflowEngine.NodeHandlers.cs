@@ -200,12 +200,12 @@ public partial class WorkflowEngine
                 _logger.LogInformation("DEBUG_WORKFLOW: End node reached for Instance {InstanceId}", instanceId);
                 await CompleteWorkflowAsync(instanceId, WorkflowStatus.Completed);
                 break;
-            case "approval":
-            case "condition":
             case "parallel":
                 // Bug 7 修复：并行网关不覆盖 CurrentNodeId，而是为每个分支独立处理
                 await ProcessParallelGatewayAsync(instanceId, nodeId, definition);
                 break;
+            case "condition":
+            case "approval":
             case "ai":
             case "llm":
             case "aiJudge":
@@ -489,8 +489,13 @@ public partial class WorkflowEngine
                         await scopedInstanceFactory.UpdateAsync(instanceId, i => i.Status = WorkflowStatus.Running);
                         await scopedEngine.ProceedAsync(instanceId, node.Id);
                     });
-                    return; // 挂起，不继续执行
                 }
+                else
+                {
+                    // 人工审批或无限期等待：设置状态为 Waiting 并停止后续 MoveToNextNode
+                    await _instanceFactory.UpdateAsync(instanceId, i => i.Status = WorkflowStatus.Waiting);
+                }
+                return; // 挂起，不继续执行
             }
 
             await MoveToNextNodeAsync(instanceId, node.Id, sourceHandle);

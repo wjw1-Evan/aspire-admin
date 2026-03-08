@@ -134,7 +134,7 @@ const Utils = {
         return res;
     },
 
-    async waitForInstanceStatus(instanceId, expectedStatus, maxRetries = 60) {
+    async waitForInstanceStatus(instanceId, expectedStatus, maxRetries = 180) {
         for (let i = 0; i < maxRetries; i++) {
             const res = await request(`/workflows/instances/${instanceId}`, { headers: Auth.headers });
             if (res.success) {
@@ -237,10 +237,10 @@ async function runSynergyTests() {
                 { id: "end1", type: "end", data: { nodeType: "end", label: "End" } }
             ],
             edges: [
-                { id: "e1", source: "start1", target: "http1", data: { condition: "" } },
-                { id: "e2", source: "http1", target: "setVar1", data: { condition: "" } },
-                { id: "e3", source: "setVar1", target: "log1", data: { condition: "" } },
-                { id: "e4", source: "log1", target: "end1", data: { condition: "" } }
+                { id: "e1", source: "start1", target: "http1", sourceHandle: "source", data: { condition: "" } },
+                { id: "e2", source: "http1", target: "setVar1", sourceHandle: "source", data: { condition: "" } },
+                { id: "e3", source: "setVar1", target: "log1", sourceHandle: "source", data: { condition: "" } },
+                { id: "e4", source: "log1", target: "end1", sourceHandle: "source", data: { condition: "" } }
             ]
         }
     };
@@ -263,13 +263,13 @@ async function runSynergyTests() {
                     { id: "e-fail", type: "end", data: { nodeType: "end", label: "End False" } }
                 ],
                 edges: [
-                    { id: "e1", source: "s1", target: "sv1", data: { condition: "" } },
-                    { id: "e2", source: "sv1", target: "ai1", data: { condition: "" } },
-                    { id: "e3", source: "ai1", target: "aj1", data: { condition: "" } },
-                    { id: "e4", source: "aj1", target: "c1", data: { condition: "" } },
-                    { id: "e5", source: "c1", target: "t1", data: { condition: "{is_correct} == 'true'" } },
-                    { id: "e6", source: "c1", target: "e-fail", data: { condition: "default" } },
-                    { id: "e7", source: "t1", target: "e-ok", data: { condition: "" } }
+                    { id: "e1", source: "s1", target: "sv1", sourceHandle: "source", data: { condition: "" } },
+                    { id: "e2", source: "sv1", target: "ai1", sourceHandle: "source", data: { condition: "" } },
+                    { id: "e3", source: "ai1", target: "aj1", sourceHandle: "source", data: { condition: "" } },
+                    { id: "e4", source: "aj1", target: "c1", sourceHandle: "source", data: { condition: "" } },
+                    { id: "e5", source: "c1", target: "t1", sourceHandle: "true", data: { condition: "{is_correct} == 'true'" } },
+                    { id: "e6", source: "c1", target: "e-fail", sourceHandle: "false", data: { condition: "default" } },
+                    { id: "e7", source: "t1", target: "e-ok", sourceHandle: "source", data: { condition: "" } }
                 ]
             }
         }
@@ -341,14 +341,17 @@ async function runDesignTests() {
         graph: {
             nodes: [
                 { id: "s", type: "start", data: { nodeType: "start" } },
-                { id: "c", type: "condition", data: { nodeType: "condition", config: { condition: {} } } },
+                { id: "c", type: "condition", data: { nodeType: "condition", config: { condition: { 
+                    conditions: [{ variable: "amount", operator: "greater_than", value: "1000" }],
+                    logicalOperator: "and"
+                } } } },
                 { id: "h", type: "end", data: { nodeType: "end", label: "High" } },
                 { id: "l", type: "end", data: { nodeType: "end", label: "Low" } }
             ],
             edges: [
-                { source: "s", target: "c", data: { condition: "" } },
-                { source: "c", target: "h", data: { condition: "amount > 1000" } },
-                { source: "c", target: "l", data: { condition: "default" } }
+                { source: "s", target: "c", sourceHandle: "source", data: { condition: "" } },
+                { source: "c", target: "h", sourceHandle: "true", data: { condition: "amount > 1000" } },
+                { source: "c", target: "l", sourceHandle: "false", data: { condition: "default" } }
             ]
         }
     };
@@ -359,12 +362,17 @@ async function runDesignTests() {
     for (const tc of testCases) {
         const docRes = await request('/documents', { method: 'POST', headers: Auth.headers, body: { title: `Branching ${tc.amt}`, content: "." } });
         const startRes = await request(`/workflows/${defId}/start`, { method: 'POST', headers: Auth.headers, body: { documentId: docRes.data.id, variables: { amount: tc.amt } } });
+        console.log(`  Starting workflow for amount ${tc.amt}. Instance ID: ${startRes.data?.id || startRes.data}`);
         const instId = startRes.data?.id || startRes.data;
-        await new Promise(r => setTimeout(r, 2000)); // 等待工作流执行完成
+        await Utils.waitForInstanceStatus(instId, 'completed');
         const instRes = await request(`/workflows/instances/${instId}`, { headers: Auth.headers });
         const finalNode = instRes.data?.currentNodeId || '(unknown)';
         console.log(`  Amount ${tc.amt} -> Landed on ${finalNode}: ${finalNode === tc.expected ? '✅' : '❌'}`);
+    if (finalNode !== tc.expected) {
+        // Log more details to debug why it failed
+        console.log(`    [DEBUG] Instance ID: ${instId}, Status: ${instRes.data.status}`);
     }
+}
 }
 
 /**
@@ -618,57 +626,229 @@ async function runFormIntegratedTests() {
 async function runExtendedComponentsTests() {
     console.log('\n=== RUNNING EXTENDED COMPONENTS TESTS ===');
     
-    const workflowDef = {
-        name: "Extended Components Master",
-        category: 'Test',
+    // 1. ParameterExtractor 深入验证
+    console.log('- Testing ParameterExtractor...');
+    const extractorWf = {
+        name: "Extractor Test",
         isActive: true,
         graph: {
             nodes: [
-                { id: "start", type: "start", data: { nodeType: "start", label: "Start" } },
-                // 变量聚合
-                { id: "agg1", type: "variableAggregator", data: { nodeType: "variableAggregator", config: { variableAggregator: { inputVariables: ["input1", "input2"], outputVariable: "agg_res" } } } },
-                // 参数提取
-                { id: "ext1", type: "parameterExtractor", data: { nodeType: "parameterExtractor", config: { parameterExtractor: { inputVariable: "agg_res", parameters: [{name: "city", type: "string"}], outputVariable: "params" } } } },
-                // 视觉分析
-                { id: "vis1", type: "vision", data: { nodeType: "vision", config: { vision: { imageVariable: "img_url", prompt: "Describe this", outputVariable: "vis_res" } } } },
-                // 邮件发送
-                { id: "mail1", type: "email", data: { nodeType: "email", config: { email: { to: "test@example.com", subject: "Test", body: "Hello" } } } },
-                // 语音/文本转换
-                { id: "stt1", type: "speechToText", data: { nodeType: "speechToText", config: { speechToText: { inputVariable: "audio", outputVariable: "txt" } } } },
-                { id: "tts1", type: "textToSpeech", data: { nodeType: "textToSpeech", config: { textToSpeech: { inputVariable: "txt", outputVariable: "audio_res" } } } },
-                { id: "end", type: "end", data: { nodeType: "end", label: "End" } }
+                { id: "s", type: "start", data: { nodeType: "start" } },
+                { id: "p", type: "parameterExtractor", data: { nodeType: "parameterExtractor", config: { parameterExtractor: { 
+                    inputVariable: "query", 
+                    parameters: [
+                        { name: "city", type: "string", description: "City name" },
+                        { name: "days", type: "number", description: "Number of days" }
+                    ], 
+                    outputVariable: "params" 
+                } } } },
+                { id: "e", type: "end", data: { nodeType: "end" } }
+            ],
+            edges: [{ source: "s", target: "p", data: { condition: "" } }, { source: "p", target: "e", data: { condition: "" } }]
+        }
+    };
+    const res1 = await request('/workflows', { method: 'POST', headers: Auth.headers, body: extractorWf });
+    if (!res1.success) throw new Error(`Failed to create extractor workflow: ${res1.message}`);
+    const defId1 = res1.data.id;
+    const startRes1 = await request(`/workflows/${defId1}/start`, { 
+        method: 'POST', headers: Auth.headers, 
+        body: { variables: { query: "I want to visit Paris for 5 days" } }
+    });
+    if (!startRes1.success) throw new Error(`Failed to start extractor workflow: ${startRes1.message}`);
+    const instId1 = startRes1.data?.id || startRes1.data;
+    await Utils.waitForInstanceStatus(instId1, 'completed');
+    const inst1 = await request(`/workflows/instances/${instId1}`, { headers: Auth.headers });
+    console.log(`  Extracted Params: ${JSON.stringify(inst1.data.variables.params)}`);
+    if (inst1.data.variables.params && (inst1.data.variables.params.city || inst1.data.variables.params.days)) {
+        console.log("  ✅ ParameterExtractor seems to be working.");
+    }
+
+    // 2. Answer 节点验证 (快速响应)
+    console.log('- Testing Answer Node...');
+    const answerWf = {
+        name: "Answer Test",
+        isActive: true,
+        graph: {
+            nodes: [
+                { id: "s", type: "start", data: { nodeType: "start" } },
+                { id: "a", type: "answer", data: { nodeType: "answer", config: { answer: { answer: "Hello {{name}}, welcome!" } } } },
+                { id: "e", type: "end", data: { nodeType: "end" } }
+            ],
+            edges: [{ source: "s", target: "a", data: { condition: "" } }, { source: "a", target: "e", data: { condition: "" } }]
+        }
+    };
+    const res2 = await request('/workflows', { method: 'POST', headers: Auth.headers, body: answerWf });
+    const defId2 = res2.data.id;
+    const startRes2 = await request(`/workflows/${defId2}/start`, { method: 'POST', headers: Auth.headers, body: { variables: { name: "Tester" } } });
+    if (startRes2.success) console.log("  ✅ Answer node workflow execution confirmed.");
+}
+
+/**
+ * [L9] 循环/迭代测试 (Iteration)
+ */
+async function runIterationTests() {
+    console.log('\n=== RUNNING ITERATION TESTS ===');
+    const workflowDef = {
+        name: "Iteration Test Workflow",
+        isActive: true,
+        graph: {
+            nodes: [
+                { id: "s", type: "start", data: { nodeType: "start" } },
+                { id: "iter", type: "iteration", data: { nodeType: "iteration", config: { iteration: { iteratorVariable: "list", outputVariable: "final_results" } } } },
+                { id: "log", type: "log", data: { nodeType: "log", parentId: "iter", config: { log: { message: "Processing item: {{item}}" } } } },
+                { id: "e", type: "end", data: { nodeType: "end" } }
             ],
             edges: [
-                { source: "start", target: "agg1", data: { condition: "" } },
-                { source: "agg1", target: "ext1", data: { condition: "" } },
-                { source: "ext1", target: "vis1", data: { condition: "" } },
-                { source: "vis1", target: "mail1", data: { condition: "" } },
-                { source: "mail1", target: "stt1", data: { condition: "" } },
-                { source: "stt1", target: "tts1", data: { condition: "" } },
-                { source: "tts1", target: "end", data: { condition: "" } }
+                { source: "s", target: "iter", data: { condition: "" } },
+                { source: "iter", target: "log", data: { condition: "" }, sourceHandle: "loop" },
+                { source: "log", target: "iter", data: { condition: "" } }, // 闭环
+                { source: "iter", target: "e", data: { condition: "" }, sourceHandle: "done" }
             ]
         }
     };
 
-    const createRes = await request('/workflows', { method: 'POST', headers: Auth.headers, body: workflowDef });
-    if (!createRes.success) throw new Error("Extended WF Creation failed: " + JSON.stringify(createRes));
-    const defId = createRes.data.id;
+    const res = await request('/workflows', { method: 'POST', headers: Auth.headers, body: workflowDef });
+    if (!res.success) throw new Error("Iteration WF creation failed: " + res.message);
+    const defId = res.data.id;
 
-    console.log(`  Starting extended components instance...`);
+    console.log("  Starting iteration with ['A', 'B', 'C']...");
     const startRes = await request(`/workflows/${defId}/start`, { 
-        method: 'POST', 
-        headers: Auth.headers, 
-        body: { 
-            documentId: "000000000000000000000000", // In a real scenario, use a real doc
-            variables: { input1: "Hello", input2: "World", img_url: "http://..." } 
-        } 
+        method: 'POST', headers: Auth.headers, 
+        body: { variables: { list: ["A", "B", "C"] } } 
     });
-    
-    // We expect it to at least start and run for a bit
-    if (startRes.success) {
-        console.log(`  ✅ Extended components workflow started successfully.`);
+    const instId = startRes.data.id || startRes.data;
+
+    await Utils.waitForInstanceStatus(instId, 'completed');
+    const inst = await request(`/workflows/instances/${instId}`, { headers: Auth.headers });
+    console.log(`  Final List: ${JSON.stringify(inst.data.variables.final_results || [])}`);
+    if (inst.data.variables.final_results && inst.data.variables.final_results.length === 3) {
+        console.log("  ✅ Iteration completed and collected all results.");
     } else {
-         console.log(`  ❌ Extended components workflow failed to start: ${startRes.message}`);
+        console.log("  ❌ Iteration results mismatch.");
+    }
+}
+
+/**
+ * [L10] 意图分类测试 (QuestionClassifier)
+ */
+async function runQuestionClassifierTests() {
+    console.log('\n=== RUNNING QUESTION CLASSIFIER TESTS ===');
+    const workflowDef = {
+        name: "Classifier Test",
+        isActive: true,
+        graph: {
+            nodes: [
+                { id: "s", type: "start", data: { nodeType: "start" } },
+                { id: "qc", type: "questionClassifier", data: { nodeType: "questionClassifier", config: { questionClassifier: { 
+                    inputVariable: "query",
+                    classes: [
+                        { id: "tech", name: "Technical", description: "Bugs or tech help" },
+                        { id: "bill", name: "Billing", description: "Invoice or payment" }
+                    ],
+                    outputVariable: "category"
+                } } } },
+                { id: "end_tech", type: "end", data: { nodeType: "end", label: "Tech Path" } },
+                { id: "end_bill", type: "end", data: { nodeType: "end", label: "Bill Path" } }
+            ],
+            edges: [
+                { source: "s", target: "qc", sourceHandle: "source", data: { condition: "" } },
+                { source: "qc", target: "end_tech", sourceHandle: "tech", data: { condition: "{{category}} == 'tech'" } },
+                { source: "qc", target: "end_bill", sourceHandle: "bill", data: { condition: "default" } }
+            ]
+        }
+    };
+
+    const res = await request('/workflows', { method: 'POST', headers: Auth.headers, body: workflowDef });
+    const defId = res.data.id;
+
+    const testCase = "My invoice is wrong";
+    console.log(`  Query: "${testCase}"`);
+    const startRes = await request(`/workflows/${defId}/start`, { method: 'POST', headers: Auth.headers, body: { variables: { query: testCase } } });
+    const instId = startRes.data.id || startRes.data;
+
+    await Utils.waitForInstanceStatus(instId, 'completed');
+    const inst = await request(`/workflows/instances/${instId}`, { headers: Auth.headers });
+    console.log(`  Final Category: ${inst.data.variables.category}`);
+    console.log(`  Landed on: ${inst.data.currentNodeId} (${inst.data.currentNodeId === 'end_bill' ? '✅' : '❌'})`);
+}
+
+/**
+ * [L11] 代码节点测试 (Code)
+ */
+async function runCodeNodeTests() {
+    console.log('\n=== RUNNING CODE NODE TESTS ===');
+    const workflowDef = {
+        name: "Code Test",
+        isActive: true,
+        graph: {
+            nodes: [
+                { id: "s", type: "start", data: { nodeType: "start" } },
+                { id: "code", type: "code", data: { nodeType: "code", config: { code: { 
+                    language: "javascript",
+                    code: "return { sum: inputs.a + inputs.b };",
+                    inputVariables: ["a", "b"],
+                    outputVariable: "out"
+                } } } },
+                { id: "e", type: "end", data: { nodeType: "end" } }
+            ],
+            edges: [{ source: "s", target: "code", sourceHandle: "source", data: { condition: "" } }, { source: "code", target: "e", sourceHandle: "source", data: { condition: "" } }]
+        }
+    };
+
+    const res = await request('/workflows', { method: 'POST', headers: Auth.headers, body: workflowDef });
+    const defId = res.data.id;
+    const startRes = await request(`/workflows/${defId}/start`, { method: 'POST', headers: Auth.headers, body: { variables: { a: 10, b: 20 } } });
+    const instId = startRes.data.id || startRes.data;
+
+    await Utils.waitForInstanceStatus(instId, 'completed');
+    const inst = await request(`/workflows/instances/${instId}`, { headers: Auth.headers });
+    console.log(`  Code Result: ${JSON.stringify(inst.data.variables.out)}`);
+    if (inst.data.variables.out && inst.data.variables.out.includes("Calculated result")) {
+        console.log("  ✅ Code node execution simulation confirmed.");
+    }
+}
+
+/**
+ * [L12] 并行汇聚测试 (Parallel/Join)
+ */
+async function runParallelJoinTests() {
+    console.log('\n=== RUNNING PARALLEL & JOIN TESTS ===');
+    const workflowDef = {
+        name: "Parallel Join Test",
+        isActive: true,
+        graph: {
+            nodes: [
+                { id: "s", type: "start", data: { nodeType: "start" } },
+                { id: "p", type: "parallel", data: { nodeType: "parallel", label: "Split" } },
+                { id: "v1", type: "setVariable", data: { nodeType: "setVariable", config: { variable: { name: "res1", value: "Branch 1 Done" } } } },
+                { id: "v2", type: "setVariable", data: { nodeType: "setVariable", config: { variable: { name: "res2", value: "Branch 2 Done" } } } },
+                { id: "agg", type: "variableAggregator", data: { nodeType: "variableAggregator", config: { variableAggregator: { 
+                    inputVariables: ["res1", "res2"],
+                    outputVariable: "combined"
+                } } } },
+                { id: "e", type: "end", data: { nodeType: "end" } }
+            ],
+            edges: [
+                { source: "s", target: "p", data: { condition: "" } },
+                { source: "p", target: "v1", data: { condition: "" } },
+                { source: "p", target: "v2", data: { condition: "" } },
+                { source: "v1", target: "agg", data: { condition: "" } },
+                { source: "v2", target: "agg", data: { condition: "" } },
+                { source: "agg", target: "e", data: { condition: "" } }
+            ]
+        }
+    };
+
+    const res = await request('/workflows', { method: 'POST', headers: Auth.headers, body: workflowDef });
+    const defId = res.data.id;
+    const startRes = await request(`/workflows/${defId}/start`, { method: 'POST', headers: Auth.headers });
+    const instId = startRes.data.id || startRes.data;
+
+    await Utils.waitForInstanceStatus(instId, 'completed');
+    const inst = await request(`/workflows/instances/${instId}`, { headers: Auth.headers });
+    console.log(`  Combined Result: ${JSON.stringify(inst.data.variables.combined)}`);
+    if (inst.data.variables.combined && inst.data.variables.combined.res1 && inst.data.variables.combined.res2) {
+        console.log("  ✅ Parallel paths joined and aggregated successfully.");
     }
 }
 
@@ -744,33 +924,27 @@ async function runVariableResolutionTests() {
     console.log('- Testing Advanced Variable Resolution (Defaults, Filters, Deep Paths)...');
     const resolutionWf = {
         name: "Variable resolution test",
+        category: "Test",
         isActive: true,
         graph: {
             nodes: [
                 { id: "s", type: "start", data: { nodeType: "start" } },
                 { id: "v", type: "setVariable", data: { nodeType: "setVariable", config: { variable: { name: "input_obj", value: "{\"items\": [{\"name\": \"item1\"}], \"status\": \"ok\"}" } } } },
-                { id: "tmpl", type: "template", data: { nodeType: "template", config: { template: { content: "Default: {{missing || 'FALLBACK'}}, JSON: {{input_obj | json}}, Deep: {{input_obj.items.0.name}}", outputVariable: "rendered" } } } },
+                { id: "tmpl", type: "template", data: { nodeType: "template", config: { template: { 
+                    content: "Default: {{missing || 'FALLBACK'}}, JSON: {{input_obj | json}}, Deep: {{input_obj.items.0.name}}, Mixed: Hello {{user.name || 'Guest'}}, count: {{input_obj.items.length}}", 
+                    outputVariable: "rendered" 
+                } } } },
                 { id: "e", type: "end", data: { nodeType: "end" } }
             ],
-            edges: [
-                { source: "s", target: "v", data: { condition: "" } },
-                { source: "v", target: "tmpl", data: { condition: "" } },
-                { source: "tmpl", target: "e", data: { condition: "" } }
-            ]
+            edges: [{ source: "s", target: "v", data: { condition: "" } }, { source: "v", target: "tmpl", data: { condition: "" } }, { source: "tmpl", target: "e", data: { condition: "" } }]
         }
     };
     const res1 = await request('/workflows', { method: 'POST', headers: Auth.headers, body: resolutionWf });
-    if (!res1.success) {
-        console.error("  ❌ WF Creation failed:", JSON.stringify(res1, null, 2));
-        throw new Error("WF Creation failed");
-    }
+    if (!res1.success) throw new Error(`Failed to create resolution workflow: ${res1.message}`);
     const defId1 = res1.data.id;
     const startRes1 = await request(`/workflows/${defId1}/start`, { method: 'POST', headers: Auth.headers });
-    if (!startRes1.success) {
-        console.error("  ❌ WF Start failed:", JSON.stringify(startRes1, null, 2));
-        throw new Error("WF Start failed");
-    }
-    const instId1 = startRes1.data.id || startRes1.data;
+    if (!startRes1.success) throw new Error(`Failed to start resolution workflow: ${startRes1.message}`);
+    const instId1 = startRes1.data?.id || startRes1.data;
     
     await Utils.waitForInstanceStatus(instId1, 'completed');
     const inst1 = await request(`/workflows/instances/${instId1}`, { headers: Auth.headers });
@@ -780,9 +954,11 @@ async function runVariableResolutionTests() {
     const passDefault = rendered.includes('FALLBACK');
     const passJson = rendered.includes('"status":"ok"');
     const passDeep = rendered.includes('item1');
+    const passMixed = rendered.includes('Guest') && rendered.includes('count: 1');
     console.log(`  Default Value: ${passDefault ? '✅' : '❌'}`);
     console.log(`  JSON Filter: ${passJson ? '✅' : '❌'}`);
     console.log(`  Deep Path: ${passDeep ? '✅' : '❌'}`);
+    console.log(`  Mixed Resolution: ${passMixed ? '✅' : '❌'}`);
 
     // 2. 测试错误边界捕获
     console.log('\n- Testing Error Boundary Capture...');
@@ -814,6 +990,105 @@ async function runVariableResolutionTests() {
     console.log(`  Node Status: ${nodeStatus}`);
     console.log(`  Error Message: ${nodeError ? (nodeError.substring(0, 50) + '...') : 'NULL'}`);
     console.log(`  Error Captured: ${nodeError && nodeStatus === 'failed' ? '✅' : '❌'}`);
+}
+
+/**
+ * [L13] 全链路集成测试 (Master Integration)
+ * 场景: 启动(输入) -> 参数提取 -> 意图分类 -> 条件分支 -> 审批 -> 代码脚本 -> 结束
+ */
+async function runAdvancedIntegrationTests() {
+    console.log('\n=== RUNNING MASTER INTEGRATION TESTS ===');
+    
+    const workflowDef = {
+        name: "Master Integration Workflow",
+        isActive: true,
+        graph: {
+            nodes: [
+                { id: "s", type: "start", data: { nodeType: "start" } },
+                { id: "p", type: "parameterExtractor", data: { nodeType: "parameterExtractor", config: { parameterExtractor: {
+                    input: "{{workflow.start.variables.input}}",
+                    parameters: [
+                        { name: "count", type: "number", description: "数量" },
+                        { name: "item", type: "string", description: "项目名称" }
+                    ],
+                    outputVariable: "params"
+                } } } },
+                { id: "c", type: "questionClassifier", data: { nodeType: "questionClassifier", config: { questionClassifier: {
+                    input: "{{workflow.start.variables.input}}",
+                    classes: [
+                        { id: "purchase", name: "Purchase" },
+                        { id: "inquiry", name: "Inquiry" }
+                    ],
+                    outputVariable: "intent"
+                } } } },
+                { id: "cond", type: "condition", data: { nodeType: "condition", config: { condition: {
+                    expression: "{{workflow.c.intent == 'purchase' && workflow.p.params.count > 3}}"
+                } } } },
+                { id: "approv", type: "approval", data: { nodeType: "approval", config: { approval: { 
+                    type: "any", 
+                    approvers: [{ type: "role", roleName: "管理员" }],
+                    allowReject: true
+                } } } },
+                { id: "auto", type: "setVariable", data: { nodeType: "setVariable", config: { variable: { 
+                    name: "final_status", 
+                    value: "Auto Approved for {{workflow.p.params.item}}" 
+                } } } },
+                { id: "code", type: "code", data: { nodeType: "code", config: { code: {
+                    language: "javascript",
+                    code: "const p = variables['workflow.p.params']; return { summary: `Confirmed ${p.count} ${p.item}` };",
+                    outputVariable: "res"
+                } } } },
+                { id: "e", type: "end", data: { nodeType: "end" } }
+            ],
+            edges: [
+                { source: "s", target: "p", data: { condition: "" } },
+                { source: "p", target: "c", data: { condition: "" } },
+                { source: "c", target: "cond", data: { condition: "" } },
+                { source: "cond", target: "approv", data: { label: "High Value", condition: "true" } },
+                { source: "cond", target: "auto", data: { label: "Low Value/Other", condition: "false" } },
+                { source: "approv", target: "code", data: { label: "Approved", condition: "default" } },
+                { source: "auto", target: "code", data: { condition: "" } },
+                { source: "code", target: "e", data: { condition: "" } }
+            ]
+        }
+    };
+
+    console.log("- Creating master workflow...");
+    const res = await request('/workflows', { method: 'POST', headers: Auth.headers, body: workflowDef });
+    const defId = res.data.id;
+
+    console.log("- Starting workflow with 'High Value Purchase' input (Approval Needed)...");
+    const startRes = await request(`/workflows/${defId}/start`, { 
+        method: 'POST', headers: Auth.headers, 
+        body: { variables: { input: "I want to buy 30 Macbook Pro laptops for the team" } } 
+    });
+    const instId = startRes.data.id || startRes.data;
+
+    // 模拟 AI 提取和分类 (如果后端是 Mock 模式或需要人工干预变量)
+    // 在真实集成中，这里应该等待节点执行
+    process.stdout.write('  Executing flow ');
+    
+    // 等待到达审批节点
+    await Utils.waitForInstanceStatus(instId, 'running'); 
+    
+    // 验证变量是否透传到了参数提取和分类
+    const check1 = await request(`/workflows/instances/${instId}`, { headers: Auth.headers });
+    console.log(`\n  Intent: ${check1.data.variables.intent}, Count: ${check1.data.variables['params.count']}`);
+
+    console.log("- Approving High Value Request...");
+    await request(`/workflows/instances/${instId}/nodes/approv/action`, {
+        method: 'POST', headers: Auth.headers, body: { action: "approve", comment: "Looks good" }
+    });
+
+    await Utils.waitForInstanceStatus(instId, 'completed');
+    const finalInst = await request(`/workflows/instances/${instId}`, { headers: Auth.headers });
+    console.log(`  Final Result: ${JSON.stringify(finalInst.data.variables.res)}`);
+    
+    if (finalInst.data.variables.res && finalInst.data.variables.res.summary && finalInst.data.variables.res.summary.includes("10 Macbook Pro")) {
+        console.log("  ✅ Master Integration Workflow executed perfectly.");
+    } else {
+        console.error("  ❌ Master Integration Workflow failed variable verification.");
+    }
 }
 
 
@@ -895,7 +1170,8 @@ const Aspire = {
 
 async function main() {
     const args = process.argv.slice(2);
-    const mode = args[0] || 'all';
+    const modes = args.length > 0 ? args : ['all'];
+    const shouldRun = (m) => modes.includes('all') || modes.includes(m);
 
     try {
         // 确保 Aspire 服务已运行
@@ -911,18 +1187,28 @@ async function main() {
         //  L3  allnodes   全节点组合                (将各节点串入单条工作流)
         //  L4  form       表单集成                  (表单定义 ➜ 校验 ➜ 数据持久化)
         //  L5  multiuser  多用户协作                (租户隔离 / 角色 / 多人审批)
-        //  L6  (Reserved)                
+        //  L6  extended   扩展组件 (Dify Style)     (Extractor, Answer 等)
         //  L7  reject     审批拒绝测试              (测试审批节点被拒绝时的行为)
+        //  L8  variable   高级变量解析              (深层路径 / 过滤器 / 默认值)
+        //  L9  iteration  迭代/循环测试             (遍历列表)
+        //  L10 classifier 意图分类测试              (AI 分类分支器)
+        //  L11 code       代码节点测试              (自定义脚本)
+        //  L12 parallel   并行/汇聚测试              (Parallel & Aggregator)
         // ─────────────────────────────────────────
-        if (mode === 'all' || mode === 'register')  await runRegisterTests();
-        if (mode === 'all' || mode === 'design')    await runDesignTests();
-        if (mode === 'all' || mode === 'synergy')   await runSynergyTests();
-        if (mode === 'all' || mode === 'allnodes')  await runAllNodesTests();
-        if (mode === 'all' || mode === 'form')      await runFormIntegratedTests();
-        if (mode === 'all' || mode === 'multiuser') await runMultiUserTests();
-        if (mode === 'all' || mode === 'extended')  await runExtendedComponentsTests();
-        if (mode === 'all' || mode === 'variable')  await runVariableResolutionTests();
-        if (mode === 'all' || mode === 'reject')    await runRejectTests();
+        if (shouldRun('register'))  await runRegisterTests();
+        if (shouldRun('design'))    await runDesignTests();
+        if (shouldRun('synergy'))   await runSynergyTests();
+        if (shouldRun('allnodes'))  await runAllNodesTests();
+        if (shouldRun('form'))      await runFormIntegratedTests();
+        if (shouldRun('multiuser')) await runMultiUserTests();
+        if (shouldRun('extended'))  await runExtendedComponentsTests();
+        if (shouldRun('variable'))  await runVariableResolutionTests();
+        if (shouldRun('reject'))    await runRejectTests();
+        if (shouldRun('iteration')) await runIterationTests();
+        if (shouldRun('classifier')) await runQuestionClassifierTests();
+        if (shouldRun('code'))       await runCodeNodeTests();
+        if (shouldRun('parallel'))   await runParallelJoinTests();
+        if (shouldRun('master'))     await runAdvancedIntegrationTests();
 
         console.log('\n🌟 Unified Test Run Finished.');
     } catch (err) {

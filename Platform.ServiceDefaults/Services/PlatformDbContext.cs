@@ -122,11 +122,12 @@ public class PlatformDbContext : DbContext
         // 2. 操作追踪
         if (entity is IOperationTrackable trackable)
         {
-            trackable.UpdatedBy = userId;
+            var currentUserId = string.IsNullOrEmpty(userId) ? null : userId;
+            trackable.UpdatedBy = currentUserId;
             trackable.LastOperationAt = now;
             if (isAdded)
             {
-                trackable.CreatedBy ??= userId;
+                trackable.CreatedBy ??= currentUserId;
                 trackable.LastOperationType = "CREATE";
             }
             else
@@ -138,7 +139,8 @@ public class PlatformDbContext : DbContext
         // 3. 多租户
         if (isAdded && entity is IMultiTenant tenant && string.IsNullOrEmpty(tenant.CompanyId))
         {
-            tenant.CompanyId = companyId ?? string.Empty;
+            var currentCompanyId = string.IsNullOrEmpty(companyId) ? null : companyId;
+            tenant.CompanyId = currentCompanyId ?? string.Empty;
         }
 
         // 4. 软删除审计
@@ -176,6 +178,7 @@ public class PlatformDbContext : DbContext
             var payloadBytes = System.Text.Encoding.UTF8.GetBytes(payloadStr);
             antiTamper.Sm3Mac = Hex.ToHexString(MacUtilities.DoFinal(hmac, payloadBytes));
         }
+
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

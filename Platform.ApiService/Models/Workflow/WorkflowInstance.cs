@@ -124,19 +124,29 @@ public class WorkflowInstance : MultiTenantEntity
             SetVariable(kv.Key, kv.Value);
         }
     }
+    private string _workflowDefinitionId = string.Empty;
     /// <summary>
     /// 关联流程定义ID
     /// </summary>
     [BsonElement("workflowDefinitionId")]
     [BsonRepresentation(BsonType.ObjectId)]
-    public string WorkflowDefinitionId { get; set; } = string.Empty;
+    public string WorkflowDefinitionId 
+    { 
+        get => _workflowDefinitionId; 
+        set => _workflowDefinitionId = value == "" ? null! : value; 
+    }
 
+    private string? _documentId;
     /// <summary>
     /// 关联公文ID
     /// </summary>
     [BsonElement("documentId")]
     [BsonRepresentation(BsonType.ObjectId)]
-    public string DocumentId { get; set; } = string.Empty;
+    public string? DocumentId 
+    { 
+        get => _documentId; 
+        set => _documentId = value == "" ? null : value; 
+    }
 
     /// <summary>
     /// 流程状态

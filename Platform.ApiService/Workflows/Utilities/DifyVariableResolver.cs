@@ -134,7 +134,7 @@ public static class DifyVariableResolver
     {
         try 
         {
-            var parts = path.Split('.');
+            var parts = path.Split('.', StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length == 0) return null;
 
             if (!variables.TryGetValue(parts[0], out var current)) return null;

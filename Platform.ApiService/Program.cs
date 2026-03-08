@@ -63,7 +63,7 @@ builder.Services.AddControllers(options =>
             var errors = context.ModelState
                 .Where(e => e.Value?.Errors.Count > 0)
                 .ToDictionary(
-                    kvp => char.ToLowerInvariant(kvp.Key[0]) + kvp.Key[1..],
+                    kvp => string.IsNullOrEmpty(kvp.Key) ? "error" : char.ToLowerInvariant(kvp.Key[0]) + kvp.Key[1..],
                     kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
                 );
 

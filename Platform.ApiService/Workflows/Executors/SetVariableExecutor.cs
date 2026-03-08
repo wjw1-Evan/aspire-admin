@@ -29,14 +29,30 @@ internal sealed partial class SetVariableExecutor : Executor
 
         var val = DifyVariableResolver.Resolve(_config.Value ?? string.Empty, variables);
         
+        // 尝试解析为 JSON 对象以支持深层路径解析
+        object? finalVal = val;
+        var trimmed = val.Trim();
+        if ((trimmed.StartsWith("{") && trimmed.EndsWith("}")) || (trimmed.StartsWith("[") && trimmed.EndsWith("]")))
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(trimmed);
+                finalVal = doc.RootElement.Clone();
+            }
+            catch
+            {
+                // 解析失败则保持原样字符串
+            }
+        }
+
         // 返回包含 __variables__ 的字典，由引擎合并到全局变量
         await Task.CompletedTask;
         return new Dictionary<string, object?>
         {
-            ["result"] = val,
+            ["result"] = finalVal,
             ["__variables__"] = new Dictionary<string, object?>
             {
-                [_config.Name ?? "unnamed_var"] = val
+                [_config.Name ?? "unnamed_var"] = finalVal
             }
         };
     }

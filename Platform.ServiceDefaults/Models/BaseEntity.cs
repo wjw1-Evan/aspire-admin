@@ -43,12 +43,17 @@ public abstract class BaseEntity : IEntity, ISoftDeletable, ITimestamped, IOpera
     [BsonElement("deletedAt")]
     public DateTime? DeletedAt { get; set; }
 
+    private string? _deletedBy;
     /// <summary>
     /// 删除者ID
     /// </summary>
     [BsonElement("deletedBy")]
     [BsonRepresentation(BsonType.ObjectId)]
-    public string? DeletedBy { get; set; }
+    public string? DeletedBy 
+    { 
+        get => _deletedBy; 
+        set => _deletedBy = value == "" ? null : value; 
+    }
 
     /// <summary>
     /// 删除原因
@@ -56,19 +61,29 @@ public abstract class BaseEntity : IEntity, ISoftDeletable, ITimestamped, IOpera
     [BsonElement("deletedReason")]
     public string? DeletedReason { get; set; }
 
+    private string? _createdBy;
     /// <summary>
     /// 创建者ID
     /// </summary>
     [BsonElement("createdBy")]
     [BsonRepresentation(BsonType.ObjectId)]
-    public string? CreatedBy { get; set; }
+    public string? CreatedBy 
+    { 
+        get => _createdBy; 
+        set => _createdBy = value == "" ? null : value; 
+    }
 
+    private string? _updatedBy;
     /// <summary>
     /// 更新者ID
     /// </summary>
     [BsonElement("updatedBy")]
     [BsonRepresentation(BsonType.ObjectId)]
-    public string? UpdatedBy { get; set; }
+    public string? UpdatedBy 
+    { 
+        get => _updatedBy; 
+        set => _updatedBy = value == "" ? null : value; 
+    }
 
     /// <summary>
     /// 最后操作类型

@@ -25,7 +25,9 @@
 
 **⚠️ 重要：以下行为严格禁止**
 
-1. **禁止直接注入数据库驱动特定对象**（如 `IMongoCollection<T>`、`IMongoDatabase` 或 `DbContext`）
+1. **禁止修改 `Platform.ServiceDefaults/Services/PlatformDbContext.cs` 文件**。
+
+2. **禁止直接注入数据库驱动特定对象**（如 `IMongoCollection<T>`、`IMongoDatabase` 或 `DbContext`）
 
    ```csharp
    // ❌ 错误示例

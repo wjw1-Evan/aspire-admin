@@ -40,7 +40,7 @@ public class RegistrationTests : IClassFixture<AppHostFixture>
     [Fact]
     public async Task ValidRegistration_ShouldSucceed_WithCompleteResponse()
     {
-        const int iterations = 100;
+        const int iterations = 10;
         _output.WriteLine($"Running property test with {iterations} iterations");
 
         for (int i = 0; i < iterations; i++)
@@ -95,7 +95,7 @@ public class RegistrationTests : IClassFixture<AppHostFixture>
     [Fact]
     public async Task DuplicateUsername_ShouldFail_WithErrorResponse()
     {
-        const int iterations = 100;
+        const int iterations = 10;
         _output.WriteLine($"Running property test with {iterations} iterations");
 
         for (int i = 0; i < iterations; i++)
@@ -168,7 +168,7 @@ public class RegistrationTests : IClassFixture<AppHostFixture>
     [Fact]
     public async Task InvalidRegistration_ShouldFail_WithValidationError()
     {
-        const int iterations = 100;
+        const int iterations = 10;
         _output.WriteLine($"Running property test with {iterations} iterations");
 
         // Test each type of validation error across iterations

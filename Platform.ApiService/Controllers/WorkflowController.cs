@@ -96,14 +96,28 @@ public class WorkflowController : BaseApiController
                               w.Category.Contains(request.Keyword);
             }
 
-            if (request.Categories != null && request.Categories.Any())
+            // Support both single category and Categories array
+            if (!string.IsNullOrEmpty(request.Category))
+            {
+                var category = request.Category;
+                Expression<Func<WorkflowDefinition, bool>> categoryFilter = w => w.Category == category;
+                filter = filter == null ? categoryFilter : filter.And(categoryFilter);
+            }
+            else if (request.Categories != null && request.Categories.Any())
             {
                 var categories = request.Categories;
                 Expression<Func<WorkflowDefinition, bool>> categoryFilter = w => categories.Contains(w.Category);
                 filter = filter == null ? categoryFilter : filter.And(categoryFilter);
             }
 
-            if (request.Statuses != null && request.Statuses.Any())
+            // Support both IsActive boolean and Statuses array
+            if (request.IsActive.HasValue)
+            {
+                var isActive = request.IsActive.Value;
+                Expression<Func<WorkflowDefinition, bool>> statusFilter = w => w.IsActive == isActive;
+                filter = filter == null ? statusFilter : filter.And(statusFilter);
+            }
+            else if (request.Statuses != null && request.Statuses.Any())
             {
                 var statusValues = request.Statuses.Select(s => s == "active").ToList();
                 Expression<Func<WorkflowDefinition, bool>> statusFilter = w => statusValues.Contains(w.IsActive);
@@ -1513,9 +1527,19 @@ public class WorkflowSearchRequest
     public string? Keyword { get; set; }
 
     /// <summary>
+    /// 单个类别过滤（用于简单查询）
+    /// </summary>
+    public string? Category { get; set; }
+
+    /// <summary>
     /// 类别列表
     /// </summary>
     public List<string>? Categories { get; set; }
+
+    /// <summary>
+    /// 是否启用过滤（用于简单查询）
+    /// </summary>
+    public bool? IsActive { get; set; }
 
     /// <summary>
     /// 状态列表（active, inactive, draft, archived）

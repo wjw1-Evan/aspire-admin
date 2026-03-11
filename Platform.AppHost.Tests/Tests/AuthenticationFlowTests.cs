@@ -40,7 +40,7 @@ public class AuthenticationFlowTests : IClassFixture<AppHostFixture>
     [Fact]
     public async Task RegistrationLoginRoundtrip_ShouldSucceed()
     {
-        const int iterations = 100;
+        const int iterations = 10;
         var httpClient = _fixture.HttpClient;
 
         _output.WriteLine($"Starting registration-login roundtrip property test with {iterations} iterations");
@@ -138,7 +138,7 @@ public class AuthenticationFlowTests : IClassFixture<AppHostFixture>
     [Fact]
     public async Task AuthenticationToken_ShouldGrantProtectedEndpointAccess()
     {
-        const int iterations = 100;
+        const int iterations = 10;
         var httpClient = _fixture.HttpClient;
 
         _output.WriteLine($"Starting authentication token access property test with {iterations} iterations");

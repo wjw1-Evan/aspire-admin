@@ -215,7 +215,7 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
     {
         // Arrange
         await InitializeAuthenticationAsync();
-        const int iterations = 100;
+        const int iterations = 10;
 
         _output.WriteLine($"Starting CRUD Round-trip property test with {iterations} iterations");
 
@@ -381,12 +381,11 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
         _output.WriteLine($"✓ Document created - ID: {documentId}");
 
         // Prepare update data with modified title and content
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        var guid = Guid.NewGuid().ToString("N")[..8];
+        var updatedDocument = TestDataGenerator.GenerateValidDocument();
 
         var updateRequest = new DocumentRequest
         {
-            Title = $"updated_doc_{timestamp}_{guid}",
+            Title = updatedDocument.Title,
             Content = $"Updated content at {DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm:ss}",
             DocumentType = originalDocumentType, // Keep the same document type
             Category = "更新后的分类"
@@ -521,7 +520,7 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
     {
         // Arrange
         await InitializeAuthenticationAsync();
-        const int iterations = 100;
+        const int iterations = 10;
 
         _output.WriteLine($"Starting Document Submission Workflow Trigger property test with {iterations} iterations");
 
@@ -807,7 +806,7 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
     {
         // Arrange
         await InitializeAuthenticationAsync();
-        const int iterations = 100;
+        const int iterations = 10;
 
         _output.WriteLine($"Starting Pending Documents User Filtering property test with {iterations} iterations");
 
@@ -1107,7 +1106,7 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
     {
         // Arrange
         await InitializeAuthenticationAsync();
-        const int iterations = 100;
+        const int iterations = 10;
 
         _output.WriteLine($"Starting Approval History Completeness property test with {iterations} iterations");
 

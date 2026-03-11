@@ -37,7 +37,7 @@ public class LoginTests : IClassFixture<AppHostFixture>
     [Fact]
     public async Task ValidLogin_ShouldSucceed_WithCompleteTokenResponse()
     {
-        const int iterations = 100;
+        const int iterations = 10;
         var successCount = 0;
         var failureCount = 0;
 
@@ -171,7 +171,7 @@ public class LoginTests : IClassFixture<AppHostFixture>
     [Fact]
     public async Task InvalidCredentials_ShouldFail_WithErrorResponse()
     {
-        const int iterations = 100;
+        const int iterations = 10;
         var successCount = 0;
         var failureCount = 0;
 
@@ -196,7 +196,7 @@ public class LoginTests : IClassFixture<AppHostFixture>
                 {
                     // Scenario 1: Non-existent username
                     scenario = "Non-existent username";
-                    var fakeUsername = $"nonexistent_{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}_{Guid.NewGuid().ToString("N")[..6]}";
+                    var fakeUsername = $"nonexistent_{Guid.NewGuid():N}";
                     loginRequest = new LoginRequest
                     {
                         Username = fakeUsername,

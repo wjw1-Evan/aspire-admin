@@ -99,7 +99,7 @@ public class NodeData
     public string? Version { get; set; }
 
     [BsonElement("config")]
-    public NodeConfig Config { get; set; } = new();
+    public NodeConfig? Config { get; set; }
 
     [BsonElement("credentials")]
     public string? Credentials { get; set; }

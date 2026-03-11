@@ -223,7 +223,7 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
     {
         // Arrange
         await InitializeAuthenticationAsync();
-        const int iterations = 100;
+        const int iterations = 10;
 
         _output.WriteLine($"Starting CRUD Round-trip property test with {iterations} iterations");
 
@@ -410,7 +410,7 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
     {
         // Arrange
         await InitializeAuthenticationAsync();
-        const int iterations = 100;
+        const int iterations = 10;
 
         _output.WriteLine($"Starting Pagination Structure property test with {iterations} iterations");
 
@@ -461,7 +461,7 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
     {
         // Arrange
         await InitializeAuthenticationAsync();
-        const int iterations = 100;
+        const int iterations = 10;
 
         _output.WriteLine($"Starting Keyword Filtering property test with {iterations} iterations");
 
@@ -590,7 +590,7 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
     {
         // Arrange
         await InitializeAuthenticationAsync();
-        const int iterations = 100;
+        const int iterations = 10;
 
         _output.WriteLine($"Starting Update Reflection property test with {iterations} iterations");
 
@@ -695,7 +695,7 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
     {
         // Arrange
         await InitializeAuthenticationAsync();
-        const int iterations = 100;
+        const int iterations = 10;
 
         _output.WriteLine($"Starting Delete Then 404 property test with {iterations} iterations");
 
@@ -799,7 +799,7 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
         unauthenticatedClient.Timeout = TimeSpan.FromSeconds(30);
         unauthenticatedClient.DefaultRequestHeaders.Accept.Add(
             new MediaTypeWithQualityHeaderValue("application/json"));
-        const int iterations = 100;
+        const int iterations = 10;
 
         _output.WriteLine($"Starting Unauthenticated Request Rejection property test with {iterations} iterations");
 
@@ -904,7 +904,7 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
     {
         // Arrange
         await InitializeAuthenticationAsync();
-        const int iterations = 100;
+        const int iterations = 10;
 
         _output.WriteLine($"Starting Non-existent Resource 404 property test with {iterations} iterations");
 

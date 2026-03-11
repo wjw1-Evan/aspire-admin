@@ -8,29 +8,30 @@ namespace Platform.AppHost.Tests.Helpers;
 /// </summary>
 public static class TestDataGenerator
 {
+    private static long _counter = Environment.TickCount64;
+
+    private static long GetNextId()
+    {
+        return Interlocked.Increment(ref _counter);
+    }
     /// <summary>
     /// Generates a valid registration request with unique username and email.
-    /// Uses timestamp + GUID to ensure uniqueness across test runs.
+    /// Uses counter + GUID to ensure uniqueness across test runs and parallel execution.
     /// Username is kept under 20 characters to comply with validation rules.
     /// Phone number is generated uniquely to avoid MongoDB unique index conflicts.
     /// </summary>
     /// <returns>A valid RegisterRequest with unique credentials.</returns>
     public static RegisterRequest GenerateValidRegistration()
     {
-        // Use last 6 digits of timestamp + 6 chars of GUID to keep username under 20 chars
-        // Format: u_{timestamp6}_{guid6} = 2 + 6 + 1 + 6 = 15 characters
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
-        var timestampSuffix = timestamp.Length >= 6 ? timestamp[^6..] : timestamp;
+        var counter = GetNextId() % 1000000L;
         var guid = Guid.NewGuid().ToString("N")[..6];
 
         return new RegisterRequest
         {
-            Username = $"u_{timestampSuffix}_{guid}",
+            Username = $"u{counter:x}_{guid}",
             Password = "Test@123456",
-            Email = $"test_{timestamp}_{guid}@example.com",
-            // Generate unique phone number to avoid MongoDB unique index conflicts on null values
-            // Format: +1 followed by 10 digits from timestamp
-            PhoneNumber = $"+1{timestamp[^10..]}"
+            Email = $"test_{counter}_{guid}@example.com",
+            PhoneNumber = $"+1{(counter % 10000000000L) + 1000000000L}"
         };
     }
 
@@ -57,20 +58,20 @@ public static class TestDataGenerator
 
     /// <summary>
     /// Generates a valid form definition with unique name and 2-3 default fields.
-    /// Uses timestamp + GUID to ensure uniqueness across test runs.
-    /// Format: "form_{timestamp}_{guid}"
+    /// Uses counter + GUID to ensure uniqueness across test runs.
+    /// Format: "form_{counter}_{guid}"
     /// </summary>
     /// <returns>A valid FormDefinitionRequest with unique name and fields.</returns>
     public static FormDefinitionRequest GenerateValidFormDefinition()
     {
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var counter = GetNextId();
         var guid = Guid.NewGuid().ToString("N")[..8];
-        var formName = $"form_{timestamp}_{guid}";
+        var formName = $"form_{counter}_{guid}";
 
         return new FormDefinitionRequest
         {
             Name = formName,
-            Key = $"key_{timestamp}_{guid}",
+            Key = $"key_{counter}_{guid}",
             Description = $"Test form created at {DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm:ss}",
             Fields = new List<FormFieldRequest>
             {
@@ -79,21 +80,21 @@ public static class TestDataGenerator
                     Label = "Name",
                     Type = "Text",
                     Required = true,
-                    DataKey = $"name_{timestamp}_{guid}"
+                    DataKey = $"name_{counter}_{guid}"
                 },
                 new FormFieldRequest
                 {
                     Label = "Email",
                     Type = "Text",  // Changed from "Email" to "Text" - Email is not a valid FormFieldType
                     Required = true,
-                    DataKey = $"email_{timestamp}_{guid}"
+                    DataKey = $"email_{counter}_{guid}"
                 },
                 new FormFieldRequest
                 {
                     Label = "Comments",
                     Type = "TextArea",
                     Required = false,
-                    DataKey = $"comments_{timestamp}_{guid}"
+                    DataKey = $"comments_{counter}_{guid}"
                 }
             },
             IsActive = true
@@ -102,15 +103,15 @@ public static class TestDataGenerator
 
     /// <summary>
     /// Generates a form definition with a specified number of fields.
-    /// Each field has a unique name using timestamp + GUID pattern.
+    /// Each field has a unique name using counter + GUID pattern.
     /// </summary>
     /// <param name="fieldCount">The number of fields to generate.</param>
     /// <returns>A FormDefinitionRequest with the specified number of fields.</returns>
     public static FormDefinitionRequest GenerateFormDefinitionWithFields(int fieldCount)
     {
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var counter = GetNextId();
         var guid = Guid.NewGuid().ToString("N")[..8];
-        var formName = $"form_{timestamp}_{guid}";
+        var formName = $"form_{counter}_{guid}";
 
         var fields = new List<FormFieldRequest>();
         var fieldTypes = new[] { "Text", "Number", "Date", "TextArea", "Checkbox", "Select" };
@@ -123,14 +124,14 @@ public static class TestDataGenerator
                 Label = $"Field {i + 1}",
                 Type = fieldTypes[i % fieldTypes.Length],
                 Required = i % 2 == 0, // Alternate between required and optional
-                DataKey = $"field_{i}_{timestamp}_{fieldGuid}"
+                DataKey = $"field_{i}_{counter}_{fieldGuid}"
             });
         }
 
         return new FormDefinitionRequest
         {
             Name = formName,
-            Key = $"key_{timestamp}_{guid}",
+            Key = $"key_{counter}_{guid}",
             Description = $"Test form with {fieldCount} fields",
             Fields = fields,
             IsActive = true
@@ -139,15 +140,15 @@ public static class TestDataGenerator
 
     /// <summary>
     /// Generates a valid knowledge base with unique name and default category.
-    /// Uses timestamp + GUID to ensure uniqueness across test runs.
-    /// Format: "kb_{timestamp}_{guid}"
+    /// Uses counter + GUID to ensure uniqueness across test runs.
+    /// Format: "kb_{counter}_{guid}"
     /// </summary>
     /// <returns>A valid KnowledgeBaseRequest with unique name and category.</returns>
     public static KnowledgeBaseRequest GenerateValidKnowledgeBase()
     {
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var counter = GetNextId();
         var guid = Guid.NewGuid().ToString("N")[..8];
-        var kbName = $"kb_{timestamp}_{guid}";
+        var kbName = $"kb_{counter}_{guid}";
 
         return new KnowledgeBaseRequest
         {
@@ -160,15 +161,15 @@ public static class TestDataGenerator
 
     /// <summary>
     /// Generates a knowledge base with a specified category.
-    /// Uses timestamp + GUID to ensure uniqueness across test runs.
+    /// Uses counter + GUID to ensure uniqueness across test runs.
     /// </summary>
     /// <param name="category">The category to assign to the knowledge base.</param>
     /// <returns>A KnowledgeBaseRequest with the specified category.</returns>
     public static KnowledgeBaseRequest GenerateKnowledgeBaseWithCategory(string category)
     {
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var counter = GetNextId();
         var guid = Guid.NewGuid().ToString("N")[..8];
-        var kbName = $"kb_{timestamp}_{guid}";
+        var kbName = $"kb_{counter}_{guid}";
 
         return new KnowledgeBaseRequest
         {
@@ -182,17 +183,17 @@ public static class TestDataGenerator
     /// <summary>
     /// Generates a valid workflow definition with unique name and minimal valid graph.
     /// The graph contains a start node and an end node connected by an edge.
-    /// Uses timestamp + GUID to ensure uniqueness across test runs.
-    /// Format: "workflow_{timestamp}_{guid}"
+    /// Uses counter + GUID to ensure uniqueness across test runs.
+    /// Format: "workflow_{counter}_{guid}"
     /// </summary>
     /// <returns>A valid WorkflowDefinitionRequest with unique name and minimal graph.</returns>
     public static WorkflowDefinitionRequest GenerateValidWorkflowDefinition()
     {
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var counter = GetNextId();
         var guid = Guid.NewGuid().ToString("N")[..8];
-        var workflowName = $"workflow_{timestamp}_{guid}";
+        var workflowName = $"workflow_{counter}_{guid}";
 
-        var graph = GenerateMinimalValidGraph();
+        var graph = GenerateMinimalValidGraph(counter);
 
         return new WorkflowDefinitionRequest
         {
@@ -208,12 +209,13 @@ public static class TestDataGenerator
     /// Generates a minimal valid workflow graph containing a start node and an end node.
     /// The nodes are connected by a single edge.
     /// </summary>
+    /// <param name="seed">Seed value for generating unique node IDs.</param>
     /// <returns>A WorkflowGraphRequest with start and end nodes.</returns>
-    public static WorkflowGraphRequest GenerateMinimalValidGraph()
+    public static WorkflowGraphRequest GenerateMinimalValidGraph(long? seed = null)
     {
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        var startNodeId = $"start_{timestamp}";
-        var endNodeId = $"end_{timestamp}";
+        var counter = seed ?? GetNextId();
+        var startNodeId = $"start_{counter}";
+        var endNodeId = $"end_{counter}";
 
         return new WorkflowGraphRequest
         {
@@ -248,7 +250,7 @@ public static class TestDataGenerator
             {
                 new WorkflowEdgeRequest
                 {
-                    Id = $"edge_{timestamp}",
+                    Id = $"edge_{counter}",
                     Source = startNodeId,
                     Target = endNodeId
                 }
@@ -265,15 +267,15 @@ public static class TestDataGenerator
     /// <returns>A WorkflowDefinitionRequest with the specified number of nodes.</returns>
     public static WorkflowDefinitionRequest GenerateWorkflowWithNodes(int nodeCount)
     {
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var counter = GetNextId();
         var guid = Guid.NewGuid().ToString("N")[..8];
-        var workflowName = $"workflow_{timestamp}_{guid}";
+        var workflowName = $"workflow_{counter}_{guid}";
 
         var nodes = new List<WorkflowNodeRequest>();
         var edges = new List<WorkflowEdgeRequest>();
 
         // Add start node
-        var startNodeId = $"start_{timestamp}";
+        var startNodeId = $"start_{counter}";
         nodes.Add(new WorkflowNodeRequest
         {
             Id = startNodeId,
@@ -292,7 +294,7 @@ public static class TestDataGenerator
         // Add intermediate nodes
         for (int i = 0; i < nodeCount; i++)
         {
-            var nodeId = $"node_{i}_{timestamp}_{Guid.NewGuid().ToString("N")[..6]}";
+            var nodeId = $"node_{i}_{counter}_{Guid.NewGuid().ToString("N")[..6]}";
             nodes.Add(new WorkflowNodeRequest
             {
                 Id = nodeId,
@@ -309,7 +311,7 @@ public static class TestDataGenerator
             // Connect previous node to current node
             edges.Add(new WorkflowEdgeRequest
             {
-                Id = $"edge_{i}_{timestamp}",
+                Id = $"edge_{i}_{counter}",
                 Source = previousNodeId,
                 Target = nodeId
             });
@@ -318,7 +320,7 @@ public static class TestDataGenerator
         }
 
         // Add end node
-        var endNodeId = $"end_{timestamp}";
+        var endNodeId = $"end_{counter}";
         nodes.Add(new WorkflowNodeRequest
         {
             Id = endNodeId,
@@ -335,7 +337,7 @@ public static class TestDataGenerator
         // Connect last intermediate node to end node
         edges.Add(new WorkflowEdgeRequest
         {
-            Id = $"edge_end_{timestamp}",
+            Id = $"edge_end_{counter}",
             Source = previousNodeId,
             Target = endNodeId
         });
@@ -363,13 +365,13 @@ public static class TestDataGenerator
     /// <returns>A WorkflowDefinitionRequest containing the specified node type.</returns>
     public static WorkflowDefinitionRequest GenerateWorkflowWithNodeType(string nodeType)
     {
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var counter = GetNextId();
         var guid = Guid.NewGuid().ToString("N")[..8];
-        var workflowName = $"workflow_{nodeType}_{timestamp}_{guid}";
+        var workflowName = $"workflow_{nodeType}_{counter}_{guid}";
 
-        var startNodeId = $"start_{timestamp}";
-        var targetNodeId = $"{nodeType}_{timestamp}";
-        var endNodeId = $"end_{timestamp}";
+        var startNodeId = $"start_{counter}";
+        var targetNodeId = $"{nodeType}_target_{counter}";
+        var endNodeId = $"end_{counter}";
 
         var nodes = new List<WorkflowNodeRequest>
         {
@@ -415,13 +417,13 @@ public static class TestDataGenerator
         {
             new WorkflowEdgeRequest
             {
-                Id = $"edge_start_{timestamp}",
+                Id = $"edge_start_{counter}",
                 Source = startNodeId,
                 Target = targetNodeId
             },
             new WorkflowEdgeRequest
             {
-                Id = $"edge_end_{timestamp}",
+                Id = $"edge_end_{counter}",
                 Source = targetNodeId,
                 Target = endNodeId
             }
@@ -443,15 +445,15 @@ public static class TestDataGenerator
 
     /// <summary>
     /// Generates a valid document with unique title and default content.
-    /// Uses timestamp + GUID to ensure uniqueness across test runs.
-    /// Format: "doc_{timestamp}_{guid}"
+    /// Uses counter + GUID to ensure uniqueness across test runs.
+    /// Format: "doc_{counter}_{guid}"
     /// </summary>
     /// <returns>A valid DocumentRequest with unique title and content.</returns>
     public static DocumentRequest GenerateValidDocument()
     {
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var counter = GetNextId();
         var guid = Guid.NewGuid().ToString("N")[..8];
-        var docTitle = $"doc_{timestamp}_{guid}";
+        var docTitle = $"doc_{counter}_{guid}";
 
         return new DocumentRequest
         {
@@ -464,15 +466,15 @@ public static class TestDataGenerator
 
     /// <summary>
     /// Generates a document with specified form data.
-    /// Uses timestamp + GUID to ensure uniqueness across test runs.
+    /// Uses counter + GUID to ensure uniqueness across test runs.
     /// </summary>
     /// <param name="formData">The form data to include in the document.</param>
     /// <returns>A DocumentRequest with the specified form data.</returns>
     public static DocumentRequest GenerateDocumentWithFormData(Dictionary<string, object> formData)
     {
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var counter = GetNextId();
         var guid = Guid.NewGuid().ToString("N")[..8];
-        var docTitle = $"doc_{timestamp}_{guid}";
+        var docTitle = $"doc_{counter}_{guid}";
 
         return new DocumentRequest
         {
@@ -499,7 +501,21 @@ public static class TestDataGenerator
             NodeTypes.Ai => new { prompt = "Test AI prompt", model = "gpt-4" },
             NodeTypes.AiJudge => new { criteria = "Test criteria", model = "gpt-4" },
             NodeTypes.Answer => new { message = "Test answer message" },
-            NodeTypes.Approval => new { approvers = new[] { "user1", "user2" }, approvalType = "sequential" },
+            NodeTypes.Approval => new
+            {
+                approval = new
+                {
+                    type = "all",
+                    approvers = new[]
+                    {
+                        new { type = "user", userId = "test-user-1" },
+                        new { type = "user", userId = "test-user-2" }
+                    },
+                    allowDelegate = false,
+                    allowReject = true,
+                    allowReturn = false
+                }
+            },
             NodeTypes.Code => new { code = "console.log('test');", language = "javascript" },
             NodeTypes.Condition => new { expression = "{{variable}} > 0" },
             NodeTypes.DocumentExtractor => new { fields = new[] { "title", "content" } },

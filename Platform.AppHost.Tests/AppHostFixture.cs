@@ -14,6 +14,11 @@ public class AppHostFixture : IAsyncLifetime
 {
     private DistributedApplication? _app;
     private HttpClient? _httpClient;
+    private readonly List<string> _createdUserIds = new();
+    private readonly List<string> _createdWorkflowIds = new();
+    private readonly List<string> _createdDocumentIds = new();
+    private readonly List<string> _createdFormDefinitionIds = new();
+    private readonly List<string> _createdKnowledgeBaseIds = new();
 
     /// <summary>
     /// Gets the configured HTTP client for making requests to the API service.
@@ -28,6 +33,61 @@ public class AppHostFixture : IAsyncLifetime
     /// <exception cref="InvalidOperationException">Thrown if the fixture has not been initialized.</exception>
     public DistributedApplication App => _app
         ?? throw new InvalidOperationException("Fixture not initialized. Ensure InitializeAsync has been called.");
+
+    /// <summary>
+    /// Registers a user ID for cleanup after tests complete.
+    /// </summary>
+    public void TrackUserId(string userId)
+    {
+        lock (_createdUserIds)
+        {
+            _createdUserIds.Add(userId);
+        }
+    }
+
+    /// <summary>
+    /// Registers a workflow ID for cleanup after tests complete.
+    /// </summary>
+    public void TrackWorkflowId(string workflowId)
+    {
+        lock (_createdWorkflowIds)
+        {
+            _createdWorkflowIds.Add(workflowId);
+        }
+    }
+
+    /// <summary>
+    /// Registers a document ID for cleanup after tests complete.
+    /// </summary>
+    public void TrackDocumentId(string documentId)
+    {
+        lock (_createdDocumentIds)
+        {
+            _createdDocumentIds.Add(documentId);
+        }
+    }
+
+    /// <summary>
+    /// Registers a form definition ID for cleanup after tests complete.
+    /// </summary>
+    public void TrackFormDefinitionId(string formDefinitionId)
+    {
+        lock (_createdFormDefinitionIds)
+        {
+            _createdFormDefinitionIds.Add(formDefinitionId);
+        }
+    }
+
+    /// <summary>
+    /// Registers a knowledge base ID for cleanup after tests complete.
+    /// </summary>
+    public void TrackKnowledgeBaseId(string knowledgeBaseId)
+    {
+        lock (_createdKnowledgeBaseIds)
+        {
+            _createdKnowledgeBaseIds.Add(knowledgeBaseId);
+        }
+    }
 
     /// <summary>
     /// Initializes the distributed application and prepares the test environment.

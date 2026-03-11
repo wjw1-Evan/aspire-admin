@@ -104,9 +104,11 @@ public class EFCoreDataFactory<T>(DbContext context)
 
     public async Task<T?> UpdateAsync(string id, Func<T, Task> updateAction, CancellationToken cancellationToken = default)
     {
-        var entity = await GetByIdAsync(id, cancellationToken);
+        var entity = await _dbSet.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
         if (entity == null) return null;
+
         await updateAction(entity);
+
         await context.SaveChangesAsync(cancellationToken);
         return entity;
     }

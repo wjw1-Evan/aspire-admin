@@ -13,6 +13,7 @@ namespace Platform.AppHost.Tests.Tests;
 /// <remarks>
 /// Requirements: 5.1, 5.2, 5.3, 5.4, 5.5
 /// </remarks>
+[Collection("AppHost Collection")]
 public class LoginTests : IClassFixture<AppHostFixture>
 {
     private readonly AppHostFixture _fixture;

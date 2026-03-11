@@ -468,6 +468,13 @@ public class DocumentService : IDocumentService
 
         var instance = await _workflowEngine.StartWorkflowAsync(workflowDefinitionId, documentId, (Dictionary<string, object?>?)(object?)sanitizedVars);
 
+        // 更新文档的 WorkflowInstanceId 字段
+        await _documentFactory.UpdateAsync(documentId, d =>
+        {
+            d.WorkflowInstanceId = instance.Id;
+            d.Status = DocumentStatus.Approving;
+        });
+
         _logger.LogInformation("公文已提交: DocumentId={DocumentId}, WorkflowInstanceId={InstanceId}",
             documentId, instance.Id);
 
@@ -742,10 +749,10 @@ public class DocumentService : IDocumentService
             var instanceIds = pendingInstances.Select(i => i.Id).ToList();
             if (instanceIds.Any())
             {
-                pendingCount = await _documentFactory.CountAsync(d => 
-                    d.CompanyId == companyId && 
-                    d.Status == DocumentStatus.Approving && 
-                    d.WorkflowInstanceId != null && 
+                pendingCount = await _documentFactory.CountAsync(d =>
+                    d.CompanyId == companyId &&
+                    d.Status == DocumentStatus.Approving &&
+                    d.WorkflowInstanceId != null &&
                     instanceIds.Contains(d.WorkflowInstanceId));
             }
         }

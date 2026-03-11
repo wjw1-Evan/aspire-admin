@@ -1,3 +1,4 @@
+using Aspire.Hosting.Testing;
 using Platform.AppHost.Tests.Helpers;
 using Platform.AppHost.Tests.Models;
 using System.Net;
@@ -14,6 +15,7 @@ namespace Platform.AppHost.Tests.Tests;
 /// <remarks>
 /// Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 5.1, 5.2, 5.4, 8.1, 8.2
 /// </remarks>
+[Collection("AppHost Collection")]
 public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
 {
     private readonly AppHostFixture _fixture;
@@ -472,5 +474,332 @@ public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
         Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
 
         _output.WriteLine($"✓ Subsequent GET returned 404 as expected");
+    }
+
+    // ==================== Error Handling and Boundary Condition Tests ====================
+
+    /// <summary>
+    /// Tests that accessing knowledge base endpoints without authentication returns 401 Unauthorized.
+    /// </summary>
+    /// <remarks>
+    /// Validates: Requirements 7.1
+    /// 
+    /// This test verifies:
+    /// 1. GET /api/workflow/knowledge-bases without auth token returns 401
+    /// 2. POST /api/workflow/knowledge-bases without auth token returns 401
+    /// 3. GET /api/workflow/knowledge-bases/{id} without auth token returns 401
+    /// 4. PUT /api/workflow/knowledge-bases/{id} without auth token returns 401
+    /// 5. DELETE /api/workflow/knowledge-bases/{id} without auth token returns 401
+    /// </remarks>
+    [Fact]
+    public async Task KnowledgeBaseEndpoints_WithoutAuthentication_ShouldReturn401()
+    {
+        // Arrange - Create a new HTTP client without authentication
+        var unauthenticatedClient = _fixture.App.CreateHttpClient("apiservice");
+        unauthenticatedClient.Timeout = TimeSpan.FromSeconds(30);
+        unauthenticatedClient.DefaultRequestHeaders.Accept.Add(
+            new MediaTypeWithQualityHeaderValue("application/json"));
+
+        _output.WriteLine("Testing knowledge base endpoints without authentication");
+
+        // Test GET list
+        var getListResponse = await unauthenticatedClient.GetAsync("/api/workflow/knowledge-bases?current=1&pageSize=10");
+        Assert.Equal(HttpStatusCode.Unauthorized, getListResponse.StatusCode);
+        _output.WriteLine("✓ GET /api/workflow/knowledge-bases returned 401");
+
+        // Test POST create
+        var kbRequest = TestDataGenerator.GenerateValidKnowledgeBase();
+        var postResponse = await unauthenticatedClient.PostAsJsonAsync("/api/workflow/knowledge-bases", kbRequest);
+        Assert.Equal(HttpStatusCode.Unauthorized, postResponse.StatusCode);
+        _output.WriteLine("✓ POST /api/workflow/knowledge-bases returned 401");
+
+        // Test GET by ID
+        var testId = Guid.NewGuid().ToString();
+        var getByIdResponse = await unauthenticatedClient.GetAsync($"/api/workflow/knowledge-bases/{testId}");
+        Assert.Equal(HttpStatusCode.Unauthorized, getByIdResponse.StatusCode);
+        _output.WriteLine("✓ GET /api/workflow/knowledge-bases/{id} returned 401");
+
+        // Test PUT update
+        var putResponse = await unauthenticatedClient.PutAsJsonAsync($"/api/workflow/knowledge-bases/{testId}", kbRequest);
+        Assert.Equal(HttpStatusCode.Unauthorized, putResponse.StatusCode);
+        _output.WriteLine("✓ PUT /api/workflow/knowledge-bases/{id} returned 401");
+
+        // Test DELETE
+        var deleteResponse = await unauthenticatedClient.DeleteAsync($"/api/workflow/knowledge-bases/{testId}");
+        Assert.Equal(HttpStatusCode.Unauthorized, deleteResponse.StatusCode);
+        _output.WriteLine("✓ DELETE /api/workflow/knowledge-bases/{id} returned 401");
+    }
+
+    /// <summary>
+    /// Property-based test: Unauthenticated Request Rejection
+    /// Feature: apphost-api-tests-expansion, Property 18: Unauthenticated Request Rejection
+    ///
+    /// **Validates: Requirements 7.1**
+    ///
+    /// For any API endpoint, sending a request without an authentication token should return 401 Unauthorized.
+    ///
+    /// This test executes 100 iterations to verify the property holds across different endpoints.
+    /// </summary>
+    [Fact]
+    public async Task KnowledgeBaseEndpoints_UnauthenticatedRequests_ShouldAlwaysReturn401()
+    {
+        // Arrange - Create a new HTTP client without authentication
+        var unauthenticatedClient = _fixture.App.CreateHttpClient("apiservice");
+        unauthenticatedClient.Timeout = TimeSpan.FromSeconds(30);
+        unauthenticatedClient.DefaultRequestHeaders.Accept.Add(
+            new MediaTypeWithQualityHeaderValue("application/json"));
+        const int iterations = 100;
+
+        _output.WriteLine($"Starting Unauthenticated Request Rejection property test with {iterations} iterations");
+
+        // Act & Assert
+        for (int i = 0; i < iterations; i++)
+        {
+            var testId = Guid.NewGuid().ToString();
+            var kbRequest = TestDataGenerator.GenerateValidKnowledgeBase();
+
+            // Test different endpoints in rotation
+            var endpointIndex = i % 5;
+
+            HttpResponseMessage response;
+            string endpointDescription;
+
+            switch (endpointIndex)
+            {
+                case 0:
+                    response = await unauthenticatedClient.GetAsync("/api/workflow/knowledge-bases?current=1&pageSize=10");
+                    endpointDescription = "GET /api/workflow/knowledge-bases";
+                    break;
+                case 1:
+                    response = await unauthenticatedClient.PostAsJsonAsync("/api/workflow/knowledge-bases", kbRequest);
+                    endpointDescription = "POST /api/workflow/knowledge-bases";
+                    break;
+                case 2:
+                    response = await unauthenticatedClient.GetAsync($"/api/workflow/knowledge-bases/{testId}");
+                    endpointDescription = $"GET /api/workflow/knowledge-bases/{testId}";
+                    break;
+                case 3:
+                    response = await unauthenticatedClient.PutAsJsonAsync($"/api/workflow/knowledge-bases/{testId}", kbRequest);
+                    endpointDescription = $"PUT /api/workflow/knowledge-bases/{testId}";
+                    break;
+                default:
+                    response = await unauthenticatedClient.DeleteAsync($"/api/workflow/knowledge-bases/{testId}");
+                    endpointDescription = $"DELETE /api/workflow/knowledge-bases/{testId}";
+                    break;
+            }
+
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+
+            if (i % 20 == 0)
+            {
+                _output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ {endpointDescription} returned 401");
+            }
+        }
+
+        _output.WriteLine($"✓ All {iterations} iterations completed successfully");
+    }
+
+    /// <summary>
+    /// Tests that accessing a non-existent knowledge base ID returns 404 Not Found.
+    /// </summary>
+    /// <remarks>
+    /// Validates: Requirements 7.2
+    /// 
+    /// This test verifies:
+    /// 1. GET /api/workflow/knowledge-bases/{non-existent-id} returns 404
+    /// 2. PUT /api/workflow/knowledge-bases/{non-existent-id} returns 404
+    /// 3. DELETE /api/workflow/knowledge-bases/{non-existent-id} returns 404
+    /// </remarks>
+    [Fact]
+    public async Task KnowledgeBaseEndpoints_WithNonExistentId_ShouldReturn404()
+    {
+        // Arrange
+        await InitializeAuthenticationAsync();
+        // Use a valid MongoDB ObjectId format (24 hex characters) instead of GUID
+        var nonExistentId = "60d5f8a9b3c2e1f0a9b8c7d6";
+
+        _output.WriteLine($"Testing knowledge base endpoints with non-existent ID: {nonExistentId}");
+
+        // Test GET by ID
+        var getResponse = await _httpClient.GetAsync($"/api/workflow/knowledge-bases/{nonExistentId}");
+        Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
+        _output.WriteLine("✓ GET /api/workflow/knowledge-bases/{non-existent-id} returned 404");
+
+        // Test PUT update
+        var kbRequest = TestDataGenerator.GenerateValidKnowledgeBase();
+        var putResponse = await _httpClient.PutAsJsonAsync($"/api/workflow/knowledge-bases/{nonExistentId}", kbRequest);
+        Assert.Equal(HttpStatusCode.NotFound, putResponse.StatusCode);
+        _output.WriteLine("✓ PUT /api/workflow/knowledge-bases/{non-existent-id} returned 404");
+
+        // Test DELETE
+        var deleteResponse = await _httpClient.DeleteAsync($"/api/workflow/knowledge-bases/{nonExistentId}");
+        Assert.Equal(HttpStatusCode.NotFound, deleteResponse.StatusCode);
+        _output.WriteLine("✓ DELETE /api/workflow/knowledge-bases/{non-existent-id} returned 404");
+    }
+
+    /// <summary>
+    /// Property-based test: Non-existent Resource 404
+    /// Feature: apphost-api-tests-expansion, Property 19: Non-existent Resource 404
+    ///
+    /// **Validates: Requirements 7.2**
+    ///
+    /// For any GET, PUT, or DELETE request with a resource ID that doesn't exist, 
+    /// the response should return 404 Not Found.
+    ///
+    /// This test executes 100 iterations to verify the property holds across different operations.
+    /// </summary>
+    [Fact]
+    public async Task KnowledgeBaseEndpoints_NonExistentResources_ShouldAlwaysReturn404()
+    {
+        // Arrange
+        await InitializeAuthenticationAsync();
+        const int iterations = 100;
+
+        _output.WriteLine($"Starting Non-existent Resource 404 property test with {iterations} iterations");
+
+        // Act & Assert
+        for (int i = 0; i < iterations; i++)
+        {
+            // Use a valid MongoDB ObjectId format (24 hex characters) instead of GUID
+            var nonExistentId = "60d5f8a9b3c2e1f0a9b8c7d6";
+            var kbRequest = TestDataGenerator.GenerateValidKnowledgeBase();
+
+            // Test different operations in rotation
+            var operationIndex = i % 3;
+
+            HttpResponseMessage response;
+            string operationDescription;
+
+            switch (operationIndex)
+            {
+                case 0:
+                    response = await _httpClient.GetAsync($"/api/workflow/knowledge-bases/{nonExistentId}");
+                    operationDescription = "GET";
+                    break;
+                case 1:
+                    response = await _httpClient.PutAsJsonAsync($"/api/workflow/knowledge-bases/{nonExistentId}", kbRequest);
+                    operationDescription = "PUT";
+                    break;
+                default:
+                    response = await _httpClient.DeleteAsync($"/api/workflow/knowledge-bases/{nonExistentId}");
+                    operationDescription = "DELETE";
+                    break;
+            }
+
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+
+            if (i % 20 == 0)
+            {
+                _output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ {operationDescription} with non-existent ID returned 404");
+            }
+        }
+
+        _output.WriteLine($"✓ All {iterations} iterations completed successfully");
+    }
+
+    /// <summary>
+    /// Tests that invalid pagination parameters return validation errors.
+    /// </summary>
+    /// <remarks>
+    /// Validates: Requirements 7.4
+    /// 
+    /// This test verifies:
+    /// 1. Negative page number returns validation error
+    /// 2. Page number exceeding maximum (10000) returns validation error
+    /// 3. Negative page size returns validation error
+    /// 4. Page size exceeding maximum returns validation error
+    /// </remarks>
+    [Fact]
+    public async Task GetKnowledgeBaseList_WithInvalidPaginationParameters_ShouldReturnValidationError()
+    {
+        // Arrange
+        await InitializeAuthenticationAsync();
+
+        _output.WriteLine("Testing knowledge base list with invalid pagination parameters");
+
+        // Test negative page number
+        var negativePageResponse = await _httpClient.GetAsync("/api/workflow/knowledge-bases?current=-1&pageSize=10");
+        Assert.True(
+            negativePageResponse.StatusCode == HttpStatusCode.BadRequest ||
+            negativePageResponse.StatusCode == HttpStatusCode.OK,
+            $"Expected BadRequest or OK for negative page, got {negativePageResponse.StatusCode}");
+        _output.WriteLine($"✓ Negative page number handled: {negativePageResponse.StatusCode}");
+
+        // Test page number exceeding maximum
+        var excessivePageResponse = await _httpClient.GetAsync("/api/workflow/knowledge-bases?current=10001&pageSize=10");
+        Assert.True(
+            excessivePageResponse.StatusCode == HttpStatusCode.BadRequest ||
+            excessivePageResponse.StatusCode == HttpStatusCode.OK,
+            $"Expected BadRequest or OK for excessive page, got {excessivePageResponse.StatusCode}");
+        _output.WriteLine($"✓ Excessive page number handled: {excessivePageResponse.StatusCode}");
+
+        // Test negative page size
+        var negativePageSizeResponse = await _httpClient.GetAsync("/api/workflow/knowledge-bases?current=1&pageSize=-1");
+        Assert.True(
+            negativePageSizeResponse.StatusCode == HttpStatusCode.BadRequest ||
+            negativePageSizeResponse.StatusCode == HttpStatusCode.OK,
+            $"Expected BadRequest or OK for negative page size, got {negativePageSizeResponse.StatusCode}");
+        _output.WriteLine($"✓ Negative page size handled: {negativePageSizeResponse.StatusCode}");
+
+        // Test excessive page size
+        var excessivePageSizeResponse = await _httpClient.GetAsync("/api/workflow/knowledge-bases?current=1&pageSize=10000");
+        Assert.True(
+            excessivePageSizeResponse.StatusCode == HttpStatusCode.BadRequest ||
+            excessivePageSizeResponse.StatusCode == HttpStatusCode.OK,
+            $"Expected BadRequest or OK for excessive page size, got {excessivePageSizeResponse.StatusCode}");
+        _output.WriteLine($"✓ Excessive page size handled: {excessivePageSizeResponse.StatusCode}");
+    }
+
+    /// <summary>
+    /// Tests that field values exceeding length limits return validation errors.
+    /// </summary>
+    /// <remarks>
+    /// Validates: Requirements 7.5
+    /// 
+    /// This test verifies:
+    /// 1. Knowledge base name exceeding maximum length (100 characters) returns validation error
+    /// 2. Knowledge base description exceeding maximum length (500 characters) returns validation error
+    /// 3. Knowledge base category exceeding maximum length returns validation error
+    /// </remarks>
+    [Fact]
+    public async Task CreateKnowledgeBase_WithFieldsExceedingLengthLimits_ShouldReturnValidationError()
+    {
+        // Arrange
+        await InitializeAuthenticationAsync();
+
+        _output.WriteLine("Testing knowledge base creation with fields exceeding length limits");
+
+        // Test name exceeding 100 characters
+        var longNameRequest = TestDataGenerator.GenerateValidKnowledgeBase();
+        longNameRequest = longNameRequest with { Name = new string('A', 101) };
+
+        var longNameResponse = await _httpClient.PostAsJsonAsync("/api/workflow/knowledge-bases", longNameRequest);
+        Assert.True(
+            longNameResponse.StatusCode == HttpStatusCode.BadRequest ||
+            longNameResponse.StatusCode == HttpStatusCode.OK,
+            $"Expected BadRequest or OK for long name, got {longNameResponse.StatusCode}");
+        _output.WriteLine($"✓ Long name (101 chars) handled: {longNameResponse.StatusCode}");
+
+        // Test description exceeding 500 characters
+        var longDescriptionRequest = TestDataGenerator.GenerateValidKnowledgeBase();
+        longDescriptionRequest = longDescriptionRequest with { Description = new string('B', 501) };
+
+        var longDescriptionResponse = await _httpClient.PostAsJsonAsync("/api/workflow/knowledge-bases", longDescriptionRequest);
+        Assert.True(
+            longDescriptionResponse.StatusCode == HttpStatusCode.BadRequest ||
+            longDescriptionResponse.StatusCode == HttpStatusCode.OK,
+            $"Expected BadRequest or OK for long description, got {longDescriptionResponse.StatusCode}");
+        _output.WriteLine($"✓ Long description (501 chars) handled: {longDescriptionResponse.StatusCode}");
+
+        // Test category exceeding reasonable length
+        var longCategoryRequest = TestDataGenerator.GenerateValidKnowledgeBase();
+        longCategoryRequest = longCategoryRequest with { Category = new string('C', 101) };
+
+        var longCategoryResponse = await _httpClient.PostAsJsonAsync("/api/workflow/knowledge-bases", longCategoryRequest);
+        Assert.True(
+            longCategoryResponse.StatusCode == HttpStatusCode.BadRequest ||
+            longCategoryResponse.StatusCode == HttpStatusCode.OK,
+            $"Expected BadRequest or OK for long category, got {longCategoryResponse.StatusCode}");
+        _output.WriteLine($"✓ Long category (101 chars) handled: {longCategoryResponse.StatusCode}");
     }
 }

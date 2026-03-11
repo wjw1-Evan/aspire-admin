@@ -14,6 +14,7 @@ namespace Platform.AppHost.Tests.Tests;
 /// <remarks>
 /// Requirements: 6.1, 6.2, 6.3, 6.4, 6.5
 /// </remarks>
+[Collection("AppHost Collection")]
 public class AuthenticationFlowTests : IClassFixture<AppHostFixture>
 {
     private readonly AppHostFixture _fixture;

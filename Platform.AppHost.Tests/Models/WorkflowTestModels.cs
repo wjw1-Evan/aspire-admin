@@ -161,6 +161,48 @@ public record WorkflowInstanceResponse
     /// </summary>
     public string Status { get; init; } = string.Empty;
 }
+/// <summary>
+/// Response model for a workflow definition.
+/// </summary>
+public record WorkflowDefinitionResponse
+{
+    /// <summary>
+    /// The unique identifier of the workflow definition.
+    /// </summary>
+    public string Id { get; init; } = string.Empty;
+
+    /// <summary>
+    /// The name of the workflow definition.
+    /// </summary>
+    public string Name { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Optional description of the workflow definition.
+    /// </summary>
+    public string? Description { get; init; }
+
+    /// <summary>
+    /// The category of the workflow definition.
+    /// </summary>
+    public string Category { get; init; } = string.Empty;
+
+    /// <summary>
+    /// The graph structure of the workflow definition.
+    /// </summary>
+    public WorkflowGraphRequest Graph { get; init; } = new();
+
+    /// <summary>
+    /// The version of the workflow definition.
+    /// </summary>
+    public int Version { get; init; }
+
+    /// <summary>
+    /// Indicates whether the workflow definition is active.
+    /// </summary>
+    public bool IsActive { get; init; }
+}
+
+
 
 /// <summary>
 /// Static class containing constants for all 26 supported workflow node types.

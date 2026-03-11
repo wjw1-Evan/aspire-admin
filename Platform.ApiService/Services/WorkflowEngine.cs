@@ -205,7 +205,7 @@ public partial class WorkflowEngine : IWorkflowEngine
         void AuditObject(object? obj, string path)
         {
             if (obj == null) return;
-            
+
             // Handle Collections
             if (obj is System.Collections.IEnumerable enumerable && !(obj is string))
             {
@@ -222,7 +222,8 @@ public partial class WorkflowEngine : IWorkflowEngine
 
             foreach (var p in type.GetProperties())
             {
-                try {
+                try
+                {
                     if (p.GetIndexParameters().Length > 0) continue;
                     var val = p.GetValue(obj);
                     if (val is string s && s == string.Empty)
@@ -236,7 +237,8 @@ public partial class WorkflowEngine : IWorkflowEngine
                     {
                         AuditObject(val, $"{path}.{p.Name}");
                     }
-                } catch {}
+                }
+                catch { }
             }
         }
         AuditObject(instance, "WorkflowInstance");

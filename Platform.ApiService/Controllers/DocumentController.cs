@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Workflow;
@@ -25,6 +26,7 @@ public class DocumentController : BaseApiController
     private readonly IDataFactory<WorkflowInstance> _instanceFactory;
     private readonly IDataFactory<WorkflowDefinition> _definitionFactory;
     private readonly IDataFactory<FormDefinition> _formFactory;
+    private readonly ILogger<DocumentController> _logger;
 
     /// <summary>
     /// 初始化公文管理控制器
@@ -34,18 +36,21 @@ public class DocumentController : BaseApiController
     /// <param name="instanceFactory">流程实例工厂</param>
     /// <param name="definitionFactory">流程定义工厂</param>
     /// <param name="formFactory">表单定义工厂</param>
+    /// <param name="logger">日志记录器</param>
     public DocumentController(
         IDocumentService documentService,
         IWorkflowEngine workflowEngine,
         IDataFactory<WorkflowInstance> instanceFactory,
         IDataFactory<WorkflowDefinition> definitionFactory,
-        IDataFactory<FormDefinition> formFactory)
+        IDataFactory<FormDefinition> formFactory,
+        ILogger<DocumentController> logger)
     {
         _documentService = documentService;
         _workflowEngine = workflowEngine;
         _instanceFactory = instanceFactory;
         _definitionFactory = definitionFactory;
         _formFactory = formFactory;
+        _logger = logger;
     }
 
     /// <summary>
@@ -97,28 +102,6 @@ public class DocumentController : BaseApiController
             if (document == null)
             {
                 return NotFoundError("公文", id);
-            }
-
-            // 如果有流程实例，获取流程信息
-            if (!string.IsNullOrEmpty(document.WorkflowInstanceId))
-            {
-                var instance = await _workflowEngine.GetInstanceAsync(document.WorkflowInstanceId);
-                var history = await _workflowEngine.GetApprovalHistoryAsync(document.WorkflowInstanceId);
-
-                // 如果有快照，使用快照中的流程定义，否则使用最新定义（用于向后兼容）
-                WorkflowDefinition? workflowDef = instance?.WorkflowDefinitionSnapshot;
-                if (workflowDef == null && instance != null)
-                {
-                    workflowDef = await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
-                }
-
-                return Success(new
-                {
-                    document,
-                    workflowInstance = instance,
-                    workflowDefinition = workflowDef, // 包含流程定义（优先使用快照）
-                    approvalHistory = history
-                });
             }
 
             return Success(document);

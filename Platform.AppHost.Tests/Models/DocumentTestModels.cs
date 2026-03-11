@@ -93,3 +93,54 @@ public record ApprovalRequest
     /// </summary>
     public string? Comment { get; init; }
 }
+
+/// <summary>
+/// Response model for an approval record in the approval history.
+/// </summary>
+public record ApprovalRecordResponse
+{
+    /// <summary>
+    /// The unique identifier of the approval record.
+    /// </summary>
+    public string Id { get; init; } = string.Empty;
+
+    /// <summary>
+    /// The workflow instance ID this approval record belongs to.
+    /// </summary>
+    public string WorkflowInstanceId { get; init; } = string.Empty;
+
+    /// <summary>
+    /// The node ID in the workflow where this approval occurred.
+    /// </summary>
+    public string NodeId { get; init; } = string.Empty;
+
+    /// <summary>
+    /// The ID of the user who performed the approval action.
+    /// </summary>
+    public string ApproverId { get; init; } = string.Empty;
+
+    /// <summary>
+    /// The name of the approver.
+    /// </summary>
+    public string? ApproverName { get; init; }
+
+    /// <summary>
+    /// The approval action performed (e.g., "Approve", "Reject", "Return", "Delegate").
+    /// </summary>
+    public string Action { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Optional comment provided by the approver.
+    /// </summary>
+    public string? Comment { get; init; }
+
+    /// <summary>
+    /// The timestamp when the approval action was performed.
+    /// </summary>
+    public DateTime? ApprovedAt { get; init; }
+
+    /// <summary>
+    /// The sequence number of this approval in the workflow.
+    /// </summary>
+    public int Sequence { get; init; }
+}

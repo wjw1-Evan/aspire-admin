@@ -12,6 +12,7 @@ namespace Platform.AppHost.Tests.Tests;
 /// <remarks>
 /// Requirements: 7.1, 7.2, 7.3, 7.4, 7.5
 /// </remarks>
+[Collection("AppHost Collection")]
 public class ResourceHealthTests : IClassFixture<AppHostFixture>
 {
     private readonly AppHostFixture _fixture;

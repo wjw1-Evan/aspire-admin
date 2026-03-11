@@ -393,6 +393,16 @@ public class WorkflowController : BaseApiController
     }
 
     /// <summary>
+    /// 启动流程实例（别名端点）
+    /// </summary>
+    [HttpPost("{id}/instances")]
+    [RequireMenu("workflow-list", "document-list")]
+    public async Task<IActionResult> StartWorkflowInstance(string id, [FromBody] StartWorkflowRequest request)
+    {
+        return await StartWorkflow(id, request);
+    }
+
+    /// <summary>
     /// 获取流程实例列表
     /// </summary>
     [HttpGet("instances")]
@@ -664,7 +674,7 @@ public class WorkflowController : BaseApiController
                 if (document != null)
                 {
                     var sourceFormData = document.FormData ?? new Dictionary<string, object>();
-                    
+
                     // L4 Bug Fix: merge top-level document properties into form data for initialValues
                     var mergedData = new Dictionary<string, object>(sourceFormData);
                     if (!mergedData.ContainsKey("title"))

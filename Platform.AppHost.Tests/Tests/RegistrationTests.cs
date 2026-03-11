@@ -13,6 +13,7 @@ namespace Platform.AppHost.Tests.Tests;
 /// <remarks>
 /// Requirements: 4.1, 4.2, 4.3, 4.4, 4.5
 /// </remarks>
+[Collection("AppHost Collection")]
 public class RegistrationTests : IClassFixture<AppHostFixture>
 {
     private readonly AppHostFixture _fixture;

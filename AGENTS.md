@@ -1,61 +1,68 @@
-# Copilot instructions
+# AI 助手 / Copilot 全局指南
 
-This repository is set up to use Aspire. Aspire is an orchestrator for the entire application and will take care of configuring dependencies, building, and running the application. The resources that make up the application are defined in `apphost.cs` including application code and external dependencies.
+> [!IMPORTANT]
+> 本文件定义了 Aspire Admin 项目的最高准则。AI 助手在处理本项目的任何任务时，**必须**优先读取并完全遵守此文档的规范。
 
-## General recommendations for working with Aspire
-1. Before making any changes always run the apphost using `aspire run` and inspect the state of resources to make sure you are building from a known state.
-1. Changes to the _apphost.cs_ file will require a restart of the application to take effect.
-2. Make changes incrementally and run the aspire application using the `aspire run` command to validate changes.
-3. Use the Aspire MCP tools to check the status of resources and debug issues.
+## 1. 核心架构与技术栈
+本项目是一个基于 **.NET 10 (后端) + React 19 (前端 Admin) + Expo 54 (移动 App) + 微信原生 (小程序 MiniApp)** 的企业级多租户闭环管理系统。
 
-## Running the application
-To run the application run the following command:
+- **后端**：`.NET 10` + `Aspire` 微服务编排 + `MongoDB`
+- **前端后台**：`React 19` + `Ant Design 6` + `UmiJS 4`
+- **移动端应用**：`Expo 54` 跨端 App，内置原生通知
+- **微信小程序**：`Platform.MiniApp` 微信原生开发，轻量级多端扩展
+- **基础设施**：`Redis` 缓存、`OpenAI/MCP` 服务、`JWT/国密算法` 加解密认证
 
-```
-aspire run
-```
+**核心项目结构**：
+- `Platform.AppHost/AppHost.cs`：所有微服务、数据库、Redis 资源的统筹编排入口。
+- `Platform.ApiService`：统一的后端核心业务网关与逻辑层。
+- `Platform.ServiceDefaults`：共享的扩展、实体基类及 `IDataFactory` 数据工厂层。
+- `Platform.Admin` / `Platform.App` / `Platform.MiniApp`：多端前端应用。
 
-If there is already an instance of the application running it will prompt to stop the existing instance. You only need to restart the application if code in `apphost.cs` is changed, but if you experience problems it can be useful to reset everything to the starting state.
+## 2. 交互与代码流基础纪律
 
-## Checking resources
-To check the status of resources defined in the app model use the _list resources_ tool. This will show you the current state of each resource and if there are any issues. If a resource is not running as expected you can use the _execute resource command_ tool to restart it or perform other actions.
+### 🤖 会话与 Git 提交
+- **全面中文交互**：所有代码注释、README、给用户的回复、以及 **Git 提交信息**，必须使用**简体中文**。
+- **Commit 格式**：遵循约定式提交（如 `feat: 添加xxx`，`fix: 修复xxx`，`docs: 更新xxx`）。
 
-## Listing integrations
-IMPORTANT! When a user asks you to add a resource to the app model you should first use the _list integrations_ tool to get a list of the current versions of all the available integrations. You should try to use the version of the integration which aligns with the version of the Aspire.AppHost.Sdk. Some integration versions may have a preview suffix. Once you have identified the correct integration you should always use the _get integration docs_ tool to fetch the latest documentation for the integration and follow the links to get additional guidance.
+### 🚀 Aspire 资源调拨
+- 修改 `Platform.AppHost/AppHost.cs` 或 `appsettings.json` 后，必须指导用户重启 `aspire run`。
+- 请勿向用户推荐使用过时的 Aspire workload。
+- 使用 MCP 提供的 `list resources` / `list integrations` 等工具排查微服务拉起问题。
+- 各个服务控制台输出均通过 `list structured logs` / `list console logs` 工具获取。
+- 调试分布式错误时，优先使用 `list traces` 查找异常链路。
 
-## Debugging issues
-IMPORTANT! Aspire is designed to capture rich logs and telemetry for all resources defined in the app model. Use the following diagnostic tools when debugging issues with the application before making changes to make sure you are focusing on the right things.
+## 3. 后端开发强制红线 (Backend Redlines)
 
-1. _list structured logs_; use this tool to get details about structured logs.
-2. _list console logs_; use this tool to get details about console logs.
-3. _list traces_; use this tool to get details about traces.
-4. _list trace structured logs_; use this tool to get logs related to a trace
+### 🗄️ 数据库操作：IDataFactory 铁律
+- **严禁**直接注入或操作 `IMongoCollection<T>` 或 `IMongoDatabase`。
+- 所有数据的新增、查询、修改、删除**必须**通过注入 `IDatabaseOperationFactory<T>` 来完成。
+- **原因**：工厂模式底层封装了多租户（`CompanyId`）自动过滤、`CreatedAt/UpdatedAt` 等审计字段的自动填充以及软删除机制。如果绕过，将导致数据污染或跨租户越权。
 
-## Other Aspire MCP tools
+### 🏢 多租户与上下文安全
+- 除了用户身份主键 `userId` 以外，任何企业级上下文（企业的 `companyId` / 用户拥有的菜单权限 / 角色），**严禁**直接从 JWT claim 中读取解包。
+- **正确获取方式**：统一通过注入 `ITenantContext` 读取当前操作人在当前企业下的属性约束。
 
-1. _select apphost_; use this tool if working with multiple app hosts within a workspace.
-2. _list apphosts_; use this tool to get details about active app hosts.
+### 🔐 鉴权策略
+- **移除旧版判断**：禁止在控制器层再使用过时的 `HasPermission()` 等方法。
+- **唯一正确手段**：全部 API 操作需打上 `[RequireMenu("menu-action-name")]` 属性（来自 `Platform.ApiService.Attributes`）来进行基于菜单按钮层级的鉴权。
 
-## Playwright MCP server
+### 📡 接口与实时通信
+- 所有常规 HTTP 接口返回数据，必须被包装为 `ApiResponse<T>`，并默认开启 camelCase （首字母小写）且忽略 Null 返回。
+- 后端不再向前端使用 SignalR 发送实时数据或通知事件，必须改为使用 **SSE (Server-Sent Events)** 推送（连接管理器为 `IChatSseConnectionManager`）。对于 SSE 响应管道，需注意跳过中间件格式化。
 
-The playwright MCP server has also been configured in this repository and you should use it to perform functional investigations of the resources defined in the app model as you work on the codebase. To get endpoints that can be used for navigation using the playwright MCP server use the list resources tool.
+## 4. MCP 服务与 AI 能力整合
 
-## Updating the app host
-The user may request that you update the Aspire apphost. You can do this using the `aspire update` command. This will update the apphost to the latest version and some of the Aspire specific packages in referenced projects, however you may need to manually update other packages in the solution to ensure compatibility. You can consider using the `dotnet-outdated` with the users consent. To install the `dotnet-outdated` tool use the following command:
+本项目在 `Platform.ApiService` 中，包含了一个强大的单一类 `McpService.cs`（及 `Mcp/` 下的各 Handler），它通过 Model Context Protocol 向外层 AI（不仅限于本 Copilot）提供系统内深度业务能力投射。
 
-```
-dotnet tool install --global dotnet-outdated-tool
-```
+- **不要重复造轮子**：当面临读取【工作流进度】、【IoT设备状态】或【园区资产查询】等复杂任务时，AI 助手应优先分析项目中是否已有现成的 MCP Handlers 支持提取能力。
+- 本项目不仅是一个应用，它自身也是一个巨大的 AI 知识源提供者。
 
-## Persistent containers
-IMPORTANT! Consider avoiding persistent containers early during development to avoid creating state management issues when restarting the app.
+## 5. 更多领域专项规范参阅
 
-## Aspire workload
-IMPORTANT! The aspire workload is obsolete. You should never attempt to install or use the Aspire workload.
+如果需要深入到前端、微服务或移动端的开发，请务必提前通过工具读取特定的 `.cursor/rules/*.mdc` 及 `docs/` 规则卡片：
+1. **全局规范总集**: `.cursor/rules/00-global.mdc`
+2. **后端深度规范**: `.cursor/rules/backend.mdc` 与 `docs/features/BACKEND-RULES.md`
+3. **前端 Admin 规范**: `.cursor/rules/frontend-admin.mdc`
+4. **移动端规范**: `.cursor/rules/frontend-app.mdc`
 
-## Official documentation
-IMPORTANT! Always prefer official documentation when available. The following sites contain the official documentation for Aspire and related components
-
-1. https://aspire.dev
-2. https://learn.microsoft.com/dotnet/aspire
-3. https://nuget.org (for specific integration package details)
+> 每次开展复杂的新功能迭代前，务必查阅上述规则卡以确保架构走向绝不偏离当前轨辙。

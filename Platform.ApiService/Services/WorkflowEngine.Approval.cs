@@ -13,10 +13,9 @@ public partial class WorkflowEngine
     /// <summary>
     /// 处理审批操作
     /// </summary>
-    public async Task<bool> ProcessApprovalAsync(string instanceId, string nodeId, ApprovalAction action, string? comment = null, string? delegateToUserId = null)
+    /// <param name="currentUserId">当前操作人用户ID</param>
+    public async Task<bool> ProcessApprovalAsync(string instanceId, string nodeId, ApprovalAction action, string currentUserId, string? comment = null, string? delegateToUserId = null)
     {
-        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-
         var instance = await _instanceFactory.GetByIdAsync(instanceId);
         // 审批节点挂起时状态为 Waiting，需同时接受 Running 和 Waiting
         if (instance == null || (instance.Status != WorkflowStatus.Running && instance.Status != WorkflowStatus.Waiting))
@@ -36,14 +35,13 @@ public partial class WorkflowEngine
             throw new InvalidOperationException("当前节点无效");
         }
 
-        if (!await CanApproveAsync(instance, currentNode, userId))
+        if (!await CanApproveAsync(instance, currentNode, currentUserId))
         {
             throw new UnauthorizedAccessException("无权执行此审批操作");
         }
 
-        var user = await _userService.GetUserByIdAsync(userId);
-        var userName = user?.Username ?? userId;
-        var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
+        var user = await _userService.GetUserByIdAsync(currentUserId);
+        var userName = user?.Username ?? currentUserId;
 
         if (action == ApprovalAction.Delegate)
         {
@@ -60,14 +58,14 @@ public partial class WorkflowEngine
             Id = GenerateSafeId(),
             WorkflowInstanceId = instanceId,
             NodeId = nodeId,
-            ApproverId = userId,
+            ApproverId = currentUserId,
             ApproverName = userName,
             Action = action,
             Comment = comment,
             DelegateToUserId = delegateToUserId,
             ApprovedAt = DateTime.UtcNow,
             Sequence = history.Count + 1,
-            CompanyId = companyId ?? string.Empty
+            CompanyId = string.Empty
         };
 
         await _approvalRecordFactory.CreateAsync(record);
@@ -88,7 +86,7 @@ public partial class WorkflowEngine
                 break;
             case ApprovalAction.Delegate:
                 // Bug 5 修复：转办后更新 CurrentApproverIds 并发送通知
-                await HandleDelegateAsync(instanceId, nodeId, delegateToUserId!, instance);
+                await HandleDelegateAsync(instanceId, nodeId, delegateToUserId!, instance, currentUserId);
                 break;
             case ApprovalAction.Return:
                 // Bug 20 修复：退回操作不在此处处理（已在 ReturnToNodeAsync 中完成）
@@ -102,10 +100,8 @@ public partial class WorkflowEngine
     /// <summary>
     /// 处理人工输入提交 - 验证用户后继续流程
     /// </summary>
-    public async Task<bool> ProcessHumanInputSubmitAsync(string instanceId, string nodeId)
+    public async Task<bool> ProcessHumanInputSubmitAsync(string instanceId, string nodeId, string currentUserId)
     {
-        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-
         var instance = await _instanceFactory.GetByIdAsync(instanceId);
         if (instance == null)
         {
@@ -130,7 +126,7 @@ public partial class WorkflowEngine
         }
 
         var approvers = await GetNodeApproversAsync(instanceId, nodeId);
-        if (!approvers.Contains(userId))
+        if (!approvers.Contains(currentUserId))
         {
             throw new UnauthorizedAccessException("无权提交此人工输入");
         }
@@ -143,13 +139,12 @@ public partial class WorkflowEngine
     /// <summary>
     /// Bug 5 修复：处理转办逻辑
     /// </summary>
-    private async Task HandleDelegateAsync(string instanceId, string nodeId, string delegateToUserId, WorkflowInstance instance)
+    private async Task HandleDelegateAsync(string instanceId, string nodeId, string delegateToUserId, WorkflowInstance instance, string currentUserId)
     {
         // 更新待审批人：移除原审批人，添加被转办人
         var currentApprovers = instance.GetActiveApprovers(nodeId);
 
-        var userId = _tenantContext.GetCurrentUserId()!;
-        currentApprovers.Remove(userId);
+        currentApprovers.Remove(currentUserId);
         if (!currentApprovers.Contains(delegateToUserId))
         {
             currentApprovers.Add(delegateToUserId);
@@ -196,9 +191,8 @@ public partial class WorkflowEngine
         // Bug 3 修复：所有审批类型都阻止重复审批
         var history = await GetApprovalHistoryAsync(instance.Id);
 
-        var currentCompId = await _tenantContext.GetCurrentCompanyIdAsync();
-        _logger.LogInformation("CanApproveAsync: 用户 {UserId}, 当前公司 {CompanyId}, 历史记录数: {Count}",
-            userId, currentCompId, history.Count);
+        _logger.LogInformation("CanApproveAsync: 用户 {UserId}, 历史记录数: {Count}",
+            userId, history.Count);
 
         var hasApproved = history.Any(r =>
             r.NodeId.Trim().Equals(node.Id.Trim(), StringComparison.OrdinalIgnoreCase) &&
@@ -313,10 +307,9 @@ public partial class WorkflowEngine
     /// <summary>
     /// Bug 9 修复：退回到指定节点后重新触发节点处理
     /// </summary>
-    public async Task<bool> ReturnToNodeAsync(string instanceId, string targetNodeId, string comment)
+    /// <param name="currentUserId">当前操作人用户ID</param>
+    public async Task<bool> ReturnToNodeAsync(string instanceId, string targetNodeId, string comment, string currentUserId)
     {
-        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-
         var instance = await _instanceFactory.GetByIdAsync(instanceId);
         if (instance == null || instance.Status != WorkflowStatus.Running)
         {
@@ -335,7 +328,7 @@ public partial class WorkflowEngine
             throw new InvalidOperationException("当前节点不存在");
         }
 
-        if (!await CanApproveAsync(instance, currentNode, userId))
+        if (!await CanApproveAsync(instance, currentNode, currentUserId))
         {
             throw new UnauthorizedAccessException("无权在当前节点执行退回操作");
         }
@@ -353,21 +346,20 @@ public partial class WorkflowEngine
             throw new InvalidOperationException("只能退回到已经经过的节点或开始节点");
         }
 
-        var user = await _userService.GetUserByIdAsync(userId);
-        var userName = user?.Username ?? userId;
-        var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
+        var user = await _userService.GetUserByIdAsync(currentUserId);
+        var userName = user?.Username ?? currentUserId;
         var approvalRecord = new ApprovalRecord
         {
             Id = GenerateSafeId(),
             WorkflowInstanceId = instanceId,
             NodeId = instance.CurrentNodeId,
-            ApproverId = userId,
+            ApproverId = currentUserId,
             ApproverName = userName,
             Action = ApprovalAction.Return,
             Comment = comment,
             ApprovedAt = DateTime.UtcNow,
             Sequence = history.Count + 1,
-            CompanyId = companyId ?? string.Empty
+            CompanyId = string.Empty
         };
         await _approvalRecordFactory.CreateAsync(approvalRecord);
 
@@ -388,7 +380,7 @@ public partial class WorkflowEngine
                 var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
                 if (document != null)
                 {
-                    var relatedUsers = new List<string> { instance.StartedBy, userId };
+                    var relatedUsers = new List<string> { instance.StartedBy, currentUserId };
                     await _notificationService.CreateWorkflowNotificationAsync(
                         instanceId,
                         document.Title,

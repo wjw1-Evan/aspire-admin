@@ -449,6 +449,9 @@ public class DocumentService : IDocumentService
             throw new InvalidOperationException("只有草稿状态的公文可以提交");
         }
 
+        // 获取当前用户ID
+        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+
         // 启动工作流（合并文档中的 FormData 和 提交时传递的变量）
         var sanitizedVars = variables != null
             ? SerializationExtensions.SanitizeDictionary(variables)
@@ -470,7 +473,7 @@ public class DocumentService : IDocumentService
             }
         }
 
-        var instance = await _workflowEngine.StartWorkflowAsync(workflowDefinitionId, documentId, allVariables);
+        var instance = await _workflowEngine.StartWorkflowAsync(workflowDefinitionId, documentId, userId, allVariables);
 
         // 更新文档的 WorkflowInstanceId 字段
         await _documentFactory.UpdateAsync(documentId, d =>

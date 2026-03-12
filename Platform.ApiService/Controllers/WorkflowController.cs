@@ -373,6 +373,7 @@ public class WorkflowController : BaseApiController
     {
         try
         {
+            var userId = GetRequiredUserId();
             Dictionary<string, object?>? sanitizedVars = null;
 
             if (request.Variables != null)
@@ -389,7 +390,7 @@ public class WorkflowController : BaseApiController
                 }
             }
 
-            var instance = await _workflowEngine.StartWorkflowAsync(id, request.DocumentId, sanitizedVars);
+            var instance = await _workflowEngine.StartWorkflowAsync(id, request.DocumentId, userId, sanitizedVars);
             return Success(instance);
         }
         catch (InvalidOperationException ex)
@@ -870,6 +871,8 @@ public class WorkflowController : BaseApiController
     {
         try
         {
+            var userId = GetRequiredUserId();
+
             if (string.IsNullOrWhiteSpace(request.Action))
             {
                 return ValidationError("操作类型不能为空");
@@ -889,7 +892,7 @@ public class WorkflowController : BaseApiController
             switch (action)
             {
                 case "approve":
-                    await _workflowEngine.ProcessApprovalAsync(id, nodeId, ApprovalAction.Approve, request.Comment);
+                    await _workflowEngine.ProcessApprovalAsync(id, nodeId, ApprovalAction.Approve, userId, request.Comment);
                     return Success("审批通过");
 
                 case "reject":
@@ -897,7 +900,7 @@ public class WorkflowController : BaseApiController
                     {
                         return ValidationError("拒绝原因不能为空");
                     }
-                    await _workflowEngine.ProcessApprovalAsync(id, nodeId, ApprovalAction.Reject, request.Comment);
+                    await _workflowEngine.ProcessApprovalAsync(id, nodeId, ApprovalAction.Reject, userId, request.Comment);
                     return Success("审批已拒绝");
 
                 case "return":
@@ -909,7 +912,7 @@ public class WorkflowController : BaseApiController
                     {
                         return ValidationError("退回原因不能为空");
                     }
-                    await _workflowEngine.ReturnToNodeAsync(id, request.TargetNodeId, request.Comment);
+                    await _workflowEngine.ReturnToNodeAsync(id, request.TargetNodeId, request.Comment, userId);
                     return Success("已退回");
 
                 case "delegate":
@@ -917,7 +920,7 @@ public class WorkflowController : BaseApiController
                     {
                         return ValidationError("转办目标用户不能为空");
                     }
-                    await _workflowEngine.ProcessApprovalAsync(id, nodeId, ApprovalAction.Delegate, request.Comment, request.DelegateToUserId);
+                    await _workflowEngine.ProcessApprovalAsync(id, nodeId, ApprovalAction.Delegate, userId, request.Comment, request.DelegateToUserId);
                     return Success("已转办");
 
                 default:
@@ -1191,6 +1194,7 @@ public class WorkflowController : BaseApiController
     {
         try
         {
+            var userId = GetRequiredUserId();
             var docService = HttpContext.RequestServices.GetRequiredService<IDocumentService>();
             var document = await docService.CreateDocumentForWorkflowAsync(id, request.Values ?? new Dictionary<string, object>(), request.AttachmentIds);
 
@@ -1207,7 +1211,7 @@ public class WorkflowController : BaseApiController
                 }
             }
 
-            var instance = await _workflowEngine.StartWorkflowAsync(id, document.Id, (Dictionary<string, object?>)(object)mergedVariables);
+            var instance = await _workflowEngine.StartWorkflowAsync(id, document.Id, userId, (Dictionary<string, object?>)(object)mergedVariables);
 
             return Success(new { document, workflowInstance = instance });
         }

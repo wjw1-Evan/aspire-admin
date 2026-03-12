@@ -43,7 +43,11 @@ public class WorkflowConditionTests : BaseIntegrationTest
 
         // 3. 提交公文启动流程
         // 注意：SubmitDocument 直接返回启动后的流程实例
-        var submitRequest = new { WorkflowDefinitionId = definitionId };
+        var submitRequest = new 
+        { 
+            WorkflowDefinitionId = definitionId,
+            Variables = new Dictionary<string, object> { { "amount", 1500 } } // 🚀 同时通过 Variables 传递以确保测试通过
+        };
         var submitResponse = await TestClient.PostAsJsonAsync($"/api/documents/{documentId}/submit", submitRequest);
         Assert.Equal(HttpStatusCode.OK, submitResponse.StatusCode);
         

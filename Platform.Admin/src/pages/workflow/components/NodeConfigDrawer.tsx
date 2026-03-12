@@ -110,8 +110,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                       </Form.Item>
 
                       <Divider titlePlacement="left" plain>审批人设置</Divider>
-                      <Form.Item name="approvers">
-                        <Form.List name="approvers">
+                      <Form.List name="approvers">
                           {(fields, { add, remove }) => (
                             <>
                               {fields.map(({ key, name, ...restField }) => (
@@ -148,7 +147,6 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                             </>
                           )}
                         </Form.List>
-                      </Form.Item>
                     </>
                   )}
 

@@ -30,12 +30,14 @@ public interface IWorkflowEngine
     /// <summary>
     /// 启动工作流
     /// </summary>
-    Task<WorkflowInstance> StartWorkflowAsync(string definitionId, string documentId, Dictionary<string, object?>? variables = null);
+    /// <param name="startedBy">启动人用户ID</param>
+    Task<WorkflowInstance> StartWorkflowAsync(string definitionId, string documentId, string startedBy, Dictionary<string, object?>? variables = null);
 
     /// <summary>
     /// 处理审批操作
     /// </summary>
-    Task<bool> ProcessApprovalAsync(string instanceId, string nodeId, ApprovalAction action, string? comment = null, string? delegateToUserId = null);
+    /// <param name="currentUserId">当前操作人用户ID</param>
+    Task<bool> ProcessApprovalAsync(string instanceId, string nodeId, ApprovalAction action, string currentUserId, string? comment = null, string? delegateToUserId = null);
 
     /// <summary>
     /// 获取指定节点的实际审批人列表
@@ -46,7 +48,8 @@ public interface IWorkflowEngine
     /// <summary>
     /// 退回到指定节点
     /// </summary>
-    Task<bool> ReturnToNodeAsync(string instanceId, string targetNodeId, string comment);
+    /// <param name="currentUserId">当前操作人用户ID</param>
+    Task<bool> ReturnToNodeAsync(string instanceId, string targetNodeId, string comment, string currentUserId);
 
     /// <summary>
     /// 获取审批历史
@@ -82,7 +85,6 @@ public partial class WorkflowEngine : IWorkflowEngine
     private readonly IDataFactory<FormDefinition> _formFactory;
     private readonly IUserService _userService;
     private readonly IUnifiedNotificationService _notificationService;
-    private readonly ITenantContext _tenantContext;
     private readonly IApproverResolverFactory _approverResolverFactory;
     private readonly IWorkflowExpressionEvaluator _expressionEvaluator;
     private readonly ILogger<WorkflowEngine> _logger;
@@ -100,7 +102,6 @@ public partial class WorkflowEngine : IWorkflowEngine
         IDataFactory<FormDefinition> formFactory,
         IUserService userService,
         IUnifiedNotificationService notificationService,
-        ITenantContext tenantContext,
         IApproverResolverFactory approverResolverFactory,
         IWorkflowExpressionEvaluator expressionEvaluator,
         ILogger<WorkflowEngine> logger,
@@ -114,7 +115,6 @@ public partial class WorkflowEngine : IWorkflowEngine
         _formFactory = formFactory;
         _userService = userService;
         _notificationService = notificationService;
-        _tenantContext = tenantContext;
         _approverResolverFactory = approverResolverFactory;
         _expressionEvaluator = expressionEvaluator;
         _logger = logger;
@@ -124,11 +124,9 @@ public partial class WorkflowEngine : IWorkflowEngine
     /// <summary>
     /// 启动工作流
     /// </summary>
-    public async Task<WorkflowInstance> StartWorkflowAsync(string definitionId, string documentId, Dictionary<string, object?>? variables = null)
+    /// <param name="startedBy">启动人用户ID</param>
+    public async Task<WorkflowInstance> StartWorkflowAsync(string definitionId, string documentId, string startedBy, Dictionary<string, object?>? variables = null)
     {
-        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
-
         var definition = await _definitionFactory.GetByIdAsync(definitionId);
         if (definition == null || !definition.IsActive)
         {
@@ -140,15 +138,14 @@ public partial class WorkflowEngine : IWorkflowEngine
         {
             WorkflowDefinitionId = definitionId,
             DocumentId = string.IsNullOrEmpty(documentId) ? null : documentId,
-            Status = WorkflowStatus.Running,
-            StartedBy = userId,
+            StartedBy = startedBy,
             StartedAt = DateTime.UtcNow,
             WorkflowDefinitionSnapshot = definition, // 🔧 保存快照以保证流程稳定性
-            CompanyId = companyId ?? string.Empty
+            CompanyId = string.Empty // 数据工厂自动处理 CompanyId
         };
 
-        _logger.LogInformation("Creating workflow instance: DefinitionId={DefinitionId}, DocumentId={DocumentId}, CompanyId={CompanyId}, UserId={UserId}",
-            instance.WorkflowDefinitionId, instance.DocumentId, instance.CompanyId, userId);
+        _logger.LogInformation("Creating workflow instance: DefinitionId={DefinitionId}, DocumentId={DocumentId}, StartedBy={StartedBy}",
+            instance.WorkflowDefinitionId, instance.DocumentId, startedBy);
 
         // 初始化变量
         instance.ResetVariables(variables ?? new Dictionary<string, object?>());

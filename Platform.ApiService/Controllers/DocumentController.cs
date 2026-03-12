@@ -324,6 +324,8 @@ public class DocumentController : BaseApiController
     {
         try
         {
+            var userId = GetRequiredUserId();
+
             if (string.IsNullOrEmpty(request.TargetNodeId))
             {
                 return ValidationError("退回目标节点不能为空");
@@ -343,7 +345,8 @@ public class DocumentController : BaseApiController
             var result = await _workflowEngine.ReturnToNodeAsync(
                 document.WorkflowInstanceId,
                 request.TargetNodeId,
-                request.Comment
+                request.Comment,
+                userId
             );
 
             return Success(result, "已退回");

@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Form, Input, Select, Button, Space, Divider, Row, Col, Card, Switch } from 'antd';
+import { Form, Input, Select, Button, Space, Divider, Row, Col, Card, Switch, Spin, Result } from 'antd';
 import { SaveOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import { useMessage } from '@/hooks/useMessage';
-import { updateWorkflow, type WorkflowDefinition, type WorkflowGraph } from '@/services/workflow/api';
+import { updateWorkflow, getWorkflowDetail, type WorkflowDefinition, type WorkflowGraph } from '@/services/workflow/api';
 import WorkflowDesigner from './WorkflowDesigner';
 
 interface WorkflowEditFormProps {
@@ -18,25 +18,56 @@ const WorkflowEditForm: React.FC<WorkflowEditFormProps> = ({ workflow, onSuccess
     const message = useMessage();
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
+    const [detailLoading, setDetailLoading] = useState(true);
+    const [fullWorkflow, setFullWorkflow] = useState<WorkflowDefinition | null>(null);
+    const [loadError, setLoadError] = useState<string | null>(null);
 
+    // 从详情 API 加载完整工作流数据
     useEffect(() => {
-        if (workflow) {
+        const loadDetail = async () => {
+            if (!workflow.id) {
+                setLoadError('工作流 ID 不存在');
+                setDetailLoading(false);
+                return;
+            }
+            try {
+                setDetailLoading(true);
+                setLoadError(null);
+                const response = await getWorkflowDetail(workflow.id);
+                if (response.success && response.data) {
+                    setFullWorkflow(response.data);
+                } else {
+                    setLoadError('加载工作流详情失败');
+                }
+            } catch (error) {
+                console.error('加载工作流详情失败:', error);
+                setLoadError('加载工作流详情失败，请重试');
+            } finally {
+                setDetailLoading(false);
+            }
+        };
+        loadDetail();
+    }, [workflow.id]);
+
+    // 在数据加载完成且渲染完成后同步表单值，避免 "not connected" 警告
+    useEffect(() => {
+        if (fullWorkflow && !detailLoading) {
             form.setFieldsValue({
-                name: workflow.name,
-                description: workflow.description,
-                category: workflow.category,
-                isActive: workflow.isActive,
+                name: fullWorkflow.name,
+                description: fullWorkflow.description,
+                category: fullWorkflow.category,
+                isActive: fullWorkflow.isActive,
             });
         }
-    }, [workflow, form]);
+    }, [fullWorkflow, detailLoading, form]);
 
     const handleSave = async (graph: WorkflowGraph) => {
-        if (readOnly) return;
+        if (readOnly || !fullWorkflow?.id) return;
         try {
             const values = await form.validateFields();
             setLoading(true);
 
-            const response = await updateWorkflow(workflow.id!, {
+            const response = await updateWorkflow(fullWorkflow.id, {
                 name: values.name,
                 description: values.description,
                 category: values.category || 'default',
@@ -55,6 +86,25 @@ const WorkflowEditForm: React.FC<WorkflowEditFormProps> = ({ workflow, onSuccess
             setLoading(false);
         }
     };
+
+    if (detailLoading) {
+        return (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '400px' }}>
+                <Spin size="large" description="加载工作流数据..." />
+            </div>
+        );
+    }
+
+    if (loadError || !fullWorkflow) {
+        return (
+            <Result
+                status="error"
+                title="加载失败"
+                subTitle={loadError || '无法加载工作流数据'}
+                extra={<Button onClick={onCancel}>返回</Button>}
+            />
+        );
+    }
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '16px' }}>
@@ -118,7 +168,7 @@ const WorkflowEditForm: React.FC<WorkflowEditFormProps> = ({ workflow, onSuccess
             <div style={{ flex: 1, minHeight: 0 }}>
                 <WorkflowDesigner
                     open={true}
-                    graph={workflow.graph}
+                    graph={fullWorkflow.graph}
                     onSave={readOnly ? undefined : handleSave}
                     onClose={onCancel}
                     readOnly={readOnly}
@@ -129,3 +179,4 @@ const WorkflowEditForm: React.FC<WorkflowEditFormProps> = ({ workflow, onSuccess
 };
 
 export default WorkflowEditForm;
+

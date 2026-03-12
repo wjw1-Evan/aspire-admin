@@ -376,17 +376,38 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
     setConfigDrawerVisible(true);
     const config = node.data.config || {};
     
+    // 映射辅助函数：处理后端返回的字符串枚举
+    const mapApprovalType = (type: any) => {
+        if (typeof type === 'number') return type;
+        const t = String(type).toLowerCase();
+        if (t === 'all') return 0;
+        if (t === 'any') return 1;
+        if (t === 'sequential') return 2;
+        return 0;
+    };
+
+    const mapApproverType = (type: any) => {
+        if (typeof type === 'number') return type;
+        const t = String(type).toLowerCase();
+        if (t === 'user') return 0;
+        if (t === 'role') return 1;
+        if (t === 'department') return 2;
+        if (t === 'formfield') return 3;
+        return 0;
+    };
+
     configForm.resetFields();
     configForm.setFieldsValue({
       label: node.data.label || '',
       nodeType: node.data.nodeType,
-      approvalType: config.approval?.type || 0,
+      approvalType: mapApprovalType(config.approval?.type),
       approvers: config.approval?.approvers?.map((r: ApproverRule) => {
-        if (r.type === 0) return { type: 0, userIds: r.userId ? [r.userId] : [] };
-        if (r.type === 1) return { type: 1, roleIds: r.roleId ? [r.roleId] : [] };
-        if (r.type === 2) return { type: 2, departmentId: r.departmentId };
-        if (r.type === 3) return { type: 3, formFieldKey: r.formFieldKey };
-        return r;
+        const type = mapApproverType(r.type);
+        if (type === 0) return { type: 0, userIds: r.userId ? [r.userId] : (r as any).userIds || [] };
+        if (type === 1) return { type: 1, roleIds: r.roleId ? [r.roleId] : (r as any).roleIds || [] };
+        if (type === 2) return { type: 2, departmentId: r.departmentId };
+        if (type === 3) return { type: 3, formFieldKey: r.formFieldKey };
+        return { ...r, type };
       }) || [],
       allowDelegate: config.approval?.allowDelegate,
       allowReject: config.approval?.allowReject,
@@ -520,8 +541,8 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
         id: edge.id,
         source: edge.source,
         target: edge.target,
-        sourceHandle: edge.sourceHandle,
-        targetHandle: edge.targetHandle,
+        sourceHandle: edge.sourceHandle ?? undefined,
+        targetHandle: edge.targetHandle ?? undefined,
         label: edge.label as string,
         data: { condition: edge.data?.condition },
       })),

@@ -29,6 +29,16 @@ public partial class WorkflowEngine
                 variables["document_id"] = document.Id;
                 variables["started_by"] = instance.StartedBy;
                 variables["document_content"] = document.Content ?? string.Empty;
+
+                // 🔧 关键修复：将公文的表单数据也作为变量注入
+                if (document.FormData != null)
+                {
+                    foreach (var kv in document.FormData)
+                    {
+                        // 如果变量名冲突，公文表单数据优先
+                        variables[kv.Key] = kv.Value;
+                    }
+                }
             }
         }
 

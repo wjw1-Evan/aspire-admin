@@ -46,7 +46,16 @@ internal sealed partial class ConditionExecutor : Executor
                 // 构造简单的表达式字符串: "{var} operator value"
                 var expression = $"{{{rule.Variable}}} {MapOperator(rule.Operator)} {rule.Value}";
                 var res = _expressionEvaluator.Evaluate(expression, variables);
-                System.Console.WriteLine($"DEBUG_EVALUATOR: Evaluating '{expression}' -> {res} (Variable: '{rule.Variable}', Op: '{rule.Operator}', Value: '{rule.Value}')");
+                
+                try {
+                    variables.TryGetValue(rule.Variable ?? "", out var leftVal);
+                    // 如果变量名不存在，尝试不分大小写查找
+                    if (leftVal == null && rule.Variable != null) 
+                    {
+                        leftVal = variables.FirstOrDefault(v => v.Key.Equals(rule.Variable, System.StringComparison.OrdinalIgnoreCase)).Value;
+                    }
+                } catch {}
+
                 results.Add(res);
             }
 

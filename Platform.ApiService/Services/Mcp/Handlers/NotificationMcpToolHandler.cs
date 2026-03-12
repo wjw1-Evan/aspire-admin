@@ -255,12 +255,12 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
                 {
                     var targetNodeId = args.ContainsKey("targetNodeId") ? args["targetNodeId"]?.ToString() : null;
                     if (string.IsNullOrEmpty(targetNodeId)) return (object)new { error = "退回操作需要提供 targetNodeId" };
-                    var returnResult = await _workflowEngine.ReturnToNodeAsync(instanceId, targetNodeId, comment ?? "退回");
+                    var returnResult = await _workflowEngine.ReturnToNodeAsync(instanceId, targetNodeId, comment ?? "退回", uid);
                     return new { success = returnResult };
                 }
 
                 var delegateToUserId = args.ContainsKey("delegateToUserId") ? args["delegateToUserId"]?.ToString() : null;
-                var result = await _workflowEngine.ProcessApprovalAsync(instanceId, nodeId, action, comment, delegateToUserId);
+                var result = await _workflowEngine.ProcessApprovalAsync(instanceId, nodeId, action, uid, comment, delegateToUserId);
                 return new { success = result };
             });
         #endregion

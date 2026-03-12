@@ -1252,6 +1252,7 @@ export default {
   'pages.workflow.designer.addTextToSpeech': '语音合成',
   'pages.workflow.designer.addVision': '视觉分析',
   'pages.workflow.designer.addEmail': '发送邮件',
+  'pages.workflow.designer.dragDropTooltip': '可拖动到右侧区域添加组件',
   'pages.workflow.knowledgeBase.title': '知识库管理',
   'pages.workflow.knowledgeBase.name': '知识库名称',
   'pages.workflow.knowledgeBase.description': '知识库描述',

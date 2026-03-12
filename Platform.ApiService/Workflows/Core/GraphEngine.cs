@@ -158,31 +158,11 @@ public class GraphEngine : IGraphEngine
 
             if (incomingEdges.All(e => completedNodes.Contains(e.Source)))
             {
-                var parallelParents = incomingEdges
-                    .Where(e => definition.Graph.Nodes.FirstOrDefault(n => n.Id == e.Source)?.Data.NodeType == "parallel")
-                    .ToList();
-
-                if (parallelParents.Any())
-                {
-                    var parallelBranchCompleted = parallelParents.All(p => 
-                        IsParallelBranchCompleted(context, p.Source, node.Id));
-                    
-                    if (!parallelBranchCompleted) continue;
-                }
-
                 runnableNodes.Add(node.Id);
             }
         }
 
         return runnableNodes;
-    }
-
-    private bool IsParallelBranchCompleted(WorkflowExecutionContext context, string parallelNodeId, string targetNodeId)
-    {
-        var parallelResult = context.NodeResults.GetValueOrDefault(parallelNodeId) as ParallelExecutionResult;
-        if (parallelResult == null) return false;
-
-        return parallelResult.CompletedBranches.Contains(targetNodeId);
     }
 
     private bool IsGraphComplete(WorkflowExecutionContext context)
@@ -423,9 +403,4 @@ public class NodeExecutionResult
     public int RetryCount { get; set; }
     public TimeSpan Duration { get; set; }
     public Dictionary<string, object?> Metadata { get; set; } = new();
-}
-
-public class ParallelExecutionResult : NodeExecutionResult
-{
-    public List<string> CompletedBranches { get; set; } = new();
 }

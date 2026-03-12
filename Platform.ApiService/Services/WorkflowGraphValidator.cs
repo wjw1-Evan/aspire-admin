@@ -113,12 +113,12 @@ public class WorkflowGraphValidator : IWorkflowGraphValidator
         // 3. 检查是否有孤立节点（已经过可达性分析处理）
         foreach (var node in graph.Nodes)
         {
-            if (node.Type == "start")
+            if (node.Data.NodeType == "start")
             {
                 if (!edges.Any(e => e.Source == node.Id))
                     return (false, $"开始节点 {node.Id} 没有出边");
             }
-            else if (node.Type == "end")
+            else if (node.Data.NodeType == "end")
             {
                 if (!edges.Any(e => e.Target == node.Id))
                     return (false, $"结束节点 {node.Id} 没有入边");
@@ -133,9 +133,15 @@ public class WorkflowGraphValidator : IWorkflowGraphValidator
         }
 
         // 3.1 特定类型节点的额外规则
+        var allowedNodeTypes = new[] { "start", "end", "approval", "condition" };
         foreach (var node in graph.Nodes)
         {
-            if (node.Type == "approval")
+            if (!allowedNodeTypes.Contains(node.Data.NodeType))
+            {
+                return (false, $"不支持的节点类型: {node.Data.NodeType}");
+            }
+
+            if (node.Data.NodeType == "approval")
             {
                 // 审批节点必须配置审批信息且审批人规则非空
                 var approval = node.Data.Config?.Approval;
@@ -146,36 +152,19 @@ public class WorkflowGraphValidator : IWorkflowGraphValidator
                 if (approval.TimeoutHours.HasValue && approval.TimeoutHours.Value < 0)
                     return (false, $"审批节点 {node.Data.Label ?? node.Id} 的超时时间必须为非负数");
             }
-            else if (node.Type == "condition")
+            else if (node.Data.NodeType == "condition")
             {
                 var outgoing = edges.Where(e => e.Source == node.Id).ToList();
                 if (outgoing.Count == 0)
                     return (false, $"条件节点 {node.Data.Label ?? node.Id} 缺少出边");
-                // 若所有出边都有条件表达式，则节点配置的表达式可以为空；
-                // 否则至少需要一个默认（无条件）出边
+                
                 var hasDefault = outgoing.Any(e => string.IsNullOrWhiteSpace(e.Data?.Condition));
                 var hasConditional = outgoing.Any(e => !string.IsNullOrWhiteSpace(e.Data?.Condition));
                 if (!hasConditional && !hasDefault)
                     return (false, $"条件节点 {node.Data.Label ?? node.Id} 的出边需包含条件或默认路径");
             }
-            else if (node.Type == "parallel")
-            {
-                var outgoing = edges.Where(e => e.Source == node.Id).ToList();
-                var incoming = edges.Where(e => e.Target == node.Id).ToList();
-                // Bug 19 修复：仅分叉型（入边<=1）要求 >=2 出边，汇聚型（多入边）允许少出边
-                if (incoming.Count <= 1 && outgoing.Count < 2)
-                    return (false, $"并行网关 {node.Data.Label ?? node.Id} 至少需要两个出边");
-                // 若配置了 Parallel.Branches，需与出边目标一致（宽松校验）
-                var branches = node.Data.Config?.Parallel?.Branches ?? new List<string>();
-                if (branches.Any())
-                {
-                    var edgeTargets = outgoing.Select(e => e.Target).Distinct().ToList();
-                    var missing = branches.Where(b => !edgeTargets.Contains(b)).ToList();
-                    if (missing.Any())
-                        return (false, $"并行网关 {node.Data.Label ?? node.Id} 的分支配置与出边不一致，缺少: {string.Join(", ", missing)}");
-                }
-            }
         }
+
 
         // 5. 循环检查 (可选，某些流程允许循环，但典型的审批流应该是 DAG)
 

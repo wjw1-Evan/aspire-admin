@@ -60,6 +60,8 @@ const DocumentDetailDrawer: React.FC<DocumentDetailDrawerProps> = ({
             id: edge.id,
             source: edge.source,
             target: edge.target,
+            sourceHandle: edge.sourceHandle,
+            targetHandle: edge.targetHandle,
             type: 'workflowEdge',
             label: edge.label,
             labelStyle: { fill: '#64748b', fontWeight: 600 },

@@ -24,7 +24,7 @@ internal sealed partial class ConditionExecutor : Executor
     protected override ProtocolBuilder ConfigureProtocol(ProtocolBuilder builder) => builder;
 
     [MessageHandler]
-    private async ValueTask<object?> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
+    public async Task<object?> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
         // 反序列化变量
         var variables = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(input) ?? new();

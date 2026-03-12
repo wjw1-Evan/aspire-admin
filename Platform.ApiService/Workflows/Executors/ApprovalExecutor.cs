@@ -28,7 +28,7 @@ internal sealed partial class ApprovalExecutor : Executor
     protected override ProtocolBuilder ConfigureProtocol(ProtocolBuilder builder) => builder;
 
     [MessageHandler]
-    private async ValueTask<object?> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
+    public async Task<object?> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
         // 审批节点通常需要挂起等待人工干预
         // 引擎会识别 __sourceHandle = "waiting" 并处理挂起逻辑

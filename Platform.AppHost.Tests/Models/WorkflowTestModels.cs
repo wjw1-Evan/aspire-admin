@@ -173,6 +173,11 @@ public record WorkflowInstanceResponse
     /// The current status of the workflow instance (e.g., "Running", "Completed", "Failed").
     /// </summary>
     public string Status { get; init; } = string.Empty;
+
+    /// <summary>
+    /// The current active node ID.
+    /// </summary>
+    public string? CurrentNodeId { get; init; }
 }
 /// <summary>
 /// Response model for a workflow definition.
@@ -222,149 +227,10 @@ public record WorkflowDefinitionResponse
 /// </summary>
 public static class NodeTypes
 {
-    /// <summary>
-    /// Start node - marks the beginning of a workflow.
-    /// </summary>
     public const string Start = "start";
-
-    /// <summary>
-    /// End node - marks the completion of a workflow.
-    /// </summary>
     public const string End = "end";
-
-    /// <summary>
-    /// AI node - performs AI-based operations.
-    /// </summary>
-    public const string Ai = "ai";
-
-    /// <summary>
-    /// AI Judge node - makes AI-based decisions.
-    /// </summary>
-    public const string AiJudge = "ai-judge";
-
-    /// <summary>
-    /// Answer node - provides responses or answers.
-    /// </summary>
-    public const string Answer = "answer";
-
-    /// <summary>
-    /// Approval node - handles approval workflows.
-    /// </summary>
     public const string Approval = "approval";
-
-    /// <summary>
-    /// Code node - executes custom code.
-    /// </summary>
-    public const string Code = "code";
-
-    /// <summary>
-    /// Condition node - evaluates conditions for branching.
-    /// </summary>
     public const string Condition = "condition";
-
-    /// <summary>
-    /// Document Extractor node - extracts data from documents.
-    /// </summary>
-    public const string DocumentExtractor = "document-extractor";
-
-    /// <summary>
-    /// Email node - sends email notifications.
-    /// </summary>
-    public const string Email = "email";
-
-    /// <summary>
-    /// HTTP Request node - makes HTTP API calls.
-    /// </summary>
-    public const string HttpRequest = "http-request";
-
-    /// <summary>
-    /// Human Input node - waits for human input.
-    /// </summary>
-    public const string HumanInput = "human-input";
-
-    /// <summary>
-    /// Iteration node - performs loops or iterations.
-    /// </summary>
-    public const string Iteration = "iteration";
-
-    /// <summary>
-    /// Knowledge Search node - searches knowledge bases.
-    /// </summary>
-    public const string KnowledgeSearch = "knowledge-search";
-
-    /// <summary>
-    /// List Operator node - performs operations on lists.
-    /// </summary>
-    public const string ListOperator = "list-operator";
-
-    /// <summary>
-    /// Log node - logs information.
-    /// </summary>
-    public const string Log = "log";
-
-    /// <summary>
-    /// Notification node - sends notifications.
-    /// </summary>
-    public const string Notification = "notification";
-
-    /// <summary>
-    /// Parameter Extractor node - extracts parameters from data.
-    /// </summary>
-    public const string ParameterExtractor = "parameter-extractor";
-
-    /// <summary>
-    /// Question Classifier node - classifies questions.
-    /// </summary>
-    public const string QuestionClassifier = "question-classifier";
-
-    /// <summary>
-    /// Set Variable node - sets workflow variables.
-    /// </summary>
-    public const string SetVariable = "set-variable";
-
-    /// <summary>
-    /// Speech to Text node - converts speech to text.
-    /// </summary>
-    public const string SpeechToText = "speech-to-text";
-
-    /// <summary>
-    /// Template node - processes templates.
-    /// </summary>
-    public const string Template = "template";
-
-    /// <summary>
-    /// Text to Speech node - converts text to speech.
-    /// </summary>
-    public const string TextToSpeech = "text-to-speech";
-
-    /// <summary>
-    /// Timer node - handles time-based operations.
-    /// </summary>
-    public const string Timer = "timer";
-
-    /// <summary>
-    /// Tool node - executes external tools.
-    /// </summary>
-    public const string Tool = "tool";
-
-    /// <summary>
-    /// Variable Aggregator node - aggregates multiple variables.
-    /// </summary>
-    public const string VariableAggregator = "variable-aggregator";
-
-    /// <summary>
-    /// Variable Assigner node - assigns values to variables.
-    /// </summary>
-    public const string VariableAssigner = "variable-assigner";
-
-    /// <summary>
-    /// Vision node - performs vision-based operations.
-    /// </summary>
-    public const string Vision = "vision";
-
-    /// <summary>
-    /// Parallel gateway node - handles parallel execution branches.
-    /// </summary>
-    public const string Parallel = "parallel";
 }
+
 

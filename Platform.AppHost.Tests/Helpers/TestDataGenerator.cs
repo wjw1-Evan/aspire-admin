@@ -224,27 +224,29 @@ public static class TestDataGenerator
                 new WorkflowNodeRequest
                 {
                     Id = startNodeId,
-                    Type = NodeTypes.Start,
+                    Type = "start",
                     Data = new NodeDataRequest
                     {
                         Label = "开始",
-                        NodeType = NodeTypes.Start,
+                        NodeType = "start",
                         Config = new { } // Empty object instead of null
                     },
                     Position = new NodePositionRequest { X = 100, Y = 100 }
                 },
+
                 new WorkflowNodeRequest
                 {
                     Id = endNodeId,
-                    Type = NodeTypes.End,
+                    Type = "end",
                     Data = new NodeDataRequest
                     {
                         Label = "结束",
-                        NodeType = NodeTypes.End,
+                        NodeType = "end",
                         Config = new { } // Empty object instead of null
                     },
                     Position = new NodePositionRequest { X = 300, Y = 100 }
                 }
+
             },
             Edges = new List<WorkflowEdgeRequest>
             {
@@ -298,12 +300,12 @@ public static class TestDataGenerator
             nodes.Add(new WorkflowNodeRequest
             {
                 Id = nodeId,
-                Type = NodeTypes.Log,
+                Type = "approval",
                 Data = new NodeDataRequest
                 {
-                    Label = $"节点 {i + 1}",
-                    NodeType = NodeTypes.Log,
-                    Config = new { message = $"Log message {i + 1}" }
+                    Label = $"审批 {i + 1}",
+                    NodeType = "approval",
+                    Config = GenerateNodeConfig("approval")
                 },
                 Position = new NodePositionRequest { X = 100 + (i + 1) * 200, Y = 100 }
             });
@@ -318,6 +320,7 @@ public static class TestDataGenerator
 
             previousNodeId = nodeId;
         }
+
 
         // Add end node
         var endNodeId = $"end_{counter}";
@@ -446,81 +449,81 @@ public static class TestDataGenerator
 
     /// <summary>
     /// Generates a workflow definition with a condition node for branching.
-    /// Graph: Start -> Condition -> [TrueBranch -> End, FalseBranch -> End]
+    /// Graph: Start -> Condition (amount > 100) -> [True: ApprovalA, False: ApprovalB] -> End
     /// </summary>
-    /// <summary>
-    /// Generates a workflow definition with a condition branch and an approval node.
-    /// Graph: Start -> Condition -> [True: Approval, False: Log] -> End
-    /// </summary>
-    public static WorkflowDefinitionRequest GenerateConditionWorkflow(List<string>? approverIds = null)
+    public static WorkflowDefinitionRequest GenerateWorkflowWithBranchingCondition()
     {
         var counter = GetNextId();
         var guid = Guid.NewGuid().ToString("N")[..8];
-        var name = $"condition_wf_{counter}_{guid}";
+        var name = $"branching_wf_{counter}_{guid}";
 
         var nodes = new List<WorkflowNodeRequest>
         {
-            new WorkflowNodeRequest { Id = "start", Type = NodeTypes.Start, Data = new NodeDataRequest { Label = "Start", NodeType = NodeTypes.Start }, Position = new NodePositionRequest { X = 100, Y = 200 } },
-            new WorkflowNodeRequest { Id = "cond", Type = NodeTypes.Condition, Data = new NodeDataRequest { Label = "Condition", NodeType = NodeTypes.Condition, Config = new { condition = new { logicalOperator = "and", conditions = new[] { new { variable = "amount", @operator = "greater_than", value = "100" } } } } }, Position = new NodePositionRequest { X = 300, Y = 200 } },
-            new WorkflowNodeRequest { Id = "approval_node", Type = NodeTypes.Approval, Data = new NodeDataRequest { Label = "True Path Approval", NodeType = NodeTypes.Approval, Config = GenerateNodeConfig(NodeTypes.Approval, approverIds) }, Position = new NodePositionRequest { X = 500, Y = 100 } },
-            new WorkflowNodeRequest { Id = "false_path", Type = NodeTypes.Log, Data = new NodeDataRequest { Label = "False Path", NodeType = NodeTypes.Log, Config = new { log = new { message = "Condition not met" } } }, Position = new NodePositionRequest { X = 500, Y = 300 } },
-            new WorkflowNodeRequest { Id = "end", Type = NodeTypes.End, Data = new NodeDataRequest { Label = "End", NodeType = NodeTypes.End }, Position = new NodePositionRequest { X = 750, Y = 200 } }
+            new WorkflowNodeRequest { Id = "start", Type = "start", Data = new NodeDataRequest { Label = "Start", NodeType = "start" }, Position = new NodePositionRequest { X = 100, Y = 200 } },
+            new WorkflowNodeRequest 
+            { 
+                Id = "condition_node", 
+                Type = "condition", 
+                Data = new NodeDataRequest 
+                { 
+                    Label = "金额 > 1000?", 
+                    NodeType = "condition", 
+                    Config = new { 
+                        condition = new { 
+                            logicalOperator = "and", 
+                            conditions = new[] { 
+                                new { variable = "amount", @operator = "greater_than", value = "1000" } 
+                            } 
+                        } 
+                    }
+                }, 
+                Position = new NodePositionRequest { X = 400, Y = 200 } 
+            },
+            new WorkflowNodeRequest 
+            { 
+                Id = "approval_a", 
+                Type = "approval", 
+                Data = new NodeDataRequest 
+                { 
+                    Label = "High Amount Approval", 
+                    NodeType = "approval", 
+                    Config = GenerateNodeConfig("approval")
+                }, 
+                Position = new NodePositionRequest { X = 700, Y = 100 } 
+            },
+            new WorkflowNodeRequest 
+            { 
+                Id = "approval_b", 
+                Type = "approval", 
+                Data = new NodeDataRequest 
+                { 
+                    Label = "Low Amount Approval", 
+                    NodeType = "approval", 
+                    Config = GenerateNodeConfig("approval")
+                }, 
+                Position = new NodePositionRequest { X = 700, Y = 300 } 
+            },
+            new WorkflowNodeRequest { Id = "end", Type = "end", Data = new NodeDataRequest { Label = "End", NodeType = "end" }, Position = new NodePositionRequest { X = 1000, Y = 200 } }
         };
 
         var edges = new List<WorkflowEdgeRequest>
         {
-            new WorkflowEdgeRequest { Id = "e1", Source = "start", Target = "cond" },
-            new WorkflowEdgeRequest { Id = "e2", Source = "cond", Target = "approval_node", SourceHandle = "true" },
-            new WorkflowEdgeRequest { Id = "e3", Source = "cond", Target = "false_path", SourceHandle = "false" },
-            new WorkflowEdgeRequest { Id = "e4", Source = "approval_node", Target = "end", SourceHandle = "approve" },
-            new WorkflowEdgeRequest { Id = "e5", Source = "false_path", Target = "end" }
+            new WorkflowEdgeRequest { Id = "e1", Source = "start", Target = "condition_node" },
+            new WorkflowEdgeRequest { Id = "e2", Source = "condition_node", Target = "approval_a", SourceHandle = "true" },
+            new WorkflowEdgeRequest { Id = "e3", Source = "condition_node", Target = "approval_b", SourceHandle = "false" },
+            new WorkflowEdgeRequest { Id = "e4", Source = "approval_a", Target = "end" },
+            new WorkflowEdgeRequest { Id = "e5", Source = "approval_b", Target = "end" }
         };
 
         return new WorkflowDefinitionRequest
         {
             Name = name,
-            Category = "Branching",
-            Graph = new WorkflowGraphRequest { Nodes = nodes, Edges = edges }
+            Category = "Testing",
+            Graph = new WorkflowGraphRequest { Nodes = nodes, Edges = edges },
+            IsActive = true
         };
     }
 
-    /// <summary>
-    /// Generates a workflow definition with a parallel gateway.
-    /// Graph: Start -> Parallel(Fork) -> [Branch1, Branch2] -> Parallel(Join) -> End
-    /// </summary>
-    public static WorkflowDefinitionRequest GenerateParallelWorkflow()
-    {
-        var counter = GetNextId();
-        var guid = Guid.NewGuid().ToString("N")[..8];
-        var name = $"parallel_wf_{counter}_{guid}";
-
-        var nodes = new List<WorkflowNodeRequest>
-        {
-            new WorkflowNodeRequest { Id = "start", Type = NodeTypes.Start, Data = new NodeDataRequest { Label = "Start", NodeType = NodeTypes.Start }, Position = new NodePositionRequest { X = 100, Y = 200 } },
-            new WorkflowNodeRequest { Id = "fork", Type = NodeTypes.Parallel, Data = new NodeDataRequest { Label = "Fork", NodeType = NodeTypes.Parallel }, Position = new NodePositionRequest { X = 300, Y = 200 } },
-            new WorkflowNodeRequest { Id = "b1", Type = NodeTypes.Log, Data = new NodeDataRequest { Label = "Branch 1", NodeType = NodeTypes.Log, Config = new { log = new { message = "Executing Branch 1" } } }, Position = new NodePositionRequest { X = 500, Y = 100 } },
-            new WorkflowNodeRequest { Id = "b2", Type = NodeTypes.Log, Data = new NodeDataRequest { Label = "Branch 2", NodeType = NodeTypes.Log, Config = new { log = new { message = "Executing Branch 2" } } }, Position = new NodePositionRequest { X = 500, Y = 300 } },
-            new WorkflowNodeRequest { Id = "join", Type = NodeTypes.Parallel, Data = new NodeDataRequest { Label = "Join", NodeType = NodeTypes.Parallel }, Position = new NodePositionRequest { X = 700, Y = 200 } },
-            new WorkflowNodeRequest { Id = "end", Type = NodeTypes.End, Data = new NodeDataRequest { Label = "End", NodeType = NodeTypes.End }, Position = new NodePositionRequest { X = 900, Y = 200 } }
-        };
-
-        var edges = new List<WorkflowEdgeRequest>
-        {
-            new WorkflowEdgeRequest { Id = "e1", Source = "start", Target = "fork" },
-            new WorkflowEdgeRequest { Id = "e2", Source = "fork", Target = "b1" },
-            new WorkflowEdgeRequest { Id = "e3", Source = "fork", Target = "b2" },
-            new WorkflowEdgeRequest { Id = "e4", Source = "b1", Target = "join" },
-            new WorkflowEdgeRequest { Id = "e5", Source = "b2", Target = "join" },
-            new WorkflowEdgeRequest { Id = "e6", Source = "join", Target = "end" }
-        };
-
-        return new WorkflowDefinitionRequest
-        {
-            Name = name,
-            Category = "Parallel",
-            Graph = new WorkflowGraphRequest { Nodes = nodes, Edges = edges }
-        };
-    }
 
     /// <summary>
     /// Generates a complex approval workflow specifically for functional lifecycle testing.
@@ -561,6 +564,129 @@ public static class TestDataGenerator
             Name = name,
             Category = "Approval",
             Graph = new WorkflowGraphRequest { Nodes = nodes, Edges = edges }
+        };
+    }
+
+    /// <summary>
+    /// Generates a workflow with condition node that branches based on amount threshold (1000).
+    /// Flow: start -> condition (amount > 1000?) -> [true: high_amount_approval] / [false: low_amount_approval] -> end
+    /// </summary>
+    /// <param name="name">Workflow name</param>
+    /// <param name="thresholdValue">Threshold value for condition (default: 1000)</param>
+    /// <returns>A WorkflowDefinitionRequest with condition branching logic</returns>
+    public static WorkflowDefinitionRequest GenerateConditionBranchWorkflow(string name = "Condition Branch Workflow", string thresholdValue = "1000")
+    {
+        var nodes = new List<WorkflowNodeRequest>
+        {
+            new WorkflowNodeRequest 
+            { 
+                Id = "start", 
+                Type = "start", 
+                Data = new NodeDataRequest 
+                { 
+                    Label = "开始", 
+                    NodeType = "start" 
+                }, 
+                Position = new NodePositionRequest { X = 100, Y = 200 } 
+            },
+            new WorkflowNodeRequest 
+            { 
+                Id = "condition_node", 
+                Type = "condition", 
+                Data = new NodeDataRequest 
+                { 
+                    Label = "金额判断", 
+                    NodeType = "condition",
+                    Config = new 
+                    { 
+                        condition = new 
+                        { 
+                            logicalOperator = "and",
+                            conditions = new[] 
+                            { 
+                                new { variable = "amount", @operator = "greater_than", value = thresholdValue } 
+                            }
+                        }
+                    }
+                }, 
+                Position = new NodePositionRequest { X = 300, Y = 200 } 
+            },
+            new WorkflowNodeRequest 
+            { 
+                Id = "high_amount_approval", 
+                Type = "approval", 
+                Data = new NodeDataRequest 
+                { 
+                    Label = "大额审批", 
+                    NodeType = "approval", 
+                    Config = new 
+                    { 
+                        approval = new 
+                        { 
+                            type = "Any",
+                            approvers = new[] { new { type = "User", userId = "test-user-1" } },
+                            allowDelegate = false,
+                            allowReject = true,
+                            allowReturn = false
+                        }
+                    }
+                }, 
+                Position = new NodePositionRequest { X = 500, Y = 100 } 
+            },
+            new WorkflowNodeRequest 
+            { 
+                Id = "low_amount_approval", 
+                Type = "approval", 
+                Data = new NodeDataRequest 
+                { 
+                    Label = "小额审批", 
+                    NodeType = "approval", 
+                    Config = new 
+                    { 
+                        approval = new 
+                        { 
+                            type = "Any",
+                            approvers = new[] { new { type = "User", userId = "test-user-2" } },
+                            allowDelegate = false,
+                            allowReject = true,
+                            allowReturn = false
+                        }
+                    }
+                }, 
+                Position = new NodePositionRequest { X = 500, Y = 300 } 
+            },
+            new WorkflowNodeRequest 
+            { 
+                Id = "end", 
+                Type = "end", 
+                Data = new NodeDataRequest 
+                { 
+                    Label = "结束", 
+                    NodeType = "end" 
+                }, 
+                Position = new NodePositionRequest { X = 700, Y = 200 } 
+            }
+        };
+
+        var edges = new List<WorkflowEdgeRequest>
+        {
+            new WorkflowEdgeRequest { Id = "e1", Source = "start", Target = "condition_node" },
+            // True branch: amount > threshold -> high amount approval
+            new WorkflowEdgeRequest { Id = "e2", Source = "condition_node", Target = "high_amount_approval", SourceHandle = "true" },
+            // False branch: amount <= threshold -> low amount approval
+            new WorkflowEdgeRequest { Id = "e3", Source = "condition_node", Target = "low_amount_approval", SourceHandle = "false" },
+            // Both branches go to end
+            new WorkflowEdgeRequest { Id = "e4", Source = "high_amount_approval", Target = "end" },
+            new WorkflowEdgeRequest { Id = "e5", Source = "low_amount_approval", Target = "end" }
+        };
+
+        return new WorkflowDefinitionRequest
+        {
+            Name = name,
+            Category = "Condition",
+            Description = "测试条件分支工作流：金额大于1000走大额审批，否则走小额审批",
+            Graph = new WorkflowGraphRequest { Nodes = nodes, Edges = edges },
+            IsActive = true
         };
     }
 
@@ -618,12 +744,9 @@ public static class TestDataGenerator
     {
         return nodeType switch
         {
-            NodeTypes.Start => null,
-            NodeTypes.End => null,
-            NodeTypes.Ai => new { ai = new { prompt = "Test AI prompt", model = "gpt-4" } },
-            NodeTypes.AiJudge => new { aiJudge = new { criteria = "Test criteria", model = "gpt-4" } },
-            NodeTypes.Answer => new { answer = new { message = "Test answer message" } },
-            NodeTypes.Approval => new
+            "start" => new { },
+            "end" => new { },
+            "approval" => new
             {
                 approval = new
                 {
@@ -632,16 +755,11 @@ public static class TestDataGenerator
                         ? approverIds.Select(id => new { type = "User", userId = id }).ToArray()
                         : new[]
                         {
-                            new { type = "User", userId = "test-user-1" },
-                            new { type = "User", userId = "test-user-2" }
-                        },
-                    allowDelegate = false,
-                    allowReject = true,
-                    allowReturn = false
+                            new { type = "User", userId = "test-user-1" }
+                        }
                 }
             },
-            NodeTypes.Code => new { code = new { code = "console.log('test');", language = "javascript" } },
-            NodeTypes.Condition => new { 
+            "condition" => new { 
                 condition = new { 
                     logicalOperator = "and", 
                     conditions = new[] { 
@@ -649,29 +767,10 @@ public static class TestDataGenerator
                     } 
                 } 
             },
-            NodeTypes.DocumentExtractor => new { documentExtractor = new { extractions = new[] { new { field = "title", type = "text" }, new { field = "content", type = "text" } } } },
-            NodeTypes.Email => new { email = new { to = "test@example.com", subject = "Test Email", body = "Test body" } },
-            NodeTypes.HttpRequest => new { http = new { url = "https://api.example.com/test", method = "GET" } },
-            NodeTypes.HumanInput => new { humanInput = new { prompt = "Please provide input", fields = new[] { "field1" } } },
-            NodeTypes.Iteration => new { iteration = new { iteratorVariable = "item" } },
-            NodeTypes.KnowledgeSearch => new { knowledge = new { query = "{{searchQuery}}", knowledgeBaseIds = new[] { "kb123" } } },
-            NodeTypes.ListOperator => new { listOperator = new { @operator = "filter", inputVariable = "var1" } },
-            NodeTypes.Log => new { log = new { message = "Test log message", level = "info" } },
-            NodeTypes.Notification => new { notification = new { message = "Test notification", channel = "system" } },
-            NodeTypes.ParameterExtractor => new { parameterExtractor = new { parameters = new[] { new { name = "param1", type = "string" }, new { name = "param2", type = "string" } } } },
-            NodeTypes.QuestionClassifier => new { questionClassifier = new { classes = new[] { new { id = "c1", name = "category1" }, new { id = "c2", name = "category2" } } } },
-            NodeTypes.SetVariable => new { variable = new { name = "testVar", value = "testValue" } },
-            NodeTypes.SpeechToText => new { speechToText = new { audioSource = "{{audioUrl}}", language = "zh-CN" } },
-            NodeTypes.Template => new { template = new { template = "Hello {{name}}", variables = new { name = "World" } } },
-            NodeTypes.TextToSpeech => new { textToSpeech = new { text = "{{textToSpeak}}", voice = "zh-CN-XiaoxiaoNeural" } },
-            NodeTypes.Timer => new { timer = new { duration = 5000, unit = "milliseconds" } },
-            NodeTypes.Tool => new { tool = new { toolName = "testTool", parameters = new { param1 = "value1" } } },
-            NodeTypes.VariableAggregator => new { variableAggregator = new { inputVariables = new[] { "var1", "var2" }, format = "json" } },
-            NodeTypes.VariableAssigner => new { variableAssigner = new { assignments = new[] { new { variable = "var1", value = "value1" }, new { variable = "var2", value = "value2" } } } },
-            NodeTypes.Vision => new { vision = new { imageSource = "{{imageUrl}}", prompt = "Describe this image" } },
             _ => new { }
         };
     }
+
 }
 
 /// <summary>

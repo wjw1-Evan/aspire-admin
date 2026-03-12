@@ -375,7 +375,6 @@ public partial class WorkflowEngine
         {
             i.CurrentNodeId = targetNodeId;
             i.ApprovalRecords.Add(approvalRecord);
-            i.ParallelBranches.Clear();
             i.ActiveApprovals.Clear();
             i.CurrentApproverIds.Clear(); // 清空审批人
             i.UpdatedAt = DateTime.UtcNow;

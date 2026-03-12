@@ -179,10 +179,6 @@ public partial class WorkflowEngine
         var node = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
         if (node == null) return new List<string>();
 
-        // humanInput 节点：审批人为发起人
-        if (node.Type == "humanInput" && node.Data.Config?.HumanInput != null)
-            return string.IsNullOrEmpty(instance.StartedBy) ? new List<string>() : new List<string> { instance.StartedBy };
-
         if (node.Data.Config?.Approval == null) return new List<string>();
 
         var approvers = new List<string>();

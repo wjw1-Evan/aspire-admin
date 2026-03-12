@@ -22,10 +22,13 @@ const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
 
   const activityCategories = React.useMemo(() => {
     const categories: Record<string, any[]> = {};
+    const allowedNodeTypes = ['start', 'end', 'approval', 'condition'];
     Object.entries(NODE_CONFIGS).forEach(([key, config]) => {
-      const cat = (config as any).category || '其他';
-      if (!categories[cat]) categories[cat] = [];
-      categories[cat].push({ type: key, ...config });
+      if (allowedNodeTypes.includes(key)) {
+        const cat = (config as any).category || '其他';
+        if (!categories[cat]) categories[cat] = [];
+        categories[cat].push({ type: key, ...config });
+      }
     });
     return categories;
   }, []);

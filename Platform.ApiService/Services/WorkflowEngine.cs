@@ -44,11 +44,6 @@ public interface IWorkflowEngine
 
 
     /// <summary>
-    /// 完成并行分支
-    /// </summary>
-    Task<bool> CompleteParallelBranchAsync(string instanceId, string nodeId, string branchId);
-
-    /// <summary>
     /// 退回到指定节点
     /// </summary>
     Task<bool> ReturnToNodeAsync(string instanceId, string targetNodeId, string comment);
@@ -72,11 +67,6 @@ public interface IWorkflowEngine
     /// 继续流程执行（用于后台任务或延迟任务恢复）
     /// </summary>
     Task<bool> ProceedAsync(string instanceId, string nodeId);
-
-    /// <summary>
-    /// 处理人工输入提交 - 验证用户后继续流程
-    /// </summary>
-    Task<bool> ProcessHumanInputSubmitAsync(string instanceId, string nodeId);
 }
 
 /// <summary>
@@ -95,10 +85,6 @@ public partial class WorkflowEngine : IWorkflowEngine
     private readonly ITenantContext _tenantContext;
     private readonly IApproverResolverFactory _approverResolverFactory;
     private readonly IWorkflowExpressionEvaluator _expressionEvaluator;
-    private readonly IKnowledgeService _knowledgeService;
-    private readonly IEmailService _emailService;
-    private readonly OpenAIClient _openAiClient;
-    private readonly AiCompletionOptions _aiOptions;
     private readonly ILogger<WorkflowEngine> _logger;
     private readonly IServiceScopeFactory _scopeFactory;
 
@@ -117,10 +103,6 @@ public partial class WorkflowEngine : IWorkflowEngine
         ITenantContext tenantContext,
         IApproverResolverFactory approverResolverFactory,
         IWorkflowExpressionEvaluator expressionEvaluator,
-        IKnowledgeService knowledgeService,
-        IEmailService emailService,
-        OpenAIClient openAiClient,
-        IOptions<AiCompletionOptions> aiOptions,
         ILogger<WorkflowEngine> logger,
         IServiceScopeFactory scopeFactory)
     {
@@ -135,10 +117,6 @@ public partial class WorkflowEngine : IWorkflowEngine
         _tenantContext = tenantContext;
         _approverResolverFactory = approverResolverFactory;
         _expressionEvaluator = expressionEvaluator;
-        _knowledgeService = knowledgeService;
-        _emailService = emailService;
-        _openAiClient = openAiClient;
-        _aiOptions = aiOptions.Value;
         _logger = logger;
         _scopeFactory = scopeFactory;
     }
@@ -264,7 +242,8 @@ public partial class WorkflowEngine : IWorkflowEngine
             await ProcessNodeAsync(instance.Id, startNode.Id);
         }
 
-        return instance;
+        // 返回数据库中的最新状态（因为自动节点可能已经改变了状态）
+        return await _instanceFactory.GetByIdAsync(instance.Id) ?? instance;
     }
 
     /// <summary>

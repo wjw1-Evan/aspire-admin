@@ -771,25 +771,6 @@ public class WorkflowController : BaseApiController
 
             var binding = node.Data.Config?.Form;
 
-            // humanInput 节点无表单绑定时，直接将 FormData 合并到实例变量
-            if (node.Type == "humanInput" && (binding == null || string.IsNullOrEmpty(binding.FormDefinitionId)))
-            {
-                if (values != null && values.Any())
-                {
-                    var humanInputSanitized = Platform.ApiService.Extensions.SerializationExtensions.SanitizeDictionary(values);
-                    var humanInputVars = (Dictionary<string, object?>)(object)humanInputSanitized;
-                    var updated = await _instanceFactory.UpdateAsync(id, i =>
-                    {
-                        foreach (var kvp in humanInputVars)
-                        {
-                            i.SetVariable(kvp.Key, kvp.Value);
-                        }
-                    });
-                    return Success(updated?.GetVariablesDict() ?? humanInputVars);
-                }
-                return Success(new Dictionary<string, object>());
-            }
-
             if (binding == null || string.IsNullOrEmpty(binding.FormDefinitionId))
             {
                 return ValidationError("该节点未绑定完整表单定义");
@@ -938,11 +919,6 @@ public class WorkflowController : BaseApiController
                     }
                     await _workflowEngine.ProcessApprovalAsync(id, nodeId, ApprovalAction.Delegate, request.Comment, request.DelegateToUserId);
                     return Success("已转办");
-
-                case "submit":
-                    // 人工输入节点：提交输入并继续流程
-                    await _workflowEngine.ProcessHumanInputSubmitAsync(id, nodeId);
-                    return Success("人工输入已提交，流程已继续");
 
                 default:
                     return ValidationError("不支持的操作类型");

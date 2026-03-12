@@ -92,28 +92,6 @@ public class WorkflowInstance : MultiTenantEntity
     }
 
     /// <summary>
-    /// 获取指定节点的并行分支完成状态
-    /// </summary>
-    public List<string> GetParallelBranches(string nodeId)
-    {
-        return ParallelBranches.FirstOrDefault(b => b.NodeId == nodeId)?.BranchIds ?? new List<string>();
-    }
-
-    /// <summary>
-    /// 为指定节点添加已完成的并行分支
-    /// </summary>
-    public void AddParallelBranch(string nodeId, string branchId)
-    {
-        var entry = ParallelBranches.FirstOrDefault(b => b.NodeId == nodeId);
-        if (entry == null)
-        {
-            entry = new ParallelBranchEntry { NodeId = nodeId };
-            ParallelBranches.Add(entry);
-        }
-        if (!entry.BranchIds.Contains(branchId)) entry.BranchIds.Add(branchId);
-    }
-
-    /// <summary>
     /// 重置所有变量
     /// </summary>
     public void ResetVariables(Dictionary<string, object?> dictionary)
@@ -210,12 +188,6 @@ public class WorkflowInstance : MultiTenantEntity
     public DateTime? CompletedAt { get; set; }
 
     /// <summary>
-    /// 并行网关状态跟踪列表（nodeId -> completed branchIds）
-    /// </summary>
-    [BsonElement("parallelBranches")]
-    public List<ParallelBranchEntry> ParallelBranches { get; set; } = new();
-
-    /// <summary>
     /// 流程定义快照（创建实例时保存，确保已创建的流程不受后续定义变更影响）
     /// </summary>
     [BsonElement("workflowDefinitionSnapshot")]
@@ -262,24 +234,6 @@ public class WorkflowVariableEntry
     /// </summary>
     [BsonElement("value")]
     public string? ValueJson { get; set; }
-}
-
-/// <summary>
-/// 并行分支入口
-/// </summary>
-public class ParallelBranchEntry
-{
-    /// <summary>
-    /// 节点ID
-    /// </summary>
-    [BsonElement("nodeId")]
-    public string NodeId { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 已完成的分支ID列表
-    /// </summary>
-    [BsonElement("branchIds")]
-    public List<string> BranchIds { get; set; } = new();
 }
 
 /// <summary>

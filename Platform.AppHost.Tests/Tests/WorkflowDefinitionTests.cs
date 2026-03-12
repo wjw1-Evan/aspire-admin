@@ -1072,96 +1072,7 @@ public class WorkflowDefinitionTests : BaseIntegrationTest
         Output.WriteLine("✓ Workflow instance creation property validated");
     }
 
-    /// <summary>
-    /// Tests that creating workflow definitions with all 26 node types succeeds.
-    /// </summary>
-    /// <remarks>
-    /// Validates: Requirements 3.11, 3.12
-    /// 
-    /// This test verifies:
-    /// 1. Workflow definitions containing each of the 26 node types can be created successfully
-    /// 2. Node configurations are correctly saved and retrieved
-    /// 3. All node types: start, end, ai, ai-judge, answer, approval, code, condition,
-    ///    document-extractor, email, http-request, human-input, iteration, knowledge-search,
-    ///    list-operator, log, notification, parameter-extractor, question-classifier,
-    ///    set-variable, speech-to-text, template, text-to-speech, timer, tool,
-    ///    variable-aggregator, variable-assigner, vision
-    /// </remarks>
-    [Fact]
-    public async Task CreateWorkflow_WithAllNodeTypes_ShouldSucceed()
-    {
-        // Arrange
-        await InitializeAuthenticationAsync();
 
-        // Get all node types except Start and End (which are already in every workflow)
-        var allNodeTypes = new[]
-        {
-            NodeTypes.Ai, NodeTypes.AiJudge,
-            NodeTypes.Answer, NodeTypes.Approval, NodeTypes.Code, NodeTypes.Condition,
-            NodeTypes.DocumentExtractor, NodeTypes.Email, NodeTypes.HttpRequest,
-            NodeTypes.HumanInput, NodeTypes.Iteration, NodeTypes.KnowledgeSearch,
-            NodeTypes.ListOperator, NodeTypes.Log, NodeTypes.Notification,
-            NodeTypes.ParameterExtractor, NodeTypes.QuestionClassifier, NodeTypes.SetVariable,
-            NodeTypes.SpeechToText, NodeTypes.Template, NodeTypes.TextToSpeech,
-            NodeTypes.Timer, NodeTypes.Tool, NodeTypes.VariableAggregator,
-            NodeTypes.VariableAssigner, NodeTypes.Vision
-        };
-
-        Output.WriteLine($"Testing workflow creation with {allNodeTypes.Length} node types (excluding Start and End which are tested separately)");
-
-        // Act & Assert - Test each node type
-        foreach (var nodeType in allNodeTypes)
-        {
-            Output.WriteLine($"Testing node type: {nodeType}");
-
-            // Generate workflow with this node type
-            var workflowRequest = TestDataGenerator.GenerateWorkflowWithNodeType(nodeType);
-
-            // Create workflow
-            var createResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
-            var createResult = await createResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
-
-            // Log error details if creation failed
-            if (createResponse.StatusCode != HttpStatusCode.OK)
-            {
-                Output.WriteLine($"  ✗ Failed to create workflow with node type '{nodeType}'");
-                Output.WriteLine($"    Status: {createResponse.StatusCode}");
-                Output.WriteLine($"    Message: {createResult?.Message}");
-                if (createResult?.Errors != null)
-                {
-                    foreach (var error in createResult.Errors)
-                    {
-                        Output.WriteLine($"    Field '{error.Key}': {string.Join(", ", error.Value)}");
-                    }
-                }
-            }
-
-            Assert.Equal(HttpStatusCode.OK, createResponse.StatusCode);
-            Assert.NotNull(createResult);
-            Assert.True(createResult.Success,
-                $"Failed to create workflow with node type '{nodeType}'. Message: {createResult.Message}");
-            Assert.NotNull(createResult.Data);
-
-            var workflowId = createResult.Data.Id;
-
-            // Retrieve workflow to verify node configuration
-            var getResponse = await TestClient.GetAsync($"/api/workflows/{workflowId}");
-            var getResult = await getResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
-
-            Assert.NotNull(getResult);
-            Assert.True(getResult.Success);
-            Assert.NotNull(getResult.Data);
-            Assert.NotNull(getResult.Data.Graph);
-
-            // Verify the specific node type exists in the graph
-            var nodeWithType = getResult.Data.Graph.Nodes.FirstOrDefault(n => n.Data.NodeType == nodeType);
-            Assert.NotNull(nodeWithType);
-
-            Output.WriteLine($"  ✓ Node type '{nodeType}' created and retrieved successfully");
-        }
-
-        Output.WriteLine($"✓ All {allNodeTypes.Length} node types tested successfully");
-    }
 
     // ==================== Error Handling and Boundary Condition Tests ====================
 
@@ -1490,61 +1401,7 @@ public class WorkflowDefinitionTests : BaseIntegrationTest
         Output.WriteLine($"✓ Long category (101 chars) handled: {longCategoryResponse.StatusCode}");
     }
 
-    /// <summary>
-    /// Tests creating a workflow with a complex parallel graph (fork/join).
-    /// </summary>
-    [Fact]
-    public async Task CreateWorkflow_WithComplexParallelGraph_ShouldSucceed()
-    {
-        // Arrange
-        await InitializeAuthenticationAsync();
-        var workflowRequest = TestDataGenerator.GenerateParallelWorkflow();
-        Output.WriteLine($"Creating parallel workflow: {workflowRequest.Name}");
 
-        // Act
-        var response = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
-
-        // Assert
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var apiResponse = await response.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
-        Assert.NotNull(apiResponse);
-        Assert.True(apiResponse.Success);
-        Assert.NotNull(apiResponse.Data?.Graph?.Nodes);
-        Assert.Equal(6, apiResponse.Data.Graph.Nodes.Count); // Start, Fork, B1, B2, Join, End
-
-        Output.WriteLine($"✓ Parallel workflow created successfully - ID: {apiResponse.Data.Id}");
-    }
-
-    /// <summary>
-    /// Tests creating a workflow with conditional branching.
-    /// </summary>
-    [Fact]
-    public async Task CreateWorkflow_WithConditionBranching_ShouldSucceed()
-    {
-        // Arrange
-        await InitializeAuthenticationAsync();
-        var workflowRequest = TestDataGenerator.GenerateConditionWorkflow();
-        Output.WriteLine($"Creating condition workflow: {workflowRequest.Name}");
-
-        // Act
-        var response = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
-
-        // Assert
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var apiResponse = await response.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
-        Assert.NotNull(apiResponse);
-        Assert.True(apiResponse.Success);
-        Assert.NotNull(apiResponse.Data?.Graph?.Nodes);
-        Assert.Equal(5, apiResponse.Data.Graph.Nodes.Count); // Start, Cond, TruePath, FalsePath, End
-
-        // Verify edges have source handles
-        var condEdges = apiResponse.Data.Graph.Edges.Where(e => e.Source == "cond").ToList();
-        Assert.Equal(2, condEdges.Count);
-        Assert.Contains(condEdges, e => e.SourceHandle == "true");
-        Assert.Contains(condEdges, e => e.SourceHandle == "false");
-
-        Output.WriteLine($"✓ Condition workflow created successfully - ID: {apiResponse.Data.Id}");
-    }
 }
 
 

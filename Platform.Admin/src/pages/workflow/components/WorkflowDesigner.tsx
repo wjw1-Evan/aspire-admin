@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState, useEffect } from 'react';
+import React, { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import dagre from 'dagre';
 import ReactFlow, {
   Node,
@@ -170,7 +170,7 @@ const nodeHeight = 100;
 
 const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'TB') => {
   const isHorizontal = direction === 'LR';
-  dagreGraph.setGraph({ rankdir: direction });
+  dagreGraph.setGraph({ rankdir: direction, nodesep: 120, ranksep: 120 });
 
   nodes.forEach((node) => {
     dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
@@ -215,6 +215,8 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [configDrawerVisible, setConfigDrawerVisible] = useState(false);
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
   const [configForm] = Form.useForm();
   const [users, setUsers] = useState<AppUser[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
@@ -308,6 +310,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
           id: node.id,
           type: 'workflowNode',
           position: { x: node.position.x, y: node.position.y },
+          deletable: node.type !== 'start',
           data: {
             label: node.data?.label,
             typeLabel: typeLabels[node.type as keyof typeof typeLabels] || node.type,
@@ -344,6 +347,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
           id: 'start',
           type: 'workflowNode',
           position: { x: 250, y: 50 },
+          deletable: false,
           data: { label: typeLabels.start, typeLabel: typeLabels.start, nodeType: 'start' },
         },
       ]);
@@ -377,6 +381,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
           x: Math.random() * 400 + 100,
           y: Math.random() * 300 + 100,
         },
+        deletable: type !== 'start',
         data: {
           label: `新${typeLabels[type as keyof typeof typeLabels] || type}`,
           typeLabel: typeLabels[type as keyof typeof typeLabels] || type,
@@ -384,9 +389,71 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
           config: {},
         },
       };
-      setNodes((nds) => [...nds, newNode]);
+      setNodes((nds) => {
+        if (type === 'start' && nds.some((n) => n.data?.nodeType === 'start')) {
+          message.warning(intl.formatMessage({ id: 'pages.workflow.designer.onlyOneStartNode', defaultMessage: '流程只能包含一个开始节点' }));
+          return nds;
+        }
+        return [...nds, newNode];
+      });
     },
-    [setNodes, intl]
+    [setNodes, intl, message]
+  );
+
+  const onDragStart = (event: React.DragEvent, nodeType: string) => {
+    event.dataTransfer.setData('application/reactflow', nodeType);
+    event.dataTransfer.effectAllowed = 'move';
+  };
+
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
+
+      if (readOnly) return; // Prevent dropping when read-only
+
+      const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect();
+      const type = event.dataTransfer.getData('application/reactflow');
+
+      // Check if the dropped element is valid
+      if (typeof type === 'undefined' || !type || !reactFlowBounds || !reactFlowInstance) {
+        return;
+      }
+
+      const position = reactFlowInstance.project({
+        x: event.clientX - reactFlowBounds.left,
+        y: event.clientY - reactFlowBounds.top,
+      });
+
+      const typeLabelsInfo = getTypeLabels(intl);
+      const id = `${type}-${Date.now()}`;
+      
+      const newNode: Node = {
+        id,
+        type: 'workflowNode',
+        position,
+        deletable: type !== 'start',
+        data: {
+          label: `新${typeLabelsInfo[type as keyof typeof typeLabelsInfo] || type}`,
+          typeLabel: typeLabelsInfo[type as keyof typeof typeLabelsInfo] || type,
+          nodeType: type,
+          config: {},
+        },
+      };
+
+      setNodes((nds) => {
+        if (type === 'start' && nds.some((n) => n.data?.nodeType === 'start')) {
+          message.warning(intl.formatMessage({ id: 'pages.workflow.designer.onlyOneStartNode', defaultMessage: '流程只能包含一个开始节点' }));
+          return nds;
+        }
+        return nds.concat(newNode);
+      });
+    },
+    [reactFlowInstance, setNodes, intl, readOnly, message]
   );
 
   const onNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
@@ -1065,7 +1132,14 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
                   <div className="category-group" key={category}>
                     <div className="category-title">{category}</div>
                     {items.map((item) => (
-                      <div className="activity-item" key={item.type} onClick={() => addNode(item.type)}>
+                      <div 
+                        className="activity-item" 
+                        key={item.type} 
+                        onClick={() => addNode(item.type)}
+                        onDragStart={(event) => onDragStart(event, item.type)}
+                        draggable
+                        title="可拖动到右侧区域添加组件"
+                      >
                         <div className="activity-icon" style={{ backgroundColor: item.backgroundColor, color: item.color }}>
                           {item.icon}
                         </div>
@@ -1087,7 +1161,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
           </>
         )}
 
-        <div className="workflow-canvas-container">
+        <div className="workflow-canvas-container" ref={reactFlowWrapper}>
           <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 10, display: 'flex', gap: 8 }}>
             {onSave && (
               <Button type="primary" icon={<SaveOutlined />} onClick={handleSave} size="middle">
@@ -1127,6 +1201,9 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
             onEdgesChange={readOnly ? undefined : onEdgesChange}
             onConnect={readOnly ? undefined : onConnect}
             onNodeClick={onNodeClick}
+            onInit={setReactFlowInstance}
+            onDrop={onDrop}
+            onDragOver={onDragOver}
             nodesDraggable={!readOnly}
             nodesConnectable={!readOnly}
             elementsSelectable={!readOnly}
@@ -1162,7 +1239,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
         className="node-drawer"
         extra={
           <Space>
-            {selectedNode?.data.nodeType !== 'start' && selectedNode?.data.nodeType !== 'end' && !readOnly && (
+            {selectedNode?.data.nodeType !== 'start' && !readOnly && (
               <Button danger icon={<DeleteOutlined />} onClick={handleDeleteNode}>
                 {intl.formatMessage({ id: 'pages.workflow.designer.delete' })}
               </Button>

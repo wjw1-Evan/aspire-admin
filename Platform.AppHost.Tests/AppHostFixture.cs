@@ -12,6 +12,9 @@ namespace Platform.AppHost.Tests;
 /// </summary>
 public class AppHostFixture : IAsyncLifetime
 {
+    public const string TestJwtKey = "test-secret-key-for-integration-tests-minimum-32-characters-required";
+    public const int DefaultTimeoutSeconds = 30;
+
     private DistributedApplication? _app;
     private HttpClient? _httpClient;
     private readonly List<string> _createdUserIds = new();
@@ -106,7 +109,7 @@ public class AppHostFixture : IAsyncLifetime
 
         // Configure test-specific settings
         // JWT secret key for token generation/validation in tests
-        appHost.Configuration["Jwt:SecretKey"] = "test-secret-key-for-integration-tests-minimum-32-characters-required";
+        appHost.Configuration["Jwt:SecretKey"] = TestJwtKey;
 
         // Disable SMTP to prevent email sending during tests
         appHost.Configuration["Smtp:Host"] = "";

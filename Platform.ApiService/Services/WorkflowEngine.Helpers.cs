@@ -20,13 +20,16 @@ public partial class WorkflowEngine
 
         var variables = instance.GetVariablesDict();
 
-        var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
-        if (document != null)
+        if (!string.IsNullOrEmpty(instance.DocumentId))
         {
-            variables["document_title"] = document.Title;
-            variables["document_id"] = document.Id;
-            variables["started_by"] = instance.StartedBy;
-            variables["document_content"] = document.Content ?? string.Empty;
+            var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
+            if (document != null)
+            {
+                variables["document_title"] = document.Title;
+                variables["document_id"] = document.Id;
+                variables["started_by"] = instance.StartedBy;
+                variables["document_content"] = document.Content ?? string.Empty;
+            }
         }
 
         return variables;
@@ -69,11 +72,14 @@ public partial class WorkflowEngine
             i.ActiveApprovals.Clear(); // 清除所有活跃审批节点
         });
 
-        await _documentFactory.UpdateAsync(instance.DocumentId, d =>
+        if (!string.IsNullOrEmpty(instance.DocumentId))
         {
-            d.Status = Models.Workflow.DocumentStatus.Draft; // 撤回 → 回到草稿
-            d.UpdatedAt = DateTime.UtcNow;
-        });
+            await _documentFactory.UpdateAsync(instance.DocumentId, d =>
+            {
+                d.Status = Models.Workflow.DocumentStatus.Draft; // 撤回 → 回到草稿
+                d.UpdatedAt = DateTime.UtcNow;
+            });
+        }
 
         return true;
     }
@@ -149,11 +155,14 @@ public partial class WorkflowEngine
             ? Models.Workflow.DocumentStatus.Approved
             : Models.Workflow.DocumentStatus.Rejected;
 
-        await _documentFactory.UpdateAsync(instance.DocumentId, d =>
+        if (!string.IsNullOrEmpty(instance.DocumentId))
         {
-            d.Status = documentStatus;
-            d.UpdatedAt = DateTime.UtcNow;
-        });
+            await _documentFactory.UpdateAsync(instance.DocumentId, d =>
+            {
+                d.Status = documentStatus;
+                d.UpdatedAt = DateTime.UtcNow;
+            });
+        }
     }
 
     /// <summary>

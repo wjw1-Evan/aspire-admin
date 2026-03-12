@@ -15,17 +15,13 @@ namespace Platform.AppHost.Tests.Tests;
 /// Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9, 4.10, 4.11, 4.12, 5.1, 5.2, 5.4, 8.1, 8.2
 /// </remarks>
 [Collection("AppHost Collection")]
-public class DocumentApprovalTests : IClassFixture<AppHostFixture>
+public class DocumentApprovalTests : BaseIntegrationTest
 {
-    private readonly AppHostFixture _fixture;
-    private readonly ITestOutputHelper _output;
-    private HttpClient _httpClient = null!;
     private string _accessToken = string.Empty;
 
     public DocumentApprovalTests(AppHostFixture fixture, ITestOutputHelper output)
+        : base(fixture, output)
     {
-        _fixture = fixture;
-        _output = output;
     }
 
     /// <summary>
@@ -35,73 +31,10 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
     /// </summary>
     /// <remarks>
     /// Validates: Requirements 5.2, 8.1, 8.2
-    /// 
-    /// This method:
-    /// 1. Generates a unique test user using TestDataGenerator.GenerateValidRegistration()
-    /// 2. Registers the user via POST /api/auth/register
-    /// 3. Logs in via POST /api/auth/login
-    /// 4. Stores the access token in _accessToken field
-    /// 5. Sets the Authorization header on _httpClient
     /// </remarks>
     private async Task InitializeAuthenticationAsync()
     {
-        // Create a new HTTP client for this test
-        _httpClient = _fixture.HttpClient;
-
-        // Generate unique test user credentials
-        var registration = TestDataGenerator.GenerateValidRegistration();
-
-        _output.WriteLine($"Registering test user: {registration.Username}");
-
-        // Register the test user
-        var registerResponse = await _httpClient.PostAsJsonAsync(
-            "/api/auth/register",
-            registration);
-
-        Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
-
-        var registerApiResponse = await registerResponse.Content
-            .ReadAsJsonAsync<ApiResponse<RegisterResponseData>>();
-
-        Assert.NotNull(registerApiResponse);
-        Assert.True(registerApiResponse.Success,
-            $"Registration failed for user '{registration.Username}'. Message: {registerApiResponse.Message}");
-        Assert.NotNull(registerApiResponse.Data);
-
-        _output.WriteLine($"✓ User registered successfully - User ID: {registerApiResponse.Data.Id}");
-
-        // Login to get access token
-        var loginRequest = new LoginRequest
-        {
-            Username = registration.Username,
-            Password = registration.Password
-        };
-
-        var loginResponse = await _httpClient.PostAsJsonAsync(
-            "/api/auth/login",
-            loginRequest);
-
-        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
-
-        var loginApiResponse = await loginResponse.Content
-            .ReadAsJsonAsync<ApiResponse<LoginResponseData>>();
-
-        Assert.NotNull(loginApiResponse);
-        Assert.True(loginApiResponse.Success,
-            $"Login failed for user '{registration.Username}'. Message: {loginApiResponse.Message}");
-        Assert.NotNull(loginApiResponse.Data);
-        Assert.NotNull(loginApiResponse.Data.Token);
-
-        // Store the access token
-        _accessToken = loginApiResponse.Data.Token;
-
-        _output.WriteLine($"✓ User logged in successfully - Access token obtained");
-
-        // Set the Authorization header on the HTTP client
-        _httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", _accessToken);
-
-        _output.WriteLine($"✓ Authorization header set on HTTP client");
+        _accessToken = await CreateAndLoginNewUserAsync();
     }
 
     /// <summary>
@@ -123,10 +56,10 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
         await InitializeAuthenticationAsync();
         var documentRequest = TestDataGenerator.GenerateValidDocument();
 
-        _output.WriteLine($"Creating document with title: {documentRequest.Title}");
+        Output.WriteLine($"Creating document with title: {documentRequest.Title}");
 
         // Act
-        var createResponse = await _httpClient.PostAsJsonAsync(
+        var createResponse = await TestClient.PostAsJsonAsync(
             "/api/documents",
             documentRequest);
 
@@ -146,7 +79,7 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
         Assert.Equal(documentRequest.DocumentType, apiResponse.Data.DocumentType);
         Assert.Equal("draft", apiResponse.Data.Status);
 
-        _output.WriteLine($"✓ Document created successfully - ID: {apiResponse.Data.Id}, Status: {apiResponse.Data.Status}");
+        Output.WriteLine($"✓ Document created successfully - ID: {apiResponse.Data.Id}, Status: {apiResponse.Data.Status}");
     }
 
     /// <summary>
@@ -173,10 +106,10 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
             Category = "测试分类"
         };
 
-        _output.WriteLine("Creating document with missing title (should fail)");
+        Output.WriteLine("Creating document with missing title (should fail)");
 
         // Act
-        var createResponse = await _httpClient.PostAsJsonAsync(
+        var createResponse = await TestClient.PostAsJsonAsync(
             "/api/documents",
             documentRequest);
 
@@ -197,7 +130,7 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
             apiResponse.Message?.Contains("标题", StringComparison.OrdinalIgnoreCase) == true,
             $"Expected validation error for missing title. Code: {apiResponse.Code}, Message: {apiResponse.Message}");
 
-        _output.WriteLine($"✓ Validation error returned as expected - Code: {apiResponse.Code}, Message: {apiResponse.Message}");
+        Output.WriteLine($"✓ Validation error returned as expected - Code: {apiResponse.Code}, Message: {apiResponse.Message}");
     }
 
     /// <summary>
@@ -217,7 +150,7 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
         await InitializeAuthenticationAsync();
         const int iterations = 10;
 
-        _output.WriteLine($"Starting CRUD Round-trip property test with {iterations} iterations");
+        Output.WriteLine($"Starting CRUD Round-trip property test with {iterations} iterations");
 
         // Act & Assert
         for (int i = 0; i < iterations; i++)
@@ -225,10 +158,10 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
             // Generate random document data
             var documentRequest = TestDataGenerator.GenerateValidDocument();
 
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] Creating document: {documentRequest.Title}");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] Creating document: {documentRequest.Title}");
 
             // Create document
-            var createResponse = await _httpClient.PostAsJsonAsync(
+            var createResponse = await TestClient.PostAsJsonAsync(
                 "/api/documents",
                 documentRequest);
 
@@ -249,7 +182,7 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
             var documentId = createResult.Data.Id;
 
             // Retrieve document by ID
-            var getResponse = await _httpClient.GetAsync($"/api/documents/{documentId}");
+            var getResponse = await TestClient.GetAsync($"/api/documents/{documentId}");
 
             Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
 
@@ -270,11 +203,11 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
 
             if ((i + 1) % 10 == 0)
             {
-                _output.WriteLine($"✓ Completed {i + 1}/{iterations} iterations successfully");
+                Output.WriteLine($"✓ Completed {i + 1}/{iterations} iterations successfully");
             }
         }
 
-        _output.WriteLine($"✓ All {iterations} iterations completed successfully - CRUD Round-trip consistency verified");
+        Output.WriteLine($"✓ All {iterations} iterations completed successfully - CRUD Round-trip consistency verified");
     }
 
     /// <summary>
@@ -299,13 +232,13 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
         for (int i = 0; i < 3; i++)
         {
             var documentRequest = TestDataGenerator.GenerateValidDocument();
-            await _httpClient.PostAsJsonAsync("/api/documents", documentRequest);
+            await TestClient.PostAsJsonAsync("/api/documents", documentRequest);
         }
 
-        _output.WriteLine("Requesting document list with pagination parameters");
+        Output.WriteLine("Requesting document list with pagination parameters");
 
         // Act
-        var response = await _httpClient.GetAsync("/api/documents?current=1&pageSize=10");
+        var response = await TestClient.GetAsync("/api/documents?current=1&pageSize=10");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -335,7 +268,7 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
                 "Document must have non-empty 'status' field");
         }
 
-        _output.WriteLine($"✓ Document list returned with pagination - Total: {pagedData.GetProperty("total").GetInt32()}");
+        Output.WriteLine($"✓ Document list returned with pagination - Total: {pagedData.GetProperty("total").GetInt32()}");
     }
     /// <summary>
     /// Tests that updating a document with modified title and content returns 200 OK
@@ -359,9 +292,9 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
 
         // Create a document first
         var documentRequest = TestDataGenerator.GenerateValidDocument();
-        _output.WriteLine($"Creating document with title: {documentRequest.Title}");
+        Output.WriteLine($"Creating document with title: {documentRequest.Title}");
 
-        var createResponse = await _httpClient.PostAsJsonAsync(
+        var createResponse = await TestClient.PostAsJsonAsync(
             "/api/documents",
             documentRequest);
 
@@ -378,7 +311,7 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
         var originalDocumentType = createResult.Data.DocumentType;
         var originalStatus = createResult.Data.Status;
 
-        _output.WriteLine($"✓ Document created - ID: {documentId}");
+        Output.WriteLine($"✓ Document created - ID: {documentId}");
 
         // Prepare update data with modified title and content
         var updatedDocument = TestDataGenerator.GenerateValidDocument();
@@ -391,10 +324,10 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
             Category = "更新后的分类"
         };
 
-        _output.WriteLine($"Updating document with new title: {updateRequest.Title}");
+        Output.WriteLine($"Updating document with new title: {updateRequest.Title}");
 
         // Act - Update the document
-        var updateResponse = await _httpClient.PutAsJsonAsync(
+        var updateResponse = await TestClient.PutAsJsonAsync(
             $"/api/documents/{documentId}",
             updateRequest);
 
@@ -415,10 +348,10 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
         Assert.Equal(originalDocumentType, updateResult.Data.DocumentType); // Unchanged field
         Assert.Equal(originalStatus, updateResult.Data.Status); // Status should remain unchanged
 
-        _output.WriteLine($"✓ Document updated successfully in response");
+        Output.WriteLine($"✓ Document updated successfully in response");
 
         // Act - Retrieve the document to verify persistence
-        var getResponse = await _httpClient.GetAsync($"/api/documents/{documentId}");
+        var getResponse = await TestClient.GetAsync($"/api/documents/{documentId}");
 
         // Assert - Verify GET response reflects the update
         Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
@@ -437,7 +370,7 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
         Assert.Equal(originalDocumentType, getResult.Data.DocumentType); // Unchanged field
         Assert.Equal(originalStatus, getResult.Data.Status); // Status should remain unchanged
 
-        _output.WriteLine($"✓ Document update verified via GET request - Title: {getResult.Data.Title}");
+        Output.WriteLine($"✓ Document update verified via GET request - Title: {getResult.Data.Title}");
     }
 
     /// <summary>
@@ -460,9 +393,9 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
 
         // Create a document first
         var documentRequest = TestDataGenerator.GenerateValidDocument();
-        _output.WriteLine($"Creating document with title: {documentRequest.Title}");
+        Output.WriteLine($"Creating document with title: {documentRequest.Title}");
 
-        var createResponse = await _httpClient.PostAsJsonAsync(
+        var createResponse = await TestClient.PostAsJsonAsync(
             "/api/documents",
             documentRequest);
 
@@ -477,12 +410,12 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
 
         var documentId = createResult.Data.Id;
 
-        _output.WriteLine($"✓ Document created - ID: {documentId}");
+        Output.WriteLine($"✓ Document created - ID: {documentId}");
 
         // Act - Delete the document
-        _output.WriteLine($"Deleting document with ID: {documentId}");
+        Output.WriteLine($"Deleting document with ID: {documentId}");
 
-        var deleteResponse = await _httpClient.DeleteAsync($"/api/documents/{documentId}");
+        var deleteResponse = await TestClient.DeleteAsync($"/api/documents/{documentId}");
 
         // Assert - Verify delete response
         Assert.Equal(HttpStatusCode.OK, deleteResponse.StatusCode);
@@ -493,17 +426,17 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
         Assert.NotNull(deleteResult);
         Assert.True(deleteResult.Success, $"Document deletion failed. Message: {deleteResult.Message}");
 
-        _output.WriteLine($"✓ Document deleted successfully");
+        Output.WriteLine($"✓ Document deleted successfully");
 
         // Act - Try to retrieve the deleted document
-        _output.WriteLine($"Attempting to retrieve deleted document with ID: {documentId}");
+        Output.WriteLine($"Attempting to retrieve deleted document with ID: {documentId}");
 
-        var getResponse = await _httpClient.GetAsync($"/api/documents/{documentId}");
+        var getResponse = await TestClient.GetAsync($"/api/documents/{documentId}");
 
         // Assert - Verify GET returns 404
         Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
 
-        _output.WriteLine($"✓ GET request returned 404 Not Found as expected");
+        Output.WriteLine($"✓ GET request returned 404 Not Found as expected");
     }
     /// <summary>
     /// Property-based test: Document Submission Workflow Trigger
@@ -522,16 +455,16 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
         await InitializeAuthenticationAsync();
         const int iterations = 10;
 
-        _output.WriteLine($"Starting Document Submission Workflow Trigger property test with {iterations} iterations");
+        Output.WriteLine($"Starting Document Submission Workflow Trigger property test with {iterations} iterations");
 
         // Act & Assert
         for (int i = 0; i < iterations; i++)
         {
             // Step 1: Create a workflow definition
             var workflowRequest = TestDataGenerator.GenerateValidWorkflowDefinition();
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] Creating workflow: {workflowRequest.Name}");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] Creating workflow: {workflowRequest.Name}");
 
-            var workflowResponse = await _httpClient.PostAsJsonAsync(
+            var workflowResponse = await TestClient.PostAsJsonAsync(
                 "/api/workflows",
                 workflowRequest);
 
@@ -549,9 +482,9 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
 
             // Step 2: Create a document
             var documentRequest = TestDataGenerator.GenerateValidDocument();
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] Creating document: {documentRequest.Title}");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] Creating document: {documentRequest.Title}");
 
-            var documentResponse = await _httpClient.PostAsJsonAsync(
+            var documentResponse = await TestClient.PostAsJsonAsync(
                 "/api/documents",
                 documentRequest);
 
@@ -582,9 +515,9 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
                 }
             };
 
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] Submitting document {documentId} with workflow {workflowId}");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] Submitting document {documentId} with workflow {workflowId}");
 
-            var submitResponse = await _httpClient.PostAsJsonAsync(
+            var submitResponse = await TestClient.PostAsJsonAsync(
                 $"/api/documents/{documentId}/submit",
                 submitRequest);
 
@@ -608,12 +541,12 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
 
             var workflowInstanceId = submitResult.Data.Id;
 
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ Workflow instance created - ID: {workflowInstanceId}, Status: {submitResult.Data.Status}");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ Workflow instance created - ID: {workflowInstanceId}, Status: {submitResult.Data.Status}");
 
             // Step 4: Retrieve the document to verify WorkflowInstanceId is populated
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] Retrieving document {documentId} to verify WorkflowInstanceId");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] Retrieving document {documentId} to verify WorkflowInstanceId");
 
-            var getDocumentResponse = await _httpClient.GetAsync($"/api/documents/{documentId}");
+            var getDocumentResponse = await TestClient.GetAsync($"/api/documents/{documentId}");
 
             Assert.Equal(HttpStatusCode.OK, getDocumentResponse.StatusCode);
 
@@ -626,18 +559,18 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
             Assert.NotNull(getDocumentResult.Data);
 
             // Property 11: Verify document's WorkflowInstanceId is populated
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] Document WorkflowInstanceId from API: {getDocumentResult.Data.WorkflowInstanceId ?? "NULL"}");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] Document WorkflowInstanceId from API: {getDocumentResult.Data.WorkflowInstanceId ?? "NULL"}");
             Assert.Equal(workflowInstanceId, getDocumentResult.Data.WorkflowInstanceId);
 
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ Document WorkflowInstanceId populated: {getDocumentResult.Data.WorkflowInstanceId}");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ Document WorkflowInstanceId populated: {getDocumentResult.Data.WorkflowInstanceId}");
 
             if ((i + 1) % 10 == 0)
             {
-                _output.WriteLine($"✓ Completed {i + 1}/{iterations} iterations successfully");
+                Output.WriteLine($"✓ Completed {i + 1}/{iterations} iterations successfully");
             }
         }
 
-        _output.WriteLine($"✓ All {iterations} iterations completed successfully - Document Submission Workflow Trigger verified");
+        Output.WriteLine($"✓ All {iterations} iterations completed successfully - Document Submission Workflow Trigger verified");
     }
 
     /// <summary>
@@ -662,9 +595,9 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
 
         // Create a workflow definition for approval
         var workflowRequest = TestDataGenerator.GenerateValidWorkflowDefinition();
-        _output.WriteLine($"Creating workflow for approval: {workflowRequest.Name}");
+        Output.WriteLine($"Creating workflow for approval: {workflowRequest.Name}");
 
-        var workflowResponse = await _httpClient.PostAsJsonAsync(
+        var workflowResponse = await TestClient.PostAsJsonAsync(
             "/api/workflows",
             workflowRequest);
 
@@ -678,13 +611,13 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
         Assert.NotNull(workflowResult.Data);
 
         var workflowId = workflowResult.Data.Id;
-        _output.WriteLine($"✓ Workflow created - ID: {workflowId}");
+        Output.WriteLine($"✓ Workflow created - ID: {workflowId}");
 
         // Create and submit a document for approval
         var documentRequest = TestDataGenerator.GenerateValidDocument();
-        _output.WriteLine($"Creating document: {documentRequest.Title}");
+        Output.WriteLine($"Creating document: {documentRequest.Title}");
 
-        var documentResponse = await _httpClient.PostAsJsonAsync(
+        var documentResponse = await TestClient.PostAsJsonAsync(
             "/api/documents",
             documentRequest);
 
@@ -698,7 +631,7 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
         Assert.NotNull(documentResult.Data);
 
         var documentId = documentResult.Data.Id;
-        _output.WriteLine($"✓ Document created - ID: {documentId}");
+        Output.WriteLine($"✓ Document created - ID: {documentId}");
 
         // Submit the document for approval
         var submitRequest = new SubmitDocumentRequest
@@ -711,9 +644,9 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
             }
         };
 
-        _output.WriteLine($"Submitting document {documentId} for approval");
+        Output.WriteLine($"Submitting document {documentId} for approval");
 
-        var submitResponse = await _httpClient.PostAsJsonAsync(
+        var submitResponse = await TestClient.PostAsJsonAsync(
             $"/api/documents/{documentId}/submit",
             submitRequest);
 
@@ -726,12 +659,12 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
         Assert.True(submitResult.Success, $"Document submission failed. Message: {submitResult.Message}");
         Assert.NotNull(submitResult.Data);
 
-        _output.WriteLine($"✓ Document submitted - Workflow Instance ID: {submitResult.Data.Id}");
+        Output.WriteLine($"✓ Document submitted - Workflow Instance ID: {submitResult.Data.Id}");
 
         // Act - Get pending documents for the current user
-        _output.WriteLine("Requesting pending documents list");
+        Output.WriteLine("Requesting pending documents list");
 
-        var pendingResponse = await _httpClient.GetAsync("/api/documents/pending?current=1&pageSize=10");
+        var pendingResponse = await TestClient.GetAsync("/api/documents/pending?current=1&pageSize=10");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, pendingResponse.StatusCode);
@@ -750,7 +683,7 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
         var pagedData = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(dataJson);
         var listArray = pagedData.GetProperty("list");
 
-        _output.WriteLine($"✓ Pending documents returned - Count: {listArray.GetArrayLength()}");
+        Output.WriteLine($"✓ Pending documents returned - Count: {listArray.GetArrayLength()}");
 
         // Verify documents in the pending list
         foreach (var document in listArray.EnumerateArray())
@@ -759,7 +692,7 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
             var docTitle = document.GetProperty("title").GetString();
             var docStatus = document.GetProperty("status").GetString();
 
-            _output.WriteLine($"  - Document ID: {docId}, Title: {docTitle}, Status: {docStatus}");
+            Output.WriteLine($"  - Document ID: {docId}, Title: {docTitle}, Status: {docStatus}");
 
             // Verify each document has required fields
             Assert.NotNull(docId);
@@ -769,7 +702,7 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
             // Check if this is our submitted document
             if (docId == documentId)
             {
-                _output.WriteLine($"  ✓ Found submitted document in pending list");
+                Output.WriteLine($"  ✓ Found submitted document in pending list");
             }
 
             // Verify the document is in a state requiring approval (not Draft)
@@ -781,14 +714,14 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
         // the current user as an approver, but for basic testing we expect it to appear
         if (listArray.GetArrayLength() > 0)
         {
-            _output.WriteLine($"✓ Pending documents list contains {listArray.GetArrayLength()} document(s)");
+            Output.WriteLine($"✓ Pending documents list contains {listArray.GetArrayLength()} document(s)");
         }
         else
         {
-            _output.WriteLine("⚠ No pending documents found - this may be expected if the workflow hasn't assigned approvers yet");
+            Output.WriteLine("⚠ No pending documents found - this may be expected if the workflow hasn't assigned approvers yet");
         }
 
-        _output.WriteLine("✓ Pending documents list test completed successfully");
+        Output.WriteLine("✓ Pending documents list test completed successfully");
     }
 
     /// <summary>
@@ -808,16 +741,16 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
         await InitializeAuthenticationAsync();
         const int iterations = 10;
 
-        _output.WriteLine($"Starting Pending Documents User Filtering property test with {iterations} iterations");
+        Output.WriteLine($"Starting Pending Documents User Filtering property test with {iterations} iterations");
 
         // Act & Assert
         for (int i = 0; i < iterations; i++)
         {
             // Step 1: Create a workflow definition
             var workflowRequest = TestDataGenerator.GenerateValidWorkflowDefinition();
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] Creating workflow: {workflowRequest.Name}");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] Creating workflow: {workflowRequest.Name}");
 
-            var workflowResponse = await _httpClient.PostAsJsonAsync(
+            var workflowResponse = await TestClient.PostAsJsonAsync(
                 "/api/workflows",
                 workflowRequest);
 
@@ -835,9 +768,9 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
 
             // Step 2: Create a document
             var documentRequest = TestDataGenerator.GenerateValidDocument();
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] Creating document: {documentRequest.Title}");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] Creating document: {documentRequest.Title}");
 
-            var documentResponse = await _httpClient.PostAsJsonAsync(
+            var documentResponse = await TestClient.PostAsJsonAsync(
                 "/api/documents",
                 documentRequest);
 
@@ -864,9 +797,9 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
                 }
             };
 
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] Submitting document {documentId} for approval");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] Submitting document {documentId} for approval");
 
-            var submitResponse = await _httpClient.PostAsJsonAsync(
+            var submitResponse = await TestClient.PostAsJsonAsync(
                 $"/api/documents/{documentId}/submit",
                 submitRequest);
 
@@ -880,12 +813,12 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
                 $"[Iteration {i + 1}] Document submission failed. Message: {submitResult.Message}");
             Assert.NotNull(submitResult.Data);
 
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ Document submitted - Workflow Instance ID: {submitResult.Data.Id}");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ Document submitted - Workflow Instance ID: {submitResult.Data.Id}");
 
             // Step 4: Request pending documents for the current user
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] Requesting pending documents list");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] Requesting pending documents list");
 
-            var pendingResponse = await _httpClient.GetAsync("/api/documents/pending?current=1&pageSize=100");
+            var pendingResponse = await TestClient.GetAsync("/api/documents/pending?current=1&pageSize=100");
 
             // Assert - Verify pending documents response
             Assert.Equal(HttpStatusCode.OK, pendingResponse.StatusCode);
@@ -905,7 +838,7 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
             var pagedData = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(dataJson);
             var listArray = pagedData.GetProperty("list");
 
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ Pending documents returned - Count: {listArray.GetArrayLength()}");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ Pending documents returned - Count: {listArray.GetArrayLength()}");
 
             // Property 14: Verify all returned documents are assigned to the current user for approval
             // Note: Since we're using the same authenticated user for all operations,
@@ -923,7 +856,7 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
                 // Verify the document is not in Draft status (must be submitted for approval)
                 Assert.NotEqual("Draft", docStatus, StringComparer.OrdinalIgnoreCase);
 
-                _output.WriteLine($"[Iteration {i + 1}/{iterations}]   - Document ID: {docId}, Status: {docStatus}");
+                Output.WriteLine($"[Iteration {i + 1}/{iterations}]   - Document ID: {docId}, Status: {docStatus}");
             }
 
             // Property 14: Verify that documents not assigned to the current user are not included
@@ -932,11 +865,11 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
 
             if ((i + 1) % 10 == 0)
             {
-                _output.WriteLine($"✓ Completed {i + 1}/{iterations} iterations successfully");
+                Output.WriteLine($"✓ Completed {i + 1}/{iterations} iterations successfully");
             }
         }
 
-        _output.WriteLine($"✓ All {iterations} iterations completed successfully - Pending Documents User Filtering verified");
+        Output.WriteLine($"✓ All {iterations} iterations completed successfully - Pending Documents User Filtering verified");
     }
 
     /// <summary>
@@ -967,9 +900,9 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
 
         // Step 1: Create a workflow definition
         var workflowRequest = TestDataGenerator.GenerateValidWorkflowDefinition();
-        _output.WriteLine($"Creating workflow: {workflowRequest.Name}");
+        Output.WriteLine($"Creating workflow: {workflowRequest.Name}");
 
-        var workflowResponse = await _httpClient.PostAsJsonAsync(
+        var workflowResponse = await TestClient.PostAsJsonAsync(
             "/api/workflows",
             workflowRequest);
 
@@ -983,13 +916,13 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
         Assert.NotNull(workflowResult.Data);
 
         var workflowId = workflowResult.Data.Id;
-        _output.WriteLine($"✓ Workflow created - ID: {workflowId}");
+        Output.WriteLine($"✓ Workflow created - ID: {workflowId}");
 
         // Step 2: Create a document
         var documentRequest = TestDataGenerator.GenerateValidDocument();
-        _output.WriteLine($"Creating document: {documentRequest.Title}");
+        Output.WriteLine($"Creating document: {documentRequest.Title}");
 
-        var documentResponse = await _httpClient.PostAsJsonAsync(
+        var documentResponse = await TestClient.PostAsJsonAsync(
             "/api/documents",
             documentRequest);
 
@@ -1003,7 +936,7 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
         Assert.NotNull(documentResult.Data);
 
         var documentId = documentResult.Data.Id;
-        _output.WriteLine($"✓ Document created - ID: {documentId}");
+        Output.WriteLine($"✓ Document created - ID: {documentId}");
 
         // Step 3: Submit the document for approval
         var submitRequest = new SubmitDocumentRequest
@@ -1016,9 +949,9 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
             }
         };
 
-        _output.WriteLine($"Submitting document {documentId} for approval");
+        Output.WriteLine($"Submitting document {documentId} for approval");
 
-        var submitResponse = await _httpClient.PostAsJsonAsync(
+        var submitResponse = await TestClient.PostAsJsonAsync(
             $"/api/documents/{documentId}/submit",
             submitRequest);
 
@@ -1032,12 +965,12 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
         Assert.NotNull(submitResult.Data);
 
         var workflowInstanceId = submitResult.Data.Id;
-        _output.WriteLine($"✓ Document submitted - Workflow Instance ID: {workflowInstanceId}");
+        Output.WriteLine($"✓ Document submitted - Workflow Instance ID: {workflowInstanceId}");
 
         // Act - Get approval history for the workflow instance
-        _output.WriteLine($"Requesting approval history for workflow instance: {workflowInstanceId}");
+        Output.WriteLine($"Requesting approval history for workflow instance: {workflowInstanceId}");
 
-        var historyResponse = await _httpClient.GetAsync(
+        var historyResponse = await TestClient.GetAsync(
             $"/api/workflows/instances/{workflowInstanceId}/history");
 
         // Assert - Verify approval history response
@@ -1050,14 +983,14 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
         Assert.True(historyResult.Success, $"Get approval history failed. Message: {historyResult.Message}");
         Assert.NotNull(historyResult.Data);
 
-        _output.WriteLine($"✓ Approval history retrieved - Record count: {historyResult.Data.Count}");
+        Output.WriteLine($"✓ Approval history retrieved - Record count: {historyResult.Data.Count}");
 
         // Verify approval history structure
         // Note: For a newly submitted document, there may be 0 approval records
         // (approval actions haven't been performed yet), but the endpoint should still work
         if (historyResult.Data.Count > 0)
         {
-            _output.WriteLine($"Verifying approval history records:");
+            Output.WriteLine($"Verifying approval history records:");
 
             foreach (var record in historyResult.Data)
             {
@@ -1072,23 +1005,23 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
                 Assert.NotNull(record.ApprovedAt);
 
                 // ApproverName may be null if not populated, but we log it for visibility
-                _output.WriteLine($"  - Record ID: {record.Id}");
-                _output.WriteLine($"    Approver: {record.ApproverName ?? record.ApproverId}");
-                _output.WriteLine($"    Action: {record.Action}");
-                _output.WriteLine($"    Timestamp: {record.ApprovedAt:yyyy-MM-dd HH:mm:ss}");
-                _output.WriteLine($"    Comment: {record.Comment ?? "(none)"}");
-                _output.WriteLine($"    Sequence: {record.Sequence}");
+                Output.WriteLine($"  - Record ID: {record.Id}");
+                Output.WriteLine($"    Approver: {record.ApproverName ?? record.ApproverId}");
+                Output.WriteLine($"    Action: {record.Action}");
+                Output.WriteLine($"    Timestamp: {record.ApprovedAt:yyyy-MM-dd HH:mm:ss}");
+                Output.WriteLine($"    Comment: {record.Comment ?? "(none)"}");
+                Output.WriteLine($"    Sequence: {record.Sequence}");
             }
 
-            _output.WriteLine($"✓ All {historyResult.Data.Count} approval record(s) contain required fields");
+            Output.WriteLine($"✓ All {historyResult.Data.Count} approval record(s) contain required fields");
         }
         else
         {
-            _output.WriteLine("⚠ No approval records found - this is expected for a newly submitted document");
-            _output.WriteLine("  Approval records are created when approval actions are performed");
+            Output.WriteLine("⚠ No approval records found - this is expected for a newly submitted document");
+            Output.WriteLine("  Approval records are created when approval actions are performed");
         }
 
-        _output.WriteLine("✓ Approval history query test completed successfully");
+        Output.WriteLine("✓ Approval history query test completed successfully");
     }
 
     /// <summary>
@@ -1108,16 +1041,16 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
         await InitializeAuthenticationAsync();
         const int iterations = 10;
 
-        _output.WriteLine($"Starting Approval History Completeness property test with {iterations} iterations");
+        Output.WriteLine($"Starting Approval History Completeness property test with {iterations} iterations");
 
         // Act & Assert
         for (int i = 0; i < iterations; i++)
         {
             // Step 1: Create a workflow definition
             var workflowRequest = TestDataGenerator.GenerateValidWorkflowDefinition();
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] Creating workflow: {workflowRequest.Name}");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] Creating workflow: {workflowRequest.Name}");
 
-            var workflowResponse = await _httpClient.PostAsJsonAsync(
+            var workflowResponse = await TestClient.PostAsJsonAsync(
                 "/api/workflows",
                 workflowRequest);
 
@@ -1135,9 +1068,9 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
 
             // Step 2: Create a document
             var documentRequest = TestDataGenerator.GenerateValidDocument();
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] Creating document: {documentRequest.Title}");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] Creating document: {documentRequest.Title}");
 
-            var documentResponse = await _httpClient.PostAsJsonAsync(
+            var documentResponse = await TestClient.PostAsJsonAsync(
                 "/api/documents",
                 documentRequest);
 
@@ -1164,9 +1097,9 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
                 }
             };
 
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] Submitting document {documentId} for approval");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] Submitting document {documentId} for approval");
 
-            var submitResponse = await _httpClient.PostAsJsonAsync(
+            var submitResponse = await TestClient.PostAsJsonAsync(
                 $"/api/documents/{documentId}/submit",
                 submitRequest);
 
@@ -1181,12 +1114,12 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
             Assert.NotNull(submitResult.Data);
 
             var workflowInstanceId = submitResult.Data.Id;
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ Document submitted - Workflow Instance ID: {workflowInstanceId}");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ Document submitted - Workflow Instance ID: {workflowInstanceId}");
 
             // Step 4: Get approval history for the workflow instance
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] Requesting approval history for workflow instance: {workflowInstanceId}");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] Requesting approval history for workflow instance: {workflowInstanceId}");
 
-            var historyResponse = await _httpClient.GetAsync(
+            var historyResponse = await TestClient.GetAsync(
                 $"/api/workflows/instances/{workflowInstanceId}/history");
 
             // Assert - Verify approval history response
@@ -1200,7 +1133,7 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
                 $"[Iteration {i + 1}] Get approval history failed. Message: {historyResult.Message}");
             Assert.NotNull(historyResult.Data);
 
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ Approval history retrieved - Record count: {historyResult.Data.Count}");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ Approval history retrieved - Record count: {historyResult.Data.Count}");
 
             // Property 13: Verify approval history completeness
             // For a newly submitted document, there may be 0 approval records initially
@@ -1232,7 +1165,7 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
                     var validActions = new[] { "Approve", "Reject", "Return", "Delegate", "Submit", "Start" };
                     Assert.Contains(record.Action, validActions, StringComparer.OrdinalIgnoreCase);
 
-                    _output.WriteLine($"[Iteration {i + 1}/{iterations}]   ✓ Record {record.Sequence}: " +
+                    Output.WriteLine($"[Iteration {i + 1}/{iterations}]   ✓ Record {record.Sequence}: " +
                         $"Action={record.Action}, Approver={record.ApproverName ?? record.ApproverId}, " +
                         $"Timestamp={record.ApprovedAt:yyyy-MM-dd HH:mm:ss}");
                 }
@@ -1242,20 +1175,20 @@ public class DocumentApprovalTests : IClassFixture<AppHostFixture>
                 var sortedSequences = sequences.OrderBy(s => s).ToList();
                 Assert.Equal(sortedSequences, sequences);
 
-                _output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ All {historyResult.Data.Count} approval record(s) are complete and properly ordered");
+                Output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ All {historyResult.Data.Count} approval record(s) are complete and properly ordered");
             }
             else
             {
-                _output.WriteLine($"[Iteration {i + 1}/{iterations}] ⚠ No approval records found - expected for newly submitted document");
+                Output.WriteLine($"[Iteration {i + 1}/{iterations}] ⚠ No approval records found - expected for newly submitted document");
             }
 
             if ((i + 1) % 10 == 0)
             {
-                _output.WriteLine($"✓ Completed {i + 1}/{iterations} iterations successfully");
+                Output.WriteLine($"✓ Completed {i + 1}/{iterations} iterations successfully");
             }
         }
 
-        _output.WriteLine($"✓ All {iterations} iterations completed successfully - Approval History Completeness verified");
+        Output.WriteLine($"✓ All {iterations} iterations completed successfully - Approval History Completeness verified");
     }
 
 }

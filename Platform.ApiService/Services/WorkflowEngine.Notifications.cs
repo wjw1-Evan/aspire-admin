@@ -15,7 +15,7 @@ public partial class WorkflowEngine
     private async Task SendApprovalNotificationsAsync(string instanceId, WorkflowNode node)
     {
         var instance = await _instanceFactory.GetByIdAsync(instanceId);
-        if (instance == null) return;
+        if (instance == null || string.IsNullOrEmpty(instance.DocumentId)) return;
 
         var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
         if (document == null) return;
@@ -72,7 +72,7 @@ public partial class WorkflowEngine
     /// </summary>
     private async Task ProcessNotificationNodeAsync(string instanceId, WorkflowNode node)
     {
-        if (node.Data.Config.Notification == null)
+        if (node.Data.Config?.Notification == null)
         {
             await MoveToNextNodeAsync(instanceId, node.Id);
             return;
@@ -81,7 +81,7 @@ public partial class WorkflowEngine
         try
         {
             var instance = await _instanceFactory.GetByIdAsync(instanceId);
-            if (instance == null) return;
+            if (instance == null || string.IsNullOrEmpty(instance.DocumentId)) return;
 
             var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
             if (document == null) return;
@@ -134,7 +134,7 @@ public partial class WorkflowEngine
         try
         {
             var instance = await _instanceFactory.GetByIdAsync(instanceId);
-            if (instance == null) return;
+            if (instance == null || string.IsNullOrEmpty(instance.DocumentId)) return;
 
             var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
             if (document == null) return;

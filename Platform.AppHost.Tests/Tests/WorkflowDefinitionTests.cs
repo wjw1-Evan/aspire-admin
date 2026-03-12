@@ -16,17 +16,13 @@ namespace Platform.AppHost.Tests.Tests;
 /// Requirements: 3.1, 3.6, 3.7, 5.1, 5.2, 5.4, 8.1, 8.2
 /// </remarks>
 [Collection("AppHost Collection")]
-public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
+public class WorkflowDefinitionTests : BaseIntegrationTest
 {
-    private readonly AppHostFixture _fixture;
-    private readonly ITestOutputHelper _output;
-    private HttpClient _httpClient = null!;
     private string _accessToken = string.Empty;
 
     public WorkflowDefinitionTests(AppHostFixture fixture, ITestOutputHelper output)
+        : base(fixture, output)
     {
-        _fixture = fixture;
-        _output = output;
     }
 
     /// <summary>
@@ -36,73 +32,10 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
     /// </summary>
     /// <remarks>
     /// Validates: Requirements 5.2, 8.1, 8.2
-    /// 
-    /// This method:
-    /// 1. Generates a unique test user using TestDataGenerator.GenerateValidRegistration()
-    /// 2. Registers the user via POST /api/auth/register
-    /// 3. Logs in via POST /api/auth/login
-    /// 4. Stores the access token in _accessToken field
-    /// 5. Sets the Authorization header on _httpClient
     /// </remarks>
     private async Task InitializeAuthenticationAsync()
     {
-        // Create a new HTTP client for this test
-        _httpClient = _fixture.HttpClient;
-
-        // Generate unique test user credentials
-        var registration = TestDataGenerator.GenerateValidRegistration();
-
-        _output.WriteLine($"Registering test user: {registration.Username}");
-
-        // Register the test user
-        var registerResponse = await _httpClient.PostAsJsonAsync(
-            "/api/auth/register",
-            registration);
-
-        Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
-
-        var registerApiResponse = await registerResponse.Content
-            .ReadAsJsonAsync<ApiResponse<RegisterResponseData>>();
-
-        Assert.NotNull(registerApiResponse);
-        Assert.True(registerApiResponse.Success,
-            $"Registration failed for user '{registration.Username}'. Message: {registerApiResponse.Message}");
-        Assert.NotNull(registerApiResponse.Data);
-
-        _output.WriteLine($"✓ User registered successfully - User ID: {registerApiResponse.Data.Id}");
-
-        // Login to get access token
-        var loginRequest = new LoginRequest
-        {
-            Username = registration.Username,
-            Password = registration.Password
-        };
-
-        var loginResponse = await _httpClient.PostAsJsonAsync(
-            "/api/auth/login",
-            loginRequest);
-
-        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
-
-        var loginApiResponse = await loginResponse.Content
-            .ReadAsJsonAsync<ApiResponse<LoginResponseData>>();
-
-        Assert.NotNull(loginApiResponse);
-        Assert.True(loginApiResponse.Success,
-            $"Login failed for user '{registration.Username}'. Message: {loginApiResponse.Message}");
-        Assert.NotNull(loginApiResponse.Data);
-        Assert.NotNull(loginApiResponse.Data.Token);
-
-        // Store the access token
-        _accessToken = loginApiResponse.Data.Token;
-
-        _output.WriteLine($"✓ User logged in successfully - Access token obtained");
-
-        // Set the Authorization header on the HTTP client
-        _httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", _accessToken);
-
-        _output.WriteLine($"✓ Authorization header set on HTTP client");
+        _accessToken = await CreateAndLoginNewUserAsync();
     }
 
     /// <summary>
@@ -125,10 +58,10 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
         await InitializeAuthenticationAsync();
         var workflowRequest = TestDataGenerator.GenerateValidWorkflowDefinition();
 
-        _output.WriteLine($"Creating workflow with name: {workflowRequest.Name}");
+        Output.WriteLine($"Creating workflow with name: {workflowRequest.Name}");
 
         // Act
-        var response = await _httpClient.PostAsJsonAsync("/api/workflows", workflowRequest);
+        var response = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
 
         // Read response first before asserting
         var apiResponse = await response.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
@@ -136,13 +69,13 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
         // Log the error details if the request failed
         if (response.StatusCode != HttpStatusCode.OK)
         {
-            _output.WriteLine($"API returned {response.StatusCode}");
-            _output.WriteLine($"API Error - Code: {apiResponse?.Code}, Message: {apiResponse?.Message}");
+            Output.WriteLine($"API returned {response.StatusCode}");
+            Output.WriteLine($"API Error - Code: {apiResponse?.Code}, Message: {apiResponse?.Message}");
             if (apiResponse?.Errors != null)
             {
                 foreach (var error in apiResponse.Errors)
                 {
-                    _output.WriteLine($"  Field '{error.Key}': {string.Join(", ", error.Value)}");
+                    Output.WriteLine($"  Field '{error.Key}': {string.Join(", ", error.Value)}");
                 }
             }
         }
@@ -164,7 +97,7 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
         var hasStartNode = apiResponse.Data.Graph.Nodes.Any(n => n.Data.NodeType == NodeTypes.Start);
         Assert.True(hasStartNode, "Workflow should have at least one start node");
 
-        _output.WriteLine($"✓ Workflow created successfully - ID: {apiResponse.Data.Id}");
+        Output.WriteLine($"✓ Workflow created successfully - ID: {apiResponse.Data.Id}");
     }
 
     /// <summary>
@@ -191,10 +124,10 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
             Graph = TestDataGenerator.GenerateMinimalValidGraph()
         };
 
-        _output.WriteLine("Attempting to create workflow with missing name field");
+        Output.WriteLine("Attempting to create workflow with missing name field");
 
         // Act
-        var response = await _httpClient.PostAsJsonAsync("/api/workflows", workflowRequest);
+        var response = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -213,7 +146,7 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
         Assert.True(hasValidationError,
             $"Expected validation error for missing name field. Code: {apiResponse.Code}, Message: {apiResponse.Message}");
 
-        _output.WriteLine($"✓ Validation error returned as expected - Code: {apiResponse.Code}, Message: {apiResponse.Message}");
+        Output.WriteLine($"✓ Validation error returned as expected - Code: {apiResponse.Code}, Message: {apiResponse.Message}");
     }
 
     /// <summary>
@@ -265,10 +198,10 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
             Graph = invalidGraph
         };
 
-        _output.WriteLine("Attempting to create workflow with invalid graph (missing start node)");
+        Output.WriteLine("Attempting to create workflow with invalid graph (missing start node)");
 
         // Act
-        var response = await _httpClient.PostAsJsonAsync("/api/workflows", workflowRequest);
+        var response = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -291,7 +224,7 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
         Assert.True(hasGraphValidationError,
             $"Expected graph validation error for missing start node. Code: {apiResponse.Code}, Message: {apiResponse.Message}");
 
-        _output.WriteLine($"✓ Graph validation error returned as expected - Code: {apiResponse.Code}, Message: {apiResponse.Message}");
+        Output.WriteLine($"✓ Graph validation error returned as expected - Code: {apiResponse.Code}, Message: {apiResponse.Message}");
     }
     /// <summary>
     /// Property-based test: CRUD Round-trip Consistency (Workflows)
@@ -313,7 +246,7 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
         await InitializeAuthenticationAsync();
         const int iterations = 10;
 
-        _output.WriteLine($"Starting CRUD round-trip property test with {iterations} iterations");
+        Output.WriteLine($"Starting CRUD round-trip property test with {iterations} iterations");
 
         // Act & Assert
         for (int i = 0; i < iterations; i++)
@@ -323,11 +256,11 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
 
             if (i % 20 == 0)
             {
-                _output.WriteLine($"Iteration {i + 1}/{iterations}: Testing workflow '{workflowRequest.Name}'");
+                Output.WriteLine($"Iteration {i + 1}/{iterations}: Testing workflow '{workflowRequest.Name}'");
             }
 
             // Create workflow
-            var createResponse = await _httpClient.PostAsJsonAsync("/api/workflows", workflowRequest);
+            var createResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
 
             // Read response
             var createResult = await createResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
@@ -349,7 +282,7 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
             var createdWorkflowId = createResult.Data.Id;
 
             // Retrieve workflow by ID
-            var getResponse = await _httpClient.GetAsync($"/api/workflows/{createdWorkflowId}");
+            var getResponse = await TestClient.GetAsync($"/api/workflows/{createdWorkflowId}");
 
             // Read response
             var getResult = await getResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
@@ -407,8 +340,8 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
                 $"Iteration {i + 1}: Retrieved workflow should have at least one start node");
         }
 
-        _output.WriteLine($"✓ All {iterations} iterations completed successfully");
-        _output.WriteLine("✓ CRUD round-trip consistency property validated");
+        Output.WriteLine($"✓ All {iterations} iterations completed successfully");
+        Output.WriteLine("✓ CRUD round-trip consistency property validated");
     }
 
     /// <summary>
@@ -433,13 +366,13 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
         for (int i = 0; i < 3; i++)
         {
             var workflowRequest = TestDataGenerator.GenerateValidWorkflowDefinition();
-            await _httpClient.PostAsJsonAsync("/api/workflows", workflowRequest);
+            await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
         }
 
-        _output.WriteLine("Requesting workflow list with pagination parameters");
+        Output.WriteLine("Requesting workflow list with pagination parameters");
 
         // Act
-        var response = await _httpClient.GetAsync("/api/workflows?page=1&pageSize=10");
+        var response = await TestClient.GetAsync("/api/workflows?page=1&pageSize=10");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -467,7 +400,7 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
                 "Each workflow should have a Graph object");
         }
 
-        _output.WriteLine($"✓ Workflow list returned with pagination - Total: {pagedData.GetProperty("total").GetInt32()}");
+        Output.WriteLine($"✓ Workflow list returned with pagination - Total: {pagedData.GetProperty("total").GetInt32()}");
     }
 
     /// <summary>
@@ -491,26 +424,26 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
         var testCategory = $"测试分类_{timestamp}";
 
         // Create workflows with the test category
-        _output.WriteLine($"Creating workflows with category: {testCategory}");
+        Output.WriteLine($"Creating workflows with category: {testCategory}");
         for (int i = 0; i < 2; i++)
         {
             var workflowRequest = TestDataGenerator.GenerateValidWorkflowDefinition();
             workflowRequest = workflowRequest with { Category = testCategory };
-            await _httpClient.PostAsJsonAsync("/api/workflows", workflowRequest);
+            await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
         }
 
         // Create workflows with a different category
         var otherCategory = $"其他分类_{timestamp}";
-        _output.WriteLine($"Creating workflows with different category: {otherCategory}");
+        Output.WriteLine($"Creating workflows with different category: {otherCategory}");
         for (int i = 0; i < 2; i++)
         {
             var workflowRequest = TestDataGenerator.GenerateValidWorkflowDefinition();
             workflowRequest = workflowRequest with { Category = otherCategory };
-            await _httpClient.PostAsJsonAsync("/api/workflows", workflowRequest);
+            await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
         }
 
         // Act
-        var response = await _httpClient.GetAsync($"/api/workflows?category={Uri.EscapeDataString(testCategory)}&page=1&pageSize=20");
+        var response = await TestClient.GetAsync($"/api/workflows?category={Uri.EscapeDataString(testCategory)}&page=1&pageSize=20");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -539,7 +472,7 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
         Assert.True(workflowCount >= 2,
             $"Expected at least 2 workflows with category '{testCategory}', but found {workflowCount}");
 
-        _output.WriteLine($"✓ Category filter returned {workflowCount} workflows with category '{testCategory}'");
+        Output.WriteLine($"✓ Category filter returned {workflowCount} workflows with category '{testCategory}'");
     }
 
     /// <summary>
@@ -560,36 +493,36 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
         await InitializeAuthenticationAsync();
 
         // Create active workflows
-        _output.WriteLine("Creating active workflows");
+        Output.WriteLine("Creating active workflows");
         var activeWorkflowIds = new List<string>();
         for (int i = 0; i < 2; i++)
         {
             var workflowRequest = TestDataGenerator.GenerateValidWorkflowDefinition();
             workflowRequest = workflowRequest with { IsActive = true };
-            var createResponse = await _httpClient.PostAsJsonAsync("/api/workflows", workflowRequest);
+            var createResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
             var createResult = await createResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
             activeWorkflowIds.Add(createResult!.Data!.Id);
         }
 
         // Create inactive workflows by updating active ones
-        _output.WriteLine("Creating inactive workflows");
+        Output.WriteLine("Creating inactive workflows");
         var inactiveWorkflowIds = new List<string>();
         for (int i = 0; i < 2; i++)
         {
             var workflowRequest = TestDataGenerator.GenerateValidWorkflowDefinition();
-            var createResponse = await _httpClient.PostAsJsonAsync("/api/workflows", workflowRequest);
+            var createResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
             var createResult = await createResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
             var workflowId = createResult!.Data!.Id;
 
             // Update to inactive
             var updateRequest = new { IsActive = false };
-            await _httpClient.PutAsJsonAsync($"/api/workflows/{workflowId}", updateRequest);
+            await TestClient.PutAsJsonAsync($"/api/workflows/{workflowId}", updateRequest);
             inactiveWorkflowIds.Add(workflowId);
         }
 
         // Test 1: Filter for active workflows
-        _output.WriteLine("Testing filter for active workflows (isActive=true)");
-        var activeResponse = await _httpClient.GetAsync("/api/workflows?isActive=true&page=1&pageSize=50");
+        Output.WriteLine("Testing filter for active workflows (isActive=true)");
+        var activeResponse = await TestClient.GetAsync("/api/workflows?isActive=true&page=1&pageSize=50");
 
         Assert.Equal(HttpStatusCode.OK, activeResponse.StatusCode);
 
@@ -616,11 +549,11 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
         Assert.True(activeCount >= 2,
             $"Expected at least 2 active workflows, but found {activeCount}");
 
-        _output.WriteLine($"✓ Active filter returned {activeCount} active workflows");
+        Output.WriteLine($"✓ Active filter returned {activeCount} active workflows");
 
         // Test 2: Filter for inactive workflows
-        _output.WriteLine("Testing filter for inactive workflows (isActive=false)");
-        var inactiveResponse = await _httpClient.GetAsync("/api/workflows?isActive=false&page=1&pageSize=50");
+        Output.WriteLine("Testing filter for inactive workflows (isActive=false)");
+        var inactiveResponse = await TestClient.GetAsync("/api/workflows?isActive=false&page=1&pageSize=50");
 
         Assert.Equal(HttpStatusCode.OK, inactiveResponse.StatusCode);
 
@@ -647,7 +580,7 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
         Assert.True(inactiveCount >= 2,
             $"Expected at least 2 inactive workflows, but found {inactiveCount}");
 
-        _output.WriteLine($"✓ Inactive filter returned {inactiveCount} inactive workflows");
+        Output.WriteLine($"✓ Inactive filter returned {inactiveCount} inactive workflows");
     }
 
     /// <summary>
@@ -669,7 +602,7 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
         await InitializeAuthenticationAsync();
         const int iterations = 10;
 
-        _output.WriteLine($"Starting filtering property test with {iterations} iterations");
+        Output.WriteLine($"Starting filtering property test with {iterations} iterations");
 
         // Act & Assert
         for (int i = 0; i < iterations; i++)
@@ -683,7 +616,7 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
 
             if (i % 20 == 0)
             {
-                _output.WriteLine($"Iteration {i + 1}/{iterations}: Testing category '{testCategory}'");
+                Output.WriteLine($"Iteration {i + 1}/{iterations}: Testing category '{testCategory}'");
             }
 
             // Create workflows with test category (some active, some inactive)
@@ -699,7 +632,7 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
                     IsActive = true
                 };
 
-                var createResponse = await _httpClient.PostAsJsonAsync("/api/workflows", workflowRequest);
+                var createResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
                 var createResult = await createResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
 
                 Assert.NotNull(createResult);
@@ -713,7 +646,7 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
             var inactiveWorkflowRequest = TestDataGenerator.GenerateValidWorkflowDefinition();
             inactiveWorkflowRequest = inactiveWorkflowRequest with { Category = testCategory };
 
-            var inactiveCreateResponse = await _httpClient.PostAsJsonAsync("/api/workflows", inactiveWorkflowRequest);
+            var inactiveCreateResponse = await TestClient.PostAsJsonAsync("/api/workflows", inactiveWorkflowRequest);
             var inactiveCreateResult = await inactiveCreateResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
 
             Assert.NotNull(inactiveCreateResult);
@@ -723,7 +656,7 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
 
             // Update to inactive
             var updateRequest = new { IsActive = false };
-            var updateResponse = await _httpClient.PutAsJsonAsync($"/api/workflows/{inactiveWorkflowId}", updateRequest);
+            var updateResponse = await TestClient.PutAsJsonAsync($"/api/workflows/{inactiveWorkflowId}", updateRequest);
             Assert.Equal(HttpStatusCode.OK, updateResponse.StatusCode);
 
             testCategoryWorkflowIds.Add((inactiveWorkflowId, false));
@@ -733,11 +666,11 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
             {
                 var otherWorkflowRequest = TestDataGenerator.GenerateValidWorkflowDefinition();
                 otherWorkflowRequest = otherWorkflowRequest with { Category = otherCategory };
-                await _httpClient.PostAsJsonAsync("/api/workflows", otherWorkflowRequest);
+                await TestClient.PostAsJsonAsync("/api/workflows", otherWorkflowRequest);
             }
 
             // Test 1: Category filtering - should return only workflows with test category
-            var categoryFilterResponse = await _httpClient.GetAsync(
+            var categoryFilterResponse = await TestClient.GetAsync(
                 $"/api/workflows?category={Uri.EscapeDataString(testCategory)}&page=1&pageSize=50");
 
             Assert.Equal(HttpStatusCode.OK, categoryFilterResponse.StatusCode);
@@ -768,7 +701,7 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
                 $"Iteration {i + 1}: Expected at least 3 workflows with category '{testCategory}', but found {categoryMatchCount}");
 
             // Test 2: Category + Active status filtering - should return only active workflows with test category
-            var categoryActiveFilterResponse = await _httpClient.GetAsync(
+            var categoryActiveFilterResponse = await TestClient.GetAsync(
                 $"/api/workflows?category={Uri.EscapeDataString(testCategory)}&isActive=true&page=1&pageSize=50");
 
             Assert.Equal(HttpStatusCode.OK, categoryActiveFilterResponse.StatusCode);
@@ -805,7 +738,7 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
                 $"Iteration {i + 1}: Expected at least 2 active workflows with category '{testCategory}', but found {activeMatchCount}");
 
             // Test 3: Category + Inactive status filtering - should return only inactive workflows with test category
-            var categoryInactiveFilterResponse = await _httpClient.GetAsync(
+            var categoryInactiveFilterResponse = await TestClient.GetAsync(
                 $"/api/workflows?category={Uri.EscapeDataString(testCategory)}&isActive=false&page=1&pageSize=50");
 
             Assert.Equal(HttpStatusCode.OK, categoryInactiveFilterResponse.StatusCode);
@@ -845,8 +778,8 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
             Assert.Equal(categoryMatchCount, activeMatchCount + inactiveMatchCount);
         }
 
-        _output.WriteLine($"✓ All {iterations} iterations completed successfully");
-        _output.WriteLine("✓ Category and status filtering accuracy property validated");
+        Output.WriteLine($"✓ All {iterations} iterations completed successfully");
+        Output.WriteLine("✓ Category and status filtering accuracy property validated");
     }
 
     /// <summary>
@@ -869,14 +802,14 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
 
         // Create initial workflow
         var workflowRequest = TestDataGenerator.GenerateValidWorkflowDefinition();
-        var createResponse = await _httpClient.PostAsJsonAsync("/api/workflows", workflowRequest);
+        var createResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
         var createResult = await createResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
 
         Assert.NotNull(createResult);
         Assert.True(createResult.Success);
         var workflowId = createResult.Data!.Id;
 
-        _output.WriteLine($"Created workflow with ID: {workflowId}");
+        Output.WriteLine($"Created workflow with ID: {workflowId}");
 
         // Modify the graph by adding a new node
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -919,10 +852,10 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
             IsActive = workflowRequest.IsActive
         };
 
-        _output.WriteLine($"Updating workflow graph - adding node: {newNodeId}");
+        Output.WriteLine($"Updating workflow graph - adding node: {newNodeId}");
 
         // Act
-        var updateResponse = await _httpClient.PutAsJsonAsync($"/api/workflows/{workflowId}", updateRequest);
+        var updateResponse = await TestClient.PutAsJsonAsync($"/api/workflows/{workflowId}", updateRequest);
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, updateResponse.StatusCode);
@@ -943,7 +876,7 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
         Assert.Equal(NodeTypes.End, newNode.Data.NodeType);
 
         // Verify by retrieving the workflow
-        var getResponse = await _httpClient.GetAsync($"/api/workflows/{workflowId}");
+        var getResponse = await TestClient.GetAsync($"/api/workflows/{workflowId}");
         var getResult = await getResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
 
         Assert.NotNull(getResult);
@@ -951,7 +884,7 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
         Assert.Equal(updatedGraph.Nodes.Count, getResult.Data!.Graph.Nodes.Count);
         Assert.Equal(updatedGraph.Edges.Count, getResult.Data.Graph.Edges.Count);
 
-        _output.WriteLine($"✓ Workflow updated successfully - Graph now has {getResult.Data.Graph.Nodes.Count} nodes and {getResult.Data.Graph.Edges.Count} edges");
+        Output.WriteLine($"✓ Workflow updated successfully - Graph now has {getResult.Data.Graph.Nodes.Count} nodes and {getResult.Data.Graph.Edges.Count} edges");
     }
 
     /// <summary>
@@ -972,30 +905,30 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
 
         // Create workflow
         var workflowRequest = TestDataGenerator.GenerateValidWorkflowDefinition();
-        var createResponse = await _httpClient.PostAsJsonAsync("/api/workflows", workflowRequest);
+        var createResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
         var createResult = await createResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
 
         Assert.NotNull(createResult);
         Assert.True(createResult.Success);
         var workflowId = createResult.Data!.Id;
 
-        _output.WriteLine($"Created workflow with ID: {workflowId}");
+        Output.WriteLine($"Created workflow with ID: {workflowId}");
 
         // Act - Delete workflow
-        var deleteResponse = await _httpClient.DeleteAsync($"/api/workflows/{workflowId}");
+        var deleteResponse = await TestClient.DeleteAsync($"/api/workflows/{workflowId}");
 
         // Assert - Delete should succeed
         Assert.Equal(HttpStatusCode.OK, deleteResponse.StatusCode);
 
-        _output.WriteLine($"✓ Workflow deleted successfully");
+        Output.WriteLine($"✓ Workflow deleted successfully");
 
         // Act - Try to get deleted workflow
-        var getResponse = await _httpClient.GetAsync($"/api/workflows/{workflowId}");
+        var getResponse = await TestClient.GetAsync($"/api/workflows/{workflowId}");
 
         // Assert - Should return 404
         Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
 
-        _output.WriteLine($"✓ Subsequent GET returned 404 as expected");
+        Output.WriteLine($"✓ Subsequent GET returned 404 as expected");
     }
 
     /// <summary>
@@ -1018,7 +951,7 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
 
         // Create workflow definition with an approval node to keep it in Running state
         var workflowRequest = TestDataGenerator.GenerateWorkflowWithNodeType(NodeTypes.Approval);
-        var createWorkflowResponse = await _httpClient.PostAsJsonAsync("/api/workflows", workflowRequest);
+        var createWorkflowResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
         var createWorkflowResult = await createWorkflowResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
 
         Assert.NotNull(createWorkflowResult);
@@ -1026,18 +959,18 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
             $"Workflow creation failed. Status: {createWorkflowResponse.StatusCode}, Message: {createWorkflowResult.Message}");
         var workflowId = createWorkflowResult.Data!.Id;
 
-        _output.WriteLine($"Created workflow definition with ID: {workflowId}");
+        Output.WriteLine($"Created workflow definition with ID: {workflowId}");
 
         // Create a document to associate with the workflow instance
         var documentRequest = TestDataGenerator.GenerateValidDocument();
-        var createDocumentResponse = await _httpClient.PostAsJsonAsync("/api/documents", documentRequest);
+        var createDocumentResponse = await TestClient.PostAsJsonAsync("/api/documents", documentRequest);
         var createDocumentResult = await createDocumentResponse.Content.ReadAsJsonAsync<ApiResponse<DocumentResponse>>();
 
         Assert.NotNull(createDocumentResult);
         Assert.True(createDocumentResult.Success);
         var documentId = createDocumentResult.Data!.Id;
 
-        _output.WriteLine($"Created document with ID: {documentId}");
+        Output.WriteLine($"Created document with ID: {documentId}");
 
         // Prepare instance start request
         var startInstanceRequest = new
@@ -1050,7 +983,7 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
         };
 
         // Act - Start workflow instance
-        var startResponse = await _httpClient.PostAsJsonAsync($"/api/workflows/{workflowId}/instances", startInstanceRequest);
+        var startResponse = await TestClient.PostAsJsonAsync($"/api/workflows/{workflowId}/instances", startInstanceRequest);
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, startResponse.StatusCode);
@@ -1068,7 +1001,7 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
                     startResult.Data.Status == "Completed" || startResult.Data.Status == "completed",
             $"Expected status 'Running' or 'Completed' but got '{startResult.Data.Status}'");
 
-        _output.WriteLine($"✓ Workflow instance started successfully - Instance ID: {startResult.Data.Id}, Status: {startResult.Data.Status}");
+        Output.WriteLine($"✓ Workflow instance started successfully - Instance ID: {startResult.Data.Id}, Status: {startResult.Data.Status}");
     }
 
     /// <summary>
@@ -1090,14 +1023,14 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
         await InitializeAuthenticationAsync();
         const int iterations = 10;
 
-        _output.WriteLine($"Starting workflow instance creation property test with {iterations} iterations");
+        Output.WriteLine($"Starting workflow instance creation property test with {iterations} iterations");
 
         // Act & Assert
         for (int i = 0; i < iterations; i++)
         {
             // Create workflow definition
             var workflowRequest = TestDataGenerator.GenerateValidWorkflowDefinition();
-            var createWorkflowResponse = await _httpClient.PostAsJsonAsync("/api/workflows", workflowRequest);
+            var createWorkflowResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
             var createWorkflowResult = await createWorkflowResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
 
             Assert.NotNull(createWorkflowResult);
@@ -1107,7 +1040,7 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
 
             // Create document
             var documentRequest = TestDataGenerator.GenerateValidDocument();
-            var createDocumentResponse = await _httpClient.PostAsJsonAsync("/api/documents", documentRequest);
+            var createDocumentResponse = await TestClient.PostAsJsonAsync("/api/documents", documentRequest);
             var createDocumentResult = await createDocumentResponse.Content.ReadAsJsonAsync<ApiResponse<DocumentResponse>>();
 
             Assert.NotNull(createDocumentResult);
@@ -1117,7 +1050,7 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
 
             if (i % 20 == 0)
             {
-                _output.WriteLine($"Iteration {i + 1}/{iterations}: Starting instance for workflow '{workflowRequest.Name}'");
+                Output.WriteLine($"Iteration {i + 1}/{iterations}: Starting instance for workflow '{workflowRequest.Name}'");
             }
 
             // Start workflow instance
@@ -1127,7 +1060,7 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
                 Variables = new Dictionary<string, object>()
             };
 
-            var startResponse = await _httpClient.PostAsJsonAsync($"/api/workflows/{workflowId}/instances", startInstanceRequest);
+            var startResponse = await TestClient.PostAsJsonAsync($"/api/workflows/{workflowId}/instances", startInstanceRequest);
 
             Assert.Equal(HttpStatusCode.OK, startResponse.StatusCode);
 
@@ -1150,8 +1083,8 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
                 $"Iteration {i + 1}: Expected status 'Running' or 'Completed' but got '{startResult.Data.Status}'");
         }
 
-        _output.WriteLine($"✓ All {iterations} iterations completed successfully");
-        _output.WriteLine("✓ Workflow instance creation property validated");
+        Output.WriteLine($"✓ All {iterations} iterations completed successfully");
+        Output.WriteLine("✓ Workflow instance creation property validated");
     }
 
     /// <summary>
@@ -1189,31 +1122,31 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
             NodeTypes.VariableAssigner, NodeTypes.Vision
         };
 
-        _output.WriteLine($"Testing workflow creation with {allNodeTypes.Length} node types (excluding Start and End which are tested separately)");
+        Output.WriteLine($"Testing workflow creation with {allNodeTypes.Length} node types (excluding Start and End which are tested separately)");
 
         // Act & Assert - Test each node type
         foreach (var nodeType in allNodeTypes)
         {
-            _output.WriteLine($"Testing node type: {nodeType}");
+            Output.WriteLine($"Testing node type: {nodeType}");
 
             // Generate workflow with this node type
             var workflowRequest = TestDataGenerator.GenerateWorkflowWithNodeType(nodeType);
 
             // Create workflow
-            var createResponse = await _httpClient.PostAsJsonAsync("/api/workflows", workflowRequest);
+            var createResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
             var createResult = await createResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
 
             // Log error details if creation failed
             if (createResponse.StatusCode != HttpStatusCode.OK)
             {
-                _output.WriteLine($"  ✗ Failed to create workflow with node type '{nodeType}'");
-                _output.WriteLine($"    Status: {createResponse.StatusCode}");
-                _output.WriteLine($"    Message: {createResult?.Message}");
+                Output.WriteLine($"  ✗ Failed to create workflow with node type '{nodeType}'");
+                Output.WriteLine($"    Status: {createResponse.StatusCode}");
+                Output.WriteLine($"    Message: {createResult?.Message}");
                 if (createResult?.Errors != null)
                 {
                     foreach (var error in createResult.Errors)
                     {
-                        _output.WriteLine($"    Field '{error.Key}': {string.Join(", ", error.Value)}");
+                        Output.WriteLine($"    Field '{error.Key}': {string.Join(", ", error.Value)}");
                     }
                 }
             }
@@ -1227,21 +1160,22 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
             var workflowId = createResult.Data.Id;
 
             // Retrieve workflow to verify node configuration
-            var getResponse = await _httpClient.GetAsync($"/api/workflows/{workflowId}");
+            var getResponse = await TestClient.GetAsync($"/api/workflows/{workflowId}");
             var getResult = await getResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
 
             Assert.NotNull(getResult);
             Assert.True(getResult.Success);
+            Assert.NotNull(getResult.Data);
             Assert.NotNull(getResult.Data.Graph);
 
             // Verify the specific node type exists in the graph
             var nodeWithType = getResult.Data.Graph.Nodes.FirstOrDefault(n => n.Data.NodeType == nodeType);
             Assert.NotNull(nodeWithType);
 
-            _output.WriteLine($"  ✓ Node type '{nodeType}' created and retrieved successfully");
+            Output.WriteLine($"  ✓ Node type '{nodeType}' created and retrieved successfully");
         }
 
-        _output.WriteLine($"✓ All {allNodeTypes.Length} node types tested successfully");
+        Output.WriteLine($"✓ All {allNodeTypes.Length} node types tested successfully");
     }
 
     // ==================== Error Handling and Boundary Condition Tests ====================
@@ -1263,39 +1197,39 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
     public async Task WorkflowEndpoints_WithoutAuthentication_ShouldReturn401()
     {
         // Arrange - Create a new HTTP client without authentication
-        var unauthenticatedClient = _fixture.App.CreateHttpClient("apiservice");
+        var unauthenticatedClient = Fixture.App.CreateHttpClient("apiservice");
         unauthenticatedClient.Timeout = TimeSpan.FromSeconds(30);
         unauthenticatedClient.DefaultRequestHeaders.Accept.Add(
             new MediaTypeWithQualityHeaderValue("application/json"));
 
-        _output.WriteLine("Testing workflow endpoints without authentication");
+        Output.WriteLine("Testing workflow endpoints without authentication");
 
         // Test GET list
         var getListResponse = await unauthenticatedClient.GetAsync("/api/workflows?page=1&pageSize=10");
         Assert.Equal(HttpStatusCode.Unauthorized, getListResponse.StatusCode);
-        _output.WriteLine("✓ GET /api/workflows returned 401");
+        Output.WriteLine("✓ GET /api/workflows returned 401");
 
         // Test POST create
         var workflowRequest = TestDataGenerator.GenerateValidWorkflowDefinition();
         var postResponse = await unauthenticatedClient.PostAsJsonAsync("/api/workflows", workflowRequest);
         Assert.Equal(HttpStatusCode.Unauthorized, postResponse.StatusCode);
-        _output.WriteLine("✓ POST /api/workflows returned 401");
+        Output.WriteLine("✓ POST /api/workflows returned 401");
 
         // Test GET by ID
         var testId = Guid.NewGuid().ToString();
         var getByIdResponse = await unauthenticatedClient.GetAsync($"/api/workflows/{testId}");
         Assert.Equal(HttpStatusCode.Unauthorized, getByIdResponse.StatusCode);
-        _output.WriteLine("✓ GET /api/workflows/{id} returned 401");
+        Output.WriteLine("✓ GET /api/workflows/{id} returned 401");
 
         // Test PUT update
         var putResponse = await unauthenticatedClient.PutAsJsonAsync($"/api/workflows/{testId}", workflowRequest);
         Assert.Equal(HttpStatusCode.Unauthorized, putResponse.StatusCode);
-        _output.WriteLine("✓ PUT /api/workflows/{id} returned 401");
+        Output.WriteLine("✓ PUT /api/workflows/{id} returned 401");
 
         // Test DELETE
         var deleteResponse = await unauthenticatedClient.DeleteAsync($"/api/workflows/{testId}");
         Assert.Equal(HttpStatusCode.Unauthorized, deleteResponse.StatusCode);
-        _output.WriteLine("✓ DELETE /api/workflows/{id} returned 401");
+        Output.WriteLine("✓ DELETE /api/workflows/{id} returned 401");
     }
 
     /// <summary>
@@ -1312,13 +1246,13 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
     public async Task WorkflowEndpoints_UnauthenticatedRequests_ShouldAlwaysReturn401()
     {
         // Arrange - Create a new HTTP client without authentication
-        var unauthenticatedClient = _fixture.App.CreateHttpClient("apiservice");
+        var unauthenticatedClient = Fixture.App.CreateHttpClient("apiservice");
         unauthenticatedClient.Timeout = TimeSpan.FromSeconds(30);
         unauthenticatedClient.DefaultRequestHeaders.Accept.Add(
             new MediaTypeWithQualityHeaderValue("application/json"));
         const int iterations = 10;
 
-        _output.WriteLine($"Starting Unauthenticated Request Rejection property test with {iterations} iterations");
+        Output.WriteLine($"Starting Unauthenticated Request Rejection property test with {iterations} iterations");
 
         // Act & Assert
         for (int i = 0; i < iterations; i++)
@@ -1360,11 +1294,11 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
 
             if (i % 20 == 0)
             {
-                _output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ {endpointDescription} returned 401");
+                Output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ {endpointDescription} returned 401");
             }
         }
 
-        _output.WriteLine($"✓ All {iterations} iterations completed successfully");
+        Output.WriteLine($"✓ All {iterations} iterations completed successfully");
     }
 
     /// <summary>
@@ -1386,23 +1320,23 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
         // Use a valid MongoDB ObjectId format (24 hex characters) instead of GUID
         var nonExistentId = "60d5f8a9b3c2e1f0a9b8c7d6";
 
-        _output.WriteLine($"Testing workflow endpoints with non-existent ID: {nonExistentId}");
+        Output.WriteLine($"Testing workflow endpoints with non-existent ID: {nonExistentId}");
 
         // Test GET by ID
-        var getResponse = await _httpClient.GetAsync($"/api/workflows/{nonExistentId}");
+        var getResponse = await TestClient.GetAsync($"/api/workflows/{nonExistentId}");
         Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
-        _output.WriteLine("✓ GET /api/workflows/{non-existent-id} returned 404");
+        Output.WriteLine("✓ GET /api/workflows/{non-existent-id} returned 404");
 
         // Test PUT update
         var workflowRequest = TestDataGenerator.GenerateValidWorkflowDefinition();
-        var putResponse = await _httpClient.PutAsJsonAsync($"/api/workflows/{nonExistentId}", workflowRequest);
+        var putResponse = await TestClient.PutAsJsonAsync($"/api/workflows/{nonExistentId}", workflowRequest);
         Assert.Equal(HttpStatusCode.NotFound, putResponse.StatusCode);
-        _output.WriteLine("✓ PUT /api/workflows/{non-existent-id} returned 404");
+        Output.WriteLine("✓ PUT /api/workflows/{non-existent-id} returned 404");
 
         // Test DELETE
-        var deleteResponse = await _httpClient.DeleteAsync($"/api/workflows/{nonExistentId}");
+        var deleteResponse = await TestClient.DeleteAsync($"/api/workflows/{nonExistentId}");
         Assert.Equal(HttpStatusCode.NotFound, deleteResponse.StatusCode);
-        _output.WriteLine("✓ DELETE /api/workflows/{non-existent-id} returned 404");
+        Output.WriteLine("✓ DELETE /api/workflows/{non-existent-id} returned 404");
     }
 
     /// <summary>
@@ -1423,7 +1357,7 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
         await InitializeAuthenticationAsync();
         const int iterations = 10;
 
-        _output.WriteLine($"Starting Non-existent Resource 404 property test with {iterations} iterations");
+        Output.WriteLine($"Starting Non-existent Resource 404 property test with {iterations} iterations");
 
         // Act & Assert
         for (int i = 0; i < iterations; i++)
@@ -1441,15 +1375,15 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
             switch (operationIndex)
             {
                 case 0:
-                    response = await _httpClient.GetAsync($"/api/workflows/{nonExistentId}");
+                    response = await TestClient.GetAsync($"/api/workflows/{nonExistentId}");
                     operationDescription = "GET";
                     break;
                 case 1:
-                    response = await _httpClient.PutAsJsonAsync($"/api/workflows/{nonExistentId}", workflowRequest);
+                    response = await TestClient.PutAsJsonAsync($"/api/workflows/{nonExistentId}", workflowRequest);
                     operationDescription = "PUT";
                     break;
                 default:
-                    response = await _httpClient.DeleteAsync($"/api/workflows/{nonExistentId}");
+                    response = await TestClient.DeleteAsync($"/api/workflows/{nonExistentId}");
                     operationDescription = "DELETE";
                     break;
             }
@@ -1458,11 +1392,11 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
 
             if (i % 20 == 0)
             {
-                _output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ {operationDescription} with non-existent ID returned 404");
+                Output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ {operationDescription} with non-existent ID returned 404");
             }
         }
 
-        _output.WriteLine($"✓ All {iterations} iterations completed successfully");
+        Output.WriteLine($"✓ All {iterations} iterations completed successfully");
     }
 
     /// <summary>
@@ -1483,39 +1417,39 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
         // Arrange
         await InitializeAuthenticationAsync();
 
-        _output.WriteLine("Testing workflow list with invalid pagination parameters");
+        Output.WriteLine("Testing workflow list with invalid pagination parameters");
 
         // Test negative page number
-        var negativePageResponse = await _httpClient.GetAsync("/api/workflows?page=-1&pageSize=10");
+        var negativePageResponse = await TestClient.GetAsync("/api/workflows?page=-1&pageSize=10");
         Assert.True(
             negativePageResponse.StatusCode == HttpStatusCode.BadRequest ||
             negativePageResponse.StatusCode == HttpStatusCode.OK,
             $"Expected BadRequest or OK for negative page, got {negativePageResponse.StatusCode}");
-        _output.WriteLine($"✓ Negative page number handled: {negativePageResponse.StatusCode}");
+        Output.WriteLine($"✓ Negative page number handled: {negativePageResponse.StatusCode}");
 
         // Test page number exceeding maximum
-        var excessivePageResponse = await _httpClient.GetAsync("/api/workflows?page=10001&pageSize=10");
+        var excessivePageResponse = await TestClient.GetAsync("/api/workflows?page=10001&pageSize=10");
         Assert.True(
             excessivePageResponse.StatusCode == HttpStatusCode.BadRequest ||
             excessivePageResponse.StatusCode == HttpStatusCode.OK,
             $"Expected BadRequest or OK for excessive page, got {excessivePageResponse.StatusCode}");
-        _output.WriteLine($"✓ Excessive page number handled: {excessivePageResponse.StatusCode}");
+        Output.WriteLine($"✓ Excessive page number handled: {excessivePageResponse.StatusCode}");
 
         // Test negative page size
-        var negativePageSizeResponse = await _httpClient.GetAsync("/api/workflows?page=1&pageSize=-1");
+        var negativePageSizeResponse = await TestClient.GetAsync("/api/workflows?page=1&pageSize=-1");
         Assert.True(
             negativePageSizeResponse.StatusCode == HttpStatusCode.BadRequest ||
             negativePageSizeResponse.StatusCode == HttpStatusCode.OK,
             $"Expected BadRequest or OK for negative page size, got {negativePageSizeResponse.StatusCode}");
-        _output.WriteLine($"✓ Negative page size handled: {negativePageSizeResponse.StatusCode}");
+        Output.WriteLine($"✓ Negative page size handled: {negativePageSizeResponse.StatusCode}");
 
         // Test excessive page size
-        var excessivePageSizeResponse = await _httpClient.GetAsync("/api/workflows?page=1&pageSize=10000");
+        var excessivePageSizeResponse = await TestClient.GetAsync("/api/workflows?page=1&pageSize=10000");
         Assert.True(
             excessivePageSizeResponse.StatusCode == HttpStatusCode.BadRequest ||
             excessivePageSizeResponse.StatusCode == HttpStatusCode.OK,
             $"Expected BadRequest or OK for excessive page size, got {excessivePageSizeResponse.StatusCode}");
-        _output.WriteLine($"✓ Excessive page size handled: {excessivePageSizeResponse.StatusCode}");
+        Output.WriteLine($"✓ Excessive page size handled: {excessivePageSizeResponse.StatusCode}");
     }
 
     /// <summary>
@@ -1535,40 +1469,40 @@ public class WorkflowDefinitionTests : IClassFixture<AppHostFixture>
         // Arrange
         await InitializeAuthenticationAsync();
 
-        _output.WriteLine("Testing workflow creation with fields exceeding length limits");
+        Output.WriteLine("Testing workflow creation with fields exceeding length limits");
 
         // Test name exceeding 100 characters
         var longNameRequest = TestDataGenerator.GenerateValidWorkflowDefinition();
         longNameRequest = longNameRequest with { Name = new string('A', 101) };
 
-        var longNameResponse = await _httpClient.PostAsJsonAsync("/api/workflows", longNameRequest);
+        var longNameResponse = await TestClient.PostAsJsonAsync("/api/workflows", longNameRequest);
         Assert.True(
             longNameResponse.StatusCode == HttpStatusCode.BadRequest ||
             longNameResponse.StatusCode == HttpStatusCode.OK,
             $"Expected BadRequest or OK for long name, got {longNameResponse.StatusCode}");
-        _output.WriteLine($"✓ Long name (101 chars) handled: {longNameResponse.StatusCode}");
+        Output.WriteLine($"✓ Long name (101 chars) handled: {longNameResponse.StatusCode}");
 
         // Test description exceeding 500 characters
         var longDescriptionRequest = TestDataGenerator.GenerateValidWorkflowDefinition();
         longDescriptionRequest = longDescriptionRequest with { Description = new string('B', 501) };
 
-        var longDescriptionResponse = await _httpClient.PostAsJsonAsync("/api/workflows", longDescriptionRequest);
+        var longDescriptionResponse = await TestClient.PostAsJsonAsync("/api/workflows", longDescriptionRequest);
         Assert.True(
             longDescriptionResponse.StatusCode == HttpStatusCode.BadRequest ||
             longDescriptionResponse.StatusCode == HttpStatusCode.OK,
             $"Expected BadRequest or OK for long description, got {longDescriptionResponse.StatusCode}");
-        _output.WriteLine($"✓ Long description (501 chars) handled: {longDescriptionResponse.StatusCode}");
+        Output.WriteLine($"✓ Long description (501 chars) handled: {longDescriptionResponse.StatusCode}");
 
         // Test category exceeding reasonable length
         var longCategoryRequest = TestDataGenerator.GenerateValidWorkflowDefinition();
         longCategoryRequest = longCategoryRequest with { Category = new string('C', 101) };
 
-        var longCategoryResponse = await _httpClient.PostAsJsonAsync("/api/workflows", longCategoryRequest);
+        var longCategoryResponse = await TestClient.PostAsJsonAsync("/api/workflows", longCategoryRequest);
         Assert.True(
             longCategoryResponse.StatusCode == HttpStatusCode.BadRequest ||
             longCategoryResponse.StatusCode == HttpStatusCode.OK,
             $"Expected BadRequest or OK for long category, got {longCategoryResponse.StatusCode}");
-        _output.WriteLine($"✓ Long category (101 chars) handled: {longCategoryResponse.StatusCode}");
+        Output.WriteLine($"✓ Long category (101 chars) handled: {longCategoryResponse.StatusCode}");
     }
 }
 

@@ -536,7 +536,11 @@ public class WorkflowController : BaseApiController
 
                 if (instance.ActiveApprovals == null || instance.ActiveApprovals.Count == 0) continue;
 
-                var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
+                Document? document = null;
+                if (!string.IsNullOrEmpty(instance.DocumentId))
+                {
+                    document = await _documentFactory.GetByIdAsync(instance.DocumentId);
+                }
 
                 foreach (var activeApproval in instance.ActiveApprovals)
                 {
@@ -546,7 +550,7 @@ public class WorkflowController : BaseApiController
                     if (!approvers.Contains(userId)) continue;
 
                     var currentNode = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
-                    if (currentNode == null || currentNode.Type != "approval" || currentNode.Data.Config.Approval == null)
+                    if (currentNode == null || currentNode.Type != "approval" || currentNode.Data.Config?.Approval == null)
                     {
                         continue;
                     }
@@ -658,7 +662,7 @@ public class WorkflowController : BaseApiController
                 return ValidationError("节点不存在");
             }
 
-            var binding = node.Data.Config.Form;
+            var binding = node.Data.Config?.Form;
             if (binding == null || string.IsNullOrEmpty(binding.FormDefinitionId))
             {
                 return Success(new { form = (FormDefinition?)null, initialValues = (object?)null });
@@ -684,7 +688,11 @@ public class WorkflowController : BaseApiController
             object? initialValues = null;
             if (binding.Target == FormTarget.Document)
             {
-                var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
+                Document? document = null;
+                if (!string.IsNullOrEmpty(instance.DocumentId))
+                {
+                    document = await _documentFactory.GetByIdAsync(instance.DocumentId);
+                }
                 if (document != null)
                 {
                     var sourceFormData = document.FormData ?? new Dictionary<string, object>();
@@ -761,7 +769,7 @@ public class WorkflowController : BaseApiController
                 return ValidationError("节点不存在");
             }
 
-            var binding = node.Data.Config.Form;
+            var binding = node.Data.Config?.Form;
 
             // humanInput 节点无表单绑定时，直接将 FormData 合并到实例变量
             if (node.Type == "humanInput" && (binding == null || string.IsNullOrEmpty(binding.FormDefinitionId)))
@@ -823,6 +831,7 @@ public class WorkflowController : BaseApiController
 
             if (binding.Target == FormTarget.Document)
             {
+                if (string.IsNullOrEmpty(instance.DocumentId)) return ValidationError("当前实例未关联公文");
                 // Bug 15 修复：提前 await 获取 document，避免 GetAwaiter().GetResult() 同步阻塞
                 var existingDoc = await _documentFactory.GetByIdAsync(instance.DocumentId);
                 Action<Document> updateAction = d =>

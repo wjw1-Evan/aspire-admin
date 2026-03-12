@@ -158,17 +158,20 @@ public partial class WorkflowEngine
         // 发送通知给被转办人
         try
         {
-            var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
-            if (document != null)
+            if (!string.IsNullOrEmpty(instance.DocumentId))
             {
-                await _notificationService.CreateWorkflowNotificationAsync(
-                    instanceId,
-                    document.Title,
-                    "workflow_delegated",
-                    new List<string> { delegateToUserId },
-                    $"您收到一个转办的审批任务",
-                    instance.CompanyId
-                );
+                var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
+                if (document != null)
+                {
+                    await _notificationService.CreateWorkflowNotificationAsync(
+                        instanceId,
+                        document.Title,
+                        "workflow_delegated",
+                        new List<string> { delegateToUserId },
+                        $"您收到一个转办的审批任务",
+                        instance.CompanyId
+                    );
+                }
             }
         }
         catch (Exception ex)
@@ -187,7 +190,7 @@ public partial class WorkflowEngine
             return instance.StartedBy == userId;
         }
 
-        if (node.Data.Config.Approval == null) return false;
+        if (node.Data.Config?.Approval == null) return false;
 
         // Bug 3 修复：所有审批类型都阻止重复审批
         var history = await GetApprovalHistoryAsync(instance.Id);
@@ -252,7 +255,7 @@ public partial class WorkflowEngine
         if (definition == null) return;
 
         var node = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
-        if (node == null || node.Data.Config.Approval == null)
+        if (node == null || node.Data.Config?.Approval == null)
         {
             await MoveToNextNodeAsync(instanceId, nodeId);
             return;
@@ -380,18 +383,21 @@ public partial class WorkflowEngine
         // 发送退回通知
         try
         {
-            var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
-            if (document != null)
+            if (!string.IsNullOrEmpty(instance.DocumentId))
             {
-                var relatedUsers = new List<string> { instance.StartedBy, userId };
-                await _notificationService.CreateWorkflowNotificationAsync(
-                    instanceId,
-                    document.Title,
-                    "workflow_returned",
-                    relatedUsers,
-                    comment,
-                    instance.CompanyId
-                );
+                var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
+                if (document != null)
+                {
+                    var relatedUsers = new List<string> { instance.StartedBy, userId };
+                    await _notificationService.CreateWorkflowNotificationAsync(
+                        instanceId,
+                        document.Title,
+                        "workflow_returned",
+                        relatedUsers,
+                        comment,
+                        instance.CompanyId
+                    );
+                }
             }
         }
         catch (Exception ex)

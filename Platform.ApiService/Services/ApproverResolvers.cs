@@ -157,7 +157,7 @@ public class FormFieldApproverResolver : IApproverResolver
     /// <returns>审批人用户ID列表</returns>
     public async Task<List<string>> ResolveAsync(ApproverRule rule, string companyId, WorkflowInstance? instance = null)
     {
-        if (rule.Type != ApproverType.FormField || string.IsNullOrEmpty(rule.FormFieldKey) || instance == null)
+        if (rule.Type != ApproverType.FormField || string.IsNullOrEmpty(rule.FormFieldKey) || instance == null || string.IsNullOrEmpty(instance.DocumentId))
             return new List<string>();
 
         var document = await _documentFactory.GetByIdAsync(instance.DocumentId);

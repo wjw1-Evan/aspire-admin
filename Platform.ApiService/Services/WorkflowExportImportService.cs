@@ -349,7 +349,7 @@ public class WorkflowExportImportService : IWorkflowExportImportService
         var formIds = new HashSet<string>();
         foreach (var node in workflow.Graph.Nodes)
         {
-            if (node.Data.Config.Form?.FormDefinitionId != null)
+            if (node.Data.Config?.Form?.FormDefinitionId != null)
             {
                 formIds.Add(node.Data.Config.Form.FormDefinitionId);
             }

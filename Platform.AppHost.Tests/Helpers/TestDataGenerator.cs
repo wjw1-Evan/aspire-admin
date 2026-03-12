@@ -77,24 +77,24 @@ public static class TestDataGenerator
             {
                 new FormFieldRequest
                 {
-                    Label = "Name",
+                    Label = "Title",
                     Type = "Text",
                     Required = true,
-                    DataKey = $"name_{counter}_{guid}"
+                    DataKey = "title"
                 },
                 new FormFieldRequest
                 {
                     Label = "Email",
-                    Type = "Text",  // Changed from "Email" to "Text" - Email is not a valid FormFieldType
+                    Type = "Text", // FormFieldType as defined in models does not include Email, so we use Text
                     Required = true,
-                    DataKey = $"email_{counter}_{guid}"
+                    DataKey = "email"
                 },
                 new FormFieldRequest
                 {
                     Label = "Comments",
                     Type = "TextArea",
                     Required = false,
-                    DataKey = $"comments_{counter}_{guid}"
+                    DataKey = "comments"
                 }
             },
             IsActive = true
@@ -363,7 +363,7 @@ public static class TestDataGenerator
     /// </summary>
     /// <param name="nodeType">The type of node to include (e.g., NodeTypes.Approval, NodeTypes.Ai).</param>
     /// <returns>A WorkflowDefinitionRequest containing the specified node type.</returns>
-    public static WorkflowDefinitionRequest GenerateWorkflowWithNodeType(string nodeType)
+    public static WorkflowDefinitionRequest GenerateWorkflowWithNodeType(string nodeType, List<string>? approverIds = null)
     {
         var counter = GetNextId();
         var guid = Guid.NewGuid().ToString("N")[..8];
@@ -381,7 +381,7 @@ public static class TestDataGenerator
                 Type = NodeTypes.Start,
                 Data = new NodeDataRequest
                 {
-                    Label = "开始",
+                    Label = "Start",
                     NodeType = NodeTypes.Start,
                     Config = null
                 },
@@ -393,9 +393,9 @@ public static class TestDataGenerator
                 Type = nodeType,
                 Data = new NodeDataRequest
                 {
-                    Label = $"{nodeType} 节点",
+                    Label = $"{nodeType} Node",
                     NodeType = nodeType,
-                    Config = GenerateNodeConfig(nodeType)
+                    Config = GenerateNodeConfig(nodeType, approverIds)
                 },
                 Position = new NodePositionRequest { X = 300, Y = 100 }
             },
@@ -405,7 +405,7 @@ public static class TestDataGenerator
                 Type = NodeTypes.End,
                 Data = new NodeDataRequest
                 {
-                    Label = "结束",
+                    Label = "End",
                     NodeType = NodeTypes.End,
                     Config = null
                 },
@@ -433,7 +433,7 @@ public static class TestDataGenerator
         {
             Name = workflowName,
             Description = $"Test workflow with {nodeType} node",
-            Category = "测试分类",
+            Category = "General",
             Graph = new WorkflowGraphRequest
             {
                 Nodes = nodes,
@@ -459,8 +459,8 @@ public static class TestDataGenerator
         {
             Title = docTitle,
             Content = $"Test document content created at {DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm:ss}",
-            DocumentType = "公文",
-            Category = "测试分类"
+            DocumentType = "Document",
+            Category = "General"
         };
     }
 
@@ -480,8 +480,8 @@ public static class TestDataGenerator
         {
             Title = docTitle,
             Content = $"Test document with form data created at {DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm:ss}",
-            DocumentType = "公文",
-            Category = "测试分类",
+            DocumentType = "Document",
+            Category = "General",
             FormData = formData
         };
     }
@@ -492,53 +492,55 @@ public static class TestDataGenerator
     /// </summary>
     /// <param name="nodeType">The type of node to generate configuration for.</param>
     /// <returns>A configuration object appropriate for the node type, or null if no config is needed.</returns>
-    private static object? GenerateNodeConfig(string nodeType)
+    private static object? GenerateNodeConfig(string nodeType, List<string>? approverIds = null)
     {
         return nodeType switch
         {
             NodeTypes.Start => null,
             NodeTypes.End => null,
-            NodeTypes.Ai => new { prompt = "Test AI prompt", model = "gpt-4" },
-            NodeTypes.AiJudge => new { criteria = "Test criteria", model = "gpt-4" },
-            NodeTypes.Answer => new { message = "Test answer message" },
+            NodeTypes.Ai => new { ai = new { prompt = "Test AI prompt", model = "gpt-4" } },
+            NodeTypes.AiJudge => new { aiJudge = new { criteria = "Test criteria", model = "gpt-4" } },
+            NodeTypes.Answer => new { answer = new { message = "Test answer message" } },
             NodeTypes.Approval => new
             {
                 approval = new
                 {
                     type = "all",
-                    approvers = new[]
-                    {
-                        new { type = "user", userId = "test-user-1" },
-                        new { type = "user", userId = "test-user-2" }
-                    },
+                    approvers = (approverIds != null && approverIds.Count > 0) 
+                        ? approverIds.Select(id => new { type = "user", userId = id }).ToArray()
+                        : new[]
+                        {
+                            new { type = "user", userId = "test-user-1" },
+                            new { type = "user", userId = "test-user-2" }
+                        },
                     allowDelegate = false,
                     allowReject = true,
                     allowReturn = false
                 }
             },
-            NodeTypes.Code => new { code = "console.log('test');", language = "javascript" },
-            NodeTypes.Condition => new { expression = "{{variable}} > 0" },
-            NodeTypes.DocumentExtractor => new { fields = new[] { "title", "content" } },
-            NodeTypes.Email => new { to = "test@example.com", subject = "Test Email", body = "Test body" },
-            NodeTypes.HttpRequest => new { url = "https://api.example.com/test", method = "GET" },
-            NodeTypes.HumanInput => new { prompt = "Please provide input", fields = new[] { "field1" } },
-            NodeTypes.Iteration => new { collection = "{{items}}", itemVariable = "item" },
-            NodeTypes.KnowledgeSearch => new { query = "{{searchQuery}}", knowledgeBaseId = "kb123" },
-            NodeTypes.ListOperator => new { operation = "filter", expression = "{{item}} > 0" },
-            NodeTypes.Log => new { message = "Test log message", level = "info" },
-            NodeTypes.Notification => new { message = "Test notification", channel = "system" },
-            NodeTypes.ParameterExtractor => new { parameters = new[] { "param1", "param2" } },
-            NodeTypes.QuestionClassifier => new { categories = new[] { "category1", "category2" } },
-            NodeTypes.SetVariable => new { variableName = "testVar", value = "testValue" },
-            NodeTypes.SpeechToText => new { audioSource = "{{audioUrl}}", language = "zh-CN" },
-            NodeTypes.Template => new { template = "Hello {{name}}", variables = new { name = "World" } },
-            NodeTypes.TextToSpeech => new { text = "{{textToSpeak}}", voice = "zh-CN-XiaoxiaoNeural" },
-            NodeTypes.Timer => new { duration = 5000, unit = "milliseconds" },
-            NodeTypes.Tool => new { toolName = "testTool", parameters = new { param1 = "value1" } },
-            NodeTypes.VariableAggregator => new { variables = new[] { "var1", "var2" }, operation = "concat" },
-            NodeTypes.VariableAssigner => new { assignments = new { var1 = "value1", var2 = "value2" } },
-            NodeTypes.Vision => new { imageSource = "{{imageUrl}}", prompt = "Describe this image" },
-            _ => new { message = $"Default config for {nodeType}" }
+            NodeTypes.Code => new { code = new { code = "console.log('test');", language = "javascript" } },
+            NodeTypes.Condition => new { condition = new { expression = "{{variable}} > 0" } },
+            NodeTypes.DocumentExtractor => new { documentExtractor = new { extractions = new[] { new { field = "title", type = "text" }, new { field = "content", type = "text" } } } },
+            NodeTypes.Email => new { email = new { to = "test@example.com", subject = "Test Email", body = "Test body" } },
+            NodeTypes.HttpRequest => new { http = new { url = "https://api.example.com/test", method = "GET" } },
+            NodeTypes.HumanInput => new { humanInput = new { prompt = "Please provide input", fields = new[] { "field1" } } },
+            NodeTypes.Iteration => new { iteration = new { iteratorVariable = "item" } },
+            NodeTypes.KnowledgeSearch => new { knowledge = new { query = "{{searchQuery}}", knowledgeBaseIds = new[] { "kb123" } } },
+            NodeTypes.ListOperator => new { listOperator = new { @operator = "filter", inputVariable = "var1" } },
+            NodeTypes.Log => new { log = new { message = "Test log message", level = "info" } },
+            NodeTypes.Notification => new { notification = new { message = "Test notification", channel = "system" } },
+            NodeTypes.ParameterExtractor => new { parameterExtractor = new { parameters = new[] { new { name = "param1", type = "string" }, new { name = "param2", type = "string" } } } },
+            NodeTypes.QuestionClassifier => new { questionClassifier = new { classes = new[] { new { id = "c1", name = "category1" }, new { id = "c2", name = "category2" } } } },
+            NodeTypes.SetVariable => new { variable = new { name = "testVar", value = "testValue" } },
+            NodeTypes.SpeechToText => new { speechToText = new { audioSource = "{{audioUrl}}", language = "zh-CN" } },
+            NodeTypes.Template => new { template = new { template = "Hello {{name}}", variables = new { name = "World" } } },
+            NodeTypes.TextToSpeech => new { textToSpeech = new { text = "{{textToSpeak}}", voice = "zh-CN-XiaoxiaoNeural" } },
+            NodeTypes.Timer => new { timer = new { duration = 5000, unit = "milliseconds" } },
+            NodeTypes.Tool => new { tool = new { toolName = "testTool", parameters = new { param1 = "value1" } } },
+            NodeTypes.VariableAggregator => new { variableAggregator = new { inputVariables = new[] { "var1", "var2" }, format = "json" } },
+            NodeTypes.VariableAssigner => new { variableAssigner = new { assignments = new[] { new { variable = "var1", value = "value1" }, new { variable = "var2", value = "value2" } } } },
+            NodeTypes.Vision => new { vision = new { imageSource = "{{imageUrl}}", prompt = "Describe this image" } },
+            _ => new { }
         };
     }
 }

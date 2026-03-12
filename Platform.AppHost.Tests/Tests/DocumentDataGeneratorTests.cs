@@ -18,11 +18,13 @@ public class DocumentDataGeneratorTests
 
         // Assert
         Assert.NotNull(document);
+        Assert.NotNull(document.Title);
         Assert.NotEmpty(document.Title);
         Assert.StartsWith("doc_", document.Title);
+        Assert.NotNull(document.Content);
         Assert.NotEmpty(document.Content);
-        Assert.Equal("公文", document.DocumentType);
-        Assert.Equal("测试分类", document.Category);
+        Assert.Equal("Document", document.DocumentType);
+        Assert.Equal("General", document.Category);
         Assert.Null(document.FormData);
     }
 
@@ -53,11 +55,13 @@ public class DocumentDataGeneratorTests
 
         // Assert
         Assert.NotNull(document);
+        Assert.NotNull(document.Title);
         Assert.NotEmpty(document.Title);
         Assert.StartsWith("doc_", document.Title);
+        Assert.NotNull(document.Content);
         Assert.NotEmpty(document.Content);
-        Assert.Equal("公文", document.DocumentType);
-        Assert.Equal("测试分类", document.Category);
+        Assert.Equal("Document", document.DocumentType);
+        Assert.Equal("General", document.Category);
         Assert.NotNull(document.FormData);
         Assert.Equal(3, document.FormData.Count);
         Assert.Equal("value1", document.FormData["field1"]);

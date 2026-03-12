@@ -4,13 +4,14 @@
 
 import React, { useMemo } from 'react';
 import { Drawer, Card, Descriptions, Tag, Steps } from 'antd';
-import ReactFlow, { Background, Controls, MiniMap, type Edge as FlowEdge, type Node as FlowNode } from 'reactflow';
+import ReactFlow, { Background, Controls, MiniMap, type Edge as FlowEdge, type Node as FlowNode, MarkerType } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { ReloadOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import { FormFieldType, WorkflowStatus, ApprovalAction } from '@/services/workflow/api';
 import { getStatusMeta, workflowStatusMap, approvalActionMap } from '@/utils/statusMaps';
+import { nodeTypes, edgeTypes, NODE_TYPE_LABELS, NODE_CONFIGS } from '../../workflow/components/WorkflowDesignerConstants';
 import type { DocumentDetailDrawerProps, NodeFormData } from './types';
 
 const DocumentDetailDrawer: React.FC<DocumentDetailDrawerProps> = ({
@@ -29,69 +30,28 @@ const DocumentDetailDrawer: React.FC<DocumentDetailDrawerProps> = ({
     // 流程图节点
     const graphNodes: FlowNode[] = useMemo(() => {
         if (!workflowDef?.graph?.nodes?.length) return [];
-
-        const typeLabel = (type?: string) => {
-            switch (type) {
-                case 'start': return intl.formatMessage({ id: 'pages.workflow.node.start', defaultMessage: '开始' });
-                case 'end': return intl.formatMessage({ id: 'pages.workflow.node.end', defaultMessage: '结束' });
-                case 'approval': return intl.formatMessage({ id: 'pages.workflow.node.approval', defaultMessage: '审批' });
-                case 'condition': return intl.formatMessage({ id: 'pages.workflow.node.condition', defaultMessage: '条件' });
-                case 'parallel': return intl.formatMessage({ id: 'pages.workflow.node.parallel', defaultMessage: '并行' });
-                case 'ai': return intl.formatMessage({ id: 'pages.workflow.node.ai', defaultMessage: 'AI' });
-                case 'notification': return intl.formatMessage({ id: 'pages.workflow.node.notification', defaultMessage: '通知' });
-                case 'httpRequest': return intl.formatMessage({ id: 'pages.workflow.node.httpRequest', defaultMessage: 'HTTP请求' });
-                case 'timer': return intl.formatMessage({ id: 'pages.workflow.node.timer', defaultMessage: '计时器' });
-                case 'setVariable': return intl.formatMessage({ id: 'pages.workflow.node.setVariable', defaultMessage: '变量设置' });
-                case 'log': return intl.formatMessage({ id: 'pages.workflow.node.log', defaultMessage: '日志' });
-                default: return intl.formatMessage({ id: 'pages.workflow.node.unknown', defaultMessage: '节点' });
-            }
-        };
-
-        const nodeStyles: Record<string, any> = {
-            start: { background: '#f6ffed', border: '1px solid #b7eb8f', color: '#52c41a' },
-            end: { background: '#fff1f0', border: '1px solid #ffa39e', color: '#ff4d4f' },
-            approval: { background: '#e6f7ff', border: '1px solid #91d5ff', color: '#1890ff' },
-            condition: { background: '#fff7e6', border: '1px solid #ffd591', color: '#fa8c16' },
-            parallel: { background: '#f9f0ff', border: '1px solid #d3adf7', color: '#722ed1' },
-            ai: { background: '#f0f5ff', border: '1px solid #adc6ff', color: '#2f54eb' },
-            notification: { background: '#fffbe6', border: '1px solid #ffe58f', color: '#faad14' },
-            httpRequest: { background: '#f0faff', border: '1px solid #91d5ff', color: '#0050b3' },
-            timer: { background: '#fff7e6', border: '1px solid #ffd591', color: '#d46b08' },
-            setVariable: { background: '#f6ffed', border: '1px solid #b7eb8f', color: '#389e0d' },
-            log: { background: '#f5f5f5', border: '1px solid #d9d9d9', color: '#595959' },
-        };
-
         const workflowInstance = detailData?.workflowInstance;
 
         return workflowDef.graph.nodes.map((node) => {
             const isCurrent = node.id === workflowInstance?.currentNodeId;
-            const style = nodeStyles[node.type] || { background: '#fff', border: '1px solid #d9d9d9' };
 
             return {
                 id: node.id,
+                type: 'workflowNode',
                 position: { x: node.position?.x || 0, y: node.position?.y || 0 },
                 data: {
-                    label: (
-                        <div style={{ textAlign: 'center', padding: '10px 14px' }}>
-                            <div style={{ fontWeight: 600, fontSize: '11px', textTransform: 'uppercase', opacity: 0.8 }}>{typeLabel(node.type)}</div>
-                            <div style={{ fontSize: '13px', fontWeight: 700 }}>{node.data?.label || node.id}</div>
-                        </div>
-                    ),
+                    label: node.data?.label || node.id,
+                    typeLabel: NODE_TYPE_LABELS[node.type as keyof typeof NODE_TYPE_LABELS] || node.type,
+                    nodeType: node.type,
+                    config: node.data?.config,
                 },
+                selected: isCurrent,
                 draggable: false,
                 selectable: false,
                 connectable: false,
-                style: {
-                    ...style,
-                    borderRadius: 8,
-                    boxShadow: isCurrent ? '0 0 10px rgba(24, 144, 255, 0.4)' : '0 2px 4px rgba(0,0,0,0.05)',
-                    borderWidth: isCurrent ? 2 : 1,
-                    borderColor: isCurrent ? '#1890ff' : style.border?.split(' ')[2],
-                    minWidth: 120,
-                },
             };
         });
-    }, [workflowDef, intl, detailData]);
+    }, [workflowDef, detailData]);
 
     // 流程图边
     const graphEdges: FlowEdge[] = useMemo(() => {
@@ -100,8 +60,16 @@ const DocumentDetailDrawer: React.FC<DocumentDetailDrawerProps> = ({
             id: edge.id,
             source: edge.source,
             target: edge.target,
-            label: edge.label || edge.data?.condition,
-            type: 'default',
+            type: 'workflowEdge',
+            label: edge.label,
+            labelStyle: { fill: '#64748b', fontWeight: 600 },
+            markerEnd: {
+                type: MarkerType.ArrowClosed,
+                color: '#94a3b8',
+            },
+            data: {
+                condition: edge.data?.condition,
+            },
             selectable: false,
         }));
     }, [workflowDef]);
@@ -129,20 +97,7 @@ const DocumentDetailDrawer: React.FC<DocumentDetailDrawerProps> = ({
     const approvalHistory = detailData.approvalHistory ?? (doc as any)?.approvalHistory ?? workflowInstance?.approvalHistory ?? [];
 
     const typeLabel = (type?: string) => {
-        switch (type) {
-            case 'start': return intl.formatMessage({ id: 'pages.workflow.node.type.start', defaultMessage: '开始' });
-            case 'end': return intl.formatMessage({ id: 'pages.workflow.node.type.end', defaultMessage: '结束' });
-            case 'approval': return intl.formatMessage({ id: 'pages.workflow.node.type.approval', defaultMessage: '审批' });
-            case 'form': return intl.formatMessage({ id: 'pages.workflow.node.type.form', defaultMessage: '表单' });
-            case 'gateway': return intl.formatMessage({ id: 'pages.workflow.node.type.gateway', defaultMessage: '网关' });
-            case 'ai': return intl.formatMessage({ id: 'pages.workflow.node.type.ai', defaultMessage: 'AI' });
-            case 'notification': return intl.formatMessage({ id: 'pages.workflow.node.type.notification', defaultMessage: '通知' });
-            case 'httpRequest': return intl.formatMessage({ id: 'pages.workflow.node.type.httpRequest', defaultMessage: 'HTTP请求' });
-            case 'timer': return intl.formatMessage({ id: 'pages.workflow.node.type.timer', defaultMessage: '计时器' });
-            case 'setVariable': return intl.formatMessage({ id: 'pages.workflow.node.type.setVariable', defaultMessage: '变量设置' });
-            case 'log': return intl.formatMessage({ id: 'pages.workflow.node.type.log', defaultMessage: '日志' });
-            default: return type || intl.formatMessage({ id: 'pages.workflow.node.type.unknown', defaultMessage: '节点' });
-        }
+        return type ? (NODE_TYPE_LABELS[type as keyof typeof NODE_TYPE_LABELS] || type) : intl.formatMessage({ id: 'pages.workflow.node.type.unknown', defaultMessage: '节点' });
     };
 
     return (
@@ -361,15 +316,24 @@ const DocumentDetailDrawer: React.FC<DocumentDetailDrawerProps> = ({
                                     <ReactFlow
                                         nodes={graphNodes}
                                         edges={graphEdges}
+                                        nodeTypes={nodeTypes}
+                                        edgeTypes={edgeTypes}
                                         fitView
                                         nodesDraggable={false}
                                         nodesConnectable={false}
                                         elementsSelectable={false}
                                         proOptions={{ hideAttribution: true }}
                                     >
-                                        <MiniMap pannable zoomable />
+                                        <MiniMap 
+                                            pannable 
+                                            zoomable 
+                                            nodeColor={(n: any) => {
+                                                const config = NODE_CONFIGS[n.data?.nodeType as keyof typeof NODE_CONFIGS];
+                                                return config?.color || '#eee';
+                                            }}
+                                        />
                                         <Controls showInteractive={false} />
-                                        <Background gap={12} size={1} />
+                                        <Background gap={16} size={1} />
                                     </ReactFlow>
                                 ) : (
                                     <div style={{ padding: 12, color: '#999' }}>

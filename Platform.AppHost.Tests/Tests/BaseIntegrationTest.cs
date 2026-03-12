@@ -14,9 +14,11 @@ public abstract class BaseIntegrationTest : IClassFixture<AppHostFixture>
     protected readonly AppHostFixture Fixture;
     protected readonly ITestOutputHelper Output;
     protected System.Net.Http.HttpClient TestClient;
+    protected string? CurrentUserId { get; private set; }
+
     
-    // Per-class token cache to avoid redundant registrations
-    private static readonly Dictionary<Type, string> TokenCache = new();
+    // Per-class auth cache to avoid redundant registrations
+    private static readonly Dictionary<Type, (string Token, string UserId)> AuthCache = new();
     private static readonly object CacheLock = new();
 
     protected BaseIntegrationTest(AppHostFixture fixture, ITestOutputHelper output)
@@ -33,35 +35,43 @@ public abstract class BaseIntegrationTest : IClassFixture<AppHostFixture>
     protected virtual async Task InitializeAuthenticationAsync(bool forceNewUser = false)
     {
         string? token = null;
+        string? userId = null;
 
         if (!forceNewUser)
         {
             lock (CacheLock)
             {
-                TokenCache.TryGetValue(GetType(), out token);
+                if (AuthCache.TryGetValue(GetType(), out var auth))
+                {
+                    token = auth.Token;
+                    userId = auth.UserId;
+                }
             }
         }
 
-        if (string.IsNullOrEmpty(token))
+        if (string.IsNullOrEmpty(token) || string.IsNullOrEmpty(userId))
         {
-            token = await CreateAndLoginNewUserAsync();
+            var authResult = await CreateAndLoginNewUserAsync();
+            token = authResult.Token;
+            userId = authResult.UserId;
             
             if (!forceNewUser)
             {
                 lock (CacheLock)
                 {
-                    TokenCache[GetType()] = token;
+                    AuthCache[GetType()] = (token, userId);
                 }
             }
         }
 
+        CurrentUserId = userId;
         TestClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
     }
 
     /// <summary>
-    /// Creates a new user and logs in to obtain an access token.
+    /// Creates a new user and logs in to obtain an access token and user ID.
     /// </summary>
-    protected async Task<string> CreateAndLoginNewUserAsync()
+    protected async Task<(string Token, string UserId)> CreateAndLoginNewUserAsync()
     {
         var registration = TestDataGenerator.GenerateValidRegistration();
         Output.WriteLine($"Registering test user: {registration.Username}");
@@ -81,7 +91,8 @@ public abstract class BaseIntegrationTest : IClassFixture<AppHostFixture>
 
         var loginApiResponse = await loginResponse.Content.ReadAsJsonAsync<ApiResponse<LoginResponseData>>();
         Assert.NotNull(loginApiResponse?.Data?.Token);
+        Assert.NotNull(registerApiResponse.Data.Id);
 
-        return loginApiResponse.Data.Token;
+        return (loginApiResponse.Data.Token, registerApiResponse.Data.Id);
     }
 }

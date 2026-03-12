@@ -32,6 +32,19 @@ public record WorkflowDefinitionRequest
 }
 
 /// <summary>
+/// Generic paged result model for API responses.
+/// </summary>
+/// <typeparam name="T">The type of items in the list.</typeparam>
+public record PagedResult<T>
+{
+    public List<T> List { get; init; } = new();
+    public int Page { get; init; }
+    public int PageSize { get; init; }
+    public int Total { get; init; }
+}
+
+
+/// <summary>
 /// Request model for a workflow graph structure.
 /// </summary>
 public record WorkflowGraphRequest
@@ -348,4 +361,10 @@ public static class NodeTypes
     /// Vision node - performs vision-based operations.
     /// </summary>
     public const string Vision = "vision";
+
+    /// <summary>
+    /// Parallel gateway node - handles parallel execution branches.
+    /// </summary>
+    public const string Parallel = "parallel";
 }
+

@@ -16,93 +16,11 @@ namespace Platform.AppHost.Tests.Tests;
 /// Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 5.1, 5.2, 5.4, 7.1, 7.2, 7.4, 7.5, 8.1, 8.2
 /// </remarks>
 [Collection("AppHost Collection")]
-public class FormDefinitionTests : IClassFixture<AppHostFixture>
+public class FormDefinitionTests : BaseIntegrationTest
 {
-    private readonly AppHostFixture _fixture;
-    private readonly ITestOutputHelper _output;
-    private HttpClient _httpClient = null!;
-    private string _accessToken = string.Empty;
-
     public FormDefinitionTests(AppHostFixture fixture, ITestOutputHelper output)
+        : base(fixture, output)
     {
-        _fixture = fixture;
-        _output = output;
-    }
-
-    /// <summary>
-    /// Initializes authentication for the test by registering a unique test user
-    /// and obtaining an access token. This method should be called at the beginning
-    /// of each test that requires authentication.
-    /// </summary>
-    /// <remarks>
-    /// Validates: Requirements 5.2, 8.1, 8.2
-    /// 
-    /// This method:
-    /// 1. Generates a unique test user using TestDataGenerator.GenerateValidRegistration()
-    /// 2. Registers the user via POST /api/auth/register
-    /// 3. Logs in via POST /api/auth/login
-    /// 4. Stores the access token in _accessToken field
-    /// 5. Sets the Authorization header on _httpClient
-    /// </remarks>
-    private async Task InitializeAuthenticationAsync()
-    {
-        // Create a new HTTP client for this test
-        _httpClient = _fixture.HttpClient;
-
-        // Generate unique test user credentials
-        var registration = TestDataGenerator.GenerateValidRegistration();
-
-        _output.WriteLine($"Registering test user: {registration.Username}");
-
-        // Register the test user
-        var registerResponse = await _httpClient.PostAsJsonAsync(
-            "/api/auth/register",
-            registration);
-
-        Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
-
-        var registerApiResponse = await registerResponse.Content
-            .ReadAsJsonAsync<ApiResponse<RegisterResponseData>>();
-
-        Assert.NotNull(registerApiResponse);
-        Assert.True(registerApiResponse.Success,
-            $"Registration failed for user '{registration.Username}'. Message: {registerApiResponse.Message}");
-        Assert.NotNull(registerApiResponse.Data);
-
-        _output.WriteLine($"✓ User registered successfully - User ID: {registerApiResponse.Data.Id}");
-
-        // Login to get access token
-        var loginRequest = new LoginRequest
-        {
-            Username = registration.Username,
-            Password = registration.Password
-        };
-
-        var loginResponse = await _httpClient.PostAsJsonAsync(
-            "/api/auth/login",
-            loginRequest);
-
-        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
-
-        var loginApiResponse = await loginResponse.Content
-            .ReadAsJsonAsync<ApiResponse<LoginResponseData>>();
-
-        Assert.NotNull(loginApiResponse);
-        Assert.True(loginApiResponse.Success,
-            $"Login failed for user '{registration.Username}'. Message: {loginApiResponse.Message}");
-        Assert.NotNull(loginApiResponse.Data);
-        Assert.NotNull(loginApiResponse.Data.Token);
-
-        // Store the access token
-        _accessToken = loginApiResponse.Data.Token;
-
-        _output.WriteLine($"✓ User logged in successfully - Access token obtained");
-
-        // Set the Authorization header on the HTTP client
-        _httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", _accessToken);
-
-        _output.WriteLine($"✓ Authorization header set on HTTP client");
     }
 
     /// <summary>
@@ -125,10 +43,10 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
         await InitializeAuthenticationAsync();
         var formRequest = TestDataGenerator.GenerateValidFormDefinition();
 
-        _output.WriteLine($"Creating form with name: {formRequest.Name}");
+        Output.WriteLine($"Creating form with name: {formRequest.Name}");
 
         // Act
-        var response = await _httpClient.PostAsJsonAsync("/api/forms", formRequest);
+        var response = await TestClient.PostAsJsonAsync("/api/forms", formRequest);
 
         // Read response first before asserting
         var apiResponse = await response.Content.ReadAsJsonAsync<ApiResponse<FormDefinitionResponse>>();
@@ -136,13 +54,13 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
         // Log the error details if the request failed
         if (response.StatusCode != HttpStatusCode.OK)
         {
-            _output.WriteLine($"API returned {response.StatusCode}");
-            _output.WriteLine($"API Error - Code: {apiResponse?.Code}, Message: {apiResponse?.Message}");
+            Output.WriteLine($"API returned {response.StatusCode}");
+            Output.WriteLine($"API Error - Code: {apiResponse?.Code}, Message: {apiResponse?.Message}");
             if (apiResponse?.Errors != null)
             {
                 foreach (var error in apiResponse.Errors)
                 {
-                    _output.WriteLine($"  Field '{error.Key}': {string.Join(", ", error.Value)}");
+                    Output.WriteLine($"  Field '{error.Key}': {string.Join(", ", error.Value)}");
                 }
             }
         }
@@ -156,7 +74,7 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
         Assert.Equal(formRequest.Name, apiResponse.Data.Name);
         Assert.NotEmpty(apiResponse.Data.Key); // Requirement 1.7: Key auto-generated
 
-        _output.WriteLine($"✓ Form created successfully - ID: {apiResponse.Data.Id}, Key: {apiResponse.Data.Key}");
+        Output.WriteLine($"✓ Form created successfully - ID: {apiResponse.Data.Id}, Key: {apiResponse.Data.Key}");
     }
 
     /// <summary>
@@ -182,10 +100,10 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
             Fields = new List<FormFieldRequest>()
         };
 
-        _output.WriteLine("Attempting to create form with missing name field");
+        Output.WriteLine("Attempting to create form with missing name field");
 
         // Act
-        var response = await _httpClient.PostAsJsonAsync("/api/forms", formRequest);
+        var response = await TestClient.PostAsJsonAsync("/api/forms", formRequest);
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -203,7 +121,7 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
         Assert.True(hasValidationError,
             $"Expected validation error for missing name field. Code: {apiResponse.Code}, Message: {apiResponse.Message}");
 
-        _output.WriteLine($"✓ Validation error returned as expected - Code: {apiResponse.Code}, Message: {apiResponse.Message}");
+        Output.WriteLine($"✓ Validation error returned as expected - Code: {apiResponse.Code}, Message: {apiResponse.Message}");
     }
 
     /// <summary>
@@ -225,7 +143,7 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
         await InitializeAuthenticationAsync();
         const int iterations = 10;
 
-        _output.WriteLine($"Starting CRUD Round-trip property test with {iterations} iterations");
+        Output.WriteLine($"Starting CRUD Round-trip property test with {iterations} iterations");
 
         // Act & Assert
         for (int i = 0; i < iterations; i++)
@@ -233,10 +151,10 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
             // Generate random form data
             var formRequest = TestDataGenerator.GenerateValidFormDefinition();
 
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] Creating form: {formRequest.Name}");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] Creating form: {formRequest.Name}");
 
             // Create form
-            var createResponse = await _httpClient.PostAsJsonAsync("/api/forms", formRequest);
+            var createResponse = await TestClient.PostAsJsonAsync("/api/forms", formRequest);
 
             // Read response
             var createApiResponse = await createResponse.Content
@@ -255,10 +173,10 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
 
             var createdFormId = createApiResponse.Data.Id;
 
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] Form created - ID: {createdFormId}, Key: {createApiResponse.Data.Key}");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] Form created - ID: {createdFormId}, Key: {createApiResponse.Data.Key}");
 
             // Retrieve form by ID
-            var getResponse = await _httpClient.GetAsync($"/api/forms/{createdFormId}");
+            var getResponse = await TestClient.GetAsync($"/api/forms/{createdFormId}");
 
             // Read response
             var getApiResponse = await getResponse.Content
@@ -289,10 +207,10 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
                 Assert.Equal(requestField.DataKey, responseField.DataKey);
             }
 
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ Round-trip consistency verified");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ Round-trip consistency verified");
         }
 
-        _output.WriteLine($"✓ All {iterations} iterations completed successfully");
+        Output.WriteLine($"✓ All {iterations} iterations completed successfully");
     }
 
     /// <summary>
@@ -316,13 +234,13 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
         for (int i = 0; i < 3; i++)
         {
             var formRequest = TestDataGenerator.GenerateValidFormDefinition();
-            await _httpClient.PostAsJsonAsync("/api/forms", formRequest);
+            await TestClient.PostAsJsonAsync("/api/forms", formRequest);
         }
 
-        _output.WriteLine("Fetching form list with pagination");
+        Output.WriteLine("Fetching form list with pagination");
 
         // Act
-        var response = await _httpClient.GetAsync("/api/forms?current=1&pageSize=10");
+        var response = await TestClient.GetAsync("/api/forms?current=1&pageSize=10");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -334,7 +252,7 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
         // Verify pagination structure
         ApiTestHelpers.AssertPagedResponse<FormDefinitionResponse>(apiResponse, expectedCurrent: 1, expectedPageSize: 10);
 
-        _output.WriteLine("✓ Form list returned with valid pagination structure");
+        Output.WriteLine("✓ Form list returned with valid pagination structure");
     }
 
     /// <summary>
@@ -359,17 +277,17 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
         var matchingFormRequest = TestDataGenerator.GenerateValidFormDefinition();
         matchingFormRequest = matchingFormRequest with { Name = $"{uniqueKeyword}_form" };
 
-        var createResponse = await _httpClient.PostAsJsonAsync("/api/forms", matchingFormRequest);
+        var createResponse = await TestClient.PostAsJsonAsync("/api/forms", matchingFormRequest);
         Assert.Equal(HttpStatusCode.OK, createResponse.StatusCode);
 
-        _output.WriteLine($"Created form with keyword: {uniqueKeyword}");
+        Output.WriteLine($"Created form with keyword: {uniqueKeyword}");
 
         // Create another form without the keyword
         var nonMatchingFormRequest = TestDataGenerator.GenerateValidFormDefinition();
-        await _httpClient.PostAsJsonAsync("/api/forms", nonMatchingFormRequest);
+        await TestClient.PostAsJsonAsync("/api/forms", nonMatchingFormRequest);
 
         // Act
-        var response = await _httpClient.GetAsync($"/api/forms?keyword={uniqueKeyword}&current=1&pageSize=10");
+        var response = await TestClient.GetAsync($"/api/forms?keyword={uniqueKeyword}&current=1&pageSize=10");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -390,7 +308,7 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
             Assert.Contains(uniqueKeyword, name, StringComparison.OrdinalIgnoreCase);
         }
 
-        _output.WriteLine($"✓ Keyword filtering returned only matching forms");
+        Output.WriteLine($"✓ Keyword filtering returned only matching forms");
     }
 
     /// <summary>
@@ -412,7 +330,7 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
         await InitializeAuthenticationAsync();
         const int iterations = 10;
 
-        _output.WriteLine($"Starting Pagination Structure property test with {iterations} iterations");
+        Output.WriteLine($"Starting Pagination Structure property test with {iterations} iterations");
 
         // Act & Assert
         for (int i = 0; i < iterations; i++)
@@ -422,10 +340,10 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
             var current = random.Next(1, 5);
             var pageSize = random.Next(5, 20);
 
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] Testing pagination - current: {current}, pageSize: {pageSize}");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] Testing pagination - current: {current}, pageSize: {pageSize}");
 
             // Fetch form list with pagination
-            var response = await _httpClient.GetAsync($"/api/forms?current={current}&pageSize={pageSize}");
+            var response = await TestClient.GetAsync($"/api/forms?current={current}&pageSize={pageSize}");
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -438,10 +356,10 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
             // Verify pagination structure
             ApiTestHelpers.AssertPagedResponse<FormDefinitionResponse>(apiResponse, expectedCurrent: current, expectedPageSize: pageSize);
 
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ Pagination structure verified");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ Pagination structure verified");
         }
 
-        _output.WriteLine($"✓ All {iterations} iterations completed successfully");
+        Output.WriteLine($"✓ All {iterations} iterations completed successfully");
     }
 
     /// <summary>
@@ -463,7 +381,7 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
         await InitializeAuthenticationAsync();
         const int iterations = 10;
 
-        _output.WriteLine($"Starting Keyword Filtering property test with {iterations} iterations");
+        Output.WriteLine($"Starting Keyword Filtering property test with {iterations} iterations");
 
         // Act & Assert
         for (int i = 0; i < iterations; i++)
@@ -475,13 +393,13 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
             var matchingFormRequest = TestDataGenerator.GenerateValidFormDefinition();
             matchingFormRequest = matchingFormRequest with { Name = $"{keyword}_testform" };
 
-            var createResponse = await _httpClient.PostAsJsonAsync("/api/forms", matchingFormRequest);
+            var createResponse = await TestClient.PostAsJsonAsync("/api/forms", matchingFormRequest);
             Assert.Equal(HttpStatusCode.OK, createResponse.StatusCode);
 
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] Created form with keyword: {keyword}");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] Created form with keyword: {keyword}");
 
             // Search for forms with the keyword
-            var response = await _httpClient.GetAsync($"/api/forms?keyword={keyword}&current=1&pageSize=10");
+            var response = await TestClient.GetAsync($"/api/forms?keyword={keyword}&current=1&pageSize=10");
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -508,10 +426,10 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
             // Verify that at least one form was returned (the one we just created)
             Assert.True(matchCount > 0, $"[Iteration {i + 1}] Expected at least one matching form, but got {matchCount}");
 
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ Keyword filtering accuracy verified - {matchCount} matching forms");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ Keyword filtering accuracy verified - {matchCount} matching forms");
         }
 
-        _output.WriteLine($"✓ All {iterations} iterations completed successfully");
+        Output.WriteLine($"✓ All {iterations} iterations completed successfully");
     }
 
     /// <summary>
@@ -533,11 +451,11 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
 
         // Create a form first
         var formRequest = TestDataGenerator.GenerateValidFormDefinition();
-        var createResponse = await _httpClient.PostAsJsonAsync("/api/forms", formRequest);
+        var createResponse = await TestClient.PostAsJsonAsync("/api/forms", formRequest);
         var createApiResponse = await createResponse.Content.ReadAsJsonAsync<ApiResponse<FormDefinitionResponse>>();
         var formId = createApiResponse!.Data!.Id;
 
-        _output.WriteLine($"Created form with ID: {formId}");
+        Output.WriteLine($"Created form with ID: {formId}");
 
         // Prepare update data
         var updateRequest = formRequest with
@@ -546,10 +464,10 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
             Description = "Updated description"
         };
 
-        _output.WriteLine($"Updating form to name: {updateRequest.Name}");
+        Output.WriteLine($"Updating form to name: {updateRequest.Name}");
 
         // Act
-        var response = await _httpClient.PutAsJsonAsync($"/api/forms/{formId}", updateRequest);
+        var response = await TestClient.PutAsJsonAsync($"/api/forms/{formId}", updateRequest);
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -561,16 +479,16 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
         Assert.Equal(updateRequest.Name, apiResponse.Data.Name);
         Assert.Equal(updateRequest.Description, apiResponse.Data.Description);
 
-        _output.WriteLine($"✓ Form updated successfully");
+        Output.WriteLine($"✓ Form updated successfully");
 
         // Verify the update persisted by fetching the form again
-        var getResponse = await _httpClient.GetAsync($"/api/forms/{formId}");
+        var getResponse = await TestClient.GetAsync($"/api/forms/{formId}");
         var getApiResponse = await getResponse.Content.ReadAsJsonAsync<ApiResponse<FormDefinitionResponse>>();
         Assert.NotNull(getApiResponse);
         Assert.True(getApiResponse.Success);
         Assert.Equal(updateRequest.Name, getApiResponse.Data!.Name);
 
-        _output.WriteLine($"✓ Update verified via GET request");
+        Output.WriteLine($"✓ Update verified via GET request");
     }
 
     /// <summary>
@@ -592,19 +510,19 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
         await InitializeAuthenticationAsync();
         const int iterations = 10;
 
-        _output.WriteLine($"Starting Update Reflection property test with {iterations} iterations");
+        Output.WriteLine($"Starting Update Reflection property test with {iterations} iterations");
 
         // Act & Assert
         for (int i = 0; i < iterations; i++)
         {
             // Create a form
             var formRequest = TestDataGenerator.GenerateValidFormDefinition();
-            var createResponse = await _httpClient.PostAsJsonAsync("/api/forms", formRequest);
+            var createResponse = await TestClient.PostAsJsonAsync("/api/forms", formRequest);
             var createApiResponse = await createResponse.Content.ReadAsJsonAsync<ApiResponse<FormDefinitionResponse>>();
             var formId = createApiResponse!.Data!.Id;
             var originalKey = createApiResponse.Data.Key;
 
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] Created form with ID: {formId}");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] Created form with ID: {formId}");
 
             // Update the form
             var updateRequest = formRequest with
@@ -613,7 +531,7 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
                 Description = $"Updated description {i}"
             };
 
-            var updateResponse = await _httpClient.PutAsJsonAsync($"/api/forms/{formId}", updateRequest);
+            var updateResponse = await TestClient.PutAsJsonAsync($"/api/forms/{formId}", updateRequest);
             Assert.Equal(HttpStatusCode.OK, updateResponse.StatusCode);
 
             var updateApiResponse = await updateResponse.Content.ReadAsJsonAsync<ApiResponse<FormDefinitionResponse>>();
@@ -622,7 +540,7 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
                 $"[Iteration {i + 1}] Form update failed. Message: {updateApiResponse.Message}");
 
             // Verify the update via GET request
-            var getResponse = await _httpClient.GetAsync($"/api/forms/{formId}");
+            var getResponse = await TestClient.GetAsync($"/api/forms/{formId}");
             var getApiResponse = await getResponse.Content.ReadAsJsonAsync<ApiResponse<FormDefinitionResponse>>();
             Assert.NotNull(getApiResponse);
             Assert.True(getApiResponse.Success);
@@ -634,10 +552,10 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
             // Verify unchanged fields (Key should remain the same)
             Assert.Equal(originalKey, getApiResponse.Data.Key);
 
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ Update reflection verified");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ Update reflection verified");
         }
 
-        _output.WriteLine($"✓ All {iterations} iterations completed successfully");
+        Output.WriteLine($"✓ All {iterations} iterations completed successfully");
     }
 
     /// <summary>
@@ -658,25 +576,25 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
 
         // Create a form first
         var formRequest = TestDataGenerator.GenerateValidFormDefinition();
-        var createResponse = await _httpClient.PostAsJsonAsync("/api/forms", formRequest);
+        var createResponse = await TestClient.PostAsJsonAsync("/api/forms", formRequest);
         var createApiResponse = await createResponse.Content.ReadAsJsonAsync<ApiResponse<FormDefinitionResponse>>();
         var formId = createApiResponse!.Data!.Id;
 
-        _output.WriteLine($"Created form with ID: {formId}");
+        Output.WriteLine($"Created form with ID: {formId}");
 
         // Act - Delete the form
-        var deleteResponse = await _httpClient.DeleteAsync($"/api/forms/{formId}");
+        var deleteResponse = await TestClient.DeleteAsync($"/api/forms/{formId}");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, deleteResponse.StatusCode);
 
-        _output.WriteLine($"✓ Form deleted successfully");
+        Output.WriteLine($"✓ Form deleted successfully");
 
         // Verify the form is no longer accessible
-        var getResponse = await _httpClient.GetAsync($"/api/forms/{formId}");
+        var getResponse = await TestClient.GetAsync($"/api/forms/{formId}");
         Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
 
-        _output.WriteLine($"✓ Subsequent GET returned 404 as expected");
+        Output.WriteLine($"✓ Subsequent GET returned 404 as expected");
     }
 
     /// <summary>
@@ -697,33 +615,33 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
         await InitializeAuthenticationAsync();
         const int iterations = 10;
 
-        _output.WriteLine($"Starting Delete Then 404 property test with {iterations} iterations");
+        Output.WriteLine($"Starting Delete Then 404 property test with {iterations} iterations");
 
         // Act & Assert
         for (int i = 0; i < iterations; i++)
         {
             // Create a form
             var formRequest = TestDataGenerator.GenerateValidFormDefinition();
-            var createResponse = await _httpClient.PostAsJsonAsync("/api/forms", formRequest);
+            var createResponse = await TestClient.PostAsJsonAsync("/api/forms", formRequest);
             var createApiResponse = await createResponse.Content.ReadAsJsonAsync<ApiResponse<FormDefinitionResponse>>();
             var formId = createApiResponse!.Data!.Id;
 
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] Created form with ID: {formId}");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] Created form with ID: {formId}");
 
             // Delete the form
-            var deleteResponse = await _httpClient.DeleteAsync($"/api/forms/{formId}");
+            var deleteResponse = await TestClient.DeleteAsync($"/api/forms/{formId}");
             Assert.Equal(HttpStatusCode.OK, deleteResponse.StatusCode);
 
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] Form deleted");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] Form deleted");
 
             // Verify 404 on subsequent GET
-            var getResponse = await _httpClient.GetAsync($"/api/forms/{formId}");
+            var getResponse = await TestClient.GetAsync($"/api/forms/{formId}");
             Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
 
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ Delete then 404 verified");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ Delete then 404 verified");
         }
 
-        _output.WriteLine($"✓ All {iterations} iterations completed successfully");
+        Output.WriteLine($"✓ All {iterations} iterations completed successfully");
     }
 
     // ==================== Error Handling and Boundary Condition Tests ====================
@@ -746,39 +664,39 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
     {
         // Arrange - Create a new HTTP client without authentication
         // Use the app's CreateHttpClient method on the DistributedApplication instance
-        var unauthenticatedClient = _fixture.App.CreateHttpClient("apiservice");
+        var unauthenticatedClient = Fixture.App.CreateHttpClient("apiservice");
         unauthenticatedClient.Timeout = TimeSpan.FromSeconds(30);
         unauthenticatedClient.DefaultRequestHeaders.Accept.Add(
             new MediaTypeWithQualityHeaderValue("application/json"));
 
-        _output.WriteLine("Testing form endpoints without authentication");
+        Output.WriteLine("Testing form endpoints without authentication");
 
         // Test GET list
         var getListResponse = await unauthenticatedClient.GetAsync("/api/forms?current=1&pageSize=10");
         Assert.Equal(HttpStatusCode.Unauthorized, getListResponse.StatusCode);
-        _output.WriteLine("✓ GET /api/forms returned 401");
+        Output.WriteLine("✓ GET /api/forms returned 401");
 
         // Test POST create
         var formRequest = TestDataGenerator.GenerateValidFormDefinition();
         var postResponse = await unauthenticatedClient.PostAsJsonAsync("/api/forms", formRequest);
         Assert.Equal(HttpStatusCode.Unauthorized, postResponse.StatusCode);
-        _output.WriteLine("✓ POST /api/forms returned 401");
+        Output.WriteLine("✓ POST /api/forms returned 401");
 
         // Test GET by ID
         var testId = Guid.NewGuid().ToString();
         var getByIdResponse = await unauthenticatedClient.GetAsync($"/api/forms/{testId}");
         Assert.Equal(HttpStatusCode.Unauthorized, getByIdResponse.StatusCode);
-        _output.WriteLine("✓ GET /api/forms/{id} returned 401");
+        Output.WriteLine("✓ GET /api/forms/{id} returned 401");
 
         // Test PUT update
         var putResponse = await unauthenticatedClient.PutAsJsonAsync($"/api/forms/{testId}", formRequest);
         Assert.Equal(HttpStatusCode.Unauthorized, putResponse.StatusCode);
-        _output.WriteLine("✓ PUT /api/forms/{id} returned 401");
+        Output.WriteLine("✓ PUT /api/forms/{id} returned 401");
 
         // Test DELETE
         var deleteResponse = await unauthenticatedClient.DeleteAsync($"/api/forms/{testId}");
         Assert.Equal(HttpStatusCode.Unauthorized, deleteResponse.StatusCode);
-        _output.WriteLine("✓ DELETE /api/forms/{id} returned 401");
+        Output.WriteLine("✓ DELETE /api/forms/{id} returned 401");
     }
 
     /// <summary>
@@ -795,13 +713,13 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
     public async Task FormEndpoints_UnauthenticatedRequests_ShouldAlwaysReturn401()
     {
         // Arrange - Create a new HTTP client without authentication
-        var unauthenticatedClient = _fixture.App.CreateHttpClient("apiservice");
+        var unauthenticatedClient = Fixture.App.CreateHttpClient("apiservice");
         unauthenticatedClient.Timeout = TimeSpan.FromSeconds(30);
         unauthenticatedClient.DefaultRequestHeaders.Accept.Add(
             new MediaTypeWithQualityHeaderValue("application/json"));
         const int iterations = 10;
 
-        _output.WriteLine($"Starting Unauthenticated Request Rejection property test with {iterations} iterations");
+        Output.WriteLine($"Starting Unauthenticated Request Rejection property test with {iterations} iterations");
 
         // Act & Assert
         for (int i = 0; i < iterations; i++)
@@ -843,11 +761,11 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
 
             if (i % 20 == 0)
             {
-                _output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ {endpointDescription} returned 401");
+                Output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ {endpointDescription} returned 401");
             }
         }
 
-        _output.WriteLine($"✓ All {iterations} iterations completed successfully");
+        Output.WriteLine($"✓ All {iterations} iterations completed successfully");
     }
 
     /// <summary>
@@ -869,23 +787,23 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
         // Use a valid MongoDB ObjectId format (24 hex characters) instead of GUID
         var nonExistentId = "60d5f8a9b3c2e1f0a9b8c7d6";
 
-        _output.WriteLine($"Testing form endpoints with non-existent ID: {nonExistentId}");
+        Output.WriteLine($"Testing form endpoints with non-existent ID: {nonExistentId}");
 
         // Test GET by ID
-        var getResponse = await _httpClient.GetAsync($"/api/forms/{nonExistentId}");
+        var getResponse = await TestClient.GetAsync($"/api/forms/{nonExistentId}");
         Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
-        _output.WriteLine("✓ GET /api/forms/{non-existent-id} returned 404");
+        Output.WriteLine("✓ GET /api/forms/{non-existent-id} returned 404");
 
         // Test PUT update
         var formRequest = TestDataGenerator.GenerateValidFormDefinition();
-        var putResponse = await _httpClient.PutAsJsonAsync($"/api/forms/{nonExistentId}", formRequest);
+        var putResponse = await TestClient.PutAsJsonAsync($"/api/forms/{nonExistentId}", formRequest);
         Assert.Equal(HttpStatusCode.NotFound, putResponse.StatusCode);
-        _output.WriteLine("✓ PUT /api/forms/{non-existent-id} returned 404");
+        Output.WriteLine("✓ PUT /api/forms/{non-existent-id} returned 404");
 
         // Test DELETE
-        var deleteResponse = await _httpClient.DeleteAsync($"/api/forms/{nonExistentId}");
+        var deleteResponse = await TestClient.DeleteAsync($"/api/forms/{nonExistentId}");
         Assert.Equal(HttpStatusCode.NotFound, deleteResponse.StatusCode);
-        _output.WriteLine("✓ DELETE /api/forms/{non-existent-id} returned 404");
+        Output.WriteLine("✓ DELETE /api/forms/{non-existent-id} returned 404");
     }
 
     /// <summary>
@@ -906,7 +824,7 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
         await InitializeAuthenticationAsync();
         const int iterations = 10;
 
-        _output.WriteLine($"Starting Non-existent Resource 404 property test with {iterations} iterations");
+        Output.WriteLine($"Starting Non-existent Resource 404 property test with {iterations} iterations");
 
         // Act & Assert
         for (int i = 0; i < iterations; i++)
@@ -924,15 +842,15 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
             switch (operationIndex)
             {
                 case 0:
-                    response = await _httpClient.GetAsync($"/api/forms/{nonExistentId}");
+                    response = await TestClient.GetAsync($"/api/forms/{nonExistentId}");
                     operationDescription = "GET";
                     break;
                 case 1:
-                    response = await _httpClient.PutAsJsonAsync($"/api/forms/{nonExistentId}", formRequest);
+                    response = await TestClient.PutAsJsonAsync($"/api/forms/{nonExistentId}", formRequest);
                     operationDescription = "PUT";
                     break;
                 default:
-                    response = await _httpClient.DeleteAsync($"/api/forms/{nonExistentId}");
+                    response = await TestClient.DeleteAsync($"/api/forms/{nonExistentId}");
                     operationDescription = "DELETE";
                     break;
             }
@@ -941,11 +859,11 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
 
             if (i % 20 == 0)
             {
-                _output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ {operationDescription} with non-existent ID returned 404");
+                Output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ {operationDescription} with non-existent ID returned 404");
             }
         }
 
-        _output.WriteLine($"✓ All {iterations} iterations completed successfully");
+        Output.WriteLine($"✓ All {iterations} iterations completed successfully");
     }
 
     /// <summary>
@@ -966,39 +884,39 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
         // Arrange
         await InitializeAuthenticationAsync();
 
-        _output.WriteLine("Testing form list with invalid pagination parameters");
+        Output.WriteLine("Testing form list with invalid pagination parameters");
 
         // Test negative page number
-        var negativePageResponse = await _httpClient.GetAsync("/api/forms?current=-1&pageSize=10");
+        var negativePageResponse = await TestClient.GetAsync("/api/forms?current=-1&pageSize=10");
         Assert.True(
             negativePageResponse.StatusCode == HttpStatusCode.BadRequest ||
             negativePageResponse.StatusCode == HttpStatusCode.OK, // Some APIs may default to page 1
             $"Expected BadRequest or OK for negative page, got {negativePageResponse.StatusCode}");
-        _output.WriteLine($"✓ Negative page number handled: {negativePageResponse.StatusCode}");
+        Output.WriteLine($"✓ Negative page number handled: {negativePageResponse.StatusCode}");
 
         // Test page number exceeding maximum
-        var excessivePageResponse = await _httpClient.GetAsync("/api/forms?current=10001&pageSize=10");
+        var excessivePageResponse = await TestClient.GetAsync("/api/forms?current=10001&pageSize=10");
         Assert.True(
             excessivePageResponse.StatusCode == HttpStatusCode.BadRequest ||
             excessivePageResponse.StatusCode == HttpStatusCode.OK, // Some APIs may allow large page numbers
             $"Expected BadRequest or OK for excessive page, got {excessivePageResponse.StatusCode}");
-        _output.WriteLine($"✓ Excessive page number handled: {excessivePageResponse.StatusCode}");
+        Output.WriteLine($"✓ Excessive page number handled: {excessivePageResponse.StatusCode}");
 
         // Test negative page size
-        var negativePageSizeResponse = await _httpClient.GetAsync("/api/forms?current=1&pageSize=-1");
+        var negativePageSizeResponse = await TestClient.GetAsync("/api/forms?current=1&pageSize=-1");
         Assert.True(
             negativePageSizeResponse.StatusCode == HttpStatusCode.BadRequest ||
             negativePageSizeResponse.StatusCode == HttpStatusCode.OK, // Some APIs may default to a valid page size
             $"Expected BadRequest or OK for negative page size, got {negativePageSizeResponse.StatusCode}");
-        _output.WriteLine($"✓ Negative page size handled: {negativePageSizeResponse.StatusCode}");
+        Output.WriteLine($"✓ Negative page size handled: {negativePageSizeResponse.StatusCode}");
 
         // Test excessive page size
-        var excessivePageSizeResponse = await _httpClient.GetAsync("/api/forms?current=1&pageSize=10000");
+        var excessivePageSizeResponse = await TestClient.GetAsync("/api/forms?current=1&pageSize=10000");
         Assert.True(
             excessivePageSizeResponse.StatusCode == HttpStatusCode.BadRequest ||
             excessivePageSizeResponse.StatusCode == HttpStatusCode.OK, // Some APIs may cap page size
             $"Expected BadRequest or OK for excessive page size, got {excessivePageSizeResponse.StatusCode}");
-        _output.WriteLine($"✓ Excessive page size handled: {excessivePageSizeResponse.StatusCode}");
+        Output.WriteLine($"✓ Excessive page size handled: {excessivePageSizeResponse.StatusCode}");
     }
 
     /// <summary>
@@ -1018,39 +936,39 @@ public class FormDefinitionTests : IClassFixture<AppHostFixture>
         // Arrange
         await InitializeAuthenticationAsync();
 
-        _output.WriteLine("Testing form creation with fields exceeding length limits");
+        Output.WriteLine("Testing form creation with fields exceeding length limits");
 
         // Test name exceeding 100 characters
         var longNameRequest = TestDataGenerator.GenerateValidFormDefinition();
         longNameRequest = longNameRequest with { Name = new string('A', 101) };
 
-        var longNameResponse = await _httpClient.PostAsJsonAsync("/api/forms", longNameRequest);
+        var longNameResponse = await TestClient.PostAsJsonAsync("/api/forms", longNameRequest);
         Assert.True(
             longNameResponse.StatusCode == HttpStatusCode.BadRequest ||
             longNameResponse.StatusCode == HttpStatusCode.OK, // Some APIs may truncate
             $"Expected BadRequest or OK for long name, got {longNameResponse.StatusCode}");
-        _output.WriteLine($"✓ Long name (101 chars) handled: {longNameResponse.StatusCode}");
+        Output.WriteLine($"✓ Long name (101 chars) handled: {longNameResponse.StatusCode}");
 
         // Test description exceeding 500 characters
         var longDescriptionRequest = TestDataGenerator.GenerateValidFormDefinition();
         longDescriptionRequest = longDescriptionRequest with { Description = new string('B', 501) };
 
-        var longDescriptionResponse = await _httpClient.PostAsJsonAsync("/api/forms", longDescriptionRequest);
+        var longDescriptionResponse = await TestClient.PostAsJsonAsync("/api/forms", longDescriptionRequest);
         Assert.True(
             longDescriptionResponse.StatusCode == HttpStatusCode.BadRequest ||
             longDescriptionResponse.StatusCode == HttpStatusCode.OK, // Some APIs may truncate
             $"Expected BadRequest or OK for long description, got {longDescriptionResponse.StatusCode}");
-        _output.WriteLine($"✓ Long description (501 chars) handled: {longDescriptionResponse.StatusCode}");
+        Output.WriteLine($"✓ Long description (501 chars) handled: {longDescriptionResponse.StatusCode}");
 
         // Test key exceeding 50 characters
         var longKeyRequest = TestDataGenerator.GenerateValidFormDefinition();
         longKeyRequest = longKeyRequest with { Key = new string('C', 51) };
 
-        var longKeyResponse = await _httpClient.PostAsJsonAsync("/api/forms", longKeyRequest);
+        var longKeyResponse = await TestClient.PostAsJsonAsync("/api/forms", longKeyRequest);
         Assert.True(
             longKeyResponse.StatusCode == HttpStatusCode.BadRequest ||
             longKeyResponse.StatusCode == HttpStatusCode.OK, // Some APIs may truncate or ignore
             $"Expected BadRequest or OK for long key, got {longKeyResponse.StatusCode}");
-        _output.WriteLine($"✓ Long key (51 chars) handled: {longKeyResponse.StatusCode}");
+        Output.WriteLine($"✓ Long key (51 chars) handled: {longKeyResponse.StatusCode}");
     }
 }

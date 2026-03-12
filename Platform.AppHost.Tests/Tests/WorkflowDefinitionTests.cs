@@ -18,24 +18,9 @@ namespace Platform.AppHost.Tests.Tests;
 [Collection("AppHost Collection")]
 public class WorkflowDefinitionTests : BaseIntegrationTest
 {
-    private string _accessToken = string.Empty;
-
     public WorkflowDefinitionTests(AppHostFixture fixture, ITestOutputHelper output)
         : base(fixture, output)
     {
-    }
-
-    /// <summary>
-    /// Initializes authentication for the test by registering a unique test user
-    /// and obtaining an access token. This method should be called at the beginning
-    /// of each test that requires authentication.
-    /// </summary>
-    /// <remarks>
-    /// Validates: Requirements 5.2, 8.1, 8.2
-    /// </remarks>
-    private async Task InitializeAuthenticationAsync()
-    {
-        _accessToken = await CreateAndLoginNewUserAsync();
     }
 
     /// <summary>
@@ -1504,7 +1489,64 @@ public class WorkflowDefinitionTests : BaseIntegrationTest
             $"Expected BadRequest or OK for long category, got {longCategoryResponse.StatusCode}");
         Output.WriteLine($"✓ Long category (101 chars) handled: {longCategoryResponse.StatusCode}");
     }
+
+    /// <summary>
+    /// Tests creating a workflow with a complex parallel graph (fork/join).
+    /// </summary>
+    [Fact]
+    public async Task CreateWorkflow_WithComplexParallelGraph_ShouldSucceed()
+    {
+        // Arrange
+        await InitializeAuthenticationAsync();
+        var workflowRequest = TestDataGenerator.GenerateParallelWorkflow();
+        Output.WriteLine($"Creating parallel workflow: {workflowRequest.Name}");
+
+        // Act
+        var response = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var apiResponse = await response.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
+        Assert.NotNull(apiResponse);
+        Assert.True(apiResponse.Success);
+        Assert.NotNull(apiResponse.Data?.Graph?.Nodes);
+        Assert.Equal(6, apiResponse.Data.Graph.Nodes.Count); // Start, Fork, B1, B2, Join, End
+
+        Output.WriteLine($"✓ Parallel workflow created successfully - ID: {apiResponse.Data.Id}");
+    }
+
+    /// <summary>
+    /// Tests creating a workflow with conditional branching.
+    /// </summary>
+    [Fact]
+    public async Task CreateWorkflow_WithConditionBranching_ShouldSucceed()
+    {
+        // Arrange
+        await InitializeAuthenticationAsync();
+        var workflowRequest = TestDataGenerator.GenerateConditionWorkflow();
+        Output.WriteLine($"Creating condition workflow: {workflowRequest.Name}");
+
+        // Act
+        var response = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var apiResponse = await response.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
+        Assert.NotNull(apiResponse);
+        Assert.True(apiResponse.Success);
+        Assert.NotNull(apiResponse.Data?.Graph?.Nodes);
+        Assert.Equal(5, apiResponse.Data.Graph.Nodes.Count); // Start, Cond, TruePath, FalsePath, End
+
+        // Verify edges have source handles
+        var condEdges = apiResponse.Data.Graph.Edges.Where(e => e.Source == "cond").ToList();
+        Assert.Equal(2, condEdges.Count);
+        Assert.Contains(condEdges, e => e.SourceHandle == "true");
+        Assert.Contains(condEdges, e => e.SourceHandle == "false");
+
+        Output.WriteLine($"✓ Condition workflow created successfully - ID: {apiResponse.Data.Id}");
+    }
 }
+
 
 /// <summary>
 /// Response model for workflow definition (matches API response structure).

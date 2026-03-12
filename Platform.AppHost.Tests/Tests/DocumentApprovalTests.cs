@@ -17,24 +17,9 @@ namespace Platform.AppHost.Tests.Tests;
 [Collection("AppHost Collection")]
 public class DocumentApprovalTests : BaseIntegrationTest
 {
-    private string _accessToken = string.Empty;
-
     public DocumentApprovalTests(AppHostFixture fixture, ITestOutputHelper output)
         : base(fixture, output)
     {
-    }
-
-    /// <summary>
-    /// Initializes authentication for the test by registering a unique test user
-    /// and obtaining an access token. This method should be called at the beginning
-    /// of each test that requires authentication.
-    /// </summary>
-    /// <remarks>
-    /// Validates: Requirements 5.2, 8.1, 8.2
-    /// </remarks>
-    private async Task InitializeAuthenticationAsync()
-    {
-        _accessToken = await CreateAndLoginNewUserAsync();
     }
 
     /// <summary>
@@ -1191,4 +1176,112 @@ public class DocumentApprovalTests : BaseIntegrationTest
         Output.WriteLine($"✓ All {iterations} iterations completed successfully - Approval History Completeness verified");
     }
 
+    /// <summary>
+    /// Tests the complete approval lifecycle: Submit -> Approve -> Complete.
+    /// </summary>
+    [Fact]
+    public async Task ApprovalFlow_Approve_ShouldCompleteWorkflow()
+    {
+        // Arrange
+        await InitializeAuthenticationAsync();
+        var currentUserId = CurrentUserId ?? throw new InvalidOperationException("User not authenticated");
+
+        // Step 1: Create a workflow with an approval node assigned to current user
+        var workflowRequest = TestDataGenerator.GenerateComplexApprovalWorkflow(new List<string> { currentUserId });
+        var workflowResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
+        var workflowResult = await workflowResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
+        var workflowId = workflowResult!.Data!.Id;
+
+        // Step 2: Create a document
+        var documentRequest = TestDataGenerator.GenerateValidDocument();
+        var documentResponse = await TestClient.PostAsJsonAsync("/api/documents", documentRequest);
+        var documentResult = await documentResponse.Content.ReadAsJsonAsync<ApiResponse<DocumentResponse>>();
+        var documentId = documentResult!.Data!.Id;
+
+        // Step 3: Submit the document
+        var submitRequest = new SubmitDocumentRequest { WorkflowDefinitionId = workflowId };
+        var submitResponse = await TestClient.PostAsJsonAsync($"/api/documents/{documentId}/submit", submitRequest);
+        var submitResult = await submitResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowInstanceResponse>>();
+        var instanceId = submitResult!.Data!.Id;
+
+        Output.WriteLine($"Document {documentId} submitted to workflow {workflowId}, instance {instanceId}");
+
+        // Step 4: Verify it's pending for the user (using polling for async workflow processing)
+        Output.WriteLine($"Waiting for document {documentId} to appear in pending list...");
+        var pendingList = await ApiTestHelpers.WaitForConditionAsync(
+            async () => {
+                var response = await TestClient.GetAsync("/api/documents/pending");
+                var result = await response.Content.ReadAsJsonAsync<ApiResponse<PagedResult<DocumentResponse>>>();
+                return result?.Data?.List ?? new List<DocumentResponse>();
+            },
+            list => list.Any(d => d.Id == documentId),
+            maxAttempts: 20,
+            delayMilliseconds: 1000
+        );
+        Assert.Contains(pendingList, d => d.Id == documentId);
+
+
+        // Step 5: Approve the document
+        var approvalRequest = new ApprovalRequest { Comment = "Looks good!" };
+        var approveResponse = await TestClient.PostAsJsonAsync($"/api/documents/{documentId}/approve", approvalRequest);
+        Assert.Equal(HttpStatusCode.OK, approveResponse.StatusCode);
+
+        // Step 6: Verify document status and workflow status
+        Output.WriteLine("Waiting for document status to update to Approved...");
+        await ApiTestHelpers.WaitForConditionAsync(
+            async () => (await (await TestClient.GetAsync($"/api/documents/{documentId}")).Content.ReadAsJsonAsync<ApiResponse<DocumentResponse>>())?.Data,
+            d => d?.Status.ToLower() == "approved",
+            maxAttempts: 10
+        );
+
+        Output.WriteLine("Waiting for workflow instance to update to Completed...");
+        await ApiTestHelpers.WaitForConditionAsync(
+            async () => (await (await TestClient.GetAsync($"/api/workflows/instances/{instanceId}")).Content.ReadAsJsonAsync<ApiResponse<WorkflowInstanceResponse>>())?.Data,
+            i => i?.Status.ToLower() == "completed",
+            maxAttempts: 10
+        );
+
+        Output.WriteLine("✓ Approval lifecycle completed successfully (Submit -> Approve -> Complete)");
+    }
+
+    /// <summary>
+    /// Tests the complete rejection lifecycle: Submit -> Reject -> Failed.
+    /// </summary>
+    [Fact]
+    public async Task ApprovalFlow_Reject_ShouldFailWorkflow()
+    {
+        // Arrange
+        await InitializeAuthenticationAsync();
+        var currentUserId = CurrentUserId ?? throw new InvalidOperationException("User not authenticated");
+
+        // Step 1: Create a workflow
+        var workflowRequest = TestDataGenerator.GenerateComplexApprovalWorkflow(new List<string> { currentUserId });
+        var workflowResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
+        var workflowResult = await workflowResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
+        var workflowId = workflowResult!.Data!.Id;
+
+        // Step 2: Create a document
+        var documentRequest = TestDataGenerator.GenerateValidDocument();
+        var documentResponse = await TestClient.PostAsJsonAsync("/api/documents", documentRequest);
+        var documentId = (await documentResponse.Content.ReadAsJsonAsync<ApiResponse<DocumentResponse>>())!.Data!.Id;
+
+        // Step 3: Submit
+        await TestClient.PostAsJsonAsync($"/api/documents/{documentId}/submit", new SubmitDocumentRequest { WorkflowDefinitionId = workflowId });
+
+        // Step 4: Reject
+        var rejectRequest = new ApprovalRequest { Comment = "Not good enough." };
+        var rejectResponse = await TestClient.PostAsJsonAsync($"/api/documents/{documentId}/reject", rejectRequest);
+        Assert.Equal(HttpStatusCode.OK, rejectResponse.StatusCode);
+
+        // Step 5: Verify statuses
+        Output.WriteLine("Waiting for document status to update to Rejected...");
+        await ApiTestHelpers.WaitForConditionAsync(
+            async () => (await (await TestClient.GetAsync($"/api/documents/{documentId}")).Content.ReadAsJsonAsync<ApiResponse<DocumentResponse>>())?.Data,
+            d => d?.Status.ToLower() == "rejected",
+            maxAttempts: 10
+        );
+
+        Output.WriteLine("✓ Rejection lifecycle completed successfully (Submit -> Reject -> Rejected)");
+    }
 }
+

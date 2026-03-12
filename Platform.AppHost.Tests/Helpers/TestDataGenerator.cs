@@ -362,6 +362,7 @@ public static class TestDataGenerator
     /// All nodes are connected sequentially.
     /// </summary>
     /// <param name="nodeType">The type of node to include (e.g., NodeTypes.Approval, NodeTypes.Ai).</param>
+    /// <param name="approverIds">Optional list of specific user IDs for the approval node.</param>
     /// <returns>A WorkflowDefinitionRequest containing the specified node type.</returns>
     public static WorkflowDefinitionRequest GenerateWorkflowWithNodeType(string nodeType, List<string>? approverIds = null)
     {
@@ -442,6 +443,123 @@ public static class TestDataGenerator
             IsActive = true
         };
     }
+
+    /// <summary>
+    /// Generates a workflow definition with a condition node for branching.
+    /// Graph: Start -> Condition -> [TrueBranch -> End, FalseBranch -> End]
+    /// </summary>
+    public static WorkflowDefinitionRequest GenerateConditionWorkflow()
+    {
+        var counter = GetNextId();
+        var guid = Guid.NewGuid().ToString("N")[..8];
+        var name = $"condition_wf_{counter}_{guid}";
+
+        var nodes = new List<WorkflowNodeRequest>
+        {
+            new WorkflowNodeRequest { Id = "start", Type = NodeTypes.Start, Data = new NodeDataRequest { Label = "Start", NodeType = NodeTypes.Start }, Position = new NodePositionRequest { X = 100, Y = 200 } },
+            new WorkflowNodeRequest { Id = "cond", Type = NodeTypes.Condition, Data = new NodeDataRequest { Label = "Condition", NodeType = NodeTypes.Condition, Config = new { condition = new { expression = "vars.amount > 100" } } }, Position = new NodePositionRequest { X = 300, Y = 200 } },
+            new WorkflowNodeRequest { Id = "true_path", Type = NodeTypes.Log, Data = new NodeDataRequest { Label = "True Path", NodeType = NodeTypes.Log, Config = new { log = new { message = "Condition met" } } }, Position = new NodePositionRequest { X = 500, Y = 100 } },
+            new WorkflowNodeRequest { Id = "false_path", Type = NodeTypes.Log, Data = new NodeDataRequest { Label = "False Path", NodeType = NodeTypes.Log, Config = new { log = new { message = "Condition not met" } } }, Position = new NodePositionRequest { X = 500, Y = 300 } },
+            new WorkflowNodeRequest { Id = "end", Type = NodeTypes.End, Data = new NodeDataRequest { Label = "End", NodeType = NodeTypes.End }, Position = new NodePositionRequest { X = 700, Y = 200 } }
+        };
+
+        var edges = new List<WorkflowEdgeRequest>
+        {
+            new WorkflowEdgeRequest { Id = "e1", Source = "start", Target = "cond" },
+            new WorkflowEdgeRequest { Id = "e2", Source = "cond", Target = "true_path", SourceHandle = "true" },
+            new WorkflowEdgeRequest { Id = "e3", Source = "cond", Target = "false_path", SourceHandle = "false" },
+            new WorkflowEdgeRequest { Id = "e4", Source = "true_path", Target = "end" },
+            new WorkflowEdgeRequest { Id = "e5", Source = "false_path", Target = "end" }
+        };
+
+        return new WorkflowDefinitionRequest
+        {
+            Name = name,
+            Category = "Branching",
+            Graph = new WorkflowGraphRequest { Nodes = nodes, Edges = edges }
+        };
+    }
+
+    /// <summary>
+    /// Generates a workflow definition with a parallel gateway.
+    /// Graph: Start -> Parallel(Fork) -> [Branch1, Branch2] -> Parallel(Join) -> End
+    /// </summary>
+    public static WorkflowDefinitionRequest GenerateParallelWorkflow()
+    {
+        var counter = GetNextId();
+        var guid = Guid.NewGuid().ToString("N")[..8];
+        var name = $"parallel_wf_{counter}_{guid}";
+
+        var nodes = new List<WorkflowNodeRequest>
+        {
+            new WorkflowNodeRequest { Id = "start", Type = NodeTypes.Start, Data = new NodeDataRequest { Label = "Start", NodeType = NodeTypes.Start }, Position = new NodePositionRequest { X = 100, Y = 200 } },
+            new WorkflowNodeRequest { Id = "fork", Type = NodeTypes.Parallel, Data = new NodeDataRequest { Label = "Fork", NodeType = NodeTypes.Parallel }, Position = new NodePositionRequest { X = 300, Y = 200 } },
+            new WorkflowNodeRequest { Id = "b1", Type = NodeTypes.Log, Data = new NodeDataRequest { Label = "Branch 1", NodeType = NodeTypes.Log, Config = new { log = new { message = "Executing Branch 1" } } }, Position = new NodePositionRequest { X = 500, Y = 100 } },
+            new WorkflowNodeRequest { Id = "b2", Type = NodeTypes.Log, Data = new NodeDataRequest { Label = "Branch 2", NodeType = NodeTypes.Log, Config = new { log = new { message = "Executing Branch 2" } } }, Position = new NodePositionRequest { X = 500, Y = 300 } },
+            new WorkflowNodeRequest { Id = "join", Type = NodeTypes.Parallel, Data = new NodeDataRequest { Label = "Join", NodeType = NodeTypes.Parallel }, Position = new NodePositionRequest { X = 700, Y = 200 } },
+            new WorkflowNodeRequest { Id = "end", Type = NodeTypes.End, Data = new NodeDataRequest { Label = "End", NodeType = NodeTypes.End }, Position = new NodePositionRequest { X = 900, Y = 200 } }
+        };
+
+        var edges = new List<WorkflowEdgeRequest>
+        {
+            new WorkflowEdgeRequest { Id = "e1", Source = "start", Target = "fork" },
+            new WorkflowEdgeRequest { Id = "e2", Source = "fork", Target = "b1" },
+            new WorkflowEdgeRequest { Id = "e3", Source = "fork", Target = "b2" },
+            new WorkflowEdgeRequest { Id = "e4", Source = "b1", Target = "join" },
+            new WorkflowEdgeRequest { Id = "e5", Source = "b2", Target = "join" },
+            new WorkflowEdgeRequest { Id = "e6", Source = "join", Target = "end" }
+        };
+
+        return new WorkflowDefinitionRequest
+        {
+            Name = name,
+            Category = "Parallel",
+            Graph = new WorkflowGraphRequest { Nodes = nodes, Edges = edges }
+        };
+    }
+
+    /// <summary>
+    /// Generates a complex approval workflow specifically for functional lifecycle testing.
+    /// Graph: Start -> Approval -> End
+    /// </summary>
+    public static WorkflowDefinitionRequest GenerateComplexApprovalWorkflow(List<string>? approverIds = null)
+    {
+        var counter = GetNextId();
+        var guid = Guid.NewGuid().ToString("N")[..8];
+        var name = $"approval_wf_{counter}_{guid}";
+
+        var nodes = new List<WorkflowNodeRequest>
+        {
+            new WorkflowNodeRequest { Id = "start", Type = NodeTypes.Start, Data = new NodeDataRequest { Label = "Start", NodeType = NodeTypes.Start }, Position = new NodePositionRequest { X = 100, Y = 200 } },
+            new WorkflowNodeRequest 
+            { 
+                Id = "approval_node", 
+                Type = NodeTypes.Approval, 
+                Data = new NodeDataRequest 
+                { 
+                    Label = "Approver Approval", 
+                    NodeType = NodeTypes.Approval, 
+                    Config = GenerateNodeConfig(NodeTypes.Approval, approverIds)
+                }, 
+                Position = new NodePositionRequest { X = 400, Y = 200 } 
+            },
+            new WorkflowNodeRequest { Id = "end", Type = NodeTypes.End, Data = new NodeDataRequest { Label = "End", NodeType = NodeTypes.End }, Position = new NodePositionRequest { X = 700, Y = 200 } }
+        };
+
+        var edges = new List<WorkflowEdgeRequest>
+        {
+            new WorkflowEdgeRequest { Id = "e1", Source = "start", Target = "approval_node" },
+            new WorkflowEdgeRequest { Id = "e2", Source = "approval_node", Target = "end", SourceHandle = "approve" }
+        };
+
+        return new WorkflowDefinitionRequest
+        {
+            Name = name,
+            Category = "Approval",
+            Graph = new WorkflowGraphRequest { Nodes = nodes, Edges = edges }
+        };
+    }
+
 
     /// <summary>
     /// Generates a valid document with unique title and default content.

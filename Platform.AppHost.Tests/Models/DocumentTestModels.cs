@@ -92,7 +92,14 @@ public record ApprovalRequest
     /// Optional comment for the approval action (required for rejection).
     /// </summary>
     public string? Comment { get; init; }
+
+    /// <summary>
+    /// Optional variables to update during the approval action.
+    /// </summary>
+    public Dictionary<string, object>? Variables { get; init; }
 }
+
+
 
 /// <summary>
 /// Response model for an approval record in the approval history.

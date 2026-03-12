@@ -16,93 +16,11 @@ namespace Platform.AppHost.Tests.Tests;
 /// Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 5.1, 5.2, 5.4, 8.1, 8.2
 /// </remarks>
 [Collection("AppHost Collection")]
-public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
+public class KnowledgeBaseTests : BaseIntegrationTest
 {
-    private readonly AppHostFixture _fixture;
-    private readonly ITestOutputHelper _output;
-    private HttpClient _httpClient = null!;
-    private string _accessToken = string.Empty;
-
     public KnowledgeBaseTests(AppHostFixture fixture, ITestOutputHelper output)
+        : base(fixture, output)
     {
-        _fixture = fixture;
-        _output = output;
-    }
-
-    /// <summary>
-    /// Initializes authentication for the test by registering a unique test user
-    /// and obtaining an access token. This method should be called at the beginning
-    /// of each test that requires authentication.
-    /// </summary>
-    /// <remarks>
-    /// Validates: Requirements 5.2, 8.1, 8.2
-    /// 
-    /// This method:
-    /// 1. Generates a unique test user using TestDataGenerator.GenerateValidRegistration()
-    /// 2. Registers the user via POST /api/auth/register
-    /// 3. Logs in via POST /api/auth/login
-    /// 4. Stores the access token in _accessToken field
-    /// 5. Sets the Authorization header on _httpClient
-    /// </remarks>
-    private async Task InitializeAuthenticationAsync()
-    {
-        // Create a new HTTP client for this test
-        _httpClient = _fixture.HttpClient;
-
-        // Generate unique test user credentials
-        var registration = TestDataGenerator.GenerateValidRegistration();
-
-        _output.WriteLine($"Registering test user: {registration.Username}");
-
-        // Register the test user
-        var registerResponse = await _httpClient.PostAsJsonAsync(
-            "/api/auth/register",
-            registration);
-
-        Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
-
-        var registerApiResponse = await registerResponse.Content
-            .ReadAsJsonAsync<ApiResponse<RegisterResponseData>>();
-
-        Assert.NotNull(registerApiResponse);
-        Assert.True(registerApiResponse.Success,
-            $"Registration failed for user '{registration.Username}'. Message: {registerApiResponse.Message}");
-        Assert.NotNull(registerApiResponse.Data);
-
-        _output.WriteLine($"✓ User registered successfully - User ID: {registerApiResponse.Data.Id}");
-
-        // Login to get access token
-        var loginRequest = new LoginRequest
-        {
-            Username = registration.Username,
-            Password = registration.Password
-        };
-
-        var loginResponse = await _httpClient.PostAsJsonAsync(
-            "/api/auth/login",
-            loginRequest);
-
-        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
-
-        var loginApiResponse = await loginResponse.Content
-            .ReadAsJsonAsync<ApiResponse<LoginResponseData>>();
-
-        Assert.NotNull(loginApiResponse);
-        Assert.True(loginApiResponse.Success,
-            $"Login failed for user '{registration.Username}'. Message: {loginApiResponse.Message}");
-        Assert.NotNull(loginApiResponse.Data);
-        Assert.NotNull(loginApiResponse.Data.Token);
-
-        // Store the access token
-        _accessToken = loginApiResponse.Data.Token;
-
-        _output.WriteLine($"✓ User logged in successfully - Access token obtained");
-
-        // Set the Authorization header on the HTTP client
-        _httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", _accessToken);
-
-        _output.WriteLine($"✓ Authorization header set on HTTP client");
     }
 
     /// <summary>
@@ -124,10 +42,10 @@ public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
         await InitializeAuthenticationAsync();
         var kbRequest = TestDataGenerator.GenerateValidKnowledgeBase();
 
-        _output.WriteLine($"Creating knowledge base with name: {kbRequest.Name}");
+        Output.WriteLine($"Creating knowledge base with name: {kbRequest.Name}");
 
         // Act
-        var response = await _httpClient.PostAsJsonAsync("/api/workflow/knowledge-bases", kbRequest);
+        var response = await TestClient.PostAsJsonAsync("/api/workflow/knowledge-bases", kbRequest);
 
         // Read response first before asserting
         var apiResponse = await response.Content.ReadAsJsonAsync<ApiResponse<KnowledgeBaseResponse>>();
@@ -135,13 +53,13 @@ public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
         // Log the error details if the request failed
         if (response.StatusCode != HttpStatusCode.OK)
         {
-            _output.WriteLine($"API returned {response.StatusCode}");
-            _output.WriteLine($"API Error - Code: {apiResponse?.Code}, Message: {apiResponse?.Message}");
+            Output.WriteLine($"API returned {response.StatusCode}");
+            Output.WriteLine($"API Error - Code: {apiResponse?.Code}, Message: {apiResponse?.Message}");
             if (apiResponse?.Errors != null)
             {
                 foreach (var error in apiResponse.Errors)
                 {
-                    _output.WriteLine($"  Field '{error.Key}': {string.Join(", ", error.Value)}");
+                    Output.WriteLine($"  Field '{error.Key}': {string.Join(", ", error.Value)}");
                 }
             }
         }
@@ -154,7 +72,7 @@ public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
         Assert.NotEmpty(apiResponse.Data.Id);
         Assert.Equal(kbRequest.Name, apiResponse.Data.Name);
 
-        _output.WriteLine($"✓ Knowledge base created successfully - ID: {apiResponse.Data.Id}");
+        Output.WriteLine($"✓ Knowledge base created successfully - ID: {apiResponse.Data.Id}");
     }
 
     /// <summary>
@@ -180,10 +98,10 @@ public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
             Category = "测试分类"
         };
 
-        _output.WriteLine("Attempting to create knowledge base with missing name field");
+        Output.WriteLine("Attempting to create knowledge base with missing name field");
 
         // Act
-        var response = await _httpClient.PostAsJsonAsync("/api/workflow/knowledge-bases", kbRequest);
+        var response = await TestClient.PostAsJsonAsync("/api/workflow/knowledge-bases", kbRequest);
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -201,7 +119,7 @@ public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
         Assert.True(hasValidationError,
             $"Expected validation error for missing name field. Code: {apiResponse.Code}, Message: {apiResponse.Message}");
 
-        _output.WriteLine($"✓ Validation error returned as expected - Code: {apiResponse.Code}, Message: {apiResponse.Message}");
+        Output.WriteLine($"✓ Validation error returned as expected - Code: {apiResponse.Code}, Message: {apiResponse.Message}");
     }
 
     /// <summary>
@@ -222,7 +140,7 @@ public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
         await InitializeAuthenticationAsync();
         const int iterations = 10;
 
-        _output.WriteLine($"Starting CRUD Round-trip property test with {iterations} iterations");
+        Output.WriteLine($"Starting CRUD Round-trip property test with {iterations} iterations");
 
         // Act & Assert
         for (int i = 0; i < iterations; i++)
@@ -230,10 +148,10 @@ public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
             // Generate random knowledge base data
             var kbRequest = TestDataGenerator.GenerateValidKnowledgeBase();
 
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] Creating knowledge base: {kbRequest.Name}");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] Creating knowledge base: {kbRequest.Name}");
 
             // Create knowledge base
-            var createResponse = await _httpClient.PostAsJsonAsync("/api/workflow/knowledge-bases", kbRequest);
+            var createResponse = await TestClient.PostAsJsonAsync("/api/workflow/knowledge-bases", kbRequest);
 
             // Read response
             var createApiResponse = await createResponse.Content
@@ -249,10 +167,10 @@ public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
 
             var createdKbId = createApiResponse.Data.Id;
 
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] Knowledge base created - ID: {createdKbId}");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] Knowledge base created - ID: {createdKbId}");
 
             // Retrieve knowledge base by ID
-            var getResponse = await _httpClient.GetAsync($"/api/workflow/knowledge-bases/{createdKbId}");
+            var getResponse = await TestClient.GetAsync($"/api/workflow/knowledge-bases/{createdKbId}");
 
             // Read response
             var getApiResponse = await getResponse.Content
@@ -270,10 +188,10 @@ public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
             Assert.Equal(kbRequest.Category, getApiResponse.Data.Category);
             Assert.Equal(kbRequest.Description, getApiResponse.Data.Description);
 
-            _output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ Round-trip consistency verified");
+            Output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ Round-trip consistency verified");
         }
 
-        _output.WriteLine($"✓ All {iterations} iterations completed successfully");
+        Output.WriteLine($"✓ All {iterations} iterations completed successfully");
     }
 
     /// <summary>
@@ -297,13 +215,13 @@ public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
         for (int i = 0; i < 3; i++)
         {
             var kbRequest = TestDataGenerator.GenerateValidKnowledgeBase();
-            await _httpClient.PostAsJsonAsync("/api/workflow/knowledge-bases", kbRequest);
+            await TestClient.PostAsJsonAsync("/api/workflow/knowledge-bases", kbRequest);
         }
 
-        _output.WriteLine("Fetching knowledge base list with pagination");
+        Output.WriteLine("Fetching knowledge base list with pagination");
 
         // Act
-        var response = await _httpClient.GetAsync("/api/workflow/knowledge-bases?current=1&pageSize=10");
+        var response = await TestClient.GetAsync("/api/workflow/knowledge-bases?current=1&pageSize=10");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -315,7 +233,7 @@ public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
         // Verify pagination structure
         ApiTestHelpers.AssertPagedResponse<KnowledgeBaseResponse>(apiResponse, expectedCurrent: 1, expectedPageSize: 10);
 
-        _output.WriteLine("✓ Knowledge base list returned with valid pagination structure");
+        Output.WriteLine("✓ Knowledge base list returned with valid pagination structure");
     }
 
     /// <summary>
@@ -340,17 +258,17 @@ public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
         var matchingKbRequest = TestDataGenerator.GenerateValidKnowledgeBase();
         matchingKbRequest = matchingKbRequest with { Name = $"{uniqueKeyword}_kb" };
 
-        var createResponse = await _httpClient.PostAsJsonAsync("/api/workflow/knowledge-bases", matchingKbRequest);
+        var createResponse = await TestClient.PostAsJsonAsync("/api/workflow/knowledge-bases", matchingKbRequest);
         Assert.Equal(HttpStatusCode.OK, createResponse.StatusCode);
 
-        _output.WriteLine($"Created knowledge base with keyword: {uniqueKeyword}");
+        Output.WriteLine($"Created knowledge base with keyword: {uniqueKeyword}");
 
         // Create another knowledge base without the keyword
         var nonMatchingKbRequest = TestDataGenerator.GenerateValidKnowledgeBase();
-        await _httpClient.PostAsJsonAsync("/api/workflow/knowledge-bases", nonMatchingKbRequest);
+        await TestClient.PostAsJsonAsync("/api/workflow/knowledge-bases", nonMatchingKbRequest);
 
         // Act
-        var response = await _httpClient.GetAsync($"/api/workflow/knowledge-bases?keyword={uniqueKeyword}&current=1&pageSize=10");
+        var response = await TestClient.GetAsync($"/api/workflow/knowledge-bases?keyword={uniqueKeyword}&current=1&pageSize=10");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -371,7 +289,7 @@ public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
             Assert.Contains(uniqueKeyword, name, StringComparison.OrdinalIgnoreCase);
         }
 
-        _output.WriteLine($"✓ Keyword filtering returned only matching knowledge bases");
+        Output.WriteLine($"✓ Keyword filtering returned only matching knowledge bases");
     }
 
     /// <summary>
@@ -394,11 +312,11 @@ public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
 
         // Create a knowledge base first
         var kbRequest = TestDataGenerator.GenerateValidKnowledgeBase();
-        var createResponse = await _httpClient.PostAsJsonAsync("/api/workflow/knowledge-bases", kbRequest);
+        var createResponse = await TestClient.PostAsJsonAsync("/api/workflow/knowledge-bases", kbRequest);
         var createApiResponse = await createResponse.Content.ReadAsJsonAsync<ApiResponse<KnowledgeBaseResponse>>();
         var kbId = createApiResponse!.Data!.Id;
 
-        _output.WriteLine($"Created knowledge base with ID: {kbId}");
+        Output.WriteLine($"Created knowledge base with ID: {kbId}");
 
         // Prepare update data
         var updateRequest = kbRequest with
@@ -408,10 +326,10 @@ public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
             IsActive = false
         };
 
-        _output.WriteLine($"Updating knowledge base to name: {updateRequest.Name}");
+        Output.WriteLine($"Updating knowledge base to name: {updateRequest.Name}");
 
         // Act
-        var response = await _httpClient.PutAsJsonAsync($"/api/workflow/knowledge-bases/{kbId}", updateRequest);
+        var response = await TestClient.PutAsJsonAsync($"/api/workflow/knowledge-bases/{kbId}", updateRequest);
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -424,17 +342,17 @@ public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
         Assert.Equal(updateRequest.Description, apiResponse.Data.Description);
         Assert.Equal(updateRequest.IsActive, apiResponse.Data.IsActive);
 
-        _output.WriteLine($"✓ Knowledge base updated successfully");
+        Output.WriteLine($"✓ Knowledge base updated successfully");
 
         // Verify the update persisted by fetching the knowledge base again
-        var getResponse = await _httpClient.GetAsync($"/api/workflow/knowledge-bases/{kbId}");
+        var getResponse = await TestClient.GetAsync($"/api/workflow/knowledge-bases/{kbId}");
         var getApiResponse = await getResponse.Content.ReadAsJsonAsync<ApiResponse<KnowledgeBaseResponse>>();
         Assert.NotNull(getApiResponse);
         Assert.True(getApiResponse.Success);
         Assert.Equal(updateRequest.Name, getApiResponse.Data!.Name);
         Assert.Equal(updateRequest.IsActive, getApiResponse.Data.IsActive);
 
-        _output.WriteLine($"✓ Update verified via GET request");
+        Output.WriteLine($"✓ Update verified via GET request");
     }
 
     /// <summary>
@@ -455,25 +373,25 @@ public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
 
         // Create a knowledge base first
         var kbRequest = TestDataGenerator.GenerateValidKnowledgeBase();
-        var createResponse = await _httpClient.PostAsJsonAsync("/api/workflow/knowledge-bases", kbRequest);
+        var createResponse = await TestClient.PostAsJsonAsync("/api/workflow/knowledge-bases", kbRequest);
         var createApiResponse = await createResponse.Content.ReadAsJsonAsync<ApiResponse<KnowledgeBaseResponse>>();
         var kbId = createApiResponse!.Data!.Id;
 
-        _output.WriteLine($"Created knowledge base with ID: {kbId}");
+        Output.WriteLine($"Created knowledge base with ID: {kbId}");
 
         // Act - Delete the knowledge base
-        var deleteResponse = await _httpClient.DeleteAsync($"/api/workflow/knowledge-bases/{kbId}");
+        var deleteResponse = await TestClient.DeleteAsync($"/api/workflow/knowledge-bases/{kbId}");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, deleteResponse.StatusCode);
 
-        _output.WriteLine($"✓ Knowledge base deleted successfully");
+        Output.WriteLine($"✓ Knowledge base deleted successfully");
 
         // Verify the knowledge base is no longer accessible
-        var getResponse = await _httpClient.GetAsync($"/api/workflow/knowledge-bases/{kbId}");
+        var getResponse = await TestClient.GetAsync($"/api/workflow/knowledge-bases/{kbId}");
         Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
 
-        _output.WriteLine($"✓ Subsequent GET returned 404 as expected");
+        Output.WriteLine($"✓ Subsequent GET returned 404 as expected");
     }
 
     // ==================== Error Handling and Boundary Condition Tests ====================
@@ -495,39 +413,39 @@ public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
     public async Task KnowledgeBaseEndpoints_WithoutAuthentication_ShouldReturn401()
     {
         // Arrange - Create a new HTTP client without authentication
-        var unauthenticatedClient = _fixture.App.CreateHttpClient("apiservice");
+        var unauthenticatedClient = Fixture.App.CreateHttpClient("apiservice");
         unauthenticatedClient.Timeout = TimeSpan.FromSeconds(30);
         unauthenticatedClient.DefaultRequestHeaders.Accept.Add(
             new MediaTypeWithQualityHeaderValue("application/json"));
 
-        _output.WriteLine("Testing knowledge base endpoints without authentication");
+        Output.WriteLine("Testing knowledge base endpoints without authentication");
 
         // Test GET list
         var getListResponse = await unauthenticatedClient.GetAsync("/api/workflow/knowledge-bases?current=1&pageSize=10");
         Assert.Equal(HttpStatusCode.Unauthorized, getListResponse.StatusCode);
-        _output.WriteLine("✓ GET /api/workflow/knowledge-bases returned 401");
+        Output.WriteLine("✓ GET /api/workflow/knowledge-bases returned 401");
 
         // Test POST create
         var kbRequest = TestDataGenerator.GenerateValidKnowledgeBase();
         var postResponse = await unauthenticatedClient.PostAsJsonAsync("/api/workflow/knowledge-bases", kbRequest);
         Assert.Equal(HttpStatusCode.Unauthorized, postResponse.StatusCode);
-        _output.WriteLine("✓ POST /api/workflow/knowledge-bases returned 401");
+        Output.WriteLine("✓ POST /api/workflow/knowledge-bases returned 401");
 
         // Test GET by ID
         var testId = Guid.NewGuid().ToString();
         var getByIdResponse = await unauthenticatedClient.GetAsync($"/api/workflow/knowledge-bases/{testId}");
         Assert.Equal(HttpStatusCode.Unauthorized, getByIdResponse.StatusCode);
-        _output.WriteLine("✓ GET /api/workflow/knowledge-bases/{id} returned 401");
+        Output.WriteLine("✓ GET /api/workflow/knowledge-bases/{id} returned 401");
 
         // Test PUT update
         var putResponse = await unauthenticatedClient.PutAsJsonAsync($"/api/workflow/knowledge-bases/{testId}", kbRequest);
         Assert.Equal(HttpStatusCode.Unauthorized, putResponse.StatusCode);
-        _output.WriteLine("✓ PUT /api/workflow/knowledge-bases/{id} returned 401");
+        Output.WriteLine("✓ PUT /api/workflow/knowledge-bases/{id} returned 401");
 
         // Test DELETE
         var deleteResponse = await unauthenticatedClient.DeleteAsync($"/api/workflow/knowledge-bases/{testId}");
         Assert.Equal(HttpStatusCode.Unauthorized, deleteResponse.StatusCode);
-        _output.WriteLine("✓ DELETE /api/workflow/knowledge-bases/{id} returned 401");
+        Output.WriteLine("✓ DELETE /api/workflow/knowledge-bases/{id} returned 401");
     }
 
     /// <summary>
@@ -544,13 +462,13 @@ public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
     public async Task KnowledgeBaseEndpoints_UnauthenticatedRequests_ShouldAlwaysReturn401()
     {
         // Arrange - Create a new HTTP client without authentication
-        var unauthenticatedClient = _fixture.App.CreateHttpClient("apiservice");
+        var unauthenticatedClient = Fixture.App.CreateHttpClient("apiservice");
         unauthenticatedClient.Timeout = TimeSpan.FromSeconds(30);
         unauthenticatedClient.DefaultRequestHeaders.Accept.Add(
             new MediaTypeWithQualityHeaderValue("application/json"));
         const int iterations = 10;
 
-        _output.WriteLine($"Starting Unauthenticated Request Rejection property test with {iterations} iterations");
+        Output.WriteLine($"Starting Unauthenticated Request Rejection property test with {iterations} iterations");
 
         // Act & Assert
         for (int i = 0; i < iterations; i++)
@@ -592,11 +510,11 @@ public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
 
             if (i % 20 == 0)
             {
-                _output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ {endpointDescription} returned 401");
+                Output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ {endpointDescription} returned 401");
             }
         }
 
-        _output.WriteLine($"✓ All {iterations} iterations completed successfully");
+        Output.WriteLine($"✓ All {iterations} iterations completed successfully");
     }
 
     /// <summary>
@@ -618,23 +536,23 @@ public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
         // Use a valid MongoDB ObjectId format (24 hex characters) instead of GUID
         var nonExistentId = "60d5f8a9b3c2e1f0a9b8c7d6";
 
-        _output.WriteLine($"Testing knowledge base endpoints with non-existent ID: {nonExistentId}");
+        Output.WriteLine($"Testing knowledge base endpoints with non-existent ID: {nonExistentId}");
 
         // Test GET by ID
-        var getResponse = await _httpClient.GetAsync($"/api/workflow/knowledge-bases/{nonExistentId}");
+        var getResponse = await TestClient.GetAsync($"/api/workflow/knowledge-bases/{nonExistentId}");
         Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
-        _output.WriteLine("✓ GET /api/workflow/knowledge-bases/{non-existent-id} returned 404");
+        Output.WriteLine("✓ GET /api/workflow/knowledge-bases/{non-existent-id} returned 404");
 
         // Test PUT update
         var kbRequest = TestDataGenerator.GenerateValidKnowledgeBase();
-        var putResponse = await _httpClient.PutAsJsonAsync($"/api/workflow/knowledge-bases/{nonExistentId}", kbRequest);
+        var putResponse = await TestClient.PutAsJsonAsync($"/api/workflow/knowledge-bases/{nonExistentId}", kbRequest);
         Assert.Equal(HttpStatusCode.NotFound, putResponse.StatusCode);
-        _output.WriteLine("✓ PUT /api/workflow/knowledge-bases/{non-existent-id} returned 404");
+        Output.WriteLine("✓ PUT /api/workflow/knowledge-bases/{non-existent-id} returned 404");
 
         // Test DELETE
-        var deleteResponse = await _httpClient.DeleteAsync($"/api/workflow/knowledge-bases/{nonExistentId}");
+        var deleteResponse = await TestClient.DeleteAsync($"/api/workflow/knowledge-bases/{nonExistentId}");
         Assert.Equal(HttpStatusCode.NotFound, deleteResponse.StatusCode);
-        _output.WriteLine("✓ DELETE /api/workflow/knowledge-bases/{non-existent-id} returned 404");
+        Output.WriteLine("✓ DELETE /api/workflow/knowledge-bases/{non-existent-id} returned 404");
     }
 
     /// <summary>
@@ -655,7 +573,7 @@ public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
         await InitializeAuthenticationAsync();
         const int iterations = 10;
 
-        _output.WriteLine($"Starting Non-existent Resource 404 property test with {iterations} iterations");
+        Output.WriteLine($"Starting Non-existent Resource 404 property test with {iterations} iterations");
 
         // Act & Assert
         for (int i = 0; i < iterations; i++)
@@ -673,15 +591,15 @@ public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
             switch (operationIndex)
             {
                 case 0:
-                    response = await _httpClient.GetAsync($"/api/workflow/knowledge-bases/{nonExistentId}");
+                    response = await TestClient.GetAsync($"/api/workflow/knowledge-bases/{nonExistentId}");
                     operationDescription = "GET";
                     break;
                 case 1:
-                    response = await _httpClient.PutAsJsonAsync($"/api/workflow/knowledge-bases/{nonExistentId}", kbRequest);
+                    response = await TestClient.PutAsJsonAsync($"/api/workflow/knowledge-bases/{nonExistentId}", kbRequest);
                     operationDescription = "PUT";
                     break;
                 default:
-                    response = await _httpClient.DeleteAsync($"/api/workflow/knowledge-bases/{nonExistentId}");
+                    response = await TestClient.DeleteAsync($"/api/workflow/knowledge-bases/{nonExistentId}");
                     operationDescription = "DELETE";
                     break;
             }
@@ -690,11 +608,11 @@ public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
 
             if (i % 20 == 0)
             {
-                _output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ {operationDescription} with non-existent ID returned 404");
+                Output.WriteLine($"[Iteration {i + 1}/{iterations}] ✓ {operationDescription} with non-existent ID returned 404");
             }
         }
 
-        _output.WriteLine($"✓ All {iterations} iterations completed successfully");
+        Output.WriteLine($"✓ All {iterations} iterations completed successfully");
     }
 
     /// <summary>
@@ -715,39 +633,39 @@ public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
         // Arrange
         await InitializeAuthenticationAsync();
 
-        _output.WriteLine("Testing knowledge base list with invalid pagination parameters");
+        Output.WriteLine("Testing knowledge base list with invalid pagination parameters");
 
         // Test negative page number
-        var negativePageResponse = await _httpClient.GetAsync("/api/workflow/knowledge-bases?current=-1&pageSize=10");
+        var negativePageResponse = await TestClient.GetAsync("/api/workflow/knowledge-bases?current=-1&pageSize=10");
         Assert.True(
             negativePageResponse.StatusCode == HttpStatusCode.BadRequest ||
             negativePageResponse.StatusCode == HttpStatusCode.OK,
             $"Expected BadRequest or OK for negative page, got {negativePageResponse.StatusCode}");
-        _output.WriteLine($"✓ Negative page number handled: {negativePageResponse.StatusCode}");
+        Output.WriteLine($"✓ Negative page number handled: {negativePageResponse.StatusCode}");
 
         // Test page number exceeding maximum
-        var excessivePageResponse = await _httpClient.GetAsync("/api/workflow/knowledge-bases?current=10001&pageSize=10");
+        var excessivePageResponse = await TestClient.GetAsync("/api/workflow/knowledge-bases?current=10001&pageSize=10");
         Assert.True(
             excessivePageResponse.StatusCode == HttpStatusCode.BadRequest ||
             excessivePageResponse.StatusCode == HttpStatusCode.OK,
             $"Expected BadRequest or OK for excessive page, got {excessivePageResponse.StatusCode}");
-        _output.WriteLine($"✓ Excessive page number handled: {excessivePageResponse.StatusCode}");
+        Output.WriteLine($"✓ Excessive page number handled: {excessivePageResponse.StatusCode}");
 
         // Test negative page size
-        var negativePageSizeResponse = await _httpClient.GetAsync("/api/workflow/knowledge-bases?current=1&pageSize=-1");
+        var negativePageSizeResponse = await TestClient.GetAsync("/api/workflow/knowledge-bases?current=1&pageSize=-1");
         Assert.True(
             negativePageSizeResponse.StatusCode == HttpStatusCode.BadRequest ||
             negativePageSizeResponse.StatusCode == HttpStatusCode.OK,
             $"Expected BadRequest or OK for negative page size, got {negativePageSizeResponse.StatusCode}");
-        _output.WriteLine($"✓ Negative page size handled: {negativePageSizeResponse.StatusCode}");
+        Output.WriteLine($"✓ Negative page size handled: {negativePageSizeResponse.StatusCode}");
 
         // Test excessive page size
-        var excessivePageSizeResponse = await _httpClient.GetAsync("/api/workflow/knowledge-bases?current=1&pageSize=10000");
+        var excessivePageSizeResponse = await TestClient.GetAsync("/api/workflow/knowledge-bases?current=1&pageSize=10000");
         Assert.True(
             excessivePageSizeResponse.StatusCode == HttpStatusCode.BadRequest ||
             excessivePageSizeResponse.StatusCode == HttpStatusCode.OK,
             $"Expected BadRequest or OK for excessive page size, got {excessivePageSizeResponse.StatusCode}");
-        _output.WriteLine($"✓ Excessive page size handled: {excessivePageSizeResponse.StatusCode}");
+        Output.WriteLine($"✓ Excessive page size handled: {excessivePageSizeResponse.StatusCode}");
     }
 
     /// <summary>
@@ -767,39 +685,39 @@ public class KnowledgeBaseTests : IClassFixture<AppHostFixture>
         // Arrange
         await InitializeAuthenticationAsync();
 
-        _output.WriteLine("Testing knowledge base creation with fields exceeding length limits");
+        Output.WriteLine("Testing knowledge base creation with fields exceeding length limits");
 
         // Test name exceeding 100 characters
         var longNameRequest = TestDataGenerator.GenerateValidKnowledgeBase();
         longNameRequest = longNameRequest with { Name = new string('A', 101) };
 
-        var longNameResponse = await _httpClient.PostAsJsonAsync("/api/workflow/knowledge-bases", longNameRequest);
+        var longNameResponse = await TestClient.PostAsJsonAsync("/api/workflow/knowledge-bases", longNameRequest);
         Assert.True(
             longNameResponse.StatusCode == HttpStatusCode.BadRequest ||
             longNameResponse.StatusCode == HttpStatusCode.OK,
             $"Expected BadRequest or OK for long name, got {longNameResponse.StatusCode}");
-        _output.WriteLine($"✓ Long name (101 chars) handled: {longNameResponse.StatusCode}");
+        Output.WriteLine($"✓ Long name (101 chars) handled: {longNameResponse.StatusCode}");
 
         // Test description exceeding 500 characters
         var longDescriptionRequest = TestDataGenerator.GenerateValidKnowledgeBase();
         longDescriptionRequest = longDescriptionRequest with { Description = new string('B', 501) };
 
-        var longDescriptionResponse = await _httpClient.PostAsJsonAsync("/api/workflow/knowledge-bases", longDescriptionRequest);
+        var longDescriptionResponse = await TestClient.PostAsJsonAsync("/api/workflow/knowledge-bases", longDescriptionRequest);
         Assert.True(
             longDescriptionResponse.StatusCode == HttpStatusCode.BadRequest ||
             longDescriptionResponse.StatusCode == HttpStatusCode.OK,
             $"Expected BadRequest or OK for long description, got {longDescriptionResponse.StatusCode}");
-        _output.WriteLine($"✓ Long description (501 chars) handled: {longDescriptionResponse.StatusCode}");
+        Output.WriteLine($"✓ Long description (501 chars) handled: {longDescriptionResponse.StatusCode}");
 
         // Test category exceeding reasonable length
         var longCategoryRequest = TestDataGenerator.GenerateValidKnowledgeBase();
         longCategoryRequest = longCategoryRequest with { Category = new string('C', 101) };
 
-        var longCategoryResponse = await _httpClient.PostAsJsonAsync("/api/workflow/knowledge-bases", longCategoryRequest);
+        var longCategoryResponse = await TestClient.PostAsJsonAsync("/api/workflow/knowledge-bases", longCategoryRequest);
         Assert.True(
             longCategoryResponse.StatusCode == HttpStatusCode.BadRequest ||
             longCategoryResponse.StatusCode == HttpStatusCode.OK,
             $"Expected BadRequest or OK for long category, got {longCategoryResponse.StatusCode}");
-        _output.WriteLine($"✓ Long category (101 chars) handled: {longCategoryResponse.StatusCode}");
+        Output.WriteLine($"✓ Long category (101 chars) handled: {longCategoryResponse.StatusCode}");
     }
 }

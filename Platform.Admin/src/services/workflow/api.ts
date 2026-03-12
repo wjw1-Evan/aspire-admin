@@ -526,8 +526,7 @@ export interface NodeHandles {
 export interface WorkflowNode {
   id: string;
   type: string;
-  label?: string;
-  config: NodeConfig;
+  data: NodeData;
   position: NodePosition;
   parentId?: string;
   handleIds?: NodeHandles;

@@ -74,7 +74,7 @@ const DocumentDetailDrawer: React.FC<DocumentDetailDrawerProps> = ({
                     label: (
                         <div style={{ textAlign: 'center', padding: '10px 14px' }}>
                             <div style={{ fontWeight: 600, fontSize: '11px', textTransform: 'uppercase', opacity: 0.8 }}>{typeLabel(node.type)}</div>
-                            <div style={{ fontSize: '13px', fontWeight: 700 }}>{node.label || node.id}</div>
+                            <div style={{ fontSize: '13px', fontWeight: 700 }}>{node.data?.label || node.id}</div>
                         </div>
                     ),
                 },
@@ -222,7 +222,7 @@ const DocumentDetailDrawer: React.FC<DocumentDetailDrawerProps> = ({
                             {(() => {
                                 const currentId = workflowInstance.currentNodeId;
                                 const nodeMeta = workflowDef?.graph?.nodes?.find((n) => n.id === currentId);
-                                const label = nodeMeta?.label || currentId;
+                                const label = nodeMeta?.data?.label || currentId;
                                 return `${label} (${typeLabel(nodeMeta?.type)}/${currentId})`;
                             })()}
                         </Descriptions.Item>

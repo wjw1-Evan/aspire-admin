@@ -295,12 +295,12 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
   useEffect(() => {
     if (graph && !hasInitializedRef.current) {
       const initialNodes: Node[] = graph.nodes.map((node) => {
-        const config = node.config || {};
+        const config = node.data?.config || {};
         let jumpLabel = '';
         if (node.type === 'condition' && config.condition?.targetNodeId) {
           const targetNode = graph.nodes.find((n) => n.id === config.condition?.targetNodeId);
           if (targetNode) {
-            jumpLabel = targetNode.label || targetNode.id;
+            jumpLabel = targetNode.data?.label || targetNode.id;
           }
         }
 
@@ -309,10 +309,10 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
           type: 'workflowNode',
           position: { x: node.position.x, y: node.position.y },
           data: {
-            label: node.label,
+            label: node.data?.label,
             typeLabel: typeLabels[node.type as keyof typeof typeLabels] || node.type,
             nodeType: node.type,
-            config: node.config,
+            config: node.data?.config,
             jumpLabel: jumpLabel,
           },
         };
@@ -993,12 +993,15 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
         return {
           id: node.id,
           type: node.data.nodeType as 'start' | 'end' | 'approval' | 'condition' | 'ai' | 'aiJudge' | 'notification' | 'parallel' | 'httpRequest' | 'timer' | 'setVariable' | 'log' | 'parameterExtractor' | 'iteration' | 'answer' | 'knowledgeSearch' | 'tool',
-          label: node.data.label || '',
+          data: {
+            nodeType: node.data.nodeType,
+            label: node.data.label || '',
+            config: deepCleanIdFields(node.data.config || {}),
+          },
           position: {
             x: node.position.x,
             y: node.position.y,
           },
-          config: deepCleanIdFields(node.data.config || {}),
         };
       }),
       edges: edges.map((edge) => ({

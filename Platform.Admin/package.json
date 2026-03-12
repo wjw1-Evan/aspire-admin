@@ -5,6 +5,11 @@
   "description": "Aspire Admin 管理后台前端项目",
   "repository": "https://github.com/wjw1-Evan/aspire-admin.git",
   "scripts": {
+    "clean": "rm -rf src/.umi src/.umi-production node_modules/.cache",
+    "preanalyze": "npm run clean",
+    "prebuild": "npm run clean",
+    "predev": "npm run clean",
+    "prestart": "npm run clean",
     "analyze": "cross-env ANALYZE=1 max build",
     "build": "max build",
     "dev": "npm run start:dev",

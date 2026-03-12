@@ -123,23 +123,32 @@ const WorkflowCreateForm: React.FC<WorkflowCreateFormProps> = ({ onSuccess, onCa
               {
                 id: 'start-1',
                 type: 'start',
-                label: intl.formatMessage({ id: 'pages.workflow.designer.addStart' }),
+                data: {
+                  label: intl.formatMessage({ id: 'pages.workflow.designer.addStart' }),
+                  nodeType: 'start',
+                  config: {},
+                },
                 position: { x: 250, y: 50 },
-                config: {},
               },
               {
                 id: 'approval-1',
                 type: 'approval',
-                label: intl.formatMessage({ id: 'pages.workflow.designer.addApproval' }),
+                data: {
+                  label: intl.formatMessage({ id: 'pages.workflow.designer.addApproval' }),
+                  nodeType: 'approval',
+                  config: {},
+                },
                 position: { x: 250, y: 250 },
-                config: {},
               },
               {
                 id: 'end-1',
                 type: 'end',
-                label: intl.formatMessage({ id: 'pages.workflow.designer.addEnd' }),
+                data: {
+                  label: intl.formatMessage({ id: 'pages.workflow.designer.addEnd' }),
+                  nodeType: 'end',
+                  config: {},
+                },
                 position: { x: 250, y: 450 },
-                config: {},
               },
             ],
             edges: [

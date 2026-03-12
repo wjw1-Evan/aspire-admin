@@ -380,8 +380,9 @@ public class DocumentService : IDocumentService
 
                 case "pending":
                     filter = filter.And(d => d.Status == DocumentStatus.Approving);
+                    // 审批节点挂起时状态为 Waiting，需同时匹配 Running 和 Waiting
                     var pendingInstances = await _instanceFactory.FindAsync(i =>
-                        i.Status == WorkflowStatus.Running &&
+                        (i.Status == WorkflowStatus.Running || i.Status == WorkflowStatus.Waiting) &&
                         i.CurrentApproverIds.Contains(userId));
                     var instanceIds = pendingInstances.Select(i => i.Id).ToList();
                     if (instanceIds.Any())
@@ -448,25 +449,28 @@ public class DocumentService : IDocumentService
             throw new InvalidOperationException("只有草稿状态的公文可以提交");
         }
 
-        // 启动工作流（先清洗变量，避免 JsonElement 序列化错误）
+        // 启动工作流（合并文档中的 FormData 和 提交时传递的变量）
         var sanitizedVars = variables != null
             ? SerializationExtensions.SanitizeDictionary(variables)
             : null;
 
-        if (sanitizedVars != null && sanitizedVars.Count > 0)
+        var allVariables = new Dictionary<string, object?>();
+        if (document.FormData != null)
         {
-            _logger.LogInformation("DEBUG_SUBMIT: Merging {Count} variables into Document {DocumentId} FormData", sanitizedVars.Count, documentId);
-            await _documentFactory.UpdateAsync(documentId, d =>
+            foreach (var kv in document.FormData)
             {
-                d.FormData ??= new Dictionary<string, object>();
-                foreach (var v in sanitizedVars)
-                {
-                    d.FormData[v.Key] = v.Value;
-                }
-            });
+                allVariables[kv.Key] = kv.Value;
+            }
+        }
+        if (sanitizedVars != null)
+        {
+            foreach (var kv in sanitizedVars)
+            {
+                allVariables[kv.Key] = kv.Value;
+            }
         }
 
-        var instance = await _workflowEngine.StartWorkflowAsync(workflowDefinitionId, documentId, (Dictionary<string, object?>?)(object?)sanitizedVars);
+        var instance = await _workflowEngine.StartWorkflowAsync(workflowDefinitionId, documentId, allVariables);
 
         // 更新文档的 WorkflowInstanceId 字段
         await _documentFactory.UpdateAsync(documentId, d =>
@@ -742,8 +746,9 @@ public class DocumentService : IDocumentService
         long pendingCount = 0;
         try
         {
+            // 审批节点挂起时状态为 Waiting，需同时匹配 Running 和 Waiting
             var pendingInstances = await _instanceFactory.FindAsync(i =>
-                i.Status == WorkflowStatus.Running &&
+                (i.Status == WorkflowStatus.Running || i.Status == WorkflowStatus.Waiting) &&
                 i.CurrentApproverIds.Contains(userId));
 
             var instanceIds = pendingInstances.Select(i => i.Id).ToList();

@@ -18,7 +18,8 @@ public partial class WorkflowEngine
         var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
 
         var instance = await _instanceFactory.GetByIdAsync(instanceId);
-        if (instance == null || instance.Status != WorkflowStatus.Running)
+        // 审批节点挂起时状态为 Waiting，需同时接受 Running 和 Waiting
+        if (instance == null || (instance.Status != WorkflowStatus.Running && instance.Status != WorkflowStatus.Waiting))
         {
             throw new InvalidOperationException("流程实例不存在或已结束");
         }

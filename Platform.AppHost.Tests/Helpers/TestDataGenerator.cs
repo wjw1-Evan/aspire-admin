@@ -448,7 +448,11 @@ public static class TestDataGenerator
     /// Generates a workflow definition with a condition node for branching.
     /// Graph: Start -> Condition -> [TrueBranch -> End, FalseBranch -> End]
     /// </summary>
-    public static WorkflowDefinitionRequest GenerateConditionWorkflow()
+    /// <summary>
+    /// Generates a workflow definition with a condition branch and an approval node.
+    /// Graph: Start -> Condition -> [True: Approval, False: Log] -> End
+    /// </summary>
+    public static WorkflowDefinitionRequest GenerateConditionWorkflow(List<string>? approverIds = null)
     {
         var counter = GetNextId();
         var guid = Guid.NewGuid().ToString("N")[..8];
@@ -457,18 +461,18 @@ public static class TestDataGenerator
         var nodes = new List<WorkflowNodeRequest>
         {
             new WorkflowNodeRequest { Id = "start", Type = NodeTypes.Start, Data = new NodeDataRequest { Label = "Start", NodeType = NodeTypes.Start }, Position = new NodePositionRequest { X = 100, Y = 200 } },
-            new WorkflowNodeRequest { Id = "cond", Type = NodeTypes.Condition, Data = new NodeDataRequest { Label = "Condition", NodeType = NodeTypes.Condition, Config = new { condition = new { expression = "vars.amount > 100" } } }, Position = new NodePositionRequest { X = 300, Y = 200 } },
-            new WorkflowNodeRequest { Id = "true_path", Type = NodeTypes.Log, Data = new NodeDataRequest { Label = "True Path", NodeType = NodeTypes.Log, Config = new { log = new { message = "Condition met" } } }, Position = new NodePositionRequest { X = 500, Y = 100 } },
+            new WorkflowNodeRequest { Id = "cond", Type = NodeTypes.Condition, Data = new NodeDataRequest { Label = "Condition", NodeType = NodeTypes.Condition, Config = new { condition = new { logicalOperator = "and", conditions = new[] { new { variable = "amount", @operator = "greater_than", value = "100" } } } } }, Position = new NodePositionRequest { X = 300, Y = 200 } },
+            new WorkflowNodeRequest { Id = "approval_node", Type = NodeTypes.Approval, Data = new NodeDataRequest { Label = "True Path Approval", NodeType = NodeTypes.Approval, Config = GenerateNodeConfig(NodeTypes.Approval, approverIds) }, Position = new NodePositionRequest { X = 500, Y = 100 } },
             new WorkflowNodeRequest { Id = "false_path", Type = NodeTypes.Log, Data = new NodeDataRequest { Label = "False Path", NodeType = NodeTypes.Log, Config = new { log = new { message = "Condition not met" } } }, Position = new NodePositionRequest { X = 500, Y = 300 } },
-            new WorkflowNodeRequest { Id = "end", Type = NodeTypes.End, Data = new NodeDataRequest { Label = "End", NodeType = NodeTypes.End }, Position = new NodePositionRequest { X = 700, Y = 200 } }
+            new WorkflowNodeRequest { Id = "end", Type = NodeTypes.End, Data = new NodeDataRequest { Label = "End", NodeType = NodeTypes.End }, Position = new NodePositionRequest { X = 750, Y = 200 } }
         };
 
         var edges = new List<WorkflowEdgeRequest>
         {
             new WorkflowEdgeRequest { Id = "e1", Source = "start", Target = "cond" },
-            new WorkflowEdgeRequest { Id = "e2", Source = "cond", Target = "true_path", SourceHandle = "true" },
+            new WorkflowEdgeRequest { Id = "e2", Source = "cond", Target = "approval_node", SourceHandle = "true" },
             new WorkflowEdgeRequest { Id = "e3", Source = "cond", Target = "false_path", SourceHandle = "false" },
-            new WorkflowEdgeRequest { Id = "e4", Source = "true_path", Target = "end" },
+            new WorkflowEdgeRequest { Id = "e4", Source = "approval_node", Target = "end", SourceHandle = "approve" },
             new WorkflowEdgeRequest { Id = "e5", Source = "false_path", Target = "end" }
         };
 
@@ -623,13 +627,13 @@ public static class TestDataGenerator
             {
                 approval = new
                 {
-                    type = "all",
+                    type = "Any",
                     approvers = (approverIds != null && approverIds.Count > 0) 
-                        ? approverIds.Select(id => new { type = "user", userId = id }).ToArray()
+                        ? approverIds.Select(id => new { type = "User", userId = id }).ToArray()
                         : new[]
                         {
-                            new { type = "user", userId = "test-user-1" },
-                            new { type = "user", userId = "test-user-2" }
+                            new { type = "User", userId = "test-user-1" },
+                            new { type = "User", userId = "test-user-2" }
                         },
                     allowDelegate = false,
                     allowReject = true,
@@ -637,7 +641,14 @@ public static class TestDataGenerator
                 }
             },
             NodeTypes.Code => new { code = new { code = "console.log('test');", language = "javascript" } },
-            NodeTypes.Condition => new { condition = new { expression = "{{variable}} > 0" } },
+            NodeTypes.Condition => new { 
+                condition = new { 
+                    logicalOperator = "and", 
+                    conditions = new[] { 
+                        new { variable = "amount", @operator = "greater_than", value = "100" } 
+                    } 
+                } 
+            },
             NodeTypes.DocumentExtractor => new { documentExtractor = new { extractions = new[] { new { field = "title", type = "text" }, new { field = "content", type = "text" } } } },
             NodeTypes.Email => new { email = new { to = "test@example.com", subject = "Test Email", body = "Test body" } },
             NodeTypes.HttpRequest => new { http = new { url = "https://api.example.com/test", method = "GET" } },

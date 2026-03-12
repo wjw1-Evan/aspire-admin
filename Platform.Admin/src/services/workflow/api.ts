@@ -560,7 +560,6 @@ export interface WorkflowEdge {
   targetHandle?: string;
   type?: string;
   label?: string;
-  condition?: string;
   data?: EdgeData;
   animated?: boolean;
   style?: EdgeStyle;

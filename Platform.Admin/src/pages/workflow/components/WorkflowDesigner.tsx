@@ -330,7 +330,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
           color: '#94a3b8',
         },
         data: {
-          condition: edge.condition,
+          condition: edge.data?.condition,
         },
       }));
 
@@ -1009,7 +1009,9 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
         source: edge.source,
         target: edge.target,
         label: edge.label as string,
-        condition: edge.data?.condition,
+        data: {
+          condition: edge.data?.condition,
+        },
       })),
     };
 

@@ -100,7 +100,7 @@ const DocumentDetailDrawer: React.FC<DocumentDetailDrawerProps> = ({
             id: edge.id,
             source: edge.source,
             target: edge.target,
-            label: edge.label || edge.condition,
+            label: edge.label || edge.data?.condition,
             type: 'default',
             selectable: false,
         }));

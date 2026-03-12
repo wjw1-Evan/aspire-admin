@@ -27,7 +27,7 @@ internal sealed partial class ConditionExecutor : Executor
     public async Task<object?> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
         // 反序列化变量
-        var variables = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(input) ?? new();
+        var variables = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(input, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new();
 
         // 遍历所有条件分支 (Dify 的条件通常是 IF/ELSE 结构)
         // 注意：在标准 Dify 节点中，条件边有明确的 handle

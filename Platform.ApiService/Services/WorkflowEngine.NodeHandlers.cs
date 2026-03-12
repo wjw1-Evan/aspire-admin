@@ -229,6 +229,13 @@ public partial class WorkflowEngine
                 _logger.LogInformation("DEBUG_WORKFLOW: Condition Node {NodeId} returned fallback handle: {Handle}", node.Id, sourceHandle);
             }
 
+            // 注入调试信息以便于测试排查
+            await _instanceFactory.UpdateAsync(instanceId, i => 
+            {
+                i.SetVariable($"debug.{node.Id}.sourceHandle", sourceHandle);
+                i.SetVariable($"debug.{node.Id}.resultType", result?.GetType().Name);
+            });
+
             if (sourceHandle == "waiting")
             {
                 _logger.LogInformation("DEBUG_WORKFLOW: Node {NodeId} is WAITING. Stopping execution.", node.Id);
@@ -242,6 +249,8 @@ public partial class WorkflowEngine
         catch (Exception ex)
         {
             _logger.LogError(ex, "DEBUG_WORKFLOW: 执行器节点处理抛异常! NodeId={NodeId}, InstanceId={InstanceId}", node.Id, instanceId);
+            // 记录异常到变量
+            await _instanceFactory.UpdateAsync(instanceId, i => i.SetVariable($"debug.{node.Id}.error", ex.ToString()));
             // ERROR: 不应当盲目 MoveToNextNode，否则会导致跳过审批节点。
             // 记录状态为 Cancelled 并停止
             await _instanceFactory.UpdateAsync(instanceId, i => i.Status = WorkflowStatus.Cancelled);

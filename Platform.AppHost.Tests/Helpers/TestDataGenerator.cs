@@ -469,10 +469,10 @@ public static class TestDataGenerator
                     Label = "金额 > 1000?", 
                     NodeType = "condition", 
                     Config = new { 
-                        condition = new { 
-                            logicalOperator = "and", 
-                            conditions = new[] { 
-                                new { variable = "amount", @operator = "greater_than", value = "1000" } 
+                        Condition = new { 
+                            LogicalOperator = "and", 
+                            Conditions = new[] { 
+                                new { Variable = "amount", Operator = "greater_than", Value = "1000" } 
                             } 
                         } 
                     }
@@ -599,12 +599,12 @@ public static class TestDataGenerator
                     NodeType = "condition",
                     Config = new 
                     { 
-                        condition = new 
+                        Condition = new 
                         { 
-                            logicalOperator = "and",
-                            conditions = new[] 
+                            LogicalOperator = "and",
+                            Conditions = new[] 
                             { 
-                                new { variable = "amount", @operator = "greater_than", value = thresholdValue } 
+                                new { Variable = "amount", Operator = "greater_than", Value = thresholdValue } 
                             }
                         }
                     }
@@ -624,7 +624,7 @@ public static class TestDataGenerator
                         approval = new 
                         { 
                             type = "Any",
-                            approvers = new[] { new { type = "User", userId = "test-user-1" } },
+                            approvers = new[] { new { type = "User", userId = "507f1f77bcf86cd799439011" } },
                             allowDelegate = false,
                             allowReject = true,
                             allowReturn = false
@@ -646,7 +646,7 @@ public static class TestDataGenerator
                         approval = new 
                         { 
                             type = "Any",
-                            approvers = new[] { new { type = "User", userId = "test-user-2" } },
+                            approvers = new[] { new { type = "User", userId = "507f1f77bcf86cd7994333333" } },
                             allowDelegate = false,
                             allowReject = true,
                             allowReturn = false

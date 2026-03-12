@@ -178,6 +178,20 @@ public record WorkflowInstanceResponse
     /// The current active node ID.
     /// </summary>
     public string? CurrentNodeId { get; init; }
+
+    /// <summary>
+    /// Workflow variables.
+    /// </summary>
+    public List<WorkflowVariableResponse>? Variables { get; init; }
+}
+
+/// <summary>
+/// Response model for a workflow variable.
+/// </summary>
+public record WorkflowVariableResponse
+{
+    public string Key { get; init; } = string.Empty;
+    public string? ValueJson { get; init; }
 }
 /// <summary>
 /// Response model for a workflow definition.

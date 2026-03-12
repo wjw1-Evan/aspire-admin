@@ -87,7 +87,9 @@ public class WorkflowExpressionEvaluator : IWorkflowExpressionEvaluator
 
             if (variables.TryGetValue(leftKeyClean, out var leftValue))
             {
-                return CompareValues(leftValue, rightValueStr, foundOp);
+                var res = CompareValues(leftValue, rightValueStr, foundOp);
+                System.Console.WriteLine($"DEBUG_EVALUATOR: Compare Variable '{leftKeyClean}' Value '{leftValue}' ({leftValue?.GetType().Name}) {foundOp} '{rightValueStr}' -> {res}");
+                return res;
             }
 
             // 变量不存在时的宽容处理

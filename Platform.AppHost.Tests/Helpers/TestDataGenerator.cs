@@ -755,15 +755,15 @@ public static class TestDataGenerator
                         ? approverIds.Select(id => new { type = "User", userId = id }).ToArray()
                         : new[]
                         {
-                            new { type = "User", userId = "test-user-1" }
+                            new { type = "User", userId = "507f1f77bcf86cd799439011" }
                         }
                 }
             },
             "condition" => new { 
-                condition = new { 
-                    logicalOperator = "and", 
-                    conditions = new[] { 
-                        new { variable = "amount", @operator = "greater_than", value = "100" } 
+                Condition = new { 
+                    LogicalOperator = "and", 
+                    Conditions = new[] { 
+                        new { Variable = "amount", Operator = "greater_than", Value = "100" } 
                     } 
                 } 
             },

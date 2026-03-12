@@ -29,6 +29,9 @@ internal sealed partial class ConditionExecutor : Executor
         // 反序列化变量
         var variables = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(input, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new();
 
+        System.Console.WriteLine($"DEBUG_EVALUATOR: Input Variables Count = {variables.Count}");
+        foreach(var v in variables) System.Console.WriteLine($"DEBUG_EVALUATOR: Var {v.Key} = {v.Value}");
+
         // 遍历所有条件分支 (Dify 的条件通常是 IF/ELSE 结构)
         // 注意：在标准 Dify 节点中，条件边有明确的 handle
         // 此处我们遍历配置中的规则
@@ -42,7 +45,9 @@ internal sealed partial class ConditionExecutor : Executor
             {
                 // 构造简单的表达式字符串: "{var} operator value"
                 var expression = $"{{{rule.Variable}}} {MapOperator(rule.Operator)} {rule.Value}";
-                results.Add(_expressionEvaluator.Evaluate(expression, variables));
+                var res = _expressionEvaluator.Evaluate(expression, variables);
+                System.Console.WriteLine($"DEBUG_EVALUATOR: Evaluating '{expression}' -> {res} (Variable: '{rule.Variable}', Op: '{rule.Operator}', Value: '{rule.Value}')");
+                results.Add(res);
             }
 
             if (_config.LogicalOperator?.ToLower() == "or")

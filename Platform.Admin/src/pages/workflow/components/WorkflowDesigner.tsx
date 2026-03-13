@@ -415,6 +415,8 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
       timeoutHours: config.approval?.timeoutHours,
 
       // 条件节点配置
+      branches: config.condition?.branches || [],
+      defaultBranchId: config.condition?.defaultBranchId,
       expression: config.condition?.expression,
       logicalOperator: config.condition?.logicalOperator || 'and',
       conditions: config.condition?.conditions || [],

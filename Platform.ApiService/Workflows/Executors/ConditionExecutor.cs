@@ -43,23 +43,13 @@ internal sealed partial class ConditionExecutor : Executor
         var debugInfo = new System.Text.StringBuilder();
         debugInfo.AppendLine($"========== 条件节点开始评估 ==========");
         debugInfo.AppendLine($"变量总数 = {variables.Count}");
-        debugInfo.AppendLine($"条件规则数 = {_config.Conditions?.Count ?? 0}");
-        debugInfo.AppendLine($"逻辑运算符 = {_config.LogicalOperator}");
+        debugInfo.AppendLine($"分支数 = {_config.Branches?.Count ?? 0}");
 
         debugInfo.AppendLine($"变量列表:");
         foreach (var v in variables)
         {
             var valueStr = v.Value == null ? "null" : $"{v.Value} ({v.Value.GetType().Name})";
             debugInfo.AppendLine($"  [{v.Key}] = {valueStr}");
-        }
-
-        if (_config.Conditions != null && _config.Conditions.Count > 0)
-        {
-            debugInfo.AppendLine($"条件规则列表:");
-            foreach (var rule in _config.Conditions)
-            {
-                debugInfo.AppendLine($"  Variable=[{rule.Variable}], Operator=[{rule.Operator}], Value=[{rule.Value}] (ValueType={rule.Value?.GetType().Name ?? "null"})");
-            }
         }
 
         System.Console.WriteLine(debugInfo.ToString());
@@ -74,7 +64,7 @@ internal sealed partial class ConditionExecutor : Executor
                 System.Console.WriteLine($"DEBUG_CONDITION: 表达式验证失败 - {validationResult.ErrorMessage}");
                 return new Dictionary<string, object?>
                 {
-                    ["__sourceHandle"] = "false",
+                    ["__sourceHandle"] = _config.DefaultBranchId ?? "default",
                     ["result"] = false,
                     ["error"] = validationResult.ErrorMessage,
                     ["evaluatedAt"] = System.DateTime.UtcNow
@@ -82,69 +72,80 @@ internal sealed partial class ConditionExecutor : Executor
             }
         }
 
-        // 验证条件规则中的变量名
-        if (_config.Conditions != null)
-        {
-            foreach (var rule in _config.Conditions)
-            {
-                var validationResult = _expressionValidator.ValidateVariableName(rule.Variable);
-                if (!validationResult.IsValid)
-                {
-                    System.Console.WriteLine($"DEBUG_CONDITION: 变量名验证失败 - {validationResult.ErrorMessage}");
-                    return new Dictionary<string, object?>
-                    {
-                        ["__sourceHandle"] = "false",
-                        ["result"] = false,
-                        ["error"] = validationResult.ErrorMessage,
-                        ["evaluatedAt"] = System.DateTime.UtcNow
-                    };
-                }
-            }
-        }
+        // 评估分支，找到匹配的分支
+        var matchedBranch = EvaluateConditionBranches(variables);
 
-        // 评估条件规则
-        bool conditionResult = EvaluateConditions(variables);
-
-        System.Console.WriteLine($"DEBUG_CONDITION: 条件评估结果 = {conditionResult}");
+        System.Console.WriteLine($"DEBUG_CONDITION: 匹配的分支 = {matchedBranch?.Id ?? "default"}");
         System.Console.Out.Flush();
 
         await Task.CompletedTask;
 
-        // 返回匹配的 handle（true/false），用于路由到不同的下一个组件
+        // 返回匹配的分支 ID 作为 sourceHandle，用于路由到不同的下一个组件
         return new Dictionary<string, object?>
         {
-            ["__sourceHandle"] = conditionResult ? "true" : "false",
-            ["result"] = conditionResult,
+            ["__sourceHandle"] = matchedBranch?.Id ?? _config.DefaultBranchId ?? "default",
+            ["branchId"] = matchedBranch?.Id,
+            ["branchLabel"] = matchedBranch?.Label,
+            ["result"] = matchedBranch != null,
             ["evaluatedAt"] = System.DateTime.UtcNow
         };
     }
 
     /// <summary>
-    /// 评估所有条件规则
+    /// 评估所有分支，返回第一个匹配的分支
     /// </summary>
-    private bool EvaluateConditions(Dictionary<string, object?> variables)
+    private ConditionBranch? EvaluateConditionBranches(Dictionary<string, object?> variables)
     {
-        // 如果没有配置条件规则，默认返回 true
-        if (_config.Conditions == null || _config.Conditions.Count == 0)
+        // 如果没有配置分支，返回 null
+        if (_config.Branches == null || _config.Branches.Count == 0)
         {
-            System.Console.WriteLine("DEBUG_CONDITION: 未配置条件规则，默认返回 true");
+            System.Console.WriteLine("DEBUG_CONDITION: 未配置分支，使用默认分支");
+            System.Console.Out.Flush();
+            return null;
+        }
+
+        // 遍历所有启用的分支，找到第一个匹配的
+        foreach (var branch in _config.Branches.Where(b => b.Enabled).OrderBy(b => b.Order))
+        {
+            System.Console.WriteLine($"DEBUG_CONDITION: 评估分支 [{branch.Id}] - {branch.Label}");
+            System.Console.Out.Flush();
+
+            // 评估分支内的条件
+            bool branchMatches = EvaluateBranchConditions(branch, variables);
+
+            System.Console.WriteLine($"DEBUG_CONDITION: 分支 [{branch.Id}] 匹配结果 = {branchMatches}");
+            System.Console.Out.Flush();
+
+            if (branchMatches)
+            {
+                return branch;
+            }
+        }
+
+        // 没有分支匹配，返回 null（将使用默认分支）
+        System.Console.WriteLine("DEBUG_CONDITION: 没有分支匹配，将使用默认分支");
+        System.Console.Out.Flush();
+        return null;
+    }
+
+    /// <summary>
+    /// 评估单个分支内的所有条件
+    /// </summary>
+    private bool EvaluateBranchConditions(ConditionBranch branch, Dictionary<string, object?> variables)
+    {
+        // 如果分支没有条件，则默认匹配
+        if (branch.Conditions == null || branch.Conditions.Count == 0)
+        {
+            System.Console.WriteLine($"DEBUG_CONDITION: 分支 [{branch.Id}] 无条件，默认匹配");
             System.Console.Out.Flush();
             return true;
         }
 
-        // 如果配置了表达式，优先使用表达式
-        if (!string.IsNullOrWhiteSpace(_config.Expression))
-        {
-            System.Console.WriteLine($"DEBUG_CONDITION: 使用表达式评估: {_config.Expression}");
-            System.Console.Out.Flush();
-            return _expressionEvaluator.Evaluate(_config.Expression, variables);
-        }
-
-        // 否则使用条件规则列表
+        // 评估分支内的所有条件规则
         var results = new List<bool>();
-        foreach (var rule in _config.Conditions)
+        foreach (var rule in branch.Conditions)
         {
-            System.Console.WriteLine($"DEBUG_CONDITION: 处理规则 - Variable={rule.Variable}, Operator={rule.Operator}, Value={rule.Value} (ValueType={rule.Value?.GetType().Name})");
+            System.Console.WriteLine($"DEBUG_CONDITION: 处理规则 - Variable={rule.Variable}, Operator={rule.Operator}, Value={rule.Value}");
             System.Console.Out.Flush();
             bool ruleResult = EvaluateSingleRule(rule, variables);
             results.Add(ruleResult);
@@ -152,8 +153,8 @@ internal sealed partial class ConditionExecutor : Executor
             System.Console.Out.Flush();
         }
 
-        // 根据逻辑运算符组合结果
-        bool finalResult = CombineResults(results);
+        // 根据分支的逻辑运算符组合结果
+        bool finalResult = CombineResults(results, branch.LogicalOperator);
         return finalResult;
     }
 
@@ -230,11 +231,11 @@ internal sealed partial class ConditionExecutor : Executor
     /// <summary>
     /// 组合多个条件结果
     /// </summary>
-    private bool CombineResults(List<bool> results)
+    private bool CombineResults(List<bool> results, string? logicalOperator = null)
     {
         if (results.Count == 0) return true;
 
-        string logicalOp = _config.LogicalOperator?.ToLower() ?? "and";
+        string logicalOp = (logicalOperator ?? "and").ToLower();
 
         if (logicalOp == "or")
         {

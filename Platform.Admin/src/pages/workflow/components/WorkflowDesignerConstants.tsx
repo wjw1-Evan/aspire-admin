@@ -83,9 +83,8 @@ export const CustomNode: React.FC<NodeProps> = ({ data, selected }) => {
         const approversCount = data.config?.approval?.approvers?.length || 0;
         return `${approversCount > 0 ? `配置了 ${approversCount} 条审批规则` : '未配置审批人'}`;
       case 'condition':
-        return data.config?.condition?.expression 
-          ? `表达式: ${data.config.condition.expression.substring(0, 20)}...` 
-          : '等待配置条件...';
+        const branchesCount = data.config?.condition?.branches?.length || 0;
+        return branchesCount > 0 ? `配置了 ${branchesCount} 条分支` : '等待配置条件分支...';
       case 'start':
         return data.config?.form?.formDefinitionId ? '已绑定启动表单' : '流程开始';
       case 'end':
@@ -95,7 +94,46 @@ export const CustomNode: React.FC<NodeProps> = ({ data, selected }) => {
     }
   };
 
+  // 为条件节点生成多个输出 handle
+  const renderHandles = () => {
+    if (nodeType === 'condition') {
+      const branches = data.config?.condition?.branches || [];
+      const handleCount = Math.max(branches.length, 1);
+      const handles = [];
 
+      // 输入 handle
+      handles.push(
+        <Handle key="target" type="target" position={Position.Top} />
+      );
+
+      // 为每个分支生成一个输出 handle
+      for (let i = 0; i < handleCount; i++) {
+        const branch = branches[i];
+        const handleId = branch?.id || `branch-${i}`;
+        handles.push(
+          <Handle
+            key={`source-${handleId}`}
+            type="source"
+            position={Position.Bottom}
+            id={handleId}
+            style={{
+              left: `${((i + 1) / (handleCount + 1)) * 100}%`,
+            }}
+          />
+        );
+      }
+
+      return handles;
+    }
+
+    // 其他节点类型保持原样
+    return (
+      <>
+        <Handle type="target" position={Position.Top} />
+        <Handle type="source" position={Position.Bottom} />
+      </>
+    );
+  };
 
   return (
     <div
@@ -105,12 +143,12 @@ export const CustomNode: React.FC<NodeProps> = ({ data, selected }) => {
         borderColor: selected ? config.color : 'rgba(226, 232, 240, 0.8)',
       } as React.CSSProperties}
     >
-      <Handle type="target" position={Position.Top} />
+      {renderHandles()}
       <div className="elsa-node-header">
-        <div className="elsa-node-icon" style={{ 
-          background: config.backgroundColor, 
+        <div className="elsa-node-icon" style={{
+          background: config.backgroundColor,
           color: config.color,
-          borderColor: `rgba(${parseInt(config.color.slice(1,3), 16)}, ${parseInt(config.color.slice(3,5), 16)}, ${parseInt(config.color.slice(5,7), 16)}, 0.1)`
+          borderColor: `rgba(${parseInt(config.color.slice(1, 3), 16)}, ${parseInt(config.color.slice(3, 5), 16)}, ${parseInt(config.color.slice(5, 7), 16)}, 0.1)`
         }}>
           {config.icon}
         </div>
@@ -125,7 +163,6 @@ export const CustomNode: React.FC<NodeProps> = ({ data, selected }) => {
         <HistoryOutlined />
         <span>v{config.version || '1.0.0'}</span>
       </div>
-      <Handle type="source" position={Position.Bottom} />
     </div>
   );
 };

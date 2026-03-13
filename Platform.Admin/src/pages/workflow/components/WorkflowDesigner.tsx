@@ -461,15 +461,26 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
               timeoutHours: values.timeoutHours,
             };
           } else if (values.nodeType === 'condition') {
-            config.condition = {
-              expression: values.expression || '',
-              logicalOperator: values.logicalOperator || 'and',
-              conditions: (values.conditions || []).map((c: any) => ({
+            // 处理新的多分支结构
+            const branches = (values.branches || []).map((branch: any, idx: number) => ({
+              id: branch.id || `branch-${idx}`,
+              label: branch.label || `分支 ${idx + 1}`,
+              conditions: (branch.conditions || []).map((c: any) => ({
+                formId: c.formId,
                 variable: c.variable,
                 operator: c.operator || 'equals',
                 value: c.value
               })),
-              targetNodeId: values.targetNodeId?.trim() !== '' ? values.targetNodeId : undefined,
+              logicalOperator: branch.logicalOperator || 'and',
+              targetNodeId: branch.targetNodeId?.trim() !== '' ? branch.targetNodeId : undefined,
+              order: idx,
+              enabled: branch.enabled !== false,
+            }));
+
+            config.condition = {
+              branches,
+              defaultBranchId: values.defaultBranchId || undefined,
+              expression: values.expression || undefined,
             };
           }
 
@@ -483,9 +494,9 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
           }
 
           let jumpLabel = '';
-          if (values.nodeType === 'condition' && config.condition?.targetNodeId) {
-            const targetNode = nodes.find(n => n.id === config.condition?.targetNodeId);
-            if (targetNode) jumpLabel = targetNode.data.label || targetNode.id;
+          if (values.nodeType === 'condition' && config.condition?.branches) {
+            // 对于多分支条件节点，显示分支数量
+            jumpLabel = `${config.condition.branches.length} 条分支`;
           }
 
           return {

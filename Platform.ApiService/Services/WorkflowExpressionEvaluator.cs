@@ -1,8 +1,30 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using Platform.ApiService.Models.Workflow;
 
 namespace Platform.ApiService.Services;
+
+/// <summary>
+/// 条件分支评估结果
+/// </summary>
+public class ConditionEvaluationResult
+{
+    /// <summary>
+    /// 匹配的分支ID
+    /// </summary>
+    public string BranchId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 目标节点ID
+    /// </summary>
+    public string TargetNodeId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 是否有分支匹配
+    /// </summary>
+    public bool IsMatched { get; set; }
+}
 
 /// <summary>
 /// 工作流表达式评估接口
@@ -16,6 +38,23 @@ public interface IWorkflowExpressionEvaluator
     /// <param name="variables">变量字典</param>
     /// <returns>表达式是否为真</returns>
     bool Evaluate(string expression, Dictionary<string, object?> variables);
+
+    /// <summary>
+    /// 评估条件规则列表
+    /// </summary>
+    /// <param name="conditions">条件规则列表</param>
+    /// <param name="logicalOperator">逻辑运算符（and/or）</param>
+    /// <param name="variables">变量字典</param>
+    /// <returns>条件是否满足</returns>
+    bool EvaluateConditions(List<ConditionRule> conditions, string logicalOperator, Dictionary<string, object?> variables);
+
+    /// <summary>
+    /// 评估条件分支，返回匹配的分支
+    /// </summary>
+    /// <param name="config">条件配置</param>
+    /// <param name="variables">变量字典</param>
+    /// <returns>匹配的分支信息</returns>
+    ConditionEvaluationResult EvaluateConditionBranches(ConditionConfig config, Dictionary<string, object?> variables);
 }
 
 /// <summary>
@@ -318,5 +357,85 @@ public class WorkflowExpressionEvaluator : IWorkflowExpressionEvaluator
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// 评估条件规则列表
+    /// </summary>
+    public bool EvaluateConditions(List<ConditionRule> conditions, string logicalOperator, Dictionary<string, object?> variables)
+    {
+        if (conditions == null || conditions.Count == 0)
+            return true;
+
+        var isAnd = logicalOperator?.ToLower() == "and";
+
+        foreach (var condition in conditions)
+        {
+            // 构建表达式：variable operator value
+            var expression = $"{condition.Variable} {condition.Operator} {condition.Value}";
+            var result = Evaluate(expression, variables);
+
+            if (isAnd && !result)
+                return false;
+
+            if (!isAnd && result)
+                return true;
+        }
+
+        return isAnd;
+    }
+
+    /// <summary>
+    /// 评估条件分支，返回匹配的分支
+    /// </summary>
+    public ConditionEvaluationResult EvaluateConditionBranches(ConditionConfig config, Dictionary<string, object?> variables)
+    {
+        if (config?.Branches == null || config.Branches.Count == 0)
+        {
+            return new ConditionEvaluationResult { IsMatched = false };
+        }
+
+        // 按顺序评估每个分支
+        foreach (var branch in config.Branches.OrderBy(b => b.Order))
+        {
+            if (!branch.Enabled)
+                continue;
+
+            // 评估该分支的条件
+            var isMatched = EvaluateConditions(
+                branch.Conditions,
+                branch.LogicalOperator,
+                variables);
+
+            if (isMatched)
+            {
+                return new ConditionEvaluationResult
+                {
+                    BranchId = branch.Id,
+                    TargetNodeId = branch.TargetNodeId,
+                    IsMatched = true
+                };
+            }
+        }
+
+        // 如果没有分支匹配，使用默认分支
+        if (!string.IsNullOrEmpty(config.DefaultBranchId))
+        {
+            var defaultBranch = config.Branches
+                .FirstOrDefault(b => b.Id == config.DefaultBranchId);
+
+            if (defaultBranch != null)
+            {
+                return new ConditionEvaluationResult
+                {
+                    BranchId = defaultBranch.Id,
+                    TargetNodeId = defaultBranch.TargetNodeId,
+                    IsMatched = true
+                };
+            }
+        }
+
+        // 没有匹配的分支
+        return new ConditionEvaluationResult { IsMatched = false };
     }
 }

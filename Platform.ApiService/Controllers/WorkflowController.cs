@@ -563,14 +563,14 @@ public class WorkflowController : BaseApiController
                 form.Id,
                 form.Name,
                 form.Key,
-                Fields = (form.Fields ?? new List<FormField>()).Select(field => new
+                Fields = form.Fields == null ? new List<dynamic>() : form.Fields.Select(field => new
                 {
                     field.Id,
                     field.Label,
                     field.DataKey,
                     field.Type,
                     field.Required
-                }).ToList()
+                }).Cast<dynamic>().ToList()
             }).ToList();
 
             return Success(new { forms = result });

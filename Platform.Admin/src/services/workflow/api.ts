@@ -135,16 +135,33 @@ export interface ApprovalConfig {
  * 条件规则
  */
 export interface ConditionRule {
+  formId?: string;
   variable: string;
   operator: string;
   value: string;
 }
 
 /**
- * 条件节点配置
+ * 条件分支
+ */
+export interface ConditionBranch {
+  id: string;
+  label: string;
+  conditions: ConditionRule[];
+  logicalOperator: 'and' | 'or';
+  targetNodeId: string;
+  order: number;
+  enabled: boolean;
+}
+
+/**
+ * 条件节点配置 - 支持多分支
  */
 export interface ConditionConfig {
+  branches?: ConditionBranch[];
+  defaultBranchId?: string;
   expression?: string;
+  // 向后兼容：旧字段
   logicalOperator?: 'and' | 'or';
   conditions?: ConditionRule[];
   targetNodeId?: string;

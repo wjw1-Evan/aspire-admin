@@ -238,15 +238,8 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
 
                   {selectedNode?.data.nodeType === 'condition' && (
                     <>
-                      <Form.Item name="logicalOperator" label="逻辑运算符">
-                        <Select>
-                          <Select.Option value="and">AND (且)</Select.Option>
-                          <Select.Option value="or">OR (或)</Select.Option>
-                        </Select>
-                      </Form.Item>
-
-                      <Divider titlePlacement="left" plain>条件规则</Divider>
-                      <Form.List name="conditions">
+                      <Divider titlePlacement="left" plain>条件分支</Divider>
+                      <Form.List name="branches">
                         {(fields, { add, remove }) => (
                           <>
                             {fields.map(({ key, name, ...restField }) => (
@@ -257,84 +250,174 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                                 extra={<DeleteOutlined onClick={() => remove(name)} style={{ color: '#ff4d4f' }} />}
                               >
                                 <Space direction="vertical" style={{ width: '100%' }}>
-                                  {/* 第一级：选择表单 */}
+                                  {/* 分支标签 */}
                                   <Form.Item
                                     {...restField}
-                                    name={[name, 'formId']}
-                                    label="表单"
-                                    rules={[{ required: true, message: '请选择表单' }]}
+                                    name={[name, 'label']}
+                                    label="分支标签"
+                                    rules={[{ required: true, message: '请输入分支标签' }]}
                                   >
-                                    <Select
-                                      placeholder="选择流程中使用的表单"
-                                      showSearch
-                                      loading={loading}
-                                      options={workflowForms.map(f => ({ label: f.Name, value: f.Id }))}
-                                    />
+                                    <Input placeholder="例如：金额 > 100" />
                                   </Form.Item>
 
-                                  {/* 第二级：选择字段 */}
-                                  <Form.Item noStyle shouldUpdate={(prev, curr) => prev.conditions?.[name]?.formId !== curr.conditions?.[name]?.formId}>
-                                    {({ getFieldValue }) => {
-                                      const formId = getFieldValue(['conditions', name, 'formId']);
-                                      const fields = getSelectedFormFields(formId);
-                                      return (
-                                        <Form.Item
-                                          {...restField}
-                                          name={[name, 'variable']}
-                                          label="字段"
-                                          rules={[{ required: true, message: '请选择字段' }]}
-                                        >
-                                          <Select
-                                            placeholder="选择表单字段"
-                                            showSearch
-                                            disabled={!formId}
-                                            options={fields.map(f => ({
-                                              label: `${f.Label} (${f.DataKey})`,
-                                              value: f.DataKey
-                                            }))}
-                                          />
-                                        </Form.Item>
-                                      );
-                                    }}
-                                  </Form.Item>
-
+                                  {/* 分支启用状态 */}
                                   <Form.Item
                                     {...restField}
-                                    name={[name, 'operator']}
-                                    label="操作符"
-                                    rules={[{ required: true, message: '请选择操作符' }]}
+                                    name={[name, 'enabled']}
+                                    label="启用此分支"
+                                    valuePropName="checked"
                                   >
-                                    <Select placeholder="选择操作符">
-                                      <Select.Option value="equals">等于 (==)</Select.Option>
-                                      <Select.Option value="not_equals">不等于 (!=)</Select.Option>
-                                      <Select.Option value="greater_than">大于 (&gt;)</Select.Option>
-                                      <Select.Option value="less_than">小于 (&lt;)</Select.Option>
-                                      <Select.Option value="greater_than_or_equal">大于等于 (&gt;=)</Select.Option>
-                                      <Select.Option value="less_than_or_equal">小于等于 (&lt;=)</Select.Option>
-                                      <Select.Option value="contains">包含 (Contains)</Select.Option>
+                                    <Switch />
+                                  </Form.Item>
+
+                                  {/* 分支内的条件规则 */}
+                                  <Divider style={{ margin: '8px 0' }} plain>条件规则</Divider>
+                                  <Form.List name={[name, 'conditions']}>
+                                    {(condFields, { add: addCond, remove: removeCond }) => (
+                                      <>
+                                        {condFields.map(({ key: condKey, name: condName, ...condRestField }) => (
+                                          <Card
+                                            size="small"
+                                            style={{ marginBottom: 8, background: '#ffffff', border: '1px solid #e5e7eb' }}
+                                            key={condKey}
+                                            extra={<DeleteOutlined onClick={() => removeCond(condName)} style={{ color: '#ff4d4f', fontSize: '12px' }} />}
+                                          >
+                                            <Space direction="vertical" style={{ width: '100%' }}>
+                                              {/* 表单选择 */}
+                                              <Form.Item
+                                                {...condRestField}
+                                                name={[condName, 'formId']}
+                                                label="表单"
+                                                rules={[{ required: true, message: '请选择表单' }]}
+                                              >
+                                                <Select
+                                                  placeholder="选择流程中使用的表单"
+                                                  showSearch
+                                                  loading={loading}
+                                                  options={workflowForms.map(f => ({ label: f.Name, value: f.Id }))}
+                                                />
+                                              </Form.Item>
+
+                                              {/* 字段选择 */}
+                                              <Form.Item noStyle shouldUpdate={(prev, curr) => {
+                                                const prevFormId = prev.branches?.[name]?.conditions?.[condName]?.formId;
+                                                const currFormId = curr.branches?.[name]?.conditions?.[condName]?.formId;
+                                                return prevFormId !== currFormId;
+                                              }}>
+                                                {({ getFieldValue }) => {
+                                                  const formId = getFieldValue(['branches', name, 'conditions', condName, 'formId']);
+                                                  const fields = getSelectedFormFields(formId);
+                                                  return (
+                                                    <Form.Item
+                                                      {...condRestField}
+                                                      name={[condName, 'variable']}
+                                                      label="字段"
+                                                      rules={[{ required: true, message: '请选择字段' }]}
+                                                    >
+                                                      <Select
+                                                        placeholder="选择表单字段"
+                                                        showSearch
+                                                        disabled={!formId}
+                                                        options={fields.map(f => ({
+                                                          label: `${f.Label} (${f.DataKey})`,
+                                                          value: f.DataKey
+                                                        }))}
+                                                      />
+                                                    </Form.Item>
+                                                  );
+                                                }}
+                                              </Form.Item>
+
+                                              {/* 操作符 */}
+                                              <Form.Item
+                                                {...condRestField}
+                                                name={[condName, 'operator']}
+                                                label="操作符"
+                                                rules={[{ required: true, message: '请选择操作符' }]}
+                                              >
+                                                <Select placeholder="选择操作符">
+                                                  <Select.Option value="equals">等于 (==)</Select.Option>
+                                                  <Select.Option value="not_equals">不等于 (!=)</Select.Option>
+                                                  <Select.Option value="greater_than">大于 (&gt;)</Select.Option>
+                                                  <Select.Option value="less_than">小于 (&lt;)</Select.Option>
+                                                  <Select.Option value="greater_than_or_equal">大于等于 (&gt;=)</Select.Option>
+                                                  <Select.Option value="less_than_or_equal">小于等于 (&lt;=)</Select.Option>
+                                                  <Select.Option value="contains">包含 (Contains)</Select.Option>
+                                                </Select>
+                                              </Form.Item>
+
+                                              {/* 比较值 */}
+                                              <Form.Item
+                                                {...condRestField}
+                                                name={[condName, 'value']}
+                                                label="比较值"
+                                                rules={[{ required: true, message: '请输入比较值' }]}
+                                              >
+                                                <Input placeholder="输入值" />
+                                              </Form.Item>
+                                            </Space>
+                                          </Card>
+                                        ))}
+                                        <Button type="dashed" onClick={() => addCond()} block size="small" icon={<PlusOutlined />}>
+                                          添加条件
+                                        </Button>
+                                      </>
+                                    )}
+                                  </Form.List>
+
+                                  {/* 分支内的逻辑运算符 */}
+                                  <Form.Item
+                                    {...restField}
+                                    name={[name, 'logicalOperator']}
+                                    label="条件间逻辑"
+                                  >
+                                    <Select>
+                                      <Select.Option value="and">AND (且)</Select.Option>
+                                      <Select.Option value="or">OR (或)</Select.Option>
                                     </Select>
                                   </Form.Item>
+
+                                  {/* 目标节点 */}
                                   <Form.Item
                                     {...restField}
-                                    name={[name, 'value']}
-                                    label="比较值"
-                                    rules={[{ required: true, message: '请输入比较值' }]}
+                                    name={[name, 'targetNodeId']}
+                                    label="目标节点"
+                                    rules={[{ required: true, message: '请选择目标节点' }]}
                                   >
-                                    <Input placeholder="输入值" />
+                                    <Select placeholder="选择此分支匹配时的下一个节点">
+                                      {allNodes
+                                        .filter(node => node.id !== selectedNode?.id)
+                                        .map(node => (
+                                          <Select.Option key={node.id} value={node.id}>
+                                            {node.data?.label || node.id}
+                                          </Select.Option>
+                                        ))}
+                                    </Select>
                                   </Form.Item>
                                 </Space>
                               </Card>
                             ))}
                             <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
-                              添加条件规则
+                              添加分支
                             </Button>
                           </>
                         )}
                       </Form.List>
 
-                      <Divider titlePlacement="left" plain>高级表达式 (可选)</Divider>
-                      <Form.Item name="expression" label="自定义 C# 表达式" tooltip="如果结构化规则无法满足，可在此输入原始表达式">
-                        <Input.TextArea rows={2} placeholder="例如: Request.Amount > 1000" />
+                      {/* 默认分支 */}
+                      <Form.Item name="defaultBranchId" label="默认分支" tooltip="当所有条件都不匹配时，使用此分支">
+                        <Select placeholder="选择默认分支" allowClear>
+                          <Form.Item noStyle shouldUpdate>
+                            {({ getFieldValue }) => {
+                              const branches = getFieldValue('branches') || [];
+                              return branches.map((branch: any, idx: number) => (
+                                <Select.Option key={idx} value={branch.id || idx}>
+                                  {branch.label || `分支 ${idx + 1}`}
+                                </Select.Option>
+                              ));
+                            }}
+                          </Form.Item>
+                        </Select>
                       </Form.Item>
                     </>
                   )}

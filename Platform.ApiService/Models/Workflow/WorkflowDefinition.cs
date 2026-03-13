@@ -254,20 +254,56 @@ public class ApproverRule
     public string? FormFieldKey { get; set; }
 }
 
-public class ConditionConfig
+public class ConditionBranch
 {
+    [BsonElement("id")]
+    public string Id { get; set; } = string.Empty;
+
+    [BsonElement("label")]
+    public string Label { get; set; } = string.Empty;
+
     [BsonElement("conditions")]
     public List<ConditionRule> Conditions { get; set; } = new();
 
     [BsonElement("logicalOperator")]
     public string LogicalOperator { get; set; } = "and";
 
+    [BsonElement("targetNodeId")]
+    public string TargetNodeId { get; set; } = string.Empty;
+
+    [BsonElement("order")]
+    public int Order { get; set; } = 0;
+
+    [BsonElement("enabled")]
+    public bool Enabled { get; set; } = true;
+}
+
+public class ConditionConfig
+{
+    [BsonElement("branches")]
+    public List<ConditionBranch> Branches { get; set; } = new();
+
+    [BsonElement("defaultBranchId")]
+    public string? DefaultBranchId { get; set; }
+
     [BsonElement("expression")]
     public string? Expression { get; set; }
+
+    // 向后兼容：保留旧字段
+    [BsonElement("conditions")]
+    [BsonIgnoreIfNull]
+    public List<ConditionRule>? LegacyConditions { get; set; }
+
+    [BsonElement("logicalOperator")]
+    [BsonIgnoreIfNull]
+    public string? LegacyLogicalOperator { get; set; }
 }
 
 public class ConditionRule
 {
+    [BsonElement("formId")]
+    public string? FormId { get; set; }
+
     [BsonElement("variable")]
     public string Variable { get; set; } = string.Empty;
 
@@ -276,9 +312,6 @@ public class ConditionRule
 
     [BsonElement("value")]
     public string? Value { get; set; }
-
-    [BsonElement("targetNodeId")]
-    public string? TargetNodeId { get; set; }
 }
 
 

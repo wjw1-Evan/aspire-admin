@@ -51,7 +51,7 @@ public class WorkflowConditionTests : BaseIntegrationTest
     }
 
     /// <summary>
-    /// 辅助方法：创建带表单绑定的工作流
+    /// 辅助方法：创建带表单绑定的工作流 - 支持多分支条件
     /// </summary>
     private WorkflowDefinitionRequest CreateWorkflowWithFormBinding(
         string formDefinitionId,
@@ -61,6 +61,33 @@ public class WorkflowConditionTests : BaseIntegrationTest
     {
         var counter = Guid.NewGuid().ToString("N")[..8];
         var name = $"workflow_form_binding_{counter}";
+
+        // 将条件转换为分支结构
+        // 第一个分支：条件满足时 → approval_a
+        // 第二个分支：条件不满足时 → approval_b
+        var branches = new List<object>
+        {
+            new
+            {
+                Id = "branch_true",
+                Label = "条件满足",
+                Conditions = conditions,
+                LogicalOperator = logicalOperator,
+                TargetNodeId = "approval_a",
+                Order = 0,
+                Enabled = true
+            },
+            new
+            {
+                Id = "branch_false",
+                Label = "条件不满足",
+                Conditions = new List<object>(), // 默认分支，无条件
+                LogicalOperator = "and",
+                TargetNodeId = "approval_b",
+                Order = 1,
+                Enabled = true
+            }
+        };
 
         var nodes = new List<WorkflowNodeRequest>
         {
@@ -85,7 +112,7 @@ public class WorkflowConditionTests : BaseIntegrationTest
                 },
                 Position = new NodePositionRequest { X = 100, Y = 200 }
             },
-            // 条件节点
+            // 条件节点 - 使用新的多分支结构
             new WorkflowNodeRequest
             {
                 Id = "condition_node",
@@ -96,8 +123,8 @@ public class WorkflowConditionTests : BaseIntegrationTest
                     NodeType = "condition",
                     Config = new {
                         Condition = new {
-                            LogicalOperator = logicalOperator,
-                            Conditions = conditions
+                            Branches = branches,
+                            DefaultBranchId = "branch_false"
                         }
                     }
                 },
@@ -149,8 +176,8 @@ public class WorkflowConditionTests : BaseIntegrationTest
         var edges = new List<WorkflowEdgeRequest>
         {
             new WorkflowEdgeRequest { Id = "e1", Source = "start", Target = "condition_node" },
-            new WorkflowEdgeRequest { Id = "e2", Source = "condition_node", Target = "approval_a", SourceHandle = "true" },
-            new WorkflowEdgeRequest { Id = "e3", Source = "condition_node", Target = "approval_b", SourceHandle = "false" },
+            new WorkflowEdgeRequest { Id = "e2", Source = "condition_node", Target = "approval_a", SourceHandle = "branch_true" },
+            new WorkflowEdgeRequest { Id = "e3", Source = "condition_node", Target = "approval_b", SourceHandle = "branch_false" },
             new WorkflowEdgeRequest { Id = "e4", Source = "approval_a", Target = "end" },
             new WorkflowEdgeRequest { Id = "e5", Source = "approval_b", Target = "end" }
         };

@@ -226,6 +226,46 @@ const DocumentDetailDrawer: React.FC<DocumentDetailDrawerProps> = ({
                                             );
                                         }
 
+                                        // 显示条件节点的分支信息
+                                        if (n.type === 'condition' && n.data?.config?.condition) {
+                                            const conditionConfig = n.data.config.condition;
+                                            const branches = conditionConfig.branches || [];
+                                            const defaultNodeId = conditionConfig.defaultNodeId;
+
+                                            if (branches.length > 0 || defaultNodeId) {
+                                                descriptionElements.push(
+                                                    <div key="condition" style={{ marginTop: 8, marginBottom: 4 }}>
+                                                        <div style={{ fontSize: 12, fontWeight: 500, color: '#666', marginBottom: 4 }}>
+                                                            {intl.formatMessage({ id: 'pages.workflow.condition.branches', defaultMessage: '条件分支' })}:
+                                                        </div>
+                                                        <div style={{ fontSize: 12, color: '#666', paddingLeft: 8 }}>
+                                                            {branches.map((branch: any, idx: number) => {
+                                                                const targetNode = workflowDef?.graph?.nodes?.find((n: any) => n.id === branch.targetNodeId);
+                                                                return (
+                                                                    <div key={idx} style={{ marginBottom: 4 }}>
+                                                                        <Tag color="blue" style={{ fontSize: 11 }}>{branch.label}</Tag>
+                                                                        {' → '}
+                                                                        <span style={{ color: '#1890ff' }}>
+                                                                            {targetNode?.data?.label || branch.targetNodeId || '(未配置)'}
+                                                                        </span>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                            {defaultNodeId && (
+                                                                <div style={{ marginTop: 4, paddingTop: 4, borderTop: '1px solid #e8e8e8' }}>
+                                                                    <Tag color="orange" style={{ fontSize: 11 }}>默认节点</Tag>
+                                                                    {' → '}
+                                                                    <span style={{ color: '#ff7a45' }}>
+                                                                        {workflowDef?.graph?.nodes?.find((n: any) => n.id === defaultNodeId)?.data?.label || defaultNodeId}
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            }
+                                        }
+
                                         if (nodeFormData?.def && nodeFormData.def.fields?.length > 0) {
                                             descriptionElements.push(
                                                 <div key="form" style={{ marginTop: 8, marginBottom: 4 }}>
@@ -326,9 +366,9 @@ const DocumentDetailDrawer: React.FC<DocumentDetailDrawerProps> = ({
                                         elementsSelectable={false}
                                         proOptions={{ hideAttribution: true }}
                                     >
-                                        <MiniMap 
-                                            pannable 
-                                            zoomable 
+                                        <MiniMap
+                                            pannable
+                                            zoomable
                                             nodeColor={(n: any) => {
                                                 const config = NODE_CONFIGS[n.data?.nodeType as keyof typeof NODE_CONFIGS];
                                                 return config?.color || '#eee';

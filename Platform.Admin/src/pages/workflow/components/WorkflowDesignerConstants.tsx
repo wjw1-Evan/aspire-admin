@@ -98,6 +98,7 @@ export const CustomNode: React.FC<NodeProps> = ({ data, selected }) => {
   const renderHandles = () => {
     if (nodeType === 'condition') {
       const branches = data.config?.condition?.branches || [];
+      const hasDefaultNode = !!data.config?.condition?.defaultNodeId;
       const handleCount = Math.max(branches.length, 1);
       const handles = [];
 
@@ -117,7 +118,22 @@ export const CustomNode: React.FC<NodeProps> = ({ data, selected }) => {
             position={Position.Bottom}
             id={handleId}
             style={{
-              left: `${((i + 1) / (handleCount + 1)) * 100}%`,
+              left: `${((i + 1) / (handleCount + (hasDefaultNode ? 2 : 1))) * 100}%`,
+            }}
+          />
+        );
+      }
+
+      // 为默认节点生成单独的输出 handle
+      if (hasDefaultNode) {
+        handles.push(
+          <Handle
+            key="source-default"
+            type="source"
+            position={Position.Bottom}
+            id="default"
+            style={{
+              left: `${((handleCount + 1) / (handleCount + 2)) * 100}%`,
             }}
           />
         );

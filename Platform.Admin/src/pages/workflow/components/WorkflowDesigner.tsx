@@ -526,6 +526,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
               id: edgeId,
               source: selectedNode.id,
               target: branch.targetNodeId,
+              sourceHandle: branch.id,
               label: branch.label,
               ...defaultEdgeOptions,
             };
@@ -533,13 +534,14 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
           }
         });
 
-        // 为默认节点生成连接线
+        // 为默认节点生成连接线，使用单独的 "default" handle
         if (selectedNodeConfig.condition.defaultNodeId) {
           const defaultEdgeId = `${selectedNode.id}-default-${selectedNodeConfig.condition.defaultNodeId}`;
           const defaultEdge: Edge = {
             id: defaultEdgeId,
             source: selectedNode.id,
             target: selectedNodeConfig.condition.defaultNodeId,
+            sourceHandle: 'default',
             label: '默认',
             ...defaultEdgeOptions,
           };

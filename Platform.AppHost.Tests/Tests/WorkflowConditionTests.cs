@@ -74,19 +74,24 @@ public class WorkflowConditionTests : BaseIntegrationTest
                 Conditions = conditions,
                 LogicalOperator = logicalOperator,
                 TargetNodeId = "approval_a",
-                Order = 0,
-                Enabled = true
+                Order = 0
             },
             new
             {
                 Id = "branch_false",
                 Label = "条件不满足",
-                Conditions = new List<object>(), // 默认分支，无条件
+                Conditions = new List<object>(), // 无条件分支
                 LogicalOperator = "and",
                 TargetNodeId = "approval_b",
-                Order = 1,
-                Enabled = true
+                Order = 1
             }
+        }; var edges = new List<WorkflowEdgeRequest>
+        {
+            new WorkflowEdgeRequest { Id = "e1", Source = "start", Target = "condition_node" },
+            new WorkflowEdgeRequest { Id = "e2", Source = "condition_node", Target = "approval_a", SourceHandle = "branch_true", Label = "条件满足" },
+            new WorkflowEdgeRequest { Id = "e3", Source = "condition_node", Target = "approval_b", SourceHandle = "branch_false", Label = "条件不满足" },
+            new WorkflowEdgeRequest { Id = "e4", Source = "approval_a", Target = "end" },
+            new WorkflowEdgeRequest { Id = "e5", Source = "approval_b", Target = "end" }
         };
 
         var nodes = new List<WorkflowNodeRequest>
@@ -770,4 +775,173 @@ public class WorkflowConditionTests : BaseIntegrationTest
         Assert.Equal("approval_a", instance.CurrentNodeId);
         Output.WriteLine($"✓ 表单数据优先级：表单数据 amount=2000 覆盖了 Variables 中的 amount=500，流程进入 approval_a");
     }
-}
+
+    /// <summary>
+    /// 测试：默认节点 - 当所有条件都不匹配时，流程跳转到默认节点
+    /// </summary>
+    [Fact]
+    public async Task ConditionBranching_DefaultNode_ShouldJumpToDefaultNode()
+    {
+        // Arrange
+        await InitializeAuthenticationAsync();
+
+        // 1. 创建表单定义
+        var formFields = new List<FormFieldRequest>
+        {
+            new FormFieldRequest
+            {
+                Label = "Amount",
+                Type = "Number",
+                Required = true,
+                DataKey = "amount"
+            }
+        };
+        var formId = await CreateFormDefinitionAsync($"form_default_node_{Guid.NewGuid().ToString("N")[..8]}", formFields);
+
+        // 2. 创建工作流，配置默认节点
+        var counter = Guid.NewGuid().ToString("N")[..8];
+        var name = $"workflow_default_node_{counter}";
+
+        var branches = new List<object>
+        {
+            new
+            {
+                Id = "branch_high",
+                Label = "金额 > 5000",
+                Conditions = new List<object>
+                {
+                    new { FormId = formId, Variable = "amount", Operator = "greater_than", Value = "5000" }
+                },
+                LogicalOperator = "and",
+                TargetNodeId = "approval_high",
+                Order = 0
+            }
+        };
+
+        var nodes = new List<WorkflowNodeRequest>
+        {
+            new WorkflowNodeRequest
+            {
+                Id = "start",
+                Type = "start",
+                Data = new NodeDataRequest
+                {
+                    Label = "Start",
+                    NodeType = "start",
+                    Config = new
+                    {
+                        Form = new
+                        {
+                            FormDefinitionId = formId,
+                            Target = "Document",
+                            Required = true
+                        }
+                    }
+                },
+                Position = new NodePositionRequest { X = 100, Y = 200 }
+            },
+            new WorkflowNodeRequest
+            {
+                Id = "condition_node",
+                Type = "condition",
+                Data = new NodeDataRequest
+                {
+                    Label = "金额判断",
+                    NodeType = "condition",
+                    Config = new {
+                        Condition = new {
+                            Branches = branches,
+                            DefaultNodeId = "approval_default"  // 设置默认节点
+                        }
+                    }
+                },
+                Position = new NodePositionRequest { X = 400, Y = 200 }
+            },
+            new WorkflowNodeRequest
+            {
+                Id = "approval_high",
+                Type = "approval",
+                Data = new NodeDataRequest
+                {
+                    Label = "高额审批",
+                    NodeType = "approval",
+                    Config = new
+                    {
+                        approval = new
+                        {
+                            type = "Any",
+                            approvers = new[] { new { type = "User", userId = "507f1f77bcf86cd799439011" } }
+                        }
+                    }
+                },
+                Position = new NodePositionRequest { X = 700, Y = 100 }
+            },
+            new WorkflowNodeRequest
+            {
+                Id = "approval_default",
+                Type = "approval",
+                Data = new NodeDataRequest
+                {
+                    Label = "默认审批",
+                    NodeType = "approval",
+                    Config = new
+                    {
+                        approval = new
+                        {
+                            type = "Any",
+                            approvers = new[] { new { type = "User", userId = "507f1f77bcf86cd799439011" } }
+                        }
+                    }
+                },
+                Position = new NodePositionRequest { X = 700, Y = 300 }
+            },
+            new WorkflowNodeRequest { Id = "end", Type = "end", Data = new NodeDataRequest { Label = "End", NodeType = "end" }, Position = new NodePositionRequest { X = 1000, Y = 200 } }
+        };
+
+        var edges = new List<WorkflowEdgeRequest>
+        {
+            new WorkflowEdgeRequest { Id = "e1", Source = "start", Target = "condition_node" },
+            new WorkflowEdgeRequest { Id = "e2", Source = "condition_node", Target = "approval_high", SourceHandle = "branch_high", Label = "金额 > 5000" },
+            new WorkflowEdgeRequest { Id = "e3", Source = "condition_node", Target = "approval_default", SourceHandle = "default", Label = "默认" },
+            new WorkflowEdgeRequest { Id = "e4", Source = "approval_high", Target = "end" },
+            new WorkflowEdgeRequest { Id = "e5", Source = "approval_default", Target = "end" }
+        };
+
+        var workflowRequest = new WorkflowDefinitionRequest
+        {
+            Name = name,
+            Category = "Testing",
+            Graph = new WorkflowGraphRequest { Nodes = nodes, Edges = edges },
+            IsActive = true
+        };
+
+        var workflowResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
+        Assert.Equal(HttpStatusCode.OK, workflowResponse.StatusCode);
+        var workflow = await workflowResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
+        Assert.NotNull(workflow?.Data);
+        var definitionId = workflow.Data.Id;
+
+        // 3. 创建公文，金额 = 2000（不满足 > 5000 的条件）
+        var documentRequest = TestDataGenerator.GenerateDocumentWithFormData(new Dictionary<string, object>
+        {
+            { "amount", 2000 }
+        });
+        var docResponse = await TestClient.PostAsJsonAsync("/api/documents", documentRequest);
+        Assert.Equal(HttpStatusCode.OK, docResponse.StatusCode);
+        var doc = await docResponse.Content.ReadAsJsonAsync<ApiResponse<DocumentResponse>>();
+        Assert.NotNull(doc?.Data);
+        var documentId = doc.Data.Id;
+
+        // Act - 启动流程
+        var submitRequest = new { WorkflowDefinitionId = definitionId };
+        var submitResponse = await TestClient.PostAsJsonAsync($"/api/documents/{documentId}/submit", submitRequest);
+        Assert.Equal(HttpStatusCode.OK, submitResponse.StatusCode);
+
+        var instanceWrap = await submitResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowInstanceResponse>>();
+        Assert.NotNull(instanceWrap?.Data);
+        var instance = instanceWrap.Data;
+
+        // Assert - 应该跳转到默认节点
+        Assert.Equal("approval_default", instance.CurrentNodeId);
+        Output.WriteLine($"✓ 默认节点：amount=2000 不满足 > 5000 的条件，流程跳转到默认节点 approval_default");
+    }

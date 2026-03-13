@@ -532,6 +532,19 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
             updatedEdges = addEdge(newEdge, updatedEdges);
           }
         });
+
+        // 为默认节点生成连接线
+        if (selectedNodeConfig.condition.defaultNodeId) {
+          const defaultEdgeId = `${selectedNode.id}-default-${selectedNodeConfig.condition.defaultNodeId}`;
+          const defaultEdge: Edge = {
+            id: defaultEdgeId,
+            source: selectedNode.id,
+            target: selectedNodeConfig.condition.defaultNodeId,
+            label: '默认',
+            ...defaultEdgeOptions,
+          };
+          updatedEdges = addEdge(defaultEdge, updatedEdges);
+        }
       }
 
       setNodes(updatedNodes);

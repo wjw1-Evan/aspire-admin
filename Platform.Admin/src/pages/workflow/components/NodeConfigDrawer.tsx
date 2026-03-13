@@ -372,18 +372,31 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                                     )}
                                   </Form.List>
 
-                                  {/* 分支内的逻辑运算符 */}
-                                  <Form.Item
-                                    {...restField}
-                                    name={[name, 'logicalOperator']}
-                                    label="条件间逻辑"
-                                  >
-                                    <Select
-                                      options={[
-                                        { label: 'AND (且)', value: 'and' },
-                                        { label: 'OR (或)', value: 'or' }
-                                      ]}
-                                    />
+                                  {/* 分支内的逻辑运算符 - 仅在有多个条件时显示 */}
+                                  <Form.Item noStyle shouldUpdate={(prev, curr) => {
+                                    const prevConds = prev.branches?.[name]?.conditions || [];
+                                    const currConds = curr.branches?.[name]?.conditions || [];
+                                    return prevConds.length !== currConds.length;
+                                  }}>
+                                    {({ getFieldValue }) => {
+                                      const conditions = getFieldValue(['branches', name, 'conditions']) || [];
+                                      return conditions.length > 1 ? (
+                                        <Form.Item
+                                          {...restField}
+                                          name={[name, 'logicalOperator']}
+                                          label="条件间逻辑"
+                                          rules={[{ required: true, message: '请选择条件间逻辑' }]}
+                                        >
+                                          <Select
+                                            placeholder="选择多个条件之间的逻辑关系"
+                                            options={[
+                                              { label: 'AND (且)', value: 'and' },
+                                              { label: 'OR (或)', value: 'or' }
+                                            ]}
+                                          />
+                                        </Form.Item>
+                                      ) : null;
+                                    }}
                                   </Form.Item>
 
                                   {/* 目标节点 */}

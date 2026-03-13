@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Button, Card, Drawer, Form, Input, Select, Switch, Space, Divider, Tabs, Mentions, FormInstance } from 'antd';
+import { Button, Card, Drawer, Form, Input, Select, Switch, Space, Divider, Tabs, FormInstance } from 'antd';
 import { DeleteOutlined, SaveOutlined, PlusOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import { NODE_CONFIGS } from './WorkflowDesignerConstants';
@@ -8,8 +8,7 @@ import type { AppUser } from '@/services/user/api';
 import type { Role } from '@/services/role/api';
 import type { FormDefinition } from '@/services/form/api';
 import { getWorkflowFormsAndFields } from '@/services/workflow/api';
-
-const { Option } = Mentions;
+import type { SelectProps } from 'antd';
 
 interface WorkflowFormField {
   Id: string;
@@ -162,13 +161,13 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
               children: (
                 <>
                   <Form.Item name="nodeType" label={intl.formatMessage({ id: 'pages.workflow.designer.nodeType' })}>
-                    <Select disabled>
-                      {Object.keys(NODE_CONFIGS).map(key => (
-                        <Select.Option key={key} value={key}>
-                          {intl.formatMessage({ id: `pages.workflow.designer.add${key.charAt(0).toUpperCase() + key.slice(1)}` })}
-                        </Select.Option>
-                      ))}
-                    </Select>
+                    <Select
+                      disabled
+                      options={Object.keys(NODE_CONFIGS).map(key => ({
+                        label: intl.formatMessage({ id: `pages.workflow.designer.add${key.charAt(0).toUpperCase() + key.slice(1)}` }),
+                        value: key
+                      }))}
+                    />
                   </Form.Item>
 
                   <Form.Item name="label" label={intl.formatMessage({ id: 'pages.workflow.designer.nodeLabel' })} rules={[{ required: true }]}>
@@ -188,11 +187,13 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                         name="approvalType"
                         label={intl.formatMessage({ id: 'pages.workflow.designer.approvalType' })}
                       >
-                        <Select>
-                          <Select.Option value={0}>{intl.formatMessage({ id: 'pages.workflow.designer.approvalType.all' })}</Select.Option>
-                          <Select.Option value={1}>{intl.formatMessage({ id: 'pages.workflow.designer.approvalType.any' })}</Select.Option>
-                          <Select.Option value={2}>{intl.formatMessage({ id: 'pages.workflow.designer.approvalType.sequential' })}</Select.Option>
-                        </Select>
+                        <Select
+                          options={[
+                            { label: intl.formatMessage({ id: 'pages.workflow.designer.approvalType.all' }), value: 0 },
+                            { label: intl.formatMessage({ id: 'pages.workflow.designer.approvalType.any' }), value: 1 },
+                            { label: intl.formatMessage({ id: 'pages.workflow.designer.approvalType.sequential' }), value: 2 }
+                          ]}
+                        />
                       </Form.Item>
 
                       <Divider titlePlacement="left" plain>审批人设置</Divider>
@@ -203,11 +204,14 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                               <Card size="small" styles={{ body: { marginBottom: 12, background: '#f8fafc' } }} key={key} extra={<DeleteOutlined onClick={() => remove(name)} style={{ color: '#ff4d4f' }} />}>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                   <Form.Item {...restField} name={[name, 'type']} rules={[{ required: true }]} style={{ marginBottom: 8 }}>
-                                    <Select placeholder="审批方式">
-                                      <Select.Option value={0}>指定用户</Select.Option>
-                                      <Select.Option value={1}>指定角色</Select.Option>
-                                      <Select.Option value={3}>表单字段</Select.Option>
-                                    </Select>
+                                    <Select
+                                      placeholder="审批方式"
+                                      options={[
+                                        { label: '指定用户', value: 0 },
+                                        { label: '指定角色', value: 1 },
+                                        { label: '表单字段', value: 3 }
+                                      ]}
+                                    />
                                   </Form.Item>
                                   <Form.Item noStyle shouldUpdate={(prev, curr) => prev.approvers?.[name]?.type !== curr.approvers?.[name]?.type}>
                                     {({ getFieldValue }) => {
@@ -249,7 +253,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                                 key={key}
                                 extra={<DeleteOutlined onClick={() => remove(name)} style={{ color: '#ff4d4f' }} />}
                               >
-                                <Space direction="vertical" style={{ width: '100%' }}>
+                                <Space orientation="vertical" style={{ width: '100%' }}>
                                   {/* 分支标签 */}
                                   <Form.Item
                                     {...restField}
@@ -282,7 +286,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                                             key={condKey}
                                             extra={<DeleteOutlined onClick={() => removeCond(condName)} style={{ color: '#ff4d4f', fontSize: '12px' }} />}
                                           >
-                                            <Space direction="vertical" style={{ width: '100%' }}>
+                                            <Space orientation="vertical" style={{ width: '100%' }}>
                                               {/* 表单选择 */}
                                               <Form.Item
                                                 {...condRestField}
@@ -335,15 +339,18 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                                                 label="操作符"
                                                 rules={[{ required: true, message: '请选择操作符' }]}
                                               >
-                                                <Select placeholder="选择操作符">
-                                                  <Select.Option value="equals">等于 (==)</Select.Option>
-                                                  <Select.Option value="not_equals">不等于 (!=)</Select.Option>
-                                                  <Select.Option value="greater_than">大于 (&gt;)</Select.Option>
-                                                  <Select.Option value="less_than">小于 (&lt;)</Select.Option>
-                                                  <Select.Option value="greater_than_or_equal">大于等于 (&gt;=)</Select.Option>
-                                                  <Select.Option value="less_than_or_equal">小于等于 (&lt;=)</Select.Option>
-                                                  <Select.Option value="contains">包含 (Contains)</Select.Option>
-                                                </Select>
+                                                <Select
+                                                  placeholder="选择操作符"
+                                                  options={[
+                                                    { label: '等于 (==)', value: 'equals' },
+                                                    { label: '不等于 (!=)', value: 'not_equals' },
+                                                    { label: '大于 (>)', value: 'greater_than' },
+                                                    { label: '小于 (<)', value: 'less_than' },
+                                                    { label: '大于等于 (>=)', value: 'greater_than_or_equal' },
+                                                    { label: '小于等于 (<=)', value: 'less_than_or_equal' },
+                                                    { label: '包含 (Contains)', value: 'contains' }
+                                                  ]}
+                                                />
                                               </Form.Item>
 
                                               {/* 比较值 */}
@@ -371,10 +378,12 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                                     name={[name, 'logicalOperator']}
                                     label="条件间逻辑"
                                   >
-                                    <Select>
-                                      <Select.Option value="and">AND (且)</Select.Option>
-                                      <Select.Option value="or">OR (或)</Select.Option>
-                                    </Select>
+                                    <Select
+                                      options={[
+                                        { label: 'AND (且)', value: 'and' },
+                                        { label: 'OR (或)', value: 'or' }
+                                      ]}
+                                    />
                                   </Form.Item>
 
                                   {/* 目标节点 */}
@@ -405,19 +414,32 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                       </Form.List>
 
                       {/* 默认分支 */}
-                      <Form.Item name="defaultBranchId" label="默认分支" tooltip="当所有条件都不匹配时，使用此分支">
-                        <Select placeholder="选择默认分支" allowClear>
-                          <Form.Item noStyle shouldUpdate>
-                            {({ getFieldValue }) => {
-                              const branches = getFieldValue('branches') || [];
-                              return branches.map((branch: any, idx: number) => (
-                                <Select.Option key={idx} value={branch.id || idx}>
-                                  {branch.label || `分支 ${idx + 1}`}
-                                </Select.Option>
-                              ));
-                            }}
-                          </Form.Item>
-                        </Select>
+                      <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => {
+                        const prevBranches = prevValues.branches || [];
+                        const currBranches = currentValues.branches || [];
+                        return prevBranches.length !== currBranches.length ||
+                          prevBranches.some((b: any, i: number) => b.id !== currBranches[i]?.id || b.label !== currBranches[i]?.label);
+                      }}>
+                        {({ getFieldValue }) => {
+                          const branches = getFieldValue('branches') || [];
+                          const branchOptions: SelectProps['options'] = branches.map((branch: any, idx: number) => ({
+                            label: branch.label || `分支 ${idx + 1}`,
+                            value: branch.id || idx
+                          }));
+                          return (
+                            <Form.Item
+                              name="defaultBranchId"
+                              label="默认分支"
+                              tooltip="当所有条件都不匹配时，使用此分支"
+                            >
+                              <Select
+                                placeholder="选择默认分支"
+                                allowClear
+                                options={branchOptions}
+                              />
+                            </Form.Item>
+                          );
+                        }}
                       </Form.Item>
                     </>
                   )}

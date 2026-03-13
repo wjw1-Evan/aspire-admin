@@ -418,13 +418,14 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                         const prevBranches = prevValues.branches || [];
                         const currBranches = currentValues.branches || [];
                         return prevBranches.length !== currBranches.length ||
-                          prevBranches.some((b: any, i: number) => b.id !== currBranches[i]?.id || b.label !== currBranches[i]?.label);
+                          prevBranches.some((b: any, i: number) => b?.id !== currBranches[i]?.id || b?.label !== currBranches[i]?.label);
                       }}>
                         {({ getFieldValue }) => {
                           const branches = getFieldValue('branches') || [];
-                          const branchOptions: SelectProps['options'] = branches.map((branch: any, idx: number) => ({
-                            label: branch.label || `分支 ${idx + 1}`,
-                            value: branch.id || idx
+                          const validBranches = Array.isArray(branches) ? branches.filter((b: any) => b) : [];
+                          const branchOptions: SelectProps['options'] = validBranches.map((branch: any, idx: number) => ({
+                            label: branch?.label || `分支 ${idx + 1}`,
+                            value: branch?.id || idx
                           }));
                           return (
                             <Form.Item

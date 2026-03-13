@@ -515,11 +515,32 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
         return node;
       });
 
+      // 根据条件节点的目标节点生成连接线
+      let updatedEdges = edges.filter(e => e.source !== selectedNode.id);
+
+      const selectedNodeConfig = updatedNodes.find(n => n.id === selectedNode.id)?.data.config;
+      if (selectedNodeConfig?.condition?.branches) {
+        selectedNodeConfig.condition.branches.forEach((branch: any) => {
+          if (branch.targetNodeId) {
+            const edgeId = `${selectedNode.id}-${branch.id}-${branch.targetNodeId}`;
+            const newEdge: Edge = {
+              id: edgeId,
+              source: selectedNode.id,
+              target: branch.targetNodeId,
+              label: branch.label,
+              ...defaultEdgeOptions,
+            };
+            updatedEdges = addEdge(newEdge, updatedEdges);
+          }
+        });
+      }
+
       setNodes(updatedNodes);
+      setEdges(updatedEdges);
       setConfigDrawerVisible(false);
       message.success(intl.formatMessage({ id: 'pages.workflow.designer.message.configSaved' }));
     }).catch(() => { });
-  }, [selectedNode, configForm, nodes, setNodes, typeLabels, intl, message]);
+  }, [selectedNode, configForm, nodes, setNodes, edges, setEdges, typeLabels, intl, message, defaultEdgeOptions]);
 
   const validateWorkflow = useCallback(() => {
     const startNodes = nodes.filter(n => n.data.nodeType === 'start');

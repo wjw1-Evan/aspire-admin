@@ -16,8 +16,14 @@ public partial class WorkflowEngine
     /// 业务规则：
     /// 1. 首先加载流程实例中的变量
     /// 2. 然后加载关联公文的基本信息（标题、ID、发起人等）
-    /// 3. 最后加载公文的表单数据（用于条件组件判断）
-    /// 4. 表单数据优先级最高，会覆盖同名的其他变量
+    /// 3. 加载流程定义中所有节点绑定的表单字段定义（用于条件组件判断）
+    /// 4. 最后加载公文的表单数据（实际值）
+    /// 5. 表单数据优先级最高，会覆盖同名的其他变量
+    /// 
+    /// 关键改进：
+    /// - 条件组件现在可以访问流程中涉及的所有表单字段
+    /// - 支持多个节点绑定不同的表单
+    /// - 自动处理 DataScopeKey 嵌套
     /// </summary>
     private async Task<Dictionary<string, object?>> GetDocumentVariablesAsync(string instanceId)
     {
@@ -31,6 +37,53 @@ public partial class WorkflowEngine
         System.Console.WriteLine($"DEBUG_WORKFLOW: 公文ID = {instance.DocumentId}");
         System.Console.WriteLine($"DEBUG_WORKFLOW: 初始变量数 = {variables.Count}");
 
+        // 第一步：加载流程定义中所有节点绑定的表单字段定义
+        // 这样条件组件可以知道有哪些表单字段可用
+        System.Console.WriteLine($"DEBUG_WORKFLOW: 开始加载流程中绑定的表单定义");
+        if (instance.FormDefinitionSnapshots != null && instance.FormDefinitionSnapshots.Count > 0)
+        {
+            System.Console.WriteLine($"DEBUG_WORKFLOW: 发现 {instance.FormDefinitionSnapshots.Count} 个表单快照");
+            foreach (var snapshot in instance.FormDefinitionSnapshots)
+            {
+                try
+                {
+                    var formDef = System.Text.Json.JsonSerializer.Deserialize<FormDefinition>(
+                        snapshot.FormDefinitionJson,
+                        new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                    if (formDef?.Fields != null && formDef.Fields.Count > 0)
+                    {
+                        System.Console.WriteLine($"DEBUG_WORKFLOW: 节点 [{snapshot.NodeId}] 绑定表单，包含 {formDef.Fields.Count} 个字段");
+                        foreach (var field in formDef.Fields)
+                        {
+                            // 注入表单字段定义（作为元数据，便于条件组件了解可用字段）
+                            // 实际值会在后面从公文表单数据中覆盖
+                            var fieldKey = field.DataKey;
+                            if (!string.IsNullOrEmpty(fieldKey))
+                            {
+                                // 如果变量中还没有这个字段，先注入 null 作为占位符
+                                if (!variables.ContainsKey(fieldKey))
+                                {
+                                    variables[fieldKey] = null;
+                                    System.Console.WriteLine($"DEBUG_WORKFLOW: 注入表单字段占位符 [{fieldKey}] (来自节点 {snapshot.NodeId})");
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine($"DEBUG_WORKFLOW: 解析表单快照失败 - {ex.Message}");
+                    _logger.LogError("DEBUG_WORKFLOW: 解析表单快照失败 - {Error}", ex.Message);
+                }
+            }
+        }
+        else
+        {
+            System.Console.WriteLine($"DEBUG_WORKFLOW: 没有表单快照");
+        }
+
+        // 第二步：加载公文信息和表单数据
         if (!string.IsNullOrEmpty(instance.DocumentId))
         {
             var document = await _documentFactory.GetByIdAsync(instance.DocumentId);

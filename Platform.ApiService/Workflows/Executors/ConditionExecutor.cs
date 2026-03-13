@@ -80,12 +80,12 @@ internal sealed partial class ConditionExecutor : Executor
 
         await Task.CompletedTask;
 
-        // 返回匹配的分支的目标节点 ID 作为 sourceHandle，用于路由到不同的下一个组件
-        // 如果没有分支匹配，则使用默认节点
-        var targetNodeId = matchedBranch?.TargetNodeId ?? _config.DefaultNodeId ?? "default";
+        // 返回匹配的分支 ID 作为 sourceHandle，用于路由到不同的下一个组件
+        // 如果没有分支匹配，则使用默认节点 ID
+        var sourceHandle = matchedBranch?.Id ?? _config.DefaultNodeId ?? "default";
         return new Dictionary<string, object?>
         {
-            ["__sourceHandle"] = targetNodeId,
+            ["__sourceHandle"] = sourceHandle,
             ["branchId"] = matchedBranch?.Id,
             ["branchLabel"] = matchedBranch?.Label,
             ["result"] = matchedBranch != null,

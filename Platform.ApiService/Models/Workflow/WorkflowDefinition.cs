@@ -291,11 +291,9 @@ public class ConditionConfig
 
     // 向后兼容：保留旧字段
     [BsonElement("conditions")]
-    [BsonIgnoreIfNull]
     public List<ConditionRule>? LegacyConditions { get; set; }
 
     [BsonElement("logicalOperator")]
-    [BsonIgnoreIfNull]
     public string? LegacyLogicalOperator { get; set; }
 }
 

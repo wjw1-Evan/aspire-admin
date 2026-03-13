@@ -67,11 +67,19 @@ const WorkflowEditForm: React.FC<WorkflowEditFormProps> = ({ workflow, onSuccess
             const values = await form.validateFields();
             setLoading(true);
 
+            // 自动增加 minor 版本号
+            const newVersion = {
+                major: fullWorkflow.version?.major || 1,
+                minor: (fullWorkflow.version?.minor || 0) + 1,
+                createdAt: fullWorkflow.version?.createdAt || new Date().toISOString(),
+            };
+
             const response = await updateWorkflow(fullWorkflow.id, {
                 name: values.name,
                 description: values.description,
                 category: values.category || 'default',
                 isActive: values.isActive,
+                version: newVersion,
                 graph: graph,
             });
 

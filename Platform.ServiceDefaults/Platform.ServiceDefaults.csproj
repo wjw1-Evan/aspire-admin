@@ -13,7 +13,6 @@
     <PackageReference Include="Aspire.OpenAI" Version="13.1.2-preview.1.26125.13" />
     <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.2" />
     <PackageReference Include="Microsoft.Agents.AI" Version="1.0.0-rc3" />
-    <PackageReference Include="Microsoft.Agents.AI.Workflows" Version="1.0.0-rc3" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.4" />
     <PackageReference Include="Microsoft.Extensions.AI" Version="10.4.0" />
     <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="10.4.0" />

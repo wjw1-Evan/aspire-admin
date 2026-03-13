@@ -26,11 +26,29 @@ public partial class WorkflowEngine
 
         var variables = instance.GetVariablesDict();
 
+        System.Console.WriteLine($"\n========== DEBUG_WORKFLOW: GetDocumentVariablesAsync ==========");
+        System.Console.WriteLine($"DEBUG_WORKFLOW: 实例ID = {instanceId}");
+        System.Console.WriteLine($"DEBUG_WORKFLOW: 公文ID = {instance.DocumentId}");
+        System.Console.WriteLine($"DEBUG_WORKFLOW: 初始变量数 = {variables.Count}");
+
         if (!string.IsNullOrEmpty(instance.DocumentId))
         {
             var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
             if (document != null)
             {
+                System.Console.WriteLine($"DEBUG_WORKFLOW: 公文已找到，标题 = {document.Title}");
+                System.Console.WriteLine($"DEBUG_WORKFLOW: 公文FormData = {(document.FormData == null ? "null" : $"Count={document.FormData.Count}")}");
+
+                // 调试：输出 FormData 的详细信息
+                if (document.FormData != null)
+                {
+                    System.Console.WriteLine($"DEBUG_WORKFLOW: FormData 详细内容:");
+                    foreach (var kv in document.FormData)
+                    {
+                        System.Console.WriteLine($"  [{kv.Key}] = {(kv.Value == null ? "null" : $"{kv.Value} ({kv.Value.GetType().Name})")}");
+                    }
+                }
+
                 // 注入公文基本信息
                 variables["document_title"] = document.Title;
                 variables["document_id"] = document.Id;
@@ -43,18 +61,34 @@ public partial class WorkflowEngine
                 // 这些数据用于条件组件的业务规则判断
                 if (document.FormData != null && document.FormData.Count > 0)
                 {
+                    System.Console.WriteLine($"DEBUG_WORKFLOW: 注入公文表单数据到变量，共 {document.FormData.Count} 个字段");
                     _logger.LogInformation("DEBUG_WORKFLOW: 注入公文表单数据到变量，共 {Count} 个字段", document.FormData.Count);
 
                     foreach (var kv in document.FormData)
                     {
                         // 表单数据优先级最高，会覆盖同名的其他变量
                         variables[kv.Key] = kv.Value;
+                        System.Console.WriteLine($"DEBUG_WORKFLOW: 表单字段 [{kv.Key}] = {(kv.Value == null ? "null" : $"{kv.Value} ({kv.Value.GetType().Name})")}");
                         _logger.LogDebug("DEBUG_WORKFLOW: 表单字段 {Key} = {Value}", kv.Key, kv.Value);
                     }
                 }
+                else
+                {
+                    System.Console.WriteLine($"DEBUG_WORKFLOW: 公文没有表单数据或FormData为空");
+                }
+            }
+            else
+            {
+                System.Console.WriteLine($"DEBUG_WORKFLOW: 公文未找到！DocumentId = {instance.DocumentId}");
             }
         }
+        else
+        {
+            System.Console.WriteLine($"DEBUG_WORKFLOW: 实例没有关联公文");
+        }
 
+        System.Console.WriteLine($"DEBUG_WORKFLOW: 最终变量数 = {variables.Count}");
+        System.Console.Out.Flush();
         return variables;
     }
 

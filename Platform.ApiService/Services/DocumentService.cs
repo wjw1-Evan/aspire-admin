@@ -235,7 +235,27 @@ public class DocumentService : IDocumentService
     {
         var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var companyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? throw new InvalidOperationException("COMPANY_NOT_FOUND");
+
+        System.Console.WriteLine($"DEBUG_DOCUMENT_SERVICE: CreateDocumentAsync 开始");
+        System.Console.WriteLine($"DEBUG_DOCUMENT_SERVICE: 请求 FormData = {(request.FormData == null ? "null" : $"Count={request.FormData.Count}")}");
+        if (request.FormData != null)
+        {
+            foreach (var kv in request.FormData)
+            {
+                System.Console.WriteLine($"  [{kv.Key}] = {(kv.Value == null ? "null" : $"{kv.Value} ({kv.Value.GetType().Name})")}");
+            }
+        }
+
         var sanitizedFormData = request.FormData != null ? SerializationExtensions.SanitizeDictionary(request.FormData) : new Dictionary<string, object>();
+
+        System.Console.WriteLine($"DEBUG_DOCUMENT_SERVICE: 清洗后 FormData = {(sanitizedFormData == null ? "null" : $"Count={sanitizedFormData.Count}")}");
+        if (sanitizedFormData != null)
+        {
+            foreach (var kv in sanitizedFormData)
+            {
+                System.Console.WriteLine($"  [{kv.Key}] = {(kv.Value == null ? "null" : $"{kv.Value} ({kv.Value.GetType().Name})")}");
+            }
+        }
 
         var document = new Document
         {
@@ -248,6 +268,9 @@ public class DocumentService : IDocumentService
             FormData = sanitizedFormData,
             CompanyId = companyId
         };
+
+        System.Console.WriteLine($"DEBUG_DOCUMENT_SERVICE: 创建的 Document FormData = {(document.FormData == null ? "null" : $"Count={document.FormData.Count}")}");
+        System.Console.Out.Flush();
 
         return await _documentFactory.CreateAsync(document);
     }

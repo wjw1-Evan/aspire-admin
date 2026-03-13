@@ -1,4 +1,3 @@
-using Microsoft.Agents.AI.Workflows;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,10 +12,8 @@ internal sealed partial class EndExecutor : Executor
     {
     }
 
-    protected override ProtocolBuilder ConfigureProtocol(ProtocolBuilder builder) => builder;
-
     [MessageHandler]
-    private async ValueTask<object?> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
+    public async Task<object?> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
         return await Task.FromResult<object?>(null);
     }

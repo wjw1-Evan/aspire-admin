@@ -170,10 +170,24 @@ public class WorkflowExpressionEvaluator : IWorkflowExpressionEvaluator
     {
         if (leftValue == null) return op == "==" ? rightValueStr == "null" : op == "!=";
 
+        // 处理布尔值比较
+        if (leftValue is bool leftBool)
+        {
+            if (bool.TryParse(rightValueStr, out var rightBool))
+            {
+                return op switch
+                {
+                    "==" => leftBool == rightBool,
+                    "!=" => leftBool != rightBool,
+                    _ => false
+                };
+            }
+        }
+
         // 尝试作为数字比较
         if (double.TryParse(leftValue.ToString(), out var leftNum) && double.TryParse(rightValueStr, out var rightNum))
         {
-            return op switch
+            var result = op switch
             {
                 ">" => leftNum > rightNum,
                 "<" => leftNum < rightNum,
@@ -183,16 +197,18 @@ public class WorkflowExpressionEvaluator : IWorkflowExpressionEvaluator
                 "!=" => Math.Abs(leftNum - rightNum) >= 0.0001,
                 _ => false
             };
+            return result;
         }
 
-        // 默认作为字符串比较
-        var leftStr = leftValue.ToString();
-        return op switch
+        // 默认作为字符串比较（不区分大小写）
+        var leftStr = leftValue.ToString() ?? string.Empty;
+        var stringResult = op switch
         {
-            "==" => leftStr == rightValueStr,
-            "!=" => leftStr != rightValueStr,
+            "==" => leftStr.Equals(rightValueStr, StringComparison.OrdinalIgnoreCase),
+            "!=" => !leftStr.Equals(rightValueStr, StringComparison.OrdinalIgnoreCase),
             _ => false
         };
+        return stringResult;
     }
 
     /// <summary>
@@ -234,7 +250,16 @@ public class WorkflowExpressionEvaluator : IWorkflowExpressionEvaluator
                 {
                     if (jsonElement.TryGetProperty(propertyName, out var property))
                     {
-                        current = property.GetRawText();
+                        // 根据 JSON 元素类型返回相应的值
+                        current = property.ValueKind switch
+                        {
+                            System.Text.Json.JsonValueKind.String => property.GetString(),
+                            System.Text.Json.JsonValueKind.Number => property.GetDouble(),
+                            System.Text.Json.JsonValueKind.True => true,
+                            System.Text.Json.JsonValueKind.False => false,
+                            System.Text.Json.JsonValueKind.Null => null,
+                            _ => property // 返回 JsonElement 本身以支持进一步的嵌套访问
+                        };
                     }
                     else
                     {

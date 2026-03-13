@@ -8,52 +8,13 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using OpenAI.Chat;
-using Microsoft.Agents.AI;
-using Microsoft.Agents.AI.Workflows;
 using Platform.ApiService.Workflows.Executors;
-using Microsoft.Extensions.AI;
-using Microsoft.Agents.AI.OpenAI;
-using Platform.ApiService.Workflows.Utilities;
 using System.Text.Json;
 
 namespace Platform.ApiService.Services;
 
 public partial class WorkflowEngine
 {
-    private async Task<Workflow> BuildAgentWorkflowAsync(string instanceId, WorkflowDefinition definition)
-    {
-        var startNode = definition.Graph.Nodes.FirstOrDefault(n => n.Data.NodeType == "start") ?? throw new InvalidOperationException("Workflow missing start node");
-
-        // 使用 WorkflowBuilder 构建工作流图
-        var entryExecutor = await CreateExecutorForNodeAsync(instanceId, startNode);
-        var builder = new WorkflowBuilder(entryExecutor);
-
-        var nodeToExecutor = new Dictionary<string, Executor> { { startNode.Id, entryExecutor } };
-
-        // 1. 创建所有 Executor
-        foreach (var node in definition.Graph.Nodes.Where(n => n.Id != startNode.Id))
-        {
-            nodeToExecutor[node.Id] = await CreateExecutorForNodeAsync(instanceId, node);
-        }
-
-        // 2. 添加边 (Edges)
-        foreach (var edge in definition.Graph.Edges)
-        {
-            if (string.IsNullOrEmpty(edge.Source) || string.IsNullOrEmpty(edge.Target))
-            {
-                continue;
-            }
-
-            if (nodeToExecutor.TryGetValue(edge.Source, out var source) &&
-                nodeToExecutor.TryGetValue(edge.Target, out var target))
-            {
-                builder.AddEdge(source, target);
-            }
-        }
-
-        return builder.Build();
-    }
-
     private async Task<Executor> CreateExecutorForNodeAsync(string instanceId, WorkflowNode node)
     {
         await Task.CompletedTask; // Keep async signature
@@ -247,6 +208,7 @@ public partial class WorkflowEngine
                 i.SetVariable($"debug.{node.Id}.sourceHandle", sourceHandle);
                 i.SetVariable($"debug.{node.Id}.resultType", result?.GetType().Name);
                 i.SetVariable($"debug.{node.Id}.processedAt", System.DateTime.UtcNow);
+                i.SetVariable($"debug.{node.Id}.result", JsonSerializer.Serialize(result));
             });
 
             if (sourceHandle == "waiting")
@@ -263,6 +225,7 @@ public partial class WorkflowEngine
         catch (Exception ex)
         {
             _logger.LogError(ex, "DEBUG_WORKFLOW: 节点处理异常! NodeId={NodeId}, InstanceId={InstanceId}", node.Id, instanceId);
+            System.Console.WriteLine($"DEBUG_WORKFLOW: 异常详情 - {ex}");
             // 记录异常到变量
             await _instanceFactory.UpdateAsync(instanceId, i => i.SetVariable($"debug.{node.Id}.error", ex.ToString()));
             // 记录状态为 Cancelled 并停止

@@ -1,4 +1,3 @@
-using Microsoft.Agents.AI.Workflows;
 using Platform.ApiService.Models.Workflow;
 using Platform.ApiService.Services;
 using System.Collections.Generic;
@@ -34,19 +33,37 @@ internal sealed partial class ConditionExecutor : Executor
         _expressionValidator = expressionValidator;
     }
 
-    protected override ProtocolBuilder ConfigureProtocol(ProtocolBuilder builder) => builder;
-
     [MessageHandler]
     public async Task<object?> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
         // 反序列化变量（包含表单数据）
         var variables = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(input, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new();
 
-        System.Console.WriteLine($"DEBUG_CONDITION: 条件节点开始评估，变量总数 = {variables.Count}");
+        // 构建调试信息
+        var debugInfo = new System.Text.StringBuilder();
+        debugInfo.AppendLine($"========== 条件节点开始评估 ==========");
+        debugInfo.AppendLine($"变量总数 = {variables.Count}");
+        debugInfo.AppendLine($"条件规则数 = {_config.Conditions?.Count ?? 0}");
+        debugInfo.AppendLine($"逻辑运算符 = {_config.LogicalOperator}");
+
+        debugInfo.AppendLine($"变量列表:");
         foreach (var v in variables)
         {
-            System.Console.WriteLine($"DEBUG_CONDITION: 变量 {v.Key} = {v.Value}");
+            var valueStr = v.Value == null ? "null" : $"{v.Value} ({v.Value.GetType().Name})";
+            debugInfo.AppendLine($"  [{v.Key}] = {valueStr}");
         }
+
+        if (_config.Conditions != null && _config.Conditions.Count > 0)
+        {
+            debugInfo.AppendLine($"条件规则列表:");
+            foreach (var rule in _config.Conditions)
+            {
+                debugInfo.AppendLine($"  Variable=[{rule.Variable}], Operator=[{rule.Operator}], Value=[{rule.Value}] (ValueType={rule.Value?.GetType().Name ?? "null"})");
+            }
+        }
+
+        System.Console.WriteLine(debugInfo.ToString());
+        System.Console.Out.Flush();
 
         // 验证表达式安全性
         if (!string.IsNullOrWhiteSpace(_config.Expression))
@@ -89,6 +106,7 @@ internal sealed partial class ConditionExecutor : Executor
         bool conditionResult = EvaluateConditions(variables);
 
         System.Console.WriteLine($"DEBUG_CONDITION: 条件评估结果 = {conditionResult}");
+        System.Console.Out.Flush();
 
         await Task.CompletedTask;
 
@@ -110,6 +128,7 @@ internal sealed partial class ConditionExecutor : Executor
         if (_config.Conditions == null || _config.Conditions.Count == 0)
         {
             System.Console.WriteLine("DEBUG_CONDITION: 未配置条件规则，默认返回 true");
+            System.Console.Out.Flush();
             return true;
         }
 
@@ -117,6 +136,7 @@ internal sealed partial class ConditionExecutor : Executor
         if (!string.IsNullOrWhiteSpace(_config.Expression))
         {
             System.Console.WriteLine($"DEBUG_CONDITION: 使用表达式评估: {_config.Expression}");
+            System.Console.Out.Flush();
             return _expressionEvaluator.Evaluate(_config.Expression, variables);
         }
 
@@ -124,9 +144,12 @@ internal sealed partial class ConditionExecutor : Executor
         var results = new List<bool>();
         foreach (var rule in _config.Conditions)
         {
+            System.Console.WriteLine($"DEBUG_CONDITION: 处理规则 - Variable={rule.Variable}, Operator={rule.Operator}, Value={rule.Value} (ValueType={rule.Value?.GetType().Name})");
+            System.Console.Out.Flush();
             bool ruleResult = EvaluateSingleRule(rule, variables);
             results.Add(ruleResult);
             System.Console.WriteLine($"DEBUG_CONDITION: 规则 [{rule.Variable} {rule.Operator} {rule.Value}] = {ruleResult}");
+            System.Console.Out.Flush();
         }
 
         // 根据逻辑运算符组合结果
@@ -142,24 +165,32 @@ internal sealed partial class ConditionExecutor : Executor
         if (string.IsNullOrWhiteSpace(rule.Variable))
         {
             System.Console.WriteLine("DEBUG_CONDITION: 规则变量名为空");
+            System.Console.Out.Flush();
             return false;
         }
 
         // 从变量中获取值（支持大小写不敏感查找）
         object? variableValue = GetVariableValue(rule.Variable, variables);
 
+        System.Console.WriteLine($"DEBUG_CONDITION: 获取变量 [{rule.Variable}] = {(variableValue == null ? "null" : $"{variableValue} ({variableValue.GetType().Name})")}");
+        System.Console.Out.Flush();
+
         if (variableValue == null)
         {
-            System.Console.WriteLine($"DEBUG_CONDITION: 变量 '{rule.Variable}' 不存在");
+            System.Console.WriteLine($"DEBUG_CONDITION: 变量 '{rule.Variable}' 不存在，返回 {(rule.Operator == "not_equals" || rule.Operator == "!=")}");
+            System.Console.Out.Flush();
             // 变量不存在时的处理
             return rule.Operator == "not_equals" || rule.Operator == "!=";
         }
 
         // 构造表达式并评估
         string expression = BuildExpression(rule.Variable, rule.Operator, rule.Value);
+        System.Console.WriteLine($"DEBUG_CONDITION: 构造表达式 = [{expression}]");
+        System.Console.Out.Flush();
         bool result = _expressionEvaluator.Evaluate(expression, variables);
 
-        System.Console.WriteLine($"DEBUG_CONDITION: 表达式 '{expression}' 评估结果 = {result}");
+        System.Console.WriteLine($"DEBUG_CONDITION: 表达式 [{expression}] 评估结果 = {result}");
+        System.Console.Out.Flush();
         return result;
     }
 

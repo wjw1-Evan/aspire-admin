@@ -162,8 +162,14 @@ public class WorkflowExpressionValidator : IWorkflowExpressionValidator
             return ValidationResult.Failure("变量名长度超过限制（最大 256 字符）");
         }
 
-        // 移除大括号
+        // 移除大括号（如果有的话）
         var cleanName = variableName.Replace("{", "").Replace("}", "").Trim();
+
+        // 验证清洁后的变量名
+        if (string.IsNullOrWhiteSpace(cleanName))
+        {
+            return ValidationResult.Failure("变量名不能为空");
+        }
 
         if (!VariableNameRegex.IsMatch(cleanName))
         {

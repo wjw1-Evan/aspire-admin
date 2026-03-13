@@ -201,6 +201,17 @@ public class WorkflowConditionTests : BaseIntegrationTest
         var definitionId = workflow.Data.Id;
         Output.WriteLine($"✓ 创建工作流: {definitionId}");
 
+        // 调试：输出工作流定义的详细信息
+        Output.WriteLine($"DEBUG: 工作流定义 JSON = {System.Text.Json.JsonSerializer.Serialize(workflow.Data)}");
+        if (workflow.Data.Graph?.Nodes != null)
+        {
+            var conditionNode = workflow.Data.Graph.Nodes.FirstOrDefault(n => n.Type == "condition");
+            if (conditionNode != null)
+            {
+                Output.WriteLine($"DEBUG: 条件节点 = {System.Text.Json.JsonSerializer.Serialize(conditionNode)}");
+            }
+        }
+
         // 3. 创建公文，填充表单数据（amount = 2000）
         var documentRequest = TestDataGenerator.GenerateDocumentWithFormData(new Dictionary<string, object>
         {
@@ -223,6 +234,24 @@ public class WorkflowConditionTests : BaseIntegrationTest
         var instance = instanceWrap.Data;
 
         // Assert - 5. 验证条件组件根据表单数据正确路由
+        Output.WriteLine($"DEBUG: 当前节点 = {instance.CurrentNodeId}");
+        Output.WriteLine($"DEBUG: 工作流实例ID = {instance.Id}");
+
+        // 获取工作流实例的完整信息以查看调试变量
+        var instanceResponse = await TestClient.GetAsync($"/api/workflows/instances/{instance.Id}");
+        if (instanceResponse.IsSuccessStatusCode)
+        {
+            var fullInstance = await instanceResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowInstanceResponse>>();
+            if (fullInstance?.Data?.Variables != null)
+            {
+                Output.WriteLine($"DEBUG: 工作流变量数 = {fullInstance.Data.Variables.Count}");
+                foreach (var var in fullInstance.Data.Variables)
+                {
+                    Output.WriteLine($"DEBUG: 变量 {var.Key} = {var.ValueJson}");
+                }
+            }
+        }
+
         Assert.Equal("approval_a", instance.CurrentNodeId);
         Output.WriteLine($"✓ 条件评估：amount=2000 > 1000 = true，流程进入 approval_a");
     }

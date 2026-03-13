@@ -16,8 +16,6 @@ using OpenAI;
 using OpenAI.Chat;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
-using Microsoft.Agents.AI;
-using Microsoft.Agents.AI.Workflows;
 using Platform.ApiService.Workflows.Executors;
 
 namespace Platform.ApiService.Services;

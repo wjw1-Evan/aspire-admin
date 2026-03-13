@@ -1,4 +1,3 @@
-using Microsoft.Agents.AI.Workflows;
 using Platform.ApiService.Models.Workflow;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Services;
@@ -25,16 +24,14 @@ internal sealed partial class ApprovalExecutor : Executor
         _expressionEvaluator = expressionEvaluator;
     }
 
-    protected override ProtocolBuilder ConfigureProtocol(ProtocolBuilder builder) => builder;
-
     [MessageHandler]
     public async Task<object?> HandleAsync(string input, IWorkflowContext context, CancellationToken cancellationToken = default)
     {
         // 审批节点通常需要挂起等待人工干预
         // 引擎会识别 __sourceHandle = "waiting" 并处理挂起逻辑
-        
+
         var approvers = string.Join(", ", _config.Approvers.Select(a => a.UserId ?? a.RoleId ?? "Unknown"));
-        
+
         // 返回特殊指令，由引擎后续调用 SendApprovalNotificationsAsync
         return await Task.FromResult<object?>(new Dictionary<string, object?>
         {

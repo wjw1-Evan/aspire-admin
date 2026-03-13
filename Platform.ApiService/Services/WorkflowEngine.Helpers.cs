@@ -67,9 +67,23 @@ public partial class WorkflowEngine
                     foreach (var kv in document.FormData)
                     {
                         // 表单数据优先级最高，会覆盖同名的其他变量
-                        variables[kv.Key] = kv.Value;
-                        System.Console.WriteLine($"DEBUG_WORKFLOW: 表单字段 [{kv.Key}] = {(kv.Value == null ? "null" : $"{kv.Value} ({kv.Value.GetType().Name})")}");
-                        _logger.LogDebug("DEBUG_WORKFLOW: 表单字段 {Key} = {Value}", kv.Key, kv.Value);
+                        // 如果值是字典（DataScopeKey 嵌套），需要展平
+                        if (kv.Value is System.Collections.Generic.Dictionary<string, object> nestedDict)
+                        {
+                            System.Console.WriteLine($"DEBUG_WORKFLOW: 展平嵌套表单数据 [{kv.Key}]，包含 {nestedDict.Count} 个字段");
+                            foreach (var nested in nestedDict)
+                            {
+                                variables[nested.Key] = nested.Value;
+                                System.Console.WriteLine($"DEBUG_WORKFLOW: 表单字段 [{nested.Key}] = {(nested.Value == null ? "null" : $"{nested.Value} ({nested.Value.GetType().Name})")}");
+                                _logger.LogDebug("DEBUG_WORKFLOW: 表单字段 {Key} = {Value}", nested.Key, nested.Value);
+                            }
+                        }
+                        else
+                        {
+                            variables[kv.Key] = kv.Value;
+                            System.Console.WriteLine($"DEBUG_WORKFLOW: 表单字段 [{kv.Key}] = {(kv.Value == null ? "null" : $"{kv.Value} ({kv.Value.GetType().Name})")}");
+                            _logger.LogDebug("DEBUG_WORKFLOW: 表单字段 {Key} = {Value}", kv.Key, kv.Value);
+                        }
                     }
                 }
                 else

@@ -476,7 +476,6 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
               logicalOperator: branch.logicalOperator || 'and',
               targetNodeId: branch.targetNodeId?.trim() !== '' ? branch.targetNodeId : undefined,
               order: idx,
-              enabled: branch.enabled !== false,
             }));
 
             config.condition = {

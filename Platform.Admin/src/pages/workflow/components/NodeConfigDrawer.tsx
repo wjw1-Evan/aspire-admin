@@ -264,16 +264,6 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                                     <Input placeholder="例如：金额 > 100" />
                                   </Form.Item>
 
-                                  {/* 分支启用状态 */}
-                                  <Form.Item
-                                    {...restField}
-                                    name={[name, 'enabled']}
-                                    label="启用此分支"
-                                    valuePropName="checked"
-                                  >
-                                    <Switch />
-                                  </Form.Item>
-
                                   {/* 分支内的条件规则 */}
                                   <Divider style={{ margin: '8px 0' }} plain>条件规则</Divider>
                                   <Form.List name={[name, 'conditions']}>

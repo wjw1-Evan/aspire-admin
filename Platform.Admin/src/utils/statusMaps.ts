@@ -5,7 +5,7 @@ export type StatusMeta = { color: string; text: string };
 
 export const documentStatusMap: Record<string, StatusMeta> = {
     draft: { color: 'default', text: 'pages.document.status.draft' },
-    pending: { color: 'processing', text: 'pages.document.status.pending' },
+    approving: { color: 'processing', text: 'pages.document.status.approving' },
     approved: { color: 'success', text: 'pages.document.status.approved' },
     rejected: { color: 'error', text: 'pages.document.status.rejected' },
 };

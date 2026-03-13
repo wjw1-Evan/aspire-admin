@@ -6,9 +6,9 @@ import type { ApiResponse } from '@/types/unified-api';
  */
 export enum DocumentStatus {
   Draft = 0,        // 草稿
-  Pending = 1,      // 审批中
-  Approved = 2,    // 已通过
-  Rejected = 3     // 已拒绝
+  Approving = 1,    // 审批中
+  Approved = 2,     // 已通过
+  Rejected = 3      // 已拒绝
 }
 
 /**

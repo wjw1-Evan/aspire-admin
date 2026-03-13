@@ -1304,7 +1304,7 @@ export default {
   'pages.document.table.createdAt': 'Created At',
   'pages.document.table.action': 'Actions',
   'pages.document.status.draft': 'Draft',
-  'pages.document.status.pending': 'Pending',
+  'pages.document.status.approving': 'Approving',
   'pages.document.status.approved': 'Approved',
   'pages.document.status.rejected': 'Rejected',
   'pages.document.action.view': 'View',

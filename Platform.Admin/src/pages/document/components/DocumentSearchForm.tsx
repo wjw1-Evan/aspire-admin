@@ -31,7 +31,7 @@ const DocumentSearchForm: React.FC<DocumentSearchFormProps> = ({ form, onSearch,
                         style={{ width: 120 }}
                         options={[
                             { label: intl.formatMessage({ id: 'pages.document.status.draft', defaultMessage: '草稿' }), value: DocumentStatus.Draft },
-                            { label: intl.formatMessage({ id: 'pages.document.status.pending', defaultMessage: '审批中' }), value: DocumentStatus.Pending },
+                            { label: intl.formatMessage({ id: 'pages.document.status.approving', defaultMessage: '审批中' }), value: DocumentStatus.Approving },
                             { label: intl.formatMessage({ id: 'pages.document.status.approved', defaultMessage: '已通过' }), value: DocumentStatus.Approved },
                             { label: intl.formatMessage({ id: 'pages.document.status.rejected', defaultMessage: '已驳回' }), value: DocumentStatus.Rejected },
                         ]}

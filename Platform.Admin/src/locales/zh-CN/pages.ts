@@ -1423,7 +1423,7 @@ export default {
   'pages.document.table.createdAt': '创建时间',
   'pages.document.table.action': '操作',
   'pages.document.status.draft': '草稿',
-  'pages.document.status.pending': '审批中',
+  'pages.document.status.approving': '审批中',
   'pages.document.status.approved': '已通过',
   'pages.document.status.rejected': '已拒绝',
   'pages.document.action.view': '查看',

@@ -13,7 +13,12 @@ public partial class WorkflowEngine
     /// <summary>
     /// 处理审批操作
     /// </summary>
+    /// <param name="instanceId">工作流实例ID</param>
+    /// <param name="nodeId">节点ID</param>
+    /// <param name="action">审批动作</param>
     /// <param name="currentUserId">当前操作人用户ID</param>
+    /// <param name="comment">审批意见</param>
+    /// <param name="delegateToUserId">转办目标用户ID</param>
     public async Task<bool> ProcessApprovalAsync(string instanceId, string nodeId, ApprovalAction action, string currentUserId, string? comment = null, string? delegateToUserId = null)
     {
         var instance = await _instanceFactory.GetByIdAsync(instanceId);
@@ -307,6 +312,9 @@ public partial class WorkflowEngine
     /// <summary>
     /// Bug 9 修复：退回到指定节点后重新触发节点处理
     /// </summary>
+    /// <param name="instanceId">工作流实例ID</param>
+    /// <param name="targetNodeId">目标节点ID</param>
+    /// <param name="comment">退回意见</param>
     /// <param name="currentUserId">当前操作人用户ID</param>
     public async Task<bool> ReturnToNodeAsync(string instanceId, string targetNodeId, string comment, string currentUserId)
     {

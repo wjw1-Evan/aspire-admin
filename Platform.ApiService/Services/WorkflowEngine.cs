@@ -30,13 +30,21 @@ public interface IWorkflowEngine
     /// <summary>
     /// 启动工作流
     /// </summary>
+    /// <param name="definitionId">工作流定义ID</param>
+    /// <param name="documentId">关联文档ID</param>
     /// <param name="startedBy">启动人用户ID</param>
+    /// <param name="variables">初始变量</param>
     Task<WorkflowInstance> StartWorkflowAsync(string definitionId, string documentId, string startedBy, Dictionary<string, object?>? variables = null);
 
     /// <summary>
     /// 处理审批操作
     /// </summary>
+    /// <param name="instanceId">工作流实例ID</param>
+    /// <param name="nodeId">节点ID</param>
+    /// <param name="action">审批动作</param>
     /// <param name="currentUserId">当前操作人用户ID</param>
+    /// <param name="comment">审批意见</param>
+    /// <param name="delegateToUserId">转办目标用户ID</param>
     Task<bool> ProcessApprovalAsync(string instanceId, string nodeId, ApprovalAction action, string currentUserId, string? comment = null, string? delegateToUserId = null);
 
     /// <summary>
@@ -48,6 +56,9 @@ public interface IWorkflowEngine
     /// <summary>
     /// 退回到指定节点
     /// </summary>
+    /// <param name="instanceId">工作流实例ID</param>
+    /// <param name="targetNodeId">目标节点ID</param>
+    /// <param name="comment">退回意见</param>
     /// <param name="currentUserId">当前操作人用户ID</param>
     Task<bool> ReturnToNodeAsync(string instanceId, string targetNodeId, string comment, string currentUserId);
 
@@ -87,6 +98,7 @@ public partial class WorkflowEngine : IWorkflowEngine
     private readonly IUnifiedNotificationService _notificationService;
     private readonly IApproverResolverFactory _approverResolverFactory;
     private readonly IWorkflowExpressionEvaluator _expressionEvaluator;
+    private readonly IWorkflowExpressionValidator _expressionValidator;
     private readonly ILogger<WorkflowEngine> _logger;
     private readonly IServiceScopeFactory _scopeFactory;
 
@@ -104,6 +116,7 @@ public partial class WorkflowEngine : IWorkflowEngine
         IUnifiedNotificationService notificationService,
         IApproverResolverFactory approverResolverFactory,
         IWorkflowExpressionEvaluator expressionEvaluator,
+        IWorkflowExpressionValidator expressionValidator,
         ILogger<WorkflowEngine> logger,
         IServiceScopeFactory scopeFactory)
     {
@@ -117,6 +130,7 @@ public partial class WorkflowEngine : IWorkflowEngine
         _notificationService = notificationService;
         _approverResolverFactory = approverResolverFactory;
         _expressionEvaluator = expressionEvaluator;
+        _expressionValidator = expressionValidator;
         _logger = logger;
         _scopeFactory = scopeFactory;
     }
@@ -124,7 +138,10 @@ public partial class WorkflowEngine : IWorkflowEngine
     /// <summary>
     /// 启动工作流
     /// </summary>
+    /// <param name="definitionId">工作流定义ID</param>
+    /// <param name="documentId">关联文档ID</param>
     /// <param name="startedBy">启动人用户ID</param>
+    /// <param name="variables">初始变量</param>
     public async Task<WorkflowInstance> StartWorkflowAsync(string definitionId, string documentId, string startedBy, Dictionary<string, object?>? variables = null)
     {
         var definition = await _definitionFactory.GetByIdAsync(definitionId);

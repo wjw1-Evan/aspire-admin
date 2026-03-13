@@ -41,6 +41,8 @@ public class WorkflowExpressionEvaluator : IWorkflowExpressionEvaluator
     {
         if (string.IsNullOrWhiteSpace(expression)) return true;
 
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
         try
         {
             expression = expression.Trim();
@@ -73,6 +75,19 @@ public class WorkflowExpressionEvaluator : IWorkflowExpressionEvaluator
             _logger.LogError(ex, "表达式评估失败: {Expression}", expression);
             return false;
         }
+        finally
+        {
+            stopwatch.Stop();
+            // 记录性能指标
+            if (stopwatch.ElapsedMilliseconds > 100)
+            {
+                _logger.LogWarning("表达式评估耗时过长: {Expression}, 耗时={ElapsedMilliseconds}ms", expression, stopwatch.ElapsedMilliseconds);
+            }
+            else if (stopwatch.ElapsedMilliseconds > 10)
+            {
+                _logger.LogDebug("表达式评估耗时: {Expression}, 耗时={ElapsedMilliseconds}ms", expression, stopwatch.ElapsedMilliseconds);
+            }
+        }
     }
 
     private bool EvaluateSingle(string expression, Dictionary<string, object?> variables)
@@ -85,7 +100,10 @@ public class WorkflowExpressionEvaluator : IWorkflowExpressionEvaluator
             // 清洗变量键，移除前端插值符号的大括号
             var leftKeyClean = leftKeyRaw.Replace("{", "").Replace("}", "").Trim();
 
-            if (variables.TryGetValue(leftKeyClean, out var leftValue))
+            // 支持嵌套对象访问，例如 user.level
+            var leftValue = GetNestedValue(leftKeyClean, variables);
+
+            if (leftValue != null)
             {
                 var res = CompareValues(leftValue, rightValueStr, foundOp);
                 System.Console.WriteLine($"DEBUG_EVALUATOR: Compare Variable '{leftKeyClean}' Value '{leftValue}' ({leftValue?.GetType().Name}) {foundOp} '{rightValueStr}' -> {res}");
@@ -107,7 +125,9 @@ public class WorkflowExpressionEvaluator : IWorkflowExpressionEvaluator
             // 是否字面布尔值
             if (bool.TryParse(singleKeyClean, out var literalBool)) return literalBool;
 
-            if (variables.TryGetValue(singleKeyClean, out var boolValue))
+            // 支持嵌套对象访问
+            var boolValue = GetNestedValue(singleKeyClean, variables);
+            if (boolValue != null)
             {
                 if (boolValue is bool b) return b;
                 if (bool.TryParse(boolValue?.ToString(), out var parsedBool)) return parsedBool;
@@ -173,5 +193,88 @@ public class WorkflowExpressionEvaluator : IWorkflowExpressionEvaluator
             "!=" => leftStr != rightValueStr,
             _ => false
         };
+    }
+
+    /// <summary>
+    /// 获取嵌套对象的值，支持点号语法
+    /// 例如：user.level, address.city
+    /// </summary>
+    private object? GetNestedValue(string path, Dictionary<string, object?> variables)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return null;
+
+        // 如果路径中包含点号，则进行嵌套访问
+        if (path.Contains("."))
+        {
+            var parts = path.Split(".", StringSplitOptions.RemoveEmptyEntries);
+            object? current = null;
+
+            // 首先从变量字典中获取根对象
+            if (!variables.TryGetValue(parts[0], out current))
+            {
+                // 尝试大小写不敏感匹配
+                var match = variables.FirstOrDefault(v =>
+                    v.Key.Equals(parts[0], StringComparison.OrdinalIgnoreCase));
+                if (match.Equals(default(KeyValuePair<string, object?>)))
+                    return null;
+                current = match.Value;
+            }
+
+            // 逐级访问嵌套属性
+            for (int i = 1; i < parts.Length; i++)
+            {
+                if (current == null)
+                    return null;
+
+                var propertyName = parts[i];
+
+                // 尝试作为 JSON 对象访问
+                if (current is System.Text.Json.JsonElement jsonElement)
+                {
+                    if (jsonElement.TryGetProperty(propertyName, out var property))
+                    {
+                        current = property.GetRawText();
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+                // 尝试作为普通对象的属性访问
+                else
+                {
+                    var property = current.GetType().GetProperty(propertyName,
+                        System.Reflection.BindingFlags.IgnoreCase | System.Reflection.BindingFlags.Public);
+                    if (property != null)
+                    {
+                        current = property.GetValue(current);
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+            }
+
+            return current;
+        }
+
+        // 单级访问
+        if (variables.TryGetValue(path, out var value))
+        {
+            return value;
+        }
+
+        // 尝试大小写不敏感匹配
+        var caseInsensitiveMatch = variables.FirstOrDefault(v =>
+            v.Key.Equals(path, StringComparison.OrdinalIgnoreCase));
+
+        if (!caseInsensitiveMatch.Equals(default(KeyValuePair<string, object?>)))
+        {
+            return caseInsensitiveMatch.Value;
+        }
+
+        return null;
     }
 }

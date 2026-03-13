@@ -12,6 +12,12 @@ public partial class WorkflowEngine
 {
     /// <summary>
     /// 从流程实例和关联公文中获取变量字典
+    /// 
+    /// 业务规则：
+    /// 1. 首先加载流程实例中的变量
+    /// 2. 然后加载关联公文的基本信息（标题、ID、发起人等）
+    /// 3. 最后加载公文的表单数据（用于条件组件判断）
+    /// 4. 表单数据优先级最高，会覆盖同名的其他变量
     /// </summary>
     private async Task<Dictionary<string, object?>> GetDocumentVariablesAsync(string instanceId)
     {
@@ -25,18 +31,25 @@ public partial class WorkflowEngine
             var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
             if (document != null)
             {
+                // 注入公文基本信息
                 variables["document_title"] = document.Title;
                 variables["document_id"] = document.Id;
                 variables["started_by"] = instance.StartedBy;
                 variables["document_content"] = document.Content ?? string.Empty;
+                variables["document_status"] = document.Status.ToString();
+                variables["document_created_at"] = document.CreatedAt;
 
-                // 🔧 关键修复：将公文的表单数据也作为变量注入
-                if (document.FormData != null)
+                // 🔧 关键修复：将公文的表单数据作为变量注入
+                // 这些数据用于条件组件的业务规则判断
+                if (document.FormData != null && document.FormData.Count > 0)
                 {
+                    _logger.LogInformation("DEBUG_WORKFLOW: 注入公文表单数据到变量，共 {Count} 个字段", document.FormData.Count);
+
                     foreach (var kv in document.FormData)
                     {
-                        // 如果变量名冲突，公文表单数据优先
+                        // 表单数据优先级最高，会覆盖同名的其他变量
                         variables[kv.Key] = kv.Value;
+                        _logger.LogDebug("DEBUG_WORKFLOW: 表单字段 {Key} = {Value}", kv.Key, kv.Value);
                     }
                 }
             }

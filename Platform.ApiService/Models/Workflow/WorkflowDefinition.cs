@@ -273,9 +273,6 @@ public class ConditionBranch
 
     [BsonElement("order")]
     public int Order { get; set; } = 0;
-
-    [BsonElement("enabled")]
-    public bool Enabled { get; set; } = true;
 }
 
 public class ConditionConfig

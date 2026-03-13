@@ -398,9 +398,6 @@ public class WorkflowExpressionEvaluator : IWorkflowExpressionEvaluator
         // 按顺序评估每个分支
         foreach (var branch in config.Branches.OrderBy(b => b.Order))
         {
-            if (!branch.Enabled)
-                continue;
-
             // 评估该分支的条件
             var isMatched = EvaluateConditions(
                 branch.Conditions,

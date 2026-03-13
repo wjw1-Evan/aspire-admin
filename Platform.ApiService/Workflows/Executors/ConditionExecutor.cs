@@ -104,8 +104,8 @@ internal sealed partial class ConditionExecutor : Executor
             return null;
         }
 
-        // 遍历所有启用的分支，找到第一个匹配的
-        foreach (var branch in _config.Branches.Where(b => b.Enabled).OrderBy(b => b.Order))
+        // 遍历所有分支，找到第一个匹配的
+        foreach (var branch in _config.Branches.OrderBy(b => b.Order))
         {
             System.Console.WriteLine($"DEBUG_CONDITION: 评估分支 [{branch.Id}] - {branch.Label}");
             System.Console.Out.Flush();

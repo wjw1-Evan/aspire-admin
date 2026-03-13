@@ -393,15 +393,15 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                                     label="目标节点"
                                     rules={[{ required: true, message: '请选择目标节点' }]}
                                   >
-                                    <Select placeholder="选择此分支匹配时的下一个节点">
-                                      {allNodes
-                                        .filter(node => node.id !== selectedNode?.id)
-                                        .map(node => (
-                                          <Select.Option key={node.id} value={node.id}>
-                                            {node.data?.label || node.id}
-                                          </Select.Option>
-                                        ))}
-                                    </Select>
+                                    <Select
+                                      placeholder="选择此分支匹配时的下一个节点"
+                                      options={allNodes
+                                        .filter(node => node && node.id !== selectedNode?.id)
+                                        .map(node => ({
+                                          label: node.data?.label || node.id,
+                                          value: node.id
+                                        }))}
+                                    />
                                   </Form.Item>
                                 </Space>
                               </Card>

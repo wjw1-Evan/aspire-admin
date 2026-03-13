@@ -1209,7 +1209,8 @@ public class DocumentApprovalTests : BaseIntegrationTest
         // Step 4: Verify it's pending for the user (using polling for async workflow processing)
         Output.WriteLine($"Waiting for document {documentId} to appear in pending list...");
         var pendingList = await ApiTestHelpers.WaitForConditionAsync(
-            async () => {
+            async () =>
+            {
                 var response = await TestClient.GetAsync("/api/documents/pending");
                 var result = await response.Content.ReadAsJsonAsync<ApiResponse<PagedResult<DocumentResponse>>>();
                 return result?.Data?.List ?? new List<DocumentResponse>();
@@ -1266,11 +1267,27 @@ public class DocumentApprovalTests : BaseIntegrationTest
         var documentId = (await documentResponse.Content.ReadAsJsonAsync<ApiResponse<DocumentResponse>>())!.Data!.Id;
 
         // Step 3: Submit
-        await TestClient.PostAsJsonAsync($"/api/documents/{documentId}/submit", new SubmitDocumentRequest { WorkflowDefinitionId = workflowId });
+        var submitResponse = await TestClient.PostAsJsonAsync($"/api/documents/{documentId}/submit", new SubmitDocumentRequest { WorkflowDefinitionId = workflowId });
+        if (!submitResponse.IsSuccessStatusCode)
+        {
+            var submitError = await submitResponse.Content.ReadAsStringAsync();
+            Output.WriteLine($"DEBUG: Submit failed with status {submitResponse.StatusCode}");
+            Output.WriteLine($"DEBUG: Submit error: {submitError}");
+            throw new InvalidOperationException($"Submit failed: {submitError}");
+        }
 
         // Step 4: Reject
         var rejectRequest = new ApprovalRequest { Comment = "Not good enough." };
         var rejectResponse = await TestClient.PostAsJsonAsync($"/api/documents/{documentId}/reject", rejectRequest);
+
+        // 添加调试信息
+        if (!rejectResponse.IsSuccessStatusCode)
+        {
+            var errorContent = await rejectResponse.Content.ReadAsStringAsync();
+            Output.WriteLine($"DEBUG: Reject failed with status {rejectResponse.StatusCode}");
+            Output.WriteLine($"DEBUG: Error response: {errorContent}");
+        }
+
         Assert.Equal(HttpStatusCode.OK, rejectResponse.StatusCode);
 
         // Step 5: Verify statuses

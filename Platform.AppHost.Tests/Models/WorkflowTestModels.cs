@@ -147,6 +147,11 @@ public record WorkflowEdgeRequest
     /// Optional source handle for conditional branches.
     /// </summary>
     public string? SourceHandle { get; init; }
+
+    /// <summary>
+    /// Optional label for the edge (displayed on the connection line).
+    /// </summary>
+    public string? Label { get; init; }
 }
 
 /// <summary>

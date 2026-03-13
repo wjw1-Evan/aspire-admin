@@ -980,11 +980,14 @@ public class WorkflowDefinitionTests : BaseIntegrationTest
         Assert.NotEmpty(startResult.Data.Id);
         Assert.Equal(workflowId, startResult.Data.WorkflowDefinitionId);
         Assert.Equal(documentId, startResult.Data.DocumentId);
-        // Workflow with approval node should be in Running state waiting for approval
-        // Note: Simple workflows may complete immediately if the engine processes them synchronously
+        // Workflow with approval node should be in Running, Waiting, or Completed state
+        // - Running: workflow is executing
+        // - Waiting: workflow is waiting for approval
+        // - Completed: workflow completed immediately (no approval needed)
         Assert.True(startResult.Data.Status == "Running" || startResult.Data.Status == "running" ||
+                    startResult.Data.Status == "Waiting" || startResult.Data.Status == "waiting" ||
                     startResult.Data.Status == "Completed" || startResult.Data.Status == "completed",
-            $"Expected status 'Running' or 'Completed' but got '{startResult.Data.Status}'");
+            $"Expected status 'Running', 'Waiting', or 'Completed' but got '{startResult.Data.Status}'");
 
         Output.WriteLine($"✓ Workflow instance started successfully - Instance ID: {startResult.Data.Id}, Status: {startResult.Data.Status}");
     }

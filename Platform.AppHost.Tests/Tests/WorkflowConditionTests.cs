@@ -85,13 +85,6 @@ public class WorkflowConditionTests : BaseIntegrationTest
                 TargetNodeId = "approval_b",
                 Order = 1
             }
-        }; var edges = new List<WorkflowEdgeRequest>
-        {
-            new WorkflowEdgeRequest { Id = "e1", Source = "start", Target = "condition_node" },
-            new WorkflowEdgeRequest { Id = "e2", Source = "condition_node", Target = "approval_a", SourceHandle = "branch_true", Label = "条件满足" },
-            new WorkflowEdgeRequest { Id = "e3", Source = "condition_node", Target = "approval_b", SourceHandle = "branch_false", Label = "条件不满足" },
-            new WorkflowEdgeRequest { Id = "e4", Source = "approval_a", Target = "end" },
-            new WorkflowEdgeRequest { Id = "e5", Source = "approval_b", Target = "end" }
         };
 
         var nodes = new List<WorkflowNodeRequest>
@@ -945,3 +938,4 @@ public class WorkflowConditionTests : BaseIntegrationTest
         Assert.Equal("approval_default", instance.CurrentNodeId);
         Output.WriteLine($"✓ 默认节点：amount=2000 不满足 > 5000 的条件，流程跳转到默认节点 approval_default");
     }
+}

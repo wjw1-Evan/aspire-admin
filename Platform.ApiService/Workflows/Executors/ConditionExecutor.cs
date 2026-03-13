@@ -64,7 +64,7 @@ internal sealed partial class ConditionExecutor : Executor
                 System.Console.WriteLine($"DEBUG_CONDITION: 表达式验证失败 - {validationResult.ErrorMessage}");
                 return new Dictionary<string, object?>
                 {
-                    ["__sourceHandle"] = _config.DefaultBranchId ?? "default",
+                    ["__sourceHandle"] = _config.DefaultNodeId ?? "default",
                     ["result"] = false,
                     ["error"] = validationResult.ErrorMessage,
                     ["evaluatedAt"] = System.DateTime.UtcNow
@@ -80,10 +80,12 @@ internal sealed partial class ConditionExecutor : Executor
 
         await Task.CompletedTask;
 
-        // 返回匹配的分支 ID 作为 sourceHandle，用于路由到不同的下一个组件
+        // 返回匹配的分支的目标节点 ID 作为 sourceHandle，用于路由到不同的下一个组件
+        // 如果没有分支匹配，则使用默认节点
+        var targetNodeId = matchedBranch?.TargetNodeId ?? _config.DefaultNodeId ?? "default";
         return new Dictionary<string, object?>
         {
-            ["__sourceHandle"] = matchedBranch?.Id ?? _config.DefaultBranchId ?? "default",
+            ["__sourceHandle"] = targetNodeId,
             ["branchId"] = matchedBranch?.Id,
             ["branchLabel"] = matchedBranch?.Label,
             ["result"] = matchedBranch != null,

@@ -280,8 +280,8 @@ public class ConditionConfig
     [BsonElement("branches")]
     public List<ConditionBranch> Branches { get; set; } = new();
 
-    [BsonElement("defaultBranchId")]
-    public string? DefaultBranchId { get; set; }
+    [BsonElement("defaultNodeId")]
+    public string? DefaultNodeId { get; set; }
 
     [BsonElement("expression")]
     public string? Expression { get; set; }

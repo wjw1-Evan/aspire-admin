@@ -416,7 +416,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
 
       // 条件节点配置
       branches: config.condition?.branches || [],
-      defaultBranchId: config.condition?.defaultBranchId,
+      defaultNodeId: config.condition?.defaultNodeId,
       expression: config.condition?.expression,
       logicalOperator: config.condition?.logicalOperator || 'and',
       conditions: config.condition?.conditions || [],
@@ -480,7 +480,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
 
             config.condition = {
               branches,
-              defaultBranchId: values.defaultBranchId || undefined,
+              defaultNodeId: values.defaultNodeId || undefined,
               expression: values.expression || undefined,
             };
           }

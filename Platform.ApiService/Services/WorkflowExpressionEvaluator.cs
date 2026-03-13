@@ -415,24 +415,17 @@ public class WorkflowExpressionEvaluator : IWorkflowExpressionEvaluator
             }
         }
 
-        // 如果没有分支匹配，使用默认分支
-        if (!string.IsNullOrEmpty(config.DefaultBranchId))
+        // 如果没有分支匹配，使用默认节点
+        if (!string.IsNullOrEmpty(config.DefaultNodeId))
         {
-            var defaultBranch = config.Branches
-                .FirstOrDefault(b => b.Id == config.DefaultBranchId);
-
-            if (defaultBranch != null)
+            return new ConditionEvaluationResult
             {
-                return new ConditionEvaluationResult
-                {
-                    BranchId = defaultBranch.Id,
-                    TargetNodeId = defaultBranch.TargetNodeId,
-                    IsMatched = true
-                };
-            }
+                TargetNodeId = config.DefaultNodeId,
+                IsMatched = false
+            };
         }
 
-        // 没有匹配的分支
+        // 没有匹配的分支，也没有默认节点
         return new ConditionEvaluationResult { IsMatched = false };
     }
 }

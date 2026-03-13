@@ -124,7 +124,7 @@ public class WorkflowConditionTests : BaseIntegrationTest
                     Config = new {
                         Condition = new {
                             Branches = branches,
-                            DefaultBranchId = "branch_false"
+                            DefaultNodeId = "approval_b"
                         }
                     }
                 },

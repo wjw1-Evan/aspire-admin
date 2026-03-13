@@ -416,7 +416,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                         )}
                       </Form.List>
 
-                      {/* 默认分支 */}
+                      {/* 默认节点 */}
                       <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => {
                         const prevBranches = prevValues.branches || [];
                         const currBranches = currentValues.branches || [];
@@ -424,22 +424,22 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                           prevBranches.some((b: any, i: number) => b?.id !== currBranches[i]?.id || b?.label !== currBranches[i]?.label);
                       }}>
                         {({ getFieldValue }) => {
-                          const branches = getFieldValue('branches') || [];
-                          const validBranches = Array.isArray(branches) ? branches.filter((b: any) => b) : [];
-                          const branchOptions: SelectProps['options'] = validBranches.map((branch: any, idx: number) => ({
-                            label: branch?.label || `分支 ${idx + 1}`,
-                            value: branch?.id || idx
-                          }));
+                          const nodeOptions: SelectProps['options'] = allNodes
+                            .filter(node => node && node.id !== selectedNode?.id)
+                            .map(node => ({
+                              label: node.data?.label || node.id,
+                              value: node.id
+                            }));
                           return (
                             <Form.Item
-                              name="defaultBranchId"
-                              label="默认分支"
-                              tooltip="当所有条件都不匹配时，使用此分支"
+                              name="defaultNodeId"
+                              label="默认节点"
+                              tooltip="当所有条件都不匹配时，流程跳转到此节点"
                             >
                               <Select
-                                placeholder="选择默认分支"
+                                placeholder="选择默认节点"
                                 allowClear
-                                options={branchOptions}
+                                options={nodeOptions}
                               />
                             </Form.Item>
                           );

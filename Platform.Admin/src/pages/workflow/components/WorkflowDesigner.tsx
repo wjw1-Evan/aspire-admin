@@ -375,25 +375,25 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
     setSelectedNode(node);
     setConfigDrawerVisible(true);
     const config = node.data.config || {};
-    
+
     // 映射辅助函数：处理后端返回的字符串枚举
     const mapApprovalType = (type: any) => {
-        if (typeof type === 'number') return type;
-        const t = String(type).toLowerCase();
-        if (t === 'all') return 0;
-        if (t === 'any') return 1;
-        if (t === 'sequential') return 2;
-        return 0;
+      if (typeof type === 'number') return type;
+      const t = String(type).toLowerCase();
+      if (t === 'all') return 0;
+      if (t === 'any') return 1;
+      if (t === 'sequential') return 2;
+      return 0;
     };
 
     const mapApproverType = (type: any) => {
-        if (typeof type === 'number') return type;
-        const t = String(type).toLowerCase();
-        if (t === 'user') return 0;
-        if (t === 'role') return 1;
-        if (t === 'department') return 2;
-        if (t === 'formfield') return 3;
-        return 0;
+      if (typeof type === 'number') return type;
+      const t = String(type).toLowerCase();
+      if (t === 'user') return 0;
+      if (t === 'role') return 1;
+      if (t === 'department') return 2;
+      if (t === 'formfield') return 3;
+      return 0;
     };
 
     configForm.resetFields();
@@ -413,7 +413,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
       allowReject: config.approval?.allowReject,
       allowReturn: config.approval?.allowReturn,
       timeoutHours: config.approval?.timeoutHours,
-      
+
       // 条件节点配置
       expression: config.condition?.expression,
       logicalOperator: config.condition?.logicalOperator || 'and',
@@ -505,7 +505,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
       setNodes(updatedNodes);
       setConfigDrawerVisible(false);
       message.success(intl.formatMessage({ id: 'pages.workflow.designer.message.configSaved' }));
-    }).catch(() => {});
+    }).catch(() => { });
   }, [selectedNode, configForm, nodes, setNodes, typeLabels, intl, message]);
 
   const validateWorkflow = useCallback(() => {
@@ -657,6 +657,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
         roles={roles}
         forms={forms}
         availableVariables={availableVariables}
+        allNodes={nodes}
       />
     </div>
   );

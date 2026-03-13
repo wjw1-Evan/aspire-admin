@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button, Card, Drawer, Form, Input, Select, Switch, Space, Divider, Tabs, Mentions, FormInstance } from 'antd';
 import { DeleteOutlined, SaveOutlined, PlusOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
@@ -39,6 +39,7 @@ export interface NodeConfigDrawerProps {
   forms: FormDefinition[];
   availableVariables: { label: string; value: string }[];
   workflowDefinitionId?: string;
+  allNodes?: Node[];
 }
 
 const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
@@ -54,29 +55,68 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
   forms,
   availableVariables,
   workflowDefinitionId,
+  allNodes = [],
 }) => {
   const intl = useIntl();
   const [workflowForms, setWorkflowForms] = useState<WorkflowForm[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // 加载流程中使用的表单及字段
+  // 从前端节点数据中提取表单信息
+  const extractFormsFromNodes = useCallback(() => {
+    const formMap = new Map<string, WorkflowForm>();
+
+    // 遍历所有节点，收集绑定的表单
+    allNodes.forEach(node => {
+      const config = node.data?.config;
+      if (config?.form?.formDefinitionId) {
+        const formId = config.form.formDefinitionId;
+        // 从 forms 列表中查找对应的表单定义
+        const formDef = forms.find(f => f.id === formId);
+        if (formDef && !formMap.has(formId)) {
+          formMap.set(formId, {
+            Id: formDef.id || 'unknown',
+            Name: formDef.name || '',
+            Key: formDef.key || '',
+            Fields: (formDef.fields || []).map(field => ({
+              Id: field.id || 'unknown',
+              Label: field.label || '',
+              DataKey: field.dataKey || '',
+              Type: field.type,
+              Required: field.required || false,
+            })),
+          });
+        }
+      }
+    });
+
+    return Array.from(formMap.values());
+  }, [allNodes, forms]);
+
+  // 当 drawer 打开或节点变化时，更新表单列表
   useEffect(() => {
-    if (visible && workflowDefinitionId) {
-      setLoading(true);
-      getWorkflowFormsAndFields(workflowDefinitionId)
-        .then(response => {
-          if (response.data?.forms) {
-            setWorkflowForms(response.data.forms);
-          }
-        })
-        .catch(error => {
-          console.error('加载流程表单失败:', error);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
+    if (visible) {
+      // 优先使用前端节点数据
+      if (allNodes.length > 0) {
+        const localForms = extractFormsFromNodes();
+        setWorkflowForms(localForms);
+      } else if (workflowDefinitionId) {
+        // 如果没有前端节点数据，则从后端获取（编辑已保存的流程时）
+        setLoading(true);
+        getWorkflowFormsAndFields(workflowDefinitionId)
+          .then(response => {
+            if (response.data?.forms) {
+              setWorkflowForms(response.data.forms);
+            }
+          })
+          .catch(error => {
+            console.error('加载流程表单失败:', error);
+          })
+          .finally(() => {
+            setLoading(false);
+          });
+      }
     }
-  }, [visible, workflowDefinitionId]);
+  }, [visible, workflowDefinitionId, allNodes, extractFormsFromNodes]);
 
   // 获取选中表单的字段
   const getSelectedFormFields = (formId: string | undefined): WorkflowFormField[] => {

@@ -258,6 +258,8 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
         id: edge.id,
         source: edge.source,
         target: edge.target,
+        sourceHandle: edge.sourceHandle,
+        targetHandle: edge.targetHandle,
         type: 'workflowEdge',
         label: edge.label,
         data: { condition: edge.data?.condition },

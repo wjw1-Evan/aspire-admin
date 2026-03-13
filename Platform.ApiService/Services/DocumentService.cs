@@ -236,26 +236,7 @@ public class DocumentService : IDocumentService
         var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var companyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? throw new InvalidOperationException("COMPANY_NOT_FOUND");
 
-        System.Console.WriteLine($"DEBUG_DOCUMENT_SERVICE: CreateDocumentAsync 开始");
-        System.Console.WriteLine($"DEBUG_DOCUMENT_SERVICE: 请求 FormData = {(request.FormData == null ? "null" : $"Count={request.FormData.Count}")}");
-        if (request.FormData != null)
-        {
-            foreach (var kv in request.FormData)
-            {
-                System.Console.WriteLine($"  [{kv.Key}] = {(kv.Value == null ? "null" : $"{kv.Value} ({kv.Value.GetType().Name})")}");
-            }
-        }
-
         var sanitizedFormData = request.FormData != null ? SerializationExtensions.SanitizeDictionary(request.FormData) : new Dictionary<string, object>();
-
-        System.Console.WriteLine($"DEBUG_DOCUMENT_SERVICE: 清洗后 FormData = {(sanitizedFormData == null ? "null" : $"Count={sanitizedFormData.Count}")}");
-        if (sanitizedFormData != null)
-        {
-            foreach (var kv in sanitizedFormData)
-            {
-                System.Console.WriteLine($"  [{kv.Key}] = {(kv.Value == null ? "null" : $"{kv.Value} ({kv.Value.GetType().Name})")}");
-            }
-        }
 
         var document = new Document
         {
@@ -268,9 +249,6 @@ public class DocumentService : IDocumentService
             FormData = sanitizedFormData,
             CompanyId = companyId
         };
-
-        System.Console.WriteLine($"DEBUG_DOCUMENT_SERVICE: 创建的 Document FormData = {(document.FormData == null ? "null" : $"Count={document.FormData.Count}")}");
-        System.Console.Out.Flush();
 
         return await _documentFactory.CreateAsync(document);
     }
@@ -476,21 +454,23 @@ public class DocumentService : IDocumentService
         var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
 
         // 启动工作流（合并文档中的 FormData 和 提交时传递的变量）
-        var sanitizedVars = variables != null
-            ? SerializationExtensions.SanitizeDictionary(variables)
-            : null;
-
+        // 优先级：FormData > Variables（FormData 不会被 Variables 覆盖）
         var allVariables = new Dictionary<string, object?>();
-        if (document.FormData != null)
+
+        // 先添加提交时传递的变量
+        if (variables != null)
         {
-            foreach (var kv in document.FormData)
+            var sanitizedVars = SerializationExtensions.SanitizeDictionary(variables);
+            foreach (var kv in sanitizedVars)
             {
                 allVariables[kv.Key] = kv.Value;
             }
         }
-        if (sanitizedVars != null)
+
+        // 再添加文档的 FormData（会覆盖同名的 Variables）
+        if (document.FormData != null)
         {
-            foreach (var kv in sanitizedVars)
+            foreach (var kv in document.FormData)
             {
                 allVariables[kv.Key] = kv.Value;
             }
@@ -686,10 +666,8 @@ public class DocumentService : IDocumentService
             CompanyId = companyId ?? string.Empty
         };
 
-        _logger.LogInformation("DEBUG_PRE_CREATE: FormData: {Data}", System.Text.Json.JsonSerializer.Serialize(document.FormData));
         document = await _documentFactory.CreateAsync(document);
         _logger.LogInformation("基于流程表单创建公文: DocumentId={DocumentId}, WorkflowDefinitionId={DefinitionId}", document.Id, workflowDefinitionId);
-        _logger.LogInformation("DEBUG_CREATE_DOC: FormData: {Data}", System.Text.Json.JsonSerializer.Serialize(document.FormData));
         return document;
     }
 

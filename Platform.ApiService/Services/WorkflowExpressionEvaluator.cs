@@ -170,6 +170,23 @@ public class WorkflowExpressionEvaluator : IWorkflowExpressionEvaluator
     {
         if (leftValue == null) return op == "==" ? rightValueStr == "null" : op == "!=";
 
+        // 处理 JsonElement 类型（从 JSON 反序列化得到）
+        if (leftValue is System.Text.Json.JsonElement jsonElement)
+        {
+            leftValue = jsonElement.ValueKind switch
+            {
+                System.Text.Json.JsonValueKind.Number => jsonElement.GetDouble(),
+                System.Text.Json.JsonValueKind.String => jsonElement.GetString(),
+                System.Text.Json.JsonValueKind.True => true,
+                System.Text.Json.JsonValueKind.False => false,
+                System.Text.Json.JsonValueKind.Null => null,
+                _ => jsonElement.ToString()
+            };
+
+            if (leftValue == null)
+                return op == "==" ? rightValueStr == "null" : op == "!=";
+        }
+
         // 处理布尔值比较
         if (leftValue is bool leftBool)
         {

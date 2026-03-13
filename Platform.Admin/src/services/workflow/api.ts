@@ -620,6 +620,28 @@ export async function getDocumentCreateForm(definitionId: string): Promise<ApiRe
 }
 
 /**
+ * 获取流程中使用的所有表单及其字段
+ */
+export async function getWorkflowFormsAndFields(definitionId: string): Promise<ApiResponse<{
+  forms: Array<{
+    Id: string;
+    Name: string;
+    Key: string;
+    Fields: Array<{
+      Id: string;
+      Label: string;
+      DataKey: string;
+      Type: string;
+      Required: boolean;
+    }>;
+  }>;
+}>> {
+  return request(`/api/workflows/${definitionId}/forms-and-fields`, {
+    method: 'GET',
+  });
+}
+
+/**
  * 按流程表单创建草稿公文
  */
 export async function createDocumentByWorkflow(definitionId: string, data: {

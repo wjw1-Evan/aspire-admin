@@ -513,6 +513,75 @@ public class WorkflowController : BaseApiController
     }
 
     /// <summary>
+    /// 获取流程中使用的所有表单及其字段（用于条件组件的二级联动选择）
+    /// </summary>
+    /// <remarks>
+    /// 返回流程定义中所有节点绑定的表单及其字段列表
+    /// 用于条件组件的二级联动选择：第一级为表单，第二级为字段
+    /// </remarks>
+    [HttpGet("{id}/forms-and-fields")]
+    [RequireMenu("workflow-list", "document-list")]
+    public async Task<IActionResult> GetWorkflowFormsAndFields(string id)
+    {
+        try
+        {
+            var definition = await _definitionFactory.GetByIdAsync(id);
+            if (definition == null)
+            {
+                return NotFoundError("流程定义", id);
+            }
+
+            // 收集流程中所有节点绑定的表单
+            var formBindings = new Dictionary<string, FormBinding>();
+            foreach (var node in definition.Graph.Nodes)
+            {
+                var binding = node.Data.Config?.Form;
+                if (binding != null && !string.IsNullOrEmpty(binding.FormDefinitionId))
+                {
+                    if (!formBindings.ContainsKey(binding.FormDefinitionId))
+                    {
+                        formBindings[binding.FormDefinitionId] = binding;
+                    }
+                }
+            }
+
+            if (formBindings.Count == 0)
+            {
+                return Success(new { forms = new List<object>() });
+            }
+
+            // 获取所有表单定义
+            var formIds = formBindings.Keys.ToList();
+            var forms = await _formFactory.FindAsync(
+                f => formIds.Contains(f.Id),
+                includes: [f => f.Fields]
+            );
+
+            // 构建返回数据：表单列表，每个表单包含其字段
+            var result = forms.Select(form => new
+            {
+                form.Id,
+                form.Name,
+                form.Key,
+                Fields = form.Fields?.Select(field => new
+                {
+                    field.Id,
+                    field.Label,
+                    field.DataKey,
+                    field.Type,
+                    field.Required
+                }).ToList() ?? new List<object>()
+            }).ToList();
+
+            return Success(new { forms = result });
+        }
+        catch (Exception ex)
+        {
+            return Error("GET_FAILED", ex.Message);
+        }
+    }
+
+    /// <summary>
     /// 获取当前用户待办的流程实例
     /// </summary>
     [HttpGet("instances/todo")]

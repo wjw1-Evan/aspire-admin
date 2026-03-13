@@ -191,7 +191,7 @@ public class WorkflowConditionTests : BaseIntegrationTest
         // 2. 创建工作流，在 start 节点绑定表单，条件节点配置条件规则
         var conditions = new List<object>
         {
-            new { Variable = "amount", Operator = "greater_than", Value = "1000" }
+            new { FormId = formId, Variable = "amount", Operator = "greater_than", Value = "1000" }
         };
         var workflowRequest = CreateWorkflowWithFormBinding(formId, "金额 > 1000?", conditions);
         var workflowResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
@@ -281,7 +281,7 @@ public class WorkflowConditionTests : BaseIntegrationTest
         // 2. 创建工作流并绑定表单
         var conditions = new List<object>
         {
-            new { Variable = "amount", Operator = "greater_than", Value = "1000" }
+            new { FormId = formId, Variable = "amount", Operator = "greater_than", Value = "1000" }
         };
         var workflowRequest = CreateWorkflowWithFormBinding(formId, "金额 > 1000?", conditions);
         var workflowResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
@@ -338,7 +338,7 @@ public class WorkflowConditionTests : BaseIntegrationTest
 
         var conditions = new List<object>
         {
-            new { Variable = "amount", Operator = "greater_than", Value = "1000" }
+            new { FormId = formId, Variable = "amount", Operator = "greater_than", Value = "1000" }
         };
         var workflowRequest = CreateWorkflowWithFormBinding(formId, "金额 > 1000?", conditions);
         var workflowResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
@@ -403,8 +403,8 @@ public class WorkflowConditionTests : BaseIntegrationTest
         // 2. 创建工作流，配置 AND 条件
         var conditions = new List<object>
         {
-            new { Variable = "amount", Operator = "greater_than", Value = "1000" },
-            new { Variable = "department", Operator = "equals", Value = "Finance" }
+            new { FormId = formId, Variable = "amount", Operator = "greater_than", Value = "1000" },
+            new { FormId = formId, Variable = "department", Operator = "equals", Value = "Finance" }
         };
         var workflowRequest = CreateWorkflowWithFormBinding(formId, "金额 > 1000 且 部门 = Finance?", conditions, "and");
         var workflowResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
@@ -469,8 +469,8 @@ public class WorkflowConditionTests : BaseIntegrationTest
 
         var conditions = new List<object>
         {
-            new { Variable = "amount", Operator = "greater_than", Value = "1000" },
-            new { Variable = "department", Operator = "equals", Value = "Finance" }
+            new { FormId = formId, Variable = "amount", Operator = "greater_than", Value = "1000" },
+            new { FormId = formId, Variable = "department", Operator = "equals", Value = "Finance" }
         };
         var workflowRequest = CreateWorkflowWithFormBinding(formId, "金额 > 1000 且 部门 = Finance?", conditions, "and");
         var workflowResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
@@ -535,8 +535,8 @@ public class WorkflowConditionTests : BaseIntegrationTest
 
         var conditions = new List<object>
         {
-            new { Variable = "amount", Operator = "greater_than", Value = "1000" },
-            new { Variable = "isUrgent", Operator = "equals", Value = "true" }
+            new { FormId = formId, Variable = "amount", Operator = "greater_than", Value = "1000" },
+            new { FormId = formId, Variable = "isUrgent", Operator = "equals", Value = "true" }
         };
         var workflowRequest = CreateWorkflowWithFormBinding(formId, "金额 > 1000 或 紧急?", conditions, "or");
         var workflowResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
@@ -594,7 +594,7 @@ public class WorkflowConditionTests : BaseIntegrationTest
 
         var conditions = new List<object>
         {
-            new { Variable = "department", Operator = "equals", Value = "Finance" }
+            new { FormId = formId, Variable = "department", Operator = "equals", Value = "Finance" }
         };
         var workflowRequest = CreateWorkflowWithFormBinding(formId, "部门 = Finance?", conditions);
         var workflowResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
@@ -650,7 +650,7 @@ public class WorkflowConditionTests : BaseIntegrationTest
 
         var conditions = new List<object>
         {
-            new { Variable = "department", Operator = "equals", Value = "Finance" }
+            new { FormId = formId, Variable = "department", Operator = "equals", Value = "Finance" }
         };
         var workflowRequest = CreateWorkflowWithFormBinding(formId, "部门 = Finance?", conditions);
         var workflowResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
@@ -706,7 +706,7 @@ public class WorkflowConditionTests : BaseIntegrationTest
 
         var conditions = new List<object>
         {
-            new { Variable = "amount", Operator = "greater_than", Value = "1000" }
+            new { FormId = formId, Variable = "amount", Operator = "greater_than", Value = "1000" }
         };
         var workflowRequest = CreateWorkflowWithFormBinding(formId, "金额 > 1000?", conditions);
         var workflowResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button, Card, Drawer, Form, Input, Select, Switch, Space, Divider, Tabs, Mentions, FormInstance } from 'antd';
 import { DeleteOutlined, SaveOutlined, PlusOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
@@ -7,8 +7,24 @@ import { Node } from 'reactflow';
 import type { AppUser } from '@/services/user/api';
 import type { Role } from '@/services/role/api';
 import type { FormDefinition } from '@/services/form/api';
+import { getWorkflowFormsAndFields } from '@/services/workflow/api';
 
 const { Option } = Mentions;
+
+interface WorkflowFormField {
+  Id: string;
+  Label: string;
+  DataKey: string;
+  Type: string;
+  Required: boolean;
+}
+
+interface WorkflowForm {
+  Id: string;
+  Name: string;
+  Key: string;
+  Fields: WorkflowFormField[];
+}
 
 export interface NodeConfigDrawerProps {
   visible: boolean;
@@ -22,6 +38,7 @@ export interface NodeConfigDrawerProps {
   roles: Role[];
   forms: FormDefinition[];
   availableVariables: { label: string; value: string }[];
+  workflowDefinitionId?: string;
 }
 
 const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
@@ -36,8 +53,37 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
   roles,
   forms,
   availableVariables,
+  workflowDefinitionId,
 }) => {
   const intl = useIntl();
+  const [workflowForms, setWorkflowForms] = useState<WorkflowForm[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // 加载流程中使用的表单及字段
+  useEffect(() => {
+    if (visible && workflowDefinitionId) {
+      setLoading(true);
+      getWorkflowFormsAndFields(workflowDefinitionId)
+        .then(response => {
+          if (response.data?.forms) {
+            setWorkflowForms(response.data.forms);
+          }
+        })
+        .catch(error => {
+          console.error('加载流程表单失败:', error);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  }, [visible, workflowDefinitionId]);
+
+  // 获取选中表单的字段
+  const getSelectedFormFields = (formId: string | undefined): WorkflowFormField[] => {
+    if (!formId) return [];
+    const form = workflowForms.find(f => f.Id === formId);
+    return form?.Fields || [];
+  };
 
   return (
     <Drawer
@@ -111,42 +157,42 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
 
                       <Divider titlePlacement="left" plain>审批人设置</Divider>
                       <Form.List name="approvers">
-                          {(fields, { add, remove }) => (
-                            <>
-                              {fields.map(({ key, name, ...restField }) => (
-                                <Card size="small" styles={{ body: { marginBottom: 12, background: '#f8fafc' } }} key={key} extra={<DeleteOutlined onClick={() => remove(name)} style={{ color: '#ff4d4f' }} />}>
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                    <Form.Item {...restField} name={[name, 'type']} rules={[{ required: true }]} style={{ marginBottom: 8 }}>
-                                      <Select placeholder="审批方式">
-                                        <Select.Option value={0}>指定用户</Select.Option>
-                                        <Select.Option value={1}>指定角色</Select.Option>
-                                        <Select.Option value={3}>表单字段</Select.Option>
-                                      </Select>
-                                    </Form.Item>
-                                    <Form.Item noStyle shouldUpdate={(prev, curr) => prev.approvers?.[name]?.type !== curr.approvers?.[name]?.type}>
-                                      {({ getFieldValue }) => {
-                                        const type = getFieldValue(['approvers', name, 'type']);
-                                        if (type === 0) return <Form.Item {...restField} name={[name, 'userIds']} rules={[{ required: true }]}><Select mode="multiple" placeholder="选择用户" options={users.map(u => ({ label: u.name || u.username, value: u.id }))} /></Form.Item>;
-                                        if (type === 1) return <Form.Item {...restField} name={[name, 'roleIds']} rules={[{ required: true }]}><Select mode="multiple" placeholder="选择角色" options={roles.map(r => ({ label: r.name, value: r.id }))} /></Form.Item>;
-                                        if (type === 3) return (
-                                          <Form.Item {...restField} name={[name, 'formFieldKey']} rules={[{ required: true }]}>
-                                            <Select 
-                                              placeholder="选择表单字段" 
-                                              showSearch
-                                              options={availableVariables.map(v => ({ label: v.label, value: v.value }))}
-                                            />
-                                          </Form.Item>
-                                        );
-                                        return null;
-                                      }}
-                                    </Form.Item>
-                                  </div>
-                                </Card>
-                              ))}
-                              <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>添加审批人</Button>
-                            </>
-                          )}
-                        </Form.List>
+                        {(fields, { add, remove }) => (
+                          <>
+                            {fields.map(({ key, name, ...restField }) => (
+                              <Card size="small" styles={{ body: { marginBottom: 12, background: '#f8fafc' } }} key={key} extra={<DeleteOutlined onClick={() => remove(name)} style={{ color: '#ff4d4f' }} />}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                  <Form.Item {...restField} name={[name, 'type']} rules={[{ required: true }]} style={{ marginBottom: 8 }}>
+                                    <Select placeholder="审批方式">
+                                      <Select.Option value={0}>指定用户</Select.Option>
+                                      <Select.Option value={1}>指定角色</Select.Option>
+                                      <Select.Option value={3}>表单字段</Select.Option>
+                                    </Select>
+                                  </Form.Item>
+                                  <Form.Item noStyle shouldUpdate={(prev, curr) => prev.approvers?.[name]?.type !== curr.approvers?.[name]?.type}>
+                                    {({ getFieldValue }) => {
+                                      const type = getFieldValue(['approvers', name, 'type']);
+                                      if (type === 0) return <Form.Item {...restField} name={[name, 'userIds']} rules={[{ required: true }]}><Select mode="multiple" placeholder="选择用户" options={users.map(u => ({ label: u.name || u.username, value: u.id }))} /></Form.Item>;
+                                      if (type === 1) return <Form.Item {...restField} name={[name, 'roleIds']} rules={[{ required: true }]}><Select mode="multiple" placeholder="选择角色" options={roles.map(r => ({ label: r.name, value: r.id }))} /></Form.Item>;
+                                      if (type === 3) return (
+                                        <Form.Item {...restField} name={[name, 'formFieldKey']} rules={[{ required: true }]}>
+                                          <Select
+                                            placeholder="选择表单字段"
+                                            showSearch
+                                            options={availableVariables.map(v => ({ label: v.label, value: v.value }))}
+                                          />
+                                        </Form.Item>
+                                      );
+                                      return null;
+                                    }}
+                                  </Form.Item>
+                                </div>
+                              </Card>
+                            ))}
+                            <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>添加审批人</Button>
+                          </>
+                        )}
+                      </Form.List>
                     </>
                   )}
 
@@ -164,25 +210,54 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                         {(fields, { add, remove }) => (
                           <>
                             {fields.map(({ key, name, ...restField }) => (
-                              <Card 
-                                size="small" 
-                                style={{ marginBottom: 12, background: '#f8fafc' }} 
+                              <Card
+                                size="small"
+                                style={{ marginBottom: 12, background: '#f8fafc' }}
                                 key={key}
                                 extra={<DeleteOutlined onClick={() => remove(name)} style={{ color: '#ff4d4f' }} />}
                               >
                                 <Space direction="vertical" style={{ width: '100%' }}>
+                                  {/* 第一级：选择表单 */}
                                   <Form.Item
                                     {...restField}
-                                    name={[name, 'variable']}
-                                    label="变量"
-                                    rules={[{ required: true, message: '请选择变量' }]}
+                                    name={[name, 'formId']}
+                                    label="表单"
+                                    rules={[{ required: true, message: '请选择表单' }]}
                                   >
-                                    <Select 
-                                      placeholder="选择变量" 
+                                    <Select
+                                      placeholder="选择流程中使用的表单"
                                       showSearch
-                                      options={availableVariables.map(v => ({ label: v.label, value: v.value }))}
+                                      loading={loading}
+                                      options={workflowForms.map(f => ({ label: f.Name, value: f.Id }))}
                                     />
                                   </Form.Item>
+
+                                  {/* 第二级：选择字段 */}
+                                  <Form.Item noStyle shouldUpdate={(prev, curr) => prev.conditions?.[name]?.formId !== curr.conditions?.[name]?.formId}>
+                                    {({ getFieldValue }) => {
+                                      const formId = getFieldValue(['conditions', name, 'formId']);
+                                      const fields = getSelectedFormFields(formId);
+                                      return (
+                                        <Form.Item
+                                          {...restField}
+                                          name={[name, 'variable']}
+                                          label="字段"
+                                          rules={[{ required: true, message: '请选择字段' }]}
+                                        >
+                                          <Select
+                                            placeholder="选择表单字段"
+                                            showSearch
+                                            disabled={!formId}
+                                            options={fields.map(f => ({
+                                              label: `${f.Label} (${f.DataKey})`,
+                                              value: f.DataKey
+                                            }))}
+                                          />
+                                        </Form.Item>
+                                      );
+                                    }}
+                                  </Form.Item>
+
                                   <Form.Item
                                     {...restField}
                                     name={[name, 'operator']}

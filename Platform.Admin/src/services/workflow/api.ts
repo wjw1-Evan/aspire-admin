@@ -159,7 +159,7 @@ export interface ConditionBranch {
  */
 export interface ConditionConfig {
   branches?: ConditionBranch[];
-  defaultBranchId?: string;
+  defaultNodeId?: string;
   expression?: string;
   // 向后兼容：旧字段
   logicalOperator?: 'and' | 'or';

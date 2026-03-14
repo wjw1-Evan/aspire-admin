@@ -20,7 +20,6 @@ import {
   useSensors,
   DragEndEvent,
   DragOverlay,
-  Over,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -64,19 +63,43 @@ const SortableCard: React.FC<SortableCardProps> = ({ id, children }) => {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-    cursor: isDragging ? 'grabbing' : 'grab',
     backgroundColor: isOver ? 'rgba(24, 144, 255, 0.05)' : 'transparent',
     borderRadius: '8px',
     padding: isOver ? '8px' : '0px',
   };
 
+  // 创建一个包装器，只在标题区域应用拖动监听器
   return (
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
+      className="sortable-card-wrapper"
     >
+      {/* 拖动句柄 - 在卡片顶部 */}
+      <div
+        style={{
+          height: '8px',
+          backgroundColor: isDragging ? '#1890ff' : '#f0f0f0',
+          cursor: isDragging ? 'grabbing' : 'grab',
+          userSelect: 'none',
+          touchAction: 'none',
+          transition: 'background-color 0.2s',
+          borderTopLeftRadius: '8px',
+          borderTopRightRadius: '8px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '10px',
+          color: '#999',
+        }}
+        {...attributes}
+        {...listeners}
+        className="sortable-card-handle"
+        title="拖动卡片来移动"
+      >
+        ⋮⋮
+      </div>
+      {/* 卡片内容 */}
       {children}
     </div>
   );

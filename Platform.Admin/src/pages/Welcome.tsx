@@ -1,15 +1,13 @@
 import { PageContainer } from '@/components';
-import { useModel, useIntl, useAccess } from '@umijs/max';
-import { useRequest } from 'ahooks';
+import { useModel, useAccess } from '@umijs/max';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { theme, Row, Col, Space, message } from 'antd';
-import { getUserStatistics, getUserActivityLogs } from '@/services/ant-design-pro/api';
+import { theme, Row, Col, message } from 'antd';
+import { getUserStatistics } from '@/services/ant-design-pro/api';
 import { getTaskStatistics, getMyTodoTasks } from '@/services/task/api';
 import { getCurrentCompany } from '@/services/company';
 import { getSystemResources } from '@/services/system/api';
 import type { SystemResources } from '@/services/system/api';
 import { getDocumentStatistics, getPendingDocuments } from '@/services/document/api';
-import useCommonStyles from '@/hooks/useCommonStyles';
 import { saveWelcomeLayout } from '@/services/welcome/layout';
 import type { CardLayoutConfig } from '@/services/welcome/layout';
 
@@ -21,6 +19,7 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  DragOverlay,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -42,7 +41,6 @@ import {
   ProjectListCard
 } from './welcome/components';
 
-// 可排序的卡片包装器
 interface SortableCardProps {
   id: string;
   children: React.ReactNode;
@@ -62,7 +60,7 @@ const SortableCard: React.FC<SortableCardProps> = ({ id, children }) => {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-    cursor: 'grab',
+    cursor: isDragging ? 'grabbing' : 'grab',
   };
 
   return (
@@ -78,7 +76,6 @@ const SortableCard: React.FC<SortableCardProps> = ({ id, children }) => {
 };
 
 const Welcome: React.FC = () => {
-  const intl = useIntl();
   const { token } = theme.useToken();
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser as API.CurrentUser;
@@ -90,32 +87,32 @@ const Welcome: React.FC = () => {
   const [systemResources, setSystemResources] = useState<SystemResources | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 审批相关
   const [docStatistics, setDocStatistics] = useState<import('@/services/document/api').DocumentStatistics | null>(null);
   const [pendingDocs, setPendingDocs] = useState<import('@/services/document/api').Document[]>([]);
 
   const access = useAccess();
   const canAccessApproval = access.canAccessPath('/document/approval');
 
-  // Resource History for Charts
   const [cpuHistory, setCpuHistory] = useState<{ value: number; time: string }[]>([]);
   const [memoryHistory, setMemoryHistory] = useState<{ value: number; time: string }[]>([]);
   const [diskHistory, setDiskHistory] = useState<{ value: number; time: string }[]>([]);
 
-  // 卡片布局状态
   const [leftCards, setLeftCards] = useState<string[]>(['task-overview', 'project-list', 'statistics-overview']);
   const [rightCards, setRightCards] = useState<string[]>(['approval-overview', 'iot-events', 'system-resources']);
   const [isSavingLayout, setIsSavingLayout] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
 
-  // dnd-kit 传感器配置
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
 
-  // 获取统计数据
   const fetchStatistics = useCallback(async () => {
     try {
       setLoading(true);
@@ -126,18 +123,10 @@ const Welcome: React.FC = () => {
         getMyTodoTasks()
       ]);
 
-      if (statsRes && statsRes.data) {
-        setStatistics(statsRes.data);
-      }
-      if (companyRes && companyRes.data) {
-        setCompanyInfo(companyRes.data);
-      }
-      if (taskStatsRes && taskStatsRes.data) {
-        setTaskStatistics(taskStatsRes.data);
-      }
-      if (todoTasksRes && todoTasksRes.data) {
-        setTodoTasks(todoTasksRes.data);
-      }
+      if (statsRes?.data) setStatistics(statsRes.data);
+      if (companyRes?.data) setCompanyInfo(companyRes.data);
+      if (taskStatsRes?.data) setTaskStatistics(taskStatsRes.data);
+      if (todoTasksRes?.data) setTodoTasks(todoTasksRes.data);
 
       try {
         const [docStatsRes, pendingDocsRes] = await Promise.all([
@@ -145,14 +134,10 @@ const Welcome: React.FC = () => {
           getPendingDocuments({ page: 1, pageSize: 5 })
         ]);
 
-        if (docStatsRes?.success && docStatsRes.data) {
-          setDocStatistics(docStatsRes.data);
-        }
-        if (pendingDocsRes?.success && pendingDocsRes.data?.list) {
-          setPendingDocs(pendingDocsRes.data.list);
-        }
+        if (docStatsRes?.success && docStatsRes.data) setDocStatistics(docStatsRes.data);
+        if (pendingDocsRes?.success && pendingDocsRes.data?.list) setPendingDocs(pendingDocsRes.data.list);
       } catch (docError) {
-        console.warn('Welcome: 获取审批统计失败', docError);
+        console.warn('获取审批统计失败', docError);
       }
     } catch (error) {
       console.error('获取统计数据失败:', error);
@@ -161,35 +146,22 @@ const Welcome: React.FC = () => {
     }
   }, []);
 
-  // 获取系统资源数据
   const fetchSystemResources = useCallback(async () => {
     try {
       const res = await getSystemResources();
-      if (res && res.data) {
+      if (res?.data) {
         const data = res.data;
         setSystemResources(data);
-
         const time = new Date().toLocaleTimeString();
 
         if (data.cpu) {
-          setCpuHistory(prev => {
-            const newHistory = [...prev, { value: data.cpu?.usagePercent || 0, time }];
-            return newHistory.slice(-20);
-          });
+          setCpuHistory(prev => [...prev, { value: data.cpu?.usagePercent || 0, time }].slice(-20));
         }
-
         if (data.memory) {
-          setMemoryHistory(prev => {
-            const newHistory = [...prev, { value: data.memory?.usagePercent || 0, time }];
-            return newHistory.slice(-20);
-          });
+          setMemoryHistory(prev => [...prev, { value: data.memory?.usagePercent || 0, time }].slice(-20));
         }
-
         if (data.disk) {
-          setDiskHistory(prev => {
-            const newHistory = [...prev, { value: data.disk?.usagePercent || 0, time }];
-            return newHistory.slice(-20);
-          });
+          setDiskHistory(prev => [...prev, { value: data.disk?.usagePercent || 0, time }].slice(-20));
         }
       }
     } catch (error) {
@@ -197,12 +169,10 @@ const Welcome: React.FC = () => {
     }
   }, []);
 
-  // 初始数据加载
   useEffect(() => {
     fetchStatistics();
   }, [fetchStatistics]);
 
-  // 定时轮询系统资源更新（每 5 秒）
   useEffect(() => {
     if (!currentUser) return;
 
@@ -213,7 +183,6 @@ const Welcome: React.FC = () => {
     };
 
     performFetch();
-
     const intervalId = setInterval(performFetch, 5000);
 
     const handleVisibilityChange = () => {
@@ -229,23 +198,19 @@ const Welcome: React.FC = () => {
     };
   }, [currentUser, fetchSystemResources]);
 
-  // 处理拖动结束
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
+    setActiveId(null);
 
-    if (!over || active.id === over.id) {
-      return;
-    }
+    if (!over || active.id === over.id) return;
 
     const activeId = active.id as string;
     const overId = over.id as string;
 
-    // 判断是否在同一列
     const activeInLeft = leftCards.includes(activeId);
     const overInLeft = leftCards.includes(overId);
 
     if (activeInLeft === overInLeft) {
-      // 同列拖动
       if (activeInLeft) {
         const oldIndex = leftCards.indexOf(activeId);
         const newIndex = leftCards.indexOf(overId);
@@ -256,10 +221,7 @@ const Welcome: React.FC = () => {
         setRightCards(arrayMove(rightCards, oldIndex, newIndex));
       }
     } else {
-      // 跨列拖动
       if (activeInLeft) {
-        // 从左列拖到右列
-        const oldIndex = leftCards.indexOf(activeId);
         const newIndex = rightCards.indexOf(overId);
         setLeftCards(leftCards.filter(id => id !== activeId));
         setRightCards([
@@ -268,8 +230,6 @@ const Welcome: React.FC = () => {
           ...rightCards.slice(newIndex),
         ]);
       } else {
-        // 从右列拖到左列
-        const oldIndex = rightCards.indexOf(activeId);
         const newIndex = leftCards.indexOf(overId);
         setRightCards(rightCards.filter(id => id !== activeId));
         setLeftCards([
@@ -280,11 +240,13 @@ const Welcome: React.FC = () => {
       }
     }
 
-    // 保存布局
     saveLayoutToBackend();
   }, [leftCards, rightCards]);
 
-  // 保存布局到后端
+  const handleDragStart = useCallback((event: any) => {
+    setActiveId(event.active.id);
+  }, []);
+
   const saveLayoutToBackend = useCallback(async () => {
     if (isSavingLayout) return;
 
@@ -311,13 +273,12 @@ const Welcome: React.FC = () => {
       });
       message.success('布局已保存');
     } catch (error) {
-      console.warn('保存布局失败（后端 API 未实现）:', error);
+      console.warn('保存布局失败:', error);
     } finally {
       setIsSavingLayout(false);
     }
   }, [isSavingLayout, leftCards, rightCards, canAccessApproval]);
 
-  // 渲染卡片
   const renderCard = (cardId: string) => {
     const cardProps = {
       loading,
@@ -365,7 +326,6 @@ const Welcome: React.FC = () => {
     );
   };
 
-  // 过滤审批卡片
   const filteredRightCards = useMemo(() => {
     return rightCards.filter(id => {
       if (id === 'approval-overview' && !canAccessApproval) {
@@ -415,32 +375,46 @@ const Welcome: React.FC = () => {
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
             <Row gutter={[16, 16]}>
-              {/* 左侧列 */}
               <Col xs={24} lg={12}>
-                <Space orientation="vertical" size={16} style={{ width: '100%' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <SortableContext
                     items={leftCards}
                     strategy={verticalListSortingStrategy}
                   >
                     {leftCards.map(cardId => renderCard(cardId))}
                   </SortableContext>
-                </Space>
+                </div>
               </Col>
-              {/* 右侧列 */}
               <Col xs={24} lg={12}>
-                <Space orientation="vertical" size={16} style={{ width: '100%' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <SortableContext
                     items={filteredRightCards}
                     strategy={verticalListSortingStrategy}
                   >
                     {filteredRightCards.map(cardId => renderCard(cardId))}
                   </SortableContext>
-                </Space>
+                </div>
               </Col>
             </Row>
+            <DragOverlay>
+              {activeId ? (
+                <div style={{
+                  opacity: 0.7,
+                  backgroundColor: '#fff',
+                  borderRadius: '8px',
+                  boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
+                  padding: '16px',
+                  minHeight: '100px',
+                  minWidth: '300px',
+                }}>
+                  拖动中...
+                </div>
+              ) : null}
+            </DragOverlay>
           </DndContext>
         </div>
       </div>

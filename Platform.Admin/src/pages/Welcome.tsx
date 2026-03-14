@@ -1,7 +1,7 @@
 import { PageContainer } from '@/components';
 import { useModel, useIntl, useAccess } from '@umijs/max';
 import { useRequest } from 'ahooks';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { theme, Row, Col, Space, message } from 'antd';
 import { getUserStatistics, getUserActivityLogs } from '@/services/ant-design-pro/api';
 import { getTaskStatistics, getMyTodoTasks } from '@/services/task/api';
@@ -10,8 +10,26 @@ import { getSystemResources } from '@/services/system/api';
 import type { SystemResources } from '@/services/system/api';
 import { getDocumentStatistics, getPendingDocuments } from '@/services/document/api';
 import useCommonStyles from '@/hooks/useCommonStyles';
-import { getWelcomeLayout, saveWelcomeLayout } from '@/services/welcome/layout';
+import { saveWelcomeLayout } from '@/services/welcome/layout';
 import type { CardLayoutConfig } from '@/services/welcome/layout';
+
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { useSortable } from '@dnd-kit/sortable';
 
 import {
   WelcomeHeader,
@@ -21,9 +39,43 @@ import {
   SystemResourcesCard,
   ApprovalOverviewCard,
   IoTEventAlertsCard,
-  ProjectListCard,
-  DraggableCardContainer
+  ProjectListCard
 } from './welcome/components';
+
+// 可排序的卡片包装器
+interface SortableCardProps {
+  id: string;
+  children: React.ReactNode;
+}
+
+const SortableCard: React.FC<SortableCardProps> = ({ id, children }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    cursor: 'grab',
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+    >
+      {children}
+    </div>
+  );
+};
 
 const Welcome: React.FC = () => {
   const intl = useIntl();
@@ -51,19 +103,17 @@ const Welcome: React.FC = () => {
   const [diskHistory, setDiskHistory] = useState<{ value: number; time: string }[]>([]);
 
   // 卡片布局状态
-  const [cardLayouts, setCardLayouts] = useState<CardLayoutConfig[]>([]);
-  const [draggingCard, setDraggingCard] = useState<string | null>(null);
+  const [leftCards, setLeftCards] = useState<string[]>(['task-overview', 'project-list', 'statistics-overview']);
+  const [rightCards, setRightCards] = useState<string[]>(['approval-overview', 'iot-events', 'system-resources']);
   const [isSavingLayout, setIsSavingLayout] = useState(false);
 
-  // 默认卡片配置
-  const defaultLayouts: CardLayoutConfig[] = [
-    { cardId: 'task-overview', order: 0, column: 'left', visible: true },
-    { cardId: 'project-list', order: 1, column: 'left', visible: true },
-    { cardId: 'statistics-overview', order: 2, column: 'left', visible: true },
-    { cardId: 'approval-overview', order: 0, column: 'right', visible: canAccessApproval },
-    { cardId: 'iot-events', order: 1, column: 'right', visible: true },
-    { cardId: 'system-resources', order: 2, column: 'right', visible: true },
-  ];
+  // dnd-kit 传感器配置
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // 获取统计数据
   const fetchStatistics = useCallback(async () => {
@@ -89,9 +139,6 @@ const Welcome: React.FC = () => {
         setTodoTasks(todoTasksRes.data);
       }
 
-      // 🚀 优化：审批统计和待处理公文尝试获取
-      // 不再严格依赖 canAccessPath，只要是登录状态就尝试请求。
-      // 这里的 canAccessApproval 仅用于 UI 模块的显隐。
       try {
         const [docStatsRes, pendingDocsRes] = await Promise.all([
           getDocumentStatistics(),
@@ -105,7 +152,6 @@ const Welcome: React.FC = () => {
           setPendingDocs(pendingDocsRes.data.list);
         }
       } catch (docError) {
-        // 对于非核心数据的失败，只记录日志不中断流程
         console.warn('Welcome: 获取审批统计失败', docError);
       }
     } catch (error) {
@@ -123,13 +169,12 @@ const Welcome: React.FC = () => {
         const data = res.data;
         setSystemResources(data);
 
-        // Update history data
         const time = new Date().toLocaleTimeString();
 
         if (data.cpu) {
           setCpuHistory(prev => {
             const newHistory = [...prev, { value: data.cpu?.usagePercent || 0, time }];
-            return newHistory.slice(-20); // Keep last 20 points
+            return newHistory.slice(-20);
           });
         }
 
@@ -148,7 +193,6 @@ const Welcome: React.FC = () => {
         }
       }
     } catch (error) {
-      // 错误由全局错误处理处理，这里只记录但不阻止后续轮询
       console.error('获取系统资源失败:', error);
     }
   }, []);
@@ -158,30 +202,20 @@ const Welcome: React.FC = () => {
     fetchStatistics();
   }, [fetchStatistics]);
 
-  // 加载用户保存的布局配置
-  useEffect(() => {
-    // 直接使用默认布局，不调用 API
-    setCardLayouts(defaultLayouts);
-  }, [canAccessApproval]);
-
   // 定时轮询系统资源更新（每 5 秒）
   useEffect(() => {
     if (!currentUser) return;
 
     const performFetch = () => {
-      // 只有在页面可见时才进行轮询，节省客户端和服务器资源
       if (document.visibilityState === 'visible') {
         fetchSystemResources();
       }
     };
 
-    // 立即获取一次
     performFetch();
 
-    // 设置定时器，每 5 秒轮询一次（降低频率以减少内存和网络压力）
     const intervalId = setInterval(performFetch, 5000);
 
-    // 监听可见性变化，当回到页面时立即刷新
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         fetchSystemResources();
@@ -189,89 +223,102 @@ const Welcome: React.FC = () => {
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // 清理定时器
     return () => {
       clearInterval(intervalId);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [currentUser, fetchSystemResources]);
 
-  // 处理拖动开始
-  const handleDragStart = useCallback((cardId: string, column: 'left' | 'right') => {
-    setDraggingCard(cardId);
-  }, []);
-
   // 处理拖动结束
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-  }, []);
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
 
-  // 处理放置
-  const handleDrop = useCallback((targetCardId: string, targetColumn: 'left' | 'right') => {
-    if (!draggingCard) return;
+    if (!over || active.id === over.id) {
+      return;
+    }
 
-    setCardLayouts(prevLayouts => {
-      const newLayouts = [...prevLayouts];
-      const draggedIndex = newLayouts.findIndex(l => l.cardId === draggingCard);
-      const targetIndex = newLayouts.findIndex(l => l.cardId === targetCardId);
+    const activeId = active.id as string;
+    const overId = over.id as string;
 
-      if (draggedIndex === -1 || targetIndex === -1) return prevLayouts;
+    // 判断是否在同一列
+    const activeInLeft = leftCards.includes(activeId);
+    const overInLeft = leftCards.includes(overId);
 
-      // 交换卡片
-      const draggedLayout = newLayouts[draggedIndex];
-      const targetLayout = newLayouts[targetIndex];
+    if (activeInLeft === overInLeft) {
+      // 同列拖动
+      if (activeInLeft) {
+        const oldIndex = leftCards.indexOf(activeId);
+        const newIndex = leftCards.indexOf(overId);
+        setLeftCards(arrayMove(leftCards, oldIndex, newIndex));
+      } else {
+        const oldIndex = rightCards.indexOf(activeId);
+        const newIndex = rightCards.indexOf(overId);
+        setRightCards(arrayMove(rightCards, oldIndex, newIndex));
+      }
+    } else {
+      // 跨列拖动
+      if (activeInLeft) {
+        // 从左列拖到右列
+        const oldIndex = leftCards.indexOf(activeId);
+        const newIndex = rightCards.indexOf(overId);
+        setLeftCards(leftCards.filter(id => id !== activeId));
+        setRightCards([
+          ...rightCards.slice(0, newIndex),
+          activeId,
+          ...rightCards.slice(newIndex),
+        ]);
+      } else {
+        // 从右列拖到左列
+        const oldIndex = rightCards.indexOf(activeId);
+        const newIndex = leftCards.indexOf(overId);
+        setRightCards(rightCards.filter(id => id !== activeId));
+        setLeftCards([
+          ...leftCards.slice(0, newIndex),
+          activeId,
+          ...leftCards.slice(newIndex),
+        ]);
+      }
+    }
 
-      // 更新拖动卡片的列和顺序
-      draggedLayout.column = targetColumn;
-      draggedLayout.order = targetLayout.order;
-
-      // 重新排序同列的卡片
-      const sameColumnLayouts = newLayouts.filter(l => l.column === targetColumn);
-      sameColumnLayouts.sort((a, b) => a.order - b.order);
-      sameColumnLayouts.forEach((layout, index) => {
-        layout.order = index;
-      });
-
-      // 保存布局到后端
-      saveLayoutToBackend(newLayouts);
-
-      return newLayouts;
-    });
-
-    setDraggingCard(null);
-  }, [draggingCard]);
+    // 保存布局
+    saveLayoutToBackend();
+  }, [leftCards, rightCards]);
 
   // 保存布局到后端
-  const saveLayoutToBackend = useCallback(async (layouts: CardLayoutConfig[]) => {
+  const saveLayoutToBackend = useCallback(async () => {
     if (isSavingLayout) return;
 
     setIsSavingLayout(true);
     try {
+      const layouts: CardLayoutConfig[] = [
+        ...leftCards.map((cardId, index) => ({
+          cardId,
+          order: index,
+          column: 'left' as const,
+          visible: true,
+        })),
+        ...rightCards.map((cardId, index) => ({
+          cardId,
+          order: index,
+          column: 'right' as const,
+          visible: cardId === 'approval-overview' ? canAccessApproval : true,
+        })),
+      ];
+
       await saveWelcomeLayout({
         layouts,
         updatedAt: new Date().toISOString(),
       });
       message.success('布局已保存');
     } catch (error) {
-      // 后端 API 未实现时，静默处理，不显示错误
       console.warn('保存布局失败（后端 API 未实现）:', error);
     } finally {
       setIsSavingLayout(false);
     }
-  }, [isSavingLayout]);
-
-  // 获取指定列的卡片
-  const getCardsForColumn = (column: 'left' | 'right') => {
-    return cardLayouts
-      .filter(l => l.column === column && l.visible)
-      .sort((a, b) => a.order - b.order);
-  };
+  }, [isSavingLayout, leftCards, rightCards, canAccessApproval]);
 
   // 渲染卡片
-  const renderCard = (layout: CardLayoutConfig) => {
-    const { cardId } = layout;
-    const isDragging = draggingCard === cardId;
-
+  const renderCard = (cardId: string) => {
     const cardProps = {
       loading,
       currentUser,
@@ -312,20 +359,21 @@ const Welcome: React.FC = () => {
     })();
 
     return (
-      <DraggableCardContainer
-        key={cardId}
-        cardId={cardId}
-        column={layout.column}
-        isDragging={isDragging}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-        onLayoutChange={setCardLayouts}
-      >
+      <SortableCard key={cardId} id={cardId}>
         {cardComponent}
-      </DraggableCardContainer>
+      </SortableCard>
     );
   };
+
+  // 过滤审批卡片
+  const filteredRightCards = useMemo(() => {
+    return rightCards.filter(id => {
+      if (id === 'approval-overview' && !canAccessApproval) {
+        return false;
+      }
+      return true;
+    });
+  }, [rightCards, canAccessApproval]);
 
   return (
     <PageContainer
@@ -364,20 +412,36 @@ const Welcome: React.FC = () => {
         />
 
         <div style={{ marginTop: '16px' }}>
-          <Row gutter={[16, 16]}>
-            {/* 左侧列 */}
-            <Col xs={24} lg={12}>
-              <Space orientation="vertical" size={16} style={{ width: '100%' }}>
-                {getCardsForColumn('left').map(layout => renderCard(layout))}
-              </Space>
-            </Col>
-            {/* 右侧列 */}
-            <Col xs={24} lg={12}>
-              <Space orientation="vertical" size={16} style={{ width: '100%' }}>
-                {getCardsForColumn('right').map(layout => renderCard(layout))}
-              </Space>
-            </Col>
-          </Row>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <Row gutter={[16, 16]}>
+              {/* 左侧列 */}
+              <Col xs={24} lg={12}>
+                <Space orientation="vertical" size={16} style={{ width: '100%' }}>
+                  <SortableContext
+                    items={leftCards}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {leftCards.map(cardId => renderCard(cardId))}
+                  </SortableContext>
+                </Space>
+              </Col>
+              {/* 右侧列 */}
+              <Col xs={24} lg={12}>
+                <Space orientation="vertical" size={16} style={{ width: '100%' }}>
+                  <SortableContext
+                    items={filteredRightCards}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {filteredRightCards.map(cardId => renderCard(cardId))}
+                  </SortableContext>
+                </Space>
+              </Col>
+            </Row>
+          </DndContext>
         </div>
       </div>
     </PageContainer>

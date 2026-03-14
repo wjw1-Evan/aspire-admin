@@ -1,12 +1,11 @@
 import React from 'react';
-import { Card, Row, Col, Space, Alert, Typography, Tag, theme, Button } from 'antd';
-import { 
-  CheckCircleOutlined, 
-  ClockCircleOutlined, 
-  FileTextOutlined, 
-  CloseCircleOutlined, 
-  EyeOutlined,
-  RightOutlined
+import { Card, Row, Col, Space, Alert, Typography, Tag, theme } from 'antd';
+import {
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  FileTextOutlined,
+  CloseCircleOutlined,
+  EyeOutlined
 } from '@ant-design/icons';
 import { useIntl, history } from '@umijs/max';
 import useCommonStyles from '@/hooks/useCommonStyles';
@@ -21,10 +20,10 @@ interface ApprovalOverviewCardProps {
   readonly loading: boolean;
 }
 
-const ApprovalOverviewCard: React.FC<ApprovalOverviewCardProps> = ({ 
-  statistics, 
-  pendingDocuments, 
-  loading 
+const ApprovalOverviewCard: React.FC<ApprovalOverviewCardProps> = ({
+  statistics,
+  pendingDocuments,
+  loading
 }) => {
   const intl = useIntl();
   const { token } = theme.useToken();
@@ -33,19 +32,9 @@ const ApprovalOverviewCard: React.FC<ApprovalOverviewCardProps> = ({
   return (
     <Card
       title={
-        <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-          <Space>
-            <CheckCircleOutlined />
-            <span>{intl.formatMessage({ id: 'pages.document.approval', defaultMessage: '我的审批' })}</span>
-          </Space>
-          <Button 
-            type="link" 
-            size="small" 
-            onClick={() => history.push('/document/approval')}
-            icon={<RightOutlined />}
-          >
-            {intl.formatMessage({ id: 'pages.common.more', defaultMessage: '更多' })}
-          </Button>
+        <Space>
+          <CheckCircleOutlined />
+          <span>{intl.formatMessage({ id: 'pages.document.approval', defaultMessage: '我的审批' })}</span>
         </Space>
       }
       className={styles.card}
@@ -134,7 +123,7 @@ const ApprovalOverviewCard: React.FC<ApprovalOverviewCardProps> = ({
                   </Text>
                 </Space>
                 <Button type="link" size="small" icon={<EyeOutlined />}>
-                   {intl.formatMessage({ id: 'pages.document.action.view', defaultMessage: '详情' })}
+                  {intl.formatMessage({ id: 'pages.document.action.view', defaultMessage: '详情' })}
                 </Button>
               </li>
             ))}

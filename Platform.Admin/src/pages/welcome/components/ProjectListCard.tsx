@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Space, Table, Button, Tag, Empty, theme, Typography, Progress, Tooltip } from 'antd';
-import { FolderOutlined, PlusOutlined, ArrowRightOutlined } from '@ant-design/icons';
+import { FolderOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import { useAccess } from '@umijs/max';
 import { getProjectList, ProjectStatus, ProjectPriority } from '@/services/task/project';
 import type { ProjectDto } from '@/services/task/project';
@@ -190,18 +190,6 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
                     <span>项目列表</span>
                 </Space>
             }
-            extra={
-                <Button
-                    type="primary"
-                    size="small"
-                    icon={<PlusOutlined />}
-                    onClick={() => {
-                        window.location.href = '/project-management/create';
-                    }}
-                >
-                    新建项目
-                </Button>
-            }
             style={{ height: '100%', borderRadius: '12px' }}
             loading={externalLoading || loading}
         >
@@ -226,7 +214,7 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
                         type="link"
                         size="small"
                         onClick={() => {
-                            window.location.href = '/project-management';
+                            window.location.href = '/project-management/project';
                         }}
                     >
                         查看全部项目

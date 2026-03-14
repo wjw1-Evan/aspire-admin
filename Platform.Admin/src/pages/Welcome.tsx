@@ -2,7 +2,7 @@ import { PageContainer } from '@/components';
 import { useModel, useIntl, useAccess } from '@umijs/max';
 import { useRequest } from 'ahooks';
 import React, { useState, useEffect, useCallback } from 'react';
-import { theme, Row, Col, Space } from 'antd';
+import { theme, Row, Col, Space, message } from 'antd';
 import { getUserStatistics, getUserActivityLogs } from '@/services/ant-design-pro/api';
 import { getTaskStatistics, getMyTodoTasks } from '@/services/task/api';
 import { getCurrentCompany } from '@/services/company';
@@ -10,6 +10,8 @@ import { getSystemResources } from '@/services/system/api';
 import type { SystemResources } from '@/services/system/api';
 import { getDocumentStatistics, getPendingDocuments } from '@/services/document/api';
 import useCommonStyles from '@/hooks/useCommonStyles';
+import { getWelcomeLayout, saveWelcomeLayout } from '@/services/welcome/layout';
+import type { CardLayoutConfig } from '@/services/welcome/layout';
 
 import {
   WelcomeHeader,
@@ -19,7 +21,8 @@ import {
   SystemResourcesCard,
   ApprovalOverviewCard,
   IoTEventAlertsCard,
-  ProjectListCard
+  ProjectListCard,
+  DraggableCardContainer
 } from './welcome/components';
 
 const Welcome: React.FC = () => {
@@ -46,6 +49,21 @@ const Welcome: React.FC = () => {
   const [cpuHistory, setCpuHistory] = useState<{ value: number; time: string }[]>([]);
   const [memoryHistory, setMemoryHistory] = useState<{ value: number; time: string }[]>([]);
   const [diskHistory, setDiskHistory] = useState<{ value: number; time: string }[]>([]);
+
+  // 卡片布局状态
+  const [cardLayouts, setCardLayouts] = useState<CardLayoutConfig[]>([]);
+  const [draggingCard, setDraggingCard] = useState<string | null>(null);
+  const [isSavingLayout, setIsSavingLayout] = useState(false);
+
+  // 默认卡片配置
+  const defaultLayouts: CardLayoutConfig[] = [
+    { cardId: 'task-overview', order: 0, column: 'left', visible: true },
+    { cardId: 'project-list', order: 1, column: 'left', visible: true },
+    { cardId: 'statistics-overview', order: 2, column: 'left', visible: true },
+    { cardId: 'approval-overview', order: 0, column: 'right', visible: canAccessApproval },
+    { cardId: 'iot-events', order: 1, column: 'right', visible: true },
+    { cardId: 'system-resources', order: 2, column: 'right', visible: true },
+  ];
 
   // 获取统计数据
   const fetchStatistics = useCallback(async () => {
@@ -140,6 +158,27 @@ const Welcome: React.FC = () => {
     fetchStatistics();
   }, [fetchStatistics]);
 
+  // 加载用户保存的布局配置
+  useEffect(() => {
+    const loadLayout = async () => {
+      try {
+        const res = await getWelcomeLayout();
+        if (res?.data?.layouts && res.data.layouts.length > 0) {
+          setCardLayouts(res.data.layouts);
+        } else {
+          setCardLayouts(defaultLayouts);
+        }
+      } catch (error) {
+        console.warn('加载布局配置失败，使用默认配置:', error);
+        setCardLayouts(defaultLayouts);
+      }
+    };
+
+    if (currentUser) {
+      loadLayout();
+    }
+  }, [currentUser, canAccessApproval]);
+
   // 定时轮询系统资源更新（每 5 秒）
   useEffect(() => {
     if (!currentUser) return;
@@ -171,6 +210,137 @@ const Welcome: React.FC = () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [currentUser, fetchSystemResources]);
+
+  // 处理拖动开始
+  const handleDragStart = useCallback((cardId: string, column: 'left' | 'right') => {
+    setDraggingCard(cardId);
+  }, []);
+
+  // 处理拖动结束
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+  }, []);
+
+  // 处理放置
+  const handleDrop = useCallback((targetCardId: string, targetColumn: 'left' | 'right') => {
+    if (!draggingCard) return;
+
+    setCardLayouts(prevLayouts => {
+      const newLayouts = [...prevLayouts];
+      const draggedIndex = newLayouts.findIndex(l => l.cardId === draggingCard);
+      const targetIndex = newLayouts.findIndex(l => l.cardId === targetCardId);
+
+      if (draggedIndex === -1 || targetIndex === -1) return prevLayouts;
+
+      // 交换卡片
+      const draggedLayout = newLayouts[draggedIndex];
+      const targetLayout = newLayouts[targetIndex];
+
+      // 更新拖动卡片的列和顺序
+      draggedLayout.column = targetColumn;
+      draggedLayout.order = targetLayout.order;
+
+      // 重新排序同列的卡片
+      const sameColumnLayouts = newLayouts.filter(l => l.column === targetColumn);
+      sameColumnLayouts.sort((a, b) => a.order - b.order);
+      sameColumnLayouts.forEach((layout, index) => {
+        layout.order = index;
+      });
+
+      // 保存布局到后端
+      saveLayoutToBackend(newLayouts);
+
+      return newLayouts;
+    });
+
+    setDraggingCard(null);
+  }, [draggingCard]);
+
+  // 保存布局到后端
+  const saveLayoutToBackend = useCallback(async (layouts: CardLayoutConfig[]) => {
+    if (isSavingLayout) return;
+
+    setIsSavingLayout(true);
+    try {
+      await saveWelcomeLayout({
+        layouts,
+        updatedAt: new Date().toISOString(),
+      });
+      message.success('布局已保存');
+    } catch (error) {
+      console.error('保存布局失败:', error);
+      message.error('保存布局失败');
+    } finally {
+      setIsSavingLayout(false);
+    }
+  }, [isSavingLayout]);
+
+  // 获取指定列的卡片
+  const getCardsForColumn = (column: 'left' | 'right') => {
+    return cardLayouts
+      .filter(l => l.column === column && l.visible)
+      .sort((a, b) => a.order - b.order);
+  };
+
+  // 渲染卡片
+  const renderCard = (layout: CardLayoutConfig) => {
+    const { cardId } = layout;
+    const isDragging = draggingCard === cardId;
+
+    const cardProps = {
+      loading,
+      currentUser,
+      taskStatistics,
+      todoTasks,
+      statistics,
+      systemResources,
+      memoryHistory,
+      cpuHistory,
+      diskHistory,
+      docStatistics,
+      pendingDocs,
+    };
+
+    const cardComponent = (() => {
+      switch (cardId) {
+        case 'task-overview':
+          return <TaskOverviewCard {...cardProps} />;
+        case 'project-list':
+          return <ProjectListCard loading={loading} />;
+        case 'statistics-overview':
+          return <StatisticsOverview {...cardProps} />;
+        case 'approval-overview':
+          return canAccessApproval ? (
+            <ApprovalOverviewCard
+              statistics={docStatistics}
+              pendingDocuments={pendingDocs}
+              loading={loading}
+            />
+          ) : null;
+        case 'iot-events':
+          return <IoTEventAlertsCard loading={loading} />;
+        case 'system-resources':
+          return <SystemResourcesCard {...cardProps} />;
+        default:
+          return null;
+      }
+    })();
+
+    return (
+      <DraggableCardContainer
+        key={cardId}
+        cardId={cardId}
+        column={layout.column}
+        isDragging={isDragging}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+        onLayoutChange={setCardLayouts}
+      >
+        {cardComponent}
+      </DraggableCardContainer>
+    );
+  };
 
   return (
     <PageContainer
@@ -213,37 +383,13 @@ const Welcome: React.FC = () => {
             {/* 左侧列 */}
             <Col xs={24} lg={12}>
               <Space orientation="vertical" size={16} style={{ width: '100%' }}>
-                <TaskOverviewCard
-                  taskStatistics={taskStatistics}
-                  todoTasks={todoTasks}
-                  loading={loading}
-                  currentUser={currentUser}
-                />
-                <ProjectListCard loading={loading} />
-                <StatisticsOverview
-                  statistics={statistics}
-                  loading={loading}
-                />
+                {getCardsForColumn('left').map(layout => renderCard(layout))}
               </Space>
             </Col>
             {/* 右侧列 */}
             <Col xs={24} lg={12}>
               <Space orientation="vertical" size={16} style={{ width: '100%' }}>
-                {canAccessApproval && (
-                  <ApprovalOverviewCard
-                    statistics={docStatistics}
-                    pendingDocuments={pendingDocs}
-                    loading={loading}
-                  />
-                )}
-                <IoTEventAlertsCard loading={loading} />
-                <SystemResourcesCard
-                  systemResources={systemResources}
-                  loading={loading}
-                  memoryHistory={memoryHistory}
-                  cpuHistory={cpuHistory}
-                  diskHistory={diskHistory}
-                />
+                {getCardsForColumn('right').map(layout => renderCard(layout))}
               </Space>
             </Col>
           </Row>

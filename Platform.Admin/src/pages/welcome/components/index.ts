@@ -11,3 +11,4 @@ export { default as QuickAction } from './QuickAction';
 export { default as ApprovalOverviewCard } from './ApprovalOverviewCard';
 export { default as IoTEventAlertsCard } from './IoTEventAlertsCard';
 export { default as ProjectListCard } from './ProjectListCard';
+export { default as DraggableCardContainer } from './DraggableCardContainer';

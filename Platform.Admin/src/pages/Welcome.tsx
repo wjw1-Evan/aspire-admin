@@ -68,37 +68,43 @@ const SortableCard: React.FC<SortableCardProps> = ({ id, children }) => {
     padding: isOver ? '8px' : '0px',
   };
 
-  // 创建一个包装器，只在标题区域应用拖动监听器
+  // 使用 useEffect 将拖动监听器应用到卡片标题
+  React.useEffect(() => {
+    const cardHeader = document.querySelector(
+      `.sortable-card-wrapper[data-card-id="${id}"] .ant-card-head`
+    ) as HTMLElement;
+
+    if (!cardHeader) return;
+
+    // 应用拖动样式
+    cardHeader.style.cursor = isDragging ? 'grabbing' : 'grab';
+    cardHeader.style.userSelect = 'none';
+    cardHeader.style.touchAction = 'none';
+
+    // 应用监听器
+    const listenerEntries = Object.entries(listeners || {});
+    listenerEntries.forEach(([key, listener]) => {
+      if (listener) {
+        cardHeader.addEventListener(key, listener as EventListener);
+      }
+    });
+
+    return () => {
+      listenerEntries.forEach(([key, listener]) => {
+        if (listener) {
+          cardHeader.removeEventListener(key, listener as EventListener);
+        }
+      });
+    };
+  }, [id, listeners, isDragging]);
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       className="sortable-card-wrapper"
+      data-card-id={id}
     >
-      {/* 拖动句柄 - 在卡片顶部 */}
-      <div
-        style={{
-          height: '8px',
-          backgroundColor: isDragging ? '#1890ff' : '#f0f0f0',
-          cursor: isDragging ? 'grabbing' : 'grab',
-          userSelect: 'none',
-          touchAction: 'none',
-          transition: 'background-color 0.2s',
-          borderTopLeftRadius: '8px',
-          borderTopRightRadius: '8px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '10px',
-          color: '#999',
-        }}
-        {...attributes}
-        {...listeners}
-        className="sortable-card-handle"
-        title="拖动卡片来移动"
-      >
-        ⋮⋮
-      </div>
       {/* 卡片内容 */}
       {children}
     </div>

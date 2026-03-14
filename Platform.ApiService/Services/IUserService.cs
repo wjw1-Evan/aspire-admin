@@ -1,5 +1,6 @@
 using User = Platform.ApiService.Models.AppUser;
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Services;
 
@@ -255,5 +256,20 @@ public interface IUserService
     /// <param name="roleDefinition">角色定义</param>
     /// <returns>是否成功更新</returns>
     Task<bool> UpdateAiRoleDefinitionAsync(string userId, string roleDefinition);
+
+    /// <summary>
+    /// 获取欢迎页面布局配置
+    /// </summary>
+    /// <param name="userId">用户ID</param>
+    /// <returns>欢迎页面布局配置</returns>
+    Task<WelcomeLayoutResponse> GetWelcomeLayoutAsync(string userId);
+
+    /// <summary>
+    /// 保存欢迎页面布局配置
+    /// </summary>
+    /// <param name="userId">用户ID</param>
+    /// <param name="request">保存布局请求</param>
+    /// <returns>是否成功保存</returns>
+    Task<bool> SaveWelcomeLayoutAsync(string userId, SaveWelcomeLayoutRequest request);
 }
 

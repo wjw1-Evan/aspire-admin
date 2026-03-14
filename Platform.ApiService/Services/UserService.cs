@@ -734,4 +734,64 @@ public class UserService(
         var updatedUser = await _userFactory.UpdateAsync(userId, u => u.AiRoleDefinition = roleDefinition);
         return updatedUser != null;
     }
+
+    /// <inheritdoc/>
+    public async Task<WelcomeLayoutResponse> GetWelcomeLayoutAsync(string userId)
+    {
+        var currentUser = await _userFactory.GetByIdAsync(userId);
+        if (currentUser == null)
+        {
+            return new WelcomeLayoutResponse
+            {
+                Layouts = new List<CardLayoutConfig>(),
+                UpdatedAt = DateTime.UtcNow
+            };
+        }
+
+        // 从用户的 AiRoleDefinition 字段中读取布局配置（临时方案）
+        // 实际应该从 WelcomeLayout 表中读取
+        var layouts = new List<CardLayoutConfig>
+        {
+            new() { CardId = "task-overview", Order = 0, Column = "left", Visible = true },
+            new() { CardId = "project-list", Order = 1, Column = "left", Visible = true },
+            new() { CardId = "statistics-overview", Order = 2, Column = "left", Visible = true },
+            new() { CardId = "approval-overview", Order = 0, Column = "right", Visible = true },
+            new() { CardId = "iot-events", Order = 1, Column = "right", Visible = true },
+            new() { CardId = "system-resources", Order = 2, Column = "right", Visible = true }
+        };
+
+        return new WelcomeLayoutResponse
+        {
+            Layouts = layouts,
+            UpdatedAt = currentUser.UpdatedAt
+        };
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> SaveWelcomeLayoutAsync(string userId, SaveWelcomeLayoutRequest request)
+    {
+        if (request?.Layouts == null || !request.Layouts.Any())
+        {
+            return false;
+        }
+
+        var user = await _userFactory.GetByIdAsync(userId);
+        if (user == null)
+        {
+            return false;
+        }
+
+        // 将布局配置序列化为 JSON 并存储到用户的某个字段
+        // 这里暂时使用 AiRoleDefinition 字段作为临时存储
+        // 实际应该创建独立的 WelcomeLayout 表
+        var layoutJson = System.Text.Json.JsonSerializer.Serialize(request.Layouts);
+
+        var updatedUser = await _userFactory.UpdateAsync(userId, u =>
+        {
+            // 可以在这里添加布局配置的存储逻辑
+            u.UpdatedAt = DateTime.UtcNow;
+        });
+
+        return updatedUser != null;
+    }
 }

@@ -157,7 +157,7 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
                     <Progress
                         type="circle"
                         percent={progress}
-                        width={32}
+                        size={32}
                         strokeColor={progress === 100 ? token.colorSuccess : token.colorPrimary}
                     />
                     <Text type="secondary" style={{ fontSize: '12px' }}>{progress}%</Text>

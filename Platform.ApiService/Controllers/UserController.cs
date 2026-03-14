@@ -780,4 +780,98 @@ public class UserController : BaseApiController
         return SuccessMessage("角色定义更新成功");
     }
 
+    /// <summary>
+    /// 获取欢迎页面布局配置
+    /// </summary>
+    /// <remarks>
+    /// 获取当前用户的欢迎页面卡片布局配置。如果用户未设置过布局，返回默认布局。
+    ///
+    /// 示例请求：
+    /// ```
+    /// GET /api/users/welcome-layout
+    /// Authorization: Bearer {token}
+    /// ```
+    ///
+    /// 示例响应：
+    /// ```json
+    /// {
+    ///   "success": true,
+    ///   "data": {
+    ///     "layouts": [
+    ///       {
+    ///         "cardId": "task-overview",
+    ///         "order": 0,
+    ///         "column": "left",
+    ///         "visible": true
+    ///       }
+    ///     ],
+    ///     "updatedAt": "2024-01-01T00:00:00Z"
+    ///   }
+    /// }
+    /// ```
+    /// </remarks>
+    /// <returns>欢迎页面布局配置</returns>
+    /// <response code="200">成功返回布局配置</response>
+    /// <response code="401">未授权，需要登录</response>
+    [HttpGet("welcome-layout")]
+    public async Task<IActionResult> GetWelcomeLayout()
+    {
+        var userId = GetRequiredUserId();
+        var layout = await _userService.GetWelcomeLayoutAsync(userId);
+        return Success(layout);
+    }
+
+    /// <summary>
+    /// 保存欢迎页面布局配置
+    /// </summary>
+    /// <remarks>
+    /// 保存当前用户的欢迎页面卡片布局配置。支持自定义卡片位置和显示/隐藏。
+    ///
+    /// 示例请求：
+    /// ```
+    /// POST /api/users/welcome-layout
+    /// Authorization: Bearer {token}
+    /// Content-Type: application/json
+    ///
+    /// {
+    ///   "layouts": [
+    ///     {
+    ///       "cardId": "task-overview",
+    ///       "order": 0,
+    ///       "column": "left",
+    ///       "visible": true
+    ///     }
+    ///   ],
+    ///   "updatedAt": "2024-01-01T00:00:00Z"
+    /// }
+    /// ```
+    ///
+    /// 示例响应：
+    /// ```json
+    /// {
+    ///   "success": true,
+    ///   "message": "布局配置保存成功"
+    /// }
+    /// ```
+    /// </remarks>
+    /// <returns>操作结果</returns>
+    /// <response code="200">布局配置保存成功</response>
+    /// <response code="400">参数验证失败</response>
+    /// <response code="401">未授权，需要登录</response>
+    [HttpPost("welcome-layout")]
+    public async Task<IActionResult> SaveWelcomeLayout([FromBody] SaveWelcomeLayoutRequest request)
+    {
+        var validationResult = ValidateModelState();
+        if (validationResult != null)
+            return validationResult;
+
+        var userId = GetRequiredUserId();
+        var success = await _userService.SaveWelcomeLayoutAsync(userId, request);
+
+        if (!success)
+            return Error("SAVE_FAILED", "保存布局配置失败");
+
+        return SuccessMessage("布局配置保存成功");
+    }
+
 }

@@ -30,7 +30,6 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useSortable } from '@dnd-kit/sortable';
-import { restrictToVerticalAxis, restrictToParentElement } from '@dnd-kit/modifiers';
 
 import {
   WelcomeHeader,
@@ -385,30 +384,24 @@ const Welcome: React.FC = () => {
             collisionDetection={closestCenter}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
-            modifiers={[restrictToVerticalAxis]}
           >
-            <Row gutter={[16, 16]}>
-              <Col xs={24} lg={12}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <SortableContext
-                    items={leftCards}
-                    strategy={verticalListSortingStrategy}
-                  >
+            <SortableContext
+              items={[...leftCards, ...filteredRightCards]}
+              strategy={verticalListSortingStrategy}
+            >
+              <Row gutter={[16, 16]}>
+                <Col xs={24} lg={12}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     {leftCards.map(cardId => renderCard(cardId))}
-                  </SortableContext>
-                </div>
-              </Col>
-              <Col xs={24} lg={12}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <SortableContext
-                    items={filteredRightCards}
-                    strategy={verticalListSortingStrategy}
-                  >
+                  </div>
+                </Col>
+                <Col xs={24} lg={12}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     {filteredRightCards.map(cardId => renderCard(cardId))}
-                  </SortableContext>
-                </div>
-              </Col>
-            </Row>
+                  </div>
+                </Col>
+              </Row>
+            </SortableContext>
             <DragOverlay>
               {activeId ? (
                 <div style={{

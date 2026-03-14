@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Space, Tag, Empty, List, Button, Badge, theme, Typography, Alert } from 'antd';
+import { Card, Space, Tag, Empty, Table, Button, Badge, theme, Typography, Alert } from 'antd';
 import { BellOutlined, AlertOutlined, ClockCircleOutlined } from '@ant-design/icons';
-import { useAccess } from '@umijs/max';
+import { useAccess, useNavigate } from '@umijs/max';
 import { queryIoTEvents, getUnhandledEventCount } from '@/services/iot/api';
 import type { IoTDeviceEvent } from '@/services/iot/api';
 
@@ -14,6 +14,7 @@ interface IoTEventAlertsCardProps {
 const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: externalLoading = false }) => {
     const { token } = theme.useToken();
     const access = useAccess();
+    const navigate = useNavigate();
     const [events, setEvents] = useState<IoTDeviceEvent[]>([]);
     const [unhandledCount, setUnhandledCount] = useState(0);
     const [loading, setLoading] = useState(false);
@@ -130,6 +131,61 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
         return null;
     }
 
+    const columns = [
+        {
+            title: '级别',
+            dataIndex: 'level',
+            key: 'level',
+            width: '12%',
+            render: (level: string) => (
+                <Tag color={getLevelColor(level)}>{level}</Tag>
+            ),
+        },
+        {
+            title: '事件类型',
+            dataIndex: 'eventType',
+            key: 'eventType',
+            width: '18%',
+            render: (eventType: string) => (
+                <Text strong>{getEventTypeLabel(eventType)}</Text>
+            ),
+        },
+        {
+            title: '描述',
+            dataIndex: 'description',
+            key: 'description',
+            width: '35%',
+            render: (description: string) => (
+                <Text type="secondary" style={{ fontSize: '12px' }}>
+                    {description || '无描述'}
+                </Text>
+            ),
+        },
+        {
+            title: '设备',
+            dataIndex: 'deviceId',
+            key: 'deviceId',
+            width: '15%',
+            render: (deviceId: string) => (
+                <Text type="secondary" style={{ fontSize: '12px' }}>
+                    {deviceId || '-'}
+                </Text>
+            ),
+        },
+        {
+            title: '时间',
+            dataIndex: 'occurredAt',
+            key: 'occurredAt',
+            width: '20%',
+            render: (occurredAt: string) => (
+                <Space size={4} style={{ fontSize: '12px', color: token.colorTextSecondary }}>
+                    <ClockCircleOutlined />
+                    <span>{formatTime(occurredAt)}</span>
+                </Space>
+            ),
+        },
+    ];
+
     return (
         <Card
             title={
@@ -152,7 +208,7 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
                     style={{ marginTop: '20px' }}
                 />
             ) : (
-                <Space style={{ width: '100%' }} direction="vertical" size={12}>
+                <Space style={{ width: '100%' }} orientation="vertical" size={12}>
                     {unhandledCount > 0 && (
                         <Alert
                             message={`有 ${unhandledCount} 个未处理的事件`}
@@ -162,54 +218,13 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
                             style={{ borderRadius: '8px' }}
                         />
                     )}
-                    <List
+                    <Table
+                        columns={columns}
                         dataSource={events}
-                        renderItem={(event) => (
-                            <List.Item
-                                style={{
-                                    padding: '12px 0',
-                                    borderBottom: `1px solid ${token.colorBorderSecondary}`,
-                                }}
-                                key={event.id}
-                            >
-                                <List.Item.Meta
-                                    avatar={
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <AlertOutlined style={{
-                                                color: getLevelColor(event.level) === 'red' ? token.colorError :
-                                                    getLevelColor(event.level) === 'orange' ? token.colorWarning :
-                                                        getLevelColor(event.level) === 'gold' ? token.colorWarning :
-                                                            token.colorInfo
-                                            }} />
-                                        </div>
-                                    }
-                                    title={
-                                        <Space size={8}>
-                                            <Tag color={getLevelColor(event.level)}>{event.level}</Tag>
-                                            <Text strong>{getEventTypeLabel(event.eventType)}</Text>
-                                        </Space>
-                                    }
-                                    description={
-                                        <Space style={{ width: '100%' }} direction="vertical" size={2}>
-                                            <Text type="secondary" style={{ fontSize: '12px' }}>
-                                                {event.description || '无描述'}
-                                            </Text>
-                                            <Space size={12} style={{ fontSize: '11px', color: token.colorTextSecondary }}>
-                                                <span>
-                                                    <ClockCircleOutlined style={{ marginRight: '4px' }} />
-                                                    {formatTime(event.occurredAt)}
-                                                </span>
-                                                {event.deviceId && (
-                                                    <span>
-                                                        设备: {event.deviceId}
-                                                    </span>
-                                                )}
-                                            </Space>
-                                        </Space>
-                                    }
-                                />
-                            </List.Item>
-                        )}
+                        rowKey="id"
+                        pagination={false}
+                        size="small"
+                        style={{ marginTop: '12px' }}
                     />
                     {events.length > 0 && (
                         <div style={{ marginTop: '12px', textAlign: 'center' }}>
@@ -217,7 +232,7 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
                                 type="link"
                                 size="small"
                                 onClick={() => {
-                                    window.location.href = '/iot-platform/event-management';
+                                    navigate('/iot-platform/event-management');
                                 }}
                             >
                                 查看全部

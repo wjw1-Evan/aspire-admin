@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Space, Tag, Empty, List, Button, Badge, theme, Typography, Alert } from 'antd';
 import { BellOutlined, AlertOutlined, ClockCircleOutlined } from '@ant-design/icons';
-import { useIntl, useAccess } from '@umijs/max';
+import { useAccess } from '@umijs/max';
 import { queryIoTEvents, getUnhandledEventCount } from '@/services/iot/api';
 import type { IoTDeviceEvent } from '@/services/iot/api';
 
@@ -12,7 +12,6 @@ interface IoTEventAlertsCardProps {
 }
 
 const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: externalLoading = false }) => {
-    const intl = useIntl();
     const { token } = theme.useToken();
     const access = useAccess();
     const [events, setEvents] = useState<IoTDeviceEvent[]>([]);
@@ -102,11 +101,11 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
     // 获取事件类型的显示文本
     const getEventTypeLabel = (eventType: string) => {
         const typeMap: Record<string, string> = {
-            'Connected': intl.formatMessage({ id: 'pages.welcome.iotEvents.type.connected', defaultMessage: '已连接' }),
-            'Disconnected': intl.formatMessage({ id: 'pages.welcome.iotEvents.type.disconnected', defaultMessage: '已断开' }),
-            'DataReceived': intl.formatMessage({ id: 'pages.welcome.iotEvents.type.dataReceived', defaultMessage: '数据接收' }),
-            'Alarm': intl.formatMessage({ id: 'pages.welcome.iotEvents.type.alarm', defaultMessage: '告警' }),
-            'Error': intl.formatMessage({ id: 'pages.welcome.iotEvents.type.error', defaultMessage: '错误' }),
+            'Connected': '已连接',
+            'Disconnected': '已断开',
+            'DataReceived': '数据接收',
+            'Alarm': '告警',
+            'Error': '错误',
         };
         return typeMap[eventType] || eventType;
     };
@@ -120,7 +119,7 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
         const hours = Math.floor(diff / 3600000);
         const days = Math.floor(diff / 86400000);
 
-        if (minutes < 1) return intl.formatMessage({ id: 'pages.welcome.iotEvents.time.justNow', defaultMessage: '刚刚' });
+        if (minutes < 1) return '刚刚';
         if (minutes < 60) return `${minutes}分钟前`;
         if (hours < 24) return `${hours}小时前`;
         if (days < 7) return `${days}天前`;
@@ -135,10 +134,13 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
         <Card
             title={
                 <Space>
-                    <Badge count={unhandledCount} color={token.colorError}>
-                        <BellOutlined />
-                    </Badge>
-                    <span>{intl.formatMessage({ id: 'pages.welcome.iotEvents.title', defaultMessage: '物联网事件告警' })}</span>
+                    {unhandledCount > 0 && (
+                        <Badge count={unhandledCount} color={token.colorError}>
+                            <BellOutlined />
+                        </Badge>
+                    )}
+                    {unhandledCount === 0 && <BellOutlined />}
+                    <span>物联网事件告警</span>
                 </Space>
             }
             style={{ height: '100%', borderRadius: '12px' }}
@@ -146,18 +148,18 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
         >
             {unhandledCount === 0 && events.length === 0 ? (
                 <Empty
-                    description={intl.formatMessage({ id: 'pages.welcome.iotEvents.empty', defaultMessage: '暂无告警事件' })}
+                    description="暂无告警事件"
                     style={{ marginTop: '20px' }}
                 />
             ) : (
-                <Space direction="vertical" style={{ width: '100%' }} size={0}>
+                <Space style={{ width: '100%' }} direction="vertical" size={12}>
                     {unhandledCount > 0 && (
                         <Alert
                             message={`有 ${unhandledCount} 个未处理的事件`}
                             type="warning"
                             showIcon
                             icon={<AlertOutlined />}
-                            style={{ marginBottom: '12px', borderRadius: '8px' }}
+                            style={{ borderRadius: '8px' }}
                         />
                     )}
                     <List
@@ -188,9 +190,9 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
                                         </Space>
                                     }
                                     description={
-                                        <Space direction="vertical" size={2} style={{ width: '100%' }}>
+                                        <Space style={{ width: '100%' }} direction="vertical" size={2}>
                                             <Text type="secondary" style={{ fontSize: '12px' }}>
-                                                {event.description || intl.formatMessage({ id: 'pages.welcome.iotEvents.noDescription', defaultMessage: '无描述' })}
+                                                {event.description || '无描述'}
                                             </Text>
                                             <Space size={12} style={{ fontSize: '11px', color: token.colorTextSecondary }}>
                                                 <span>
@@ -199,7 +201,7 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
                                                 </span>
                                                 {event.deviceId && (
                                                     <span>
-                                                        {intl.formatMessage({ id: 'pages.welcome.iotEvents.device', defaultMessage: '设备' })}: {event.deviceId}
+                                                        设备: {event.deviceId}
                                                     </span>
                                                 )}
                                             </Space>
@@ -215,11 +217,10 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
                                 type="link"
                                 size="small"
                                 onClick={() => {
-                                    // 导航到事件管理页面
                                     window.location.href = '/iot-platform/event-management';
                                 }}
                             >
-                                {intl.formatMessage({ id: 'pages.welcome.iotEvents.viewAll', defaultMessage: '查看全部' })}
+                                查看全部
                             </Button>
                         </div>
                     )}

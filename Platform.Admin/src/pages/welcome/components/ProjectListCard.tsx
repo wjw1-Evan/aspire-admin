@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Space, Table, Button, Tag, Empty, theme, Typography, Progress, Tooltip } from 'antd';
 import { FolderOutlined, ArrowRightOutlined } from '@ant-design/icons';
-import { useAccess } from '@umijs/max';
+import { useAccess, useNavigate } from '@umijs/max';
 import { getProjectList, ProjectStatus, ProjectPriority } from '@/services/task/project';
 import type { ProjectDto } from '@/services/task/project';
 
@@ -14,6 +14,7 @@ interface ProjectListCardProps {
 const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoading = false }) => {
     const { token } = theme.useToken();
     const access = useAccess();
+    const navigate = useNavigate();
     const [projects, setProjects] = useState<ProjectDto[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -173,7 +174,7 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
                     size="small"
                     icon={<ArrowRightOutlined />}
                     onClick={() => {
-                        window.location.href = `/project-management/detail/${record.id}`;
+                        navigate(`/project-management/detail/${record.id}`);
                     }}
                 >
                     查看
@@ -214,7 +215,7 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
                         type="link"
                         size="small"
                         onClick={() => {
-                            window.location.href = '/project-management/project';
+                            navigate('/project-management/project');
                         }}
                     >
                         查看全部项目

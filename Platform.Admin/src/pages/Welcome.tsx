@@ -254,81 +254,77 @@ const Welcome: React.FC = () => {
     const activeId = active.id as string;
     const overId = over.id as string;
 
-    setLeftCards((prevLeftCards) => {
-      setRightCards((prevRightCards) => {
-        let newLeftCards = prevLeftCards;
-        let newRightCards = prevRightCards;
+    const activeInLeft = leftCards.includes(activeId);
+    const overInLeft = leftCards.includes(overId);
 
-        const activeInLeft = prevLeftCards.includes(activeId);
-        const overInLeft = prevLeftCards.includes(overId);
+    let newLeftCards = leftCards;
+    let newRightCards = rightCards;
 
-        if (activeInLeft === overInLeft) {
-          if (activeInLeft) {
-            const oldIndex = prevLeftCards.indexOf(activeId);
-            const newIndex = prevLeftCards.indexOf(overId);
-            newLeftCards = arrayMove(prevLeftCards, oldIndex, newIndex);
-          } else {
-            const oldIndex = prevRightCards.indexOf(activeId);
-            const newIndex = prevRightCards.indexOf(overId);
-            newRightCards = arrayMove(prevRightCards, oldIndex, newIndex);
-          }
-        } else {
-          if (activeInLeft) {
-            const newIndex = prevRightCards.indexOf(overId);
-            newLeftCards = prevLeftCards.filter(id => id !== activeId);
-            newRightCards = [
-              ...prevRightCards.slice(0, newIndex),
-              activeId,
-              ...prevRightCards.slice(newIndex),
-            ];
-          } else {
-            const newIndex = prevLeftCards.indexOf(overId);
-            newRightCards = prevRightCards.filter(id => id !== activeId);
-            newLeftCards = [
-              ...prevLeftCards.slice(0, newIndex),
-              activeId,
-              ...prevLeftCards.slice(newIndex),
-            ];
-          }
-        }
+    if (activeInLeft === overInLeft) {
+      if (activeInLeft) {
+        const oldIndex = leftCards.indexOf(activeId);
+        const newIndex = leftCards.indexOf(overId);
+        newLeftCards = arrayMove(leftCards, oldIndex, newIndex);
+      } else {
+        const oldIndex = rightCards.indexOf(activeId);
+        const newIndex = rightCards.indexOf(overId);
+        newRightCards = arrayMove(rightCards, oldIndex, newIndex);
+      }
+    } else {
+      if (activeInLeft) {
+        const newIndex = rightCards.indexOf(overId);
+        newLeftCards = leftCards.filter(id => id !== activeId);
+        newRightCards = [
+          ...rightCards.slice(0, newIndex),
+          activeId,
+          ...rightCards.slice(newIndex),
+        ];
+      } else {
+        const newIndex = leftCards.indexOf(overId);
+        newRightCards = rightCards.filter(id => id !== activeId);
+        newLeftCards = [
+          ...leftCards.slice(0, newIndex),
+          activeId,
+          ...leftCards.slice(newIndex),
+        ];
+      }
+    }
 
-        // 保存布局到后端
-        (async () => {
-          if (isSavingLayout) return;
-          setIsSavingLayout(true);
-          try {
-            const layouts: CardLayoutConfig[] = [
-              ...newLeftCards.map((cardId, index) => ({
-                cardId,
-                order: index,
-                column: 'left' as const,
-                visible: true,
-              })),
-              ...newRightCards.map((cardId, index) => ({
-                cardId,
-                order: index,
-                column: 'right' as const,
-                visible: cardId === 'approval-overview' ? canAccessApproval : true,
-              })),
-            ];
+    setLeftCards(newLeftCards);
+    setRightCards(newRightCards);
 
-            await saveWelcomeLayout({
-              layouts,
-              updatedAt: new Date().toISOString(),
-            });
-            messageApi.success('布局已保存');
-          } catch (error) {
-            console.warn('保存布局失败:', error);
-          } finally {
-            setIsSavingLayout(false);
-          }
-        })();
+    // 保存布局到后端
+    (async () => {
+      if (isSavingLayout) return;
+      setIsSavingLayout(true);
+      try {
+        const layouts: CardLayoutConfig[] = [
+          ...newLeftCards.map((cardId, index) => ({
+            cardId,
+            order: index,
+            column: 'left' as const,
+            visible: true,
+          })),
+          ...newRightCards.map((cardId, index) => ({
+            cardId,
+            order: index,
+            column: 'right' as const,
+            visible: cardId === 'approval-overview' ? canAccessApproval : true,
+          })),
+        ];
 
-        return newRightCards;
-      });
-      return newLeftCards;
-    });
-  }, [isSavingLayout, canAccessApproval, messageApi]);
+        await saveWelcomeLayout({
+          layouts,
+          updatedAt: new Date().toISOString(),
+        });
+        messageApi.success('布局已保存');
+      } catch (error) {
+        console.warn('保存布局失败:', error);
+      } finally {
+        setIsSavingLayout(false);
+      }
+    })();
+  }, [leftCards, rightCards, isSavingLayout, canAccessApproval, messageApi]);
 
   const handleDragStart = useCallback((event: any) => {
     setActiveId(event.active.id);

@@ -121,9 +121,9 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
         const days = Math.floor(diff / 86400000);
 
         if (minutes < 1) return intl.formatMessage({ id: 'pages.welcome.iotEvents.time.justNow', defaultMessage: '刚刚' });
-        if (minutes < 60) return intl.formatMessage({ id: 'pages.welcome.iotEvents.time.minutesAgo', defaultMessage: '{minutes}分钟前' }, { minutes });
-        if (hours < 24) return intl.formatMessage({ id: 'pages.welcome.iotEvents.time.hoursAgo', defaultMessage: '{hours}小时前' }, { hours });
-        if (days < 7) return intl.formatMessage({ id: 'pages.welcome.iotEvents.time.daysAgo', defaultMessage: '{days}天前' }, { days });
+        if (minutes < 60) return `${minutes}分钟前`;
+        if (hours < 24) return `${hours}小时前`;
+        if (days < 7) return `${days}天前`;
         return d.toLocaleDateString();
     };
 

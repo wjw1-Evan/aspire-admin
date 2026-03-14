@@ -18,7 +18,8 @@ import {
   StatisticsOverview,
   SystemResourcesCard,
   ApprovalOverviewCard,
-  IoTEventAlertsCard
+  IoTEventAlertsCard,
+  ProjectListCard
 } from './welcome/components';
 
 const Welcome: React.FC = () => {
@@ -218,6 +219,7 @@ const Welcome: React.FC = () => {
                   loading={loading}
                   currentUser={currentUser}
                 />
+                <ProjectListCard loading={loading} />
                 <StatisticsOverview
                   statistics={statistics}
                   loading={loading}

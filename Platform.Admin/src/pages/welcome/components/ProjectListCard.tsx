@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Space, Table, Button, Tag, Empty, theme, Typography, Progress, Tooltip } from 'antd';
-import { FolderOutlined, ArrowRightOutlined } from '@ant-design/icons';
+import { Card, Space, Table, Tag, Empty, theme, Typography, Progress, Tooltip } from 'antd';
+import { FolderOutlined } from '@ant-design/icons';
 import { useAccess, useNavigate } from '@umijs/max';
 import { getProjectList, ProjectStatus, ProjectPriority } from '@/services/task/project';
 import type { ProjectDto } from '@/services/task/project';
@@ -162,23 +162,6 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
                     />
                     <Text type="secondary" style={{ fontSize: '12px' }}>{progress}%</Text>
                 </Space>
-            ),
-        },
-        {
-            title: '操作',
-            key: 'action',
-            width: '18%',
-            render: (_: any, record: ProjectDto) => (
-                <Button
-                    type="link"
-                    size="small"
-                    icon={<ArrowRightOutlined />}
-                    onClick={() => {
-                        navigate(`/project-management/detail/${record.id}`);
-                    }}
-                >
-                    查看
-                </Button>
             ),
         },
     ];

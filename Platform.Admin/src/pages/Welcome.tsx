@@ -20,6 +20,7 @@ import {
   useSensors,
   DragEndEvent,
   DragOverlay,
+  Over,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -29,6 +30,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useSortable } from '@dnd-kit/sortable';
+import { restrictToVerticalAxis, restrictToParentElement } from '@dnd-kit/modifiers';
 
 import {
   WelcomeHeader,
@@ -54,13 +56,19 @@ const SortableCard: React.FC<SortableCardProps> = ({ id, children }) => {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id });
+    isOver,
+  } = useSortable({
+    id,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
     cursor: isDragging ? 'grabbing' : 'grab',
+    backgroundColor: isOver ? 'rgba(24, 144, 255, 0.05)' : 'transparent',
+    borderRadius: '8px',
+    padding: isOver ? '8px' : '0px',
   };
 
   return (
@@ -377,6 +385,7 @@ const Welcome: React.FC = () => {
             collisionDetection={closestCenter}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
+            modifiers={[restrictToVerticalAxis]}
           >
             <Row gutter={[16, 16]}>
               <Col xs={24} lg={12}>

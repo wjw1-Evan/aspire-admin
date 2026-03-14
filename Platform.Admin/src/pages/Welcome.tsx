@@ -2,7 +2,6 @@ import { PageContainer } from '@/components';
 import { useModel, useAccess } from '@umijs/max';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { theme, Row, Col, message as antMessage } from 'antd';
-import { useMessage } from 'antd/es/message/useMessage';
 import { getUserStatistics } from '@/services/ant-design-pro/api';
 import { getTaskStatistics, getMyTodoTasks } from '@/services/task/api';
 import { getCurrentCompany } from '@/services/company';

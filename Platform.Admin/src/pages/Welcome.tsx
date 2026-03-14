@@ -1,7 +1,8 @@
 import { PageContainer } from '@/components';
 import { useModel, useAccess } from '@umijs/max';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { theme, Row, Col, message } from 'antd';
+import { theme, Row, Col, message as antMessage } from 'antd';
+import { useMessage } from 'antd/es/message/useMessage';
 import { getUserStatistics } from '@/services/ant-design-pro/api';
 import { getTaskStatistics, getMyTodoTasks } from '@/services/task/api';
 import { getCurrentCompany } from '@/services/company';
@@ -86,6 +87,7 @@ const Welcome: React.FC = () => {
   const { token } = theme.useToken();
   const { initialState } = useModel('@@initialState');
   const currentUser = initialState?.currentUser as API.CurrentUser;
+  const [messageApi, contextHolder] = antMessage.useMessage();
 
   const [statistics, setStatistics] = useState<any>(null);
   const [taskStatistics, setTaskStatistics] = useState<import('@/services/task/api').TaskStatistics | null>(null);
@@ -278,13 +280,13 @@ const Welcome: React.FC = () => {
         layouts,
         updatedAt: new Date().toISOString(),
       });
-      message.success('布局已保存');
+      messageApi.success('布局已保存');
     } catch (error) {
       console.warn('保存布局失败:', error);
     } finally {
       setIsSavingLayout(false);
     }
-  }, [isSavingLayout, leftCards, rightCards, canAccessApproval]);
+  }, [isSavingLayout, leftCards, rightCards, canAccessApproval, messageApi]);
 
   const renderCard = (cardId: string) => {
     const cardProps = {
@@ -347,6 +349,7 @@ const Welcome: React.FC = () => {
       showBreadcrumb={false}
       style={{ background: 'transparent', paddingBlock: 8 }}
     >
+      {contextHolder}
       <style>{`
         .ant-breadcrumb, 
         .ant-page-header-breadcrumb,

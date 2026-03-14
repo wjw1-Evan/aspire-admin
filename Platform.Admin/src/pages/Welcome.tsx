@@ -9,7 +9,7 @@ import { getCurrentCompany } from '@/services/company';
 import { getSystemResources } from '@/services/system/api';
 import type { SystemResources } from '@/services/system/api';
 import { getDocumentStatistics, getPendingDocuments } from '@/services/document/api';
-import { saveWelcomeLayout } from '@/services/welcome/layout';
+import { saveWelcomeLayout, getWelcomeLayout } from '@/services/welcome/layout';
 import type { CardLayoutConfig } from '@/services/welcome/layout';
 
 import {
@@ -181,6 +181,44 @@ const Welcome: React.FC = () => {
   useEffect(() => {
     fetchStatistics();
   }, [fetchStatistics]);
+
+  // 加载保存的欢迎页面布局配置
+  useEffect(() => {
+    const loadWelcomeLayout = async () => {
+      try {
+        const res = await getWelcomeLayout();
+        if (res?.data?.layouts && res.data.layouts.length > 0) {
+          const leftCardsList: string[] = [];
+          const rightCardsList: string[] = [];
+
+          res.data.layouts.forEach((layout: CardLayoutConfig) => {
+            if (layout.visible) {
+              if (layout.column === 'left') {
+                leftCardsList[layout.order] = layout.cardId;
+              } else if (layout.column === 'right') {
+                rightCardsList[layout.order] = layout.cardId;
+              }
+            }
+          });
+
+          // 过滤掉 undefined 值
+          const filteredLeftCards = leftCardsList.filter(Boolean);
+          const filteredRightCards = rightCardsList.filter(Boolean);
+
+          if (filteredLeftCards.length > 0) {
+            setLeftCards(filteredLeftCards);
+          }
+          if (filteredRightCards.length > 0) {
+            setRightCards(filteredRightCards);
+          }
+        }
+      } catch (error) {
+        console.warn('加载欢迎页面布局失败:', error);
+      }
+    };
+
+    loadWelcomeLayout();
+  }, []);
 
   useEffect(() => {
     if (!currentUser) return;

@@ -390,6 +390,13 @@ public class AppUser : BaseEntity
     [Column("aiRoleDefinition")]
     [BsonElement("aiRoleDefinition")]
     public string? AiRoleDefinition { get; set; }
+
+    /// <summary>
+    /// 欢迎页面布局配置（JSON 格式）
+    /// </summary>
+    [Column("welcomeLayoutConfig")]
+    [BsonElement("welcomeLayoutConfig")]
+    public string? WelcomeLayoutConfig { get; set; }
 }
 
 /// <summary>

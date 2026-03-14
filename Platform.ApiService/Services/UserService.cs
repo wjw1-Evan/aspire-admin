@@ -748,9 +748,30 @@ public class UserService(
             };
         }
 
-        // 从用户的 AiRoleDefinition 字段中读取布局配置（临时方案）
-        // 实际应该从 WelcomeLayout 表中读取
-        var layouts = new List<CardLayoutConfig>
+        // 如果用户有保存的布局配置，从 WelcomeLayoutConfig 字段读取
+        if (!string.IsNullOrEmpty(currentUser.WelcomeLayoutConfig))
+        {
+            try
+            {
+                var layouts = System.Text.Json.JsonSerializer.Deserialize<List<CardLayoutConfig>>(
+                    currentUser.WelcomeLayoutConfig);
+                if (layouts != null && layouts.Any())
+                {
+                    return new WelcomeLayoutResponse
+                    {
+                        Layouts = layouts,
+                        UpdatedAt = currentUser.UpdatedAt
+                    };
+                }
+            }
+            catch
+            {
+                // 如果反序列化失败，返回默认布局
+            }
+        }
+
+        // 返回默认布局
+        var defaultLayouts = new List<CardLayoutConfig>
         {
             new() { CardId = "task-overview", Order = 0, Column = "left", Visible = true },
             new() { CardId = "project-list", Order = 1, Column = "left", Visible = true },
@@ -762,7 +783,7 @@ public class UserService(
 
         return new WelcomeLayoutResponse
         {
-            Layouts = layouts,
+            Layouts = defaultLayouts,
             UpdatedAt = currentUser.UpdatedAt
         };
     }
@@ -781,14 +802,12 @@ public class UserService(
             return false;
         }
 
-        // 将布局配置序列化为 JSON 并存储到用户的某个字段
-        // 这里暂时使用 AiRoleDefinition 字段作为临时存储
-        // 实际应该创建独立的 WelcomeLayout 表
+        // 将布局配置序列化为 JSON 并存储到 WelcomeLayoutConfig 字段
         var layoutJson = System.Text.Json.JsonSerializer.Serialize(request.Layouts);
 
         var updatedUser = await _userFactory.UpdateAsync(userId, u =>
         {
-            // 可以在这里添加布局配置的存储逻辑
+            u.WelcomeLayoutConfig = layoutJson;
             u.UpdatedAt = DateTime.UtcNow;
         });
 

@@ -160,24 +160,9 @@ const Welcome: React.FC = () => {
 
   // 加载用户保存的布局配置
   useEffect(() => {
-    const loadLayout = async () => {
-      try {
-        const res = await getWelcomeLayout();
-        if (res?.data?.layouts && res.data.layouts.length > 0) {
-          setCardLayouts(res.data.layouts);
-        } else {
-          setCardLayouts(defaultLayouts);
-        }
-      } catch (error) {
-        console.warn('加载布局配置失败，使用默认配置:', error);
-        setCardLayouts(defaultLayouts);
-      }
-    };
-
-    if (currentUser) {
-      loadLayout();
-    }
-  }, [currentUser, canAccessApproval]);
+    // 直接使用默认布局，不调用 API
+    setCardLayouts(defaultLayouts);
+  }, [canAccessApproval]);
 
   // 定时轮询系统资源更新（每 5 秒）
   useEffect(() => {
@@ -268,8 +253,8 @@ const Welcome: React.FC = () => {
       });
       message.success('布局已保存');
     } catch (error) {
-      console.error('保存布局失败:', error);
-      message.error('保存布局失败');
+      // 后端 API 未实现时，静默处理，不显示错误
+      console.warn('保存布局失败（后端 API 未实现）:', error);
     } finally {
       setIsSavingLayout(false);
     }

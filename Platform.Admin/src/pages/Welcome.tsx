@@ -17,7 +17,8 @@ import {
   TaskOverviewCard,
   StatisticsOverview,
   SystemResourcesCard,
-  ApprovalOverviewCard
+  ApprovalOverviewCard,
+  IoTEventAlertsCard
 } from './welcome/components';
 
 const Welcome: React.FC = () => {
@@ -233,6 +234,7 @@ const Welcome: React.FC = () => {
                     loading={loading}
                   />
                 )}
+                <IoTEventAlertsCard loading={loading} />
                 <SystemResourcesCard
                   systemResources={systemResources}
                   loading={loading}

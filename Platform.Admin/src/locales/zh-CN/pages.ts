@@ -2278,3 +2278,20 @@ export default {
   'pages.forgotPassword.resetFailed': '重置密码失败，验证码错误或已过期',
 };
 
+
+// IoT 事件告警
+'pages.welcome.iotEvents.title': '物联网事件告警',
+  'pages.welcome.iotEvents.empty': '暂无告警事件',
+    'pages.welcome.iotEvents.unhandledAlert': '有 {count} 个未处理的事件',
+      'pages.welcome.iotEvents.noDescription': '无描述',
+        'pages.welcome.iotEvents.device': '设备',
+          'pages.welcome.iotEvents.viewAll': '查看全部',
+            'pages.welcome.iotEvents.type.connected': '已连接',
+              'pages.welcome.iotEvents.type.disconnected': '已断开',
+                'pages.welcome.iotEvents.type.dataReceived': '数据接收',
+                  'pages.welcome.iotEvents.type.alarm': '告警',
+                    'pages.welcome.iotEvents.type.error': '错误',
+                      'pages.welcome.iotEvents.time.justNow': '刚刚',
+                        'pages.welcome.iotEvents.time.minutesAgo': '{minutes}分钟前',
+                          'pages.welcome.iotEvents.time.hoursAgo': '{hours}小时前',
+                            'pages.welcome.iotEvents.time.daysAgo': '{days}天前',

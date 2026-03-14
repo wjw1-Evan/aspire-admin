@@ -153,10 +153,7 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
                 <Space direction="vertical" style={{ width: '100%' }} size={0}>
                     {unhandledCount > 0 && (
                         <Alert
-                            message={intl.formatMessage(
-                                { id: 'pages.welcome.iotEvents.unhandledAlert', defaultMessage: '有 {count} 个未处理的事件' },
-                                { count: unhandledCount }
-                            )}
+                            message={`有 ${unhandledCount} 个未处理的事件`}
                             type="warning"
                             showIcon
                             icon={<AlertOutlined />}

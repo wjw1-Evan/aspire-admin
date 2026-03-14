@@ -1,6 +1,6 @@
-import React, { useState, useCallback } from 'react';
-import { Button, Tooltip } from 'antd';
-import { DragOutlined, LockOutlined, UnlockOutlined } from '@ant-design/icons';
+import React from 'react';
+import { Tooltip } from 'antd';
+import { DragOutlined } from '@ant-design/icons';
 import type { CardLayoutConfig } from '@/services/welcome/layout';
 
 interface DraggableCardContainerProps {
@@ -23,10 +23,7 @@ const DraggableCardContainer: React.FC<DraggableCardContainerProps> = ({
     onDragOver,
     onDrop,
 }) => {
-    const [isEditMode, setIsEditMode] = useState(false);
-
     const handleDragStart = (e: React.DragEvent) => {
-        if (!isEditMode) return;
         e.dataTransfer!.effectAllowed = 'move';
         e.dataTransfer!.setData('cardId', cardId);
         e.dataTransfer!.setData('column', column);
@@ -34,14 +31,12 @@ const DraggableCardContainer: React.FC<DraggableCardContainerProps> = ({
     };
 
     const handleDragOver = (e: React.DragEvent) => {
-        if (!isEditMode) return;
         e.preventDefault();
         e.dataTransfer!.dropEffect = 'move';
         onDragOver(e);
     };
 
     const handleDrop = (e: React.DragEvent) => {
-        if (!isEditMode) return;
         e.preventDefault();
         const draggedCardId = e.dataTransfer!.getData('cardId');
         onDrop(draggedCardId, column);
@@ -49,50 +44,32 @@ const DraggableCardContainer: React.FC<DraggableCardContainerProps> = ({
 
     return (
         <div
-            draggable={isEditMode}
+            draggable
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
             onDrop={handleDrop}
             style={{
                 opacity: isDragging ? 0.5 : 1,
-                cursor: isEditMode ? 'grab' : 'default',
+                cursor: 'grab',
                 transition: 'opacity 0.2s',
                 position: 'relative',
             }}
         >
-            {isEditMode && (
-                <div
-                    style={{
-                        position: 'absolute',
-                        top: 8,
-                        right: 8,
-                        zIndex: 10,
-                        display: 'flex',
-                        gap: '4px',
-                    }}
-                >
-                    <Tooltip title="拖动调整位置">
-                        <DragOutlined style={{ cursor: 'grab', fontSize: '14px', color: '#1890ff' }} />
-                    </Tooltip>
-                </div>
-            )}
-            {children}
             <div
                 style={{
                     position: 'absolute',
                     top: 8,
-                    left: 8,
+                    right: 8,
                     zIndex: 10,
+                    display: 'flex',
+                    gap: '4px',
                 }}
             >
-                <Button
-                    type="text"
-                    size="small"
-                    icon={isEditMode ? <LockOutlined /> : <UnlockOutlined />}
-                    onClick={() => setIsEditMode(!isEditMode)}
-                    title={isEditMode ? '锁定布局' : '编辑布局'}
-                />
+                <Tooltip title="拖动调整位置">
+                    <DragOutlined style={{ cursor: 'grab', fontSize: '14px', color: '#1890ff' }} />
+                </Tooltip>
             </div>
+            {children}
         </div>
     );
 };

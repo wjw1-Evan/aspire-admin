@@ -983,23 +983,33 @@ public static class TestDataGenerator
             {
                 approval = new
                 {
-                    type = "Any",
+                    type = "any",
                     approvers = (approverIds != null && approverIds.Count > 0)
-                        ? approverIds.Select(id => new { type = "User", userId = id }).ToArray()
+                        ? approverIds.Select(id => new { type = "user", userId = id }).ToArray()
                         : new[]
                         {
-                            new { type = "User", userId = "507f1f77bcf86cd799439011" }
+                            new { type = "user", userId = "507f1f77bcf86cd799439011" }
                         }
                 }
             },
             "condition" => new
             {
-                Condition = new
+                condition = new
                 {
-                    LogicalOperator = "and",
-                    Conditions = new[] {
-                        new { Variable = "amount", Operator = "greater_than", Value = "100" }
-                    }
+                    branches = new[]
+                    {
+                        new
+                        {
+                            id = "true",
+                            label = "Amount > 100",
+                            logicalOperator = "and",
+                            conditions = new[]
+                            {
+                                new { variable = "amount", @operator = "greater_than", value = "100" }
+                            }
+                        }
+                    },
+                    defaultNodeId = "false"
                 }
             },
             _ => new { }

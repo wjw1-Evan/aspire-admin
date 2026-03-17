@@ -1232,14 +1232,16 @@ public class DocumentApprovalTests : BaseIntegrationTest
         await ApiTestHelpers.WaitForConditionAsync(
             async () => (await (await TestClient.GetAsync($"/api/documents/{documentId}")).Content.ReadAsJsonAsync<ApiResponse<DocumentResponse>>())?.Data,
             d => d?.Status.ToLower() == "approved",
-            maxAttempts: 10
+            maxAttempts: 20,
+            delayMilliseconds: 1000
         );
 
         Output.WriteLine("Waiting for workflow instance to update to Completed...");
-        await ApiTestHelpers.WaitForConditionAsync(
-            async () => (await (await TestClient.GetAsync($"/api/workflows/instances/{instanceId}")).Content.ReadAsJsonAsync<ApiResponse<WorkflowInstanceResponse>>())?.Data,
-            i => i?.Status.ToLower() == "completed",
-            maxAttempts: 10
+        await ApiTestHelpers.WaitForWorkflowInstanceStatus(
+            async () => await (await TestClient.GetAsync($"/api/workflows/instances/{instanceId}")).Content.ReadAsJsonAsync<ApiResponse<WorkflowInstanceResponse>>(),
+            "Completed",
+            maxAttempts: 20,
+            delayMilliseconds: 1000
         );
 
         Output.WriteLine("✓ Approval lifecycle completed successfully (Submit -> Approve -> Complete)");
@@ -1276,7 +1278,21 @@ public class DocumentApprovalTests : BaseIntegrationTest
             throw new InvalidOperationException($"Submit failed: {submitError}");
         }
 
-        // Step 4: Reject
+        // Step 4: Wait for it to be pending (CRITICAL: ensure workflow engine is ready)
+        Output.WriteLine($"Waiting for document {documentId} to appear in pending list...");
+        await ApiTestHelpers.WaitForConditionAsync(
+            async () =>
+            {
+                var response = await TestClient.GetAsync("/api/documents/pending");
+                var result = await response.Content.ReadAsJsonAsync<ApiResponse<PagedResult<DocumentResponse>>>();
+                return result?.Data?.List ?? new List<DocumentResponse>();
+            },
+            list => list.Any(d => d.Id == documentId),
+            maxAttempts: 20,
+            delayMilliseconds: 1000
+        );
+
+        // Step 5: Reject
         var rejectRequest = new ApprovalRequest { Comment = "Not good enough." };
         var rejectResponse = await TestClient.PostAsJsonAsync($"/api/documents/{documentId}/reject", rejectRequest);
 

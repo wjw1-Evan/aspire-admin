@@ -302,10 +302,12 @@ public class DocumentController : BaseApiController
                 return ValidationError("流程实例当前无待处理节点");
             }
 
+            var userId = GetRequiredUserId();
             var result = await _workflowEngine.ProcessApprovalAsync(
                 document.WorkflowInstanceId,
                 instance.CurrentNodeId,
                 ApprovalAction.Reject,
+                userId,
                 request.Comment
             );
 

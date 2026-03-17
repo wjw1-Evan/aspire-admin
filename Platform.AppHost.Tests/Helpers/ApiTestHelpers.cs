@@ -144,23 +144,6 @@ public static class ApiTestHelpers
     /// <returns>The result of the operation when the condition is met.</returns>
     /// <exception cref="ArgumentNullException">Thrown when operation or condition is null.</exception>
     /// <exception cref="TimeoutException">Thrown when max attempts are reached without condition being met.</exception>
-    /// <remarks>
-    /// Validates: Requirements 8.6
-    /// 
-    /// This method is useful for waiting for asynchronous state changes, such as:
-    /// - Workflow instance status transitions
-    /// - Document approval status updates
-    /// - Background processing completion
-    /// 
-    /// Example usage:
-    /// <code>
-    /// var instance = await WaitForConditionAsync(
-    ///     operation: async () => await GetWorkflowInstanceAsync(instanceId),
-    ///     condition: instance => instance.Status == "Completed",
-    ///     maxAttempts: 10
-    /// );
-    /// </code>
-    /// </remarks>
     public static async Task<T> WaitForConditionAsync<T>(
         Func<Task<T>> operation,
         Func<T, bool> condition,
@@ -196,5 +179,24 @@ public static class ApiTestHelpers
 
         throw new TimeoutException(
             $"Condition was not met after {maxAttempts} attempts (total wait time: {maxAttempts * delayMilliseconds}ms)");
+    }
+
+    /// <summary>
+    /// Waits for a workflow instance to reach a specific status.
+    /// </summary>
+    public static async Task<Models.WorkflowInstanceResponse> WaitForWorkflowInstanceStatus(
+        Func<Task<Models.ApiResponse<Models.WorkflowInstanceResponse>>> getOperation,
+        string expectedStatus,
+        int maxAttempts = 20,
+        int delayMilliseconds = 1000)
+    {
+        var response = await WaitForConditionAsync(
+            operation: getOperation,
+            condition: resp => resp.Success && 
+                               string.Equals(resp.Data?.Status, expectedStatus, StringComparison.OrdinalIgnoreCase),
+            maxAttempts: maxAttempts,
+            delayMilliseconds: delayMilliseconds
+        );
+        return response.Data!;
     }
 }

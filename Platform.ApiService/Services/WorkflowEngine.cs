@@ -156,7 +156,7 @@ public partial class WorkflowEngine : IWorkflowEngine
             StartedBy = startedBy,
             StartedAt = DateTime.UtcNow,
             WorkflowDefinitionSnapshot = definition, // 🔧 保存快照以保证流程稳定性
-            CompanyId = string.Empty // 数据工厂自动处理 CompanyId
+            CompanyId = definition.CompanyId
         };
 
         _logger.LogInformation("Creating workflow instance: DefinitionId={DefinitionId}, DocumentId={DocumentId}, StartedBy={StartedBy}",

@@ -70,7 +70,7 @@ public partial class WorkflowEngine
             DelegateToUserId = delegateToUserId,
             ApprovedAt = DateTime.UtcNow,
             Sequence = history.Count + 1,
-            CompanyId = string.Empty
+            CompanyId = instance.CompanyId
         };
 
         await _approvalRecordFactory.CreateAsync(record);

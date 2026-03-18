@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Space, Table, Button, Tag, Empty, theme, Typography, Progress, Tooltip } from 'antd';
 import { FolderOutlined } from '@ant-design/icons';
-import { useAccess, useNavigate } from '@umijs/max';
+import { useAccess, useNavigate, useIntl } from '@umijs/max';
 import { getProjectList, ProjectStatus, ProjectPriority } from '@/services/task/project';
 import type { ProjectDto } from '@/services/task/project';
 
@@ -15,6 +15,7 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
     const { token } = theme.useToken();
     const access = useAccess();
     const navigate = useNavigate();
+    const intl = useIntl();
     const [projects, setProjects] = useState<ProjectDto[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -35,7 +36,7 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
                 setProjects(res.data.projects);
             }
         } catch (error) {
-            console.warn('获取项目列表失败:', error);
+            console.warn(intl.formatMessage({ id: 'pages.welcome.projectList.fetchFailed' }), error);
         } finally {
             setLoading(false);
         }
@@ -103,13 +104,13 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
     const getPriorityText = (priority: number) => {
         switch (priority) {
             case ProjectPriority.Low:
-                return '低';
+                return intl.formatMessage({ id: 'pages.welcome.projectList.priority.low' });
             case ProjectPriority.Medium:
-                return '中';
+                return intl.formatMessage({ id: 'pages.welcome.projectList.priority.medium' });
             case ProjectPriority.High:
-                return '高';
+                return intl.formatMessage({ id: 'pages.welcome.projectList.priority.high' });
             default:
-                return '未知';
+                return intl.formatMessage({ id: 'pages.welcome.projectList.priority.unknown' });
         }
     };
 
@@ -119,7 +120,7 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
 
     const columns = [
         {
-            title: '项目名称',
+            title: intl.formatMessage({ id: 'pages.welcome.projectList.projectName' }),
             dataIndex: 'name',
             key: 'name',
             width: '35%',
@@ -130,7 +131,7 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
             ),
         },
         {
-            title: '状态',
+            title: intl.formatMessage({ id: 'pages.welcome.projectList.status' }),
             dataIndex: 'statusName',
             key: 'status',
             width: '15%',
@@ -139,7 +140,7 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
             ),
         },
         {
-            title: '优先级',
+            title: intl.formatMessage({ id: 'pages.welcome.projectList.priority' }),
             dataIndex: 'priority',
             key: 'priority',
             width: '12%',
@@ -148,7 +149,7 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
             ),
         },
         {
-            title: '进度',
+            title: intl.formatMessage({ id: 'pages.welcome.projectList.progress' }),
             dataIndex: 'progress',
             key: 'progress',
             width: '20%',
@@ -171,7 +172,7 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
             title={
                 <Space>
                     <FolderOutlined />
-                    <span>项目列表</span>
+                    <span>{intl.formatMessage({ id: 'pages.welcome.projectList.title' })}</span>
                 </Space>
             }
             style={{ height: '100%', borderRadius: '12px' }}
@@ -179,7 +180,7 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
         >
             {projects.length === 0 ? (
                 <Empty
-                    description="暂无项目"
+                    description={intl.formatMessage({ id: 'pages.welcome.projectList.empty' })}
                     style={{ marginTop: '20px' }}
                 />
             ) : (
@@ -201,7 +202,7 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
                             navigate('/project-management/project');
                         }}
                     >
-                        查看全部项目
+                        {intl.formatMessage({ id: 'pages.welcome.projectList.viewAll' })}
                     </Button>
                 </div>
             )}

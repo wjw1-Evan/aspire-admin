@@ -6,6 +6,7 @@ import pwa from './vi-VN/pwa';
 import settingDrawer from './vi-VN/settingDrawer';
 import settings from './vi-VN/settings';
 import request from './vi-VN/request';
+import welcome from './vi-VN/welcome';
 
 export default {
     'navBar.lang': 'Ngôn ngữ',
@@ -24,4 +25,5 @@ export default {
     ...component,
     ...request,
     ...pages,
+  ...welcome,
 };

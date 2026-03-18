@@ -6,6 +6,7 @@ import pwa from './fr-FR/pwa';
 import settingDrawer from './fr-FR/settingDrawer';
 import settings from './fr-FR/settings';
 import request from './fr-FR/request';
+import welcome from './fr-FR/welcome';
 
 export default {
     'navBar.lang': 'Langues',
@@ -24,4 +25,5 @@ export default {
     ...component,
     ...request,
     ...pages,
+  ...welcome,
 };

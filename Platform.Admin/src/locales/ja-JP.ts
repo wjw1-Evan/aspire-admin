@@ -5,6 +5,7 @@ import pages from './ja-JP/pages';
 import pwa from './ja-JP/pwa';
 import settingDrawer from './ja-JP/settingDrawer';
 import settings from './ja-JP/settings';
+import welcome from './ja-JP/welcome';
 
 export default {
   'navBar.lang': '言語',
@@ -22,4 +23,5 @@ export default {
   ...pwa,
   ...component,
   ...pages,
+  ...welcome,
 };

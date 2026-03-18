@@ -5,6 +5,7 @@ import pages from './pt-BR/pages';
 import pwa from './pt-BR/pwa';
 import settingDrawer from './pt-BR/settingDrawer';
 import settings from './pt-BR/settings';
+import welcome from './pt-BR/welcome';
 
 export default {
   'navBar.lang': 'Idiomas',
@@ -19,4 +20,5 @@ export default {
   ...pwa,
   ...component,
   ...pages,
+  ...welcome,
 };

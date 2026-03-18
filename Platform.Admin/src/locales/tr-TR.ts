@@ -6,6 +6,7 @@ import pwa from './tr-TR/pwa';
 import settingDrawer from './tr-TR/settingDrawer';
 import settings from './tr-TR/settings';
 import request from './tr-TR/request';
+import welcome from './tr-TR/welcome';
 
 export default {
     'navBar.lang': 'Diller',
@@ -24,4 +25,5 @@ export default {
     ...component,
     ...request,
     ...pages,
+  ...welcome,
 };

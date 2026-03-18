@@ -79,7 +79,6 @@ const WorkflowEditForm: React.FC<WorkflowEditFormProps> = ({ workflow, onSuccess
                 description: values.description,
                 category: values.category || 'default',
                 isActive: values.isActive,
-                version: newVersion,
                 graph: graph,
             });
 

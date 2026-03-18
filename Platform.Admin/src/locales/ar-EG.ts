@@ -6,6 +6,7 @@ import pwa from './ar-EG/pwa';
 import settingDrawer from './ar-EG/settingDrawer';
 import settings from './ar-EG/settings';
 import request from './ar-EG/request';
+import welcome from './ar-EG/welcome';
 
 export default {
     'navBar.lang': 'اللغات',
@@ -24,4 +25,5 @@ export default {
     ...component,
     ...request,
     ...pages,
+  ...welcome,
 };

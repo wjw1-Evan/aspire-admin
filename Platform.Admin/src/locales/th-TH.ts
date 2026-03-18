@@ -6,6 +6,7 @@ import pwa from './th-TH/pwa';
 import settingDrawer from './th-TH/settingDrawer';
 import settings from './th-TH/settings';
 import request from './th-TH/request';
+import welcome from './th-TH/welcome';
 
 export default {
     'navBar.lang': 'ภาษา',
@@ -24,4 +25,5 @@ export default {
     ...component,
     ...request,
     ...pages,
+  ...welcome,
 };

@@ -6,6 +6,7 @@ import pwa from './ru-RU/pwa';
 import settingDrawer from './ru-RU/settingDrawer';
 import settings from './ru-RU/settings';
 import request from './ru-RU/request';
+import welcome from './ru-RU/welcome';
 
 export default {
     'navBar.lang': 'Языки',
@@ -24,4 +25,5 @@ export default {
     ...component,
     ...request,
     ...pages,
+  ...welcome,
 };

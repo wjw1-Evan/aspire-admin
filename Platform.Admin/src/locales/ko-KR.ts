@@ -6,6 +6,7 @@ import pwa from './ko-KR/pwa';
 import settingDrawer from './ko-KR/settingDrawer';
 import settings from './ko-KR/settings';
 import request from './ko-KR/request';
+import welcome from './ko-KR/welcome';
 
 export default {
     'navBar.lang': '언어',
@@ -24,4 +25,5 @@ export default {
     ...component,
     ...request,
     ...pages,
+  ...welcome,
 };

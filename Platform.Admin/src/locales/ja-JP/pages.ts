@@ -28,9 +28,6 @@ export default {
   'pages.login.loginWith': 'その他のログイン方法：',
   'pages.login.register': 'アカウントをお持ちでないですか？今すぐ登録',
   'pages.login.registerAccount': 'アカウント登録',
-  'pages.welcome.link': 'ようこそ',
-  'pages.welcome.alertMessage':
-    'より高速で強力な頑丈なコンポーネントがリリースされました。',
   'pages.unifiedNotificationCenter.title': '通知センター',
   'pages.unifiedNotificationCenter.priority.low': '低',
   'pages.unifiedNotificationCenter.priority.medium': '中',

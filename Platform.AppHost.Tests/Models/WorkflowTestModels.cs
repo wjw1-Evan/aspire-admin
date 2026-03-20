@@ -188,6 +188,32 @@ public record WorkflowInstanceResponse
     /// Workflow variables.
     /// </summary>
     public List<WorkflowVariableResponse>? Variables { get; init; }
+
+    /// <summary>
+    /// Current approver IDs for the active node.
+    /// </summary>
+    public List<string>? CurrentApproverIds { get; init; }
+
+    /// <summary>
+    /// Active approvals at the current node.
+    /// </summary>
+    public List<ActiveApprovalResponse>? ActiveApprovals { get; init; }
+
+    /// <summary>
+    /// The user who started this instance.
+    /// </summary>
+    public string? StartedBy { get; init; }
+
+    /// <summary>
+    /// When the instance was started.
+    /// </summary>
+    public DateTime? StartedAt { get; init; }
+}
+
+public record ActiveApprovalResponse
+{
+    public string NodeId { get; init; } = string.Empty;
+    public List<string> ApproverIds { get; init; } = new();
 }
 
 /// <summary>

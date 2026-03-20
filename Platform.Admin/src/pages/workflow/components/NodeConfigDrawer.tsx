@@ -120,8 +120,8 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
   // 获取选中表单的字段
   const getSelectedFormFields = (formId: string | undefined): WorkflowFormField[] => {
     if (!formId) return [];
-    const form = workflowForms.find(f => f.Id === formId);
-    return form?.Fields || [];
+    const form = workflowForms.find(f => f.id === formId);
+    return form?.fields || [];
   };
 
   return (
@@ -288,7 +288,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                                                   placeholder="选择流程中使用的表单"
                                                   showSearch
                                                   loading={loading}
-                                                  options={workflowForms.map(f => ({ label: f.Name, value: f.Id }))}
+                                                  options={workflowForms.map(f => ({ label: f.name, value: f.id }))}
                                                 />
                                               </Form.Item>
 
@@ -313,8 +313,8 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                                                         showSearch
                                                         disabled={!formId}
                                                         options={fields.map(f => ({
-                                                          label: `${f.Label} (${f.DataKey})`,
-                                                          value: f.DataKey
+                                                          label: `${f.label} (${f.dataKey})`,
+                                                          value: f.dataKey
                                                         }))}
                                                       />
                                                     </Form.Item>

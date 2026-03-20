@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 
 namespace Platform.ApiService.Workflows.Executors;
 
@@ -25,12 +26,14 @@ internal sealed partial class ConditionExecutor : Executor
     private readonly ConditionConfig _config;
     private readonly IWorkflowExpressionEvaluator _expressionEvaluator;
     private readonly IWorkflowExpressionValidator _expressionValidator;
+    private readonly ILogger<ConditionExecutor> _logger;
 
-    public ConditionExecutor(ConditionConfig config, IWorkflowExpressionEvaluator expressionEvaluator, IWorkflowExpressionValidator expressionValidator) : base("ConditionExecutor")
+    public ConditionExecutor(ConditionConfig config, IWorkflowExpressionEvaluator expressionEvaluator, IWorkflowExpressionValidator expressionValidator, ILogger<ConditionExecutor> logger) : base("ConditionExecutor")
     {
         _config = config;
         _expressionEvaluator = expressionEvaluator;
         _expressionValidator = expressionValidator;
+        _logger = logger;
     }
 
     [MessageHandler]
@@ -52,8 +55,8 @@ internal sealed partial class ConditionExecutor : Executor
             debugInfo.AppendLine($"  [{v.Key}] = {valueStr}");
         }
 
-        System.Console.WriteLine(debugInfo.ToString());
-        System.Console.Out.Flush();
+        _logger.LogDebug(debugInfo.ToString());
+        
 
         // 验证表达式安全性
         if (!string.IsNullOrWhiteSpace(_config.Expression))
@@ -61,7 +64,7 @@ internal sealed partial class ConditionExecutor : Executor
             var validationResult = _expressionValidator.Validate(_config.Expression);
             if (!validationResult.IsValid)
             {
-                System.Console.WriteLine($"DEBUG_CONDITION: 表达式验证失败 - {validationResult.ErrorMessage}");
+                _logger.LogDebug($"DEBUG_CONDITION: 表达式验证失败 - {validationResult.ErrorMessage}");
                 return new Dictionary<string, object?>
                 {
                     ["__sourceHandle"] = _config.DefaultNodeId ?? "default",
@@ -75,19 +78,20 @@ internal sealed partial class ConditionExecutor : Executor
         // 评估分支，找到匹配的分支
         var matchedBranch = EvaluateConditionBranches(variables);
 
-        System.Console.WriteLine($"DEBUG_CONDITION: 匹配的分支 = {matchedBranch?.Id ?? "default"}");
-        System.Console.Out.Flush();
+        _logger.LogDebug($"DEBUG_CONDITION: 匹配的分支 = {matchedBranch?.Id ?? "default"}");
+        
 
         await Task.CompletedTask;
 
         // 返回匹配的分支 ID 作为 sourceHandle，用于路由到不同的下一个组件
-        // 如果没有分支匹配，则使用默认节点 ID
-        var sourceHandle = matchedBranch?.Id ?? _config.DefaultNodeId ?? "default";
+        // 如果没有分支匹配，则使用 "default" 作为 fallback，与前端设计保持一致
+        var sourceHandle = matchedBranch?.Id ?? "default";
         return new Dictionary<string, object?>
         {
             ["__sourceHandle"] = sourceHandle,
             ["branchId"] = matchedBranch?.Id,
             ["branchLabel"] = matchedBranch?.Label,
+            ["targetNodeId"] = matchedBranch?.TargetNodeId ?? _config.DefaultNodeId,
             ["result"] = matchedBranch != null,
             ["evaluatedAt"] = System.DateTime.UtcNow
         };
@@ -101,22 +105,22 @@ internal sealed partial class ConditionExecutor : Executor
         // 如果没有配置分支，返回 null
         if (_config.Branches == null || _config.Branches.Count == 0)
         {
-            System.Console.WriteLine("DEBUG_CONDITION: 未配置分支，使用默认分支");
-            System.Console.Out.Flush();
+            _logger.LogDebug("DEBUG_CONDITION: 未配置分支，使用默认分支");
+            
             return null;
         }
 
         // 遍历所有分支，找到第一个匹配的
         foreach (var branch in _config.Branches.OrderBy(b => b.Order))
         {
-            System.Console.WriteLine($"DEBUG_CONDITION: 评估分支 [{branch.Id}] - {branch.Label}");
-            System.Console.Out.Flush();
+            _logger.LogDebug($"DEBUG_CONDITION: 评估分支 [{branch.Id}] - {branch.Label}");
+            
 
             // 评估分支内的条件
             bool branchMatches = EvaluateBranchConditions(branch, variables);
 
-            System.Console.WriteLine($"DEBUG_CONDITION: 分支 [{branch.Id}] 匹配结果 = {branchMatches}");
-            System.Console.Out.Flush();
+            _logger.LogDebug($"DEBUG_CONDITION: 分支 [{branch.Id}] 匹配结果 = {branchMatches}");
+            
 
             if (branchMatches)
             {
@@ -125,8 +129,8 @@ internal sealed partial class ConditionExecutor : Executor
         }
 
         // 没有分支匹配，返回 null（将使用默认分支）
-        System.Console.WriteLine("DEBUG_CONDITION: 没有分支匹配，将使用默认分支");
-        System.Console.Out.Flush();
+        _logger.LogDebug("DEBUG_CONDITION: 没有分支匹配，将使用默认分支");
+        
         return null;
     }
 
@@ -138,8 +142,8 @@ internal sealed partial class ConditionExecutor : Executor
         // 如果分支没有条件，则默认匹配
         if (branch.Conditions == null || branch.Conditions.Count == 0)
         {
-            System.Console.WriteLine($"DEBUG_CONDITION: 分支 [{branch.Id}] 无条件，默认匹配");
-            System.Console.Out.Flush();
+            _logger.LogDebug($"DEBUG_CONDITION: 分支 [{branch.Id}] 无条件，默认匹配");
+            
             return true;
         }
 
@@ -147,12 +151,12 @@ internal sealed partial class ConditionExecutor : Executor
         var results = new List<bool>();
         foreach (var rule in branch.Conditions)
         {
-            System.Console.WriteLine($"DEBUG_CONDITION: 处理规则 - Variable={rule.Variable}, Operator={rule.Operator}, Value={rule.Value}");
-            System.Console.Out.Flush();
+            _logger.LogDebug($"DEBUG_CONDITION: 处理规则 - Variable={rule.Variable}, Operator={rule.Operator}, Value={rule.Value}");
+            
             bool ruleResult = EvaluateSingleRule(rule, variables);
             results.Add(ruleResult);
-            System.Console.WriteLine($"DEBUG_CONDITION: 规则 [{rule.Variable} {rule.Operator} {rule.Value}] = {ruleResult}");
-            System.Console.Out.Flush();
+            _logger.LogDebug($"DEBUG_CONDITION: 规则 [{rule.Variable} {rule.Operator} {rule.Value}] = {ruleResult}");
+            
         }
 
         // 根据分支的逻辑运算符组合结果
@@ -167,33 +171,33 @@ internal sealed partial class ConditionExecutor : Executor
     {
         if (string.IsNullOrWhiteSpace(rule.Variable))
         {
-            System.Console.WriteLine("DEBUG_CONDITION: 规则变量名为空");
-            System.Console.Out.Flush();
+            _logger.LogDebug("DEBUG_CONDITION: 规则变量名为空");
+            
             return false;
         }
 
         // 从变量中获取值（支持大小写不敏感查找）
         object? variableValue = GetVariableValue(rule.Variable, variables);
 
-        System.Console.WriteLine($"DEBUG_CONDITION: 获取变量 [{rule.Variable}] = {(variableValue == null ? "null" : $"{variableValue} ({variableValue.GetType().Name})")}");
-        System.Console.Out.Flush();
+        _logger.LogDebug($"DEBUG_CONDITION: 获取变量 [{rule.Variable}] = {(variableValue == null ? "null" : $"{variableValue} ({variableValue.GetType().Name})")}");
+        
 
         if (variableValue == null)
         {
-            System.Console.WriteLine($"DEBUG_CONDITION: 变量 '{rule.Variable}' 不存在，返回 {(rule.Operator == "not_equals" || rule.Operator == "!=")}");
-            System.Console.Out.Flush();
+            _logger.LogDebug($"DEBUG_CONDITION: 变量 '{rule.Variable}' 不存在，返回 {(rule.Operator == "not_equals" || rule.Operator == "!=")}");
+            
             // 变量不存在时的处理
             return rule.Operator == "not_equals" || rule.Operator == "!=";
         }
 
         // 构造表达式并评估
         string expression = BuildExpression(rule.Variable, rule.Operator, rule.Value);
-        System.Console.WriteLine($"DEBUG_CONDITION: 构造表达式 = [{expression}]");
-        System.Console.Out.Flush();
+        _logger.LogDebug($"DEBUG_CONDITION: 构造表达式 = [{expression}]");
+        
         bool result = _expressionEvaluator.Evaluate(expression, variables);
 
-        System.Console.WriteLine($"DEBUG_CONDITION: 表达式 [{expression}] 评估结果 = {result}");
-        System.Console.Out.Flush();
+        _logger.LogDebug($"DEBUG_CONDITION: 表达式 [{expression}] 评估结果 = {result}");
+        
         return result;
     }
 

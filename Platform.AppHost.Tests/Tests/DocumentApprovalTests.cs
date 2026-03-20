@@ -1238,7 +1238,7 @@ public class DocumentApprovalTests : BaseIntegrationTest
 
         Output.WriteLine("Waiting for workflow instance to update to Completed...");
         await ApiTestHelpers.WaitForWorkflowInstanceStatus(
-            async () => await (await TestClient.GetAsync($"/api/workflows/instances/{instanceId}")).Content.ReadAsJsonAsync<ApiResponse<WorkflowInstanceResponse>>(),
+            async () => await (await TestClient.GetAsync($"/api/workflows/instances/{instanceId}")).Content.ReadAsJsonAsync<ApiResponse<WorkflowInstanceResponse>>()!,
             "Completed",
             maxAttempts: 20,
             delayMilliseconds: 1000

@@ -99,6 +99,7 @@ public partial class WorkflowEngine : IWorkflowEngine
     private readonly IWorkflowExpressionValidator _expressionValidator;
     private readonly ILogger<WorkflowEngine> _logger;
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILoggerFactory _loggerFactory;
 
     /// <summary>
     /// 初始化工作流引擎
@@ -116,7 +117,8 @@ public partial class WorkflowEngine : IWorkflowEngine
         IWorkflowExpressionEvaluator expressionEvaluator,
         IWorkflowExpressionValidator expressionValidator,
         ILogger<WorkflowEngine> logger,
-        IServiceScopeFactory scopeFactory)
+        IServiceScopeFactory scopeFactory,
+        ILoggerFactory loggerFactory)
     {
         _definitionFactory = definitionFactory;
         _instanceFactory = instanceFactory;
@@ -131,6 +133,7 @@ public partial class WorkflowEngine : IWorkflowEngine
         _expressionValidator = expressionValidator;
         _logger = logger;
         _scopeFactory = scopeFactory;
+        _loggerFactory = loggerFactory;
     }
 
     /// <summary>
@@ -228,7 +231,10 @@ public partial class WorkflowEngine : IWorkflowEngine
                         AuditObject(val, $"{path}.{p.Name}");
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "[DIAGNOSTIC] AuditObject failed for path: {Path}", path);
+                }
             }
         }
         AuditObject(instance, "WorkflowInstance");

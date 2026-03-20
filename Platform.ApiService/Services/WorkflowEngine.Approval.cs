@@ -48,11 +48,34 @@ public partial class WorkflowEngine
         var user = await _userService.GetUserByIdAsync(currentUserId);
         var userName = user?.Username ?? currentUserId;
 
-        if (action == ApprovalAction.Delegate)
+        // 检查操作权限标志
+        var approvalConfig = currentNode.Data.Config?.Approval;
+        if (approvalConfig != null)
         {
-            if (string.IsNullOrEmpty(delegateToUserId))
+            switch (action)
             {
-                throw new ArgumentException("转办必须指定目标用户");
+                case ApprovalAction.Delegate:
+                    if (!approvalConfig.AllowDelegate)
+                    {
+                        throw new InvalidOperationException("该节点不允许转办操作");
+                    }
+                    if (string.IsNullOrEmpty(delegateToUserId))
+                    {
+                        throw new ArgumentException("转办必须指定目标用户");
+                    }
+                    break;
+                case ApprovalAction.Reject:
+                    if (!approvalConfig.AllowReject)
+                    {
+                        throw new InvalidOperationException("该节点不允许拒绝操作");
+                    }
+                    break;
+                case ApprovalAction.Return:
+                    if (!approvalConfig.AllowReturn)
+                    {
+                        throw new InvalidOperationException("该节点不允许退回操作");
+                    }
+                    break;
             }
         }
 
@@ -73,13 +96,17 @@ public partial class WorkflowEngine
             CompanyId = instance.CompanyId
         };
 
-        await _approvalRecordFactory.CreateAsync(record);
-
-        await _instanceFactory.UpdateAsync(instanceId, i =>
+        // 注意：Return 操作由 ReturnToNodeAsync 方法处理，此处不创建记录
+        if (action != ApprovalAction.Return)
         {
-            i.ApprovalRecords.Add(record);
-            i.UpdatedAt = DateTime.UtcNow;
-        });
+            await _approvalRecordFactory.CreateAsync(record);
+
+            await _instanceFactory.UpdateAsync(instanceId, i =>
+            {
+                i.ApprovalRecords.Add(record);
+                i.UpdatedAt = DateTime.UtcNow;
+            });
+        }
 
         switch (action)
         {
@@ -305,6 +332,32 @@ public partial class WorkflowEngine
 
         if (isNodeComplete)
         {
+            // Bug 6 修复：审批节点完成时通知发起人
+            try
+            {
+                var instanceForNotify = await _instanceFactory.GetByIdAsync(instanceId);
+                if (instanceForNotify != null && !string.IsNullOrEmpty(instanceForNotify.DocumentId))
+                {
+                    var document = await _documentFactory.GetByIdAsync(instanceForNotify.DocumentId);
+                    if (document != null)
+                    {
+                        var approverNames = string.Join(", ", completedApprovals);
+                        await _notificationService.CreateWorkflowNotificationAsync(
+                            instanceId,
+                            document.Title,
+                            "workflow_approval_completed",
+                            new List<string> { instanceForNotify.StartedBy },
+                            $"审批节点 [{node.Data.Label ?? node.Id}] 已完成，审批人: {approverNames}",
+                            instanceForNotify.CompanyId
+                        );
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "发送审批完成通知失败: InstanceId={InstanceId}", instanceId);
+            }
+
             await MoveToNextNodeAsync(instanceId, nodeId);
         }
     }
@@ -367,7 +420,7 @@ public partial class WorkflowEngine
             Comment = comment,
             ApprovedAt = DateTime.UtcNow,
             Sequence = history.Count + 1,
-            CompanyId = string.Empty
+            CompanyId = instance.CompanyId
         };
         await _approvalRecordFactory.CreateAsync(approvalRecord);
 

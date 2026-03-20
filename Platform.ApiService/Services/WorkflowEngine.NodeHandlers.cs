@@ -29,7 +29,7 @@ public partial class WorkflowEngine
                 return new ApprovalExecutor(node.Data.Config.Approval, _instanceFactory, _expressionEvaluator);
             case "condition":
                 if (node.Data.Config?.Condition == null) throw new InvalidOperationException($"Condition node {node.Id} missing config");
-                return new ConditionExecutor(node.Data.Config.Condition, _expressionEvaluator, _expressionValidator);
+                return new ConditionExecutor(node.Data.Config.Condition, _expressionEvaluator, _expressionValidator, _loggerFactory.CreateLogger<ConditionExecutor>());
             default:
                 throw new InvalidOperationException($"Unsupported node type: {node.Data.NodeType}");
         }
@@ -86,14 +86,33 @@ public partial class WorkflowEngine
         // 获取出边
         var outgoingEdges = definition.Graph.Edges.Where(e => e.Source == currentNodeId).ToList();
 
-        // 如果提供了 sourceHandle，则过滤出边
+        // Bug 2 修复：如果提供了 sourceHandle，则过滤出边
+        // 如果没有匹配的边，尝试匹配 "default" handle
         if (!string.IsNullOrEmpty(sourceHandle))
         {
             var filteredEdges = outgoingEdges.Where(e => string.Equals(e.SourceHandle, sourceHandle, StringComparison.OrdinalIgnoreCase)).ToList();
-            if (filteredEdges.Any())
+            
+            // 如果精确匹配没有找到，尝试 "default"
+            if (!filteredEdges.Any())
             {
-                outgoingEdges = filteredEdges;
+                filteredEdges = outgoingEdges.Where(e => string.Equals(e.SourceHandle, "default", StringComparison.OrdinalIgnoreCase)).ToList();
             }
+            
+            // 如果仍然没有匹配，只取第一条无 handle 的边
+            if (!filteredEdges.Any())
+            {
+                filteredEdges = outgoingEdges.Where(e => string.IsNullOrEmpty(e.SourceHandle)).ToList();
+            }
+            
+            // Bug 2 修复：过滤后无结果时完成流程，而不是处理所有边
+            if (!filteredEdges.Any())
+            {
+                _logger.LogWarning("DEBUG_WORKFLOW: 没有找到匹配的边来完成节点 {NodeId}", currentNodeId);
+                await CompleteWorkflowAsync(instanceId, WorkflowStatus.Completed);
+                return;
+            }
+            
+            outgoingEdges = filteredEdges;
         }
 
         if (outgoingEdges.Count == 0)
@@ -102,11 +121,18 @@ public partial class WorkflowEngine
             return;
         }
 
-        foreach (var edge in outgoingEdges)
+        // Bug 1 修复：只处理第一条匹配的边，避免 CurrentNodeId 被覆盖
+        // 对于条件节点，只有一个分支应该被执行
+        var firstEdge = outgoingEdges.First();
+        var nextNodeId = firstEdge.Target;
+        await SetCurrentNodeAsync(instanceId, nextNodeId);
+        await ProcessNodeAsync(instanceId, nextNodeId);
+        
+        // 如果有多条边，也处理后续的边（用于并行分支场景）
+        foreach (var edge in outgoingEdges.Skip(1))
         {
-            var nextNodeId = edge.Target;
-            await SetCurrentNodeAsync(instanceId, nextNodeId);
-            await ProcessNodeAsync(instanceId, nextNodeId);
+            _logger.LogInformation("DEBUG_WORKFLOW: 处理并行分支边 {EdgeId} -> {Target}", edge.Id, edge.Target);
+            await ProcessNodeAsync(instanceId, edge.Target);
         }
     }
 

@@ -297,8 +297,8 @@ export enum FormFieldType {
  * 表单目标（数据存储位置）
  */
 export enum FormTarget {
-  Document = 'Document',
-  Instance = 'Instance',
+  Document = 'document',
+  Instance = 'instance',
 }
 
 /**
@@ -641,15 +641,15 @@ export async function getDocumentCreateForm(definitionId: string): Promise<ApiRe
  */
 export async function getWorkflowFormsAndFields(definitionId: string): Promise<ApiResponse<{
   forms: Array<{
-    Id: string;
-    Name: string;
-    Key: string;
-    Fields: Array<{
-      Id: string;
-      Label: string;
-      DataKey: string;
-      Type: string;
-      Required: boolean;
+    id: string;
+    name: string;
+    key: string;
+    fields: Array<{
+      id: string;
+      label: string;
+      dataKey: string;
+      type: string;
+      required: boolean;
     }>;
   }>;
 }>> {

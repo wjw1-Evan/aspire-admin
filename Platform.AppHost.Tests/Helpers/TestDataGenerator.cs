@@ -469,11 +469,12 @@ public static class TestDataGenerator
                     Label = "金额 > 1000?",
                     NodeType = "condition",
                     Config = new {
-                        Condition = new {
-                            LogicalOperator = "and",
-                            Conditions = new[] {
-                                new { Variable = "amount", Operator = "greater_than", Value = "1000" }
-                            }
+                        condition = new {
+                            branches = new[]
+                            {
+                                new { id = "true", label = "金额 > 1000", conditions = new[] { new { variable = "amount", @operator = "greater_than", value = "1000" } }, logicalOperator = "and", targetNodeId = "approval_a", order = 0 }
+                            },
+                            defaultNodeId = "approval_b"
                         }
                     }
                 },
@@ -510,7 +511,7 @@ public static class TestDataGenerator
         {
             new WorkflowEdgeRequest { Id = "e1", Source = "start", Target = "condition_node" },
             new WorkflowEdgeRequest { Id = "e2", Source = "condition_node", Target = "approval_a", SourceHandle = "true" },
-            new WorkflowEdgeRequest { Id = "e3", Source = "condition_node", Target = "approval_b", SourceHandle = "false" },
+            new WorkflowEdgeRequest { Id = "e3", Source = "condition_node", Target = "approval_b", SourceHandle = "default" },
             new WorkflowEdgeRequest { Id = "e4", Source = "approval_a", Target = "end" },
             new WorkflowEdgeRequest { Id = "e5", Source = "approval_b", Target = "end" }
         };
@@ -556,7 +557,7 @@ public static class TestDataGenerator
         var edges = new List<WorkflowEdgeRequest>
         {
             new WorkflowEdgeRequest { Id = "e1", Source = "start", Target = "approval_node" },
-            new WorkflowEdgeRequest { Id = "e2", Source = "approval_node", Target = "end", SourceHandle = "approve" }
+            new WorkflowEdgeRequest { Id = "e2", Source = "approval_node", Target = "end" }
         };
 
         return new WorkflowDefinitionRequest
@@ -599,13 +600,13 @@ public static class TestDataGenerator
                     NodeType = "condition",
                     Config = new
                     {
-                        Condition = new
+                        condition = new
                         {
-                            LogicalOperator = "and",
-                            Conditions = new[]
+                            branches = new[]
                             {
-                                new { Variable = "amount", Operator = "greater_than", Value = thresholdValue }
-                            }
+                                new { id = "true", label = "金额 > " + thresholdValue, conditions = new[] { new { variable = "amount", @operator = "greater_than", value = thresholdValue } }, logicalOperator = "and", targetNodeId = "high_amount_approval", order = 0 }
+                            },
+                            defaultNodeId = "low_amount_approval"
                         }
                     }
                 },
@@ -623,8 +624,8 @@ public static class TestDataGenerator
                     {
                         approval = new
                         {
-                            type = "Any",
-                            approvers = new[] { new { type = "User", userId = "507f1f77bcf86cd799439011" } },
+                            type = "any",
+                            approvers = Array.Empty<object>(),
                             allowDelegate = false,
                             allowReject = true,
                             allowReturn = false
@@ -645,8 +646,8 @@ public static class TestDataGenerator
                     {
                         approval = new
                         {
-                            type = "Any",
-                            approvers = new[] { new { type = "User", userId = "507f1f77bcf86cd7994333333" } },
+                            type = "any",
+                            approvers = Array.Empty<object>(),
                             allowDelegate = false,
                             allowReject = true,
                             allowReturn = false
@@ -671,11 +672,8 @@ public static class TestDataGenerator
         var edges = new List<WorkflowEdgeRequest>
         {
             new WorkflowEdgeRequest { Id = "e1", Source = "start", Target = "condition_node" },
-            // True branch: amount > threshold -> high amount approval
             new WorkflowEdgeRequest { Id = "e2", Source = "condition_node", Target = "high_amount_approval", SourceHandle = "true" },
-            // False branch: amount <= threshold -> low amount approval
-            new WorkflowEdgeRequest { Id = "e3", Source = "condition_node", Target = "low_amount_approval", SourceHandle = "false" },
-            // Both branches go to end
+            new WorkflowEdgeRequest { Id = "e3", Source = "condition_node", Target = "low_amount_approval", SourceHandle = "default" },
             new WorkflowEdgeRequest { Id = "e4", Source = "high_amount_approval", Target = "end" },
             new WorkflowEdgeRequest { Id = "e5", Source = "low_amount_approval", Target = "end" }
         };
@@ -684,7 +682,7 @@ public static class TestDataGenerator
         {
             Name = name,
             Category = "Condition",
-            Description = "测试条件分支工作流：金额大于1000走大额审批，否则走小额审批",
+            Description = "测试条件分支工作流：金额大于" + thresholdValue + "走大额审批，否则走小额审批",
             Graph = new WorkflowGraphRequest { Nodes = nodes, Edges = edges },
             IsActive = true
         };
@@ -756,12 +754,12 @@ public static class TestDataGenerator
                     Label = "金额 > 1000 且 部门 = Finance?",
                     NodeType = "condition",
                     Config = new {
-                        Condition = new {
-                            LogicalOperator = "and",
-                            Conditions = new[] {
-                                new { Variable = "amount", Operator = "greater_than", Value = "1000" },
-                                new { Variable = "department", Operator = "equals", Value = "Finance" }
-                            }
+                        condition = new {
+                            branches = new[]
+                            {
+                                new { id = "true", label = "金额 > 1000 且 部门 = Finance", conditions = new[] { new { variable = "amount", @operator = "greater_than", value = "1000" }, new { variable = "department", @operator = "equals", value = "Finance" } }, logicalOperator = "and", targetNodeId = "approval_a", order = 0 }
+                            },
+                            defaultNodeId = "approval_b"
                         }
                     }
                 },
@@ -798,7 +796,7 @@ public static class TestDataGenerator
         {
             new WorkflowEdgeRequest { Id = "e1", Source = "start", Target = "condition_node" },
             new WorkflowEdgeRequest { Id = "e2", Source = "condition_node", Target = "approval_a", SourceHandle = "true" },
-            new WorkflowEdgeRequest { Id = "e3", Source = "condition_node", Target = "approval_b", SourceHandle = "false" },
+            new WorkflowEdgeRequest { Id = "e3", Source = "condition_node", Target = "approval_b", SourceHandle = "default" },
             new WorkflowEdgeRequest { Id = "e4", Source = "approval_a", Target = "end" },
             new WorkflowEdgeRequest { Id = "e5", Source = "approval_b", Target = "end" }
         };
@@ -834,12 +832,12 @@ public static class TestDataGenerator
                     Label = "金额 > 1000 或 紧急?",
                     NodeType = "condition",
                     Config = new {
-                        Condition = new {
-                            LogicalOperator = "or",
-                            Conditions = new[] {
-                                new { Variable = "amount", Operator = "greater_than", Value = "1000" },
-                                new { Variable = "isUrgent", Operator = "equals", Value = "true" }
-                            }
+                        condition = new {
+                            branches = new[]
+                            {
+                                new { id = "true", label = "金额 > 1000 或 紧急", conditions = new[] { new { variable = "amount", @operator = "greater_than", value = "1000" }, new { variable = "isUrgent", @operator = "equals", value = "true" } }, logicalOperator = "or", targetNodeId = "approval_a", order = 0 }
+                            },
+                            defaultNodeId = "approval_b"
                         }
                     }
                 },
@@ -876,7 +874,7 @@ public static class TestDataGenerator
         {
             new WorkflowEdgeRequest { Id = "e1", Source = "start", Target = "condition_node" },
             new WorkflowEdgeRequest { Id = "e2", Source = "condition_node", Target = "approval_a", SourceHandle = "true" },
-            new WorkflowEdgeRequest { Id = "e3", Source = "condition_node", Target = "approval_b", SourceHandle = "false" },
+            new WorkflowEdgeRequest { Id = "e3", Source = "condition_node", Target = "approval_b", SourceHandle = "default" },
             new WorkflowEdgeRequest { Id = "e4", Source = "approval_a", Target = "end" },
             new WorkflowEdgeRequest { Id = "e5", Source = "approval_b", Target = "end" }
         };
@@ -912,11 +910,12 @@ public static class TestDataGenerator
                     Label = "部门 = Finance?",
                     NodeType = "condition",
                     Config = new {
-                        Condition = new {
-                            LogicalOperator = "and",
-                            Conditions = new[] {
-                                new { Variable = "department", Operator = "equals", Value = "Finance" }
-                            }
+                        condition = new {
+                            branches = new[]
+                            {
+                                new { id = "true", label = "部门 = Finance", conditions = new[] { new { variable = "department", @operator = "equals", value = "Finance" } }, logicalOperator = "and", targetNodeId = "approval_a", order = 0 }
+                            },
+                            defaultNodeId = "approval_b"
                         }
                     }
                 },
@@ -953,7 +952,7 @@ public static class TestDataGenerator
         {
             new WorkflowEdgeRequest { Id = "e1", Source = "start", Target = "condition_node" },
             new WorkflowEdgeRequest { Id = "e2", Source = "condition_node", Target = "approval_a", SourceHandle = "true" },
-            new WorkflowEdgeRequest { Id = "e3", Source = "condition_node", Target = "approval_b", SourceHandle = "false" },
+            new WorkflowEdgeRequest { Id = "e3", Source = "condition_node", Target = "approval_b", SourceHandle = "default" },
             new WorkflowEdgeRequest { Id = "e4", Source = "approval_a", Target = "end" },
             new WorkflowEdgeRequest { Id = "e5", Source = "approval_b", Target = "end" }
         };
@@ -986,30 +985,15 @@ public static class TestDataGenerator
                     type = "any",
                     approvers = (approverIds != null && approverIds.Count > 0)
                         ? approverIds.Select(id => new { type = "user", userId = id }).ToArray()
-                        : new[]
-                        {
-                            new { type = "user", userId = "507f1f77bcf86cd799439011" }
-                        }
+                        : Array.Empty<object>()
                 }
             },
             "condition" => new
             {
                 condition = new
                 {
-                    branches = new[]
-                    {
-                        new
-                        {
-                            id = "true",
-                            label = "Amount > 100",
-                            logicalOperator = "and",
-                            conditions = new[]
-                            {
-                                new { variable = "amount", @operator = "greater_than", value = "100" }
-                            }
-                        }
-                    },
-                    defaultNodeId = "false"
+                    branches = Array.Empty<object>(),
+                    defaultNodeId = ""
                 }
             },
             _ => new { }

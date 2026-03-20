@@ -1,5 +1,12 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "command": {
+    "commit": {
+      "template": "执行自动提交流程：\n1. 运行 git status 查看变更\n2. 运行 git diff 查看具体改动\n3. 将变更添加到暂存区\n4. 根据改动内容生成符合约定式提交规范的 commit message（feat/fix/docs/refactor/style/perf/test/chore）\n5. 执行 git commit\n6. 如果分支领先于远程，提示用户可执行 git push\n\n规则：\n- commit message 必须使用简体中文\n- 提交信息应简洁明了\n- 如果没有变更则不执行提交\n- 不要自动推送到远程",
+      "description": "修改成功后自动提交 Git",
+      "agent": "build"
+    }
+  },
   "mcp": {
     "aspire": {
       "type": "local",

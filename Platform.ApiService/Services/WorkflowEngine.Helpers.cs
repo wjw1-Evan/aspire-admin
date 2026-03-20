@@ -32,17 +32,17 @@ public partial class WorkflowEngine
 
         var variables = instance.GetVariablesDict();
 
-        System.Console.WriteLine($"\n========== DEBUG_WORKFLOW: GetDocumentVariablesAsync ==========");
-        System.Console.WriteLine($"DEBUG_WORKFLOW: 实例ID = {instanceId}");
-        System.Console.WriteLine($"DEBUG_WORKFLOW: 公文ID = {instance.DocumentId}");
-        System.Console.WriteLine($"DEBUG_WORKFLOW: 初始变量数 = {variables.Count}");
+        _logger.LogDebug($"\n========== DEBUG_WORKFLOW: GetDocumentVariablesAsync ==========");
+        _logger.LogDebug($"DEBUG_WORKFLOW: 实例ID = {instanceId}");
+        _logger.LogDebug($"DEBUG_WORKFLOW: 公文ID = {instance.DocumentId}");
+        _logger.LogDebug($"DEBUG_WORKFLOW: 初始变量数 = {variables.Count}");
 
         // 第一步：加载流程定义中所有节点绑定的表单字段定义
         // 这样条件组件可以知道有哪些表单字段可用
-        System.Console.WriteLine($"DEBUG_WORKFLOW: 开始加载流程中绑定的表单定义");
+        _logger.LogDebug($"DEBUG_WORKFLOW: 开始加载流程中绑定的表单定义");
         if (instance.FormDefinitionSnapshots != null && instance.FormDefinitionSnapshots.Count > 0)
         {
-            System.Console.WriteLine($"DEBUG_WORKFLOW: 发现 {instance.FormDefinitionSnapshots.Count} 个表单快照");
+            _logger.LogDebug($"DEBUG_WORKFLOW: 发现 {instance.FormDefinitionSnapshots.Count} 个表单快照");
             foreach (var snapshot in instance.FormDefinitionSnapshots)
             {
                 try
@@ -53,7 +53,7 @@ public partial class WorkflowEngine
 
                     if (formDef?.Fields != null && formDef.Fields.Count > 0)
                     {
-                        System.Console.WriteLine($"DEBUG_WORKFLOW: 节点 [{snapshot.NodeId}] 绑定表单，包含 {formDef.Fields.Count} 个字段");
+                        _logger.LogDebug($"DEBUG_WORKFLOW: 节点 [{snapshot.NodeId}] 绑定表单，包含 {formDef.Fields.Count} 个字段");
                         foreach (var field in formDef.Fields)
                         {
                             // 注入表单字段定义（作为元数据，便于条件组件了解可用字段）
@@ -65,7 +65,7 @@ public partial class WorkflowEngine
                                 if (!variables.ContainsKey(fieldKey))
                                 {
                                     variables[fieldKey] = null;
-                                    System.Console.WriteLine($"DEBUG_WORKFLOW: 注入表单字段占位符 [{fieldKey}] (来自节点 {snapshot.NodeId})");
+                                    _logger.LogDebug($"DEBUG_WORKFLOW: 注入表单字段占位符 [{fieldKey}] (来自节点 {snapshot.NodeId})");
                                 }
                             }
                         }
@@ -73,14 +73,14 @@ public partial class WorkflowEngine
                 }
                 catch (Exception ex)
                 {
-                    System.Console.WriteLine($"DEBUG_WORKFLOW: 解析表单快照失败 - {ex.Message}");
+                    _logger.LogDebug($"DEBUG_WORKFLOW: 解析表单快照失败 - {ex.Message}");
                     _logger.LogError("DEBUG_WORKFLOW: 解析表单快照失败 - {Error}", ex.Message);
                 }
             }
         }
         else
         {
-            System.Console.WriteLine($"DEBUG_WORKFLOW: 没有表单快照");
+            _logger.LogDebug($"DEBUG_WORKFLOW: 没有表单快照");
         }
 
         // 第二步：加载公文信息和表单数据
@@ -89,16 +89,16 @@ public partial class WorkflowEngine
             var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
             if (document != null)
             {
-                System.Console.WriteLine($"DEBUG_WORKFLOW: 公文已找到，标题 = {document.Title}");
-                System.Console.WriteLine($"DEBUG_WORKFLOW: 公文FormData = {(document.FormData == null ? "null" : $"Count={document.FormData.Count}")}");
+                _logger.LogDebug($"DEBUG_WORKFLOW: 公文已找到，标题 = {document.Title}");
+                _logger.LogDebug($"DEBUG_WORKFLOW: 公文FormData = {(document.FormData == null ? "null" : $"Count={document.FormData.Count}")}");
 
                 // 调试：输出 FormData 的详细信息
                 if (document.FormData != null)
                 {
-                    System.Console.WriteLine($"DEBUG_WORKFLOW: FormData 详细内容:");
+                    _logger.LogDebug($"DEBUG_WORKFLOW: FormData 详细内容:");
                     foreach (var kv in document.FormData)
                     {
-                        System.Console.WriteLine($"  [{kv.Key}] = {(kv.Value == null ? "null" : $"{kv.Value} ({kv.Value.GetType().Name})")}");
+                        _logger.LogDebug($"  [{kv.Key}] = {(kv.Value == null ? "null" : $"{kv.Value} ({kv.Value.GetType().Name})")}");
                     }
                 }
 
@@ -114,7 +114,7 @@ public partial class WorkflowEngine
                 // 这些数据用于条件组件的业务规则判断
                 if (document.FormData != null && document.FormData.Count > 0)
                 {
-                    System.Console.WriteLine($"DEBUG_WORKFLOW: 注入公文表单数据到变量，共 {document.FormData.Count} 个字段");
+                    _logger.LogDebug($"DEBUG_WORKFLOW: 注入公文表单数据到变量，共 {document.FormData.Count} 个字段");
                     _logger.LogInformation("DEBUG_WORKFLOW: 注入公文表单数据到变量，共 {Count} 个字段", document.FormData.Count);
 
                     foreach (var kv in document.FormData)
@@ -123,39 +123,38 @@ public partial class WorkflowEngine
                         // 如果值是字典（DataScopeKey 嵌套），需要展平
                         if (kv.Value is System.Collections.Generic.Dictionary<string, object> nestedDict)
                         {
-                            System.Console.WriteLine($"DEBUG_WORKFLOW: 展平嵌套表单数据 [{kv.Key}]，包含 {nestedDict.Count} 个字段");
+                            _logger.LogDebug($"DEBUG_WORKFLOW: 展平嵌套表单数据 [{kv.Key}]，包含 {nestedDict.Count} 个字段");
                             foreach (var nested in nestedDict)
                             {
                                 variables[nested.Key] = nested.Value;
-                                System.Console.WriteLine($"DEBUG_WORKFLOW: 表单字段 [{nested.Key}] = {(nested.Value == null ? "null" : $"{nested.Value} ({nested.Value.GetType().Name})")}");
+                                _logger.LogDebug($"DEBUG_WORKFLOW: 表单字段 [{nested.Key}] = {(nested.Value == null ? "null" : $"{nested.Value} ({nested.Value.GetType().Name})")}");
                                 _logger.LogDebug("DEBUG_WORKFLOW: 表单字段 {Key} = {Value}", nested.Key, nested.Value);
                             }
                         }
                         else
                         {
                             variables[kv.Key] = kv.Value;
-                            System.Console.WriteLine($"DEBUG_WORKFLOW: 表单字段 [{kv.Key}] = {(kv.Value == null ? "null" : $"{kv.Value} ({kv.Value.GetType().Name})")}");
+                            _logger.LogDebug($"DEBUG_WORKFLOW: 表单字段 [{kv.Key}] = {(kv.Value == null ? "null" : $"{kv.Value} ({kv.Value.GetType().Name})")}");
                             _logger.LogDebug("DEBUG_WORKFLOW: 表单字段 {Key} = {Value}", kv.Key, kv.Value);
                         }
                     }
                 }
                 else
                 {
-                    System.Console.WriteLine($"DEBUG_WORKFLOW: 公文没有表单数据或FormData为空");
+                    _logger.LogDebug($"DEBUG_WORKFLOW: 公文没有表单数据或FormData为空");
                 }
             }
             else
             {
-                System.Console.WriteLine($"DEBUG_WORKFLOW: 公文未找到！DocumentId = {instance.DocumentId}");
+                _logger.LogDebug($"DEBUG_WORKFLOW: 公文未找到！DocumentId = {instance.DocumentId}");
             }
         }
         else
         {
-            System.Console.WriteLine($"DEBUG_WORKFLOW: 实例没有关联公文");
+            _logger.LogDebug($"DEBUG_WORKFLOW: 实例没有关联公文");
         }
 
-        System.Console.WriteLine($"DEBUG_WORKFLOW: 最终变量数 = {variables.Count}");
-        System.Console.Out.Flush();
+        _logger.LogDebug($"DEBUG_WORKFLOW: 最终变量数 = {variables.Count}");
         return variables;
     }
 

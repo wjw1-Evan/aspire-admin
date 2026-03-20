@@ -5,10 +5,11 @@ using Aspire.Hosting.Yarp.Transforms;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-// 🔄 副本数配置：dotnet watch 模式下强制单实例（避免 IDE run session 冲突）
-// dotnet run / 生产环境使用配置值（默认 3）
+// 🔄 副本数配置：默认单实例，避免多容器重复
+// 开发/测试环境强制单实例
 var isDotnetWatch = Environment.GetEnvironmentVariable("DOTNET_WATCH") == "1";
-var apiReplicas = isDotnetWatch ? 1 : int.Parse(builder.Configuration["ApiService:Replicas"] ?? "3");
+var isTestEnvironment = builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing");
+var apiReplicas = isDotnetWatch || isTestEnvironment ? 1 : int.Parse(builder.Configuration["ApiService:Replicas"] ?? "1");
 
 // Add a Docker Compose environment 发布：aspire publish
 

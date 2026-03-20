@@ -8,15 +8,18 @@ namespace Platform.AppHost.Tests;
 
 /// <summary>
 /// Test fixture for managing the distributed application lifecycle during integration tests.
-/// Implements IAsyncLifetime to ensure proper setup and teardown of the Aspire application.
+/// Uses singleton pattern to ensure only one instance of the application runs across all tests.
 /// </summary>
 public class AppHostFixture : IAsyncLifetime
 {
     public const string TestJwtKey = "test-secret-key-for-integration-tests-minimum-32-characters-required";
     public const int DefaultTimeoutSeconds = 30;
 
-    private DistributedApplication? _app;
-    private HttpClient? _httpClient;
+    private static readonly SemaphoreSlim _initLock = new(1, 1);
+    private static DistributedApplication? _sharedApp;
+    private static HttpClient? _sharedHttpClient;
+    private static bool _initialized;
+
     private readonly List<string> _createdUserIds = new();
     private readonly List<string> _createdWorkflowIds = new();
     private readonly List<string> _createdDocumentIds = new();
@@ -26,15 +29,13 @@ public class AppHostFixture : IAsyncLifetime
     /// <summary>
     /// Gets the configured HTTP client for making requests to the API service.
     /// </summary>
-    /// <exception cref="InvalidOperationException">Thrown if the fixture has not been initialized.</exception>
-    public HttpClient HttpClient => _httpClient
+    public HttpClient HttpClient => _sharedHttpClient
         ?? throw new InvalidOperationException("Fixture not initialized. Ensure InitializeAsync has been called.");
 
     /// <summary>
     /// Gets the distributed application instance.
     /// </summary>
-    /// <exception cref="InvalidOperationException">Thrown if the fixture has not been initialized.</exception>
-    public DistributedApplication App => _app
+    public DistributedApplication App => _sharedApp
         ?? throw new InvalidOperationException("Fixture not initialized. Ensure InitializeAsync has been called.");
 
     /// <summary>
@@ -93,58 +94,73 @@ public class AppHostFixture : IAsyncLifetime
     }
 
     /// <summary>
-    /// Initializes the distributed application and prepares the test environment.
-    /// This method:
-    /// 1. Creates the DistributedApplication from the AppHost
-    /// 2. Configures test-specific settings (JWT key, disable SMTP)
-    /// 3. Starts the application
-    /// 4. Waits for the API service to be ready
-    /// 5. Creates and configures an HTTP client for testing
+    /// Initializes the distributed application. Uses singleton pattern to ensure
+    /// only one instance is created even when multiple test classes access this fixture.
     /// </summary>
     public async Task InitializeAsync()
     {
-        // Create the distributed application builder from the AppHost project
-        var appHost = await DistributedApplicationTestingBuilder
-            .CreateAsync<Projects.Platform_AppHost>();
+        if (_initialized && _sharedApp != null && _sharedHttpClient != null)
+        {
+            return;
+        }
 
-        // Configure test-specific settings
-        // JWT secret key for token generation/validation in tests
-        appHost.Configuration["Jwt:SecretKey"] = TestJwtKey;
+        await _initLock.WaitAsync();
+        try
+        {
+            if (_initialized && _sharedApp != null && _sharedHttpClient != null)
+            {
+                return;
+            }
 
-        // Disable SMTP to prevent email sending during tests
-        appHost.Configuration["Smtp:Host"] = "";
+            // Create the distributed application builder from the AppHost project
+            var appHost = await DistributedApplicationTestingBuilder
+                .CreateAsync<Projects.Platform_AppHost>();
 
-        // Build and start the distributed application
-        _app = await appHost.BuildAsync();
-        await _app.StartAsync();
+            // Configure test-specific settings
+            appHost.Configuration["Jwt:SecretKey"] = TestJwtKey;
+            appHost.Configuration["Smtp:Host"] = "";
+            appHost.Configuration["ApiService:Replicas"] = "1";
 
-        // Wait for the API service to be ready
-        // The resource name "apiservice" matches the name defined in AppHost.cs
-        var resourceNotificationService = _app.Services.GetRequiredService<ResourceNotificationService>();
-        await resourceNotificationService
-            .WaitForResourceAsync("apiservice", KnownResourceStates.Running)
-            .WaitAsync(TimeSpan.FromSeconds(60));
+            // Build and start the distributed application
+            _sharedApp = await appHost.BuildAsync();
+            await _sharedApp.StartAsync();
 
-        // Create HTTP client configured for the API service
-        _httpClient = _app.CreateHttpClient("apiservice");
+            // Wait for the API service to be ready
+            var resourceNotificationService = _sharedApp.Services.GetRequiredService<ResourceNotificationService>();
+            await resourceNotificationService
+                .WaitForResourceAsync("apiservice", KnownResourceStates.Running)
+                .WaitAsync(TimeSpan.FromSeconds(DefaultTimeoutSeconds));
 
-        // Configure HTTP client settings
-        _httpClient.Timeout = TimeSpan.FromSeconds(30);
-        _httpClient.DefaultRequestHeaders.Accept.Add(
-            new MediaTypeWithQualityHeaderValue("application/json"));
+            // Create HTTP client configured for the API service
+            _sharedHttpClient = _sharedApp.CreateHttpClient("apiservice");
+            _sharedHttpClient.Timeout = TimeSpan.FromSeconds(DefaultTimeoutSeconds);
+            _sharedHttpClient.DefaultRequestHeaders.Accept.Add(
+                new MediaTypeWithQualityHeaderValue("application/json"));
+
+            _initialized = true;
+        }
+        finally
+        {
+            _initLock.Release();
+        }
     }
 
     /// <summary>
     /// Cleans up resources when tests are complete.
-    /// Disposes the HTTP client and stops the distributed application.
+    /// Only disposes the application if this is the last reference.
     /// </summary>
     public async Task DisposeAsync()
     {
-        _httpClient?.Dispose();
-
-        if (_app != null)
+        if (_initialized)
         {
-            await _app.DisposeAsync();
+            _sharedHttpClient?.Dispose();
+            if (_sharedApp != null)
+            {
+                await _sharedApp.DisposeAsync();
+                _sharedApp = null;
+                _sharedHttpClient = null;
+                _initialized = false;
+            }
         }
     }
 }

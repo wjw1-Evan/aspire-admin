@@ -15,7 +15,6 @@ public sealed class AppHostFixture : IAsyncLifetime
     private DistributedApplication? _app;
     private HttpClient? _httpClient;
 
-    public const string TestJwtKey = "test-secret-key-for-integration-tests-minimum-32-characters-required";
     public static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(5);
 
     private readonly List<string> _trackedUserIds = new();
@@ -38,8 +37,7 @@ public sealed class AppHostFixture : IAsyncLifetime
     {
         _builder = await DistributedApplicationTestingBuilder.CreateAsync<Projects.Platform_AppHost>(
             args: [
-                "--environment=Testing",
-                "Jwt:SecretKey=" + TestJwtKey
+                "--environment=Testing"
             ]);
 
         _builder.Services.ConfigureHttpClientDefaults(clientBuilder =>

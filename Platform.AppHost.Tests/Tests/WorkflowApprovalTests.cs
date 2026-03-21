@@ -1727,17 +1727,17 @@ public class WorkflowApprovalTests : BaseIntegrationTest
 
         await WaitForStatusAsync(instance.Data.Id, "running");
 
-        // 使用非审批人（secondUser）尝试审批
-        var (secondClient, _) = await CreateAuthenticatedClientAsync();
-        using var _ = secondClient;
+        // 使用非审批人（thirdUser）尝试审批
+        var (thirdClient, thirdUserId) = await CreateAuthenticatedClientAsync();
+        using var _ = thirdClient;
         var nonApproverRequest = new { Comment = "尝试审批" };
-        var nonApproverResponse = await secondClient.PostAsJsonAsync($"/api/documents/{doc.Data.Id}/approve", nonApproverRequest);
+        var nonApproverResponse = await thirdClient.PostAsJsonAsync($"/api/documents/{doc.Data.Id}/approve", nonApproverRequest);
 
         // 非审批人应该无法审批（返回 BadRequest 或 Forbidden）
         Assert.True(
             nonApproverResponse.StatusCode == HttpStatusCode.BadRequest ||
             nonApproverResponse.StatusCode == HttpStatusCode.Forbidden,
-            $"非审批人审批应该失败，但返回了 {nonApproverResponse.StatusCode}");
+            $"非审批人({thirdUserId})审批应该失败，但返回了 {nonApproverResponse.StatusCode}");
         Output.WriteLine($"✓ 非审批人尝试审批被正确拒绝，返回 {nonApproverResponse.StatusCode}");
     }
 

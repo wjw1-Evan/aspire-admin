@@ -313,7 +313,10 @@ public partial class WorkflowEngine
 
             case ApprovalType.Sequential:
                 // Bug 4 修复：顺序审批 - 所有人按顺序审完才完成
-                var nextApprover = await GetNextSequentialApproverAsync(instance, node, allApprovers);
+                // 注意：record 刚刚被添加，还没有被持久化到数据库，所以需要将当前记录加入已完成列表
+                var completedWithCurrent = new List<string>(completedApprovals) { record.ApproverId };
+                var nextApprover = allApprovers.FirstOrDefault(a => !completedWithCurrent.Contains(a));
+                
                 if (nextApprover == null)
                 {
                     // 所有人都审批完成

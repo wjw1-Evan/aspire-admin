@@ -5,12 +5,11 @@ using Aspire.Hosting.Yarp.Transforms;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-// Add a Docker Compose environment 发布：aspire publish
-
 var compose = builder.AddDockerComposeEnvironment("compose").WithDashboard(dashboard =>
-       {
-           dashboard.WithHostPort(18888);
-       });
+{
+    dashboard.WithHostPort(18888);
+});
+
 
 // 🔒 从 Aspire 配置中读取 JWT 设置
 var jwtSecretKey = builder.Configuration["Jwt:SecretKey"]
@@ -26,12 +25,18 @@ var chat = openai.AddModel("chat", openAiModel);
 
 var redis = builder.AddRedis("redis");
 
-
 var mongoOptionName = builder.Configuration["MongoDB:ServiceName"] ?? throw new InvalidOperationException("缺少 MongoDB 服务名称配置项 'MongoDB:ServiceName'。");
-var mongo = builder.AddMongoDB(mongoOptionName)
-    .WithMongoExpress()
+var mongoUser = builder.Configuration["MongoDB:User"] ?? "admin";
+var mongoPassword = builder.Configuration["MongoDB:Password"] ?? throw new InvalidOperationException("缺少 MongoDB 密码配置项 'MongoDB:Password'。");
+var mongoUserParam = builder.AddParameter("mongo-user", mongoUser);
+var mongoPasswordParam = builder.AddParameter("mongo-password", mongoPassword, secret: true);
+
+var mongoBuilder = builder.AddMongoDB(mongoOptionName, userName: mongoUserParam, password: mongoPasswordParam)
     .WithLifetime(ContainerLifetime.Persistent)
+    .WithMongoExpress()
     .WithDataVolume();
+
+var mongo = mongoBuilder;
 
 var databaseName = builder.Configuration["MongoDB:DatabaseName"] ?? throw new InvalidOperationException("缺少 MongoDB 数据库名称配置项 'MongoDB:DatabaseName'。");
 

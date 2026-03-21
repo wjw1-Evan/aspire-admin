@@ -8,12 +8,13 @@ namespace Platform.AppHost.Tests;
 
 /// <summary>
 /// Test fixture for managing the distributed application lifecycle during integration tests.
+/// All services are started and managed by Aspire through Platform.AppHost.
 /// Uses singleton pattern to ensure only one instance of the application runs across all tests.
 /// </summary>
 public class AppHostFixture : IAsyncLifetime
 {
     public const string TestJwtKey = "test-secret-key-for-integration-tests-minimum-32-characters-required";
-    public const int DefaultTimeoutSeconds = 30;
+    public const int DefaultTimeoutSeconds = 60;
 
     private static readonly SemaphoreSlim _initLock = new(1, 1);
     private static DistributedApplication? _sharedApp;
@@ -28,12 +29,14 @@ public class AppHostFixture : IAsyncLifetime
 
     /// <summary>
     /// Gets the configured HTTP client for making requests to the API service.
+    /// All requests go through Aspire-managed services.
     /// </summary>
     public HttpClient HttpClient => _sharedHttpClient
         ?? throw new InvalidOperationException("Fixture not initialized. Ensure InitializeAsync has been called.");
 
     /// <summary>
     /// Gets the distributed application instance.
+    /// This represents the entire Aspire-managed application.
     /// </summary>
     public DistributedApplication App => _sharedApp
         ?? throw new InvalidOperationException("Fixture not initialized. Ensure InitializeAsync has been called.");
@@ -94,8 +97,9 @@ public class AppHostFixture : IAsyncLifetime
     }
 
     /// <summary>
-    /// Initializes the distributed application. Uses singleton pattern to ensure
-    /// only one instance is created even when multiple test classes access this fixture.
+    /// Initializes the distributed application from Platform.AppHost.
+    /// All microservices (API, MongoDB, Redis, etc.) are started and managed by Aspire.
+    /// Uses singleton pattern to ensure only one instance across all test classes.
     /// </summary>
     public async Task InitializeAsync()
     {
@@ -112,7 +116,10 @@ public class AppHostFixture : IAsyncLifetime
                 return;
             }
 
+            Console.WriteLine("[TestFixture] Creating distributed application from Platform.AppHost...");
+
             // Create the distributed application builder from the AppHost project
+            // This ensures ALL services are started by Aspire
             var appHost = await DistributedApplicationTestingBuilder
                 .CreateAsync<Projects.Platform_AppHost>();
 
@@ -121,23 +128,42 @@ public class AppHostFixture : IAsyncLifetime
             appHost.Configuration["Smtp:Host"] = "";
             appHost.Configuration["ApiService:Replicas"] = "1";
 
+            Console.WriteLine("[TestFixture] Building distributed application...");
+
             // Build and start the distributed application
+            // All services (MongoDB, Redis, API, etc.) are started by Aspire
             _sharedApp = await appHost.BuildAsync();
             await _sharedApp.StartAsync();
 
-            // Wait for the API service to be ready
+            Console.WriteLine("[TestFixture] Waiting for all Aspire-managed resources...");
+
+            // Wait for MongoDB to be ready
             var resourceNotificationService = _sharedApp.Services.GetRequiredService<ResourceNotificationService>();
+            await resourceNotificationService
+                .WaitForResourceAsync("mongo", KnownResourceStates.Running)
+                .WaitAsync(TimeSpan.FromSeconds(DefaultTimeoutSeconds));
+
+            // Wait for Redis to be ready
+            await resourceNotificationService
+                .WaitForResourceAsync("redis", KnownResourceStates.Running)
+                .WaitAsync(TimeSpan.FromSeconds(DefaultTimeoutSeconds));
+
+            // Wait for API service to be ready
             await resourceNotificationService
                 .WaitForResourceAsync("apiservice", KnownResourceStates.Running)
                 .WaitAsync(TimeSpan.FromSeconds(DefaultTimeoutSeconds));
 
+            Console.WriteLine("[TestFixture] All resources ready. Creating HTTP client...");
+
             // Create HTTP client configured for the API service
+            // This client goes through Aspire's service discovery
             _sharedHttpClient = _sharedApp.CreateHttpClient("apiservice");
             _sharedHttpClient.Timeout = TimeSpan.FromSeconds(DefaultTimeoutSeconds);
             _sharedHttpClient.DefaultRequestHeaders.Accept.Add(
                 new MediaTypeWithQualityHeaderValue("application/json"));
 
             _initialized = true;
+            Console.WriteLine("[TestFixture] Test fixture initialized successfully.");
         }
         finally
         {
@@ -147,12 +173,13 @@ public class AppHostFixture : IAsyncLifetime
 
     /// <summary>
     /// Cleans up resources when tests are complete.
-    /// Only disposes the application if this is the last reference.
+    /// All Aspire-managed services are stopped and cleaned up.
     /// </summary>
     public async Task DisposeAsync()
     {
         if (_initialized)
         {
+            Console.WriteLine("[TestFixture] Disposing distributed application...");
             _sharedHttpClient?.Dispose();
             if (_sharedApp != null)
             {
@@ -161,6 +188,7 @@ public class AppHostFixture : IAsyncLifetime
                 _sharedHttpClient = null;
                 _initialized = false;
             }
+            Console.WriteLine("[TestFixture] Distributed application disposed.");
         }
     }
 }

@@ -40,6 +40,7 @@ public sealed class AppHostFixture : IAsyncLifetime
             args: [
                 "--environment=Testing",
                 "ApiService:Replicas=1",
+                "MongoDB:DatabaseName=aspire-admin-test-db",
                 "Jwt:SecretKey=" + TestJwtKey,
                 "Smtp:Host="
             ]);

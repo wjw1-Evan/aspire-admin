@@ -37,7 +37,11 @@ var mongo = builder.AddMongoDB("mongo")
     .WithLifetime(ContainerLifetime.Persistent)
     .WithDataVolume();
 
-var mongodb = mongo.AddDatabase("mongodb", "aspire-admin-db");
+// 测试环境使用独立数据库，避免污染开发数据
+var databaseName = builder.Configuration["MongoDB:DatabaseName"] 
+    ?? (isTestEnvironment ? "aspire-admin-test-db" : "aspire-admin-db");
+
+var mongodb = mongo.AddDatabase("mongodb", databaseName);
 
 // 数据初始化服务（一次性任务，完成后自动停止）
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")

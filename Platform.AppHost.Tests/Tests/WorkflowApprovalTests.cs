@@ -1539,19 +1539,33 @@ public class WorkflowApprovalTests : BaseIntegrationTest
 
         // 第一个用户审批
         var approve1 = await TestClient.PostAsJsonAsync($"/api/documents/{doc.Data.Id}/approve", new { Comment = "第一级通过" });
+        Output.WriteLine($"DEBUG: approve1 status = {approve1.StatusCode}");
+        var approve1Content = await approve1.Content.ReadAsStringAsync();
+        Output.WriteLine($"DEBUG: approve1 content = {approve1Content}");
         Assert.Equal(HttpStatusCode.OK, approve1.StatusCode);
         Output.WriteLine("✓ 第一级审批完成");
 
         // 等待状态更新
         await Task.Delay(500);
 
+        // DEBUG: 检查审批历史
+        var historyResponse = await TestClient.GetAsync($"/api/workflows/instances/{instance.Data.Id}/history");
+        var history = await historyResponse.Content.ReadAsJsonAsync<ApiResponse<object>>();
+        Output.WriteLine($"DEBUG: 审批历史 = {System.Text.Json.JsonSerializer.Serialize(history)}");
+
+        // DEBUG: 检查实例状态
+        Output.WriteLine($"DEBUG: secondUser.UserId = {secondUser.UserId}");
+        Output.WriteLine($"DEBUG: CurrentUserId = {CurrentUserId}");
+
         // 第二个审批人应该是 secondUser
         var check2 = await TestClient.GetAsync($"/api/workflows/instances/{instance.Data.Id}");
-        var status2 = await check2.Content.ReadAsJsonAsync<ApiResponse<WorkflowInstanceResponse>>();
-        Assert.NotNull(status2?.Data);
-        Assert.Contains(secondUser.UserId, status2.Data.CurrentApproverIds ?? new List<string>());
-        Assert.DoesNotContain(CurrentUserId, status2.Data.CurrentApproverIds ?? new List<string>());
-        Output.WriteLine($"✓ 顺序审批：第二个审批人是 secondUser，待审批列表: {string.Join(", ", status2.Data.CurrentApproverIds ?? new List<string>())}");
+        var status2Raw = await check2.Content.ReadAsJsonAsync<ApiResponse<object>>();
+        Output.WriteLine($"DEBUG: check2 raw = {System.Text.Json.JsonSerializer.Serialize(status2Raw)}");
+        var status2Data = await check2.Content.ReadAsJsonAsync<ApiResponse<WorkflowInstanceResponse>>();
+        Assert.NotNull(status2Data?.Data);
+        Assert.Contains(secondUser.UserId, status2Data.Data.CurrentApproverIds ?? new List<string>());
+        Assert.DoesNotContain(CurrentUserId, status2Data.Data.CurrentApproverIds ?? new List<string>());
+        Output.WriteLine($"✓ 顺序审批：第二个审批人是 secondUser，待审批列表: {string.Join(", ", status2Data.Data.CurrentApproverIds ?? new List<string>())}");
 
         // 第二个用户审批
         var (secondClient, _) = await CreateAuthenticatedClientAsync();

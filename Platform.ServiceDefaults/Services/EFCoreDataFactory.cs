@@ -107,9 +107,13 @@ public class EFCoreDataFactory<T>(DbContext context)
         var entity = await _dbSet.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
         if (entity == null) return null;
 
+        Console.WriteLine($"[EFCoreDataFactory.UpdateAsync] Entity {typeof(T).Name} with Id={id} retrieved, calling updateAction");
+        
         await updateAction(entity);
 
+        Console.WriteLine($"[EFCoreDataFactory.UpdateAsync] Entity {typeof(T).Name} with Id={id} saving changes");
         await context.SaveChangesAsync(cancellationToken);
+        Console.WriteLine($"[EFCoreDataFactory.UpdateAsync] Entity {typeof(T).Name} with Id={id} saved successfully");
         return entity;
     }
 

@@ -21,6 +21,9 @@ public partial class WorkflowEngine
     /// <param name="delegateToUserId">转办目标用户ID</param>
     public async Task<bool> ProcessApprovalAsync(string instanceId, string nodeId, ApprovalAction action, string currentUserId, string? comment = null, string? delegateToUserId = null)
     {
+        _logger.LogInformation("=== ProcessApprovalAsync START: instanceId={InstanceId}, nodeId={NodeId}, action={Action}, currentUserId={UserId}",
+            instanceId, nodeId, action, currentUserId);
+        
         var instance = await _instanceFactory.GetByIdAsync(instanceId);
         // 审批节点挂起时状态为 Waiting，需同时接受 Running 和 Waiting
         if (instance == null || (instance.Status != WorkflowStatus.Running && instance.Status != WorkflowStatus.Waiting))
@@ -275,15 +278,27 @@ public partial class WorkflowEngine
     /// </summary>
     private async Task ProcessNodeApproversAsync(string instanceId, string nodeId, ApprovalRecord record)
     {
+        _logger.LogInformation("=== ProcessNodeApproversAsync START: instanceId={InstanceId}, nodeId={NodeId}, record.ApproverId={ApproverId}",
+            instanceId, nodeId, record.ApproverId);
+
         var instance = await _instanceFactory.GetByIdAsync(instanceId);
-        if (instance == null) return;
+        if (instance == null)
+        {
+            _logger.LogWarning("=== ProcessNodeApproversAsync: instance not found!");
+            return;
+        }
 
         var definition = instance.WorkflowDefinitionSnapshot ?? await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
-        if (definition == null) return;
+        if (definition == null)
+        {
+            _logger.LogWarning("=== ProcessNodeApproversAsync: definition not found!");
+            return;
+        }
 
         var node = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
         if (node == null || node.Data.Config?.Approval == null)
         {
+            _logger.LogWarning("=== ProcessNodeApproversAsync: node not found or no approval config!");
             await MoveToNextNodeAsync(instanceId, nodeId);
             return;
         }
@@ -292,11 +307,20 @@ public partial class WorkflowEngine
         var allApprovers = await GetNodeApproversAsync(instanceId, nodeId);
 
         var history = await GetApprovalHistoryAsync(instanceId);
+        Console.WriteLine($"[DEBUG] ProcessNodeApproversAsync: instanceId={instanceId}, nodeId={nodeId}");
+        Console.WriteLine($"[DEBUG] ProcessNodeApproversAsync: history count={history.Count}, allApprovers count={allApprovers.Count}");
+        foreach (var h in history)
+        {
+            Console.WriteLine($"[DEBUG] ProcessNodeApproversAsync: history item: NodeId={h.NodeId}, ApproverId={h.ApproverId}, Action={h.Action}");
+        }
+        
         var completedApprovals = history
             .Where(r => r.NodeId == nodeId && r.Action == ApprovalAction.Approve)
             .Select(r => r.ApproverId)
             .Distinct()
             .ToList();
+        
+        Console.WriteLine($"[DEBUG] ProcessNodeApproversAsync: completedApprovals={string.Join(",", completedApprovals)}, allApprovers={string.Join(",", allApprovers)}");
 
         bool isNodeComplete = false;
         switch (config.Type)
@@ -312,19 +336,25 @@ public partial class WorkflowEngine
                 break;
 
             case ApprovalType.Sequential:
+                _logger.LogInformation("=== Sequential: completedApprovals={Completed}, record.ApproverId={ApproverId}, allApprovers={All}",
+                    string.Join(",", completedApprovals), record.ApproverId, string.Join(",", allApprovers));
                 // Bug 4 修复：顺序审批 - 所有人按顺序审完才完成
                 // 注意：record 刚刚被添加，还没有被持久化到数据库，所以需要将当前记录加入已完成列表
                 var completedWithCurrent = new List<string>(completedApprovals) { record.ApproverId };
                 var nextApprover = allApprovers.FirstOrDefault(a => !completedWithCurrent.Contains(a));
+                _logger.LogInformation("=== Sequential: completedWithCurrent={CompletedWithCurrent}, nextApprover={NextApprover}",
+                    string.Join(",", completedWithCurrent), nextApprover ?? "null");
                 
                 if (nextApprover == null)
                 {
                     // 所有人都审批完成
+                    _logger.LogInformation("=== Sequential: 所有人都审批完成，标记节点完成");
                     isNodeComplete = true;
                 }
                 else
                 {
                     // 还有下一人，更新 CurrentApproverIds 为下一个审批人
+                    _logger.LogInformation("=== Sequential: 更新 CurrentApproverIds 为 {NextApprover}", nextApprover);
                     await UpdateCurrentApproverIdsAsync(instanceId, nodeId, new List<string> { nextApprover });
 
                     // 发送通知给下一个审批人

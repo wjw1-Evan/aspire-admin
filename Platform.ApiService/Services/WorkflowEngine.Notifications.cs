@@ -14,6 +14,8 @@ public partial class WorkflowEngine
     /// </summary>
     private async Task SendApprovalNotificationsAsync(string instanceId, WorkflowNode node)
     {
+        _logger.LogInformation("=== SendApprovalNotificationsAsync START: instanceId={InstanceId}, nodeId={NodeId}", instanceId, node.Id);
+        
         var instance = await _instanceFactory.GetByIdAsync(instanceId);
         if (instance == null || string.IsNullOrEmpty(instance.DocumentId)) return;
 

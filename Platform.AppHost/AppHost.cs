@@ -5,12 +5,6 @@ using Aspire.Hosting.Yarp.Transforms;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-// 🔄 副本数配置：默认单实例，避免多容器重复
-// 开发/测试环境强制单实例
-var isDotnetWatch = Environment.GetEnvironmentVariable("DOTNET_WATCH") == "1";
-var isTestEnvironment = builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing");
-var apiReplicas = isDotnetWatch || isTestEnvironment ? 1 : int.Parse(builder.Configuration["ApiService:Replicas"] ?? "1");
-
 // Add a Docker Compose environment 发布：aspire publish
 
 var compose = builder.AddDockerComposeEnvironment("compose").WithDashboard(dashboard =>
@@ -27,19 +21,19 @@ var openAiEndpoint = builder.Configuration["Parameters:openai-openai-endpoint"]
 
 var openai = builder.AddOpenAI("openai").WithEndpoint(openAiEndpoint);
 
-var chat = openai.AddModel("chat", "gpt-4o-mini");
+var openAiModel = builder.Configuration["OpenAI:Model"];
+var chat = openai.AddModel("chat", openAiModel);
 
 var redis = builder.AddRedis("redis");
-                 
 
-var mongo = builder.AddMongoDB("mongo")
+
+var mongoOptionName = builder.Configuration["MongoDB:ServiceName"] ;
+var mongo = builder.AddMongoDB(mongoOptionName)
     .WithMongoExpress()
     .WithLifetime(ContainerLifetime.Persistent)
     .WithDataVolume();
 
-// 测试环境使用独立数据库，避免污染开发数据
-var databaseName = builder.Configuration["MongoDB:DatabaseName"] 
-    ?? (isTestEnvironment ? "aspire-admin-test-db" : "aspire-admin-db");
+var databaseName = builder.Configuration["MongoDB:DatabaseName"];
 
 var mongodb = mongo.AddDatabase("mongodb", databaseName);
 
@@ -61,7 +55,6 @@ var apiService = builder.AddProject<Projects.Platform_ApiService>("apiservice")
     .WithHttpEndpoint()
     .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health")
-    .WithReplicas(apiReplicas)
     .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
     .WithReference(chat)
     // 🔧 添加日志配置，确保在 AppHost 控制台中能看到清晰的日志

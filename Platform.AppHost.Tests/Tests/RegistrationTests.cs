@@ -12,6 +12,7 @@ namespace Platform.AppHost.Tests.Tests;
 /// </summary>
 /// <remarks>
 /// Requirements: 4.1, 4.2, 4.3, 4.4, 4.5
+/// See: https://aspire.dev/zh-cn/testing/overview/
 /// </remarks>
 [Collection("AppHost Collection")]
 public class RegistrationTests : IClassFixture<AppHostFixture>
@@ -24,6 +25,12 @@ public class RegistrationTests : IClassFixture<AppHostFixture>
         _fixture = fixture;
         _output = output;
     }
+
+    /// <summary>
+    /// Gets the HttpClient from the fixture.
+    /// See: https://aspire.dev/zh-cn/testing/accessing-resources/
+    /// </summary>
+    private System.Net.Http.HttpClient TestClient => _fixture.HttpClient;
 
     /// <summary>
     /// Property 1: Valid registration succeeds and returns complete response.
@@ -52,7 +59,7 @@ public class RegistrationTests : IClassFixture<AppHostFixture>
             _output.WriteLine($"Request: Username={request.Username}, Email={request.Email}");
 
             // Send registration request
-            var response = await _fixture.HttpClient.PostAsJsonAsync(
+            var response = await TestClient.PostAsJsonAsync(
                 "/api/auth/register", request);
 
             // Log response details
@@ -107,7 +114,7 @@ public class RegistrationTests : IClassFixture<AppHostFixture>
             _output.WriteLine($"Request: Username={request.Username}, Email={request.Email}");
 
             // First registration - should succeed
-            var firstResponse = await _fixture.HttpClient.PostAsJsonAsync(
+            var firstResponse = await TestClient.PostAsJsonAsync(
                 "/api/auth/register", request);
 
             var firstResponseBody = await firstResponse.Content.ReadAsStringAsync();
@@ -125,7 +132,7 @@ public class RegistrationTests : IClassFixture<AppHostFixture>
 
             _output.WriteLine($"Attempting duplicate registration with same username: {duplicateRequest.Username}");
 
-            var secondResponse = await _fixture.HttpClient.PostAsJsonAsync(
+            var secondResponse = await TestClient.PostAsJsonAsync(
                 "/api/auth/register", duplicateRequest);
 
             var secondResponseBody = await secondResponse.Content.ReadAsStringAsync();
@@ -186,7 +193,7 @@ public class RegistrationTests : IClassFixture<AppHostFixture>
             _output.WriteLine($"Request: Username='{request.Username}', Password='{request.Password}', Email='{request.Email}'");
 
             // Send registration request with invalid data
-            var response = await _fixture.HttpClient.PostAsJsonAsync(
+            var response = await TestClient.PostAsJsonAsync(
                 "/api/auth/register", request);
 
             // Log response details

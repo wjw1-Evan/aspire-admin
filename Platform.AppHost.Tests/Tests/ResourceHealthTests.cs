@@ -1,5 +1,4 @@
 using Aspire.Hosting.ApplicationModel;
-using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
 namespace Platform.AppHost.Tests.Tests;
@@ -17,6 +16,7 @@ public class ResourceHealthTests : IClassFixture<AppHostFixture>
 {
     private readonly AppHostFixture _fixture;
     private readonly ITestOutputHelper _output;
+    private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(30);
 
     public ResourceHealthTests(AppHostFixture fixture, ITestOutputHelper output)
     {
@@ -36,20 +36,14 @@ public class ResourceHealthTests : IClassFixture<AppHostFixture>
     /// - 7.4: Dedicated test to verify all resources are healthy
     /// - 7.5: Log all resource states at test execution start
     /// </remarks>
+    /// <see cref="https://aspire.dev/zh-cn/testing/accessing-resources/"/>
     [Fact]
     public async Task AllCriticalResources_ShouldBeHealthy()
     {
-        // Get the resource notification service to check resource states
-        var resourceNotificationService = _fixture.App.Services
-            .GetRequiredService<ResourceNotificationService>();
-
         _output.WriteLine("=== Resource Health Status ===");
         _output.WriteLine("");
 
-        // Verify critical resources are healthy
-        // The critical resources for authentication tests are:
-        // - apiservice: The API service that exposes authentication endpoints
-        // - mongodb: The MongoDB database that stores user data
+        var app = _fixture.App;
         var criticalResources = new[] { "apiservice", "mongodb" };
 
         foreach (var resourceName in criticalResources)
@@ -58,23 +52,17 @@ public class ResourceHealthTests : IClassFixture<AppHostFixture>
 
             try
             {
-                // Wait for the resource to be in "Running" state
-                // This ensures the resource is available before tests execute
-                await resourceNotificationService
-                    .WaitForResourceAsync(resourceName, KnownResourceStates.Running)
-                    .WaitAsync(TimeSpan.FromSeconds(10));
-
-                _output.WriteLine($"✓ {resourceName} is Running");
+                using var cts = new CancellationTokenSource(DefaultTimeout);
+                await app.ResourceNotifications.WaitForResourceHealthyAsync(resourceName, cts.Token);
+                _output.WriteLine($"✓ {resourceName} is Healthy");
             }
-            catch (TimeoutException)
+            catch (OperationCanceledException)
             {
-                // If the resource doesn't reach Running state within timeout, fail the test
-                Assert.Fail($"Critical resource '{resourceName}' is not in a healthy state (not Running). " +
-                           $"This indicates an infrastructure issue. Check the Aspire dashboard and resource logs for details.");
+                Assert.Fail($"Critical resource '{resourceName}' did not become healthy within {DefaultTimeout.TotalSeconds} seconds. " +
+                           "This indicates an infrastructure issue. Check the Aspire dashboard and resource logs for details.");
             }
             catch (Exception ex)
             {
-                // Catch any other exceptions and provide diagnostic information
                 Assert.Fail($"Failed to check health of critical resource '{resourceName}': {ex.Message}");
             }
 

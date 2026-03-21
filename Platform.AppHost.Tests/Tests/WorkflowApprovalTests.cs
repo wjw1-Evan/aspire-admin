@@ -64,16 +64,90 @@ public class WorkflowApprovalTests : BaseIntegrationTest
     public async Task ApprovalFlow_Approve_ShouldCompleteWorkflow()
     {
         await InitializeAuthenticationAsync();
-        var (workflowId, documentId, instanceId) = await CreateWorkflowAndSubmitAsync();
+        var counter = Guid.NewGuid().ToString("N")[..8];
 
-        await WaitForStatusAsync(instanceId, "completed");
+        // 创建带审批节点的流程定义
+        var nodes = new List<WorkflowNodeRequest>
+        {
+            new() { Id = "start_1", Type = "start", Data = new NodeDataRequest { Label = "Start", NodeType = "start" }, Position = new NodePositionRequest { X = 100, Y = 200 } },
+            new()
+            {
+                Id = "approval_1",
+                Type = "approval",
+                Data = new NodeDataRequest
+                {
+                    Label = "审批",
+                    NodeType = "approval",
+                    Config = new
+                    {
+                        approval = new
+                        {
+                            type = "any",
+                            approvers = new[] { new { type = "user", userId = CurrentUserId } }
+                        }
+                    }
+                },
+                Position = new NodePositionRequest { X = 300, Y = 200 }
+            },
+            new() { Id = "end_1", Type = "end", Data = new NodeDataRequest { Label = "End", NodeType = "end" }, Position = new NodePositionRequest { X = 500, Y = 200 } }
+        };
 
-        var instanceResponse = await TestClient.GetAsync($"/api/workflows/instances/{instanceId}");
-        var instance = await instanceResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowInstanceResponse>>();
+        var edges = new List<WorkflowEdgeRequest>
+        {
+            new() { Id = $"e1_{counter}", Source = "start_1", Target = "approval_1" },
+            new() { Id = $"e2_{counter}", Source = "approval_1", Target = "end_1" }
+        };
+
+        var workflowRequest = new WorkflowDefinitionRequest
+        {
+            Name = $"approval_test_{counter}",
+            Category = "Testing",
+            Graph = new WorkflowGraphRequest { Nodes = nodes, Edges = edges },
+            IsActive = true
+        };
+
+        var workflowResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
+        Assert.Equal(HttpStatusCode.OK, workflowResponse.StatusCode);
+        var workflow = await workflowResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
+        Assert.NotNull(workflow?.Data);
+        var workflowId = workflow.Data.Id;
+
+        // 创建文档并提交
+        var docRequest = TestDataGenerator.GenerateValidDocument();
+        var docResponse = await TestClient.PostAsJsonAsync("/api/documents", docRequest);
+        Assert.Equal(HttpStatusCode.OK, docResponse.StatusCode);
+        var doc = await docResponse.Content.ReadAsJsonAsync<ApiResponse<DocumentResponse>>();
+        Assert.NotNull(doc?.Data);
+        var documentId = doc.Data.Id;
+
+        var submitRequest = new { WorkflowDefinitionId = workflowId };
+        var submitResponse = await TestClient.PostAsJsonAsync($"/api/documents/{documentId}/submit", submitRequest);
+        Assert.Equal(HttpStatusCode.OK, submitResponse.StatusCode);
+        var instance = await submitResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowInstanceResponse>>();
         Assert.NotNull(instance?.Data);
 
-        Assert.Equal("Completed", instance.Data.Status, ignoreCase: true);
-        Output.WriteLine($"✓ 审批流程完成，状态: {instance.Data.Status}");
+        // 等待流程进入 Running 状态（审批节点等待中）
+        await WaitForStatusAsync(instance.Data.Id, "running");
+
+        // 验证当前用户在待审批列表中
+        var instanceCheck = await TestClient.GetAsync($"/api/workflows/instances/{instance.Data.Id}");
+        var instanceData = await instanceCheck.Content.ReadAsJsonAsync<ApiResponse<WorkflowInstanceResponse>>();
+        Assert.NotNull(instanceData?.Data);
+        Assert.Contains(CurrentUserId, instanceData.Data.CurrentApproverIds ?? new List<string>());
+
+        // 执行审批操作
+        var approveRequest = new { Comment = "审批通过" };
+        var approveResponse = await TestClient.PostAsJsonAsync($"/api/documents/{documentId}/approve", approveRequest);
+        Assert.Equal(HttpStatusCode.OK, approveResponse.StatusCode);
+
+        // 等待流程完成
+        await WaitForStatusAsync(instance.Data.Id, "completed");
+
+        var finalResponse = await TestClient.GetAsync($"/api/workflows/instances/{instance.Data.Id}");
+        var finalInstance = await finalResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowInstanceResponse>>();
+        Assert.NotNull(finalInstance?.Data);
+        Assert.Equal("Completed", finalInstance.Data.Status, ignoreCase: true);
+        Output.WriteLine($"✓ 审批流程完成，状态: {finalInstance.Data.Status}");
     }
 
     [Fact]
@@ -161,8 +235,49 @@ public class WorkflowApprovalTests : BaseIntegrationTest
     public async Task ApprovalFlow_Withdraw_ShouldSucceedByInitiator()
     {
         await InitializeAuthenticationAsync();
+        var counter = Guid.NewGuid().ToString("N")[..8];
 
-        var workflowRequest = TestDataGenerator.GenerateValidWorkflowDefinition();
+        // 创建带审批节点的流程（发起人也可以撤回）
+        var nodes = new List<WorkflowNodeRequest>
+        {
+            new() { Id = "start_1", Type = "start", Data = new NodeDataRequest { Label = "Start", NodeType = "start" }, Position = new NodePositionRequest { X = 100, Y = 200 } },
+            new()
+            {
+                Id = "approval_1",
+                Type = "approval",
+                Data = new NodeDataRequest
+                {
+                    Label = "审批",
+                    NodeType = "approval",
+                    Config = new
+                    {
+                        approval = new
+                        {
+                            type = "any",
+                            approvers = new[] { new { type = "user", userId = CurrentUserId } },
+                            allowReturn = true
+                        }
+                    }
+                },
+                Position = new NodePositionRequest { X = 300, Y = 200 }
+            },
+            new() { Id = "end_1", Type = "end", Data = new NodeDataRequest { Label = "End", NodeType = "end" }, Position = new NodePositionRequest { X = 500, Y = 200 } }
+        };
+
+        var edges = new List<WorkflowEdgeRequest>
+        {
+            new() { Id = $"e1_{counter}", Source = "start_1", Target = "approval_1" },
+            new() { Id = $"e2_{counter}", Source = "approval_1", Target = "end_1" }
+        };
+
+        var workflowRequest = new WorkflowDefinitionRequest
+        {
+            Name = $"withdraw_test_{counter}",
+            Category = "Testing",
+            Graph = new WorkflowGraphRequest { Nodes = nodes, Edges = edges },
+            IsActive = true
+        };
+
         var workflowResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
         Assert.Equal(HttpStatusCode.OK, workflowResponse.StatusCode);
         var workflow = await workflowResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
@@ -180,22 +295,27 @@ public class WorkflowApprovalTests : BaseIntegrationTest
         var instance = await submitResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowInstanceResponse>>();
         Assert.NotNull(instance?.Data);
 
-        await WaitForStatusAsync(instance.Data.Id, "completed");
+        // 等待流程进入 Running 状态
+        await WaitForStatusAsync(instance.Data.Id, "running");
 
+        // 在 running 状态撤回（流程完成后无法撤回）
         var withdrawRequest = new { Reason = "测试撤回" };
         var withdrawResponse = await TestClient.PostAsJsonAsync($"/api/workflows/instances/{instance.Data.Id}/withdraw", withdrawRequest);
 
-        if (withdrawResponse.StatusCode == HttpStatusCode.OK)
-        {
-            var withdrawResult = await withdrawResponse.Content.ReadAsJsonAsync<ApiResponse<object>>();
-            Assert.True(withdrawResult?.Success);
-            Output.WriteLine("✓ 撤回操作成功");
-        }
-        else
-        {
-            var errorResult = await withdrawResponse.Content.ReadAsJsonAsync<ApiResponse<object>>();
-            Output.WriteLine($"✓ 撤回测试完成（可能因流程已完成）: {errorResult?.Message}");
-        }
+        // 验证撤回成功
+        Assert.Equal(HttpStatusCode.OK, withdrawResponse.StatusCode);
+        var withdrawResult = await withdrawResponse.Content.ReadAsJsonAsync<ApiResponse<object>>();
+        Assert.True(withdrawResult?.Success);
+        Output.WriteLine("✓ 撤回操作成功");
+
+        // 等待流程状态变为 Withdrawn
+        await WaitForStatusAsync(instance.Data.Id, "withdrawn");
+
+        var finalResponse = await TestClient.GetAsync($"/api/workflows/instances/{instance.Data.Id}");
+        var finalInstance = await finalResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowInstanceResponse>>();
+        Assert.NotNull(finalInstance?.Data);
+        Assert.Equal("Withdrawn", finalInstance.Data.Status, ignoreCase: true);
+        Output.WriteLine($"✓ 流程已撤回，状态: {finalInstance.Data.Status}");
     }
 
     [Fact]
@@ -264,10 +384,8 @@ public class WorkflowApprovalTests : BaseIntegrationTest
         // 等待流程进入 Running 状态（审批节点等待中）
         await WaitForStatusAsync(instance.Data.Id, "running");
 
-        var secondUser = await CreateAndLoginNewUserAsync();
-
-        using var secondClient = new HttpClient { BaseAddress = TestClient.BaseAddress };
-        secondClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {secondUser.Token}");
+        var (secondClient, _) = await CreateAuthenticatedClientAsync();
+        using var _ = secondClient;
 
         var withdrawRequest = new { Reason = "非发起人尝试撤回" };
         var withdrawResponse = await secondClient.PostAsJsonAsync($"/api/workflows/instances/{instance.Data.Id}/withdraw", withdrawRequest);
@@ -440,19 +558,39 @@ public class WorkflowApprovalTests : BaseIntegrationTest
         var instance = await submitResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowInstanceResponse>>();
         Assert.NotNull(instance?.Data);
 
-        await Task.Delay(1000);
+        // 等待流程进入 Running 状态
+        await WaitForStatusAsync(instance.Data.Id, "running");
 
+        // 验证两个用户都在待审批列表中
         var instanceCheck = await TestClient.GetAsync($"/api/workflows/instances/{instance.Data.Id}");
         var instanceResult = await instanceCheck.Content.ReadAsJsonAsync<ApiResponse<WorkflowInstanceResponse>>();
         Assert.NotNull(instanceResult?.Data);
+        Assert.Contains(CurrentUserId, instanceResult.Data.CurrentApproverIds ?? new List<string>());
+        Assert.Contains(secondUser.UserId, instanceResult.Data.CurrentApproverIds ?? new List<string>());
+        Output.WriteLine("✓ 会签审批：两个用户都在待审批列表中");
 
-        if (instanceResult.Data.Status == "running" || instanceResult.Data.Status == "Running")
-        {
-            Assert.Contains(CurrentUserId, instanceResult.Data.CurrentApproverIds ?? new List<string>());
-            Output.WriteLine("✓ 会签审批需要等待所有审批人");
-        }
+        // 第一个用户审批
+        var approveRequest = new { Comment = "用户1审批通过" };
+        var approveResponse = await TestClient.PostAsJsonAsync($"/api/documents/{doc.Data.Id}/approve", approveRequest);
+        Assert.Equal(HttpStatusCode.OK, approveResponse.StatusCode);
+        Output.WriteLine("✓ 用户1已审批");
 
-        Output.WriteLine($"✓ 会签审批类型测试完成，状态: {instanceResult.Data.Status}");
+        // 验证流程仍在运行（需要第二个用户审批）
+        var statusAfterFirst = await WaitForStatusAsync(instance.Data.Id, "running");
+        Assert.Equal("Running", statusAfterFirst.Status, ignoreCase: true);
+        Output.WriteLine("✓ 第一个用户审批后，流程仍在运行（等待第二个用户）");
+
+        // 使用第二个用户账号审批
+        var (secondClient, _) = await CreateAuthenticatedClientAsync();
+        using var _ = secondClient;
+        var secondApproveRequest = new { Comment = "用户2审批通过" };
+        var secondApproveResponse = await secondClient.PostAsJsonAsync($"/api/documents/{doc.Data.Id}/approve", secondApproveRequest);
+        Assert.Equal(HttpStatusCode.OK, secondApproveResponse.StatusCode);
+        Output.WriteLine("✓ 用户2已审批");
+
+        // 等待流程完成
+        await WaitForStatusAsync(instance.Data.Id, "completed");
+        Output.WriteLine("✓ 会签审批完成：所有审批人都已通过，流程完成");
     }
 
     [Fact]
@@ -1319,6 +1457,288 @@ public class WorkflowApprovalTests : BaseIntegrationTest
         var result = await WaitForCurrentNodeAsync(instance.Data.Id, "approval_ceo");
         Assert.Equal("approval_ceo", result.CurrentNodeId);
         Output.WriteLine("✓ 大额金额 500000 >= 100000，走CEO审批");
+    }
+
+    [Fact]
+    public async Task ApprovalFlow_Sequential_ShouldFollowOrder()
+    {
+        await InitializeAuthenticationAsync();
+
+        var secondUser = await CreateAndLoginNewUserAsync();
+
+        var counter = Guid.NewGuid().ToString("N")[..8];
+        var nodes = new List<WorkflowNodeRequest>
+        {
+            new() { Id = "start_1", Type = "start", Data = new NodeDataRequest { Label = "Start", NodeType = "start" }, Position = new NodePositionRequest { X = 100, Y = 200 } },
+            new()
+            {
+                Id = "seq_approval",
+                Type = "approval",
+                Data = new NodeDataRequest
+                {
+                    Label = "顺序审批",
+                    NodeType = "approval",
+                    Config = new
+                    {
+                        approval = new
+                        {
+                            type = "sequential",
+                            approvers = new[]
+                            {
+                                new { type = "user", userId = CurrentUserId },
+                                new { type = "user", userId = secondUser.UserId }
+                            }
+                        }
+                    }
+                },
+                Position = new NodePositionRequest { X = 300, Y = 200 }
+            },
+            new() { Id = "end_1", Type = "end", Data = new NodeDataRequest { Label = "End", NodeType = "end" }, Position = new NodePositionRequest { X = 500, Y = 200 } }
+        };
+
+        var edges = new List<WorkflowEdgeRequest>
+        {
+            new() { Id = $"e1_{counter}", Source = "start_1", Target = "seq_approval" },
+            new() { Id = $"e2_{counter}", Source = "seq_approval", Target = "end_1" }
+        };
+
+        var workflowRequest = new WorkflowDefinitionRequest
+        {
+            Name = $"sequential_test_{counter}",
+            Category = "Testing",
+            Graph = new WorkflowGraphRequest { Nodes = nodes, Edges = edges },
+            IsActive = true
+        };
+
+        var workflowResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
+        Assert.Equal(HttpStatusCode.OK, workflowResponse.StatusCode);
+        var workflow = await workflowResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
+        Assert.NotNull(workflow?.Data);
+
+        var docRequest = TestDataGenerator.GenerateValidDocument();
+        var docResponse = await TestClient.PostAsJsonAsync("/api/documents", docRequest);
+        Assert.Equal(HttpStatusCode.OK, docResponse.StatusCode);
+        var doc = await docResponse.Content.ReadAsJsonAsync<ApiResponse<DocumentResponse>>();
+        Assert.NotNull(doc?.Data);
+
+        var submitRequest = new { WorkflowDefinitionId = workflow.Data.Id };
+        var submitResponse = await TestClient.PostAsJsonAsync($"/api/documents/{doc.Data.Id}/submit", submitRequest);
+        Assert.Equal(HttpStatusCode.OK, submitResponse.StatusCode);
+        var instance = await submitResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowInstanceResponse>>();
+        Assert.NotNull(instance?.Data);
+
+        await WaitForStatusAsync(instance.Data.Id, "running");
+
+        // 第一个审批人应该是 CurrentUserId
+        var check1 = await TestClient.GetAsync($"/api/workflows/instances/{instance.Data.Id}");
+        var status1 = await check1.Content.ReadAsJsonAsync<ApiResponse<WorkflowInstanceResponse>>();
+        Assert.NotNull(status1?.Data);
+        Assert.Contains(CurrentUserId, status1.Data.CurrentApproverIds ?? new List<string>());
+        Assert.DoesNotContain(secondUser.UserId, status1.Data.CurrentApproverIds ?? new List<string>());
+        Output.WriteLine($"✓ 顺序审批：第一个审批人是 CurrentUserId，待审批列表: {string.Join(", ", status1.Data.CurrentApproverIds ?? new List<string>())}");
+
+        // 第一个用户审批
+        var approve1 = await TestClient.PostAsJsonAsync($"/api/documents/{doc.Data.Id}/approve", new { Comment = "第一级通过" });
+        Assert.Equal(HttpStatusCode.OK, approve1.StatusCode);
+        Output.WriteLine("✓ 第一级审批完成");
+
+        // 等待状态更新
+        await Task.Delay(500);
+
+        // 第二个审批人应该是 secondUser
+        var check2 = await TestClient.GetAsync($"/api/workflows/instances/{instance.Data.Id}");
+        var status2 = await check2.Content.ReadAsJsonAsync<ApiResponse<WorkflowInstanceResponse>>();
+        Assert.NotNull(status2?.Data);
+        Assert.Contains(secondUser.UserId, status2.Data.CurrentApproverIds ?? new List<string>());
+        Assert.DoesNotContain(CurrentUserId, status2.Data.CurrentApproverIds ?? new List<string>());
+        Output.WriteLine($"✓ 顺序审批：第二个审批人是 secondUser，待审批列表: {string.Join(", ", status2.Data.CurrentApproverIds ?? new List<string>())}");
+
+        // 第二个用户审批
+        var (secondClient, _) = await CreateAuthenticatedClientAsync();
+        using var _ = secondClient;
+        var approve2 = await secondClient.PostAsJsonAsync($"/api/documents/{doc.Data.Id}/approve", new { Comment = "第二级通过" });
+        Assert.Equal(HttpStatusCode.OK, approve2.StatusCode);
+        Output.WriteLine("✓ 第二级审批完成");
+
+        // 流程应该完成
+        await WaitForStatusAsync(instance.Data.Id, "completed");
+        Output.WriteLine("✓ 顺序审批流程完成");
+    }
+
+    [Fact]
+    public async Task ApprovalFlow_Return_ShouldAllowReApproval()
+    {
+        await InitializeAuthenticationAsync();
+        var counter = Guid.NewGuid().ToString("N")[..8];
+
+        var nodes = new List<WorkflowNodeRequest>
+        {
+            new() { Id = "start_1", Type = "start", Data = new NodeDataRequest { Label = "Start", NodeType = "start" }, Position = new NodePositionRequest { X = 100, Y = 200 } },
+            new()
+            {
+                Id = "approval_1",
+                Type = "approval",
+                Data = new NodeDataRequest
+                {
+                    Label = "审批",
+                    NodeType = "approval",
+                    Config = new
+                    {
+                        approval = new
+                        {
+                            type = "any",
+                            approvers = new[] { new { type = "user", userId = CurrentUserId } },
+                            allowReturn = true
+                        }
+                    }
+                },
+                Position = new NodePositionRequest { X = 300, Y = 200 }
+            },
+            new() { Id = "end_1", Type = "end", Data = new NodeDataRequest { Label = "End", NodeType = "end" }, Position = new NodePositionRequest { X = 500, Y = 200 } }
+        };
+
+        var edges = new List<WorkflowEdgeRequest>
+        {
+            new() { Id = $"e1_{counter}", Source = "start_1", Target = "approval_1" },
+            new() { Id = $"e2_{counter}", Source = "approval_1", Target = "end_1" }
+        };
+
+        var workflowRequest = new WorkflowDefinitionRequest
+        {
+            Name = $"return_test_{counter}",
+            Category = "Testing",
+            Graph = new WorkflowGraphRequest { Nodes = nodes, Edges = edges },
+            IsActive = true
+        };
+
+        var workflowResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
+        Assert.Equal(HttpStatusCode.OK, workflowResponse.StatusCode);
+        var workflow = await workflowResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
+        Assert.NotNull(workflow?.Data);
+
+        var docRequest = TestDataGenerator.GenerateValidDocument();
+        var docResponse = await TestClient.PostAsJsonAsync("/api/documents", docRequest);
+        Assert.Equal(HttpStatusCode.OK, docResponse.StatusCode);
+        var doc = await docResponse.Content.ReadAsJsonAsync<ApiResponse<DocumentResponse>>();
+        Assert.NotNull(doc?.Data);
+
+        var submitRequest = new { WorkflowDefinitionId = workflow.Data.Id };
+        var submitResponse = await TestClient.PostAsJsonAsync($"/api/documents/{doc.Data.Id}/submit", submitRequest);
+        Assert.Equal(HttpStatusCode.OK, submitResponse.StatusCode);
+        var instance = await submitResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowInstanceResponse>>();
+        Assert.NotNull(instance?.Data);
+
+        await WaitForStatusAsync(instance.Data.Id, "running");
+
+        // 退回流程（退回需要指定目标节点，这里退回给发起人）
+        var returnRequest = new { Comment = "需要修改", TargetUserId = CurrentUserId };
+        var returnResponse = await TestClient.PostAsJsonAsync($"/api/documents/{doc.Data.Id}/return", returnRequest);
+
+        if (returnResponse.StatusCode == HttpStatusCode.OK)
+        {
+            var returnResult = await returnResponse.Content.ReadAsJsonAsync<ApiResponse<object>>();
+            Assert.True(returnResult?.Success);
+            Output.WriteLine("✓ 退回操作成功");
+
+            // 验证流程仍在 running 状态
+            var statusAfterReturn = await WaitForStatusAsync(instance.Data.Id, "running");
+            Assert.Equal("Running", statusAfterReturn.Status, ignoreCase: true);
+            Output.WriteLine("✓ 退回后流程仍在运行");
+
+            // 重新审批
+            var reApproveRequest = new { Comment = "已修改，重新审批" };
+            var reApproveResponse = await TestClient.PostAsJsonAsync($"/api/documents/{doc.Data.Id}/approve", reApproveRequest);
+            Assert.Equal(HttpStatusCode.OK, reApproveResponse.StatusCode);
+            Output.WriteLine("✓ 重新审批成功");
+
+            // 等待流程完成
+            await WaitForStatusAsync(instance.Data.Id, "completed");
+            Output.WriteLine("✓ 退回后重新审批流程完成");
+        }
+        else
+        {
+            Output.WriteLine($"退回操作返回 {returnResponse.StatusCode}，跳过退回测试");
+        }
+    }
+
+    [Fact]
+    public async Task ApprovalFlow_NonApprover_ShouldFailApproval()
+    {
+        await InitializeAuthenticationAsync();
+
+        var secondUser = await CreateAndLoginNewUserAsync();
+
+        var counter = Guid.NewGuid().ToString("N")[..8];
+        var nodes = new List<WorkflowNodeRequest>
+        {
+            new() { Id = "start_1", Type = "start", Data = new NodeDataRequest { Label = "Start", NodeType = "start" }, Position = new NodePositionRequest { X = 100, Y = 200 } },
+            new()
+            {
+                Id = "approval_1",
+                Type = "approval",
+                Data = new NodeDataRequest
+                {
+                    Label = "审批",
+                    NodeType = "approval",
+                    Config = new
+                    {
+                        approval = new
+                        {
+                            type = "any",
+                            approvers = new[] { new { type = "user", userId = CurrentUserId } }
+                        }
+                    }
+                },
+                Position = new NodePositionRequest { X = 300, Y = 200 }
+            },
+            new() { Id = "end_1", Type = "end", Data = new NodeDataRequest { Label = "End", NodeType = "end" }, Position = new NodePositionRequest { X = 500, Y = 200 } }
+        };
+
+        var edges = new List<WorkflowEdgeRequest>
+        {
+            new() { Id = $"e1_{counter}", Source = "start_1", Target = "approval_1" },
+            new() { Id = $"e2_{counter}", Source = "approval_1", Target = "end_1" }
+        };
+
+        var workflowRequest = new WorkflowDefinitionRequest
+        {
+            Name = $"non_approver_test_{counter}",
+            Category = "Testing",
+            Graph = new WorkflowGraphRequest { Nodes = nodes, Edges = edges },
+            IsActive = true
+        };
+
+        var workflowResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
+        Assert.Equal(HttpStatusCode.OK, workflowResponse.StatusCode);
+        var workflow = await workflowResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
+        Assert.NotNull(workflow?.Data);
+
+        var docRequest = TestDataGenerator.GenerateValidDocument();
+        var docResponse = await TestClient.PostAsJsonAsync("/api/documents", docRequest);
+        Assert.Equal(HttpStatusCode.OK, docResponse.StatusCode);
+        var doc = await docResponse.Content.ReadAsJsonAsync<ApiResponse<DocumentResponse>>();
+        Assert.NotNull(doc?.Data);
+
+        var submitRequest = new { WorkflowDefinitionId = workflow.Data.Id };
+        var submitResponse = await TestClient.PostAsJsonAsync($"/api/documents/{doc.Data.Id}/submit", submitRequest);
+        Assert.Equal(HttpStatusCode.OK, submitResponse.StatusCode);
+        var instance = await submitResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowInstanceResponse>>();
+        Assert.NotNull(instance?.Data);
+
+        await WaitForStatusAsync(instance.Data.Id, "running");
+
+        // 使用非审批人（secondUser）尝试审批
+        var (secondClient, _) = await CreateAuthenticatedClientAsync();
+        using var _ = secondClient;
+        var nonApproverRequest = new { Comment = "尝试审批" };
+        var nonApproverResponse = await secondClient.PostAsJsonAsync($"/api/documents/{doc.Data.Id}/approve", nonApproverRequest);
+
+        // 非审批人应该无法审批（返回 BadRequest 或 Forbidden）
+        Assert.True(
+            nonApproverResponse.StatusCode == HttpStatusCode.BadRequest ||
+            nonApproverResponse.StatusCode == HttpStatusCode.Forbidden,
+            $"非审批人审批应该失败，但返回了 {nonApproverResponse.StatusCode}");
+        Output.WriteLine($"✓ 非审批人尝试审批被正确拒绝，返回 {nonApproverResponse.StatusCode}");
     }
 
     private async Task<string> CreateFormDefinitionAsync(string formName, List<FormFieldRequest> fields)

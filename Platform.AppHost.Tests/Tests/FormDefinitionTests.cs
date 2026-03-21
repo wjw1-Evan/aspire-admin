@@ -1,8 +1,8 @@
+using System.Net.Http.Headers;
 using Aspire.Hosting.Testing;
 using Platform.AppHost.Tests.Helpers;
 using Platform.AppHost.Tests.Models;
 using System.Net;
-using System.Net.Http.Headers;
 using Xunit.Abstractions;
 
 namespace Platform.AppHost.Tests.Tests;
@@ -14,6 +14,7 @@ namespace Platform.AppHost.Tests.Tests;
 /// </summary>
 /// <remarks>
 /// Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 5.1, 5.2, 5.4, 7.1, 7.2, 7.4, 7.5, 8.1, 8.2
+/// See: https://aspire.dev/zh-cn/testing/overview/
 /// </remarks>
 [Collection("AppHost Collection")]
 public class FormDefinitionTests : BaseIntegrationTest

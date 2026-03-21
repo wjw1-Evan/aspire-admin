@@ -14,6 +14,7 @@ namespace Platform.AppHost.Tests.Tests;
 /// </summary>
 /// <remarks>
 /// Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 5.1, 5.2, 5.4, 8.1, 8.2
+/// See: https://aspire.dev/zh-cn/testing/overview/
 /// </remarks>
 [Collection("AppHost Collection")]
 public class KnowledgeBaseTests : BaseIntegrationTest

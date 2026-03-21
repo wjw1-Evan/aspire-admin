@@ -8,6 +8,8 @@ namespace Platform.AppHost.Tests.Tests;
 
 /// <summary>
 /// Base class for integration tests that provides common functionality like authentication and HTTP client management.
+/// Follows official Aspire testing patterns.
+/// See: https://aspire.dev/zh-cn/testing/overview/
 /// </summary>
 public abstract class BaseIntegrationTest : IClassFixture<AppHostFixture>
 {
@@ -16,7 +18,6 @@ public abstract class BaseIntegrationTest : IClassFixture<AppHostFixture>
     protected System.Net.Http.HttpClient TestClient;
     protected string? CurrentUserId { get; private set; }
 
-    
     // Per-class auth cache to avoid redundant registrations
     private static readonly Dictionary<Type, (string Token, string UserId)> AuthCache = new();
     private static readonly object CacheLock = new();
@@ -66,6 +67,26 @@ public abstract class BaseIntegrationTest : IClassFixture<AppHostFixture>
 
         CurrentUserId = userId;
         TestClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+    }
+
+    /// <summary>
+    /// Creates a new authenticated HttpClient for tests that need different user context.
+    /// Uses official Aspire pattern for proper HttpClient creation.
+    /// See: https://aspire.dev/zh-cn/testing/write-your-first-test/
+    /// </summary>
+    protected async Task<(System.Net.Http.HttpClient Client, string UserId)> CreateAuthenticatedClientAsync()
+    {
+        var authResult = await CreateAndLoginNewUserAsync();
+        
+        var client = new System.Net.Http.HttpClient
+        {
+            BaseAddress = TestClient.BaseAddress,
+            Timeout = AppHostFixture.DefaultTimeout
+        };
+        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authResult.Token);
+        
+        return (client, authResult.UserId);
     }
 
     /// <summary>

@@ -14,6 +14,7 @@ namespace Platform.AppHost.Tests.Tests;
 /// </summary>
 /// <remarks>
 /// Requirements: 3.1, 3.6, 3.7, 5.1, 5.2, 5.4, 8.1, 8.2
+/// See: https://aspire.dev/zh-cn/testing/overview/
 /// </remarks>
 [Collection("AppHost Collection")]
 public class WorkflowDefinitionTests : BaseIntegrationTest

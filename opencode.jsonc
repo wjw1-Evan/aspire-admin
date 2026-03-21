@@ -25,6 +25,17 @@
         "@playwright/mcp@latest"
       ],
       "enabled": true
+    },
+    "context7": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@upstash/context7-mcp",
+        "--api-key",
+        "YOUR_API_KEY"
+      ],
+      "enabled": true
     }
   }
 }

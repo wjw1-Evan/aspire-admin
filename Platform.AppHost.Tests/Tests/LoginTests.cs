@@ -12,6 +12,7 @@ namespace Platform.AppHost.Tests.Tests;
 /// </summary>
 /// <remarks>
 /// Requirements: 5.1, 5.2, 5.3, 5.4, 5.5
+/// See: https://aspire.dev/zh-cn/testing/overview/
 /// </remarks>
 [Collection("AppHost Collection")]
 public class LoginTests : IClassFixture<AppHostFixture>
@@ -24,6 +25,12 @@ public class LoginTests : IClassFixture<AppHostFixture>
         _fixture = fixture;
         _output = output;
     }
+
+    /// <summary>
+    /// Gets the HttpClient from the fixture.
+    /// See: https://aspire.dev/zh-cn/testing/accessing-resources/
+    /// </summary>
+    private System.Net.Http.HttpClient TestClient => _fixture.HttpClient;
 
     /// <summary>
     /// Feature: aspire-apphost-auth-tests, Property 4: 有效登录成功并返回完整令牌响应
@@ -55,7 +62,7 @@ public class LoginTests : IClassFixture<AppHostFixture>
                 _output.WriteLine($"Username: {registerRequest.Username}");
 
                 // Step 1: Register a new user
-                var registerResponse = await _fixture.HttpClient.PostAsJsonAsync(
+                var registerResponse = await TestClient.PostAsJsonAsync(
                     "/api/auth/register", registerRequest);
 
                 if (!registerResponse.IsSuccessStatusCode)
@@ -82,7 +89,7 @@ public class LoginTests : IClassFixture<AppHostFixture>
                     Password = registerRequest.Password
                 };
 
-                var loginResponse = await _fixture.HttpClient.PostAsJsonAsync(
+                var loginResponse = await TestClient.PostAsJsonAsync(
                     "/api/auth/login", loginRequest);
 
                 var loginContent = await loginResponse.Content.ReadAsStringAsync();
@@ -213,7 +220,7 @@ public class LoginTests : IClassFixture<AppHostFixture>
 
                     // First, register a user
                     var registerRequest = TestDataGenerator.GenerateValidRegistration();
-                    var registerResponse = await _fixture.HttpClient.PostAsJsonAsync(
+                    var registerResponse = await TestClient.PostAsJsonAsync(
                         "/api/auth/register", registerRequest);
 
                     if (!registerResponse.IsSuccessStatusCode)
@@ -237,7 +244,7 @@ public class LoginTests : IClassFixture<AppHostFixture>
                 }
 
                 // Attempt login with invalid credentials
-                var loginResponse = await _fixture.HttpClient.PostAsJsonAsync(
+                var loginResponse = await TestClient.PostAsJsonAsync(
                     "/api/auth/login", loginRequest);
 
                 var loginContent = await loginResponse.Content.ReadAsStringAsync();

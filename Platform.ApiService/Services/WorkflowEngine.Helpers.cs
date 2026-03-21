@@ -327,27 +327,19 @@ public partial class WorkflowEngine
     /// </summary>
     private async Task UpdateCurrentApproverIdsAsync(string instanceId, string nodeId, List<string> approverIds)
     {
-        Console.WriteLine($"[DEBUG] UpdateCurrentApproverIdsAsync CALLED: instanceId={instanceId}, nodeId={nodeId}, approvers={string.Join(",", approverIds)}");
-        
         await _instanceFactory.UpdateAsync(instanceId, i =>
         {
-            Console.WriteLine($"[DEBUG] UpdateCurrentApproverIdsAsync UPDATE: nodeId={nodeId}, approvers={string.Join(",", approverIds)}, ActiveApprovals.Count={i.ActiveApprovals.Count}");
-            
             if (approverIds == null || approverIds.Count == 0)
             {
-                Console.WriteLine($"[DEBUG] UpdateCurrentApproverIdsAsync: REMOVING approvers for node {nodeId}");
                 i.RemoveActiveApprovers(nodeId);
             }
             else
             {
-                Console.WriteLine($"[DEBUG] UpdateCurrentApproverIdsAsync: SETTING approvers for node {nodeId}");
                 i.SetActiveApprovers(nodeId, approverIds.Distinct().ToList());
             }
 
             i.CurrentApproverIds = i.ActiveApprovals.SelectMany(x => x.ApproverIds).Distinct().ToList();
             i.UpdatedAt = DateTime.UtcNow;
-            
-            Console.WriteLine($"[DEBUG] UpdateCurrentApproverIdsAsync: Final CurrentApproverIds={string.Join(",", i.CurrentApproverIds)}");
         });
     }
 

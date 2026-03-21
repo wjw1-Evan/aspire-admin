@@ -250,8 +250,6 @@ public partial class WorkflowEngine
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "DEBUG_WORKFLOW: 节点处理异常! NodeId={NodeId}, InstanceId={InstanceId}", node.Id, instanceId);
-            System.Console.WriteLine($"DEBUG_WORKFLOW: 异常详情 - {ex}");
             // 记录异常到变量
             await _instanceFactory.UpdateAsync(instanceId, i => i.SetVariable($"debug.{node.Id}.error", ex.ToString()));
             // 记录状态为 Cancelled 并停止

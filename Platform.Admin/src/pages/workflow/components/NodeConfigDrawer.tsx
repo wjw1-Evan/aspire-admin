@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Button, Card, Drawer, Form, Input, Select, Switch, Space, Divider, Tabs, FormInstance } from 'antd';
+import { Button, Card, Drawer, Form, Input, Select, Switch, Space, Divider, Tabs, FormInstance, Tree } from 'antd';
 import { DeleteOutlined, SaveOutlined, PlusOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import { NODE_CONFIGS } from './WorkflowDesignerConstants';
@@ -7,8 +7,9 @@ import { Node } from 'reactflow';
 import type { AppUser } from '@/services/user/api';
 import type { Role } from '@/services/role/api';
 import type { FormDefinition } from '@/services/form/api';
-import { getWorkflowFormsAndFields } from '@/services/workflow/api';
+import { getWorkflowFormsAndFields, getOrganizationTree, type OrganizationTreeNode } from '@/services/workflow/api';
 import type { SelectProps } from 'antd';
+import type { DataNode } from 'antd/es/tree';
 
 interface WorkflowFormField {
   Id: string;
@@ -59,6 +60,10 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
   const intl = useIntl();
   const [workflowForms, setWorkflowForms] = useState<WorkflowForm[]>([]);
   const [loading, setLoading] = useState(false);
+  const [organizationTree, setOrganizationTree] = useState<OrganizationTreeNode[]>([]);
+  const [loadingOrgs, setLoadingOrgs] = useState(false);
+  const [departmentModalVisible, setDepartmentModalVisible] = useState(false);
+  const [currentApproverIndex, setCurrentApproverIndex] = useState<number | null>(null);
 
   // 从前端节点数据中提取表单信息
   const extractFormsFromNodes = useCallback(() => {
@@ -114,6 +119,21 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
             setLoading(false);
           });
       }
+
+      // 加载组织架构树
+      setLoadingOrgs(true);
+      getOrganizationTree()
+        .then(response => {
+          if (response.data) {
+            setOrganizationTree(response.data);
+          }
+        })
+        .catch(error => {
+          console.error('加载组织架构失败:', error);
+        })
+        .finally(() => {
+          setLoadingOrgs(false);
+        });
     }
   }, [visible, workflowDefinitionId, allNodes, extractFormsFromNodes]);
 
@@ -122,6 +142,15 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
     if (!formId) return [];
     const form = workflowForms.find(f => f.id === formId);
     return form?.fields || [];
+  };
+
+  // 转换组织树为 Ant Design TreeSelect 格式
+  const organizationTreeToTreeData = (nodes: OrganizationTreeNode[]): DataNode[] => {
+    return nodes.map(node => ({
+      title: node.name,
+      value: node.id,
+      children: node.children?.length > 0 ? organizationTreeToTreeData(node.children) : undefined,
+    }));
   };
 
   return (
@@ -209,7 +238,9 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                                       options={[
                                         { label: '指定用户', value: 0 },
                                         { label: '指定角色', value: 1 },
-                                        { label: '表单字段', value: 3 }
+                                        { label: '指定部门', value: 2 },
+                                        { label: '表单字段', value: 3 },
+                                        { label: '主管', value: 4 }
                                       ]}
                                     />
                                   </Form.Item>
@@ -218,12 +249,36 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                                       const type = getFieldValue(['approvers', name, 'type']);
                                       if (type === 0) return <Form.Item {...restField} name={[name, 'userIds']} rules={[{ required: true }]}><Select mode="multiple" placeholder="选择用户" options={users.map(u => ({ label: u.name || u.username, value: u.id }))} /></Form.Item>;
                                       if (type === 1) return <Form.Item {...restField} name={[name, 'roleIds']} rules={[{ required: true }]}><Select mode="multiple" placeholder="选择角色" options={roles.map(r => ({ label: r.name, value: r.id }))} /></Form.Item>;
+                                      if (type === 2) return (
+                                        <Form.Item {...restField} name={[name, 'departmentId']} rules={[{ required: true }]}>
+                                          <Select
+                                            placeholder="选择部门"
+                                            showSearch
+                                            treeDefaultExpandAll
+                                            treeData={organizationTreeToTreeData(organizationTree)}
+                                            treeNodeFilterProp="title"
+                                          />
+                                        </Form.Item>
+                                      );
                                       if (type === 3) return (
                                         <Form.Item {...restField} name={[name, 'formFieldKey']} rules={[{ required: true }]}>
                                           <Select
                                             placeholder="选择表单字段"
                                             showSearch
                                             options={availableVariables.map(v => ({ label: v.label, value: v.value }))}
+                                          />
+                                        </Form.Item>
+                                      );
+                                      if (type === 4) return (
+                                        <Form.Item {...restField} name={[name, 'supervisorLevel']} rules={[{ required: true }]}>
+                                          <Select
+                                            placeholder="选择主管级别"
+                                            options={[
+                                              { label: '直接主管 (1级)', value: 1 },
+                                              { label: '部门经理 (2级)', value: 2 },
+                                              { label: '总监 (3级)', value: 3 },
+                                              { label: '副总 (4级)', value: 4 }
+                                            ]}
                                           />
                                         </Form.Item>
                                       );
@@ -461,6 +516,40 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                       <Form.Item name="allowReject" label="允许驳回" valuePropName="checked"><Switch /></Form.Item>
                       <Form.Item name="allowReturn" label="允许退回" valuePropName="checked"><Switch /></Form.Item>
                       <Form.Item name="timeoutHours" label="审批超时设置 (小时)"><Input type="number" /></Form.Item>
+
+                      <Divider titlePlacement="left" plain>抄送规则 (CC)</Divider>
+                      <Form.List name="ccRules">
+                        {(fields, { add, remove }) => (
+                          <>
+                            {fields.map(({ key, name, ...restField }) => (
+                              <Card size="small" styles={{ body: { marginBottom: 8, background: '#f8fafc' } }} key={key} extra={<DeleteOutlined onClick={() => remove(name)} style={{ color: '#ff4d4f' }} />}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                  <Form.Item {...restField} name={[name, 'type']} rules={[{ required: true }]}>
+                                    <Select
+                                      placeholder="抄送类型"
+                                      options={[
+                                        { label: '指定用户', value: 0 },
+                                        { label: '指定角色', value: 1 },
+                                        { label: '指定部门', value: 2 }
+                                      ]}
+                                    />
+                                  </Form.Item>
+                                  <Form.Item noStyle shouldUpdate={(prev, curr) => prev.ccRules?.[name]?.type !== curr.ccRules?.[name]?.type}>
+                                    {({ getFieldValue }) => {
+                                      const type = getFieldValue(['ccRules', name, 'type']);
+                                      if (type === 0) return <Form.Item {...restField} name={[name, 'userIds']} rules={[{ required: true }]}><Select mode="multiple" placeholder="选择用户" options={users.map(u => ({ label: u.name || u.username, value: u.id }))} /></Form.Item>;
+                                      if (type === 1) return <Form.Item {...restField} name={[name, 'roleIds']} rules={[{ required: true }]}><Select mode="multiple" placeholder="选择角色" options={roles.map(r => ({ label: r.name, value: r.id }))} /></Form.Item>;
+                                      if (type === 2) return <Form.Item {...restField} name={[name, 'departmentId']} rules={[{ required: true }]}><Select placeholder="选择部门" showSearch treeDefaultExpandAll treeData={organizationTreeToTreeData(organizationTree)} /></Form.Item>;
+                                      return null;
+                                    }}
+                                  </Form.Item>
+                                </div>
+                              </Card>
+                            ))}
+                            <Button type="dashed" onClick={() => add()} block size="small" icon={<PlusOutlined />}>添加抄送规则</Button>
+                          </>
+                        )}
+                      </Form.List>
                     </div>
                   )}
                   {selectedNode?.data.nodeType === 'start' && (

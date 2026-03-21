@@ -165,5 +165,8 @@ public enum ApproverType
     Department = 2,
 
     /// <summary>表单字段</summary>
-    FormField = 3
+    FormField = 3,
+
+    /// <summary>主管（发起人的上级）</summary>
+    Supervisor = 4
 }

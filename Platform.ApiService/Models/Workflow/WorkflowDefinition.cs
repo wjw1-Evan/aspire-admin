@@ -252,6 +252,9 @@ public class ApproverRule
 
     [BsonElement("formFieldKey")]
     public string? FormFieldKey { get; set; }
+
+    [BsonElement("supervisorLevel")]
+    public int? SupervisorLevel { get; set; }
 }
 
 public class ConditionBranch

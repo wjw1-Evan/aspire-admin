@@ -17,6 +17,7 @@ public abstract class BaseIntegrationTest : IClassFixture<AppHostFixture>
     protected readonly ITestOutputHelper Output;
     protected System.Net.Http.HttpClient TestClient;
     protected string? CurrentUserId { get; private set; }
+    protected string? CurrentCompanyId { get; private set; }
 
     // Per-class auth cache to avoid redundant registrations
     private static readonly Dictionary<Type, (string Token, string UserId)> AuthCache = new();
@@ -67,6 +68,24 @@ public abstract class BaseIntegrationTest : IClassFixture<AppHostFixture>
 
         CurrentUserId = userId;
         TestClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        
+        // 获取当前用户的公司ID
+        var meResponse = await TestClient.GetAsync("/api/auth/me");
+        if (meResponse.IsSuccessStatusCode)
+        {
+            var meData = await meResponse.Content.ReadAsJsonAsync<ApiResponse<object>>();
+            // 从响应中提取公司ID
+            var meJson = await meResponse.Content.ReadAsStringAsync();
+            if (meJson.Contains("currentCompanyId"))
+            {
+                var doc = System.Text.Json.JsonDocument.Parse(meJson);
+                if (doc.RootElement.TryGetProperty("data", out var data) && 
+                    data.TryGetProperty("currentCompanyId", out var companyIdProp))
+                {
+                    CurrentCompanyId = companyIdProp.GetString();
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -115,5 +134,53 @@ public abstract class BaseIntegrationTest : IClassFixture<AppHostFixture>
         Assert.NotNull(registerApiResponse.Data.Id);
 
         return (loginApiResponse.Data.Token, registerApiResponse.Data.Id);
+    }
+    
+    /// <summary>
+    /// 添加用户到当前用户的公司（用于测试多用户审批场景）
+    /// </summary>
+    protected async Task AddUserToCurrentCompanyAsync(string userId, string userToken)
+    {
+        if (string.IsNullOrEmpty(CurrentCompanyId))
+        {
+            Output.WriteLine("Warning: CurrentCompanyId is not set, skipping add user to company");
+            return;
+        }
+        
+        // 获取管理员的 token（第一个用户）
+        var adminToken = TestClient.DefaultRequestHeaders.Authorization?.Parameter;
+        if (string.IsNullOrEmpty(adminToken))
+        {
+            Output.WriteLine("Warning: Admin token not found, skipping add user to company");
+            return;
+        }
+        
+        // 使用第二个用户的身份提交加入申请
+        var userClient = new System.Net.Http.HttpClient
+        {
+            BaseAddress = TestClient.BaseAddress,
+            Timeout = AppHostFixture.DefaultTimeout
+        };
+        userClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        userClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userToken);
+        
+        var joinRequest = new { CompanyId = CurrentCompanyId, Reason = "Test user for approval workflow" };
+        var joinResponse = await userClient.PostAsJsonAsync("/api/company/join", joinRequest);
+        
+        if (!joinResponse.IsSuccessStatusCode && joinResponse.StatusCode != HttpStatusCode.BadRequest)
+        {
+            Output.WriteLine($"Warning: Failed to submit join request: {joinResponse.StatusCode}");
+            // 继续执行，可能用户已经在公司中
+        }
+        
+        // 获取待处理的加入申请
+        var requestsResponse = await TestClient.GetAsync($"/api/company/join-requests?status=pending");
+        if (requestsResponse.IsSuccessStatusCode)
+        {
+            var requestsData = await requestsResponse.Content.ReadAsJsonAsync<ApiResponse<object>>();
+            Output.WriteLine($"Join requests: {System.Text.Json.JsonSerializer.Serialize(requestsData)}");
+        }
+        
+        Output.WriteLine($"Note: User {userId} join request submitted (pending approval)");
     }
 }

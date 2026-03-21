@@ -174,7 +174,10 @@ public class AuthenticationFlowTests : BaseIntegrationTest
 
             Output.WriteLine($"  ✓ Login successful - Access token obtained");
 
-            using var authenticatedClient = Fixture.HttpClient;
+            using var authenticatedClient = new System.Net.Http.HttpClient
+            {
+                BaseAddress = Fixture.HttpClient.BaseAddress
+            };
             authenticatedClient.DefaultRequestHeaders.Authorization = 
                 new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
@@ -194,13 +197,17 @@ public class AuthenticationFlowTests : BaseIntegrationTest
 
             Output.WriteLine($"  ✓ Protected endpoint access with valid token: 200 OK");
 
+            TestClient.DefaultRequestHeaders.Authorization = null;
             var unauthenticatedResponse = await TestClient.GetAsync("/api/auth/current-user");
 
             Assert.Equal(HttpStatusCode.Unauthorized, unauthenticatedResponse.StatusCode);
 
             Output.WriteLine($"  ✓ Protected endpoint access without token: 401 Unauthorized");
 
-            using var invalidTokenClient = Fixture.HttpClient;
+            using var invalidTokenClient = new System.Net.Http.HttpClient
+            {
+                BaseAddress = Fixture.HttpClient.BaseAddress
+            };
             invalidTokenClient.DefaultRequestHeaders.Authorization = 
                 new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "invalid-token-12345");
 

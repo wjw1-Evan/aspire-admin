@@ -56,7 +56,8 @@ export enum WorkflowStatus {
   Running = 0,      // 运行中
   Completed = 1,    // 已完成
   Cancelled = 2,    // 已取消
-  Rejected = 3      // 已拒绝
+  Rejected = 3,     // 已拒绝
+  Waiting = 4       // 挂起等待
 }
 
 /**
@@ -87,7 +88,8 @@ export enum ApproverType {
   User = 0,         // 指定用户
   Role = 1,          // 角色
   Department = 2,    // 部门
-  FormField = 3      // 表单字段
+  FormField = 3,     // 表单字段
+  Supervisor = 4     // 主管（发起人的上级）
 }
 
 /**
@@ -116,6 +118,7 @@ export interface ApproverRule {
   roleId?: string;
   departmentId?: string;
   formFieldKey?: string;
+  supervisorLevel?: number;
 }
 
 /**
@@ -864,5 +867,43 @@ export async function resolveImportConflicts(formData: FormData): Promise<ApiRes
     headers: {
       'Content-Type': 'multipart/form-data',
     },
+  });
+}
+
+/**
+ * 组织架构树节点
+ */
+export interface OrganizationTreeNode {
+  id: string;
+  name: string;
+  code?: string;
+  parentId?: string;
+  description?: string;
+  sortOrder: number;
+  managerUserId?: string;
+  createdAt: string;
+  updatedAt: string;
+  children: OrganizationTreeNode[];
+}
+
+/**
+ * 获取组织架构树
+ */
+export async function getOrganizationTree(): Promise<ApiResponse<OrganizationTreeNode[]>> {
+  return request('/api/organizations/tree', {
+    method: 'GET',
+  });
+}
+
+/**
+ * 获取组织成员
+ */
+export async function getOrganizationMembers(orgId: string, params?: {
+  page?: number;
+  pageSize?: number;
+}): Promise<ApiResponse<{ list: Array<{ userId: string; username: string; email?: string }>; total: number }>> {
+  return request(`/api/organizations/${orgId}/members`, {
+    method: 'GET',
+    params,
   });
 }

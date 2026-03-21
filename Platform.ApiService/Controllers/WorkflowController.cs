@@ -1017,9 +1017,9 @@ public class WorkflowController : BaseApiController
                 return NotFoundError("流程实例", id);
             }
 
-            if (instance.Status != WorkflowStatus.Running)
+            if (instance.Status != WorkflowStatus.Running && instance.Status != WorkflowStatus.Waiting)
             {
-                return ValidationError("仅运行中的流程可以撤回");
+                return ValidationError("仅运行中或等待审批的流程可以撤回");
             }
 
             var userId = GetRequiredUserId();

@@ -14,8 +14,6 @@ public partial class WorkflowEngine
     /// </summary>
     private async Task SendApprovalNotificationsAsync(string instanceId, WorkflowNode node)
     {
-        _logger.LogInformation("=== SendApprovalNotificationsAsync START: instanceId={InstanceId}, nodeId={NodeId}", instanceId, node.Id);
-        
         var instance = await _instanceFactory.GetByIdAsync(instanceId);
         if (instance == null || string.IsNullOrEmpty(instance.DocumentId)) return;
 
@@ -24,10 +22,6 @@ public partial class WorkflowEngine
 
         var approvers = await GetNodeApproversAsync(instanceId, node.Id);
 
-        _logger.LogInformation("=== 审批通知 Node={NodeId}: 解析出审批人={Approvers} ===",
-            node.Id, string.Join(", ", approvers));
-
-        // Sequential 模式仅通知当前轮到的人
         if (node.Data.Config?.Approval != null && node.Data.Config.Approval.Type == ApprovalType.Sequential)
         {
             var history = await GetApprovalHistoryAsync(instanceId);
@@ -36,13 +30,8 @@ public partial class WorkflowEngine
             approvers = nextApprover != null ? new List<string> { nextApprover } : new List<string>();
         }
 
-        // Bug 6 修复：同步更新 CurrentApproverIds 用于待办查询
         await UpdateCurrentApproverIdsAsync(instanceId, node.Id, approvers);
 
-        _logger.LogInformation("=== 审批通知 Node={NodeId}: 已更新 ActiveApprovals, 审批人数={Count} ===",
-            node.Id, approvers.Count);
-
-        // 计算超时时间
         if (node.Data.Config?.Approval?.TimeoutHours != null)
         {
             await _instanceFactory.UpdateAsync(instanceId, i =>
@@ -68,8 +57,7 @@ public partial class WorkflowEngine
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "发送审批通知失败: NodeId={NodeId}, InstanceId={InstanceId}", node.Id, instanceId);
-            // 通知失败不应阻断流程主流程，但我们需要记录
+            _logger.LogWarning(ex, "发送审批通知失败: NodeId={NodeId}, InstanceId={InstanceId}", node.Id, instanceId);
         }
     }
 
@@ -98,6 +86,66 @@ public partial class WorkflowEngine
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "发送退回开始节点通知失败: InstanceId={InstanceId}", instanceId);
+        }
+    }
+
+    /// <summary>
+    /// 发送抄送通知
+    /// 根据节点配置的 CcRules 解析抄送人并发送通知
+    /// </summary>
+    private async Task SendCcNotificationsAsync(string instanceId, WorkflowNode node, string notificationType, string message)
+    {
+        try
+        {
+            var instance = await _instanceFactory.GetByIdAsync(instanceId);
+            if (instance == null || string.IsNullOrEmpty(instance.DocumentId)) return;
+
+            var ccConfig = node.Data.Config?.Approval?.CcRules;
+            if (ccConfig == null || !ccConfig.Any()) return;
+
+            var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
+            if (document == null) return;
+
+            var ccUserIds = new List<string>();
+            foreach (var ccRule in ccConfig)
+            {
+                var resolved = await _approverResolverFactory.ResolveAsync(ccRule, instance.CompanyId, instance);
+                ccUserIds.AddRange(resolved);
+            }
+
+            ccUserIds = ccUserIds.Distinct().ToList();
+
+            var initiator = await _userService.GetUserByIdAsync(instance.StartedBy);
+            var approvers = await GetNodeApproversAsync(instanceId, node.Id);
+            var approverNames = approvers.Any()
+                ? string.Join(", ", await Task.WhenAll(approvers.Select(async u =>
+                {
+                    var user = await _userService.GetUserByIdAsync(u);
+                    return user?.Username ?? u;
+                })))
+                : "无";
+
+            var ccMessage = $"{initiator?.Username ?? instance.StartedBy} 的 {node.Data.Label ?? node.Id} 流程抄送：" +
+                            $"\n节点审批人: {approverNames}" +
+                            $"\n状态: {(notificationType == "workflow_approval_completed" ? "已通过" : "已拒绝")}" +
+                            $"\n备注: {message}";
+
+            if (ccUserIds.Any())
+            {
+                await _notificationService.CreateWorkflowNotificationAsync(
+                    instanceId,
+                    document.Title,
+                    "workflow_cc",
+                    ccUserIds,
+                    ccMessage,
+                    instance.CompanyId
+                );
+                _logger.LogInformation("发送抄送通知成功: InstanceId={InstanceId}, CcUsers={CcUsers}", instanceId, string.Join(",", ccUserIds));
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "发送抄送通知失败: InstanceId={InstanceId}", instanceId);
         }
     }
 }

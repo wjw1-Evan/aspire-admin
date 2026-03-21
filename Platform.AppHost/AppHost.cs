@@ -21,19 +21,19 @@ var openAiEndpoint = builder.Configuration["Parameters:openai-openai-endpoint"]
 
 var openai = builder.AddOpenAI("openai").WithEndpoint(openAiEndpoint);
 
-var openAiModel = builder.Configuration["OpenAI:Model"];
+var openAiModel = builder.Configuration["OpenAI:Model"] ?? throw new InvalidOperationException("缺少 OpenAI 模型配置项 'OpenAI:Model'。");
 var chat = openai.AddModel("chat", openAiModel);
 
 var redis = builder.AddRedis("redis");
 
 
-var mongoOptionName = builder.Configuration["MongoDB:ServiceName"] ;
+var mongoOptionName = builder.Configuration["MongoDB:ServiceName"] ?? throw new InvalidOperationException("缺少 MongoDB 服务名称配置项 'MongoDB:ServiceName'。");
 var mongo = builder.AddMongoDB(mongoOptionName)
     .WithMongoExpress()
     .WithLifetime(ContainerLifetime.Persistent)
     .WithDataVolume();
 
-var databaseName = builder.Configuration["MongoDB:DatabaseName"];
+var databaseName = builder.Configuration["MongoDB:DatabaseName"] ?? throw new InvalidOperationException("缺少 MongoDB 数据库名称配置项 'MongoDB:DatabaseName'。");
 
 var mongodb = mongo.AddDatabase("mongodb", databaseName);
 

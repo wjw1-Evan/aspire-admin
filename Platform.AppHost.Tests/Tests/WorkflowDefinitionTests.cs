@@ -935,7 +935,8 @@ public class WorkflowDefinitionTests : BaseIntegrationTest
         await InitializeAuthenticationAsync();
 
         // Create workflow definition with an approval node to keep it in Running state
-        var workflowRequest = TestDataGenerator.GenerateWorkflowWithNodeType(NodeTypes.Approval);
+        // Pass current user ID as approver to avoid validation error
+        var workflowRequest = TestDataGenerator.GenerateWorkflowWithNodeType(NodeTypes.Approval, new List<string> { CurrentUserId });
         var createWorkflowResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
         var createWorkflowResult = await createWorkflowResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
 

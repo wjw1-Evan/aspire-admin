@@ -985,7 +985,7 @@ public static class TestDataGenerator
                     type = "any",
                     approvers = (approverIds != null && approverIds.Count > 0)
                         ? approverIds.Select(id => new { type = "user", userId = id }).ToArray()
-                        : Array.Empty<object>()
+                        : new[] { new { type = "user", userId = "" } } // Placeholder, tests should provide actual IDs
                 }
             },
             "condition" => new

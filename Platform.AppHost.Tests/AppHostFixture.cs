@@ -14,7 +14,7 @@ public sealed class AppHostFixture : IAsyncLifetime
     private IDistributedApplicationTestingBuilder? _builder;
     private DistributedApplication? _app;
     private HttpClient? _httpClient;
-    
+
     public const string TestJwtKey = "test-secret-key-for-integration-tests-minimum-32-characters-required";
     public static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(5);
 
@@ -39,10 +39,7 @@ public sealed class AppHostFixture : IAsyncLifetime
         _builder = await DistributedApplicationTestingBuilder.CreateAsync<Projects.Platform_AppHost>(
             args: [
                 "--environment=Testing",
-                "ApiService:Replicas=1",
-                "MongoDB:DatabaseName=aspire-admin-test-db",
-                "Jwt:SecretKey=" + TestJwtKey,
-                "Smtp:Host="
+                "Jwt:SecretKey=" + TestJwtKey
             ]);
 
         _builder.Services.ConfigureHttpClientDefaults(clientBuilder =>

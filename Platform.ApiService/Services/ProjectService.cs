@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using System;
@@ -17,6 +18,7 @@ public class ProjectService : IProjectService
     private readonly IDataFactory<WorkTask> _taskFactory;
     private readonly IDataFactory<Milestone> _milestoneFactory;
     private readonly IUserService _userService;
+    private readonly ILogger<ProjectService> _logger;
 
     /// <summary>
     /// 初始化 ProjectService 实例
@@ -26,13 +28,15 @@ public class ProjectService : IProjectService
         IDataFactory<ProjectMember> projectMemberFactory,
         IDataFactory<WorkTask> taskFactory,
         IDataFactory<Milestone> milestoneFactory,
-        IUserService userService)
+        IUserService userService,
+        ILogger<ProjectService> logger)
     {
         _projectFactory = projectFactory;
         _projectMemberFactory = projectMemberFactory;
         _taskFactory = taskFactory;
         _milestoneFactory = milestoneFactory;
         _userService = userService;
+        _logger = logger;
     }
 
     /// <summary>
@@ -394,13 +398,13 @@ public class ProjectService : IProjectService
                 else
                 {
                     // 如果找不到用户，记录警告但不抛出异常
-                    Console.WriteLine($"警告: 找不到项目经理，ManagerId={project.ManagerId}");
+                    _logger.LogWarning("找不到项目经理，ManagerId={ManagerId}", project.ManagerId);
                     dto.ManagerName = null;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"获取项目经理信息失败，ManagerId={project.ManagerId}, 错误: {ex.Message}");
+                _logger.LogWarning(ex, "获取项目经理信息失败，ManagerId={ManagerId}", project.ManagerId);
                 dto.ManagerName = null;
             }
         }
@@ -421,13 +425,13 @@ public class ProjectService : IProjectService
                 }
                 else
                 {
-                    Console.WriteLine($"警告: 找不到创建者，CreatedBy={project.CreatedBy}");
+                    _logger.LogWarning("找不到创建者，CreatedBy={CreatedBy}", project.CreatedBy);
                     dto.CreatedByName = null;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"获取创建者信息失败，CreatedBy={project.CreatedBy}, 错误: {ex.Message}");
+                _logger.LogWarning(ex, "获取创建者信息失败，CreatedBy={CreatedBy}", project.CreatedBy);
                 dto.CreatedByName = null;
             }
         }
@@ -463,7 +467,7 @@ public class ProjectService : IProjectService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"获取用户信息失败: {ex.Message}");
+            _logger.LogWarning(ex, "获取用户信息失败");
         }
 
         return dto;

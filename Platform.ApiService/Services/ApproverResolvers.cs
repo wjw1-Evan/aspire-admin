@@ -228,7 +228,7 @@ public class DepartmentApproverResolver : IApproverResolver
             return new List<string>();
         }
 
-        var orgIds = CollectOrgAndDescendantIds(org);
+        var orgIds = await CollectOrgAndDescendantIdsAsync(org);
         Expression<Func<UserOrganization, bool>> filter = uo => orgIds.Contains(uo.OrganizationUnitId);
         var userOrgs = await _userOrgFactory.FindAsync(filter);
         var userIds = userOrgs
@@ -248,18 +248,18 @@ public class DepartmentApproverResolver : IApproverResolver
         return new List<string>();
     }
 
-    private List<string> CollectOrgAndDescendantIds(OrganizationUnit rootOrg)
+    private async Task<List<string>> CollectOrgAndDescendantIdsAsync(OrganizationUnit rootOrg)
     {
         var result = new List<string> { rootOrg.Id };
         if (!string.IsNullOrEmpty(rootOrg.ParentId))
         {
-            var parent = _orgFactory.GetByIdAsync(rootOrg.ParentId).GetAwaiter().GetResult();
+            var parent = await _orgFactory.GetByIdAsync(rootOrg.ParentId);
             if (parent != null)
             {
                 result.Add(parent.Id);
                 if (!string.IsNullOrEmpty(parent.ParentId))
                 {
-                    var grandParent = _orgFactory.GetByIdAsync(parent.ParentId).GetAwaiter().GetResult();
+                    var grandParent = await _orgFactory.GetByIdAsync(parent.ParentId);
                     if (grandParent != null)
                     {
                         result.Add(grandParent.Id);

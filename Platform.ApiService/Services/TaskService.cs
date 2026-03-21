@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using TaskModel = Platform.ApiService.Models.WorkTask;
 using TaskStatusEnum = Platform.ApiService.Models.TaskStatus;
 
@@ -20,25 +21,20 @@ public class TaskService : ITaskService
     private readonly IUnifiedNotificationService _notificationService;
     private readonly IServiceProvider _serviceProvider;
     private readonly ITenantContext _tenantContext;
+    private readonly ILogger<TaskService> _logger;
 
     /// <summary>
     /// 初始化 TaskService 实例
     /// </summary>
-    /// <param name="taskFactory">任务数据工厂</param>
-    /// <param name="executionLogFactory">任务执行日志数据工厂</param>
-    /// <param name="userService">用户服务</param>
-    /// <param name="userActivityLogService">用户活动日志服务</param>
-    /// <param name="notificationService">统一通知服务，用于在任务创建、分配、状态变更时发送通知</param>
-    /// <param name="serviceProvider">服务提供者，用于获取其他服务实例</param>
-    /// <param name="tenantContext">租户上下文</param>
     public TaskService(
         IDataFactory<TaskModel> taskFactory,
         IDataFactory<TaskExecutionLog> executionLogFactory,
         IUserService userService,
-        IUserActivityLogService userActivityLogService, // Added to match ITaskService if needed or just fix constructor
+        IUserActivityLogService userActivityLogService,
         IUnifiedNotificationService notificationService,
         IServiceProvider serviceProvider,
-        ITenantContext tenantContext)
+        ITenantContext tenantContext,
+        ILogger<TaskService> logger)
     {
         _taskFactory = taskFactory;
         _executionLogFactory = executionLogFactory;
@@ -46,6 +42,7 @@ public class TaskService : ITaskService
         _notificationService = notificationService;
         _serviceProvider = serviceProvider;
         _tenantContext = tenantContext;
+        _logger = logger;
     }
 
     /// <summary>
@@ -105,7 +102,7 @@ public class TaskService : ITaskService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"创建任务后的通知发送失败: {ex.Message}");
+            _logger.LogWarning(ex, "创建任务后的通知发送失败");
         }
 
         return await ConvertToTaskDtoAsync(task);
@@ -331,7 +328,7 @@ public class TaskService : ITaskService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"任务分配通知发送失败: {ex.Message}");
+            _logger.LogWarning(ex, "任务分配通知发送失败");
         }
 
         return await ConvertToTaskDtoAsync(updatedTask);
@@ -389,7 +386,7 @@ public class TaskService : ITaskService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"任务分配通知发送失败: {ex.Message}");
+            _logger.LogWarning(ex, "任务分配通知发送失败");
         }
 
         return await ConvertToTaskDtoAsync(updatedTask);
@@ -474,7 +471,7 @@ public class TaskService : ITaskService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"任务状态变更通知发送失败: {ex.Message}");
+            _logger.LogWarning(ex, "任务状态变更通知发送失败");
         }
 
         return await ConvertToTaskDtoAsync(updatedTask);
@@ -555,7 +552,7 @@ public class TaskService : ITaskService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"任务完成通知发送失败: {ex.Message}");
+            _logger.LogWarning(ex, "任务完成通知发送失败");
         }
 
         return await ConvertToTaskDtoAsync(updatedTask);
@@ -612,7 +609,7 @@ public class TaskService : ITaskService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"任务取消通知发送失败: {ex.Message}");
+            _logger.LogWarning(ex, "任务取消通知发送失败");
         }
 
         return await ConvertToTaskDtoAsync(updatedTask);
@@ -920,7 +917,7 @@ public class TaskService : ITaskService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"获取用户信息失败: {ex.Message}");
+            _logger.LogWarning(ex, "获取用户信息失败");
         }
 
         // 转换附件
@@ -951,7 +948,7 @@ public class TaskService : ITaskService
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"获取项目信息失败: {ex.Message}");
+                _logger.LogWarning(ex, "获取项目信息失败");
             }
         }
 
@@ -992,7 +989,7 @@ public class TaskService : ITaskService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"获取用户信息失败: {ex.Message}");
+            _logger.LogWarning(ex, "获取用户信息失败");
         }
 
         return dto;

@@ -18,14 +18,17 @@ namespace Platform.ApiService.Controllers;
 public class OrganizationController : BaseApiController
 {
     private readonly IOrganizationService _organizationService;
+    private readonly IUserService _userService;
 
     /// <summary>
     /// 初始化组织架构控制器
     /// </summary>
     /// <param name="organizationService">组织架构服务</param>
-    public OrganizationController(IOrganizationService organizationService)
+    /// <param name="userService">用户服务</param>
+    public OrganizationController(IOrganizationService organizationService, IUserService userService)
     {
         _organizationService = organizationService;
+        _userService = userService;
     }
 
     /// <summary>
@@ -106,6 +109,30 @@ public class OrganizationController : BaseApiController
     {
         var members = await _organizationService.GetMembersAsync(id).ConfigureAwait(false);
         return Success(members);
+    }
+
+    /// <summary>
+    /// 获取可分配的用户列表（用于添加成员下拉选择）
+    /// </summary>
+    /// <param name="organizationUnitId">组织节点ID</param>
+    /// <param name="query">搜索关键词（可选）</param>
+    [HttpGet("available-users")]
+    [RequireMenu("organization")]
+    public async Task<IActionResult> GetAvailableUsers([FromQuery] string organizationUnitId, [FromQuery] string? query = null)
+    {
+        var existingMembers = await _organizationService.GetMembersAsync(organizationUnitId).ConfigureAwait(false);
+        var existingUserIds = existingMembers.Select(m => m.UserId).ToHashSet();
+
+        var allUsers = string.IsNullOrWhiteSpace(query)
+            ? await _userService.GetAllUsersAsync().ConfigureAwait(false)
+            : await _userService.SearchUsersByNameAsync(query).ConfigureAwait(false);
+
+        var availableUsers = allUsers
+            .Where(u => !existingUserIds.Contains(u.Id))
+            .Select(u => new { value = u.Id, label = $"{u.Username}{(string.IsNullOrEmpty(u.Name) ? "" : $" ({u.Name})")}" })
+            .ToList();
+
+        return Success(availableUsers);
     }
 
     /// <summary>

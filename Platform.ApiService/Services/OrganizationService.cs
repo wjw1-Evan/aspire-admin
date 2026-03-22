@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using MongoDB.Bson;
 using Platform.ApiService.Constants;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
@@ -411,8 +412,12 @@ public class OrganizationService : IOrganizationService
     /// </summary>
     private async Task<AppUser?> FindUserByIdOrUsernameAsync(string userIdOrName)
     {
-        var byId = await _userFactory.GetByIdAsync(userIdOrName).ConfigureAwait(false);
-        if (byId != null) return byId;
+        // 先校验是否为合法 ObjectId 格式，避免 MongoDB 驱动序列化表达式时抛出异常
+        if (!string.IsNullOrWhiteSpace(userIdOrName) && ObjectId.TryParse(userIdOrName, out _))
+        {
+            var byId = await _userFactory.GetByIdAsync(userIdOrName).ConfigureAwait(false);
+            if (byId != null) return byId;
+        }
 
         var byUsername = await _userFactory.FindAsync(
             filter: u => u.Username == userIdOrName,

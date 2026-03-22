@@ -110,3 +110,15 @@ export async function getOrganizationMembers(organizationUnitId: string) {
         method: 'GET',
     });
 }
+
+export interface AvailableUserItem {
+    value: string;
+    label: string;
+}
+
+export async function getAvailableUsers(organizationUnitId: string, query?: string) {
+    return request<ApiResponse<AvailableUserItem[]>>('/api/organization/available-users', {
+        method: 'GET',
+        params: { organizationUnitId, query },
+    });
+}

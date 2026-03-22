@@ -217,3 +217,72 @@ appliesTo:
   - **适用字段**：`CreatedByName`、`AssignedToName`、`ExecutedByName`、`ManagerName` 等所有用户名称字段
 - **跨租户场景**：对于可能跨租户的用户信息（如创建者可能属于不同企业），使用 `GetUserByIdWithoutTenantFilterAsync` 方法获取用户信息。
 - **统一性要求**：确保所有服务（TaskService、ProjectService 等）中的用户信息转换逻辑保持一致，统一使用上述格式。
+
+## 批量用户查询规范（避免 N+1）
+- **严禁在循环内调用单条查询**：如 `_userService.GetUserByIdAsync()` 在 `foreach` 循环内调用
+- **必须提供批量查询接口**：在 `IUserService` 中添加：
+  ```csharp
+  Task<Dictionary<string, User>> GetUsersByIdsAsync(IEnumerable<string> ids);
+  ```
+- **批量转换 DTO 模式**：当需要将多个实体转换为包含用户信息的 DTO 时，采用以下模式：
+  1. 一次性收集所有需要查询的用户 ID（使用 `HashSet<string>` 去重）
+  2. 调用 `GetUsersByIdsAsync` 批量获取用户
+  3. 在内存中使用 `Dictionary` 进行映射转换
+  4. **禁止**在循环内调用单条查询
+- **示例代码**：
+  ```csharp
+  private async Task<List<TaskDto>> ConvertToTaskDtosAsync(IEnumerable<WorkTask> tasks)
+  {
+      var taskList = tasks.ToList();
+      if (taskList.Count == 0) return new List<TaskDto>();
+      
+      // 1. 收集用户 ID
+      var userIds = new HashSet<string>();
+      foreach (var task in taskList)
+      {
+          if (!string.IsNullOrEmpty(task.CreatedBy)) userIds.Add(task.CreatedBy);
+          if (!string.IsNullOrEmpty(task.AssignedTo)) userIds.Add(task.AssignedTo);
+      }
+      
+      // 2. 批量查询
+      var userMap = await _userService.GetUsersByIdsAsync(userIds);
+      
+      // 3. 内存映射转换
+      return taskList.Select(t => ConvertToTaskDtoWithCache(t, userMap)).ToList();
+  }
+  
+  private TaskDto ConvertToTaskDtoWithCache(WorkTask task, Dictionary<string, User> userMap)
+  {
+      var dto = new TaskDto { /* 基本字段 */ };
+      
+      // 4. 使用 Dictionary 查找，避免 N+1
+      if (!string.IsNullOrEmpty(task.CreatedBy) && userMap.TryGetValue(task.CreatedBy, out var createdByUser))
+      {
+          dto.CreatedByName = !string.IsNullOrWhiteSpace(createdByUser.Name)
+              ? $"{createdByUser.Username} ({createdByUser.Name})"
+              : createdByUser.Username;
+      }
+      
+      return dto;
+  }
+  ```
+
+## 类型命名规范
+- **禁止使用类型别名**：严禁使用 `using Xxx = Yyy.Zzz` 别名写法
+- **必须直接使用完整类型名**：
+  ```csharp
+  // ❌ 禁止
+  using TaskModel = Platform.ApiService.Models.WorkTask;
+  using TaskStatusEnum = Platform.ApiService.Models.TaskStatus;
+  using User = Platform.ApiService.Models.AppUser;
+  
+  // ✅ 正确
+  public async Task<List<WorkTask>> GetTasksAsync()
+  {
+      // 使用 Models.TaskStatus
+      if (t.Status == Models.TaskStatus.Pending) { }
+      
+      // 使用完整类型 AppUser
+      var userMap = new Dictionary<string, AppUser>();
+  }
+  ```

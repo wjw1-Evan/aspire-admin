@@ -35,6 +35,82 @@
   - 复用较高的表单、列表操作栏等拆分为独立组件放在 `src/components/`，避免在页面中堆积过多逻辑。
   - UI 组件不直接调用后端 services，由页面或 hooks 层处理数据与副作用。
 
+### 3.2 TypeScript 类型安全规范
+
+> **强制要求**：禁止使用 `any` 类型，确保代码的类型安全性。
+
+#### 3.2.1 表单处理
+- **禁止**在 `Form.useForm()` 相关处理中使用 `any` 类型
+- **必须**为每个表单定义明确的类型接口：
+  ```tsx
+  // ✅ 正确：定义明确的表单值类型
+  interface TaskFormValues {
+    taskName: string;
+    description?: string;
+    taskType: string | string[];
+    priority?: number;
+    assignedUserIds?: string[];
+    plannedStartTime?: Dayjs;
+    plannedEndTime?: Dayjs;
+    estimatedDuration?: number;
+  }
+
+  const handleSubmit = async (values: TaskFormValues) => {
+    // 处理表单提交
+  };
+  
+  <Form onFinish={handleSubmit}>
+
+  // ❌ 禁止：使用 any 类型
+  const handleSubmit = async (values: any) => {
+  ```
+
+#### 3.2.2 ProTable 请求函数
+- **禁止**使用 `any` 作为请求参数类型
+- **必须**使用 `RequestParams` 类型（`@/types/pro-components`）或自定义类型：
+  ```tsx
+  import type { RequestParams } from '@/types/pro-components';
+
+  // ✅ 正确：使用 RequestParams
+  const requestFunction = useCallback(async (params: RequestParams, sort?: Record<string, 'ascend' | 'descend'>) => {
+    // 处理请求
+  }, []);
+
+  // ❌ 禁止：使用 any
+  const requestFunction = useCallback(async (params: any) => {
+  ```
+
+#### 3.2.3 DTO 类型复用
+- **必须**从 services 层导入已定义的 DTO 类型，禁止重复定义
+- **禁止**在前端重复定义后端已有的枚举和类型
+  ```tsx
+  // ✅ 正确：从 services 导入类型
+  import { type TaskDto, type ProjectDto } from '@/services/task/api';
+  import type { RequestParams } from '@/types/pro-components';
+
+  // ❌ 禁止：重复定义已有的类型
+  // interface TaskDto { ... }  // 不应重复定义
+  ```
+
+#### 3.2.4 类型定义文件
+- 在 `types.ts` 文件中集中管理页面级别的类型定义
+- 导出的类型应便于复用和维护：
+  ```tsx
+  // src/pages/task-management/types.ts
+  export interface SearchFormValues {
+    search?: string;
+    status?: number;
+    priority?: number;
+    assignedTo?: string;
+    createdBy?: string;
+  }
+
+  export interface TaskQueryParams extends TaskListRequest {
+    current?: number;
+    pageSize?: number;
+  }
+  ```
+
 ### 3.1 页面风格统一规范
 
 > **强制要求**：所有列表/管理页面必须遵循以下统一风格，确保整个平台视觉和交互一致性。

@@ -114,6 +114,45 @@
 - **严禁**绕过工厂自行维护审计字段、多租户过滤或软删除逻辑。
   - **严禁**在业务逻辑中使用数据库特定的 API（如 MongoDB `FilterBuilder`）。
 
+### 6. 性能优化规范（N+1 查询防护）
+
+#### 批量查询原则
+- **严禁在循环内调用单条查询**：如在 `foreach` 循环内调用 `_userService.GetUserByIdAsync()` 会导致 N+1 查询问题
+- **必须使用批量查询方法**：`IUserService` 必须提供批量查询接口：
+  ```csharp
+  Task<Dictionary<string, User>> GetUsersByIdsAsync(IEnumerable<string> ids);
+  ```
+- **批量转换 DTO 模式**：
+  1. 一次性收集所有需要查询的用户 ID（使用 `HashSet<string>` 去重）
+  2. 调用批量查询方法一次性获取所有数据
+  3. 使用 `Dictionary` 在内存中进行映射
+  4. **禁止**在循环内调用单条查询
+
+#### 异常处理与日志级别
+- 非关键操作的异常（如通知发送失败）应使用 `LogDebug` 记录
+- 只有需要运维关注的异常才使用 `LogWarning`
+- 日志应包含足够的上下文信息：
+  ```csharp
+  _logger.LogDebug(ex, "通知发送失败: TaskId={TaskId}, Action={Action}", task.Id, actionType);
+  ```
+
+### 7. 类型命名规范
+- **禁止使用类型别名写法**：`using Xxx = Yyy.Zzz` 会导致类型不明确
+- **必须直接使用完整类型名**：
+  ```csharp
+  // ❌ 禁止
+  using TaskModel = Platform.ApiService.Models.WorkTask;
+  using TaskStatusEnum = Platform.ApiService.Models.TaskStatus;
+  using User = Platform.ApiService.Models.AppUser;
+  
+  // ✅ 正确：直接使用完整类型名
+  public async Task<List<WorkTask>> GetTasksAsync()
+  {
+      // 使用 Models.TaskStatus 或直接用枚举
+      if (t.Status == Models.TaskStatus.Pending) { }
+  }
+  ```
+
 ### 6. 实体基类与接口规范
 
 - **基础模型**（`Platform.ServiceDefaults.Models.BaseEntity` 等）：

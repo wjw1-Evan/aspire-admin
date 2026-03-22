@@ -43,6 +43,42 @@ alwaysApply: true
 - 暴露底层异常（统一错误码与错误消息）
 - 手写 BsonDocument（必须使用构建器）
 - 手动设置审计字段（由工厂自动维护）
+- 使用 `using Xxx = Yyy.Zzz` 别名写法（必须直接使用完整类型名）
+- 在循环内调用单条查询方法（N+1 查询问题）
+
+## 性能优化规范
+
+### 批量查询（避免 N+1）
+- **严禁**在循环内调用单条查询方法（如 `_userService.GetUserByIdAsync()`）
+- **必须**使用批量查询方法（如 `_userService.GetUsersByIdsAsync()`）一次性获取所有数据
+- 服务应提供批量查询接口，例如：
+  ```csharp
+  Task<Dictionary<string, User>> GetUsersByIdsAsync(IEnumerable<string> ids);
+  ```
+- DTO 转换应在批量查询后统一进行，避免逐条查询
+
+### 异常处理与日志
+- 非关键操作的异常（如通知发送失败）应使用 `LogDebug` 记录，避免 `LogWarning` 造成日志泛滥
+- 异常处理应包含足够的上下文信息：
+  ```csharp
+  _logger.LogDebug(ex, "通知发送失败: TaskId={TaskId}, Action={Action}", task.Id, actionType);
+  ```
+- 异常应阻止传播时使用 `LogWarning`；不应阻止传播时使用 `LogDebug`
+
+### 类型命名规范
+- **禁止**使用类型别名写法：`using Xxx = Yyy.Zzz`
+- **必须**直接使用完整类型名：
+  ```csharp
+  // ❌ 禁止
+  using TaskModel = Platform.ApiService.Models.WorkTask;
+  using TaskStatusEnum = Platform.ApiService.Models.TaskStatus;
+  
+  // ✅ 正确
+  private async Task<List<WorkTask>> ConvertToTaskDtosAsync(IEnumerable<WorkTask> tasks)
+  {
+      // 使用 Models.TaskStatus
+  }
+  ```
 
 ## Git 提交规范
 

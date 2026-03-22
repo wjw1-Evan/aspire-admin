@@ -11,7 +11,7 @@ const useCommonStyles = createStyles(({ token, css }) => {
     card: css`
       border-radius: ${token.borderRadiusLG}px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-      margin-bottom: ${token.margin}px;
+      margin-bottom: 0;
       position: relative;
       
       .ant-card-head {

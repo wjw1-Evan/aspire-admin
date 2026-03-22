@@ -64,10 +64,8 @@ const SortableCard: React.FC<SortableCardProps> = ({ id, children }) => {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-    backgroundColor: isOver ? 'rgba(24, 144, 255, 0.05)' : 'transparent',
-    borderRadius: '8px',
-    padding: isOver ? '8px' : '0px',
     position: 'relative',
+    marginBottom: 0,
   };
 
   return (
@@ -437,10 +435,10 @@ const Welcome: React.FC = () => {
     >
       {contextHolder}
       <style>{`
-        .ant-breadcrumb, 
+        .ant-breadcrumb,
         .ant-page-header-breadcrumb,
-        .ant-page-header-heading { 
-          display: none !important; 
+        .ant-page-header-heading {
+          display: none !important;
         }
         .ant-page-header {
           padding-top: 0 !important;
@@ -480,12 +478,12 @@ const Welcome: React.FC = () => {
             >
               <Row gutter={[16, 16]}>
                 <Col xs={24} lg={12}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                     {leftCards.map(cardId => renderCard(cardId))}
                   </div>
                 </Col>
                 <Col xs={24} lg={12}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                     {filteredRightCards.map(cardId => renderCard(cardId))}
                   </div>
                 </Col>

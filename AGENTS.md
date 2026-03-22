@@ -59,10 +59,13 @@
 
 ## 5. 更多领域专项规范参阅
 
-如果需要深入到前端、微服务或移动端的开发，请务必提前通过工具读取特定的 `.cursor/rules/*.mdc` 及 `docs/` 规则卡片：
-1. **全局规范总集**: `.cursor/rules/00-global.mdc`
-2. **后端深度规范**: `.cursor/rules/backend.mdc` 与 `docs/features/BACKEND-RULES.md`
-3. **前端 Admin 规范**: `.cursor/rules/frontend-admin.mdc`
-4. **移动端规范**: `.cursor/rules/frontend-app.mdc`
+如果需要深入到前端、微服务或移动端的开发，请务必提前通过工具读取 `docs/rules/` 目录下的规则卡片：
+
+| 分类 | 路径 | 说明 |
+|------|------|------|
+| 通用原则 | `docs/rules/00-通用原则.md` | 全局开发准则 |
+| 后端规范 | `docs/rules/backend/` | API 服务开发规范 |
+| Admin 前端 | `docs/rules/frontend-admin/` | React Admin 后台规范 |
+| 移动端 | `docs/rules/frontend-app/` | Expo 移动端规范 |
 
 > 每次开展复杂的新功能迭代前，务必查阅上述规则卡以确保架构走向绝不偏离当前轨辙。

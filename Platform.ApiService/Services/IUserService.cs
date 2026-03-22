@@ -133,6 +133,13 @@ public interface IUserService
     Task<List<UserActivityLog>> GetUserActivityLogsAsync(string userId, int limit = 50);
 
     /// <summary>
+    /// 根据ID列表批量获取用户（带租户过滤）
+    /// </summary>
+    /// <param name="ids">用户ID列表</param>
+    /// <returns>用户字典，Key为用户ID</returns>
+    Task<Dictionary<string, User>> GetUsersByIdsAsync(IEnumerable<string> ids);
+
+    /// <summary>
     /// 获取当前用户的活动日志（分页，带统计信息）
     /// </summary>
     /// <param name="page">页码（默认1）</param>

@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { Form, Input, Select, DatePicker, InputNumber, Button, Space } from 'antd';
+import type { Dayjs } from 'dayjs';
 import {
   createProject,
   updateProject,
@@ -15,6 +16,17 @@ interface ProjectFormProps {
   project?: ProjectDto | null;
   onSuccess: () => void;
   onCancel: () => void;
+}
+
+interface ProjectFormValues {
+  name: string;
+  description?: string;
+  status?: number;
+  startDate?: Dayjs;
+  endDate?: Dayjs;
+  managerId?: string;
+  budget?: number;
+  priority?: number;
 }
 
 const ProjectForm: React.FC<ProjectFormProps> = ({ project, onSuccess, onCancel }) => {
@@ -36,7 +48,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ project, onSuccess, onCancel 
     }
   }, [project, form]);
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: ProjectFormValues) => {
     try {
       const requestData: CreateProjectRequest | UpdateProjectRequest = {
         ...(isEditing ? { projectId: project!.id! } : {}),

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 
@@ -209,11 +210,7 @@ public class ProjectService : IProjectService
             request.Page,
             request.PageSize);
 
-        var projectDtos = new List<ProjectDto>();
-        foreach (var project in projects)
-        {
-            projectDtos.Add(await ConvertToProjectDtoAsync(project));
-        }
+        var projectDtos = await ConvertToProjectDtosAsync(projects);
 
         return new ProjectListResponse
         {
@@ -313,14 +310,7 @@ public class ProjectService : IProjectService
     public async Task<List<ProjectMemberDto>> GetProjectMembersAsync(string projectId)
     {
         var members = await _projectMemberFactory.FindAsync(m => m.ProjectId == projectId);
-
-        var memberDtos = new List<ProjectMemberDto>();
-        foreach (var member in members)
-        {
-            memberDtos.Add(await ConvertToProjectMemberDtoAsync(member));
-        }
-
-        return memberDtos;
+        return await ConvertToProjectMemberDtosAsync(members);
     }
 
     /// <summary>
@@ -355,6 +345,100 @@ public class ProjectService : IProjectService
         await _projectFactory.UpdateAsync(projectId, p => p.Progress = averageProgress);
 
         return averageProgress;
+    }
+
+    private async Task<List<ProjectDto>> ConvertToProjectDtosAsync(IEnumerable<Project> projects)
+    {
+        var projectList = projects.ToList();
+        if (projectList.Count == 0)
+        {
+            return new List<ProjectDto>();
+        }
+
+        var userIds = new HashSet<string>();
+        foreach (var project in projectList)
+        {
+            if (!string.IsNullOrEmpty(project.ManagerId)) userIds.Add(project.ManagerId);
+            if (!string.IsNullOrEmpty(project.CreatedBy)) userIds.Add(project.CreatedBy);
+        }
+
+        var userMap = await _userService.GetUsersByIdsAsync(userIds);
+
+        return projectList.Select(p => ConvertToProjectDtoWithCache(p, userMap)).ToList();
+    }
+
+    private ProjectDto ConvertToProjectDtoWithCache(Project project, Dictionary<string, AppUser> userMap)
+    {
+        var dto = new ProjectDto
+        {
+            Id = project.Id,
+            Name = project.Name,
+            Description = project.Description,
+            Status = (int)project.Status,
+            StatusName = GetStatusName(project.Status),
+            StartDate = project.StartDate,
+            EndDate = project.EndDate,
+            Progress = project.Progress,
+            ManagerId = project.ManagerId,
+            Budget = project.Budget,
+            Priority = (int)project.Priority,
+            PriorityName = GetPriorityName(project.Priority),
+            CreatedAt = project.CreatedAt,
+            CreatedBy = project.CreatedBy,
+            UpdatedAt = project.UpdatedAt
+        };
+
+        if (!string.IsNullOrEmpty(project.ManagerId) && userMap.TryGetValue(project.ManagerId, out var manager))
+        {
+            dto.ManagerName = !string.IsNullOrWhiteSpace(manager.Name)
+                ? $"{manager.Username} ({manager.Name})"
+                : manager.Username;
+        }
+
+        if (!string.IsNullOrEmpty(project.CreatedBy) && userMap.TryGetValue(project.CreatedBy, out var creator))
+        {
+            dto.CreatedByName = !string.IsNullOrWhiteSpace(creator.Name)
+                ? $"{creator.Username} ({creator.Name})"
+                : creator.Username;
+        }
+
+        return dto;
+    }
+
+    private async Task<List<ProjectMemberDto>> ConvertToProjectMemberDtosAsync(IEnumerable<ProjectMember> members)
+    {
+        var memberList = members.ToList();
+        if (memberList.Count == 0)
+        {
+            return new List<ProjectMemberDto>();
+        }
+
+        var userIds = memberList.Select(m => m.UserId).Distinct().ToList();
+        var userMap = await _userService.GetUsersByIdsAsync(userIds);
+
+        return memberList.Select(m => ConvertToProjectMemberDtoWithCache(m, userMap)).ToList();
+    }
+
+    private ProjectMemberDto ConvertToProjectMemberDtoWithCache(ProjectMember member, Dictionary<string, AppUser> userMap)
+    {
+        var dto = new ProjectMemberDto
+        {
+            Id = member.Id,
+            ProjectId = member.ProjectId,
+            UserId = member.UserId,
+            Role = (int)member.Role,
+            RoleName = GetRoleName(member.Role),
+            Allocation = member.Allocation,
+            CreatedAt = member.CreatedAt
+        };
+
+        if (userMap.TryGetValue(member.UserId, out var user))
+        {
+            dto.UserName = user.Username;
+            dto.UserEmail = user.Email;
+        }
+
+        return dto;
     }
 
     /// <summary>

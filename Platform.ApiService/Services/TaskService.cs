@@ -5,8 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using TaskModel = Platform.ApiService.Models.WorkTask;
-using TaskStatusEnum = Platform.ApiService.Models.TaskStatus;
 
 namespace Platform.ApiService.Services;
 
@@ -15,7 +13,7 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class TaskService : ITaskService
 {
-    private readonly IDataFactory<TaskModel> _taskFactory;
+    private readonly IDataFactory<WorkTask> _taskFactory;
     private readonly IDataFactory<TaskExecutionLog> _executionLogFactory;
     private readonly IUserService _userService;
     private readonly IUnifiedNotificationService _notificationService;
@@ -27,7 +25,7 @@ public class TaskService : ITaskService
     /// 初始化 TaskService 实例
     /// </summary>
     public TaskService(
-        IDataFactory<TaskModel> taskFactory,
+        IDataFactory<WorkTask> taskFactory,
         IDataFactory<TaskExecutionLog> executionLogFactory,
         IUserService userService,
         IUserActivityLogService userActivityLogService,
@@ -54,7 +52,7 @@ public class TaskService : ITaskService
     /// <returns>创建的任务信息</returns>
     public async System.Threading.Tasks.Task<TaskDto> CreateTaskAsync(CreateTaskRequest request, string userId, string companyId)
     {
-        var task = new TaskModel
+        var task = new WorkTask
         {
             TaskName = request.TaskName,
             Description = request.Description,
@@ -69,7 +67,7 @@ public class TaskService : ITaskService
             ParticipantIds = request.ParticipantIds ?? new(),
             Tags = request.Tags ?? new(),
             Remarks = request.Remarks,
-            Status = string.IsNullOrEmpty(request.AssignedTo) ? TaskStatusEnum.Pending : TaskStatusEnum.Assigned,
+            Status = string.IsNullOrEmpty(request.AssignedTo) ? Models.TaskStatus.Pending : Models.TaskStatus.Assigned,
             ProjectId = request.ProjectId,
             ParentTaskId = request.ParentTaskId,
             SortOrder = request.SortOrder,
@@ -102,7 +100,7 @@ public class TaskService : ITaskService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "创建任务后的通知发送失败");
+            _logger.LogDebug(ex, "通知发送失败: TaskId={TaskId}, Action=task_assigned", task.Id);
         }
 
         return await ConvertToTaskDtoAsync(task);
@@ -135,10 +133,10 @@ public class TaskService : ITaskService
         var onlyRoot = request.OnlyRoot ?? string.IsNullOrEmpty(request.Search);
 
         // 构建过滤器（LINQ）
-        System.Linq.Expressions.Expression<Func<TaskModel, bool>> filter = t =>
+        System.Linq.Expressions.Expression<Func<WorkTask, bool>> filter = t =>
             (string.IsNullOrEmpty(search) || (t.TaskName != null && t.TaskName.ToLower().Contains(search)) || (t.Description != null && t.Description.ToLower().Contains(search))) &&
             (string.IsNullOrEmpty(request.ProjectId) || t.ProjectId == request.ProjectId) &&
-            (!request.Status.HasValue || t.Status == (TaskStatusEnum)request.Status.Value) &&
+            (!request.Status.HasValue || t.Status == (Models.TaskStatus)request.Status.Value) &&
             (!request.Priority.HasValue || t.Priority == (TaskPriority)request.Priority.Value) &&
             (string.IsNullOrEmpty(request.AssignedTo) || t.AssignedTo == request.AssignedTo) &&
             (string.IsNullOrEmpty(request.CreatedBy) || t.CreatedBy == request.CreatedBy) &&
@@ -149,7 +147,7 @@ public class TaskService : ITaskService
             (request.Tags == null || request.Tags.Count == 0 || t.Tags.Any(tag => request.Tags.Contains(tag)));
 
         // 排序处理
-        Func<IQueryable<TaskModel>, IOrderedQueryable<TaskModel>> orderBy = query =>
+        Func<IQueryable<WorkTask>, IOrderedQueryable<WorkTask>> orderBy = query =>
         {
             var isAsc = request.SortOrder?.ToLower() == "asc";
             return request.SortBy?.ToLower() switch
@@ -171,37 +169,28 @@ public class TaskService : ITaskService
             request.Page,
             request.PageSize);
 
-        var taskDtos = new List<TaskDto>();
-        foreach (var task in tasks)
+        var taskDtos = await ConvertToTaskDtosAsync(tasks);
+
+        if (onlyRoot)
         {
-            var dto = await ConvertToTaskDtoAsync(task);
+            var parentIds = tasks.Where(t => !string.IsNullOrEmpty(t.Id)).Select(t => t.Id!).ToList();
+            var children = await _taskFactory.FindAsync(
+                t => parentIds.Contains(t.ParentTaskId!),
+                q => q.OrderBy(c => c.SortOrder).ThenBy(c => c.CreatedAt));
 
-            // 如果是树形展示（不进行全局搜索时），加载第一层子任务
-            if (onlyRoot)
+            if (children.Any())
             {
-                var children = await _taskFactory.FindAsync(
-                    t => t.ParentTaskId == task.Id,
-                    q => q.OrderBy(c => c.SortOrder).ThenBy(c => c.CreatedAt));
+                var childDtos = await ConvertToTaskDtosAsync(children);
+                var childMap = childDtos.GroupBy(c => c.ParentTaskId!).ToDictionary(g => g.Key, g => g.ToList());
 
-                if (children.Any())
+                foreach (var dto in taskDtos)
                 {
-                    dto.Children = new List<TaskDto>();
-                    foreach (var child in children)
+                    if (childMap.TryGetValue(dto.Id!, out var dtoChildren))
                     {
-                        dto.Children.Add(await ConvertToTaskDtoAsync(child));
+                        dto.Children = dtoChildren;
                     }
                 }
-                else
-                {
-                    dto.Children = null;
-                }
             }
-            else
-            {
-                dto.Children = null;
-            }
-
-            taskDtos.Add(dto);
         }
 
         return new TaskListResponse
@@ -244,7 +233,7 @@ public class TaskService : ITaskService
                 t.Priority = (TaskPriority)request.Priority.Value;
 
             if (request.Status.HasValue)
-                t.Status = (TaskStatusEnum)request.Status.Value;
+                t.Status = (Models.TaskStatus)request.Status.Value;
 
             // 处理指派用户：null 表示不更新；空字符串表示清空指派
             if (request.AssignedTo != null)
@@ -254,15 +243,15 @@ public class TaskService : ITaskService
                     t.AssignedTo = null;
                     t.AssignedAt = null;
                     // 若任务处于已分配状态且未开始执行，清空指派后恢复为待分配
-                    if (t.Status == TaskStatusEnum.Assigned)
-                        t.Status = TaskStatusEnum.Pending;
+                    if (t.Status == Models.TaskStatus.Assigned)
+                        t.Status = Models.TaskStatus.Pending;
                 }
                 else
                 {
                     t.AssignedTo = request.AssignedTo;
                     t.AssignedAt = DateTime.UtcNow;
-                    if (t.Status == TaskStatusEnum.Pending)
-                        t.Status = TaskStatusEnum.Assigned;
+                    if (t.Status == Models.TaskStatus.Pending)
+                        t.Status = Models.TaskStatus.Assigned;
                 }
             }
 
@@ -328,7 +317,7 @@ public class TaskService : ITaskService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "任务分配通知发送失败");
+            _logger.LogDebug(ex, "通知发送失败: TaskId={TaskId}, Action=task_assigned", updatedTask.Id);
         }
 
         return await ConvertToTaskDtoAsync(updatedTask);
@@ -351,7 +340,7 @@ public class TaskService : ITaskService
         {
             t.AssignedTo = request.AssignedTo;
             t.AssignedAt = DateTime.UtcNow;
-            t.Status = TaskStatusEnum.Assigned;
+            t.Status = Models.TaskStatus.Assigned;
             t.UpdatedBy = userId;
             t.UpdatedAt = DateTime.UtcNow;
 
@@ -386,7 +375,7 @@ public class TaskService : ITaskService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "任务分配通知发送失败");
+            _logger.LogDebug(ex, "通知发送失败: TaskId={TaskId}, Action=task_assigned", updatedTask.Id);
         }
 
         return await ConvertToTaskDtoAsync(updatedTask);
@@ -407,11 +396,11 @@ public class TaskService : ITaskService
 
         var updatedTask = await _taskFactory.UpdateAsync(request.TaskId, t =>
         {
-            t.Status = (TaskStatusEnum)request.Status;
+            t.Status = (Models.TaskStatus)request.Status;
             t.UpdatedBy = userId;
             t.UpdatedAt = DateTime.UtcNow;
 
-            if (request.Status == (int)TaskStatusEnum.InProgress && t.ActualStartTime == null)
+            if (request.Status == (int)Models.TaskStatus.InProgress && t.ActualStartTime == null)
                 t.ActualStartTime = DateTime.UtcNow;
 
             if (request.CompletionPercentage.HasValue)
@@ -442,13 +431,13 @@ public class TaskService : ITaskService
         // 发送状态变更通知（执行中等）
         try
         {
-            var actionType = ((TaskStatusEnum)updatedTask.Status) switch
+            var actionType = ((Models.TaskStatus)updatedTask.Status) switch
             {
-                TaskStatusEnum.InProgress => "task_started",
-                TaskStatusEnum.Completed => "task_completed",
-                TaskStatusEnum.Cancelled => "task_cancelled",
-                TaskStatusEnum.Failed => "task_failed",
-                TaskStatusEnum.Paused => "task_paused",
+                Models.TaskStatus.InProgress => "task_started",
+                Models.TaskStatus.Completed => "task_completed",
+                Models.TaskStatus.Cancelled => "task_cancelled",
+                Models.TaskStatus.Failed => "task_failed",
+                Models.TaskStatus.Paused => "task_paused",
                 _ => "task_updated"
             };
 
@@ -471,7 +460,7 @@ public class TaskService : ITaskService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "任务状态变更通知发送失败");
+            _logger.LogDebug(ex, "通知发送失败: TaskId={TaskId}, Action=task_status_changed", updatedTask.Id);
         }
 
         return await ConvertToTaskDtoAsync(updatedTask);
@@ -493,7 +482,7 @@ public class TaskService : ITaskService
         var now = DateTime.UtcNow;
         var updatedTask = await _taskFactory.UpdateAsync(request.TaskId, t =>
         {
-            t.Status = TaskStatusEnum.Completed;
+            t.Status = Models.TaskStatus.Completed;
             t.ExecutionResult = (TaskExecutionResult)request.ExecutionResult;
             t.ActualEndTime = now;
             t.CompletionPercentage = 100;
@@ -552,7 +541,7 @@ public class TaskService : ITaskService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "任务完成通知发送失败");
+            _logger.LogDebug(ex, "通知发送失败: TaskId={TaskId}, Action=task_completed", updatedTask.Id);
         }
 
         return await ConvertToTaskDtoAsync(updatedTask);
@@ -574,7 +563,7 @@ public class TaskService : ITaskService
 
         var updatedTask = await _taskFactory.UpdateAsync(taskId, t =>
         {
-            t.Status = TaskStatusEnum.Cancelled;
+            t.Status = Models.TaskStatus.Cancelled;
             t.UpdatedBy = userId;
             t.UpdatedAt = DateTime.UtcNow;
 
@@ -609,7 +598,7 @@ public class TaskService : ITaskService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "任务取消通知发送失败");
+            _logger.LogDebug(ex, "通知发送失败: TaskId={TaskId}, Action=task_cancelled", updatedTask.Id);
         }
 
         return await ConvertToTaskDtoAsync(updatedTask);
@@ -657,7 +646,7 @@ public class TaskService : ITaskService
     /// <returns>任务统计信息</returns>
     public async System.Threading.Tasks.Task<TaskStatistics> GetTaskStatisticsAsync(string companyId, string? userId = null)
     {
-        System.Linq.Expressions.Expression<Func<TaskModel, bool>> filter = t =>
+        System.Linq.Expressions.Expression<Func<WorkTask, bool>> filter = t =>
             string.IsNullOrEmpty(userId) || (t.AssignedTo == userId || t.CreatedBy == userId);
 
         var tasks = await _taskFactory.FindAsync(filter);
@@ -665,14 +654,14 @@ public class TaskService : ITaskService
         var statistics = new TaskStatistics
         {
             TotalTasks = tasks.Count,
-            PendingTasks = tasks.Count(t => t.Status == TaskStatusEnum.Pending),
-            InProgressTasks = tasks.Count(t => t.Status == TaskStatusEnum.InProgress),
-            CompletedTasks = tasks.Count(t => t.Status == TaskStatusEnum.Completed),
-            FailedTasks = tasks.Count(t => t.Status == TaskStatusEnum.Failed),
+            PendingTasks = tasks.Count(t => t.Status == Models.TaskStatus.Pending),
+            InProgressTasks = tasks.Count(t => t.Status == Models.TaskStatus.InProgress),
+            CompletedTasks = tasks.Count(t => t.Status == Models.TaskStatus.Completed),
+            FailedTasks = tasks.Count(t => t.Status == Models.TaskStatus.Failed),
         };
 
         // 计算平均完成时间
-        var completedTasks = tasks.Where(t => t.Status == TaskStatusEnum.Completed && t.ActualDuration.HasValue).ToList();
+        var completedTasks = tasks.Where(t => t.Status == Models.TaskStatus.Completed && t.ActualDuration.HasValue).ToList();
         if (completedTasks.Count > 0)
         {
             statistics.AverageCompletionTime = completedTasks.Average(t => t.ActualDuration ?? 0);
@@ -697,12 +686,12 @@ public class TaskService : ITaskService
         statistics.TasksByStatus = new Dictionary<string, int>
         {
             { "Pending", statistics.PendingTasks },
-            { "Assigned", tasks.Count(t => t.Status == TaskStatusEnum.Assigned) },
+            { "Assigned", tasks.Count(t => t.Status == Models.TaskStatus.Assigned) },
             { "InProgress", statistics.InProgressTasks },
             { "Completed", statistics.CompletedTasks },
-            { "Cancelled", tasks.Count(t => t.Status == TaskStatusEnum.Cancelled) },
+            { "Cancelled", tasks.Count(t => t.Status == Models.TaskStatus.Cancelled) },
             { "Failed", statistics.FailedTasks },
-            { "Paused", tasks.Count(t => t.Status == TaskStatusEnum.Paused) }
+            { "Paused", tasks.Count(t => t.Status == Models.TaskStatus.Paused) }
         };
 
         return statistics;
@@ -780,16 +769,10 @@ public class TaskService : ITaskService
     public async System.Threading.Tasks.Task<List<TaskDto>> GetUserTodoTasksAsync(string userId, string companyId)
     {
         var tasks = await _taskFactory.FindAsync(
-            t => t.AssignedTo == userId && (t.Status == TaskStatusEnum.Assigned || t.Status == TaskStatusEnum.InProgress),
+            t => t.AssignedTo == userId && (t.Status == Models.TaskStatus.Assigned || t.Status == Models.TaskStatus.InProgress),
             q => q.OrderByDescending(t => t.Priority).ThenByDescending(t => t.CreatedAt));
 
-        var taskDtos = new List<TaskDto>();
-        foreach (var task in tasks)
-        {
-            taskDtos.Add(await ConvertToTaskDtoAsync(task));
-        }
-
-        return taskDtos;
+        return await ConvertToTaskDtosAsync(tasks);
     }
 
     /// <summary>
@@ -808,12 +791,7 @@ public class TaskService : ITaskService
             page,
             pageSize);
 
-        var taskDtos = new List<TaskDto>();
-        foreach (var task in tasks)
-        {
-            taskDtos.Add(await ConvertToTaskDtoAsync(task));
-        }
-
+        var taskDtos = await ConvertToTaskDtosAsync(tasks);
         return (taskDtos, (int)total);
     }
 
@@ -834,7 +812,151 @@ public class TaskService : ITaskService
         });
     }
 
-    private async System.Threading.Tasks.Task<TaskDto> ConvertToTaskDtoAsync(TaskModel task)
+    private async System.Threading.Tasks.Task<List<TaskDto>> ConvertToTaskDtosAsync(IEnumerable<WorkTask> tasks)
+    {
+        var taskList = tasks.ToList();
+        if (taskList.Count == 0)
+        {
+            return new List<TaskDto>();
+        }
+
+        var userIds = new HashSet<string>();
+        var projectIds = new HashSet<string>();
+
+        foreach (var task in taskList)
+        {
+            if (!string.IsNullOrEmpty(task.CreatedBy)) userIds.Add(task.CreatedBy);
+            if (!string.IsNullOrEmpty(task.AssignedTo)) userIds.Add(task.AssignedTo);
+            if (task.ParticipantIds != null)
+            {
+                foreach (var pid in task.ParticipantIds)
+                {
+                    if (!string.IsNullOrEmpty(pid)) userIds.Add(pid);
+                }
+            }
+            if (!string.IsNullOrEmpty(task.ProjectId)) projectIds.Add(task.ProjectId);
+        }
+
+        var userMap = await _userService.GetUsersByIdsAsync(userIds);
+
+        Dictionary<string, string> projectMap = new();
+        if (projectIds.Count > 0)
+        {
+            var projectService = _serviceProvider.GetRequiredService<IProjectService>();
+            foreach (var projectId in projectIds)
+            {
+                try
+                {
+                    var project = await projectService.GetProjectByIdAsync(projectId);
+                    if (project != null)
+                    {
+                        projectMap[projectId] = project.Name;
+                    }
+                }
+                catch
+                {
+                    // Ignore project fetch errors
+                }
+            }
+        }
+
+        var result = new List<TaskDto>();
+        foreach (var task in taskList)
+        {
+            result.Add(ConvertToTaskDtoWithCache(task, userMap, projectMap));
+        }
+
+        return result;
+    }
+
+    private TaskDto ConvertToTaskDtoWithCache(WorkTask task, Dictionary<string, AppUser> userMap, Dictionary<string, string> projectMap)
+    {
+        var dto = new TaskDto
+        {
+            Id = task.Id,
+            TaskName = task.TaskName,
+            Description = task.Description,
+            TaskType = task.TaskType,
+            Status = (int)task.Status,
+            StatusName = GetStatusName(task.Status),
+            Priority = (int)task.Priority,
+            PriorityName = GetPriorityName(task.Priority),
+            CreatedBy = task.CreatedBy ?? string.Empty,
+            CreatedAt = task.CreatedAt,
+            AssignedTo = task.AssignedTo,
+            AssignedAt = task.AssignedAt,
+            PlannedStartTime = task.PlannedStartTime,
+            PlannedEndTime = task.PlannedEndTime,
+            ActualStartTime = task.ActualStartTime,
+            ActualEndTime = task.ActualEndTime,
+            EstimatedDuration = task.EstimatedDuration,
+            ActualDuration = task.ActualDuration,
+            ExecutionResult = (int)task.ExecutionResult,
+            ExecutionResultName = GetExecutionResultName(task.ExecutionResult),
+            CompletionPercentage = task.CompletionPercentage,
+            Remarks = task.Remarks,
+            ParticipantIds = task.ParticipantIds,
+            Tags = task.Tags,
+            UpdatedAt = task.UpdatedAt,
+            UpdatedBy = task.UpdatedBy,
+            ProjectId = task.ProjectId,
+            ParentTaskId = task.ParentTaskId,
+            SortOrder = task.SortOrder,
+            Duration = task.Duration
+        };
+
+        if (!string.IsNullOrEmpty(task.CreatedBy) && userMap.TryGetValue(task.CreatedBy, out var createdByUser))
+        {
+            dto.CreatedByName = !string.IsNullOrWhiteSpace(createdByUser.Name)
+                ? $"{createdByUser.Username} ({createdByUser.Name})"
+                : createdByUser.Username;
+        }
+
+        if (!string.IsNullOrEmpty(task.AssignedTo) && userMap.TryGetValue(task.AssignedTo, out var assignedToUser))
+        {
+            dto.AssignedToName = !string.IsNullOrWhiteSpace(assignedToUser.Name)
+                ? $"{assignedToUser.Username} ({assignedToUser.Name})"
+                : assignedToUser.Username;
+        }
+
+        if (task.ParticipantIds?.Count > 0)
+        {
+            foreach (var participantId in task.ParticipantIds)
+            {
+                if (!string.IsNullOrEmpty(participantId) && userMap.TryGetValue(participantId, out var participant))
+                {
+                    dto.Participants.Add(new ParticipantInfo
+                    {
+                        UserId = participantId,
+                        Username = participant.Username,
+                        Email = participant.Email
+                    });
+                }
+            }
+        }
+
+        if (task.Attachments?.Count > 0)
+        {
+            dto.Attachments = task.Attachments.Select(a => new TaskAttachmentDto
+            {
+                Id = a.Id,
+                FileName = a.FileName,
+                FileUrl = a.FileUrl,
+                FileSize = a.FileSize,
+                UploadedAt = a.UploadedAt,
+                UploadedBy = a.UploadedBy
+            }).ToList();
+        }
+
+        if (!string.IsNullOrEmpty(task.ProjectId) && projectMap.TryGetValue(task.ProjectId, out var projectName))
+        {
+            dto.ProjectName = projectName;
+        }
+
+        return dto;
+    }
+
+    private async System.Threading.Tasks.Task<TaskDto> ConvertToTaskDtoAsync(WorkTask task)
     {
         var dto = new TaskDto
         {
@@ -917,7 +1039,7 @@ public class TaskService : ITaskService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "获取用户信息失败");
+            _logger.LogDebug(ex, "获取用户信息失败: TaskId={TaskId}", task.Id);
         }
 
         // 转换附件
@@ -948,7 +1070,7 @@ public class TaskService : ITaskService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "获取项目信息失败");
+                _logger.LogDebug(ex, "获取项目信息失败: TaskId={TaskId}, ProjectId={ProjectId}", task.Id, task.ProjectId);
             }
         }
 
@@ -989,21 +1111,21 @@ public class TaskService : ITaskService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "获取用户信息失败");
+            _logger.LogDebug(ex, "获取执行日志用户信息失败: LogId={LogId}", log.Id);
         }
 
         return dto;
     }
 
-    private static string GetStatusName(TaskStatusEnum status) => status switch
+    private static string GetStatusName(Models.TaskStatus status) => status switch
     {
-        TaskStatusEnum.Pending => "待分配",
-        TaskStatusEnum.Assigned => "已分配",
-        TaskStatusEnum.InProgress => "执行中",
-        TaskStatusEnum.Completed => "已完成",
-        TaskStatusEnum.Cancelled => "已取消",
-        TaskStatusEnum.Failed => "失败",
-        TaskStatusEnum.Paused => "暂停",
+        Models.TaskStatus.Pending => "待分配",
+        Models.TaskStatus.Assigned => "已分配",
+        Models.TaskStatus.InProgress => "执行中",
+        Models.TaskStatus.Completed => "已完成",
+        Models.TaskStatus.Cancelled => "已取消",
+        Models.TaskStatus.Failed => "失败",
+        Models.TaskStatus.Paused => "暂停",
         _ => "未知"
     };
 
@@ -1032,13 +1154,7 @@ public class TaskService : ITaskService
     public async System.Threading.Tasks.Task<List<TaskDto>> GetTasksByProjectIdAsync(string projectId)
     {
         var tasks = await _taskFactory.FindAsync(t => t.ProjectId == projectId);
-
-        var taskDtos = new List<TaskDto>();
-        foreach (var task in tasks.OrderBy(t => t.SortOrder).ThenBy(t => t.CreatedAt))
-        {
-            taskDtos.Add(await ConvertToTaskDtoAsync(task));
-        }
-
+        var taskDtos = await ConvertToTaskDtosAsync(tasks.OrderBy(t => t.SortOrder).ThenBy(t => t.CreatedAt));
         return BuildTaskTree(taskDtos);
     }
 
@@ -1048,12 +1164,7 @@ public class TaskService : ITaskService
     public async System.Threading.Tasks.Task<List<TaskDto>> GetTaskTreeAsync(string? projectId = null)
     {
         var tasks = await _taskFactory.FindAsync(t => string.IsNullOrEmpty(projectId) || t.ProjectId == projectId);
-        var taskDtos = new List<TaskDto>();
-        foreach (var task in tasks.OrderBy(t => t.SortOrder).ThenBy(t => t.CreatedAt))
-        {
-            taskDtos.Add(await ConvertToTaskDtoAsync(task));
-        }
-
+        var taskDtos = await ConvertToTaskDtosAsync(tasks.OrderBy(t => t.SortOrder).ThenBy(t => t.CreatedAt));
         return BuildTaskTree(taskDtos);
     }
 

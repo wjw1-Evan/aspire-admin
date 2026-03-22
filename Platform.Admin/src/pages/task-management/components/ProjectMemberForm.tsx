@@ -16,6 +16,12 @@ interface ProjectMemberFormProps {
   onCancel: () => void;
 }
 
+interface ProjectMemberFormValues {
+  userId: string;
+  role?: number;
+  allocation?: number;
+}
+
 const ProjectMemberForm: React.FC<ProjectMemberFormProps> = ({
   projectId,
   existingMembers,
@@ -25,7 +31,7 @@ const ProjectMemberForm: React.FC<ProjectMemberFormProps> = ({
 }) => {
   const [form] = Form.useForm();
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: ProjectMemberFormValues) => {
     try {
       const request: AddProjectMemberRequest = {
         projectId,

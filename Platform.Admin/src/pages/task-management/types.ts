@@ -31,6 +31,28 @@ export interface TaskStatisticsResponse {
   tasksByStatus: Record<string, number>;
 }
 
+export interface SearchFormValues {
+  search?: string;
+  status?: number;
+  priority?: number;
+  assignedTo?: string;
+  createdBy?: string;
+  taskType?: string;
+  projectId?: string;
+  startDate?: string;
+  endDate?: string;
+  tags?: string[];
+}
+
+export interface TaskQueryParams extends TaskListRequest {
+  current?: number;
+  pageSize?: number;
+}
+
+export interface TableSort {
+  [key: string]: 'ascend' | 'descend' | undefined;
+}
+
 /**
  * 项目相关类型（从 services/task/project.ts 导入）
  */

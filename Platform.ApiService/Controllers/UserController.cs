@@ -416,7 +416,7 @@ public class UserController : BaseApiController
     /// </summary>
     /// <param name="id">用户ID</param>
     [HttpPut("{id}/activate")]
-
+    [RequireMenu(SystemConstants.Permissions.UserManagement)]
     public async Task<IActionResult> ActivateUser(string id)
     {
         var success = await _userService.ActivateUserAsync(id);
@@ -429,7 +429,7 @@ public class UserController : BaseApiController
     /// </summary>
     /// <param name="id">用户ID</param>
     [HttpPut("{id}/deactivate")]
-
+    [RequireMenu(SystemConstants.Permissions.UserManagement)]
     public async Task<IActionResult> DeactivateUser(string id)
     {
         var success = await _userService.DeactivateUserAsync(id);

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import type { ActionType } from '@/types/pro-components';
+import type { ActionType, RequestParams } from '@/types/pro-components';
 import type { ColumnsType } from 'antd/es/table';
 import { PageContainer } from '@/components';
 import SearchFormCard from '@/components/SearchFormCard';
@@ -60,6 +60,7 @@ import TaskExecutionPanel from './components/TaskExecutionPanel';
 import UnifiedNotificationCenter from '@/components/UnifiedNotificationCenter';
 import { getProjectList, type ProjectDto } from '@/services/task/project';
 import { StatCard } from '@/components';
+import type { SearchFormValues, TaskQueryParams } from './types';
 
 // 提取纯函数到组件外部，避免每次渲染都重新创建
 const getStatusColor = (status: number) => {
@@ -197,7 +198,7 @@ const TaskManagement: React.FC = () => {
     const searchQuery = params.get('search');
 
     let shouldReload = false;
-    const formValues: any = {};
+    const formValues: Partial<SearchFormValues> = {};
 
     // 处理状态过滤
     if (status !== null) {
@@ -259,7 +260,7 @@ const TaskManagement: React.FC = () => {
   }, [location?.search, searchForm]);
 
   // 获取任务列表
-  const fetchTasks = useCallback(async (params: any, sort?: Record<string, any>) => {
+  const fetchTasks = useCallback(async (params: RequestParams, sort?: Record<string, 'ascend' | 'descend'>) => {
     let sortBy = searchParamsRef.current.sortBy;
     let sortOrder = searchParamsRef.current.sortOrder;
 
@@ -270,17 +271,17 @@ const TaskManagement: React.FC = () => {
       sortOrder = sortValue === 'ascend' ? 'asc' : 'desc';
     }
 
-    const requestData = {
-      page: params.current || searchParamsRef.current.page,
-      pageSize: params.pageSize || searchParamsRef.current.pageSize,
-      search: searchParamsRef.current.search,
-      status: searchParamsRef.current.status,
-      priority: searchParamsRef.current.priority,
-      assignedTo: searchParamsRef.current.assignedTo,
-      taskType: searchParamsRef.current.taskType,
-      projectId: searchParamsRef.current.projectId,
-      sortBy,
-      sortOrder,
+    const requestData: TaskQueryParams = {
+      Page: params.current || searchParamsRef.current.page,
+      PageSize: params.pageSize || searchParamsRef.current.pageSize,
+      SortBy: sortBy,
+      SortOrder: sortOrder,
+      Search: searchParamsRef.current.search,
+      Status: searchParamsRef.current.status,
+      Priority: searchParamsRef.current.priority,
+      AssignedTo: searchParamsRef.current.assignedTo,
+      TaskType: searchParamsRef.current.taskType,
+      ProjectId: searchParamsRef.current.projectId,
     };
 
     try {
@@ -389,7 +390,7 @@ const TaskManagement: React.FC = () => {
   }, [fetchStatistics]);
 
   // 处理搜索
-  const handleSearch = useCallback((values: any) => {
+  const handleSearch = useCallback((values: SearchFormValues) => {
     const newSearchParams = {
       ...searchParamsRef.current,
       page: 1,
@@ -598,7 +599,7 @@ const TaskManagement: React.FC = () => {
   }, []);
 
   // 请求函数（使用 useCallback 包装）
-  const requestFunction = useCallback(async (params: any, sort?: Record<string, any>) => {
+  const requestFunction = useCallback(async (params: RequestParams, sort?: Record<string, 'ascend' | 'descend'>) => {
     return fetchTasks(params, sort);
   }, [fetchTasks]);
 

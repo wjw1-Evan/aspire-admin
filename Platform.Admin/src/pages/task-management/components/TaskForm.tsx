@@ -12,8 +12,9 @@ import {
   Row,
   Col,
 } from 'antd';
+import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
-import { createTask, updateTask, TaskPriority, type TaskDto } from '@/services/task/api';
+import { createTask, updateTask, TaskPriority, type TaskDto, type CreateTaskRequest, type UpdateTaskRequest } from '@/services/task/api';
 import { getUserList } from '@/services/user/api';
 import type { AppUser } from '@/services/user/api';
 import { getProjectList, type ProjectDto } from '@/services/task/project';
@@ -27,6 +28,24 @@ interface TaskFormProps {
   onCancel?: () => void;
   projectId?: string;
   parentTaskId?: string;
+}
+
+interface TaskFormValues {
+  taskName: string;
+  description?: string;
+  taskType: string | string[];
+  priority?: number;
+  assignedUserIds?: string[];
+  participantIds?: string[];
+  plannedStartTime?: Dayjs;
+  plannedEndTime?: Dayjs;
+  estimatedDuration?: number;
+  tags?: string[];
+  remarks?: string;
+  projectId?: string;
+  parentTaskId?: string;
+  sortOrder?: number;
+  duration?: number;
 }
 
 const TaskForm: React.FC<TaskFormProps> = ({
@@ -137,7 +156,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
     }
   }, [open, task, form]);
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: TaskFormValues) => {
     setLoading(true);
     try {
       const assignedUserIds: string[] = values.assignedUserIds || [];
@@ -152,10 +171,10 @@ const TaskForm: React.FC<TaskFormProps> = ({
         ])
       );
 
-      const data: any = {
+      const data: CreateTaskRequest | UpdateTaskRequest = {
         taskName: values.taskName,
         description: values.description,
-        taskType: Array.isArray(values.taskType) ? values.taskType[0] : values.taskType,
+        taskType: Array.isArray(values.taskType) ? values.taskType[0] : (values.taskType || '其他'),
         priority: values.priority,
         plannedStartTime: values.plannedStartTime?.toISOString(),
         plannedEndTime: values.plannedEndTime?.toISOString(),
@@ -171,29 +190,24 @@ const TaskForm: React.FC<TaskFormProps> = ({
       }
 
       // 添加项目和父任务字段（如果存在）
-      if (values.projectId || projectId) {
-        data.projectId = values.projectId || projectId;
-      }
-      if (values.parentTaskId || parentTaskId) {
-        data.parentTaskId = values.parentTaskId || parentTaskId;
-      }
-      if (values.sortOrder !== undefined) {
-        data.sortOrder = values.sortOrder;
-      }
-      if (values.duration !== undefined) {
-        data.duration = values.duration;
-      }
+      const extendedData = {
+        ...data,
+        ...(values.projectId || projectId ? { projectId: values.projectId || projectId } : {}),
+        ...(values.parentTaskId || parentTaskId ? { parentTaskId: values.parentTaskId || parentTaskId } : {}),
+        ...(values.sortOrder !== undefined ? { sortOrder: values.sortOrder } : {}),
+        ...(values.duration !== undefined ? { duration: values.duration } : {}),
+      } as CreateTaskRequest;
 
       if (task?.id) {
         // 更新任务
         await updateTask({
           taskId: task.id,
-          ...data,
+          ...extendedData,
         });
         message.success('任务已更新');
       } else {
         // 创建任务
-        await createTask(data);
+        await createTask(extendedData);
         message.success('任务已创建');
       }
 

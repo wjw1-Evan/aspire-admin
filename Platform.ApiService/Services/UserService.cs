@@ -85,6 +85,19 @@ public class UserService(
     }
 
     /// <inheritdoc/>
+    public async Task<Dictionary<string, User>> GetUsersByIdsAsync(IEnumerable<string> ids)
+    {
+        var idList = ids.Where(id => !string.IsNullOrEmpty(id)).Distinct().ToList();
+        if (idList.Count == 0)
+        {
+            return new Dictionary<string, User>();
+        }
+
+        var users = await _userFactory.FindAsync(u => idList.Contains(u.Id));
+        return users.ToDictionary(u => u.Id!, u => u);
+    }
+
+    /// <inheritdoc/>
     public async Task<User> CreateUserAsync(CreateUserRequest request)
     {
         var user = new User

@@ -22,6 +22,8 @@ import {
   TaskStatus,
   TaskExecutionResult,
   type TaskDto,
+  type ExecuteTaskRequest,
+  type CompleteTaskRequest,
 } from '@/services/task/api';
 
 interface TaskExecutionPanelProps {
@@ -29,6 +31,17 @@ interface TaskExecutionPanelProps {
   task?: TaskDto | null;
   onClose: () => void;
   onSuccess: () => void;
+}
+
+interface ProgressFormValues {
+  completionPercentage: number;
+  message?: string;
+}
+
+interface CompleteFormValues {
+  executionResult: number;
+  remarks?: string;
+  errorMessage?: string;
 }
 
 type ExecutionMode = 'progress' | 'complete';
@@ -47,17 +60,18 @@ const TaskExecutionPanel: React.FC<TaskExecutionPanelProps> = ({
     task?.completionPercentage || 0,
   );
 
-  const handleExecuteProgress = async (values: any) => {
+  const handleExecuteProgress = async (values: ProgressFormValues) => {
     if (!task?.id) return;
 
     setLoading(true);
     try {
-      await executeTask({
+      const request: ExecuteTaskRequest = {
         taskId: task.id,
         status: TaskStatus.InProgress,
         completionPercentage: values.completionPercentage,
         message: values.message,
-      });
+      };
+      await executeTask(request);
 
       message.success('任务进度已更新');
       form.resetFields();
@@ -70,18 +84,18 @@ const TaskExecutionPanel: React.FC<TaskExecutionPanelProps> = ({
     }
   };
 
-  const handleCompleteTask = async (values: any) => {
+  const handleCompleteTask = async (values: CompleteFormValues) => {
     if (!task?.id) return;
 
     setLoading(true);
     try {
-      await completeTask({
+      const request: CompleteTaskRequest = {
         taskId: task.id,
         executionResult: values.executionResult,
         remarks: values.remarks,
-
         errorMessage: values.errorMessage,
-      });
+      };
+      await completeTask(request);
 
       message.success('任务已完成');
       form.resetFields();
@@ -94,11 +108,11 @@ const TaskExecutionPanel: React.FC<TaskExecutionPanelProps> = ({
     }
   };
 
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: ProgressFormValues | CompleteFormValues) => {
     if (mode === 'progress') {
-      await handleExecuteProgress(values);
+      await handleExecuteProgress(values as ProgressFormValues);
     } else {
-      await handleCompleteTask(values);
+      await handleCompleteTask(values as CompleteFormValues);
     }
   };
 

@@ -51,6 +51,16 @@ export interface SystemResources {
     is64BitProcess: boolean;
     systemUpTime: number;
   };
+  database: {
+    name: string;
+    totalSizeMB: number;
+    collectionCount: number;
+    indexCount: number;
+    dataSizeMB: number;
+    storageSizeMB: number;
+    objectCount?: number;
+    status: string;
+  };
   timestamp: string;
 }
 

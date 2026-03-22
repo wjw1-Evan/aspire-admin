@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, Row, Col, Space, Tag, Alert, Typography, theme } from 'antd';
-import { DatabaseOutlined, ThunderboltOutlined, CiOutlined, HddOutlined, MonitorOutlined } from '@ant-design/icons';
+import { DatabaseOutlined, ThunderboltOutlined, CiOutlined, HddOutlined, MonitorOutlined, CloudServerOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import ResourceCard from './ResourceCard';
 import TinyAreaChart from './TinyAreaChart';
@@ -171,6 +171,7 @@ const SystemResourcesCard: React.FC<SystemResourcesCardProps> = ({
                     <Title level={5} style={{ marginBottom: 12, fontSize: '14px', display: 'flex', alignItems: 'center', gap: 8 }}>
                         <MonitorOutlined style={{ color: token.colorPrimary }} />
                         {intl.formatMessage({ id: 'pages.welcome.systemDetails' }, { defaultMessage: '系统运行详情' })}
+                        <Tag color="processing" style={{ marginLeft: 8 }}>在线</Tag>
                     </Title>
                     <Row gutter={[16, 12]}>
                         {[
@@ -190,18 +191,43 @@ const SystemResourcesCard: React.FC<SystemResourcesCardProps> = ({
                             </Col>
                         ))}
                     </Row>
-                    <div style={{
-                        marginTop: 12,
-                        paddingTop: 8,
-                        borderTop: `1px dashed ${token.colorBorderSecondary || '#f0f0f0'}`,
-                        fontSize: '12px',
-                        color: token.colorTextSecondary
-                    }}>
-                        <Space>
-                            <span style={{ opacity: 0.7 }}>{intl.formatMessage({ id: 'pages.welcome.systemDetails.workingDirectory', defaultMessage: '运行目录:' })}</span>
-                            <Text code style={{ fontSize: '11px' }}>{systemResources.system?.workingDirectory}</Text>
-                        </Space>
-                    </div>
+                </div>
+            )}
+
+            {/* 数据库详细信息 */}
+            {systemResources?.database && (
+                <div style={{
+                    marginTop: '16px',
+                    padding: '16px',
+                    backgroundColor: token.colorFillAlter || '#fafafa',
+                    borderRadius: '12px',
+                    border: `1px solid ${token.colorBorderSecondary || '#f0f0f0'}`
+                }}>
+                    <Title level={5} style={{ marginBottom: 12, fontSize: '14px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <CloudServerOutlined style={{ color: token.colorPrimary }} />
+                        {intl.formatMessage({ id: 'pages.welcome.databaseDetails' }, { defaultMessage: '数据库信息' })}
+                        <Tag color={systemResources.database?.status === 'Connected' ? 'success' : 'default'} style={{ marginLeft: 8 }}>
+                            {systemResources.database?.status === 'Connected' ? '在线' : systemResources.database?.status || '离线'}
+                        </Tag>
+                    </Title>
+                    <Row gutter={[16, 12]}>
+                        {[
+                            { label: 'databaseName', value: systemResources.database?.name },
+                            { label: 'totalSize', value: `${systemResources.database?.totalSizeMB?.toFixed(2) || '0'} MB` },
+                            { label: 'dataSize', value: `${systemResources.database?.dataSizeMB?.toFixed(2) || '0'} MB` },
+                            { label: 'storageSize', value: `${systemResources.database?.storageSizeMB?.toFixed(2) || '0'} MB` },
+                            { label: 'collections', value: systemResources.database?.collectionCount },
+                            { label: 'indexes', value: systemResources.database?.indexCount },
+                            { label: 'documents', value: systemResources.database?.objectCount?.toLocaleString() },
+                        ].map((item, idx) => (
+                            <Col key={idx} xs={24} sm={12} md={6}>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <Text type="secondary" style={{ fontSize: '12px' }}>{intl.formatMessage({ id: `pages.welcome.databaseDetails.${item.label}` }, { defaultMessage: item.label })}</Text>
+                                    <Text strong style={{ fontSize: '13px' }}>{item.value || '-'}</Text>
+                                </div>
+                            </Col>
+                        ))}
+                    </Row>
                 </div>
             )}
         </Card>

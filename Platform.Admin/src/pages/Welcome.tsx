@@ -29,6 +29,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useSortable } from '@dnd-kit/sortable';
+import { DragOutlined } from '@ant-design/icons';
 
 import {
   WelcomeHeader,
@@ -66,6 +67,7 @@ const SortableCard: React.FC<SortableCardProps> = ({ id, children }) => {
     backgroundColor: isOver ? 'rgba(24, 144, 255, 0.05)' : 'transparent',
     borderRadius: '8px',
     padding: isOver ? '8px' : '0px',
+    position: 'relative',
   };
 
   return (
@@ -75,23 +77,50 @@ const SortableCard: React.FC<SortableCardProps> = ({ id, children }) => {
       className="sortable-card-wrapper"
       data-card-id={id}
     >
-      {/* 拖动句柄 - 在卡片顶部，应用所有拖动属性 */}
+      {/* 拖动按钮 - 位于卡片右上角，与标题对齐 */}
       <div
         style={{
-          height: '8px',
-          backgroundColor: isDragging ? '#1890ff' : '#f0f0f0',
-          cursor: isDragging ? 'grabbing' : 'grab',
-          userSelect: 'none',
-          touchAction: 'none',
-          transition: 'background-color 0.2s',
-          borderTopLeftRadius: '8px',
-          borderTopRightRadius: '8px',
+          position: 'absolute',
+          top: '12px',
+          right: '16px',
+          zIndex: 10,
+          opacity: isDragging ? 0.5 : 0.6,
         }}
-        {...attributes}
-        {...listeners}
-        className="sortable-card-handle"
-        title="拖动卡片来移动"
-      />
+      >
+        <button
+          {...attributes}
+          {...listeners}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '28px',
+            height: '28px',
+            padding: 0,
+            border: 'none',
+            borderRadius: '4px',
+            backgroundColor: isDragging ? '#1890ff' : '#f5f5f5',
+            color: isDragging ? '#fff' : '#999',
+            cursor: isDragging ? 'grabbing' : 'grab',
+            transition: 'all 0.2s',
+          }}
+          title="拖动卡片来移动"
+          onMouseOver={(e) => {
+            e.currentTarget.style.backgroundColor = '#1890ff';
+            e.currentTarget.style.color = '#fff';
+            e.currentTarget.style.opacity = '1';
+          }}
+          onMouseOut={(e) => {
+            if (!isDragging) {
+              e.currentTarget.style.backgroundColor = '#f5f5f5';
+              e.currentTarget.style.color = '#999';
+              e.currentTarget.style.opacity = '0.6';
+            }
+          }}
+        >
+          <DragOutlined style={{ fontSize: '14px' }} />
+        </button>
+      </div>
       {/* 卡片内容 */}
       {children}
     </div>

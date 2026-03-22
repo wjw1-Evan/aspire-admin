@@ -3,11 +3,14 @@ using System.Management;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Controllers;
+using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Globalization;
 using System.Linq;
+using MongoDB.Bson;
+using MongoDB.Driver;
 
 namespace Platform.ApiService.Controllers;
 
@@ -19,14 +22,17 @@ namespace Platform.ApiService.Controllers;
 public class SystemMonitorController : BaseApiController
 {
     private readonly ILogger<SystemMonitorController> _logger;
+    private readonly IMongoDatabase? _mongoDatabase;
 
     /// <summary>
     /// 初始化系统监控控制器
     /// </summary>
     /// <param name="logger">日志记录器</param>
-    public SystemMonitorController(ILogger<SystemMonitorController> logger)
+    /// <param name="mongoDatabase">MongoDB 数据库实例（可选）</param>
+    public SystemMonitorController(ILogger<SystemMonitorController> logger, IMongoDatabase? mongoDatabase = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _mongoDatabase = mongoDatabase;
     }
 
     private static DateTime _lastCpuSampleTime = DateTime.MinValue;
@@ -46,8 +52,7 @@ public class SystemMonitorController : BaseApiController
     /// <response code="200">成功返回系统资源信息</response>
     /// <response code="401">未授权</response>
     [HttpGet("resources")]
-
-    public IActionResult GetSystemResources()
+    public async Task<IActionResult> GetSystemResources()
     {
         lock (_resourceLock)
         {
@@ -76,11 +81,54 @@ public class SystemMonitorController : BaseApiController
                 Cpu = cpuInfo,
                 Disk = diskInfo,
                 System = systemInfo,
+                Database = GetDatabaseInfo(),
                 Timestamp = DateTime.UtcNow
             };
             _lastResourceFetchTime = DateTime.UtcNow;
 
             return Success(_cachedResources);
+        }
+    }
+
+    /// <summary>
+    /// 获取 MongoDB 数据库统计信息
+    /// </summary>
+    private object GetDatabaseInfo()
+    {
+        if (_mongoDatabase == null)
+        {
+            return new { Name = "未连接", TotalSizeMB = 0, CollectionCount = 0, IndexCount = 0, DataSizeMB = 0, StorageSizeMB = 0, Status = "Unavailable" };
+        }
+
+        try
+        {
+            var databaseName = _mongoDatabase.DatabaseNamespace.DatabaseName;
+            var statsCommand = new BsonDocument("dbStats", 1);
+            var stats = _mongoDatabase.RunCommandAsync<BsonDocument>(statsCommand).GetAwaiter().GetResult();
+
+            var collectionCount = stats.GetValue("collections", 0).ToInt32();
+            var indexCount = stats.GetValue("indexes", 0).ToInt32();
+            var dataSizeMB = Math.Round(stats.GetValue("dataSize", 0).ToInt64() / 1024.0 / 1024.0, 2);
+            var storageSizeMB = Math.Round(stats.GetValue("storageSize", 0).ToInt64() / 1024.0 / 1024.0, 2);
+            var totalSizeMB = Math.Round(stats.GetValue("totalSize", 0).ToInt64() / 1024.0 / 1024.0, 2);
+            var objectCount = stats.GetValue("objects", 0).ToInt64();
+
+            return new
+            {
+                Name = databaseName,
+                TotalSizeMB = totalSizeMB,
+                CollectionCount = collectionCount,
+                IndexCount = indexCount,
+                DataSizeMB = dataSizeMB,
+                StorageSizeMB = storageSizeMB,
+                ObjectCount = objectCount,
+                Status = "Connected"
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "获取 MongoDB 数据库统计信息失败");
+            return new { Name = "Error", TotalSizeMB = 0, CollectionCount = 0, IndexCount = 0, DataSizeMB = 0, StorageSizeMB = 0, Status = "Error" };
         }
     }
     /// <summary>

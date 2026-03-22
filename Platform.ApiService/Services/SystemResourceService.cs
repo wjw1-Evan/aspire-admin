@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
+using MongoDB.Driver;
 
 namespace Platform.ApiService.Services;
 
@@ -9,21 +11,24 @@ namespace Platform.ApiService.Services;
 public class SystemResourceService : ISystemResourceService
 {
     private readonly ILogger<SystemResourceService> _logger;
+    private readonly IMongoDatabase? _mongoDatabase;
 
     /// <summary>
     /// 初始化系统资源采集服务
     /// </summary>
     /// <param name="logger">日志记录器</param>
-    public SystemResourceService(ILogger<SystemResourceService> logger)
+    /// <param name="mongoDatabase">MongoDB 数据库实例（可选）</param>
+    public SystemResourceService(ILogger<SystemResourceService> logger, IMongoDatabase? mongoDatabase = null)
     {
         _logger = logger;
+        _mongoDatabase = mongoDatabase;
     }
 
     /// <summary>
     /// 获取当前系统资源使用情况（内存、CPU、磁盘、系统信息）
     /// </summary>
-    /// <returns>匿名对象，包含 Memory/Cpu/Disk/System/Timestamp 字段</returns>
-    public Task<object> GetSystemResourcesAsync()
+    /// <returns>匿名对象，包含 Memory/Cpu/Disk/System/Database/Timestamp 字段</returns>
+    public async Task<object> GetSystemResourcesAsync()
     {
         try
         {
@@ -33,6 +38,7 @@ public class SystemResourceService : ISystemResourceService
             var cpuInfo = GetCpuInfo(process);
             var diskInfo = GetDiskInfo();
             var systemInfo = GetSystemInfo();
+            var databaseInfo = await GetDatabaseInfoAsync();
 
             var resources = new
             {
@@ -40,24 +46,67 @@ public class SystemResourceService : ISystemResourceService
                 Cpu = cpuInfo,
                 Disk = diskInfo,
                 System = systemInfo,
+                Database = databaseInfo,
                 Timestamp = DateTime.UtcNow
             };
 
-            return Task.FromResult<object>(resources);
+            return resources;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取系统资源信息失败");
-            // 返回一个安全的空对象，避免调用端崩溃
             var fallback = new
             {
                 Memory = new { ProcessMemoryMB = 0, TotalMemoryMB = 0, AvailableMemoryMB = 0, UsagePercent = 0, ProcessUsagePercent = 0, Unit = "MB" },
                 Cpu = new { UsagePercent = 0, ProcessTime = 0, Uptime = 0, Unit = "%" },
                 Disk = new { TotalSizeGB = 0, AvailableSizeGB = 0, UsedSizeGB = 0, UsagePercent = 0, DriveName = "Unknown", DriveType = "Unknown", Unit = "GB" },
                 System = GetSystemInfo(),
+                Database = new { Name = "Unknown", TotalSizeMB = 0, CollectionCount = 0, IndexCount = 0, DataSizeMB = 0, StorageSizeMB = 0, Status = "Unknown" },
                 Timestamp = DateTime.UtcNow
             };
-            return Task.FromResult<object>(fallback);
+            return fallback;
+        }
+    }
+
+    /// <summary>
+    /// 获取 MongoDB 数据库统计信息
+    /// </summary>
+    private async Task<object> GetDatabaseInfoAsync()
+    {
+        if (_mongoDatabase == null)
+        {
+            return new { Name = "未连接", TotalSizeMB = 0, CollectionCount = 0, IndexCount = 0, DataSizeMB = 0, StorageSizeMB = 0, Status = "Unavailable" };
+        }
+
+        try
+        {
+            var databaseName = _mongoDatabase.DatabaseNamespace.DatabaseName;
+            var statsCommand = new BsonDocument("dbStats", 1);
+            var stats = await _mongoDatabase.RunCommandAsync<BsonDocument>(statsCommand);
+
+            var collectionCount = stats.GetValue("collections", 0).ToInt32();
+            var indexCount = stats.GetValue("indexes", 0).ToInt32();
+            var dataSizeMB = Math.Round(stats.GetValue("dataSize", 0).ToInt64() / 1024.0 / 1024.0, 2);
+            var storageSizeMB = Math.Round(stats.GetValue("storageSize", 0).ToInt64() / 1024.0 / 1024.0, 2);
+            var totalSizeMB = Math.Round(stats.GetValue("totalSize", 0).ToInt64() / 1024.0 / 1024.0, 2);
+            var objectCount = stats.GetValue("objects", 0).ToInt64();
+
+            return new
+            {
+                Name = databaseName,
+                TotalSizeMB = totalSizeMB,
+                CollectionCount = collectionCount,
+                IndexCount = indexCount,
+                DataSizeMB = dataSizeMB,
+                StorageSizeMB = storageSizeMB,
+                ObjectCount = objectCount,
+                Status = "Connected"
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "获取 MongoDB 数据库统计信息失败");
+            return new { Name = "Error", TotalSizeMB = 0, CollectionCount = 0, IndexCount = 0, DataSizeMB = 0, StorageSizeMB = 0, Status = "Error" };
         }
     }
 

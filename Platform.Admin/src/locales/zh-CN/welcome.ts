@@ -116,4 +116,13 @@ export default {
   'pages.welcome.projectList.priority.high': '高',
   'pages.welcome.projectList.priority.unknown': '未知',
   'pages.welcome.projectList.fetchFailed': '获取项目列表失败:',
+  // 数据库详情
+  'pages.welcome.databaseDetails': '数据库信息',
+  'pages.welcome.databaseDetails.databaseName': '数据库名称:',
+  'pages.welcome.databaseDetails.totalSize': '总大小:',
+  'pages.welcome.databaseDetails.dataSize': '数据大小:',
+  'pages.welcome.databaseDetails.storageSize': '存储大小:',
+  'pages.welcome.databaseDetails.collections': '集合数量:',
+  'pages.welcome.databaseDetails.indexes': '索引数量:',
+  'pages.welcome.databaseDetails.documents': '文档数量:',
 };

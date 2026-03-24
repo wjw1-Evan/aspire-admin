@@ -38,9 +38,7 @@ var mongoBuilder = builder.AddMongoDB(mongoOptionName, userName: mongoUserParam,
 
 var mongo = mongoBuilder;
 
-var databaseName = builder.Configuration["MongoDB:DatabaseName"] ?? throw new InvalidOperationException("缺少 MongoDB 数据库名称配置项 'MongoDB:DatabaseName'。");
-
-var mongodb = mongo.AddDatabase("mongodb", databaseName);
+var mongodb = mongo.AddDatabase("mongodb");
 
 // 数据初始化服务（一次性任务，完成后自动停止）
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")

@@ -19,10 +19,6 @@ public abstract class BaseIntegrationTest : IClassFixture<AppHostFixture>
     protected string? CurrentUserId { get; private set; }
     protected string? CurrentCompanyId { get; private set; }
 
-    // Per-class auth cache to avoid redundant registrations
-    private static readonly Dictionary<Type, (string Token, string UserId)> AuthCache = new();
-    private static readonly object CacheLock = new();
-
     protected BaseIntegrationTest(AppHostFixture fixture, ITestOutputHelper output)
     {
         Fixture = fixture;
@@ -31,50 +27,21 @@ public abstract class BaseIntegrationTest : IClassFixture<AppHostFixture>
     }
 
     /// <summary>
-    /// Initializes authentication for the test. 
-    /// If a token is already cached for the test class, it will be reused.
+    /// Initializes authentication for the test.
+    /// By default, each test gets a fresh new user for proper test isolation.
+    /// Use forceNewUser=false only when you need to share user context within test class.
     /// </summary>
-    protected virtual async Task InitializeAuthenticationAsync(bool forceNewUser = false)
+    protected virtual async Task InitializeAuthenticationAsync(bool forceNewUser = true)
     {
-        string? token = null;
-        string? userId = null;
-
-        if (!forceNewUser)
-        {
-            lock (CacheLock)
-            {
-                if (AuthCache.TryGetValue(GetType(), out var auth))
-                {
-                    token = auth.Token;
-                    userId = auth.UserId;
-                }
-            }
-        }
-
-        if (string.IsNullOrEmpty(token) || string.IsNullOrEmpty(userId))
-        {
-            var authResult = await CreateAndLoginNewUserAsync();
-            token = authResult.Token;
-            userId = authResult.UserId;
-            
-            if (!forceNewUser)
-            {
-                lock (CacheLock)
-                {
-                    AuthCache[GetType()] = (token, userId);
-                }
-            }
-        }
-
-        CurrentUserId = userId;
-        TestClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var authResult = await CreateAndLoginNewUserAsync();
+        
+        CurrentUserId = authResult.UserId;
+        TestClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authResult.Token);
         
         // 获取当前用户的公司ID
         var meResponse = await TestClient.GetAsync("/api/auth/me");
         if (meResponse.IsSuccessStatusCode)
         {
-            var meData = await meResponse.Content.ReadAsJsonAsync<ApiResponse<object>>();
-            // 从响应中提取公司ID
             var meJson = await meResponse.Content.ReadAsStringAsync();
             if (meJson.Contains("currentCompanyId"))
             {
@@ -85,6 +52,10 @@ public abstract class BaseIntegrationTest : IClassFixture<AppHostFixture>
                     CurrentCompanyId = companyIdProp.GetString();
                 }
             }
+        }
+        else
+        {
+            Output.WriteLine($"Warning: Failed to get user info: {meResponse.StatusCode}");
         }
     }
 

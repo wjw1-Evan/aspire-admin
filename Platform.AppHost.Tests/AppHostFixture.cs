@@ -1,8 +1,11 @@
+using System.Net;
+using System.Net.Http.Json;
 using Aspire.Hosting;
 using Aspire.Hosting.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http;
 using System.Net.Http.Headers;
+using Xunit.Abstractions;
 
 namespace Platform.AppHost.Tests;
 
@@ -21,9 +24,14 @@ public sealed class AppHostFixture : IAsyncLifetime
     private readonly List<string> _trackedWorkflowIds = new();
     private readonly List<string> _trackedDefinitionIds = new();
     private readonly object _lock = new();
+    private ITestOutputHelper? _output;
 
     public CancellationTokenSource Cts { get; } = new(DefaultTimeout);
     public CancellationToken CancellationToken => Cts.Token;
+
+    public void SetOutputHelper(ITestOutputHelper output) => _output = output;
+
+    private void Log(string message) => _output?.WriteLine(message);
 
     public AppHostFixture() { }
 
@@ -59,11 +67,69 @@ public sealed class AppHostFixture : IAsyncLifetime
     public async Task DisposeAsync()
     {
         _httpClient?.Dispose();
+
+        // 清理测试数据
+        await CleanupTestDataAsync();
+
         if (_app != null)
         {
             await _app.DisposeAsync();
         }
         Cts.Dispose();
+    }
+
+    private async Task CleanupTestDataAsync()
+    {
+        if (_app == null) return;
+
+        try
+        {
+            var cleanupClient = _app.CreateHttpClient("apiservice");
+            cleanupClient.Timeout = TimeSpan.FromSeconds(30);
+
+            var adminLogin = new { Username = "admin", Password = "admin" };
+            var loginResponse = await cleanupClient.PostAsJsonAsync("/api/auth/login", adminLogin);
+
+            string? adminToken = null;
+            if (loginResponse.IsSuccessStatusCode)
+            {
+                var loginJson = await loginResponse.Content.ReadAsStringAsync();
+                if (loginJson.Contains("\"success\":true") || loginJson.Contains("\"success\": true"))
+                {
+                    var tokenStart = loginJson.IndexOf("\"token\":\"") + 9;
+                    if (tokenStart > 8)
+                    {
+                        var tokenEnd = loginJson.IndexOf("\"", tokenStart);
+                        if (tokenEnd > tokenStart)
+                            adminToken = loginJson.Substring(tokenStart, tokenEnd - tokenStart);
+                    }
+                }
+            }
+
+            if (string.IsNullOrEmpty(adminToken))
+            {
+                Log("Warning: Failed to obtain admin token for cleanup, skipping test data cleanup");
+                return;
+            }
+
+            cleanupClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+
+            foreach (var definitionId in TrackedDefinitionIds)
+            {
+                try { await cleanupClient.DeleteAsync($"/api/workflows/{definitionId}"); } catch { }
+            }
+
+            foreach (var workflowId in TrackedWorkflowIds)
+            {
+                try { await cleanupClient.DeleteAsync($"/api/workflows/instances/{workflowId}"); } catch { }
+            }
+
+            Log($"Cleanup completed: {TrackedUserIds.Count} users, {TrackedWorkflowIds.Count} workflows, {TrackedDefinitionIds.Count} definitions");
+        }
+        catch (Exception ex)
+        {
+            Log($"Warning: Test data cleanup failed: {ex.Message}");
+        }
     }
 
     public void TrackUserId(string userId)

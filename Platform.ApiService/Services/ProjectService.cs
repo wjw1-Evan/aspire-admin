@@ -79,8 +79,16 @@ public class ProjectService : IProjectService
     /// <summary>
     /// 更新项目
     /// </summary>
-    public async Task<ProjectDto> UpdateProjectAsync(UpdateProjectRequest request)
+    public async Task<ProjectDto> UpdateProjectAsync(UpdateProjectRequest request, string userId)
     {
+        var project = await _projectFactory.GetByIdAsync(request.ProjectId);
+        if (project == null)
+            throw new KeyNotFoundException($"项目 {request.ProjectId} 不存在");
+
+        // 验证权限：创建者或项目经理可以更新
+        if (project.CreatedBy != userId && project.ManagerId != userId)
+            throw new UnauthorizedAccessException("无权更新此项目");
+
         var updatedProject = await _projectFactory.UpdateAsync(request.ProjectId, p =>
         {
             if (!string.IsNullOrEmpty(request.Name))
@@ -117,8 +125,16 @@ public class ProjectService : IProjectService
     /// <summary>
     /// 删除项目（软删除）
     /// </summary>
-    public async Task<bool> DeleteProjectAsync(string projectId, string? reason = null)
+    public async Task<bool> DeleteProjectAsync(string projectId, string userId, string? reason = null)
     {
+        var project = await _projectFactory.GetByIdAsync(projectId);
+        if (project == null)
+            return false;
+
+        // 验证权限：创建者或项目经理可以删除
+        if (project.CreatedBy != userId && project.ManagerId != userId)
+            throw new UnauthorizedAccessException("无权删除此项目");
+
         var updated = await _projectFactory.UpdateAsync(projectId, p => p.IsDeleted = true);
         return updated != null;
     }

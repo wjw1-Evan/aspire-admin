@@ -21,16 +21,18 @@ public interface IProjectService
     /// 更新项目
     /// </summary>
     /// <param name="request">更新项目请求</param>
+    /// <param name="userId">当前用户ID</param>
     /// <returns>更新后的项目</returns>
-    Task<ProjectDto> UpdateProjectAsync(UpdateProjectRequest request);
+    Task<ProjectDto> UpdateProjectAsync(UpdateProjectRequest request, string userId);
 
     /// <summary>
     /// 删除项目（软删除）
     /// </summary>
     /// <param name="projectId">项目ID</param>
+    /// <param name="userId">当前用户ID</param>
     /// <param name="reason">删除原因</param>
     /// <returns>是否删除成功</returns>
-    Task<bool> DeleteProjectAsync(string projectId, string? reason = null);
+    Task<bool> DeleteProjectAsync(string projectId, string userId, string? reason = null);
 
     /// <summary>
     /// 获取项目详情

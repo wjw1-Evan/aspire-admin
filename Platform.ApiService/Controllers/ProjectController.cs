@@ -67,12 +67,17 @@ public class ProjectController : BaseApiController
 
         try
         {
-            var project = await _projectService.UpdateProjectAsync(request);
+            var userId = GetRequiredUserId();
+            var project = await _projectService.UpdateProjectAsync(request, userId);
             return Success(project);
         }
         catch (KeyNotFoundException)
         {
             return NotFoundError("项目", id);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Error("UNAUTHORIZED", ex.Message);
         }
         catch (Exception ex)
         {
@@ -89,11 +94,16 @@ public class ProjectController : BaseApiController
     {
         try
         {
-            var deleted = await _projectService.DeleteProjectAsync(id, reason);
+            var userId = GetRequiredUserId();
+            var deleted = await _projectService.DeleteProjectAsync(id, userId, reason);
             if (!deleted)
                 return NotFoundError("项目", id);
 
             return Success("项目已删除");
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Error("UNAUTHORIZED", ex.Message);
         }
         catch (Exception ex)
         {

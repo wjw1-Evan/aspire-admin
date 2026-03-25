@@ -197,8 +197,7 @@ public partial class WorkflowEngine
                         document.Title,
                         "workflow_delegated",
                         new List<string> { delegateToUserId },
-                        $"您收到一个转办的审批任务",
-                        instance.CompanyId
+                        $"您收到一个转办的审批任务"
                     );
                 }
             }
@@ -331,8 +330,7 @@ public partial class WorkflowEngine
                             document.Title,
                             "workflow_approval_completed",
                             new List<string> { instanceForNotify.StartedBy },
-                            $"审批节点 [{node.Data.Label ?? node.Id}] 已完成，审批人: {approverNames}",
-                            instanceForNotify.CompanyId
+                            $"审批节点 [{node.Data.Label ?? node.Id}] 已完成，审批人: {approverNames}"
                         );
 
                         await SendCcNotificationsAsync(instanceId, node, "workflow_approval_completed",
@@ -434,8 +432,7 @@ public partial class WorkflowEngine
                         document.Title,
                         "workflow_returned",
                         relatedUsers,
-                        comment,
-                        instance.CompanyId
+                        comment
                     );
                 }
             }

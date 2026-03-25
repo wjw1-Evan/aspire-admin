@@ -17,9 +17,6 @@ public class PasswordBookService : IPasswordBookService
     /// <summary>
     /// 初始化密码本服务
     /// </summary>
-    /// <param name="factory">数据库操作工厂</param>
-    /// <param name="encryptionService">加密服务</param>
-    /// <param name="logger">日志记录器</param>
     public PasswordBookService(
         IDataFactory<PasswordBookEntry> factory,
         IEncryptionService encryptionService,
@@ -41,8 +38,9 @@ public class PasswordBookService : IPasswordBookService
             throw new ArgumentException("账号不能为空", nameof(request));
         if (string.IsNullOrEmpty(request.Password))
             throw new ArgumentException("密码不能为空", nameof(request));
+        if (string.IsNullOrEmpty(userId))
+            throw new ArgumentException("用户ID不能为空", nameof(userId));
 
-        // 加密密码
         var encryptedPassword = await _encryptionService.EncryptAsync(request.Password, userId);
 
         var entry = new PasswordBookEntry
@@ -54,7 +52,8 @@ public class PasswordBookService : IPasswordBookService
             Category = request.Category,
             Tags = request.Tags ?? new List<string>(),
             Notes = request.Notes,
-            UserId = userId
+            UserId = userId,
+            IsPublic = request.IsPublic
         };
 
         var result = await _factory.CreateAsync(entry);
@@ -67,11 +66,13 @@ public class PasswordBookService : IPasswordBookService
     /// </summary>
     public async Task<PasswordBookEntry?> UpdateEntryAsync(string id, UpdatePasswordBookEntryRequest request, string userId)
     {
+        if (string.IsNullOrEmpty(userId))
+            throw new ArgumentException("用户ID不能为空", nameof(userId));
+        
         var entry = await _factory.GetByIdAsync(id);
         if (entry == null)
             return null;
 
-        // 验证用户权限（只能更新自己的条目）
         if (entry.UserId != userId)
             throw new UnauthorizedAccessException("无权更新此条目");
 
@@ -98,6 +99,8 @@ public class PasswordBookService : IPasswordBookService
                 entity.Tags = request.Tags;
             if (request.Notes != null)
                 entity.Notes = request.Notes;
+            if (request.IsPublic.HasValue)
+                entity.IsPublic = request.IsPublic.Value;
         });
 
         if (updated != null)
@@ -113,19 +116,22 @@ public class PasswordBookService : IPasswordBookService
     /// </summary>
     public async Task<PasswordBookEntryDetailDto?> GetEntryByIdAsync(string id, string userId)
     {
+        if (string.IsNullOrEmpty(userId))
+            throw new ArgumentException("用户ID不能为空", nameof(userId));
+        
         var entry = await _factory.GetByIdAsync(id);
         if (entry == null)
             return null;
 
-        // 验证用户权限
-        if (entry.UserId != userId)
+        if (entry.UserId != userId && !entry.IsPublic)
             throw new UnauthorizedAccessException("无权访问此条目");
 
-        // 解密密码
-        var password = await _encryptionService.DecryptAsync(entry.EncryptedPassword, userId);
+        var password = await _encryptionService.DecryptAsync(entry.EncryptedPassword, entry.UserId);
 
-        // 更新最后使用时间
-        await _factory.UpdateAsync(id, entity => entity.LastUsedAt = DateTime.UtcNow);
+        if (entry.UserId == userId)
+        {
+            await _factory.UpdateAsync(id, entity => entity.LastUsedAt = DateTime.UtcNow);
+        }
 
         return new PasswordBookEntryDetailDto
         {
@@ -139,15 +145,20 @@ public class PasswordBookService : IPasswordBookService
             Notes = entry.Notes,
             LastUsedAt = entry.LastUsedAt,
             CreatedAt = entry.CreatedAt,
-            UpdatedAt = entry.UpdatedAt
+            UpdatedAt = entry.UpdatedAt,
+            IsPublic = entry.IsPublic
         };
     }
 
     /// <summary>
     /// 分页查询条目列表（不返回密码）
+    /// 可见范围：自己的私有条目 + 企业内所有公有条目
     /// </summary>
-    public async Task<(List<PasswordBookEntryDto> Items, long Total)> GetEntriesAsync(PasswordBookQueryRequest request)
+    public async Task<(List<PasswordBookEntryDto> Items, long Total)> GetEntriesAsync(PasswordBookQueryRequest request, string userId)
     {
+        if (string.IsNullOrEmpty(userId))
+            throw new ArgumentException("用户ID不能为空", nameof(userId));
+        
         var platform = request.Platform?.Trim();
         var account = request.Account?.Trim();
         var category = request.Category?.Trim();
@@ -156,6 +167,7 @@ public class PasswordBookService : IPasswordBookService
 
         var (items, total) = await _factory.FindPagedAsync(
             e =>
+                (e.UserId == userId || e.IsPublic) &&
                 (string.IsNullOrEmpty(platform) || e.Platform.Contains(platform)) &&
                 (string.IsNullOrEmpty(account) || e.Account.Contains(account)) &&
                 (string.IsNullOrEmpty(category) || e.Category == category) &&
@@ -181,7 +193,8 @@ public class PasswordBookService : IPasswordBookService
             Notes = e.Notes,
             LastUsedAt = e.LastUsedAt,
             CreatedAt = e.CreatedAt,
-            UpdatedAt = e.UpdatedAt
+            UpdatedAt = e.UpdatedAt,
+            IsPublic = e.IsPublic
         }).ToList();
 
         return (dtos, total);
@@ -192,11 +205,13 @@ public class PasswordBookService : IPasswordBookService
     /// </summary>
     public async Task<bool> DeleteEntryAsync(string id, string userId)
     {
+        if (string.IsNullOrEmpty(userId))
+            throw new ArgumentException("用户ID不能为空", nameof(userId));
+        
         var entry = await _factory.GetByIdAsync(id);
         if (entry == null)
             return false;
 
-        // 🔒 安全修复：验证用户权限（只能删除自己的条目）
         if (entry.UserId != userId)
             throw new UnauthorizedAccessException("无权删除此条目");
 
@@ -243,19 +258,20 @@ public class PasswordBookService : IPasswordBookService
     }
 
     /// <summary>
-    /// 导出条目（解密后导出）
+    /// 导出条目（解密后导出，仅导出自己创建的条目）
     /// </summary>
     public async Task<List<PasswordBookEntryDetailDto>> ExportEntriesAsync(ExportPasswordBookRequest request, string userId)
     {
+        if (string.IsNullOrEmpty(userId))
+            throw new ArgumentException("用户ID不能为空", nameof(userId));
+        
         var category = request.Category?.Trim();
         var tags = request.Tags;
 
         var entries = await _factory.FindAsync(e =>
+            e.UserId == userId &&
             (string.IsNullOrEmpty(category) || e.Category == category) &&
             (tags == null || tags.Count == 0 || (e.Tags != null && e.Tags.Any(t => tags.Contains(t)))));
-
-        // 只导出当前用户的条目
-        entries = entries.Where(e => e.UserId == userId).ToList();
 
         var result = new List<PasswordBookEntryDetailDto>();
         foreach (var entry in entries)
@@ -275,13 +291,13 @@ public class PasswordBookService : IPasswordBookService
                     Notes = entry.Notes,
                     LastUsedAt = entry.LastUsedAt,
                     CreatedAt = entry.CreatedAt,
-                    UpdatedAt = entry.UpdatedAt
+                    UpdatedAt = entry.UpdatedAt,
+                    IsPublic = entry.IsPublic
                 });
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Failed to decrypt entry {EntryId} during export", entry.Id);
-                // 跳过无法解密的条目
             }
         }
 

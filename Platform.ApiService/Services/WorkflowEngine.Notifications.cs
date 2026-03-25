@@ -50,8 +50,7 @@ public partial class WorkflowEngine
                     document.Title,
                     "workflow_pending_approval",
                     approvers,
-                    message,
-                    instance.CompanyId
+                    message
                 );
             }
         }
@@ -79,8 +78,7 @@ public partial class WorkflowEngine
                 document.Title,
                 "workflow_returned_to_start",
                 new List<string> { startedBy },
-                $"您的流程已被退回至起始节点，请重新填写并提交：{startNode.Data.Label ?? startNode.Id}",
-                instance.CompanyId
+                $"您的流程已被退回至起始节点，请重新填写并提交：{startNode.Data.Label ?? startNode.Id}"
             );
         }
         catch (Exception ex)
@@ -137,8 +135,7 @@ public partial class WorkflowEngine
                     document.Title,
                     "workflow_cc",
                     ccUserIds,
-                    ccMessage,
-                    instance.CompanyId
+                    ccMessage
                 );
                 _logger.LogInformation("发送抄送通知成功: InstanceId={InstanceId}, CcUsers={CcUsers}", instanceId, string.Join(",", ccUserIds));
             }

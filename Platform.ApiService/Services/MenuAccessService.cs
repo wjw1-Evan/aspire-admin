@@ -36,10 +36,7 @@ public class MenuAccessService : IMenuAccessService
     /// <summary>
     /// 检查用户是否具有指定菜单的访问权限
     /// </summary>
-    /// <param name="userId">用户ID</param>
-    /// <param name="menuName">菜单名称（如 "user-management"、"cloud-storage-files"）</param>
-    /// <returns>是否有访问权限</returns>
-    public async Task<bool> HasMenuAccessAsync(string userId, string menuName)
+    public async Task<bool> HasMenuAccessAsync(string menuName, string userId)
     {
         if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(menuName))
         {
@@ -53,9 +50,6 @@ public class MenuAccessService : IMenuAccessService
     /// <summary>
     /// 检查用户是否有任意一个菜单的访问权限
     /// </summary>
-    /// <param name="userId">用户ID</param>
-    /// <param name="menuNames">菜单名称列表</param>
-    /// <returns>是否有访问权限</returns>
     public async Task<bool> HasAnyMenuAccessAsync(string userId, params string[] menuNames)
     {
         var userMenuNames = await GetUserMenuNamesAsync(userId);
@@ -66,10 +60,13 @@ public class MenuAccessService : IMenuAccessService
     /// <summary>
     /// 获取用户的菜单名称列表
     /// </summary>
-    /// <param name="userId">用户ID</param>
-    /// <returns>菜单名称列表（小写）</returns>
     public async Task<List<string>> GetUserMenuNamesAsync(string userId)
     {
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return new List<string>();
+        }
+
         try
         {
             // 获取用户信息

@@ -397,24 +397,11 @@ public class UnifiedNotificationService : IUnifiedNotificationService
         string documentTitle,
         string actionType,
         IEnumerable<string> relatedUserIds,
-        string? remarks = null,
-        string? companyId = null)
+        string? remarks = null)
     {
-        // 获取企业ID
-        string finalCompanyId;
-        if (!string.IsNullOrEmpty(companyId))
-        {
-            finalCompanyId = companyId;
-        }
-        else
-        {
-            var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-            var currentUser = await _userFactory.GetByIdAsync(currentUserId)
-                ?? throw new UnauthorizedAccessException("未找到当前用户信息");
-            if (string.IsNullOrEmpty(currentUser.CurrentCompanyId))
-                throw new UnauthorizedAccessException("未找到当前企业信息");
-            finalCompanyId = currentUser.CurrentCompanyId;
-        }
+        var finalCompanyId = await _tenantContext.GetCurrentCompanyIdAsync();
+        if (string.IsNullOrEmpty(finalCompanyId))
+            throw new UnauthorizedAccessException("未找到当前企业信息");
 
         // 根据操作类型生成标题和描述
         var (title, description) = GenerateWorkflowNotificationContent(actionType, documentTitle, remarks);

@@ -120,7 +120,7 @@ public class UserService(
 
         // 检查是否有用户管理权限
         var hasMenuAccess = await _menuAccessService
-            .HasMenuAccessAsync(currentUserId!, SystemConstants.Permissions.UserManagement);
+            .HasMenuAccessAsync(SystemConstants.Permissions.UserManagement, currentUserId);
 
         if (!hasMenuAccess)
         {

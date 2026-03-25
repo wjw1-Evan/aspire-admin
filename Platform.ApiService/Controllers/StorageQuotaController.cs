@@ -4,6 +4,7 @@ using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
+using Platform.ServiceDefaults.Services;
 
 namespace Platform.ApiService.Controllers;
 
@@ -17,6 +18,7 @@ namespace Platform.ApiService.Controllers;
 public class StorageQuotaController : BaseApiController
 {
     private readonly IStorageQuotaService _storageQuotaService;
+    private readonly ITenantContext _tenantContext;
     private readonly ILogger<StorageQuotaController> _logger;
 
     /// <summary>
@@ -24,9 +26,11 @@ public class StorageQuotaController : BaseApiController
     /// </summary>
     public StorageQuotaController(
         IStorageQuotaService storageQuotaService,
+        ITenantContext tenantContext,
         ILogger<StorageQuotaController> logger)
     {
         _storageQuotaService = storageQuotaService ?? throw new ArgumentNullException(nameof(storageQuotaService));
+        _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -314,15 +318,14 @@ public class StorageQuotaController : BaseApiController
     /// <summary>
     /// 获取企业存储统计
     /// </summary>
-    /// <param name="companyId">企业ID（可选，为空时获取当前企业）</param>
     /// <returns>企业存储统计信息</returns>
     [HttpGet("company/usage")]
     [RequireMenu("cloud-storage-quota")]
-    public async Task<IActionResult> GetCompanyUsage([FromQuery] string? companyId = null)
+    public async Task<IActionResult> GetCompanyUsage()
     {
         try
         {
-            var statistics = await _storageQuotaService.GetCompanyStorageStatisticsAsync(companyId);
+            var statistics = await _storageQuotaService.GetCompanyStorageStatisticsAsync();
             return Success(statistics);
         }
         catch (Exception ex)
@@ -336,18 +339,17 @@ public class StorageQuotaController : BaseApiController
     /// 获取存储使用量排行榜
     /// </summary>
     /// <param name="topCount">返回数量</param>
-    /// <param name="companyId">企业ID（可选）</param>
     /// <returns>存储使用量排行</returns>
     [HttpGet("ranking")]
     [RequireMenu("cloud-storage-quota")]
-    public async Task<IActionResult> GetStorageUsageRanking([FromQuery] int topCount = 10, [FromQuery] string? companyId = null)
+    public async Task<IActionResult> GetStorageUsageRanking([FromQuery] int topCount = 10)
     {
         if (topCount < 1 || topCount > 100)
             return ValidationError("返回数量必须在 1-100 之间");
 
         try
         {
-            var ranking = await _storageQuotaService.GetStorageUsageRankingAsync(topCount, companyId);
+            var ranking = await _storageQuotaService.GetStorageUsageRankingAsync(topCount);
             return Success(ranking);
         }
         catch (Exception ex)
@@ -361,18 +363,17 @@ public class StorageQuotaController : BaseApiController
     /// 获取存储配额警告列表
     /// </summary>
     /// <param name="warningThreshold">警告阈值（百分比，默认80%）</param>
-    /// <param name="companyId">企业ID（可选）</param>
     /// <returns>配额警告列表</returns>
     [HttpGet("warnings")]
     [RequireMenu("cloud-storage-quota")]
-    public async Task<IActionResult> GetQuotaWarnings([FromQuery] double warningThreshold = 0.8, [FromQuery] string? companyId = null)
+    public async Task<IActionResult> GetQuotaWarnings([FromQuery] double warningThreshold = 0.8)
     {
         if (warningThreshold < 0.1 || warningThreshold > 1.0)
             return ValidationError("警告阈值必须在 0.1-1.0 之间");
 
         try
         {
-            var warnings = await _storageQuotaService.GetQuotaWarningsAsync(warningThreshold, companyId);
+            var warnings = await _storageQuotaService.GetQuotaWarningsAsync(warningThreshold);
             return Success(new
             {
                 data = warnings,
@@ -393,15 +394,15 @@ public class StorageQuotaController : BaseApiController
     /// <summary>
     /// 清理未使用的存储配额记录
     /// </summary>
-    /// <param name="companyId">企业ID（可选）</param>
     /// <returns>清理结果</returns>
     [HttpPost("cleanup")]
     [RequireMenu("cloud-storage-quota")]
-    public async Task<IActionResult> CleanupUnusedQuotas([FromQuery] string? companyId = null)
+    public async Task<IActionResult> CleanupUnusedQuotas()
     {
         try
         {
-            var result = await _storageQuotaService.CleanupUnusedQuotasAsync(companyId);
+            var result = await _storageQuotaService.CleanupUnusedQuotasAsync();
+            var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
             _logger.LogInformation("清理未使用配额, CompanyId: {CompanyId}, Count: {Count}", companyId, result.SuccessCount);
             return Success(result, $"清理完成，删除了 {result.SuccessCount} 个未使用的配额记录");
         }

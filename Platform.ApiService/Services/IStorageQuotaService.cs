@@ -43,9 +43,8 @@ public interface IStorageQuotaService
     /// <summary>
     /// 获取企业存储统计
     /// </summary>
-    /// <param name="companyId">企业ID（可选，为空时获取当前企业）</param>
     /// <returns>企业存储统计</returns>
-    Task<CompanyStorageStatistics> GetCompanyStorageStatisticsAsync(string? companyId = null);
+    Task<CompanyStorageStatistics> GetCompanyStorageStatisticsAsync();
 
     /// <summary>
     /// 重新计算用户存储使用量
@@ -65,24 +64,21 @@ public interface IStorageQuotaService
     /// 获取存储使用量排行榜
     /// </summary>
     /// <param name="topCount">返回数量</param>
-    /// <param name="companyId">企业ID（可选）</param>
     /// <returns>存储使用量排行</returns>
-    Task<List<UserStorageRanking>> GetStorageUsageRankingAsync(int topCount = 10, string? companyId = null);
+    Task<List<UserStorageRanking>> GetStorageUsageRankingAsync(int topCount = 10);
 
     /// <summary>
     /// 获取存储配额警告列表
     /// </summary>
     /// <param name="warningThreshold">警告阈值（百分比，默认80%）</param>
-    /// <param name="companyId">企业ID（可选）</param>
     /// <returns>配额警告列表</returns>
-    Task<List<StorageQuotaWarning>> GetQuotaWarningsAsync(double warningThreshold = 0.8, string? companyId = null);
+    Task<List<StorageQuotaWarning>> GetQuotaWarningsAsync(double warningThreshold = 0.8);
 
     /// <summary>
     /// 清理未使用的存储配额记录
     /// </summary>
-    /// <param name="companyId">企业ID（可选）</param>
     /// <returns>清理结果</returns>
-    Task<BatchOperationResult> CleanupUnusedQuotasAsync(string? companyId = null);
+    Task<BatchOperationResult> CleanupUnusedQuotasAsync();
 
     /// <summary>
     /// 获取存储配额列表（分页）

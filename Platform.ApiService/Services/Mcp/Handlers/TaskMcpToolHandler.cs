@@ -283,7 +283,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             ProjectId = arguments.GetValueOrDefault("projectId")?.ToString()
         };
 
-        var task = await _taskService.CreateTaskAsync(request, currentUserId);
+        var task = await _taskService.CreateTaskAsync(request);
         return new { task.Id, task.TaskName, task.Status, task.StatusName, task.Priority, task.PriorityName, task.CreatedAt, message = "任务创建成功" };
     }
 
@@ -302,7 +302,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             CompletionPercentage = arguments.ContainsKey("completionPercentage") && int.TryParse(arguments["completionPercentage"]?.ToString(), out var completion) ? completion : null
         };
 
-        var task = await _taskService.UpdateTaskAsync(request, currentUserId);
+        var task = await _taskService.UpdateTaskAsync(request);
         return new { task.Id, task.TaskName, task.Status, task.StatusName, task.CompletionPercentage, task.UpdatedAt, message = "任务更新成功" };
     }
 
@@ -320,7 +320,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             Remarks = arguments.GetValueOrDefault("remarks")?.ToString()
         };
 
-        var task = await _taskService.AssignTaskAsync(request, currentUserId);
+        var task = await _taskService.AssignTaskAsync(request);
         return new { task.Id, task.TaskName, task.AssignedTo, task.AssignedToName, task.AssignedAt, task.Status, task.StatusName, message = "任务分配成功" };
     }
 
@@ -340,7 +340,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             Remarks = arguments.ContainsKey("remarks") ? arguments["remarks"]?.ToString() : null
         };
 
-        var task = await _taskService.CompleteTaskAsync(request, currentUserId);
+        var task = await _taskService.CompleteTaskAsync(request);
         return new { task.Id, task.TaskName, task.Status, task.StatusName, task.ExecutionResult, task.ExecutionResultName, task.CompletionPercentage, task.ActualEndTime, message = "任务完成成功" };
     }
 

@@ -187,9 +187,9 @@ public class StorageQuotaService : IStorageQuotaService
     /// <summary>
     /// 获取企业存储统计
     /// </summary>
-    public async Task<CompanyStorageStatistics> GetCompanyStorageStatisticsAsync(string? companyId = null)
+    public async Task<CompanyStorageStatistics> GetCompanyStorageStatisticsAsync()
     {
-        var targetCompanyId = companyId ?? await _tenantContext.GetCurrentCompanyIdAsync();
+        var targetCompanyId = await _tenantContext.GetCurrentCompanyIdAsync();
         if (string.IsNullOrEmpty(targetCompanyId))
             throw new InvalidOperationException("企业ID不能为空");
 
@@ -327,7 +327,7 @@ public class StorageQuotaService : IStorageQuotaService
     /// <summary>
     /// 获取存储使用量排行榜
     /// </summary>
-    public async Task<List<UserStorageRanking>> GetStorageUsageRankingAsync(int topCount = 10, string? companyId = null)
+    public async Task<List<UserStorageRanking>> GetStorageUsageRankingAsync(int topCount = 10)
     {
         if (topCount <= 0)
             throw new ArgumentException("返回数量必须大于0", nameof(topCount));
@@ -366,7 +366,7 @@ public class StorageQuotaService : IStorageQuotaService
     /// <summary>
     /// 获取存储配额警告列表
     /// </summary>
-    public async Task<List<StorageQuotaWarning>> GetQuotaWarningsAsync(double warningThreshold = 0.8, string? companyId = null)
+    public async Task<List<StorageQuotaWarning>> GetQuotaWarningsAsync(double warningThreshold = 0.8)
     {
         if (warningThreshold < 0 || warningThreshold > 1)
             throw new ArgumentException("警告阈值必须在0-1之间", nameof(warningThreshold));
@@ -421,7 +421,7 @@ public class StorageQuotaService : IStorageQuotaService
     /// <summary>
     /// 清理未使用的存储配额记录
     /// </summary>
-    public async Task<BatchOperationResult> CleanupUnusedQuotasAsync(string? companyId = null)
+    public async Task<BatchOperationResult> CleanupUnusedQuotasAsync()
     {
         var result = new BatchOperationResult
         {

@@ -374,7 +374,6 @@ public class TaskService : ITaskService
     /// 执行任务
     /// </summary>
     /// <param name="request">执行任务请求</param>
-    /// <param name="userId">操作用户ID</param>
     /// <returns>执行后的任务信息</returns>
     public async System.Threading.Tasks.Task<TaskDto> ExecuteTaskAsync(ExecuteTaskRequest request)
     {
@@ -455,7 +454,6 @@ public class TaskService : ITaskService
     /// 完成任务
     /// </summary>
     /// <param name="request">完成任务请求</param>
-    /// <param name="userId">操作用户ID</param>
     /// <returns>完成后的任务信息</returns>
     public async System.Threading.Tasks.Task<TaskDto> CompleteTaskAsync(CompleteTaskRequest request)
     {
@@ -532,7 +530,6 @@ public class TaskService : ITaskService
     /// 取消任务
     /// </summary>
     /// <param name="taskId">任务ID</param>
-    /// <param name="userId">操作用户ID</param>
     /// <param name="remarks">取消备注</param>
     /// <returns>取消后的任务信息</returns>
     public async System.Threading.Tasks.Task<TaskDto> CancelTaskAsync(string taskId, string? remarks = null)
@@ -587,7 +584,6 @@ public class TaskService : ITaskService
     /// 删除任务
     /// </summary>
     /// <param name="taskId">任务ID</param>
-    /// <param name="userId">操作用户ID</param>
     /// <returns>删除是否成功</returns>
     public async System.Threading.Tasks.Task<bool> DeleteTaskAsync(string taskId)
     {
@@ -703,7 +699,6 @@ public class TaskService : ITaskService
     /// 记录任务执行日志
     /// </summary>
     /// <param name="taskId">任务ID</param>
-    /// <param name="userId">执行用户ID</param>
     /// <param name="status">执行结果状态</param>
     /// <param name="message">执行消息</param>
     /// <param name="progressPercentage">进度百分比</param>
@@ -766,7 +761,6 @@ public class TaskService : ITaskService
     /// </summary>
     /// <param name="taskIds">任务ID列表</param>
     /// <param name="status">新状态</param>
-    /// <param name="userId">当前用户ID</param>
     /// <returns>更新的任务数量</returns>
     public async System.Threading.Tasks.Task<int> BatchUpdateTaskStatusAsync(List<string> taskIds, Models.TaskStatus status)
     {

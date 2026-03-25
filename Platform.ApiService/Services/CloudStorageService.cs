@@ -635,6 +635,10 @@ public class CloudStorageService : ICloudStorageService
         if (fileItem == null)
             throw new ArgumentException("文件项不存在", nameof(id));
 
+        // 验证是否是文件创建者
+        if (fileItem.CreatedBy != userId)
+            throw new UnauthorizedAccessException("无权删除他人的文件");
+
         var now = DateTime.UtcNow;
         var keepDays = 30;
 

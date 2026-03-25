@@ -201,13 +201,22 @@ public class TaskService : ITaskService
     /// 更新任务信息
     /// </summary>
     /// <param name="request">更新任务请求</param>
+    /// <param name="userId">当前用户ID</param>
     /// <returns>更新后的任务信息</returns>
-    public async System.Threading.Tasks.Task<TaskDto> UpdateTaskAsync(UpdateTaskRequest request)
+    public async System.Threading.Tasks.Task<TaskDto> UpdateTaskAsync(UpdateTaskRequest request, string userId)
     {
         var task = await _taskFactory.GetByIdAsync(request.TaskId);
 
         if (task == null)
             throw new KeyNotFoundException($"任务 {request.TaskId} 不存在");
+
+        // 验证权限：创建者、负责人或参与者可以更新
+        var isCreator = task.CreatedBy == userId;
+        var isAssignee = task.AssignedTo == userId;
+        var isParticipant = task.ParticipantIds?.Contains(userId) == true;
+        
+        if (!isCreator && !isAssignee && !isParticipant)
+            throw new UnauthorizedAccessException("无权更新此任务");
 
         var updatedTask = await _taskFactory.UpdateAsync(request.TaskId, t =>
         {
@@ -584,9 +593,18 @@ public class TaskService : ITaskService
     /// 删除任务
     /// </summary>
     /// <param name="taskId">任务ID</param>
+    /// <param name="userId">当前用户ID</param>
     /// <returns>删除是否成功</returns>
-    public async System.Threading.Tasks.Task<bool> DeleteTaskAsync(string taskId)
+    public async System.Threading.Tasks.Task<bool> DeleteTaskAsync(string taskId, string userId)
     {
+        var task = await _taskFactory.GetByIdAsync(taskId);
+        if (task == null)
+            return false;
+
+        // 验证是否是任务创建者
+        if (task.CreatedBy != userId)
+            throw new UnauthorizedAccessException("无权删除他人的任务");
+
         // 收集所有需要删除的任务ID（包括任务本身及其所有后代任务）
         var idsToDelete = new List<string> { taskId };
         await GetAllDescendantIdsAsync(taskId, idsToDelete);

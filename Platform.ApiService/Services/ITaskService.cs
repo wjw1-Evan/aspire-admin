@@ -35,8 +35,9 @@ public interface ITaskService
     /// 更新任务
     /// </summary>
     /// <param name="request">更新请求</param>
+    /// <param name="userId">当前用户ID</param>
     /// <returns>更新后的任务</returns>
-    Task<TaskDto> UpdateTaskAsync(UpdateTaskRequest request);
+    Task<TaskDto> UpdateTaskAsync(UpdateTaskRequest request, string userId);
 
     /// <summary>
     /// 分配任务
@@ -71,8 +72,9 @@ public interface ITaskService
     /// 删除任务
     /// </summary>
     /// <param name="taskId">任务ID</param>
+    /// <param name="userId">当前用户ID</param>
     /// <returns>是否删除成功</returns>
-    Task<bool> DeleteTaskAsync(string taskId);
+    Task<bool> DeleteTaskAsync(string taskId, string userId);
 
     /// <summary>
     /// 获取任务统计信息

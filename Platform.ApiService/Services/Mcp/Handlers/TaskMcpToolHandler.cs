@@ -302,7 +302,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             CompletionPercentage = arguments.ContainsKey("completionPercentage") && int.TryParse(arguments["completionPercentage"]?.ToString(), out var completion) ? completion : null
         };
 
-        var task = await _taskService.UpdateTaskAsync(request);
+        var task = await _taskService.UpdateTaskAsync(request, currentUserId);
         return new { task.Id, task.TaskName, task.Status, task.StatusName, task.CompletionPercentage, task.UpdatedAt, message = "任务更新成功" };
     }
 

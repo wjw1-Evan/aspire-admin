@@ -147,12 +147,17 @@ public class TaskController : BaseApiController
 
         try
         {
-            var task = await _taskService.UpdateTaskAsync(request);
+            var userId = GetRequiredUserId();
+            var task = await _taskService.UpdateTaskAsync(request, userId);
             return Success(task);
         }
         catch (KeyNotFoundException)
         {
             return NotFoundError("任务", request.TaskId);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Error("UNAUTHORIZED", ex.Message);
         }
         catch (Exception ex)
         {
@@ -320,7 +325,8 @@ public class TaskController : BaseApiController
     {
         try
         {
-            var result = await _taskService.DeleteTaskAsync(taskId);
+            var userId = GetRequiredUserId();
+            var result = await _taskService.DeleteTaskAsync(taskId, userId);
             if (!result)
                 return NotFoundError("任务", taskId);
 

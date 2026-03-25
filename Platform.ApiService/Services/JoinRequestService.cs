@@ -473,8 +473,8 @@ public class JoinRequestService : IJoinRequestService
                 Datetime = DateTime.UtcNow
             };
 
-            // 为指定企业创建通知（通知会显示在该企业的所有管理员的通知列表中）
-            await _noticeService.CreateNoticeForCompanyAsync(companyId, noticeRequest);
+            // 创建通知
+            await _noticeService.CreateNoticeForCompanyAsync(noticeRequest);
 
             _logger.LogInformation(
                 "已为企业 {CompanyId} 的 {AdminCount} 位管理员发送加入申请通知，申请人: {ApplicantName}",

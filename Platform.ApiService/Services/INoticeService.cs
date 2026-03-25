@@ -28,12 +28,11 @@ public interface INoticeService
     Task<NoticeIconItem> CreateNoticeAsync(CreateNoticeRequest request);
     
     /// <summary>
-    /// 为指定企业创建通知（用于系统通知，不依赖当前用户上下文）
+    /// 创建系统通知
     /// </summary>
-    /// <param name="companyId">企业ID</param>
     /// <param name="request">创建通知请求</param>
     /// <returns>创建的通知信息</returns>
-    Task<NoticeIconItem> CreateNoticeForCompanyAsync(string companyId, CreateNoticeRequest request);
+    Task<NoticeIconItem> CreateNoticeForCompanyAsync(CreateNoticeRequest request);
     
     /// <summary>
     /// 更新通知

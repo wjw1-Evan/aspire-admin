@@ -57,11 +57,7 @@ public class TaskController : BaseApiController
         try
         {
             var userId = GetRequiredUserId();
-            var user = await _userService.GetUserByIdAsync(userId);
-            if (user?.CurrentCompanyId == null)
-                return ValidationError("无法获取企业信息");
-
-            var task = await _taskService.CreateTaskAsync(request, userId, user.CurrentCompanyId);
+            var task = await _taskService.CreateTaskAsync(request, userId);
             return Success(task);
         }
         catch (Exception ex)
@@ -120,12 +116,7 @@ public class TaskController : BaseApiController
     {
         try
         {
-            var userId = GetRequiredUserId();
-            var user = await _userService.GetUserByIdAsync(userId);
-            if (user?.CurrentCompanyId == null)
-                return ValidationError("无法获取企业信息");
-
-            var result = await _taskService.QueryTasksAsync(request, user.CurrentCompanyId);
+            var result = await _taskService.QueryTasksAsync(request);
             return Success(result);
         }
         catch (Exception ex)
@@ -367,11 +358,7 @@ public class TaskController : BaseApiController
         try
         {
             var currentUserId = GetRequiredUserId();
-            var user = await _userService.GetUserByIdAsync(currentUserId);
-            if (user?.CurrentCompanyId == null)
-                return ValidationError("无法获取企业信息");
-
-            var statistics = await _taskService.GetTaskStatisticsAsync(user.CurrentCompanyId, userId);
+            var statistics = await _taskService.GetTaskStatisticsAsync(userId);
             return Success(statistics);
         }
         catch (Exception ex)
@@ -427,12 +414,29 @@ public class TaskController : BaseApiController
         try
         {
             var userId = GetRequiredUserId();
-            var user = await _userService.GetUserByIdAsync(userId);
-            if (user?.CurrentCompanyId == null)
-                return ValidationError("无法获取企业信息");
-
-            var tasks = await _taskService.GetUserTodoTasksAsync(userId, user.CurrentCompanyId);
+            var tasks = await _taskService.GetUserTodoTasksAsync(userId);
             return Success(tasks);
+        }
+        catch (Exception ex)
+        {
+            return Error("GET_TODO_FAILED", ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// 获取用户创建的任务
+    /// </summary>
+    /// <param name="page">页码</param>
+    /// <param name="pageSize">每页数量</param>
+    /// <returns>用户创建的任务列表</returns>
+    [HttpGet("created")]
+    public async Task<IActionResult> GetUserCreatedTasks([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        try
+        {
+            var userId = GetRequiredUserId();
+            var (tasks, total) = await _taskService.GetUserCreatedTasksAsync(userId, page, pageSize);
+            return SuccessPaged(tasks, total, page, pageSize);
         }
         catch (Exception ex)
         {
@@ -460,11 +464,7 @@ public class TaskController : BaseApiController
         try
         {
             var userId = GetRequiredUserId();
-            var user = await _userService.GetUserByIdAsync(userId);
-            if (user?.CurrentCompanyId == null)
-                return ValidationError("无法获取企业信息");
-
-            var (tasks, total) = await _taskService.GetUserCreatedTasksAsync(userId, user.CurrentCompanyId, page, pageSize);
+            var (tasks, total) = await _taskService.GetUserCreatedTasksAsync(userId, page, pageSize);
             return Success(new { tasks, total, page, pageSize });
         }
         catch (Exception ex)

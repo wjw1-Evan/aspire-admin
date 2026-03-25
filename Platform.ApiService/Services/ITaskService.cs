@@ -15,9 +15,8 @@ public interface ITaskService
     /// </summary>
     /// <param name="request">创建任务请求</param>
     /// <param name="userId">当前用户ID</param>
-    /// <param name="companyId">企业ID</param>
     /// <returns>创建的任务</returns>
-    Task<TaskDto> CreateTaskAsync(CreateTaskRequest request, string userId, string companyId);
+    Task<TaskDto> CreateTaskAsync(CreateTaskRequest request, string userId);
 
     /// <summary>
     /// 获取任务详情
@@ -30,9 +29,8 @@ public interface ITaskService
     /// 查询任务列表
     /// </summary>
     /// <param name="request">查询请求</param>
-    /// <param name="companyId">企业ID</param>
     /// <returns>任务列表</returns>
-    Task<TaskListResponse> QueryTasksAsync(TaskQueryRequest request, string companyId);
+    Task<TaskListResponse> QueryTasksAsync(TaskQueryRequest request);
 
     /// <summary>
     /// 更新任务
@@ -86,10 +84,9 @@ public interface ITaskService
     /// <summary>
     /// 获取任务统计信息
     /// </summary>
-    /// <param name="companyId">企业ID</param>
     /// <param name="userId">用户ID（可选，用于获取用户相关的统计）</param>
     /// <returns>统计信息</returns>
-    Task<TaskStatistics> GetTaskStatisticsAsync(string companyId, string? userId = null);
+    Task<TaskStatistics> GetTaskStatisticsAsync(string? userId = null);
 
     /// <summary>
     /// 获取任务执行日志
@@ -108,33 +105,29 @@ public interface ITaskService
     /// <param name="status">执行状态</param>
     /// <param name="message">执行消息</param>
     /// <param name="progressPercentage">进度百分比</param>
-    /// <param name="companyId">企业ID</param>
     /// <returns>记录的日志</returns>
     Task<TaskExecutionLogDto> LogTaskExecutionAsync(
         string taskId,
         string userId,
         TaskExecutionResult status,
         string? message = null,
-        int progressPercentage = 0,
-        string? companyId = null);
+        int progressPercentage = 0);
 
     /// <summary>
     /// 获取用户的待办任务
     /// </summary>
     /// <param name="userId">用户ID</param>
-    /// <param name="companyId">企业ID</param>
     /// <returns>待办任务列表</returns>
-    Task<List<TaskDto>> GetUserTodoTasksAsync(string userId, string companyId);
+    Task<List<TaskDto>> GetUserTodoTasksAsync(string userId);
 
     /// <summary>
     /// 获取用户创建的任务
     /// </summary>
     /// <param name="userId">用户ID</param>
-    /// <param name="companyId">企业ID</param>
     /// <param name="page">页码</param>
     /// <param name="pageSize">每页数量</param>
     /// <returns>创建的任务列表</returns>
-    Task<(List<TaskDto> tasks, int total)> GetUserCreatedTasksAsync(string userId, string companyId, int page = 1, int pageSize = 10);
+    Task<(List<TaskDto> tasks, int total)> GetUserCreatedTasksAsync(string userId, int page = 1, int pageSize = 10);
 
     /// <summary>
     /// 批量更新任务状态

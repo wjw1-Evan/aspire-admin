@@ -172,9 +172,6 @@ public class TaskMcpToolHandler : McpToolHandlerBase
     private async Task<object?> HandleGetTasksAsync(Dictionary<string, object> arguments, string currentUserId)
     {
         var currentUser = await _userFactory.GetByIdAsync(currentUserId);
-        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
-            return new { error = "无法确定当前企业" };
-
         var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
         var request = new TaskQueryRequest
         {
@@ -187,7 +184,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             ProjectId = arguments.GetValueOrDefault("projectId")?.ToString()
         };
 
-        var response = await _taskService.QueryTasksAsync(request, currentUser.CurrentCompanyId);
+        var response = await _taskService.QueryTasksAsync(request);
         return new
         {
             tasks = response.Tasks.Select(t => new
@@ -221,10 +218,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
         {
             if (string.IsNullOrEmpty(taskName)) return new { error = "参数错误: taskId 或 taskName 必填" };
 
-            var currentUser = await _userFactory.GetByIdAsync(currentUserId);
-            if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId)) return new { error = "无法确定当前企业" };
-
-            var searchResult = await _taskService.QueryTasksAsync(new TaskQueryRequest { Search = taskName, Page = 1, PageSize = 1 }, currentUser.CurrentCompanyId);
+            var searchResult = await _taskService.QueryTasksAsync(new TaskQueryRequest { Search = taskName, Page = 1, PageSize = 1 });
             if (searchResult.Tasks.Any()) taskId = searchResult.Tasks.First().Id;
             else return new { error = "未找到该任务" };
         }
@@ -273,10 +267,6 @@ public class TaskMcpToolHandler : McpToolHandlerBase
         if (string.IsNullOrEmpty(taskName) || string.IsNullOrEmpty(taskType))
             return new { error = "taskName 和 taskType 必填" };
 
-        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
-        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
-            return new { error = "无法确定当前企业" };
-
         var request = new CreateTaskRequest
         {
             TaskName = taskName,
@@ -293,7 +283,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             ProjectId = arguments.GetValueOrDefault("projectId")?.ToString()
         };
 
-        var task = await _taskService.CreateTaskAsync(request, currentUserId, currentUser.CurrentCompanyId);
+        var task = await _taskService.CreateTaskAsync(request, currentUserId);
         return new { task.Id, task.TaskName, task.Status, task.StatusName, task.Priority, task.PriorityName, task.CreatedAt, message = "任务创建成功" };
     }
 
@@ -357,11 +347,8 @@ public class TaskMcpToolHandler : McpToolHandlerBase
     private async Task<object?> HandleGetTaskStatisticsAsync(Dictionary<string, object> arguments, string currentUserId)
     {
         var currentUser = await _userFactory.GetByIdAsync(currentUserId);
-        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
-            return new { error = "无法确定当前企业" };
-
         var userId = arguments.ContainsKey("userId") && !string.IsNullOrEmpty(arguments["userId"]?.ToString()) ? arguments["userId"]?.ToString() : null;
-        var statistics = await _taskService.GetTaskStatisticsAsync(currentUser.CurrentCompanyId, userId);
+        var statistics = await _taskService.GetTaskStatisticsAsync(userId);
 
         return new
         {
@@ -379,12 +366,8 @@ public class TaskMcpToolHandler : McpToolHandlerBase
 
     private async Task<object?> HandleGetMyTaskCountAsync(Dictionary<string, object> arguments, string currentUserId)
     {
-        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
-        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
-            return new { error = "无法确定当前企业" };
-
         var includeCompleted = arguments.ContainsKey("includeCompleted") && bool.TryParse(arguments["includeCompleted"]?.ToString(), out var ic) && ic;
-        var statistics = await _taskService.GetTaskStatisticsAsync(currentUser.CurrentCompanyId, currentUserId);
+        var statistics = await _taskService.GetTaskStatisticsAsync(currentUserId);
 
         var totalCount = statistics.TotalTasks;
         if (!includeCompleted)
@@ -425,7 +408,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             Search = arguments.ContainsKey("search") ? arguments["search"]?.ToString() : null
         };
 
-        var response = await _taskService.QueryTasksAsync(request, currentUser.CurrentCompanyId);
+        var response = await _taskService.QueryTasksAsync(request);
         return new
         {
             tasks = response.Tasks.Select(t => new

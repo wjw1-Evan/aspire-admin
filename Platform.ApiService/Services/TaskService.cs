@@ -48,9 +48,8 @@ public class TaskService : ITaskService
     /// </summary>
     /// <param name="request">创建任务请求</param>
     /// <param name="userId">创建者用户ID</param>
-    /// <param name="companyId">公司ID</param>
     /// <returns>创建的任务信息</returns>
-    public async System.Threading.Tasks.Task<TaskDto> CreateTaskAsync(CreateTaskRequest request, string userId, string companyId)
+    public async System.Threading.Tasks.Task<TaskDto> CreateTaskAsync(CreateTaskRequest request, string userId)
     {
         var task = new WorkTask
         {
@@ -63,7 +62,6 @@ public class TaskService : ITaskService
             PlannedStartTime = request.PlannedStartTime,
             PlannedEndTime = request.PlannedEndTime,
             EstimatedDuration = request.EstimatedDuration,
-            CompanyId = companyId,
             ParticipantIds = request.ParticipantIds ?? new(),
             Tags = request.Tags ?? new(),
             Remarks = request.Remarks,
@@ -125,9 +123,8 @@ public class TaskService : ITaskService
     /// 查询任务列表
     /// </summary>
     /// <param name="request">查询请求</param>
-    /// <param name="companyId">公司ID</param>
     /// <returns>任务列表响应</returns>
-    public async System.Threading.Tasks.Task<TaskListResponse> QueryTasksAsync(TaskQueryRequest request, string companyId)
+    public async System.Threading.Tasks.Task<TaskListResponse> QueryTasksAsync(TaskQueryRequest request)
     {
         var search = request.Search?.ToLower();
         var onlyRoot = request.OnlyRoot ?? string.IsNullOrEmpty(request.Search);
@@ -138,8 +135,8 @@ public class TaskService : ITaskService
             (string.IsNullOrEmpty(request.ProjectId) || t.ProjectId == request.ProjectId) &&
             (!request.Status.HasValue || t.Status == (Models.TaskStatus)request.Status.Value) &&
             (!request.Priority.HasValue || t.Priority == (TaskPriority)request.Priority.Value) &&
-            (string.IsNullOrEmpty(request.AssignedTo) || t.AssignedTo == request.AssignedTo) &&
-            (string.IsNullOrEmpty(request.CreatedBy) || t.CreatedBy == request.CreatedBy) &&
+            (string.IsNullOrEmpty(request.AssignedTo) || t.AssignedTo == request.AssignedTo) ||
+            (string.IsNullOrEmpty(request.CreatedBy) || t.CreatedBy == request.CreatedBy) ||
             (string.IsNullOrEmpty(request.TaskType) || t.TaskType == request.TaskType) &&
             (!onlyRoot || string.IsNullOrEmpty(t.ParentTaskId)) &&
             (!request.StartDate.HasValue || t.CreatedAt >= request.StartDate.Value) &&
@@ -418,8 +415,7 @@ public class TaskService : ITaskService
             userId,
             TaskExecutionResult.Success,
             request.Message,
-            request.CompletionPercentage ?? 0,
-            task.CompanyId);
+            request.CompletionPercentage ?? 0);
 
         // 如果任务属于项目，且进度有更新，更新项目进度
         if (!string.IsNullOrEmpty(updatedTask.ProjectId) && request.CompletionPercentage.HasValue)
@@ -509,8 +505,7 @@ public class TaskService : ITaskService
             userId,
             (TaskExecutionResult)request.ExecutionResult,
             request.Remarks,
-            100,
-            task.CompanyId);
+            100);
 
         // 如果任务属于项目，更新项目进度（任务完成时进度为100%）
         if (!string.IsNullOrEmpty(updatedTask.ProjectId))
@@ -641,10 +636,9 @@ public class TaskService : ITaskService
     /// <summary>
     /// 获取任务统计信息
     /// </summary>
-    /// <param name="companyId">公司ID</param>
     /// <param name="userId">用户ID（可选，为空时统计全公司）</param>
     /// <returns>任务统计信息</returns>
-    public async System.Threading.Tasks.Task<TaskStatistics> GetTaskStatisticsAsync(string companyId, string? userId = null)
+    public async System.Threading.Tasks.Task<TaskStatistics> GetTaskStatisticsAsync(string? userId = null)
     {
         System.Linq.Expressions.Expression<Func<WorkTask, bool>> filter = t =>
             string.IsNullOrEmpty(userId) || (t.AssignedTo == userId || t.CreatedBy == userId);
@@ -729,21 +723,14 @@ public class TaskService : ITaskService
     /// <param name="status">执行结果状态</param>
     /// <param name="message">执行消息</param>
     /// <param name="progressPercentage">进度百分比</param>
-    /// <param name="companyId">公司ID</param>
     /// <returns>执行日志信息</returns>
     public async System.Threading.Tasks.Task<TaskExecutionLogDto> LogTaskExecutionAsync(
         string taskId,
         string userId,
         TaskExecutionResult status,
         string? message = null,
-        int progressPercentage = 0,
-        string? companyId = null)
+        int progressPercentage = 0)
     {
-        if (string.IsNullOrEmpty(companyId))
-        {
-            companyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
-        }
-
         var log = new TaskExecutionLog
         {
             TaskId = taskId,
@@ -752,7 +739,6 @@ public class TaskService : ITaskService
             Status = status,
             Message = message,
             ProgressPercentage = progressPercentage,
-            CompanyId = companyId,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -764,9 +750,8 @@ public class TaskService : ITaskService
     /// 获取用户待办任务列表
     /// </summary>
     /// <param name="userId">用户ID</param>
-    /// <param name="companyId">公司ID</param>
     /// <returns>待办任务列表</returns>
-    public async System.Threading.Tasks.Task<List<TaskDto>> GetUserTodoTasksAsync(string userId, string companyId)
+    public async System.Threading.Tasks.Task<List<TaskDto>> GetUserTodoTasksAsync(string userId)
     {
         var tasks = await _taskFactory.FindAsync(
             t => t.AssignedTo == userId && (t.Status == Models.TaskStatus.Assigned || t.Status == Models.TaskStatus.InProgress),
@@ -779,11 +764,10 @@ public class TaskService : ITaskService
     /// 获取用户创建的任务列表
     /// </summary>
     /// <param name="userId">用户ID</param>
-    /// <param name="companyId">公司ID</param>
     /// <param name="page">页码</param>
     /// <param name="pageSize">每页大小</param>
     /// <returns>创建的任务列表和总数</returns>
-    public async System.Threading.Tasks.Task<(List<TaskDto> tasks, int total)> GetUserCreatedTasksAsync(string userId, string companyId, int page = 1, int pageSize = 10)
+    public async System.Threading.Tasks.Task<(List<TaskDto> tasks, int total)> GetUserCreatedTasksAsync(string userId, int page = 1, int pageSize = 10)
     {
         var (tasks, total) = await _taskFactory.FindPagedAsync(
             t => t.CreatedBy == userId,

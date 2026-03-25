@@ -79,9 +79,7 @@ public class ChatAttachmentService : IChatAttachmentService
             MimeType = file.ContentType ?? "application/octet-stream",
             StorageObjectId = gridFsId.ToString(),
             DownloadUrl = $"/api/chat/messages/{session.Id}/attachments/{gridFsId}",
-            Checksum = checksum,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            Checksum = checksum
         };
 
         attachment = await _attachmentFactory.CreateAsync(attachment);

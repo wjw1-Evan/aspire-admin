@@ -608,9 +608,7 @@ public class AuthService : IAuthService
                 Description = "企业管理员，拥有所有菜单访问权限",
                 CompanyId = company.Id!,
                 MenuIds = allMenuIds,
-                IsActive = true,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                IsActive = true
             };
 
             await _roleFactory.CreateAsync(adminRole);
@@ -678,9 +676,7 @@ public class AuthService : IAuthService
                 Description = "企业管理员，拥有所有菜单访问权限",
                 CompanyId = company.Id!,
                 MenuIds = allMenuIds,
-                IsActive = true,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                IsActive = true
             };
 
             await _roleFactory.CreateAsync(adminRole);
@@ -695,9 +691,7 @@ public class AuthService : IAuthService
                 Status = "active",
                 JoinedAt = DateTime.UtcNow,
                 ApprovedBy = user.Id,
-                ApprovedAt = DateTime.UtcNow,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                ApprovedAt = DateTime.UtcNow
             };
 
             await _userCompanyFactory.CreateAsync(newUserCompany);

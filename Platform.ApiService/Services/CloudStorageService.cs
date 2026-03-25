@@ -273,7 +273,6 @@ public class CloudStorageService : ICloudStorageService
             ThumbnailGridFSId = source.ThumbnailGridFSId,
             Metadata = source.Metadata != null ? new Dictionary<string, object>(source.Metadata) : [],
             Status = FileStatus.Active,
-            CreatedAt = DateTime.UtcNow,
             LastAccessedAt = DateTime.UtcNow,
             DownloadCount = 0
             // Removed non-existent properties: CreatedByName, IsStarred

@@ -132,9 +132,7 @@ public class ChatSessionService : IChatSessionService
             Participants = participants.ToList(),
             ParticipantNames = participants.ToDictionary(id => id, id => participantUsers.FirstOrDefault(u => u.Id == id)?.Name ?? id),
             ParticipantAvatars = participantUsers.Where(u => !string.IsNullOrWhiteSpace(u.Avatar)).ToDictionary(u => u.Id, u => u.Avatar!),
-            TopicTags = new List<string> { "direct" },
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            TopicTags = new List<string> { "direct" }
         };
 
         return await _sessionFactory.CreateAsync(session);
@@ -152,7 +150,7 @@ public class ChatSessionService : IChatSessionService
         var lastRead = session.LastReadMessageIds ?? new Dictionary<string, string>();
         lastRead[currentUserId] = lastMessageId;
 
-        await _sessionFactory.UpdateAsync(session.Id, s => { s.UnreadCounts = unread; s.LastReadMessageIds = lastRead; s.UpdatedAt = DateTime.UtcNow; });
+        await _sessionFactory.UpdateAsync(session.Id, s => { s.UnreadCounts = unread; s.LastReadMessageIds = lastRead; });
         await _broadcaster.BroadcastSessionReadAsync(session.Id, currentUserId, new ChatSessionReadPayload { SessionId = session.Id, UserId = currentUserId, LastMessageId = message.Id, ReadAtUtc = DateTime.UtcNow });
         await NotifySessionSummaryAsync(session.Id);
     }
@@ -175,7 +173,7 @@ public class ChatSessionService : IChatSessionService
         {
             s.LastMessageAt = message.CreatedAt;
             s.LastMessageExcerpt = message.Content?.Length > 50 ? message.Content[..50] + "..." : message.Content;
-            s.UnreadCounts = unread; s.UpdatedAt = DateTime.UtcNow;
+            s.UnreadCounts = unread;
         });
         await NotifySessionSummaryAsync(session.Id);
     }
@@ -186,7 +184,6 @@ public class ChatSessionService : IChatSessionService
         {
             s.LastMessageAt = message.CreatedAt;
             s.LastMessageExcerpt = message.Content?.Length > 50 ? message.Content[..50] + "..." : message.Content;
-            s.UpdatedAt = DateTime.UtcNow;
         });
         await NotifySessionSummaryAsync(session.Id);
     }
@@ -268,8 +265,6 @@ public class ChatSessionService : IChatSessionService
             Content = request.Content,
             Attachment = attachmentInfo,
             Metadata = request.Metadata ?? new Dictionary<string, object>(),
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
             ClientMessageId = request.ClientMessageId
         };
         message.Metadata["assistantStreaming"] = request.AssistantStreaming;

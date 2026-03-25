@@ -343,7 +343,7 @@ public class DocumentService : IDocumentService
         if (!string.IsNullOrEmpty(query.Keyword))
         {
             var keyword = query.Keyword.ToLower();
-            filter = filter.And(d => d.Title.ToLower().Contains(keyword) || (d.Content != null && d.Content.ToLower().Contains(keyword)));
+            filter = filter.And(d => (d.Title ?? "").ToLower().Contains(keyword) || (d.Content != null && d.Content.ToLower().Contains(keyword)));
         }
 
         // 状态筛选

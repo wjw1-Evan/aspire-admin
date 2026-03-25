@@ -112,9 +112,7 @@ public class AiAssistantCoordinator : IAiAssistantCoordinator
             ParticipantNames = participantNames,
             ParticipantAvatars = participantAvatars,
             UnreadCounts = unreadCounts,
-            TopicTags = new List<string> { "assistant", "direct" },
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            TopicTags = new List<string> { "assistant", "direct" }
         };
 
         session = await _sessionFactory.CreateAsync(session);

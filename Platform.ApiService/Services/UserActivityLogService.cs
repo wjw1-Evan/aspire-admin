@@ -50,9 +50,7 @@ public class UserActivityLogService : IUserActivityLogService
             Description = description,
             IpAddress = ipAddress,
             UserAgent = userAgent,
-            CompanyId = companyId ?? string.Empty,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CompanyId = companyId ?? string.Empty
         };
 
         await _activityLogFactory.CreateAsync(log);

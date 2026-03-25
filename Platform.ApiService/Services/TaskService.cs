@@ -715,8 +715,7 @@ public class TaskService : ITaskService
             StartTime = DateTime.UtcNow,
             Status = status,
             Message = message,
-            ProgressPercentage = progressPercentage,
-            CreatedAt = DateTime.UtcNow
+            ProgressPercentage = progressPercentage
         };
 
         await _executionLogFactory.CreateAsync(log);

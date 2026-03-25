@@ -196,9 +196,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
             Datetime = DateTime.UtcNow,
             Read = false,
             ClickClose = false,
-            CompanyId = currentUser.CurrentCompanyId,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CompanyId = currentUser.CurrentCompanyId
         };
 
         return await _noticeFactory.CreateAsync(todo);
@@ -230,8 +228,6 @@ public class UnifiedNotificationService : IUnifiedNotificationService
             {
                 entity.Extra = string.Join(",", request.Tags);
             }
-
-            entity.UpdatedAt = DateTime.UtcNow;
         });
     }
 
@@ -243,7 +239,6 @@ public class UnifiedNotificationService : IUnifiedNotificationService
         var result = await _noticeFactory.UpdateAsync(id, entity =>
         {
             entity.Read = true;
-            entity.UpdatedAt = DateTime.UtcNow;
         });
         return result != null;
     }
@@ -290,9 +285,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
             Datetime = DateTime.UtcNow,
             Read = false,
             ClickClose = true,
-            CompanyId = currentUser.CurrentCompanyId,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CompanyId = currentUser.CurrentCompanyId
         };
 
         // 如果指定了分配给的用户，添加到相关用户列表
@@ -325,7 +318,6 @@ public class UnifiedNotificationService : IUnifiedNotificationService
         var result = await _noticeFactory.UpdateAsync(id, entity =>
         {
             entity.Read = true;
-            entity.UpdatedAt = DateTime.UtcNow;
         });
         return result != null;
     }
@@ -416,9 +408,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
             Datetime = DateTime.UtcNow,
             Read = false,
             ClickClose = true,
-            CompanyId = finalCompanyId,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CompanyId = finalCompanyId
         };
 
         // 添加相关用户

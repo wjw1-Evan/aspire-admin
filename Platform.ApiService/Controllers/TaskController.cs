@@ -56,8 +56,7 @@ public class TaskController : BaseApiController
 
         try
         {
-            var userId = GetRequiredUserId();
-            var task = await _taskService.CreateTaskAsync(request, userId);
+            var task = await _taskService.CreateTaskAsync(request);
             return Success(task);
         }
         catch (Exception ex)
@@ -148,8 +147,7 @@ public class TaskController : BaseApiController
 
         try
         {
-            var userId = GetRequiredUserId();
-            var task = await _taskService.UpdateTaskAsync(request, userId);
+            var task = await _taskService.UpdateTaskAsync(request);
             return Success(task);
         }
         catch (KeyNotFoundException)
@@ -185,8 +183,7 @@ public class TaskController : BaseApiController
 
         try
         {
-            var userId = GetRequiredUserId();
-            var task = await _taskService.AssignTaskAsync(request, userId);
+            var task = await _taskService.AssignTaskAsync(request);
             return Success(task);
         }
         catch (KeyNotFoundException)
@@ -222,8 +219,7 @@ public class TaskController : BaseApiController
 
         try
         {
-            var userId = GetRequiredUserId();
-            var task = await _taskService.ExecuteTaskAsync(request, userId);
+            var task = await _taskService.ExecuteTaskAsync(request);
             return Success(task);
         }
         catch (KeyNotFoundException)
@@ -259,8 +255,7 @@ public class TaskController : BaseApiController
 
         try
         {
-            var userId = GetRequiredUserId();
-            var task = await _taskService.CompleteTaskAsync(request, userId);
+            var task = await _taskService.CompleteTaskAsync(request);
             return Success(task);
         }
         catch (KeyNotFoundException)
@@ -293,8 +288,7 @@ public class TaskController : BaseApiController
     {
         try
         {
-            var userId = GetRequiredUserId();
-            var task = await _taskService.CancelTaskAsync(taskId, userId, remarks);
+            var task = await _taskService.CancelTaskAsync(taskId, remarks);
             return Success(task);
         }
         catch (KeyNotFoundException)
@@ -326,8 +320,7 @@ public class TaskController : BaseApiController
     {
         try
         {
-            var userId = GetRequiredUserId();
-            var result = await _taskService.DeleteTaskAsync(taskId, userId);
+            var result = await _taskService.DeleteTaskAsync(taskId);
             if (!result)
                 return NotFoundError("任务", taskId);
 
@@ -358,7 +351,7 @@ public class TaskController : BaseApiController
         try
         {
             var currentUserId = GetRequiredUserId();
-            var statistics = await _taskService.GetTaskStatisticsAsync(userId);
+            var statistics = await _taskService.GetTaskStatisticsAsync(userId ?? currentUserId);
             return Success(statistics);
         }
         catch (Exception ex)
@@ -495,11 +488,9 @@ public class TaskController : BaseApiController
 
         try
         {
-            var userId = GetRequiredUserId();
             var count = await _taskService.BatchUpdateTaskStatusAsync(
                 request.TaskIds,
-                (Models.TaskStatus)request.Status,
-                userId);
+                (Models.TaskStatus)request.Status);
 
             return Success(new { message = $"已更新 {count} 个任务" });
         }
@@ -554,8 +545,7 @@ public class TaskController : BaseApiController
     {
         try
         {
-            var userId = GetRequiredUserId();
-            var task = await _taskService.UpdateTaskProgressAsync(id, request.Progress, userId);
+            var task = await _taskService.UpdateTaskProgressAsync(id, request.Progress);
             return Success(task);
         }
         catch (KeyNotFoundException)
@@ -581,14 +571,11 @@ public class TaskController : BaseApiController
 
         try
         {
-            var userId = GetRequiredUserId();
-
             var dependencyId = await _taskService.AddTaskDependencyAsync(
                 request.PredecessorTaskId,
                 request.SuccessorTaskId,
                 request.DependencyType,
-                request.LagDays,
-                userId);
+                request.LagDays);
 
             return Success(new { id = dependencyId });
         }
@@ -634,8 +621,7 @@ public class TaskController : BaseApiController
     {
         try
         {
-            var userId = GetRequiredUserId();
-            var removed = await _taskService.RemoveTaskDependencyAsync(id, userId);
+            var removed = await _taskService.RemoveTaskDependencyAsync(id);
             if (!removed)
                 return NotFoundError("依赖关系", id);
 

@@ -274,7 +274,6 @@ public class CloudStorageService : ICloudStorageService
             Metadata = source.Metadata != null ? new Dictionary<string, object>(source.Metadata) : [],
             Status = FileStatus.Active,
             CreatedAt = DateTime.UtcNow,
-            CreatedBy = _tenantContext.GetCurrentUserId(), // CreatedBy 是字符串类型，可能为空
             LastAccessedAt = DateTime.UtcNow,
             DownloadCount = 0
             // Removed non-existent properties: CreatedByName, IsStarred

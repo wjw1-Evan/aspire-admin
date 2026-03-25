@@ -586,8 +586,7 @@ public class AuthService : IAuthService
                 Name = $"{user.Username} 的企业",
                 Code = $"personal-{user.Id}",
                 Description = "个人企业",
-                IsActive = true,
-                CreatedBy = user.Id
+                IsActive = true
             };
 
             await _companyFactory.CreateAsync(company);
@@ -657,8 +656,7 @@ public class AuthService : IAuthService
                 Code = $"personal-{user.Id}",
                 Description = "个人企业",
                 IsActive = true,
-                MaxUsers = 50,
-                CreatedBy = user.Id
+                MaxUsers = 50
             };
 
             await _companyFactory.CreateAsync(company);

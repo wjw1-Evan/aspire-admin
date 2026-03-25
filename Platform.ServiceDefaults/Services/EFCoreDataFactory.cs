@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.ServiceDefaults.Models;
+using Platform.ServiceDefaults.Extensions;
 using System.Linq.Expressions;
 
 namespace Platform.ServiceDefaults.Services;
@@ -50,7 +51,6 @@ public class EFCoreDataFactory<T>(DbContext context)
         IQueryable<T> baseQuery = _dbSet.AsNoTracking();
         if (filter != null) baseQuery = baseQuery.Where(filter);
 
-        // 顺序执行查询，因为单一 DbContext 实例不支持多线程并发查询 (不能用 Task.WhenAll)
         var total = await baseQuery.CountAsync(cancellationToken);
 
         var itemsQuery = BuildQuery(baseQuery, null, orderBy, includes);

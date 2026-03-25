@@ -65,6 +65,10 @@ public class PasswordBookEntry : MultiTenantEntity
     /// <summary>创建者用户ID（用于加密密钥派生）</summary>
     [BsonElement("userId")]
     public string UserId { get; set; } = string.Empty;
+
+    /// <summary>是否公有（true: 企业内可见, false: 仅自己可见）</summary>
+    [BsonElement("isPublic")]
+    public bool IsPublic { get; set; } = false;
 }
 
 /// <summary>
@@ -92,6 +96,9 @@ public class CreatePasswordBookEntryRequest
 
     /// <summary>备注</summary>
     public string? Notes { get; set; }
+
+    /// <summary>是否公有（true: 企业内可见, false: 仅自己可见）</summary>
+    public bool IsPublic { get; set; } = false;
 }
 
 /// <summary>
@@ -119,6 +126,9 @@ public class UpdatePasswordBookEntryRequest
 
     /// <summary>备注</summary>
     public string? Notes { get; set; }
+
+    /// <summary>是否公有（true: 企业内可见, false: 仅自己可见）</summary>
+    public bool? IsPublic { get; set; }
 }
 
 /// <summary>
@@ -182,6 +192,9 @@ public class PasswordBookEntryDto
 
     /// <summary>更新时间</summary>
     public DateTime UpdatedAt { get; set; }
+
+    /// <summary>是否公有（true: 企业内可见, false: 仅自己可见）</summary>
+    public bool IsPublic { get; set; } = false;
 }
 
 /// <summary>

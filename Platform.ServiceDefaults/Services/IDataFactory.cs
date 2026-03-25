@@ -15,6 +15,9 @@ public interface IDataFactory<T> where T : class, IEntity, ISoftDeletable, ITime
     Task<bool> ExistsAsync(System.Linq.Expressions.Expression<Func<T, bool>> filter, CancellationToken cancellationToken = default);
 
     // 🚀 查询操作 - 支持Include预加载
+    /// <summary>
+    /// 查询数据（多租户过滤由 PlatformDbContext 全局查询过滤器自动处理）
+    /// </summary>
     Task<List<T>> FindAsync(
         System.Linq.Expressions.Expression<Func<T, bool>>? filter = null,
         Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,
@@ -22,7 +25,10 @@ public interface IDataFactory<T> where T : class, IEntity, ISoftDeletable, ITime
         System.Linq.Expressions.Expression<Func<T, object>>[]? includes = null,
         CancellationToken cancellationToken = default);
 
-    // 🚀 优化的分页查询 - 并行count和查询
+    // 🚀 优化的分页查询
+    /// <summary>
+    /// 分页查询数据（多租户过滤由 PlatformDbContext 全局查询过滤器自动处理）
+    /// </summary>
     Task<(List<T> items, long total)> FindPagedAsync(
         System.Linq.Expressions.Expression<Func<T, bool>>? filter = null,
         Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,

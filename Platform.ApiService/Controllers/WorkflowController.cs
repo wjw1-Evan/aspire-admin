@@ -256,8 +256,6 @@ public class WorkflowController : BaseApiController
                 return ValidationError($"流程图形定义不合法: {graphError}");
             }
 
-            var userId = GetRequiredUserId();
-
             var workflow = new WorkflowDefinition
             {
                 Name = request.Name,

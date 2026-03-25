@@ -26,37 +26,21 @@ namespace Platform.ServiceDefaults.Controllers;
 [ApiController]
 public abstract class BaseApiController : ControllerBase
 {
+    protected string? CurrentUserId 
+        => HttpContext.RequestServices.GetRequiredService<ITenantContext>().GetCurrentUserId();
 
-    /// <summary>
-    /// 从 JWT Claim 中获取当前登录用户的 ID
-    /// </summary>
-    protected string? CurrentUserId => User.FindFirst("userId")?.Value;
+    protected bool IsAuthenticated => !string.IsNullOrEmpty(CurrentUserId);
 
-    /// <summary>
-    /// 检查当前请求是否已通过身份验证
-    /// </summary>
-    protected bool IsAuthenticated => User.Identity?.IsAuthenticated == true;
-
-    /// <summary>
-    /// 获取必需的用户 ID，如果未登录则抛出异常
-    /// </summary>
-    /// <exception cref="UnauthorizedAccessException">当用户信息不存在时抛出</exception>
     protected string GetRequiredUserId()
-        => string.IsNullOrEmpty(CurrentUserId) ? throw new UnauthorizedAccessException("未找到用户信息") : CurrentUserId;
+        => CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
 
-    /// <summary>
-    /// 异步获取当前登录用户的企业 ID (实时从数据库查询并缓存)
-    /// </summary>
     protected Task<string?> GetCurrentCompanyIdAsync()
         => HttpContext.RequestServices.GetRequiredService<ITenantContext>().GetCurrentCompanyIdAsync();
 
-    /// <summary>
-    /// 异步获取必需的企业 ID，如果未找到则抛出 BusinessException
-    /// </summary>
     protected async Task<string> GetRequiredCompanyIdAsync()
     {
         var companyId = await GetCurrentCompanyIdAsync();
-        return string.IsNullOrEmpty(companyId) ? throw new BusinessException("未找到当前用户的企业信息", "NOT_FOUND", 404) : companyId;
+        return companyId ?? throw new BusinessException("未找到当前用户的企业信息", "NOT_FOUND", 404);
     }
 
     /// <summary>

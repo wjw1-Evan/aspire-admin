@@ -194,8 +194,7 @@ public class CompanyService : ICompanyService
                 ContactEmail = request.ContactEmail,
                 ContactPhone = request.ContactPhone,
                 IsActive = true,
-                MaxUsers = request.MaxUsers > 0 ? request.MaxUsers : CompanyConstants.DefaultMaxUsers,
-                CreatedBy = currentUser.Id  // ✅ 显式设置创建人ID
+                MaxUsers = request.MaxUsers > 0 ? request.MaxUsers : CompanyConstants.DefaultMaxUsers
             };
 
             await _companyFactory.CreateAsync(company);

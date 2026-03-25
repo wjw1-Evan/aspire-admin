@@ -77,8 +77,6 @@ public class KnowledgeBaseController : BaseApiController
         {
             if (string.IsNullOrEmpty(knowledgeBase.Name)) return ValidationError("名称不能为空");
             
-            knowledgeBase.CreatedBy = GetRequiredUserId();
-            
             var created = await _knowledgeService.CreateAsync(knowledgeBase);
             return Success(created);
         }
@@ -103,8 +101,6 @@ public class KnowledgeBaseController : BaseApiController
                 if (request.Description != null) kb.Description = request.Description;
                 if (!string.IsNullOrEmpty(request.Category)) kb.Category = request.Category;
                 kb.IsActive = request.IsActive;
-                kb.UpdatedBy = GetRequiredUserId();
-                kb.UpdatedAt = DateTime.UtcNow;
             });
 
             if (updated == null) return NotFoundError("知识库", id);

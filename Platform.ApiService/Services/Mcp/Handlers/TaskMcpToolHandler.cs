@@ -465,7 +465,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             Status = arguments.ContainsKey("status") && int.TryParse(arguments["status"]?.ToString(), out var status) ? status : null
         };
 
-        var response = await _projectService.GetProjectsListAsync(request, currentUser.CurrentCompanyId);
+        var response = await _projectService.GetProjectsListAsync(request);
         return new
         {
             projects = response.Projects.Select(p => new { p.Id, p.Name, p.Description, p.StartDate, p.EndDate, p.Status, p.StatusName, memberCount = response.Total, p.Progress }).ToList(),
@@ -484,10 +484,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
         {
             if (string.IsNullOrEmpty(name)) return new { error = "未提供项目ID或名称" };
 
-            var currentUser = await _userFactory.GetByIdAsync(currentUserId);
-            if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId)) return new { error = "无法确定当前企业" };
-
-            var searchResult = await _projectService.GetProjectsListAsync(new ProjectQueryRequest { Search = name, Page = 1, PageSize = 1 }, currentUser.CurrentCompanyId);
+            var searchResult = await _projectService.GetProjectsListAsync(new ProjectQueryRequest { Search = name, Page = 1, PageSize = 1 });
             if (searchResult.Projects.Any()) projectId = searchResult.Projects.First().Id;
             else return new { error = "未找到该项目" };
         }
@@ -509,10 +506,6 @@ public class TaskMcpToolHandler : McpToolHandlerBase
         var name = arguments.ContainsKey("name") ? arguments["name"]?.ToString() : null;
         if (string.IsNullOrEmpty(name)) return new { error = "项目名称必填" };
 
-        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
-        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
-            return new { error = "无法确定当前企业" };
-
         var request = new CreateProjectRequest
         {
             Name = name,
@@ -521,17 +514,13 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             EndDate = arguments.ContainsKey("endDate") && DateTime.TryParse(arguments["endDate"]?.ToString(), out var end) ? end : null
         };
 
-        var project = await _projectService.CreateProjectAsync(request, currentUserId, currentUser.CurrentCompanyId);
+        var project = await _projectService.CreateProjectAsync(request, currentUserId);
         return new { success = true, projectId = project.Id, projectName = project.Name };
     }
 
     private async Task<object?> HandleGetProjectStatisticsAsync(Dictionary<string, object> arguments, string currentUserId)
     {
-        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
-        if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
-            return new { error = "无法确定当前企业" };
-
-        var stats = await _projectService.GetProjectStatisticsAsync(currentUser.CurrentCompanyId);
+        var stats = await _projectService.GetProjectStatisticsAsync();
         return stats;
     }
 }

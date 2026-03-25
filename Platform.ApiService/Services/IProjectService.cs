@@ -15,9 +15,8 @@ public interface IProjectService
     /// </summary>
     /// <param name="request">创建项目请求</param>
     /// <param name="userId">当前用户ID</param>
-    /// <param name="companyId">企业ID</param>
     /// <returns>创建的项目</returns>
-    Task<ProjectDto> CreateProjectAsync(CreateProjectRequest request, string userId, string companyId);
+    Task<ProjectDto> CreateProjectAsync(CreateProjectRequest request, string userId);
 
     /// <summary>
     /// 更新项目
@@ -47,25 +46,22 @@ public interface IProjectService
     /// 分页获取项目列表
     /// </summary>
     /// <param name="request">查询请求</param>
-    /// <param name="companyId">企业ID</param>
     /// <returns>项目列表响应</returns>
-    Task<ProjectListResponse> GetProjectsListAsync(ProjectQueryRequest request, string companyId);
+    Task<ProjectListResponse> GetProjectsListAsync(ProjectQueryRequest request);
 
     /// <summary>
     /// 获取项目统计信息
     /// </summary>
-    /// <param name="companyId">企业ID</param>
     /// <returns>统计信息</returns>
-    Task<ProjectStatistics> GetProjectStatisticsAsync(string companyId);
+    Task<ProjectStatistics> GetProjectStatisticsAsync();
 
     /// <summary>
     /// 添加项目成员
     /// </summary>
     /// <param name="request">添加成员请求</param>
     /// <param name="userId">当前用户ID</param>
-    /// <param name="companyId">企业ID</param>
     /// <returns>项目成员</returns>
-    Task<ProjectMemberDto> AddProjectMemberAsync(AddProjectMemberRequest request, string userId, string companyId);
+    Task<ProjectMemberDto> AddProjectMemberAsync(AddProjectMemberRequest request, string userId);
 
     /// <summary>
     /// 移除项目成员

@@ -3,7 +3,6 @@ using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
-using Platform.ServiceDefaults.Services;
 using System;
 using System.Threading.Tasks;
 
@@ -18,16 +17,14 @@ public class ProjectController : BaseApiController
 {
     private readonly IProjectService _projectService;
     private readonly IUserService _userService;
-    private readonly ITenantContext _tenantContext;
 
     /// <summary>
     /// 初始化项目管理控制器
     /// </summary>
-    public ProjectController(IProjectService projectService, IUserService userService, ITenantContext tenantContext)
+    public ProjectController(IProjectService projectService, IUserService userService)
     {
         _projectService = projectService ?? throw new ArgumentNullException(nameof(projectService));
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
-        _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
     }
 
     /// <summary>
@@ -47,9 +44,7 @@ public class ProjectController : BaseApiController
         try
         {
             var userId = GetRequiredUserId();
-            var companyId = await GetRequiredCompanyIdAsync();
-
-            var project = await _projectService.CreateProjectAsync(request, userId, companyId);
+            var project = await _projectService.CreateProjectAsync(request, userId);
             return Success(project);
         }
         catch (Exception ex)
@@ -139,8 +134,7 @@ public class ProjectController : BaseApiController
     {
         try
         {
-            var companyId = await GetRequiredCompanyIdAsync();
-            var result = await _projectService.GetProjectsListAsync(request, companyId);
+            var result = await _projectService.GetProjectsListAsync(request);
             return Success(result);
         }
         catch (Exception ex)
@@ -158,8 +152,7 @@ public class ProjectController : BaseApiController
     {
         try
         {
-            var companyId = await GetRequiredCompanyIdAsync();
-            var statistics = await _projectService.GetProjectStatisticsAsync(companyId);
+            var statistics = await _projectService.GetProjectStatisticsAsync();
             return Success(statistics);
         }
         catch (Exception ex)
@@ -184,9 +177,7 @@ public class ProjectController : BaseApiController
         try
         {
             var userId = GetRequiredUserId();
-            var companyId = await GetRequiredCompanyIdAsync();
-
-            var member = await _projectService.AddProjectMemberAsync(request, userId, companyId);
+            var member = await _projectService.AddProjectMemberAsync(request, userId);
             return Success(member);
         }
         catch (KeyNotFoundException)

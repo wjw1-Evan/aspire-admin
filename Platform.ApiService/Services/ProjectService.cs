@@ -43,7 +43,7 @@ public class ProjectService : IProjectService
     /// <summary>
     /// 创建项目
     /// </summary>
-    public async Task<ProjectDto> CreateProjectAsync(CreateProjectRequest request, string userId, string companyId)
+    public async Task<ProjectDto> CreateProjectAsync(CreateProjectRequest request, string userId)
     {
         var project = new Project
         {
@@ -55,7 +55,6 @@ public class ProjectService : IProjectService
             ManagerId = request.ManagerId,
             Budget = request.Budget,
             Priority = (ProjectPriority)request.Priority,
-            CompanyId = companyId,
             Progress = 0
         };
 
@@ -69,8 +68,7 @@ public class ProjectService : IProjectService
                 ProjectId = project.Id,
                 UserId = request.ManagerId,
                 Role = ProjectMemberRole.Manager,
-                Allocation = 100,
-                CompanyId = companyId
+                Allocation = 100
             };
             await _projectMemberFactory.CreateAsync(member);
         }
@@ -140,9 +138,9 @@ public class ProjectService : IProjectService
     /// <summary>
     /// 分页获取项目列表
     /// </summary>
-    public async Task<ProjectListResponse> GetProjectsListAsync(ProjectQueryRequest request, string companyId)
+    public async Task<ProjectListResponse> GetProjectsListAsync(ProjectQueryRequest request)
     {
-        Expression<Func<Project, bool>> filter = p => p.CompanyId == companyId;
+        Expression<Func<Project, bool>>? filter = null;
 
         // 搜索关键词
         if (!string.IsNullOrEmpty(request.Search))
@@ -224,9 +222,9 @@ public class ProjectService : IProjectService
     /// <summary>
     /// 获取项目统计信息
     /// </summary>
-    public async Task<ProjectStatistics> GetProjectStatisticsAsync(string companyId)
+    public async Task<ProjectStatistics> GetProjectStatisticsAsync()
     {
-        var allProjects = await _projectFactory.FindAsync(p => p.CompanyId == companyId);
+        var allProjects = await _projectFactory.FindAsync();
 
         var statistics = new ProjectStatistics
         {
@@ -265,7 +263,7 @@ public class ProjectService : IProjectService
     /// <summary>
     /// 添加项目成员
     /// </summary>
-    public async Task<ProjectMemberDto> AddProjectMemberAsync(AddProjectMemberRequest request, string userId, string companyId)
+    public async Task<ProjectMemberDto> AddProjectMemberAsync(AddProjectMemberRequest request, string userId)
     {
         // 检查项目是否存在
         var project = await _projectFactory.GetByIdAsync(request.ProjectId);
@@ -284,8 +282,7 @@ public class ProjectService : IProjectService
             ProjectId = request.ProjectId,
             UserId = request.UserId,
             Role = (ProjectMemberRole)request.Role,
-            Allocation = request.Allocation,
-            CompanyId = companyId
+            Allocation = request.Allocation
         };
 
         await _projectMemberFactory.CreateAsync(member);

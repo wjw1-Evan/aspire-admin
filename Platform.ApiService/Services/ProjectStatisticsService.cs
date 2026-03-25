@@ -29,11 +29,10 @@ public class ProjectStatisticsService(
     /// <summary>
     /// 获取仪表盘统计数据
     /// </summary>
-    /// <param name="companyId">企业ID</param>
     /// <param name="startDate">开始日期</param>
     /// <param name="endDate">结束日期</param>
     /// <returns>仪表盘统计数据</returns>
-    public async Task<ProjectDashboardStatistics> GetDashboardStatisticsAsync(string companyId, DateTime? startDate = null, DateTime? endDate = null)
+    public async Task<ProjectDashboardStatistics> GetDashboardStatisticsAsync(DateTime? startDate = null, DateTime? endDate = null)
     {
         var start = startDate;
         var end = endDate;
@@ -41,7 +40,7 @@ public class ProjectStatisticsService(
         var stats = new ProjectDashboardStatistics();
 
         // 2. Project Stats (Snapshot of current state)
-        var projects = await _projectFactory.FindAsync(p => p.CompanyId == companyId);
+        var projects = await _projectFactory.FindAsync();
         stats.Project = new ProjectStatistics
         {
             TotalProjects = projects.Count,
@@ -63,7 +62,6 @@ public class ProjectStatisticsService(
 
         // 3. Task Stats (Time-bound)
         var tasks = await _taskFactory.FindAsync(t =>
-            t.CompanyId == companyId &&
             (!start.HasValue || t.CreatedAt >= start.Value) &&
             (!end.HasValue || t.CreatedAt <= end.Value));
         stats.Task = new TaskStatistics
@@ -91,7 +89,7 @@ public class ProjectStatisticsService(
         }
 
         // 4. Member Stats (Snapshot)
-        var members = await _memberFactory.FindAsync(m => m.CompanyId == companyId);
+        var members = await _memberFactory.FindAsync();
         stats.Member.TotalMembers = members.Select(m => m.UserId).Distinct().Count();
         foreach (var m in members)
         {
@@ -102,7 +100,6 @@ public class ProjectStatisticsService(
 
         // 5. Milestone Stats (Time-bound by TargetDate)
         var milestones = await _milestoneFactory.FindAsync(m =>
-            m.CompanyId == companyId &&
             (!start.HasValue || m.TargetDate >= start.Value) &&
             (!end.HasValue || m.TargetDate <= end.Value));
         stats.Milestone.TotalMilestones = milestones.Count;
@@ -116,12 +113,11 @@ public class ProjectStatisticsService(
     /// <summary>
     /// 生成 AI 分析报告
     /// </summary>
-    /// <param name="companyId">企业ID</param>
     /// <param name="startDate">开始日期</param>
     /// <param name="endDate">结束日期</param>
     /// <param name="statisticsData">现有统计数据（可选）</param>
     /// <returns>AI 生成的项目管理分析报告 (Markdown 格式)</returns>
-    public async Task<string> GenerateAiReportAsync(string companyId, DateTime? startDate = null, DateTime? endDate = null, object? statisticsData = null)
+    public async Task<string> GenerateAiReportAsync(DateTime? startDate = null, DateTime? endDate = null, object? statisticsData = null)
     {
         try
         {
@@ -141,7 +137,7 @@ public class ProjectStatisticsService(
             else
             {
                 // Fetch dashboard statistics if data not provided
-                var dashboardStats = await GetDashboardStatisticsAsync(companyId, startDate, endDate);
+                var dashboardStats = await GetDashboardStatisticsAsync(startDate, endDate);
 
                 statsData = new
                 {

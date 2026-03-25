@@ -46,14 +46,7 @@ public class ProjectStatisticsController : BaseApiController
     {
         try
         {
-            var userId = GetRequiredUserId();
-            var user = await _userService.GetUserByIdAsync(userId);
-            if (user?.CurrentCompanyId == null)
-            {
-                return ValidationError("无法获取企业信息的统计数据");
-            }
-
-            var stats = await _statisticsService.GetDashboardStatisticsAsync(user.CurrentCompanyId, startDate, endDate);
+            var stats = await _statisticsService.GetDashboardStatisticsAsync(startDate, endDate);
             return Success(stats);
         }
         catch (Exception ex)
@@ -78,14 +71,7 @@ public class ProjectStatisticsController : BaseApiController
     {
         try
         {
-            var userId = GetRequiredUserId();
-            var user = await _userService.GetUserByIdAsync(userId);
-            if (user?.CurrentCompanyId == null)
-            {
-                return ValidationError("无法获取企业信息的统计数据");
-            }
-
-            var report = await _statisticsService.GenerateAiReportAsync(user.CurrentCompanyId, startDate, endDate, statisticsData);
+            var report = await _statisticsService.GenerateAiReportAsync(startDate, endDate, statisticsData);
             return Success(data: report);
         }
         catch (Exception ex)

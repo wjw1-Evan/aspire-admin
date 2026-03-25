@@ -43,8 +43,7 @@ public class ProjectController : BaseApiController
 
         try
         {
-            var userId = GetRequiredUserId();
-            var project = await _projectService.CreateProjectAsync(request, userId);
+            var project = await _projectService.CreateProjectAsync(request);
             return Success(project);
         }
         catch (Exception ex)
@@ -68,8 +67,7 @@ public class ProjectController : BaseApiController
 
         try
         {
-            var userId = GetRequiredUserId();
-            var project = await _projectService.UpdateProjectAsync(request, userId);
+            var project = await _projectService.UpdateProjectAsync(request);
             return Success(project);
         }
         catch (KeyNotFoundException)
@@ -91,8 +89,7 @@ public class ProjectController : BaseApiController
     {
         try
         {
-            var userId = GetRequiredUserId();
-            var deleted = await _projectService.DeleteProjectAsync(id, userId, reason);
+            var deleted = await _projectService.DeleteProjectAsync(id, reason);
             if (!deleted)
                 return NotFoundError("项目", id);
 
@@ -176,8 +173,7 @@ public class ProjectController : BaseApiController
 
         try
         {
-            var userId = GetRequiredUserId();
-            var member = await _projectService.AddProjectMemberAsync(request, userId);
+            var member = await _projectService.AddProjectMemberAsync(request);
             return Success(member);
         }
         catch (KeyNotFoundException)
@@ -203,8 +199,7 @@ public class ProjectController : BaseApiController
     {
         try
         {
-            var currentUserId = GetRequiredUserId();
-            var removed = await _projectService.RemoveProjectMemberAsync(projectId, userId, currentUserId);
+            var removed = await _projectService.RemoveProjectMemberAsync(projectId, userId);
             if (!removed)
                 return NotFoundError("项目成员", userId);
 

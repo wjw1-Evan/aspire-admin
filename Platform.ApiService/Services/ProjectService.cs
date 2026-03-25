@@ -43,7 +43,7 @@ public class ProjectService : IProjectService
     /// <summary>
     /// 创建项目
     /// </summary>
-    public async Task<ProjectDto> CreateProjectAsync(CreateProjectRequest request, string userId)
+    public async Task<ProjectDto> CreateProjectAsync(CreateProjectRequest request)
     {
         var project = new Project
         {
@@ -79,7 +79,7 @@ public class ProjectService : IProjectService
     /// <summary>
     /// 更新项目
     /// </summary>
-    public async Task<ProjectDto> UpdateProjectAsync(UpdateProjectRequest request, string userId)
+    public async Task<ProjectDto> UpdateProjectAsync(UpdateProjectRequest request)
     {
         var updatedProject = await _projectFactory.UpdateAsync(request.ProjectId, p =>
         {
@@ -117,7 +117,7 @@ public class ProjectService : IProjectService
     /// <summary>
     /// 删除项目（软删除）
     /// </summary>
-    public async Task<bool> DeleteProjectAsync(string projectId, string userId, string? reason = null)
+    public async Task<bool> DeleteProjectAsync(string projectId, string? reason = null)
     {
         var updated = await _projectFactory.UpdateAsync(projectId, p => p.IsDeleted = true);
         return updated != null;
@@ -263,7 +263,7 @@ public class ProjectService : IProjectService
     /// <summary>
     /// 添加项目成员
     /// </summary>
-    public async Task<ProjectMemberDto> AddProjectMemberAsync(AddProjectMemberRequest request, string userId)
+    public async Task<ProjectMemberDto> AddProjectMemberAsync(AddProjectMemberRequest request)
     {
         // 检查项目是否存在
         var project = await _projectFactory.GetByIdAsync(request.ProjectId);
@@ -293,7 +293,7 @@ public class ProjectService : IProjectService
     /// <summary>
     /// 移除项目成员
     /// </summary>
-    public async Task<bool> RemoveProjectMemberAsync(string projectId, string memberUserId, string userId)
+    public async Task<bool> RemoveProjectMemberAsync(string projectId, string memberUserId)
     {
         var updated = await _projectMemberFactory.UpdateManyAsync(
             m => m.ProjectId == projectId && m.UserId == memberUserId,

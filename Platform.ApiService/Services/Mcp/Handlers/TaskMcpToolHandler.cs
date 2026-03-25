@@ -497,7 +497,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             EndDate = arguments.ContainsKey("endDate") && DateTime.TryParse(arguments["endDate"]?.ToString(), out var end) ? end : null
         };
 
-        var project = await _projectService.CreateProjectAsync(request, currentUserId);
+        var project = await _projectService.CreateProjectAsync(request);
         return new { success = true, projectId = project.Id, projectName = project.Name };
     }
 

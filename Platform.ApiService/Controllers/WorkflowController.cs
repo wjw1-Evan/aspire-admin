@@ -257,7 +257,6 @@ public class WorkflowController : BaseApiController
             }
 
             var userId = GetRequiredUserId();
-            var companyId = await GetRequiredCompanyIdAsync();
 
             var workflow = new WorkflowDefinition
             {
@@ -266,8 +265,7 @@ public class WorkflowController : BaseApiController
                 Category = request.Category ?? string.Empty,
                 Version = new WorkflowVersion { Major = 1, Minor = 0, CreatedAt = DateTime.UtcNow },
                 Graph = request.Graph,
-                IsActive = request.IsActive ?? true,
-                CompanyId = companyId
+                IsActive = request.IsActive ?? true
             };
 
             workflow = await _definitionFactory.CreateAsync(workflow);

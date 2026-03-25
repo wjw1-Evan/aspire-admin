@@ -1205,8 +1205,7 @@ public class TaskService : ITaskService
         string successorTaskId,
         int dependencyType,
         int lagDays,
-        string userId,
-        string companyId)
+        string userId)
     {
         // 检查任务是否存在
         var predecessor = await _taskFactory.GetByIdAsync(predecessorTaskId);
@@ -1218,7 +1217,7 @@ public class TaskService : ITaskService
             throw new KeyNotFoundException($"后续任务 {successorTaskId} 不存在");
 
         // 检查循环依赖
-        if (await HasCircularDependencyAsync(predecessorTaskId, successorTaskId, companyId))
+        if (await HasCircularDependencyAsync(predecessorTaskId, successorTaskId))
             throw new InvalidOperationException("检测到循环依赖，无法添加");
 
         var dependencyFactory = _serviceProvider
@@ -1229,8 +1228,7 @@ public class TaskService : ITaskService
             PredecessorTaskId = predecessorTaskId,
             SuccessorTaskId = successorTaskId,
             DependencyType = (TaskDependencyType)dependencyType,
-            LagDays = lagDays,
-            CompanyId = companyId
+            LagDays = lagDays
         };
 
         await dependencyFactory.CreateAsync(dependency);
@@ -1240,7 +1238,7 @@ public class TaskService : ITaskService
     /// <summary>
     /// 检查是否存在循环依赖
     /// </summary>
-    private async System.Threading.Tasks.Task<bool> HasCircularDependencyAsync(string startTaskId, string endTaskId, string companyId)
+    private async System.Threading.Tasks.Task<bool> HasCircularDependencyAsync(string startTaskId, string endTaskId)
     {
         var dependencyFactory = _serviceProvider
             .GetRequiredService<IDataFactory<TaskDependency>>();

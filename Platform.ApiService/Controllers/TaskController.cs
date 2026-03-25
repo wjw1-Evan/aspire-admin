@@ -582,17 +582,13 @@ public class TaskController : BaseApiController
         try
         {
             var userId = GetRequiredUserId();
-            var user = await _userService.GetUserByIdAsync(userId);
-            if (user?.CurrentCompanyId == null)
-                return ValidationError("无法获取企业信息");
 
             var dependencyId = await _taskService.AddTaskDependencyAsync(
                 request.PredecessorTaskId,
                 request.SuccessorTaskId,
                 request.DependencyType,
                 request.LagDays,
-                userId,
-                user.CurrentCompanyId);
+                userId);
 
             return Success(new { id = dependencyId });
         }

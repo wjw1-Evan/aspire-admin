@@ -77,7 +77,6 @@ public class KnowledgeBaseController : BaseApiController
         {
             if (string.IsNullOrEmpty(knowledgeBase.Name)) return ValidationError("名称不能为空");
             
-            knowledgeBase.CompanyId = await GetRequiredCompanyIdAsync();
             knowledgeBase.CreatedBy = GetRequiredUserId();
             
             var created = await _knowledgeService.CreateAsync(knowledgeBase);

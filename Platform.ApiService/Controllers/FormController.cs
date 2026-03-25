@@ -15,17 +15,14 @@ namespace Platform.ApiService.Controllers;
 public class FormController : BaseApiController
 {
     private readonly IDataFactory<FormDefinition> _formFactory;
-    private readonly ITenantContext _tenantContext;
 
     /// <summary>
     /// 初始化表单管理控制器
     /// </summary>
     /// <param name="formFactory">表单定义数据工厂</param>
-    /// <param name="tenantContext">租户上下文</param>
-    public FormController(IDataFactory<FormDefinition> formFactory, ITenantContext tenantContext)
+    public FormController(IDataFactory<FormDefinition> formFactory)
     {
         _formFactory = formFactory;
-        _tenantContext = tenantContext;
     }
 
     /// <summary>
@@ -109,8 +106,6 @@ public class FormController : BaseApiController
                 return ValidationError("表单名称不能为空");
             }
 
-            var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
-            form.CompanyId = companyId ?? string.Empty;
             form.Key = string.IsNullOrWhiteSpace(form.Key) ? $"form_{Guid.NewGuid():N}" : form.Key;
 
             var created = await _formFactory.CreateAsync(form);

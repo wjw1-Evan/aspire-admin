@@ -160,9 +160,8 @@ public interface ITaskService
     /// <param name="dependencyType">依赖类型</param>
     /// <param name="lagDays">延迟天数</param>
     /// <param name="userId">当前用户ID</param>
-    /// <param name="companyId">企业ID</param>
     /// <returns>任务依赖ID</returns>
-    Task<string> AddTaskDependencyAsync(string predecessorTaskId, string successorTaskId, int dependencyType, int lagDays, string userId, string companyId);
+    Task<string> AddTaskDependencyAsync(string predecessorTaskId, string successorTaskId, int dependencyType, int lagDays, string userId);
 
     /// <summary>
     /// 移除任务依赖

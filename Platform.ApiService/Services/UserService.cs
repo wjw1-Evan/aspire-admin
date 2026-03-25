@@ -355,13 +355,8 @@ public class UserService(
     public async Task<UserListWithRolesResponse> GetUsersWithRolesAsync(UserListRequest request)
     {
         var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        var currentCompanyId = await _tenantContext.GetCurrentCompanyIdAsync();
 
-        if (string.IsNullOrEmpty(currentCompanyId))
-        {
-            throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
-        }
-        var filter = await BuildUserListFilterAsync(request, currentCompanyId);
+        var filter = await BuildUserListFilterAsync(request);
 
         Func<IQueryable<User>, IOrderedQueryable<User>>? orderBy = null;
         var sortBy = request.SortBy?.Trim().ToLowerInvariant();
@@ -380,7 +375,7 @@ public class UserService(
 
         var (users, total) = await _userFactory.FindPagedAsync(filter, orderBy, request.Page, request.PageSize);
 
-        var usersWithRoles = await EnrichUsersWithRolesAsync(users, currentCompanyId);
+        var usersWithRoles = await EnrichUsersWithRolesAsync(users);
 
         return new UserListWithRolesResponse
         {
@@ -391,17 +386,16 @@ public class UserService(
         };
     }
 
-    private async Task<Expression<Func<User, bool>>> BuildUserListFilterAsync(UserListRequest request, string currentCompanyId)
+    private async Task<Expression<Func<User, bool>>> BuildUserListFilterAsync(UserListRequest request)
     {
         List<string> memberUserIds;
         if (request.RoleIds != null && request.RoleIds.Count > 0)
         {
-            memberUserIds = await _userRoleService.GetUserIdsByRolesAsync(request.RoleIds, currentCompanyId);
+            memberUserIds = await _userRoleService.GetUserIdsByRolesAsync(request.RoleIds);
         }
         else
         {
             var memberships = await _userCompanyFactory.FindAsync(uc =>
-                uc.CompanyId == currentCompanyId &&
                 uc.Status == SystemConstants.UserStatus.Active);
             memberUserIds = memberships.Select(uc => uc.UserId).Distinct().ToList();
         }
@@ -440,18 +434,17 @@ public class UserService(
         return Expression.Lambda<Func<T, bool>>(combined, parameter);
     }
 
-    private async Task<List<UserWithRolesResponse>> EnrichUsersWithRolesAsync(List<User> users, string companyId)
+    private async Task<List<UserWithRolesResponse>> EnrichUsersWithRolesAsync(List<User> users)
     {
         var userIds = users.Select(u => u.Id!).ToList();
 
         var userCompanies = await _userCompanyFactory.FindAsync(uc =>
             userIds.Contains(uc.UserId) &&
-            uc.CompanyId == companyId &&
             uc.Status == SystemConstants.UserStatus.Active);
 
         var allRoleIds = userCompanies.SelectMany(uc => uc.RoleIds).Distinct().ToList();
-        var roleIdToNameMap = await _userRoleService.GetRoleNameMapAsync(allRoleIds, companyId);
-        var userOrganizationMap = await _userOrganizationService.GetUserOrganizationMapAsync(userIds, companyId);
+        var roleIdToNameMap = await _userRoleService.GetRoleNameMapAsync(allRoleIds);
+        var userOrganizationMap = await _userOrganizationService.GetUserOrganizationMapAsync(userIds);
 
         var userIdToCompanyMap = userCompanies.ToDictionary(uc => uc.UserId, uc => uc);
 

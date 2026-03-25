@@ -26,12 +26,12 @@ public interface IUserRoleService
     /// <summary>
     /// 获取角色名称映射
     /// </summary>
-    Task<Dictionary<string, string>> GetRoleNameMapAsync(List<string> roleIds, string companyId);
+    Task<Dictionary<string, string>> GetRoleNameMapAsync(List<string> roleIds);
 
     /// <summary>
     /// 根据角色ID获取用户ID列表
     /// </summary>
-    Task<List<string>> GetUserIdsByRolesAsync(List<string> roleIds, string companyId);
+    Task<List<string>> GetUserIdsByRolesAsync(List<string> roleIds);
 
     /// <summary>
     /// 统计当前企业的角色总数

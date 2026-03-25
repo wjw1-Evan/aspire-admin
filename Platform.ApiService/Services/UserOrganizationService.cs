@@ -18,20 +18,21 @@ public class UserOrganizationService(
     private readonly IDataFactory<UserOrganization> _userOrgFactory = userOrgFactory;
 
     /// <inheritdoc/>
-    public async Task<Dictionary<string, List<UserOrganizationInfo>>> GetUserOrganizationMapAsync(List<string> userIds, string companyId)
+    public async Task<Dictionary<string, List<UserOrganizationInfo>>> GetUserOrganizationMapAsync(List<string> userIds)
     {
         var result = new Dictionary<string, List<UserOrganizationInfo>>();
         if (!userIds.Any()) return result;
 
         var mappings = await _userOrgFactory.FindAsync(
-            m => userIds.Contains(m.UserId) && m.CompanyId == companyId);
+            m => userIds.Contains(m.UserId));
         if (mappings == null || !mappings.Any()) return result;
 
         var organizationIds = mappings.Select(m => m.OrganizationUnitId).Distinct().ToList();
         if (!organizationIds.Any()) return result;
 
         var orgUnits = await _organizationFactory.FindAsync(
-            o => organizationIds.Contains(o.Id) && o.CompanyId == companyId);
+            o => organizationIds.Contains(o.Id));
+        
         
         var orgMap = orgUnits
             .Where(o => !string.IsNullOrEmpty(o.Id))

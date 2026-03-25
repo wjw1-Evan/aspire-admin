@@ -104,22 +104,19 @@ public class UserRoleService : IUserRoleService
     }
 
     /// <inheritdoc/>
-    public async Task<Dictionary<string, string>> GetRoleNameMapAsync(List<string> roleIds, string companyId)
+    public async Task<Dictionary<string, string>> GetRoleNameMapAsync(List<string> roleIds)
     {
         if (!roleIds.Any()) return new Dictionary<string, string>();
 
-        var roles = await _roleFactory.FindAsync(r =>
-            roleIds.Contains(r.Id!) && r.CompanyId == companyId);
+        var roles = await _roleFactory.FindAsync(r => roleIds.Contains(r.Id!));
 
         return roles.ToDictionary(r => r.Id!, r => r.Name);
     }
 
     /// <inheritdoc/>
-    public async Task<List<string>> GetUserIdsByRolesAsync(List<string> roleIds, string companyId)
+    public async Task<List<string>> GetUserIdsByRolesAsync(List<string> roleIds)
     {
-        // 查找属于该企业且拥有任一指定角色的活跃用户
         var userCompanies = await _userCompanyFactory.FindAsync(uc =>
-            uc.CompanyId == companyId &&
             uc.Status == "active" &&
             uc.RoleIds.Any(rid => roleIds.Contains(rid)));
 

@@ -13,5 +13,5 @@ public interface IUserOrganizationService
     /// <summary>
     /// 批量获取用户的组织信息（含层级路径）
     /// </summary>
-    Task<Dictionary<string, List<UserOrganizationInfo>>> GetUserOrganizationMapAsync(List<string> userIds, string companyId);
+    Task<Dictionary<string, List<UserOrganizationInfo>>> GetUserOrganizationMapAsync(List<string> userIds);
 }

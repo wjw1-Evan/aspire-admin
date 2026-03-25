@@ -47,9 +47,8 @@ public class TaskService : ITaskService
     /// 创建新任务
     /// </summary>
     /// <param name="request">创建任务请求</param>
-    /// <param name="userId">创建者用户ID</param>
     /// <returns>创建的任务信息</returns>
-    public async System.Threading.Tasks.Task<TaskDto> CreateTaskAsync(CreateTaskRequest request, string userId)
+    public async System.Threading.Tasks.Task<TaskDto> CreateTaskAsync(CreateTaskRequest request)
     {
         var task = new WorkTask
         {
@@ -57,7 +56,6 @@ public class TaskService : ITaskService
             Description = request.Description,
             TaskType = request.TaskType,
             Priority = (TaskPriority)request.Priority,
-            CreatedBy = userId,
             AssignedTo = request.AssignedTo,
             PlannedStartTime = request.PlannedStartTime,
             PlannedEndTime = request.PlannedEndTime,
@@ -203,9 +201,8 @@ public class TaskService : ITaskService
     /// 更新任务信息
     /// </summary>
     /// <param name="request">更新任务请求</param>
-    /// <param name="userId">操作用户ID</param>
     /// <returns>更新后的任务信息</returns>
-    public async System.Threading.Tasks.Task<TaskDto> UpdateTaskAsync(UpdateTaskRequest request, string userId)
+    public async System.Threading.Tasks.Task<TaskDto> UpdateTaskAsync(UpdateTaskRequest request)
     {
         var task = await _taskFactory.GetByIdAsync(request.TaskId);
 
@@ -214,8 +211,6 @@ public class TaskService : ITaskService
 
         var updatedTask = await _taskFactory.UpdateAsync(request.TaskId, t =>
         {
-            t.UpdatedBy = userId;
-            t.UpdatedAt = DateTime.UtcNow;
 
             if (!string.IsNullOrEmpty(request.TaskName))
                 t.TaskName = request.TaskName;
@@ -324,9 +319,8 @@ public class TaskService : ITaskService
     /// 分配任务给用户
     /// </summary>
     /// <param name="request">分配任务请求</param>
-    /// <param name="userId">操作用户ID</param>
     /// <returns>分配后的任务信息</returns>
-    public async System.Threading.Tasks.Task<TaskDto> AssignTaskAsync(AssignTaskRequest request, string userId)
+    public async System.Threading.Tasks.Task<TaskDto> AssignTaskAsync(AssignTaskRequest request)
     {
         var task = await _taskFactory.GetByIdAsync(request.TaskId);
 
@@ -338,8 +332,6 @@ public class TaskService : ITaskService
             t.AssignedTo = request.AssignedTo;
             t.AssignedAt = DateTime.UtcNow;
             t.Status = Models.TaskStatus.Assigned;
-            t.UpdatedBy = userId;
-            t.UpdatedAt = DateTime.UtcNow;
 
             if (!string.IsNullOrEmpty(request.Remarks))
                 t.Remarks = request.Remarks;
@@ -384,7 +376,7 @@ public class TaskService : ITaskService
     /// <param name="request">执行任务请求</param>
     /// <param name="userId">操作用户ID</param>
     /// <returns>执行后的任务信息</returns>
-    public async System.Threading.Tasks.Task<TaskDto> ExecuteTaskAsync(ExecuteTaskRequest request, string userId)
+    public async System.Threading.Tasks.Task<TaskDto> ExecuteTaskAsync(ExecuteTaskRequest request)
     {
         var task = await _taskFactory.GetByIdAsync(request.TaskId);
 
@@ -394,8 +386,6 @@ public class TaskService : ITaskService
         var updatedTask = await _taskFactory.UpdateAsync(request.TaskId, t =>
         {
             t.Status = (Models.TaskStatus)request.Status;
-            t.UpdatedBy = userId;
-            t.UpdatedAt = DateTime.UtcNow;
 
             if (request.Status == (int)Models.TaskStatus.InProgress && t.ActualStartTime == null)
                 t.ActualStartTime = DateTime.UtcNow;
@@ -412,7 +402,6 @@ public class TaskService : ITaskService
         // 记录执行日志
         await LogTaskExecutionAsync(
             request.TaskId,
-            userId,
             TaskExecutionResult.Success,
             request.Message,
             request.CompletionPercentage ?? 0);
@@ -468,7 +457,7 @@ public class TaskService : ITaskService
     /// <param name="request">完成任务请求</param>
     /// <param name="userId">操作用户ID</param>
     /// <returns>完成后的任务信息</returns>
-    public async System.Threading.Tasks.Task<TaskDto> CompleteTaskAsync(CompleteTaskRequest request, string userId)
+    public async System.Threading.Tasks.Task<TaskDto> CompleteTaskAsync(CompleteTaskRequest request)
     {
         var task = await _taskFactory.GetByIdAsync(request.TaskId);
 
@@ -482,8 +471,6 @@ public class TaskService : ITaskService
             t.ExecutionResult = (TaskExecutionResult)request.ExecutionResult;
             t.ActualEndTime = now;
             t.CompletionPercentage = 100;
-            t.UpdatedBy = userId;
-            t.UpdatedAt = now;
 
             if (t.ActualStartTime.HasValue)
             {
@@ -502,7 +489,6 @@ public class TaskService : ITaskService
         // 记录执行日志
         await LogTaskExecutionAsync(
             request.TaskId,
-            userId,
             (TaskExecutionResult)request.ExecutionResult,
             request.Remarks,
             100);
@@ -549,7 +535,7 @@ public class TaskService : ITaskService
     /// <param name="userId">操作用户ID</param>
     /// <param name="remarks">取消备注</param>
     /// <returns>取消后的任务信息</returns>
-    public async System.Threading.Tasks.Task<TaskDto> CancelTaskAsync(string taskId, string userId, string? remarks = null)
+    public async System.Threading.Tasks.Task<TaskDto> CancelTaskAsync(string taskId, string? remarks = null)
     {
         var task = await _taskFactory.GetByIdAsync(taskId);
 
@@ -559,8 +545,6 @@ public class TaskService : ITaskService
         var updatedTask = await _taskFactory.UpdateAsync(taskId, t =>
         {
             t.Status = Models.TaskStatus.Cancelled;
-            t.UpdatedBy = userId;
-            t.UpdatedAt = DateTime.UtcNow;
 
             if (!string.IsNullOrEmpty(remarks))
                 t.Remarks = remarks;
@@ -605,7 +589,7 @@ public class TaskService : ITaskService
     /// <param name="taskId">任务ID</param>
     /// <param name="userId">操作用户ID</param>
     /// <returns>删除是否成功</returns>
-    public async System.Threading.Tasks.Task<bool> DeleteTaskAsync(string taskId, string userId)
+    public async System.Threading.Tasks.Task<bool> DeleteTaskAsync(string taskId)
     {
         // 收集所有需要删除的任务ID（包括任务本身及其所有后代任务）
         var idsToDelete = new List<string> { taskId };
@@ -726,7 +710,6 @@ public class TaskService : ITaskService
     /// <returns>执行日志信息</returns>
     public async System.Threading.Tasks.Task<TaskExecutionLogDto> LogTaskExecutionAsync(
         string taskId,
-        string userId,
         TaskExecutionResult status,
         string? message = null,
         int progressPercentage = 0)
@@ -734,7 +717,6 @@ public class TaskService : ITaskService
         var log = new TaskExecutionLog
         {
             TaskId = taskId,
-            ExecutedBy = userId,
             StartTime = DateTime.UtcNow,
             Status = status,
             Message = message,
@@ -786,13 +768,11 @@ public class TaskService : ITaskService
     /// <param name="status">新状态</param>
     /// <param name="userId">当前用户ID</param>
     /// <returns>更新的任务数量</returns>
-    public async System.Threading.Tasks.Task<int> BatchUpdateTaskStatusAsync(List<string> taskIds, Models.TaskStatus status, string userId)
+    public async System.Threading.Tasks.Task<int> BatchUpdateTaskStatusAsync(List<string> taskIds, Models.TaskStatus status)
     {
         return (int)await _taskFactory.UpdateManyAsync(t => taskIds.Contains(t.Id!), t =>
         {
             t.Status = status;
-            t.UpdatedBy = userId;
-            t.UpdatedAt = DateTime.UtcNow;
         });
     }
 
@@ -1204,8 +1184,7 @@ public class TaskService : ITaskService
         string predecessorTaskId,
         string successorTaskId,
         int dependencyType,
-        int lagDays,
-        string userId)
+        int lagDays)
     {
         // 检查任务是否存在
         var predecessor = await _taskFactory.GetByIdAsync(predecessorTaskId);
@@ -1271,7 +1250,7 @@ public class TaskService : ITaskService
     /// <summary>
     /// 移除任务依赖
     /// </summary>
-    public async System.Threading.Tasks.Task<bool> RemoveTaskDependencyAsync(string dependencyId, string userId)
+    public async System.Threading.Tasks.Task<bool> RemoveTaskDependencyAsync(string dependencyId)
     {
         var dependencyFactory = _serviceProvider
             .GetRequiredService<IDataFactory<TaskDependency>>();
@@ -1461,7 +1440,7 @@ public class TaskService : ITaskService
     /// <summary>
     /// 更新任务进度（同时更新项目进度）
     /// </summary>
-    public async System.Threading.Tasks.Task<TaskDto> UpdateTaskProgressAsync(string taskId, int progress, string userId)
+    public async System.Threading.Tasks.Task<TaskDto> UpdateTaskProgressAsync(string taskId, int progress)
     {
         var task = await _taskFactory.GetByIdAsync(taskId);
         if (task == null)
@@ -1470,8 +1449,6 @@ public class TaskService : ITaskService
         var updatedTask = await _taskFactory.UpdateAsync(taskId, t =>
         {
             t.CompletionPercentage = Math.Max(0, Math.Min(100, progress));
-            t.UpdatedAt = DateTime.UtcNow;
-            t.UpdatedBy = userId;
         });
 
         if (updatedTask == null)

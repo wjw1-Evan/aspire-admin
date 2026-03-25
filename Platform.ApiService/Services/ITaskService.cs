@@ -14,9 +14,8 @@ public interface ITaskService
     /// 创建任务
     /// </summary>
     /// <param name="request">创建任务请求</param>
-    /// <param name="userId">当前用户ID</param>
     /// <returns>创建的任务</returns>
-    Task<TaskDto> CreateTaskAsync(CreateTaskRequest request, string userId);
+    Task<TaskDto> CreateTaskAsync(CreateTaskRequest request);
 
     /// <summary>
     /// 获取任务详情
@@ -36,50 +35,44 @@ public interface ITaskService
     /// 更新任务
     /// </summary>
     /// <param name="request">更新请求</param>
-    /// <param name="userId">当前用户ID</param>
     /// <returns>更新后的任务</returns>
-    Task<TaskDto> UpdateTaskAsync(UpdateTaskRequest request, string userId);
+    Task<TaskDto> UpdateTaskAsync(UpdateTaskRequest request);
 
     /// <summary>
     /// 分配任务
     /// </summary>
     /// <param name="request">分配请求</param>
-    /// <param name="userId">当前用户ID</param>
     /// <returns>分配后的任务</returns>
-    Task<TaskDto> AssignTaskAsync(AssignTaskRequest request, string userId);
+    Task<TaskDto> AssignTaskAsync(AssignTaskRequest request);
 
     /// <summary>
     /// 执行任务
     /// </summary>
     /// <param name="request">执行请求</param>
-    /// <param name="userId">当前用户ID</param>
     /// <returns>执行后的任务</returns>
-    Task<TaskDto> ExecuteTaskAsync(ExecuteTaskRequest request, string userId);
+    Task<TaskDto> ExecuteTaskAsync(ExecuteTaskRequest request);
 
     /// <summary>
     /// 完成任务
     /// </summary>
     /// <param name="request">完成请求</param>
-    /// <param name="userId">当前用户ID</param>
     /// <returns>完成后的任务</returns>
-    Task<TaskDto> CompleteTaskAsync(CompleteTaskRequest request, string userId);
+    Task<TaskDto> CompleteTaskAsync(CompleteTaskRequest request);
 
     /// <summary>
     /// 取消任务
     /// </summary>
     /// <param name="taskId">任务ID</param>
-    /// <param name="userId">当前用户ID</param>
     /// <param name="remarks">取消备注</param>
     /// <returns>取消后的任务</returns>
-    Task<TaskDto> CancelTaskAsync(string taskId, string userId, string? remarks = null);
+    Task<TaskDto> CancelTaskAsync(string taskId, string? remarks = null);
 
     /// <summary>
     /// 删除任务
     /// </summary>
     /// <param name="taskId">任务ID</param>
-    /// <param name="userId">当前用户ID</param>
     /// <returns>是否删除成功</returns>
-    Task<bool> DeleteTaskAsync(string taskId, string userId);
+    Task<bool> DeleteTaskAsync(string taskId);
 
     /// <summary>
     /// 获取任务统计信息
@@ -101,14 +94,12 @@ public interface ITaskService
     /// 记录任务执行日志
     /// </summary>
     /// <param name="taskId">任务ID</param>
-    /// <param name="userId">执行者ID</param>
     /// <param name="status">执行状态</param>
     /// <param name="message">执行消息</param>
     /// <param name="progressPercentage">进度百分比</param>
     /// <returns>记录的日志</returns>
     Task<TaskExecutionLogDto> LogTaskExecutionAsync(
         string taskId,
-        string userId,
         TaskExecutionResult status,
         string? message = null,
         int progressPercentage = 0);
@@ -134,9 +125,8 @@ public interface ITaskService
     /// </summary>
     /// <param name="taskIds">任务ID列表</param>
     /// <param name="status">新状态</param>
-    /// <param name="userId">当前用户ID</param>
     /// <returns>更新的任务数量</returns>
-    Task<int> BatchUpdateTaskStatusAsync(List<string> taskIds, Models.TaskStatus status, string userId);
+    Task<int> BatchUpdateTaskStatusAsync(List<string> taskIds, Models.TaskStatus status);
 
     /// <summary>
     /// 获取项目下的所有任务（树形结构）
@@ -159,17 +149,15 @@ public interface ITaskService
     /// <param name="successorTaskId">后续任务ID</param>
     /// <param name="dependencyType">依赖类型</param>
     /// <param name="lagDays">延迟天数</param>
-    /// <param name="userId">当前用户ID</param>
     /// <returns>任务依赖ID</returns>
-    Task<string> AddTaskDependencyAsync(string predecessorTaskId, string successorTaskId, int dependencyType, int lagDays, string userId);
+    Task<string> AddTaskDependencyAsync(string predecessorTaskId, string successorTaskId, int dependencyType, int lagDays);
 
     /// <summary>
     /// 移除任务依赖
     /// </summary>
     /// <param name="dependencyId">依赖ID</param>
-    /// <param name="userId">当前用户ID</param>
     /// <returns>是否移除成功</returns>
-    Task<bool> RemoveTaskDependencyAsync(string dependencyId, string userId);
+    Task<bool> RemoveTaskDependencyAsync(string dependencyId);
 
     /// <summary>
     /// 获取任务依赖关系
@@ -190,8 +178,7 @@ public interface ITaskService
     /// </summary>
     /// <param name="taskId">任务ID</param>
     /// <param name="progress">进度百分比</param>
-    /// <param name="userId">当前用户ID</param>
     /// <returns>更新后的任务</returns>
-    Task<TaskDto> UpdateTaskProgressAsync(string taskId, int progress, string userId);
+    Task<TaskDto> UpdateTaskProgressAsync(string taskId, int progress);
 }
 

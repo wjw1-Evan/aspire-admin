@@ -13,6 +13,7 @@ public class ParkInvestmentService : IParkInvestmentService
     private readonly IDataFactory<InvestmentLead> _leadFactory;
     private readonly IDataFactory<InvestmentProject> _projectFactory;
     private readonly IDataFactory<InvestmentFollowUp> _followUpFactory;
+    private readonly ITenantContext _tenantContext;
     private readonly ILogger<ParkInvestmentService> _logger;
 
     /// <summary>
@@ -22,11 +23,13 @@ public class ParkInvestmentService : IParkInvestmentService
         IDataFactory<InvestmentLead> leadFactory,
         IDataFactory<InvestmentProject> projectFactory,
         IDataFactory<InvestmentFollowUp> followUpFactory,
+        ITenantContext tenantContext,
         ILogger<ParkInvestmentService> logger)
     {
         _leadFactory = leadFactory;
         _projectFactory = projectFactory;
         _followUpFactory = followUpFactory;
+        _tenantContext = tenantContext;
         _logger = logger;
     }
 
@@ -103,6 +106,16 @@ public class ParkInvestmentService : IParkInvestmentService
     /// </summary>
     public async Task<InvestmentLeadDto?> UpdateLeadAsync(string id, CreateInvestmentLeadRequest request)
     {
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        
+        var lead = await _leadFactory.GetByIdAsync(id);
+        if (lead == null)
+            return null;
+
+        // 验证权限：创建者或负责人可以更新
+        if (lead.CreatedBy != currentUserId && lead.AssignedTo != currentUserId)
+            throw new UnauthorizedAccessException("无权更新此线索");
+
         var updatedLead = await _leadFactory.UpdateAsync(id, lead =>
         {
             lead.CompanyName = request.CompanyName;
@@ -128,6 +141,16 @@ public class ParkInvestmentService : IParkInvestmentService
     /// </summary>
     public async Task<bool> DeleteLeadAsync(string id)
     {
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        
+        var lead = await _leadFactory.GetByIdAsync(id);
+        if (lead == null)
+            return false;
+
+        // 验证权限：创建者或负责人可以删除
+        if (lead.CreatedBy != currentUserId && lead.AssignedTo != currentUserId)
+            throw new UnauthorizedAccessException("无权删除此线索");
+
         return await _leadFactory.SoftDeleteAsync(id);
     }
 
@@ -245,6 +268,16 @@ public class ParkInvestmentService : IParkInvestmentService
     /// </summary>
     public async Task<InvestmentProjectDto?> UpdateProjectAsync(string id, CreateInvestmentProjectRequest request)
     {
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        
+        var project = await _projectFactory.GetByIdAsync(id);
+        if (project == null)
+            return null;
+
+        // 验证权限：创建者或负责人可以更新
+        if (project.CreatedBy != currentUserId && project.AssignedTo != currentUserId)
+            throw new UnauthorizedAccessException("无权更新此项目");
+
         var updatedProject = await _projectFactory.UpdateAsync(id, project =>
         {
             project.ProjectName = request.ProjectName;
@@ -269,6 +302,16 @@ public class ParkInvestmentService : IParkInvestmentService
     /// </summary>
     public async Task<bool> DeleteProjectAsync(string id)
     {
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        
+        var project = await _projectFactory.GetByIdAsync(id);
+        if (project == null)
+            return false;
+
+        // 验证权限：创建者或负责人可以删除
+        if (project.CreatedBy != currentUserId && project.AssignedTo != currentUserId)
+            throw new UnauthorizedAccessException("无权删除此项目");
+
         return await _projectFactory.SoftDeleteAsync(id);
     }
 

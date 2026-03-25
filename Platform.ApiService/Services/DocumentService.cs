@@ -258,10 +258,18 @@ public class DocumentService : IDocumentService
     /// </summary>
     public async Task<Document?> UpdateDocumentAsync(string id, UpdateDocumentRequest request)
     {
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        
         var document = await _documentFactory.GetByIdAsync(id);
         if (document == null)
         {
             return null;
+        }
+
+        // 验证是否是文档创建者
+        if (document.CreatedBy != currentUserId)
+        {
+            throw new UnauthorizedAccessException("无权修改他人的公文");
         }
 
         // 只有草稿状态的公文可以修改
@@ -418,10 +426,18 @@ public class DocumentService : IDocumentService
     /// </summary>
     public async Task<bool> DeleteDocumentAsync(string id)
     {
+        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        
         var document = await _documentFactory.GetByIdAsync(id);
         if (document == null)
         {
             return false;
+        }
+
+        // 验证是否是文档创建者
+        if (document.CreatedBy != currentUserId)
+        {
+            throw new UnauthorizedAccessException("无权删除他人的公文");
         }
 
         // 只有草稿状态的公文可以删除

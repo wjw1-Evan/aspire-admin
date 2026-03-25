@@ -31,7 +31,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@types/dagre": "^0.7.54",
-    "antd": "^6.3.3",
+    "antd": "^6.3.4",
     "antd-style": "^4.1.0",
     "classnames": "^2.5.1",
     "dagre": "^0.8.5",
@@ -51,9 +51,9 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@types/sm-crypto": "^0.3.4",
-    "@umijs/max": "^4.6.34",
+    "@umijs/max": "^4.6.35",
     "cross-env": "^10.1.0",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.2",
     "umi-presets-pro": "^2.0.3"
   },
   "engines": {

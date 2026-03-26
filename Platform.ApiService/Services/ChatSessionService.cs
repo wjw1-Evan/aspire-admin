@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 #pragma warning disable CS1591
 using Microsoft.Extensions.Logging;
 using Platform.ApiService.Models;
@@ -12,28 +13,21 @@ namespace Platform.ApiService.Services;
 
 public class ChatSessionService : IChatSessionService
 {
+    private readonly DbContext _context;
     private const int MaxPageSize = 200;
-
-    private readonly IDataFactory<ChatSession> _sessionFactory;
-    private readonly IDataFactory<ChatMessage> _messageFactory;
-    private readonly IDataFactory<AppUser> _userFactory;
     private readonly ITenantContext _tenantContext;
     private readonly IAiAssistantCoordinator _aiAssistantCoordinator;
     private readonly IChatBroadcaster _broadcaster;
     private readonly ILogger<ChatSessionService> _logger;
 
     public ChatSessionService(
-        IDataFactory<ChatSession> sessionFactory,
-        IDataFactory<ChatMessage> messageFactory,
-        IDataFactory<AppUser> userFactory,
+        DbContext context,
         ITenantContext tenantContext,
         IAiAssistantCoordinator aiAssistantCoordinator,
         IChatBroadcaster broadcaster,
         ILogger<ChatSessionService> logger)
     {
-        _sessionFactory = sessionFactory ?? throw new ArgumentNullException(nameof(sessionFactory));
-        _messageFactory = messageFactory ?? throw new ArgumentNullException(nameof(messageFactory));
-        _userFactory = userFactory ?? throw new ArgumentNullException(nameof(userFactory));
+        _context = context;
         _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
         _aiAssistantCoordinator = aiAssistantCoordinator ?? throw new ArgumentNullException(nameof(aiAssistantCoordinator));
         _broadcaster = broadcaster ?? throw new ArgumentNullException(nameof(broadcaster));
@@ -54,9 +48,15 @@ public class ChatSessionService : IChatSessionService
                               session.TopicTags.Any(tag => tag.Contains(request.Keyword, StringComparison.OrdinalIgnoreCase));
         }
 
-        var paged = await _sessionFactory.FindPagedAsync(filter, q => q.OrderByDescending(s => s.UpdatedAt), Math.Max(1, request.Page), Math.Min(Math.Max(request.PageSize, 1), MaxPageSize));
-        await EnrichParticipantMetadataAsync(paged.items);
-        return (paged.items, paged.total);
+        var query = _context.Set<ChatSession>().Where(filter);
+        var total = await query.LongCountAsync();
+        var items = await query.OrderByDescending(s => s.UpdatedAt)
+            .Skip((Math.Max(1, request.Page) - 1) * Math.Min(Math.Max(request.PageSize, 1), MaxPageSize))
+            .Take(Math.Min(Math.Max(request.PageSize, 1), MaxPageSize))
+            .ToListAsync();
+
+        await EnrichParticipantMetadataAsync(items);
+        return (items, total);
     }
 
     public async Task<(List<ChatMessage> messages, bool hasMore, string? nextCursor)> GetMessagesAsync(string sessionId, ChatMessageListRequest request)
@@ -68,25 +68,29 @@ public class ChatSessionService : IChatSessionService
         Expression<Func<ChatMessage, bool>> filter = m => m.SessionId == session.Id;
         if (!string.IsNullOrWhiteSpace(request.Cursor))
         {
-            var cursorMsg = await _messageFactory.GetByIdAsync(request.Cursor);
+            var cursorMsg = await _context.Set<ChatMessage>().FirstOrDefaultAsync(m => m.Id == request.Cursor);
             if (cursorMsg != null && cursorMsg.SessionId == session.Id)
                 filter = m => m.SessionId == session.Id && m.CreatedAt < cursorMsg.CreatedAt;
         }
 
         var limit = Math.Min(Math.Max(request.Limit, 1), MaxPageSize);
-        var messages = await _messageFactory.FindAsync(filter, q => q.OrderByDescending(m => m.CreatedAt), limit + 1);
+        var messages = await _context.Set<ChatMessage>()
+            .Where(filter)
+            .OrderByDescending(m => m.CreatedAt)
+            .Take(limit + 1)
+            .ToListAsync();
+
         var hasMore = messages.Count > limit;
         if (hasMore) messages = messages.Take(limit).ToList();
         var nextCursor = hasMore ? messages.LastOrDefault()?.Id : null;
         messages.Reverse();
 
-        // Calculate read status
         var lastReadMessageIds = session.LastReadMessageIds ?? new Dictionary<string, string>();
         var lastReadMessages = new Dictionary<string, ChatMessage>();
         var uniqueIds = lastReadMessageIds.Values.Where(id => !string.IsNullOrWhiteSpace(id)).Distinct().ToList();
         if (uniqueIds.Count > 0)
         {
-            var list = await _messageFactory.FindAsync(m => uniqueIds.Contains(m.Id), null, uniqueIds.Count);
+            var list = await _context.Set<ChatMessage>().Where(m => uniqueIds.Contains(m.Id)).ToListAsync();
             foreach (var m in list) lastReadMessages[m.Id] = m;
         }
 
@@ -119,28 +123,33 @@ public class ChatSessionService : IChatSessionService
         var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         if (currentUserId == participantUserId) throw new InvalidOperationException("无法与自己创建会话");
 
-        var participants = new[] { currentUserId, participantUserId };
+        var participants = new[] { currentUserId, participantUserId }.OrderBy(id => id).ToList();
 
-        var existing = await _sessionFactory.FindAsync(s => s.Participants.Count == 2 && participants.All(p => s.Participants.Contains(p)), null, 1);
-        if (existing.Count > 0) return existing[0];
+        var existing = await _context.Set<ChatSession>()
+            .Where(s => s.Participants.Count == 2 && s.Participants.All(p => participants.Contains(p)))
+            .FirstOrDefaultAsync();
+        
+        if (existing != null) return existing;
 
-        var participantUsers = await _userFactory.FindAsync(u => participants.Contains(u.Id));
+        var participantUsers = await _context.Set<AppUser>().Where(u => participants.Contains(u.Id)).ToListAsync();
         var session = new ChatSession
         {
-            Participants = participants.ToList(),
+            Participants = participants,
             ParticipantNames = participants.ToDictionary(id => id, id => participantUsers.FirstOrDefault(u => u.Id == id)?.Name ?? id),
             ParticipantAvatars = participantUsers.Where(u => !string.IsNullOrWhiteSpace(u.Avatar)).ToDictionary(u => u.Id, u => u.Avatar!),
             TopicTags = new List<string> { "direct" }
         };
 
-        return await _sessionFactory.CreateAsync(session);
+        await _context.Set<ChatSession>().AddAsync(session);
+        await _context.SaveChangesAsync();
+        return session;
     }
 
     public async Task MarkSessionReadAsync(string sessionId, string lastMessageId)
     {
         var session = await EnsureSessionAccessibleAsync(sessionId);
         var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        var message = await _messageFactory.GetByIdAsync(lastMessageId);
+        var message = await _context.Set<ChatMessage>().FirstOrDefaultAsync(x => x.Id == lastMessageId);
         if (message == null || message.SessionId != session.Id) throw new KeyNotFoundException("消息不存在");
 
         var unread = session.UnreadCounts ?? new Dictionary<string, int>();
@@ -148,14 +157,17 @@ public class ChatSessionService : IChatSessionService
         var lastRead = session.LastReadMessageIds ?? new Dictionary<string, string>();
         lastRead[currentUserId] = lastMessageId;
 
-        await _sessionFactory.UpdateAsync(session.Id, s => { s.UnreadCounts = unread; s.LastReadMessageIds = lastRead; });
+        session.UnreadCounts = unread;
+        session.LastReadMessageIds = lastRead;
+        await _context.SaveChangesAsync();
+
         await _broadcaster.BroadcastSessionReadAsync(session.Id, currentUserId, new ChatSessionReadPayload { SessionId = session.Id, UserId = currentUserId, LastMessageId = message.Id, ReadAtUtc = DateTime.UtcNow });
         await NotifySessionSummaryAsync(session.Id);
     }
 
     public async Task<ChatSession> EnsureSessionAccessibleAsync(string sessionId)
     {
-        var session = await _sessionFactory.GetByIdAsync(sessionId);
+        var session = await _context.Set<ChatSession>().FirstOrDefaultAsync(x => x.Id == sessionId);
         if (session == null) throw new KeyNotFoundException("会话不存在");
         var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         if (!session.Participants.Contains(currentUserId)) throw new UnauthorizedAccessException("无权访问该会话");
@@ -167,22 +179,20 @@ public class ChatSessionService : IChatSessionService
         var unread = session.UnreadCounts ?? new Dictionary<string, int>();
         foreach (var p in session.Participants.Where(p => p != userId)) unread[p] = unread.GetValueOrDefault(p, 0) + 1;
 
-        await _sessionFactory.UpdateAsync(session.Id, s =>
-        {
-            s.LastMessageAt = message.CreatedAt;
-            s.LastMessageExcerpt = message.Content?.Length > 50 ? message.Content[..50] + "..." : message.Content;
-            s.UnreadCounts = unread;
-        });
+        session.LastMessageAt = message.CreatedAt;
+        session.LastMessageExcerpt = message.Content?.Length > 50 ? message.Content[..50] + "..." : message.Content;
+        session.UnreadCounts = unread;
+        await _context.SaveChangesAsync();
+
         await NotifySessionSummaryAsync(session.Id);
     }
 
     public async Task UpdateSessionLastMessageOnlyAsync(ChatSession session, ChatMessage message, string userId)
     {
-        await _sessionFactory.UpdateAsync(session.Id, s =>
-        {
-            s.LastMessageAt = message.CreatedAt;
-            s.LastMessageExcerpt = message.Content?.Length > 50 ? message.Content[..50] + "..." : message.Content;
-        });
+        session.LastMessageAt = message.CreatedAt;
+        session.LastMessageExcerpt = message.Content?.Length > 50 ? message.Content[..50] + "..." : message.Content;
+        await _context.SaveChangesAsync();
+
         await NotifySessionSummaryAsync(session.Id);
     }
 
@@ -195,7 +205,7 @@ public class ChatSessionService : IChatSessionService
     {
         if (sessions == null || sessions.Count == 0) return;
         var ids = sessions.SelectMany(s => s.Participants).Distinct().ToList();
-        var users = await _userFactory.FindAsync(u => ids.Contains(u.Id));
+        var users = await _context.Set<AppUser>().Where(u => ids.Contains(u.Id)).ToListAsync();
         var userMap = users.ToDictionary(u => u.Id);
         foreach (var session in sessions)
         {
@@ -216,7 +226,7 @@ public class ChatSessionService : IChatSessionService
     {
         try
         {
-            var session = await _sessionFactory.GetByIdAsync(sessionId);
+            var session = await _context.Set<ChatSession>().FirstOrDefaultAsync(x => x.Id == sessionId);
             if (session != null) await _broadcaster.BroadcastSessionUpdatedAsync(sessionId, new ChatSessionRealtimePayload { Session = session, BroadcastAtUtc = DateTime.UtcNow });
         }
         catch (Exception ex) { _logger.LogError(ex, "通知摘要失败: {SessionId}", sessionId); }
@@ -225,7 +235,12 @@ public class ChatSessionService : IChatSessionService
     public async Task DeleteMessageAsync(string sessionId, string messageId)
     {
         await EnsureSessionAccessibleAsync(sessionId);
-        await _messageFactory.SoftDeleteAsync(messageId);
+        var message = await _context.Set<ChatMessage>().FirstOrDefaultAsync(x => x.Id == messageId);
+        if (message != null)
+        {
+            message.IsDeleted = true;
+            await _context.SaveChangesAsync();
+        }
     }
 
     public async Task<ChatMessage> SendMessageAsync(SendChatMessageRequest request, ChatAttachmentInfo? attachmentInfo)
@@ -243,15 +258,17 @@ public class ChatSessionService : IChatSessionService
 
         if (!string.IsNullOrWhiteSpace(request.ClientMessageId))
         {
-            var existing = await _messageFactory.FindAsync(m => m.SessionId == session.Id && m.ClientMessageId == request.ClientMessageId && m.SenderId == currentUserId, null, 1);
-            if (existing.Count > 0)
+            var existing = await _context.Set<ChatMessage>()
+                .FirstOrDefaultAsync(m => m.SessionId == session.Id && m.ClientMessageId == request.ClientMessageId && m.SenderId == currentUserId);
+            
+            if (existing != null)
             {
-                await UpdateSessionLastMessageOnlyAsync(session, existing[0], currentUserId);
-                return existing[0];
+                await UpdateSessionLastMessageOnlyAsync(session, existing, currentUserId);
+                return existing;
             }
         }
 
-        var sender = await _userFactory.GetByIdAsync(currentUserId);
+        var sender = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == currentUserId);
         var message = new ChatMessage
         {
             SessionId = session.Id,
@@ -267,12 +284,14 @@ public class ChatSessionService : IChatSessionService
         };
         message.Metadata["assistantStreaming"] = request.AssistantStreaming;
 
-        var saved = await _messageFactory.CreateAsync(message);
-        await UpdateSessionAfterMessageAsync(session, saved, currentUserId);
+        await _context.Set<ChatMessage>().AddAsync(message);
+        await _context.SaveChangesAsync();
+        
+        await UpdateSessionAfterMessageAsync(session, message, currentUserId);
 
-        var payload = new ChatMessageRealtimePayload { SessionId = session.Id, Message = saved, BroadcastAtUtc = DateTime.UtcNow };
+        var payload = new ChatMessageRealtimePayload { SessionId = session.Id, Message = message, BroadcastAtUtc = DateTime.UtcNow };
         await _broadcaster.BroadcastMessageAsync(session.Id, payload);
 
-        return saved;
+        return message;
     }
 }

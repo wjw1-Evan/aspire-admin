@@ -35,4 +35,3 @@ public interface IMenuService
     /// <returns>菜单信息，如果不存在则返回 null</returns>
     Task<Menu?> GetMenuByIdAsync(string id);
 }
-

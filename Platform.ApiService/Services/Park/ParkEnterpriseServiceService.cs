@@ -11,20 +11,17 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
 {
-    private readonly IDataFactory<ServiceCategory> _categoryFactory;
-    private readonly IDataFactory<ServiceRequest> _requestFactory;
+    private readonly DbContext _context;
+
     private readonly ILogger<ParkEnterpriseServiceService> _logger;
 
     /// <summary>
     /// 初始化企业服务管理服务
     /// </summary>
-    public ParkEnterpriseServiceService(
-        IDataFactory<ServiceCategory> categoryFactory,
-        IDataFactory<ServiceRequest> requestFactory,
-        ILogger<ParkEnterpriseServiceService> logger)
-    {
-        _categoryFactory = categoryFactory;
-        _requestFactory = requestFactory;
+    public ParkEnterpriseServiceService(DbContext context,
+        ILogger<ParkEnterpriseServiceService> logger
+    ) {
+        _context = context;
         _logger = logger;
     }
 
@@ -35,9 +32,8 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
     /// </summary>
     public async Task<ServiceCategoryListResponse> GetCategoriesAsync()
     {
-        Func<IQueryable<ServiceCategory>, IOrderedQueryable<ServiceCategory>> orderBy = q => q.OrderBy(c => c.SortOrder);
-
-        var items = await _categoryFactory.FindAsync(null, orderBy);
+        
+        var items = await _context.Set<ServiceCategory>().OrderBy(c => c.SortOrder).ToListAsync();
 
         var categories = new List<ServiceCategoryDto>();
         foreach (var item in items)
@@ -62,7 +58,8 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
             IsActive = true
         };
 
-        await _categoryFactory.CreateAsync(category);
+        await _context.Set<ServiceCategory>().AddAsync(category);
+        await _context.SaveChangesAsync();
         return await MapToCategoryDtoAsync(category);
     }
 
@@ -71,7 +68,7 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
     /// </summary>
     public async Task<ServiceCategoryDto?> UpdateCategoryAsync(string id, CreateServiceCategoryRequest request)
     {
-        var category = await _categoryFactory.GetByIdAsync(id);
+        var category = await _context.Set<ServiceCategory>().FirstOrDefaultAsync(x => x.Id == id);
         if (category == null) return null;
 
         category.Name = request.Name;
@@ -79,7 +76,7 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
         category.Icon = request.Icon;
         category.SortOrder = request.SortOrder;
 
-        await _categoryFactory.UpdateAsync(id, category => { });
+        await _context.SaveChangesAsync();
         return await MapToCategoryDtoAsync(category);
     }
 
@@ -89,12 +86,16 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
     public async Task<bool> DeleteCategoryAsync(string id)
     {
         // 检查是否有关联的服务申请
-        var requests = await _requestFactory.FindAsync(r => r.CategoryId == id);
+        var requests = await _context.Set<ServiceRequest>().Where(r => r.CategoryId == id).ToListAsync();
         if (requests.Any())
             throw new InvalidOperationException("该类别下存在服务申请，无法删除");
 
-        var result = await _categoryFactory.SoftDeleteAsync(id);
-        return result;
+        var category = await _context.Set<ServiceCategory>().FirstOrDefaultAsync(x => x.Id == id);
+        if (category == null) return false;
+
+        _context.Set<ServiceCategory>().Remove(category);
+        await _context.SaveChangesAsync();
+        return true;
     }
 
     /// <summary>
@@ -102,17 +103,17 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
     /// </summary>
     public async Task<bool> ToggleCategoryStatusAsync(string id)
     {
-        var category = await _categoryFactory.GetByIdAsync(id);
+        var category = await _context.Set<ServiceCategory>().FirstOrDefaultAsync(x => x.Id == id);
         if (category == null) return false;
 
         category.IsActive = !category.IsActive;
-        var result = await _categoryFactory.UpdateAsync(id, category => { });
-        return result != null;
+        await _context.SaveChangesAsync();
+        return true;
     }
 
     private async Task<ServiceCategoryDto> MapToCategoryDtoAsync(ServiceCategory category)
     {
-        var requestCount = (int)await _requestFactory.CountAsync(r => r.CategoryId == category.Id);
+        var requestCount = (int)await _context.Set<ServiceRequest>().LongCountAsync(r => r.CategoryId == category.Id);
 
         return new ServiceCategoryDto
         {
@@ -165,7 +166,9 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
             orderBy = q => q.OrderByDescending(r => r.CreatedAt);
         }
 
-        var (items, total) = await _requestFactory.FindPagedAsync(filter, orderBy, request.Page, request.PageSize);
+        var __fpQ = _context.Set<ServiceRequest>().Where(filter);
+        var total = await __fpQ.LongCountAsync();
+        var items = await orderBy(__fpQ).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
 
         var requestDtos = new List<ServiceRequestDto>();
         foreach (var item in items)
@@ -181,7 +184,7 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
     /// </summary>
     public async Task<ServiceRequestDto?> GetRequestByIdAsync(string id)
     {
-        var request = await _requestFactory.GetByIdAsync(id);
+        var request = await _context.Set<ServiceRequest>().FirstOrDefaultAsync(x => x.Id == id);
         return request != null ? await MapToRequestDtoAsync(request) : null;
     }
 
@@ -203,7 +206,8 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
             Status = "Pending"
         };
 
-        await _requestFactory.CreateAsync(serviceRequest);
+        await _context.Set<ServiceRequest>().AddAsync(serviceRequest);
+        await _context.SaveChangesAsync();
         return await MapToRequestDtoAsync(serviceRequest);
     }
 
@@ -212,7 +216,7 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
     /// </summary>
     public async Task<ServiceRequestDto?> UpdateRequestStatusAsync(string id, UpdateServiceRequestStatusRequest request)
     {
-        var serviceRequest = await _requestFactory.GetByIdAsync(id);
+        var serviceRequest = await _context.Set<ServiceRequest>().FirstOrDefaultAsync(x => x.Id == id);
         if (serviceRequest == null) return null;
 
         serviceRequest.Status = request.Status;
@@ -229,7 +233,7 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
             serviceRequest.CompletedAt = DateTime.UtcNow;
         }
 
-        await _requestFactory.UpdateAsync(id, _ => { });
+        await _context.SaveChangesAsync();
         return await MapToRequestDtoAsync(serviceRequest);
     }
 
@@ -238,8 +242,12 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
     /// </summary>
     public async Task<bool> DeleteRequestAsync(string id)
     {
-        var result = await _requestFactory.SoftDeleteAsync(id);
-        return result;
+        var serviceRequest = await _context.Set<ServiceRequest>().FirstOrDefaultAsync(x => x.Id == id);
+        if (serviceRequest == null) return false;
+        
+        _context.Set<ServiceRequest>().Remove(serviceRequest);
+        await _context.SaveChangesAsync();
+        return true;
     }
 
     /// <summary>
@@ -247,19 +255,19 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
     /// </summary>
     public async Task<bool> RateRequestAsync(string id, int rating, string? feedback)
     {
-        var request = await _requestFactory.GetByIdAsync(id);
+        var request = await _context.Set<ServiceRequest>().FirstOrDefaultAsync(x => x.Id == id);
         if (request == null || request.Status != "Completed") return false;
 
         request.Rating = rating;
         request.Feedback = feedback;
 
-        var updated = await _requestFactory.UpdateAsync(id, _ => { });
-        return updated != null;
+        await _context.SaveChangesAsync();
+        return true;
     }
 
     private async Task<ServiceRequestDto> MapToRequestDtoAsync(ServiceRequest request)
     {
-        var category = await _categoryFactory.GetByIdAsync(request.CategoryId);
+        var category = await _context.Set<ServiceCategory>().FirstOrDefaultAsync(c => c.Id == request.CategoryId);
 
         return new ServiceRequestDto
         {
@@ -299,9 +307,9 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
     /// </summary>
     public async Task<ServiceStatisticsResponse> GetStatisticsAsync(DateTime? startDate = null, DateTime? endDate = null)
     {
-        var categories = await _categoryFactory.FindAsync();
+        var categories = await _context.Set<ServiceCategory>().ToListAsync();
         // Get all requests first (or optimize to filter in DB)
-        var allRequests = await _requestFactory.FindAsync();
+        var allRequests = await _context.Set<ServiceRequest>().ToListAsync();
 
         DateTime start = startDate ?? new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
         DateTime end = endDate ?? DateTime.UtcNow;

@@ -330,4 +330,3 @@ public class AssistantReplyStreamChunk
     /// </summary>
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 }
-

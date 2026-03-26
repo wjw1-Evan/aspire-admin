@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Workflow;
 using Platform.ServiceDefaults.Services;
@@ -193,35 +194,22 @@ public class DocumentQueryParams
 /// </summary>
 public class DocumentService : IDocumentService
 {
-    private readonly IDataFactory<Document> _documentFactory;
-    private readonly IDataFactory<WorkflowInstance> _instanceFactory;
-    private readonly IDataFactory<WorkflowDefinition> _definitionFactory;
-    private readonly IDataFactory<UserCompany> _userCompanyFactory;
-    private readonly IDataFactory<FormDefinition> _formFactory;
     private readonly IWorkflowEngine _workflowEngine;
     private readonly ILogger<DocumentService> _logger;
     private readonly IFileStorageFactory _fileStorageFactory;
     private readonly ITenantContext _tenantContext;
+    private readonly DbContext _context;
 
     /// <summary>
     /// 初始化公文服务
     /// </summary>
-    public DocumentService(
-        IDataFactory<Document> documentFactory,
-        IDataFactory<WorkflowInstance> instanceFactory,
-        IDataFactory<WorkflowDefinition> definitionFactory,
-        IDataFactory<UserCompany> userCompanyFactory,
-        IDataFactory<FormDefinition> formFactory,
+    public DocumentService(DbContext context,
         IWorkflowEngine workflowEngine,
         ILogger<DocumentService> logger,
         IFileStorageFactory fileStorageFactory,
         ITenantContext tenantContext)
     {
-        _documentFactory = documentFactory;
-        _instanceFactory = instanceFactory;
-        _definitionFactory = definitionFactory;
-        _userCompanyFactory = userCompanyFactory;
-        _formFactory = formFactory;
+        _context = context;
         _workflowEngine = workflowEngine;
         _logger = logger;
         _fileStorageFactory = fileStorageFactory;
@@ -233,6 +221,7 @@ public class DocumentService : IDocumentService
     /// </summary>
     public async Task<Document> CreateDocumentAsync(CreateDocumentRequest request)
     {
+        
         var sanitizedFormData = request.FormData != null ? SerializationExtensions.SanitizeDictionary(request.FormData) : new Dictionary<string, object>();
 
         var document = new Document
@@ -246,7 +235,9 @@ public class DocumentService : IDocumentService
             FormData = sanitizedFormData
         };
 
-        return await _documentFactory.CreateAsync(document);
+        await _context.Set<Document>().AddAsync(document);
+        await _context.SaveChangesAsync();
+        return document;
     }
 
     /// <summary>
@@ -254,7 +245,7 @@ public class DocumentService : IDocumentService
     /// </summary>
     public async Task<Document?> UpdateDocumentAsync(string id, UpdateDocumentRequest request)
     {
-        var document = await _documentFactory.GetByIdAsync(id);
+        var document = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == id);
         if (document == null)
         {
             return null;
@@ -268,52 +259,56 @@ public class DocumentService : IDocumentService
 
         bool hasUpdate = false;
 
-        await _documentFactory.UpdateAsync(id, entity =>
+        var __entity = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == id);
+        if (__entity != null)
         {
+    
             if (!string.IsNullOrEmpty(request.Title))
             {
-                entity.Title = request.Title;
+                __entity.Title = request.Title;
                 hasUpdate = true;
             }
 
             if (request.Content != null)
             {
-                entity.Content = request.Content;
+                __entity.Content = request.Content;
                 hasUpdate = true;
             }
 
             if (!string.IsNullOrEmpty(request.DocumentType))
             {
-                entity.DocumentType = request.DocumentType;
+                __entity.DocumentType = request.DocumentType;
                 hasUpdate = true;
             }
 
             if (request.Category != null)
             {
-                entity.Category = request.Category;
+                __entity.Category = request.Category;
                 hasUpdate = true;
             }
 
             if (request.AttachmentIds != null)
             {
-                entity.AttachmentIds = request.AttachmentIds;
+                __entity.AttachmentIds = request.AttachmentIds;
                 hasUpdate = true;
             }
 
             if (request.FormData != null)
             {
                 var sanitized = SerializationExtensions.SanitizeDictionary(request.FormData);
-                entity.FormData = sanitized;
+                __entity.FormData = sanitized;
                 hasUpdate = true;
             }
-        });
+            await _context.SaveChangesAsync();
+        }
+
 
         if (!hasUpdate)
         {
             return document;
         }
 
-        var updated = await _documentFactory.FindAsync(d => d.Id == id, limit: 1);
+        var updated = await _context.Set<Document>().Where(d => d.Id == id).Take(1).ToListAsync();
         return updated.FirstOrDefault();
     }
 
@@ -322,7 +317,7 @@ public class DocumentService : IDocumentService
     /// </summary>
     public async Task<Document?> GetDocumentAsync(string id)
     {
-        return await _documentFactory.GetByIdAsync(id);
+        return await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == id);
     }
 
     /// <summary>
@@ -379,9 +374,9 @@ public class DocumentService : IDocumentService
                     // 审批节点挂起时状态为 Waiting，需同时匹配 Running 和 Waiting
                     if (!string.IsNullOrEmpty(userId))
                     {
-                        var pendingInstances = await _instanceFactory.FindAsync(i =>
+                        var pendingInstances = await _context.Set<WorkflowInstance>().Where(i =>
                             (i.Status == WorkflowStatus.Running || i.Status == WorkflowStatus.Waiting) &&
-                            i.CurrentApproverIds.Contains(userId));
+                            i.CurrentApproverIds.Contains(userId)).ToListAsync();
                         var instanceIds = pendingInstances.Select(i => i.Id).ToList();
                         if (instanceIds.Any())
                         {
@@ -404,11 +399,13 @@ public class DocumentService : IDocumentService
             }
         }
 
-        return await _documentFactory.FindPagedAsync(
-            filter,
-            q => q.OrderByDescending(d => d.CreatedAt),
-            query.Page,
-            query.PageSize);
+        {
+            var __fpQ = _context.Set<Document>().Where(
+            filter);
+            var __fpT = await __fpQ.LongCountAsync();
+            var __fpI = await __fpQ.OrderByDescending(d => d.CreatedAt).Skip((query.Page - 1) * query.PageSize).Take(query.PageSize).ToListAsync();
+            return (__fpI, __fpT);
+        }
     }
 
     /// <summary>
@@ -416,7 +413,7 @@ public class DocumentService : IDocumentService
     /// </summary>
     public async Task<bool> DeleteDocumentAsync(string id)
     {
-        var document = await _documentFactory.GetByIdAsync(id);
+        var document = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == id);
         if (document == null)
         {
             return false;
@@ -428,7 +425,9 @@ public class DocumentService : IDocumentService
             throw new InvalidOperationException("只有草稿状态的公文可以删除");
         }
 
-        await _documentFactory.SoftDeleteAsync(id);
+                    var __sd2 = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == id);
+            if (__sd2 != null) { __sd2.IsDeleted = true; await _context.SaveChangesAsync(); }
+
         return true;
     }
 
@@ -437,7 +436,7 @@ public class DocumentService : IDocumentService
     /// </summary>
     public async Task<WorkflowInstance> SubmitDocumentAsync(string documentId, string workflowDefinitionId, Dictionary<string, object>? variables = null)
     {
-        var document = await _documentFactory.GetByIdAsync(documentId);
+        var document = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == documentId);
         if (document == null)
         {
             throw new InvalidOperationException("公文不存在");
@@ -476,11 +475,15 @@ public class DocumentService : IDocumentService
         var instance = await _workflowEngine.StartWorkflowAsync(workflowDefinitionId, documentId, userId, allVariables);
 
         // 更新文档的 WorkflowInstanceId 字段
-        await _documentFactory.UpdateAsync(documentId, d =>
+        var __entity = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == documentId);
+        if (__entity != null)
         {
-            d.WorkflowInstanceId = instance.Id;
-            d.Status = DocumentStatus.Approving;
-        });
+    
+            __entity.WorkflowInstanceId = instance.Id;
+            __entity.Status = DocumentStatus.Approving;
+            await _context.SaveChangesAsync();
+        }
+
 
         _logger.LogInformation("公文已提交: DocumentId={DocumentId}, WorkflowInstanceId={InstanceId}",
             documentId, instance.Id);
@@ -581,7 +584,7 @@ public class DocumentService : IDocumentService
             throw new ArgumentException("流程定义ID不能为空", nameof(workflowDefinitionId));
         }
 
-        var definition = await _definitionFactory.GetByIdAsync(workflowDefinitionId);
+        var definition = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowDefinitionId);
         if (definition == null)
         {
             throw new InvalidOperationException("流程定义不存在");
@@ -600,7 +603,7 @@ public class DocumentService : IDocumentService
             throw new InvalidOperationException("该流程未配置完整用于创建公文的文档表单");
         }
 
-        var form = await _formFactory.GetByIdAsync(binding.FormDefinitionId);
+        var form = await _context.Set<FormDefinition>().FirstOrDefaultAsync(x => x.Id == binding.FormDefinitionId);
         if (form == null)
         {
             throw new InvalidOperationException("表单定义不存在");
@@ -658,7 +661,9 @@ public class DocumentService : IDocumentService
             FormData = formDataToSave
         };
 
-        document = await _documentFactory.CreateAsync(document);
+        await _context.Set<Document>().AddAsync(document);
+        await _context.SaveChangesAsync();
+        document = document;
         _logger.LogInformation("基于流程表单创建公文: DocumentId={DocumentId}, WorkflowDefinitionId={DefinitionId}", document.Id, workflowDefinitionId);
         return document;
     }
@@ -686,7 +691,7 @@ public class DocumentService : IDocumentService
                     {
                         try
                         {
-                            var userCompanies = await _userCompanyFactory.FindAsync(uc => uc.CompanyId == companyId && uc.Status == "active" && uc.RoleIds.Contains(rule.RoleId!));
+                            var userCompanies = await _context.Set<UserCompany>().Where(uc => uc.CompanyId == companyId && uc.Status == "active" && uc.RoleIds.Contains(rule.RoleId!)).ToListAsync();
                             var userIds = userCompanies
                                 .Select(uc => uc.UserId)
                                 .Where(id => !string.IsNullOrEmpty(id))
@@ -718,36 +723,36 @@ public class DocumentService : IDocumentService
     {
         var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         // 1. 总公文数
-        var totalDocuments = await _documentFactory.CountAsync(d => true);
+        var totalDocuments = await _context.Set<Document>().LongCountAsync(d => true);
 
         // 2. 草稿箱
-        var draftCount = await _documentFactory.CountAsync(d => d.Status == DocumentStatus.Draft);
+        var draftCount = await _context.Set<Document>().LongCountAsync(d => d.Status == DocumentStatus.Draft);
 
         // 3. 已审批（通过）
-        var approvedCount = await _documentFactory.CountAsync(d => d.Status == DocumentStatus.Approved);
+        var approvedCount = await _context.Set<Document>().LongCountAsync(d => d.Status == DocumentStatus.Approved);
 
         // 4. 已驳回
-        var rejectedCount = await _documentFactory.CountAsync(d => d.Status == DocumentStatus.Rejected);
+        var rejectedCount = await _context.Set<Document>().LongCountAsync(d => d.Status == DocumentStatus.Rejected);
 
         // Bug 22 修复：统计审批中文档总数
-        var approvingCount = await _documentFactory.CountAsync(d => d.Status == DocumentStatus.Approving);
+        var approvingCount = await _context.Set<Document>().LongCountAsync(d => d.Status == DocumentStatus.Approving);
 
         // 5. 我发起的
-        var myCreatedCount = await _documentFactory.CountAsync(d => d.CreatedBy == userId);
+        var myCreatedCount = await _context.Set<Document>().LongCountAsync(d => d.CreatedBy == userId);
 
         // 6. 待审批
         long pendingCount = 0;
         try
         {
             // 审批节点挂起时状态为 Waiting，需同时匹配 Running 和 Waiting
-            var pendingInstances = await _instanceFactory.FindAsync(i =>
+            var pendingInstances = await _context.Set<WorkflowInstance>().Where(i =>
                 (i.Status == WorkflowStatus.Running || i.Status == WorkflowStatus.Waiting) &&
-                i.CurrentApproverIds.Contains(userId));
+                i.CurrentApproverIds.Contains(userId)).ToListAsync();
 
             var instanceIds = pendingInstances.Select(i => i.Id).ToList();
             if (instanceIds.Any())
             {
-                pendingCount = await _documentFactory.CountAsync(d =>
+                pendingCount = await _context.Set<Document>().LongCountAsync(d =>
                     d.Status == DocumentStatus.Approving &&
                     d.WorkflowInstanceId != null &&
                     instanceIds.Contains(d.WorkflowInstanceId));

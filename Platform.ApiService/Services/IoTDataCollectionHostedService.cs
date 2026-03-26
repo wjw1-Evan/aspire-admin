@@ -23,7 +23,6 @@ public class IoTDataCollectionHostedService : BackgroundService
         IOptionsMonitor<IoTDataCollectionOptions> optionsMonitor,
         ILogger<IoTDataCollectionHostedService> logger)
     {
-        _scopeFactory = scopeFactory;
         _optionsMonitor = optionsMonitor;
         _logger = logger;
         _cronExpression = CreateCron(optionsMonitor.CurrentValue.Cron);
@@ -90,23 +89,9 @@ public class IoTDataCollectionHostedService : BackgroundService
         {
             using var scope = _scopeFactory.CreateScope();
             var collector = scope.ServiceProvider.GetRequiredService<IoTDataCollector>();
-            var result = await collector.RunOnceAsync(cancellationToken).ConfigureAwait(false);
+            await collector.CollectDataAsync(cancellationToken).ConfigureAwait(false);
 
-            _logger.LogInformation(
-                "IoT data collection finished: devices={Devices}, datapoints={DataPoints}, inserted={Inserted}, skipped={Skipped}, warnings={Warnings}",
-                result.DevicesProcessed,
-                result.DataPointsProcessed,
-                result.RecordsInserted,
-                result.RecordsSkipped,
-                result.Warnings.Count);
-
-            if (result.Warnings.Count > 0)
-            {
-                foreach (var warning in result.Warnings.Take(5))
-                {
-                    _logger.LogWarning("IoT collection warning: {Warning}", warning);
-                }
-            }
+            _logger.LogInformation("IoT data collection finished.");
         }
         catch (OperationCanceledException)
         {

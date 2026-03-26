@@ -173,4 +173,3 @@ public class SocialController : BaseApiController
         return Success(locationInfo);
     }
 }
-

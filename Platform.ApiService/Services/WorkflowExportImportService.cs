@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Workflow;
@@ -12,26 +13,22 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class WorkflowExportImportService : IWorkflowExportImportService
 {
-    private readonly IDataFactory<WorkflowDefinition> _workflowFactory;
-    private readonly IDataFactory<FormDefinition> _formFactory;
+    private readonly DbContext _context;
+
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<WorkflowExportImportService> _logger;
 
     /// <summary>
     /// 初始化工作流导出导入服务
     /// </summary>
-    /// <param name="workflowFactory">工作流定义数据工厂</param>
-    /// <param name="formFactory">表单定义数据工厂</param>
+
     /// <param name="tenantContext">租户上下文</param>
     /// <param name="logger">日志记录器</param>
-    public WorkflowExportImportService(
-        IDataFactory<WorkflowDefinition> workflowFactory,
-        IDataFactory<FormDefinition> formFactory,
+    public WorkflowExportImportService(DbContext context,
         ITenantContext tenantContext,
-        ILogger<WorkflowExportImportService> logger)
-    {
-        _workflowFactory = workflowFactory;
-        _formFactory = formFactory;
+        ILogger<WorkflowExportImportService> logger
+    ) {
+        _context = context;
         _tenantContext = tenantContext;
         _logger = logger;
     }
@@ -41,13 +38,14 @@ public class WorkflowExportImportService : IWorkflowExportImportService
     /// </summary>
     public async Task<byte[]> ExportWorkflowsAsync(List<string> workflowIds, WorkflowExportConfig config)
     {
+        
         try
         {
             _logger.LogInformation("开始导出工作流: WorkflowCount={WorkflowCount}, Format={Format}",
                 workflowIds.Count, config.Format);
 
             // 获取工作流定义
-            var workflows = await _workflowFactory.FindAsync(w => workflowIds.Contains(w.Id));
+            var workflows = await _context.Set<WorkflowDefinition>().Where(w => workflowIds.Contains(w.Id)).ToListAsync();
 
             if (workflows.Count == 0)
             {
@@ -120,7 +118,7 @@ public class WorkflowExportImportService : IWorkflowExportImportService
                 filters.Count, config.Format);
 
             var filter = BuildFilterExpression(filters);
-            var workflows = await _workflowFactory.FindAsync(filter);
+            var workflows = await _context.Set<WorkflowDefinition>().Where(filter).ToListAsync();
 
             if (workflows.Count == 0)
             {
@@ -353,7 +351,9 @@ public class WorkflowExportImportService : IWorkflowExportImportService
 
         if (formIds.Count > 0)
         {
-            var forms = await _formFactory.FindAsync(f => formIds.Contains(f.Id) && f.IsDeleted != true);
+            var forms = await _context.Set<FormDefinition>()
+                .Where(f => formIds.Contains(f.Id))
+                .ToListAsync();
             foreach (var form in forms)
             {
                 dependencies.Add(new WorkflowDependency
@@ -455,7 +455,7 @@ public class WorkflowExportImportService : IWorkflowExportImportService
     private async Task ValidateWorkflowForImportAsync(WorkflowExportItem workflow, WorkflowImportResult result)
     {
         // 检查名称冲突
-        var existingResult = await _workflowFactory.FindAsync(w => w.Name == workflow.Name && w.IsDeleted != true, limit: 1);
+        var existingResult = await _context.Set<WorkflowDefinition>().Where(w => w.Name == workflow.Name).Take(1).ToListAsync();
         var existing = existingResult.FirstOrDefault();
         if (existing != null)
         {
@@ -496,7 +496,7 @@ public class WorkflowExportImportService : IWorkflowExportImportService
     private async Task ImportSingleWorkflowAsync(WorkflowExportItem workflowItem, WorkflowImportResult result, bool overwriteExisting)
     {
         // 检查是否存在同名工作流
-        var existingResult = await _workflowFactory.FindAsync(w => w.Name == workflowItem.Name && w.IsDeleted != true, limit: 1);
+        var existingResult = await _context.Set<WorkflowDefinition>().Where(w => w.Name == workflowItem.Name).Take(1).ToListAsync();
         var existing = existingResult.FirstOrDefault();
 
         if (existing != null && !overwriteExisting)
@@ -526,20 +526,25 @@ public class WorkflowExportImportService : IWorkflowExportImportService
         if (existing != null && overwriteExisting)
         {
             // 更新现有工作流
-            await _workflowFactory.UpdateAsync(existing.Id, entity =>
-            {
-                entity.Description = workflow.Description;
-                entity.Category = workflow.Category;
-                entity.Graph = workflow.Graph;
-                entity.IsActive = workflow.IsActive;
-            });
+            var __entity = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == existing.Id);
+        if (__entity != null)
+        {
+    
+                __entity.Description = workflow.Description;
+                __entity.Category = workflow.Category;
+                __entity.Graph = workflow.Graph;
+                __entity.IsActive = workflow.IsActive;
+            await _context.SaveChangesAsync();
+        }
+
             result.ImportedWorkflowIds.Add(existing.Id);
         }
         else
         {
             // 创建新工作流
-            var created = await _workflowFactory.CreateAsync(workflow);
-            result.ImportedWorkflowIds.Add(created.Id);
+            await _context.Set<WorkflowDefinition>().AddAsync(workflow);
+            await _context.SaveChangesAsync();
+            result.ImportedWorkflowIds.Add(workflow.Id);
         }
 
         result.ImportedCount++;
@@ -580,7 +585,7 @@ public class WorkflowExportImportService : IWorkflowExportImportService
         do
         {
             newName = $"{baseName} ({counter})";
-            var existingResult = await _workflowFactory.FindAsync(w => w.Name == newName && w.IsDeleted != true, limit: 1);
+            var existingResult = await _context.Set<WorkflowDefinition>().Where(w => w.Name == newName).Take(1).ToListAsync();
             var existing = existingResult.FirstOrDefault();
             if (existing == null)
             {

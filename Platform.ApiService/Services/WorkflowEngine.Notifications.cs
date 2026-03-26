@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Workflow;
 using System.Collections.Generic;
@@ -14,10 +15,10 @@ public partial class WorkflowEngine
     /// </summary>
     private async Task SendApprovalNotificationsAsync(string instanceId, WorkflowNode node)
     {
-        var instance = await _instanceFactory.GetByIdAsync(instanceId);
+        var instance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
         if (instance == null || string.IsNullOrEmpty(instance.DocumentId)) return;
 
-        var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
+        var document = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == instance.DocumentId);
         if (document == null) return;
 
         var approvers = await GetNodeApproversAsync(instanceId, node.Id);
@@ -34,10 +35,12 @@ public partial class WorkflowEngine
 
         if (node.Data.Config?.Approval?.TimeoutHours != null)
         {
-            await _instanceFactory.UpdateAsync(instanceId, i =>
+            var __instance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
+            if (__instance != null)
             {
-                i.TimeoutAt = DateTime.UtcNow.AddHours(node.Data.Config.Approval.TimeoutHours.Value);
-            });
+                __instance.TimeoutAt = DateTime.UtcNow.AddHours(node.Data.Config.Approval.TimeoutHours.Value);
+                await _context.SaveChangesAsync();
+            }
         }
 
         try 
@@ -67,10 +70,10 @@ public partial class WorkflowEngine
     {
         try
         {
-            var instance = await _instanceFactory.GetByIdAsync(instanceId);
+            var instance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
             if (instance == null || string.IsNullOrEmpty(instance.DocumentId)) return;
 
-            var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
+            var document = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == instance.DocumentId);
             if (document == null) return;
 
             await _notificationService.CreateWorkflowNotificationAsync(
@@ -95,13 +98,13 @@ public partial class WorkflowEngine
     {
         try
         {
-            var instance = await _instanceFactory.GetByIdAsync(instanceId);
+            var instance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
             if (instance == null || string.IsNullOrEmpty(instance.DocumentId)) return;
 
             var ccConfig = node.Data.Config?.Approval?.CcRules;
             if (ccConfig == null || !ccConfig.Any()) return;
 
-            var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
+            var document = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == instance.DocumentId);
             if (document == null) return;
 
             var ccUserIds = new List<string>();

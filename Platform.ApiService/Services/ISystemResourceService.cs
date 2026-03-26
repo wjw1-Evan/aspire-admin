@@ -13,4 +13,3 @@ public interface ISystemResourceService
     /// <returns>包含 Memory/Cpu/Disk/System/Timestamp 字段的对象</returns>
     Task<object> GetSystemResourcesAsync();
 }
-

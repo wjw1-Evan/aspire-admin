@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Constants;
@@ -108,12 +109,8 @@ public interface IUserCompanyService
 /// </summary>
 public class UserCompanyService : IUserCompanyService
 {
-    private readonly IDataFactory<UserCompany> _userCompanyFactory;
-    private readonly IDataFactory<AppUser> _userFactory;
-    private readonly IDataFactory<Company> _companyFactory;
-    private readonly IDataFactory<Role> _roleFactory;
-    private readonly IDataFactory<CompanyJoinRequest> _joinRequestFactory;
-    private readonly IDataFactory<Menu> _menuFactory;
+    private readonly DbContext _context;
+
     private readonly IMenuService _menuService;
     private readonly ITenantContext _tenantContext;
     private readonly IJwtService _jwtService;
@@ -122,34 +119,23 @@ public class UserCompanyService : IUserCompanyService
     /// <summary>
     /// 初始化用户企业关联服务
     /// </summary>
-    /// <param name="userCompanyFactory">用户企业关联数据操作工厂</param>
-    /// <param name="userFactory">用户数据操作工厂</param>
-    /// <param name="companyFactory">企业数据操作工厂</param>
-    /// <param name="roleFactory">角色数据操作工厂</param>
-    /// <param name="joinRequestFactory">企业加入申请数据操作工厂</param>
-    /// <param name="menuFactory">菜单数据操作工厂</param>
+
+
+
+
+
     /// <param name="menuService">菜单服务</param>
     /// <param name="tenantContext">租户上下文</param>
     /// <param name="jwtService">JWT 服务</param>
     /// <param name="logger">日志记录器</param>
-    public UserCompanyService(
-        IDataFactory<UserCompany> userCompanyFactory,
-        IDataFactory<AppUser> userFactory,
-        IDataFactory<Company> companyFactory,
-        IDataFactory<Role> roleFactory,
-        IDataFactory<CompanyJoinRequest> joinRequestFactory,
-        IDataFactory<Menu> menuFactory,
+    public UserCompanyService(DbContext context,
         IMenuService menuService,
         ITenantContext tenantContext,
         IJwtService jwtService,
-        ILogger<UserCompanyService> logger)
-    {
-        _userCompanyFactory = userCompanyFactory;
-        _userFactory = userFactory;
-        _companyFactory = companyFactory;
-        _roleFactory = roleFactory;
-        _joinRequestFactory = joinRequestFactory;
-        _menuFactory = menuFactory;
+        ILogger<UserCompanyService> logger
+    ) {
+        _context = context;
+        
         _menuService = menuService;
         _tenantContext = tenantContext;
         _jwtService = jwtService;
@@ -161,19 +147,20 @@ public class UserCompanyService : IUserCompanyService
     /// </summary>
     public async Task<bool> ApplyToJoinCompanyAsync(string userId, string companyId, string? reason)
     {
+        
         // 1. 验证企业是否存在
-        var company = await _companyFactory.GetByIdAsync(companyId);
+        var company = await _context.Set<Company>().FirstOrDefaultAsync(x => x.Id == companyId);
         if (company == null)
             throw new KeyNotFoundException("企业不存在");
 
         // 2. 检查是否已经是成员
         var existingMember = await GetUserCompanyAsync(userId, companyId);
-        if (existingMember != null && !existingMember.IsDeleted && existingMember.Status == "active")
+        if (existingMember != null && existingMember.Status == "active")
             throw new InvalidOperationException("您已经是该企业的成员");
 
         // 3. 检查是否有待处理的申请
         Expression<Func<CompanyJoinRequest, bool>> pendingFilter = r => r.UserId == userId && r.CompanyId == companyId && r.Status == "pending";
-        var existingRequests = await _joinRequestFactory.FindAsync(pendingFilter);
+        var existingRequests = await _context.Set<CompanyJoinRequest>().Where(pendingFilter).ToListAsync();
         if (existingRequests.Any())
             throw new InvalidOperationException("您已提交过申请，请耐心等待审核");
 
@@ -186,7 +173,8 @@ public class UserCompanyService : IUserCompanyService
             Reason = reason
         };
 
-        await _joinRequestFactory.CreateAsync(request);
+        await _context.Set<CompanyJoinRequest>().AddAsync(request);
+        await _context.SaveChangesAsync();
         return true;
     }
 
@@ -207,7 +195,7 @@ public class UserCompanyService : IUserCompanyService
             filter = r => r.CompanyId == companyId && r.Status == status;
         }
 
-        var requests = await _joinRequestFactory.FindAsync(filter);
+        var requests = await _context.Set<CompanyJoinRequest>().Where(filter).ToListAsync();
         var result = new List<JoinRequestDetail>();
 
         if (!requests.Any())
@@ -220,11 +208,11 @@ public class UserCompanyService : IUserCompanyService
         userIds = userIds.Distinct().ToList();
 
         Expression<Func<AppUser, bool>> userFilter = u => userIds.Contains(u.Id);
-        var users = await _userFactory.FindAsync(userFilter);
+        var users = await _context.Set<AppUser>().Where(userFilter).ToListAsync();
         var userDict = users.ToDictionary(u => u.Id!, u => u);
 
         // 获取企业信息
-        var company = await _companyFactory.GetByIdAsync(companyId);
+        var company = await _context.Set<Company>().FirstOrDefaultAsync(x => x.Id == companyId);
 
         foreach (var req in requests)
         {
@@ -252,8 +240,6 @@ public class UserCompanyService : IUserCompanyService
         return result.OrderByDescending(r => r.CreatedAt).ToList();
     }
 
-
-
     /// <summary>
     /// 获取用户的加入申请列表
     /// </summary>
@@ -262,7 +248,7 @@ public class UserCompanyService : IUserCompanyService
         // 1. 获取用户的所有申请
         Expression<Func<CompanyJoinRequest, bool>> filter = r => r.UserId == userId;
 
-        var requests = await _joinRequestFactory.FindAsync(filter);
+        var requests = await _context.Set<CompanyJoinRequest>().Where(filter).ToListAsync();
         var result = new List<JoinRequestDetail>();
 
         if (!requests.Any())
@@ -271,7 +257,7 @@ public class UserCompanyService : IUserCompanyService
         // 2. 批量获取企业信息
         var companyIds = requests.Select(r => r.CompanyId).Distinct().ToList();
         Expression<Func<Company, bool>> companyFilter = c => companyIds.Contains(c.Id);
-        var companies = await _companyFactory.FindAsync(companyFilter);
+        var companies = await _context.Set<Company>().Where(companyFilter).ToListAsync();
         var companyDict = companies.ToDictionary(c => c.Id!, c => c);
 
         // 3. 批量获取审核人信息
@@ -281,12 +267,12 @@ public class UserCompanyService : IUserCompanyService
         if (reviewerIds.Any())
         {
             Expression<Func<AppUser, bool>> userFilter = u => reviewerIds.Contains(u.Id);
-            var reviewers = await _userFactory.FindAsync(userFilter);
+            var reviewers = await _context.Set<AppUser>().Where(userFilter).ToListAsync();
             userDict = reviewers.ToDictionary(u => u.Id!, u => u);
         }
 
         // 4. 获取当前用户信息（用户名）
-        var currentUser = await _userFactory.GetByIdAsync(userId);
+        var currentUser = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == userId);
 
         foreach (var req in requests)
         {
@@ -326,7 +312,7 @@ public class UserCompanyService : IUserCompanyService
         }
 
         // 1. 获取申请
-        var request = await _joinRequestFactory.GetByIdAsync(requestId);
+        var request = await _context.Set<CompanyJoinRequest>().FirstOrDefaultAsync(x => x.Id == requestId);
         if (request == null)
             throw new KeyNotFoundException("申请记录不存在");
 
@@ -339,12 +325,16 @@ public class UserCompanyService : IUserCompanyService
             throw new InvalidOperationException($"申请状态为 {request.Status}，无法撤销");
 
         // 4. 更新状态为 cancelled
-        await _joinRequestFactory.UpdateAsync(requestId, r =>
+        var __entity = await _context.Set<CompanyJoinRequest>().FirstOrDefaultAsync(x => x.Id == requestId);
+        if (__entity != null)
         {
-            r.Status = "cancelled";
-            r.RejectReason = "User Cancelled";
-            r.UpdatedAt = DateTime.UtcNow;
-        });
+    
+            __entity.Status = "cancelled";
+            __entity.RejectReason = "User Cancelled";
+            __entity.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+
         return true;
     }
 
@@ -354,7 +344,7 @@ public class UserCompanyService : IUserCompanyService
     public async Task<bool> ReviewJoinRequestAsync(string requestId, bool approved, string? rejectReason = null, List<string>? roleIds = null)
     {
         // 1. 获取申请
-        var request = await _joinRequestFactory.GetByIdAsync(requestId);
+        var request = await _context.Set<CompanyJoinRequest>().FirstOrDefaultAsync(x => x.Id == requestId);
         if (request == null)
             throw new KeyNotFoundException("申请记录不存在");
 
@@ -377,20 +367,26 @@ public class UserCompanyService : IUserCompanyService
             var membership = await GetUserCompanyAsync(request.UserId, request.CompanyId);
             if (membership != null)
             {
-                await _userCompanyFactory.SoftDeleteAsync(membership.Id!);
+                var __sd2 = await _context.Set<UserCompany>().FirstOrDefaultAsync(x => x.Id == membership.Id!);
+                if (__sd2 != null) { _context.Set<UserCompany>().Remove(__sd2); await _context.SaveChangesAsync(); }
+
                 _logger.LogInformation("由于申请状态变更为拒绝，已移除用户 {UserId} 在企业 {CompanyId} 的成员身份", request.UserId, request.CompanyId);
             }
         }
 
         // 5. 更新申请状态
-        await _joinRequestFactory.UpdateAsync(requestId, r =>
+        var __entity = await _context.Set<CompanyJoinRequest>().FirstOrDefaultAsync(x => x.Id == requestId);
+        if (__entity != null)
         {
-            r.Status = approved ? "approved" : "rejected";
-            r.ReviewedBy = currentUserId;
-            r.ReviewedAt = DateTime.UtcNow;
-            r.RejectReason = approved ? null : (rejectReason ?? "管理员修改了审核结果");
-            r.UpdatedAt = DateTime.UtcNow;
-        });
+    
+            __entity.Status = approved ? "approved" : "rejected";
+            __entity.ReviewedBy = currentUserId;
+            __entity.ReviewedAt = DateTime.UtcNow;
+            __entity.RejectReason = approved ? null : (rejectReason ?? "管理员修改了审核结果");
+            __entity.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+
 
         // 6. 如果现在是“已批准”状态，确保 UserCompany 关联存在
         if (approved)
@@ -400,18 +396,16 @@ public class UserCompanyService : IUserCompanyService
             // 如果已经存在，则更新状态和角色
             if (existingMember != null)
             {
-                // 如果是软删除状态，或者状态不是 active，需要恢复并更新
-                if (existingMember.IsDeleted || existingMember.Status != "active")
+                // 如果状态不是 active，需要恢复并更新
+                if (existingMember.Status != "active")
                 {
-                    await _userCompanyFactory.UpdateAsync(existingMember.Id!, uc =>
-                    {
-                        uc.IsDeleted = false;
-                        uc.Status = "active";
-                        uc.RoleIds = roleIds ?? new List<string>();
-                        uc.ApprovedBy = currentUserId;
-                        uc.ApprovedAt = DateTime.UtcNow;
-                        uc.UpdatedAt = DateTime.UtcNow;
-                    });
+                        existingMember.Status = "active";
+                        existingMember.RoleIds = roleIds ?? new List<string>();
+                        existingMember.ApprovedBy = currentUserId;
+                        existingMember.ApprovedAt = DateTime.UtcNow;
+                        existingMember.UpdatedAt = DateTime.UtcNow;
+                        await _context.SaveChangesAsync();
+
                     _logger.LogInformation("用户 {UserId} 的企业成员身份已恢复并更新角色", request.UserId);
                 }
                 else if (roleIds != null && roleIds.Any())
@@ -426,7 +420,7 @@ public class UserCompanyService : IUserCompanyService
                 if (!finalRoleIds.Any())
                 {
                     Expression<Func<Role, bool>> roleFilter = r => r.CompanyId == request.CompanyId;
-                    var roles = await _roleFactory.FindAsync(roleFilter);
+                    var roles = await _context.Set<Role>().Where(roleFilter).ToListAsync();
                     var defaultRole = roles.FirstOrDefault(r => r.Name == "普通用户" || r.Name == "user")
                                      ?? roles.FirstOrDefault(r => r.Name != "管理员");
 
@@ -448,7 +442,8 @@ public class UserCompanyService : IUserCompanyService
                     ApprovedAt = DateTime.UtcNow
                 };
 
-                await _userCompanyFactory.CreateAsync(userCompany);
+                await _context.Set<UserCompany>().AddAsync(userCompany);
+        await _context.SaveChangesAsync();
             }
         }
 
@@ -463,14 +458,14 @@ public class UserCompanyService : IUserCompanyService
         // UserCompany 不实现 IMultiTenant，CompanyId 是业务字段，可以查询用户在所有企业的关联记录
         Expression<Func<UserCompany, bool>> filter = uc => uc.UserId == userId && uc.Status == "active";
 
-        var memberships = await _userCompanyFactory.FindWithoutTenantFilterAsync(filter);
+        var memberships = await _context.Set<UserCompany>().IgnoreQueryFilters().Where(filter).ToListAsync();
         var result = new List<UserCompanyItem>();
 
         if (!memberships.Any())
             return result;
 
         // 获取用户的当前企业和个人企业
-        var user = await _userFactory.GetByIdAsync(userId);
+        var user = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == userId);
 
         // 批量查询优化：避免N+1查询问题
         var companyIds = memberships.Select(m => m.CompanyId).Distinct().ToList();
@@ -480,7 +475,7 @@ public class UserCompanyService : IUserCompanyService
         // 批量查询企业信息（跨企业查询，需要查询多个企业的信息）
         // 只需要 Name 和 Code
         Expression<Func<Company, bool>> companyFilter = c => companyIds.Contains(c.Id);
-        var companies = await _companyFactory.FindWithoutTenantFilterAsync(companyFilter);
+        var companies = await _context.Set<Company>().IgnoreQueryFilters().Where(companyFilter).ToListAsync();
         var companyDict = companies.ToDictionary(c => c.Id!, c => c);
 
         // 批量查询角色信息（跨企业查询，需要按企业分组）
@@ -513,7 +508,7 @@ public class UserCompanyService : IUserCompanyService
                 if (roleIds.Any())
                 {
                     Expression<Func<Role, bool>> roleFilter = r => roleIds.Contains(r.Id) && r.CompanyId == companyId && r.IsActive == true;
-                    var roles = await _roleFactory.FindWithoutTenantFilterAsync(roleFilter);
+                    var roles = await _context.Set<Role>().IgnoreQueryFilters().Where(roleFilter).ToListAsync();
                     foreach (var role in roles)
                     {
                         if (role.Id != null && !roleDict.ContainsKey(role.Id))
@@ -589,7 +584,7 @@ public class UserCompanyService : IUserCompanyService
     public async Task<UserCompany?> GetUserCompanyAsync(string userId, string companyId)
     {
         Expression<Func<UserCompany, bool>> filter = uc => uc.UserId == userId && uc.CompanyId == companyId;
-        var userCompanies = await _userCompanyFactory.FindAsync(filter);
+        var userCompanies = await _context.Set<UserCompany>().Where(filter).ToListAsync();
         return userCompanies.FirstOrDefault();
     }
 
@@ -617,23 +612,27 @@ public class UserCompanyService : IUserCompanyService
         }
 
         // 2. 获取企业信息
-        var company = await _companyFactory.GetByIdAsync(targetCompanyId);
+        var company = await _context.Set<Company>().FirstOrDefaultAsync(x => x.Id == targetCompanyId);
         if (company == null)
         {
             throw new KeyNotFoundException("企业不存在");
         }
 
         // 3. 更新用户当前企业（使用原子操作）
-        await _userFactory.UpdateAsync(userId, u =>
+        var __entity = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == userId);
+        if (__entity != null)
         {
-            u.CurrentCompanyId = targetCompanyId;
-            u.UpdatedAt = DateTime.UtcNow;
-        });
+    
+            __entity.CurrentCompanyId = targetCompanyId;
+            __entity.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+
 
         // 🚀 清除用户缓存，确保获取最新企业信息
         _tenantContext.ClearUserCache(userId);
 
-        var updatedUser = await _userFactory.GetByIdAsync(userId);
+        var updatedUser = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == userId);
         if (updatedUser == null)
         {
             throw new KeyNotFoundException($"用户 {userId} 不存在");
@@ -665,7 +664,7 @@ public class UserCompanyService : IUserCompanyService
 
         Expression<Func<UserCompany, bool>> filter = uc => uc.CompanyId == companyId && uc.Status == "active";
 
-        var memberships = await _userCompanyFactory.FindAsync(filter);
+        var memberships = await _context.Set<UserCompany>().Where(filter).ToListAsync();
         var result = new List<CompanyMemberItem>();
 
         if (!memberships.Any())
@@ -677,7 +676,7 @@ public class UserCompanyService : IUserCompanyService
 
         // 批量查询用户信息
         Expression<Func<AppUser, bool>> userFilter = u => userIds.Contains(u.Id);
-        var users = await _userFactory.FindAsync(userFilter);
+        var users = await _context.Set<AppUser>().Where(userFilter).ToListAsync();
         var userDict = users.ToDictionary(u => u.Id!, u => u);
 
         // 批量查询角色信息
@@ -685,7 +684,7 @@ public class UserCompanyService : IUserCompanyService
         if (allRoleIds.Any())
         {
             Expression<Func<Role, bool>> roleFilter = r => allRoleIds.Contains(r.Id);
-            var roles = await _roleFactory.FindAsync(roleFilter);
+            var roles = await _context.Set<Role>().Where(roleFilter).ToListAsync();
             roleDict = roles.ToDictionary(r => r.Id!, r => r);
         }
 
@@ -730,7 +729,7 @@ public class UserCompanyService : IUserCompanyService
         if (roleIds.Any())
         {
             Expression<Func<Role, bool>> roleFilter = r => roleIds.Contains(r.Id) && r.CompanyId == companyId;
-            var validRoles = await _roleFactory.FindAsync(roleFilter);
+            var validRoles = await _context.Set<Role>().Where(roleFilter).ToListAsync();
 
             if (validRoles.Count != roleIds.Count)
             {
@@ -742,11 +741,15 @@ public class UserCompanyService : IUserCompanyService
         if (membership == null)
             throw new KeyNotFoundException("未找到该用户的企业成员记录");
 
-        var updatedUserCompany = await _userCompanyFactory.UpdateAsync(membership.Id!, uc =>
+        var __entity = await _context.Set<UserCompany>().FirstOrDefaultAsync(x => x.Id == membership.Id!);
+        if (__entity != null)
         {
-            uc.RoleIds = roleIds;
-            uc.UpdatedAt = DateTime.UtcNow;
-        });
+    
+            __entity.RoleIds = roleIds;
+            __entity.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+        var updatedUserCompany = __entity;
         return updatedUserCompany != null;
     }
 
@@ -769,11 +772,15 @@ public class UserCompanyService : IUserCompanyService
         if (membership == null)
             throw new KeyNotFoundException("未找到该用户的企业成员记录");
 
-        var updatedUserCompany = await _userCompanyFactory.UpdateAsync(membership.Id!, uc =>
+        var __entity = await _context.Set<UserCompany>().FirstOrDefaultAsync(x => x.Id == membership.Id!);
+        if (__entity != null)
         {
-            uc.IsAdmin = isAdmin;
-            uc.UpdatedAt = DateTime.UtcNow;
-        });
+    
+            __entity.IsAdmin = isAdmin;
+            __entity.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+        var updatedUserCompany = __entity;
         return updatedUserCompany != null;
     }
 
@@ -795,7 +802,9 @@ public class UserCompanyService : IUserCompanyService
         var membership = await GetUserCompanyAsync(userId, companyId);
         if (membership != null)
         {
-            var result = await _userCompanyFactory.SoftDeleteAsync(membership.Id!);
+            var __sdE = await _context.Set<UserCompany>().FirstOrDefaultAsync(x => x.Id == membership.Id!);
+            if (__sdE != null) { _context.Set<UserCompany>().Remove(__sdE); await _context.SaveChangesAsync(); }
+            var result = __sdE != null;
             return result;
         }
         return false;
@@ -814,8 +823,8 @@ public class UserCompanyService : IUserCompanyService
         }
 
         // 2. 检查是否是企业创建者（不允许退出，只能注销）
-        var user = await _userFactory.GetByIdAsync(userId);
-        var company = await _companyFactory.GetByIdAsync(companyId);
+        var user = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == userId);
+        var company = await _context.Set<Company>().FirstOrDefaultAsync(x => x.Id == companyId);
         if (company?.CreatedBy == userId)
         {
             throw new InvalidOperationException("COMPANY_CREATOR_CANNOT_LEAVE");
@@ -825,24 +834,30 @@ public class UserCompanyService : IUserCompanyService
         if (membership.IsAdmin)
         {
             Expression<Func<UserCompany, bool>> adminFilter = uc => uc.CompanyId == companyId && uc.IsAdmin == true && uc.Status == "active";
-            var adminCount = await _userCompanyFactory.CountAsync(adminFilter);
+            var adminCount = await _context.Set<UserCompany>().LongCountAsync(adminFilter);
             if (adminCount <= 1)
             {
                 throw new InvalidOperationException("COMPANY_SOLE_ADMIN_CANNOT_LEAVE");
             }
         }
 
-        // 4. 执行软删除
+        // 4. 执行删除
         var membershipToDelete = await GetUserCompanyAsync(userId, companyId);
-        var result = await _userCompanyFactory.SoftDeleteAsync(membershipToDelete!.Id!);
+        var __sdE = await _context.Set<UserCompany>().FirstOrDefaultAsync(x => x.Id == membershipToDelete!.Id!);
+        if (__sdE != null) { _context.Set<UserCompany>().Remove(__sdE); await _context.SaveChangesAsync(); }
+        var result = __sdE != null;
 
         // 5. 如果当前正在使用该企业，需要重置 CurrentCompanyId
         if (user != null && user.CurrentCompanyId == companyId)
         {
-            await _userFactory.UpdateAsync(userId, u =>
-            {
-                u.CurrentCompanyId = user.PersonalCompanyId ?? "";
-            });
+            var __entity = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == userId);
+        if (__entity != null)
+        {
+    
+                __entity.CurrentCompanyId = user.PersonalCompanyId ?? "";
+            await _context.SaveChangesAsync();
+        }
+
         }
 
         return result;
@@ -898,4 +913,3 @@ public class CompanyMemberItem
     /// </summary>
     public bool IsActive { get; set; }
 }
-

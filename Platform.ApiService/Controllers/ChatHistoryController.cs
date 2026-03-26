@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Attributes;
@@ -18,24 +19,23 @@ namespace Platform.ApiService.Controllers;
 
 public class ChatHistoryController : BaseApiController
 {
+    private readonly DbContext _context;
+
     private readonly IChatService _chatService;
-    private readonly IDataFactory<ChatSession> _sessionFactory;
-    private readonly IDataFactory<ChatMessage> _messageFactory;
 
     /// <summary>
     /// 初始化聊天历史记录管理控制器
     /// </summary>
     /// <param name="chatService">聊天服务</param>
-    /// <param name="sessionFactory">聊天会话数据工厂</param>
-    /// <param name="messageFactory">聊天消息数据工厂</param>
+
     public ChatHistoryController(
-        IChatService chatService,
-        IDataFactory<ChatSession> sessionFactory,
-        IDataFactory<ChatMessage> messageFactory)
-    {
+        DbContext context,
+        IChatService chatService
+    ) {
+        _context = context;
+        
         _chatService = chatService ?? throw new ArgumentNullException(nameof(chatService));
-        _sessionFactory = sessionFactory ?? throw new ArgumentNullException(nameof(sessionFactory));
-        _messageFactory = messageFactory ?? throw new ArgumentNullException(nameof(messageFactory));
+
     }
 
     /// <summary>
@@ -94,7 +94,7 @@ public class ChatHistoryController : BaseApiController
         {
             var content = request.Content;
             Expression<Func<ChatMessage, bool>> messageFilter = m => m.Content != null && m.Content.Contains(content);
-            var messages = await _messageFactory.FindAsync(messageFilter);
+            var messages = await _context.Set<ChatMessage>().Where(messageFilter).ToListAsync();
             matchedSessionIds = messages.Where(m => !string.IsNullOrEmpty(m.SessionId)).Select(m => m.SessionId!).Distinct().ToList();
 
             if (!matchedSessionIds.Any())
@@ -114,20 +114,22 @@ public class ChatHistoryController : BaseApiController
                 : s => (filter.Compile()(s) && matchedSessionIds.Contains(s.Id!));
         }
 
-        var total = await _sessionFactory.CountAsync(filter);
+        var total = await _context.Set<ChatSession>().LongCountAsync(filter);
 
         var orderBy = (IQueryable<ChatSession> query) => query
             .OrderByDescending(s => s.LastMessageAt)
             .ThenByDescending(s => s.CreatedAt);
 
-        var (sessions, _) = await _sessionFactory.FindPagedAsync(filter, orderBy, request.Current, request.PageSize);
+        var __fpQ = _context.Set<ChatSession>().Where(filter);
+        var _ = await __fpQ.LongCountAsync();
+        var sessions = await orderBy(__fpQ).Skip((request.Current - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
 
         var sessionIds = sessions.Select(s => s.Id!).ToList();
         var messageCounts = new Dictionary<string, int>();
         if (sessionIds.Any())
         {
             Expression<Func<ChatMessage, bool>> messageFilter = m => sessionIds.Contains(m.SessionId!);
-            var messages = await _messageFactory.FindAsync(messageFilter);
+            var messages = await _context.Set<ChatMessage>().Where(messageFilter).ToListAsync();
             messageCounts = messages
                 .GroupBy(m => m.SessionId!)
                 .ToDictionary(g => g.Key, g => g.Count());
@@ -165,7 +167,7 @@ public class ChatHistoryController : BaseApiController
     [RequireMenu("xiaoke-management-chat-history")]
     public async Task<IActionResult> GetChatHistoryDetail(string sessionId)
     {
-        var session = await _sessionFactory.GetByIdAsync(sessionId);
+        var session = await _context.Set<ChatSession>().FirstOrDefaultAsync(x => x.Id == sessionId);
         if (session == null)
         {
             return Error("SESSION_NOT_FOUND", $"会话 {sessionId} 不存在");
@@ -196,7 +198,9 @@ public class ChatHistoryController : BaseApiController
     [RequireMenu("xiaoke-management-chat-history")]
     public async Task<IActionResult> DeleteChatHistory(string sessionId)
     {
-        var result = await _sessionFactory.SoftDeleteAsync(sessionId);
+        var __sdE = await _context.Set<ChatSession>().FirstOrDefaultAsync(x => x.Id == sessionId);
+        if (__sdE != null) { __sdE.IsDeleted = true; await _context.SaveChangesAsync(); }
+        var result = __sdE != null;
 
         if (!result)
         {

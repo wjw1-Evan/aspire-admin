@@ -382,4 +382,3 @@ public class UnreadCountStatistics
     /// </summary>
     public int TaskNotifications { get; set; }
 }
-

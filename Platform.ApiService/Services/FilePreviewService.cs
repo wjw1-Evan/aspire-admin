@@ -14,8 +14,9 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class FilePreviewService : IFilePreviewService
 {
+    private readonly DbContext _context;
+
     private readonly ICloudStorageService _cloudStorageService;
-    private readonly IDataFactory<FileItem> _fileItemFactory;
     private readonly IFileStorageFactory _fileStorageFactory;
     private readonly ILogger<FilePreviewService> _logger;
 
@@ -56,14 +57,15 @@ public class FilePreviewService : IFilePreviewService
     /// 初始化文件预览服务
     /// </summary>
     public FilePreviewService(
+        DbContext context,
         ICloudStorageService cloudStorageService,
-        IDataFactory<FileItem> fileItemFactory,
         IFileStorageFactory fileStorageFactory,
-        ILogger<FilePreviewService> logger)
-    {
+        ILogger<FilePreviewService> logger
+    ) {
+        _context = context;
+        
         _cloudStorageService = cloudStorageService ?? throw new ArgumentNullException(nameof(cloudStorageService));
-        _fileItemFactory = fileItemFactory ?? throw new ArgumentNullException(nameof(fileItemFactory));
-        _fileStorageFactory = fileStorageFactory ?? throw new ArgumentNullException(nameof(fileStorageFactory));
+
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -343,10 +345,10 @@ public class FilePreviewService : IFilePreviewService
         };
 
         // 统计生成的缩略图数量 (ThumbnailGridFSId 不为空)
-        statistics.TotalThumbnails = await _fileItemFactory.CountAsync(f => f.ThumbnailGridFSId != null && f.ThumbnailGridFSId != "");
+        statistics.TotalThumbnails = await _context.Set<FileItem>().LongCountAsync(f => f.ThumbnailGridFSId != null && f.ThumbnailGridFSId != "");
 
         // 统计总预览次数 (DownloadCount 并不完全等同于预览，但作为近似值)
-        var totalDownloads = await _fileItemFactory.SumAsync(null, f => (long)f.DownloadCount);
+        var totalDownloads = await _context.Set<FileItem>().SumAsync(f => (long)f.DownloadCount);
         statistics.TotalPreviews = totalDownloads;
 
         // 统计按类型分布 (需要聚合查询，这里简化通过多次查询或后续优化)

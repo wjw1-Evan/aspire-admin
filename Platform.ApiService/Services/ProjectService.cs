@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 
 namespace Platform.ApiService.Services;
 
@@ -14,585 +15,234 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class ProjectService : IProjectService
 {
-    private readonly IDataFactory<Project> _projectFactory;
-    private readonly IDataFactory<ProjectMember> _projectMemberFactory;
-    private readonly IDataFactory<WorkTask> _taskFactory;
-    private readonly IDataFactory<Milestone> _milestoneFactory;
+    private readonly DbContext _context;
     private readonly IUserService _userService;
     private readonly ILogger<ProjectService> _logger;
 
-    /// <summary>
-    /// 初始化 ProjectService 实例
-    /// </summary>
-    public ProjectService(
-        IDataFactory<Project> projectFactory,
-        IDataFactory<ProjectMember> projectMemberFactory,
-        IDataFactory<WorkTask> taskFactory,
-        IDataFactory<Milestone> milestoneFactory,
-        IUserService userService,
-        ILogger<ProjectService> logger)
+    public ProjectService(DbContext context, IUserService userService, ILogger<ProjectService> logger)
     {
-        _projectFactory = projectFactory;
-        _projectMemberFactory = projectMemberFactory;
-        _taskFactory = taskFactory;
-        _milestoneFactory = milestoneFactory;
+        _context = context;
         _userService = userService;
         _logger = logger;
     }
 
-    /// <summary>
-    /// 创建项目
-    /// </summary>
+    /// <inheritdoc/>
     public async Task<ProjectDto> CreateProjectAsync(CreateProjectRequest request)
     {
         var project = new Project
         {
-            Name = request.Name,
-            Description = request.Description,
-            Status = (ProjectStatus)request.Status,
-            StartDate = request.StartDate,
-            EndDate = request.EndDate,
-            ManagerId = request.ManagerId,
-            Budget = request.Budget,
-            Priority = (ProjectPriority)request.Priority,
-            Progress = 0
+            Name = request.Name, Description = request.Description, Status = (ProjectStatus)request.Status,
+            StartDate = request.StartDate, EndDate = request.EndDate, ManagerId = request.ManagerId,
+            Budget = request.Budget, Priority = (ProjectPriority)request.Priority, Progress = 0
         };
+        await _context.Set<Project>().AddAsync(project);
+        await _context.SaveChangesAsync();
 
-        await _projectFactory.CreateAsync(project);
-
-        // 如果指定了项目经理，自动添加为项目成员
         if (!string.IsNullOrEmpty(request.ManagerId))
         {
-            var member = new ProjectMember
+            await _context.Set<ProjectMember>().AddAsync(new ProjectMember
             {
-                ProjectId = project.Id,
-                UserId = request.ManagerId,
-                Role = ProjectMemberRole.Manager,
-                Allocation = 100
-            };
-            await _projectMemberFactory.CreateAsync(member);
+                ProjectId = project.Id, UserId = request.ManagerId, Role = ProjectMemberRole.Manager, Allocation = 100
+            });
+            await _context.SaveChangesAsync();
         }
-
         return await ConvertToProjectDtoAsync(project);
     }
 
-    /// <summary>
-    /// 更新项目
-    /// </summary>
+    /// <inheritdoc/>
     public async Task<ProjectDto> UpdateProjectAsync(UpdateProjectRequest request, string userId)
     {
-        var project = await _projectFactory.GetByIdAsync(request.ProjectId);
-        if (project == null)
-            throw new KeyNotFoundException($"项目 {request.ProjectId} 不存在");
+        var project = await _context.Set<Project>().FirstOrDefaultAsync(x => x.Id == request.ProjectId);
+        if (project == null) throw new KeyNotFoundException($"项目 {request.ProjectId} 不存在");
 
-        // 验证权限：创建者或项目经理可以更新
         if (project.CreatedBy != userId && project.ManagerId != userId)
             throw new UnauthorizedAccessException("无权更新此项目");
 
-        var updatedProject = await _projectFactory.UpdateAsync(request.ProjectId, p =>
-        {
-            if (!string.IsNullOrEmpty(request.Name))
-                p.Name = request.Name;
+        if (!string.IsNullOrEmpty(request.Name)) project.Name = request.Name;
+        if (request.Description != null) project.Description = request.Description;
+        if (request.Status.HasValue) project.Status = (ProjectStatus)request.Status.Value;
+        if (request.StartDate.HasValue) project.StartDate = request.StartDate;
+        if (request.EndDate.HasValue) project.EndDate = request.EndDate;
+        if (request.ManagerId != null) project.ManagerId = request.ManagerId;
+        if (request.Budget.HasValue) project.Budget = request.Budget;
+        if (request.Priority.HasValue) project.Priority = (ProjectPriority)request.Priority.Value;
 
-            if (request.Description != null)
-                p.Description = request.Description;
-
-            if (request.Status.HasValue)
-                p.Status = (ProjectStatus)request.Status.Value;
-
-            if (request.StartDate.HasValue)
-                p.StartDate = request.StartDate;
-
-            if (request.EndDate.HasValue)
-                p.EndDate = request.EndDate;
-
-            if (request.ManagerId != null)
-                p.ManagerId = request.ManagerId;
-
-            if (request.Budget.HasValue)
-                p.Budget = request.Budget;
-
-            if (request.Priority.HasValue)
-                p.Priority = (ProjectPriority)request.Priority.Value;
-        });
-
-        if (updatedProject == null)
-            throw new KeyNotFoundException($"项目 {request.ProjectId} 不存在");
-
-        return await ConvertToProjectDtoAsync(updatedProject);
-    }
-
-    /// <summary>
-    /// 删除项目（软删除）
-    /// </summary>
-    public async Task<bool> DeleteProjectAsync(string projectId, string userId, string? reason = null)
-    {
-        var project = await _projectFactory.GetByIdAsync(projectId);
-        if (project == null)
-            return false;
-
-        // 验证权限：创建者或项目经理可以删除
-        if (project.CreatedBy != userId && project.ManagerId != userId)
-            throw new UnauthorizedAccessException("无权删除此项目");
-
-        var updated = await _projectFactory.UpdateAsync(projectId, p => p.IsDeleted = true);
-        return updated != null;
-    }
-
-    /// <summary>
-    /// 获取项目详情
-    /// </summary>
-    public async Task<ProjectDto?> GetProjectByIdAsync(string projectId)
-    {
-        var project = await _projectFactory.GetByIdAsync(projectId);
-        if (project == null)
-            return null;
-
+        await _context.SaveChangesAsync();
         return await ConvertToProjectDtoAsync(project);
     }
 
-    /// <summary>
-    /// 分页获取项目列表
-    /// </summary>
+    /// <inheritdoc/>
+    public async Task<bool> DeleteProjectAsync(string projectId, string userId, string? reason = null)
+    {
+        var project = await _context.Set<Project>().FirstOrDefaultAsync(x => x.Id == projectId);
+        if (project == null) return false;
+        if (project.CreatedBy != userId && project.ManagerId != userId)
+            throw new UnauthorizedAccessException("无权删除此项目");
+
+        _context.Set<Project>().Remove(project);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    /// <inheritdoc/>
+    public async Task<ProjectDto?> GetProjectByIdAsync(string projectId)
+    {
+        var project = await _context.Set<Project>().FirstOrDefaultAsync(x => x.Id == projectId);
+        return project == null ? null : await ConvertToProjectDtoAsync(project);
+    }
+
+    /// <inheritdoc/>
     public async Task<ProjectListResponse> GetProjectsListAsync(ProjectQueryRequest request)
     {
-        Expression<Func<Project, bool>>? filter = null;
+        var q = _context.Set<Project>().AsQueryable();
 
-        // 搜索关键词
         if (!string.IsNullOrEmpty(request.Search))
         {
             var search = request.Search.ToLower();
-            filter = filter.And(p => (p.Name != null && p.Name.ToLower().Contains(search)) || (p.Description != null && p.Description.ToLower().Contains(search)));
+            q = q.Where(p => p.Name.ToLower().Contains(search) || p.Description.ToLower().Contains(search));
         }
 
-        // 状态过滤
-        if (request.Status.HasValue)
+        if (request.Status.HasValue) q = q.Where(p => p.Status == (ProjectStatus)request.Status.Value);
+        if (request.Priority.HasValue) q = q.Where(p => p.Priority == (ProjectPriority)request.Priority.Value);
+        if (!string.IsNullOrEmpty(request.ManagerId)) q = q.Where(p => p.ManagerId == request.ManagerId);
+
+        if (request.StartDate.HasValue) q = q.Where(p => p.CreatedAt >= request.StartDate.Value.ToUniversalTime());
+        if (request.EndDate.HasValue) q = q.Where(p => p.CreatedAt <= request.EndDate.Value.ToUniversalTime().Date.AddDays(1).AddMilliseconds(-1));
+
+        var isAsc = (request.SortOrder ?? "desc").ToLower() == "asc";
+        q = (request.SortBy ?? "CreatedAt").ToLower() switch
         {
-            var status = (ProjectStatus)request.Status.Value;
-            filter = filter.And(p => p.Status == status);
-        }
-
-        // 优先级过滤
-        if (request.Priority.HasValue)
-        {
-            var priority = (ProjectPriority)request.Priority.Value;
-            filter = filter.And(p => p.Priority == priority);
-        }
-
-        // 项目经理过滤
-        if (!string.IsNullOrEmpty(request.ManagerId))
-        {
-            filter = filter.And(p => p.ManagerId == request.ManagerId);
-        }
-
-        // 日期范围过滤
-        if (request.StartDate.HasValue || request.EndDate.HasValue)
-        {
-            if (request.StartDate.HasValue)
-            {
-                var startDate = request.StartDate.Value.ToUniversalTime();
-                filter = filter.And(p => p.CreatedAt >= startDate);
-            }
-
-            if (request.EndDate.HasValue)
-            {
-                var endDate = request.EndDate.Value.ToUniversalTime().Date.AddDays(1).AddMilliseconds(-1);
-                filter = filter.And(p => p.CreatedAt <= endDate);
-            }
-        }
-
-        // 排序
-        Func<IQueryable<Project>, IOrderedQueryable<Project>> sortAction;
-        var isAscending = (request.SortOrder ?? "desc").ToLower() == "asc";
-        var sortBy = (request.SortBy ?? "CreatedAt").ToLower();
-
-        sortAction = sortBy switch
-        {
-            "name" => isAscending ? (q => q.OrderBy(p => p.Name)) : (q => q.OrderByDescending(p => p.Name)),
-            "status" => isAscending ? (q => q.OrderBy(p => p.Status)) : (q => q.OrderByDescending(p => p.Status)),
-            "priority" => isAscending ? (q => q.OrderBy(p => p.Priority)) : (q => q.OrderByDescending(p => p.Priority)),
-            "progress" => isAscending ? (q => q.OrderBy(p => p.Progress)) : (q => q.OrderByDescending(p => p.Progress)),
-            "startdate" => isAscending ? (q => q.OrderBy(p => p.StartDate)) : (q => q.OrderByDescending(p => p.StartDate)),
-            "enddate" => isAscending ? (q => q.OrderBy(p => p.EndDate)) : (q => q.OrderByDescending(p => p.EndDate)),
-            _ => isAscending ? (q => q.OrderBy(p => p.CreatedAt)) : (q => q.OrderByDescending(p => p.CreatedAt)),
+            "name" => isAsc ? q.OrderBy(p => p.Name) : q.OrderByDescending(p => p.Name),
+            "status" => isAsc ? q.OrderBy(p => p.Status) : q.OrderByDescending(p => p.Status),
+            "priority" => isAsc ? q.OrderBy(p => p.Priority) : q.OrderByDescending(p => p.Priority),
+            "progress" => isAsc ? q.OrderBy(p => p.Progress) : q.OrderByDescending(p => p.Progress),
+            "startdate" => isAsc ? q.OrderBy(p => p.StartDate) : q.OrderByDescending(p => p.StartDate),
+            "enddate" => isAsc ? q.OrderBy(p => p.EndDate) : q.OrderByDescending(p => p.EndDate),
+            _ => isAsc ? q.OrderBy(p => p.CreatedAt) : q.OrderByDescending(p => p.CreatedAt)
         };
 
-        // 分页查询
-        var (projects, total) = await _projectFactory.FindPagedAsync(
-            filter,
-            sortAction,
-            request.Page,
-            request.PageSize);
-
-        var projectDtos = await ConvertToProjectDtosAsync(projects);
-
-        return new ProjectListResponse
-        {
-            Projects = projectDtos,
-            Total = (int)total,
-            Page = request.Page,
-            PageSize = request.PageSize
-        };
+        var total = await q.LongCountAsync();
+        var projects = await q.Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
+        return new ProjectListResponse { Projects = await ConvertToProjectDtosAsync(projects), Total = (int)total, Page = request.Page, PageSize = request.PageSize };
     }
 
-    /// <summary>
-    /// 获取项目统计信息
-    /// </summary>
+    /// <inheritdoc/>
     public async Task<ProjectStatistics> GetProjectStatisticsAsync()
     {
-        var allProjects = await _projectFactory.FindAsync();
-
-        var statistics = new ProjectStatistics
+        var all = await _context.Set<Project>().ToListAsync();
+        var stats = new ProjectStatistics
         {
-            TotalProjects = allProjects.Count,
-            InProgressProjects = allProjects.Count(p => p.Status == ProjectStatus.InProgress),
-            CompletedProjects = allProjects.Count(p => p.Status == ProjectStatus.Completed),
-            DelayedProjects = allProjects.Count(p =>
-                p.Status == ProjectStatus.InProgress &&
-                p.EndDate.HasValue &&
-                p.EndDate.Value < DateTime.UtcNow)
+            TotalProjects = all.Count,
+            InProgressProjects = all.Count(p => p.Status == ProjectStatus.InProgress),
+            CompletedProjects = all.Count(p => p.Status == ProjectStatus.Completed),
+            DelayedProjects = all.Count(p => p.Status == ProjectStatus.InProgress && p.EndDate.HasValue && p.EndDate.Value < DateTime.UtcNow)
         };
-
-        // 按状态统计
-        foreach (var status in Enum.GetValues<ProjectStatus>())
-        {
-            var count = allProjects.Count(p => p.Status == status);
-            if (count > 0)
-            {
-                statistics.ProjectsByStatus[GetStatusName(status)] = count;
-            }
-        }
-
-        // 按优先级统计
-        foreach (var priority in Enum.GetValues<ProjectPriority>())
-        {
-            var count = allProjects.Count(p => p.Priority == priority);
-            if (count > 0)
-            {
-                statistics.ProjectsByPriority[GetPriorityName(priority)] = count;
-            }
-        }
-
-        return statistics;
+        foreach (var s in Enum.GetValues<ProjectStatus>()) { var count = all.Count(p => p.Status == s); if (count > 0) stats.ProjectsByStatus[GetStatusName(s)] = count; }
+        foreach (var pr in Enum.GetValues<ProjectPriority>()) { var count = all.Count(p => p.Priority == pr); if (count > 0) stats.ProjectsByPriority[GetPriorityName(pr)] = count; }
+        return stats;
     }
 
-    /// <summary>
-    /// 添加项目成员
-    /// </summary>
+    /// <inheritdoc/>
     public async Task<ProjectMemberDto> AddProjectMemberAsync(AddProjectMemberRequest request)
     {
-        // 检查项目是否存在
-        var project = await _projectFactory.GetByIdAsync(request.ProjectId);
-        if (project == null)
-            throw new KeyNotFoundException($"项目 {request.ProjectId} 不存在");
+        if (!await _context.Set<Project>().AnyAsync(x => x.Id == request.ProjectId)) throw new KeyNotFoundException($"项目 {request.ProjectId} 不存在");
+        if (await _context.Set<ProjectMember>().AnyAsync(m => m.ProjectId == request.ProjectId && m.UserId == request.UserId)) throw new InvalidOperationException("该用户已经是项目成员");
 
-        // 检查成员是否已存在
-        var exists = await _projectMemberFactory.ExistsAsync(m =>
-            m.ProjectId == request.ProjectId && m.UserId == request.UserId);
-
-        if (exists)
-            throw new InvalidOperationException("该用户已经是项目成员");
-
-        var member = new ProjectMember
-        {
-            ProjectId = request.ProjectId,
-            UserId = request.UserId,
-            Role = (ProjectMemberRole)request.Role,
-            Allocation = request.Allocation
-        };
-
-        await _projectMemberFactory.CreateAsync(member);
-
+        var member = new ProjectMember { ProjectId = request.ProjectId, UserId = request.UserId, Role = (ProjectMemberRole)request.Role, Allocation = request.Allocation };
+        await _context.Set<ProjectMember>().AddAsync(member);
+        await _context.SaveChangesAsync();
         return await ConvertToProjectMemberDtoAsync(member);
     }
 
-    /// <summary>
-    /// 移除项目成员
-    /// </summary>
+    /// <inheritdoc/>
     public async Task<bool> RemoveProjectMemberAsync(string projectId, string memberUserId)
     {
-        var updated = await _projectMemberFactory.UpdateManyAsync(
-            m => m.ProjectId == projectId && m.UserId == memberUserId,
-            m => m.IsDeleted = true);
-        return updated > 0;
+        var members = await _context.Set<ProjectMember>().Where(m => m.ProjectId == projectId && m.UserId == memberUserId).ToListAsync();
+        if (!members.Any()) return false;
+        foreach (var m in members) _context.Set<ProjectMember>().Remove(m);
+        await _context.SaveChangesAsync();
+        return true;
     }
 
-    /// <summary>
-    /// 获取项目成员列表
-    /// </summary>
-    public async Task<List<ProjectMemberDto>> GetProjectMembersAsync(string projectId)
-    {
-        var members = await _projectMemberFactory.FindAsync(m => m.ProjectId == projectId);
-        return await ConvertToProjectMemberDtosAsync(members);
-    }
+    /// <inheritdoc/>
+    public async Task<List<ProjectMemberDto>> GetProjectMembersAsync(string projectId) => await ConvertToProjectMemberDtosAsync(await _context.Set<ProjectMember>().Where(m => m.ProjectId == projectId).ToListAsync());
 
-    /// <summary>
-    /// 自动计算项目进度（基于任务进度）
-    /// </summary>
+    /// <inheritdoc/>
     public async Task<int> CalculateProjectProgressAsync(string projectId)
     {
-        // 获取项目下的所有任务
-        var tasks = await _taskFactory.FindAsync(t => t.ProjectId == projectId);
+        var tasks = await _context.Set<WorkTask>().Where(t => t.ProjectId == projectId).ToListAsync();
+        if (!tasks.Any()) return 0;
 
-        if (tasks.Count == 0)
-            return 0;
+        var roots = tasks.Where(t => string.IsNullOrEmpty(t.ParentTaskId)).ToList();
+        var avg = (roots.Any() ? roots.Sum(t => t.CompletionPercentage) / roots.Count : tasks.Sum(t => t.CompletionPercentage) / tasks.Count);
 
-        // 只计算根任务（没有父任务的任务）的进度，避免重复计算
-        var rootTasks = tasks.Where(t => string.IsNullOrEmpty(t.ParentTaskId)).ToList();
-
-        int averageProgress;
-        if (rootTasks.Count == 0)
-        {
-            // 如果没有根任务，计算所有任务的平均进度
-            var totalProgress = tasks.Sum(t => t.CompletionPercentage);
-            averageProgress = totalProgress / tasks.Count;
-        }
-        else
-        {
-            // 计算根任务的平均进度
-            var rootTotalProgress = rootTasks.Sum(t => t.CompletionPercentage);
-            averageProgress = rootTotalProgress / rootTasks.Count;
-        }
-
-        // 更新项目进度
-        await _projectFactory.UpdateAsync(projectId, p => p.Progress = averageProgress);
-
-        return averageProgress;
+        var p = await _context.Set<Project>().FirstOrDefaultAsync(x => x.Id == projectId);
+        if (p != null) { p.Progress = avg; await _context.SaveChangesAsync(); }
+        return avg;
     }
 
     private async Task<List<ProjectDto>> ConvertToProjectDtosAsync(IEnumerable<Project> projects)
     {
-        var projectList = projects.ToList();
-        if (projectList.Count == 0)
-        {
-            return new List<ProjectDto>();
-        }
-
-        var userIds = new HashSet<string>();
-        foreach (var project in projectList)
-        {
-            if (!string.IsNullOrEmpty(project.ManagerId)) userIds.Add(project.ManagerId);
-            if (!string.IsNullOrEmpty(project.CreatedBy)) userIds.Add(project.CreatedBy);
-        }
-
+        var list = projects.ToList();
+        if (!list.Any()) return new List<ProjectDto>();
+        var userIds = list.SelectMany(p => new[] { p.ManagerId, p.CreatedBy }).Where(id => !string.IsNullOrEmpty(id)).Select(id => id!).Distinct();
         var userMap = await _userService.GetUsersByIdsAsync(userIds);
-
-        return projectList.Select(p => ConvertToProjectDtoWithCache(p, userMap)).ToList();
+        return list.Select(p => ConvertToProjectDtoWithCache(p, userMap)).ToList();
     }
 
-    private ProjectDto ConvertToProjectDtoWithCache(Project project, Dictionary<string, AppUser> userMap)
+    private ProjectDto ConvertToProjectDtoWithCache(Project p, Dictionary<string, AppUser> uMap)
     {
-        var dto = new ProjectDto
-        {
-            Id = project.Id,
-            Name = project.Name,
-            Description = project.Description,
-            Status = (int)project.Status,
-            StatusName = GetStatusName(project.Status),
-            StartDate = project.StartDate,
-            EndDate = project.EndDate,
-            Progress = project.Progress,
-            ManagerId = project.ManagerId,
-            Budget = project.Budget,
-            Priority = (int)project.Priority,
-            PriorityName = GetPriorityName(project.Priority),
-            CreatedAt = project.CreatedAt,
-            CreatedBy = project.CreatedBy,
-            UpdatedAt = project.UpdatedAt
-        };
-
-        if (!string.IsNullOrEmpty(project.ManagerId) && userMap.TryGetValue(project.ManagerId, out var manager))
-        {
-            dto.ManagerName = !string.IsNullOrWhiteSpace(manager.Name)
-                ? $"{manager.Username} ({manager.Name})"
-                : manager.Username;
-        }
-
-        if (!string.IsNullOrEmpty(project.CreatedBy) && userMap.TryGetValue(project.CreatedBy, out var creator))
-        {
-            dto.CreatedByName = !string.IsNullOrWhiteSpace(creator.Name)
-                ? $"{creator.Username} ({creator.Name})"
-                : creator.Username;
-        }
-
+        var dto = MapToDto(p);
+        if (!string.IsNullOrEmpty(p.ManagerId) && uMap.TryGetValue(p.ManagerId, out var m)) dto.ManagerName = string.IsNullOrWhiteSpace(m.Name) ? m.Username : $"{m.Username} ({m.Name})";
+        if (!string.IsNullOrEmpty(p.CreatedBy) && uMap.TryGetValue(p.CreatedBy, out var c)) dto.CreatedByName = string.IsNullOrWhiteSpace(c.Name) ? c.Username : $"{c.Username} ({c.Name})";
         return dto;
     }
+
+    private async Task<ProjectDto> ConvertToProjectDtoAsync(Project p)
+    {
+        var dto = MapToDto(p);
+        if (!string.IsNullOrEmpty(p.ManagerId))
+        {
+            try { var m = await _userService.GetUserByIdWithoutTenantFilterAsync(p.ManagerId); if (m != null) dto.ManagerName = string.IsNullOrWhiteSpace(m.Name) ? m.Username : $"{m.Username} ({m.Name})"; } catch { }
+        }
+        if (!string.IsNullOrEmpty(p.CreatedBy))
+        {
+            try { var c = await _userService.GetUserByIdWithoutTenantFilterAsync(p.CreatedBy); if (c != null) dto.CreatedByName = string.IsNullOrWhiteSpace(c.Name) ? c.Username : $"{c.Username} ({c.Name})"; } catch { }
+        }
+        return dto;
+    }
+
+    private ProjectDto MapToDto(Project p) => new ProjectDto
+    {
+        Id = p.Id, Name = p.Name, Description = p.Description, Status = (int)p.Status, StatusName = GetStatusName(p.Status),
+        StartDate = p.StartDate, EndDate = p.EndDate, Progress = p.Progress, ManagerId = p.ManagerId, Budget = p.Budget,
+        Priority = (int)p.Priority, PriorityName = GetPriorityName(p.Priority), CreatedAt = p.CreatedAt, CreatedBy = p.CreatedBy, UpdatedAt = p.UpdatedAt
+    };
 
     private async Task<List<ProjectMemberDto>> ConvertToProjectMemberDtosAsync(IEnumerable<ProjectMember> members)
     {
-        var memberList = members.ToList();
-        if (memberList.Count == 0)
-        {
-            return new List<ProjectMemberDto>();
-        }
-
-        var userIds = memberList.Select(m => m.UserId).Distinct().ToList();
+        var list = members.ToList();
+        if (!list.Any()) return new List<ProjectMemberDto>();
+        var userIds = list.Select(m => m.UserId).Distinct();
         var userMap = await _userService.GetUsersByIdsAsync(userIds);
-
-        return memberList.Select(m => ConvertToProjectMemberDtoWithCache(m, userMap)).ToList();
+        return list.Select(m => ConvertToProjectMemberDtoWithCache(m, userMap)).ToList();
     }
 
-    private ProjectMemberDto ConvertToProjectMemberDtoWithCache(ProjectMember member, Dictionary<string, AppUser> userMap)
+    private ProjectMemberDto ConvertToProjectMemberDtoWithCache(ProjectMember m, Dictionary<string, AppUser> uMap)
     {
-        var dto = new ProjectMemberDto
-        {
-            Id = member.Id,
-            ProjectId = member.ProjectId,
-            UserId = member.UserId,
-            Role = (int)member.Role,
-            RoleName = GetRoleName(member.Role),
-            Allocation = member.Allocation,
-            CreatedAt = member.CreatedAt
-        };
-
-        if (userMap.TryGetValue(member.UserId, out var user))
-        {
-            dto.UserName = user.Username;
-            dto.UserEmail = user.Email;
-        }
-
+        var dto = new ProjectMemberDto { Id = m.Id, ProjectId = m.ProjectId, UserId = m.UserId, Role = (int)m.Role, RoleName = GetRoleName(m.Role), Allocation = m.Allocation, CreatedAt = m.CreatedAt };
+        if (uMap.TryGetValue(m.UserId, out var u)) { dto.UserName = u.Username; dto.UserEmail = u.Email; }
         return dto;
     }
 
-    /// <summary>
-    /// 转换项目实体为DTO
-    /// </summary>
-    private async Task<ProjectDto> ConvertToProjectDtoAsync(Project project)
+    private async Task<ProjectMemberDto> ConvertToProjectMemberDtoAsync(ProjectMember m)
     {
-        var dto = new ProjectDto
-        {
-            Id = project.Id,
-            Name = project.Name,
-            Description = project.Description,
-            Status = (int)project.Status,
-            StatusName = GetStatusName(project.Status),
-            StartDate = project.StartDate,
-            EndDate = project.EndDate,
-            Progress = project.Progress,
-            ManagerId = project.ManagerId,
-            Budget = project.Budget,
-            Priority = (int)project.Priority,
-            PriorityName = GetPriorityName(project.Priority),
-            CreatedAt = project.CreatedAt,
-            CreatedBy = project.CreatedBy,
-            UpdatedAt = project.UpdatedAt
-        };
-
-        // 获取项目经理信息
-        // 注意：使用 GetUserByIdWithoutTenantFilterAsync 因为项目经理可能属于不同的企业
-        if (!string.IsNullOrEmpty(project.ManagerId))
-        {
-            try
-            {
-                var manager = await _userService.GetUserByIdWithoutTenantFilterAsync(project.ManagerId);
-                if (manager != null)
-                {
-                    // 显示格式：用户名 (昵称)，如果昵称为空则只显示用户名
-                    dto.ManagerName = !string.IsNullOrWhiteSpace(manager.Name)
-                        ? $"{manager.Username} ({manager.Name})"
-                        : manager.Username;
-                }
-                else
-                {
-                    // 如果找不到用户，记录警告但不抛出异常
-                    _logger.LogWarning("找不到项目经理，ManagerId={ManagerId}", project.ManagerId);
-                    dto.ManagerName = null;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "获取项目经理信息失败，ManagerId={ManagerId}", project.ManagerId);
-                dto.ManagerName = null;
-            }
-        }
-
-        // 获取创建者信息
-        // 注意：使用 GetUserByIdWithoutTenantFilterAsync 因为创建者可能属于不同的企业
-        if (!string.IsNullOrEmpty(project.CreatedBy))
-        {
-            try
-            {
-                var creator = await _userService.GetUserByIdWithoutTenantFilterAsync(project.CreatedBy);
-                if (creator != null)
-                {
-                    // 显示格式：用户名 (昵称)，如果昵称为空则只显示用户名
-                    dto.CreatedByName = !string.IsNullOrWhiteSpace(creator.Name)
-                        ? $"{creator.Username} ({creator.Name})"
-                        : creator.Username;
-                }
-                else
-                {
-                    _logger.LogWarning("找不到创建者，CreatedBy={CreatedBy}", project.CreatedBy);
-                    dto.CreatedByName = null;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "获取创建者信息失败，CreatedBy={CreatedBy}", project.CreatedBy);
-                dto.CreatedByName = null;
-            }
-        }
-
+        var dto = new ProjectMemberDto { Id = m.Id, ProjectId = m.ProjectId, UserId = m.UserId, Role = (int)m.Role, RoleName = GetRoleName(m.Role), Allocation = m.Allocation, CreatedAt = m.CreatedAt };
+        try { var u = await _userService.GetUserByIdAsync(m.UserId); if (u != null) { dto.UserName = u.Username; dto.UserEmail = u.Email; } } catch { }
         return dto;
     }
 
-    /// <summary>
-    /// 转换项目成员实体为DTO
-    /// </summary>
-    private async Task<ProjectMemberDto> ConvertToProjectMemberDtoAsync(ProjectMember member)
-    {
-        var dto = new ProjectMemberDto
-        {
-            Id = member.Id,
-            ProjectId = member.ProjectId,
-            UserId = member.UserId,
-            Role = (int)member.Role,
-            RoleName = GetRoleName(member.Role),
-            Allocation = member.Allocation,
-            CreatedAt = member.CreatedAt
-        };
-
-        // 获取用户信息
-        try
-        {
-            var user = await _userService.GetUserByIdAsync(member.UserId);
-            if (user != null)
-            {
-                dto.UserName = user.Username;
-                dto.UserEmail = user.Email;
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "获取用户信息失败");
-        }
-
-        return dto;
-    }
-
-    private static string GetStatusName(ProjectStatus status) => status switch
-    {
-        ProjectStatus.Planning => "规划中",
-        ProjectStatus.InProgress => "进行中",
-        ProjectStatus.OnHold => "暂停",
-        ProjectStatus.Completed => "已完成",
-        ProjectStatus.Cancelled => "已取消",
-        _ => "未知"
-    };
-
-    private static string GetPriorityName(ProjectPriority priority) => priority switch
-    {
-        ProjectPriority.Low => "低",
-        ProjectPriority.Medium => "中",
-        ProjectPriority.High => "高",
-        _ => "未知"
-    };
-
-    private static string GetRoleName(ProjectMemberRole role) => role switch
-    {
-        ProjectMemberRole.Manager => "项目经理",
-        ProjectMemberRole.Member => "成员",
-        ProjectMemberRole.Viewer => "查看者",
-        _ => "未知"
-    };
+    private static string GetStatusName(ProjectStatus s) => s switch { ProjectStatus.Planning => "规划中", ProjectStatus.InProgress => "进行中", ProjectStatus.OnHold => "暂停", ProjectStatus.Completed => "已完成", ProjectStatus.Cancelled => "已取消", _ => "未知" };
+    private static string GetPriorityName(ProjectPriority p) => p switch { ProjectPriority.Low => "低", ProjectPriority.Medium => "中", ProjectPriority.High => "高", _ => "未知" };
+    private static string GetRoleName(ProjectMemberRole r) => r switch { ProjectMemberRole.Manager => "项目经理", ProjectMemberRole.Member => "成员", ProjectMemberRole.Viewer => "查看者", _ => "未知" };
 }

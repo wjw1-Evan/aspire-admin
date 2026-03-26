@@ -88,4 +88,3 @@ public class MenuTreeNode
     /// </summary>
     public DateTime UpdatedAt { get; set; }
 }
-

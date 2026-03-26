@@ -52,4 +52,3 @@ public interface IChatBroadcaster
     /// <param name="message">完整消息</param>
     Task BroadcastMessageCompleteAsync(string sessionId, ChatMessage message);
 }
-

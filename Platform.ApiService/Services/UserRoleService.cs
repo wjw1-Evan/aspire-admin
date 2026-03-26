@@ -9,31 +9,21 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class UserRoleService : IUserRoleService
 {
-    private readonly IDataFactory<AppUser> _userFactory;
-    private readonly IDataFactory<Role> _roleFactory;
-    private readonly IDataFactory<UserCompany> _userCompanyFactory;
+    private readonly DbContext _context;
 
     /// <summary>
     /// 初始化用户角色服务
     /// </summary>
-    /// <param name="userFactory">用户数据库工厂</param>
-    /// <param name="roleFactory">角色数据库工厂</param>
-    /// <param name="userCompanyFactory">用户企业关联数据库工厂</param>
-    public UserRoleService(
-        IDataFactory<AppUser> userFactory,
-        IDataFactory<Role> roleFactory,
-        IDataFactory<UserCompany> userCompanyFactory)
+    public UserRoleService(DbContext context)
     {
-        _userFactory = userFactory;
-        _roleFactory = roleFactory;
-        _userCompanyFactory = userCompanyFactory;
+        _context = context;
     }
 
     /// <inheritdoc/>
     public async Task<object> GetUserPermissionsAsync(string userId)
     {
         // 获取用户信息
-        var user = await _userFactory.GetByIdAsync(userId);
+        var user = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == userId);
         if (user == null)
         {
             throw new KeyNotFoundException($"用户 {userId} 不存在");
@@ -46,19 +36,19 @@ public class UserRoleService : IUserRoleService
             return new { menuIds = Array.Empty<string>() };
         }
 
-        var userCompanies = await _userCompanyFactory.FindAsync(uc =>
-            uc.UserId == userId && uc.CompanyId == companyId);
-        var userCompany = userCompanies.FirstOrDefault();
+        var userCompany = await _context.Set<UserCompany>()
+            .FirstOrDefaultAsync(uc => uc.UserId == userId && uc.CompanyId == companyId);
 
         var menuIds = new List<string>();
 
         if (userCompany?.RoleIds != null && userCompany.RoleIds.Any())
         {
             // 获取用户角色对应的菜单权限
-            var roles = await _roleFactory.FindWithoutTenantFilterAsync(r =>
-                userCompany.RoleIds.Contains(r.Id!) &&
-                r.CompanyId == companyId &&
-                r.IsActive);
+            var roles = await _context.Set<Role>()
+                .IgnoreQueryFilters()
+                .Where(x => !x.IsDeleted)
+                .Where(r => userCompany.RoleIds.Contains(r.Id!) && r.CompanyId == companyId && r.IsActive)
+                .ToListAsync();
 
             // 收集所有角色的菜单ID
             menuIds = roles.SelectMany(r => r.MenuIds).Distinct().ToList();
@@ -75,7 +65,9 @@ public class UserRoleService : IUserRoleService
             return new List<string>();
         }
 
-        var roles = await _roleFactory.FindAsync(r => roleIds.Contains(r.Id!));
+        var roles = await _context.Set<Role>()
+            .Where(r => roleIds.Contains(r.Id!))
+            .ToListAsync();
 
         if (roles.Count != roleIds.Count)
         {
@@ -91,9 +83,11 @@ public class UserRoleService : IUserRoleService
     /// <inheritdoc/>
     public async Task<Dictionary<string, string>> GetRoleNameMapAsync(List<string> roleIds)
     {
-        if (!roleIds.Any()) return new Dictionary<string, string>();
+        if (roleIds == null || !roleIds.Any()) return new Dictionary<string, string>();
 
-        var roles = await _roleFactory.FindAsync(r => roleIds.Contains(r.Id!));
+        var roles = await _context.Set<Role>()
+            .Where(r => roleIds.Contains(r.Id!))
+            .ToListAsync();
 
         return roles.ToDictionary(r => r.Id!, r => r.Name);
     }
@@ -101,9 +95,11 @@ public class UserRoleService : IUserRoleService
     /// <inheritdoc/>
     public async Task<List<string>> GetUserIdsByRolesAsync(List<string> roleIds)
     {
-        var userCompanies = await _userCompanyFactory.FindAsync(uc =>
-            uc.Status == "active" &&
-            uc.RoleIds.Any(rid => roleIds.Contains(rid)));
+        if (roleIds == null || !roleIds.Any()) return new List<string>();
+
+        var userCompanies = await _context.Set<UserCompany>()
+            .Where(uc => uc.Status == "active" && uc.RoleIds.Any(rid => roleIds.Contains(rid)))
+            .ToListAsync();
 
         return userCompanies.Select(uc => uc.UserId).Distinct().ToList();
     }
@@ -111,6 +107,6 @@ public class UserRoleService : IUserRoleService
     /// <inheritdoc/>
     public async Task<int> CountAsync()
     {
-        return (int)await _roleFactory.CountAsync();
+        return (int)await _context.Set<Role>().LongCountAsync();
     }
 }

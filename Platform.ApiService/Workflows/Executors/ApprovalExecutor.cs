@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models.Workflow;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Services;
@@ -13,14 +14,14 @@ namespace Platform.ApiService.Workflows.Executors;
 /// </summary>
 internal sealed partial class ApprovalExecutor : Executor
 {
+    private readonly DbContext _context;
     private readonly ApprovalConfig _config;
-    private readonly IDataFactory<WorkflowInstance> _instanceFactory;
     private readonly IWorkflowExpressionEvaluator _expressionEvaluator;
 
-    public ApprovalExecutor(ApprovalConfig config, IDataFactory<WorkflowInstance> instanceFactory, IWorkflowExpressionEvaluator expressionEvaluator) : base("ApprovalExecutor")
+    public ApprovalExecutor(DbContext context, ApprovalConfig config, IWorkflowExpressionEvaluator expressionEvaluator) : base("ApprovalExecutor")
     {
+        _context = context;
         _config = config;
-        _instanceFactory = instanceFactory;
         _expressionEvaluator = expressionEvaluator;
     }
 

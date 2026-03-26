@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -21,11 +22,10 @@ namespace Platform.ApiService.Controllers;
 [Route("api/documents")]
 public class DocumentController : BaseApiController
 {
+    private readonly DbContext _context;
+
     private readonly IDocumentService _documentService;
     private readonly IWorkflowEngine _workflowEngine;
-    private readonly IDataFactory<WorkflowInstance> _instanceFactory;
-    private readonly IDataFactory<WorkflowDefinition> _definitionFactory;
-    private readonly IDataFactory<FormDefinition> _formFactory;
     private readonly ILogger<DocumentController> _logger;
 
     /// <summary>
@@ -33,23 +33,19 @@ public class DocumentController : BaseApiController
     /// </summary>
     /// <param name="documentService">公文服务</param>
     /// <param name="workflowEngine">工作流引擎</param>
-    /// <param name="instanceFactory">流程实例工厂</param>
-    /// <param name="definitionFactory">流程定义工厂</param>
-    /// <param name="formFactory">表单定义工厂</param>
+
+
     /// <param name="logger">日志记录器</param>
     public DocumentController(
+        DbContext context,
         IDocumentService documentService,
         IWorkflowEngine workflowEngine,
-        IDataFactory<WorkflowInstance> instanceFactory,
-        IDataFactory<WorkflowDefinition> definitionFactory,
-        IDataFactory<FormDefinition> formFactory,
-        ILogger<DocumentController> logger)
-    {
+        ILogger<DocumentController> logger
+    ) {
+        _context = context;
+        
         _documentService = documentService;
         _workflowEngine = workflowEngine;
-        _instanceFactory = instanceFactory;
-        _definitionFactory = definitionFactory;
-        _formFactory = formFactory;
         _logger = logger;
     }
 
@@ -455,7 +451,7 @@ public class DocumentController : BaseApiController
             if (definition == null)
             {
                 // 如果没有快照，使用最新定义（向后兼容）
-                definition = await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
+                definition = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(d => d.Id == instance.WorkflowDefinitionId);
                 if (definition == null)
                 {
                     return NotFoundError("流程定义", instance.WorkflowDefinitionId);
@@ -497,7 +493,7 @@ public class DocumentController : BaseApiController
                     return ValidationError("流程节点未配置表单定义ID");
                 }
                 // 如果没有快照，使用最新定义（向后兼容）
-                form = await _formFactory.GetByIdAsync(binding.FormDefinitionId!);
+                form = await _context.Set<FormDefinition>().FirstOrDefaultAsync(f => f.Id == binding.FormDefinitionId);
                 if (form == null)
                 {
                     return NotFoundError("表单定义", binding.FormDefinitionId);

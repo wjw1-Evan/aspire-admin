@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 #pragma warning disable CS1591
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -15,21 +16,21 @@ namespace Platform.ApiService.Services;
 
 public class ChatAttachmentService : IChatAttachmentService
 {
-    private readonly IDataFactory<ChatAttachment> _attachmentFactory;
+    private readonly DbContext _context;
+
     private readonly IFileStorageFactory _fileStorageFactory;
     private readonly ITenantContext _tenantContext;
     private readonly IChatSessionService _sessionService;
     private readonly ILogger<ChatAttachmentService> _logger;
 
-    public ChatAttachmentService(
-        IDataFactory<ChatAttachment> attachmentFactory,
+    public ChatAttachmentService(DbContext context,
         IFileStorageFactory fileStorageFactory,
         ITenantContext tenantContext,
         IChatSessionService sessionService,
-        ILogger<ChatAttachmentService> logger)
-    {
-        _attachmentFactory = attachmentFactory ?? throw new ArgumentNullException(nameof(attachmentFactory));
-        _fileStorageFactory = fileStorageFactory ?? throw new ArgumentNullException(nameof(fileStorageFactory));
+        ILogger<ChatAttachmentService> logger
+    ) {
+        _context = context;
+        
         _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
         _sessionService = sessionService ?? throw new ArgumentNullException(nameof(sessionService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -82,7 +83,9 @@ public class ChatAttachmentService : IChatAttachmentService
             Checksum = checksum
         };
 
-        attachment = await _attachmentFactory.CreateAsync(attachment);
+        await _context.Set<ChatAttachment>().AddAsync(attachment);
+        await _context.SaveChangesAsync();
+        attachment = attachment;
 
         return new ChatAttachmentInfo
         {
@@ -103,7 +106,7 @@ public class ChatAttachmentService : IChatAttachmentService
         Expression<Func<ChatAttachment, bool>> filter = attachment => attachment.SessionId == session.Id &&
                                                                   attachment.StorageObjectId == storageObjectId;
 
-        var attachments = await _attachmentFactory.FindAsync(filter, null, 1);
+        var attachments = await _context.Set<ChatAttachment>().Where(filter).Take(1).ToListAsync();
         var attachment = attachments.FirstOrDefault();
         if (attachment == null) throw new KeyNotFoundException("附件不存在或不属于当前会话");
 
@@ -130,7 +133,7 @@ public class ChatAttachmentService : IChatAttachmentService
 
     public async Task<ChatAttachmentInfo?> GetAttachmentInfoAsync(string attachmentId, string sessionId)
     {
-        var attachment = await _attachmentFactory.GetByIdAsync(attachmentId);
+        var attachment = await _context.Set<ChatAttachment>().FirstOrDefaultAsync(x => x.Id == attachmentId);
         if (attachment == null || attachment.SessionId != sessionId)
             return null;
 

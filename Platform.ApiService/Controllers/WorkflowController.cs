@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,10 +25,8 @@ namespace Platform.ApiService.Controllers;
 [Route("api/workflows")]
 public class WorkflowController : BaseApiController
 {
-    private readonly IDataFactory<WorkflowDefinition> _definitionFactory;
-    private readonly IDataFactory<WorkflowInstance> _instanceFactory;
-    private readonly IDataFactory<FormDefinition> _formFactory;
-    private readonly IDataFactory<Document> _documentFactory;
+    private readonly DbContext _context;
+
     private readonly IWorkflowEngine _workflowEngine;
     private readonly IUserService _userService;
     private readonly IFieldValidationService _fieldValidationService;
@@ -38,32 +37,24 @@ public class WorkflowController : BaseApiController
     /// <summary>
     /// 初始化工作流管理控制器
     /// </summary>
-    /// <param name="definitionFactory">流程定义工厂</param>
-    /// <param name="instanceFactory">流程实例工厂</param>
-    /// <param name="formFactory">表单定义工厂</param>
-    /// <param name="documentFactory">文档工厂</param>
+
+
+
     /// <param name="workflowEngine">工作流引擎</param>
     /// <param name="userService">用户服务</param>
     /// <param name="fieldValidationService">字段验证服务</param>
     /// <param name="graphValidator">流程图形校验服务</param>
     /// <param name="exportImportService">工作流导出导入服务</param>
     /// <param name="logger">日志记录器</param>
-    public WorkflowController(
-        IDataFactory<WorkflowDefinition> definitionFactory,
-        IDataFactory<WorkflowInstance> instanceFactory,
-        IDataFactory<FormDefinition> formFactory,
-        IDataFactory<Document> documentFactory,
+    public WorkflowController(DbContext context,
         IWorkflowEngine workflowEngine,
         IUserService userService,
         IFieldValidationService fieldValidationService,
         IWorkflowGraphValidator graphValidator,
         IWorkflowExportImportService exportImportService,
-        ILogger<WorkflowController> logger)
-    {
-        _definitionFactory = definitionFactory;
-        _instanceFactory = instanceFactory;
-        _formFactory = formFactory;
-        _documentFactory = documentFactory;
+        ILogger<WorkflowController> logger
+    ) {
+        _context = context;
         _workflowEngine = workflowEngine;
         _userService = userService;
         _fieldValidationService = fieldValidationService;
@@ -194,9 +185,11 @@ public class WorkflowController : BaseApiController
                 return q.OrderByDescending(w => w.CreatedAt);
             };
 
-            var result = await _definitionFactory.FindPagedAsync(filter, sort, request.Page, request.PageSize);
+            var queryable = _context.Set<WorkflowDefinition>().Where(filter ?? (w => true));
+            var totalCount = await queryable.LongCountAsync();
+            var items = await sort(queryable).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
 
-            return SuccessPaged(result.items, result.total, request.Page, request.PageSize);
+            return SuccessPaged(items, totalCount, request.Page, request.PageSize);
         }
         catch (ArgumentException ex)
         {
@@ -217,7 +210,7 @@ public class WorkflowController : BaseApiController
     {
         try
         {
-            var workflow = await _definitionFactory.GetByIdAsync(id);
+            var workflow = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == id);
             if (workflow == null)
             {
                 return NotFoundError("流程定义", id);
@@ -266,7 +259,9 @@ public class WorkflowController : BaseApiController
                 IsActive = request.IsActive ?? true
             };
 
-            workflow = await _definitionFactory.CreateAsync(workflow);
+            await _context.Set<WorkflowDefinition>().AddAsync(workflow);
+        await _context.SaveChangesAsync();
+        workflow = workflow;
             return Success(workflow);
         }
         catch (Exception ex)
@@ -284,7 +279,7 @@ public class WorkflowController : BaseApiController
     {
         try
         {
-            var workflow = await _definitionFactory.GetByIdAsync(id);
+            var workflow = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == id);
             if (workflow == null)
             {
                 return NotFoundError("流程定义", id);
@@ -324,8 +319,9 @@ public class WorkflowController : BaseApiController
                 }
             };
 
-            var updated = await _definitionFactory.UpdateAsync(id, updateAction);
-            return Success(updated);
+            updateAction(workflow);
+            await _context.SaveChangesAsync();
+            return Success(workflow);
         }
         catch (ArgumentException ex)
         {
@@ -346,7 +342,9 @@ public class WorkflowController : BaseApiController
     {
         try
         {
-            var result = await _definitionFactory.SoftDeleteAsync(id);
+            var __sdE = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == id);
+        if (__sdE != null) { __sdE.IsDeleted = true; await _context.SaveChangesAsync(); }
+        var result = __sdE != null;
             if (!result)
             {
                 return NotFoundError("流程定义", id);
@@ -438,8 +436,10 @@ public class WorkflowController : BaseApiController
 
             Func<IQueryable<WorkflowInstance>, IOrderedQueryable<WorkflowInstance>> sort = q => q.OrderByDescending(i => i.CreatedAt);
 
-            var result = await _instanceFactory.FindPagedAsync(filter, sort, current, pageSize);
-            return SuccessPaged(result.items, result.total, current, pageSize);
+            var queryable = _context.Set<WorkflowInstance>().Where(filter);
+            var totalCount = await queryable.LongCountAsync();
+            var items = await sort(queryable).Skip((current - 1) * pageSize).Take(pageSize).ToListAsync();
+            return SuccessPaged(items, totalCount, current, pageSize);
         }
         catch (Exception ex)
         {
@@ -456,7 +456,7 @@ public class WorkflowController : BaseApiController
     {
         try
         {
-            var definition = await _definitionFactory.GetByIdAsync(id);
+            var definition = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == id);
             if (definition == null)
             {
                 return NotFoundError("流程定义", id);
@@ -477,7 +477,7 @@ public class WorkflowController : BaseApiController
                 return Success(new { form = (FormDefinition?)null, dataScopeKey = (string?)null, initialValues = (object?)null });
             }
 
-            var forms = await _formFactory.FindAsync(f => f.Id == binding.FormDefinitionId, includes: [f => f.Fields]);
+            var forms = await _context.Set<FormDefinition>().Where(f => f.Id == binding.FormDefinitionId).ToListAsync();
             var form = forms.FirstOrDefault();
 
             if (form == null)
@@ -521,7 +521,7 @@ public class WorkflowController : BaseApiController
     {
         try
         {
-            var definition = await _definitionFactory.GetByIdAsync(id);
+            var definition = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == id);
             if (definition == null)
             {
                 return NotFoundError("流程定义", id);
@@ -548,10 +548,10 @@ public class WorkflowController : BaseApiController
 
             // 获取所有表单定义
             var formIds = formBindings.Keys.ToList();
-            var forms = await _formFactory.FindAsync(
-                f => formIds.Contains(f.Id),
-                includes: [f => f.Fields]
-            );
+            var forms = await _context.Set<FormDefinition>()
+                .Include(f => f.Fields)
+                .Where(f => formIds.Contains(f.Id))
+                .ToListAsync();
 
             // 构建返回数据：表单列表，每个表单包含其字段
             var result = forms.Select(form => new
@@ -592,12 +592,14 @@ public class WorkflowController : BaseApiController
 
             Func<IQueryable<WorkflowInstance>, IOrderedQueryable<WorkflowInstance>> sort = q => q.OrderByDescending(i => i.CreatedAt);
 
-            var result = await _instanceFactory.FindPagedAsync(filter, sort, current, pageSize);
+            var queryable = _context.Set<WorkflowInstance>().Where(filter);
+            var totalCount = await queryable.LongCountAsync();
+            var items = await sort(queryable).Skip((current - 1) * pageSize).Take(pageSize).ToListAsync();
             var todos = new List<object>();
 
-            foreach (var instance in result.items)
+            foreach (var instance in items)
             {
-                var definition = instance.WorkflowDefinitionSnapshot ?? await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
+                var definition = instance.WorkflowDefinitionSnapshot ?? await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == instance.WorkflowDefinitionId);
                 if (definition == null) continue;
 
                 if (instance.ActiveApprovals == null || instance.ActiveApprovals.Count == 0) continue;
@@ -605,7 +607,7 @@ public class WorkflowController : BaseApiController
                 Document? document = null;
                 if (!string.IsNullOrEmpty(instance.DocumentId))
                 {
-                    document = await _documentFactory.GetByIdAsync(instance.DocumentId);
+                    document = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == instance.DocumentId);
                 }
 
                 foreach (var activeApproval in instance.ActiveApprovals)
@@ -648,7 +650,7 @@ public class WorkflowController : BaseApiController
                 }
             }
 
-            return SuccessPaged(todos, result.total, current, pageSize);
+            return SuccessPaged(todos, totalCount, current, pageSize);
         }
         catch (Exception ex)
         {
@@ -715,7 +717,7 @@ public class WorkflowController : BaseApiController
             WorkflowDefinition? definition = instance.WorkflowDefinitionSnapshot;
             if (definition == null)
             {
-                definition = await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
+                definition = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == instance.WorkflowDefinitionId);
                 if (definition == null)
                 {
                     return NotFoundError("流程定义", instance.WorkflowDefinitionId);
@@ -743,7 +745,7 @@ public class WorkflowController : BaseApiController
 
             if (form == null)
             {
-                var forms = await _formFactory.FindAsync(f => f.Id == binding.FormDefinitionId, includes: [f => f.Fields]);
+                var forms = await _context.Set<FormDefinition>().Where(f => f.Id == binding.FormDefinitionId).ToListAsync();
                 form = forms.FirstOrDefault();
                 if (form == null)
                 {
@@ -757,7 +759,7 @@ public class WorkflowController : BaseApiController
                 Document? document = null;
                 if (!string.IsNullOrEmpty(instance.DocumentId))
                 {
-                    document = await _documentFactory.GetByIdAsync(instance.DocumentId);
+                    document = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == instance.DocumentId);
                 }
                 if (document != null)
                 {
@@ -822,7 +824,7 @@ public class WorkflowController : BaseApiController
             WorkflowDefinition? definition = instance.WorkflowDefinitionSnapshot;
             if (definition == null)
             {
-                definition = await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
+                definition = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == instance.WorkflowDefinitionId);
                 if (definition == null)
                 {
                     return NotFoundError("流程定义", instance.WorkflowDefinitionId);
@@ -851,7 +853,7 @@ public class WorkflowController : BaseApiController
 
             if (form == null)
             {
-                var forms = await _formFactory.FindAsync(f => f.Id == binding.FormDefinitionId, includes: [f => f.Fields]);
+                var forms = await _context.Set<FormDefinition>().Where(f => f.Id == binding.FormDefinitionId).ToListAsync();
                 form = forms.FirstOrDefault();
                 if (form == null)
                 {
@@ -880,7 +882,7 @@ public class WorkflowController : BaseApiController
             {
                 if (string.IsNullOrEmpty(instance.DocumentId)) return ValidationError("当前实例未关联公文");
                 // Bug 15 修复：提前 await 获取 document，避免 GetAwaiter().GetResult() 同步阻塞
-                var existingDoc = await _documentFactory.GetByIdAsync(instance.DocumentId);
+                var existingDoc = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == instance.DocumentId);
                 Action<Document> updateAction = d =>
                 {
                     if (!string.IsNullOrWhiteSpace(binding.DataScopeKey))
@@ -900,8 +902,12 @@ public class WorkflowController : BaseApiController
                     }
                 };
 
-                var updated = await _documentFactory.UpdateAsync(instance.DocumentId, updateAction);
-                return Success(updated?.FormData ?? (object)sanitizedValues);
+                if (existingDoc != null)
+                {
+                    updateAction(existingDoc);
+                    await _context.SaveChangesAsync();
+                }
+                return Success(existingDoc?.FormData ?? (object)sanitizedValues);
             }
             else
             {
@@ -917,8 +923,9 @@ public class WorkflowController : BaseApiController
                     }
                 };
 
-                var updated = await _instanceFactory.UpdateAsync(id, updateAction);
-                return Success(updated?.GetVariablesDict() ?? valuesWithNulls);
+                updateAction(instance);
+                await _context.SaveChangesAsync();
+                return Success(instance.GetVariablesDict() ?? valuesWithNulls);
             }
         }
         catch (Exception ex)
@@ -1063,14 +1070,11 @@ public class WorkflowController : BaseApiController
         try
         {
             var userId = GetRequiredUserId();
-            var preferencesFactory = HttpContext.RequestServices.GetRequiredService<IDataFactory<UserWorkflowFilterPreference>>();
-
-            Expression<Func<UserWorkflowFilterPreference, bool>> filter = p => p.UserId == userId;
-
-            Func<IQueryable<UserWorkflowFilterPreference>, IOrderedQueryable<UserWorkflowFilterPreference>> sort = q =>
-                q.OrderByDescending(p => p.IsDefault).ThenBy(p => p.Name);
-
-            var preferences = await preferencesFactory.FindAsync(filter, sort);
+            var preferences = await _context.Set<UserWorkflowFilterPreference>()
+                .Where(p => p.UserId == userId)
+                .OrderByDescending(p => p.IsDefault)
+                .ThenBy(p => p.Name)
+                .ToListAsync();
             return Success(preferences);
         }
         catch (Exception ex)
@@ -1094,10 +1098,9 @@ public class WorkflowController : BaseApiController
             }
 
             var userId = GetRequiredUserId();
-            var preferencesFactory = HttpContext.RequestServices.GetRequiredService<IDataFactory<UserWorkflowFilterPreference>>();
 
-            Expression<Func<UserWorkflowFilterPreference, bool>> existingFilter = p => p.UserId == userId && p.Name == request.Name;
-            var existing = (await preferencesFactory.FindAsync(existingFilter, limit: 1)).FirstOrDefault();
+            var existing = await _context.Set<UserWorkflowFilterPreference>()
+                .FirstOrDefaultAsync(p => p.UserId == userId && p.Name == request.Name);
             if (existing != null)
             {
                 return ValidationError("已存在同名的过滤器偏好");
@@ -1105,8 +1108,10 @@ public class WorkflowController : BaseApiController
 
             if (request.IsDefault)
             {
-                Expression<Func<UserWorkflowFilterPreference, bool>> defaultFilter = p => p.UserId == userId && p.IsDefault == true;
-                await preferencesFactory.UpdateManyAsync(defaultFilter, p => p.IsDefault = false);
+                var defaultPrefs = await _context.Set<UserWorkflowFilterPreference>()
+                    .Where(p => p.UserId == userId && p.IsDefault)
+                    .ToListAsync();
+                foreach (var p in defaultPrefs) p.IsDefault = false;
             }
 
             var preference = new UserWorkflowFilterPreference
@@ -1117,7 +1122,8 @@ public class WorkflowController : BaseApiController
                 FilterConfig = request.FilterConfig ?? new WorkflowFilterConfig()
             };
 
-            preference = await preferencesFactory.CreateAsync(preference);
+            _context.Set<UserWorkflowFilterPreference>().Add(preference);
+            await _context.SaveChangesAsync();
             return Success(preference);
         }
         catch (Exception ex)
@@ -1136,10 +1142,9 @@ public class WorkflowController : BaseApiController
         try
         {
             var userId = GetRequiredUserId();
-            var preferencesFactory = HttpContext.RequestServices.GetRequiredService<IDataFactory<UserWorkflowFilterPreference>>();
 
-            Expression<Func<UserWorkflowFilterPreference, bool>> filter = p => p.Id == id && p.UserId == userId;
-            var preference = (await preferencesFactory.FindAsync(filter, limit: 1)).FirstOrDefault();
+            var preference = await _context.Set<UserWorkflowFilterPreference>()
+                .FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId);
             if (preference == null)
             {
                 return NotFoundError("过滤器偏好", id);
@@ -1148,9 +1153,8 @@ public class WorkflowController : BaseApiController
             // Bug 21 修复：将异步操作提到 lambda 外部，避免 GetAwaiter().GetResult() 死锁
             if (!string.IsNullOrEmpty(request.Name) && request.Name != preference.Name)
             {
-                Expression<Func<UserWorkflowFilterPreference, bool>> nameFilter = pref =>
-                    pref.UserId == userId && pref.Name == request.Name && pref.Id != id;
-                var existingWithName = (await preferencesFactory.FindAsync(nameFilter, limit: 1)).FirstOrDefault();
+                var existingWithName = await _context.Set<UserWorkflowFilterPreference>()
+                    .FirstOrDefaultAsync(p => p.UserId == userId && p.Name == request.Name && p.Id != id);
                 if (existingWithName != null)
                 {
                     return ValidationError("已存在同名的过滤器偏好");
@@ -1159,9 +1163,10 @@ public class WorkflowController : BaseApiController
 
             if (request.IsDefault.HasValue && request.IsDefault.Value && !preference.IsDefault)
             {
-                Expression<Func<UserWorkflowFilterPreference, bool>> defaultFilter = pref =>
-                    pref.UserId == userId && pref.IsDefault == true && pref.Id != id;
-                await preferencesFactory.UpdateManyAsync(defaultFilter, pref => pref.IsDefault = false);
+                var defaultPrefs = await _context.Set<UserWorkflowFilterPreference>()
+                    .Where(p => p.UserId == userId && p.IsDefault && p.Id != id)
+                    .ToListAsync();
+                foreach (var p in defaultPrefs) p.IsDefault = false;
             }
 
             Action<UserWorkflowFilterPreference> updateAction = p =>
@@ -1182,8 +1187,9 @@ public class WorkflowController : BaseApiController
                 }
             };
 
-            var updated = await preferencesFactory.UpdateAsync(id, updateAction);
-            return Success(updated);
+            updateAction(preference);
+            await _context.SaveChangesAsync();
+            return Success(preference);
         }
         catch (ArgumentException ex)
         {
@@ -1205,20 +1211,16 @@ public class WorkflowController : BaseApiController
         try
         {
             var userId = GetRequiredUserId();
-            var preferencesFactory = HttpContext.RequestServices.GetRequiredService<IDataFactory<UserWorkflowFilterPreference>>();
 
-            Expression<Func<UserWorkflowFilterPreference, bool>> filter = p => p.Id == id && p.UserId == userId;
-            var preference = (await preferencesFactory.FindAsync(filter, limit: 1)).FirstOrDefault();
+            var preference = await _context.Set<UserWorkflowFilterPreference>()
+                .FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId);
             if (preference == null)
             {
                 return NotFoundError("过滤器偏好", id);
             }
 
-            var result = await preferencesFactory.SoftDeleteAsync(id);
-            if (!result)
-            {
-                return NotFoundError("过滤器偏好", id);
-            }
+            _context.Set<UserWorkflowFilterPreference>().Remove(preference);
+            await _context.SaveChangesAsync();
 
             return Success("过滤器偏好已删除");
         }
@@ -1238,10 +1240,9 @@ public class WorkflowController : BaseApiController
         try
         {
             var userId = GetRequiredUserId();
-            var preferencesFactory = HttpContext.RequestServices.GetRequiredService<IDataFactory<UserWorkflowFilterPreference>>();
 
-            Expression<Func<UserWorkflowFilterPreference, bool>> filter = p => p.UserId == userId && p.IsDefault == true;
-            var defaultPreference = (await preferencesFactory.FindAsync(filter, limit: 1)).FirstOrDefault();
+            var defaultPreference = await _context.Set<UserWorkflowFilterPreference>()
+                .FirstOrDefaultAsync(p => p.UserId == userId && p.IsDefault);
             return Success(defaultPreference);
         }
         catch (Exception ex)
@@ -1625,8 +1626,6 @@ public class WorkflowSearchRequest
     /// </summary>
     public string? SortOrder { get; set; }
 }
-
-
 
 /// <summary>
 /// 创建流程定义请求

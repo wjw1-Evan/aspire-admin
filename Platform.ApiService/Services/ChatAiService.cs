@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OpenAI;
@@ -26,14 +27,10 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class ChatAiService : IChatAiService
 {
+    private readonly DbContext _context;
     private const int AssistantContextMessageLimit = 24;
-
     private readonly OpenAIClient _openAiClient;
     private readonly AiCompletionOptions _aiOptions;
-    private readonly IDataFactory<ChatMessage> _messageFactory;
-    private readonly IDataFactory<ChatSession> _sessionFactory;
-    private readonly IDataFactory<AppUser> _userFactory;
-    private readonly IDataFactory<UserMemory> _memoryFactory;
     private readonly IUserService _userService;
     private readonly IChatBroadcaster _broadcaster;
     private readonly IChatSessionService _sessionService;
@@ -41,28 +38,10 @@ public class ChatAiService : IChatAiService
     private readonly IXiaokeConfigService? _xiaokeConfigService;
     private readonly ILogger<ChatAiService> _logger;
 
-    /// <summary>
-    /// 初始化聊天 AI 服务
-    /// </summary>
-    /// <param name="openAiClient">OpenAI 客户端</param>
-    /// <param name="aiOptions">AI 补全配置选项</param>
-    /// <param name="messageFactory">聊天消息数据工厂</param>
-    /// <param name="sessionFactory">聊天会话数据工厂</param>
-    /// <param name="userFactory">用户数据工厂</param>
-    /// <param name="memoryFactory">用户记忆数据工厂</param>
-    /// <param name="userService">用户服务</param>
-    /// <param name="broadcaster">消息广播器</param>
-    /// <param name="sessionService">会话管理服务</param>
-    /// <param name="mcpService">MCP 协议工具服务</param>
-    /// <param name="xiaokeConfigService">Xiaoke 配置服务（可选）</param>
-    /// <param name="logger">日志处理器</param>
     public ChatAiService(
+        DbContext context,
         OpenAIClient openAiClient,
         IOptions<AiCompletionOptions> aiOptions,
-        IDataFactory<ChatMessage> messageFactory,
-        IDataFactory<ChatSession> sessionFactory,
-        IDataFactory<AppUser> userFactory,
-        IDataFactory<UserMemory> memoryFactory,
         IUserService userService,
         IChatBroadcaster broadcaster,
         IChatSessionService sessionService,
@@ -70,12 +49,9 @@ public class ChatAiService : IChatAiService
         IXiaokeConfigService? xiaokeConfigService,
         ILogger<ChatAiService> logger)
     {
+        _context = context;
         _openAiClient = openAiClient ?? throw new ArgumentNullException(nameof(openAiClient));
         _aiOptions = aiOptions?.Value ?? throw new ArgumentNullException(nameof(aiOptions));
-        _messageFactory = messageFactory ?? throw new ArgumentNullException(nameof(messageFactory));
-        _sessionFactory = sessionFactory ?? throw new ArgumentNullException(nameof(sessionFactory));
-        _userFactory = userFactory ?? throw new ArgumentNullException(nameof(userFactory));
-        _memoryFactory = memoryFactory ?? throw new ArgumentNullException(nameof(memoryFactory));
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         _broadcaster = broadcaster ?? throw new ArgumentNullException(nameof(broadcaster));
         _sessionService = sessionService ?? throw new ArgumentNullException(nameof(sessionService));
@@ -84,7 +60,6 @@ public class ChatAiService : IChatAiService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    /// <inheritdoc />
     public async Task RespondAsAssistantAsync(ChatSession session, ChatMessage triggerMessage, CancellationToken cancellationToken)
     {
         if (!session.Participants.Contains(AiAssistantConstants.AssistantUserId)) return;
@@ -102,7 +77,6 @@ public class ChatAiService : IChatAiService
         }
     }
 
-    /// <inheritdoc />
     public async Task<ChatMessage?> GetOrGenerateAssistantReplyStreamAsync(
         ChatSession session,
         ChatMessage userMessage,
@@ -125,7 +99,11 @@ public class ChatAiService : IChatAiService
 
     private async Task<ChatMessage?> FindExistingAssistantReply(string sessionId, string triggerMessageId)
     {
-        var existing = await _messageFactory.FindAsync(m => m.SessionId == sessionId && m.SenderId == AiAssistantConstants.AssistantUserId, null, 100);
+        var existing = await _context.Set<ChatMessage>()
+            .Where(m => m.SessionId == sessionId && m.SenderId == AiAssistantConstants.AssistantUserId)
+            .Take(100)
+            .ToListAsync();
+        
         return existing.FirstOrDefault(m => m.Metadata != null && m.Metadata.TryGetValue("triggerMessageId", out var id) && id?.ToString() == triggerMessageId);
     }
 
@@ -147,18 +125,8 @@ public class ChatAiService : IChatAiService
         var conversationMessages = await BuildAssistantConversationMessagesAsync(session, triggerMessage, cancellationToken);
         if (conversationMessages.Count == 0) return null;
 
-        // 尝试 MCP 直接调用（快速路径）
         var mcpResult = await _mcpService.DetectAndCallMcpToolsAsync(session, triggerMessage, triggerMessage.SenderId, cancellationToken);
         var toolResultContext = mcpResult?.Context;
-
-        if (!string.IsNullOrEmpty(toolResultContext))
-        {
-            _logger.LogInformation("[ChatAI] 已获取 MCP 数据: {Summary}", mcpResult?.ToolSummary);
-        }
-        else
-        {
-            _logger.LogInformation("[ChatAI] 未匹配到实时工具，进入常规回复模式。");
-        }
 
         var instructionBuilder = new StringBuilder();
         instructionBuilder.AppendLine(systemPrompt.Trim());
@@ -181,7 +149,6 @@ public class ChatAiService : IChatAiService
         {
             assistantMessage = await CreateAssistantMessageStreamingAsync(session, string.Empty, triggerMessage.SenderId, null, triggerMessage.Id, cancellationToken);
 
-            // 发送服务调用提示（关联到 assistantMessage.Id）
             if (!string.IsNullOrEmpty(toolResultContext) && onChunk != null)
             {
                 var tip = $">  **{mcpResult?.ToolSummary}**  \n\n";
@@ -219,7 +186,8 @@ public class ChatAiService : IChatAiService
             {
                 await UpdateStreamingMessageAsync(assistantMessage.Id, finalContent, cancellationToken);
                 await CompleteStreamingMessageAsync(assistantMessage.Id, finalContent, cancellationToken);
-                var completed = await _messageFactory.GetByIdAsync(assistantMessage.Id);
+                
+                var completed = await _context.Set<ChatMessage>().FirstOrDefaultAsync(m => m.Id == assistantMessage.Id);
                 if (completed != null)
                 {
                     if (onComplete != null) await onComplete(completed);
@@ -229,14 +197,21 @@ public class ChatAiService : IChatAiService
             }
             else if (assistantMessage != null)
             {
-                await _messageFactory.SoftDeleteAsync(assistantMessage.Id);
+                assistantMessage.IsDeleted = true;
+                await _context.SaveChangesAsync();
             }
             return null;
         }
-        catch (OperationCanceledException) { if (assistantMessage != null) await _messageFactory.SoftDeleteAsync(assistantMessage.Id); return null; }
-        catch (Exception ex) { _logger.LogError(ex, "流式生成异常"); if (assistantMessage != null) await _messageFactory.SoftDeleteAsync(assistantMessage.Id); return null; }
+        catch (Exception)
+        {
+            if (assistantMessage != null)
+            {
+                assistantMessage.IsDeleted = true;
+                await _context.SaveChangesAsync();
+            }
+            return null;
+        }
     }
-
 
     private async Task<XiaokeConfigDto?> GetXiaokeConfig()
     {
@@ -261,8 +236,13 @@ public class ChatAiService : IChatAiService
             else if (xiaokeConfig != null && !string.IsNullOrWhiteSpace(xiaokeConfig.SystemPrompt)) basePrompt = xiaokeConfig.SystemPrompt;
             else if (!string.IsNullOrWhiteSpace(_aiOptions.SystemPrompt)) basePrompt = _aiOptions.SystemPrompt;
 
-            // Load and append UserMemory as context
-            var memories = await _memoryFactory.FindAsync(m => m.UserId == userId, q => q.OrderByDescending(m => m.Importance).ThenByDescending(m => m.CreatedAt), 20);
+            var memories = await _context.Set<UserMemory>()
+                .Where(m => m.UserId == userId)
+                .OrderByDescending(m => m.Importance)
+                .ThenByDescending(m => m.CreatedAt)
+                .Take(20)
+                .ToListAsync();
+
             if (memories.Count > 0)
             {
                 var memoryContext = "\n\n=== 关于该用户的长期记忆 ===\n" + string.Join("\n", memories.Select(m => $"- [{m.Category}] {m.Content}"));
@@ -300,7 +280,12 @@ public class ChatAiService : IChatAiService
         var conversation = new List<OpenAIChatMessage>();
         try
         {
-            var history = await _messageFactory.FindAsync(m => m.SessionId == session.Id, q => q.OrderByDescending(m => m.CreatedAt), AssistantContextMessageLimit);
+            var history = await _context.Set<ChatMessage>()
+                .Where(m => m.SessionId == session.Id)
+                .OrderByDescending(m => m.CreatedAt)
+                .Take(AssistantContextMessageLimit)
+                .ToListAsync();
+            
             history.Reverse();
             foreach (var message in history)
             {
@@ -364,13 +349,15 @@ public class ChatAiService : IChatAiService
             UpdatedAt = DateTime.UtcNow,
             ClientMessageId = clientMsgId
         };
-        var saved = await _messageFactory.CreateAsync(message);
-        await _sessionService.UpdateSessionAfterMessageAsync(session, saved, AiAssistantConstants.AssistantUserId);
+        await _context.Set<ChatMessage>().AddAsync(message);
+        await _context.SaveChangesAsync();
+        
+        await _sessionService.UpdateSessionAfterMessageAsync(session, message, AiAssistantConstants.AssistantUserId);
 
-        var payload = new ChatMessageRealtimePayload { SessionId = session.Id, Message = saved };
+        var payload = new ChatMessageRealtimePayload { SessionId = session.Id, Message = message };
         await _broadcaster.BroadcastMessageAsync(session.Id, payload);
 
-        return saved;
+        return message;
     }
 
     private async Task<ChatMessage> CreateAssistantMessageStreamingAsync(ChatSession session, string initialContent, string recipientId, string? clientMsgId, string? triggerMsgId, CancellationToken cancellationToken)
@@ -391,60 +378,44 @@ public class ChatAiService : IChatAiService
         };
         if (!string.IsNullOrWhiteSpace(triggerMsgId)) message.Metadata["triggerMessageId"] = triggerMsgId;
 
-        var saved = await _messageFactory.CreateAsync(message);
-        await _sessionService.UpdateSessionAfterMessageAsync(session, saved, AiAssistantConstants.AssistantUserId);
+        await _context.Set<ChatMessage>().AddAsync(message);
+        await _context.SaveChangesAsync();
+        
+        await _sessionService.UpdateSessionAfterMessageAsync(session, message, AiAssistantConstants.AssistantUserId);
 
-        var payload = new ChatMessageRealtimePayload { SessionId = session.Id, Message = saved, BroadcastAtUtc = DateTime.UtcNow };
+        var payload = new ChatMessageRealtimePayload { SessionId = session.Id, Message = message, BroadcastAtUtc = DateTime.UtcNow };
         await _broadcaster.BroadcastMessageAsync(session.Id, payload);
-        return saved;
+        return message;
     }
 
     private async Task UpdateStreamingMessageAsync(string messageId, string newContent, CancellationToken cancellationToken)
     {
-        await _messageFactory.UpdateAsync(messageId, m => { m.Content = newContent; m.UpdatedAt = DateTime.UtcNow; });
+        var message = await _context.Set<ChatMessage>().FirstOrDefaultAsync(x => x.Id == messageId);
+        if (message != null)
+        {
+            message.Content = newContent;
+            message.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
     }
 
     private async Task CompleteStreamingMessageAsync(string messageId, string finalContent, CancellationToken cancellationToken)
     {
-        var msg = await _messageFactory.GetByIdAsync(messageId);
+        var msg = await _context.Set<ChatMessage>().FirstOrDefaultAsync(x => x.Id == messageId);
         if (msg == null) return;
+        
         var meta = msg.Metadata != null ? new Dictionary<string, object>(msg.Metadata) : new Dictionary<string, object>();
         meta.Remove("streaming");
-        await _messageFactory.UpdateAsync(messageId, m => { m.Content = finalContent; m.UpdatedAt = DateTime.UtcNow; m.Metadata = meta; });
+        
+        msg.Content = finalContent;
+        msg.UpdatedAt = DateTime.UtcNow;
+        msg.Metadata = meta;
+        await _context.SaveChangesAsync();
     }
 
-    /// <summary>
-    /// 检查是否应跳过自动助手回复。
-    /// </summary>
-    /// <param name="triggerMessage">触发回复的消息</param>
-    /// <returns>如果应跳过则返回 true</returns>
     public bool ShouldSkipAutomaticAssistantReply(ChatMessage triggerMessage)
     {
         if (triggerMessage.Metadata == null || !triggerMessage.Metadata.TryGetValue("assistantStreaming", out var value)) return false;
         return value switch { bool b => b, JsonElement j when j.ValueKind == JsonValueKind.True => true, _ => false };
-    }
-
-    private Dictionary<string, object> NormalizeMetadata(Dictionary<string, object>? raw)
-    {
-        if (raw == null) return new Dictionary<string, object>();
-        return raw.ToDictionary(k => k.Key, v => NormalizeMetadataValue(v.Value));
-    }
-
-    private object NormalizeMetadataValue(object value)
-    {
-        if (value is JsonElement json)
-        {
-            return json.ValueKind switch
-            {
-                JsonValueKind.String => json.GetString() ?? string.Empty,
-                JsonValueKind.Number => json.TryGetInt64(out var l) ? l : json.GetDouble(),
-                JsonValueKind.True => true,
-                JsonValueKind.False => false,
-                JsonValueKind.Object => json.EnumerateObject().ToDictionary(p => p.Name, p => NormalizeMetadataValue(p.Value)),
-                JsonValueKind.Array => json.EnumerateArray().Select(x => NormalizeMetadataValue(x)).ToList(),
-                _ => string.Empty
-            };
-        }
-        return value;
     }
 }

@@ -605,4 +605,3 @@ public class HandleEventRequest
     /// </summary>
     public string? Remarks { get; set; }
 }
-

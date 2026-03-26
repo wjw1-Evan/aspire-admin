@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Models;
@@ -10,26 +11,17 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class MenuAccessService : IMenuAccessService
 {
-    private readonly IDataFactory<AppUser> _userFactory;
-    private readonly IDataFactory<Role> _roleFactory;
-    private readonly IDataFactory<Menu> _menuFactory;
-    private readonly IDataFactory<UserCompany> _userCompanyFactory;
+    private readonly DbContext _context;
+
     private readonly ILogger<MenuAccessService> _logger;
 
     /// <summary>
     /// 初始化菜单访问权限服务
     /// </summary>
-    public MenuAccessService(
-        IDataFactory<AppUser> userFactory,
-        IDataFactory<Role> roleFactory,
-        IDataFactory<Menu> menuFactory,
-        IDataFactory<UserCompany> userCompanyFactory,
-        ILogger<MenuAccessService> logger)
-    {
-        _userFactory = userFactory;
-        _roleFactory = roleFactory;
-        _menuFactory = menuFactory;
-        _userCompanyFactory = userCompanyFactory;
+    public MenuAccessService(DbContext context,
+        ILogger<MenuAccessService> logger
+    ) {
+        _context = context;
         _logger = logger;
     }
 
@@ -38,6 +30,7 @@ public class MenuAccessService : IMenuAccessService
     /// </summary>
     public async Task<bool> HasMenuAccessAsync(string menuName, string userId)
     {
+        
         if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(menuName))
         {
             return false;
@@ -70,7 +63,7 @@ public class MenuAccessService : IMenuAccessService
         try
         {
             // 获取用户信息
-            var user = await _userFactory.GetByIdAsync(userId);
+            var user = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == userId);
             if (user == null || !user.IsActive)
             {
                 return new List<string>();
@@ -87,10 +80,10 @@ public class MenuAccessService : IMenuAccessService
             _logger.LogDebug("获取用户 {UserId} 在企业 {CompanyId} 的菜单权限", userId, companyId);
 
             // 获取用户在企业中的关联关系
-            var userCompanies = await _userCompanyFactory.FindAsync(uc => 
+            var userCompanies = await _context.Set<UserCompany>().Where(uc => 
                 uc.UserId == userId && 
                 uc.CompanyId == companyId && 
-                uc.Status == "active");
+                uc.Status == "active").ToListAsync();
             var userCompany = userCompanies.FirstOrDefault();
 
             if (userCompany == null)
@@ -104,10 +97,10 @@ public class MenuAccessService : IMenuAccessService
             if (userCompany.RoleIds != null && userCompany.RoleIds.Any())
             {
                 // 获取用户的所有角色
-                var roles = await _roleFactory.FindWithoutTenantFilterAsync(r => 
+                var roles = await _context.Set<Role>().IgnoreQueryFilters().Where(x => !x.IsDeleted).Where(r => 
                     userCompany.RoleIds.Contains(r.Id) && 
                     r.CompanyId == companyId && 
-                    r.IsActive == true);
+                    r.IsActive == true).ToListAsync();
 
                 _logger.LogDebug("用户 {UserId} 在企业 {CompanyId} 拥有 {RoleCount} 个角色",
                     userId, companyId, roles.Count);
@@ -134,9 +127,9 @@ public class MenuAccessService : IMenuAccessService
             }
 
             // 获取菜单详情
-            var menus = await _menuFactory.FindAsync(m => 
+            var menus = await _context.Set<Menu>().Where(m => 
                 uniqueMenuIds.Contains(m.Id) && 
-                m.IsEnabled == true);
+                m.IsEnabled == true).ToListAsync();
 
             // 返回菜单名称列表（小写）
             var menuNames = menus.Select(m => m.Name.ToLower()).Distinct().ToList();

@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Workflow;
@@ -11,23 +12,19 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class WorkflowAnalyticsService : IWorkflowAnalyticsService
 {
-    private readonly IDataFactory<WorkflowDefinition> _workflowFactory;
-    private readonly IDataFactory<WorkflowInstance> _instanceFactory;
+    private readonly DbContext _context;
+
     private readonly ILogger<WorkflowAnalyticsService> _logger;
 
     /// <summary>
     /// 初始化工作流分析服务
     /// </summary>
-    /// <param name="workflowFactory">工作流定义数据工厂</param>
-    /// <param name="instanceFactory">工作流实例数据工厂</param>
+
     /// <param name="logger">日志记录器</param>
-    public WorkflowAnalyticsService(
-        IDataFactory<WorkflowDefinition> workflowFactory,
-        IDataFactory<WorkflowInstance> instanceFactory,
-        ILogger<WorkflowAnalyticsService> logger)
-    {
-        _workflowFactory = workflowFactory;
-        _instanceFactory = instanceFactory;
+    public WorkflowAnalyticsService(DbContext context,
+        ILogger<WorkflowAnalyticsService> logger
+    ) {
+        _context = context;
         _logger = logger;
     }
 
@@ -36,13 +33,18 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
     /// </summary>
     public async Task UpdateUsageStatisticsAsync(string workflowId)
     {
+        
         try
         {
-            await _workflowFactory.UpdateAsync(workflowId, entity =>
-            {
-                entity.Analytics.UsageCount++;
-                entity.Analytics.LastUsedAt = DateTime.UtcNow;
-            });
+            var __entity = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
+        if (__entity != null)
+        {
+    
+                __entity.Analytics.UsageCount++;
+                __entity.Analytics.LastUsedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+
 
             _logger.LogDebug("工作流使用统计已更新: WorkflowId={WorkflowId}", workflowId);
         }
@@ -59,7 +61,7 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
     {
         try
         {
-            var workflow = await _workflowFactory.GetByIdAsync(workflowId);
+            var workflow = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
             if (workflow == null) return;
 
             var analytics = workflow.Analytics;
@@ -72,11 +74,15 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
             // 计算完成率（假设所有使用都会完成，实际应该基于实际完成数据）
             var completionRate = Math.Min(100.0, (totalCompletions * 100.0) / Math.Max(analytics.UsageCount, 1));
 
-            await _workflowFactory.UpdateAsync(workflowId, entity =>
-            {
-                entity.Analytics.AverageCompletionTimeHours = newAverageTime;
-                entity.Analytics.CompletionRate = completionRate;
-            });
+            var __entity = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
+        if (__entity != null)
+        {
+    
+                __entity.Analytics.AverageCompletionTimeHours = newAverageTime;
+                __entity.Analytics.CompletionRate = completionRate;
+            await _context.SaveChangesAsync();
+        }
+
 
             // 更新趋势数据
             await UpdateTrendDataAsync(workflowId, completionTimeHours);
@@ -97,7 +103,7 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
     {
         try
         {
-            var workflow = await _workflowFactory.GetByIdAsync(workflowId);
+            var workflow = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
             if (workflow == null) return 0.0;
 
             var analytics = workflow.Analytics;
@@ -124,10 +130,14 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
             score = usageScore + completionScore + efficiencyScore;
 
             // 更新性能评分
-            await _workflowFactory.UpdateAsync(workflowId, entity =>
-            {
-                entity.Analytics.PerformanceScore = score;
-            });
+            var __entity = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
+        if (__entity != null)
+        {
+    
+                __entity.Analytics.PerformanceScore = score;
+            await _context.SaveChangesAsync();
+        }
+
 
             return score;
         }
@@ -147,7 +157,7 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
 
         try
         {
-            var workflow = await _workflowFactory.GetByIdAsync(workflowId);
+            var workflow = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
             if (workflow == null) return issues;
 
             var analytics = workflow.Analytics;
@@ -226,10 +236,14 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
             }
 
             // 更新性能问题列表
-            await _workflowFactory.UpdateAsync(workflowId, entity =>
-            {
-                entity.Analytics.PerformanceIssues = issues;
-            });
+            var __entity = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
+        if (__entity != null)
+        {
+    
+                __entity.Analytics.PerformanceIssues = issues;
+            await _context.SaveChangesAsync();
+        }
+
         }
         catch (Exception ex)
         {
@@ -246,7 +260,7 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
     {
         try
         {
-            var workflow = await _workflowFactory.GetByIdAsync(workflowId);
+            var workflow = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
             return workflow?.Analytics;
         }
         catch (Exception ex)
@@ -263,7 +277,7 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
     {
         try
         {
-            var workflow = await _workflowFactory.GetByIdAsync(workflowId);
+            var workflow = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
             if (workflow == null) return new List<TrendDataPoint>();
 
             return workflow.Analytics.TrendData
@@ -289,7 +303,7 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
 
             Expression<Func<WorkflowDefinition, bool>> filter = w => w.IsDeleted != true;
 
-            var workflows = await _workflowFactory.FindAsync(filter);
+            var workflows = await _context.Set<WorkflowDefinition>().Where(filter).ToListAsync();
 
             foreach (var workflow in workflows)
             {
@@ -326,7 +340,7 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
         {
             Expression<Func<WorkflowDefinition, bool>> filter = w => w.IsDeleted != true && w.Analytics.UsageCount > 0;
 
-            var workflows = await _workflowFactory.FindAsync(filter);
+            var workflows = await _context.Set<WorkflowDefinition>().Where(filter).ToListAsync();
 
             var sortedWorkflows = workflows
                 .Where(w => w.Analytics.UsageCount > 0)
@@ -352,7 +366,7 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
         {
             Expression<Func<WorkflowDefinition, bool>> filter = w => w.IsDeleted != true && w.Analytics.PerformanceScore > 0;
 
-            var workflows = await _workflowFactory.FindAsync(filter);
+            var workflows = await _context.Set<WorkflowDefinition>().Where(filter).ToListAsync();
 
             var sortedWorkflows = workflows
                 .Where(w => w.Analytics.PerformanceScore > 0)
@@ -379,7 +393,7 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
         try
         {
             var today = DateTime.UtcNow.Date;
-            var workflow = await _workflowFactory.GetByIdAsync(workflowId);
+            var workflow = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
             if (workflow == null) return;
 
             var trendData = workflow.Analytics.TrendData;
@@ -408,10 +422,14 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
             var cutoffDate = DateTime.UtcNow.AddDays(-30).Date;
             trendData.RemoveAll(t => t.Date < cutoffDate);
 
-            await _workflowFactory.UpdateAsync(workflowId, entity =>
-            {
-                entity.Analytics.TrendData = trendData;
-            });
+            var __entity = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
+        if (__entity != null)
+        {
+    
+                __entity.Analytics.TrendData = trendData;
+            await _context.SaveChangesAsync();
+        }
+
         }
         catch (Exception ex)
         {

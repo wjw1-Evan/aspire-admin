@@ -10,19 +10,19 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class XiaokeConfigService : IXiaokeConfigService
 {
-    private readonly IDataFactory<XiaokeConfig> _configFactory;
+    private readonly DbContext _context;
+
     private readonly ITenantContext _tenantContext;
 
     /// <summary>
     /// 初始化晓可配置服务
     /// </summary>
-    /// <param name="configFactory">配置数据库工厂</param>
     /// <param name="tenantContext">租户上下文</param>
-    public XiaokeConfigService(
-        IDataFactory<XiaokeConfig> configFactory,
-        ITenantContext tenantContext)
-    {
-        _configFactory = configFactory ?? throw new ArgumentNullException(nameof(configFactory));
+    public XiaokeConfigService(DbContext context,
+        ITenantContext tenantContext
+    ) {
+        _context = context;
+        
         _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
     }
 
@@ -74,11 +74,14 @@ public class XiaokeConfigService : IXiaokeConfigService
                 : c => (filter.Compile()(c) && c.IsEnabled == isEnabledFilter);
         }
 
-        var total = await _configFactory.CountAsync(filter);
+        IQueryable<XiaokeConfig> query = _context.Set<XiaokeConfig>();
+        if (filter != null)
+        {
+            query = query.Where(filter);
+        }
 
-        var orderBy = (IQueryable<XiaokeConfig> query) => query.OrderByDescending(c => c.UpdatedAt);
-
-        var (configs, _) = await _configFactory.FindPagedAsync(filter, orderBy, queryParams.Current, queryParams.PageSize);
+        var total = await query.LongCountAsync();
+        var configs = await query.OrderByDescending(c => c.UpdatedAt).Skip((queryParams.Current - 1) * queryParams.PageSize).Take(queryParams.PageSize).ToListAsync();
 
         if (!string.IsNullOrEmpty(queryParams.Sorter))
         {
@@ -98,7 +101,7 @@ public class XiaokeConfigService : IXiaokeConfigService
     /// <inheritdoc/>
     public async Task<XiaokeConfigDto?> GetConfigByIdAsync(string id)
     {
-        var config = await _configFactory.GetByIdAsync(id);
+        var config = await _context.Set<XiaokeConfig>().FirstOrDefaultAsync(x => x.Id == id);
         return config != null ? ToDto(config) : null;
     }
 
@@ -106,7 +109,7 @@ public class XiaokeConfigService : IXiaokeConfigService
     public async Task<XiaokeConfigDto?> GetDefaultConfigAsync()
     {
         Expression<Func<XiaokeConfig, bool>> filter = c => c.IsDefault == true;
-        var configs = await _configFactory.FindAsync(filter, limit: 1);
+        var configs = await _context.Set<XiaokeConfig>().Where(filter).Take(1).ToListAsync();
         var defaultConfig = configs.FirstOrDefault();
         return defaultConfig != null ? ToDto(defaultConfig) : null;
     }
@@ -136,9 +139,10 @@ public class XiaokeConfigService : IXiaokeConfigService
             IsDefault = request.IsDefault
         };
 
-        await _configFactory.CreateAsync(config);
+        await _context.Set<XiaokeConfig>().AddAsync(config);
+        await _context.SaveChangesAsync();
 
-        var createdConfig = await _configFactory.GetByIdAsync(config.Id);
+        var createdConfig = await _context.Set<XiaokeConfig>().FirstOrDefaultAsync(x => x.Id == config.Id);
         if (createdConfig == null)
         {
             throw new InvalidOperationException("创建配置后无法获取配置信息");
@@ -150,7 +154,7 @@ public class XiaokeConfigService : IXiaokeConfigService
     /// <inheritdoc/>
     public async Task<XiaokeConfigDto?> UpdateConfigAsync(string id, UpdateXiaokeConfigRequest request)
     {
-        var existingConfig = await _configFactory.GetByIdAsync(id);
+        var existingConfig = await _context.Set<XiaokeConfig>().FirstOrDefaultAsync(x => x.Id == id);
         if (existingConfig == null)
         {
             throw new KeyNotFoundException($"配置 {id} 不存在");
@@ -185,26 +189,30 @@ public class XiaokeConfigService : IXiaokeConfigService
             existingConfig.IsDefault = request.IsDefault.Value;
         }
 
-        await _configFactory.UpdateAsync(id, c =>
+        var __entity = await _context.Set<XiaokeConfig>().FirstOrDefaultAsync(x => x.Id == id);
+        if (__entity != null)
         {
-            if (!string.IsNullOrEmpty(request.Name)) c.Name = request.Name;
-            if (!string.IsNullOrEmpty(request.Model)) c.Model = request.Model;
-            if (request.SystemPrompt != null) c.SystemPrompt = request.SystemPrompt;
-            if (request.Temperature.HasValue) c.Temperature = request.Temperature.Value;
-            if (request.MaxTokens.HasValue) c.MaxTokens = request.MaxTokens.Value;
-            if (request.TopP.HasValue) c.TopP = request.TopP.Value;
-            if (request.FrequencyPenalty.HasValue) c.FrequencyPenalty = request.FrequencyPenalty.Value;
-            if (request.PresencePenalty.HasValue) c.PresencePenalty = request.PresencePenalty.Value;
-            if (request.IsEnabled.HasValue) c.IsEnabled = request.IsEnabled.Value;
+    
+            if (!string.IsNullOrEmpty(request.Name)) __entity.Name = request.Name;
+            if (!string.IsNullOrEmpty(request.Model)) __entity.Model = request.Model;
+            if (request.SystemPrompt != null) __entity.SystemPrompt = request.SystemPrompt;
+            if (request.Temperature.HasValue) __entity.Temperature = request.Temperature.Value;
+            if (request.MaxTokens.HasValue) __entity.MaxTokens = request.MaxTokens.Value;
+            if (request.TopP.HasValue) __entity.TopP = request.TopP.Value;
+            if (request.FrequencyPenalty.HasValue) __entity.FrequencyPenalty = request.FrequencyPenalty.Value;
+            if (request.PresencePenalty.HasValue) __entity.PresencePenalty = request.PresencePenalty.Value;
+            if (request.IsEnabled.HasValue) __entity.IsEnabled = request.IsEnabled.Value;
             if (request.IsDefault.HasValue && request.IsDefault.Value)
             {
-                c.IsDefault = true;
+                __entity.IsDefault = true;
             }
             else if (request.IsDefault.HasValue)
             {
-                c.IsDefault = false;
+                __entity.IsDefault = false;
             }
-        });
+            await _context.SaveChangesAsync();
+        }
+
 
         return await GetConfigByIdAsync(id);
     }
@@ -212,7 +220,13 @@ public class XiaokeConfigService : IXiaokeConfigService
     /// <inheritdoc/>
     public async Task<bool> DeleteConfigAsync(string id)
     {
-        return await _configFactory.SoftDeleteAsync(id);
+        {
+            var __sd = await _context.Set<XiaokeConfig>().FirstOrDefaultAsync(x => x.Id == id);
+            if (__sd == null) return false;
+            __sd.IsDeleted = true;
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 
     /// <inheritdoc/>
@@ -220,9 +234,14 @@ public class XiaokeConfigService : IXiaokeConfigService
     {
         await UnsetOtherDefaultConfigsAsync(id);
 
-        await _configFactory.UpdateAsync(id, c => c.IsDefault = true);
+        var __configToUpdate = await _context.Set<XiaokeConfig>().FirstOrDefaultAsync(x => x.Id == id);
+        if (__configToUpdate != null)
+        {
+            __configToUpdate.IsDefault = true;
+            await _context.SaveChangesAsync();
+        }
 
-        return await _configFactory.ExistsAsync(id);
+        return await _context.Set<XiaokeConfig>().AnyAsync(x => x.Id == id);
     }
 
     private async Task UnsetOtherDefaultConfigsAsync(string? excludeId = null)
@@ -234,7 +253,7 @@ public class XiaokeConfigService : IXiaokeConfigService
             filter = c => c.IsDefault == true && c.Id != excludeId;
         }
 
-        var defaultConfigs = await _configFactory.FindAsync(filter);
+        var defaultConfigs = await _context.Set<XiaokeConfig>().Where(filter).ToListAsync();
 
         if (defaultConfigs.Any())
         {
@@ -242,9 +261,10 @@ public class XiaokeConfigService : IXiaokeConfigService
             {
                 if (config.Id != null)
                 {
-                    await _configFactory.UpdateAsync(config.Id, c => c.IsDefault = false);
+                    config.IsDefault = false;
                 }
             }
+            await _context.SaveChangesAsync();
         }
     }
 }

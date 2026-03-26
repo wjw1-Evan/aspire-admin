@@ -1,42 +1,46 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
-using Platform.ServiceDefaults.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Platform.ApiService.Services;
 
 /// <summary>
 /// 用户组织架构服务实现
 /// </summary>
-/// <param name="organizationFactory">组织架构数据库工厂</param>
-/// <param name="userOrgFactory">用户组织关联数据库工厂</param>
-public class UserOrganizationService(
-    IDataFactory<OrganizationUnit> organizationFactory,
-    IDataFactory<UserOrganization> userOrgFactory) : IUserOrganizationService
+public class UserOrganizationService : IUserOrganizationService
 {
-    private readonly IDataFactory<OrganizationUnit> _organizationFactory = organizationFactory;
-    private readonly IDataFactory<UserOrganization> _userOrgFactory = userOrgFactory;
+    private readonly DbContext _context;
+
+    public UserOrganizationService(DbContext context)
+    {
+        _context = context;
+    }
 
     /// <inheritdoc/>
     public async Task<Dictionary<string, List<UserOrganizationInfo>>> GetUserOrganizationMapAsync(List<string> userIds)
     {
         var result = new Dictionary<string, List<UserOrganizationInfo>>();
-        if (!userIds.Any()) return result;
+        if (userIds == null || !userIds.Any()) return result;
 
-        var mappings = await _userOrgFactory.FindAsync(
-            m => userIds.Contains(m.UserId));
+        var mappings = await _context.Set<UserOrganization>()
+            .Where(m => userIds.Contains(m.UserId))
+            .ToListAsync();
+        
         if (mappings == null || !mappings.Any()) return result;
 
         var organizationIds = mappings.Select(m => m.OrganizationUnitId).Distinct().ToList();
         if (!organizationIds.Any()) return result;
 
-        var orgUnits = await _organizationFactory.FindAsync(
-            o => organizationIds.Contains(o.Id));
-        
+        var orgUnits = await _context.Set<OrganizationUnit>()
+            .Where(o => organizationIds.Contains(o.Id))
+            .ToListAsync();
         
         var orgMap = orgUnits
-            .Where(o => !string.IsNullOrEmpty(o.Id))
-            .ToDictionary(o => o.Id, o => o);
+            .Where(o => o.Id != null)
+            .ToDictionary(o => o.Id!, o => o);
 
         string BuildFullPath(string? orgId)
         {
@@ -63,6 +67,8 @@ public class UserOrganizationService(
 
         foreach (var mapping in mappings)
         {
+            if (mapping.OrganizationUnitId == null) continue;
+
             var info = new UserOrganizationInfo
             {
                 OrganizationUnitId = mapping.OrganizationUnitId,

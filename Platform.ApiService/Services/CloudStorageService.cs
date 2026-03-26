@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using MongoDB.Bson;
 using Microsoft.AspNetCore.Http;
 using Platform.ApiService.Models;
 using Platform.ApiService.Validators;
@@ -18,17 +17,8 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public enum FileConflictResolution
 {
-    /// <summary>
-    /// 覆盖现有文件
-    /// </summary>
     Overwrite,
-    /// <summary>
-    /// 重命名新文件（添加序号）
-    /// </summary>
     Rename,
-    /// <summary>
-    /// 跳过上传
-    /// </summary>
     Skip
 }
 
@@ -37,32 +27,20 @@ public enum FileConflictResolution
 /// </summary>
 public class CloudStorageService : ICloudStorageService
 {
-    private readonly IDataFactory<FileItem> _fileItemFactory;
-    private readonly IDataFactory<FileVersion> _fileVersionFactory;
+    private readonly DbContext _context;
     private readonly IFileStorageFactory _fileStorageFactory;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<CloudStorageService> _logger;
     private readonly IStorageQuotaService _storageQuotaService;
 
-    /// <summary>
-    /// 初始化云存储服务
-    /// </summary>
-    /// <param name="fileItemFactory">文件项数据库工厂</param>
-    /// <param name="fileVersionFactory">文件版本数据库工厂</param>
-    /// <param name="storageQuotaService">存储配额服务</param>
-    /// <param name="fileStorageFactory">文件存储工厂</param>
-    /// <param name="tenantContext">租户上下文</param>
-    /// <param name="logger">日志记录器</param>
     public CloudStorageService(
-        IDataFactory<FileItem> fileItemFactory,
-        IDataFactory<FileVersion> fileVersionFactory,
+        DbContext context,
         IStorageQuotaService storageQuotaService,
         IFileStorageFactory fileStorageFactory,
         ITenantContext tenantContext,
         ILogger<CloudStorageService> logger)
     {
-        _fileItemFactory = fileItemFactory;
-        _fileVersionFactory = fileVersionFactory;
+        _context = context;
         _storageQuotaService = storageQuotaService;
         _fileStorageFactory = fileStorageFactory;
         _tenantContext = tenantContext;
@@ -73,15 +51,15 @@ public class CloudStorageService : ICloudStorageService
     public Task<bool> SupportsBatchUploadAsync() => Task.FromResult(true);
     /// <inheritdoc/>
     public Task<bool> SupportsResumeUploadAsync() => Task.FromResult(false);
+
     /// <inheritdoc/>
     public async Task<RecycleStatistics> GetRecycleStatisticsAsync()
     {
-        var recycleItems = await _fileItemFactory.FindAsync(x => x.Status == FileStatus.InRecycleBin);
+        var recycleItems = await _context.Set<FileItem>().Where(x => x.Status == FileStatus.InRecycleBin).ToListAsync();
 
         var totalItems = recycleItems.Count;
         var totalSize = recycleItems.Where(f => f.Type == FileItemType.File).Sum(f => f.Size);
 
-        // Group by date (yyyy-MM-dd)
         var itemsByDate = recycleItems
             .Where(x => x.DeletedAt.HasValue)
             .GroupBy(x => x.DeletedAt!.Value.ToString("yyyy-MM-dd"))
@@ -101,6 +79,7 @@ public class CloudStorageService : ICloudStorageService
             ItemsByDate = itemsByDate
         };
     }
+
     /// <inheritdoc/>
     public async Task<BatchOperationResult> BatchDeleteAsync(List<string> ids)
     {
@@ -109,7 +88,12 @@ public class CloudStorageService : ICloudStorageService
         {
             try
             {
-                await _fileItemFactory.SoftDeleteAsync(id);
+                var item = await _context.Set<FileItem>().FirstOrDefaultAsync(x => x.Id == id);
+                if (item != null)
+                {
+                    _context.Set<FileItem>().Remove(item);
+                    await _context.SaveChangesAsync();
+                }
                 result.SuccessIds.Add(id);
                 result.SuccessCount++;
             }
@@ -122,6 +106,7 @@ public class CloudStorageService : ICloudStorageService
         result.EndTime = DateTime.UtcNow;
         return result;
     }
+
     /// <inheritdoc/>
     public async Task<BatchOperationResult> BatchMoveAsync(List<string> ids, string targetParentId)
     {
@@ -143,6 +128,7 @@ public class CloudStorageService : ICloudStorageService
         result.EndTime = DateTime.UtcNow;
         return result;
     }
+
     /// <inheritdoc/>
     public async Task<BatchOperationResult> BatchCopyAsync(List<string> ids, string targetParentId)
     {
@@ -164,14 +150,13 @@ public class CloudStorageService : ICloudStorageService
         result.EndTime = DateTime.UtcNow;
         return result;
     }
+
     /// <inheritdoc/>
     public async Task<Stream> DownloadFolderAsZipAsync(string folderId)
     {
         var folder = await GetFileItemAsync(folderId);
-        if (folder == null)
-            throw new ArgumentException("文件夹不存在", nameof(folderId));
-        if (folder.Type != FileItemType.Folder)
-            throw new ArgumentException("指定的ID不是文件夹", nameof(folderId));
+        if (folder == null || folder.Type != FileItemType.Folder)
+            throw new ArgumentException("文件夹不存在或无效", nameof(folderId));
 
         var memoryStream = new MemoryStream();
         using (var archive = new System.IO.Compression.ZipArchive(memoryStream, System.IO.Compression.ZipArchiveMode.Create, true))
@@ -185,8 +170,7 @@ public class CloudStorageService : ICloudStorageService
 
     private async Task AddFolderToZipAsync(System.IO.Compression.ZipArchive archive, FileItem folder, string relativePath)
     {
-        // 获取该文件夹下的所有直接子项
-        var children = await _fileItemFactory.FindAsync(x => x.ParentId == folder.Id && x.Status == FileStatus.Active);
+        var children = await _context.Set<FileItem>().Where(x => x.ParentId == folder.Id && x.Status == FileStatus.Active).ToListAsync();
 
         foreach (var child in children)
         {
@@ -194,21 +178,14 @@ public class CloudStorageService : ICloudStorageService
 
             if (child.Type == FileItemType.Folder)
             {
-                // 递归处理子文件夹
-                // 创建一个空目录项（如果在 zip 中需要显式空目录）
-                // archive.CreateEntry(childPath + "/"); 
                 await AddFolderToZipAsync(archive, child, childPath);
             }
-            else
+            else if (!string.IsNullOrEmpty(child.GridFSId))
             {
-                // 处理文件
-                if (!string.IsNullOrEmpty(child.GridFSId))
-                {
-                    var entry = archive.CreateEntry(childPath);
-                    using var entryStream = entry.Open();
-                    using var fileStream = await _fileStorageFactory.GetDownloadStreamAsync(child.GridFSId, "cloud_storage_files");
-                    await fileStream.CopyToAsync(entryStream);
-                }
+                var entry = archive.CreateEntry(childPath);
+                using var entryStream = entry.Open();
+                using var fileStream = await _fileStorageFactory.GetDownloadStreamAsync(child.GridFSId, "cloud_storage_files");
+                await fileStream.CopyToAsync(entryStream);
             }
         }
     }
@@ -217,48 +194,33 @@ public class CloudStorageService : ICloudStorageService
     public async Task<FileItem> CopyFileItemAsync(string id, string newParentId, string? newName = null)
     {
         var sourceItem = await GetFileItemAsync(id);
-        if (sourceItem == null)
-            throw new ArgumentException("源文件项不存在", nameof(id));
+        if (sourceItem == null) throw new ArgumentException("源文件项不存在", nameof(id));
 
-        // 验证目标父文件夹
         string targetPathPrefix = "";
         if (!string.IsNullOrEmpty(newParentId))
         {
             var targetParent = await GetFileItemAsync(newParentId);
-            if (targetParent == null)
-                throw new ArgumentException("目标文件夹不存在", nameof(newParentId));
-            if (targetParent.Type != FileItemType.Folder)
-                throw new ArgumentException("目标必须是文件夹", nameof(newParentId));
+            if (targetParent == null || targetParent.Type != FileItemType.Folder)
+                throw new ArgumentException("目标文件夹不存在或无效", nameof(newParentId));
 
-            // 防止将文件夹复制到其自身或子文件夹中
             if (sourceItem.Type == FileItemType.Folder)
             {
-                if (sourceItem.Id == newParentId)
-                    throw new InvalidOperationException("不能将文件夹复制到自身");
-
-                var isDescendant = await IsDescendantFolderAsync(sourceItem.Id, newParentId);
-                if (isDescendant)
-                    throw new InvalidOperationException("不能将文件夹复制到其子文件夹中");
+                if (sourceItem.Id == newParentId || await IsDescendantFolderAsync(sourceItem.Id, newParentId))
+                    throw new InvalidOperationException("不能将文件夹复制到自身或其子文件夹中");
             }
             targetPathPrefix = targetParent.Path;
         }
 
         var targetName = !string.IsNullOrWhiteSpace(newName) ? newName : sourceItem.Name;
-
-        // 检查重名
-        var existingItems = await _fileItemFactory.FindAsync(
-            x => x.Name == targetName && x.ParentId == newParentId && x.Type == sourceItem.Type && x.Status == FileStatus.Active,
-            limit: 1);
-
-        if (existingItems.Count > 0)
-            throw new InvalidOperationException($"目标位置已存在同名{(sourceItem.Type == FileItemType.File ? "文件" : "文件夹")}: {targetName}");
+        var exists = await _context.Set<FileItem>().AnyAsync(x => x.Name == targetName && x.ParentId == newParentId && x.Type == sourceItem.Type && x.Status == FileStatus.Active);
+        if (exists) throw new InvalidOperationException($"目标位置已存在同名{(sourceItem.Type == FileItemType.File ? "文件" : "文件夹")}");
 
         return await CopyItemRecursiveAsync(sourceItem, newParentId, targetName, targetPathPrefix);
     }
 
     private async Task<FileItem> CopyItemRecursiveAsync(FileItem source, string parentId, string name, string parentPath)
     {
-        var newPath = string.IsNullOrEmpty(parentPath) ? name : $"{parentPath}/{name}";
+        var newPath = string.IsNullOrEmpty(parentPath) ? $"/{name}" : $"{parentPath}/{name}";
 
         var newItem = new FileItem
         {
@@ -268,27 +230,25 @@ public class CloudStorageService : ICloudStorageService
             Type = source.Type,
             Size = source.Size,
             MimeType = source.MimeType,
-            GridFSId = source.GridFSId, // 文件内容引用同一个 GridFS ID
+            GridFSId = source.GridFSId,
             Hash = source.Hash,
             ThumbnailGridFSId = source.ThumbnailGridFSId,
-            Metadata = source.Metadata != null ? new Dictionary<string, object>(source.Metadata) : [],
+            Metadata = source.Metadata != null ? new Dictionary<string, object>(source.Metadata) : new Dictionary<string, object>(),
             Status = FileStatus.Active,
             LastAccessedAt = DateTime.UtcNow,
             DownloadCount = 0
-            // Removed non-existent properties: CreatedByName, IsStarred
         };
 
-        await _fileItemFactory.CreateAsync(newItem);
+        await _context.Set<FileItem>().AddAsync(newItem);
+        await _context.SaveChangesAsync();
 
-        // 如果是文件，增加空间使用量
         if (newItem.Type == FileItemType.File)
         {
             await UpdateStorageUsageAsync(newItem.Size);
         }
-        // 如果是文件夹，递归复制子项
         else if (newItem.Type == FileItemType.Folder)
         {
-            var children = await _fileItemFactory.FindAsync(x => x.ParentId == source.Id && x.Status == FileStatus.Active);
+            var children = await _context.Set<FileItem>().Where(x => x.ParentId == source.Id && x.Status == FileStatus.Active).ToListAsync();
             foreach (var child in children)
             {
                 await CopyItemRecursiveAsync(child, newItem.Id!, child.Name, newItem.Path);
@@ -301,119 +261,80 @@ public class CloudStorageService : ICloudStorageService
     /// <inheritdoc/>
     public async Task<FileItem> CreateFolderAsync(string name, string parentId)
     {
-        if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("文件夹名称不能为空", nameof(name));
+        if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("文件夹名称不能为空", nameof(name));
 
-        var normalizedParentId = string.IsNullOrWhiteSpace(parentId) ? null : parentId;
-
+        var normalizedParentId = string.IsNullOrWhiteSpace(parentId) ? string.Empty : parentId;
         if (!string.IsNullOrEmpty(normalizedParentId))
         {
-            var parentFolder = await GetFileItemAsync(normalizedParentId);
-            if (parentFolder == null)
-                throw new ArgumentException("父文件夹不存在", nameof(parentId));
-            if (parentFolder.Type != FileItemType.Folder)
-                throw new ArgumentException("父项必须是文件夹", nameof(parentId));
+            var parent = await GetFileItemAsync(normalizedParentId);
+            if (parent == null || parent.Type != FileItemType.Folder) throw new ArgumentException("父文件夹不存在或无效");
         }
 
-        var existingFolders = await _fileItemFactory.FindAsync(
-            x => x.Name == name && x.ParentId == normalizedParentId && x.Type == FileItemType.Folder && x.Status == FileStatus.Active,
-            limit: 1);
+        var exists = await _context.Set<FileItem>().AnyAsync(x => x.Name == name && x.ParentId == normalizedParentId && x.Type == FileItemType.Folder && x.Status == FileStatus.Active);
+        if (exists) throw new InvalidOperationException($"文件夹 '{name}' 已存在");
 
-        if (existingFolders.Count > 0)
-            throw new InvalidOperationException($"文件夹 '{name}' 已存在");
-
-        var path = await BuildFilePathAsync(name, normalizedParentId ?? string.Empty);
-
+        var path = await BuildFilePathAsync(name, normalizedParentId);
         var folder = new FileItem
         {
             Name = name,
             Path = path,
-            ParentId = normalizedParentId ?? string.Empty,
+            ParentId = normalizedParentId,
             Type = FileItemType.Folder,
             Status = FileStatus.Active,
             Size = 0,
             MimeType = "application/x-directory"
         };
 
-        await _fileItemFactory.CreateAsync(folder);
-        _logger.LogInformation("Created folder: {FolderName} at path: {Path}", name, path);
+        await _context.Set<FileItem>().AddAsync(folder);
+        await _context.SaveChangesAsync();
         return folder;
     }
 
     /// <inheritdoc/>
     public async Task<FileItem> UploadFileAsync(IFormFile file, string parentId, bool overwrite = false)
     {
-        if (file == null || file.Length == 0)
-            throw new ArgumentException("文件不能为空", nameof(file));
-
+        if (file == null || file.Length == 0) throw new ArgumentException("文件不能为空", nameof(file));
         var fileName = Path.GetFileName(file.FileName);
-        if (string.IsNullOrWhiteSpace(fileName))
-            throw new ArgumentException("文件名不能为空");
+        if (string.IsNullOrWhiteSpace(fileName)) throw new ArgumentException("文件名不能为空");
 
         var (isValid, errorMessage) = FileValidator.ValidateFile(file);
-        if (!isValid)
-            throw new ArgumentException(errorMessage!);
+        if (!isValid) throw new ArgumentException(errorMessage!);
 
-        var normalizedParentId = string.IsNullOrWhiteSpace(parentId) ? null : parentId;
-
-        if (normalizedParentId != null)
+        var normalizedParentId = string.IsNullOrWhiteSpace(parentId) ? string.Empty : parentId;
+        if (!string.IsNullOrEmpty(normalizedParentId))
         {
-            var parentFolder = await GetFileItemAsync(normalizedParentId);
-            if (parentFolder == null)
-                throw new ArgumentException("父文件夹不存在", nameof(parentId));
-            if (parentFolder.Type != FileItemType.Folder)
-                throw new ArgumentException("父项必须是文件夹", nameof(parentId));
+            var parent = await GetFileItemAsync(normalizedParentId);
+            if (parent == null || parent.Type != FileItemType.Folder) throw new ArgumentException("父文件夹不存在或无效");
         }
 
         await CheckStorageQuotaAsync(file.Length);
 
         string fileHash;
-        using (var fileStream = file.OpenReadStream())
-        {
-            fileHash = await ComputeFileHashAsync(fileStream);
-        }
+        using (var stream = file.OpenReadStream()) fileHash = await ComputeFileHashAsync(stream);
 
-        Expression<Func<FileItem, bool>> baseFilter;
-        if (normalizedParentId == null)
-            baseFilter = x => x.Name == fileName && x.Type == FileItemType.File && x.Status == FileStatus.Active && x.IsDeleted != true && (x.ParentId == null || x.ParentId == string.Empty);
-        else
-            baseFilter = x => x.Name == fileName && x.Type == FileItemType.File && x.Status == FileStatus.Active && x.IsDeleted != true && x.ParentId == normalizedParentId;
+        var existingFile = await _context.Set<FileItem>().FirstOrDefaultAsync(x => 
+            x.Name == fileName && x.ParentId == normalizedParentId && x.Type == FileItemType.File && x.Status == FileStatus.Active);
 
-        var existingFiles = await _fileItemFactory.FindAsync(baseFilter, limit: 1);
-        var existingFile = existingFiles.FirstOrDefault();
-
-        var hashFiles = await _fileItemFactory.FindAsync(
-            x => x.Hash == fileHash && x.Status == FileStatus.Active && x.IsDeleted != true,
-            limit: 1);
-        var duplicateFile = hashFiles.FirstOrDefault();
+        var duplicateFile = await _context.Set<FileItem>().FirstOrDefaultAsync(x => x.Hash == fileHash && x.Status == FileStatus.Active);
         string gridFSId;
 
         if (duplicateFile != null)
         {
             gridFSId = duplicateFile.GridFSId;
-            _logger.LogInformation("File content already exists, reusing GridFS file: {GridFSId}", gridFSId);
         }
         else
         {
             using var uploadStream = file.OpenReadStream();
-            var metadata = new Dictionary<string, object>
+            gridFSId = await _fileStorageFactory.UploadAsync(uploadStream, fileName, file.ContentType, new Dictionary<string, object>
             {
                 ["originalName"] = fileName,
                 ["contentType"] = file.ContentType ?? "application/octet-stream",
                 ["uploadedAt"] = DateTime.UtcNow,
                 ["hash"] = fileHash
-            };
-            gridFSId = await _fileStorageFactory.UploadAsync(
-                uploadStream,
-                fileName,
-                file.ContentType,
-                metadata,
-                "cloud_storage_files");
+            }, "cloud_storage_files");
         }
 
-        var filePath = await BuildFilePathAsync(fileName, normalizedParentId ?? string.Empty);
         FileItem fileItem;
-
         if (existingFile != null)
         {
             if (!overwrite)
@@ -421,6 +342,7 @@ public class CloudStorageService : ICloudStorageService
                 await EnsureCurrentVersionSnapshotAsync(existingFile);
                 var nextVersionNumber = await GetNextVersionNumberAsync(existingFile.Id!);
                 await MarkAllVersionsAsNonCurrentAsync(existingFile.Id!);
+                
                 var version = new FileVersion
                 {
                     FileItemId = existingFile.Id!,
@@ -431,37 +353,23 @@ public class CloudStorageService : ICloudStorageService
                     Comment = "上传新版本",
                     IsCurrentVersion = true
                 };
-                await _fileVersionFactory.CreateAsync(version);
-
-                await _fileItemFactory.UpdateAsync(existingFile.Id!, entity =>
-                {
-                    entity.GridFSId = gridFSId;
-                    entity.Size = file.Length;
-                    entity.Hash = fileHash;
-                    entity.MimeType = file.ContentType ?? "application/octet-stream";
-                });
-            }
-            else
-            {
-                await _fileItemFactory.UpdateAsync(existingFile.Id!, entity =>
-                {
-                    entity.GridFSId = gridFSId;
-                    entity.Size = file.Length;
-                    entity.Hash = fileHash;
-                    entity.MimeType = file.ContentType ?? "application/octet-stream";
-                });
+                await _context.Set<FileVersion>().AddAsync(version);
             }
 
-            var updated = await _fileItemFactory.FindAsync(x => x.Id == existingFile.Id, limit: 1);
-            fileItem = updated.First();
+            existingFile.GridFSId = gridFSId;
+            existingFile.Size = file.Length;
+            existingFile.Hash = fileHash;
+            existingFile.MimeType = file.ContentType ?? "application/octet-stream";
+            fileItem = existingFile;
+            await _context.SaveChangesAsync();
         }
         else
         {
             fileItem = new FileItem
             {
                 Name = fileName,
-                Path = filePath,
-                ParentId = parentId,
+                Path = await BuildFilePathAsync(fileName, normalizedParentId),
+                ParentId = normalizedParentId,
                 Type = FileItemType.File,
                 Size = file.Length,
                 MimeType = file.ContentType ?? "application/octet-stream",
@@ -469,864 +377,461 @@ public class CloudStorageService : ICloudStorageService
                 Hash = fileHash,
                 Status = FileStatus.Active
             };
-            await _fileItemFactory.CreateAsync(fileItem);
+            await _context.Set<FileItem>().AddAsync(fileItem);
+            await _context.SaveChangesAsync();
         }
 
         if (IsImageFile(file.ContentType))
         {
-            try
-            {
-                using var thumbStream = file.OpenReadStream();
-                await GenerateAndUploadThumbnailAsync(thumbStream, fileItem);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to generate thumbnail for file {FileId}", fileItem.Id);
-            }
+            try { using var thumbStream = file.OpenReadStream(); await GenerateAndUploadThumbnailAsync(thumbStream, fileItem); }
+            catch (Exception ex) { _logger.LogWarning(ex, "Failed to generate thumbnail for {FileId}", fileItem.Id); }
         }
 
         await UpdateStorageUsageAsync(file.Length);
-        _logger.LogInformation("Uploaded file: {FileName} ({FileSize} bytes)", fileName, file.Length);
         return fileItem;
     }
 
     /// <inheritdoc/>
     public async Task<FileItem?> GetFileItemAsync(string id)
     {
-        if (string.IsNullOrWhiteSpace(id))
-            return null;
-
-        var items = await _fileItemFactory.FindAsync(x => x.Id == id && x.Status == FileStatus.Active, limit: 1);
-        return items.FirstOrDefault();
+        return await _context.Set<FileItem>().FirstOrDefaultAsync(x => x.Id == id && x.Status == FileStatus.Active);
     }
 
     /// <inheritdoc/>
     public async Task<PagedResult<FileItem>> GetFileItemsAsync(string parentId, FileListQuery query)
     {
-        var normalizedParentId = string.IsNullOrWhiteSpace(parentId) ? null : parentId;
+        var normalizedParentId = string.IsNullOrWhiteSpace(parentId) ? string.Empty : parentId;
+        var q = _context.Set<FileItem>().Where(x => x.Status == FileStatus.Active && x.ParentId == normalizedParentId);
+        
+        if (query.Type.HasValue) q = q.Where(x => x.Type == query.Type.Value);
 
-        Expression<Func<FileItem, bool>> filter;
-        if (normalizedParentId == null)
-        {
-            if (query.Type.HasValue)
-                filter = x => x.Status == FileStatus.Active && x.IsDeleted != true && (x.ParentId == null || x.ParentId == string.Empty) && x.Type == query.Type.Value;
-            else
-                filter = x => x.Status == FileStatus.Active && x.IsDeleted != true && (x.ParentId == null || x.ParentId == string.Empty);
-        }
-        else
-        {
-            if (query.Type.HasValue)
-                filter = x => x.Status == FileStatus.Active && x.IsDeleted != true && x.ParentId == normalizedParentId && x.Type == query.Type.Value;
-            else
-                filter = x => x.Status == FileStatus.Active && x.IsDeleted != true && x.ParentId == normalizedParentId;
-        }
+        var sortBy = query.SortBy.ToLower();
+        var isDesc = query.SortOrder.ToLower() == "desc";
 
-        Func<IQueryable<FileItem>, IOrderedQueryable<FileItem>> sort;
-        var sortByLower = query.SortBy.ToLower();
-        var sortOrderDesc = query.SortOrder.ToLower() == "desc";
-
-        sort = sortByLower switch
+        q = sortBy switch
         {
-            "name" => sortOrderDesc ? q => q.OrderByDescending(f => f.Name) : q => q.OrderBy(f => f.Name),
-            "size" => sortOrderDesc ? q => q.OrderByDescending(f => f.Size) : q => q.OrderBy(f => f.Size),
-            "createdat" => sortOrderDesc ? q => q.OrderByDescending(f => f.CreatedAt) : q => q.OrderBy(f => f.CreatedAt),
-            "updatedat" => sortOrderDesc ? q => q.OrderByDescending(f => f.UpdatedAt) : q => q.OrderBy(f => f.UpdatedAt),
-            _ => q => q.OrderBy(f => f.Name)
+            "name" => isDesc ? q.OrderByDescending(f => f.Name) : q.OrderBy(f => f.Name),
+            "size" => isDesc ? q.OrderByDescending(f => f.Size) : q.OrderBy(f => f.Size),
+            "createdat" => isDesc ? q.OrderByDescending(f => f.CreatedAt) : q.OrderBy(f => f.CreatedAt),
+            "updatedat" => isDesc ? q.OrderByDescending(f => f.UpdatedAt) : q.OrderBy(f => f.UpdatedAt),
+            _ => q.OrderBy(f => f.Name)
         };
 
-        var (items, total) = await _fileItemFactory.FindPagedAsync(filter, sort, query.Page, query.PageSize);
+        var total = await q.LongCountAsync();
+        var data = await q.Skip((query.Page - 1) * query.PageSize).Take(query.PageSize).ToListAsync();
 
-        return new PagedResult<FileItem>
-        {
-            Data = items,
-            Total = (int)total,
-            Page = query.Page,
-            PageSize = query.PageSize
-        };
+        return new PagedResult<FileItem> { Data = data, Total = (int)total, Page = query.Page, PageSize = query.PageSize };
     }
 
     /// <inheritdoc/>
     public async Task<FileItem> RenameFileItemAsync(string id, string newName)
     {
-        if (string.IsNullOrWhiteSpace(newName))
-            throw new ArgumentException("新名称不能为空", nameof(newName));
+        var item = await _context.Set<FileItem>().FirstOrDefaultAsync(x => x.Id == id && x.Status == FileStatus.Active);
+        if (item == null) throw new ArgumentException("文件项不存在", nameof(id));
 
-        var fileItem = await GetFileItemAsync(id);
-        if (fileItem == null)
-            throw new ArgumentException("文件项不存在", nameof(id));
+        var exists = await _context.Set<FileItem>().AnyAsync(x => x.Name == newName && x.ParentId == item.ParentId && x.Type == item.Type && x.Status == FileStatus.Active && x.Id != id);
+        if (exists) throw new InvalidOperationException($"名称 '{newName}' 已存在");
 
-        var existingItems = await _fileItemFactory.FindAsync(
-            x => x.Name == newName && x.ParentId == fileItem.ParentId && x.Type == fileItem.Type && x.Status == FileStatus.Active && x.Id != id,
-            limit: 1);
+        var oldPath = item.Path;
+        var newPath = await BuildFilePathAsync(newName, item.ParentId);
+        item.Name = newName;
+        item.Path = newPath;
 
-        if (existingItems.Count > 0)
-            throw new InvalidOperationException($"名称 '{newName}' 已存在");
-
-        var newPath = await BuildFilePathAsync(newName, fileItem.ParentId);
-
-        await _fileItemFactory.UpdateAsync(id, entity =>
-        {
-            entity.Name = newName;
-            entity.Path = newPath;
-        });
-
-        var updated = await _fileItemFactory.FindAsync(x => x.Id == id, limit: 1);
-        var updatedItem = updated.First();
-
-        if (fileItem.Type == FileItemType.Folder)
-            await UpdateDescendantsPathAsync(fileItem.Path, newPath);
-
-        _logger.LogInformation("Renamed file item {Id} from '{OldName}' to '{NewName}'", id, fileItem.Name, newName);
-        return updatedItem!;
+        await _context.SaveChangesAsync();
+        if (item.Type == FileItemType.Folder) await UpdateDescendantsPathAsync(oldPath!, newPath);
+        return item;
     }
 
     /// <inheritdoc/>
     public async Task<FileItem> MoveFileItemAsync(string id, string newParentId)
     {
-        var fileItem = await GetFileItemAsync(id);
-        if (fileItem == null)
-            throw new ArgumentException("文件项不存在", nameof(id));
+        var item = await _context.Set<FileItem>().FirstOrDefaultAsync(x => x.Id == id && x.Status == FileStatus.Active);
+        if (item == null) throw new ArgumentException("文件项不存在", nameof(id));
 
         if (!string.IsNullOrEmpty(newParentId))
         {
-            var targetParent = await GetFileItemAsync(newParentId);
-            if (targetParent == null)
-                throw new ArgumentException("目标文件夹不存在", nameof(newParentId));
-            if (targetParent.Type != FileItemType.Folder)
-                throw new ArgumentException("目标必须是文件夹", nameof(newParentId));
-
-            if (fileItem.Type == FileItemType.Folder)
-            {
-                var isDescendant = await IsDescendantFolderAsync(id, newParentId);
-                if (isDescendant)
-                    throw new InvalidOperationException("不能将文件夹移动到自己的子文件夹中");
-            }
+            var parent = await GetFileItemAsync(newParentId);
+            if (parent == null || parent.Type != FileItemType.Folder) throw new ArgumentException("目标文件夹无效");
+            if (item.Type == FileItemType.Folder && (id == newParentId || await IsDescendantFolderAsync(id, newParentId)))
+                throw new InvalidOperationException("不能移动到自身或子文件夹");
         }
 
-        var existingItems = await _fileItemFactory.FindAsync(
-            x => x.Name == fileItem.Name && x.ParentId == newParentId && x.Type == fileItem.Type && x.Status == FileStatus.Active && x.Id != id,
-            limit: 1);
+        var exists = await _context.Set<FileItem>().AnyAsync(x => x.Name == item.Name && x.ParentId == newParentId && x.Type == item.Type && x.Status == FileStatus.Active && x.Id != id);
+        if (exists) throw new InvalidOperationException("目标位置已存在同名项");
 
-        if (existingItems.Count > 0)
-            throw new InvalidOperationException($"目标位置已存在同名{(fileItem.Type == FileItemType.File ? "文件" : "文件夹")}");
+        var oldPath = item.Path;
+        var newPath = await BuildFilePathAsync(item.Name, newParentId);
+        item.ParentId = newParentId;
+        item.Path = newPath;
 
-        var newPath = await BuildFilePathAsync(fileItem.Name, newParentId);
-
-        await _fileItemFactory.UpdateAsync(id, entity =>
-        {
-            entity.ParentId = newParentId;
-            entity.Path = newPath;
-        });
-
-        var updated = await _fileItemFactory.FindAsync(x => x.Id == id, limit: 1);
-        var updatedItem = updated.First();
-
-        if (fileItem.Type == FileItemType.Folder)
-            await UpdateDescendantsPathAsync(fileItem.Path, newPath);
-
-        _logger.LogInformation("Moved file item {Id} from '{OldPath}' to '{NewPath}'", id, fileItem.Path, newPath);
-        return updatedItem!;
+        await _context.SaveChangesAsync();
+        if (item.Type == FileItemType.Folder) await UpdateDescendantsPathAsync(oldPath!, newPath);
+        return item;
     }
 
     /// <inheritdoc/>
     public async Task DeleteFileAsync(string id, string userId)
     {
-        var fileItem = await GetFileItemAsync(id);
-        if (fileItem == null)
-            throw new ArgumentException("文件项不存在", nameof(id));
+        var item = await _context.Set<FileItem>().FirstOrDefaultAsync(x => x.Id == id && x.Status == FileStatus.Active);
+        if (item == null) throw new ArgumentException("文件项不存在");
+        if (item.CreatedBy != userId) throw new UnauthorizedAccessException("无权删除他人的文件");
 
-        // 验证是否是文件创建者
-        if (fileItem.CreatedBy != userId)
-            throw new UnauthorizedAccessException("无权删除他人的文件");
+        item.Status = FileStatus.InRecycleBin;
+        item.DeletedAt = DateTime.UtcNow;
+        item.DeletedBy = userId;
+        item.OriginalPath = item.Path;
+        item.DaysUntilPermanentDelete = 30;
 
-        var now = DateTime.UtcNow;
-        var keepDays = 30;
-
-        await _fileItemFactory.UpdateAsync(id, entity =>
+        if (item.Type == FileItemType.Folder)
         {
-            entity.Status = FileStatus.InRecycleBin;
-            entity.DeletedAt = now;
-            entity.DeletedBy = userId;
-            entity.OriginalPath = fileItem.Path;
-            entity.DaysUntilPermanentDelete = keepDays;
-        });
-
-        if (fileItem.Type == FileItemType.Folder)
-        {
-            var pathPrefix = $"{fileItem.Path}/";
-            var childItems = await _fileItemFactory.FindAsync(x => x.Path != null && x.Path.StartsWith(pathPrefix));
-            foreach (var child in childItems)
+            var pathPrefix = $"{item.Path}/";
+            var children = await _context.Set<FileItem>().Where(x => x.Path != null && x.Path.StartsWith(pathPrefix)).ToListAsync();
+            foreach (var child in children)
             {
-                await _fileItemFactory.UpdateAsync(child.Id!, entity =>
-                {
-                    entity.Status = FileStatus.InRecycleBin;
-                    entity.DeletedAt = now;
-                    entity.DeletedBy = userId;
-                });
+                child.Status = FileStatus.InRecycleBin;
+                child.DeletedAt = DateTime.UtcNow;
+                child.DeletedBy = userId;
             }
         }
-
-        _logger.LogInformation("User {UserId} moved file item {Id} to recycle bin: {Name}", userId, id, fileItem.Name);
+        await _context.SaveChangesAsync();
     }
 
     /// <inheritdoc/>
-    public async Task DeleteFileItemAsync(string id)
-    {
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? "system";
-        await DeleteFileAsync(id, currentUserId);
-    }
+    public async Task DeleteFileItemAsync(string id) => await DeleteFileAsync(id, _tenantContext.GetCurrentUserId() ?? "system");
 
     /// <inheritdoc/>
     public async Task PermanentDeleteFileItemAsync(string id)
     {
-        if (string.IsNullOrWhiteSpace(id))
-            throw new ArgumentException("文件项不存在", nameof(id));
+        var item = await _context.Set<FileItem>().IgnoreQueryFilters().FirstOrDefaultAsync(x => x.Id == id);
+        if (item == null) throw new ArgumentException("文件项不存在");
 
-        var fileItem = await GetFileItemAsync(id);
-        if (fileItem == null)
+        if (item.Type == FileItemType.Folder) await PermanentDeleteFolderContentsAsync(item);
+
+        _context.Set<FileItem>().Remove(item);
+        if (item.Type == FileItemType.File)
         {
-            var recycleItems = await _fileItemFactory.FindAsync(x => x.Id == id && x.Status == FileStatus.InRecycleBin, limit: 1);
-            if (recycleItems.Count == 0)
-                throw new ArgumentException("文件项不存在", nameof(id));
-            fileItem = recycleItems.First();
+            await UpdateStorageUsageAsync(-item.Size);
+            await DeleteGridFSFileAsync(item);
         }
-
-        if (fileItem.Type == FileItemType.Folder)
-            await PermanentDeleteFolderContentsAsync(fileItem);
-
-        await _fileItemFactory.SoftDeleteAsync(id);
-
-        if (fileItem.Type == FileItemType.File)
-        {
-            await UpdateStorageUsageAsync(-fileItem.Size);
-            await DeleteGridFSFileAsync(fileItem);
-        }
-
-        _logger.LogInformation("Permanently deleted file item {Id}: {Name}", id, fileItem.Name);
+        await _context.SaveChangesAsync();
     }
 
     /// <inheritdoc/>
     public async Task<FileItem> RestoreFileItemAsync(string id, string? newParentId = null)
     {
-        if (string.IsNullOrWhiteSpace(id))
-            throw new ArgumentException("回收站中不存在该文件项", nameof(id));
+        var item = await _context.Set<FileItem>().FirstOrDefaultAsync(x => x.Id == id && x.Status == FileStatus.InRecycleBin);
+        if (item == null) throw new ArgumentException("回收站中不存在该文件项");
 
-        var recycleItems = await _fileItemFactory.FindAsync(x => x.Id == id && x.Status == FileStatus.InRecycleBin, limit: 1);
-        if (recycleItems.Count == 0)
-            throw new ArgumentException("回收站中不存在该文件项", nameof(id));
-
-        var fileItem = recycleItems.First();
-        var targetParentId = newParentId ?? fileItem.ParentId;
-
+        var targetParentId = newParentId ?? item.ParentId;
         if (!string.IsNullOrEmpty(targetParentId))
         {
-            var targetParent = await GetFileItemAsync(targetParentId);
-            if (targetParent == null)
-                throw new ArgumentException("目标文件夹不存在", nameof(newParentId));
-            if (targetParent.Type != FileItemType.Folder)
-                throw new ArgumentException("目标必须是文件夹", nameof(newParentId));
+            var parent = await GetFileItemAsync(targetParentId);
+            if (parent == null || parent.Type != FileItemType.Folder) throw new ArgumentException("目标文件夹无效");
         }
 
-        var existingItems = await _fileItemFactory.FindAsync(
-            x => x.Name == fileItem.Name && x.ParentId == targetParentId && x.Type == fileItem.Type && x.Status == FileStatus.Active,
-            limit: 1);
+        var exists = await _context.Set<FileItem>().AnyAsync(x => x.Name == item.Name && x.ParentId == targetParentId && x.Type == item.Type && x.Status == FileStatus.Active);
+        if (exists) throw new InvalidOperationException("目标位置已存在同名项");
 
-        if (existingItems.Count > 0)
-            throw new InvalidOperationException($"目标位置已存在同名{(fileItem.Type == FileItemType.File ? "文件" : "文件夹")}");
+        var oldPath = item.Path;
+        var newPath = await BuildFilePathAsync(item.Name, targetParentId);
+        item.Status = FileStatus.Active;
+        item.ParentId = targetParentId;
+        item.Path = newPath;
+        item.DeletedAt = null;
+        item.DeletedBy = null;
+        item.OriginalPath = null;
 
-        var newPath = await BuildFilePathAsync(fileItem.Name, targetParentId);
-
-        await _fileItemFactory.UpdateAsync(id, entity =>
+        if (item.Type == FileItemType.Folder)
         {
-            entity.Status = FileStatus.Active;
-            entity.ParentId = targetParentId;
-            entity.Path = newPath;
-            entity.DeletedAt = null;
-            entity.DeletedBy = null;
-            entity.DeletedByName = null;
-            entity.OriginalPath = null;
-            entity.DaysUntilPermanentDelete = null;
-        });
-
-        var restored = await _fileItemFactory.FindAsync(x => x.Id == id, limit: 1);
-        var restoredItem = restored.First();
-
-        if (fileItem.Type == FileItemType.Folder)
-        {
-            var pathPrefix = $"{fileItem.Path}/";
-            var childItems = await _fileItemFactory.FindAsync(x => x.Path != null && x.Path.StartsWith(pathPrefix));
-            foreach (var child in childItems)
+            var pathPrefix = $"{oldPath}/";
+            var children = await _context.Set<FileItem>().Where(x => x.Path != null && x.Path.StartsWith(pathPrefix)).ToListAsync();
+            foreach (var child in children)
             {
-                await _fileItemFactory.UpdateAsync(child.Id!, entity =>
-                {
-                    entity.Status = FileStatus.Active;
-                    entity.DeletedAt = null;
-                    entity.DeletedBy = null;
-                    entity.DeletedByName = null;
-                    entity.OriginalPath = null;
-                    entity.DaysUntilPermanentDelete = null;
-                });
+                child.Status = FileStatus.Active;
+                child.DeletedAt = null;
+                child.DeletedBy = null;
+                child.OriginalPath = null;
+                child.Path = child.Path!.Replace(pathPrefix, $"{newPath}/");
             }
-            await UpdateDescendantsPathAsync(fileItem.Path, newPath);
         }
-
-        _logger.LogInformation("Restored file item {Id} from recycle bin to path: {Path}", id, newPath);
-        return restoredItem!;
+        await _context.SaveChangesAsync();
+        return item;
     }
 
     /// <inheritdoc/>
     public async Task<Stream> DownloadFileAsync(string id)
     {
-        var fileItem = await GetFileItemAsync(id);
-        if (fileItem == null)
-            throw new ArgumentException("文件不存在", nameof(id));
+        var item = await GetFileItemAsync(id);
+        if (item == null || item.Type != FileItemType.File || string.IsNullOrEmpty(item.GridFSId))
+            throw new ArgumentException("文件不存在或无法下载");
 
-        if (fileItem.Type != FileItemType.File)
-            throw new InvalidOperationException("只能下载文件");
+        item.DownloadCount++;
+        item.LastAccessedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
 
-        if (string.IsNullOrEmpty(fileItem.GridFSId))
-            throw new InvalidOperationException("文件内容不存在");
-
-        var stream = await _fileStorageFactory.GetDownloadStreamAsync(fileItem.GridFSId, "cloud_storage_files");
-
-        await _fileItemFactory.UpdateAsync(id, entity =>
-        {
-            entity.DownloadCount = entity.DownloadCount + 1;
-            entity.LastAccessedAt = DateTime.UtcNow;
-        });
-
-        return stream;
+        return await _fileStorageFactory.GetDownloadStreamAsync(item.GridFSId, "cloud_storage_files");
     }
 
     /// <inheritdoc/>
     public async Task<Stream> GetThumbnailAsync(string id)
     {
-        var fileItem = await GetFileItemAsync(id);
-        if (fileItem == null)
-            throw new ArgumentException("文件不存在", nameof(id));
-
-        if (string.IsNullOrEmpty(fileItem.ThumbnailGridFSId))
-            throw new InvalidOperationException("缩略图不存在");
-
-        return await _fileStorageFactory.GetDownloadStreamAsync(fileItem.ThumbnailGridFSId, "cloud_storage_thumbnails");
+        var item = await GetFileItemAsync(id);
+        if (item == null || string.IsNullOrEmpty(item.ThumbnailGridFSId)) throw new ArgumentException("缩略图不存在");
+        return await _fileStorageFactory.GetDownloadStreamAsync(item.ThumbnailGridFSId, "cloud_storage_thumbnails");
     }
 
     /// <inheritdoc/>
     public async Task<FilePreviewInfo> GetPreviewInfoAsync(string id)
     {
-        var fileItem = await GetFileItemAsync(id);
-        if (fileItem == null)
-            throw new ArgumentException("文件不存在", nameof(id));
-
+        var item = await GetFileItemAsync(id);
+        if (item == null) throw new ArgumentException("文件不存在");
         return new FilePreviewInfo
         {
             FileId = id,
-            IsPreviewable = IsPreviewableFile(fileItem.MimeType),
-            PreviewType = GetPreviewType(fileItem.MimeType),
+            IsPreviewable = IsPreviewableFile(item.MimeType),
+            PreviewType = GetPreviewType(item.MimeType),
             PreviewUrl = $"/api/cloud-storage/files/{id}/download",
-            ThumbnailUrl = !string.IsNullOrEmpty(fileItem.ThumbnailGridFSId) ? $"/api/cloud-storage/files/{id}/thumbnail" : string.Empty
+            ThumbnailUrl = !string.IsNullOrEmpty(item.ThumbnailGridFSId) ? $"/api/cloud-storage/files/{id}/thumbnail" : string.Empty
         };
     }
 
     /// <inheritdoc/>
     public async Task<PagedResult<FileItem>> SearchFilesAsync(FileSearchQuery query)
     {
-        Expression<Func<FileItem, bool>> filter;
         var keyword = query.Keyword?.ToLower();
-        var type = query.Type;
+        var q = _context.Set<FileItem>().Where(x => x.Status == FileStatus.Active);
+        if (!string.IsNullOrWhiteSpace(keyword)) q = q.Where(x => x.Name.ToLower().Contains(keyword));
+        if (query.Type.HasValue) q = q.Where(x => x.Type == query.Type.Value);
 
-        if (!string.IsNullOrWhiteSpace(keyword))
+        var isDesc = query.SortOrder.ToLower() == "desc";
+        q = query.SortBy.ToLower() switch
         {
-            if (type.HasValue)
-                filter = x => x.Status == FileStatus.Active && x.Name.ToLower().Contains(keyword) && x.Type == type.Value;
-            else
-                filter = x => x.Status == FileStatus.Active && x.Name.ToLower().Contains(keyword);
-        }
-        else
-        {
-            if (type.HasValue)
-                filter = x => x.Status == FileStatus.Active && x.Type == type.Value;
-            else
-                filter = x => x.Status == FileStatus.Active;
-        }
-
-        Func<IQueryable<FileItem>, IOrderedQueryable<FileItem>> sort;
-        var sortByLower = query.SortBy.ToLower();
-        var sortOrderDesc = query.SortOrder.ToLower() == "desc";
-
-        sort = sortByLower switch
-        {
-            "name" => sortOrderDesc ? q => q.OrderByDescending(f => f.Name) : q => q.OrderBy(f => f.Name),
-            "size" => sortOrderDesc ? q => q.OrderByDescending(f => f.Size) : q => q.OrderBy(f => f.Size),
-            "createdat" => sortOrderDesc ? q => q.OrderByDescending(f => f.CreatedAt) : q => q.OrderBy(f => f.CreatedAt),
-            "updatedat" => sortOrderDesc ? q => q.OrderByDescending(f => f.UpdatedAt) : q => q.OrderBy(f => f.UpdatedAt),
-            _ => q => q.OrderBy(f => f.Name)
+            "name" => isDesc ? q.OrderByDescending(f => f.Name) : q.OrderBy(f => f.Name),
+            "size" => isDesc ? q.OrderByDescending(f => f.Size) : q.OrderBy(f => f.Size),
+            "createdat" => isDesc ? q.OrderByDescending(f => f.CreatedAt) : q.OrderBy(f => f.CreatedAt),
+            "updatedat" => isDesc ? q.OrderByDescending(f => f.UpdatedAt) : q.OrderBy(f => f.UpdatedAt),
+            _ => q.OrderBy(f => f.Name)
         };
 
-        var (items, total) = await _fileItemFactory.FindPagedAsync(filter, sort, query.Page, query.PageSize);
-
-        return new PagedResult<FileItem>
-        {
-            Data = items,
-            Total = (int)total,
-            Page = query.Page,
-            PageSize = query.PageSize
-        };
+        var total = await q.LongCountAsync();
+        var data = await q.Skip((query.Page - 1) * query.PageSize).Take(query.PageSize).ToListAsync();
+        return new PagedResult<FileItem> { Data = data, Total = (int)total, Page = query.Page, PageSize = query.PageSize };
     }
 
     /// <inheritdoc/>
     public async Task<List<FileItem>> GetRecentFilesAsync(int count = 10)
     {
-        return await _fileItemFactory.FindAsync(
-            x => x.Type == FileItemType.File && x.Status == FileStatus.Active && x.LastAccessedAt != null,
-            query => query.OrderByDescending(f => f.LastAccessedAt),
-            count);
+        return await _context.Set<FileItem>()
+            .Where(x => x.Type == FileItemType.File && x.Status == FileStatus.Active && x.LastAccessedAt != null)
+            .OrderByDescending(f => f.LastAccessedAt)
+            .Take(count)
+            .ToListAsync();
     }
 
     /// <inheritdoc/>
     public async Task<PagedResult<FileItem>> SearchByContentAsync(string keyword, FileContentSearchQuery query)
     {
-        if (string.IsNullOrWhiteSpace(keyword))
-            throw new ArgumentException("搜索关键词不能为空", nameof(keyword));
+        if (string.IsNullOrWhiteSpace(keyword)) throw new ArgumentException("搜索关键词不能为空");
+        var allFiles = await _context.Set<FileItem>().Where(x => x.Type == FileItemType.File && x.Status == FileStatus.Active)
+            .OrderByDescending(f => f.UpdatedAt).Take(500).ToListAsync();
 
-        Expression<Func<FileItem, bool>> filter = x => x.Type == FileItemType.File && x.Status == FileStatus.Active;
-
-        var (allFiles, _) = await _fileItemFactory.FindPagedAsync(
-            filter,
-            q => q.OrderByDescending(f => f.UpdatedAt),
-            1,
-            100);
-
-        var matchedFiles = new List<FileItem>();
-
+        var matched = new List<FileItem>();
         foreach (var file in allFiles)
         {
-            if (matchedFiles.Count >= query.PageSize * query.Page)
-                break;
-
+            if (matched.Count >= query.PageSize * query.Page) break;
             try
             {
-                if (string.IsNullOrEmpty(file.GridFSId))
-                    continue;
-
+                if (string.IsNullOrEmpty(file.GridFSId)) continue;
                 var bytes = await _fileStorageFactory.DownloadAsBytesAsync(file.GridFSId, "cloud_storage_files");
-                var limit = 2 * 1024 * 1024;
-                var bytesToRead = (int)Math.Min(bytes.Length, limit);
-                var content = Encoding.UTF8.GetString(bytes, 0, bytesToRead);
-
-                if (content.Contains(keyword, StringComparison.OrdinalIgnoreCase))
-                    matchedFiles.Add(file);
+                var content = Encoding.UTF8.GetString(bytes, 0, (int)Math.Min(bytes.Length, 1024 * 1024));
+                if (content.Contains(keyword, StringComparison.OrdinalIgnoreCase)) matched.Add(file);
             }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to search content in file {FileId}", file.Id);
-            }
+            catch { }
         }
 
-        var skip = (query.Page - 1) * query.PageSize;
-        var pagedResults = matchedFiles.Skip(skip).Take(query.PageSize).ToList();
-
-        return new PagedResult<FileItem>
-        {
-            Data = pagedResults,
-            Total = matchedFiles.Count,
-            Page = query.Page,
-            PageSize = query.PageSize
-        };
+        var paged = matched.Skip((query.Page - 1) * query.PageSize).Take(query.PageSize).ToList();
+        return new PagedResult<FileItem> { Data = paged, Total = matched.Count, Page = query.Page, PageSize = query.PageSize };
     }
 
     /// <inheritdoc/>
     public async Task<PagedResult<FileItem>> GetRecycleBinItemsAsync(RecycleBinQuery query)
     {
-        Expression<Func<FileItem, bool>> filter;
-        if (query.Type.HasValue)
-            filter = x => x.Status == FileStatus.InRecycleBin && x.Type == query.Type.Value;
-        else
-            filter = x => x.Status == FileStatus.InRecycleBin;
+        var q = _context.Set<FileItem>().Where(x => x.Status == FileStatus.InRecycleBin);
+        if (query.Type.HasValue) q = q.Where(x => x.Type == query.Type.Value);
 
-        Func<IQueryable<FileItem>, IOrderedQueryable<FileItem>> sort;
-        var sortByLower = query.SortBy.ToLower();
-        var sortOrderDesc = query.SortOrder.ToLower() == "desc";
-
-        sort = sortByLower switch
+        var isDesc = query.SortOrder.ToLower() == "desc";
+        q = query.SortBy.ToLower() switch
         {
-            "name" => sortOrderDesc ? q => q.OrderByDescending(f => f.Name) : q => q.OrderBy(f => f.Name),
-            "deletedat" => sortOrderDesc ? q => q.OrderByDescending(f => f.DeletedAt) : q => q.OrderBy(f => f.DeletedAt),
-            "size" => sortOrderDesc ? q => q.OrderByDescending(f => f.Size) : q => q.OrderBy(f => f.Size),
-            _ => q => q.OrderByDescending(f => f.DeletedAt)
+            "name" => isDesc ? q.OrderByDescending(f => f.Name) : q.OrderBy(f => f.Name),
+            "size" => isDesc ? q.OrderByDescending(f => f.Size) : q.OrderBy(f => f.Size),
+            "deletedat" => isDesc ? q.OrderByDescending(f => f.DeletedAt) : q.OrderBy(f => f.DeletedAt),
+            _ => q.OrderByDescending(f => f.DeletedAt)
         };
 
-        var (items, total) = await _fileItemFactory.FindPagedAsync(filter, sort, query.Page, query.PageSize);
-
-        return new PagedResult<FileItem>
-        {
-            Data = items,
-            Total = (int)total,
-            Page = query.Page,
-            PageSize = query.PageSize
-        };
+        var total = await q.LongCountAsync();
+        var data = await q.Skip((query.Page - 1) * query.PageSize).Take(query.PageSize).ToListAsync();
+        return new PagedResult<FileItem> { Data = data, Total = (int)total, Page = query.Page, PageSize = query.PageSize };
     }
 
     /// <inheritdoc/>
     public async Task EmptyRecycleBinAsync()
     {
-        var recycleItems = await _fileItemFactory.FindAsync(x => x.Status == FileStatus.InRecycleBin);
-        var totalSize = recycleItems.Where(f => f.Type == FileItemType.File).Sum(f => f.Size);
-        var itemIds = recycleItems.Select(x => x.Id!).Where(id => !string.IsNullOrEmpty(id)).ToList();
-
-        foreach (var itemId in itemIds)
-            await _fileItemFactory.SoftDeleteAsync(itemId);
-
-        if (totalSize > 0)
-            await UpdateStorageUsageAsync(-totalSize);
-
-        _logger.LogInformation("Emptied recycle bin, freed {TotalSize} bytes from {ItemCount} items", totalSize, recycleItems.Count);
+        var items = await _context.Set<FileItem>().Where(x => x.Status == FileStatus.InRecycleBin).ToListAsync();
+        var totalSize = items.Where(f => f.Type == FileItemType.File).Sum(f => f.Size);
+        foreach (var item in items) _context.Set<FileItem>().Remove(item);
+        if (totalSize > 0) await UpdateStorageUsageAsync(-totalSize);
+        await _context.SaveChangesAsync();
     }
 
     /// <inheritdoc/>
     public async Task<(int deletedCount, long freedSpace)> CleanupExpiredRecycleBinItemsAsync(int expireDays = 30)
     {
         var expireDate = DateTime.UtcNow.AddDays(-expireDays);
-        var expiredItems = await _fileItemFactory.FindAsync(x => x.Status == FileStatus.InRecycleBin && x.DeletedAt != null && x.DeletedAt < expireDate);
-
-        var totalSize = expiredItems.Where(f => f.Type == FileItemType.File).Sum(f => f.Size);
-        var itemIds = expiredItems.Select(x => x.Id!).Where(id => !string.IsNullOrEmpty(id)).ToList();
-
-        foreach (var itemId in itemIds)
-            await _fileItemFactory.SoftDeleteAsync(itemId);
-
-        if (totalSize > 0)
-            await UpdateStorageUsageAsync(-totalSize);
-
-        _logger.LogInformation("Cleaned up {ItemCount} expired recycle bin items, freed {TotalSize} bytes", itemIds.Count, totalSize);
-        return (itemIds.Count, totalSize);
+        var expired = await _context.Set<FileItem>().Where(x => x.Status == FileStatus.InRecycleBin && x.DeletedAt < expireDate).ToListAsync();
+        var totalSize = expired.Where(f => f.Type == FileItemType.File).Sum(f => f.Size);
+        foreach (var item in expired) _context.Set<FileItem>().Remove(item);
+        if (totalSize > 0) await UpdateStorageUsageAsync(-totalSize);
+        await _context.SaveChangesAsync();
+        return (expired.Count, totalSize);
     }
 
     /// <inheritdoc/>
     public async Task<StorageUsageInfo> GetStorageUsageAsync(string? userId = null)
     {
-        var targetUserId = userId ?? _tenantContext.GetCurrentUserId();
-        if (string.IsNullOrEmpty(targetUserId))
-            throw new InvalidOperationException("用户ID不能为空");
-
+        var targetId = userId ?? _tenantContext.GetCurrentUserId();
+        if (string.IsNullOrEmpty(targetId)) throw new InvalidOperationException("用户ID不能为空");
+        
         StorageQuota quota;
-        try
-        {
-            quota = await _storageQuotaService.GetUserQuotaAsync(targetUserId);
-        }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("用户尚未分配存储配额"))
-        {
-            await InitializeDefaultQuotaAsync(targetUserId);
-            quota = await _storageQuotaService.GetUserQuotaAsync(targetUserId);
-        }
+        try { quota = await _storageQuotaService.GetUserQuotaAsync(targetId); }
+        catch { await InitializeDefaultQuotaAsync(targetId); quota = await _storageQuotaService.GetUserQuotaAsync(targetId); }
 
-        var folderCount = await _fileItemFactory.CountAsync(x => x.CreatedBy == targetUserId && x.Type == FileItemType.Folder && x.Status == FileStatus.Active);
-
-        return new StorageUsageInfo
-        {
-            UserId = targetUserId,
-            TotalQuota = quota.TotalQuota,
-            UsedSpace = quota.UsedSpace,
-            FileCount = quota.FileCount,
-            FolderCount = (int)folderCount,
-            TypeUsage = quota.TypeUsage ?? [],
-            LastUpdatedAt = quota.LastCalculatedAt
-        };
+        var folders = await _context.Set<FileItem>().LongCountAsync(x => x.CreatedBy == targetId && x.Type == FileItemType.Folder && x.Status == FileStatus.Active);
+        return new StorageUsageInfo { UserId = targetId, TotalQuota = quota.TotalQuota, UsedSpace = quota.UsedSpace, FileCount = quota.FileCount, FolderCount = (int)folders, TypeUsage = quota.TypeUsage ?? new Dictionary<string, long>(), LastUpdatedAt = quota.LastCalculatedAt };
     }
 
     /// <inheritdoc/>
     public async Task<List<FileItem>> UploadMultipleFilesAsync(IList<IFormFile> files, string parentId, FileConflictResolution conflictResolution = FileConflictResolution.Rename)
     {
-        if (files == null || files.Count == 0)
-            throw new ArgumentException("文件列表不能为空", nameof(files));
-
-        var rootParentId = string.IsNullOrWhiteSpace(parentId) ? string.Empty : parentId;
-        var processedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (files == null || files.Count == 0) throw new ArgumentException("文件列表不能为空");
         var results = new List<FileItem>();
-        var totalSize = files.Sum(f => f.Length);
-
-        await CheckStorageQuotaAsync(totalSize);
+        await CheckStorageQuotaAsync(files.Sum(f => f.Length));
 
         foreach (var file in files)
         {
             try
             {
-                var (isValid, errorMessage) = FileValidator.ValidateFile(file);
-                if (!isValid)
-                {
-                    _logger.LogWarning("文件验证失败: {FileName} - {Error}", file.FileName, errorMessage);
-                    continue;
-                }
+                var (isValid, err) = FileValidator.ValidateFile(file);
+                if (!isValid) continue;
 
                 var relativePath = file.FileName?.Replace("\\", "/") ?? string.Empty;
-                var directoryPath = Path.GetDirectoryName(relativePath)?.Replace("\\", "/");
+                var dirPath = Path.GetDirectoryName(relativePath)?.Replace("\\", "/");
                 var fileName = Path.GetFileName(relativePath);
+                if (string.IsNullOrWhiteSpace(fileName)) continue;
 
-                var dedupeKey = string.IsNullOrEmpty(relativePath) ? (file.FileName ?? string.Empty) : relativePath;
-                if (!processedPaths.Add(dedupeKey))
-                {
-                    _logger.LogWarning("Skipped duplicate file in batch: {Path}", dedupeKey);
-                    continue;
-                }
+                var targetId = string.IsNullOrWhiteSpace(parentId) ? string.Empty : parentId;
+                if (!string.IsNullOrWhiteSpace(dirPath)) targetId = await EnsureFolderPathAsync(dirPath!, targetId);
 
-                if (string.IsNullOrWhiteSpace(fileName))
-                    continue;
-
-                var targetParentId = rootParentId;
-                if (!string.IsNullOrWhiteSpace(directoryPath))
-                    targetParentId = await EnsureFolderPathAsync(directoryPath!, rootParentId);
-
-                var overwrite = conflictResolution == FileConflictResolution.Overwrite;
-                if (conflictResolution == FileConflictResolution.Skip && await FileExistsAsync(fileName, targetParentId))
-                    continue;
-
-                var uploadedFile = await UploadFileAsync(file, targetParentId, overwrite);
-                results.Add(uploadedFile);
+                if (conflictResolution == FileConflictResolution.Skip && await FileExistsAsync(fileName, targetId)) continue;
+                results.Add(await UploadFileAsync(file, targetId, conflictResolution == FileConflictResolution.Overwrite));
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to upload file: {FileName}", file.FileName);
-            }
+            catch (Exception ex) { _logger.LogError(ex, "Batch upload failed for {File}", file.FileName); }
         }
-
         return results;
     }
 
     private async Task<string> EnsureFolderPathAsync(string relativePath, string parentId)
     {
         var segments = relativePath.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
-        var currentParentId = string.IsNullOrWhiteSpace(parentId) ? null : parentId;
-
-        foreach (var segment in segments)
+        var currentId = parentId;
+        foreach (var seg in segments)
         {
-            Expression<Func<FileItem, bool>> baseFilter;
-            if (currentParentId == null)
-                baseFilter = x => x.Name == segment && x.Type == FileItemType.Folder && x.Status == FileStatus.Active && x.IsDeleted != true && (x.ParentId == null || x.ParentId == string.Empty);
-            else
-                baseFilter = x => x.Name == segment && x.Type == FileItemType.Folder && x.Status == FileStatus.Active && x.IsDeleted != true && x.ParentId == currentParentId;
-
-            var existing = await _fileItemFactory.FindAsync(baseFilter, limit: 1);
-
-            if (existing.Any())
-            {
-                currentParentId = existing.First().Id!;
-            }
+            var folder = await _context.Set<FileItem>().FirstOrDefaultAsync(x => x.Name == seg && x.ParentId == currentId && x.Type == FileItemType.Folder && x.Status == FileStatus.Active);
+            if (folder != null) currentId = folder.Id!;
             else
             {
-                var path = await BuildFilePathAsync(segment, currentParentId ?? string.Empty);
-                var newFolder = new FileItem
-                {
-                    Name = segment,
-                    Path = path,
-                    ParentId = currentParentId ?? string.Empty,
-                    Type = FileItemType.Folder,
-                    Status = FileStatus.Active,
-                    Size = 0,
-                    MimeType = "application/x-directory"
-                };
-
-                await _fileItemFactory.CreateAsync(newFolder);
-                currentParentId = newFolder.Id;
+                var newFolder = await CreateFolderAsync(seg, currentId);
+                currentId = newFolder.Id!;
             }
         }
-
-        return currentParentId!;
+        return currentId;
     }
 
     private async Task<string> BuildFilePathAsync(string name, string parentId)
     {
-        if (string.IsNullOrEmpty(parentId))
-            return $"/{name}";
-
-        var parentItems = await _fileItemFactory.FindAsync(x => x.Id == parentId && x.Status == FileStatus.Active, limit: 1);
-        var parent = parentItems.FirstOrDefault();
-        if (parent == null)
-            return $"/{name}";
-
-        return $"{parent.Path}/{name}";
+        if (string.IsNullOrEmpty(parentId)) return $"/{name}";
+        var parent = await _context.Set<FileItem>().FirstOrDefaultAsync(x => x.Id == parentId);
+        return parent == null ? $"/{name}" : $"{parent.Path}/{name}";
     }
 
     private async Task UpdateDescendantsPathAsync(string oldPath, string newPath)
     {
-        var pathPrefix = $"{oldPath}/";
-        var childItems = await _fileItemFactory.FindAsync(x => x.Path != null && x.Path.StartsWith(pathPrefix));
-        foreach (var child in childItems)
-        {
-            await _fileItemFactory.UpdateAsync(child.Id!, entity =>
-            {
-                entity.Path = entity.Path!.Replace(pathPrefix, $"{newPath}/", StringComparison.Ordinal);
-            });
-        }
+        var prefix = $"{oldPath}/";
+        var children = await _context.Set<FileItem>().Where(x => x.Path != null && x.Path.StartsWith(prefix)).ToListAsync();
+        foreach (var child in children) child.Path = child.Path!.Replace(prefix, $"{newPath}/");
+        await _context.SaveChangesAsync();
     }
 
     private async Task PermanentDeleteFolderContentsAsync(FileItem folder)
     {
-        var pathPrefix = $"{folder.Path}/";
-        var childItems = await _fileItemFactory.FindAsync(x => x.Path != null && x.Path.StartsWith(pathPrefix));
-
-        foreach (var item in childItems)
+        var prefix = $"{folder.Path}/";
+        var children = await _context.Set<FileItem>().IgnoreQueryFilters().Where(x => x.Path != null && x.Path.StartsWith(prefix)).ToListAsync();
+        foreach (var item in children)
         {
-            if (item.Type == FileItemType.Folder)
-                await PermanentDeleteFolderContentsAsync(item);
-
-            await _fileItemFactory.SoftDeleteAsync(item.Id!);
-
-            if (item.Type == FileItemType.File)
-            {
-                await UpdateStorageUsageAsync(-item.Size);
-                await DeleteGridFSFileAsync(item);
-            }
+            if (item.Type == FileItemType.Folder) await PermanentDeleteFolderContentsAsync(item);
+            _context.Set<FileItem>().Remove(item);
+            if (item.Type == FileItemType.File) { await UpdateStorageUsageAsync(-item.Size); await DeleteGridFSFileAsync(item); }
         }
     }
 
-    private async Task DeleteGridFSFileAsync(FileItem fileItem)
+    private async Task DeleteGridFSFileAsync(FileItem item) { if (!string.IsNullOrEmpty(item.GridFSId)) await _fileStorageFactory.DeleteAsync(item.GridFSId, "cloud_storage_files"); }
+
+    private async Task GenerateAndUploadThumbnailAsync(Stream stream, FileItem file)
     {
-        if (!string.IsNullOrEmpty(fileItem.GridFSId))
+        stream.Position = 0;
+        using var image = await Image.LoadAsync(stream);
+        image.Mutate(x => x.Resize(200, 0));
+        using var ms = new MemoryStream();
+        await image.SaveAsPngAsync(ms);
+        ms.Position = 0;
+        file.ThumbnailGridFSId = await _fileStorageFactory.UploadAsync(ms, $"{file.Id}.png", "image/png", null, "cloud_storage_thumbnails");
+        await _context.SaveChangesAsync();
+    }
+
+    private async Task EnsureCurrentVersionSnapshotAsync(FileItem file)
+    {
+        if (!await _context.Set<FileVersion>().AnyAsync(x => x.FileItemId == file.Id && x.IsCurrentVersion))
         {
-            await _fileStorageFactory.DeleteAsync(fileItem.GridFSId, "cloud_storage_files");
+            await _context.Set<FileVersion>().AddAsync(new FileVersion { FileItemId = file.Id!, VersionNumber = 1, GridFSId = file.GridFSId, Size = file.Size, Hash = file.Hash, Comment = "原始版本", IsCurrentVersion = true });
+            await _context.SaveChangesAsync();
         }
     }
 
-    private async Task GenerateAndUploadThumbnailAsync(Stream sourceStream, FileItem fileItem)
+    private async Task MarkAllVersionsAsNonCurrentAsync(string fileId)
     {
-        sourceStream.Position = 0;
-        using var image = await Image.LoadAsync(sourceStream);
-        var thumbnailWidth = 200;
-        var thumbnailHeight = (int)(image.Height * (thumbnailWidth / (double)image.Width));
-        image.Mutate(x => x.Resize(new ResizeOptions { Size = new Size(thumbnailWidth, thumbnailHeight), Mode = ResizeMode.Stretch }));
-        using var thumbnailStream = new MemoryStream();
-        await image.SaveAsPngAsync(thumbnailStream);
-        thumbnailStream.Position = 0;
-        var thumbnailId = await _fileStorageFactory.UploadAsync(
-            thumbnailStream,
-            $"{fileItem.Id}.png",
-            "image/png",
-            null,
-            "cloud_storage_thumbnails");
-
-        await _fileItemFactory.UpdateAsync(fileItem.Id!, entity =>
-        {
-            entity.ThumbnailGridFSId = thumbnailId;
-        });
+        var versions = await _context.Set<FileVersion>().Where(x => x.FileItemId == fileId && x.IsCurrentVersion).ToListAsync();
+        foreach (var v in versions) v.IsCurrentVersion = false;
+        await _context.SaveChangesAsync();
     }
 
-    private async Task EnsureCurrentVersionSnapshotAsync(FileItem fileItem)
+    private async Task<int> GetNextVersionNumberAsync(string fileId)
     {
-        var currentVersion = await GetCurrentVersionAsync(fileItem.Id!);
-        if (currentVersion == null)
-        {
-            var version = new FileVersion
-            {
-                FileItemId = fileItem.Id!,
-                VersionNumber = 1,
-                GridFSId = fileItem.GridFSId,
-                Size = fileItem.Size,
-                Hash = fileItem.Hash,
-                Comment = "原始版本",
-                IsCurrentVersion = true
-            };
-            await _fileVersionFactory.CreateAsync(version);
-        }
+        var max = await _context.Set<FileVersion>().Where(x => x.FileItemId == fileId).MaxAsync(v => (int?)v.VersionNumber) ?? 0;
+        return max + 1;
     }
 
-    private async Task<FileVersion?> GetCurrentVersionAsync(string fileItemId)
+    private async Task CheckStorageQuotaAsync(long size) { if ((await _storageQuotaService.GetUserQuotaAsync(_tenantContext.GetCurrentUserId())).UsedSpace + size > (await _storageQuotaService.GetUserQuotaAsync(_tenantContext.GetCurrentUserId())).TotalQuota) throw new InvalidOperationException("存储配额不足"); }
+    private async Task UpdateStorageUsageAsync(long delta) { var id = _tenantContext.GetCurrentUserId(); if (id != null) await _storageQuotaService.UpdateStorageUsageAsync(id, delta); }
+    private async Task InitializeDefaultQuotaAsync(string id) => await _storageQuotaService.SetUserQuotaAsync(id, 0);
+    private async Task<bool> FileExistsAsync(string name, string pid) => await _context.Set<FileItem>().AnyAsync(x => x.Name == name && x.ParentId == pid && x.Status == FileStatus.Active);
+    private async Task<bool> IsDescendantFolderAsync(string fid, string did)
     {
-        var versions = await _fileVersionFactory.FindAsync(x => x.FileItemId == fileItemId && x.IsCurrentVersion, limit: 1);
-        return versions.FirstOrDefault();
+        if (fid == did) return true;
+        var folder = await _context.Set<FileItem>().FirstOrDefaultAsync(x => x.Id == fid);
+        return folder != null && await _context.Set<FileItem>().AnyAsync(x => x.Id == did && x.Path != null && x.Path.StartsWith($"{folder.Path}/"));
     }
 
-    private async Task MarkAllVersionsAsNonCurrentAsync(string fileItemId)
-    {
-        var versions = await _fileVersionFactory.FindAsync(x => x.FileItemId == fileItemId && x.IsCurrentVersion);
-        foreach (var version in versions)
-        {
-            await _fileVersionFactory.UpdateAsync(version.Id!, entity =>
-            {
-                entity.IsCurrentVersion = false;
-            });
-        }
-    }
-
-    private async Task<int> GetNextVersionNumberAsync(string fileItemId)
-    {
-        var versions = await _fileVersionFactory.FindAsync(x => x.FileItemId == fileItemId, query => query.OrderByDescending(v => v.VersionNumber));
-        return versions.Count > 0 ? versions.Max(v => v.VersionNumber) + 1 : 1;
-    }
-
-    private async Task CheckStorageQuotaAsync(long fileSize)
-    {
-        var userId = _tenantContext.GetCurrentUserId();
-        var quota = await _storageQuotaService.GetUserQuotaAsync(userId);
-        if (quota.UsedSpace + fileSize > quota.TotalQuota)
-            throw new InvalidOperationException("存储配额不足");
-    }
-
-    private async Task UpdateStorageUsageAsync(long sizeDelta)
-    {
-        var userId = _tenantContext.GetCurrentUserId();
-        if (string.IsNullOrEmpty(userId)) return;
-        await _storageQuotaService.UpdateStorageUsageAsync(userId, sizeDelta);
-    }
-
-    private async Task InitializeDefaultQuotaAsync(string userId)
-    {
-        await _storageQuotaService.SetUserQuotaAsync(userId, 0);
-    }
-
-    private async Task<bool> FileExistsAsync(string name, string parentId)
-    {
-        var items = await _fileItemFactory.FindAsync(x => x.Name == name && x.ParentId == parentId && x.Status == FileStatus.Active, limit: 1);
-        return items.Count > 0;
-    }
-
-    private async Task<bool> IsDescendantFolderAsync(string folderId, string potentialDescendantId)
-    {
-        if (folderId == potentialDescendantId)
-            return true;
-
-        var folderItems = await _fileItemFactory.FindAsync(x => x.Id == folderId && x.Type == FileItemType.Folder, limit: 1);
-        if (folderItems.Count == 0)
-            return false;
-
-        var folder = folderItems.First();
-        var pathPrefix = $"{folder.Path}/";
-        var descendantItems = await _fileItemFactory.FindAsync(x => x.Id == potentialDescendantId && x.Path != null && x.Path.StartsWith(pathPrefix), limit: 1);
-        return descendantItems.Count > 0;
-    }
-
-    private static async Task<string> ComputeFileHashAsync(Stream stream)
-    {
-        using var sha256 = SHA256.Create();
-        var hashBytes = await sha256.ComputeHashAsync(stream);
-        return Convert.ToHexString(hashBytes).ToLowerInvariant();
-    }
-
-    private static bool IsImageFile(string? contentType)
-    {
-        if (string.IsNullOrWhiteSpace(contentType))
-            return false;
-        return contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase) &&
-               (contentType.Equals("image/jpeg", StringComparison.OrdinalIgnoreCase) ||
-                contentType.Equals("image/png", StringComparison.OrdinalIgnoreCase) ||
-                contentType.Equals("image/gif", StringComparison.OrdinalIgnoreCase) ||
-                contentType.Equals("image/webp", StringComparison.OrdinalIgnoreCase));
-    }
-
-    private static bool IsPreviewableFile(string mimeType)
-    {
-        return mimeType.Equals("application/pdf", StringComparison.OrdinalIgnoreCase) ||
-               mimeType.StartsWith("text/", StringComparison.OrdinalIgnoreCase) ||
-               mimeType.Equals("application/json", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static string GetPreviewType(string mimeType)
-    {
-        if (mimeType.Equals("application/pdf", StringComparison.OrdinalIgnoreCase))
-            return "pdf";
-        if (mimeType.StartsWith("text/", StringComparison.OrdinalIgnoreCase))
-            return "text";
-        if (mimeType.Equals("application/json", StringComparison.OrdinalIgnoreCase))
-            return "json";
-        return "unsupported";
-    }
+    private static async Task<string> ComputeFileHashAsync(Stream s) { using var sha = SHA256.Create(); return Convert.ToHexString(await sha.ComputeHashAsync(s)).ToLowerInvariant(); }
+    private static bool IsImageFile(string? ct) => !string.IsNullOrEmpty(ct) && ct.StartsWith("image/") && (ct.EndsWith("jpeg") || ct.EndsWith("png") || ct.EndsWith("gif") || ct.EndsWith("webp"));
+    private static bool IsPreviewableFile(string mt) => mt.Equals("application/pdf", StringComparison.OrdinalIgnoreCase) || mt.StartsWith("text/", StringComparison.OrdinalIgnoreCase) || mt.Equals("application/json", StringComparison.OrdinalIgnoreCase);
+    private static string GetPreviewType(string mt) => mt.Equals("application/pdf", StringComparison.OrdinalIgnoreCase) ? "pdf" : mt.StartsWith("text/") ? "text" : mt.Equals("application/json") ? "json" : "unsupported";
 }

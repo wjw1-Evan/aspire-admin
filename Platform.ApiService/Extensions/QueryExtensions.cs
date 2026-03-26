@@ -97,4 +97,3 @@ public static class QueryExtensions
         return sortOrder?.ToLower() == "desc" || sortOrder?.ToLower() == "descending";
     }
 }
-

@@ -1,30 +1,40 @@
-using Platform.ApiService.Models;
-using Platform.ApiService.Options;
-using Platform.ServiceDefaults.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OpenAI;
 using OpenAI.Chat;
+using Platform.ApiService.Models;
+using Platform.ApiService.Options;
+using Platform.ServiceDefaults.Services;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace Platform.ApiService.Services;
 
 /// <summary>
 /// 项目统计服务
 /// </summary>
-public class ProjectStatisticsService(
-    IDataFactory<Project> projectFactory,
-    IDataFactory<WorkTask> taskFactory,
-    IDataFactory<ProjectMember> memberFactory,
-    IDataFactory<Milestone> milestoneFactory,
-    OpenAIClient openAiClient,
-    IOptions<AiCompletionOptions> aiOptions,
-    ILogger<ProjectStatisticsService> logger) : IProjectStatisticsService
+public class ProjectStatisticsService : IProjectStatisticsService
 {
-    private readonly IDataFactory<Project> _projectFactory = projectFactory;
-    private readonly IDataFactory<WorkTask> _taskFactory = taskFactory;
-    private readonly IDataFactory<ProjectMember> _memberFactory = memberFactory;
-    private readonly IDataFactory<Milestone> _milestoneFactory = milestoneFactory;
-    private readonly AiCompletionOptions _aiOptions = aiOptions.Value;
+    private readonly DbContext _context;
+    private readonly OpenAIClient _openAiClient;
+    private readonly AiCompletionOptions _aiOptions;
+    private readonly ILogger<ProjectStatisticsService> _logger;
+
+    public ProjectStatisticsService(
+        DbContext context,
+        OpenAIClient openAiClient,
+        IOptions<AiCompletionOptions> aiOptions,
+        ILogger<ProjectStatisticsService> logger)
+    {
+        _context = context;
+        _openAiClient = openAiClient;
+        _aiOptions = aiOptions.Value;
+        _logger = logger;
+    }
 
     /// <summary>
     /// 获取仪表盘统计数据
@@ -39,8 +49,8 @@ public class ProjectStatisticsService(
 
         var stats = new ProjectDashboardStatistics();
 
-        // 2. Project Stats (Snapshot of current state)
-        var projects = await _projectFactory.FindAsync();
+        // 2. Project Stats
+        var projects = await _context.Set<Project>().ToListAsync();
         stats.Project = new ProjectStatistics
         {
             TotalProjects = projects.Count,
@@ -60,10 +70,11 @@ public class ProjectStatisticsService(
             stats.Project.ProjectsByPriority[pr]++;
         }
 
-        // 3. Task Stats (Time-bound)
-        var tasks = await _taskFactory.FindAsync(t =>
-            (!start.HasValue || t.CreatedAt >= start.Value) &&
-            (!end.HasValue || t.CreatedAt <= end.Value));
+        // 3. Task Stats
+        var tasks = await _context.Set<WorkTask>()
+            .Where(t => (!start.HasValue || t.CreatedAt >= start.Value) && (!end.HasValue || t.CreatedAt <= end.Value))
+            .ToListAsync();
+
         stats.Task = new TaskStatistics
         {
             TotalTasks = tasks.Count,
@@ -88,8 +99,8 @@ public class ProjectStatisticsService(
             stats.Task.TasksByPriority[pr]++;
         }
 
-        // 4. Member Stats (Snapshot)
-        var members = await _memberFactory.FindAsync();
+        // 4. Member Stats
+        var members = await _context.Set<ProjectMember>().ToListAsync();
         stats.Member.TotalMembers = members.Select(m => m.UserId).Distinct().Count();
         foreach (var m in members)
         {
@@ -98,10 +109,11 @@ public class ProjectStatisticsService(
             stats.Member.MembersByRole[r]++;
         }
 
-        // 5. Milestone Stats (Time-bound by TargetDate)
-        var milestones = await _milestoneFactory.FindAsync(m =>
-            (!start.HasValue || m.TargetDate >= start.Value) &&
-            (!end.HasValue || m.TargetDate <= end.Value));
+        // 5. Milestone Stats
+        var milestones = await _context.Set<Milestone>()
+            .Where(m => (!start.HasValue || m.TargetDate >= start.Value) && (!end.HasValue || m.TargetDate <= end.Value))
+            .ToListAsync();
+            
         stats.Milestone.TotalMilestones = milestones.Count;
         stats.Milestone.PendingMilestones = milestones.Count(m => m.Status == MilestoneStatus.Pending);
         stats.Milestone.AchievedMilestones = milestones.Count(m => m.Status == MilestoneStatus.Achieved);
@@ -113,10 +125,6 @@ public class ProjectStatisticsService(
     /// <summary>
     /// 生成 AI 分析报告
     /// </summary>
-    /// <param name="startDate">开始日期</param>
-    /// <param name="endDate">结束日期</param>
-    /// <param name="statisticsData">现有统计数据（可选）</param>
-    /// <returns>AI 生成的项目管理分析报告 (Markdown 格式)</returns>
     public async Task<string> GenerateAiReportAsync(DateTime? startDate = null, DateTime? endDate = null, object? statisticsData = null)
     {
         try
@@ -128,22 +136,12 @@ public class ProjectStatisticsService(
 
             if (statisticsData != null)
             {
-                statsData = new
-                {
-                    Period = periodDesc,
-                    Data = statisticsData
-                };
+                statsData = new { Period = periodDesc, Data = statisticsData };
             }
             else
             {
-                // Fetch dashboard statistics if data not provided
                 var dashboardStats = await GetDashboardStatisticsAsync(startDate, endDate);
-
-                statsData = new
-                {
-                    Period = periodDesc,
-                    Data = dashboardStats
-                };
+                statsData = new { Period = periodDesc, Data = dashboardStats };
             }
 
             var statsJson = JsonSerializer.Serialize(statsData, new JsonSerializerOptions { WriteIndented = true });
@@ -154,27 +152,15 @@ public class ProjectStatisticsService(
 {statsJson}
 
 报告要求：
-1. **总体概览**：简要总结本周期项目整体运行状况（如项目总数、完成率、延期情况）。
-2. **详细分析**：
-   - **项目进度**：分析进行中与延期项目的比例，识别交付风险。
-   - **任务执行**：关注任务完成率、逾期任务数量及优先级分布，评估团队执行力。
-   - **资源负载**：分析成员角色分布及投入情况（如果有相应数据）。
-   - **里程碑达成**：评估关键节点的达成情况。
-3. **趋势与风险**：
-   - 识别潜在的风险点（如高优先级任务积压、里程碑频繁延期）。
-   - 分析数据背后的趋势。
-4. **改进建议**：提出具体的管理改进建议（如资源调配、流程优化）。
+1. **总体概览**：简要总结本周期项目整体运行状况。
+2. **详细分析**：项目进度、任务执行效率等。
+3. **趋势与风险**：识别潜在风险点。
+4. **改进建议**：提出具体的改进建议。
 
-请使用 Markdown 格式输出，并进行以下美化：
-1. **使用 Emoji 图标**：增强可读性 (📊, 🚀, ⚠️, ✅)。
-2. **使用表格**：展示关键数据对比。
-3. **高亮关键数据**：使用 **加粗** 或 `代码块`。
-4. **引用块**：展示核心洞察。
-
-语气需专业、客观且具有建设性。";
+请使用 Markdown 格式输出，并使用 Emoji 增强可读性。";
 
             var model = string.IsNullOrWhiteSpace(_aiOptions.Model) ? "gpt-4o-mini" : _aiOptions.Model;
-            var chatClient = openAiClient.GetChatClient(model);
+            var chatClient = _openAiClient.GetChatClient(model);
 
             var messages = new List<OpenAI.Chat.ChatMessage>
             {
@@ -193,7 +179,7 @@ public class ProjectStatisticsService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "生成 AI 报告失败");
+            _logger.LogError(ex, "生成 AI 报告失败");
             return $"生成报告时发生错误：{ex.Message}。请联系管理员检查 AI 服务配置。";
         }
     }

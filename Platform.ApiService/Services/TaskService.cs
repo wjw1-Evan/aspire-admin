@@ -1,10 +1,13 @@
+using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
 
 namespace Platform.ApiService.Services;
 
@@ -13,39 +16,27 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class TaskService : ITaskService
 {
-    private readonly IDataFactory<WorkTask> _taskFactory;
-    private readonly IDataFactory<TaskExecutionLog> _executionLogFactory;
+    private readonly DbContext _context;
     private readonly IUserService _userService;
     private readonly IUnifiedNotificationService _notificationService;
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<TaskService> _logger;
 
-    /// <summary>
-    /// 初始化 TaskService 实例
-    /// </summary>
-    public TaskService(
-        IDataFactory<WorkTask> taskFactory,
-        IDataFactory<TaskExecutionLog> executionLogFactory,
+    public TaskService(DbContext context,
         IUserService userService,
-        IUserActivityLogService userActivityLogService,
         IUnifiedNotificationService notificationService,
         IServiceProvider serviceProvider,
         ILogger<TaskService> logger)
     {
-        _taskFactory = taskFactory;
-        _executionLogFactory = executionLogFactory;
+        _context = context;
         _userService = userService;
         _notificationService = notificationService;
         _serviceProvider = serviceProvider;
         _logger = logger;
     }
 
-    /// <summary>
-    /// 创建新任务
-    /// </summary>
-    /// <param name="request">创建任务请求</param>
-    /// <returns>创建的任务信息</returns>
-    public async System.Threading.Tasks.Task<TaskDto> CreateTaskAsync(CreateTaskRequest request)
+    /// <inheritdoc/>
+    public async Task<TaskDto> CreateTaskAsync(CreateTaskRequest request)
     {
         var task = new WorkTask
         {
@@ -57,8 +48,8 @@ public class TaskService : ITaskService
             PlannedStartTime = request.PlannedStartTime,
             PlannedEndTime = request.PlannedEndTime,
             EstimatedDuration = request.EstimatedDuration,
-            ParticipantIds = request.ParticipantIds ?? new(),
-            Tags = request.Tags ?? new(),
+            ParticipantIds = request.ParticipantIds ?? new List<string>(),
+            Tags = request.Tags ?? new List<string>(),
             Remarks = request.Remarks,
             Status = string.IsNullOrEmpty(request.AssignedTo) ? Models.TaskStatus.Pending : Models.TaskStatus.Assigned,
             ProjectId = request.ProjectId,
@@ -72,9 +63,9 @@ public class TaskService : ITaskService
             task.AssignedAt = DateTime.UtcNow;
         }
 
-        await _taskFactory.CreateAsync(task);
+        await _context.Set<WorkTask>().AddAsync(task);
+        await _context.SaveChangesAsync();
 
-        // 如果在创建时已指派给某人，发送任务分配通知
         try
         {
             if (!string.IsNullOrEmpty(task.AssignedTo))
@@ -99,329 +90,206 @@ public class TaskService : ITaskService
         return await ConvertToTaskDtoAsync(task);
     }
 
-    /// <summary>
-    /// 根据任务ID获取任务详情
-    /// </summary>
-    /// <param name="taskId">任务ID</param>
-    /// <returns>任务信息，如果不存在则返回 null</returns>
-    public async System.Threading.Tasks.Task<TaskDto?> GetTaskByIdAsync(string taskId)
+    /// <inheritdoc/>
+    public async Task<TaskDto?> GetTaskByIdAsync(string taskId)
     {
-        var task = await _taskFactory.GetByIdAsync(taskId);
-
-        if (task == null)
-            return null;
-
-        return await ConvertToTaskDtoAsync(task);
+        var task = await _context.Set<WorkTask>().FirstOrDefaultAsync(x => x.Id == taskId);
+        return task == null ? null : await ConvertToTaskDtoAsync(task);
     }
 
-    /// <summary>
-    /// 查询任务列表
-    /// </summary>
-    /// <param name="request">查询请求</param>
-    /// <returns>任务列表响应</returns>
-    public async System.Threading.Tasks.Task<TaskListResponse> QueryTasksAsync(TaskQueryRequest request)
+    /// <inheritdoc/>
+    public async Task<TaskListResponse> QueryTasksAsync(TaskQueryRequest request)
     {
         var search = request.Search?.ToLower();
         var onlyRoot = request.OnlyRoot ?? string.IsNullOrEmpty(request.Search);
 
-        // 构建过滤器（LINQ）
-        System.Linq.Expressions.Expression<Func<WorkTask, bool>> filter = t =>
-            (string.IsNullOrEmpty(search) || (t.TaskName != null && t.TaskName.ToLower().Contains(search)) || (t.Description != null && t.Description.ToLower().Contains(search))) &&
-            (string.IsNullOrEmpty(request.ProjectId) || t.ProjectId == request.ProjectId) &&
-            (!request.Status.HasValue || t.Status == (Models.TaskStatus)request.Status.Value) &&
-            (!request.Priority.HasValue || t.Priority == (TaskPriority)request.Priority.Value) &&
-            (string.IsNullOrEmpty(request.AssignedTo) || t.AssignedTo == request.AssignedTo) ||
-            (string.IsNullOrEmpty(request.CreatedBy) || t.CreatedBy == request.CreatedBy) ||
-            (string.IsNullOrEmpty(request.TaskType) || t.TaskType == request.TaskType) &&
-            (!onlyRoot || string.IsNullOrEmpty(t.ParentTaskId)) &&
-            (!request.StartDate.HasValue || t.CreatedAt >= request.StartDate.Value) &&
-            (!request.EndDate.HasValue || t.CreatedAt <= request.EndDate.Value) &&
-            (request.Tags == null || request.Tags.Count == 0 || t.Tags.Any(tag => request.Tags.Contains(tag)));
+        var q = _context.Set<WorkTask>().AsQueryable();
 
-        // 排序处理
-        Func<IQueryable<WorkTask>, IOrderedQueryable<WorkTask>> orderBy = query =>
+        if (!string.IsNullOrEmpty(search))
+            q = q.Where(t => t.TaskName.ToLower().Contains(search) || t.Description.ToLower().Contains(search));
+        
+        if (!string.IsNullOrEmpty(request.ProjectId)) q = q.Where(t => t.ProjectId == request.ProjectId);
+        if (request.Status.HasValue) q = q.Where(t => t.Status == (Models.TaskStatus)request.Status.Value);
+        if (request.Priority.HasValue) q = q.Where(t => t.Priority == (TaskPriority)request.Priority.Value);
+        if (!string.IsNullOrEmpty(request.AssignedTo)) q = q.Where(t => t.AssignedTo == request.AssignedTo);
+        if (!string.IsNullOrEmpty(request.CreatedBy)) q = q.Where(t => t.CreatedBy == request.CreatedBy);
+        if (!string.IsNullOrEmpty(request.TaskType)) q = q.Where(t => t.TaskType == request.TaskType);
+        if (onlyRoot) q = q.Where(t => string.IsNullOrEmpty(t.ParentTaskId));
+        if (request.StartDate.HasValue) q = q.Where(t => t.CreatedAt >= request.StartDate.Value);
+        if (request.EndDate.HasValue) q = q.Where(t => t.CreatedAt <= request.EndDate.Value);
+        if (request.Tags != null && request.Tags.Count > 0) q = q.Where(t => t.Tags.Any(tag => request.Tags.Contains(tag)));
+
+        var isAsc = request.SortOrder?.ToLower() == "asc";
+        q = request.SortBy?.ToLower() switch
         {
-            var isAsc = request.SortOrder?.ToLower() == "asc";
-            return request.SortBy?.ToLower() switch
-            {
-                "taskname" => isAsc ? query.OrderBy(t => t.TaskName) : query.OrderByDescending(t => t.TaskName),
-                "priority" => isAsc ? query.OrderBy(t => t.Priority) : query.OrderByDescending(t => t.Priority),
-                "status" => isAsc ? query.OrderBy(t => t.Status) : query.OrderByDescending(t => t.Status),
-                "plannedstarttime" => isAsc ? query.OrderBy(t => t.PlannedStartTime) : query.OrderByDescending(t => t.PlannedStartTime),
-                "plannedendtime" => isAsc ? query.OrderBy(t => t.PlannedEndTime) : query.OrderByDescending(t => t.PlannedEndTime),
-                "sortorder" => isAsc ? query.OrderBy(t => t.SortOrder) : query.OrderByDescending(t => t.SortOrder),
-                _ => isAsc ? query.OrderBy(t => t.CreatedAt) : query.OrderByDescending(t => t.CreatedAt)
-            };
+            "taskname" => isAsc ? q.OrderBy(t => t.TaskName) : q.OrderByDescending(t => t.TaskName),
+            "priority" => isAsc ? q.OrderBy(t => t.Priority) : q.OrderByDescending(t => t.Priority),
+            "status" => isAsc ? q.OrderBy(t => t.Status) : q.OrderByDescending(t => t.Status),
+            "plannedstarttime" => isAsc ? q.OrderBy(t => t.PlannedStartTime) : q.OrderByDescending(t => t.PlannedStartTime),
+            "plannedendtime" => isAsc ? q.OrderBy(t => t.PlannedEndTime) : q.OrderByDescending(t => t.PlannedEndTime),
+            "sortorder" => isAsc ? q.OrderBy(t => t.SortOrder) : q.OrderByDescending(t => t.SortOrder),
+            _ => isAsc ? q.OrderBy(t => t.CreatedAt) : q.OrderByDescending(t => t.CreatedAt)
         };
 
-        // 分页查询
-        var (tasks, total) = await _taskFactory.FindPagedAsync(
-            filter,
-            orderBy,
-            request.Page,
-            request.PageSize);
-
+        var total = await q.LongCountAsync();
+        var tasks = await q.Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
         var taskDtos = await ConvertToTaskDtosAsync(tasks);
 
         if (onlyRoot)
         {
-            var parentIds = tasks.Where(t => !string.IsNullOrEmpty(t.Id)).Select(t => t.Id!).ToList();
-            var children = await _taskFactory.FindAsync(
-                t => parentIds.Contains(t.ParentTaskId!),
-                q => q.OrderBy(c => c.SortOrder).ThenBy(c => c.CreatedAt));
+            var parentIds = tasks.Select(t => t.Id!).ToList();
+            var children = await _context.Set<WorkTask>()
+                .Where(t => parentIds.Contains(t.ParentTaskId!))
+                .OrderBy(c => c.SortOrder)
+                .ThenBy(c => c.CreatedAt)
+                .ToListAsync();
 
             if (children.Any())
             {
                 var childDtos = await ConvertToTaskDtosAsync(children);
                 var childMap = childDtos.GroupBy(c => c.ParentTaskId!).ToDictionary(g => g.Key, g => g.ToList());
-
                 foreach (var dto in taskDtos)
                 {
-                    if (childMap.TryGetValue(dto.Id!, out var dtoChildren))
-                    {
-                        dto.Children = dtoChildren;
-                    }
+                    if (childMap.TryGetValue(dto.Id!, out var dtoChildren)) dto.Children = dtoChildren;
                 }
             }
         }
 
-        return new TaskListResponse
-        {
-            Tasks = taskDtos,
-            Total = (int)total,
-            Page = request.Page,
-            PageSize = request.PageSize
-        };
+        return new TaskListResponse { Tasks = taskDtos, Total = (int)total, Page = request.Page, PageSize = request.PageSize };
     }
 
-    /// <summary>
-    /// 更新任务信息
-    /// </summary>
-    /// <param name="request">更新任务请求</param>
-    /// <param name="userId">当前用户ID</param>
-    /// <returns>更新后的任务信息</returns>
-    public async System.Threading.Tasks.Task<TaskDto> UpdateTaskAsync(UpdateTaskRequest request, string userId)
+    /// <inheritdoc/>
+    public async Task<TaskDto> UpdateTaskAsync(UpdateTaskRequest request, string userId)
     {
-        var task = await _taskFactory.GetByIdAsync(request.TaskId);
+        var task = await _context.Set<WorkTask>().FirstOrDefaultAsync(x => x.Id == request.TaskId);
+        if (task == null) throw new KeyNotFoundException($"任务 {request.TaskId} 不存在");
 
-        if (task == null)
-            throw new KeyNotFoundException($"任务 {request.TaskId} 不存在");
-
-        // 验证权限：创建者、负责人或参与者可以更新
-        var isCreator = task.CreatedBy == userId;
-        var isAssignee = task.AssignedTo == userId;
-        var isParticipant = task.ParticipantIds?.Contains(userId) == true;
-        
-        if (!isCreator && !isAssignee && !isParticipant)
+        if (task.CreatedBy != userId && task.AssignedTo != userId && (task.ParticipantIds == null || !task.ParticipantIds.Contains(userId)))
             throw new UnauthorizedAccessException("无权更新此任务");
 
-        var updatedTask = await _taskFactory.UpdateAsync(request.TaskId, t =>
+        if (!string.IsNullOrEmpty(request.TaskName)) task.TaskName = request.TaskName;
+        if (request.Description != null) task.Description = request.Description;
+        if (!string.IsNullOrEmpty(request.TaskType)) task.TaskType = request.TaskType;
+        if (request.Priority.HasValue) task.Priority = (TaskPriority)request.Priority.Value;
+        if (request.Status.HasValue) task.Status = (Models.TaskStatus)request.Status.Value;
+
+        if (request.AssignedTo != null)
         {
-
-            if (!string.IsNullOrEmpty(request.TaskName))
-                t.TaskName = request.TaskName;
-
-            if (request.Description != null)
-                t.Description = request.Description;
-
-            if (!string.IsNullOrEmpty(request.TaskType))
-                t.TaskType = request.TaskType;
-
-            if (request.Priority.HasValue)
-                t.Priority = (TaskPriority)request.Priority.Value;
-
-            if (request.Status.HasValue)
-                t.Status = (Models.TaskStatus)request.Status.Value;
-
-            // 处理指派用户：null 表示不更新；空字符串表示清空指派
-            if (request.AssignedTo != null)
+            if (string.IsNullOrWhiteSpace(request.AssignedTo))
             {
-                if (string.IsNullOrWhiteSpace(request.AssignedTo))
-                {
-                    t.AssignedTo = null;
-                    t.AssignedAt = null;
-                    // 若任务处于已分配状态且未开始执行，清空指派后恢复为待分配
-                    if (t.Status == Models.TaskStatus.Assigned)
-                        t.Status = Models.TaskStatus.Pending;
-                }
-                else
-                {
-                    t.AssignedTo = request.AssignedTo;
-                    t.AssignedAt = DateTime.UtcNow;
-                    if (t.Status == Models.TaskStatus.Pending)
-                        t.Status = Models.TaskStatus.Assigned;
-                }
+                task.AssignedTo = null;
+                task.AssignedAt = null;
+                if (task.Status == Models.TaskStatus.Assigned) task.Status = Models.TaskStatus.Pending;
             }
-
-            if (request.PlannedStartTime.HasValue)
-                t.PlannedStartTime = request.PlannedStartTime;
-
-            if (request.PlannedEndTime.HasValue)
-                t.PlannedEndTime = request.PlannedEndTime;
-
-            if (request.CompletionPercentage.HasValue)
-                t.CompletionPercentage = request.CompletionPercentage.Value;
-
-            if (request.ParticipantIds != null)
-                t.ParticipantIds = request.ParticipantIds;
-
-            if (request.Tags != null)
-                t.Tags = request.Tags;
-
-            if (request.Remarks != null)
-                t.Remarks = request.Remarks;
-
-            if (request.ProjectId != null)
-                t.ProjectId = request.ProjectId;
-
-            if (request.ParentTaskId != null)
-                t.ParentTaskId = request.ParentTaskId;
-
-            if (request.SortOrder.HasValue)
-                t.SortOrder = request.SortOrder.Value;
-
-            if (request.Duration.HasValue)
-                t.Duration = request.Duration.Value;
-        });
-
-        if (updatedTask == null)
-        {
-            throw new KeyNotFoundException($"任务 {request.TaskId} 不存在");
+            else
+            {
+                task.AssignedTo = request.AssignedTo;
+                task.AssignedAt = DateTime.UtcNow;
+                if (task.Status == Models.TaskStatus.Pending) task.Status = Models.TaskStatus.Assigned;
+            }
         }
 
-        // 如果任务属于项目，且进度有更新，更新项目进度
-        if (!string.IsNullOrEmpty(updatedTask.ProjectId) && request.CompletionPercentage.HasValue)
+        if (request.PlannedStartTime.HasValue) task.PlannedStartTime = request.PlannedStartTime;
+        if (request.PlannedEndTime.HasValue) task.PlannedEndTime = request.PlannedEndTime;
+        if (request.CompletionPercentage.HasValue) task.CompletionPercentage = request.CompletionPercentage.Value;
+        if (request.ParticipantIds != null) task.ParticipantIds = request.ParticipantIds;
+        if (request.Tags != null) task.Tags = request.Tags;
+        if (request.Remarks != null) task.Remarks = request.Remarks;
+        if (request.ProjectId != null) task.ProjectId = request.ProjectId;
+        if (request.ParentTaskId != null) task.ParentTaskId = request.ParentTaskId;
+        if (request.SortOrder.HasValue) task.SortOrder = request.SortOrder.Value;
+        if (request.Duration.HasValue) task.Duration = request.Duration.Value;
+
+        await _context.SaveChangesAsync();
+
+        if (!string.IsNullOrEmpty(task.ProjectId) && request.CompletionPercentage.HasValue)
         {
             var projectService = _serviceProvider.GetRequiredService<IProjectService>();
-            await projectService.CalculateProjectProgressAsync(updatedTask.ProjectId);
+            await projectService.CalculateProjectProgressAsync(task.ProjectId);
         }
 
-        // 发送任务分配通知
         try
         {
-            if (!string.IsNullOrEmpty(updatedTask.AssignedTo))
+            if (!string.IsNullOrEmpty(task.AssignedTo))
             {
                 await _notificationService.CreateTaskNotificationAsync(
-                    updatedTask.Id!,
-                    updatedTask.TaskName,
+                    task.Id!,
+                    task.TaskName,
                     "task_assigned",
-                    (int)updatedTask.Priority,
-                    (int)updatedTask.Status,
-                    updatedTask.AssignedTo,
+                    (int)task.Priority,
+                    (int)task.Status,
+                    task.AssignedTo,
                     null,
                     string.IsNullOrWhiteSpace(request.Remarks) ? "任务已分配给您" : request.Remarks
                 );
             }
         }
-        catch (Exception ex)
-        {
-            _logger.LogDebug(ex, "通知发送失败: TaskId={TaskId}, Action=task_assigned", updatedTask.Id);
-        }
+        catch (Exception ex) { _logger.LogDebug(ex, "通知发送失败: TaskId={TaskId}", task.Id); }
 
-        return await ConvertToTaskDtoAsync(updatedTask);
+        return await ConvertToTaskDtoAsync(task);
     }
 
-    /// <summary>
-    /// 分配任务给用户
-    /// </summary>
-    /// <param name="request">分配任务请求</param>
-    /// <returns>分配后的任务信息</returns>
-    public async System.Threading.Tasks.Task<TaskDto> AssignTaskAsync(AssignTaskRequest request)
+    /// <inheritdoc/>
+    public async Task<TaskDto> AssignTaskAsync(AssignTaskRequest request)
     {
-        var task = await _taskFactory.GetByIdAsync(request.TaskId);
+        var task = await _context.Set<WorkTask>().FirstOrDefaultAsync(x => x.Id == request.TaskId);
+        if (task == null) throw new KeyNotFoundException($"任务 {request.TaskId} 不存在");
 
-        if (task == null)
-            throw new KeyNotFoundException($"任务 {request.TaskId} 不存在");
+        task.AssignedTo = request.AssignedTo;
+        task.AssignedAt = DateTime.UtcNow;
+        task.Status = Models.TaskStatus.Assigned;
+        if (!string.IsNullOrEmpty(request.Remarks)) task.Remarks = request.Remarks;
 
-        var updatedTask = await _taskFactory.UpdateAsync(request.TaskId, t =>
-        {
-            t.AssignedTo = request.AssignedTo;
-            t.AssignedAt = DateTime.UtcNow;
-            t.Status = Models.TaskStatus.Assigned;
+        await _context.SaveChangesAsync();
 
-            if (!string.IsNullOrEmpty(request.Remarks))
-                t.Remarks = request.Remarks;
-        });
-
-        if (updatedTask == null)
-        {
-            throw new KeyNotFoundException($"任务 {request.TaskId} 不存在");
-        }
-
-        // 分配后发送任务分配通知
         try
         {
-            var relatedUsers = new List<string>();
-            if (!string.IsNullOrEmpty(updatedTask.CreatedBy)) relatedUsers.Add(updatedTask.CreatedBy);
-            if (!string.IsNullOrEmpty(updatedTask.AssignedTo)) relatedUsers.Add(updatedTask.AssignedTo);
-            if (updatedTask.ParticipantIds != null && updatedTask.ParticipantIds.Count > 0)
-                relatedUsers.AddRange(updatedTask.ParticipantIds);
+            var related = new List<string>();
+            if (!string.IsNullOrEmpty(task.CreatedBy)) related.Add(task.CreatedBy);
+            if (!string.IsNullOrEmpty(task.AssignedTo)) related.Add(task.AssignedTo);
+            if (task.ParticipantIds != null) related.AddRange(task.ParticipantIds);
 
             await _notificationService.CreateTaskNotificationAsync(
-                updatedTask.Id!,
-                updatedTask.TaskName,
+                task.Id!,
+                task.TaskName,
                 "task_assigned",
-                (int)updatedTask.Priority,
-                (int)updatedTask.Status,
-                updatedTask.AssignedTo,
-                relatedUsers.Distinct(),
+                (int)task.Priority,
+                (int)task.Status,
+                task.AssignedTo,
+                related.Distinct(),
                 request.Remarks
             );
         }
-        catch (Exception ex)
-        {
-            _logger.LogDebug(ex, "通知发送失败: TaskId={TaskId}, Action=task_assigned", updatedTask.Id);
-        }
+        catch (Exception ex) { _logger.LogDebug(ex, "通知发送失败: TaskId={TaskId}", task.Id); }
 
-        return await ConvertToTaskDtoAsync(updatedTask);
+        return await ConvertToTaskDtoAsync(task);
     }
 
-    /// <summary>
-    /// 执行任务
-    /// </summary>
-    /// <param name="request">执行任务请求</param>
-    /// <returns>执行后的任务信息</returns>
-    public async System.Threading.Tasks.Task<TaskDto> ExecuteTaskAsync(ExecuteTaskRequest request)
+    /// <inheritdoc/>
+    public async Task<TaskDto> ExecuteTaskAsync(ExecuteTaskRequest request)
     {
-        var task = await _taskFactory.GetByIdAsync(request.TaskId);
+        var task = await _context.Set<WorkTask>().FirstOrDefaultAsync(x => x.Id == request.TaskId);
+        if (task == null) throw new KeyNotFoundException($"任务 {request.TaskId} 不存在");
 
-        if (task == null)
-            throw new KeyNotFoundException($"任务 {request.TaskId} 不存在");
+        task.Status = (Models.TaskStatus)request.Status;
+        if (request.Status == (int)Models.TaskStatus.InProgress && task.ActualStartTime == null)
+            task.ActualStartTime = DateTime.UtcNow;
 
-        var updatedTask = await _taskFactory.UpdateAsync(request.TaskId, t =>
-        {
-            t.Status = (Models.TaskStatus)request.Status;
+        if (request.CompletionPercentage.HasValue) task.CompletionPercentage = request.CompletionPercentage.Value;
+        
+        await _context.SaveChangesAsync();
 
-            if (request.Status == (int)Models.TaskStatus.InProgress && t.ActualStartTime == null)
-                t.ActualStartTime = DateTime.UtcNow;
+        await LogTaskExecutionAsync(request.TaskId, TaskExecutionResult.Success, request.Message, request.CompletionPercentage ?? 0);
 
-            if (request.CompletionPercentage.HasValue)
-                t.CompletionPercentage = request.CompletionPercentage.Value;
-        });
-
-        if (updatedTask == null)
-        {
-            throw new KeyNotFoundException($"任务 {request.TaskId} 不存在");
-        }
-
-        // 记录执行日志
-        await LogTaskExecutionAsync(
-            request.TaskId,
-            TaskExecutionResult.Success,
-            request.Message,
-            request.CompletionPercentage ?? 0);
-
-        // 如果任务属于项目，且进度有更新，更新项目进度
-        if (!string.IsNullOrEmpty(updatedTask.ProjectId) && request.CompletionPercentage.HasValue)
+        if (!string.IsNullOrEmpty(task.ProjectId) && request.CompletionPercentage.HasValue)
         {
             var projectService = _serviceProvider.GetRequiredService<IProjectService>();
-            await projectService.CalculateProjectProgressAsync(updatedTask.ProjectId);
+            await projectService.CalculateProjectProgressAsync(task.ProjectId);
         }
 
-        // 发送状态变更通知（执行中等）
         try
         {
-            var actionType = ((Models.TaskStatus)updatedTask.Status) switch
+            var action = (Models.TaskStatus)task.Status switch
             {
                 Models.TaskStatus.InProgress => "task_started",
                 Models.TaskStatus.Completed => "task_completed",
@@ -431,216 +299,122 @@ public class TaskService : ITaskService
                 _ => "task_updated"
             };
 
-            var relatedUsers = new List<string>();
-            if (!string.IsNullOrEmpty(updatedTask.CreatedBy)) relatedUsers.Add(updatedTask.CreatedBy);
-            if (!string.IsNullOrEmpty(updatedTask.AssignedTo)) relatedUsers.Add(updatedTask.AssignedTo);
-            if (updatedTask.ParticipantIds != null && updatedTask.ParticipantIds.Count > 0)
-                relatedUsers.AddRange(updatedTask.ParticipantIds);
+            var related = new List<string>();
+            if (!string.IsNullOrEmpty(task.CreatedBy)) related.Add(task.CreatedBy);
+            if (!string.IsNullOrEmpty(task.AssignedTo)) related.Add(task.AssignedTo);
+            if (task.ParticipantIds != null) related.AddRange(task.ParticipantIds);
 
             await _notificationService.CreateTaskNotificationAsync(
-                updatedTask.Id!,
-                updatedTask.TaskName,
-                actionType,
-                (int)updatedTask.Priority,
-                (int)updatedTask.Status,
-                updatedTask.AssignedTo,
-                relatedUsers.Distinct(),
-                request.Message
-            );
+                task.Id!, task.TaskName, action, (int)task.Priority, (int)task.Status, task.AssignedTo, related.Distinct(), request.Message);
         }
-        catch (Exception ex)
-        {
-            _logger.LogDebug(ex, "通知发送失败: TaskId={TaskId}, Action=task_status_changed", updatedTask.Id);
-        }
+        catch (Exception ex) { _logger.LogDebug(ex, "通知发送失败: TaskId={TaskId}", task.Id); }
 
-        return await ConvertToTaskDtoAsync(updatedTask);
+        return await ConvertToTaskDtoAsync(task);
     }
 
-    /// <summary>
-    /// 完成任务
-    /// </summary>
-    /// <param name="request">完成任务请求</param>
-    /// <returns>完成后的任务信息</returns>
-    public async System.Threading.Tasks.Task<TaskDto> CompleteTaskAsync(CompleteTaskRequest request)
+    /// <inheritdoc/>
+    public async Task<TaskDto> CompleteTaskAsync(CompleteTaskRequest request)
     {
-        var task = await _taskFactory.GetByIdAsync(request.TaskId);
-
-        if (task == null)
-            throw new KeyNotFoundException($"任务 {request.TaskId} 不存在");
+        var task = await _context.Set<WorkTask>().FirstOrDefaultAsync(x => x.Id == request.TaskId);
+        if (task == null) throw new KeyNotFoundException($"任务 {request.TaskId} 不存在");
 
         var now = DateTime.UtcNow;
-        var updatedTask = await _taskFactory.UpdateAsync(request.TaskId, t =>
-        {
-            t.Status = Models.TaskStatus.Completed;
-            t.ExecutionResult = (TaskExecutionResult)request.ExecutionResult;
-            t.ActualEndTime = now;
-            t.CompletionPercentage = 100;
+        task.Status = Models.TaskStatus.Completed;
+        task.ExecutionResult = (TaskExecutionResult)request.ExecutionResult;
+        task.ActualEndTime = now;
+        task.CompletionPercentage = 100;
 
-            if (t.ActualStartTime.HasValue)
-            {
-                t.ActualDuration = (int)(now - t.ActualStartTime.Value).TotalMinutes;
-            }
+        if (task.ActualStartTime.HasValue)
+            task.ActualDuration = (int)(now - task.ActualStartTime.Value).TotalMinutes;
 
-            if (!string.IsNullOrEmpty(request.Remarks))
-                t.Remarks = request.Remarks;
-        });
+        if (!string.IsNullOrEmpty(request.Remarks)) task.Remarks = request.Remarks;
+        await _context.SaveChangesAsync();
 
-        if (updatedTask == null)
-        {
-            throw new KeyNotFoundException($"任务 {request.TaskId} 不存在");
-        }
+        await LogTaskExecutionAsync(request.TaskId, (TaskExecutionResult)request.ExecutionResult, request.Remarks, 100);
 
-        // 记录执行日志
-        await LogTaskExecutionAsync(
-            request.TaskId,
-            (TaskExecutionResult)request.ExecutionResult,
-            request.Remarks,
-            100);
-
-        // 如果任务属于项目，更新项目进度（任务完成时进度为100%）
-        if (!string.IsNullOrEmpty(updatedTask.ProjectId))
+        if (!string.IsNullOrEmpty(task.ProjectId))
         {
             var projectService = _serviceProvider.GetRequiredService<IProjectService>();
-            await projectService.CalculateProjectProgressAsync(updatedTask.ProjectId);
+            await projectService.CalculateProjectProgressAsync(task.ProjectId);
         }
 
-        // 发送任务完成通知
         try
         {
-            var relatedUsers = new List<string>();
-            if (!string.IsNullOrEmpty(updatedTask.CreatedBy)) relatedUsers.Add(updatedTask.CreatedBy);
-            if (!string.IsNullOrEmpty(updatedTask.AssignedTo)) relatedUsers.Add(updatedTask.AssignedTo);
-            if (updatedTask.ParticipantIds != null && updatedTask.ParticipantIds.Count > 0)
-                relatedUsers.AddRange(updatedTask.ParticipantIds);
+            var related = new List<string>();
+            if (!string.IsNullOrEmpty(task.CreatedBy)) related.Add(task.CreatedBy);
+            if (!string.IsNullOrEmpty(task.AssignedTo)) related.Add(task.AssignedTo);
+            if (task.ParticipantIds != null) related.AddRange(task.ParticipantIds);
 
             await _notificationService.CreateTaskNotificationAsync(
-                updatedTask.Id!,
-                updatedTask.TaskName,
-                "task_completed",
-                (int)updatedTask.Priority,
-                (int)updatedTask.Status,
-                updatedTask.AssignedTo,
-                relatedUsers.Distinct(),
-                request.Remarks
-            );
+                task.Id!, task.TaskName, "task_completed", (int)task.Priority, (int)task.Status, task.AssignedTo, related.Distinct(), request.Remarks);
         }
-        catch (Exception ex)
-        {
-            _logger.LogDebug(ex, "通知发送失败: TaskId={TaskId}, Action=task_completed", updatedTask.Id);
-        }
+        catch (Exception ex) { _logger.LogDebug(ex, "通知发送失败: TaskId={TaskId}", task.Id); }
 
-        return await ConvertToTaskDtoAsync(updatedTask);
+        return await ConvertToTaskDtoAsync(task);
     }
 
-    /// <summary>
-    /// 取消任务
-    /// </summary>
-    /// <param name="taskId">任务ID</param>
-    /// <param name="remarks">取消备注</param>
-    /// <returns>取消后的任务信息</returns>
-    public async System.Threading.Tasks.Task<TaskDto> CancelTaskAsync(string taskId, string? remarks = null)
+    /// <inheritdoc/>
+    public async Task<TaskDto> CancelTaskAsync(string taskId, string? remarks = null)
     {
-        var task = await _taskFactory.GetByIdAsync(taskId);
+        var task = await _context.Set<WorkTask>().FirstOrDefaultAsync(x => x.Id == taskId);
+        if (task == null) throw new KeyNotFoundException($"任务 {taskId} 不存在");
 
-        if (task == null)
-            throw new KeyNotFoundException($"任务 {taskId} 不存在");
+        task.Status = Models.TaskStatus.Cancelled;
+        if (!string.IsNullOrEmpty(remarks)) task.Remarks = remarks;
+        await _context.SaveChangesAsync();
 
-        var updatedTask = await _taskFactory.UpdateAsync(taskId, t =>
-        {
-            t.Status = Models.TaskStatus.Cancelled;
-
-            if (!string.IsNullOrEmpty(remarks))
-                t.Remarks = remarks;
-        });
-
-        if (updatedTask == null)
-        {
-            throw new KeyNotFoundException($"任务 {taskId} 不存在");
-        }
-
-        // 发送任务取消通知
         try
         {
-            var relatedUsers = new List<string>();
-            if (!string.IsNullOrEmpty(updatedTask.CreatedBy)) relatedUsers.Add(updatedTask.CreatedBy);
-            if (!string.IsNullOrEmpty(updatedTask.AssignedTo)) relatedUsers.Add(updatedTask.AssignedTo);
-            if (updatedTask.ParticipantIds != null && updatedTask.ParticipantIds.Count > 0)
-                relatedUsers.AddRange(updatedTask.ParticipantIds);
+            var related = new List<string>();
+            if (!string.IsNullOrEmpty(task.CreatedBy)) related.Add(task.CreatedBy);
+            if (!string.IsNullOrEmpty(task.AssignedTo)) related.Add(task.AssignedTo);
+            if (task.ParticipantIds != null) related.AddRange(task.ParticipantIds);
 
             await _notificationService.CreateTaskNotificationAsync(
-                updatedTask.Id!,
-                updatedTask.TaskName,
-                "task_cancelled",
-                (int)updatedTask.Priority,
-                (int)updatedTask.Status,
-                updatedTask.AssignedTo,
-                relatedUsers.Distinct(),
-                remarks
-            );
+                task.Id!, task.TaskName, "task_cancelled", (int)task.Priority, (int)task.Status, task.AssignedTo, related.Distinct(), remarks);
         }
-        catch (Exception ex)
-        {
-            _logger.LogDebug(ex, "通知发送失败: TaskId={TaskId}, Action=task_cancelled", updatedTask.Id);
-        }
+        catch (Exception ex) { _logger.LogDebug(ex, "通知发送失败: TaskId={TaskId}", task.Id); }
 
-        return await ConvertToTaskDtoAsync(updatedTask);
+        return await ConvertToTaskDtoAsync(task);
     }
 
-    /// <summary>
-    /// 删除任务
-    /// </summary>
-    /// <param name="taskId">任务ID</param>
-    /// <param name="userId">当前用户ID</param>
-    /// <returns>删除是否成功</returns>
-    public async System.Threading.Tasks.Task<bool> DeleteTaskAsync(string taskId, string userId)
+    /// <inheritdoc/>
+    public async Task<bool> DeleteTaskAsync(string taskId, string userId)
     {
-        var task = await _taskFactory.GetByIdAsync(taskId);
-        if (task == null)
-            return false;
+        var task = await _context.Set<WorkTask>().FirstOrDefaultAsync(x => x.Id == taskId);
+        if (task == null) return false;
+        if (task.CreatedBy != userId) throw new UnauthorizedAccessException("无权删除他人的任务");
 
-        // 验证是否是任务创建者
-        if (task.CreatedBy != userId)
-            throw new UnauthorizedAccessException("无权删除他人的任务");
+        var ids = new List<string> { taskId };
+        await GetAllDescendantIdsAsync(taskId, ids);
 
-        // 收集所有需要删除的任务ID（包括任务本身及其所有后代任务）
-        var idsToDelete = new List<string> { taskId };
-        await GetAllDescendantIdsAsync(taskId, idsToDelete);
-
-        // 执行批量软删除
-        var modifiedCount = await _taskFactory.SoftDeleteManyAsync(t => idsToDelete.Contains(t.Id));
-        return modifiedCount > 0;
+        var tasks = await _context.Set<WorkTask>().Where(t => ids.Contains(t.Id!)).ToListAsync();
+        foreach (var t in tasks) _context.Set<WorkTask>().Remove(t);
+        await _context.SaveChangesAsync();
+        return true;
     }
 
-    /// <summary>
-    /// 递归获取所有后代任务的ID
-    /// </summary>
-    private async System.Threading.Tasks.Task GetAllDescendantIdsAsync(string parentId, List<string> allIds)
+    private async Task GetAllDescendantIdsAsync(string pid, List<string> all)
     {
-        var children = await _taskFactory.FindAsync(t => t.ParentTaskId == parentId);
-
-        foreach (var child in children)
+        var children = await _context.Set<WorkTask>().Where(t => t.ParentTaskId == pid).ToListAsync();
+        foreach (var c in children)
         {
-            if (!string.IsNullOrEmpty(child.Id))
+            if (!string.IsNullOrEmpty(c.Id))
             {
-                allIds.Add(child.Id);
-                await GetAllDescendantIdsAsync(child.Id, allIds);
+                all.Add(c.Id);
+                await GetAllDescendantIdsAsync(c.Id, all);
             }
         }
     }
 
-    /// <summary>
-    /// 获取任务统计信息
-    /// </summary>
-    /// <param name="userId">用户ID（可选，为空时统计全公司）</param>
-    /// <returns>任务统计信息</returns>
-    public async System.Threading.Tasks.Task<TaskStatistics> GetTaskStatisticsAsync(string? userId = null)
+    /// <inheritdoc/>
+    public async Task<TaskStatistics> GetTaskStatisticsAsync(string? userId = null)
     {
-        System.Linq.Expressions.Expression<Func<WorkTask, bool>> filter = t =>
-            string.IsNullOrEmpty(userId) || (t.AssignedTo == userId || t.CreatedBy == userId);
+        var q = _context.Set<WorkTask>().AsQueryable();
+        if (!string.IsNullOrEmpty(userId)) q = q.Where(t => t.AssignedTo == userId || t.CreatedBy == userId);
+        var tasks = await q.ToListAsync();
 
-        var tasks = await _taskFactory.FindAsync(filter);
-
-        var statistics = new TaskStatistics
+        var stats = new TaskStatistics
         {
             TotalTasks = tasks.Count,
             PendingTasks = tasks.Count(t => t.Status == Models.TaskStatus.Pending),
@@ -649,21 +423,11 @@ public class TaskService : ITaskService
             FailedTasks = tasks.Count(t => t.Status == Models.TaskStatus.Failed),
         };
 
-        // 计算平均完成时间
-        var completedTasks = tasks.Where(t => t.Status == Models.TaskStatus.Completed && t.ActualDuration.HasValue).ToList();
-        if (completedTasks.Count > 0)
-        {
-            statistics.AverageCompletionTime = completedTasks.Average(t => t.ActualDuration ?? 0);
-        }
+        var completed = tasks.Where(t => t.Status == Models.TaskStatus.Completed && t.ActualDuration.HasValue).ToList();
+        if (completed.Count > 0) stats.AverageCompletionTime = completed.Average(t => t.ActualDuration.Value);
+        if (stats.TotalTasks > 0) stats.CompletionRate = (double)stats.CompletedTasks / stats.TotalTasks * 100;
 
-        // 计算完成率
-        if (statistics.TotalTasks > 0)
-        {
-            statistics.CompletionRate = (double)statistics.CompletedTasks / statistics.TotalTasks * 100;
-        }
-
-        // 按优先级统计
-        statistics.TasksByPriority = new Dictionary<string, int>
+        stats.TasksByPriority = new Dictionary<string, int>
         {
             { "Low", tasks.Count(t => t.Priority == TaskPriority.Low) },
             { "Medium", tasks.Count(t => t.Priority == TaskPriority.Medium) },
@@ -671,814 +435,277 @@ public class TaskService : ITaskService
             { "Urgent", tasks.Count(t => t.Priority == TaskPriority.Urgent) }
         };
 
-        // 按状态统计
-        statistics.TasksByStatus = new Dictionary<string, int>
-        {
-            { "Pending", statistics.PendingTasks },
-            { "Assigned", tasks.Count(t => t.Status == Models.TaskStatus.Assigned) },
-            { "InProgress", statistics.InProgressTasks },
-            { "Completed", statistics.CompletedTasks },
-            { "Cancelled", tasks.Count(t => t.Status == Models.TaskStatus.Cancelled) },
-            { "Failed", statistics.FailedTasks },
-            { "Paused", tasks.Count(t => t.Status == Models.TaskStatus.Paused) }
-        };
-
-        return statistics;
+        stats.TasksByStatus = Enum.GetValues<Models.TaskStatus>().ToDictionary(s => s.ToString(), s => tasks.Count(t => t.Status == s));
+        return stats;
     }
 
-    /// <summary>
-    /// 获取任务执行日志
-    /// </summary>
-    /// <param name="taskId">任务ID</param>
-    /// <param name="page">页码</param>
-    /// <param name="pageSize">每页大小</param>
-    /// <returns>执行日志列表和总数</returns>
-    public async System.Threading.Tasks.Task<(List<TaskExecutionLogDto> logs, int total)> GetTaskExecutionLogsAsync(string taskId, int page = 1, int pageSize = 10)
+    /// <inheritdoc/>
+    public async Task<(List<TaskExecutionLogDto> logs, int total)> GetTaskExecutionLogsAsync(string taskId, int page = 1, int pageSize = 10)
     {
-        var (logs, total) = await _executionLogFactory.FindPagedAsync(
-            l => l.TaskId == taskId,
-            q => q.OrderByDescending(l => l.CreatedAt),
-            page,
-            pageSize);
-
-        var logDtos = new List<TaskExecutionLogDto>();
-        foreach (var log in logs)
-        {
-            logDtos.Add(await ConvertToTaskExecutionLogDtoAsync(log));
-        }
-
-        return (logDtos, (int)total);
+        var q = _context.Set<TaskExecutionLog>().Where(l => l.TaskId == taskId);
+        var total = await q.LongCountAsync();
+        var logs = await q.OrderByDescending(l => l.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var dtos = new List<TaskExecutionLogDto>();
+        foreach (var l in logs) dtos.Add(await ConvertToTaskExecutionLogDtoAsync(l));
+        return (dtos, (int)total);
     }
 
-    /// <summary>
-    /// 记录任务执行日志
-    /// </summary>
-    /// <param name="taskId">任务ID</param>
-    /// <param name="status">执行结果状态</param>
-    /// <param name="message">执行消息</param>
-    /// <param name="progressPercentage">进度百分比</param>
-    /// <returns>执行日志信息</returns>
-    public async System.Threading.Tasks.Task<TaskExecutionLogDto> LogTaskExecutionAsync(
-        string taskId,
-        TaskExecutionResult status,
-        string? message = null,
-        int progressPercentage = 0)
+    /// <inheritdoc/>
+    public async Task<TaskExecutionLogDto> LogTaskExecutionAsync(string taskId, TaskExecutionResult status, string? msg = null, int progress = 0)
     {
-        var log = new TaskExecutionLog
-        {
-            TaskId = taskId,
-            StartTime = DateTime.UtcNow,
-            Status = status,
-            Message = message,
-            ProgressPercentage = progressPercentage
-        };
-
-        await _executionLogFactory.CreateAsync(log);
+        var log = new TaskExecutionLog { TaskId = taskId, StartTime = DateTime.UtcNow, Status = status, Message = msg, ProgressPercentage = progress };
+        await _context.Set<TaskExecutionLog>().AddAsync(log);
+        await _context.SaveChangesAsync();
         return await ConvertToTaskExecutionLogDtoAsync(log);
     }
 
-    /// <summary>
-    /// 获取用户待办任务列表
-    /// </summary>
-    /// <param name="userId">用户ID</param>
-    /// <returns>待办任务列表</returns>
-    public async System.Threading.Tasks.Task<List<TaskDto>> GetUserTodoTasksAsync(string userId)
+    /// <inheritdoc/>
+    public async Task<List<TaskDto>> GetUserTodoTasksAsync(string userId)
     {
-        var tasks = await _taskFactory.FindAsync(
-            t => t.AssignedTo == userId && (t.Status == Models.TaskStatus.Assigned || t.Status == Models.TaskStatus.InProgress),
-            q => q.OrderByDescending(t => t.Priority).ThenByDescending(t => t.CreatedAt));
-
+        var tasks = await _context.Set<WorkTask>()
+            .Where(t => t.AssignedTo == userId && (t.Status == Models.TaskStatus.Assigned || t.Status == Models.TaskStatus.InProgress))
+            .OrderByDescending(t => t.Priority)
+            .ThenByDescending(t => t.CreatedAt)
+            .ToListAsync();
         return await ConvertToTaskDtosAsync(tasks);
     }
 
-    /// <summary>
-    /// 获取用户创建的任务列表
-    /// </summary>
-    /// <param name="userId">用户ID</param>
-    /// <param name="page">页码</param>
-    /// <param name="pageSize">每页大小</param>
-    /// <returns>创建的任务列表和总数</returns>
-    public async System.Threading.Tasks.Task<(List<TaskDto> tasks, int total)> GetUserCreatedTasksAsync(string userId, int page = 1, int pageSize = 10)
+    /// <inheritdoc/>
+    public async Task<(List<TaskDto> tasks, int total)> GetUserCreatedTasksAsync(string userId, int page = 1, int pageSize = 10)
     {
-        var (tasks, total) = await _taskFactory.FindPagedAsync(
-            t => t.CreatedBy == userId,
-            q => q.OrderByDescending(t => t.CreatedAt),
-            page,
-            pageSize);
-
-        var taskDtos = await ConvertToTaskDtosAsync(tasks);
-        return (taskDtos, (int)total);
+        var q = _context.Set<WorkTask>().Where(t => t.CreatedBy == userId);
+        var total = await q.LongCountAsync();
+        var tasks = await q.OrderByDescending(t => t.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        return (await ConvertToTaskDtosAsync(tasks), (int)total);
     }
 
-    /// <summary>
-    /// 批量更新任务状态
-    /// </summary>
-    /// <param name="taskIds">任务ID列表</param>
-    /// <param name="status">新状态</param>
-    /// <returns>更新的任务数量</returns>
-    public async System.Threading.Tasks.Task<int> BatchUpdateTaskStatusAsync(List<string> taskIds, Models.TaskStatus status)
+    /// <inheritdoc/>
+    public async Task<int> BatchUpdateTaskStatusAsync(List<string> ids, Models.TaskStatus status)
     {
-        return (int)await _taskFactory.UpdateManyAsync(t => taskIds.Contains(t.Id!), t =>
-        {
-            t.Status = status;
-        });
+        var tasks = await _context.Set<WorkTask>().Where(t => ids.Contains(t.Id!)).ToListAsync();
+        foreach (var t in tasks) t.Status = status;
+        await _context.SaveChangesAsync();
+        return tasks.Count;
     }
 
-    private async System.Threading.Tasks.Task<List<TaskDto>> ConvertToTaskDtosAsync(IEnumerable<WorkTask> tasks)
+    private async Task<List<TaskDto>> ConvertToTaskDtosAsync(IEnumerable<WorkTask> tasks)
     {
-        var taskList = tasks.ToList();
-        if (taskList.Count == 0)
-        {
-            return new List<TaskDto>();
-        }
+        var list = tasks.ToList();
+        if (!list.Any()) return new List<TaskDto>();
 
-        var userIds = new HashSet<string>();
-        var projectIds = new HashSet<string>();
-
-        foreach (var task in taskList)
-        {
-            if (!string.IsNullOrEmpty(task.CreatedBy)) userIds.Add(task.CreatedBy);
-            if (!string.IsNullOrEmpty(task.AssignedTo)) userIds.Add(task.AssignedTo);
-            if (task.ParticipantIds != null)
-            {
-                foreach (var pid in task.ParticipantIds)
-                {
-                    if (!string.IsNullOrEmpty(pid)) userIds.Add(pid);
-                }
-            }
-            if (!string.IsNullOrEmpty(task.ProjectId)) projectIds.Add(task.ProjectId);
-        }
+        var userIds = list.SelectMany(t => (t.ParticipantIds ?? new List<string>()).Concat(new[] { t.CreatedBy, t.AssignedTo })).Where(id => !string.IsNullOrEmpty(id)).Select(id => id!).Distinct();
+        var pIds = list.Select(t => t.ProjectId).Where(id => !string.IsNullOrEmpty(id)).Select(id => id!).Distinct();
 
         var userMap = await _userService.GetUsersByIdsAsync(userIds);
-
-        Dictionary<string, string> projectMap = new();
-        if (projectIds.Count > 0)
+        var pMap = new Dictionary<string, string>();
+        if (pIds.Any())
         {
-            var projectService = _serviceProvider.GetRequiredService<IProjectService>();
-            foreach (var projectId in projectIds)
+            var pService = _serviceProvider.GetRequiredService<IProjectService>();
+            foreach (var pid in pIds)
             {
-                try
-                {
-                    var project = await projectService.GetProjectByIdAsync(projectId);
-                    if (project != null)
-                    {
-                        projectMap[projectId] = project.Name;
-                    }
-                }
-                catch
-                {
-                    // Ignore project fetch errors
-                }
+                try { var p = await pService.GetProjectByIdAsync(pid!); if (p != null) pMap[pid!] = p.Name; } catch { }
             }
         }
 
-        var result = new List<TaskDto>();
-        foreach (var task in taskList)
-        {
-            result.Add(ConvertToTaskDtoWithCache(task, userMap, projectMap));
-        }
-
-        return result;
+        return list.Select(t => ConvertToTaskDtoWithCache(t, userMap, pMap)).ToList();
     }
 
-    private TaskDto ConvertToTaskDtoWithCache(WorkTask task, Dictionary<string, AppUser> userMap, Dictionary<string, string> projectMap)
+    private TaskDto ConvertToTaskDtoWithCache(WorkTask t, Dictionary<string, AppUser> uMap, Dictionary<string, string> pMap)
     {
-        var dto = new TaskDto
+        var dto = MapToDto(t);
+        if (!string.IsNullOrEmpty(t.CreatedBy) && uMap.TryGetValue(t.CreatedBy, out var u1)) dto.CreatedByName = string.IsNullOrWhiteSpace(u1.Name) ? u1.Username : $"{u1.Username} ({u1.Name})";
+        if (!string.IsNullOrEmpty(t.AssignedTo) && uMap.TryGetValue(t.AssignedTo, out var u2)) dto.AssignedToName = string.IsNullOrWhiteSpace(u2.Name) ? u2.Username : $"{u2.Username} ({u2.Name})";
+        if (t.ParticipantIds?.Any() == true)
         {
-            Id = task.Id,
-            TaskName = task.TaskName,
-            Description = task.Description,
-            TaskType = task.TaskType,
-            Status = (int)task.Status,
-            StatusName = GetStatusName(task.Status),
-            Priority = (int)task.Priority,
-            PriorityName = GetPriorityName(task.Priority),
-            CreatedBy = task.CreatedBy ?? string.Empty,
-            CreatedAt = task.CreatedAt,
-            AssignedTo = task.AssignedTo,
-            AssignedAt = task.AssignedAt,
-            PlannedStartTime = task.PlannedStartTime,
-            PlannedEndTime = task.PlannedEndTime,
-            ActualStartTime = task.ActualStartTime,
-            ActualEndTime = task.ActualEndTime,
-            EstimatedDuration = task.EstimatedDuration,
-            ActualDuration = task.ActualDuration,
-            ExecutionResult = (int)task.ExecutionResult,
-            ExecutionResultName = GetExecutionResultName(task.ExecutionResult),
-            CompletionPercentage = task.CompletionPercentage,
-            Remarks = task.Remarks,
-            ParticipantIds = task.ParticipantIds,
-            Tags = task.Tags,
-            UpdatedAt = task.UpdatedAt,
-            UpdatedBy = task.UpdatedBy,
-            ProjectId = task.ProjectId,
-            ParentTaskId = task.ParentTaskId,
-            SortOrder = task.SortOrder,
-            Duration = task.Duration
-        };
-
-        if (!string.IsNullOrEmpty(task.CreatedBy) && userMap.TryGetValue(task.CreatedBy, out var createdByUser))
-        {
-            dto.CreatedByName = !string.IsNullOrWhiteSpace(createdByUser.Name)
-                ? $"{createdByUser.Username} ({createdByUser.Name})"
-                : createdByUser.Username;
+            foreach (var pid in t.ParticipantIds)
+                if (uMap.TryGetValue(pid, out var u)) dto.Participants.Add(new ParticipantInfo { UserId = pid, Username = u.Username, Email = u.Email });
         }
-
-        if (!string.IsNullOrEmpty(task.AssignedTo) && userMap.TryGetValue(task.AssignedTo, out var assignedToUser))
-        {
-            dto.AssignedToName = !string.IsNullOrWhiteSpace(assignedToUser.Name)
-                ? $"{assignedToUser.Username} ({assignedToUser.Name})"
-                : assignedToUser.Username;
-        }
-
-        if (task.ParticipantIds?.Count > 0)
-        {
-            foreach (var participantId in task.ParticipantIds)
-            {
-                if (!string.IsNullOrEmpty(participantId) && userMap.TryGetValue(participantId, out var participant))
-                {
-                    dto.Participants.Add(new ParticipantInfo
-                    {
-                        UserId = participantId,
-                        Username = participant.Username,
-                        Email = participant.Email
-                    });
-                }
-            }
-        }
-
-        if (task.Attachments?.Count > 0)
-        {
-            dto.Attachments = task.Attachments.Select(a => new TaskAttachmentDto
-            {
-                Id = a.Id,
-                FileName = a.FileName,
-                FileUrl = a.FileUrl,
-                FileSize = a.FileSize,
-                UploadedAt = a.UploadedAt,
-                UploadedBy = a.UploadedBy
-            }).ToList();
-        }
-
-        if (!string.IsNullOrEmpty(task.ProjectId) && projectMap.TryGetValue(task.ProjectId, out var projectName))
-        {
-            dto.ProjectName = projectName;
-        }
-
+        if (!string.IsNullOrEmpty(t.ProjectId) && pMap.TryGetValue(t.ProjectId, out var pn)) dto.ProjectName = pn;
         return dto;
     }
 
-    private async System.Threading.Tasks.Task<TaskDto> ConvertToTaskDtoAsync(WorkTask task)
+    private async Task<TaskDto> ConvertToTaskDtoAsync(WorkTask t)
     {
-        var dto = new TaskDto
-        {
-            Id = task.Id,
-            TaskName = task.TaskName,
-            Description = task.Description,
-            TaskType = task.TaskType,
-            Status = (int)task.Status,
-            StatusName = GetStatusName(task.Status),
-            Priority = (int)task.Priority,
-            PriorityName = GetPriorityName(task.Priority),
-            CreatedBy = task.CreatedBy ?? string.Empty,
-            CreatedAt = task.CreatedAt,
-            AssignedTo = task.AssignedTo,
-            AssignedAt = task.AssignedAt,
-            PlannedStartTime = task.PlannedStartTime,
-            PlannedEndTime = task.PlannedEndTime,
-            ActualStartTime = task.ActualStartTime,
-            ActualEndTime = task.ActualEndTime,
-            EstimatedDuration = task.EstimatedDuration,
-            ActualDuration = task.ActualDuration,
-            ExecutionResult = (int)task.ExecutionResult,
-            ExecutionResultName = GetExecutionResultName(task.ExecutionResult),
-            CompletionPercentage = task.CompletionPercentage,
-            Remarks = task.Remarks,
-            ParticipantIds = task.ParticipantIds,
-            Tags = task.Tags,
-            UpdatedAt = task.UpdatedAt,
-            UpdatedBy = task.UpdatedBy,
-            ProjectId = task.ProjectId,
-            ParentTaskId = task.ParentTaskId,
-            SortOrder = task.SortOrder,
-            Duration = task.Duration
-        };
-
-        // 获取用户信息
+        var dto = MapToDto(t);
         try
         {
-            if (!string.IsNullOrEmpty(task.CreatedBy))
+            if (!string.IsNullOrEmpty(t.CreatedBy))
             {
-                var createdByUser = await _userService.GetUserByIdAsync(task.CreatedBy);
-                if (createdByUser != null)
+                var u = await _userService.GetUserByIdAsync(t.CreatedBy);
+                if (u != null) dto.CreatedByName = string.IsNullOrWhiteSpace(u.Name) ? u.Username : $"{u.Username} ({u.Name})";
+            }
+            if (!string.IsNullOrEmpty(t.AssignedTo))
+            {
+                var u = await _userService.GetUserByIdAsync(t.AssignedTo);
+                if (u != null) dto.AssignedToName = string.IsNullOrWhiteSpace(u.Name) ? u.Username : $"{u.Username} ({u.Name})";
+            }
+            if (t.ParticipantIds?.Any() == true)
+            {
+                foreach (var id in t.ParticipantIds)
                 {
-                    // 显示格式：用户名 (昵称)，如果昵称为空则只显示用户名
-                    dto.CreatedByName = !string.IsNullOrWhiteSpace(createdByUser.Name)
-                        ? $"{createdByUser.Username} ({createdByUser.Name})"
-                        : createdByUser.Username;
+                    var u = await _userService.GetUserByIdAsync(id);
+                    if (u != null) dto.Participants.Add(new ParticipantInfo { UserId = id, Username = u.Username, Email = u.Email });
                 }
             }
-
-            if (!string.IsNullOrEmpty(task.AssignedTo))
+            if (!string.IsNullOrEmpty(t.ProjectId))
             {
-                var assignedToUser = await _userService.GetUserByIdAsync(task.AssignedTo);
-                if (assignedToUser != null)
-                {
-                    // 显示格式：用户名 (昵称)，如果昵称为空则只显示用户名
-                    dto.AssignedToName = !string.IsNullOrWhiteSpace(assignedToUser.Name)
-                        ? $"{assignedToUser.Username} ({assignedToUser.Name})"
-                        : assignedToUser.Username;
-                }
-            }
-
-            // 获取参与者信息
-            if (task.ParticipantIds.Count > 0)
-            {
-                foreach (var participantId in task.ParticipantIds)
-                {
-                    var participant = await _userService.GetUserByIdAsync(participantId);
-                    if (participant != null)
-                    {
-                        dto.Participants.Add(new ParticipantInfo
-                        {
-                            UserId = participantId,
-                            Username = participant.Username,
-                            Email = participant.Email
-                        });
-                    }
-                }
+                var ps = _serviceProvider.GetRequiredService<IProjectService>();
+                var p = await ps.GetProjectByIdAsync(t.ProjectId);
+                if (p != null) dto.ProjectName = p.Name;
             }
         }
-        catch (Exception ex)
-        {
-            _logger.LogDebug(ex, "获取用户信息失败: TaskId={TaskId}", task.Id);
-        }
-
-        // 转换附件
-        if (task.Attachments.Count > 0)
-        {
-            dto.Attachments = task.Attachments.Select(a => new TaskAttachmentDto
-            {
-                Id = a.Id,
-                FileName = a.FileName,
-                FileUrl = a.FileUrl,
-                FileSize = a.FileSize,
-                UploadedAt = a.UploadedAt,
-                UploadedBy = a.UploadedBy
-            }).ToList();
-        }
-
-        // 获取项目信息
-        if (!string.IsNullOrEmpty(task.ProjectId))
-        {
-            try
-            {
-                var projectService = _serviceProvider.GetRequiredService<IProjectService>();
-                var project = await projectService.GetProjectByIdAsync(task.ProjectId);
-                if (project != null)
-                {
-                    dto.ProjectName = project.Name;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogDebug(ex, "获取项目信息失败: TaskId={TaskId}, ProjectId={ProjectId}", task.Id, task.ProjectId);
-            }
-        }
-
+        catch (Exception ex) { _logger.LogDebug(ex, "转换 TaskDto 失败: {Id}", t.Id); }
         return dto;
     }
 
-    private async System.Threading.Tasks.Task<TaskExecutionLogDto> ConvertToTaskExecutionLogDtoAsync(TaskExecutionLog log)
+    private TaskDto MapToDto(WorkTask t) => new TaskDto
     {
-        var dto = new TaskExecutionLogDto
-        {
-            Id = log.Id,
-            TaskId = log.TaskId,
-            ExecutedBy = log.ExecutedBy,
-            StartTime = log.StartTime,
-            EndTime = log.EndTime,
-            Status = (int)log.Status,
-            StatusName = GetExecutionResultName(log.Status),
-            Message = log.Message,
-            ErrorMessage = log.ErrorMessage,
-            ProgressPercentage = log.ProgressPercentage,
-            CreatedAt = log.CreatedAt
-        };
+        Id = t.Id, TaskName = t.TaskName, Description = t.Description, TaskType = t.TaskType,
+        Status = (int)t.Status, StatusName = GetStatusName(t.Status),
+        Priority = (int)t.Priority, PriorityName = GetPriorityName(t.Priority),
+        CreatedBy = t.CreatedBy ?? "", CreatedAt = t.CreatedAt, AssignedTo = t.AssignedTo, AssignedAt = t.AssignedAt,
+        PlannedStartTime = t.PlannedStartTime, PlannedEndTime = t.PlannedEndTime, ActualStartTime = t.ActualStartTime, ActualEndTime = t.ActualEndTime,
+        EstimatedDuration = t.EstimatedDuration, ActualDuration = t.ActualDuration, ExecutionResult = (int)t.ExecutionResult, ExecutionResultName = GetExecutionResultName(t.ExecutionResult),
+        CompletionPercentage = t.CompletionPercentage, Remarks = t.Remarks, ParticipantIds = t.ParticipantIds, Tags = t.Tags,
+        UpdatedAt = t.UpdatedAt, UpdatedBy = t.UpdatedBy, ProjectId = t.ProjectId, ParentTaskId = t.ParentTaskId, SortOrder = t.SortOrder, Duration = t.Duration,
+        Attachments = t.Attachments?.Select(a => new TaskAttachmentDto { Id = a.Id, FileName = a.FileName, FileUrl = a.FileUrl, FileSize = a.FileSize, UploadedAt = a.UploadedAt, UploadedBy = a.UploadedBy }).ToList() ?? new List<TaskAttachmentDto>()
+    };
 
-        // 获取执行者信息
-        try
+    private async Task<TaskExecutionLogDto> ConvertToTaskExecutionLogDtoAsync(TaskExecutionLog l)
+    {
+        var dto = new TaskExecutionLogDto { Id = l.Id, TaskId = l.TaskId, ExecutedBy = l.ExecutedBy, StartTime = l.StartTime, EndTime = l.EndTime, Status = (int)l.Status, StatusName = GetExecutionResultName(l.Status), Message = l.Message, ErrorMessage = l.ErrorMessage, ProgressPercentage = l.ProgressPercentage, CreatedAt = l.CreatedAt };
+        if (!string.IsNullOrEmpty(l.ExecutedBy))
         {
-            if (!string.IsNullOrEmpty(log.ExecutedBy))
-            {
-                var user = await _userService.GetUserByIdAsync(log.ExecutedBy);
-                if (user != null)
-                {
-                    // 显示格式：用户名 (昵称)，如果昵称为空则只显示用户名
-                    dto.ExecutedByName = !string.IsNullOrWhiteSpace(user.Name)
-                        ? $"{user.Username} ({user.Name})"
-                        : user.Username;
-                }
-            }
+            try { var u = await _userService.GetUserByIdAsync(l.ExecutedBy); if (u != null) dto.ExecutedByName = string.IsNullOrWhiteSpace(u.Name) ? u.Username : $"{u.Username} ({u.Name})"; } catch { }
         }
-        catch (Exception ex)
-        {
-            _logger.LogDebug(ex, "获取执行日志用户信息失败: LogId={LogId}", log.Id);
-        }
-
         return dto;
     }
 
-    private static string GetStatusName(Models.TaskStatus status) => status switch
-    {
-        Models.TaskStatus.Pending => "待分配",
-        Models.TaskStatus.Assigned => "已分配",
-        Models.TaskStatus.InProgress => "执行中",
-        Models.TaskStatus.Completed => "已完成",
-        Models.TaskStatus.Cancelled => "已取消",
-        Models.TaskStatus.Failed => "失败",
-        Models.TaskStatus.Paused => "暂停",
-        _ => "未知"
-    };
+    public async Task<List<TaskDto>> GetTasksByProjectIdAsync(string pid) => BuildTaskTree(await ConvertToTaskDtosAsync((await _context.Set<WorkTask>().Where(t => t.ProjectId == pid).ToListAsync()).OrderBy(t => t.SortOrder).ThenBy(t => t.CreatedAt)));
+    public async Task<List<TaskDto>> GetTaskTreeAsync(string? pid = null) => BuildTaskTree(await ConvertToTaskDtosAsync((await _context.Set<WorkTask>().Where(t => string.IsNullOrEmpty(pid) || t.ProjectId == pid).ToListAsync()).OrderBy(t => t.SortOrder).ThenBy(t => t.CreatedAt)));
 
-    private static string GetPriorityName(TaskPriority priority) => priority switch
+    private List<TaskDto> BuildTaskTree(List<TaskDto> all)
     {
-        TaskPriority.Low => "低",
-        TaskPriority.Medium => "中",
-        TaskPriority.High => "高",
-        TaskPriority.Urgent => "紧急",
-        _ => "未知"
-    };
-
-    private static string GetExecutionResultName(TaskExecutionResult result) => result switch
-    {
-        TaskExecutionResult.NotExecuted => "未执行",
-        TaskExecutionResult.Success => "成功",
-        TaskExecutionResult.Failed => "失败",
-        TaskExecutionResult.Timeout => "超时",
-        TaskExecutionResult.Interrupted => "被中断",
-        _ => "未知"
-    };
-
-    /// <summary>
-    /// 获取项目下的所有任务（树形结构）
-    /// </summary>
-    public async System.Threading.Tasks.Task<List<TaskDto>> GetTasksByProjectIdAsync(string projectId)
-    {
-        var tasks = await _taskFactory.FindAsync(t => t.ProjectId == projectId);
-        var taskDtos = await ConvertToTaskDtosAsync(tasks.OrderBy(t => t.SortOrder).ThenBy(t => t.CreatedAt));
-        return BuildTaskTree(taskDtos);
-    }
-
-    /// <summary>
-    /// 获取任务树（支持按项目过滤）
-    /// </summary>
-    public async System.Threading.Tasks.Task<List<TaskDto>> GetTaskTreeAsync(string? projectId = null)
-    {
-        var tasks = await _taskFactory.FindAsync(t => string.IsNullOrEmpty(projectId) || t.ProjectId == projectId);
-        var taskDtos = await ConvertToTaskDtosAsync(tasks.OrderBy(t => t.SortOrder).ThenBy(t => t.CreatedAt));
-        return BuildTaskTree(taskDtos);
-    }
-
-    /// <summary>
-    /// 构建任务树
-    /// </summary>
-    private List<TaskDto> BuildTaskTree(List<TaskDto> allTasks)
-    {
-        var taskMap = allTasks.ToDictionary(t => t.Id!);
-        var rootTasks = new List<TaskDto>();
-
-        foreach (var task in allTasks)
+        var map = all.ToDictionary(t => t.Id!);
+        var roots = new List<TaskDto>();
+        foreach (var t in all)
         {
-            if (string.IsNullOrEmpty(task.ParentTaskId))
-            {
-                // 根任务
-                rootTasks.Add(task);
-            }
-            else if (taskMap.ContainsKey(task.ParentTaskId))
-            {
-                // 子任务，添加到父任务的 Children 列表
-                var parent = taskMap[task.ParentTaskId];
-                parent.Children ??= new List<TaskDto>();
-                parent.Children.Add(task);
-            }
-            else
-            {
-                // 父任务不存在，作为根任务处理
-                rootTasks.Add(task);
-            }
+            if (string.IsNullOrEmpty(t.ParentTaskId) || !map.ContainsKey(t.ParentTaskId)) roots.Add(t);
+            else { var p = map[t.ParentTaskId]; p.Children ??= new List<TaskDto>(); p.Children.Add(t); }
         }
-
-        // 对每个节点的子任务进行排序
-        foreach (var task in allTasks)
-        {
-            if (task.Children != null && task.Children.Any())
-            {
-                task.Children = task.Children.OrderBy(c => c.SortOrder).ThenBy(c => c.CreatedAt).ToList();
-            }
-            else
-            {
-                task.Children = null;
-            }
-        }
-
-        return rootTasks.OrderBy(t => t.SortOrder).ThenBy(t => t.CreatedAt).ToList();
+        foreach (var t in all) if (t.Children != null) t.Children = t.Children.OrderBy(c => c.SortOrder).ThenBy(c => c.CreatedAt).ToList();
+        return roots.OrderBy(t => t.SortOrder).ThenBy(t => t.CreatedAt).ToList();
     }
 
-    /// <summary>
-    /// 添加任务依赖
-    /// </summary>
-    public async System.Threading.Tasks.Task<string> AddTaskDependencyAsync(
-        string predecessorTaskId,
-        string successorTaskId,
-        int dependencyType,
-        int lagDays)
+    public async Task<string> AddTaskDependencyAsync(string pId, string sId, int type, int lag)
     {
-        // 检查任务是否存在
-        var predecessor = await _taskFactory.GetByIdAsync(predecessorTaskId);
-        var successor = await _taskFactory.GetByIdAsync(successorTaskId);
+        if (!await _context.Set<WorkTask>().AnyAsync(x => x.Id == pId)) throw new KeyNotFoundException($"前置任务 {pId} 不存在");
+        if (!await _context.Set<WorkTask>().AnyAsync(x => x.Id == sId)) throw new KeyNotFoundException($"后续任务 {sId} 不存在");
+        if (await HasCircularDependencyAsync(pId, sId)) throw new InvalidOperationException("检测到循环依赖");
 
-        if (predecessor == null)
-            throw new KeyNotFoundException($"前置任务 {predecessorTaskId} 不存在");
-        if (successor == null)
-            throw new KeyNotFoundException($"后续任务 {successorTaskId} 不存在");
-
-        // 检查循环依赖
-        if (await HasCircularDependencyAsync(predecessorTaskId, successorTaskId))
-            throw new InvalidOperationException("检测到循环依赖，无法添加");
-
-        var dependencyFactory = _serviceProvider
-            .GetRequiredService<IDataFactory<TaskDependency>>();
-
-        var dependency = new TaskDependency
-        {
-            PredecessorTaskId = predecessorTaskId,
-            SuccessorTaskId = successorTaskId,
-            DependencyType = (TaskDependencyType)dependencyType,
-            LagDays = lagDays
-        };
-
-        await dependencyFactory.CreateAsync(dependency);
-        return dependency.Id;
+        var dep = new TaskDependency { PredecessorTaskId = pId, SuccessorTaskId = sId, DependencyType = (TaskDependencyType)type, LagDays = lag };
+        await _context.Set<TaskDependency>().AddAsync(dep);
+        await _context.SaveChangesAsync();
+        return dep.Id;
     }
 
-    /// <summary>
-    /// 检查是否存在循环依赖
-    /// </summary>
-    private async System.Threading.Tasks.Task<bool> HasCircularDependencyAsync(string startTaskId, string endTaskId)
+    private async Task<bool> HasCircularDependencyAsync(string start, string end)
     {
-        var dependencyFactory = _serviceProvider
-            .GetRequiredService<IDataFactory<TaskDependency>>();
-
-        var visited = new HashSet<string> { startTaskId };
-        var queue = new Queue<string>();
-        queue.Enqueue(startTaskId);
-
-        while (queue.Count > 0)
+        var visited = new HashSet<string> { start };
+        var q = new Queue<string>(); q.Enqueue(start);
+        while (q.Any())
         {
-            var currentTaskId = queue.Dequeue();
-            if (currentTaskId == endTaskId)
-                return true;
-
-            var dependencies = await dependencyFactory.FindAsync(d => d.PredecessorTaskId == currentTaskId);
-
-            foreach (var dep in dependencies)
-            {
-                if (!visited.Contains(dep.SuccessorTaskId))
-                {
-                    visited.Add(dep.SuccessorTaskId);
-                    queue.Enqueue(dep.SuccessorTaskId);
-                }
-            }
+            var cur = q.Dequeue(); if (cur == end) return true;
+            var deps = await _context.Set<TaskDependency>().Where(d => d.PredecessorTaskId == cur).ToListAsync();
+            foreach (var d in deps) if (visited.Add(d.SuccessorTaskId)) q.Enqueue(d.SuccessorTaskId);
         }
-
         return false;
     }
 
-    /// <summary>
-    /// 移除任务依赖
-    /// </summary>
-    public async System.Threading.Tasks.Task<bool> RemoveTaskDependencyAsync(string dependencyId)
+    public async Task<bool> RemoveTaskDependencyAsync(string id)
     {
-        var dependencyFactory = _serviceProvider
-            .GetRequiredService<IDataFactory<TaskDependency>>();
-
-        return await dependencyFactory.SoftDeleteAsync(dependencyId);
+        var dep = await _context.Set<TaskDependency>().FirstOrDefaultAsync(x => x.Id == id);
+        if (dep == null) return false;
+        _context.Set<TaskDependency>().Remove(dep);
+        await _context.SaveChangesAsync();
+        return true;
     }
 
-    /// <summary>
-    /// 获取任务依赖关系
-    /// </summary>
-    public async System.Threading.Tasks.Task<List<TaskDependencyDto>> GetTaskDependenciesAsync(string taskId)
+    public async Task<List<TaskDependencyDto>> GetTaskDependenciesAsync(string tid)
     {
-        var dependencyFactory = _serviceProvider
-            .GetRequiredService<IDataFactory<TaskDependency>>();
-
-        var dependencies = await dependencyFactory.FindAsync(d => d.PredecessorTaskId == taskId || d.SuccessorTaskId == taskId);
-
-        var dependencyDtos = new List<TaskDependencyDto>();
-        foreach (var dep in dependencies)
+        var deps = await _context.Set<TaskDependency>().Where(d => d.PredecessorTaskId == tid || d.SuccessorTaskId == tid).ToListAsync();
+        var dtos = new List<TaskDependencyDto>();
+        foreach (var d in deps)
         {
-            var predecessor = await _taskFactory.GetByIdAsync(dep.PredecessorTaskId);
-            var successor = await _taskFactory.GetByIdAsync(dep.SuccessorTaskId);
-
-            dependencyDtos.Add(new TaskDependencyDto
-            {
-                Id = dep.Id,
-                PredecessorTaskId = dep.PredecessorTaskId,
-                PredecessorTaskName = predecessor?.TaskName,
-                SuccessorTaskId = dep.SuccessorTaskId,
-                SuccessorTaskName = successor?.TaskName,
-                DependencyType = (int)dep.DependencyType,
-                DependencyTypeName = GetDependencyTypeName(dep.DependencyType),
-                LagDays = dep.LagDays
-            });
+            var p = await GetTaskByIdAsync(d.PredecessorTaskId);
+            var s = await GetTaskByIdAsync(d.SuccessorTaskId);
+            dtos.Add(new TaskDependencyDto { Id = d.Id, PredecessorTaskId = d.PredecessorTaskId, PredecessorTaskName = p?.TaskName, SuccessorTaskId = d.SuccessorTaskId, SuccessorTaskName = s?.TaskName, DependencyType = (int)d.DependencyType, DependencyTypeName = GetDependencyTypeName(d.DependencyType), LagDays = d.LagDays });
         }
-
-        return dependencyDtos;
+        return dtos;
     }
 
-    /// <summary>
-    /// 计算关键路径
-    /// </summary>
-    public async System.Threading.Tasks.Task<List<string>> CalculateCriticalPathAsync(string projectId)
+    public async Task<List<string>> CalculateCriticalPathAsync(string pid)
     {
-        // 获取项目下的所有任务
-        var tasks = await _taskFactory.FindAsync(t => t.ProjectId == projectId);
+        var tasks = await _context.Set<WorkTask>().Where(t => t.ProjectId == pid).ToListAsync();
+        if (!tasks.Any()) return new List<string>();
+        var deps = await _context.Set<TaskDependency>().Where(d => tasks.Select(t => t.Id).Contains(d.PredecessorTaskId) || tasks.Select(t => t.Id).Contains(d.SuccessorTaskId)).ToListAsync();
+        
+        var graph = tasks.ToDictionary(t => t.Id!, t => new List<string>());
+        var inDeg = tasks.ToDictionary(t => t.Id!, t => 0);
+        foreach (var d in deps) if (graph.ContainsKey(d.PredecessorTaskId) && graph.ContainsKey(d.SuccessorTaskId)) { graph[d.PredecessorTaskId].Add(d.SuccessorTaskId); inDeg[d.SuccessorTaskId]++; }
 
-        if (tasks.Count == 0)
-            return new List<string>();
-
-        var dependencyFactory = _serviceProvider
-            .GetRequiredService<IDataFactory<TaskDependency>>();
-
-        var dependencies = await dependencyFactory.FindAsync();
-
-        // 构建任务图
-        var taskGraph = tasks.ToDictionary(t => t.Id!, t => new List<string>());
-        var inDegree = tasks.ToDictionary(t => t.Id!, t => 0);
-
-        foreach (var dep in dependencies.Where(d =>
-            tasks.Any(t => t.Id == d.PredecessorTaskId || t.Id == d.SuccessorTaskId)))
+        var eStart = tasks.ToDictionary(t => t.Id!, t => 0);
+        var q = new Queue<string>(tasks.Where(t => inDeg[t.Id!] == 0).Select(t => t.Id!));
+        while (q.Any())
         {
-            if (taskGraph.ContainsKey(dep.PredecessorTaskId) && taskGraph.ContainsKey(dep.SuccessorTaskId))
+            var cur = q.Dequeue();
+            foreach (var next in graph[cur])
             {
-                taskGraph[dep.PredecessorTaskId].Add(dep.SuccessorTaskId);
-                inDegree[dep.SuccessorTaskId]++;
+                var tCur = tasks.First(t => t.Id == cur);
+                var dur = tCur.Duration ?? (tCur.PlannedEndTime.HasValue && tCur.PlannedStartTime.HasValue ? (int)(tCur.PlannedEndTime.Value - tCur.PlannedStartTime.Value).TotalDays : 1);
+                eStart[next] = Math.Max(eStart[next], eStart[cur] + dur);
+                if (--inDeg[next] == 0) q.Enqueue(next);
             }
         }
 
-        // 拓扑排序计算最早开始时间
-        var earliestStart = tasks.ToDictionary(t => t.Id!, t => 0);
-        var queue = new Queue<string>();
-
-        foreach (var task in tasks)
+        var lStart = tasks.ToDictionary(t => t.Id!, t => eStart.Values.Max());
+        var rGraph = tasks.ToDictionary(t => t.Id!, t => new List<string>());
+        foreach (var d in deps) if (rGraph.ContainsKey(d.SuccessorTaskId) && rGraph.ContainsKey(d.PredecessorTaskId)) rGraph[d.SuccessorTaskId].Add(d.PredecessorTaskId);
+        
+        var ends = tasks.Where(t => !graph[t.Id!].Any()).ToList();
+        if (ends.Any())
         {
-            if (inDegree[task.Id!] == 0)
-                queue.Enqueue(task.Id!);
-        }
-
-        while (queue.Count > 0)
-        {
-            var current = queue.Dequeue();
-            if (!taskGraph.ContainsKey(current))
-                continue;
-
-            foreach (var next in taskGraph[current])
+            var maxE = ends.Max(t => eStart[t.Id!] + (t.Duration ?? (t.PlannedEndTime.HasValue && t.PlannedStartTime.HasValue ? (int)(t.PlannedEndTime.Value - t.PlannedStartTime.Value).TotalDays : 1)));
+            foreach (var e in ends) lStart[e.Id!] = maxE - (e.Duration ?? (e.PlannedEndTime.HasValue && e.PlannedStartTime.HasValue ? (int)(e.PlannedEndTime.Value - e.PlannedStartTime.Value).TotalDays : 1));
+            
+            var visited = new HashSet<string>(); q = new Queue<string>(ends.Select(t => t.Id!));
+            while (q.Any())
             {
-                if (!taskGraph.ContainsKey(next))
-                    continue;
-
-                var currentTask = tasks.FirstOrDefault(t => t.Id == current);
-                var nextTask = tasks.FirstOrDefault(t => t.Id == next);
-
-                if (currentTask == null || nextTask == null)
-                    continue;
-
-                var duration = currentTask.Duration ??
-                    (currentTask.PlannedEndTime.HasValue && currentTask.PlannedStartTime.HasValue
-                        ? (int)(currentTask.PlannedEndTime.Value - currentTask.PlannedStartTime.Value).TotalDays
-                        : 1);
-
-                earliestStart[next] = Math.Max(earliestStart[next], earliestStart[current] + duration);
-                inDegree[next]--;
-
-                if (inDegree[next] == 0)
-                    queue.Enqueue(next);
-            }
-        }
-
-        // 计算最晚开始时间
-        var latestStart = tasks.ToDictionary(t => t.Id!, t => earliestStart.Values.Max());
-        var reverseGraph = tasks.ToDictionary(t => t.Id!, t => new List<string>());
-
-        foreach (var dep in dependencies.Where(d =>
-            tasks.Any(t => t.Id == d.PredecessorTaskId || t.Id == d.SuccessorTaskId)))
-        {
-            if (reverseGraph.ContainsKey(dep.SuccessorTaskId) && reverseGraph.ContainsKey(dep.PredecessorTaskId))
-            {
-                reverseGraph[dep.SuccessorTaskId].Add(dep.PredecessorTaskId);
-            }
-        }
-
-        var endTasks = tasks.Where(t => taskGraph.ContainsKey(t.Id!) && taskGraph[t.Id!].Count == 0).ToList();
-        if (endTasks.Count > 0)
-        {
-            var maxEndTime = endTasks.Max(t =>
-            {
-                var taskDuration = t.Duration ??
-                    (t.PlannedEndTime.HasValue && t.PlannedStartTime.HasValue
-                        ? (int)(t.PlannedEndTime.Value - t.PlannedStartTime.Value).TotalDays
-                        : 1);
-                return earliestStart[t.Id!] + taskDuration;
-            });
-            foreach (var endTask in endTasks)
-            {
-                var endTaskDuration = endTask.Duration ??
-                    (endTask.PlannedEndTime.HasValue && endTask.PlannedStartTime.HasValue
-                        ? (int)(endTask.PlannedEndTime.Value - endTask.PlannedStartTime.Value).TotalDays
-                        : 1);
-                latestStart[endTask.Id!] = maxEndTime - endTaskDuration;
-            }
-
-            var visited = new HashSet<string>();
-            queue = new Queue<string>(endTasks.Select(t => t.Id!));
-            while (queue.Count > 0)
-            {
-                var current = queue.Dequeue();
-                if (visited.Contains(current) || !reverseGraph.ContainsKey(current))
-                    continue;
-                visited.Add(current);
-
-                foreach (var prev in reverseGraph[current])
+                var cur = q.Dequeue(); if (!visited.Add(cur)) continue;
+                foreach (var prev in rGraph[cur])
                 {
-                    if (!taskGraph.ContainsKey(prev))
-                        continue;
-
-                    var prevTask = tasks.FirstOrDefault(t => t.Id == prev);
-                    if (prevTask == null)
-                        continue;
-
-                    var duration = prevTask.Duration ??
-                        (prevTask.PlannedEndTime.HasValue && prevTask.PlannedStartTime.HasValue
-                            ? (int)(prevTask.PlannedEndTime.Value - prevTask.PlannedStartTime.Value).TotalDays
-                            : 1);
-                    latestStart[prev] = Math.Min(latestStart[prev], latestStart[current] - duration);
-
-                    if (!visited.Contains(prev) && !queue.Contains(prev))
-                        queue.Enqueue(prev);
+                    var tP = tasks.First(t => t.Id == prev);
+                    var dur = tP.Duration ?? (tP.PlannedEndTime.HasValue && tP.PlannedStartTime.HasValue ? (int)(tP.PlannedEndTime.Value - tP.PlannedStartTime.Value).TotalDays : 1);
+                    lStart[prev] = Math.Min(lStart[prev], lStart[cur] - dur);
+                    if (!visited.Contains(prev)) q.Enqueue(prev);
                 }
             }
         }
-
-        // 关键路径：总浮动时间为0的任务
-        var criticalPath = new List<string>();
-        foreach (var task in tasks)
-        {
-            var totalFloat = latestStart[task.Id!] - earliestStart[task.Id!];
-            if (totalFloat == 0)
-            {
-                criticalPath.Add(task.Id!);
-            }
-        }
-
-        return criticalPath;
+        return tasks.Where(t => lStart[t.Id!] == eStart[t.Id!]).Select(t => t.Id!).ToList();
     }
 
-    /// <summary>
-    /// 更新任务进度（同时更新项目进度）
-    /// </summary>
-    public async System.Threading.Tasks.Task<TaskDto> UpdateTaskProgressAsync(string taskId, int progress)
+    public async Task<TaskDto> UpdateTaskProgressAsync(string tid, int p)
     {
-        var task = await _taskFactory.GetByIdAsync(taskId);
-        if (task == null)
-            throw new KeyNotFoundException($"任务 {taskId} 不存在");
-
-        var updatedTask = await _taskFactory.UpdateAsync(taskId, t =>
-        {
-            t.CompletionPercentage = Math.Max(0, Math.Min(100, progress));
-        });
-
-        if (updatedTask == null)
-            throw new KeyNotFoundException($"任务 {taskId} 不存在");
-
-        // 如果任务属于项目，更新项目进度
-        if (!string.IsNullOrEmpty(updatedTask.ProjectId))
-        {
-            var projectService = _serviceProvider.GetRequiredService<IProjectService>();
-            await projectService.CalculateProjectProgressAsync(updatedTask.ProjectId);
-        }
-
-        return await ConvertToTaskDtoAsync(updatedTask);
+        var t = await _context.Set<WorkTask>().FirstOrDefaultAsync(x => x.Id == tid);
+        if (t == null) throw new KeyNotFoundException($"任务 {tid} 不存在");
+        t.CompletionPercentage = Math.Max(0, Math.Min(100, p));
+        await _context.SaveChangesAsync();
+        if (!string.IsNullOrEmpty(t.ProjectId)) await _serviceProvider.GetRequiredService<IProjectService>().CalculateProjectProgressAsync(t.ProjectId);
+        return await ConvertToTaskDtoAsync(t);
     }
 
-    private static string GetDependencyTypeName(TaskDependencyType type) => type switch
-    {
-        TaskDependencyType.FinishToStart => "完成到开始",
-        TaskDependencyType.StartToStart => "开始到开始",
-        TaskDependencyType.FinishToFinish => "完成到完成",
-        TaskDependencyType.StartToFinish => "开始到完成",
-        _ => "未知"
-    };
+    private static string GetStatusName(Models.TaskStatus s) => s switch { Models.TaskStatus.Pending => "待分配", Models.TaskStatus.Assigned => "已分配", Models.TaskStatus.InProgress => "执行中", Models.TaskStatus.Completed => "已完成", Models.TaskStatus.Cancelled => "已取消", Models.TaskStatus.Failed => "失败", Models.TaskStatus.Paused => "暂停", _ => "未知" };
+    private static string GetPriorityName(TaskPriority p) => p switch { TaskPriority.Low => "低", TaskPriority.Medium => "中", TaskPriority.High => "高", TaskPriority.Urgent => "紧急", _ => "未知" };
+    private static string GetExecutionResultName(TaskExecutionResult r) => r switch { TaskExecutionResult.NotExecuted => "未执行", TaskExecutionResult.Success => "成功", TaskExecutionResult.Failed => "失败", TaskExecutionResult.Timeout => "超时", TaskExecutionResult.Interrupted => "被中断", _ => "未知" };
+    private static string GetDependencyTypeName(TaskDependencyType t) => t switch { TaskDependencyType.FinishToStart => "完成到开始", TaskDependencyType.StartToStart => "开始到开始", TaskDependencyType.FinishToFinish => "完成到完成", TaskDependencyType.StartToFinish => "开始到完成", _ => "未知" };
 }
-

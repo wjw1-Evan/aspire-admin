@@ -11,26 +11,17 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class ParkTenantService : IParkTenantService
 {
-    private readonly IDataFactory<ParkTenant> _tenantFactory;
-    private readonly IDataFactory<LeaseContract> _contractFactory;
-    private readonly IDataFactory<PropertyUnit> _unitFactory;
-    private readonly IDataFactory<LeasePaymentRecord> _paymentFactory;
+    private readonly DbContext _context;
+
     private readonly ILogger<ParkTenantService> _logger;
 
     /// <summary>
     /// 初始化园区租户管理服务
     /// </summary>
-    public ParkTenantService(
-        IDataFactory<ParkTenant> tenantFactory,
-        IDataFactory<LeaseContract> contractFactory,
-        IDataFactory<PropertyUnit> unitFactory,
-        IDataFactory<LeasePaymentRecord> paymentFactory,
-        ILogger<ParkTenantService> logger)
-    {
-        _tenantFactory = tenantFactory;
-        _contractFactory = contractFactory;
-        _unitFactory = unitFactory;
-        _paymentFactory = paymentFactory;
+    public ParkTenantService(DbContext context,
+        ILogger<ParkTenantService> logger
+    ) {
+        _context = context;
         _logger = logger;
     }
 
@@ -41,6 +32,7 @@ public class ParkTenantService : IParkTenantService
     /// </summary>
     public async Task<ParkTenantListResponse> GetTenantsAsync(ParkTenantListRequest request)
     {
+        
         Expression<Func<ParkTenant, bool>> filter = t => true;
 
         if (!string.IsNullOrEmpty(request.Search))
@@ -65,7 +57,9 @@ public class ParkTenantService : IParkTenantService
             orderBy = q => q.OrderByDescending(t => t.CreatedAt);
         }
 
-        var (items, total) = await _tenantFactory.FindPagedAsync(filter, orderBy, request.Page, request.PageSize);
+        var __fpQ = _context.Set<ParkTenant>().Where(filter);
+        var total = await __fpQ.LongCountAsync();
+        var items = await orderBy(__fpQ).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
 
         var tenants = new List<ParkTenantDto>();
         foreach (var item in items)
@@ -81,7 +75,7 @@ public class ParkTenantService : IParkTenantService
     /// </summary>
     public async Task<ParkTenantDto?> GetTenantByIdAsync(string id)
     {
-        var tenant = await _tenantFactory.GetByIdAsync(id);
+        var tenant = await _context.Set<ParkTenant>().FirstOrDefaultAsync(x => x.Id == id);
         return tenant != null ? await MapToTenantDtoAsync(tenant) : null;
     }
 
@@ -104,7 +98,8 @@ public class ParkTenantService : IParkTenantService
             Status = "Active"
         };
 
-        await _tenantFactory.CreateAsync(tenant);
+        await _context.Set<ParkTenant>().AddAsync(tenant);
+        await _context.SaveChangesAsync();
         return await MapToTenantDtoAsync(tenant);
     }
 
@@ -113,7 +108,7 @@ public class ParkTenantService : IParkTenantService
     /// </summary>
     public async Task<ParkTenantDto?> UpdateTenantAsync(string id, CreateParkTenantRequest request)
     {
-        var tenant = await _tenantFactory.GetByIdAsync(id);
+        var tenant = await _context.Set<ParkTenant>().FirstOrDefaultAsync(x => x.Id == id);
         if (tenant == null) return null;
 
         tenant.TenantName = request.TenantName;
@@ -126,7 +121,8 @@ public class ParkTenantService : IParkTenantService
         tenant.EntryDate = request.EntryDate;
         tenant.Notes = request.Notes;
 
-        await _tenantFactory.UpdateAsync(id, tenant => { });
+        await _context.SaveChangesAsync();
+
         return await MapToTenantDtoAsync(tenant);
     }
 
@@ -135,28 +131,29 @@ public class ParkTenantService : IParkTenantService
     /// </summary>
     public async Task<bool> DeleteTenantAsync(string id)
     {
-        var tenant = await _tenantFactory.GetByIdAsync(id);
+        var tenant = await _context.Set<ParkTenant>().FirstOrDefaultAsync(x => x.Id == id);
         if (tenant == null)
             return false;
 
         // 检查是否有有效合同
-        var activeContracts = await _contractFactory.FindAsync(c => c.TenantId == id && c.Status == "Active");
+        var activeContracts = await _context.Set<LeaseContract>().Where(c => c.TenantId == id && c.Status == "Active").ToListAsync();
         if (activeContracts.Any())
             throw new InvalidOperationException("租户存在有效合同，无法删除");
 
-        var result = await _tenantFactory.SoftDeleteAsync(id);
-        return result;
+        _context.Set<ParkTenant>().Remove(tenant);
+        await _context.SaveChangesAsync();
+        return true;
     }
 
     private async Task<ParkTenantDto> MapToTenantDtoAsync(ParkTenant tenant)
     {
-        var contracts = await _contractFactory.FindAsync(c => c.TenantId == tenant.Id);
+        var contracts = await _context.Set<LeaseContract>().Where(c => c.TenantId == tenant.Id).ToListAsync();
         var activeContracts = contracts.Where(c => c.Status == "Active").ToList();
 
         decimal totalArea = 0;
         if (tenant.UnitIds != null && tenant.UnitIds.Any())
         {
-            var units = await _unitFactory.FindAsync(u => tenant.UnitIds.Contains(u.Id));
+            var units = await _context.Set<PropertyUnit>().Where(u => tenant.UnitIds.Contains(u.Id)).ToListAsync();
             totalArea = units.Sum(u => u.Area);
         }
 
@@ -216,7 +213,9 @@ public class ParkTenantService : IParkTenantService
             orderBy = q => q.OrderByDescending(c => c.CreatedAt);
         }
 
-        var (items, total) = await _contractFactory.FindPagedAsync(filter, orderBy, request.Page, request.PageSize);
+        var __fpQ = _context.Set<LeaseContract>().Where(filter);
+        var total = await __fpQ.LongCountAsync();
+        var items = await orderBy(__fpQ).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
 
         var contracts = new List<LeaseContractDto>();
         foreach (var item in items)
@@ -232,7 +231,7 @@ public class ParkTenantService : IParkTenantService
     /// </summary>
     public async Task<LeaseContractDto?> GetContractByIdAsync(string id)
     {
-        var contract = await _contractFactory.GetByIdAsync(id);
+        var contract = await _context.Set<LeaseContract>().FirstOrDefaultAsync(x => x.Id == id);
         return contract != null ? await MapToContractDtoAsync(contract) : null;
     }
 
@@ -266,14 +265,15 @@ public class ParkTenantService : IParkTenantService
         {
             var dateStr = DateTime.Now.ToString("yyyyMMdd");
             var prefix = $"HT-{dateStr}";
-            var count = await _contractFactory.CountAsync(c => c.ContractNumber.StartsWith(prefix));
+            var count = await _context.Set<LeaseContract>().LongCountAsync(c => c.ContractNumber.StartsWith(prefix));
             contract.ContractNumber = $"HT-{dateStr}-{(count + 1):D3}";
         }
 
-        await _contractFactory.CreateAsync(contract);
+        await _context.Set<LeaseContract>().AddAsync(contract);
+        await _context.SaveChangesAsync();
 
         // 更新租户的单元列表
-        var tenant = await _tenantFactory.GetByIdAsync(request.TenantId);
+        var tenant = await _context.Set<ParkTenant>().FirstOrDefaultAsync(x => x.Id == request.TenantId);
         if (tenant != null)
         {
             tenant.UnitIds ??= new List<string>();
@@ -284,19 +284,21 @@ public class ParkTenantService : IParkTenantService
                     tenant.UnitIds.Add(unitId);
                 }
             }
-            await _tenantFactory.UpdateAsync(tenant.Id, _ => { });
+            await _context.SaveChangesAsync();
+
 
             // 更新房源状态
             foreach (var unitId in request.UnitIds)
             {
-                var unit = await _unitFactory.GetByIdAsync(unitId);
+                var unit = await _context.Set<PropertyUnit>().FirstOrDefaultAsync(x => x.Id == unitId);
                 if (unit != null)
                 {
                     unit.Status = "Rented";
                     unit.CurrentTenantId = tenant.Id;
                     unit.LeaseStartDate = request.StartDate;
                     unit.LeaseEndDate = request.EndDate;
-                    await _unitFactory.UpdateAsync(unit.Id, _ => { });
+                    await _context.SaveChangesAsync();
+
                 }
             }
         }
@@ -309,7 +311,7 @@ public class ParkTenantService : IParkTenantService
     /// </summary>
     public async Task<LeaseContractDto?> UpdateContractAsync(string id, CreateLeaseContractRequest request)
     {
-        var contract = await _contractFactory.GetByIdAsync(id);
+        var contract = await _context.Set<LeaseContract>().FirstOrDefaultAsync(x => x.Id == id);
         if (contract == null) return null;
 
         var oldUnitIds = contract.UnitIds ?? new List<string>();
@@ -335,38 +337,46 @@ public class ParkTenantService : IParkTenantService
         contract.Terms = request.Terms;
         contract.Attachments = request.Attachments;
 
-        await _contractFactory.UpdateAsync(id, _ => { });
+        var __entity = await _context.Set<LeaseContract>().FirstOrDefaultAsync(x => x.Id == id);
+        if (__entity != null)
+        {
+    
+            await _context.SaveChangesAsync();
+        }
+
 
         // 处理移除的单元：恢复为 Available
         foreach (var unitId in removedUnitIds)
         {
-            var unit = await _unitFactory.GetByIdAsync(unitId);
+            var unit = await _context.Set<PropertyUnit>().FirstOrDefaultAsync(x => x.Id == unitId);
             if (unit != null)
             {
                 unit.Status = "Available";
                 unit.CurrentTenantId = null;
                 unit.LeaseStartDate = null;
                 unit.LeaseEndDate = null;
-                await _unitFactory.UpdateAsync(unit.Id, _ => { });
+                await _context.SaveChangesAsync();
+
             }
         }
 
         // 处理新增的单元：设为 Rented
         foreach (var unitId in addedUnitIds)
         {
-            var unit = await _unitFactory.GetByIdAsync(unitId);
+            var unit = await _context.Set<PropertyUnit>().FirstOrDefaultAsync(x => x.Id == unitId);
             if (unit != null)
             {
                 unit.Status = "Rented";
                 unit.CurrentTenantId = request.TenantId;
                 unit.LeaseStartDate = request.StartDate;
                 unit.LeaseEndDate = request.EndDate;
-                await _unitFactory.UpdateAsync(unit.Id, _ => { });
+                await _context.SaveChangesAsync();
+
             }
         }
 
         // 更新租户的单元列表
-        var tenant = await _tenantFactory.GetByIdAsync(request.TenantId);
+        var tenant = await _context.Set<ParkTenant>().FirstOrDefaultAsync(x => x.Id == request.TenantId);
         if (tenant != null)
         {
             tenant.UnitIds ??= new List<string>();
@@ -383,7 +393,8 @@ public class ParkTenantService : IParkTenantService
                     tenant.UnitIds.Add(unitId);
                 }
             }
-            await _tenantFactory.UpdateAsync(tenant.Id, _ => { });
+        await _context.SaveChangesAsync();
+
         }
 
         return await MapToContractDtoAsync(contract);
@@ -394,14 +405,15 @@ public class ParkTenantService : IParkTenantService
     /// </summary>
     public async Task<bool> DeleteContractAsync(string id)
     {
-        var contract = await _contractFactory.GetByIdAsync(id);
+        var contract = await _context.Set<LeaseContract>().FirstOrDefaultAsync(x => x.Id == id);
         if (contract == null) return false;
 
         if (contract.Status == "Active")
             throw new InvalidOperationException("有效合同无法删除，请先终止合同");
 
-        var result = await _contractFactory.SoftDeleteAsync(id);
-        return result;
+        _context.Set<LeaseContract>().Remove(contract);
+        await _context.SaveChangesAsync();
+        return true;
     }
 
     /// <summary>
@@ -409,12 +421,18 @@ public class ParkTenantService : IParkTenantService
     /// </summary>
     public async Task<LeaseContractDto?> RenewContractAsync(string id, CreateLeaseContractRequest request)
     {
-        var oldContract = await _contractFactory.GetByIdAsync(id);
+        var oldContract = await _context.Set<LeaseContract>().FirstOrDefaultAsync(x => x.Id == id);
         if (oldContract == null) return null;
 
         // 将旧合同标记为已续签
         oldContract.Status = "Renewed";
-        await _contractFactory.UpdateAsync(id, _ => { });
+        var __entity = await _context.Set<LeaseContract>().FirstOrDefaultAsync(x => x.Id == id);
+        if (__entity != null)
+        {
+    
+            await _context.SaveChangesAsync();
+        }
+
 
         // 创建新合同
         var result = await CreateContractAsync(request);
@@ -423,13 +441,13 @@ public class ParkTenantService : IParkTenantService
 
     private async Task<LeaseContractDto> MapToContractDtoAsync(LeaseContract contract)
     {
-        var tenant = await _tenantFactory.GetByIdAsync(contract.TenantId);
+        var tenant = await _context.Set<ParkTenant>().FirstOrDefaultAsync(x => x.Id == contract.TenantId);
         var daysUntilExpiry = (contract.EndDate - DateTime.UtcNow).Days;
 
         var unitNumbers = new List<string>();
         if (contract.UnitIds != null && contract.UnitIds.Any())
         {
-            var units = await _unitFactory.FindAsync(u => contract.UnitIds.Contains(u.Id));
+            var units = await _context.Set<PropertyUnit>().Where(u => contract.UnitIds.Contains(u.Id)).ToListAsync();
             unitNumbers = units.Select(u => u.UnitNumber).ToList();
         }
 
@@ -465,7 +483,7 @@ public class ParkTenantService : IParkTenantService
     /// </summary>
     public async Task<LeasePaymentRecordDto> CreatePaymentRecordAsync(CreateLeasePaymentRecordRequest request)
     {
-        var contract = await _contractFactory.GetByIdAsync(request.ContractId);
+        var contract = await _context.Set<LeaseContract>().FirstOrDefaultAsync(x => x.Id == request.ContractId);
         if (contract == null) throw new InvalidOperationException("合同不存在");
 
         var record = new LeasePaymentRecord
@@ -481,7 +499,8 @@ public class ParkTenantService : IParkTenantService
             Notes = request.Notes
         };
 
-        await _paymentFactory.CreateAsync(record);
+        await _context.Set<LeasePaymentRecord>().AddAsync(record);
+        await _context.SaveChangesAsync();
         return MapToPaymentRecordDto(record);
     }
 
@@ -490,16 +509,17 @@ public class ParkTenantService : IParkTenantService
     /// </summary>
     public async Task<List<LeasePaymentRecordDto>> GetPaymentRecordsByContractIdAsync(string contractId)
     {
-        var records = await _paymentFactory.FindAsync(r => r.ContractId == contractId);
+        var records = await _context.Set<LeasePaymentRecord>().Where(r => r.ContractId == contractId).ToListAsync();
         return records.OrderByDescending(r => r.PaymentDate).Select(MapToPaymentRecordDto).ToList();
     }
 
-    /// <summary>
-    /// 删除合同付款记录
-    /// </summary>
     public async Task<bool> DeletePaymentRecordAsync(string id)
     {
-        return (await _paymentFactory.SoftDeleteManyAsync(r => r.Id == id)) > 0;
+        var record = await _context.Set<LeasePaymentRecord>().FirstOrDefaultAsync(x => x.Id == id);
+        if (record == null) return false;
+        _context.Set<LeasePaymentRecord>().Remove(record);
+        await _context.SaveChangesAsync();
+        return true;
     }
 
     private LeasePaymentRecordDto MapToPaymentRecordDto(LeasePaymentRecord record)
@@ -540,9 +560,9 @@ public class ParkTenantService : IParkTenantService
     /// </summary>
     public async Task<TenantStatisticsResponse> GetStatisticsAsync(DateTime? startDate = null, DateTime? endDate = null)
     {
-        var tenants = await _tenantFactory.FindAsync();
-        var contracts = await _contractFactory.FindAsync();
-        var payments = await _paymentFactory.FindAsync();
+        var tenants = await _context.Set<ParkTenant>().ToListAsync();
+        var contracts = await _context.Set<LeaseContract>().ToListAsync();
+        var payments = await _context.Set<LeasePaymentRecord>().ToListAsync();
 
         DateTime end = endDate ?? DateTime.UtcNow;
         DateTime start = startDate ?? new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
@@ -605,7 +625,6 @@ public class ParkTenantService : IParkTenantService
         var (currentActiveTenants, currentMonthlyRent) = (activeContracts.Count > 0 ? activeContracts.Select(c => c.TenantId).Distinct().Count() : 0, activeContracts.Sum(c => c.MonthlyRent));
         // Better to use the helper ensuring consistency
         var (calcActiveTenants, calcMonthlyRent) = CalculateMetricsAtDate(end);
-
 
         var momDate = end.AddMonths(-1);
         var (momActiveTenants, momMonthlyRent) = CalculateMetricsAtDate(momDate);

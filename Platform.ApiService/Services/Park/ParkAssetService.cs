@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
+using Microsoft.Extensions.Logging;
 
 namespace Platform.ApiService.Services;
 
@@ -10,191 +11,103 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class ParkAssetService : IParkAssetService
 {
+    private readonly DbContext _context;
     private readonly ILogger<ParkAssetService> _logger;
-    private readonly IDataFactory<Building> _buildingFactory;
-    private readonly IDataFactory<PropertyUnit> _unitFactory;
-    private readonly IDataFactory<LeaseContract> _contractFactory;
-    private readonly IDataFactory<ParkTenant> _tenantFactory;
 
-    /// <summary>
-    /// 初始化资产管理服务
-    /// </summary>
-    public ParkAssetService(
-        ILogger<ParkAssetService> logger,
-        IDataFactory<Building> buildingFactory,
-        IDataFactory<PropertyUnit> unitFactory,
-        IDataFactory<LeaseContract> contractFactory,
-        IDataFactory<ParkTenant> tenantFactory)
+    public ParkAssetService(DbContext context, ILogger<ParkAssetService> logger)
     {
+        _context = context;
         _logger = logger;
-        _buildingFactory = buildingFactory;
-        _unitFactory = unitFactory;
-        _contractFactory = contractFactory;
-        _tenantFactory = tenantFactory;
     }
-
 
     #region 楼宇管理
 
-    /// <summary>
-    /// 获取楼宇列表
-    /// </summary>
     public async Task<BuildingListResponse> GetBuildingsAsync(BuildingListRequest request)
     {
-        Expression<Func<Building, bool>> filter = b => true;
+        var q = _context.Set<Building>().AsQueryable();
 
         if (!string.IsNullOrEmpty(request.Search))
         {
             var search = request.Search.ToLower();
-            filter = CombineFilters(filter, b => b.Name.ToLower().Contains(search));
+            q = q.Where(b => b.Name.ToLower().Contains(search));
         }
 
-        if (!string.IsNullOrEmpty(request.Status))
-        {
-            filter = CombineFilters(filter, b => b.Status == request.Status);
-        }
+        if (!string.IsNullOrEmpty(request.Status)) q = q.Where(b => b.Status == request.Status);
+        if (!string.IsNullOrEmpty(request.BuildingType)) q = q.Where(b => b.BuildingType == request.BuildingType);
 
-        if (!string.IsNullOrEmpty(request.BuildingType))
-        {
-            filter = CombineFilters(filter, b => b.BuildingType == request.BuildingType);
-        }
+        if (request.SortOrder?.ToLower() == "asc") q = q.OrderBy(b => b.CreatedAt);
+        else q = q.OrderByDescending(b => b.CreatedAt);
 
-        Func<IQueryable<Building>, IOrderedQueryable<Building>>? orderBy = null;
-        if (request.SortOrder?.ToLower() == "asc")
-        {
-            orderBy = q => q.OrderBy(b => b.CreatedAt);
-        }
-        else
-        {
-            orderBy = q => q.OrderByDescending(b => b.CreatedAt);
-        }
+        var total = await q.LongCountAsync();
+        var items = await q.Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
 
-        var (items, total) = await _buildingFactory.FindPagedAsync(filter, orderBy, request.Page, request.PageSize);
-
-        // 我们需要手动填充 DTO，因为 DTO 包含一些计算字段（房源数量等）
         var buildings = new List<BuildingDto>();
-        foreach (var building in items)
-        {
-            buildings.Add(await MapToBuildingDtoAsync(building));
-        }
+        foreach (var b in items) buildings.Add(await MapToBuildingDtoAsync(b));
 
-        return new BuildingListResponse
-        {
-            Buildings = buildings,
-            Total = (int)total
-        };
+        return new BuildingListResponse { Buildings = buildings, Total = (int)total };
     }
 
-    /// <summary>
-    /// 获取楼宇详情
-    /// </summary>
     public async Task<BuildingDto?> GetBuildingByIdAsync(string id)
     {
-        var building = await _buildingFactory.GetByIdAsync(id);
-        return building != null ? await MapToBuildingDtoAsync(building) : null;
+        var b = await _context.Set<Building>().FirstOrDefaultAsync(x => x.Id == id);
+        return b != null ? await MapToBuildingDtoAsync(b) : null;
     }
 
-    /// <summary>
-    /// 创建楼宇
-    /// </summary>
     public async Task<BuildingDto> CreateBuildingAsync(CreateBuildingRequest request)
     {
-        var building = new Building
+        var b = new Building
         {
-            Name = request.Name,
-            Address = request.Address,
-            TotalFloors = request.TotalFloors,
-            TotalArea = request.TotalArea,
-            BuildingType = request.BuildingType,
-            YearBuilt = request.YearBuilt,
-            DeliveryDate = request.DeliveryDate,
-            Description = request.Description,
-            CoverImage = request.CoverImage,
-            Images = request.Images,
-            Attachments = request.Attachments
+            Name = request.Name, Address = request.Address, TotalFloors = request.TotalFloors,
+            TotalArea = request.TotalArea, BuildingType = request.BuildingType, YearBuilt = request.YearBuilt,
+            DeliveryDate = request.DeliveryDate, Description = request.Description, CoverImage = request.CoverImage,
+            Images = request.Images, Attachments = request.Attachments
         };
-
-        await _buildingFactory.CreateAsync(building);
-        _logger.LogInformation("创建楼宇: {Name}, ID: {Id}", building.Name, building.Id);
-
-        return await MapToBuildingDtoAsync(building);
+        await _context.Set<Building>().AddAsync(b);
+        await _context.SaveChangesAsync();
+        return await MapToBuildingDtoAsync(b);
     }
 
-    /// <summary>
-    /// 更新楼宇
-    /// </summary>
     public async Task<BuildingDto?> UpdateBuildingAsync(string id, UpdateBuildingRequest request)
     {
-        var building = await _buildingFactory.GetByIdAsync(id);
-        if (building == null) return null;
+        var b = await _context.Set<Building>().FirstOrDefaultAsync(x => x.Id == id);
+        if (b == null) return null;
 
-        building.Name = request.Name;
-        building.Address = request.Address;
-        building.TotalFloors = request.TotalFloors;
-        building.TotalArea = request.TotalArea;
-        building.BuildingType = request.BuildingType;
-        building.YearBuilt = request.YearBuilt;
-        building.DeliveryDate = request.DeliveryDate;
-        building.Description = request.Description;
-        building.CoverImage = request.CoverImage;
-        building.Images = request.Images;
-        building.Attachments = request.Attachments;
-        building.Status = request.Status ?? building.Status;
+        b.Name = request.Name; b.Address = request.Address; b.TotalFloors = request.TotalFloors;
+        b.TotalArea = request.TotalArea; b.BuildingType = request.BuildingType; b.YearBuilt = request.YearBuilt;
+        b.DeliveryDate = request.DeliveryDate; b.Description = request.Description; b.CoverImage = request.CoverImage;
+        b.Images = request.Images; b.Attachments = request.Attachments; b.Status = request.Status ?? b.Status;
 
-        await _buildingFactory.UpdateAsync(id, building => { });
-
-        return await MapToBuildingDtoAsync(building);
+        await _context.SaveChangesAsync();
+        return await MapToBuildingDtoAsync(b);
     }
 
-    /// <summary>
-    /// 删除楼宇
-    /// </summary>
     public async Task<bool> DeleteBuildingAsync(string id)
     {
-        var building = await _buildingFactory.GetByIdAsync(id);
-        if (building == null)
-            return false;
+        var b = await _context.Set<Building>().FirstOrDefaultAsync(x => x.Id == id);
+        if (b == null) return false;
 
-        // 检查是否有关联的房源
-        var unitCount = await _unitFactory.CountAsync(u => u.BuildingId == id);
-        if (unitCount > 0)
-        {
+        if (await _context.Set<PropertyUnit>().AnyAsync(u => u.BuildingId == id))
             throw new InvalidOperationException("楼宇下存在房源，无法删除");
-        }
 
-        var deleted = await _buildingFactory.SoftDeleteAsync(id);
-        return deleted;
+        _context.Set<Building>().Remove(b);
+        await _context.SaveChangesAsync();
+        return true;
     }
 
-    private async Task<BuildingDto> MapToBuildingDtoAsync(Building building)
+    private async Task<BuildingDto> MapToBuildingDtoAsync(Building b)
     {
-        var units = await _unitFactory.FindAsync(u => u.BuildingId == building.Id);
+        var units = await _context.Set<PropertyUnit>().Where(u => u.BuildingId == b.Id).ToListAsync();
         var rentedUnits = units.Where(u => u.Status == "Rented").ToList();
         var rentedArea = rentedUnits.Sum(u => u.Area);
-
-        // 以旗下所有房源面积之和作为分母
         var totalRentableArea = units.Sum(u => u.Area);
 
         return new BuildingDto
         {
-            Id = building.Id,
-            Name = building.Name,
-            Address = building.Address,
-            TotalFloors = building.TotalFloors,
-            TotalArea = building.TotalArea,
-            RentedArea = rentedArea,
-            OccupancyRate = totalRentableArea > 0 ? Math.Round(rentedArea / totalRentableArea * 100, 2) : 0,
-            BuildingType = building.BuildingType,
-            YearBuilt = building.YearBuilt,
-            DeliveryDate = building.DeliveryDate,
-            Status = building.Status,
-            Description = building.Description,
-            CoverImage = building.CoverImage,
-            TotalUnits = units.Count,
-            AvailableUnits = units.Count(u => u.Status == "Available"),
-            Images = building.Images,
-            CreatedAt = building.CreatedAt,
-            Attachments = building.Attachments
+            Id = b.Id, Name = b.Name, Address = b.Address, TotalFloors = b.TotalFloors, TotalArea = b.TotalArea,
+            RentedArea = rentedArea, OccupancyRate = totalRentableArea > 0 ? Math.Round(rentedArea / totalRentableArea * 100, 2) : 0,
+            BuildingType = b.BuildingType, YearBuilt = b.YearBuilt, DeliveryDate = b.DeliveryDate, Status = b.Status,
+            Description = b.Description, CoverImage = b.CoverImage, TotalUnits = units.Count,
+            AvailableUnits = units.Count(u => u.Status == "Available"), Images = b.Images, CreatedAt = b.CreatedAt, Attachments = b.Attachments
         };
     }
 
@@ -202,187 +115,100 @@ public class ParkAssetService : IParkAssetService
 
     #region 房源管理
 
-    /// <summary>
-    /// 获取房源列表
-    /// </summary>
     public async Task<PropertyUnitListResponse> GetPropertyUnitsAsync(PropertyUnitListRequest request)
     {
-        Expression<Func<PropertyUnit, bool>> filter = p => true;
+        var q = _context.Set<PropertyUnit>().AsQueryable();
 
-        if (!string.IsNullOrEmpty(request.BuildingId))
-        {
-            filter = CombineFilters(filter, p => p.BuildingId == request.BuildingId);
-        }
+        if (!string.IsNullOrEmpty(request.BuildingId)) q = q.Where(p => p.BuildingId == request.BuildingId);
+        if (!string.IsNullOrEmpty(request.Search)) q = q.Where(p => p.UnitNumber.Contains(request.Search));
+        if (!string.IsNullOrEmpty(request.Status)) q = q.Where(p => p.Status == request.Status);
+        if (!string.IsNullOrEmpty(request.UnitType)) q = q.Where(p => p.UnitType == request.UnitType);
+        if (request.Floor.HasValue) q = q.Where(p => p.Floor == request.Floor.Value);
 
-        if (!string.IsNullOrEmpty(request.Search))
-        {
-            filter = CombineFilters(filter, p => p.UnitNumber.Contains(request.Search));
-        }
+        if (request.SortOrder?.ToLower() == "asc") q = q.OrderBy(p => p.CreatedAt);
+        else q = q.OrderByDescending(p => p.CreatedAt);
 
-        if (!string.IsNullOrEmpty(request.Status))
-        {
-            filter = CombineFilters(filter, p => p.Status == request.Status);
-        }
-
-        if (!string.IsNullOrEmpty(request.UnitType))
-        {
-            filter = CombineFilters(filter, p => p.UnitType == request.UnitType);
-        }
-
-        if (request.Floor.HasValue)
-        {
-            filter = CombineFilters(filter, p => p.Floor == request.Floor.Value);
-        }
-
-        Func<IQueryable<PropertyUnit>, IOrderedQueryable<PropertyUnit>>? orderBy = null;
-        if (request.SortOrder?.ToLower() == "asc")
-        {
-            orderBy = q => q.OrderBy(p => p.CreatedAt);
-        }
-        else
-        {
-            orderBy = q => q.OrderByDescending(p => p.CreatedAt);
-        }
-
-        var (items, total) = await _unitFactory.FindPagedAsync(filter, orderBy, request.Page, request.PageSize);
+        var total = await q.LongCountAsync();
+        var items = await q.Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
 
         var units = new List<PropertyUnitDto>();
-        foreach (var item in items)
-        {
-            units.Add(await MapToPropertyUnitDtoAsync(item));
-        }
+        foreach (var item in items) units.Add(await MapToPropertyUnitDtoAsync(item));
 
-        return new PropertyUnitListResponse
-        {
-            Units = units,
-            Total = (int)total
-        };
+        return new PropertyUnitListResponse { Units = units, Total = (int)total };
     }
 
-    /// <summary>
-    /// 获取房源详情
-    /// </summary>
     public async Task<PropertyUnitDto?> GetPropertyUnitByIdAsync(string id)
     {
-        var unit = await _unitFactory.GetByIdAsync(id);
-        return unit != null ? await MapToPropertyUnitDtoAsync(unit, true) : null;
+        var u = await _context.Set<PropertyUnit>().FirstOrDefaultAsync(x => x.Id == id);
+        return u != null ? await MapToPropertyUnitDtoAsync(u, true) : null;
     }
 
-    /// <summary>
-    /// 创建房源
-    /// </summary>
     public async Task<PropertyUnitDto> CreatePropertyUnitAsync(CreatePropertyUnitRequest request)
     {
-        var unit = new PropertyUnit
+        var u = new PropertyUnit
         {
-            BuildingId = request.BuildingId,
-            UnitNumber = request.UnitNumber,
-            Floor = request.Floor,
-            Area = request.Area,
-            MonthlyRent = request.MonthlyRent,
-            DailyRent = request.DailyRent,
-            UnitType = request.UnitType ?? "Office",
-            Description = request.Description,
-            Facilities = request.Facilities,
-            Images = request.Images,
-            Attachments = request.Attachments
+            BuildingId = request.BuildingId, UnitNumber = request.UnitNumber, Floor = request.Floor,
+            Area = request.Area, MonthlyRent = request.MonthlyRent, DailyRent = request.DailyRent,
+            UnitType = request.UnitType ?? "Office", Description = request.Description,
+            Facilities = request.Facilities, Images = request.Images, Attachments = request.Attachments
         };
-
-        await _unitFactory.CreateAsync(unit);
-        return await MapToPropertyUnitDtoAsync(unit);
+        await _context.Set<PropertyUnit>().AddAsync(u);
+        await _context.SaveChangesAsync();
+        return await MapToPropertyUnitDtoAsync(u);
     }
 
-    /// <summary>
-    /// 更新房源
-    /// </summary>
     public async Task<PropertyUnitDto?> UpdatePropertyUnitAsync(string id, CreatePropertyUnitRequest request)
     {
-        var unit = await _unitFactory.GetByIdAsync(id);
-        if (unit == null) return null;
+        var u = await _context.Set<PropertyUnit>().FirstOrDefaultAsync(x => x.Id == id);
+        if (u == null) return null;
 
-        unit.BuildingId = request.BuildingId;
-        unit.UnitNumber = request.UnitNumber;
-        unit.Floor = request.Floor;
-        unit.Area = request.Area;
-        unit.MonthlyRent = request.MonthlyRent;
-        unit.DailyRent = request.DailyRent;
-        unit.UnitType = request.UnitType ?? unit.UnitType;
-        unit.Description = request.Description;
-        unit.Facilities = request.Facilities;
-        unit.Images = request.Images;
-        unit.Attachments = request.Attachments;
+        u.BuildingId = request.BuildingId; u.UnitNumber = request.UnitNumber; u.Floor = request.Floor;
+        u.Area = request.Area; u.MonthlyRent = request.MonthlyRent; u.DailyRent = request.DailyRent;
+        u.UnitType = request.UnitType ?? u.UnitType; u.Description = request.Description;
+        u.Facilities = request.Facilities; u.Images = request.Images; u.Attachments = request.Attachments;
 
-        await _unitFactory.UpdateAsync(id, _ => { });
-
-        return await MapToPropertyUnitDtoAsync(unit);
+        await _context.SaveChangesAsync();
+        return await MapToPropertyUnitDtoAsync(u);
     }
 
-    /// <summary>
-    /// 删除房源
-    /// </summary>
     public async Task<bool> DeletePropertyUnitAsync(string id)
     {
-        var unit = await _unitFactory.GetByIdAsync(id);
-        if (unit == null) return false;
-
-        if (unit.Status == "Rented")
-        {
-            throw new InvalidOperationException("房源已出租，无法删除");
-        }
-
-        var result = await _unitFactory.SoftDeleteAsync(id);
-        return result;
+        var u = await _context.Set<PropertyUnit>().FirstOrDefaultAsync(x => x.Id == id);
+        if (u == null) return false;
+        if (u.Status == "Rented") throw new InvalidOperationException("房源已出租，无法删除");
+        _context.Set<PropertyUnit>().Remove(u);
+        await _context.SaveChangesAsync();
+        return true;
     }
 
-    private async Task<PropertyUnitDto> MapToPropertyUnitDtoAsync(PropertyUnit unit, bool includeHistory = false)
+    private async Task<PropertyUnitDto> MapToPropertyUnitDtoAsync(PropertyUnit u, bool includeHistory = false)
     {
-        var building = await _buildingFactory.GetByIdAsync(unit.BuildingId);
+        var b = await _context.Set<Building>().FirstOrDefaultAsync(x => x.Id == u.BuildingId);
 
         var dto = new PropertyUnitDto
         {
-            Id = unit.Id,
-            BuildingId = unit.BuildingId,
-            BuildingName = building?.Name,
-            UnitNumber = unit.UnitNumber,
-            Floor = unit.Floor,
-            Area = unit.Area,
-            MonthlyRent = unit.MonthlyRent,
-            DailyRent = unit.DailyRent,
-            UnitType = unit.UnitType,
-            Status = unit.Status,
-            CurrentTenantId = unit.CurrentTenantId,
-            LeaseEndDate = unit.LeaseEndDate,
-            Facilities = unit.Facilities,
-            Attachments = unit.Attachments
+            Id = u.Id, BuildingId = u.BuildingId, BuildingName = b?.Name, UnitNumber = u.UnitNumber, Floor = u.Floor,
+            Area = u.Area, MonthlyRent = u.MonthlyRent, DailyRent = u.DailyRent, UnitType = u.UnitType,
+            Status = u.Status, CurrentTenantId = u.CurrentTenantId, LeaseEndDate = u.LeaseEndDate,
+            Facilities = u.Facilities, Attachments = u.Attachments
         };
 
         if (includeHistory)
         {
-            var contracts = await _contractFactory.FindAsync(c => c.UnitIds.Contains(unit.Id));
+            var contracts = await _context.Set<LeaseContract>().Where(c => c.UnitIds.Contains(u.Id)).ToListAsync();
             var leaseHistory = new List<LeaseContractDto>();
-
-            foreach (var contract in contracts.OrderByDescending(c => c.CreatedAt))
+            foreach (var c in contracts.OrderByDescending(x => x.CreatedAt))
             {
-                var tenant = await _tenantFactory.GetByIdAsync(contract.TenantId);
+                var tenant = await _context.Set<ParkTenant>().FirstOrDefaultAsync(x => x.Id == c.TenantId);
                 leaseHistory.Add(new LeaseContractDto
                 {
-                    Id = contract.Id,
-                    TenantId = contract.TenantId,
-                    TenantName = tenant?.TenantName,
-                    ContractNumber = contract.ContractNumber,
-                    StartDate = contract.StartDate,
-                    EndDate = contract.EndDate,
-                    Status = contract.Status,
-                    MonthlyRent = contract.MonthlyRent,
-                    Deposit = contract.Deposit,
-                    PaymentCycle = contract.PaymentCycle,
-                    UnitIds = contract.UnitIds,
-                    CreatedAt = contract.CreatedAt
+                    Id = c.Id, TenantId = c.TenantId, TenantName = tenant?.TenantName, ContractNumber = c.ContractNumber,
+                    StartDate = c.StartDate, EndDate = c.EndDate, Status = c.Status, MonthlyRent = c.MonthlyRent,
+                    Deposit = c.Deposit, PaymentCycle = c.PaymentCycle, UnitIds = c.UnitIds, CreatedAt = c.CreatedAt
                 });
             }
             dto.LeaseHistory = leaseHistory;
         }
-
         return dto;
     }
 
@@ -390,70 +216,38 @@ public class ParkAssetService : IParkAssetService
 
     #region 统计
 
-    private static Expression<Func<T, bool>> CombineFilters<T>(Expression<Func<T, bool>> first, Expression<Func<T, bool>> second)
-    {
-        var parameter = Expression.Parameter(typeof(T));
-        var combined = Expression.AndAlso(
-            Expression.Invoke(first, parameter),
-            Expression.Invoke(second, parameter)
-        );
-        return Expression.Lambda<Func<T, bool>>(combined, parameter);
-    }
-
-    /// <summary>
-    /// 获取资产统计数据
-    /// </summary>
     public async Task<AssetStatisticsResponse> GetAssetStatisticsAsync(DateTime? startDate = null, DateTime? endDate = null)
     {
-        var buildings = await _buildingFactory.FindAsync();
-        var units = await _unitFactory.FindAsync();
-        var contracts = await _contractFactory.FindAsync();
+        var buildings = await _context.Set<Building>().ToListAsync();
+        var units = await _context.Set<PropertyUnit>().ToListAsync();
+        var contracts = await _context.Set<LeaseContract>().ToListAsync();
 
         DateTime start = startDate ?? new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
         DateTime end = endDate ?? DateTime.UtcNow;
 
-        // Helper function to calculate metrics at a specific date
         (decimal OccupancyRate, decimal RentedArea, int RentedUnitsCount, int TotalBuildingsCount, decimal RentableAreaAtDate) CalculateMetricsAtDate(DateTime date)
         {
             var activeBuildingsAtDate = buildings.Where(b => b.DeliveryDate == null || b.DeliveryDate <= date).ToList();
             var activeBuildingIds = activeBuildingsAtDate.Select(b => b.Id).ToList();
             var activeUnitsAtDate = units.Where(u => activeBuildingIds.Contains(u.BuildingId)).ToList();
-
             var rentableAreaAtDate = activeUnitsAtDate.Sum(u => u.Area);
-
-            var activeContractsAtDate = contracts
-                .Where(c => (c.Status == "Active" || c.Status == "Renewed")
-                            && c.StartDate <= date
-                            && c.EndDate >= date)
-                .ToList();
-
-            var rentedUnitIdsAtDate = activeContractsAtDate
-                .SelectMany(c => c.UnitIds)
-                .Distinct()
-                .ToList();
-
+            var activeContractsAtDate = contracts.Where(c => (c.Status == "Active" || c.Status == "Renewed") && c.StartDate <= date && c.EndDate >= date).ToList();
+            var rentedUnitIdsAtDate = activeContractsAtDate.SelectMany(c => c.UnitIds).Distinct().ToList();
             var rentedUnitsAtDate = activeUnitsAtDate.Where(u => rentedUnitIdsAtDate.Contains(u.Id)).ToList();
             var rentedAreaAtDate = rentedUnitsAtDate.Sum(u => u.Area);
             var occupancyRateAtDate = rentableAreaAtDate > 0 ? (decimal)Math.Round((double)(rentedAreaAtDate / rentableAreaAtDate * 100), 2) : 0;
-
             return (occupancyRateAtDate, rentedAreaAtDate, rentedUnitsAtDate.Count, activeBuildingsAtDate.Count, rentableAreaAtDate);
         }
 
-        // Metrics at the end of the selected period
         var (currentOccupancyRate, currentRentedArea, currentRentedUnits, currentTotalBuildings, currentTotalRentableArea) = CalculateMetricsAtDate(end);
         var activeBuildingsAtEnd = buildings.Where(b => b.DeliveryDate == null || b.DeliveryDate <= end).ToList();
         var currentTotalArea = activeBuildingsAtEnd.Sum(b => b.TotalArea);
-
-        // Only count units belonging to buildings delivered by end of period
         var activeBuildingIdsAtEnd = activeBuildingsAtEnd.Select(b => b.Id).ToList();
         var activeUnitsAtEnd = units.Where(u => activeBuildingIdsAtEnd.Contains(u.BuildingId)).ToList();
         var currentTotalUnits = activeUnitsAtEnd.Count;
 
-        // MoM Comparison (Previous Month/Period)
         var momDate = end.AddMonths(-1);
         var (momOccupancyRate, momRentedArea, _, momTotalBuildings, _) = CalculateMetricsAtDate(momDate);
-
-        // YoY Comparison (Same time last year)
         var yoyDate = end.AddYears(-1);
         var (yoyOccupancyRate, yoyRentedArea, _, yoyTotalBuildings, _) = CalculateMetricsAtDate(yoyDate);
 
@@ -465,14 +259,9 @@ public class ParkAssetService : IParkAssetService
 
         return new AssetStatisticsResponse
         {
-            TotalBuildings = currentTotalBuildings,
-            TotalArea = currentTotalArea,
-            TotalUnits = currentTotalUnits,
-            AvailableUnits = currentTotalUnits - currentRentedUnits,
-            RentedUnits = currentRentedUnits,
-            OccupancyRate = currentOccupancyRate,
-            TotalRentableArea = currentTotalRentableArea,
-            RentedArea = currentRentedArea,
+            TotalBuildings = currentTotalBuildings, TotalArea = currentTotalArea, TotalUnits = currentTotalUnits,
+            AvailableUnits = currentTotalUnits - currentRentedUnits, RentedUnits = currentRentedUnits,
+            OccupancyRate = currentOccupancyRate, TotalRentableArea = currentTotalRentableArea, RentedArea = currentRentedArea,
             OccupancyRateYoY = CalculateGrowth(currentOccupancyRate, yoyOccupancyRate),
             OccupancyRateMoM = CalculateGrowth(currentOccupancyRate, momOccupancyRate),
             RentedAreaYoY = CalculateGrowth(currentRentedArea, yoyRentedArea),

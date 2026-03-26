@@ -293,4 +293,3 @@ public class NearbyUsersResponse
     /// </summary>
     public int? NextRefreshAfter { get; set; }
 }
-

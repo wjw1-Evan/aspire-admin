@@ -21,26 +21,22 @@ public interface IAiAssistantCoordinator
 /// </summary>
 public class AiAssistantCoordinator : IAiAssistantCoordinator
 {
-    private readonly IDataFactory<AppUser> _userFactory;
-    private readonly IDataFactory<ChatSession> _sessionFactory;
+    private readonly DbContext _context;
+
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<AiAssistantCoordinator> _logger;
 
     /// <summary>
     /// 初始化协调器实例。
     /// </summary>
-    /// <param name="userFactory">用户数据操作工厂</param>
-    /// <param name="sessionFactory">会话数据操作工厂</param>
+
     /// <param name="tenantContext">租户上下文</param>
     /// <param name="logger">日志记录器</param>
-    public AiAssistantCoordinator(
-        IDataFactory<AppUser> userFactory,
-        IDataFactory<ChatSession> sessionFactory,
+    public AiAssistantCoordinator(DbContext context,
         ITenantContext tenantContext,
-        ILogger<AiAssistantCoordinator> logger)
-    {
-        _userFactory = userFactory;
-        _sessionFactory = sessionFactory;
+        ILogger<AiAssistantCoordinator> logger
+    ) {
+        _context = context;
         _tenantContext = tenantContext;
         _logger = logger;
     }
@@ -48,8 +44,9 @@ public class AiAssistantCoordinator : IAiAssistantCoordinator
     /// <inheritdoc />
     public async Task<ChatSession> EnsureAssistantSessionForCurrentUserAsync()
     {
+        
         var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        var user = await _userFactory.GetByIdAsync(currentUserId)
+        var user = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == currentUserId)
             ?? throw new InvalidOperationException("未找到当前用户信息，无法创建 AI 助手会话。");
 
         var companyId = user.CurrentCompanyId ?? user.PersonalCompanyId;
@@ -72,12 +69,11 @@ public class AiAssistantCoordinator : IAiAssistantCoordinator
     private async Task<ChatSession> EnsureAssistantSessionAsync(AppUser user, string companyId)
     {
         _logger.LogDebug("正在查找用户 {UserId} 的现有助手会话 (企业: {CompanyId})", user.Id, companyId);
-        var existing = await _sessionFactory.FindAsync(session =>
+        var existing = await _context.Set<ChatSession>().Where(session =>
             session.CompanyId == companyId &&
             session.Participants.Count == 2 &&
             session.Participants.Contains(user.Id) &&
-            session.Participants.Contains(AiAssistantConstants.AssistantUserId),
-            limit: 1);
+            session.Participants.Contains(AiAssistantConstants.AssistantUserId)).Take(1).ToListAsync();
         if (existing.Count > 0)
         {
             _logger.LogDebug("找到现有助手会话: {SessionId}", existing[0].Id);
@@ -115,7 +111,8 @@ public class AiAssistantCoordinator : IAiAssistantCoordinator
             TopicTags = new List<string> { "assistant", "direct" }
         };
 
-        session = await _sessionFactory.CreateAsync(session);
+        await _context.Set<ChatSession>().AddAsync(session);
+        await _context.SaveChangesAsync();
         _logger.LogInformation("已为用户 {UserId} 创建 AI 助手会话 {SessionId}", user.Id, session.Id);
         return session;
     }

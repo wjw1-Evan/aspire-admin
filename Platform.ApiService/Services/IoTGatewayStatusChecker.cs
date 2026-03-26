@@ -1,8 +1,16 @@
+using Microsoft.EntityFrameworkCore;
 using System.Net.Sockets;
 using Microsoft.Extensions.Options;
 using Platform.ApiService.Models;
 using Platform.ApiService.Options;
 using Platform.ServiceDefaults.Services;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Platform.ApiService.Services;
 
@@ -11,105 +19,60 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class IoTGatewayStatusChecker
 {
-    private readonly IDataFactory<IoTGateway> _gatewayFactory;
+    private readonly DbContext _context;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IOptionsMonitor<IoTDataCollectionOptions> _optionsMonitor;
     private readonly ILogger<IoTGatewayStatusChecker> _logger;
 
-    /// <summary>
-    /// 初始化网关状态检测服务
-    /// </summary>
-    /// <param name="gatewayFactory">网关数据操作工厂</param>
-    /// <param name="httpClientFactory">HTTP 客户端工厂</param>
-    /// <param name="optionsMonitor">数据采集配置选项监视器</param>
-    /// <param name="logger">日志记录器</param>
-    public IoTGatewayStatusChecker(
-        IDataFactory<IoTGateway> gatewayFactory,
+    public IoTGatewayStatusChecker(DbContext context,
         IHttpClientFactory httpClientFactory,
         IOptionsMonitor<IoTDataCollectionOptions> optionsMonitor,
         ILogger<IoTGatewayStatusChecker> logger)
     {
-        _gatewayFactory = gatewayFactory;
+        _context = context;
         _httpClientFactory = httpClientFactory;
         _optionsMonitor = optionsMonitor;
         _logger = logger;
     }
 
-    /// <summary>
-    /// 检查并更新所有网关的状态（跨租户处理）
-    /// </summary>
     public async Task CheckAndUpdateGatewayStatusesAsync(CancellationToken cancellationToken)
     {
         var options = _optionsMonitor.CurrentValue;
-        if (!options.GatewayStatusCheckEnabled)
-        {
-            return;
-        }
+        if (!options.GatewayStatusCheckEnabled) return;
 
-        // 后台服务需要跨租户查询所有网关
-        var gateways = await _gatewayFactory.FindWithoutTenantFilterAsync(g => g.IsDeleted != true).ConfigureAwait(false);
-
-        // 按租户分组处理，确保数据隔离
-        var gatewaysByTenant = gateways
-            .Where(g => !string.IsNullOrWhiteSpace(g.CompanyId))
-            .GroupBy(g => g.CompanyId)
-            .ToList();
+        var gateways = await _context.Set<IoTGateway>().IgnoreQueryFilters().Where(x => !x.IsDeleted).ToListAsync(cancellationToken);
+        var gatewaysByTenant = gateways.Where(g => !string.IsNullOrWhiteSpace(g.CompanyId)).GroupBy(g => g.CompanyId).ToList();
 
         int updatedCount = 0;
         foreach (var tenantGroup in gatewaysByTenant)
         {
             var companyId = tenantGroup.Key;
-            _logger.LogDebug("Processing {Count} gateways for company {CompanyId}", tenantGroup.Count(), companyId);
-
             foreach (var gateway in tenantGroup)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                if (string.IsNullOrWhiteSpace(gateway.Address)) continue;
 
-                if (string.IsNullOrWhiteSpace(gateway.Address))
-                {
-                    _logger.LogDebug("Gateway {GatewayId} has no address, skipping ping check", gateway.GatewayId);
-                    continue;
-                }
-
-                var newStatus = await PingGatewayAsync(gateway, cancellationToken).ConfigureAwait(false);
+                var newStatus = await PingGatewayAsync(gateway, cancellationToken);
                 if (newStatus != gateway.Status)
                 {
-                    await UpdateGatewayStatusAsync(gateway, newStatus, cancellationToken).ConfigureAwait(false);
+                    await UpdateGatewayStatusAsync(gateway, newStatus, cancellationToken);
                     updatedCount++;
-                    _logger.LogInformation(
-                        "Gateway {GatewayId} ({Address}) status updated: {OldStatus} -> {NewStatus} for company {CompanyId}",
-                        gateway.GatewayId,
-                        gateway.Address,
-                        gateway.Status,
-                        newStatus,
-                        companyId);
+                    _logger.LogInformation("Gateway {GatewayId} ({Address}) status updated: {OldStatus} -> {NewStatus} for company {CompanyId}", gateway.GatewayId, gateway.Address, gateway.Status, newStatus, companyId);
                 }
             }
         }
-
-        if (updatedCount > 0)
-        {
-            _logger.LogInformation("Updated {UpdatedCount} gateway statuses across {TenantCount} tenants", updatedCount, gatewaysByTenant.Count);
-        }
+        if (updatedCount > 0) _logger.LogInformation("Updated {UpdatedCount} gateway statuses across {TenantCount} tenants", updatedCount, gatewaysByTenant.Count);
     }
 
-    private async Task<IoTDeviceStatus> PingGatewayAsync(
-        IoTGateway gateway,
-        CancellationToken cancellationToken)
+    private async Task<IoTDeviceStatus> PingGatewayAsync(IoTGateway gateway, CancellationToken cancellationToken)
     {
         var options = _optionsMonitor.CurrentValue;
         var timeout = TimeSpan.FromSeconds(options.GatewayPingTimeoutSeconds);
-
         try
         {
-            // HTTP 协议使用 HTTP 请求检测
             if (gateway.ProtocolType?.Equals("HTTP", StringComparison.OrdinalIgnoreCase) == true)
-            {
-                return await PingHttpGatewayAsync(gateway, timeout, cancellationToken).ConfigureAwait(false);
-            }
-
-            // 其他协议使用 TCP ping
-            return await PingTcpGatewayAsync(gateway, timeout, cancellationToken).ConfigureAwait(false);
+                return await PingHttpGatewayAsync(gateway, timeout, cancellationToken);
+            return await PingTcpGatewayAsync(gateway, timeout, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -118,135 +81,66 @@ public class IoTGatewayStatusChecker
         }
     }
 
-    private async Task<IoTDeviceStatus> PingHttpGatewayAsync(
-        IoTGateway gateway,
-        TimeSpan timeout,
-        CancellationToken cancellationToken)
+    private async Task<IoTDeviceStatus> PingHttpGatewayAsync(IoTGateway gateway, TimeSpan timeout, CancellationToken cancellationToken)
     {
         try
         {
             var url = gateway.Address;
-            if (string.IsNullOrWhiteSpace(url))
-            {
-                return IoTDeviceStatus.Offline;
-            }
-
-            // 如果地址没有协议前缀，添加 http://
-            if (!url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
-                !url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-            {
-                url = "http://" + url;
-            }
+            if (string.IsNullOrWhiteSpace(url)) return IoTDeviceStatus.Offline;
+            if (!url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && !url.StartsWith("https://", StringComparison.OrdinalIgnoreCase)) url = "http://" + url;
 
             var httpClient = _httpClientFactory.CreateClient(nameof(IoTGatewayStatusChecker));
             httpClient.Timeout = timeout;
-
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             cts.CancelAfter(timeout);
 
-            using var response = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cts.Token).ConfigureAwait(false);
+            using var response = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cts.Token);
             return response.IsSuccessStatusCode ? IoTDeviceStatus.Online : IoTDeviceStatus.Offline;
         }
-        catch (TaskCanceledException)
-        {
-            return IoTDeviceStatus.Offline;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogDebug(ex, "HTTP ping failed for gateway {GatewayId}", gateway.GatewayId);
-            return IoTDeviceStatus.Offline;
-        }
+        catch { return IoTDeviceStatus.Offline; }
     }
 
-    private async Task<IoTDeviceStatus> PingTcpGatewayAsync(
-        IoTGateway gateway,
-        TimeSpan timeout,
-        CancellationToken cancellationToken)
+    private async Task<IoTDeviceStatus> PingTcpGatewayAsync(IoTGateway gateway, TimeSpan timeout, CancellationToken cancellationToken)
     {
         try
         {
             var address = gateway.Address;
-            if (string.IsNullOrWhiteSpace(address))
-            {
-                return IoTDeviceStatus.Offline;
-            }
-
-            // 解析地址和端口
+            if (string.IsNullOrWhiteSpace(address)) return IoTDeviceStatus.Offline;
             var (host, port) = ParseAddress(address);
-            if (string.IsNullOrWhiteSpace(host))
-            {
-                return IoTDeviceStatus.Offline;
-            }
+            if (string.IsNullOrWhiteSpace(host)) return IoTDeviceStatus.Offline;
 
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             cts.CancelAfter(timeout);
-
             using var tcpClient = new TcpClient();
             var connectTask = tcpClient.ConnectAsync(host, port);
-            await Task.WhenAny(connectTask, Task.Delay(timeout, cts.Token)).ConfigureAwait(false);
-
-            if (tcpClient.Connected)
-            {
-                return IoTDeviceStatus.Online;
-            }
-
-            return IoTDeviceStatus.Offline;
+            await Task.WhenAny(connectTask, Task.Delay(timeout, cts.Token));
+            return tcpClient.Connected ? IoTDeviceStatus.Online : IoTDeviceStatus.Offline;
         }
-        catch (TaskCanceledException)
-        {
-            return IoTDeviceStatus.Offline;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogDebug(ex, "TCP ping failed for gateway {GatewayId}", gateway.GatewayId);
-            return IoTDeviceStatus.Offline;
-        }
+        catch { return IoTDeviceStatus.Offline; }
     }
 
     private static (string host, int port) ParseAddress(string address)
     {
-        // 移除协议前缀
         var isHttps = address.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
-        address = address.Replace("http://", "", StringComparison.OrdinalIgnoreCase)
-                         .Replace("https://", "", StringComparison.OrdinalIgnoreCase)
-                         .Replace("tcp://", "", StringComparison.OrdinalIgnoreCase)
-                         .Replace("mqtt://", "", StringComparison.OrdinalIgnoreCase)
-                         .TrimEnd('/');
-
-        // 移除路径部分（只保留主机和端口）
+        address = address.Replace("http://", "", StringComparison.OrdinalIgnoreCase).Replace("https://", "", StringComparison.OrdinalIgnoreCase).Replace("tcp://", "", StringComparison.OrdinalIgnoreCase).Replace("mqtt://", "", StringComparison.OrdinalIgnoreCase).TrimEnd('/');
         var pathIndex = address.IndexOf('/');
-        if (pathIndex > 0)
-        {
-            address = address.Substring(0, pathIndex);
-        }
-
-        // 解析主机和端口
+        if (pathIndex > 0) address = address.Substring(0, pathIndex);
         if (address.Contains(':'))
         {
             var parts = address.Split(':');
-            if (parts.Length >= 2 && int.TryParse(parts[^1], out var port))
-            {
-                var host = string.Join(":", parts.Take(parts.Length - 1));
-                return (host, port);
-            }
+            if (parts.Length >= 2 && int.TryParse(parts[^1], out var port)) return (string.Join(":", parts.Take(parts.Length - 1)), port);
         }
-
-        // 默认端口：HTTPS=443, HTTP=80, MQTT=1883
         return (address, isHttps ? 443 : 80);
     }
 
-    private async Task UpdateGatewayStatusAsync(
-        IoTGateway gateway,
-        IoTDeviceStatus newStatus,
-        CancellationToken cancellationToken)
+    private async Task UpdateGatewayStatusAsync(IoTGateway gateway, IoTDeviceStatus newStatus, CancellationToken cancellationToken)
     {
-        var result = await _gatewayFactory.UpdateAsync(gateway.Id, entity =>
+        var entity = await _context.Set<IoTGateway>().FirstOrDefaultAsync(x => x.Id == gateway.Id, cancellationToken);
+        if (entity != null)
         {
             entity.Status = newStatus;
-            if (newStatus == IoTDeviceStatus.Online)
-            {
-                entity.LastConnectedAt = DateTime.UtcNow;
-            }
-        }).ConfigureAwait(false);
+            if (newStatus == IoTDeviceStatus.Online) entity.LastConnectedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync(cancellationToken);
+        }
     }
 }

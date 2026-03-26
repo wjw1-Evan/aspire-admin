@@ -43,4 +43,3 @@ public class LoginFailureRecord : BaseEntity
     [BsonElement("lastFailureAt")]
     public DateTime LastFailureAt { get; set; } = DateTime.UtcNow;
 }
-

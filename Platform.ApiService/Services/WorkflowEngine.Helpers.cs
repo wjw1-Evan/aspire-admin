@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 
 namespace Platform.ApiService.Services;
 
@@ -27,7 +29,7 @@ public partial class WorkflowEngine
     /// </summary>
     private async Task<Dictionary<string, object?>> GetDocumentVariablesAsync(string instanceId)
     {
-        var instance = await _instanceFactory.GetByIdAsync(instanceId);
+        var instance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
         if (instance == null) return new Dictionary<string, object?>();
 
         var variables = instance.GetVariablesDict();
@@ -86,7 +88,7 @@ public partial class WorkflowEngine
         // 第二步：加载公文信息和表单数据
         if (!string.IsNullOrEmpty(instance.DocumentId))
         {
-            var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
+            var document = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == instance.DocumentId);
             if (document != null)
             {
                 _logger.LogDebug($"DEBUG_WORKFLOW: 公文已找到，标题 = {document.Title}");
@@ -163,9 +165,11 @@ public partial class WorkflowEngine
     /// </summary>
     public async Task<List<ApprovalRecord>> GetApprovalHistoryAsync(string instanceId)
     {
-        var history = await _approvalRecordFactory.FindWithoutTenantFilterAsync(
-            r => r.WorkflowInstanceId == instanceId,
-            query => query.OrderBy(r => r.Sequence));
+        var history = await _context.Set<ApprovalRecord>()
+            .IgnoreQueryFilters()
+            .Where(r => r.WorkflowInstanceId == instanceId)
+            .OrderBy(r => r.Sequence)
+            .ToListAsync();
         _logger.LogInformation("获取实例 {InstanceId} 的审批历史, 发现 {Count} 条记录 (忽略租户过滤器)", instanceId, history.Count);
         return history;
     }
@@ -175,7 +179,7 @@ public partial class WorkflowEngine
     /// </summary>
     public async Task<WorkflowInstance?> GetInstanceAsync(string instanceId)
     {
-        return await _instanceFactory.GetByIdWithoutTenantFilterAsync(instanceId);
+        return await _context.Set<WorkflowInstance>().IgnoreQueryFilters().FirstOrDefaultAsync(x => x.Id == instanceId);
     }
 
     /// <summary>
@@ -183,25 +187,25 @@ public partial class WorkflowEngine
     /// </summary>
     public async Task<bool> CancelWorkflowAsync(string instanceId, string reason)
     {
-        var instance = await _instanceFactory.GetByIdAsync(instanceId);
-        if (instance == null) return false;
-
-        // Bug 8 修复：撤回时状态设为 Cancelled，公文回到草稿
-        await _instanceFactory.UpdateAsync(instanceId, i =>
+        var __instance1 = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
+        if (__instance1 != null)
         {
-            i.Status = WorkflowStatus.Cancelled;
-            i.CompletedAt = DateTime.UtcNow;
-            i.CurrentApproverIds.Clear(); // 清空待审批人
-            i.ActiveApprovals.Clear(); // 清除所有活跃审批节点
-        });
+            __instance1.Status = WorkflowStatus.Cancelled;
+            __instance1.CompletedAt = DateTime.UtcNow;
+            __instance1.CurrentApproverIds.Clear(); // 清空待审批人
+            __instance1.ActiveApprovals.Clear(); // 清除所有活跃审批节点
+            await _context.SaveChangesAsync();
+        }
 
-        if (!string.IsNullOrEmpty(instance.DocumentId))
+        if (!string.IsNullOrEmpty(__instance1.DocumentId))
         {
-            await _documentFactory.UpdateAsync(instance.DocumentId, d =>
+            var __doc1 = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == __instance1.DocumentId);
+            if (__doc1 != null)
             {
-                d.Status = Models.Workflow.DocumentStatus.Draft; // 撤回 → 回到草稿
-                d.UpdatedAt = DateTime.UtcNow;
-            });
+                __doc1.Status = Models.Workflow.DocumentStatus.Draft; // 撤回 → 回到草稿
+                __doc1.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+            }
         }
 
         return true;
@@ -220,10 +224,10 @@ public partial class WorkflowEngine
     /// </summary>
     public async Task<List<WorkflowNode>> GetNextWaitNodesAsync(string instanceId)
     {
-        var instance = await _instanceFactory.GetByIdAsync(instanceId);
+        var instance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
         if (instance == null || instance.Status != WorkflowStatus.Running) return new List<WorkflowNode>();
 
-        var definition = instance.WorkflowDefinitionSnapshot ?? await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
+        var definition = instance.WorkflowDefinitionSnapshot ?? await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == instance.WorkflowDefinitionId);
         if (definition == null) return new List<WorkflowNode>();
 
         var currentNode = definition.Graph.Nodes.FirstOrDefault(n => n.Id == instance.CurrentNodeId);
@@ -247,12 +251,14 @@ public partial class WorkflowEngine
     /// </summary>
     private async Task SetCurrentNodeAsync(string instanceId, string nodeId)
     {
-        await _instanceFactory.UpdateAsync(instanceId, i =>
+        var __instance2 = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
+        if (__instance2 != null)
         {
-            i.CurrentNodeId = nodeId;
-            i.CurrentApproverIds.Clear(); // Bug 6: 切换节点时清空审批人
-            i.UpdatedAt = DateTime.UtcNow;
-        });
+            __instance2.CurrentNodeId = nodeId;
+            __instance2.CurrentApproverIds.Clear(); // Bug 6: 切换节点时清空审批人
+            __instance2.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
     }
 
     /// <summary>
@@ -260,18 +266,20 @@ public partial class WorkflowEngine
     /// </summary>
     private async Task CompleteWorkflowAsync(string instanceId, WorkflowStatus status)
     {
-        var instance = await _instanceFactory.GetByIdAsync(instanceId);
+        var instance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
         if (instance == null) return;
 
         _logger.LogInformation("DEBUG_WORKFLOW: Completing Workflow {InstanceId} with Status {Status}", instanceId, status);
 
-        await _instanceFactory.UpdateAsync(instanceId, i =>
+        var __instance3 = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
+        if (__instance3 != null)
         {
-            i.Status = status;
-            i.CompletedAt = DateTime.UtcNow;
-            i.CurrentApproverIds.Clear(); // Bug 6: 流程结束清空审批人
-            i.ActiveApprovals.Clear(); // 清除任务映射
-        });
+            __instance3.Status = status;
+            __instance3.CompletedAt = DateTime.UtcNow;
+            __instance3.CurrentApproverIds.Clear(); // Bug 6: 流程结束清空审批人
+            __instance3.ActiveApprovals.Clear(); // 清除任务映射
+            await _context.SaveChangesAsync();
+        }
 
         // Bug 2/8 修复：使用完全限定名，区分 Completed/Rejected
         var documentStatus = status == WorkflowStatus.Completed
@@ -280,11 +288,13 @@ public partial class WorkflowEngine
 
         if (!string.IsNullOrEmpty(instance.DocumentId))
         {
-            await _documentFactory.UpdateAsync(instance.DocumentId, d =>
+            var __doc2 = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == instance.DocumentId);
+            if (__doc2 != null)
             {
-                d.Status = documentStatus;
-                d.UpdatedAt = DateTime.UtcNow;
-            });
+                __doc2.Status = documentStatus;
+                __doc2.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+            }
         }
     }
 
@@ -293,10 +303,10 @@ public partial class WorkflowEngine
     /// </summary>
     public async Task<List<string>> GetNodeApproversAsync(string instanceId, string nodeId)
     {
-        var instance = await _instanceFactory.GetByIdAsync(instanceId);
+        var instance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
         if (instance == null) return new List<string>();
 
-        var definition = instance.WorkflowDefinitionSnapshot ?? await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
+        var definition = instance.WorkflowDefinitionSnapshot ?? await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == instance.WorkflowDefinitionId);
         if (definition == null) return new List<string>();
 
         var node = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
@@ -327,20 +337,22 @@ public partial class WorkflowEngine
     /// </summary>
     private async Task UpdateCurrentApproverIdsAsync(string instanceId, string nodeId, List<string> approverIds)
     {
-        await _instanceFactory.UpdateAsync(instanceId, i =>
+        var __instance4 = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
+        if (__instance4 != null)
         {
             if (approverIds == null || approverIds.Count == 0)
             {
-                i.RemoveActiveApprovers(nodeId);
+                __instance4.RemoveActiveApprovers(nodeId);
             }
             else
             {
-                i.SetActiveApprovers(nodeId, approverIds.Distinct().ToList());
+                __instance4.SetActiveApprovers(nodeId, approverIds.Distinct().ToList());
             }
 
-            i.CurrentApproverIds = i.ActiveApprovals.SelectMany(x => x.ApproverIds).Distinct().ToList();
-            i.UpdatedAt = DateTime.UtcNow;
-        });
+            __instance4.CurrentApproverIds = __instance4.ActiveApprovals.SelectMany(x => x.ApproverIds).Distinct().ToList();
+            __instance4.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
     }
 
     /// <summary>
@@ -348,14 +360,16 @@ public partial class WorkflowEngine
     /// </summary>
     private async Task ClearNodeApproversAsync(string instanceId, string nodeId)
     {
-        await _instanceFactory.UpdateAsync(instanceId, i =>
+        var __instance5 = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
+        if (__instance5 != null)
         {
-            if (i.ActiveApprovals.Any(a => a.NodeId == nodeId))
+            if (__instance5.ActiveApprovals.Any(a => a.NodeId == nodeId))
             {
-                i.RemoveActiveApprovers(nodeId);
-                i.CurrentApproverIds = i.ActiveApprovals.SelectMany(x => x.ApproverIds).Distinct().ToList();
-                i.UpdatedAt = DateTime.UtcNow;
+                __instance5.RemoveActiveApprovers(nodeId);
+                __instance5.CurrentApproverIds = __instance5.ActiveApprovals.SelectMany(x => x.ApproverIds).Distinct().ToList();
+                __instance5.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
             }
-        });
+        }
     }
 }

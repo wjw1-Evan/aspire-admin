@@ -66,4 +66,3 @@ public static class ValidationRules
     public const int MaxPageSize = 100;
 }
 
-

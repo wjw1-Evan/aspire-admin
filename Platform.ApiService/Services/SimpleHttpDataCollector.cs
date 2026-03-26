@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using Platform.ApiService.Models;
@@ -11,45 +12,23 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class SimpleHttpDataCollector
 {
-    private readonly IDataFactory<IoTGateway> _gatewayFactory;
-    private readonly IDataFactory<IoTDevice> _deviceFactory;
-    private readonly IDataFactory<IoTDataPoint> _dataPointFactory;
-    private readonly IDataFactory<IoTDataRecord> _dataRecordFactory;
+    private readonly DbContext _context;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IOptionsMonitor<IoTDataCollectionOptions> _optionsMonitor;
     private readonly ILogger<SimpleHttpDataCollector> _logger;
 
-    /// <summary>
-    /// 初始化简化的 HTTP 数据采集器
-    /// </summary>
-    /// <param name="gatewayFactory">网关数据操作工厂</param>
-    /// <param name="deviceFactory">设备数据操作工厂</param>
-    /// <param name="dataPointFactory">数据点数据操作工厂</param>
-    /// <param name="dataRecordFactory">数据记录数据操作工厂</param>
-    /// <param name="httpClientFactory">HTTP 客户端工厂</param>
-    /// <param name="optionsMonitor">数据采集配置选项监视器</param>
-    /// <param name="logger">日志记录器</param>
     public SimpleHttpDataCollector(
-        IDataFactory<IoTGateway> gatewayFactory,
-        IDataFactory<IoTDevice> deviceFactory,
-        IDataFactory<IoTDataPoint> dataPointFactory,
-        IDataFactory<IoTDataRecord> dataRecordFactory,
+        DbContext context,
         IHttpClientFactory httpClientFactory,
         IOptionsMonitor<IoTDataCollectionOptions> optionsMonitor,
         ILogger<SimpleHttpDataCollector> logger)
     {
-        _gatewayFactory = gatewayFactory;
-        _deviceFactory = deviceFactory;
-        _dataPointFactory = dataPointFactory;
-        _dataRecordFactory = dataRecordFactory;
+        _context = context;
         _httpClientFactory = httpClientFactory;
         _optionsMonitor = optionsMonitor;
         _logger = logger;
     }
 
-    /// <summary>
-    /// 采集单个网关的HTTP数据（自动获取或创建默认设备）
-    /// </summary>
     public async Task<GatewayCollectionResult> CollectGatewayDataAsync(
         IoTGateway gateway,
         CancellationToken cancellationToken)
@@ -75,21 +54,16 @@ public class SimpleHttpDataCollector
             return result;
         }
 
-        // 获取或创建默认设备
-        // 优先使用网关下已有的设备，如果没有则创建默认设备
-        var device = await GetOrCreateDefaultDeviceAsync(gateway, cancellationToken).ConfigureAwait(false);
+        var device = await GetOrCreateDefaultDeviceAsync(gateway, cancellationToken);
         if (device == null)
         {
             result.Warning = "无法创建或获取设备";
             return result;
         }
 
-        return await CollectDeviceDataAsync(gateway, device, cancellationToken).ConfigureAwait(false);
+        return await CollectDeviceDataAsync(gateway, device, cancellationToken);
     }
 
-    /// <summary>
-    /// 采集指定设备的HTTP数据
-    /// </summary>
     public async Task<GatewayCollectionResult> CollectDeviceDataAsync(
         IoTGateway gateway,
         IoTDevice device,
@@ -118,24 +92,20 @@ public class SimpleHttpDataCollector
 
         _logger.LogDebug("Collecting data for device {DeviceId} on gateway {GatewayId}", device.DeviceId, gateway.GatewayId);
 
-        // 采集HTTP数据
-        var httpData = await FetchHttpDataAsync(url, gateway, cancellationToken).ConfigureAwait(false);
+        var httpData = await FetchHttpDataAsync(url, gateway, cancellationToken);
         if (httpData == null || httpData.Count == 0)
         {
             result.Warning = "HTTP请求未返回数据";
             return result;
         }
 
-        // 查询设备下已配置的数据点（仅使用用户手动创建的数据点）
-        var dataPoints = await GetDataPointsForDeviceAsync(gateway, device, cancellationToken).ConfigureAwait(false);
+        var dataPoints = await GetDataPointsForDeviceAsync(gateway, device, cancellationToken);
         result.DataPointsFound = dataPoints.Count;
 
-        // 构建数据记录（统一时间戳）
         var reportedAt = DateTime.UtcNow;
         var recordsToSave = new List<IoTDataRecord>();
         var dataPointValueMap = new Dictionary<string, (IoTDataPoint DataPoint, string Value)>();
         var matchedDataPointIds = new HashSet<string>();
-
         var unmatchedKeys = new List<string>();
 
         foreach (var kvp in httpData)
@@ -146,7 +116,6 @@ public class SimpleHttpDataCollector
 
             if (dataPoint == null)
             {
-                // HTTP响应中有该字段，但未配置对应的数据点，跳过
                 unmatchedKeys.Add(kvp.Key);
                 continue;
             }
@@ -169,101 +138,63 @@ public class SimpleHttpDataCollector
             matchedDataPointIds.Add(dataPoint.DataPointId);
         }
 
-        // 记录未匹配的字段（HTTP响应中有但未配置数据点）
         if (unmatchedKeys.Count > 0)
         {
-            _logger.LogWarning("HTTP response contains {Count} fields without configured data points for device {DeviceId}: {Fields}. " +
-                "Please create data points manually for these fields.",
+            _logger.LogWarning("HTTP response contains {Count} fields without configured data points for device {DeviceId}: {Fields}",
                 unmatchedKeys.Count, device.DeviceId, string.Join(", ", unmatchedKeys));
         }
 
-        // 批量检查重复并保存（如果有数据记录）
-        var recordsInserted = 0;
-        var recordsSkipped = 0;
-
         if (recordsToSave.Count > 0)
         {
-            var uniqueRecords = await FilterDuplicatesAsync(gateway.CompanyId, recordsToSave, cancellationToken).ConfigureAwait(false);
-            recordsInserted = uniqueRecords.Count;
-            recordsSkipped = recordsToSave.Count - uniqueRecords.Count;
-
+            var uniqueRecords = await FilterDuplicatesAsync(gateway.CompanyId, recordsToSave, cancellationToken);
             if (uniqueRecords.Count > 0)
             {
-                // 批量保存所有记录
-                await _dataRecordFactory.CreateManyAsync(uniqueRecords).ConfigureAwait(false);
+                await _context.Set<IoTDataRecord>().AddRangeAsync(uniqueRecords, cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
 
-                // 按数据点分组，每个数据点只更新一次（使用最新的值）
                 foreach (var group in uniqueRecords.GroupBy(r => r.DataPointId))
                 {
                     var latestRecord = group.OrderByDescending(r => r.ReportedAt).First();
                     if (dataPointValueMap.TryGetValue(latestRecord.DataPointId, out var dpInfo))
                     {
-                        await UpdateDataPointLastValueAsync(gateway.CompanyId, dpInfo.DataPoint, latestRecord.Value, reportedAt, cancellationToken).ConfigureAwait(false);
+                        await UpdateDataPointLastValueAsync(dpInfo.DataPoint, latestRecord.Value, reportedAt, cancellationToken);
                     }
                 }
 
-                // 更新设备最后上报时间
-                await UpdateDeviceLastReportedAsync(gateway.CompanyId, device, reportedAt, cancellationToken).ConfigureAwait(false);
+                await UpdateDeviceLastReportedAsync(device, reportedAt, cancellationToken);
             }
+            result.RecordsInserted = uniqueRecords.Count;
+            result.RecordsSkipped = recordsToSave.Count - uniqueRecords.Count;
         }
 
-        // 重要：更新所有被请求采集的数据点的 LastUpdatedAt，即使 HTTP 响应中没有它们的数据
-        // 这样可以避免这些数据点一直被过滤出来但采集不到数据的情况
         foreach (var dataPoint in dataPoints)
         {
-            // 如果这个数据点没有被采集到数据，也要更新它的 LastUpdatedAt，避免它一直被过滤出来
             if (!matchedDataPointIds.Contains(dataPoint.DataPointId))
             {
-                _logger.LogDebug("Data point {DataPointId} ({Name}) not found in HTTP response, updating LastUpdatedAt to prevent repeated filtering",
-                    dataPoint.DataPointId, dataPoint.Name);
-
-                await _dataPointFactory.UpdateAsync(dataPoint.Id, entity =>
+                var __entity = await _context.Set<IoTDataPoint>().FirstOrDefaultAsync(x => x.Id == dataPoint.Id, cancellationToken);
+                if (__entity != null)
                 {
-                    entity.LastUpdatedAt = reportedAt;
-                }).ConfigureAwait(false);
+                    __entity.LastUpdatedAt = reportedAt;
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
             }
         }
 
-        result.RecordsInserted = recordsInserted;
-        result.RecordsSkipped = recordsSkipped;
         result.Success = true;
-
         if (dataPoints.Count == 0)
-        {
-            result.Warning = $"设备 {device.DeviceId} 未配置任何数据点，请先手动创建数据点";
-        }
-        else if (recordsToSave.Count == 0 && unmatchedKeys.Count > 0)
-        {
-            result.Warning = $"HTTP响应中的字段 [{string.Join(", ", unmatchedKeys)}] 未配置对应的数据点";
-        }
-
-        result.RecordsInserted = recordsInserted;
-        result.RecordsSkipped = recordsSkipped;
-        result.Success = true;
-
-        _logger.LogInformation(
-            "Gateway {GatewayId} collected: {RecordsInserted} records inserted, {RecordsSkipped} skipped",
-            gateway.GatewayId, recordsInserted, recordsSkipped);
-
+            result.Warning = $"设备 {device.DeviceId} 未配置任何数据点";
+        
         return result;
     }
 
     private string? GetGatewayUrl(IoTGateway gateway)
     {
-        // 优先从 Config 读取 urlTemplate
         if (gateway.Config != null && gateway.Config.TryGetValue("urlTemplate", out var urlTemplate) && !string.IsNullOrWhiteSpace(urlTemplate))
-        {
             return urlTemplate;
-        }
-
-        // 回退到 Address
         return gateway.Address;
     }
 
-    private async Task<Dictionary<string, object>?> FetchHttpDataAsync(
-        string url,
-        IoTGateway gateway,
-        CancellationToken cancellationToken)
+    private async Task<Dictionary<string, object>?> FetchHttpDataAsync(string url, IoTGateway gateway, CancellationToken cancellationToken)
     {
         try
         {
@@ -284,98 +215,53 @@ public class SimpleHttpDataCollector
             }
 
             var request = new HttpRequestMessage(method, url);
-
-            // 添加请求头（如果有配置）
             if (gateway.Config != null && gateway.Config.TryGetValue("headers", out var headersStr))
             {
                 try
                 {
                     var headers = JsonSerializer.Deserialize<Dictionary<string, string>>(headersStr ?? "{}");
                     if (headers != null)
-                    {
-                        foreach (var h in headers)
-                        {
-                            request.Headers.TryAddWithoutValidation(h.Key, h.Value);
-                        }
-                    }
+                        foreach (var h in headers) request.Headers.TryAddWithoutValidation(h.Key, h.Value);
                 }
-                catch
-                {
-                    // 忽略头部解析错误
-                }
+                catch { }
             }
 
-            using var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
-            if (!response.IsSuccessStatusCode)
-            {
-                _logger.LogWarning("HTTP {StatusCode} when fetching gateway {GatewayId} from {Url}",
-                    response.StatusCode, gateway.GatewayId, url);
-                return null;
-            }
+            using var response = await httpClient.SendAsync(request, cancellationToken);
+            if (!response.IsSuccessStatusCode) return null;
 
-            var contentString = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-            var payload = JsonSerializer.Deserialize<Dictionary<string, object>>(contentString);
-
-            if (payload == null || payload.Count == 0)
-            {
-                _logger.LogWarning("Gateway {GatewayId} returned empty or invalid JSON", gateway.GatewayId);
-                return null;
-            }
-
-            _logger.LogDebug("Fetched {KeyCount} keys from gateway {GatewayId}: {Keys}",
-                payload.Count, gateway.GatewayId, string.Join(", ", payload.Keys));
-
-            return payload;
+            var contentString = await response.Content.ReadAsStringAsync(cancellationToken);
+            return JsonSerializer.Deserialize<Dictionary<string, object>>(contentString);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to fetch HTTP data for gateway {GatewayId} from {Url}",
-                gateway.GatewayId, url);
+            _logger.LogError(ex, "Failed to fetch HTTP data for gateway {GatewayId}", gateway.GatewayId);
             return null;
         }
     }
 
-    private async Task<IoTDevice?> GetOrCreateDefaultDeviceAsync(
-        IoTGateway gateway,
-        CancellationToken cancellationToken)
+    private async Task<IoTDevice?> GetOrCreateDefaultDeviceAsync(IoTGateway gateway, CancellationToken cancellationToken)
     {
-        // 查找网关下的设备（优先使用已启用的设备）
-        var devices = await _deviceFactory
-            .FindAsync(d => d.GatewayId == gateway.GatewayId && d.IsEnabled == true)
-            .ConfigureAwait(false);
+        var device = await _context.Set<IoTDevice>()
+            .FirstOrDefaultAsync(d => d.GatewayId == gateway.GatewayId && d.IsEnabled == true, cancellationToken);
 
-        // 优先返回第一个启用的设备
-        if (devices.Count > 0)
-        {
-            _logger.LogDebug("Found existing device {DeviceId} for gateway {GatewayId}",
-                devices[0].DeviceId, gateway.GatewayId);
-            return devices[0];
-        }
+        if (device != null) return device;
 
-        // 如果没有启用的设备，检查是否有任何设备（包括禁用的）
-        var anyDevices = await _deviceFactory
-            .FindAsync(d => d.GatewayId == gateway.GatewayId, limit: 1)
-            .ConfigureAwait(false);
-        if (anyDevices.Count > 0)
+        device = await _context.Set<IoTDevice>()
+            .FirstOrDefaultAsync(d => d.GatewayId == gateway.GatewayId, cancellationToken);
+
+        if (device != null)
         {
-            // 如果有设备但被禁用了，启用它
-            var device = anyDevices[0];
             if (!device.IsEnabled)
             {
-                await _deviceFactory.UpdateAsync(device.Id, entity =>
-                {
-                    entity.IsEnabled = true;
-                }).ConfigureAwait(false);
-                _logger.LogInformation("Enabled existing device {DeviceId} for gateway {GatewayId}",
-                    device.DeviceId, gateway.GatewayId);
+                device.IsEnabled = true;
+                await _context.SaveChangesAsync(cancellationToken);
             }
             return device;
         }
 
-        // 创建默认设备（仅在网关下没有任何设备时）
         var defaultDevice = new IoTDevice
         {
-            DeviceId = Guid.NewGuid().ToString("N"), // 使用无连字符格式，避免序列化问题
+            DeviceId = Guid.NewGuid().ToString("N"),
             GatewayId = gateway.GatewayId,
             CompanyId = gateway.CompanyId,
             Name = $"{gateway.Title}_设备",
@@ -383,56 +269,28 @@ public class SimpleHttpDataCollector
             IsEnabled = true
         };
 
-        await _deviceFactory.CreateAsync(defaultDevice).ConfigureAwait(false);
-        _logger.LogInformation("Created default device {DeviceId} for gateway {GatewayId}",
-            defaultDevice.DeviceId, gateway.GatewayId);
-
+        await _context.Set<IoTDevice>().AddAsync(defaultDevice, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
         return defaultDevice;
     }
 
-    /// <summary>
-    /// 获取设备下已配置的数据点（仅返回用户手动创建的数据点，并根据采样间隔过滤）
-    /// </summary>
-    private async Task<List<IoTDataPoint>> GetDataPointsForDeviceAsync(
-        IoTGateway gateway,
-        IoTDevice device,
-        CancellationToken cancellationToken)
+    private async Task<List<IoTDataPoint>> GetDataPointsForDeviceAsync(IoTGateway gateway, IoTDevice device, CancellationToken cancellationToken)
     {
-        var allDataPoints = await _dataPointFactory
-            .FindAsync(dp => dp.DeviceId == device.DeviceId && dp.IsEnabled == true)
-            .ConfigureAwait(false);
+        var allDataPoints = await _context.Set<IoTDataPoint>()
+            .Where(dp => dp.DeviceId == device.DeviceId && dp.IsEnabled == true)
+            .ToListAsync(cancellationToken);
 
-        // 根据采样间隔过滤数据点：只返回需要采集的数据点
         var now = DateTime.UtcNow;
-        var dataPoints = allDataPoints.Where(dp =>
+        return allDataPoints.Where(dp =>
         {
-            // 如果从未采集过，需要采集
-            if (!dp.LastUpdatedAt.HasValue)
-            {
-                return true;
-            }
-
-            // 计算距离上次采集的时间间隔（秒）
-            var elapsedSeconds = (now - dp.LastUpdatedAt.Value).TotalSeconds;
-
-            // 如果已超过采样间隔，需要采集
-            return elapsedSeconds >= dp.SamplingInterval;
+            if (!dp.LastUpdatedAt.HasValue) return true;
+            return (now - dp.LastUpdatedAt.Value).TotalSeconds >= dp.SamplingInterval;
         }).ToList();
-
-        _logger.LogDebug("Found {ReadyCount}/{TotalCount} enabled data points ready for collection on device {DeviceId}",
-            dataPoints.Count, allDataPoints.Count, device.DeviceId);
-
-        return dataPoints;
     }
-
 
     private static string ExtractValue(object? value)
     {
-        if (value == null)
-        {
-            return string.Empty;
-        }
-
+        if (value == null) return string.Empty;
         if (value is JsonElement je)
         {
             return je.ValueKind switch
@@ -442,93 +300,59 @@ public class SimpleHttpDataCollector
                 JsonValueKind.True => "true",
                 JsonValueKind.False => "false",
                 JsonValueKind.Null => string.Empty,
-                JsonValueKind.Object or JsonValueKind.Array => je.GetRawText(),
-                _ => value.ToString() ?? string.Empty
+                _ => je.GetRawText()
             };
         }
-
         return value.ToString() ?? string.Empty;
     }
 
-    /// <summary>
-    /// 批量过滤重复记录
-    /// </summary>
-    private async Task<List<IoTDataRecord>> FilterDuplicatesAsync(
-        string companyId,
-        List<IoTDataRecord> records,
-        CancellationToken cancellationToken)
+    private async Task<List<IoTDataRecord>> FilterDuplicatesAsync(string companyId, List<IoTDataRecord> records, CancellationToken cancellationToken)
     {
-        if (records.Count == 0)
-        {
-            return records;
-        }
+        if (records.Count == 0) return records;
 
         var deviceIds = records.Select(r => r.DeviceId).Distinct().ToList();
         var dataPointIds = records.Select(r => r.DataPointId).Distinct().ToList();
         var reportedAtValues = records.Select(r => r.ReportedAt).Distinct().ToList();
 
-        var existingRecords = await _dataRecordFactory
-            .FindAsync(r =>
-                r.CompanyId == companyId &&
-                deviceIds.Contains(r.DeviceId) &&
-                dataPointIds.Contains(r.DataPointId) &&
-                reportedAtValues.Contains(r.ReportedAt))
-            .ConfigureAwait(false);
-        cancellationToken.ThrowIfCancellationRequested();
+        var existingRecords = await _context.Set<IoTDataRecord>()
+            .Where(r => r.CompanyId == companyId &&
+                        deviceIds.Contains(r.DeviceId) &&
+                        dataPointIds.Contains(r.DataPointId) &&
+                        reportedAtValues.Contains(r.ReportedAt))
+            .ToListAsync(cancellationToken);
 
-        var existingKeys = existingRecords
-            .Select(r => (r.DeviceId, r.DataPointId, r.ReportedAt))
-            .ToHashSet();
-
-        var uniqueRecords = records
-            .Where(record => !existingKeys.Contains((record.DeviceId, record.DataPointId, record.ReportedAt)))
-            .ToList();
-
-        return uniqueRecords;
+        var existingKeys = existingRecords.Select(r => (r.DeviceId, r.DataPointId, r.ReportedAt)).ToHashSet();
+        return records.Where(record => !existingKeys.Contains((record.DeviceId, record.DataPointId, record.ReportedAt))).ToList();
     }
 
-    private async Task UpdateDataPointLastValueAsync(
-        string companyId,
-        IoTDataPoint dataPoint,
-        string value,
-        DateTime reportedAt,
-        CancellationToken cancellationToken)
+    private async Task UpdateDataPointLastValueAsync(IoTDataPoint dataPoint, string value, DateTime reportedAt, CancellationToken cancellationToken)
     {
-        await _dataPointFactory.UpdateAsync(dataPoint.Id, entity =>
+        var __entity = await _context.Set<IoTDataPoint>().FirstOrDefaultAsync(x => x.Id == dataPoint.Id, cancellationToken);
+        if (__entity != null)
         {
-            entity.LastValue = value;
-            entity.LastUpdatedAt = reportedAt;
-        }).ConfigureAwait(false);
+            __entity.LastValue = value;
+            __entity.LastUpdatedAt = reportedAt;
+            await _context.SaveChangesAsync(cancellationToken);
+        }
     }
 
-    private async Task UpdateDeviceLastReportedAsync(
-        string companyId,
-        IoTDevice device,
-        DateTime reportedAt,
-        CancellationToken cancellationToken)
+    private async Task UpdateDeviceLastReportedAsync(IoTDevice device, DateTime reportedAt, CancellationToken cancellationToken)
     {
-        await _deviceFactory.UpdateAsync(device.Id, entity =>
+        var __entity = await _context.Set<IoTDevice>().FirstOrDefaultAsync(x => x.Id == device.Id, cancellationToken);
+        if (__entity != null)
         {
-            entity.LastReportedAt = reportedAt;
-        }).ConfigureAwait(false);
+            __entity.LastReportedAt = reportedAt;
+            await _context.SaveChangesAsync(cancellationToken);
+        }
     }
 
-    /// <summary>
-    /// 网关采集结果
-    /// </summary>
     public class GatewayCollectionResult
     {
-        /// <summary>网关 ID</summary>
         public string GatewayId { get; set; } = string.Empty;
-        /// <summary>是否采集成功</summary>
         public bool Success { get; set; }
-        /// <summary>找到的数据点数量</summary>
         public int DataPointsFound { get; set; }
-        /// <summary>插入的记录数量</summary>
         public int RecordsInserted { get; set; }
-        /// <summary>跳过的记录数量（重复或无效）</summary>
         public int RecordsSkipped { get; set; }
-        /// <summary>警告信息（如果有）</summary>
         public string? Warning { get; set; }
     }
 }

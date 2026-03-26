@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
@@ -14,15 +15,15 @@ namespace Platform.ApiService.Controllers;
 [Route("api/forms")]
 public class FormController : BaseApiController
 {
-    private readonly IDataFactory<FormDefinition> _formFactory;
+    private readonly DbContext _context;
 
     /// <summary>
     /// 初始化表单管理控制器
     /// </summary>
-    /// <param name="formFactory">表单定义数据工厂</param>
-    public FormController(IDataFactory<FormDefinition> formFactory)
+    public FormController(DbContext context)
     {
-        _formFactory = formFactory;
+        _context = context;
+        
     }
 
     /// <summary>
@@ -56,7 +57,9 @@ public class FormController : BaseApiController
 
             var orderBy = (IQueryable<FormDefinition> query) => query.OrderByDescending(f => f.CreatedAt);
 
-            var (items, total) = await _formFactory.FindPagedAsync(filter, orderBy, current, pageSize);
+            var __fpQ = filter == null ? _context.Set<FormDefinition>() : _context.Set<FormDefinition>().Where(filter);
+        var total = await __fpQ.LongCountAsync();
+        var items = await orderBy(__fpQ).Skip((current - 1) * pageSize).Take(pageSize).ToListAsync();
             return SuccessPaged(items, total, current, pageSize);
         }
         catch (Exception ex)
@@ -76,7 +79,7 @@ public class FormController : BaseApiController
     {
         try
         {
-            var form = await _formFactory.GetByIdAsync(id);
+            var form = await _context.Set<FormDefinition>().FirstOrDefaultAsync(x => x.Id == id);
             if (form == null)
             {
                 return NotFoundError("表单定义", id);
@@ -108,8 +111,9 @@ public class FormController : BaseApiController
 
             form.Key = string.IsNullOrWhiteSpace(form.Key) ? $"form_{Guid.NewGuid():N}" : form.Key;
 
-            var created = await _formFactory.CreateAsync(form);
-            return Success(created);
+            await _context.Set<FormDefinition>().AddAsync(form);
+        await _context.SaveChangesAsync();
+            return Success(form);
         }
         catch (Exception ex)
         {
@@ -129,22 +133,26 @@ public class FormController : BaseApiController
     {
         try
         {
-            var existing = await _formFactory.GetByIdAsync(id);
+            var existing = await _context.Set<FormDefinition>().FirstOrDefaultAsync(x => x.Id == id);
             if (existing == null)
             {
                 return NotFoundError("表单定义", id);
             }
 
-            await _formFactory.UpdateAsync(id, f =>
-            {
-                f.Name = form.Name;
-                f.Description = form.Description;
-                f.Fields = form.Fields;
-                f.IsActive = form.IsActive;
-                f.Version = form.Version;
-            });
+            var __entity = await _context.Set<FormDefinition>().FirstOrDefaultAsync(x => x.Id == id);
+        if (__entity != null)
+        {
+    
+                __entity.Name = form.Name;
+                __entity.Description = form.Description;
+                __entity.Fields = form.Fields;
+                __entity.IsActive = form.IsActive;
+                __entity.Version = form.Version;
+            await _context.SaveChangesAsync();
+        }
 
-            var updated = await _formFactory.GetByIdAsync(id);
+
+            var updated = await _context.Set<FormDefinition>().FirstOrDefaultAsync(x => x.Id == id);
             return Success(updated);
         }
         catch (Exception ex)
@@ -164,7 +172,9 @@ public class FormController : BaseApiController
     {
         try
         {
-            var result = await _formFactory.SoftDeleteAsync(id);
+            var __sdE = await _context.Set<FormDefinition>().FirstOrDefaultAsync(x => x.Id == id);
+        if (__sdE != null) { __sdE.IsDeleted = true; await _context.SaveChangesAsync(); }
+        var result = __sdE != null;
             if (!result)
             {
                 return NotFoundError("表单定义", id);

@@ -50,7 +50,6 @@ public interface IWorkflowEngine
     /// </summary>
     Task<List<string>> GetNodeApproversAsync(string instanceId, string nodeId);
 
-
     /// <summary>
     /// 退回到指定节点
     /// </summary>
@@ -86,12 +85,8 @@ public interface IWorkflowEngine
 /// </summary>
 public partial class WorkflowEngine : IWorkflowEngine
 {
-    private readonly IDataFactory<WorkflowDefinition> _definitionFactory;
-    private readonly IDataFactory<WorkflowInstance> _instanceFactory;
-    private readonly IDataFactory<ApprovalRecord> _approvalRecordFactory;
-    private readonly IDataFactory<Document> _documentFactory;
-    private readonly IDataFactory<UserCompany> _userCompanyFactory;
-    private readonly IDataFactory<FormDefinition> _formFactory;
+    private readonly DbContext _context;
+
     private readonly IUserService _userService;
     private readonly IUnifiedNotificationService _notificationService;
     private readonly IApproverResolverFactory _approverResolverFactory;
@@ -104,13 +99,7 @@ public partial class WorkflowEngine : IWorkflowEngine
     /// <summary>
     /// 初始化工作流引擎
     /// </summary>
-    public WorkflowEngine(
-        IDataFactory<WorkflowDefinition> definitionFactory,
-        IDataFactory<WorkflowInstance> instanceFactory,
-        IDataFactory<ApprovalRecord> approvalRecordFactory,
-        IDataFactory<Document> documentFactory,
-        IDataFactory<UserCompany> userCompanyFactory,
-        IDataFactory<FormDefinition> formFactory,
+    public WorkflowEngine(DbContext context,
         IUserService userService,
         IUnifiedNotificationService notificationService,
         IApproverResolverFactory approverResolverFactory,
@@ -120,15 +109,9 @@ public partial class WorkflowEngine : IWorkflowEngine
         IServiceScopeFactory scopeFactory,
         ILoggerFactory loggerFactory)
     {
-        _definitionFactory = definitionFactory;
-        _instanceFactory = instanceFactory;
-        _approvalRecordFactory = approvalRecordFactory;
-        _documentFactory = documentFactory;
-        _userCompanyFactory = userCompanyFactory;
-        _formFactory = formFactory;
+        _context = context;
         _userService = userService;
         _notificationService = notificationService;
-        _approverResolverFactory = approverResolverFactory;
         _expressionEvaluator = expressionEvaluator;
         _expressionValidator = expressionValidator;
         _logger = logger;
@@ -145,7 +128,7 @@ public partial class WorkflowEngine : IWorkflowEngine
     /// <param name="variables">初始变量</param>
     public async Task<WorkflowInstance> StartWorkflowAsync(string definitionId, string documentId, string startedBy, Dictionary<string, object?>? variables = null)
     {
-        var definition = await _definitionFactory.GetByIdAsync(definitionId);
+        var definition = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == definitionId);
         if (definition == null || !definition.IsActive)
         {
             throw new InvalidOperationException("流程定义不存在或未启用");
@@ -178,7 +161,7 @@ public partial class WorkflowEngine : IWorkflowEngine
             {
                 if (!formCache.TryGetValue(formDefId, out var formDef))
                 {
-                    var formDefs = await _formFactory.FindAsync(f => f.Id == formDefId, includes: [f => f.Fields]);
+                    var formDefs = await _context.Set<FormDefinition>().Where(f => f.Id == formDefId).ToListAsync();
                     formDef = formDefs.FirstOrDefault();
                     if (formDef != null) formCache[formDefId] = formDef;
                 }
@@ -239,17 +222,22 @@ public partial class WorkflowEngine : IWorkflowEngine
         }
         AuditObject(instance, "WorkflowInstance");
 
-        await _instanceFactory.CreateAsync(instance);
+        await _context.Set<WorkflowInstance>().AddAsync(instance);
+        await _context.SaveChangesAsync();
 
         // 更新公文状态
         if (!string.IsNullOrEmpty(documentId))
         {
-            await _documentFactory.UpdateAsync(documentId, d =>
-            {
-                d.Status = Models.Workflow.DocumentStatus.Approving;
-                d.WorkflowInstanceId = instance.Id;
-                d.UpdatedAt = DateTime.UtcNow;
-            });
+            var __entity = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == documentId);
+        if (__entity != null)
+        {
+    
+                __entity.Status = Models.Workflow.DocumentStatus.Approving;
+                __entity.WorkflowInstanceId = instance.Id;
+                __entity.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+
         }
 
         // 查找开始节点并处理
@@ -261,7 +249,7 @@ public partial class WorkflowEngine : IWorkflowEngine
         }
 
         // 返回数据库中的最新状态（因为自动节点可能已经改变了状态）
-        return await _instanceFactory.GetByIdAsync(instance.Id) ?? instance;
+        return await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instance.Id) ?? instance;
     }
 
     /// <summary>
@@ -269,7 +257,7 @@ public partial class WorkflowEngine : IWorkflowEngine
     /// </summary>
     public async Task<bool> ProceedAsync(string instanceId, string nodeId)
     {
-        var instance = await _instanceFactory.GetByIdAsync(instanceId);
+        var instance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
         if (instance == null || instance.Status != WorkflowStatus.Running) return false;
 
         await MoveToNextNodeAsync(instanceId, nodeId);

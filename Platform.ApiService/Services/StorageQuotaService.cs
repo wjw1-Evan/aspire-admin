@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 
@@ -8,10 +9,8 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class StorageQuotaService : IStorageQuotaService
 {
-    private readonly IDataFactory<StorageQuota> _quotaFactory;
-    private readonly IDataFactory<FileItem> _fileItemFactory;
-    private readonly IDataFactory<AppUser> _userFactory;
-    private readonly IDataFactory<Company> _companyFactory;
+    private readonly DbContext _context;
+
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<StorageQuotaService> _logger;
 
@@ -23,22 +22,15 @@ public class StorageQuotaService : IStorageQuotaService
     /// <summary>
     /// 初始化存储配额服务
     /// </summary>
-    public StorageQuotaService(
-        IDataFactory<StorageQuota> quotaFactory,
-        IDataFactory<FileItem> fileItemFactory,
-        IDataFactory<AppUser> userFactory,
-        IDataFactory<Company> companyFactory,
+    public StorageQuotaService(DbContext context,
         ITenantContext tenantContext,
-        ILogger<StorageQuotaService> logger)
-    {
-        _quotaFactory = quotaFactory ?? throw new ArgumentNullException(nameof(quotaFactory));
-        _fileItemFactory = fileItemFactory ?? throw new ArgumentNullException(nameof(fileItemFactory));
-        _userFactory = userFactory ?? throw new ArgumentNullException(nameof(userFactory));
-        _companyFactory = companyFactory ?? throw new ArgumentNullException(nameof(companyFactory));
+        ILogger<StorageQuotaService> logger
+    ) {
+        _context = context;
+        
         _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
-
 
     /// <summary>
     /// 获取用户存储配额信息（实时计算文件统计）
@@ -53,10 +45,10 @@ public class StorageQuotaService : IStorageQuotaService
             ?? throw new InvalidOperationException("用户尚未分配存储配额，请联系管理员设置配额");
 
         // 实时查询用户的所有活跃文件，计算准确的文件数量和使用空间
-        var allFiles = await _fileItemFactory.FindAsync(f =>
+        var allFiles = await _context.Set<FileItem>().Where(f =>
             f.CreatedBy == targetUserId &&
             f.Type == FileItemType.File &&
-            f.Status == FileStatus.Active);
+            f.Status == FileStatus.Active).ToListAsync();
 
         // 过滤掉 CreatedBy 为空的文件（确保统计准确）
         var userFiles = allFiles
@@ -97,21 +89,25 @@ public class StorageQuotaService : IStorageQuotaService
 
         var quota = await EnsureQuotaForSettingAsync(userId, totalQuota, warningThreshold, isEnabled);
 
-        var updatedQuota = await _quotaFactory.UpdateAsync(quota.Id!, entity =>
+        var __entity = await _context.Set<StorageQuota>().FirstOrDefaultAsync(x => x.Id == quota.Id!);
+        if (__entity != null)
         {
-            entity.TotalQuota = totalQuota;
-            entity.LastCalculatedAt = DateTime.UtcNow;
+    
+            __entity.TotalQuota = totalQuota;
+            __entity.LastCalculatedAt = DateTime.UtcNow;
 
             if (warningThreshold.HasValue)
             {
-                entity.WarningThreshold = warningThreshold.Value;
+                __entity.WarningThreshold = warningThreshold.Value;
             }
 
             if (isEnabled.HasValue)
             {
-                entity.IsEnabled = isEnabled.Value;
+                __entity.IsEnabled = isEnabled.Value;
             }
-        });
+            await _context.SaveChangesAsync();
+        }
+        var updatedQuota = __entity;
 
         if (updatedQuota == null)
             throw new InvalidOperationException("更新配额失败");
@@ -138,11 +134,15 @@ public class StorageQuotaService : IStorageQuotaService
         // 计算新的使用量
         var newUsedSpace = Math.Max(0, quota.UsedSpace + sizeChange);
 
-        var updatedQuota = await _quotaFactory.UpdateAsync(quota.Id!, entity =>
+        var __entity = await _context.Set<StorageQuota>().FirstOrDefaultAsync(x => x.Id == quota.Id!);
+        if (__entity != null)
         {
-            entity.UsedSpace = newUsedSpace;
-            entity.LastCalculatedAt = DateTime.UtcNow;
-        });
+    
+            __entity.UsedSpace = newUsedSpace;
+            __entity.LastCalculatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+        var updatedQuota = __entity;
 
         if (updatedQuota == null)
             throw new InvalidOperationException("更新存储使用量失败");
@@ -194,10 +194,10 @@ public class StorageQuotaService : IStorageQuotaService
             throw new InvalidOperationException("企业ID不能为空");
 
         // 获取企业所有用户的配额信息
-        var quotas = await _quotaFactory.FindAsync();
+        var quotas = await _context.Set<StorageQuota>().ToListAsync();
 
         // 获取企业所有文件统计
-        var files = await _fileItemFactory.FindAsync(f => f.Status == FileStatus.Active);
+        var files = await _context.Set<FileItem>().Where(f => f.Status == FileStatus.Active).ToListAsync();
 
         // 按文件类型统计
         var typeUsage = files
@@ -211,7 +211,7 @@ public class StorageQuotaService : IStorageQuotaService
             .GroupBy(f => f.CreatedBy!)
             .ToDictionary(g => g.Key, g => g.Sum(f => f.Size));
 
-        var company = await _companyFactory.GetByIdAsync(targetCompanyId);
+        var company = await _context.Set<Company>().FirstOrDefaultAsync(x => x.Id == targetCompanyId);
         var companyName = company?.Name ?? "未知企业";
 
         var statistics = new CompanyStorageStatistics
@@ -241,10 +241,10 @@ public class StorageQuotaService : IStorageQuotaService
 
         // 1. 获取用户所有活跃/回收站中的文件统计
         // 使用 LINQ 统计总大小和分布
-        var files = await _fileItemFactory.FindAsync(f =>
+        var files = await _context.Set<FileItem>().Where(f =>
             f.CreatedBy == userId &&
             f.Type == FileItemType.File &&
-            f.Status == FileStatus.Active);
+            f.Status == FileStatus.Active).ToListAsync();
         var stats = files.GroupBy(f => f.MimeType ?? string.Empty)
                          .Select(g => new { MimeType = g.Key, Size = g.Sum(f => f.Size), Count = g.Count() })
                          .ToList();
@@ -271,13 +271,17 @@ public class StorageQuotaService : IStorageQuotaService
         var quota = await FindUserQuotaAsync(userId)
             ?? throw new InvalidOperationException("用户尚未分配存储配额，无法重新计算使用量");
 
-        var updatedQuota = await _quotaFactory.UpdateAsync(quota.Id!, entity =>
+        var __entity = await _context.Set<StorageQuota>().FirstOrDefaultAsync(x => x.Id == quota.Id!);
+        if (__entity != null)
         {
-            entity.UsedSpace = actualUsedSpace;
-            entity.FileCount = fileCount;
-            entity.TypeUsage = typeUsage;
-            entity.LastCalculatedAt = DateTime.UtcNow;
-        });
+    
+            __entity.UsedSpace = actualUsedSpace;
+            __entity.FileCount = fileCount;
+            __entity.TypeUsage = typeUsage;
+            __entity.LastCalculatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+        var updatedQuota = __entity;
 
         if (updatedQuota == null)
             throw new InvalidOperationException("重新计算存储使用量失败");
@@ -332,14 +336,14 @@ public class StorageQuotaService : IStorageQuotaService
         if (topCount <= 0)
             throw new ArgumentException("返回数量必须大于0", nameof(topCount));
 
-        var quotas = await _quotaFactory.FindAsync();
+        var quotas = await _context.Set<StorageQuota>().ToListAsync();
 
         // 获取排名前 topCount 的用户 ID
         var topQuotas = quotas.OrderByDescending(q => q.UsedSpace).Take(topCount).ToList();
         var userIds = topQuotas.Select(q => q.UserId).ToList();
 
         // 查询用户信息
-        var users = await _userFactory.FindAsync(u => userIds.Contains(u.Id));
+        var users = await _context.Set<AppUser>().Where(u => userIds.Contains(u.Id)).ToListAsync();
         var userDict = users.ToDictionary(u => u.Id ?? string.Empty, u => u);
 
         var rankings = topQuotas
@@ -372,14 +376,14 @@ public class StorageQuotaService : IStorageQuotaService
             throw new ArgumentException("警告阈值必须在0-1之间", nameof(warningThreshold));
 
         // 1. 获取配额记录
-        var quotas = await _quotaFactory.FindAsync();
+        var quotas = await _context.Set<StorageQuota>().ToListAsync();
 
         if (!quotas.Any())
             return [];
 
         // 2. 获取涉及到的用户信息
         var userIds = quotas.Select(q => q.UserId).Distinct().ToList();
-        var users = await _userFactory.FindAsync(u => userIds.Contains(u.Id));
+        var users = await _context.Set<AppUser>().Where(u => userIds.Contains(u.Id)).ToListAsync();
         var userDict = users.ToDictionary(u => u.Id ?? string.Empty, u => u);
 
         var warnings = new List<StorageQuotaWarning>();
@@ -431,7 +435,7 @@ public class StorageQuotaService : IStorageQuotaService
         try
         {
             // 获取所有配额记录
-            var quotas = await _quotaFactory.FindAsync();
+            var quotas = await _context.Set<StorageQuota>().ToListAsync();
 
             // 查找未使用的配额（使用量为0且文件数为0，且超过30天未更新）
             var cutoffDate = DateTime.UtcNow.AddDays(-30);
@@ -445,8 +449,14 @@ public class StorageQuotaService : IStorageQuotaService
             {
                 try
                 {
-                    // 软删除配额记录
-                    await _quotaFactory.SoftDeleteAsync(quota.Id);
+                    // 真实删除配额记录
+                    var __sdQ = await _context.Set<StorageQuota>().FirstOrDefaultAsync(x => x.Id == quota.Id);
+                    if (__sdQ != null)
+                    {
+                        _context.Set<StorageQuota>().Remove(__sdQ);
+                        await _context.SaveChangesAsync();
+                    }
+
 
                     result.SuccessIds.Add(quota.Id);
                     result.SuccessCount++;
@@ -492,7 +502,7 @@ public class StorageQuotaService : IStorageQuotaService
             throw new InvalidOperationException("未找到当前企业信息");
 
         // 获取当前企业的所有用户
-        var users = await _userFactory.FindAsync(u => u.CurrentCompanyId == currentCompanyId);
+        var users = await _context.Set<AppUser>().Where(u => u.CurrentCompanyId == currentCompanyId).ToListAsync();
 
         // 验证用户名唯一性（调试用）
         var usernameGroups = users
@@ -526,7 +536,7 @@ public class StorageQuotaService : IStorageQuotaService
         }
 
         // 获取所有配额记录（当前企业）
-        var quotas = await _quotaFactory.FindAsync();
+        var quotas = await _context.Set<StorageQuota>().ToListAsync();
 
         // 批量查询所有用户的文件统计（实时统计，与统计API保持一致）
         var userIds = users.Select(u => u.Id ?? string.Empty).Where(id => !string.IsNullOrEmpty(id)).ToList();
@@ -537,11 +547,11 @@ public class StorageQuotaService : IStorageQuotaService
         {
             // 查询所有用户的活跃文件（按用户分组统计）
             // 注意：CreatedBy 可能为空，需要过滤掉空值
-            var allFiles = await _fileItemFactory.FindAsync(f =>
+            var allFiles = await _context.Set<FileItem>().Where(f =>
                 f.CreatedBy != null &&
                 userIds.Contains(f.CreatedBy) &&
                 f.Type == FileItemType.File &&
-                f.Status == FileStatus.Active);
+                f.Status == FileStatus.Active).ToListAsync();
 
             // 按 CreatedBy 分组，过滤掉 CreatedBy 为空的文件
             var fileGroups = allFiles
@@ -723,7 +733,7 @@ public class StorageQuotaService : IStorageQuotaService
             throw new InvalidOperationException("未找到当前企业信息");
 
         // 获取企业用户
-        var users = await _userFactory.FindAsync(u => u.CurrentCompanyId == currentCompanyId);
+        var users = await _context.Set<AppUser>().Where(u => u.CurrentCompanyId == currentCompanyId).ToListAsync();
 
         // 如果指定用户，只保留该用户
         if (!string.IsNullOrWhiteSpace(userId))
@@ -739,18 +749,18 @@ public class StorageQuotaService : IStorageQuotaService
         var userIds = users.Select(u => u.Id ?? string.Empty).Where(id => !string.IsNullOrEmpty(id)).ToList();
 
         // 读取配额记录
-        var quotas = await _quotaFactory.FindAsync();
+        var quotas = await _context.Set<StorageQuota>().ToListAsync();
         var quotaDict = quotas.GroupBy(q => q.UserId).ToDictionary(g => g.Key, g => g.OrderByDescending(q => q.UpdatedAt).First());
 
         // 实时文件使用量
         var usedSpaceDict = new Dictionary<string, long>();
         if (userIds.Any())
         {
-            var allFiles = await _fileItemFactory.FindAsync(f =>
+            var allFiles = await _context.Set<FileItem>().Where(f =>
                 f.CreatedBy != null &&
                 userIds.Contains(f.CreatedBy) &&
                 f.Type == FileItemType.File &&
-                f.Status == FileStatus.Active);
+                f.Status == FileStatus.Active).ToListAsync();
             usedSpaceDict = allFiles
                 .Where(f => !string.IsNullOrEmpty(f.CreatedBy))
                 .GroupBy(f => f.CreatedBy!)
@@ -875,7 +885,7 @@ public class StorageQuotaService : IStorageQuotaService
     /// </summary>
     private async Task<StorageQuota?> FindUserQuotaAsync(string userId)
     {
-        var quotas = await _quotaFactory.FindAsync(q => q.UserId == userId, limit: 1);
+        var quotas = await _context.Set<StorageQuota>().Where(q => q.UserId == userId).Take(1).ToListAsync();
         return quotas.FirstOrDefault();
     }
 
@@ -902,7 +912,8 @@ public class StorageQuotaService : IStorageQuotaService
             TypeUsage = []
         };
 
-        await _quotaFactory.CreateAsync(quota);
+        await _context.Set<StorageQuota>().AddAsync(quota);
+        await _context.SaveChangesAsync();
         _logger.LogInformation("Created storage quota for user {UserId}: {TotalQuota} bytes (IsEnabled: {IsEnabled})", userId, totalQuota, quota.IsEnabled);
         return quota;
     }

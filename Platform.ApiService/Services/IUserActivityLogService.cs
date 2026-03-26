@@ -91,4 +91,3 @@ public interface IUserActivityLogService
         DateTime? startDate = null,
         DateTime? endDate = null);
 }
-

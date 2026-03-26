@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Models;
@@ -12,20 +13,16 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class UserActivityLogService : IUserActivityLogService
 {
-    private readonly IDataFactory<UserActivityLog> _activityLogFactory;
-    private readonly IDataFactory<AppUser> _userFactory;
+    private readonly DbContext _context;
 
     /// <summary>
     /// 初始化用户活动日志服务
     /// </summary>
-    public UserActivityLogService(
-        IDataFactory<UserActivityLog> activityLogFactory,
-        IDataFactory<AppUser> userFactory)
+    public UserActivityLogService(DbContext context)
     {
-        _activityLogFactory = activityLogFactory;
-        _userFactory = userFactory;
+        _context = context;
+        
     }
-
 
     /// <summary>
     /// 记录用户活动
@@ -41,7 +38,8 @@ public class UserActivityLogService : IUserActivityLogService
             CreatedBy = userId,
         };
 
-        await _activityLogFactory.CreateAsync(log);
+        await _context.Set<UserActivityLog>().AddAsync(log);
+        await _context.SaveChangesAsync();
     }
 
     /// <summary>
@@ -60,12 +58,11 @@ public class UserActivityLogService : IUserActivityLogService
             (!startDate.HasValue || log.CreatedAt >= startDate.Value) &&
             (!endDate.HasValue || log.CreatedAt <= endDate.Value);
 
-        var total = await _activityLogFactory.CountAsync(filter);
-        var (logs, _) = await _activityLogFactory.FindPagedAsync(
-            filter,
-            query => query.OrderByDescending(log => log.CreatedAt),
-            request.Page,
-            request.PageSize);
+        var total = await _context.Set<UserActivityLog>().LongCountAsync(filter);
+        var __fpQ = _context.Set<UserActivityLog>().Where(
+            filter);
+        var _ = await __fpQ.LongCountAsync();
+        var logs = await __fpQ.OrderByDescending(log => log.CreatedAt).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
         var totalPages = (int)Math.Ceiling(total / (double)request.PageSize);
 
         return new UserActivityLogPagedResponse
@@ -83,10 +80,7 @@ public class UserActivityLogService : IUserActivityLogService
     {
         Expression<Func<UserActivityLog, bool>> filter = log => log.CreatedBy == createdBy;
 
-        return await _activityLogFactory.FindAsync(
-            filter,
-            orderBy: query => query.OrderByDescending(log => log.CreatedAt),
-            limit: limit);
+        return await _context.Set<UserActivityLog>().Where(filter).OrderByDescending(log => log.CreatedAt).Take(limit).ToListAsync();
     }
 
     /// <inheritdoc/>
@@ -116,10 +110,10 @@ public class UserActivityLogService : IUserActivityLogService
             (!endDate.HasValue || log.CreatedAt <= endDate.Value);
 
         // 核心：在后台线程中并行执行统计查询，提高响应速度
-        var totalTask = _activityLogFactory.CountAsync(filter);
+        var totalTask = _context.Set<UserActivityLog>().LongCountAsync(filter);
 
         // 成功记录统计 (2xx)
-        var successTask = _activityLogFactory.CountAsync(log =>
+        var successTask = _context.Set<UserActivityLog>().LongCountAsync(log =>
 
             (string.IsNullOrEmpty(actionLower) || (log.Action != null && log.Action.ToLower().Contains(actionLower))) &&
             (string.IsNullOrEmpty(httpMethodUpper) || log.HttpMethod == httpMethodUpper) &&
@@ -130,7 +124,7 @@ public class UserActivityLogService : IUserActivityLogService
             log.StatusCode >= 200 && log.StatusCode < 300);
 
         // 错误记录统计 (>= 400)
-        var errorTask = _activityLogFactory.CountAsync(log =>
+        var errorTask = _context.Set<UserActivityLog>().LongCountAsync(log =>
 
             (string.IsNullOrEmpty(actionLower) || (log.Action != null && log.Action.ToLower().Contains(actionLower))) &&
             (string.IsNullOrEmpty(httpMethodUpper) || log.HttpMethod == httpMethodUpper) &&
@@ -146,7 +140,6 @@ public class UserActivityLogService : IUserActivityLogService
         var successCount = successTask.Result;
         var errorCount = errorTask.Result;
         var actionTypesCount = 0; // 暂时禁用，优化性能
-
 
         Func<IQueryable<UserActivityLog>, IOrderedQueryable<UserActivityLog>> orderBy = query =>
         {
@@ -167,7 +160,9 @@ public class UserActivityLogService : IUserActivityLogService
             return query.OrderByDescending(log => log.CreatedAt);
         };
 
-        var (logs, _) = await _activityLogFactory.FindPagedAsync(filter, orderBy, page, pageSize);
+        var __fpQ = _context.Set<UserActivityLog>().Where(filter);
+        var _ = await __fpQ.LongCountAsync();
+        var logs = await orderBy(__fpQ).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
         var logDtos = logs.Select(log => new ActivityLogListItemResponse
         {
@@ -202,7 +197,7 @@ public class UserActivityLogService : IUserActivityLogService
     /// <inheritdoc/>
     public async Task<UserActivityLog?> GetCurrentUserActivityLogByIdAsync(string logId)
     {
-        var log = await _activityLogFactory.GetByIdAsync(logId);
+        var log = await _context.Set<UserActivityLog>().FirstOrDefaultAsync(x => x.Id == logId);
 
         return log;
     }
@@ -210,7 +205,7 @@ public class UserActivityLogService : IUserActivityLogService
     /// <inheritdoc/>
     public async Task<UserActivityLog?> GetActivityLogByIdAsync(string logId)
     {
-        return await _activityLogFactory.GetByIdAsync(logId);
+        return await _context.Set<UserActivityLog>().FirstOrDefaultAsync(x => x.Id == logId);
     }
 
     /// <inheritdoc/>
@@ -253,12 +248,11 @@ public class UserActivityLogService : IUserActivityLogService
             (!startDate.HasValue || log.CreatedAt >= startDate.Value) &&
             (!endDate.HasValue || log.CreatedAt <= endDate.Value);
 
-        var total = await _activityLogFactory.CountAsync(filter);
-        var (logs, _) = await _activityLogFactory.FindPagedAsync(
-            filter,
-            query => query.OrderByDescending(log => log.CreatedAt),
-            page,
-            pageSize);
+        var total = await _context.Set<UserActivityLog>().LongCountAsync(filter);
+        var __fpQ = _context.Set<UserActivityLog>().Where(
+            filter);
+        var _ = await __fpQ.LongCountAsync();
+        var logs = await __fpQ.OrderByDescending(log => log.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
         var validUserIds = logs
             .Select(log => log.CreatedBy)
@@ -269,7 +263,7 @@ public class UserActivityLogService : IUserActivityLogService
         var users = new List<AppUser>();
         if (validUserIds.Any())
         {
-            users = await _userFactory.FindAsync(u => validUserIds.Contains(u.Id));
+            users = await _context.Set<AppUser>().Where(u => validUserIds.Contains(u.Id)).ToListAsync();
         }
 
         var userMap = users.ToDictionary(u => u.Id!, u => u.Username);
@@ -299,12 +293,15 @@ public class UserActivityLogService : IUserActivityLogService
     {
         Expression<Func<UserActivityLog, bool>> filter = log => log.CreatedAt < olderThan;
 
-        var logs = await _activityLogFactory.FindAsync(filter);
+        var logs = await _context.Set<UserActivityLog>().Where(filter).ToListAsync();
         var logIds = logs.Select(log => log.Id!).ToList();
 
         if (logIds.Any())
         {
-            await _activityLogFactory.SoftDeleteManyAsync(log => log.Id != null && logIds.Contains(log.Id));
+                        var __sdm = await _context.Set<UserActivityLog>().Where(log => log.Id != null && logIds.Contains(log.Id)).ToListAsync();
+            foreach (var __e in __sdm) __e.IsDeleted = true;
+            await _context.SaveChangesAsync();
+
         }
 
         return logIds.Count;
@@ -319,7 +316,6 @@ public class UserActivityLogService : IUserActivityLogService
             ? request.Path
             : $"{request.Path}{request.QueryString}";
         var fullUrl = $"{request.Scheme}://{request.Host}{pathWithQuery}";
-
 
         var log = new UserActivityLog
         {
@@ -337,7 +333,8 @@ public class UserActivityLogService : IUserActivityLogService
             Metadata = request.Metadata,
         };
 
-        await _activityLogFactory.CreateAsync(log);
+        await _context.Set<UserActivityLog>().AddAsync(log);
+        await _context.SaveChangesAsync();
     }
 
     private static bool IsValidObjectId(string? value)
@@ -346,6 +343,5 @@ public class UserActivityLogService : IUserActivityLogService
         if (value.Length != 24) return false;
         return value.All(c => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
     }
-
 
 }

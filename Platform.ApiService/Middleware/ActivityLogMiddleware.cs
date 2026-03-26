@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Diagnostics;
 using System.Collections.Generic;
@@ -91,7 +92,7 @@ public class ActivityLogMiddleware
             stopwatch.Stop();
 
             // ✅ 生命周期修复：在请求 Scope 内直接记录日志
-            // 确保 ITenantContext 可用，PlatformDbContext 审计逻辑能自动填充 CompanyId、CreatedBy 等字段
+            // 确保 ITenantContext 可用，DbContext 审计逻辑能自动填充 CompanyId、CreatedBy 等字段
             var logData = await ExtractLogData(context, tenantContext, stopwatch.ElapsedMilliseconds);
 
             if (logData.HasValue)

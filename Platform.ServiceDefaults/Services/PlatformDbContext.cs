@@ -7,7 +7,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Platform.ServiceDefaults.Services;
 
 /// <summary>
-/// 平台数据库上下文 - 基于 MongoDB Entity Framework Core (优化版本)
+/// 平台数据库上下文 - 基于 MongoDB Entity Framework Core 
 /// </summary>
 public class PlatformDbContext : DbContext
 {
@@ -144,7 +144,6 @@ public class PlatformDbContext : DbContext
     private void ApplyFilterGeneric<TEntity>(ModelBuilder modelBuilder) where TEntity : class
     {
         modelBuilder.Entity<TEntity>().HasQueryFilter(e =>
-            (!(e is ISoftDeletable) || !((ISoftDeletable)e).IsDeleted) &&
             (!(e is IMultiTenant) || IsSystemContext || ((IMultiTenant)e).CompanyId == _tenantContext!.GetCurrentCompanyIdAsync().GetAwaiter().GetResult())
         );
     }

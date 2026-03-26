@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -22,23 +23,24 @@ namespace Platform.ApiService.Controllers;
 
 public class ChatMessagesController : BaseApiController
 {
+    private readonly DbContext _context;
+
     private readonly IChatService _chatService;
-    private readonly IDataFactory<ChatSession> _sessionFactory;
     private readonly ILogger<ChatMessagesController> _logger;
 
     /// <summary>
     /// 初始化聊天消息控制器
     /// </summary>
     /// <param name="chatService">聊天服务</param>
-    /// <param name="sessionFactory">会话数据操作工厂</param>
     /// <param name="logger">日志记录器</param>
     public ChatMessagesController(
+        DbContext context,
         IChatService chatService,
-        IDataFactory<ChatSession> sessionFactory,
-        ILogger<ChatMessagesController> logger)
-    {
+        ILogger<ChatMessagesController> logger
+    ) {
+        _context = context;
+        
         _chatService = chatService ?? throw new ArgumentNullException(nameof(chatService));
-        _sessionFactory = sessionFactory ?? throw new ArgumentNullException(nameof(sessionFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -133,7 +135,7 @@ public class ChatMessagesController : BaseApiController
         {
             // 1. 保存用户消息（但不触发 AI 回复，因为我们要在同一个流中返回）
             var currentUserId = GetRequiredUserId();
-            var session = await _sessionFactory.GetByIdAsync(request.SessionId);
+            var session = await _context.Set<ChatSession>().FirstOrDefaultAsync(s => s.Id == request.SessionId);
             if (session == null || !session.Participants.Contains(currentUserId))
             {
                 await WriteSseEventAsync("Error", new { error = "会话不存在或无权访问" }, cancellationToken);

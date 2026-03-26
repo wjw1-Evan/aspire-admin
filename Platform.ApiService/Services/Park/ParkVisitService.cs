@@ -13,12 +13,9 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class ParkVisitService : IParkVisitService
 {
+    private readonly DbContext _context;
+
     private readonly ILogger<ParkVisitService> _logger;
-    private readonly IDataFactory<VisitTask> _visitTaskFactory;
-    private readonly IDataFactory<VisitAssessment> _assessmentFactory;
-    private readonly IDataFactory<VisitQuestion> _questionFactory;
-    private readonly IDataFactory<VisitQuestionnaire> _questionnaireFactory;
-    private readonly IDataFactory<ParkTenant> _tenantFactory;
     private readonly OpenAIClient _openAiClient;
     private readonly AiCompletionOptions _aiOptions;
 
@@ -26,21 +23,14 @@ public class ParkVisitService : IParkVisitService
     /// 初始化走访管理服务
     /// </summary>
     public ParkVisitService(
+        DbContext context,
         ILogger<ParkVisitService> logger,
-        IDataFactory<VisitTask> visitTaskFactory,
-        IDataFactory<VisitAssessment> assessmentFactory,
-        IDataFactory<VisitQuestion> questionFactory,
-        IDataFactory<VisitQuestionnaire> questionnaireFactory,
-        IDataFactory<ParkTenant> tenantFactory,
         OpenAIClient openAiClient,
-        IOptions<AiCompletionOptions> aiOptions)
-    {
+        IOptions<AiCompletionOptions> aiOptions
+    ) {
+        _context = context;
+        
         _logger = logger;
-        _visitTaskFactory = visitTaskFactory;
-        _assessmentFactory = assessmentFactory;
-        _questionFactory = questionFactory;
-        _questionnaireFactory = questionnaireFactory;
-        _tenantFactory = tenantFactory;
         _openAiClient = openAiClient;
         _aiOptions = aiOptions.Value;
     }
@@ -52,21 +42,21 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<VisitTaskListResponse> GetVisitTasksAsync(VisitTaskListRequest request)
     {
+        
         var search = request.Search?.ToLower();
         var status = request.Status;
 
-        var (items, total) = await _visitTaskFactory.FindPagedAsync(
+        var __fpQ = _context.Set<VisitTask>().Where(
             t => (string.IsNullOrEmpty(search) || (t.ManagerName != null && t.ManagerName.ToLower().Contains(search)) || (t.Phone != null && t.Phone.ToLower().Contains(search))) &&
-                 (string.IsNullOrEmpty(status) || t.Status == status),
-            q => q.OrderByDescending(t => t.CreatedAt),
-            request.Page,
-            request.PageSize);
+                 (string.IsNullOrEmpty(status) || t.Status == status));
+        var total = await __fpQ.LongCountAsync();
+        var items = await __fpQ.OrderByDescending(t => t.CreatedAt).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
 
         var tasks = new List<VisitTaskDto>();
         foreach (var item in items)
         {
-            var tenant = string.IsNullOrEmpty(item.TenantId) ? null : await _tenantFactory.GetByIdAsync(item.TenantId);
-            var assessment = (await _assessmentFactory.FindAsync(a => a.TaskId == item.Id)).FirstOrDefault();
+            var tenant = string.IsNullOrEmpty(item.TenantId) ? null : await _context.Set<ParkTenant>().FirstOrDefaultAsync(t => t.Id == item.TenantId);
+            var assessment = (await _context.Set<VisitAssessment>().Where(a => a.TaskId == item.Id).ToListAsync()).FirstOrDefault();
             tasks.Add(new VisitTaskDto
             {
                 Id = item.Id,
@@ -105,11 +95,11 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<VisitTaskDto?> GetVisitTaskByIdAsync(string id)
     {
-        var item = await _visitTaskFactory.GetByIdAsync(id);
+        var item = await _context.Set<VisitTask>().FirstOrDefaultAsync(x => x.Id == id);
         if (item == null) return null;
 
-        var tenant = string.IsNullOrEmpty(item.TenantId) ? null : await _tenantFactory.GetByIdAsync(item.TenantId);
-        var assessment = (await _assessmentFactory.FindAsync(a => a.TaskId == item.Id)).FirstOrDefault();
+        var tenant = string.IsNullOrEmpty(item.TenantId) ? null : await _context.Set<ParkTenant>().FirstOrDefaultAsync(t => t.Id == item.TenantId);
+        var assessment = await _context.Set<VisitAssessment>().FirstOrDefaultAsync(a => a.TaskId == item.Id);
         return new VisitTaskDto
         {
             Id = item.Id,
@@ -165,7 +155,8 @@ public class ParkVisitService : IParkVisitService
             Feedback = request.Feedback
         };
 
-        await _visitTaskFactory.CreateAsync(task);
+        await _context.Set<VisitTask>().AddAsync(task);
+        await _context.SaveChangesAsync();
         _logger.LogInformation("创建走访任务: {ManagerName}, ID: {Id}", task.ManagerName, task.Id);
 
         return (await GetVisitTaskByIdAsync(task.Id))!;
@@ -176,38 +167,36 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<VisitTaskDto?> UpdateVisitTaskAsync(string id, CreateVisitTaskRequest request)
     {
-        var task = await _visitTaskFactory.GetByIdAsync(id);
+        var task = await _context.Set<VisitTask>().FirstOrDefaultAsync(x => x.Id == id);
         if (task == null) return null;
 
-        var updatedTask = await _visitTaskFactory.UpdateAsync(id, task =>
+        task.Title = request.Title;
+        task.ManagerName = request.ManagerName;
+        task.Phone = request.Phone;
+        task.VisitType = request.VisitType;
+        task.VisitMethod = request.VisitMethod;
+        task.Details = request.Details;
+        task.TenantId = request.TenantId;
+        task.TenantName = request.TenantName;
+        task.VisitLocation = request.VisitLocation;
+        task.VisitDate = request.VisitDate;
+        task.QuestionnaireId = request.QuestionnaireId;
+        task.Visitor = request.Visitor;
+        task.IntervieweeName = request.IntervieweeName;
+        task.IntervieweePosition = request.IntervieweePosition;
+        task.IntervieweePhone = request.IntervieweePhone;
+        task.Content = request.Content;
+        if (request.Photos != null) task.Photos = request.Photos;
+        if (request.Attachments != null) task.Attachments = request.Attachments;
+        task.Feedback = request.Feedback;
+
+        if (!string.IsNullOrEmpty(request.Status))
         {
-            task.Title = request.Title;
-            task.ManagerName = request.ManagerName;
-            task.Phone = request.Phone;
-            task.VisitType = request.VisitType;
-            task.VisitMethod = request.VisitMethod;
-            task.Details = request.Details;
-            task.TenantId = request.TenantId;
-            task.TenantName = request.TenantName;
-            task.VisitLocation = request.VisitLocation;
-            task.VisitDate = request.VisitDate;
-            task.QuestionnaireId = request.QuestionnaireId;
-            task.Visitor = request.Visitor;
-            task.IntervieweeName = request.IntervieweeName;
-            task.IntervieweePosition = request.IntervieweePosition;
-            task.IntervieweePhone = request.IntervieweePhone;
-            task.Content = request.Content;
-            if (request.Photos != null) task.Photos = request.Photos;
-            if (request.Attachments != null) task.Attachments = request.Attachments;
-            task.Feedback = request.Feedback;
+            task.Status = request.Status;
+        }
+        await _context.SaveChangesAsync();
 
-            if (!string.IsNullOrEmpty(request.Status))
-            {
-                task.Status = request.Status;
-            }
-        });
-
-        return updatedTask != null ? await GetVisitTaskByIdAsync(id) : null;
+        return await GetVisitTaskByIdAsync(id);
     }
 
     /// <summary>
@@ -215,14 +204,14 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<bool> DeleteVisitTaskAsync(string id)
     {
-        var task = await _visitTaskFactory.GetByIdAsync(id);
+        var task = await _context.Set<VisitTask>().FirstOrDefaultAsync(x => x.Id == id);
         if (task == null)
             return false;
 
-        return await _visitTaskFactory.SoftDeleteAsync(id);
+        _context.Set<VisitTask>().Remove(task);
+        await _context.SaveChangesAsync();
+        return true;
     }
-
-
 
     #endregion
 
@@ -235,14 +224,13 @@ public class ParkVisitService : IParkVisitService
     {
         var search = request.Search?.ToLower();
 
-        var (items, total) = await _assessmentFactory.FindPagedAsync(
+        var __fpQ = _context.Set<VisitAssessment>().Where(
             a => string.IsNullOrEmpty(search) ||
                  (a.VisitorName != null && a.VisitorName.ToLower().Contains(search)) ||
                  (a.Phone != null && a.Phone.ToLower().Contains(search)) ||
-                 (a.TaskDescription != null && a.TaskDescription.ToLower().Contains(search)),
-            q => q.OrderByDescending(a => a.CreatedAt),
-            request.Page,
-            request.PageSize);
+                 (a.TaskDescription != null && a.TaskDescription.ToLower().Contains(search)));
+        var total = await __fpQ.LongCountAsync();
+        var items = await __fpQ.OrderByDescending(a => a.CreatedAt).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
 
         return new VisitAssessmentListResponse
         {
@@ -281,14 +269,15 @@ public class ParkVisitService : IParkVisitService
         // 如果关联了任务，且没有指定走访人（受访者），尝试从任务中获取
         if (!string.IsNullOrEmpty(assessment.TaskId) && string.IsNullOrEmpty(assessment.VisitorName))
         {
-            var task = await _visitTaskFactory.GetByIdAsync(assessment.TaskId);
+            var task = await _context.Set<VisitTask>().FirstOrDefaultAsync(t => t.Id == assessment.TaskId);
             if (task != null && !string.IsNullOrEmpty(task.Visitor))
             {
                 assessment.VisitorName = task.Visitor;
             }
         }
 
-        await _assessmentFactory.CreateAsync(assessment);
+        await _context.Set<VisitAssessment>().AddAsync(assessment);
+        await _context.SaveChangesAsync();
         return new VisitAssessmentDto
         {
             Id = assessment.Id,
@@ -315,12 +304,11 @@ public class ParkVisitService : IParkVisitService
         var search = request.Search?.ToLower();
         var category = request.Category;
 
-        var (items, total) = await _questionFactory.FindPagedAsync(
+        var __fpQ = _context.Set<VisitQuestion>().Where(
             q => (string.IsNullOrEmpty(search) || (q.Content != null && q.Content.ToLower().Contains(search))) &&
-                 (string.IsNullOrEmpty(category) || q.Category == category),
-            q => q.OrderByDescending(q => q.CreatedAt),
-            request.Page,
-            request.PageSize);
+                 (string.IsNullOrEmpty(category) || q.Category == category));
+        var total = await __fpQ.LongCountAsync();
+        var items = await __fpQ.OrderByDescending(q => q.CreatedAt).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
 
         return new VisitQuestionListResponse
         {
@@ -342,7 +330,7 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<List<VisitQuestionDto>> GetVisitQuestionsByCategoryAsync(string category)
     {
-        var items = await _questionFactory.FindAsync(q => q.Category == category);
+        var items = await _context.Set<VisitQuestion>().Where(q => q.Category == category).ToListAsync();
         return items.OrderByDescending(q => q.IsFrequentlyUsed ?? false).ThenBy(q => q.SortOrder).Select(q => new VisitQuestionDto
         {
             Id = q.Id,
@@ -368,7 +356,8 @@ public class ParkVisitService : IParkVisitService
             SortOrder = request.SortOrder
         };
 
-        await _questionFactory.CreateAsync(question);
+        await _context.Set<VisitQuestion>().AddAsync(question);
+        await _context.SaveChangesAsync();
         return new VisitQuestionDto
         {
             Id = question.Id,
@@ -385,19 +374,17 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<VisitQuestionDto?> UpdateVisitQuestionAsync(string id, VisitQuestionDto request)
     {
-        var question = await _questionFactory.GetByIdAsync(id);
+        var question = await _context.Set<VisitQuestion>().FirstOrDefaultAsync(x => x.Id == id);
         if (question == null) return null;
 
-        var updatedQuestion = await _questionFactory.UpdateAsync(id, question =>
-        {
-            question.Content = request.Content;
-            question.Category = request.Category;
-            question.Answer = request.Answer;
-            question.IsFrequentlyUsed = request.IsFrequentlyUsed;
-            question.SortOrder = request.SortOrder;
-        });
+        question.Content = request.Content;
+        question.Category = request.Category;
+        question.Answer = request.Answer;
+        question.IsFrequentlyUsed = request.IsFrequentlyUsed;
+        question.SortOrder = request.SortOrder;
+        await _context.SaveChangesAsync();
 
-        return updatedQuestion != null ? request : null;
+        return request;
     }
 
     /// <summary>
@@ -405,11 +392,13 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<bool> DeleteVisitQuestionAsync(string id)
     {
-        var question = await _questionFactory.GetByIdAsync(id);
+        var question = await _context.Set<VisitQuestion>().FirstOrDefaultAsync(x => x.Id == id);
         if (question == null)
             return false;
 
-        return await _questionFactory.SoftDeleteAsync(id);
+        _context.Set<VisitQuestion>().Remove(question);
+        await _context.SaveChangesAsync();
+        return true;
     }
 
     /// <summary>
@@ -417,7 +406,7 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<VisitQuestionnaireListResponse> GetVisitQuestionnairesAsync()
     {
-        var items = await _questionnaireFactory.FindAsync();
+        var items = await _context.Set<VisitQuestionnaire>().ToListAsync();
         return new VisitQuestionnaireListResponse
         {
             Questionnaires = items.OrderBy(q => q.SortOrder).Select(q => new VisitQuestionnaireDto
@@ -429,7 +418,7 @@ public class ParkVisitService : IParkVisitService
                 CreatedAt = q.CreatedAt,
                 SortOrder = q.SortOrder ?? 0
             }).ToList(),
-            Total = (int)await _questionnaireFactory.CountAsync()
+            Total = (int)await _context.Set<VisitQuestionnaire>().LongCountAsync()
         };
     }
 
@@ -447,7 +436,8 @@ public class ParkVisitService : IParkVisitService
             SortOrder = request.SortOrder
         };
 
-        await _questionnaireFactory.CreateAsync(questionnaire);
+        await _context.Set<VisitQuestionnaire>().AddAsync(questionnaire);
+        await _context.SaveChangesAsync();
         return new VisitQuestionnaireDto
         {
             Id = questionnaire.Id,
@@ -464,27 +454,23 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<VisitQuestionnaireDto?> UpdateVisitQuestionnaireAsync(string id, VisitQuestionnaireDto request)
     {
-        var questionnaire = await _questionnaireFactory.GetByIdAsync(id);
+        var questionnaire = await _context.Set<VisitQuestionnaire>().FirstOrDefaultAsync(x => x.Id == id);
         if (questionnaire == null) return null;
 
-        var updated = await _questionnaireFactory.UpdateAsync(id, q =>
-        {
-            q.Title = request.Title;
-            q.Purpose = request.Purpose;
-            q.QuestionIds = request.QuestionIds;
-            q.SortOrder = request.SortOrder;
-        });
-
-        if (updated == null) return null;
+        questionnaire.Title = request.Title;
+        questionnaire.Purpose = request.Purpose;
+        questionnaire.QuestionIds = request.QuestionIds;
+        questionnaire.SortOrder = request.SortOrder;
+        await _context.SaveChangesAsync();
 
         return new VisitQuestionnaireDto
         {
-            Id = updated.Id,
-            Title = updated.Title,
-            Purpose = updated.Purpose,
-            QuestionIds = updated.QuestionIds,
-            CreatedAt = updated.CreatedAt,
-            SortOrder = updated.SortOrder ?? 0
+            Id = questionnaire.Id,
+            Title = questionnaire.Title,
+            Purpose = questionnaire.Purpose,
+            QuestionIds = questionnaire.QuestionIds,
+            CreatedAt = questionnaire.CreatedAt,
+            SortOrder = questionnaire.SortOrder ?? 0
         };
     }
 
@@ -493,11 +479,13 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<bool> DeleteVisitQuestionnaireAsync(string id)
     {
-        var questionnaire = await _questionnaireFactory.GetByIdAsync(id);
+        var questionnaire = await _context.Set<VisitQuestionnaire>().FirstOrDefaultAsync(x => x.Id == id);
         if (questionnaire == null)
             return false;
 
-        return await _questionnaireFactory.SoftDeleteAsync(id);
+        _context.Set<VisitQuestionnaire>().Remove(questionnaire);
+        await _context.SaveChangesAsync();
+        return true;
     }
 
     /// <summary>
@@ -511,17 +499,17 @@ public class ParkVisitService : IParkVisitService
         var endOfPeriod = endDate ?? now;
 
         // 1. 基础指标
-        var pendingTasks = await _visitTaskFactory.CountAsync(t => t.Status == "Pending" && t.VisitDate >= startOfPeriod && t.VisitDate <= endOfPeriod);
-        var completedTasksInPeriod = await _visitTaskFactory.CountAsync(t => t.Status == "Completed" && t.VisitDate >= startOfPeriod && t.VisitDate <= endOfPeriod);
-        var totalTasks = await _visitTaskFactory.CountAsync(t => t.VisitDate >= startOfPeriod && t.VisitDate <= endOfPeriod);
+        var pendingTasks = await _context.Set<VisitTask>().LongCountAsync(t => t.Status == "Pending" && t.VisitDate >= startOfPeriod && t.VisitDate <= endOfPeriod);
+        var completedTasksInPeriod = await _context.Set<VisitTask>().LongCountAsync(t => t.Status == "Completed" && t.VisitDate >= startOfPeriod && t.VisitDate <= endOfPeriod);
+        var totalTasks = await _context.Set<VisitTask>().LongCountAsync(t => t.VisitDate >= startOfPeriod && t.VisitDate <= endOfPeriod);
         decimal completionRate = totalTasks > 0 ? (decimal)completedTasksInPeriod * 100 / totalTasks : 0;
 
-        var assessments = await _assessmentFactory.FindAsync(a => a.CreatedAt >= startOfPeriod && a.CreatedAt <= endOfPeriod);
+        var assessments = await _context.Set<VisitAssessment>().Where(a => a.CreatedAt >= startOfPeriod && a.CreatedAt <= endOfPeriod).ToListAsync();
         var totalAssessments = assessments.Count;
         var averageScore = totalAssessments > 0 ? (decimal)assessments.Average(a => a.Score) : 0m;
 
         // 2-4. 按类型、状态、企管员排行统计（从基础数据加载后再分组，因为 IDataFactory 暂不支持直接复杂的聚合）
-        var tasks = await _visitTaskFactory.FindAsync(t => t.VisitDate >= startOfPeriod && t.VisitDate <= endOfPeriod);
+        var tasks = await _context.Set<VisitTask>().Where(t => t.VisitDate >= startOfPeriod && t.VisitDate <= endOfPeriod).ToListAsync();
 
         // 修复：活跃企管员数计算（有完成走访任务的企管员）
         var activeManagers = tasks.Where(t =>
@@ -542,7 +530,7 @@ public class ParkVisitService : IParkVisitService
         // 5. 趋势分析 (最近6个月) - 修复边界问题
         var monthlyTrends = new Dictionary<string, int>();
         var sixMonthsAgo = startOfPeriod.AddMonths(-5).Date;
-        var trendTasks = await _visitTaskFactory.FindAsync(t => t.VisitDate >= sixMonthsAgo);
+        var trendTasks = await _context.Set<VisitTask>().Where(t => t.VisitDate >= sixMonthsAgo).ToListAsync();
 
         monthlyTrends = trendTasks.GroupBy(t => new { t.VisitDate.Year, t.VisitDate.Month })
                                    .OrderBy(g => g.Key.Year)

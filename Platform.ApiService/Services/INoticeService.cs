@@ -62,4 +62,3 @@ public interface INoticeService
     /// <returns>是否成功标记</returns>
     Task<bool> MarkAllAsReadAsync();
 }
-

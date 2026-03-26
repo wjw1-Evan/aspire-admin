@@ -216,4 +216,3 @@ public class MarkMultipleAsReadRequest
     /// </summary>
     public List<string> Ids { get; set; } = new();
 }
-

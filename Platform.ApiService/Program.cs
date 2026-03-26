@@ -39,7 +39,7 @@ builder.Services.Configure<FormOptions>(o => o.MultipartBodyLengthLimit = MaxUpl
 // ──────────────────────────────────────────────
 
 builder.AddServiceDefaults();                       // OpenTelemetry, 健康检查, 服务发现, HttpClient 弹性
-builder.AddPlatformDatabase("mongodb");             // IMongoClient, IMongoDatabase, PlatformDbContext, IDataFactory, IAuditService
+builder.AddPlatformDatabase("mongodb");             // IMongoClient, IMongoDatabase, PlatformDbContext, ITenantContext
 builder.AddOpenAIClient(connectionName: "chat");    // OpenAI 客户端
 
 // ──────────────────────────────────────────────

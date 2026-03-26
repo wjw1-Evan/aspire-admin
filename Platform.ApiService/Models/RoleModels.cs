@@ -204,4 +204,3 @@ public class RoleListWithStatsResponse
     /// </summary>
     public int Total { get; set; }
 }
-

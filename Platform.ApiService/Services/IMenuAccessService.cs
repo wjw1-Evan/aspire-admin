@@ -28,4 +28,3 @@ public interface IMenuAccessService
     /// <param name="menuNames">菜单名称列表</param>
     Task<bool> HasAnyMenuAccessAsync(string userId, params string[] menuNames);
 }
-

@@ -612,4 +612,3 @@ public class ChatSessionReadPayload
     /// </summary>
     public DateTime ReadAtUtc { get; set; } = DateTime.UtcNow;
 }
-

@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Workflow;
 using Platform.ServiceDefaults.Services;
@@ -10,10 +11,10 @@ namespace Platform.ApiService.Services.Mcp.Handlers;
 /// </summary>
 public class NotificationMcpToolHandler : McpToolHandlerBase
 {
+    private readonly DbContext _context;
+
     private readonly IUnifiedNotificationService _unifiedNotificationService;
     private readonly IXiaokeConfigService? _xiaokeConfigService;
-    private readonly IDataFactory<WorkflowDefinition> _workflowDefinitionFactory;
-    private readonly IDataFactory<WorkflowInstance> _workflowInstanceFactory;
     private readonly IWorkflowEngine _workflowEngine;
     private readonly ILogger<NotificationMcpToolHandler> _logger;
 
@@ -21,23 +22,21 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
     /// 初始化通知中心、工作流与小科配置 MCP 处理器
     /// </summary>
     /// <param name="unifiedNotificationService">统一通知服务</param>
-    /// <param name="workflowDefinitionFactory">工作流定义工厂</param>
-    /// <param name="workflowInstanceFactory">工作流实例工厂</param>
+
     /// <param name="workflowEngine">工作流引擎</param>
     /// <param name="logger">日志处理器</param>
     /// <param name="xiaokeConfigService">小科配置服务</param>
     public NotificationMcpToolHandler(
+        DbContext context,
         IUnifiedNotificationService unifiedNotificationService,
-        IDataFactory<WorkflowDefinition> workflowDefinitionFactory,
-        IDataFactory<WorkflowInstance> workflowInstanceFactory,
         IWorkflowEngine workflowEngine,
         ILogger<NotificationMcpToolHandler> logger,
-        IXiaokeConfigService? xiaokeConfigService = null)
-    {
+        IXiaokeConfigService? xiaokeConfigService = null
+    ) {
+        _context = context;
+        
         _unifiedNotificationService = unifiedNotificationService;
         _xiaokeConfigService = xiaokeConfigService;
-        _workflowDefinitionFactory = workflowDefinitionFactory;
-        _workflowInstanceFactory = workflowInstanceFactory;
         _workflowEngine = workflowEngine;
         _logger = logger;
 
@@ -204,7 +203,9 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
             {
                 var keyword = args.ContainsKey("keyword") ? args["keyword"]?.ToString() : null;
                 var (page, pageSize) = ParsePaginationArgs(args);
-                var (items, total) = await _workflowDefinitionFactory.FindPagedAsync(d => string.IsNullOrEmpty(keyword) || (d.Name != null && d.Name.Contains(keyword)), q => q.OrderByDescending(d => d.UpdatedAt), page, pageSize);
+                var __fpQ = _context.Set<WorkflowDefinition>().Where(d => string.IsNullOrEmpty(keyword) || (d.Name != null && d.Name.Contains(keyword)));
+        var total = await __fpQ.LongCountAsync();
+        var items = await __fpQ.OrderByDescending(d => d.UpdatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
                 return new { items, total, page, pageSize };
             });
 
@@ -217,7 +218,9 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
             {
                 var (page, pageSize) = ParsePaginationArgs(args);
                 var status = args.ContainsKey("status") && int.TryParse(args["status"]?.ToString(), out var s) ? (WorkflowStatus)s : (WorkflowStatus?)null;
-                var (items, total) = await _workflowInstanceFactory.FindPagedAsync(i => status == null || i.Status == status, q => q.OrderByDescending(i => i.UpdatedAt), page, pageSize);
+                var __fpQ = _context.Set<WorkflowInstance>().Where(i => status == null || i.Status == status);
+        var total = await __fpQ.LongCountAsync();
+        var items = await __fpQ.OrderByDescending(i => i.UpdatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
                 return new { items, total, page, pageSize };
             });
 
@@ -226,7 +229,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
             async (args, uid) =>
             {
                 if (!args.TryGetValue("instanceId", out var idObj) || idObj?.ToString() is not string instanceId) return new { error = "缺少必需的参数: instanceId" };
-                var instance = await _workflowInstanceFactory.GetByIdAsync(instanceId);
+                var instance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
                 if (instance == null) return (object)new { error = "流程实例未找到" };
                 var history = await _workflowEngine.GetApprovalHistoryAsync(instanceId);
                 return new { instance, history };

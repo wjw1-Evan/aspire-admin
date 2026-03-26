@@ -18,23 +18,24 @@ namespace Platform.ApiService.Controllers;
 
 public class ChatSessionsController : BaseApiController
 {
+    private readonly DbContext _context;
+
     private readonly IChatService _chatService;
-    private readonly IDataFactory<ChatSession> _sessionFactory;
     private readonly ILogger<ChatSessionsController> _logger;
 
     /// <summary>
     /// 初始化聊天会话控制器
     /// </summary>
     /// <param name="chatService">聊天服务</param>
-    /// <param name="sessionFactory">会话工厂</param>
     /// <param name="logger">日志记录器</param>
     public ChatSessionsController(
+        DbContext context,
         IChatService chatService,
-        IDataFactory<ChatSession> sessionFactory,
-        ILogger<ChatSessionsController> logger)
-    {
+        ILogger<ChatSessionsController> logger
+    ) {
+        _context = context;
+        
         _chatService = chatService ?? throw new ArgumentNullException(nameof(chatService));
-        _sessionFactory = sessionFactory ?? throw new ArgumentNullException(nameof(sessionFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -82,4 +83,3 @@ public class ChatSessionsController : BaseApiController
     }
 
 }
-

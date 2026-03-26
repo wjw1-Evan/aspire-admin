@@ -50,4 +50,3 @@ public interface IRuleService
     /// <returns>是否成功删除</returns>
     Task<bool> DeleteRulesAsync(List<int> keys);
 }
-

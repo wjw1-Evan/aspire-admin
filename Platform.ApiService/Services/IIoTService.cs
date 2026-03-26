@@ -366,4 +366,3 @@ public class DeviceStatusStatistics
     /// <summary>维护中设备数</summary>
     public int Maintenance { get; set; }
 }
-

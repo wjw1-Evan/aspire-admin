@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using User = Platform.ApiService.Models.AppUser;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
@@ -57,19 +58,18 @@ public interface IUniquenessChecker
 /// </summary>
 public class UniquenessChecker : IUniquenessChecker
 {
-    private readonly IDataFactory<User> _userFactory;
+    private readonly DbContext _context;
+
     private readonly ITenantContext _tenantContext;
 
     /// <summary>
     /// 初始化唯一性检查服务
     /// </summary>
-    /// <param name="userFactory">用户数据操作工厂</param>
     /// <param name="tenantContext">租户上下文</param>
-    public UniquenessChecker(
-        IDataFactory<User> userFactory,
-        ITenantContext tenantContext)
-    {
-        _userFactory = userFactory;
+    public UniquenessChecker(DbContext context,
+        ITenantContext tenantContext
+    ) {
+        _context = context;
         _tenantContext = tenantContext;
     }
 
@@ -78,6 +78,7 @@ public class UniquenessChecker : IUniquenessChecker
     /// </summary>
     public async Task EnsureUsernameUniqueAsync(string username, string? excludeUserId = null)
     {
+        
         if (!await IsUsernameUniqueAsync(username, excludeUserId))
         {
             throw new InvalidOperationException("USER_NAME_EXISTS");
@@ -118,7 +119,7 @@ public class UniquenessChecker : IUniquenessChecker
             filter = u => u.Username == username && u.Id != excludeUserId;
         }
 
-        var users = await _userFactory.FindAsync(filter);
+        var users = await _context.Set<User>().Where(filter).ToListAsync();
         var existing = users.FirstOrDefault();
         return existing == null;
     }
@@ -138,7 +139,7 @@ public class UniquenessChecker : IUniquenessChecker
             filter = u => u.Email == email && u.Id != excludeUserId;
         }
 
-        var users = await _userFactory.FindAsync(filter);
+        var users = await _context.Set<User>().Where(filter).ToListAsync();
         var existing = users.FirstOrDefault();
         return existing == null;
     }
@@ -160,10 +161,8 @@ public class UniquenessChecker : IUniquenessChecker
             filter = u => u.PhoneNumber == phone && u.Id != excludeUserId;
         }
 
-        var users = await _userFactory.FindAsync(filter);
+        var users = await _context.Set<User>().Where(filter).ToListAsync();
         var existing = users.FirstOrDefault();
         return existing == null;
     }
 }
-
-

@@ -33,10 +33,60 @@
 
 ## 3. 后端开发强制红线 (Backend Redlines)
 
-### 🗄️ 数据库操作：IDataFactory 铁律
+### 🗄️ 数据库操作：DbContext 注入规范
 - **严禁**直接注入或操作 `IMongoCollection<T>` 或 `IMongoDatabase`。
-- 所有数据的新增、查询、修改、删除**必须**通过注入 `IDatabaseOperationFactory<T>` 来完成。
-- **原因**：工厂模式底层封装了多租户（`CompanyId`）自动过滤、`CreatedAt/UpdatedAt` 等审计字段的自动填充以及软删除机制。如果绕过，将导致数据污染或跨租户越权。
+- 业务服务层进行所有数据的新增、查询、修改、删除时，**必须**通过注入 `DbContext` 来完成。由于我们在 `ServiceExtensions.cs` 中已经将底层的 `PlatformDbContext` 注册为 `DbContext`，使用基类注入即可。
+- **原因**：底层的 `PlatformDbContext` 封装了多租户（`CompanyId`）自动过滤、`CreatedAt/UpdatedAt` 等审计字段的自动填充。服务层使用 `DbContext` 与 `_context.Set<T>()` 能自动享受这些机制。如果绕过上下文直接操作 MongoDB 的集合，将导致数据污染或跨租户越权。
+
+**使用示例：**
+```csharp
+// ✅ 正确：直接注入 DbContext 并使用 Set<T>() 操作
+using Microsoft.EntityFrameworkCore;
+
+public class UserService
+{
+    private readonly DbContext _context;
+    
+    public UserService(DbContext context)
+    {
+        _context = context;
+    }
+    
+    // 查询
+    public async Task<User?> GetUserAsync(string id)
+        => await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == id);
+    
+    // 创建
+    public async Task<User> CreateUserAsync(User user)
+    {
+        await _context.Set<User>().AddAsync(user);
+        await _context.SaveChangesAsync();
+        return user;
+    }
+    
+    // 更新
+    public async Task<User?> UpdateUserAsync(string id, Action<User> updateAction)
+    {
+        var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == id);
+        if (user == null) return null;
+        
+        updateAction(user);
+        await _context.SaveChangesAsync();
+        return user;
+    }
+    
+    // 删除 （PlatformDbContext自动实现软删除）
+    public async Task<bool> DeleteUserAsync(string id)
+    {
+        var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == id);
+        if (user == null) return false;
+        
+        _context.Set<User>().Remove(user);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+}
+```
 
 ### 🏢 多租户与上下文安全
 - 除了用户身份主键 `userId` 以外，任何企业级上下文（企业的 `companyId` / 用户拥有的菜单权限 / 角色），**严禁**直接从 JWT claim 中读取解包。

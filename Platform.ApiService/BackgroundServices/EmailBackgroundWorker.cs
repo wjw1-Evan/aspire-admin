@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Services;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
@@ -40,13 +41,15 @@ public class EmailBackgroundWorker : BackgroundService
 
                 using var scope = _serviceProvider.CreateScope();
                 var emailService = scope.ServiceProvider.GetRequiredService<ISmtpEmailService>();
-                var dataFactory = scope.ServiceProvider.GetRequiredService<IDataFactory<EmailLog>>();
+                var dbContext = scope.ServiceProvider.GetRequiredService<PlatformDbContext>();
 
                 // 2. 更新日志状态为“发送中”
-                await dataFactory.UpdateAsync(taskItem.LogId, log =>
+                var __log1 = await dbContext.Set<EmailLog>().FirstOrDefaultAsync(x => x.Id == taskItem.LogId);
+                if (__log1 != null)
                 {
-                    log.Status = EmailStatus.Sending;
-                });
+                    __log1.Status = EmailStatus.Sending;
+                    await dbContext.SaveChangesAsync();
+                }
 
                 // 3. 执行真实发送
                 try
@@ -54,11 +57,13 @@ public class EmailBackgroundWorker : BackgroundService
                     await emailService.ExecuteRawSendAsync(taskItem.ToEmail, taskItem.Subject, taskItem.HtmlBody);
 
                     // 4. 发送成功，更新状态
-                    await dataFactory.UpdateAsync(taskItem.LogId, log =>
+                    var __log2 = await dbContext.Set<EmailLog>().FirstOrDefaultAsync(x => x.Id == taskItem.LogId);
+                    if (__log2 != null)
                     {
-                        log.Status = EmailStatus.Sent;
-                        log.SentAt = DateTime.UtcNow;
-                    });
+                        __log2.Status = EmailStatus.Sent;
+                        __log2.SentAt = DateTime.UtcNow;
+                        await dbContext.SaveChangesAsync();
+                    }
                     _logger.LogInformation("邮件后台发送成功：ID={LogId}", taskItem.LogId);
                 }
                 catch (Exception sendEx)
@@ -66,11 +71,13 @@ public class EmailBackgroundWorker : BackgroundService
                     _logger.LogError(sendEx, "邮件后台发送失败：ID={LogId}", taskItem.LogId);
 
                     // 5. 发送失败，记录错误
-                    await dataFactory.UpdateAsync(taskItem.LogId, log =>
+                    var __log3 = await dbContext.Set<EmailLog>().FirstOrDefaultAsync(x => x.Id == taskItem.LogId);
+                    if (__log3 != null)
                     {
-                        log.Status = EmailStatus.Failed;
-                        log.ErrorMessage = sendEx.Message;
-                    });
+                        __log3.Status = EmailStatus.Failed;
+                        __log3.ErrorMessage = sendEx.Message;
+                        await dbContext.SaveChangesAsync();
+                    }
                 }
             }
             catch (OperationCanceledException)

@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using System.Text;
 using System.Text.Json;
@@ -11,8 +12,9 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class ChatBroadcaster : IChatBroadcaster
 {
+    private readonly DbContext _context;
+
     private readonly IChatSseConnectionManager _sseConnectionManager;
-    private readonly IDataFactory<ChatSession> _sessionFactory;
     private readonly ILogger<ChatBroadcaster> _logger;
     private readonly JsonSerializerOptions _jsonOptions;
 
@@ -20,15 +22,15 @@ public class ChatBroadcaster : IChatBroadcaster
     /// 初始化聊天广播器
     /// </summary>
     /// <param name="sseConnectionManager">SSE 连接管理器</param>
-    /// <param name="sessionFactory">会话数据操作工厂</param>
     /// <param name="logger">日志记录器</param>
     public ChatBroadcaster(
+        DbContext context,
         IChatSseConnectionManager sseConnectionManager,
-        IDataFactory<ChatSession> sessionFactory,
-        ILogger<ChatBroadcaster> logger)
-    {
+        ILogger<ChatBroadcaster> logger
+    ) {
+        _context = context;
+        
         _sseConnectionManager = sseConnectionManager ?? throw new ArgumentNullException(nameof(sseConnectionManager));
-        _sessionFactory = sessionFactory ?? throw new ArgumentNullException(nameof(sessionFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         _jsonOptions = new JsonSerializerOptions
@@ -132,7 +134,7 @@ public class ChatBroadcaster : IChatBroadcaster
         try
         {
             // 获取会话的参与者
-            var session = await _sessionFactory.GetByIdAsync(sessionId);
+            var session = await _context.Set<ChatSession>().FirstOrDefaultAsync(x => x.Id == sessionId);
             if (session == null || session.Participants == null || session.Participants.Count == 0)
             {
                 _logger.LogWarning("SSE 广播：会话 {SessionId} 事件 {EventType} 没有参与者", sessionId, eventType);

@@ -63,4 +63,3 @@ public interface IAuthService
     /// <returns>操作结果</returns>
     Task<ServiceResult<bool>> ResetPasswordAsync(ResetPasswordRequest request);
 }
-

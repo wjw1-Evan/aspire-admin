@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Platform.ApiService.Models;
 using Platform.ApiService.Options;
@@ -17,13 +18,11 @@ public class IoTDataRetentionHostedService : BackgroundService
     /// <summary>
     /// 初始化物联网数据保留后台服务
     /// </summary>
-    /// <param name="scopeFactory">服务作用域工厂</param>
     /// <param name="logger">日志记录器</param>
     public IoTDataRetentionHostedService(
         IServiceScopeFactory scopeFactory,
         ILogger<IoTDataRetentionHostedService> logger)
     {
-        _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
@@ -63,12 +62,11 @@ public class IoTDataRetentionHostedService : BackgroundService
     private async Task RunOnceAsync(CancellationToken cancellationToken)
     {
         using var scope = _scopeFactory.CreateScope();
-        var deviceFactory = scope.ServiceProvider.GetRequiredService<IDataFactory<IoTDevice>>();
-        var recordFactory = scope.ServiceProvider.GetRequiredService<IDataFactory<IoTDataRecord>>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<PlatformDbContext>();
         var iotService = scope.ServiceProvider.GetRequiredService<IIoTService>();
 
         // 1. 按设备保留策略清理过期遥测数据
-        var devices = await deviceFactory.FindWithoutTenantFilterAsync(d => d.RetentionDays.HasValue && d.RetentionDays.Value > 0 && d.IsDeleted != true);
+        var devices = await dbContext.Set<IoTDevice>().IgnoreQueryFilters().Where(d => d.RetentionDays.HasValue && d.RetentionDays.Value > 0 && d.IsDeleted != true).ToListAsync();
         int deletedRecords = 0;
 
         foreach (var device in devices)
@@ -76,12 +74,13 @@ public class IoTDataRetentionHostedService : BackgroundService
             cancellationToken.ThrowIfCancellationRequested();
 
             var cutoff = DateTime.UtcNow.AddDays(-device.RetentionDays!.Value);
-            var expired = await recordFactory.FindWithoutTenantFilterAsync(
-                r => r.DeviceId == device.DeviceId && r.ReportedAt < cutoff && r.IsDeleted != true);
+            var expired = await dbContext.Set<IoTDataRecord>().IgnoreQueryFilters().Where(
+                r => r.DeviceId == device.DeviceId && r.ReportedAt < cutoff && r.IsDeleted != true).ToListAsync();
 
             foreach (var record in expired)
             {
-                await recordFactory.SoftDeleteAsync(record.Id);
+                var __r = await dbContext.Set<IoTDataRecord>().FirstOrDefaultAsync(x => x.Id == record.Id);
+                if (__r != null) { __r.IsDeleted = true; await dbContext.SaveChangesAsync(); }
                 deletedRecords++;
             }
         }

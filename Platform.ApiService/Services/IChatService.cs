@@ -83,4 +83,3 @@ public interface IChatService
         Func<ChatMessage, Task>? onComplete,
         CancellationToken cancellationToken);
 }
-

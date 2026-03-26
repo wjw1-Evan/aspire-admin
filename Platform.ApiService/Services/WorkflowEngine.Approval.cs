@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System;
+using Microsoft.EntityFrameworkCore;
 
 namespace Platform.ApiService.Services;
 
@@ -21,13 +22,13 @@ public partial class WorkflowEngine
     /// <param name="delegateToUserId">转办目标用户ID</param>
     public async Task<bool> ProcessApprovalAsync(string instanceId, string nodeId, ApprovalAction action, string currentUserId, string? comment = null, string? delegateToUserId = null)
     {
-        var instance = await _instanceFactory.GetByIdAsync(instanceId);
+        var instance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
         if (instance == null || (instance.Status != WorkflowStatus.Running && instance.Status != WorkflowStatus.Waiting))
         {
             throw new InvalidOperationException("流程实例不存在或已结束");
         }
 
-        var definition = instance.WorkflowDefinitionSnapshot ?? await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
+        var definition = instance.WorkflowDefinitionSnapshot ?? await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == instance.WorkflowDefinitionId);
         if (definition == null)
         {
             throw new InvalidOperationException("流程定义不存在");
@@ -98,13 +99,17 @@ public partial class WorkflowEngine
         // 注意：Return 操作由 ReturnToNodeAsync 方法处理，此处不创建记录
         if (action != ApprovalAction.Return)
         {
-            await _approvalRecordFactory.CreateAsync(record);
+            await _context.Set<ApprovalRecord>().AddAsync(record);
+            await _context.SaveChangesAsync();
 
-            await _instanceFactory.UpdateAsync(instanceId, i =>
+            var __instanceToUpdate = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
+            if (__instanceToUpdate != null)
             {
-                i.ApprovalRecords.Add(record);
-                i.UpdatedAt = DateTime.UtcNow;
-            });
+                __instanceToUpdate.ApprovalRecords ??= new List<ApprovalRecord>();
+                __instanceToUpdate.ApprovalRecords.Add(record);
+                __instanceToUpdate.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+            }
         }
 
         switch (action)
@@ -135,7 +140,7 @@ public partial class WorkflowEngine
     /// </summary>
     public async Task<bool> ProcessHumanInputSubmitAsync(string instanceId, string nodeId, string currentUserId)
     {
-        var instance = await _instanceFactory.GetByIdAsync(instanceId);
+        var instance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
         if (instance == null)
         {
             throw new InvalidOperationException("流程实例不存在");
@@ -146,7 +151,7 @@ public partial class WorkflowEngine
             throw new InvalidOperationException("流程已结束");
         }
 
-        var definition = instance.WorkflowDefinitionSnapshot ?? await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
+        var definition = instance.WorkflowDefinitionSnapshot ?? await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == instance.WorkflowDefinitionId);
         if (definition == null)
         {
             throw new InvalidOperationException("流程定义不存在");
@@ -164,7 +169,12 @@ public partial class WorkflowEngine
             throw new UnauthorizedAccessException("无权提交此人工输入");
         }
 
-        await _instanceFactory.UpdateAsync(instanceId, i => i.Status = WorkflowStatus.Running);
+        var __instanceForUpdate = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
+        if (__instanceForUpdate != null)
+        {
+            __instanceForUpdate.Status = WorkflowStatus.Running;
+            await _context.SaveChangesAsync();
+        }
         await MoveToNextNodeAsync(instanceId, nodeId);
         return true;
     }
@@ -189,7 +199,7 @@ public partial class WorkflowEngine
         {
             if (!string.IsNullOrEmpty(instance.DocumentId))
             {
-                var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
+                var document = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == instance.DocumentId);
                 if (document != null)
                 {
                     await _notificationService.CreateWorkflowNotificationAsync(
@@ -260,10 +270,10 @@ public partial class WorkflowEngine
     /// </summary>
     private async Task ProcessNodeApproversAsync(string instanceId, string nodeId, ApprovalRecord record)
     {
-        var instance = await _instanceFactory.GetByIdAsync(instanceId);
+        var instance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
         if (instance == null) return;
 
-        var definition = instance.WorkflowDefinitionSnapshot ?? await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
+        var definition = instance.WorkflowDefinitionSnapshot ?? await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == instance.WorkflowDefinitionId);
         if (definition == null) return;
 
         var node = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
@@ -318,10 +328,10 @@ public partial class WorkflowEngine
             // Bug 6 修复：审批节点完成时通知发起人
             try
             {
-                var instanceForNotify = await _instanceFactory.GetByIdAsync(instanceId);
+                var instanceForNotify = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
                 if (instanceForNotify != null && !string.IsNullOrEmpty(instanceForNotify.DocumentId))
                 {
-                    var document = await _documentFactory.GetByIdAsync(instanceForNotify.DocumentId);
+                    var document = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == instanceForNotify.DocumentId);
                     if (document != null)
                     {
                         var approverNames = string.Join(", ", completedApprovals);
@@ -356,13 +366,13 @@ public partial class WorkflowEngine
     /// <param name="currentUserId">当前操作人用户ID</param>
     public async Task<bool> ReturnToNodeAsync(string instanceId, string targetNodeId, string comment, string currentUserId)
     {
-        var instance = await _instanceFactory.GetByIdAsync(instanceId);
+        var instance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
         if (instance == null || instance.Status != WorkflowStatus.Running)
         {
             throw new InvalidOperationException("流程实例不存在或已结束");
         }
 
-        var definition = instance.WorkflowDefinitionSnapshot ?? await _definitionFactory.GetByIdAsync(instance.WorkflowDefinitionId);
+        var definition = instance.WorkflowDefinitionSnapshot ?? await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == instance.WorkflowDefinitionId);
         if (definition == null)
         {
             throw new InvalidOperationException("流程定义不存在");
@@ -407,23 +417,27 @@ public partial class WorkflowEngine
             Sequence = history.Count + 1,
             CompanyId = instance.CompanyId
         };
-        await _approvalRecordFactory.CreateAsync(approvalRecord);
+        await _context.Set<ApprovalRecord>().AddAsync(approvalRecord);
+        await _context.SaveChangesAsync();
 
-        await _instanceFactory.UpdateAsync(instanceId, i =>
+        var __targetInstance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
+        if (__targetInstance != null)
         {
-            i.CurrentNodeId = targetNodeId;
-            i.ApprovalRecords.Add(approvalRecord);
-            i.ActiveApprovals.Clear();
-            i.CurrentApproverIds.Clear(); // 清空审批人
-            i.UpdatedAt = DateTime.UtcNow;
-        });
+            __targetInstance.CurrentNodeId = targetNodeId;
+            __targetInstance.ApprovalRecords ??= new List<ApprovalRecord>();
+            __targetInstance.ApprovalRecords.Add(approvalRecord);
+            __targetInstance.ActiveApprovals?.Clear();
+            __targetInstance.CurrentApproverIds?.Clear();
+            __targetInstance.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
 
         // 发送退回通知
         try
         {
             if (!string.IsNullOrEmpty(instance.DocumentId))
             {
-                var document = await _documentFactory.GetByIdAsync(instance.DocumentId);
+                var document = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == instance.DocumentId);
                 if (document != null)
                 {
                     var relatedUsers = new List<string> { instance.StartedBy, currentUserId };

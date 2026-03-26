@@ -7,6 +7,7 @@ using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 using System.Text;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Services;
 
@@ -15,7 +16,7 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class FileShareService : IFileShareService
 {
-    private readonly IDataFactory<Models.FileShare> _shareFactory;
+    private readonly DbContext _context;
     private readonly ICloudStorageService _cloudStorageService;
     private readonly ILogger<FileShareService> _logger;
 
@@ -23,11 +24,11 @@ public class FileShareService : IFileShareService
     /// 初始化文件分享服务
     /// </summary>
     public FileShareService(
-        IDataFactory<Models.FileShare> shareFactory,
+        DbContext context,
         ICloudStorageService cloudStorageService,
         ILogger<FileShareService> logger)
     {
-        _shareFactory = shareFactory ?? throw new ArgumentNullException(nameof(shareFactory));
+        _context = context;
         _cloudStorageService = cloudStorageService ?? throw new ArgumentNullException(nameof(cloudStorageService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -63,7 +64,8 @@ public class FileShareService : IFileShareService
             Settings = new Dictionary<string, object>(request.Settings)
         };
 
-        await _shareFactory.CreateAsync(share);
+        await _context.Set<Models.FileShare>().AddAsync(share);
+        await _context.SaveChangesAsync();
 
         _logger.LogInformation("Created file share {ShareId} for file {FileItemId} with token {ShareToken}",
             share.Id, fileItemId, shareToken);
@@ -79,8 +81,7 @@ public class FileShareService : IFileShareService
         if (string.IsNullOrWhiteSpace(shareToken))
             return null;
 
-        var shares = await _shareFactory.FindAsync(s => s.ShareToken == shareToken && s.IsActive, limit: 1);
-        var share = shares.FirstOrDefault();
+        var share = await _context.Set<Models.FileShare>().FirstOrDefaultAsync(s => s.ShareToken == shareToken && s.IsActive);
 
         if (share != null && share.ExpiresAt.HasValue && share.ExpiresAt.Value <= DateTime.UtcNow)
         {
@@ -99,8 +100,7 @@ public class FileShareService : IFileShareService
         if (string.IsNullOrWhiteSpace(id))
             return null;
 
-        var shares = await _shareFactory.FindAsync(s => s.Id == id, limit: 1);
-        return shares.FirstOrDefault();
+        return await _context.Set<Models.FileShare>().FirstOrDefaultAsync(s => s.Id == id);
     }
 
     /// <summary>
@@ -111,25 +111,23 @@ public class FileShareService : IFileShareService
         if (string.IsNullOrWhiteSpace(id))
             throw new ArgumentException("分享ID不能为空", nameof(id));
 
-        var share = await GetShareByIdAsync(id);
+        var share = await _context.Set<Models.FileShare>().FirstOrDefaultAsync(s => s.Id == id);
         if (share == null)
             throw new ArgumentException("分享不存在", nameof(id));
 
-        await _shareFactory.UpdateAsync(id, entity =>
+        if (request.Permission.HasValue) share.Permission = request.Permission.Value;
+        if (request.ExpiresAt.HasValue) share.ExpiresAt = request.ExpiresAt.Value;
+        if (request.Password != null)
         {
-            if (request.Permission.HasValue) entity.Permission = request.Permission.Value;
-            if (request.ExpiresAt.HasValue) entity.ExpiresAt = request.ExpiresAt.Value;
-            if (request.Password != null)
-            {
-                entity.Password = !string.IsNullOrEmpty(request.Password) ? HashPassword(request.Password) : string.Empty;
-            }
-            if (request.IsActive.HasValue) entity.IsActive = request.IsActive.Value;
-            if (request.AllowedUserIds != null) entity.AllowedUserIds = request.AllowedUserIds;
-            if (request.Settings != null) entity.Settings = request.Settings;
-        });
+            share.Password = !string.IsNullOrEmpty(request.Password) ? HashPassword(request.Password) : string.Empty;
+        }
+        if (request.IsActive.HasValue) share.IsActive = request.IsActive.Value;
+        if (request.AllowedUserIds != null) share.AllowedUserIds = request.AllowedUserIds;
+        if (request.Settings != null) share.Settings = request.Settings;
 
+        await _context.SaveChangesAsync();
         _logger.LogInformation("Updated share {ShareId}", id);
-        return await _shareFactory.GetByIdAsync(id) ?? throw new InvalidOperationException("更新分享失败");
+        return share;
     }
 
     /// <summary>
@@ -140,11 +138,12 @@ public class FileShareService : IFileShareService
         if (string.IsNullOrWhiteSpace(id))
             throw new ArgumentException("分享ID不能为空", nameof(id));
 
-        var share = await GetShareByIdAsync(id);
+        var share = await _context.Set<Models.FileShare>().FirstOrDefaultAsync(s => s.Id == id);
         if (share == null)
             throw new ArgumentException("分享不存在", nameof(id));
 
-        await _shareFactory.SoftDeleteAsync(id);
+        share.IsDeleted = true;
+        await _context.SaveChangesAsync();
         _logger.LogInformation("Deleted share {ShareId}", id);
     }
 
@@ -153,54 +152,54 @@ public class FileShareService : IFileShareService
     /// </summary>
     public async Task<PagedResult<Models.FileShare>> GetMySharesAsync(ShareListQuery query)
     {
-        Expression<Func<Models.FileShare, bool>> filter = s => true;
+        IQueryable<Models.FileShare> queryable = _context.Set<Models.FileShare>();
 
         if (query.Type.HasValue)
         {
             var typeFilter = query.Type.Value;
-            filter = CombineFilters(filter, s => s.Type == typeFilter);
+            queryable = queryable.Where(s => s.Type == typeFilter);
         }
 
         if (query.Permission.HasValue)
         {
             var permissionFilter = query.Permission.Value;
-            filter = CombineFilters(filter, s => s.Permission == permissionFilter);
+            queryable = queryable.Where(s => s.Permission == permissionFilter);
         }
 
         if (query.IsActive.HasValue)
         {
-            filter = CombineFilters(filter, s => s.IsActive == query.IsActive.Value);
+            queryable = queryable.Where(s => s.IsActive == query.IsActive.Value);
         }
 
         if (query.CreatedAfter.HasValue)
         {
-            filter = CombineFilters(filter, s => s.CreatedAt >= query.CreatedAfter.Value);
+            queryable = queryable.Where(s => s.CreatedAt >= query.CreatedAfter.Value);
         }
 
         if (query.CreatedBefore.HasValue)
         {
-            filter = CombineFilters(filter, s => s.CreatedAt <= query.CreatedBefore.Value);
+            queryable = queryable.Where(s => s.CreatedAt <= query.CreatedBefore.Value);
         }
 
         if (query.ExpiresAfter.HasValue)
         {
-            filter = CombineFilters(filter, s => s.ExpiresAt >= query.ExpiresAfter.Value);
+            queryable = queryable.Where(s => s.ExpiresAt >= query.ExpiresAfter.Value);
         }
 
         if (query.ExpiresBefore.HasValue)
         {
-            filter = CombineFilters(filter, s => s.ExpiresAt <= query.ExpiresBefore.Value);
+            queryable = queryable.Where(s => s.ExpiresAt <= query.ExpiresBefore.Value);
         }
 
-        var (shares, total) = await _shareFactory.FindPagedAsync(
-            filter,
-            query => query.OrderByDescending(s => s.CreatedAt),
-            query.Page,
-            query.PageSize);
+        var total = await queryable.LongCountAsync();
+        var items = await queryable.OrderByDescending(s => s.CreatedAt)
+                                 .Skip((query.Page - 1) * query.PageSize)
+                                 .Take(query.PageSize)
+                                 .ToListAsync();
 
         return new PagedResult<Models.FileShare>
         {
-            Data = shares,
+            Data = items,
             Total = (int)total,
             Page = query.Page,
             PageSize = query.PageSize
@@ -212,43 +211,44 @@ public class FileShareService : IFileShareService
     /// </summary>
     public async Task<PagedResult<Models.FileShare>> GetSharedWithMeAsync(ShareListQuery query)
     {
-        Expression<Func<Models.FileShare, bool>> filter = s => s.Type == ShareType.Internal && s.IsActive;
+        IQueryable<Models.FileShare> queryable = _context.Set<Models.FileShare>()
+            .Where(s => s.Type == ShareType.Internal && s.IsActive);
 
         if (query.Permission.HasValue)
         {
             var permissionFilter = query.Permission.Value;
-            filter = CombineFilters(filter, s => s.Permission == permissionFilter);
+            queryable = queryable.Where(s => s.Permission == permissionFilter);
         }
 
         if (query.CreatedAfter.HasValue)
         {
-            filter = CombineFilters(filter, s => s.CreatedAt >= query.CreatedAfter.Value);
+            queryable = queryable.Where(s => s.CreatedAt >= query.CreatedAfter.Value);
         }
 
         if (query.CreatedBefore.HasValue)
         {
-            filter = CombineFilters(filter, s => s.CreatedAt <= query.CreatedBefore.Value);
+            queryable = queryable.Where(s => s.CreatedAt <= query.CreatedBefore.Value);
         }
 
         if (query.ExpiresAfter.HasValue)
         {
-            filter = CombineFilters(filter, s => s.ExpiresAt >= query.ExpiresAfter.Value);
+            queryable = queryable.Where(s => s.ExpiresAt >= query.ExpiresAfter.Value);
         }
 
         if (query.ExpiresBefore.HasValue)
         {
-            filter = CombineFilters(filter, s => s.ExpiresAt <= query.ExpiresBefore.Value);
+            queryable = queryable.Where(s => s.ExpiresAt <= query.ExpiresBefore.Value);
         }
 
-        var (shares, total) = await _shareFactory.FindPagedAsync(
-            filter,
-            q => q.OrderByDescending(s => s.CreatedAt),
-            query.Page,
-            Math.Min(query.PageSize, 100));
+        var total = await queryable.LongCountAsync();
+        var items = await queryable.OrderByDescending(s => s.CreatedAt)
+                                 .Skip((query.Page - 1) * query.PageSize)
+                                 .Take(Math.Min(query.PageSize, 100))
+                                 .ToListAsync();
 
         return new PagedResult<Models.FileShare>
         {
-            Data = shares,
+            Data = items,
             Total = (int)total,
             Page = query.Page,
             PageSize = query.PageSize
@@ -260,7 +260,7 @@ public class FileShareService : IFileShareService
     /// </summary>
     public async Task<bool> ValidateShareAccessAsync(string shareToken, string? password = null)
     {
-        var share = await _shareFactory.FindAsync(s => s.ShareToken == shareToken, limit: 1).ContinueWith(t => t.Result.FirstOrDefault());
+        var share = await _context.Set<Models.FileShare>().FirstOrDefaultAsync(s => s.ShareToken == shareToken);
 
         if (share == null)
             return false;
@@ -292,11 +292,13 @@ public class FileShareService : IFileShareService
     /// </summary>
     public async Task IncrementAccessCountAsync(string shareId)
     {
-        await _shareFactory.UpdateAsync(shareId, entity =>
+        var share = await _context.Set<Models.FileShare>().FirstOrDefaultAsync(s => s.Id == shareId);
+        if (share != null)
         {
-            entity.AccessCount++;
-            entity.LastAccessedAt = DateTime.UtcNow;
-        });
+            share.AccessCount++;
+            share.LastAccessedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
     }
 
     /// <summary>
@@ -308,11 +310,9 @@ public class FileShareService : IFileShareService
         if (share == null)
             return;
 
-        await _shareFactory.UpdateAsync(share.Id, entity =>
-        {
-            entity.AccessCount++;
-            entity.LastAccessedAt = DateTime.UtcNow;
-        });
+        share.AccessCount++;
+        share.LastAccessedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
 
         _logger.LogInformation("Recorded access for share {ShareId} with token {ShareToken}, accessor: {AccessorInfo}",
             share.Id, shareToken, accessorInfo ?? "anonymous");

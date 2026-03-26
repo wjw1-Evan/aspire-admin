@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
@@ -36,7 +37,7 @@ public interface IImageCaptchaService
 /// </summary>
 public class ImageCaptchaService : IImageCaptchaService
 {
-    private readonly IDataFactory<CaptchaImage> _captchaFactory;
+    private readonly DbContext _context;
 
     // 常量配置
     private const int EXPIRATION_MINUTES = 5;
@@ -54,12 +55,11 @@ public class ImageCaptchaService : IImageCaptchaService
     /// <summary>
     /// 初始化图形验证码服务
     /// </summary>
-    /// <param name="captchaFactory">图形验证码数据操作工厂</param>
-    public ImageCaptchaService(IDataFactory<CaptchaImage> captchaFactory)
+    public ImageCaptchaService(DbContext context)
     {
-        _captchaFactory = captchaFactory;
+        _context = context;
+        
     }
-
 
     /// <summary>
     /// 生成图形验证码
@@ -73,25 +73,29 @@ public class ImageCaptchaService : IImageCaptchaService
         var expiresAt = DateTime.UtcNow.AddMinutes(EXPIRATION_MINUTES);
 
         // Try to find existing captcha for this type and client IP
-        var existingCaptchas = await _captchaFactory.FindWithoutTenantFilterAsync(
-            c => c.IsUsed == false && c.Type == type && (string.IsNullOrEmpty(clientIp) || c.ClientIp == clientIp),
-            limit: 1);
+        var existingCaptchas = await _context.Set<CaptchaImage>().IgnoreQueryFilters().Where(x => !x.IsDeleted).Where(
+            c => c.IsUsed == false && c.Type == type && (string.IsNullOrEmpty(clientIp) || c.ClientIp == clientIp))
+            .Take(1).ToListAsync();
 
         CaptchaImage captcha;
         if (existingCaptchas.Any())
         {
             // Update existing captcha
             captcha = existingCaptchas.First();
-            await _captchaFactory.UpdateAsync(captcha.Id, entity =>
-            {
-                entity.CaptchaId = captchaId;
-                entity.Answer = encryptedAnswer;
-                entity.ExpiresAt = expiresAt;
-                entity.Type = type;
-                entity.ClientIp = clientIp!;
-                entity.IsUsed = false;
-                entity.UpdatedAt = DateTime.UtcNow;
-            });
+            var __entity = await _context.Set<CaptchaImage>().FirstOrDefaultAsync(x => x.Id == captcha.Id);
+        if (__entity != null)
+        {
+    
+                __entity.CaptchaId = captchaId;
+                __entity.Answer = encryptedAnswer;
+                __entity.ExpiresAt = expiresAt;
+                __entity.Type = type;
+                __entity.ClientIp = clientIp!;
+                __entity.IsUsed = false;
+                __entity.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+
         }
         else
         {
@@ -105,7 +109,8 @@ public class ImageCaptchaService : IImageCaptchaService
                 ClientIp = clientIp!,
                 IsUsed = false
             };
-            await _captchaFactory.CreateAsync(captcha);
+            await _context.Set<CaptchaImage>().AddAsync(captcha);
+        await _context.SaveChangesAsync();
         }
 
         return new CaptchaImageResult
@@ -126,9 +131,9 @@ public class ImageCaptchaService : IImageCaptchaService
             return false;
         }
 
-        var captchas = await _captchaFactory.FindWithoutTenantFilterAsync(
-            c => c.CaptchaId == captchaId && c.Type == type && c.IsUsed == false && c.ExpiresAt > DateTime.UtcNow,
-            limit: 1);
+        var captchas = await _context.Set<CaptchaImage>().IgnoreQueryFilters().Where(x => !x.IsDeleted).Where(
+            c => c.CaptchaId == captchaId && c.Type == type && c.IsUsed == false && c.ExpiresAt > DateTime.UtcNow)
+            .Take(1).ToListAsync();
 
         var result = captchas.FirstOrDefault();
         if (result == null)
@@ -137,11 +142,15 @@ public class ImageCaptchaService : IImageCaptchaService
         }
 
         // Mark as used
-        await _captchaFactory.UpdateAsync(result.Id, entity =>
+        var __entity = await _context.Set<CaptchaImage>().FirstOrDefaultAsync(x => x.Id == result.Id);
+        if (__entity != null)
         {
-            entity.IsUsed = true;
-            entity.UpdatedAt = DateTime.UtcNow;
-        });
+    
+            __entity.IsUsed = true;
+            __entity.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+
 
         var decryptedAnswer = DecryptAnswer(result.Answer);
         return string.Equals(decryptedAnswer, answer.Trim(), StringComparison.OrdinalIgnoreCase);
@@ -532,4 +541,3 @@ public class ImageCaptchaService : IImageCaptchaService
         }
     }
 }
-

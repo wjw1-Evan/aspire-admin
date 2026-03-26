@@ -341,4 +341,3 @@ public class JoinRequestDetail
     /// </summary>
     public DateTime CreatedAt { get; set; }
 }
-

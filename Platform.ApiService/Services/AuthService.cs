@@ -16,11 +16,7 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class AuthService : IAuthService
 {
-    private readonly IDataFactory<User> _userFactory;
-    private readonly IDataFactory<UserCompany> _userCompanyFactory;
-    private readonly IDataFactory<Role> _roleFactory;
-    private readonly IDataFactory<Company> _companyFactory;
-    private readonly IDataFactory<Menu> _menuFactory;
+    private readonly DbContext _context;
     private readonly IJwtService _jwtService;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IUserService _userService;
@@ -29,9 +25,7 @@ public class AuthService : IAuthService
     private readonly IFieldValidationService _validationService;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IImageCaptchaService _imageCaptchaService;
-    private readonly IDataFactory<LoginFailureRecord> _failureRecordFactory;
     private readonly ISocialService _socialService;
-    private readonly IDataFactory<RefreshToken> _refreshTokenFactory;
     private readonly IConfiguration _configuration;
     private readonly IPasswordEncryptionService _encryptionService;
     private readonly Microsoft.Extensions.Caching.Memory.IMemoryCache _memoryCache;
@@ -40,32 +34,8 @@ public class AuthService : IAuthService
     /// <summary>
     /// 初始化认证服务
     /// </summary>
-    /// <param name="userFactory">用户数据工厂</param>
-    /// <param name="userCompanyFactory">用户企业关联数据工厂</param>
-    /// <param name="roleFactory">角色数据工厂</param>
-    /// <param name="companyFactory">企业数据工厂</param>
-    /// <param name="menuFactory">菜单数据工厂</param>
-    /// <param name="jwtService">JWT 服务</param>
-    /// <param name="httpContextAccessor">HTTP 上下文访问器</param>
-    /// <param name="userService">用户服务</param>
-    /// <param name="logger">日志</param>
-    /// <param name="uniquenessChecker">唯一性校验器</param>
-    /// <param name="validationService">字段校验服务</param>
-    /// <param name="passwordHasher">密码哈希服务</param>
-    /// <param name="imageCaptchaService">图形验证码服务</param>
-    /// <param name="failureRecordFactory">登录失败记录工厂</param>
-    /// <param name="socialService">社交服务</param>
-    /// <param name="refreshTokenFactory">刷新令牌工厂</param>
-    /// <param name="configuration">配置</param>
-    /// <param name="encryptionService">密码加密服务</param>
-    /// <param name="memoryCache">缓存</param>
-    /// <param name="emailService">邮件服务</param>
     public AuthService(
-        IDataFactory<User> userFactory,
-        IDataFactory<UserCompany> userCompanyFactory,
-        IDataFactory<Role> roleFactory,
-        IDataFactory<Company> companyFactory,
-        IDataFactory<Menu> menuFactory,
+        DbContext context,
         IJwtService jwtService,
         IHttpContextAccessor httpContextAccessor,
         IUserService userService,
@@ -74,19 +44,14 @@ public class AuthService : IAuthService
         IFieldValidationService validationService,
         IPasswordHasher passwordHasher,
         IImageCaptchaService imageCaptchaService,
-        IDataFactory<LoginFailureRecord> failureRecordFactory,
         ISocialService socialService,
-        IDataFactory<RefreshToken> refreshTokenFactory,
         IConfiguration configuration,
         IPasswordEncryptionService encryptionService,
         Microsoft.Extensions.Caching.Memory.IMemoryCache memoryCache,
         IEmailService emailService)
     {
-        _userFactory = userFactory;
-        _userCompanyFactory = userCompanyFactory;
-        _roleFactory = roleFactory;
-        _companyFactory = companyFactory;
-        _menuFactory = menuFactory;
+        _context = context;
+        
         _jwtService = jwtService;
         _httpContextAccessor = httpContextAccessor;
         _userService = userService;
@@ -95,9 +60,7 @@ public class AuthService : IAuthService
         _validationService = validationService;
         _passwordHasher = passwordHasher;
         _imageCaptchaService = imageCaptchaService;
-        _failureRecordFactory = failureRecordFactory;
         _socialService = socialService;
-        _refreshTokenFactory = refreshTokenFactory;
         _configuration = configuration;
         _encryptionService = encryptionService;
         _memoryCache = memoryCache;
@@ -106,27 +69,28 @@ public class AuthService : IAuthService
 
     private async Task<int> GetFailureCountAsync(string clientId, string type)
     {
-        Expression<Func<LoginFailureRecord, bool>> filter = r =>
-            r.ClientId == clientId &&
-            r.Type == type &&
-            r.ExpiresAt > DateTime.UtcNow;
-        var records = await _failureRecordFactory.FindWithoutTenantFilterAsync(filter);
-        return records.FirstOrDefault()?.FailureCount ?? 0;
+        var record = await _context.Set<LoginFailureRecord>()
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(r =>
+                r.ClientId == clientId &&
+                r.Type == type &&
+                r.ExpiresAt > DateTime.UtcNow);
+        return record?.FailureCount ?? 0;
     }
 
     private async Task RecordFailureAsync(string clientId, string type)
     {
-        Expression<Func<LoginFailureRecord, bool>> filter = r => r.ClientId == clientId && r.Type == type;
-        var existingRecord = (await _failureRecordFactory.FindWithoutTenantFilterAsync(filter)).FirstOrDefault();
+        var existingRecord = await _context.Set<LoginFailureRecord>()
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(r =>
+                r.ClientId == clientId &&
+                r.Type == type);
 
         if (existingRecord != null)
         {
-            await _failureRecordFactory.UpdateAsync(existingRecord.Id!, r =>
-            {
-                r.FailureCount++;
-                r.LastFailureAt = DateTime.UtcNow;
-                r.ExpiresAt = DateTime.UtcNow.AddMinutes(30);
-            });
+            existingRecord.FailureCount++;
+            existingRecord.LastFailureAt = DateTime.UtcNow;
+            existingRecord.ExpiresAt = DateTime.UtcNow.AddMinutes(30);
         }
         else
         {
@@ -136,20 +100,26 @@ public class AuthService : IAuthService
                 Type = type,
                 FailureCount = 1,
                 LastFailureAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(30),
-                IsDeleted = false
+                ExpiresAt = DateTime.UtcNow.AddMinutes(30)
             };
-            await _failureRecordFactory.CreateAsync(newRecord);
+            await _context.Set<LoginFailureRecord>().AddAsync(newRecord);
         }
+
+        await _context.SaveChangesAsync();
     }
 
     private async Task ClearFailureAsync(string clientId, string type)
     {
-        Expression<Func<LoginFailureRecord, bool>> filter = r => r.ClientId == clientId && r.Type == type;
-        var record = (await _failureRecordFactory.FindWithoutTenantFilterAsync(filter)).FirstOrDefault();
+        var record = await _context.Set<LoginFailureRecord>()
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(r =>
+                r.ClientId == clientId &&
+                r.Type == type &&
+                !r.IsDeleted);
         if (record != null)
         {
-            await _failureRecordFactory.SoftDeleteAsync(record.Id!);
+            _context.Set<LoginFailureRecord>().Remove(record);
+            await _context.SaveChangesAsync();
         }
     }
 
@@ -181,14 +151,9 @@ public class AuthService : IAuthService
             return new CurrentUser { IsLogin = false };
         }
 
-        var users = await _userFactory.FindAsync(u => u.Id == userId);
-        var user = users.FirstOrDefault();
-        if (user == null)
-        {
-            return new CurrentUser { IsLogin = false };
-        }
-
-        if (!user.IsActive)
+        var user = await _context.Set<User>()
+            .FirstOrDefaultAsync(u => u.Id == userId);
+        if (user == null || !user.IsActive)
         {
             return new CurrentUser { IsLogin = false };
         }
@@ -201,17 +166,20 @@ public class AuthService : IAuthService
 
         if (!string.IsNullOrEmpty(user.CurrentCompanyId))
         {
-            var userCompanies = await _userCompanyFactory.FindAsync(uc =>
-                uc.UserId == user.Id && uc.CompanyId == user.CurrentCompanyId);
-            firstUserCompany = userCompanies.FirstOrDefault();
+            firstUserCompany = await _context.Set<UserCompany>()
+                .FirstOrDefaultAsync(uc =>
+                    uc.UserId == user.Id && uc.CompanyId == user.CurrentCompanyId);
+
             if (firstUserCompany?.RoleIds != null && firstUserCompany.RoleIds.Any())
             {
-                var userRoles = await _roleFactory.FindAsync(r => firstUserCompany.RoleIds.Contains(r.Id));
-                roleNames = userRoles.Select(r => r.Name).ToList();
+                roleNames = await _context.Set<Role>()
+                    .Where(r => firstUserCompany.RoleIds.Contains(r.Id))
+                    .Select(r => r.Name)
+                    .ToListAsync();
             }
 
-            var companies = await _companyFactory.FindAsync(c => c.Id == user.CurrentCompanyId);
-            var company = companies.FirstOrDefault();
+            var company = await _context.Set<Company>()
+                .FirstOrDefaultAsync(c => c.Id == user.CurrentCompanyId);
             if (company != null)
             {
                 companyDisplayName = company.DisplayName;
@@ -282,7 +250,7 @@ public class AuthService : IAuthService
             */
         }
 
-        var users = await _userFactory.FindAsync(u => u.Username == request.Username && u.IsActive == true);
+        var users = await _context.Set<User>().Where(u => u.Username == request.Username && u.IsActive == true).ToListAsync();
         var user = users.FirstOrDefault();
 
         if (user == null)
@@ -308,8 +276,8 @@ public class AuthService : IAuthService
         bool shouldClearInvalidCompanyId = false;
         if (!string.IsNullOrEmpty(user.CurrentCompanyId))
         {
-            // 使用 FindWithoutTenantFilterAsync 绕过过滤器，确保登录时能找到企业
-            var companies = await _companyFactory.FindWithoutTenantFilterAsync(c => c.Id == user.CurrentCompanyId);
+            // 使用 IgnoreQueryFilters 绕过过滤器，确保登录时能找到企业
+            var companies = await _context.Set<Company>().IgnoreQueryFilters().Where(c => c.Id == user.CurrentCompanyId).ToListAsync();
             var company = companies.FirstOrDefault();
 
             if (company == null)
@@ -333,14 +301,16 @@ public class AuthService : IAuthService
         }
 
         // 统一更新用户信息（最后登录时间 + 可选的无效企业 ID 清理）
-        await _userFactory.UpdateAsync(user.Id!, u =>
+        var __u = await _context.Set<User>().FirstOrDefaultAsync(x => x.Id == user.Id!);
+        if (__u != null)
         {
-            u.LastLoginAt = DateTime.UtcNow;
+            __u.LastLoginAt = DateTime.UtcNow;
             if (shouldClearInvalidCompanyId)
             {
-                u.CurrentCompanyId = null;
+                __u.CurrentCompanyId = null;
             }
-        });
+            await _context.SaveChangesAsync();
+        }
 
         var httpContext = _httpContextAccessor.HttpContext;
         var ipAddress = httpContext?.Connection?.RemoteIpAddress?.ToString();
@@ -361,7 +331,8 @@ public class AuthService : IAuthService
             UserAgent = userAgent,
             IsRevoked = false
         };
-        await _refreshTokenFactory.CreateAsync(refreshTokenEntity);
+        await _context.Set<RefreshToken>().AddAsync(refreshTokenEntity);
+        await _context.SaveChangesAsync();
 
         var loginData = new LoginData
         {
@@ -484,7 +455,8 @@ public class AuthService : IAuthService
                 user.PhoneNumber = request.PhoneNumber.Trim();
             }
 
-            await _userFactory.CreateAsync(user);
+            await _context.Set<User>().AddAsync(user);
+            await _context.SaveChangesAsync();
             _logger.LogInformation("用户注册成功: {Username} ({UserId})", user.Username, user.Id);
 
             var companyResult = await CreatePersonalCompanyWithDetailsAsync(user);
@@ -492,11 +464,13 @@ public class AuthService : IAuthService
             adminRole = companyResult.Role;
             userCompany = companyResult.UserCompany;
 
-            await _userFactory.UpdateAsync(user.Id!, u =>
+            var __userToUpdate = await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == user.Id!);
+            if (__userToUpdate != null)
             {
-                u.CurrentCompanyId = personalCompany.Id;
-                u.PersonalCompanyId = personalCompany.Id;
-            });
+                __userToUpdate.CurrentCompanyId = personalCompany.Id;
+                __userToUpdate.PersonalCompanyId = personalCompany.Id;
+                await _context.SaveChangesAsync();
+            }
 
             user.CurrentCompanyId = personalCompany.Id;
             user.PersonalCompanyId = personalCompany.Id;
@@ -536,25 +510,29 @@ public class AuthService : IAuthService
         {
             if (userCompany != null)
             {
-                await _userCompanyFactory.SoftDeleteAsync(userCompany.Id!);
+                var __uc = await _context.Set<UserCompany>().FirstOrDefaultAsync(x => x.Id == userCompany.Id!);
+                if (__uc != null) { _context.Set<UserCompany>().Remove(__uc); await _context.SaveChangesAsync(); }
                 _logger.LogInformation("回滚：删除用户-企业关联 {UserCompanyId}", userCompany.Id);
             }
 
             if (role != null)
             {
-                await _roleFactory.SoftDeleteAsync(role.Id!);
+                var __r = await _context.Set<Role>().FirstOrDefaultAsync(x => x.Id == role.Id!);
+                if (__r != null) { _context.Set<Role>().Remove(__r); await _context.SaveChangesAsync(); }
                 _logger.LogInformation("回滚：删除角色 {RoleId}", role.Id);
             }
 
             if (company != null)
             {
-                await _companyFactory.SoftDeleteAsync(company.Id!);
+                var __c = await _context.Set<Company>().FirstOrDefaultAsync(x => x.Id == company.Id!);
+                if (__c != null) { _context.Set<Company>().Remove(__c); await _context.SaveChangesAsync(); }
                 _logger.LogInformation("回滚：删除企业 {CompanyId}", company.Id);
             }
 
             if (user != null)
             {
-                await _userFactory.SoftDeleteAsync(user.Id!);
+                var __u = await _context.Set<User>().FirstOrDefaultAsync(x => x.Id == user.Id!);
+                if (__u != null) { _context.Set<User>().Remove(__u); await _context.SaveChangesAsync(); }
                 _logger.LogInformation("回滚：删除用户 {UserId}", user.Id);
             }
 
@@ -589,10 +567,11 @@ public class AuthService : IAuthService
                 IsActive = true
             };
 
-            await _companyFactory.CreateAsync(company);
+            await _context.Set<Company>().AddAsync(company);
+            await _context.SaveChangesAsync();
             _logger.LogInformation("创建个人企业: {CompanyName} ({CompanyCode}), CreatedBy: {CreatedBy}", company.Name, company.Code, company.CreatedBy);
 
-            var allMenus = await _menuFactory.FindAsync(m => m.IsEnabled == true);
+            var allMenus = await _context.Set<Menu>().Where(m => m.IsEnabled == true).ToListAsync();
             var allMenuIds = allMenus.Select(m => m.Id!).ToList();
             _logger.LogInformation("获取 {Count} 个全局菜单", allMenuIds.Count);
 
@@ -611,7 +590,8 @@ public class AuthService : IAuthService
                 IsActive = true
             };
 
-            await _roleFactory.CreateAsync(adminRole);
+            await _context.Set<Role>().AddAsync(adminRole);
+            await _context.SaveChangesAsync();
             _logger.LogInformation("创建管理员角色: {RoleId}，分配 {MenuCount} 个菜单", adminRole.Id, allMenuIds.Count);
 
             userCompany = new UserCompany
@@ -624,7 +604,8 @@ public class AuthService : IAuthService
                 JoinedAt = DateTime.UtcNow
             };
 
-            await _userCompanyFactory.CreateAsync(userCompany);
+            await _context.Set<UserCompany>().AddAsync(userCompany);
+            await _context.SaveChangesAsync();
             _logger.LogInformation("创建用户-企业关联: {UserId} -> {CompanyId}", user.Id, company.Id);
 
             return new CompanyCreationResult
@@ -657,10 +638,11 @@ public class AuthService : IAuthService
                 MaxUsers = 50
             };
 
-            await _companyFactory.CreateAsync(company);
+            await _context.Set<Company>().AddAsync(company);
+            await _context.SaveChangesAsync();
             _logger.LogInformation("创建个人企业: {CompanyName} ({CompanyCode}), CreatedBy: {CreatedBy}", company.Name, company.Code, company.CreatedBy);
 
-            var allMenus = await _menuFactory.FindAsync(m => m.IsEnabled == true);
+            var allMenus = await _context.Set<Menu>().Where(m => m.IsEnabled == true).ToListAsync();
             var allMenuIds = allMenus.Select(m => m.Id!).ToList();
             _logger.LogInformation("获取 {Count} 个全局菜单", allMenuIds.Count);
 
@@ -679,7 +661,8 @@ public class AuthService : IAuthService
                 IsActive = true
             };
 
-            await _roleFactory.CreateAsync(adminRole);
+            await _context.Set<Role>().AddAsync(adminRole);
+            await _context.SaveChangesAsync();
             _logger.LogInformation("创建管理员角色: {RoleId}，分配 {MenuCount} 个菜单", adminRole.Id, allMenuIds.Count);
 
             var newUserCompany = new UserCompany
@@ -694,7 +677,8 @@ public class AuthService : IAuthService
                 ApprovedAt = DateTime.UtcNow
             };
 
-            await _userCompanyFactory.CreateAsync(newUserCompany);
+            await _context.Set<UserCompany>().AddAsync(newUserCompany);
+            await _context.SaveChangesAsync();
 
             _logger.LogInformation("个人企业创建完成");
             return company;
@@ -707,26 +691,28 @@ public class AuthService : IAuthService
             {
                 if (user?.Id != null && company?.Id != null)
                 {
-                    var userCompanies = await _userCompanyFactory.FindAsync(uc =>
+                    var userCompanyToDelete = await _context.Set<UserCompany>().FirstOrDefaultAsync(uc =>
                         uc.UserId == user.Id && uc.CompanyId == company.Id);
-                    var userCompanyToDelete = userCompanies.FirstOrDefault();
 
                     if (userCompanyToDelete != null)
                     {
-                        await _userCompanyFactory.SoftDeleteAsync(userCompanyToDelete.Id!);
+                        _context.Set<UserCompany>().Remove(userCompanyToDelete);
+                        await _context.SaveChangesAsync();
                         _logger.LogInformation("已清理用户-企业关联");
                     }
                 }
 
                 if (adminRole?.Id != null)
                 {
-                    await _roleFactory.SoftDeleteAsync(adminRole.Id!);
+                    var __r = await _context.Set<Role>().FirstOrDefaultAsync(r => r.Id == adminRole.Id);
+                    if (__r != null) { _context.Set<Role>().Remove(__r); await _context.SaveChangesAsync(); }
                     _logger.LogInformation("已清理角色");
                 }
 
                 if (company?.Id != null)
                 {
-                    await _companyFactory.SoftDeleteAsync(company.Id!);
+                    var __c = await _context.Set<Company>().FirstOrDefaultAsync(c => c.Id == company.Id);
+                    if (__c != null) { _context.Set<Company>().Remove(__c); await _context.SaveChangesAsync(); }
                     _logger.LogInformation("已清理企业");
                 }
             }
@@ -752,8 +738,7 @@ public class AuthService : IAuthService
             if (string.IsNullOrEmpty(userId))
                 return ServiceResult<bool>.Failure("UNAUTHORIZED", "未授权访问");
 
-            var users = await _userFactory.FindAsync(u => u.Id == userId && u.IsActive == true);
-            var user = users.FirstOrDefault();
+            var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == userId && u.IsActive == true);
             if (user == null)
                 return ServiceResult<bool>.Failure("USER_NOT_FOUND", "用户不存在或已被禁用");
 
@@ -766,10 +751,8 @@ public class AuthService : IAuthService
 
             _validationService.ValidatePassword(newPassword);
 
-            await _userFactory.UpdateAsync(user.Id!, u =>
-            {
-                u.PasswordHash = _passwordHasher.HashPassword(newPassword);
-            });
+            user.PasswordHash = _passwordHasher.HashPassword(newPassword);
+            await _context.SaveChangesAsync();
 
             var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
             var userAgent = _httpContextAccessor.HttpContext?.Request?.Headers["User-Agent"].ToString();
@@ -803,22 +786,20 @@ public class AuthService : IAuthService
             return ServiceResult<RefreshTokenResult>.Failure("REFRESH_TOKEN_USER_NOT_FOUND", "无法从刷新token中获取用户信息");
 
         Expression<Func<RefreshToken, bool>> baseFilter = rt => rt.Token == request.RefreshToken && rt.UserId == userId && rt.IsRevoked == false;
-        var existingToken = (await _refreshTokenFactory.FindWithoutTenantFilterAsync(baseFilter)).FirstOrDefault();
+        var existingToken = await _context.Set<RefreshToken>().IgnoreQueryFilters().Where(baseFilter).FirstOrDefaultAsync();
 
         if (existingToken == null)
         {
-            var userTokens = await _refreshTokenFactory.FindWithoutTenantFilterAsync(rt => rt.UserId == userId && rt.IsRevoked == false);
+            var userTokens = await _context.Set<RefreshToken>().IgnoreQueryFilters().Where(rt => rt.UserId == userId && rt.IsRevoked == false).ToListAsync();
             if (userTokens.Any())
             {
-                await _refreshTokenFactory.UpdateManyAsync(
-                    rt => rt.UserId == userId,
-                    rt =>
-                    {
-                        rt.IsRevoked = true;
-                        rt.RevokedAt = DateTime.UtcNow;
-                        rt.RevokedReason = "检测到旧token重用攻击";
-                    }
-                );
+                foreach(var rt in userTokens)
+                {
+                    rt.IsRevoked = true;
+                    rt.RevokedAt = DateTime.UtcNow;
+                    rt.RevokedReason = "检测到旧token重用攻击";
+                }
+                await _context.SaveChangesAsync();
                 _logger.LogWarning("检测到用户 {UserId} 的旧token重用攻击，已撤销所有token", userId);
             }
             return ServiceResult<RefreshTokenResult>.Failure("REFRESH_TOKEN_REVOKED", "刷新token无效或已被撤销");
@@ -826,17 +807,14 @@ public class AuthService : IAuthService
 
         if (existingToken.ExpiresAt < DateTime.UtcNow)
         {
-            await _refreshTokenFactory.UpdateAsync(existingToken.Id!, rt =>
-            {
-                rt.IsRevoked = true;
-                rt.RevokedAt = DateTime.UtcNow;
-                rt.RevokedReason = "Token已过期";
-            });
+            existingToken.IsRevoked = true;
+            existingToken.RevokedAt = DateTime.UtcNow;
+            existingToken.RevokedReason = "Token已过期";
+            await _context.SaveChangesAsync();
             return ServiceResult<RefreshTokenResult>.Failure("REFRESH_TOKEN_EXPIRED", "刷新token已过期");
         }
 
-        var users = await _userFactory.FindAsync(u => u.Id == userId && u.IsActive == true);
-        var user = users.FirstOrDefault();
+        var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == userId && u.IsActive == true);
         if (user == null)
             return ServiceResult<RefreshTokenResult>.Failure("USER_NOT_FOUND", "用户不存在或已被禁用");
 
@@ -847,12 +825,10 @@ public class AuthService : IAuthService
         var ipAddress = httpContext?.Connection?.RemoteIpAddress?.ToString();
         var userAgent = httpContext?.Request?.Headers["User-Agent"].ToString();
 
-        await _refreshTokenFactory.UpdateAsync(existingToken.Id!, rt =>
-        {
-            rt.IsRevoked = true;
-            rt.RevokedAt = DateTime.UtcNow;
-            rt.RevokedReason = "Token轮换";
-        });
+        existingToken.IsRevoked = true;
+        existingToken.RevokedAt = DateTime.UtcNow;
+        existingToken.RevokedReason = "Token轮换";
+        await _context.SaveChangesAsync();
 
         var refreshTokenExpirationDays = int.Parse(_configuration["Jwt:RefreshTokenExpirationDays"] ?? "7");
         var newRefreshTokenEntity = new RefreshToken
@@ -866,7 +842,8 @@ public class AuthService : IAuthService
             LastUsedAt = DateTime.UtcNow,
             IsRevoked = false
         };
-        await _refreshTokenFactory.CreateAsync(newRefreshTokenEntity);
+        await _context.Set<RefreshToken>().AddAsync(newRefreshTokenEntity);
+        await _context.SaveChangesAsync();
 
         await _userService.LogUserActivityAsync(userId, "refresh_token", "刷新访问token", ipAddress, userAgent);
 
@@ -889,8 +866,7 @@ public class AuthService : IAuthService
     /// <returns>操作结果</returns>
     public async Task<ServiceResult<bool>> SendPasswordResetCodeAsync(SendResetCodeRequest request)
     {
-        var users = await _userFactory.FindAsync(u => u.Email == request.Email && u.IsActive == true);
-        var user = users.FirstOrDefault();
+        var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive == true);
         if (user == null)
             return ServiceResult<bool>.Failure("USER_NOT_FOUND", "该邮箱未绑定任何活动账户，或账户已被禁用");
 
@@ -942,8 +918,7 @@ public class AuthService : IAuthService
         if (cachedCode != request.Code)
             return ServiceResult<bool>.Failure("INVALID_CODE", "验证码不正确");
 
-        var users = await _userFactory.FindAsync(u => u.Email == request.Email && u.IsActive == true);
-        var user = users.FirstOrDefault();
+        var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive == true);
         if (user == null)
             return ServiceResult<bool>.Failure("USER_NOT_FOUND", "该邮箱未绑定任何活动账户");
 
@@ -952,11 +927,9 @@ public class AuthService : IAuthService
 
         // 如果配置了加密服务并且收到了前端原样传来的加密密码（而没有用RSA），解密可能会返回原字符串。
         // 所以，我们需要确保解密后的密码也进行相同的安全校验。
-        
-        await _userFactory.UpdateAsync(user.Id!, u =>
-        {
-            u.PasswordHash = _passwordHasher.HashPassword(newPassword);
-        });
+
+        user.PasswordHash = _passwordHasher.HashPassword(newPassword);
+        await _context.SaveChangesAsync();
 
         // 重置成功后，清除验证码
         _memoryCache.Remove(cacheKey);

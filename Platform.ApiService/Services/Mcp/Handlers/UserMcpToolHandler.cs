@@ -1,6 +1,10 @@
+using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Platform.ApiService.Services.Mcp.Handlers;
 
@@ -9,30 +13,21 @@ namespace Platform.ApiService.Services.Mcp.Handlers;
 /// </summary>
 public class UserMcpToolHandler : McpToolHandlerBase
 {
+    private readonly DbContext _context;
     private readonly IUserService _userService;
     private readonly IRoleService _roleService;
-    private readonly IDataFactory<ChatSession> _sessionFactory;
     private readonly ILogger<UserMcpToolHandler> _logger;
 
-    /// <summary>
-    /// 初始化用户管理 MCP 处理器
-    /// </summary>
-    /// <param name="userService">用户服务</param>
-    /// <param name="roleService">角色服务</param>
-    /// <param name="sessionFactory">聊天会话工厂</param>
-    /// <param name="logger">日志处理器</param>
     public UserMcpToolHandler(
+        DbContext context,
         IUserService userService,
         IRoleService roleService,
-        IDataFactory<ChatSession> sessionFactory,
-        ILogger<UserMcpToolHandler> logger)
-    {
+        ILogger<UserMcpToolHandler> logger
+    ) {
+        _context = context;
         _userService = userService;
         _roleService = roleService;
-        _sessionFactory = sessionFactory;
         _logger = logger;
-
-        // --- 用户管理 ---
 
         RegisterTool("get_users", "分页获取用户列表。关键词：用户,账号,成员,同事",
             ObjectSchema(MergeProperties(new Dictionary<string, object>
@@ -108,12 +103,8 @@ public class UserMcpToolHandler : McpToolHandlerBase
             ObjectSchema(new Dictionary<string, object> { ["id"] = new Dictionary<string, object> { ["type"] = "string" } }, ["id"]),
             async (args, uid) => await _userService.DeleteUserAsync(args.GetValueOrDefault("id")?.ToString() ?? ""));
 
-        // --- 角色管理 ---
-
         RegisterTool("get_roles", "获取所有可用角色列表。关键词：角色,权限组",
             async (args, uid) => await _roleService.GetAllRolesAsync());
-
-        // --- 日志与活动 ---
 
         RegisterTool("get_user_activity_logs", "获取指定用户的活动日志。关键词：操作日志,活动状态",
             ObjectSchema(new Dictionary<string, object>
@@ -125,12 +116,14 @@ public class UserMcpToolHandler : McpToolHandlerBase
                 args["userId"].ToString()!,
                 args.ContainsKey("limit") ? int.Parse(args["limit"].ToString()!) : 50));
 
-        // --- 社交/会话 ---
-
         RegisterTool("get_my_chat_sessions", "获取我参与的所有聊天会话列表。关键词：聊天记录,会话历史",
             async (args, uid) =>
             {
-                var sessions = await _sessionFactory.FindAsync(s => s.Participants.Contains(uid), q => q.OrderByDescending(s => s.LastMessageAt), 100);
+                var sessions = await _context.Set<ChatSession>()
+                    .Where(s => s.Participants.Contains(uid))
+                    .OrderByDescending(s => s.LastMessageAt ?? s.CreatedAt)
+                    .Take(100)
+                    .ToListAsync();
                 return sessions.Select(s => new
                 {
                     s.Id,

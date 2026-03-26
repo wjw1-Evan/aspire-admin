@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Workflow;
@@ -11,26 +12,23 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class BulkOperationService : IBulkOperationService
 {
-    private readonly IDataFactory<BulkOperation> _bulkOperationFactory;
-    private readonly IDataFactory<WorkflowDefinition> _workflowFactory;
+    private readonly DbContext _context;
+
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<BulkOperationService> _logger;
 
     /// <summary>
     /// 初始化批量操作服务
     /// </summary>
-    /// <param name="bulkOperationFactory">批量操作数据工厂</param>
-    /// <param name="workflowFactory">工作流数据工厂</param>
+
     /// <param name="tenantContext">租户上下文</param>
     /// <param name="logger">日志</param>
-    public BulkOperationService(
-        IDataFactory<BulkOperation> bulkOperationFactory,
-        IDataFactory<WorkflowDefinition> workflowFactory,
+    public BulkOperationService(DbContext context,
         ITenantContext tenantContext,
-        ILogger<BulkOperationService> logger)
-    {
-        _bulkOperationFactory = bulkOperationFactory;
-        _workflowFactory = workflowFactory;
+        ILogger<BulkOperationService> logger
+    ) {
+        _context = context;
+        
         _tenantContext = tenantContext;
         _logger = logger;
     }
@@ -44,11 +42,12 @@ public class BulkOperationService : IBulkOperationService
     /// <returns>创建的批量操作</returns>
     public async Task<BulkOperation> CreateBulkOperationAsync(BulkOperationType operationType, List<string> workflowIds, Dictionary<string, object>? parameters = null)
     {
+        
         Expression<Func<WorkflowDefinition, bool>> filter = w =>
             workflowIds.Contains(w.Id!) &&
             w.IsDeleted != true;
 
-        var existingWorkflows = await _workflowFactory.FindAsync(filter);
+        var existingWorkflows = await _context.Set<WorkflowDefinition>().Where(filter).ToListAsync();
         var existingWorkflowIds = existingWorkflows.Select(w => w.Id).ToList();
         var invalidWorkflowIds = workflowIds.Except(existingWorkflowIds.Where(id => id != null).Select(id => id!)).ToList();
 
@@ -66,12 +65,12 @@ public class BulkOperationService : IBulkOperationService
             TotalCount = workflowIds.Count
         };
 
-        var createdOperation = await _bulkOperationFactory.CreateAsync(bulkOperation);
-
+        await _context.Set<BulkOperation>().AddAsync(bulkOperation);
+        await _context.SaveChangesAsync();
         _logger.LogInformation("批量操作已创建: OperationId={OperationId}, Type={OperationType}, WorkflowCount={WorkflowCount}",
-            createdOperation.Id, operationType, workflowIds.Count);
+            bulkOperation.Id, operationType, workflowIds.Count);
 
-        return createdOperation;
+        return bulkOperation;
     }
 
     /// <summary>
@@ -82,7 +81,7 @@ public class BulkOperationService : IBulkOperationService
     /// <returns>是否执行成功</returns>
     public async Task<bool> ExecuteBulkOperationAsync(string operationId, CancellationToken cancellationToken = default)
     {
-        var operation = await _bulkOperationFactory.GetByIdAsync(operationId);
+        var operation = await _context.Set<BulkOperation>().FirstOrDefaultAsync(x => x.Id == operationId);
         if (operation == null)
         {
             _logger.LogWarning("批量操作不存在: OperationId={OperationId}", operationId);
@@ -147,7 +146,7 @@ public class BulkOperationService : IBulkOperationService
     /// <returns>是否取消成功</returns>
     public async Task<bool> CancelBulkOperationAsync(string operationId)
     {
-        var operation = await _bulkOperationFactory.GetByIdAsync(operationId);
+        var operation = await _context.Set<BulkOperation>().FirstOrDefaultAsync(x => x.Id == operationId);
         if (operation == null || !operation.Cancellable)
         {
             return false;
@@ -170,7 +169,7 @@ public class BulkOperationService : IBulkOperationService
     /// <returns>批量操作详情</returns>
     public async Task<BulkOperation?> GetBulkOperationAsync(string operationId)
     {
-        return await _bulkOperationFactory.GetByIdAsync(operationId);
+        return await _context.Set<BulkOperation>().FirstOrDefaultAsync(x => x.Id == operationId);
     }
 
     /// <summary>
@@ -189,7 +188,9 @@ public class BulkOperationService : IBulkOperationService
 
         var orderBy = (IQueryable<BulkOperation> query) => query.OrderByDescending(b => b.CreatedAt);
 
-        var (operations, _) = await _bulkOperationFactory.FindPagedAsync(filter, orderBy, page, pageSize);
+        var __fpQ = _context.Set<BulkOperation>().Where(filter);
+        var _ = await __fpQ.LongCountAsync();
+        var operations = await orderBy(__fpQ).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
         return operations;
     }
 
@@ -209,14 +210,16 @@ public class BulkOperationService : IBulkOperationService
             b.CompletedAt < cutoffDate &&
             b.IsDeleted != true;
 
-        var operationsToDelete = await _bulkOperationFactory.FindAsync(filter);
+        var operationsToDelete = await _context.Set<BulkOperation>().Where(filter).ToListAsync();
         var deletedCount = 0;
 
         foreach (var operation in operationsToDelete)
         {
             if (operation.Id != null)
             {
-                await _bulkOperationFactory.SoftDeleteAsync(operation.Id);
+                            var __sd2 = await _context.Set<BulkOperation>().FirstOrDefaultAsync(x => x.Id == operation.Id);
+            if (__sd2 != null) { __sd2.IsDeleted = true; await _context.SaveChangesAsync(); }
+
                 deletedCount++;
             }
         }
@@ -227,12 +230,16 @@ public class BulkOperationService : IBulkOperationService
 
     private async Task UpdateOperationStatusAsync(string operationId, BulkOperationStatus status, DateTime? startedAt = null, DateTime? completedAt = null)
     {
-        await _bulkOperationFactory.UpdateAsync(operationId, b =>
+        var __entity = await _context.Set<BulkOperation>().FirstOrDefaultAsync(x => x.Id == operationId);
+        if (__entity != null)
         {
-            b.Status = status;
-            if (startedAt.HasValue) b.StartedAt = startedAt.Value;
-            if (completedAt.HasValue) b.CompletedAt = completedAt.Value;
-        });
+    
+            __entity.Status = status;
+            if (startedAt.HasValue) __entity.StartedAt = startedAt.Value;
+            if (completedAt.HasValue) __entity.CompletedAt = completedAt.Value;
+            await _context.SaveChangesAsync();
+        }
+
     }
 
     private async Task ExecuteActivateOperationAsync(BulkOperation operation, CancellationToken cancellationToken)
@@ -243,10 +250,14 @@ public class BulkOperationService : IBulkOperationService
 
             try
             {
-                await _workflowFactory.UpdateAsync(workflowId!, w =>
-                {
-                    w.IsActive = true;
-                });
+                var __entity = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId!);
+        if (__entity != null)
+        {
+    
+                    __entity.IsActive = true;
+            await _context.SaveChangesAsync();
+        }
+
                 operation.SuccessCount++;
                 _logger.LogDebug("工作流激活成功: WorkflowId={WorkflowId}", workflowId);
             }
@@ -274,10 +285,14 @@ public class BulkOperationService : IBulkOperationService
 
             try
             {
-                await _workflowFactory.UpdateAsync(workflowId!, w =>
-                {
-                    w.IsActive = false;
-                });
+                var __entity = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId!);
+        if (__entity != null)
+        {
+    
+                    __entity.IsActive = false;
+            await _context.SaveChangesAsync();
+        }
+
                 operation.SuccessCount++;
                 _logger.LogDebug("工作流停用成功: WorkflowId={WorkflowId}", workflowId);
             }
@@ -307,7 +322,9 @@ public class BulkOperationService : IBulkOperationService
             {
                 if (workflowId != null)
                 {
-                    var result = await _workflowFactory.SoftDeleteAsync(workflowId);
+                    var __sdE = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
+        if (__sdE != null) { __sdE.IsDeleted = true; await _context.SaveChangesAsync(); }
+        var result = __sdE != null;
                     if (result)
                     {
                         operation.SuccessCount++;
@@ -353,10 +370,14 @@ public class BulkOperationService : IBulkOperationService
 
             try
             {
-                await _workflowFactory.UpdateAsync(workflowId!, w =>
-                {
-                    w.Category = category;
-                });
+                var __entity = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId!);
+        if (__entity != null)
+        {
+    
+                    __entity.Category = category;
+            await _context.SaveChangesAsync();
+        }
+
                 operation.SuccessCount++;
                 _logger.LogDebug("工作流类别更新成功: WorkflowId={WorkflowId}, Category={Category}", workflowId, category);
             }
@@ -380,12 +401,16 @@ public class BulkOperationService : IBulkOperationService
     {
         if (operation.Id == null) return;
 
-        await _bulkOperationFactory.UpdateAsync(operation.Id, b =>
+        var __entity = await _context.Set<BulkOperation>().FirstOrDefaultAsync(x => x.Id == operation.Id);
+        if (__entity != null)
         {
-            b.ProcessedCount = operation.ProcessedCount;
-            b.SuccessCount = operation.SuccessCount;
-            b.FailureCount = operation.FailureCount;
-            b.Errors = operation.Errors;
-        });
+    
+            __entity.ProcessedCount = operation.ProcessedCount;
+            __entity.SuccessCount = operation.SuccessCount;
+            __entity.FailureCount = operation.FailureCount;
+            __entity.Errors = operation.Errors;
+            await _context.SaveChangesAsync();
+        }
+
     }
 }

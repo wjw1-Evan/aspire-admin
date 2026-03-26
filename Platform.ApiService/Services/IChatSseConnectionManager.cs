@@ -52,4 +52,3 @@ public interface IChatSseConnectionManager : ISingletonDependency
     /// <param name="message">消息内容（已格式化的 SSE 消息）</param>
     Task SendToUserAsync(string userId, string message);
 }
-

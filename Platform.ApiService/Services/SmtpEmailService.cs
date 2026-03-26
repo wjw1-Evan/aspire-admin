@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
@@ -16,18 +17,19 @@ public class SmtpEmailService : ISmtpEmailService
 {
     private readonly SmtpOptions _options;
     private readonly ILogger<SmtpEmailService> _logger;
-    private readonly IDataFactory<EmailLog> _dataFactory;
+    private readonly DbContext _context;
     private readonly IEmailBackgroundQueue _queue;
 
     public SmtpEmailService(
         IOptions<SmtpOptions> options, 
         ILogger<SmtpEmailService> logger,
-        IDataFactory<EmailLog> dataFactory,
+        DbContext context,
         IEmailBackgroundQueue queue)
     {
+        _context = context;
         _options = options.Value;
         _logger = logger;
-        _dataFactory = dataFactory;
+        
         _queue = queue;
     }
 
@@ -47,7 +49,8 @@ public class SmtpEmailService : ISmtpEmailService
             Status = EmailStatus.Pending
         };
 
-        await _dataFactory.CreateAsync(log);
+        await _context.Set<EmailLog>().AddAsync(log);
+        await _context.SaveChangesAsync();
 
         // 2. 推入后台队列
         await _queue.QueueEmailAsync(new EmailTaskItem(log.Id, toEmail, subject, htmlBody));

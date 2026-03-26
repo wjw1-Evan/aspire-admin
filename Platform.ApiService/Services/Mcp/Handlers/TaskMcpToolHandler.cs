@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using Microsoft.Extensions.Logging;
@@ -9,7 +10,8 @@ namespace Platform.ApiService.Services.Mcp.Handlers;
 /// </summary>
 public class TaskMcpToolHandler : McpToolHandlerBase
 {
-    private readonly IDataFactory<AppUser> _userFactory;
+    private readonly DbContext _context;
+
     private readonly ITaskService _taskService;
     private readonly IProjectService _projectService;
     private readonly ILogger<TaskMcpToolHandler> _logger;
@@ -17,17 +19,16 @@ public class TaskMcpToolHandler : McpToolHandlerBase
     /// <summary>
     /// 初始化任务与项目管理 MCP 处理器
     /// </summary>
-    /// <param name="userFactory">用户数据工厂</param>
     /// <param name="taskService">任务服务</param>
     /// <param name="projectService">项目服务</param>
     /// <param name="logger">日志处理器</param>
-    public TaskMcpToolHandler(
-        IDataFactory<AppUser> userFactory,
+    public TaskMcpToolHandler(DbContext context,
         ITaskService taskService,
         IProjectService projectService,
-        ILogger<TaskMcpToolHandler> logger)
-    {
-        _userFactory = userFactory;
+        ILogger<TaskMcpToolHandler> logger
+    ) {
+        _context = context;
+        
         _taskService = taskService;
         _projectService = projectService;
         _logger = logger;
@@ -171,7 +172,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
 
     private async Task<object?> HandleGetTasksAsync(Dictionary<string, object> arguments, string currentUserId)
     {
-        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        var currentUser = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == currentUserId);
         var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
         var request = new TaskQueryRequest
         {
@@ -346,7 +347,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
 
     private async Task<object?> HandleGetTaskStatisticsAsync(Dictionary<string, object> arguments, string currentUserId)
     {
-        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        var currentUser = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == currentUserId);
         var userId = arguments.ContainsKey("userId") && !string.IsNullOrEmpty(arguments["userId"]?.ToString()) ? arguments["userId"]?.ToString() : null;
         var statistics = await _taskService.GetTaskStatisticsAsync(userId);
 
@@ -393,7 +394,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
 
     private async Task<object?> HandleGetMyTasksAsync(Dictionary<string, object> arguments, string currentUserId)
     {
-        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        var currentUser = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == currentUserId);
         if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
             return new { error = "无法确定当前企业" };
 
@@ -435,7 +436,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
 
     private async Task<object?> HandleGetProjectsAsync(Dictionary<string, object> arguments, string currentUserId)
     {
-        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
+        var currentUser = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == currentUserId);
         if (currentUser == null || string.IsNullOrEmpty(currentUser.CurrentCompanyId))
             return new { error = "无法确定当前企业" };
 

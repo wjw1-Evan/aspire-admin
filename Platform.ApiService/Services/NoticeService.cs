@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
@@ -9,27 +10,25 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class NoticeService : INoticeService
 {
-    private readonly IDataFactory<NoticeIconItem> _noticeFactory;
+    private readonly DbContext _context;
 
     /// <summary>
     /// 初始化通知服务
     /// </summary>
-    /// <param name="noticeFactory">通知数据操作工厂</param>
-    public NoticeService(
-        IDataFactory<NoticeIconItem> noticeFactory)
+    public NoticeService(DbContext context)
     {
-        _noticeFactory = noticeFactory;
+        _context = context;
+        
     }
 
     /// <summary>
     /// 获取当前用户的通知列表
     /// </summary>
-    /// <returns>通知列表响应</returns>
     public async Task<NoticeIconListResponse> GetNoticesAsync()
     {
-        // 仅返回当前企业的未删除通知，按时间倒序（工厂自动叠加租户与软删除过滤）
-        var notices = await _noticeFactory.FindAsync(
-            orderBy: query => query.OrderByDescending(n => n.Datetime));
+        var notices = await _context.Set<NoticeIconItem>()
+            .OrderByDescending(n => n.Datetime)
+            .ToListAsync();
 
         return new NoticeIconListResponse
         {
@@ -42,18 +41,14 @@ public class NoticeService : INoticeService
     /// <summary>
     /// 根据ID获取通知详情
     /// </summary>
-    /// <param name="id">通知ID</param>
-    /// <returns>通知信息，如果不存在则返回 null</returns>
     public async Task<NoticeIconItem?> GetNoticeByIdAsync(string id)
     {
-        return await _noticeFactory.GetByIdAsync(id);
+        return await _context.Set<NoticeIconItem>().FirstOrDefaultAsync(x => x.Id == id);
     }
 
     /// <summary>
     /// 创建通知
     /// </summary>
-    /// <param name="request">创建通知请求</param>
-    /// <returns>创建的通知信息</returns>
     public async Task<NoticeIconItem> CreateNoticeAsync(CreateNoticeRequest request)
     {
         var notice = new NoticeIconItem
@@ -68,7 +63,9 @@ public class NoticeService : INoticeService
             Datetime = request.Datetime ?? DateTime.UtcNow
         };
 
-        return await _noticeFactory.CreateAsync(notice);
+        await _context.Set<NoticeIconItem>().AddAsync(notice);
+        await _context.SaveChangesAsync();
+        return notice;
     }
 
     /// <summary>
@@ -88,7 +85,9 @@ public class NoticeService : INoticeService
             Datetime = request.Datetime ?? DateTime.UtcNow
         };
 
-        return await _noticeFactory.CreateAsync(notice);
+        await _context.Set<NoticeIconItem>().AddAsync(notice);
+        await _context.SaveChangesAsync();
+        return notice;
     }
 
     /// <summary>
@@ -96,47 +95,50 @@ public class NoticeService : INoticeService
     /// </summary>
     public async Task<NoticeIconItem?> UpdateNoticeAsync(string id, UpdateNoticeRequest request)
     {
-        // 仅允许更新当前企业的通知（工厂自动叠加租户过滤）
-        return await _noticeFactory.UpdateAsync(id, entity =>
-        {
-            if (!string.IsNullOrEmpty(request.Title))
-                entity.Title = request.Title;
+        var entity = await _context.Set<NoticeIconItem>().FirstOrDefaultAsync(x => x.Id == id);
+        if (entity == null) return null;
 
-            if (!string.IsNullOrEmpty(request.Description))
-                entity.Description = request.Description;
+        if (!string.IsNullOrEmpty(request.Title))
+            entity.Title = request.Title;
 
-            if (!string.IsNullOrEmpty(request.Avatar))
-                entity.Avatar = request.Avatar;
+        if (!string.IsNullOrEmpty(request.Description))
+            entity.Description = request.Description;
 
-            if (!string.IsNullOrEmpty(request.Status))
-                entity.Status = request.Status;
+        if (!string.IsNullOrEmpty(request.Avatar))
+            entity.Avatar = request.Avatar;
 
-            if (!string.IsNullOrEmpty(request.Extra))
-                entity.Extra = request.Extra;
+        if (!string.IsNullOrEmpty(request.Status))
+            entity.Status = request.Status;
 
-            if (request.Type.HasValue)
-                entity.Type = request.Type.Value;
+        if (!string.IsNullOrEmpty(request.Extra))
+            entity.Extra = request.Extra;
 
-            if (request.ClickClose.HasValue)
-                entity.ClickClose = request.ClickClose.Value;
+        if (request.Type.HasValue)
+            entity.Type = request.Type.Value;
 
-            if (request.Read.HasValue)
-                entity.Read = request.Read.Value;
+        if (request.ClickClose.HasValue)
+            entity.ClickClose = request.ClickClose.Value;
 
-            if (request.Datetime.HasValue)
-                entity.Datetime = request.Datetime.Value;
-        });
+        if (request.Read.HasValue)
+            entity.Read = request.Read.Value;
+
+        if (request.Datetime.HasValue)
+            entity.Datetime = request.Datetime.Value;
+
+        await _context.SaveChangesAsync();
+        return entity;
     }
 
     /// <summary>
     /// 删除通知
     /// </summary>
-    /// <param name="id">通知ID</param>
-    /// <returns>是否成功删除</returns>
     public async Task<bool> DeleteNoticeAsync(string id)
     {
-        // 仅允许删除当前企业的通知（工厂自动叠加租户过滤）
-        return await _noticeFactory.SoftDeleteAsync(id);
+        var entity = await _context.Set<NoticeIconItem>().FirstOrDefaultAsync(x => x.Id == id);
+        if (entity == null) return false;
+        entity.IsDeleted = true;
+        await _context.SaveChangesAsync();
+        return true;
     }
 
     /// <summary>
@@ -144,25 +146,22 @@ public class NoticeService : INoticeService
     /// </summary>
     public async Task<bool> MarkAsReadAsync(string id)
     {
-        // 仅允许标记当前企业的通知（工厂自动叠加租户过滤）
-        var updated = await _noticeFactory.UpdateAsync(id, entity =>
-        {
-            entity.Read = true;
-        });
-
-        return updated != null;
+        var entity = await _context.Set<NoticeIconItem>().FirstOrDefaultAsync(x => x.Id == id);
+        if (entity == null) return false;
+        entity.Read = true;
+        await _context.SaveChangesAsync();
+        return true;
     }
 
     /// <summary>
     /// 标记所有通知为已读
     /// </summary>
-    /// <returns>是否成功标记</returns>
     public async Task<bool> MarkAllAsReadAsync()
     {
-        // 仅作用于当前企业的未读通知（工厂自动叠加租户过滤）
-        var result = await _noticeFactory.UpdateManyAsync(
-            n => !n.Read,
-            entity => entity.Read = true);
-        return result > 0;
+        var unreadItems = await _context.Set<NoticeIconItem>().Where(n => !n.Read).ToListAsync();
+        foreach (var item in unreadItems)
+            item.Read = true;
+        await _context.SaveChangesAsync();
+        return unreadItems.Count > 0;
     }
 }

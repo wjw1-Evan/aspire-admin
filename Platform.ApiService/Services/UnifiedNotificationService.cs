@@ -1,6 +1,12 @@
+using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Threading.Tasks;
 
 namespace Platform.ApiService.Services;
 
@@ -9,26 +15,16 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class UnifiedNotificationService : IUnifiedNotificationService
 {
-    private readonly IDataFactory<NoticeIconItem> _noticeFactory;
-    private readonly IDataFactory<AppUser> _userFactory;
+    private readonly DbContext _context;
     private readonly ITenantContext _tenantContext;
 
-    /// <summary>
-    /// 初始化统一通知服务
-    /// </summary>
-    public UnifiedNotificationService(
-        IDataFactory<NoticeIconItem> noticeFactory,
-        IDataFactory<AppUser> userFactory,
-        ITenantContext tenantContext)
+    public UnifiedNotificationService(DbContext context, ITenantContext tenantContext)
     {
-        _noticeFactory = noticeFactory;
-        _userFactory = userFactory;
+        _context = context;
         _tenantContext = tenantContext;
     }
 
-    /// <summary>
-    /// 获取统一的通知/待办/任务中心数据
-    /// </summary>
+    /// <inheritdoc/>
     public async Task<UnifiedNotificationListResponse> GetUnifiedNotificationsAsync(
         int page = 1,
         int pageSize = 10,
@@ -40,8 +36,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
         var applyTaskVisibility = filterTypeLower is "all" or "unread";
         var onlyMyTasks = filterTypeLower == "task";
 
-        // 构建过滤器（LINQ）
-        System.Linq.Expressions.Expression<Func<NoticeIconItem, bool>> BuildFilter(bool unreadOnly)
+        Expression<Func<NoticeIconItem, bool>> BuildFilter(bool unreadOnly)
         {
             return n =>
                 (filterTypeLower == "notification" ? n.Type == NoticeIconItemType.Notification :
@@ -56,23 +51,18 @@ public class UnifiedNotificationService : IUnifiedNotificationService
                 (!unreadOnly || !n.Read);
         }
 
-        var filter = BuildFilter(unreadOnly: false);
+        var query = _context.Set<NoticeIconItem>().Where(BuildFilter(false));
 
-        // 构建排序条件
-        Func<IQueryable<NoticeIconItem>, IOrderedQueryable<NoticeIconItem>> sort = sortBy switch
+        query = sortBy switch
         {
-            "priority" => query => query.OrderByDescending(n => n.Datetime),
-            "dueDate" => query => query
-                .OrderBy(n => n.TodoDueDate)
-                .ThenByDescending(n => n.Datetime),
-            _ => query => query.OrderByDescending(n => n.Datetime)
+            "priority" => query.OrderByDescending(n => n.Datetime),
+            "dueDate" => query.OrderBy(n => n.TodoDueDate).ThenByDescending(n => n.Datetime),
+            _ => query.OrderByDescending(n => n.Datetime)
         };
 
-        // 获取分页数据与总数
-        var (items, total) = await _noticeFactory.FindPagedAsync(filter, sort, page, pageSize);
-
-        // 获取未读数量（与列表相同的可见性规则）
-        var unreadCount = await _noticeFactory.CountAsync(BuildFilter(unreadOnly: true));
+        var total = await query.LongCountAsync();
+        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var unreadCount = await _context.Set<NoticeIconItem>().LongCountAsync(BuildFilter(true));
 
         return new UnifiedNotificationListResponse
         {
@@ -85,102 +75,51 @@ public class UnifiedNotificationService : IUnifiedNotificationService
         };
     }
 
-    /// <summary>
-    /// 获取待办项列表
-    /// </summary>
-    public async Task<TodoListResponse> GetTodosAsync(
-        int page = 1,
-        int pageSize = 10,
-        string sortBy = "dueDate")
+    /// <inheritdoc/>
+    public async Task<TodoListResponse> GetTodosAsync(int page = 1, int pageSize = 10, string sortBy = "dueDate")
     {
-        System.Linq.Expressions.Expression<Func<NoticeIconItem, bool>> filter = n => n.IsTodo;
+        var query = _context.Set<NoticeIconItem>().Where(n => n.IsTodo);
 
-        // 构建排序条件
-        Func<IQueryable<NoticeIconItem>, IOrderedQueryable<NoticeIconItem>> sort = sortBy switch
+        query = sortBy switch
         {
-            "priority" => query => query
-                .OrderByDescending(n => n.TodoPriority ?? 0)
-                .ThenBy(n => n.TodoDueDate),
-            "datetime" => query => query.OrderByDescending(n => n.Datetime),
-            _ => query => query
-                .OrderBy(n => n.TodoDueDate)
-                .ThenByDescending(n => n.Datetime)
+            "priority" => query.OrderByDescending(n => n.TodoPriority ?? 0).ThenBy(n => n.TodoDueDate),
+            "datetime" => query.OrderByDescending(n => n.Datetime),
+            _ => query.OrderBy(n => n.TodoDueDate).ThenByDescending(n => n.Datetime)
         };
 
-        // 获取分页数据
-        var (todos, total) = await _noticeFactory.FindPagedAsync(filter, sort, page, pageSize);
+        var total = await query.LongCountAsync();
+        var todos = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
-        return new TodoListResponse
-        {
-            Todos = todos,
-            Total = (int)total,
-            Page = page,
-            PageSize = pageSize,
-            Success = true
-        };
+        return new TodoListResponse { Todos = todos, Total = (int)total, Page = page, PageSize = pageSize, Success = true };
     }
 
-    /// <summary>
-    /// 获取系统消息列表
-    /// </summary>
-    public async Task<SystemMessageListResponse> GetSystemMessagesAsync(
-        int page = 1,
-        int pageSize = 10)
+    /// <inheritdoc/>
+    public async Task<SystemMessageListResponse> GetSystemMessagesAsync(int page = 1, int pageSize = 10)
     {
-        System.Linq.Expressions.Expression<Func<NoticeIconItem, bool>> filter = n => n.IsSystemMessage;
+        var query = _context.Set<NoticeIconItem>().Where(n => n.IsSystemMessage).OrderByDescending(n => n.Datetime);
+        var total = await query.LongCountAsync();
+        var messages = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
-        // 按时间倒序
-        Func<IQueryable<NoticeIconItem>, IOrderedQueryable<NoticeIconItem>> sort =
-            query => query.OrderByDescending(n => n.Datetime);
-
-        // 获取分页数据
-        var (messages, total) = await _noticeFactory.FindPagedAsync(filter, sort, page, pageSize);
-
-        return new SystemMessageListResponse
-        {
-            Messages = messages,
-            Total = (int)total,
-            Page = page,
-            PageSize = pageSize,
-            Success = true
-        };
+        return new SystemMessageListResponse { Messages = messages, Total = (int)total, Page = page, PageSize = pageSize, Success = true };
     }
 
-    /// <summary>
-    /// 获取任务相关通知列表
-    /// </summary>
-    public async Task<TaskNotificationListResponse> GetTaskNotificationsAsync(
-        int page = 1,
-        int pageSize = 10)
+    /// <inheritdoc/>
+    public async Task<TaskNotificationListResponse> GetTaskNotificationsAsync(int page = 1, int pageSize = 10)
     {
         var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        System.Linq.Expressions.Expression<Func<NoticeIconItem, bool>> filter = n =>
-            n.Type == NoticeIconItemType.Task && n.RelatedUserIds.Contains(currentUserId);
+        var query = _context.Set<NoticeIconItem>()
+            .Where(n => n.Type == NoticeIconItemType.Task && n.RelatedUserIds.Contains(currentUserId))
+            .OrderByDescending(n => n.Datetime);
 
-        // 按时间倒序
-        Func<IQueryable<NoticeIconItem>, IOrderedQueryable<NoticeIconItem>> sort =
-            query => query.OrderByDescending(n => n.Datetime);
+        var total = await query.LongCountAsync();
+        var notifications = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
-        // 获取分页数据
-        var (notifications, total) = await _noticeFactory.FindPagedAsync(filter, sort, page, pageSize);
-
-        return new TaskNotificationListResponse
-        {
-            Notifications = notifications,
-            Total = (int)total,
-            Page = page,
-            PageSize = pageSize,
-            Success = true
-        };
+        return new TaskNotificationListResponse { Notifications = notifications, Total = (int)total, Page = page, PageSize = pageSize, Success = true };
     }
 
-    /// <summary>
-    /// 创建待办项
-    /// </summary>
+    /// <inheritdoc/>
     public async Task<NoticeIconItem> CreateTodoAsync(CreateTodoRequest request)
     {
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-
         var todo = new NoticeIconItem
         {
             Title = request.Title,
@@ -194,61 +133,51 @@ public class UnifiedNotificationService : IUnifiedNotificationService
             ClickClose = false
         };
 
-        return await _noticeFactory.CreateAsync(todo);
+        await _context.Set<NoticeIconItem>().AddAsync(todo);
+        await _context.SaveChangesAsync();
+        return todo;
     }
 
-    /// <summary>
-    /// 更新待办项
-    /// </summary>
+    /// <inheritdoc/>
     public async Task<NoticeIconItem?> UpdateTodoAsync(string id, UpdateTodoRequest request)
     {
-        return await _noticeFactory.UpdateAsync(id, entity =>
-        {
-            if (!string.IsNullOrEmpty(request.Title))
-                entity.Title = request.Title;
+        var todo = await _context.Set<NoticeIconItem>().FirstOrDefaultAsync(x => x.Id == id);
+        if (todo == null) return null;
 
-            if (!string.IsNullOrEmpty(request.Description))
-                entity.Description = request.Description;
+        if (!string.IsNullOrEmpty(request.Title)) todo.Title = request.Title;
+        if (!string.IsNullOrEmpty(request.Description)) todo.Description = request.Description;
+        if (request.Priority.HasValue) todo.TodoPriority = request.Priority;
+        if (request.DueDate.HasValue) todo.TodoDueDate = request.DueDate;
+        if (request.IsCompleted.HasValue) todo.Read = request.IsCompleted.Value;
+        if (request.Tags != null && request.Tags.Count > 0) todo.Extra = string.Join(",", request.Tags);
 
-            if (request.Priority.HasValue)
-                entity.TodoPriority = request.Priority;
-
-            if (request.DueDate.HasValue)
-                entity.TodoDueDate = request.DueDate;
-
-            if (request.IsCompleted.HasValue)
-                entity.Read = request.IsCompleted.Value;
-
-            if (request.Tags != null && request.Tags.Count > 0)
-            {
-                entity.Extra = string.Join(",", request.Tags);
-            }
-        });
+        await _context.SaveChangesAsync();
+        return todo;
     }
 
-    /// <summary>
-    /// 完成待办项
-    /// </summary>
+    /// <inheritdoc/>
     public async Task<bool> CompleteTodoAsync(string id)
     {
-        var result = await _noticeFactory.UpdateAsync(id, entity =>
-        {
-            entity.Read = true;
-        });
-        return result != null;
+        var todo = await _context.Set<NoticeIconItem>().FirstOrDefaultAsync(x => x.Id == id);
+        if (todo == null) return false;
+
+        todo.Read = true;
+        await _context.SaveChangesAsync();
+        return true;
     }
 
-    /// <summary>
-    /// 删除待办项
-    /// </summary>
+    /// <inheritdoc/>
     public async Task<bool> DeleteTodoAsync(string id)
     {
-        return await _noticeFactory.SoftDeleteAsync(id);
+        var todo = await _context.Set<NoticeIconItem>().FirstOrDefaultAsync(x => x.Id == id);
+        if (todo == null) return false;
+
+        todo.IsDeleted = true;
+        await _context.SaveChangesAsync();
+        return true;
     }
 
-    /// <summary>
-    /// 创建任务相关通知
-    /// </summary>
+    /// <inheritdoc/>
     public async Task<NoticeIconItem> CreateTaskNotificationAsync(
         string taskId,
         string taskName,
@@ -259,7 +188,6 @@ public class UnifiedNotificationService : IUnifiedNotificationService
         IEnumerable<string>? relatedUserIds = null,
         string? remarks = null)
     {
-        // 根据操作类型生成标题和描述
         var (title, description) = GenerateTaskNotificationContent(actionType, taskName, remarks);
 
         var notification = new NoticeIconItem
@@ -276,102 +204,69 @@ public class UnifiedNotificationService : IUnifiedNotificationService
             ClickClose = true
         };
 
-        // 如果指定了分配给的用户，添加到相关用户列表
-        if (!string.IsNullOrEmpty(assignedTo))
-        {
-            notification.RelatedUserIds.Add(assignedTo);
-        }
-
-        // 添加额外的相关用户（创建者、参与者等）
+        if (!string.IsNullOrEmpty(assignedTo)) notification.RelatedUserIds.Add(assignedTo);
         if (relatedUserIds != null)
         {
             foreach (var uid in relatedUserIds)
             {
                 if (!string.IsNullOrWhiteSpace(uid) && !notification.RelatedUserIds.Contains(uid))
-                {
                     notification.RelatedUserIds.Add(uid);
-                }
             }
         }
 
-        var created = await _noticeFactory.CreateAsync(notification);
-        return created;
+        await _context.Set<NoticeIconItem>().AddAsync(notification);
+        await _context.SaveChangesAsync();
+        return notification;
     }
 
-    /// <summary>
-    /// 标记通知为已读
-    /// </summary>
+    /// <inheritdoc/>
     public async Task<bool> MarkAsReadAsync(string id)
     {
-        var result = await _noticeFactory.UpdateAsync(id, entity =>
-        {
-            entity.Read = true;
-        });
-        return result != null;
-    }
+        var item = await _context.Set<NoticeIconItem>().FirstOrDefaultAsync(x => x.Id == id);
+        if (item == null) return false;
 
-    /// <summary>
-    /// 标记多个通知为已读
-    /// </summary>
-    public async Task<bool> MarkMultipleAsReadAsync(List<string> ids)
-    {
-        foreach (var id in ids)
-        {
-            await MarkAsReadAsync(id);
-        }
+        item.Read = true;
+        await _context.SaveChangesAsync();
         return true;
     }
 
-    /// <summary>
-    /// 获取未读通知数量
-    /// </summary>
-    public async Task<int> GetUnreadCountAsync()
+    /// <inheritdoc/>
+    public async Task<bool> MarkMultipleAsReadAsync(List<string> ids)
     {
-        return (int)await _noticeFactory.CountAsync(n => !n.Read);
+        var items = await _context.Set<NoticeIconItem>().Where(x => ids.Contains(x.Id!)).ToListAsync();
+        foreach (var item in items) item.Read = true;
+        await _context.SaveChangesAsync();
+        return true;
     }
 
-    /// <summary>
-    /// 获取未读通知数量统计（按类型）
-    /// </summary>
+    /// <inheritdoc/>
+    public async Task<int> GetUnreadCountAsync()
+    {
+        return (int)await _context.Set<NoticeIconItem>().LongCountAsync(n => !n.Read);
+    }
+
+    /// <inheritdoc/>
     public async Task<UnreadCountStatistics> GetUnreadCountStatisticsAsync()
     {
         var uid = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
 
-        // 系统消息未读数（按租户/软删除自动过滤）
-        var systemMessagesCount = (int)await _noticeFactory.CountAsync(n =>
-            !n.Read && n.IsSystemMessage);
-
-        // 普通通知未读数（非任务/消息/系统）
-        var notificationsCount = (int)await _noticeFactory.CountAsync(n =>
-            !n.Read && n.Type == NoticeIconItemType.Notification);
-
-        // 消息未读数
-        var messagesCount = (int)await _noticeFactory.CountAsync(n =>
-            !n.Read && n.Type == NoticeIconItemType.Message);
-
-        // 任务通知未读数（仅统计与当前用户相关的任务通知）
-        var taskNotificationsCount = (int)await _noticeFactory.CountAsync(n =>
-            !n.Read && n.Type == NoticeIconItemType.Task && n.RelatedUserIds.Contains(uid));
-
-        // 待办已下线：不计入统计
-        var todosCount = 0;
-
-        var total = systemMessagesCount + notificationsCount + messagesCount + taskNotificationsCount;
+        var systemMessagesCount = (int)await _context.Set<NoticeIconItem>().LongCountAsync(n => !n.Read && n.IsSystemMessage);
+        var notificationsCount = (int)await _context.Set<NoticeIconItem>().LongCountAsync(n => !n.Read && n.Type == NoticeIconItemType.Notification);
+        var messagesCount = (int)await _context.Set<NoticeIconItem>().LongCountAsync(n => !n.Read && n.Type == NoticeIconItemType.Message);
+        var taskNotificationsCount = (int)await _context.Set<NoticeIconItem>().LongCountAsync(n => !n.Read && n.Type == NoticeIconItemType.Task && n.RelatedUserIds.Contains(uid));
 
         return new UnreadCountStatistics
         {
-            Total = total,
+            Total = systemMessagesCount + notificationsCount + messagesCount + taskNotificationsCount,
             SystemMessages = systemMessagesCount,
             Notifications = notificationsCount,
             Messages = messagesCount,
-            Todos = todosCount,
+            Todos = 0,
             TaskNotifications = taskNotificationsCount
         };
     }
 
-    /// <summary>
-    /// 创建工作流相关通知
-    /// </summary>
+    /// <inheritdoc/>
     public async Task<NoticeIconItem> CreateWorkflowNotificationAsync(
         string workflowInstanceId,
         string documentTitle,
@@ -379,7 +274,6 @@ public class UnifiedNotificationService : IUnifiedNotificationService
         IEnumerable<string> relatedUserIds,
         string? remarks = null)
     {
-        // 根据操作类型生成标题和描述
         var (title, description) = GenerateWorkflowNotificationContent(actionType, documentTitle, remarks);
 
         var notification = new NoticeIconItem
@@ -387,36 +281,28 @@ public class UnifiedNotificationService : IUnifiedNotificationService
             Title = title,
             Description = description,
             Type = NoticeIconItemType.Notification,
-            Extra = workflowInstanceId, // 将工作流实例ID存储在Extra字段中
+            Extra = workflowInstanceId,
             ActionType = actionType,
             Datetime = DateTime.UtcNow,
             Read = false,
             ClickClose = true
         };
 
-        // 添加相关用户
         if (relatedUserIds != null)
         {
             foreach (var uid in relatedUserIds)
             {
                 if (!string.IsNullOrWhiteSpace(uid) && !notification.RelatedUserIds.Contains(uid))
-                {
                     notification.RelatedUserIds.Add(uid);
-                }
             }
         }
 
-        var created = await _noticeFactory.CreateAsync(notification);
-        return created;
+        await _context.Set<NoticeIconItem>().AddAsync(notification);
+        await _context.SaveChangesAsync();
+        return notification;
     }
 
-    /// <summary>
-    /// 根据操作类型生成任务通知内容
-    /// </summary>
-    private (string title, string description) GenerateTaskNotificationContent(
-        string actionType,
-        string taskName,
-        string? remarks)
+    private (string title, string description) GenerateTaskNotificationContent(string actionType, string taskName, string? remarks)
     {
         return actionType switch
         {
@@ -431,13 +317,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
         };
     }
 
-    /// <summary>
-    /// 根据操作类型生成工作流通知内容
-    /// </summary>
-    private (string title, string description) GenerateWorkflowNotificationContent(
-        string actionType,
-        string documentTitle,
-        string? remarks)
+    private (string title, string description) GenerateWorkflowNotificationContent(string actionType, string documentTitle, string? remarks)
     {
         var baseDescription = $"公文 \"{documentTitle}\"";
         var remarkText = string.IsNullOrEmpty(remarks) ? "" : $" ({remarks})";
@@ -456,4 +336,3 @@ public class UnifiedNotificationService : IUnifiedNotificationService
         };
     }
 }
-

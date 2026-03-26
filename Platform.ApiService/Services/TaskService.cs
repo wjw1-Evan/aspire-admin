@@ -18,7 +18,6 @@ public class TaskService : ITaskService
     private readonly IUserService _userService;
     private readonly IUnifiedNotificationService _notificationService;
     private readonly IServiceProvider _serviceProvider;
-    private readonly ITenantContext _tenantContext;
     private readonly ILogger<TaskService> _logger;
 
     /// <summary>
@@ -31,7 +30,6 @@ public class TaskService : ITaskService
         IUserActivityLogService userActivityLogService,
         IUnifiedNotificationService notificationService,
         IServiceProvider serviceProvider,
-        ITenantContext tenantContext,
         ILogger<TaskService> logger)
     {
         _taskFactory = taskFactory;
@@ -39,7 +37,6 @@ public class TaskService : ITaskService
         _userService = userService;
         _notificationService = notificationService;
         _serviceProvider = serviceProvider;
-        _tenantContext = tenantContext;
         _logger = logger;
     }
 

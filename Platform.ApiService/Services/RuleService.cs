@@ -13,38 +13,20 @@ namespace Platform.ApiService.Services;
 public class RuleService : IRuleService
 {
     private readonly IDataFactory<RuleListItem> _ruleFactory;
-    private readonly ITenantContext _tenantContext;
 
     /// <summary>
     /// 初始化规则服务
     /// </summary>
     /// <param name="ruleFactory">规则数据操作工厂</param>
-    /// <param name="tenantContext">租户上下文</param>
     public RuleService(
-        IDataFactory<RuleListItem> ruleFactory,
-        ITenantContext tenantContext)
+        IDataFactory<RuleListItem> ruleFactory)
     {
         _ruleFactory = ruleFactory;
-        _tenantContext = tenantContext;
-    }
-
-    /// <summary>
-    /// 获取当前用户的企业ID（从数据库获取，不使用 JWT token）
-    /// </summary>
-    private async Task<string> GetCurrentCompanyIdAsync()
-    {
-        var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
-        if (string.IsNullOrEmpty(companyId))
-        {
-            throw new UnauthorizedAccessException("未找到当前企业信息");
-        }
-        return companyId;
     }
 
 
     /// <summary>
     /// 获取规则列表
-    /// ✅ 使用数据工厂的自动企业过滤（RuleListItem 实现了 IMultiTenant）
     /// </summary>
     public async Task<RuleListResponse> GetRulesAsync(RuleQueryParams queryParams)
     {
@@ -108,12 +90,8 @@ public class RuleService : IRuleService
     /// <returns>创建的规则信息</returns>
     public async Task<RuleListItem> CreateRuleAsync(CreateRuleRequest request)
     {
-        // 获取当前企业ID进行多租户过滤（从数据库获取，不使用 JWT token）
-        var companyId = await GetCurrentCompanyIdAsync();
-
         var rule = new RuleListItem
         {
-            CompanyId = companyId,
             Key = await GetNextKeyAsync(),
             Name = request.Name ?? string.Empty,
             Desc = request.Desc ?? string.Empty,
@@ -124,7 +102,6 @@ public class RuleService : IRuleService
             Status = request.Status,
             Progress = request.Progress,
             Disabled = request.Disabled
-            // ✅ DatabaseOperationFactory.CreateAsync 会自动设置 IsDeleted = false, CreatedAt, UpdatedAt
         };
 
         await _ruleFactory.CreateAsync(rule);

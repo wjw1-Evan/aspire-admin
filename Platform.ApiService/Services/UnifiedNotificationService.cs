@@ -180,10 +180,6 @@ public class UnifiedNotificationService : IUnifiedNotificationService
     public async Task<NoticeIconItem> CreateTodoAsync(CreateTodoRequest request)
     {
         var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        var currentUser = await _userFactory.GetByIdAsync(currentUserId)
-            ?? throw new UnauthorizedAccessException("未找到当前用户信息");
-        if (string.IsNullOrEmpty(currentUser.CurrentCompanyId))
-            throw new UnauthorizedAccessException("未找到当前企业信息");
 
         var todo = new NoticeIconItem
         {
@@ -195,8 +191,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
             TodoDueDate = request.DueDate,
             Datetime = DateTime.UtcNow,
             Read = false,
-            ClickClose = false,
-            CompanyId = currentUser.CurrentCompanyId
+            ClickClose = false
         };
 
         return await _noticeFactory.CreateAsync(todo);
@@ -264,12 +259,6 @@ public class UnifiedNotificationService : IUnifiedNotificationService
         IEnumerable<string>? relatedUserIds = null,
         string? remarks = null)
     {
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        var currentUser = await _userFactory.GetByIdAsync(currentUserId)
-            ?? throw new UnauthorizedAccessException("未找到当前用户信息");
-        if (string.IsNullOrEmpty(currentUser.CurrentCompanyId))
-            throw new UnauthorizedAccessException("未找到当前企业信息");
-
         // 根据操作类型生成标题和描述
         var (title, description) = GenerateTaskNotificationContent(actionType, taskName, remarks);
 
@@ -284,8 +273,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
             ActionType = actionType,
             Datetime = DateTime.UtcNow,
             Read = false,
-            ClickClose = true,
-            CompanyId = currentUser.CurrentCompanyId
+            ClickClose = true
         };
 
         // 如果指定了分配给的用户，添加到相关用户列表
@@ -391,10 +379,6 @@ public class UnifiedNotificationService : IUnifiedNotificationService
         IEnumerable<string> relatedUserIds,
         string? remarks = null)
     {
-        var finalCompanyId = await _tenantContext.GetCurrentCompanyIdAsync();
-        if (string.IsNullOrEmpty(finalCompanyId))
-            throw new UnauthorizedAccessException("未找到当前企业信息");
-
         // 根据操作类型生成标题和描述
         var (title, description) = GenerateWorkflowNotificationContent(actionType, documentTitle, remarks);
 
@@ -407,8 +391,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
             ActionType = actionType,
             Datetime = DateTime.UtcNow,
             Read = false,
-            ClickClose = true,
-            CompanyId = finalCompanyId
+            ClickClose = true
         };
 
         // 添加相关用户

@@ -16,7 +16,6 @@ public class RoleService : IRoleService
     private readonly IDataFactory<UserCompany> _userCompanyFactory;
     private readonly IDataFactory<Menu> _menuFactory;
     private readonly ILogger<RoleService> _logger;
-    private readonly ITenantContext _tenantContext;
 
     /// <summary>
     /// 初始化角色服务
@@ -26,15 +25,13 @@ public class RoleService : IRoleService
         IDataFactory<AppUser> userFactory,
         IDataFactory<UserCompany> userCompanyFactory,
         IDataFactory<Menu> menuFactory,
-        ILogger<RoleService> logger,
-        ITenantContext tenantContext)
+        ILogger<RoleService> logger)
     {
         _roleFactory = roleFactory;
         _userFactory = userFactory;
         _userCompanyFactory = userCompanyFactory;
         _menuFactory = menuFactory;
         _logger = logger;
-        _tenantContext = tenantContext;
     }
 
 
@@ -128,20 +125,12 @@ public class RoleService : IRoleService
             throw new InvalidOperationException(string.Format(ErrorMessages.ResourceAlreadyExists, "角色名称"));
         }
 
-        // 获取当前企业ID（通过 ITenantContext）
-        var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
-        if (string.IsNullOrEmpty(companyId))
-        {
-            throw new UnauthorizedAccessException("未找到当前企业信息");
-        }
-
         var role = new Role
         {
             Name = request.Name,
             Description = request.Description,
             MenuIds = request.MenuIds,
-            IsActive = request.IsActive,
-            CompanyId = companyId  // 设置企业ID，确保多租户隔离
+            IsActive = request.IsActive
         };
 
         return await _roleFactory.CreateAsync(role);

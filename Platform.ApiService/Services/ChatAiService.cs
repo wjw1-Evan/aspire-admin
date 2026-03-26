@@ -39,7 +39,6 @@ public class ChatAiService : IChatAiService
     private readonly IChatSessionService _sessionService;
     private readonly IMcpService _mcpService;
     private readonly IXiaokeConfigService? _xiaokeConfigService;
-    private readonly ITenantContext _tenantContext;
     private readonly ILogger<ChatAiService> _logger;
 
     /// <summary>
@@ -56,7 +55,6 @@ public class ChatAiService : IChatAiService
     /// <param name="sessionService">会话管理服务</param>
     /// <param name="mcpService">MCP 协议工具服务</param>
     /// <param name="xiaokeConfigService">Xiaoke 配置服务（可选）</param>
-    /// <param name="tenantContext">租户上下文</param>
     /// <param name="logger">日志处理器</param>
     public ChatAiService(
         OpenAIClient openAiClient,
@@ -70,7 +68,6 @@ public class ChatAiService : IChatAiService
         IChatSessionService sessionService,
         IMcpService mcpService,
         IXiaokeConfigService? xiaokeConfigService,
-        ITenantContext tenantContext,
         ILogger<ChatAiService> logger)
     {
         _openAiClient = openAiClient ?? throw new ArgumentNullException(nameof(openAiClient));
@@ -84,7 +81,6 @@ public class ChatAiService : IChatAiService
         _sessionService = sessionService ?? throw new ArgumentNullException(nameof(sessionService));
         _mcpService = mcpService ?? throw new ArgumentNullException(nameof(mcpService));
         _xiaokeConfigService = xiaokeConfigService;
-        _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 

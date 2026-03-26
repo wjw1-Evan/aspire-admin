@@ -13,7 +13,6 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
 {
     private readonly IDataFactory<WorkflowDefinition> _workflowFactory;
     private readonly IDataFactory<WorkflowInstance> _instanceFactory;
-    private readonly ITenantContext _tenantContext;
     private readonly ILogger<WorkflowAnalyticsService> _logger;
 
     /// <summary>
@@ -21,17 +20,14 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
     /// </summary>
     /// <param name="workflowFactory">工作流定义数据工厂</param>
     /// <param name="instanceFactory">工作流实例数据工厂</param>
-    /// <param name="tenantContext">租户上下文</param>
     /// <param name="logger">日志记录器</param>
     public WorkflowAnalyticsService(
         IDataFactory<WorkflowDefinition> workflowFactory,
         IDataFactory<WorkflowInstance> instanceFactory,
-        ITenantContext tenantContext,
         ILogger<WorkflowAnalyticsService> logger)
     {
         _workflowFactory = workflowFactory;
         _instanceFactory = instanceFactory;
-        _tenantContext = tenantContext;
         _logger = logger;
     }
 

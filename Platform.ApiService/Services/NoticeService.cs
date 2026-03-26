@@ -10,23 +10,15 @@ namespace Platform.ApiService.Services;
 public class NoticeService : INoticeService
 {
     private readonly IDataFactory<NoticeIconItem> _noticeFactory;
-    private readonly Platform.ServiceDefaults.Services.IDataFactory<AppUser> _userFactory;
-    private readonly ITenantContext _tenantContext;
 
     /// <summary>
     /// 初始化通知服务
     /// </summary>
     /// <param name="noticeFactory">通知数据操作工厂</param>
-    /// <param name="userFactory">用户数据操作工厂</param>
-    /// <param name="tenantContext">租户上下文</param>
     public NoticeService(
-        IDataFactory<NoticeIconItem> noticeFactory,
-        Platform.ServiceDefaults.Services.IDataFactory<AppUser> userFactory,
-        ITenantContext tenantContext)
+        IDataFactory<NoticeIconItem> noticeFactory)
     {
         _noticeFactory = noticeFactory;
-        _userFactory = userFactory;
-        _tenantContext = tenantContext;
     }
 
     /// <summary>
@@ -64,13 +56,6 @@ public class NoticeService : INoticeService
     /// <returns>创建的通知信息</returns>
     public async Task<NoticeIconItem> CreateNoticeAsync(CreateNoticeRequest request)
     {
-        // 按规范：从 ITenantContext 获取当前用户的企业ID
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        var currentUser = await _userFactory.GetByIdAsync(currentUserId)
-            ?? throw new UnauthorizedAccessException("未找到当前用户信息");
-        if (string.IsNullOrEmpty(currentUser.CurrentCompanyId))
-            throw new UnauthorizedAccessException("未找到当前企业信息");
-
         var notice = new NoticeIconItem
         {
             Title = request.Title ?? string.Empty,
@@ -80,8 +65,7 @@ public class NoticeService : INoticeService
             Extra = request.Extra,
             Type = request.Type,
             ClickClose = request.ClickClose,
-            Datetime = request.Datetime ?? DateTime.UtcNow,
-            CompanyId = currentUser.CurrentCompanyId
+            Datetime = request.Datetime ?? DateTime.UtcNow
         };
 
         return await _noticeFactory.CreateAsync(notice);

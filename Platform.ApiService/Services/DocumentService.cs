@@ -233,9 +233,6 @@ public class DocumentService : IDocumentService
     /// </summary>
     public async Task<Document> CreateDocumentAsync(CreateDocumentRequest request)
     {
-        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? throw new InvalidOperationException("COMPANY_NOT_FOUND");
-
         var sanitizedFormData = request.FormData != null ? SerializationExtensions.SanitizeDictionary(request.FormData) : new Dictionary<string, object>();
 
         var document = new Document
@@ -246,8 +243,7 @@ public class DocumentService : IDocumentService
             Category = request.Category,
             Status = DocumentStatus.Draft,
             AttachmentIds = request.AttachmentIds ?? new List<string>(),
-            FormData = sanitizedFormData,
-            CompanyId = companyId
+            FormData = sanitizedFormData
         };
 
         return await _documentFactory.CreateAsync(document);
@@ -258,18 +254,10 @@ public class DocumentService : IDocumentService
     /// </summary>
     public async Task<Document?> UpdateDocumentAsync(string id, UpdateDocumentRequest request)
     {
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        
         var document = await _documentFactory.GetByIdAsync(id);
         if (document == null)
         {
             return null;
-        }
-
-        // 验证是否是文档创建者
-        if (document.CreatedBy != currentUserId)
-        {
-            throw new UnauthorizedAccessException("无权修改他人的公文");
         }
 
         // 只有草稿状态的公文可以修改
@@ -342,10 +330,7 @@ public class DocumentService : IDocumentService
     /// </summary>
     public async Task<(List<Document> items, long total)> GetDocumentsAsync(DocumentQueryParams query)
     {
-        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? throw new InvalidOperationException("COMPANY_NOT_FOUND");
-
-        Expression<Func<Document, bool>> filter = d => d.CompanyId == companyId;
+        Expression<Func<Document, bool>> filter = d => true;
 
         // 关键词搜索
         if (!string.IsNullOrEmpty(query.Keyword))
@@ -381,26 +366,31 @@ public class DocumentService : IDocumentService
         // 筛选类型
         if (!string.IsNullOrEmpty(query.FilterType))
         {
+            var userId = _tenantContext.GetCurrentUserId();
             switch (query.FilterType.ToLower())
             {
                 case "my":
-                    filter = filter.And(d => d.CreatedBy == userId);
+                    if (!string.IsNullOrEmpty(userId))
+                        filter = filter.And(d => d.CreatedBy == userId);
                     break;
 
                 case "pending":
                     filter = filter.And(d => d.Status == DocumentStatus.Approving);
                     // 审批节点挂起时状态为 Waiting，需同时匹配 Running 和 Waiting
-                    var pendingInstances = await _instanceFactory.FindAsync(i =>
-                        (i.Status == WorkflowStatus.Running || i.Status == WorkflowStatus.Waiting) &&
-                        i.CurrentApproverIds.Contains(userId));
-                    var instanceIds = pendingInstances.Select(i => i.Id).ToList();
-                    if (instanceIds.Any())
+                    if (!string.IsNullOrEmpty(userId))
                     {
-                        filter = filter.And(d => d.WorkflowInstanceId != null && instanceIds.Contains(d.WorkflowInstanceId));
-                    }
-                    else
-                    {
-                        return (new List<Document>(), 0);
+                        var pendingInstances = await _instanceFactory.FindAsync(i =>
+                            (i.Status == WorkflowStatus.Running || i.Status == WorkflowStatus.Waiting) &&
+                            i.CurrentApproverIds.Contains(userId));
+                        var instanceIds = pendingInstances.Select(i => i.Id).ToList();
+                        if (instanceIds.Any())
+                        {
+                            filter = filter.And(d => d.WorkflowInstanceId != null && instanceIds.Contains(d.WorkflowInstanceId));
+                        }
+                        else
+                        {
+                            return (new List<Document>(), 0);
+                        }
                     }
                     break;
 
@@ -426,18 +416,10 @@ public class DocumentService : IDocumentService
     /// </summary>
     public async Task<bool> DeleteDocumentAsync(string id)
     {
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        
         var document = await _documentFactory.GetByIdAsync(id);
         if (document == null)
         {
             return false;
-        }
-
-        // 验证是否是文档创建者
-        if (document.CreatedBy != currentUserId)
-        {
-            throw new UnauthorizedAccessException("无权删除他人的公文");
         }
 
         // 只有草稿状态的公文可以删除
@@ -466,7 +448,6 @@ public class DocumentService : IDocumentService
             throw new InvalidOperationException("只有草稿状态的公文可以提交");
         }
 
-        // 获取当前用户ID
         var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
 
         // 启动工作流（合并文档中的 FormData 和 提交时传递的变量）
@@ -520,7 +501,6 @@ public class DocumentService : IDocumentService
         }
 
         var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
 
         await using var fileStream = file.OpenReadStream();
 
@@ -539,7 +519,6 @@ public class DocumentService : IDocumentService
 
         var metadata = new Dictionary<string, object>
         {
-            { "companyId", companyId ?? string.Empty },
             { "uploaderId", userId },
             { "mimeType", file.ContentType ?? "application/octet-stream" },
             { "size", file.Length },
@@ -649,8 +628,6 @@ public class DocumentService : IDocumentService
             throw new InvalidOperationException($"必填字段缺失: {string.Join(", ", missing)}");
         }
 
-        var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
-
         // 构造 FormData（考虑 DataScopeKey）
         Dictionary<string, object> formDataToSave;
         if (!string.IsNullOrWhiteSpace(binding.DataScopeKey))
@@ -678,8 +655,7 @@ public class DocumentService : IDocumentService
             Category = definition.Category,
             Status = DocumentStatus.Draft,
             AttachmentIds = attachmentIds ?? new List<string>(),
-            FormData = formDataToSave,
-            CompanyId = companyId ?? string.Empty
+            FormData = formDataToSave
         };
 
         document = await _documentFactory.CreateAsync(document);
@@ -690,10 +666,9 @@ public class DocumentService : IDocumentService
     /// <summary>
     /// 解析审批人列表（与 WorkflowEngine 中的逻辑相同）
     /// </summary>
-    private async Task<List<string>> ResolveApproversAsync(WorkflowInstance instance, List<ApproverRule> rules)
+    private async Task<List<string>> ResolveApproversAsync(WorkflowInstance instance, List<ApproverRule> rules, string companyId)
     {
         var approvers = new List<string>();
-        var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
 
         foreach (var rule in rules)
         {
@@ -742,25 +717,23 @@ public class DocumentService : IDocumentService
     public async Task<DocumentStatisticsResponse> GetStatisticsAsync()
     {
         var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? throw new InvalidOperationException("COMPANY_NOT_FOUND");
-
         // 1. 总公文数
-        var totalDocuments = await _documentFactory.CountAsync(d => d.CompanyId == companyId);
+        var totalDocuments = await _documentFactory.CountAsync(d => true);
 
         // 2. 草稿箱
-        var draftCount = await _documentFactory.CountAsync(d => d.CompanyId == companyId && d.Status == DocumentStatus.Draft);
+        var draftCount = await _documentFactory.CountAsync(d => d.Status == DocumentStatus.Draft);
 
         // 3. 已审批（通过）
-        var approvedCount = await _documentFactory.CountAsync(d => d.CompanyId == companyId && d.Status == DocumentStatus.Approved);
+        var approvedCount = await _documentFactory.CountAsync(d => d.Status == DocumentStatus.Approved);
 
         // 4. 已驳回
-        var rejectedCount = await _documentFactory.CountAsync(d => d.CompanyId == companyId && d.Status == DocumentStatus.Rejected);
+        var rejectedCount = await _documentFactory.CountAsync(d => d.Status == DocumentStatus.Rejected);
 
         // Bug 22 修复：统计审批中文档总数
-        var approvingCount = await _documentFactory.CountAsync(d => d.CompanyId == companyId && d.Status == DocumentStatus.Approving);
+        var approvingCount = await _documentFactory.CountAsync(d => d.Status == DocumentStatus.Approving);
 
         // 5. 我发起的
-        var myCreatedCount = await _documentFactory.CountAsync(d => d.CompanyId == companyId && d.CreatedBy == userId);
+        var myCreatedCount = await _documentFactory.CountAsync(d => d.CreatedBy == userId);
 
         // 6. 待审批
         long pendingCount = 0;
@@ -775,7 +748,6 @@ public class DocumentService : IDocumentService
             if (instanceIds.Any())
             {
                 pendingCount = await _documentFactory.CountAsync(d =>
-                    d.CompanyId == companyId &&
                     d.Status == DocumentStatus.Approving &&
                     d.WorkflowInstanceId != null &&
                     instanceIds.Contains(d.WorkflowInstanceId));

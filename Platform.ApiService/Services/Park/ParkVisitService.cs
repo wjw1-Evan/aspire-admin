@@ -21,7 +21,6 @@ public class ParkVisitService : IParkVisitService
     private readonly IDataFactory<ParkTenant> _tenantFactory;
     private readonly OpenAIClient _openAiClient;
     private readonly AiCompletionOptions _aiOptions;
-    private readonly ITenantContext _tenantContext;
 
     /// <summary>
     /// 初始化走访管理服务
@@ -34,8 +33,7 @@ public class ParkVisitService : IParkVisitService
         IDataFactory<VisitQuestionnaire> questionnaireFactory,
         IDataFactory<ParkTenant> tenantFactory,
         OpenAIClient openAiClient,
-        IOptions<AiCompletionOptions> aiOptions,
-        ITenantContext tenantContext)
+        IOptions<AiCompletionOptions> aiOptions)
     {
         _logger = logger;
         _visitTaskFactory = visitTaskFactory;
@@ -45,7 +43,6 @@ public class ParkVisitService : IParkVisitService
         _tenantFactory = tenantFactory;
         _openAiClient = openAiClient;
         _aiOptions = aiOptions.Value;
-        _tenantContext = tenantContext;
     }
 
     #region 走访任务
@@ -179,14 +176,8 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<VisitTaskDto?> UpdateVisitTaskAsync(string id, CreateVisitTaskRequest request)
     {
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        
         var task = await _visitTaskFactory.GetByIdAsync(id);
         if (task == null) return null;
-
-        // 验证权限：创建者可以更新
-        if (task.CreatedBy != currentUserId)
-            throw new UnauthorizedAccessException("无权更新此走访任务");
 
         var updatedTask = await _visitTaskFactory.UpdateAsync(id, task =>
         {
@@ -224,15 +215,9 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<bool> DeleteVisitTaskAsync(string id)
     {
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        
         var task = await _visitTaskFactory.GetByIdAsync(id);
         if (task == null)
             return false;
-
-        // 验证权限：创建者可以删除
-        if (task.CreatedBy != currentUserId)
-            throw new UnauthorizedAccessException("无权删除此走访任务");
 
         return await _visitTaskFactory.SoftDeleteAsync(id);
     }
@@ -400,14 +385,8 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<VisitQuestionDto?> UpdateVisitQuestionAsync(string id, VisitQuestionDto request)
     {
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        
         var question = await _questionFactory.GetByIdAsync(id);
         if (question == null) return null;
-
-        // 验证权限：创建者可以更新
-        if (question.CreatedBy != currentUserId)
-            throw new UnauthorizedAccessException("无权更新此问题");
 
         var updatedQuestion = await _questionFactory.UpdateAsync(id, question =>
         {
@@ -426,15 +405,9 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<bool> DeleteVisitQuestionAsync(string id)
     {
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        
         var question = await _questionFactory.GetByIdAsync(id);
         if (question == null)
             return false;
-
-        // 验证权限：创建者可以删除
-        if (question.CreatedBy != currentUserId)
-            throw new UnauthorizedAccessException("无权删除此问题");
 
         return await _questionFactory.SoftDeleteAsync(id);
     }
@@ -491,14 +464,8 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<VisitQuestionnaireDto?> UpdateVisitQuestionnaireAsync(string id, VisitQuestionnaireDto request)
     {
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        
         var questionnaire = await _questionnaireFactory.GetByIdAsync(id);
         if (questionnaire == null) return null;
-
-        // 验证权限：创建者可以更新
-        if (questionnaire.CreatedBy != currentUserId)
-            throw new UnauthorizedAccessException("无权更新此问卷");
 
         var updated = await _questionnaireFactory.UpdateAsync(id, q =>
         {
@@ -526,15 +493,9 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<bool> DeleteVisitQuestionnaireAsync(string id)
     {
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        
         var questionnaire = await _questionnaireFactory.GetByIdAsync(id);
         if (questionnaire == null)
             return false;
-
-        // 验证权限：创建者可以删除
-        if (questionnaire.CreatedBy != currentUserId)
-            throw new UnauthorizedAccessException("无权删除此问卷");
 
         return await _questionnaireFactory.SoftDeleteAsync(id);
     }

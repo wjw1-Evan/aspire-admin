@@ -17,7 +17,6 @@ public class FilePreviewService : IFilePreviewService
     private readonly ICloudStorageService _cloudStorageService;
     private readonly IDataFactory<FileItem> _fileItemFactory;
     private readonly IFileStorageFactory _fileStorageFactory;
-    private readonly ITenantContext _tenantContext;
     private readonly ILogger<FilePreviewService> _logger;
 
     /// <summary>
@@ -60,13 +59,11 @@ public class FilePreviewService : IFilePreviewService
         ICloudStorageService cloudStorageService,
         IDataFactory<FileItem> fileItemFactory,
         IFileStorageFactory fileStorageFactory,
-        ITenantContext tenantContext,
         ILogger<FilePreviewService> logger)
     {
         _cloudStorageService = cloudStorageService ?? throw new ArgumentNullException(nameof(cloudStorageService));
         _fileItemFactory = fileItemFactory ?? throw new ArgumentNullException(nameof(fileItemFactory));
         _fileStorageFactory = fileStorageFactory ?? throw new ArgumentNullException(nameof(fileStorageFactory));
-        _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -126,14 +123,12 @@ public class FilePreviewService : IFilePreviewService
             var thumbnailData = await GenerateThumbnailDataAsync(originalStream, fileItem.MimeType, width, height);
 
             // 上传缩略图到存储
-            var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
             var metadata = new Dictionary<string, object>
             {
                 ["originalFileId"] = fileItemId,
                 ["width"] = width,
                 ["height"] = height,
-                ["generatedAt"] = DateTime.UtcNow,
-                ["companyId"] = companyId ?? string.Empty
+                ["generatedAt"] = DateTime.UtcNow
             };
 
             using var thumbnailStream = new MemoryStream(thumbnailData);

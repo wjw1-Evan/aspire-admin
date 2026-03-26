@@ -15,7 +15,6 @@ public class ParkTenantService : IParkTenantService
     private readonly IDataFactory<LeaseContract> _contractFactory;
     private readonly IDataFactory<PropertyUnit> _unitFactory;
     private readonly IDataFactory<LeasePaymentRecord> _paymentFactory;
-    private readonly ITenantContext _tenantContext;
     private readonly ILogger<ParkTenantService> _logger;
 
     /// <summary>
@@ -26,14 +25,12 @@ public class ParkTenantService : IParkTenantService
         IDataFactory<LeaseContract> contractFactory,
         IDataFactory<PropertyUnit> unitFactory,
         IDataFactory<LeasePaymentRecord> paymentFactory,
-        ITenantContext tenantContext,
         ILogger<ParkTenantService> logger)
     {
         _tenantFactory = tenantFactory;
         _contractFactory = contractFactory;
         _unitFactory = unitFactory;
         _paymentFactory = paymentFactory;
-        _tenantContext = tenantContext;
         _logger = logger;
     }
 
@@ -116,14 +113,8 @@ public class ParkTenantService : IParkTenantService
     /// </summary>
     public async Task<ParkTenantDto?> UpdateTenantAsync(string id, CreateParkTenantRequest request)
     {
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        
         var tenant = await _tenantFactory.GetByIdAsync(id);
         if (tenant == null) return null;
-
-        // 验证权限：创建者可以更新
-        if (tenant.CreatedBy != currentUserId)
-            throw new UnauthorizedAccessException("无权更新此租户");
 
         tenant.TenantName = request.TenantName;
         tenant.ContactPerson = request.ContactPerson;
@@ -144,15 +135,9 @@ public class ParkTenantService : IParkTenantService
     /// </summary>
     public async Task<bool> DeleteTenantAsync(string id)
     {
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        
         var tenant = await _tenantFactory.GetByIdAsync(id);
         if (tenant == null)
             return false;
-
-        // 验证权限：创建者可以删除
-        if (tenant.CreatedBy != currentUserId)
-            throw new UnauthorizedAccessException("无权删除此租户");
 
         // 检查是否有有效合同
         var activeContracts = await _contractFactory.FindAsync(c => c.TenantId == id && c.Status == "Active");
@@ -324,14 +309,8 @@ public class ParkTenantService : IParkTenantService
     /// </summary>
     public async Task<LeaseContractDto?> UpdateContractAsync(string id, CreateLeaseContractRequest request)
     {
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        
         var contract = await _contractFactory.GetByIdAsync(id);
         if (contract == null) return null;
-
-        // 验证权限：创建者可以更新
-        if (contract.CreatedBy != currentUserId)
-            throw new UnauthorizedAccessException("无权更新此合同");
 
         var oldUnitIds = contract.UnitIds ?? new List<string>();
         var newUnitIds = request.UnitIds ?? new List<string>();
@@ -415,14 +394,8 @@ public class ParkTenantService : IParkTenantService
     /// </summary>
     public async Task<bool> DeleteContractAsync(string id)
     {
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        
         var contract = await _contractFactory.GetByIdAsync(id);
         if (contract == null) return false;
-
-        // 验证权限：创建者可以删除
-        if (contract.CreatedBy != currentUserId)
-            throw new UnauthorizedAccessException("无权删除此合同");
 
         if (contract.Status == "Active")
             throw new InvalidOperationException("有效合同无法删除，请先终止合同");

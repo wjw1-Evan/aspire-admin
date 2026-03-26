@@ -119,16 +119,14 @@ public class ChatSessionService : IChatSessionService
         var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         if (currentUserId == participantUserId) throw new InvalidOperationException("无法与自己创建会话");
 
-        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? throw new InvalidOperationException("COMPANY_NOT_FOUND");
         var participants = new[] { currentUserId, participantUserId };
 
-        var existing = await _sessionFactory.FindAsync(s => s.CompanyId == companyId && s.Participants.Count == 2 && participants.All(p => s.Participants.Contains(p)), null, 1);
+        var existing = await _sessionFactory.FindAsync(s => s.Participants.Count == 2 && participants.All(p => s.Participants.Contains(p)), null, 1);
         if (existing.Count > 0) return existing[0];
 
         var participantUsers = await _userFactory.FindAsync(u => participants.Contains(u.Id));
         var session = new ChatSession
         {
-            CompanyId = companyId,
             Participants = participants.ToList(),
             ParticipantNames = participants.ToDictionary(id => id, id => participantUsers.FirstOrDefault(u => u.Id == id)?.Name ?? id),
             ParticipantAvatars = participantUsers.Where(u => !string.IsNullOrWhiteSpace(u.Avatar)).ToDictionary(u => u.Id, u => u.Avatar!),

@@ -17,7 +17,6 @@ public class FileShareService : IFileShareService
 {
     private readonly IDataFactory<Models.FileShare> _shareFactory;
     private readonly ICloudStorageService _cloudStorageService;
-    private readonly ITenantContext _tenantContext;
     private readonly ILogger<FileShareService> _logger;
 
     /// <summary>
@@ -26,12 +25,10 @@ public class FileShareService : IFileShareService
     public FileShareService(
         IDataFactory<Models.FileShare> shareFactory,
         ICloudStorageService cloudStorageService,
-        ITenantContext tenantContext,
         ILogger<FileShareService> logger)
     {
         _shareFactory = shareFactory ?? throw new ArgumentNullException(nameof(shareFactory));
         _cloudStorageService = cloudStorageService ?? throw new ArgumentNullException(nameof(cloudStorageService));
-        _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -118,10 +115,6 @@ public class FileShareService : IFileShareService
         if (share == null)
             throw new ArgumentException("分享不存在", nameof(id));
 
-        var currentUserId = _tenantContext.GetCurrentUserId();
-        if (share.CreatedBy != currentUserId)
-            throw new UnauthorizedAccessException("无权限修改此分享");
-
         await _shareFactory.UpdateAsync(id, entity =>
         {
             if (request.Permission.HasValue) entity.Permission = request.Permission.Value;
@@ -151,10 +144,6 @@ public class FileShareService : IFileShareService
         if (share == null)
             throw new ArgumentException("分享不存在", nameof(id));
 
-        var currentUserId = _tenantContext.GetCurrentUserId();
-        if (share.CreatedBy != currentUserId)
-            throw new UnauthorizedAccessException("无权限删除此分享");
-
         await _shareFactory.SoftDeleteAsync(id);
         _logger.LogInformation("Deleted share {ShareId}", id);
     }
@@ -164,11 +153,7 @@ public class FileShareService : IFileShareService
     /// </summary>
     public async Task<PagedResult<Models.FileShare>> GetMySharesAsync(ShareListQuery query)
     {
-        var currentUserId = _tenantContext.GetCurrentUserId();
-        if (string.IsNullOrEmpty(currentUserId))
-            throw new UnauthorizedAccessException("用户未登录");
-
-        Expression<Func<Models.FileShare, bool>> filter = s => s.CreatedBy == currentUserId;
+        Expression<Func<Models.FileShare, bool>> filter = s => true;
 
         if (query.Type.HasValue)
         {
@@ -227,10 +212,6 @@ public class FileShareService : IFileShareService
     /// </summary>
     public async Task<PagedResult<Models.FileShare>> GetSharedWithMeAsync(ShareListQuery query)
     {
-        var currentUserId = _tenantContext.GetCurrentUserId();
-        if (string.IsNullOrEmpty(currentUserId))
-            throw new UnauthorizedAccessException("用户未登录");
-
         Expression<Func<Models.FileShare, bool>> filter = s => s.Type == ShareType.Internal && s.IsActive;
 
         if (query.Permission.HasValue)
@@ -261,17 +242,14 @@ public class FileShareService : IFileShareService
 
         var (shares, total) = await _shareFactory.FindPagedAsync(
             filter,
-            query => query.OrderByDescending(s => s.CreatedAt),
+            q => q.OrderByDescending(s => s.CreatedAt),
             query.Page,
-            query.PageSize);
-
-        var filteredShares = shares.Where(s => s.AllowedUserIds.Contains(currentUserId)).ToList();
-        var filteredTotal = total;
+            Math.Min(query.PageSize, 100));
 
         return new PagedResult<Models.FileShare>
         {
-            Data = filteredShares,
-            Total = (int)filteredTotal,
+            Data = shares,
+            Total = (int)total,
             Page = query.Page,
             PageSize = query.PageSize
         };
@@ -282,37 +260,43 @@ public class FileShareService : IFileShareService
     /// </summary>
     public async Task<bool> ValidateShareAccessAsync(string shareToken, string? password = null)
     {
-        var share = await GetShareAsync(shareToken);
+        var share = await _shareFactory.FindAsync(s => s.ShareToken == shareToken, limit: 1).ContinueWith(t => t.Result.FirstOrDefault());
+
         if (share == null)
             return false;
 
-        // 检查分享是否激活
-        if (!share.IsActive)
-            return false;
-
-        // 检查分享是否过期
-        if (share.ExpiresAt.HasValue && share.ExpiresAt.Value <= DateTime.UtcNow)
-            return false;
-
-        // 检查密码
+        // 验证密码
         if (!string.IsNullOrEmpty(share.Password))
         {
             if (string.IsNullOrEmpty(password))
                 return false;
 
-            if (!VerifyPassword(password, share.Password))
+            var hashedPassword = HashPassword(password);
+            if (hashedPassword != share.Password)
                 return false;
         }
 
-        // 检查内部分享权限
-        if (share.Type == ShareType.Internal)
-        {
-            var currentUserId = _tenantContext.GetCurrentUserId();
-            if (string.IsNullOrEmpty(currentUserId) || !share.AllowedUserIds.Contains(currentUserId))
-                return false;
-        }
+        // 验证过期时间
+        if (share.ExpiresAt.HasValue && share.ExpiresAt.Value < DateTime.UtcNow)
+            return false;
+
+        // 验证激活状态
+        if (!share.IsActive)
+            return false;
 
         return true;
+    }
+
+    /// <summary>
+    /// 增加分享访问次数
+    /// </summary>
+    public async Task IncrementAccessCountAsync(string shareId)
+    {
+        await _shareFactory.UpdateAsync(shareId, entity =>
+        {
+            entity.AccessCount++;
+            entity.LastAccessedAt = DateTime.UtcNow;
+        });
     }
 
     /// <summary>

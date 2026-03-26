@@ -15,7 +15,6 @@ public class ParkAssetService : IParkAssetService
     private readonly IDataFactory<PropertyUnit> _unitFactory;
     private readonly IDataFactory<LeaseContract> _contractFactory;
     private readonly IDataFactory<ParkTenant> _tenantFactory;
-    private readonly ITenantContext _tenantContext;
 
     /// <summary>
     /// 初始化资产管理服务
@@ -25,15 +24,13 @@ public class ParkAssetService : IParkAssetService
         IDataFactory<Building> buildingFactory,
         IDataFactory<PropertyUnit> unitFactory,
         IDataFactory<LeaseContract> contractFactory,
-        IDataFactory<ParkTenant> tenantFactory,
-        ITenantContext tenantContext)
+        IDataFactory<ParkTenant> tenantFactory)
     {
         _logger = logger;
         _buildingFactory = buildingFactory;
         _unitFactory = unitFactory;
         _contractFactory = contractFactory;
         _tenantFactory = tenantFactory;
-        _tenantContext = tenantContext;
     }
 
 
@@ -128,14 +125,8 @@ public class ParkAssetService : IParkAssetService
     /// </summary>
     public async Task<BuildingDto?> UpdateBuildingAsync(string id, UpdateBuildingRequest request)
     {
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        
         var building = await _buildingFactory.GetByIdAsync(id);
         if (building == null) return null;
-
-        // 验证权限：创建者可以更新
-        if (building.CreatedBy != currentUserId)
-            throw new UnauthorizedAccessException("无权更新此楼宇");
 
         building.Name = request.Name;
         building.Address = request.Address;
@@ -160,15 +151,9 @@ public class ParkAssetService : IParkAssetService
     /// </summary>
     public async Task<bool> DeleteBuildingAsync(string id)
     {
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        
         var building = await _buildingFactory.GetByIdAsync(id);
         if (building == null)
             return false;
-
-        // 验证权限：创建者可以删除
-        if (building.CreatedBy != currentUserId)
-            throw new UnauthorizedAccessException("无权删除此楼宇");
 
         // 检查是否有关联的房源
         var unitCount = await _unitFactory.CountAsync(u => u.BuildingId == id);
@@ -312,14 +297,8 @@ public class ParkAssetService : IParkAssetService
     /// </summary>
     public async Task<PropertyUnitDto?> UpdatePropertyUnitAsync(string id, CreatePropertyUnitRequest request)
     {
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        
         var unit = await _unitFactory.GetByIdAsync(id);
         if (unit == null) return null;
-
-        // 验证权限：创建者可以更新
-        if (unit.CreatedBy != currentUserId)
-            throw new UnauthorizedAccessException("无权更新此房源");
 
         unit.BuildingId = request.BuildingId;
         unit.UnitNumber = request.UnitNumber;
@@ -343,14 +322,8 @@ public class ParkAssetService : IParkAssetService
     /// </summary>
     public async Task<bool> DeletePropertyUnitAsync(string id)
     {
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        
         var unit = await _unitFactory.GetByIdAsync(id);
         if (unit == null) return false;
-
-        // 验证权限：创建者可以删除
-        if (unit.CreatedBy != currentUserId)
-            throw new UnauthorizedAccessException("无权删除此房源");
 
         if (unit.Status == "Rented")
         {

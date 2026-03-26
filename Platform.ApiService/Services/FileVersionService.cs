@@ -14,7 +14,6 @@ public class FileVersionService : IFileVersionService
     private readonly IDataFactory<FileVersion> _versionFactory;
     private readonly ICloudStorageService _cloudStorageService;
     private readonly IFileStorageFactory _fileStorageFactory;
-    private readonly ITenantContext _tenantContext;
     private readonly ILogger<FileVersionService> _logger;
 
     /// <summary>
@@ -24,13 +23,11 @@ public class FileVersionService : IFileVersionService
         IDataFactory<FileVersion> versionFactory,
         ICloudStorageService cloudStorageService,
         IFileStorageFactory fileStorageFactory,
-        ITenantContext tenantContext,
         ILogger<FileVersionService> logger)
     {
         _versionFactory = versionFactory ?? throw new ArgumentNullException(nameof(versionFactory));
         _cloudStorageService = cloudStorageService ?? throw new ArgumentNullException(nameof(cloudStorageService));
         _fileStorageFactory = fileStorageFactory ?? throw new ArgumentNullException(nameof(fileStorageFactory));
-        _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -74,13 +71,11 @@ public class FileVersionService : IFileVersionService
         string gridFSId;
         using (var fileStream = file.OpenReadStream())
         {
-            var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
             var metadata = new Dictionary<string, object>
             {
                 ["originalName"] = file.FileName,
                 ["contentType"] = file.ContentType ?? "application/octet-stream",
                 ["uploadedAt"] = DateTime.UtcNow,
-                ["companyId"] = companyId ?? string.Empty,
                 ["hash"] = fileHash,
                 ["fileItemId"] = fileItemId,
                 ["versionNumber"] = nextVersionNumber
@@ -220,18 +215,6 @@ public class FileVersionService : IFileVersionService
         if (version.IsCurrentVersion)
         {
             throw new InvalidOperationException("不能删除当前版本");
-        }
-
-        // 验证当前用户是否有权限删除版本
-        var currentUserId = _tenantContext.GetCurrentUserId();
-        if (version.CreatedBy != currentUserId)
-        {
-            // 检查是否是文件所有者
-            var fileItem = await _cloudStorageService.GetFileItemAsync(version.FileItemId);
-            if (fileItem?.CreatedBy != currentUserId)
-            {
-                throw new UnauthorizedAccessException("无权限删除此版本");
-            }
         }
 
         // 软删除版本记录

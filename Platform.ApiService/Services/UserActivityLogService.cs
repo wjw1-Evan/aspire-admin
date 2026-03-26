@@ -24,9 +24,9 @@ public class UserActivityLogService : IUserActivityLogService
         IDataFactory<AppUser> userFactory,
         ITenantContext tenantContext)
     {
-        _activityLogFactory = activityLogFactory;
-        _userFactory = userFactory;
-        _tenantContext = tenantContext;
+        _activityLogFactory = activityLogFactory ?? throw new ArgumentNullException(nameof(activityLogFactory));
+        _userFactory = userFactory ?? throw new ArgumentNullException(nameof(userFactory));
+        _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
     }
 
 
@@ -35,9 +35,6 @@ public class UserActivityLogService : IUserActivityLogService
     /// </summary>
     public async Task LogUserActivityAsync(string userId, string action, string description, string? ipAddress = null, string? userAgent = null)
     {
-        // 使用 ITenantContext 获取实时企业 ID
-        var companyId = await _tenantContext.GetCurrentCompanyIdAsync();
-
         // 获取用户信息用于显示名（仅在必要时查询）
         var user = await _userFactory.GetByIdAsync(userId);
         var username = user?.Username ?? user?.Name;
@@ -49,8 +46,7 @@ public class UserActivityLogService : IUserActivityLogService
             Action = action,
             Description = description,
             IpAddress = ipAddress,
-            UserAgent = userAgent,
-            CompanyId = companyId ?? string.Empty
+            UserAgent = userAgent
         };
 
         await _activityLogFactory.CreateAsync(log);
@@ -343,8 +339,6 @@ public class UserActivityLogService : IUserActivityLogService
     /// </summary>
     public async Task LogHttpRequestAsync(LogHttpRequestRequest request)
     {
-        // 优先从请求对象中获取已捕获的企业 ID，如果为空（如匿名请求）再尝试从当前上下文获取
-        var companyId = request.CompanyId ?? await _tenantContext.GetCurrentCompanyIdAsync() ?? "system";
         var pathWithQuery = string.IsNullOrEmpty(request.QueryString)
             ? request.Path
             : $"{request.Path}{request.QueryString}";
@@ -364,8 +358,7 @@ public class UserActivityLogService : IUserActivityLogService
             IpAddress = request.IpAddress,
             UserAgent = request.UserAgent,
             ResponseBody = request.ResponseBody,
-            Metadata = request.Metadata,
-            CompanyId = companyId
+            Metadata = request.Metadata
         };
 
         await _activityLogFactory.CreateAsync(log);

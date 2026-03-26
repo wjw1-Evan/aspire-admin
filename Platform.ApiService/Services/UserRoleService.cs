@@ -12,7 +12,6 @@ public class UserRoleService : IUserRoleService
     private readonly IDataFactory<AppUser> _userFactory;
     private readonly IDataFactory<Role> _roleFactory;
     private readonly IDataFactory<UserCompany> _userCompanyFactory;
-    private readonly ITenantContext _tenantContext;
 
     /// <summary>
     /// 初始化用户角色服务
@@ -20,17 +19,14 @@ public class UserRoleService : IUserRoleService
     /// <param name="userFactory">用户数据库工厂</param>
     /// <param name="roleFactory">角色数据库工厂</param>
     /// <param name="userCompanyFactory">用户企业关联数据库工厂</param>
-    /// <param name="tenantContext">租户上下文</param>
     public UserRoleService(
         IDataFactory<AppUser> userFactory,
         IDataFactory<Role> roleFactory,
-        IDataFactory<UserCompany> userCompanyFactory,
-        ITenantContext tenantContext)
+        IDataFactory<UserCompany> userCompanyFactory)
     {
         _userFactory = userFactory;
         _roleFactory = roleFactory;
         _userCompanyFactory = userCompanyFactory;
-        _tenantContext = tenantContext;
     }
 
     /// <inheritdoc/>
@@ -79,22 +75,11 @@ public class UserRoleService : IUserRoleService
             return new List<string>();
         }
 
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        var currentUser = await _userFactory.GetByIdAsync(currentUserId);
-        var companyId = currentUser?.CurrentCompanyId;
-        if (string.IsNullOrEmpty(companyId))
-        {
-            return roleIds;
-        }
+        var roles = await _roleFactory.FindAsync(r => roleIds.Contains(r.Id!));
 
-        // 查询属于当前企业的角色
-        var validRoles = await _roleFactory.FindAsync(r =>
-            roleIds.Contains(r.Id!) && r.CompanyId == companyId);
-
-        // 验证所有请求的角色都存在且属于当前企业
-        if (validRoles.Count != roleIds.Count)
+        if (roles.Count != roleIds.Count)
         {
-            var invalidRoleIds = roleIds.Except(validRoles.Select(r => r.Id!)).ToList();
+            var invalidRoleIds = roleIds.Except(roles.Select(r => r.Id!)).ToList();
             throw new InvalidOperationException(
                 $"部分角色不存在或不属于当前企业: {string.Join(", ", invalidRoleIds)}"
             );

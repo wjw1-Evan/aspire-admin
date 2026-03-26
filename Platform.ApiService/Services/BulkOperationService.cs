@@ -44,9 +44,6 @@ public class BulkOperationService : IBulkOperationService
     /// <returns>创建的批量操作</returns>
     public async Task<BulkOperation> CreateBulkOperationAsync(BulkOperationType operationType, List<string> workflowIds, Dictionary<string, object>? parameters = null)
     {
-        var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-        var companyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? throw new UnauthorizedAccessException("未找到当前企业信息");
-
         Expression<Func<WorkflowDefinition, bool>> filter = w =>
             workflowIds.Contains(w.Id!) &&
             w.IsDeleted != true;
@@ -66,8 +63,7 @@ public class BulkOperationService : IBulkOperationService
             Status = BulkOperationStatus.Queued,
             TargetWorkflowIds = workflowIds,
             Parameters = parameters ?? new Dictionary<string, object>(),
-            TotalCount = workflowIds.Count,
-            CompanyId = companyId
+            TotalCount = workflowIds.Count
         };
 
         var createdOperation = await _bulkOperationFactory.CreateAsync(bulkOperation);

@@ -58,7 +58,6 @@ public class WorkflowExportImportService : IWorkflowExportImportService
             var exportData = new WorkflowExportData
             {
                 ExportedAt = DateTime.UtcNow,
-                ExportedBy = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED"),
                 Config = config,
                 Workflows = new List<WorkflowExportItem>()
             };
@@ -231,15 +230,12 @@ public class WorkflowExportImportService : IWorkflowExportImportService
                 return result;
             }
 
-            var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
-            var companyId = await _tenantContext.GetCurrentCompanyIdAsync() ?? throw new InvalidOperationException("COMPANY_NOT_FOUND");
-
             // 导入每个工作流
             foreach (var workflowItem in importData.Workflows)
             {
                 try
                 {
-                    await ImportSingleWorkflowAsync(workflowItem, result, overwriteExisting, userId, companyId);
+                    await ImportSingleWorkflowAsync(workflowItem, result, overwriteExisting);
                 }
                 catch (Exception ex)
                 {
@@ -308,7 +304,7 @@ public class WorkflowExportImportService : IWorkflowExportImportService
                 {
                     if (resolutions.TryGetValue(workflowItem.Name, out var resolution))
                     {
-                        await ResolveWorkflowConflictAsync(workflowItem, resolution, result, userId, companyId);
+                        await ResolveWorkflowConflictAsync(workflowItem, resolution, result);
                     }
                     else
                     {
@@ -497,7 +493,7 @@ public class WorkflowExportImportService : IWorkflowExportImportService
     /// <summary>
     /// 导入单个工作流
     /// </summary>
-    private async Task ImportSingleWorkflowAsync(WorkflowExportItem workflowItem, WorkflowImportResult result, bool overwriteExisting, string userId, string companyId)
+    private async Task ImportSingleWorkflowAsync(WorkflowExportItem workflowItem, WorkflowImportResult result, bool overwriteExisting)
     {
         // 检查是否存在同名工作流
         var existingResult = await _workflowFactory.FindAsync(w => w.Name == workflowItem.Name && w.IsDeleted != true, limit: 1);
@@ -524,8 +520,7 @@ public class WorkflowExportImportService : IWorkflowExportImportService
             Category = workflowItem.Category ?? string.Empty,
             Version = workflowItem.Version ?? new WorkflowVersion { Major = 1, Minor = 0, CreatedAt = DateTime.UtcNow },
             Graph = workflowItem.Graph ?? new WorkflowGraph(),
-            IsActive = workflowItem.IsActive,
-            CompanyId = companyId
+            IsActive = workflowItem.IsActive
         };
 
         if (existing != null && overwriteExisting)
@@ -553,18 +548,18 @@ public class WorkflowExportImportService : IWorkflowExportImportService
     /// <summary>
     /// 解决工作流冲突
     /// </summary>
-    private async Task ResolveWorkflowConflictAsync(WorkflowExportItem workflowItem, string resolution, WorkflowImportResult result, string userId, string companyId)
+    private async Task ResolveWorkflowConflictAsync(WorkflowExportItem workflowItem, string resolution, WorkflowImportResult result)
     {
         switch (resolution.ToLowerInvariant())
         {
             case "overwrite":
-                await ImportSingleWorkflowAsync(workflowItem, result, true, userId, companyId);
+                await ImportSingleWorkflowAsync(workflowItem, result, true);
                 break;
             case "rename":
                 // 生成新名称
                 var newName = await GenerateUniqueWorkflowNameAsync(workflowItem.Name);
                 workflowItem.Name = newName;
-                await ImportSingleWorkflowAsync(workflowItem, result, false, userId, companyId);
+                await ImportSingleWorkflowAsync(workflowItem, result, false);
                 break;
             case "skip":
                 result.SkippedCount++;

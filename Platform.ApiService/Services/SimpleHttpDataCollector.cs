@@ -468,7 +468,7 @@ public class SimpleHttpDataCollector
         var reportedAtValues = records.Select(r => r.ReportedAt).Distinct().ToList();
 
         var existingRecords = await _dataRecordFactory
-            .FindWithoutTenantFilterAsync(r =>
+            .FindAsync(r =>
                 r.CompanyId == companyId &&
                 deviceIds.Contains(r.DeviceId) &&
                 dataPointIds.Contains(r.DataPointId) &&

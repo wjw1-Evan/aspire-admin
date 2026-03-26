@@ -27,22 +27,11 @@ public class PlatformDbContext : DbContext
         Database.AutoTransactionBehavior = AutoTransactionBehavior.Never;
     }
 
-    public string? CurrentCompanyId
-    {
-        get
-        {
-            if (_tenantContext == null) return null;
+    protected bool IsSystemContext => _tenantContext?.IsSystemContext ?? true;
 
-            // 🚀 性能优化：由于 EF Core 过滤器要求同步访问，此处使用同步阻塞。
-            // 但通过 TenantContext 的 Scoped 缓存，后续调用将直接从内存返回，减少阻塞时间。
-            var task = _tenantContext.GetCurrentCompanyIdAsync();
-            if (!task.IsCompleted)
-            {
-                // _logger?.LogWarning("PlatformDbContext: 同步阻塞获取 CurrentCompanyId，请检查是否已在请求开始时预热缓存");
-            }
-            return task.GetAwaiter().GetResult();
-        }
-    }
+
+    public string? CurrentCompanyId => _tenantContext?.GetCurrentCompanyIdAsync().GetAwaiter().GetResult();
+
 
     // 缓存实体类型扫描结果
     private static List<Type>? _cachedEntityTypes;
@@ -77,38 +66,26 @@ public class PlatformDbContext : DbContext
         return await base.SaveChangesAsync(cancellationToken);
     }
 
-    private void ApplyAuditInfo()
-    {
-        // 同步版本保持不变，用于 SaveChanges()
-        var userId = _tenantContext?.GetCurrentUserId();
-        var companyId = CurrentCompanyId;
+    private void ApplyAuditInfo() 
+        => ApplyAuditInfoCore(_tenantContext?.GetCurrentUserId(), CurrentCompanyId);
 
-        ApplyAuditInfoCore(userId, companyId);
-    }
-
-    private async Task ApplyAuditInfoAsync()
-    {
-        // 🚀 性能优化：异步获取租户信息，避免 SaveChangesAsync 内部触发同步阻塞
-        var userId = _tenantContext?.GetCurrentUserId();
-        var companyId = _tenantContext != null ? await _tenantContext.GetCurrentCompanyIdAsync() : null;
-
-        ApplyAuditInfoCore(userId, companyId);
-    }
+    private async Task ApplyAuditInfoAsync() 
+        => ApplyAuditInfoCore(_tenantContext?.GetCurrentUserId(), _tenantContext != null ? await _tenantContext.GetCurrentCompanyIdAsync() : null);
 
     private void ApplyAuditInfoCore(string? userId, string? companyId)
     {
+        var hmac = new HMac(new SM3Digest());
+        hmac.Init(new Org.BouncyCastle.Crypto.Parameters.KeyParameter(System.Text.Encoding.UTF8.GetBytes("YOUR_GLOBAL_SM3_HMAC_KEY_REPLACE_ME")));
         var now = DateTime.UtcNow;
 
-        foreach (var entry in ChangeTracker.Entries())
-        {
-            ApplyEntryAuditInfo(entry, userId, companyId, now);
-        }
+        ChangeTracker.Entries()
+            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified)
+            .ToList()
+            .ForEach(entry => ApplyEntryAuditInfo(entry, userId, companyId, now, hmac));
     }
 
-    private static void ApplyEntryAuditInfo(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry, string? userId, string? companyId, DateTime now)
+    private static void ApplyEntryAuditInfo(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry, string? userId, string? companyId, DateTime now, HMac hmac)
     {
-        if (entry.State != EntityState.Added && entry.State != EntityState.Modified) return;
-
         var entity = entry.Entity;
         var isAdded = entry.State == EntityState.Added;
 
@@ -168,52 +145,38 @@ public class PlatformDbContext : DbContext
         // 5. 数据防篡改 (MAC 生成)
         if (entity is IAntiTamper antiTamper)
         {
-            var keyBytes = System.Text.Encoding.UTF8.GetBytes("YOUR_GLOBAL_SM3_HMAC_KEY_REPLACE_ME");
-            var hmac = new HMac(new SM3Digest());
-            hmac.Init(new Org.BouncyCastle.Crypto.Parameters.KeyParameter(keyBytes));
-
             var properties = entry.CurrentValues.Properties.Where(p => p.Name != nameof(IAntiTamper.Sm3Mac));
             var payloadStr = string.Join("|", properties.Select(p => entry.CurrentValues[p]?.ToString() ?? ""));
-
             var payloadBytes = System.Text.Encoding.UTF8.GetBytes(payloadStr);
             antiTamper.Sm3Mac = Hex.ToHexString(MacUtilities.DoFinal(hmac, payloadBytes));
         }
-
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        GetEntityTypes().ForEach(type => ConfigureEntity(modelBuilder, type));
+    }
 
-        foreach (var type in GetEntityTypes())
-        {
-            var entityBuilder = modelBuilder.Entity(type);
+    private void ConfigureEntity(ModelBuilder modelBuilder, Type type)
+    {
+        var entityBuilder = modelBuilder.Entity(type);
+        var bsonAttr = type.GetCustomAttribute<Attributes.BsonCollectionNameAttribute>();
+        var tableAttr = type.GetCustomAttribute<TableAttribute>();
+        entityBuilder.ToCollection(bsonAttr?.Name ?? tableAttr?.Name ?? type.Name.ToLowerInvariant() + "s");
 
-            // 配置集合名称
-            var bsonAttr = type.GetCustomAttribute<Attributes.BsonCollectionNameAttribute>();
-            var tableAttr = type.GetCustomAttribute<TableAttribute>();
-            entityBuilder.ToCollection(bsonAttr?.Name ?? tableAttr?.Name ?? type.Name.ToLowerInvariant() + "s");
+        // 🚀 核心优化：使用泛型方法反射调用，利用编译器生成的 Lambda 确保对 'this' (DbContext) 的闭包正确。
+        // 避免手动构建 Expression.Constant(this) 导致过滤器被绑定到第一个创建模型的实例上（EF Core 模型缓存问题）。
+        var method = typeof(PlatformDbContext).GetMethod(nameof(ApplyFilterGeneric), BindingFlags.NonPublic | BindingFlags.Instance);
+        method?.MakeGenericMethod(type).Invoke(this, [modelBuilder]);
+    }
 
-            // 配置全局查询过滤器
-            var parameter = Expression.Parameter(type, "e");
-            Expression? filterBody = null;
-
-            if (typeof(ISoftDeletable).IsAssignableFrom(type))
-            {
-                var isDeleted = Expression.Property(parameter, nameof(ISoftDeletable.IsDeleted));
-                filterBody = Expression.NotEqual(Expression.Convert(isDeleted, typeof(bool?)), Expression.Constant(true, typeof(bool?)));
-            }
-
-            if (typeof(IMultiTenant).IsAssignableFrom(type))
-            {
-                var companyIdProperty = Expression.Property(parameter, nameof(IMultiTenant.CompanyId));
-                var currentCompanyIdProperty = Expression.Property(Expression.Constant(this), nameof(CurrentCompanyId));
-                var tenantFilter = Expression.Equal(companyIdProperty, currentCompanyIdProperty);
-                filterBody = filterBody == null ? tenantFilter : Expression.AndAlso(filterBody, tenantFilter);
-            }
-
-            if (filterBody != null) entityBuilder.HasQueryFilter(Expression.Lambda(filterBody, parameter));
-        }
+    private void ApplyFilterGeneric<TEntity>(ModelBuilder modelBuilder) where TEntity : class
+    {
+        modelBuilder.Entity<TEntity>().HasQueryFilter(e =>
+            (!(e is ISoftDeletable) || !((ISoftDeletable)e).IsDeleted) &&
+            (!(e is IMultiTenant) || (IsSystemContext || ((IMultiTenant)e).CompanyId == CurrentCompanyId))
+        );
     }
 
     private static List<Type> GetEntityTypes()

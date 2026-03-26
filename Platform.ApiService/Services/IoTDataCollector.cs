@@ -78,7 +78,7 @@ public class IoTDataCollector
         // 2. 非HTTP网关：使用手动创建的设备和数据点采集
         // 后台服务需要跨租户查询所有启用的网关
         var gateways = await _gatewayFactory
-            .FindWithoutTenantFilterAsync(g => g.IsEnabled == true)
+            .FindAsync(g => g.IsEnabled == true)
             .ConfigureAwait(false);
 
         if (gateways.Count == 0)
@@ -437,7 +437,7 @@ public class IoTDataCollector
         }
 
         var gateways = await _gatewayFactory
-            .FindWithoutTenantFilterAsync(g => g.CompanyId == companyId && g.GatewayId == gatewayId, limit: 1)
+            .FindAsync(g => g.CompanyId == companyId && g.GatewayId == gatewayId, limit: 1)
             .ConfigureAwait(false);
         return gateways.FirstOrDefault();
     }
@@ -480,7 +480,7 @@ public class IoTDataCollector
 
         // 查询已存在的记录（允许少量过取，后续精确匹配）
         var existingRecords = await _dataRecordFactory
-            .FindWithoutTenantFilterAsync(r =>
+            .FindAsync(r =>
                 r.CompanyId == companyId &&
                 deviceIds.Contains(r.DeviceId) &&
                 dataPointIds.Contains(r.DataPointId) &&

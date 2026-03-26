@@ -14,6 +14,7 @@ public interface ITenantContext
     string? GetCurrentUserId();
     Task<string?> GetCurrentCompanyIdAsync();
     void ClearUserCache(string userId);
+    bool IsSystemContext { get; }
 }
 
 /// <summary>
@@ -26,6 +27,8 @@ public class TenantContext(
 {
     private string? _cachedCompanyId;
     private bool _companyLoaded;
+
+    public bool IsSystemContext => httpContextAccessor.HttpContext == null;
 
     public string? GetCurrentUserId()
     {

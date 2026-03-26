@@ -1,7 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Platform.ServiceDefaults.Models;
 
@@ -123,7 +122,7 @@ public abstract class MultiTenantEntity : BaseEntity, IMultiTenant
     /// 企业ID - 多租户隔离标识
     /// </summary>
     [BsonElement("companyId")]
-    public string CompanyId { get; set; }
+    public string CompanyId { get; set; } = string.Empty;
 }
 
 /// <summary>

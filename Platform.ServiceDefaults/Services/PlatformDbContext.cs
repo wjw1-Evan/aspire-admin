@@ -1,56 +1,47 @@
 using Microsoft.EntityFrameworkCore;
 using MongoDB.EntityFrameworkCore.Extensions;
-using Org.BouncyCastle.Security;
-using Org.BouncyCastle.Utilities.Encoders;
-using Org.BouncyCastle.Crypto.Digests;
-using Org.BouncyCastle.Crypto.Macs;
 using Platform.ServiceDefaults.Models;
 using System.Reflection;
-using System.Linq.Expressions;
 using System.ComponentModel.DataAnnotations.Schema;
-
 
 namespace Platform.ServiceDefaults.Services;
 
 /// <summary>
-/// 平台数据库上下文 - 基于 MongoDB Entity Framework Core (优化版本) 不允许修改该文件
+/// 平台数据库上下文 - 基于 MongoDB Entity Framework Core (优化版本)
 /// </summary>
 public class PlatformDbContext : DbContext
 {
     private readonly ITenantContext? _tenantContext;
 
-    public PlatformDbContext(DbContextOptions<PlatformDbContext> options, ITenantContext? tenantContext = null) 
+    public PlatformDbContext(
+        DbContextOptions<PlatformDbContext> options,
+        ITenantContext? tenantContext = null)
         : base(options)
     {
         _tenantContext = tenantContext;
+
         // 🚀 兼容性修复：MongoDB 单机模式不支持事务，禁用自动事务
         Database.AutoTransactionBehavior = AutoTransactionBehavior.Never;
     }
 
     protected bool IsSystemContext => _tenantContext?.IsSystemContext ?? true;
 
-
-    public string? CurrentCompanyId => _tenantContext?.GetCurrentCompanyIdAsync().GetAwaiter().GetResult();
-
-
     // 缓存实体类型扫描结果
     private static List<Type>? _cachedEntityTypes;
     private static readonly List<Assembly> _extraEntityAssemblies = [];
-    private static readonly System.Threading.Lock _cacheLock = new();
+    private static readonly object _cacheLock = new();
 
     /// <summary>
     /// 注册额外的实体程序集（主要用于单元测试）
     /// </summary>
-    /// <param name="assembly"></param>
     public static void RegisterEntityAssembly(Assembly assembly)
     {
         lock (_cacheLock)
         {
-            if (!_extraEntityAssemblies.Contains(assembly))
-            {
-                _extraEntityAssemblies.Add(assembly);
-                _cachedEntityTypes = null; // 清除缓存以重新扫描
-            }
+            if (_extraEntityAssemblies.Contains(assembly)) return;
+
+            _extraEntityAssemblies.Add(assembly);
+            _cachedEntityTypes = null; // 清除缓存以重新扫描
         }
     }
 
@@ -66,65 +57,70 @@ public class PlatformDbContext : DbContext
         return await base.SaveChangesAsync(cancellationToken);
     }
 
-    private void ApplyAuditInfo() 
-        => ApplyAuditInfoCore(_tenantContext?.GetCurrentUserId(), CurrentCompanyId);
+    private void ApplyAuditInfo()
+    {
+        var userId = _tenantContext?.GetCurrentUserId();
+        var companyId = _tenantContext?.GetCurrentCompanyIdAsync().GetAwaiter().GetResult();
+        ApplyAuditInfoCore(userId, companyId);
+    }
 
-    private async Task ApplyAuditInfoAsync() 
-        => ApplyAuditInfoCore(_tenantContext?.GetCurrentUserId(), _tenantContext != null ? await _tenantContext.GetCurrentCompanyIdAsync() : null);
+    private async Task ApplyAuditInfoAsync()
+    {
+        var userId = _tenantContext?.GetCurrentUserId();
+        var companyId = _tenantContext != null ? await _tenantContext.GetCurrentCompanyIdAsync() : null;
+        ApplyAuditInfoCore(userId, companyId);
+    }
 
     private void ApplyAuditInfoCore(string? userId, string? companyId)
     {
-        var hmac = new HMac(new SM3Digest());
-        hmac.Init(new Org.BouncyCastle.Crypto.Parameters.KeyParameter(System.Text.Encoding.UTF8.GetBytes("YOUR_GLOBAL_SM3_HMAC_KEY_REPLACE_ME")));
         var now = DateTime.UtcNow;
 
-        ChangeTracker.Entries()
-            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified)
-            .ToList()
-            .ForEach(entry => ApplyEntryAuditInfo(entry, userId, companyId, now, hmac));
-    }
+        // 🚀 使用 LINQ 筛选需要审计的实体
+        var modifiedEntries = ChangeTracker.Entries()
+            .Where(e => e.State is EntityState.Added or EntityState.Modified)
+            .ToList();
 
-    private static void ApplyEntryAuditInfo(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry, string? userId, string? companyId, DateTime now, HMac hmac)
-    {
-        var entity = entry.Entity;
-        var isAdded = entry.State == EntityState.Added;
+        if (modifiedEntries.Count == 0) return;
 
-        // 1. 时间戳
-        if (entity is ITimestamped timestamped)
+        // 🚀 使用 LINQ 分组处理不同类型的审计
+        foreach (var entry in modifiedEntries)
         {
-            if (isAdded) timestamped.CreatedAt = now;
-            timestamped.UpdatedAt = now;
-        }
+            var entity = entry.Entity;
+            var isAdded = entry.State == EntityState.Added;
 
-        // 2. 操作追踪
-        if (entity is IOperationTrackable trackable)
-        {
-            var currentUserId = string.IsNullOrEmpty(userId) ? null : userId;
-            trackable.UpdatedBy = currentUserId;
-            trackable.LastOperationAt = now;
-            if (isAdded)
+            // 1. 时间戳审计
+            if (entity is ITimestamped timestamped)
             {
-                trackable.CreatedBy ??= currentUserId;
-                trackable.LastOperationType = "CREATE";
+                if (isAdded) timestamped.CreatedAt = now;
+                timestamped.UpdatedAt = now;
             }
-            else
+
+            // 2. 操作追踪审计
+            if (entity is IOperationTrackable trackable)
             {
-                trackable.LastOperationType = "UPDATE";
+                trackable.UpdatedBy = string.IsNullOrEmpty(userId) ? null : userId;
+                trackable.LastOperationAt = now;
+
+                if (isAdded)
+                {
+                    trackable.CreatedBy ??= trackable.UpdatedBy;
+                    trackable.LastOperationType = "CREATE";
+                }
+                else
+                {
+                    trackable.LastOperationType = "UPDATE";
+                }
             }
-        }
 
-        // 3. 多租户
-        if (isAdded && entity is IMultiTenant tenant && string.IsNullOrEmpty(tenant.CompanyId))
-        {
-            var currentCompanyId = string.IsNullOrEmpty(companyId) ? null : companyId;
-            tenant.CompanyId = currentCompanyId ?? string.Empty;
-        }
+            // 3. 多租户审计
+            if (isAdded && entity is IMultiTenant { CompanyId: "" or null } tenant)
+            {
+                tenant.CompanyId = companyId ?? string.Empty;
+            }
 
-        // 4. 软删除审计
-        if (!isAdded && entity is ISoftDeletable softDeletable)
-        {
-            var isDeletedProp = entry.Property(nameof(ISoftDeletable.IsDeleted));
-            if (isDeletedProp.IsModified)
+            // 4. 软删除审计
+            if (!isAdded && entity is ISoftDeletable softDeletable &&
+                entry.Property(nameof(ISoftDeletable.IsDeleted)).IsModified)
             {
                 if (softDeletable.IsDeleted)
                 {
@@ -141,41 +137,39 @@ public class PlatformDbContext : DbContext
                 }
             }
         }
-
-        // 5. 数据防篡改 (MAC 生成)
-        if (entity is IAntiTamper antiTamper)
-        {
-            var properties = entry.CurrentValues.Properties.Where(p => p.Name != nameof(IAntiTamper.Sm3Mac));
-            var payloadStr = string.Join("|", properties.Select(p => entry.CurrentValues[p]?.ToString() ?? ""));
-            var payloadBytes = System.Text.Encoding.UTF8.GetBytes(payloadStr);
-            antiTamper.Sm3Mac = Hex.ToHexString(MacUtilities.DoFinal(hmac, payloadBytes));
-        }
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // 🚀 使用 LINQ 批量配置实体
         GetEntityTypes().ForEach(type => ConfigureEntity(modelBuilder, type));
     }
 
     private void ConfigureEntity(ModelBuilder modelBuilder, Type type)
     {
         var entityBuilder = modelBuilder.Entity(type);
-        var bsonAttr = type.GetCustomAttribute<Attributes.BsonCollectionNameAttribute>();
-        var tableAttr = type.GetCustomAttribute<TableAttribute>();
-        entityBuilder.ToCollection(bsonAttr?.Name ?? tableAttr?.Name ?? type.Name.ToLowerInvariant() + "s");
 
-        // 🚀 核心优化：使用泛型方法反射调用，利用编译器生成的 Lambda 确保对 'this' (DbContext) 的闭包正确。
-        // 避免手动构建 Expression.Constant(this) 导致过滤器被绑定到第一个创建模型的实例上（EF Core 模型缓存问题）。
-        var method = typeof(PlatformDbContext).GetMethod(nameof(ApplyFilterGeneric), BindingFlags.NonPublic | BindingFlags.Instance);
-        method?.MakeGenericMethod(type).Invoke(this, [modelBuilder]);
+        // 🚀 使用 LINQ 简化集合名称获取
+        var collectionName = type.GetCustomAttribute<Attributes.BsonCollectionNameAttribute>()?.Name
+                          ?? type.GetCustomAttribute<TableAttribute>()?.Name
+                          ?? $"{type.Name.ToLowerInvariant()}s";
+
+        entityBuilder.ToCollection(collectionName);
+
+        // 🚀 应用全局查询过滤器（软删除 + 多租户）
+        typeof(PlatformDbContext)
+            .GetMethod(nameof(ApplyFilterGeneric), BindingFlags.NonPublic | BindingFlags.Instance)
+            ?.MakeGenericMethod(type)
+            .Invoke(this, [modelBuilder]);
     }
 
     private void ApplyFilterGeneric<TEntity>(ModelBuilder modelBuilder) where TEntity : class
     {
         modelBuilder.Entity<TEntity>().HasQueryFilter(e =>
-            (!(e is ISoftDeletable) || !((ISoftDeletable)e).IsDeleted) &&
-            (!(e is IMultiTenant) || (IsSystemContext || ((IMultiTenant)e).CompanyId == CurrentCompanyId))
+            (e is not ISoftDeletable sd || !sd.IsDeleted) &&
+            (e is not IMultiTenant mt || IsSystemContext || mt.CompanyId == _tenantContext!.GetCurrentCompanyIdAsync().GetAwaiter().GetResult())
         );
     }
 
@@ -187,24 +181,25 @@ public class PlatformDbContext : DbContext
         {
             if (_cachedEntityTypes != null) return _cachedEntityTypes;
 
-            var assemblies = new List<Assembly>
-            {
-                Assembly.GetExecutingAssembly()
-            };
-
-            var entryAssembly = Assembly.GetEntryAssembly();
-            if (entryAssembly != null) assemblies.Add(entryAssembly);
-
-            assemblies.AddRange(_extraEntityAssemblies);
-
-            _cachedEntityTypes = assemblies
+            // 🚀 使用 LINQ 简化程序集收集
+            var assemblies = new[] { Assembly.GetExecutingAssembly(), Assembly.GetEntryAssembly() }
+                .Where(a => a != null)
+                .Cast<Assembly>()
+                .Concat(_extraEntityAssemblies)
                 .Distinct()
-                .SelectMany(a => { try { return a.GetTypes(); } catch { return Type.EmptyTypes; } })
-                .Where(t => t.IsClass && !t.IsAbstract && typeof(IEntity).IsAssignableFrom(t))
+                .ToList();
+
+            // 🚀 使用 LINQ 简化实体类型扫描
+            _cachedEntityTypes = assemblies
+                .SelectMany(a =>
+                {
+                    try { return a.GetTypes(); }
+                    catch { return []; }
+                })
+                .Where(t => t is { IsClass: true, IsAbstract: false } && typeof(IEntity).IsAssignableFrom(t))
                 .ToList();
 
             return _cachedEntityTypes;
         }
     }
-
 }

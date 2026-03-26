@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using Platform.ServiceDefaults.Models;
 
 namespace Platform.ServiceDefaults.Services;

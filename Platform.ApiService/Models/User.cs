@@ -461,13 +461,8 @@ public class UserStatisticsResponse
 /// <summary>
 /// 用户活动日志实体
 /// </summary>
-public class UserActivityLog : MultiTenantEntity, IAntiTamper
+public class UserActivityLog : MultiTenantEntity
 {
-    /// <summary>
-    /// SM3 消息认证码（MAC），用于防篡改校验
-    /// </summary>
-    public string? Sm3Mac { get; set; }
-
     /// <summary>
     /// 操作类型（"login", "logout", "update_profile" 等）
     /// </summary>

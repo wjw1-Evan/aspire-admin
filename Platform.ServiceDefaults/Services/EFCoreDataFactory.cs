@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.ServiceDefaults.Models;
-using Platform.ServiceDefaults.Extensions;
 using System.Linq.Expressions;
 
 namespace Platform.ServiceDefaults.Services;
@@ -54,7 +53,10 @@ public class EFCoreDataFactory<T>(DbContext context)
         var total = await baseQuery.CountAsync(cancellationToken);
 
         var itemsQuery = BuildQuery(baseQuery, null, orderBy, includes);
-        var items = await itemsQuery.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+        var items = await itemsQuery
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
 
         return (items, total);
     }
@@ -79,6 +81,7 @@ public class EFCoreDataFactory<T>(DbContext context)
     {
         var entityList = entities.ToList();
         if (entityList.Count == 0) return entityList;
+
         await _dbSet.AddRangeAsync(entityList, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
         return entityList;
@@ -93,8 +96,9 @@ public class EFCoreDataFactory<T>(DbContext context)
 
     public async Task<T?> UpdateAsync(string id, Func<T, Task> updateAction, CancellationToken cancellationToken = default)
     {
-        var entity = await GetByIdAsync(id, cancellationToken);
+        var entity = await _dbSet.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
         if (entity == null) return null;
+
         await updateAction(entity);
         await context.SaveChangesAsync(cancellationToken);
         return entity;
@@ -105,11 +109,28 @@ public class EFCoreDataFactory<T>(DbContext context)
 
     public async Task<int> UpdateManyAsync(Expression<Func<T, bool>> filter, Func<T, Task> updateAction, CancellationToken cancellationToken = default)
     {
-        var entities = await LoadBatchAsync(filter, cancellationToken);
-        if (entities.Count == 0) return 0;
-        foreach (var entity in entities) await updateAction(entity);
-        await context.SaveChangesAsync(cancellationToken);
-        return entities.Count;
+        // 🚀 优化：分批加载以避免内存溢出
+        const int batchSize = 1000;
+        var totalUpdated = 0;
+
+        while (true)
+        {
+            var batch = await _dbSet.Where(filter).Take(batchSize).ToListAsync(cancellationToken);
+            if (batch.Count == 0) break;
+
+            foreach (var entity in batch)
+            {
+                await updateAction(entity);
+            }
+
+            await context.SaveChangesAsync(cancellationToken);
+            totalUpdated += batch.Count;
+
+            // 如果批次小于 batchSize，说明已经处理完所有数据
+            if (batch.Count < batchSize) break;
+        }
+
+        return totalUpdated;
     }
 
     #endregion
@@ -117,15 +138,29 @@ public class EFCoreDataFactory<T>(DbContext context)
     #region 删除操作
 
     public async Task<bool> SoftDeleteAsync(string id, string? reason = null, CancellationToken cancellationToken = default)
-        => await UpdateAsync(id, entity => { entity.IsDeleted = true; entity.DeletedReason = reason; }, cancellationToken) != null;
+    {
+        return await UpdateAsync(id, entity =>
+        {
+            entity.IsDeleted = true;
+            entity.DeletedReason = reason;
+        }, cancellationToken) != null;
+    }
 
     public async Task<int> SoftDeleteManyAsync(Expression<Func<T, bool>> filter, string? reason = null, CancellationToken cancellationToken = default)
-        => await UpdateManyAsync(filter, entity => { entity.IsDeleted = true; entity.DeletedReason = reason; }, cancellationToken);
+    {
+        return await UpdateManyAsync(filter, entity =>
+        {
+            entity.IsDeleted = true;
+            entity.DeletedReason = reason;
+        }, cancellationToken);
+    }
 
     public async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
     {
-        var entity = await _dbSet.IgnoreQueryFilters().FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+        // 🚀 优化：明确只删除未软删除的记录
+        var entity = await _dbSet.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
         if (entity == null) return false;
+
         _dbSet.Remove(entity);
         await context.SaveChangesAsync(cancellationToken);
         return true;
@@ -133,11 +168,23 @@ public class EFCoreDataFactory<T>(DbContext context)
 
     public async Task<int> DeleteManyAsync(Expression<Func<T, bool>> filter, CancellationToken cancellationToken = default)
     {
-        var entities = await _dbSet.IgnoreQueryFilters().Where(filter).ToListAsync(cancellationToken);
-        if (entities.Count == 0) return 0;
-        _dbSet.RemoveRange(entities);
-        await context.SaveChangesAsync(cancellationToken);
-        return entities.Count;
+        // 🚀 优化：分批删除以避免内存溢出
+        const int batchSize = 1000;
+        var totalDeleted = 0;
+
+        while (true)
+        {
+            var batch = await _dbSet.Where(filter).Take(batchSize).ToListAsync(cancellationToken);
+            if (batch.Count == 0) break;
+
+            _dbSet.RemoveRange(batch);
+            await context.SaveChangesAsync(cancellationToken);
+            totalDeleted += batch.Count;
+
+            if (batch.Count < batchSize) break;
+        }
+
+        return totalDeleted;
     }
 
     #endregion
@@ -145,7 +192,9 @@ public class EFCoreDataFactory<T>(DbContext context)
     #region 忽略过滤器操作
 
     public async Task<T?> GetByIdWithoutTenantFilterAsync(string id, CancellationToken cancellationToken = default)
-        => (await _dbSet.IgnoreQueryFilters().FirstOrDefaultAsync(e => e.Id == id && e.IsDeleted != true, cancellationToken));
+        => await _dbSet.IgnoreQueryFilters()
+            .Where(e => !e.IsDeleted)
+            .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
 
     public async Task<List<T>> FindWithoutTenantFilterAsync(
         Expression<Func<T, bool>>? filter = null,
@@ -154,7 +203,8 @@ public class EFCoreDataFactory<T>(DbContext context)
         Expression<Func<T, object>>[]? includes = null,
         CancellationToken cancellationToken = default)
     {
-        var query = BuildQuery(_dbSet.IgnoreQueryFilters().AsNoTracking().Where(e => e.IsDeleted != true), filter, orderBy, includes);
+        var baseQuery = _dbSet.IgnoreQueryFilters().AsNoTracking().Where(e => !e.IsDeleted);
+        var query = BuildQuery(baseQuery, filter, orderBy, includes);
         if (limit is > 0) query = query.Take(limit.Value);
         return await query.ToListAsync(cancellationToken);
     }
@@ -163,14 +213,21 @@ public class EFCoreDataFactory<T>(DbContext context)
 
     #region 私有工具方法
 
-    private static IQueryable<T> BuildQuery(IQueryable<T> query, Expression<Func<T, bool>>? filter, Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy, Expression<Func<T, object>>[]? includes)
+    private static IQueryable<T> BuildQuery(
+        IQueryable<T> query,
+        Expression<Func<T, bool>>? filter,
+        Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy,
+        Expression<Func<T, object>>[]? includes)
     {
-        var q = (includes ?? []).Aggregate(filter == null ? query : query.Where(filter), (c, i) => c.Include(i));
-        return orderBy?.Invoke(q) ?? q.OrderByDescending(e => e.CreatedAt);
-    }
+        if (filter != null) query = query.Where(filter);
 
-    private async Task<List<T>> LoadBatchAsync(Expression<Func<T, bool>> filter, CancellationToken cancellationToken)
-        => await _dbSet.Where(filter).ToListAsync(cancellationToken);
+        if (includes != null)
+        {
+            query = includes.Aggregate(query, (current, include) => current.Include(include));
+        }
+
+        return orderBy?.Invoke(query) ?? query.OrderByDescending(e => e.CreatedAt);
+    }
 
     #endregion
 }

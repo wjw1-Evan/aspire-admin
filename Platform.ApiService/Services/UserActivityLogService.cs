@@ -14,19 +14,16 @@ public class UserActivityLogService : IUserActivityLogService
 {
     private readonly IDataFactory<UserActivityLog> _activityLogFactory;
     private readonly IDataFactory<AppUser> _userFactory;
-    private readonly ITenantContext _tenantContext;
 
     /// <summary>
     /// 初始化用户活动日志服务
     /// </summary>
     public UserActivityLogService(
         IDataFactory<UserActivityLog> activityLogFactory,
-        IDataFactory<AppUser> userFactory,
-        ITenantContext tenantContext)
+        IDataFactory<AppUser> userFactory)
     {
-        _activityLogFactory = activityLogFactory ?? throw new ArgumentNullException(nameof(activityLogFactory));
-        _userFactory = userFactory ?? throw new ArgumentNullException(nameof(userFactory));
-        _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
+        _activityLogFactory = activityLogFactory;
+        _userFactory = userFactory;
     }
 
 
@@ -35,18 +32,13 @@ public class UserActivityLogService : IUserActivityLogService
     /// </summary>
     public async Task LogUserActivityAsync(string userId, string action, string description, string? ipAddress = null, string? userAgent = null)
     {
-        // 获取用户信息用于显示名（仅在必要时查询）
-        var user = await _userFactory.GetByIdAsync(userId);
-        var username = user?.Username ?? user?.Name;
-
         var log = new UserActivityLog
         {
-            UserId = userId,
-            Username = username ?? string.Empty,
             Action = action,
             Description = description,
             IpAddress = ipAddress,
-            UserAgent = userAgent
+            UserAgent = userAgent,
+            CreatedBy = userId,
         };
 
         await _activityLogFactory.CreateAsync(log);
@@ -57,13 +49,13 @@ public class UserActivityLogService : IUserActivityLogService
     /// </summary>
     public async Task<UserActivityLogPagedResponse> GetActivityLogsAsync(GetUserActivityLogsRequest request)
     {
-        var userId = request.UserId;
+        var createdBy = request.CreatedBy;
         var action = request.Action;
         var startDate = request.StartDate;
         var endDate = request.EndDate;
 
         Expression<Func<UserActivityLog, bool>> filter = log =>
-            (string.IsNullOrEmpty(userId) || log.UserId == userId) &&
+            (string.IsNullOrEmpty(createdBy) || log.CreatedBy == createdBy) &&
             (string.IsNullOrEmpty(action) || log.Action == action) &&
             (!startDate.HasValue || log.CreatedAt >= startDate.Value) &&
             (!endDate.HasValue || log.CreatedAt <= endDate.Value);
@@ -87,9 +79,9 @@ public class UserActivityLogService : IUserActivityLogService
     }
 
     /// <inheritdoc/>
-    public async Task<List<UserActivityLog>> GetUserActivityLogsAsync(string userId, int limit = 50)
+    public async Task<List<UserActivityLog>> GetUserActivityLogsAsync(string createdBy, int limit = 50)
     {
-        Expression<Func<UserActivityLog, bool>> filter = log => log.UserId == userId;
+        Expression<Func<UserActivityLog, bool>> filter = log => log.CreatedBy == createdBy;
 
         return await _activityLogFactory.FindAsync(
             filter,
@@ -110,13 +102,12 @@ public class UserActivityLogService : IUserActivityLogService
         string? sortBy = null,
         string? sortOrder = null)
     {
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var actionLower = action?.ToLowerInvariant();
         var ipLower = ipAddress?.ToLowerInvariant();
         var httpMethodUpper = httpMethod?.ToUpperInvariant();
 
         Expression<Func<UserActivityLog, bool>> filter = log =>
-            log.UserId == currentUserId &&
+
             (string.IsNullOrEmpty(actionLower) || (log.Action != null && log.Action.ToLower().Contains(actionLower))) &&
             (string.IsNullOrEmpty(httpMethodUpper) || log.HttpMethod == httpMethodUpper) &&
             (!statusCode.HasValue || log.StatusCode == statusCode.Value) &&
@@ -129,7 +120,7 @@ public class UserActivityLogService : IUserActivityLogService
 
         // 成功记录统计 (2xx)
         var successTask = _activityLogFactory.CountAsync(log =>
-            log.UserId == currentUserId &&
+
             (string.IsNullOrEmpty(actionLower) || (log.Action != null && log.Action.ToLower().Contains(actionLower))) &&
             (string.IsNullOrEmpty(httpMethodUpper) || log.HttpMethod == httpMethodUpper) &&
             (!statusCode.HasValue || log.StatusCode == statusCode.Value) &&
@@ -140,7 +131,7 @@ public class UserActivityLogService : IUserActivityLogService
 
         // 错误记录统计 (>= 400)
         var errorTask = _activityLogFactory.CountAsync(log =>
-            log.UserId == currentUserId &&
+
             (string.IsNullOrEmpty(actionLower) || (log.Action != null && log.Action.ToLower().Contains(actionLower))) &&
             (string.IsNullOrEmpty(httpMethodUpper) || log.HttpMethod == httpMethodUpper) &&
             (!statusCode.HasValue || log.StatusCode == statusCode.Value) &&
@@ -156,15 +147,6 @@ public class UserActivityLogService : IUserActivityLogService
         var errorCount = errorTask.Result;
         var actionTypesCount = 0; // 暂时禁用，优化性能
 
-        /*
-        // 旧的统计逻辑（已废弃）
-        var actionTypesResults = actionTypesTask.Result;
-        var actionTypesCount = actionTypesResults
-            .Select(log => log.Action)
-            .Where(actionName => !string.IsNullOrEmpty(actionName))
-            .Distinct()
-            .Count();
-        */
 
         Func<IQueryable<UserActivityLog>, IOrderedQueryable<UserActivityLog>> orderBy = query =>
         {
@@ -190,8 +172,7 @@ public class UserActivityLogService : IUserActivityLogService
         var logDtos = logs.Select(log => new ActivityLogListItemResponse
         {
             Id = log.Id ?? string.Empty,
-            UserId = log.UserId,
-            Username = log.Username,
+            CreatedBy = log.CreatedBy,
             Action = log.Action,
             Description = log.Description,
             IpAddress = log.IpAddress,
@@ -221,12 +202,8 @@ public class UserActivityLogService : IUserActivityLogService
     /// <inheritdoc/>
     public async Task<UserActivityLog?> GetCurrentUserActivityLogByIdAsync(string logId)
     {
-        var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var log = await _activityLogFactory.GetByIdAsync(logId);
-        if (log == null || log.UserId != currentUserId)
-        {
-            return null;
-        }
+
         return log;
     }
 
@@ -256,7 +233,7 @@ public class UserActivityLogService : IUserActivityLogService
     public async Task<(List<UserActivityLog> logs, long total, Dictionary<string, string> userMap)> GetAllActivityLogsWithUsersAsync(
         int page = 1,
         int pageSize = 20,
-        string? userId = null,
+        string? createdBy = null,
         string? action = null,
         string? httpMethod = null,
         int? statusCode = null,
@@ -268,7 +245,7 @@ public class UserActivityLogService : IUserActivityLogService
         var ipLower = ipAddress?.ToLowerInvariant();
 
         Expression<Func<UserActivityLog, bool>> filter = log =>
-            (string.IsNullOrEmpty(userId) || log.UserId == userId) &&
+            (string.IsNullOrEmpty(createdBy) || log.CreatedBy == createdBy) &&
             (string.IsNullOrEmpty(actionLower) || (log.Action != null && log.Action.ToLower().Contains(actionLower))) &&
             (string.IsNullOrEmpty(httpMethod) || log.HttpMethod == httpMethod) &&
             (!statusCode.HasValue || log.StatusCode == statusCode.Value) &&
@@ -284,7 +261,7 @@ public class UserActivityLogService : IUserActivityLogService
             pageSize);
 
         var validUserIds = logs
-            .Select(log => log.UserId)
+            .Select(log => log.CreatedBy)
             .Distinct()
             .Where(uid => !string.IsNullOrEmpty(uid) && IsValidObjectId(uid))
             .ToList();
@@ -297,7 +274,7 @@ public class UserActivityLogService : IUserActivityLogService
 
         var userMap = users.ToDictionary(u => u.Id!, u => u.Username);
         var invalidUserIds = logs
-            .Select(log => log.UserId)
+            .Select(log => log.CreatedBy)
             .Distinct()
             .Where(uid => !string.IsNullOrEmpty(uid) && !IsValidObjectId(uid))
             .Where(uid => !userMap.ContainsKey(uid))
@@ -307,7 +284,6 @@ public class UserActivityLogService : IUserActivityLogService
         {
             string defaultUsername = invalidUserId switch
             {
-                "anonymous" => "匿名用户",
                 _ => $"用户({invalidUserId})"
             };
             userMap[invalidUserId] = defaultUsername;
@@ -344,11 +320,11 @@ public class UserActivityLogService : IUserActivityLogService
             : $"{request.Path}{request.QueryString}";
         var fullUrl = $"{request.Scheme}://{request.Host}{pathWithQuery}";
 
+
         var log = new UserActivityLog
         {
-            UserId = request.UserId ?? "anonymous",
-            Username = request.Username ?? "匿名用户",
-            Action = DetermineActionCode(request.HttpMethod, request.Path),
+            CreatedBy = request.CreatedBy,
+            Action = request.HttpMethod + request.Path,
             HttpMethod = request.HttpMethod,
             Path = request.Path,
             QueryString = request.QueryString,
@@ -358,7 +334,7 @@ public class UserActivityLogService : IUserActivityLogService
             IpAddress = request.IpAddress,
             UserAgent = request.UserAgent,
             ResponseBody = request.ResponseBody,
-            Metadata = request.Metadata
+            Metadata = request.Metadata,
         };
 
         await _activityLogFactory.CreateAsync(log);
@@ -371,75 +347,5 @@ public class UserActivityLogService : IUserActivityLogService
         return value.All(c => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
     }
 
-    /// <summary>
-    /// 将后端路由映射为前端定义的标准动作码
-    /// </summary>
-    private static string DetermineActionCode(string httpMethod, string path)
-    {
-        var method = httpMethod.ToUpper();
-        var p = path.ToLower();
 
-        // 认证 Auth
-        if (p.EndsWith("/api/auth/login")) return "login";
-        if (p.EndsWith("/api/auth/logout")) return "logout";
-        if (p.EndsWith("/api/auth/refresh")) return "refresh_token";
-        if (p.EndsWith("/api/auth/register")) return "register";
-
-        // 用户 User
-        if (p.Contains("/api/users/me/activity-logs")) return "view_activity_logs";
-        if (p.EndsWith("/api/users/me/password") && method == "PUT") return "change_password";
-        if (p.EndsWith("/api/users/me") && method == "PUT") return "update_profile";
-        if (p.EndsWith("/api/users/me") && method == "GET") return "view_profile";
-        if (p.Contains("/activate") && method == "PUT") return "activate_user";
-        if (p.Contains("/deactivate") && method == "PUT") return "deactivate_user";
-        if (p.EndsWith("/api/users/bulk") && method == "POST") return "bulk_action";
-        if (p.EndsWith("/api/users/management") && method == "POST") return "create_user";
-        if ((p.EndsWith("/api/users/list") || p.EndsWith("/api/users/all")) && (method == "GET" || method == "POST")) return "view_users";
-        if (p.EndsWith("/api/users/statistics") && method == "GET") return "view_statistics";
-        if (p.StartsWith("/api/users/") && method == "GET") return "view_user";
-        if (p.StartsWith("/api/users/") && method == "PUT") return "update_user";
-        if (p.StartsWith("/api/users/") && method == "DELETE") return "delete_user";
-
-        // 角色 Role
-        if (p.Contains("/api/roles"))
-        {
-            if (method == "POST") return "create_role";
-            if (method == "PUT") return "update_role";
-            if (method == "DELETE") return "delete_role";
-            if (method == "GET") return "view_roles";
-        }
-
-        // 菜单/权限 Menu
-        if (p.Contains("/api/menus"))
-        {
-            if (method == "POST") return "create_menu";
-            if (method == "PUT") return "update_menu";
-            if (method == "DELETE") return "delete_menu";
-            if (method == "GET") return "view_menus";
-        }
-
-        // 字典 Dictionary
-        if (p.Contains("/api/dictionaries"))
-        {
-            if (method == "POST") return "create_dictionary";
-            if (method == "PUT") return "update_dictionary";
-            if (method == "DELETE") return "delete_dictionary";
-            if (method == "GET") return "view_dictionaries";
-        }
-
-        // 日志 Log (通用)
-        if (p.Contains("/api/activity-logs") && method == "GET") return "view_activity_logs";
-        if (p.Contains("/api/logs") && method == "GET") return "view_system_logs";
-
-        // 默认回退：按动作前缀动态映射（为了兼容前端 dynamic mapping，如 create_xxx, view_xxx）
-        var resource = p.Split('/', StringSplitOptions.RemoveEmptyEntries).LastOrDefault() ?? "resource";
-        return method switch
-        {
-            "POST" => $"create_{resource}",
-            "PUT" => $"update_{resource}",
-            "DELETE" => $"delete_{resource}",
-            "GET" => $"view_{resource}",
-            _ => $"{method.ToLower()}_{resource}"
-        };
-    }
 }

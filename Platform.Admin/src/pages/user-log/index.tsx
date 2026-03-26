@@ -43,7 +43,7 @@ const UserLog: React.FC = () => {
     action?: string;
     startDate?: string;
     endDate?: string;
-    username?: string;
+    createdBy?: string;
     httpMethod?: string;
     statusCode?: number;
     ipAddress?: string;
@@ -81,17 +81,13 @@ const UserLog: React.FC = () => {
         ipAddress: filters.ipAddress,
         startDate: filters.startDate,
         endDate: filters.endDate,
+        createdBy: filters.createdBy,
       });
 
       if (response.success && response.data) {
         // 后端返回的数据结构：{ data: { list: [...], total: xxx, ... } }
         const result = response.data as any;
         let list: UserActivityLog[] = result.list || [];
-
-        if (filters.username) {
-          const keyword = filters.username.trim().toLowerCase();
-          list = list.filter((item) => (item.username || '').toLowerCase().includes(keyword));
-        }
 
         const successCount = list.filter((item) => (item.statusCode ?? 0) >= 200 && (item.statusCode ?? 0) < 400).length;
         const errorCount = list.filter((item) => (item.statusCode ?? 0) >= 400).length;

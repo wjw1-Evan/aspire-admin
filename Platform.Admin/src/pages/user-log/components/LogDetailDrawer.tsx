@@ -161,8 +161,8 @@ export default function LogDetailDrawer({
               <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.user' })}>
                 <Space>
                   <Text strong>{log.username}</Text>
-                  <Text type="secondary" copyable={{ text: log.userId }}>
-                    ({intl.formatMessage({ id: 'pages.logDetail.userId' }, { userId: log.userId })})
+                  <Text type="secondary" copyable={{ text: log.createdBy }}>
+                    ({intl.formatMessage({ id: 'pages.logDetail.userId' }, { userId: log.createdBy })})
                   </Text>
                 </Space>
               </Descriptions.Item>

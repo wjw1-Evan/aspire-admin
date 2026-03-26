@@ -3,8 +3,8 @@
  */
 export interface UserActivityLog {
   id: string;
-  userId: string;
-  username: string;
+  createdBy?: string;
+  username?: string;
   action: string;
   description: string;
   ipAddress?: string;
@@ -25,7 +25,7 @@ export interface UserActivityLog {
 export interface GetUserActivityLogsParams {
   page?: number;
   pageSize?: number;
-  userId?: string;
+  createdBy?: string;
   action?: string;
   httpMethod?: string;
   statusCode?: number;

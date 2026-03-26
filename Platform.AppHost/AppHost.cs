@@ -104,11 +104,11 @@ builder.AddNpmApp("admin", "../Platform.Admin")
                                         // 强制安装 devDependencies 并在开发模式下运行
     .WithEnvironment("NPM_CONFIG_PRODUCTION", "false")
     .WithEnvironment("NODE_ENV", "development")
-    .WithHttpEndpoint(env: "PORT", port: 15001, targetPort: 8080)
+    .WithHttpEndpoint(env: "PORT", port: 15001, targetPort: 8082)
     .WithNpmPackageInstallation()
     .PublishAsDockerFile().PublishAsDockerComposeService((resource, service) =>
                    {
-                       service.Ports = ["15001:8080"];
+                       service.Ports = ["15001:8082"];
                    });
 
 // 添加移动端应用 (Expo)

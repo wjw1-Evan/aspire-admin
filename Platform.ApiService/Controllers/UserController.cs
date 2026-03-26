@@ -344,7 +344,7 @@ public class UserController : BaseApiController
         var (logs, total, userMap) = await _activityLogService.GetAllActivityLogsWithUsersAsync(
             query.Page,
             query.PageSize,
-            query.UserId,
+            query.CreatedBy,
             query.Action,
             query.HttpMethod,
             query.StatusCode,
@@ -355,8 +355,8 @@ public class UserController : BaseApiController
         var logsWithUserInfo = logs.Select(log => new ActivityLogListItemResponse
         {
             Id = log.Id ?? string.Empty,
-            UserId = log.UserId,
-            Username = userMap.ContainsKey(log.UserId) ? userMap[log.UserId] : "未知用户",
+            CreatedBy = log.CreatedBy,
+            Username = userMap.ContainsKey(log.CreatedBy ?? "") ? userMap[log.CreatedBy ?? ""] : null,
             Action = log.Action,
             Description = log.Description,
             IpAddress = log.IpAddress,

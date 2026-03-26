@@ -469,18 +469,6 @@ public class UserActivityLog : MultiTenantEntity, IAntiTamper
     public string? Sm3Mac { get; set; }
 
     /// <summary>
-    /// 用户ID
-    /// </summary>
-    [BsonElement("userId")]
-    public string UserId { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 用户名
-    /// </summary>
-    [BsonElement("username")]
-    public string Username { get; set; } = string.Empty;
-
-    /// <summary>
     /// 操作类型（"login", "logout", "update_profile" 等）
     /// </summary>
     [BsonElement("action")]
@@ -571,9 +559,9 @@ public class GetUserActivityLogsRequest
     public int PageSize { get; set; } = 20;
 
     /// <summary>
-    /// 用户ID（可选，按用户筛选）
+    /// 创建者ID（可选，按用户筛选）
     /// </summary>
-    public string? UserId { get; set; }
+    public string? CreatedBy { get; set; }
 
     /// <summary>
     /// 操作类型（可选，按操作类型筛选）
@@ -602,8 +590,8 @@ public class ActivityLogQuery
     /// <summary>每页数量</summary>
     public int PageSize { get; set; } = 20;
 
-    /// <summary>用户ID</summary>
-    public string? UserId { get; set; }
+    /// <summary>创建者ID</summary>
+    public string? CreatedBy { get; set; }
 
     /// <summary>操作类型</summary>
     public string? Action { get; set; }
@@ -667,19 +655,14 @@ public class UserActivityLogPagedResponse
 public class LogHttpRequestRequest
 {
     /// <summary>
-    /// 用户ID
+    /// 创建者ID（用户ID）
     /// </summary>
-    public string? UserId { get; set; }
+    public string? CreatedBy { get; set; }
 
     /// <summary>
     /// 企业ID
     /// </summary>
     public string? CompanyId { get; set; }
-
-    /// <summary>
-    /// 用户名
-    /// </summary>
-    public string? Username { get; set; }
 
     /// <summary>
     /// HTTP方法

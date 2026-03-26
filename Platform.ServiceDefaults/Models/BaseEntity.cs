@@ -49,10 +49,10 @@ public abstract class BaseEntity : IEntity, ISoftDeletable, ITimestamped, IOpera
     /// </summary>
     [BsonElement("deletedBy")]
     [BsonRepresentation(BsonType.ObjectId)]
-    public string? DeletedBy 
-    { 
-        get => _deletedBy; 
-        set => _deletedBy = value == "" ? null : value; 
+    public string? DeletedBy
+    {
+        get => _deletedBy;
+        set => _deletedBy = value == "" ? null : value;
     }
 
     /// <summary>
@@ -67,10 +67,10 @@ public abstract class BaseEntity : IEntity, ISoftDeletable, ITimestamped, IOpera
     /// </summary>
     [BsonElement("createdBy")]
     [BsonRepresentation(BsonType.ObjectId)]
-    public string? CreatedBy 
-    { 
-        get => _createdBy; 
-        set => _createdBy = value == "" ? null : value; 
+    public string? CreatedBy
+    {
+        get => _createdBy;
+        set => _createdBy = value == "" ? null : value;
     }
 
     private string? _updatedBy;
@@ -79,10 +79,10 @@ public abstract class BaseEntity : IEntity, ISoftDeletable, ITimestamped, IOpera
     /// </summary>
     [BsonElement("updatedBy")]
     [BsonRepresentation(BsonType.ObjectId)]
-    public string? UpdatedBy 
-    { 
-        get => _updatedBy; 
-        set => _updatedBy = value == "" ? null : value; 
+    public string? UpdatedBy
+    {
+        get => _updatedBy;
+        set => _updatedBy = value == "" ? null : value;
     }
 
     /// <summary>
@@ -123,7 +123,7 @@ public abstract class MultiTenantEntity : BaseEntity, IMultiTenant
     /// 企业ID - 多租户隔离标识
     /// </summary>
     [BsonElement("companyId")]
-    public string CompanyId { get; set; } = string.Empty;
+    public string CompanyId { get; set; }
 }
 
 /// <summary>

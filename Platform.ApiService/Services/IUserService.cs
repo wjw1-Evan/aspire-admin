@@ -127,10 +127,10 @@ public interface IUserService
     /// <summary>
     /// 获取用户活动日志
     /// </summary>
-    /// <param name="userId">用户ID</param>
+    /// <param name="createdBy">创建者ID</param>
     /// <param name="limit">返回数量限制（默认50）</param>
     /// <returns>活动日志列表</returns>
-    Task<List<UserActivityLog>> GetUserActivityLogsAsync(string userId, int limit = 50);
+    Task<List<UserActivityLog>> GetUserActivityLogsAsync(string createdBy, int limit = 50);
 
     /// <summary>
     /// 根据ID列表批量获取用户（带租户过滤）
@@ -175,7 +175,7 @@ public interface IUserService
     /// </summary>
     /// <param name="page">页码（默认1）</param>
     /// <param name="pageSize">每页大小（默认20）</param>
-    /// <param name="userId">用户ID（可选，按用户筛选）</param>
+    /// <param name="createdBy">创建者ID（可选，按用户筛选）</param>
     /// <param name="action">操作类型（可选，按操作类型筛选）</param>
     /// <param name="httpMethod">HTTP请求方法（可选）</param>
     /// <param name="statusCode">HTTP状态码（可选）</param>
@@ -183,14 +183,14 @@ public interface IUserService
     /// <param name="startDate">开始日期（可选，按时间范围筛选）</param>
     /// <param name="endDate">结束日期（可选，按时间范围筛选）</param>
     /// <returns>活动日志列表和总数</returns>
-    Task<(List<UserActivityLog> logs, long total)> GetAllActivityLogsAsync(int page = 1, int pageSize = 20, string? userId = null, string? action = null, string? httpMethod = null, int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null);
+    Task<(List<UserActivityLog> logs, long total)> GetAllActivityLogsAsync(int page = 1, int pageSize = 20, string? createdBy = null, string? action = null, string? httpMethod = null, int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null);
 
     /// <summary>
     /// 获取所有活动日志（包含用户信息，分页，管理员功能）
     /// </summary>
     /// <param name="page">页码（默认1）</param>
     /// <param name="pageSize">每页大小（默认20）</param>
-    /// <param name="userId">用户ID（可选，按用户筛选）</param>
+    /// <param name="createdBy">创建者ID（可选，按用户筛选）</param>
     /// <param name="action">操作类型（可选，按操作类型筛选）</param>
     /// <param name="httpMethod">HTTP请求方法（可选）</param>
     /// <param name="statusCode">HTTP状态码（可选）</param>
@@ -198,7 +198,7 @@ public interface IUserService
     /// <param name="startDate">开始日期（可选，按时间范围筛选）</param>
     /// <param name="endDate">结束日期（可选，按时间范围筛选）</param>
     /// <returns>活动日志列表、总数和用户映射</returns>
-    Task<(List<UserActivityLog> logs, long total, Dictionary<string, string> userMap)> GetAllActivityLogsWithUsersAsync(int page = 1, int pageSize = 20, string? userId = null, string? action = null, string? httpMethod = null, int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null);
+    Task<(List<UserActivityLog> logs, long total, Dictionary<string, string> userMap)> GetAllActivityLogsWithUsersAsync(int page = 1, int pageSize = 20, string? createdBy = null, string? action = null, string? httpMethod = null, int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null);
 
     /// <summary>
     /// 记录用户活动日志

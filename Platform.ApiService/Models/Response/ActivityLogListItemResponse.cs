@@ -11,14 +11,14 @@ public class ActivityLogListItemResponse
     public string Id { get; set; } = string.Empty;
 
     /// <summary>
-    /// 用户ID
+    /// 创建者ID（用户ID）
     /// </summary>
-    public string UserId { get; set; } = string.Empty;
+    public string? CreatedBy { get; set; }
 
     /// <summary>
-    /// 用户名
+    /// 用户名（通过 CreatedBy 从用户表查询）
     /// </summary>
-    public string Username { get; set; } = string.Empty;
+    public string? Username { get; set; }
 
     /// <summary>
     /// 操作类型

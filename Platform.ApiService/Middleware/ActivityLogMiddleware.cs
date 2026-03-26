@@ -29,25 +29,20 @@ public class ActivityLogMiddleware
         "/chat/sse"  // SSE 端点（直接访问）
     };
 
-    private readonly IUserActivityLogQueue _logQueue;
-
     /// <summary>
     /// 初始化活动日志中间件
     /// </summary>
     /// <param name="next">下一个中间件委托</param>
     /// <param name="logger">日志记录器</param>
     /// <param name="configuration">配置对象</param>
-    /// <param name="logQueue">异步日志队列</param>
     public ActivityLogMiddleware(
         RequestDelegate next,
         ILogger<ActivityLogMiddleware> logger,
-        IConfiguration configuration,
-        IUserActivityLogQueue logQueue)
+        IConfiguration configuration)
     {
         _next = next;
         _logger = logger;
         _configuration = configuration;
-        _logQueue = logQueue;
     }
 
     /// <summary>
@@ -55,7 +50,8 @@ public class ActivityLogMiddleware
     /// </summary>
     /// <param name="context">HTTP 上下文</param>
     /// <param name="tenantContext">租户上下文</param>
-    public async Task InvokeAsync(HttpContext context, ITenantContext tenantContext)
+    /// <param name="logService">用户活动日志服务（请求 Scope 内注入）</param>
+    public async Task InvokeAsync(HttpContext context, ITenantContext tenantContext, IUserActivityLogService logService)
     {
         // 检查是否启用日志记录
         var enabled = _configuration.GetValue<bool>("ActivityLog:Enabled", true);
@@ -94,14 +90,20 @@ public class ActivityLogMiddleware
             // 停止计时
             stopwatch.Stop();
 
-            // ⚠️ 关键修复：在请求线程中提取所有数据（包括企业 ID），避免在后台线程访问 HttpContext 或丢失 Scoped Context
+            // ✅ 生命周期修复：在请求 Scope 内直接记录日志
+            // 确保 ITenantContext 可用，PlatformDbContext 审计逻辑能自动填充 CompanyId、CreatedBy 等字段
             var logData = await ExtractLogData(context, tenantContext, stopwatch.ElapsedMilliseconds);
 
             if (logData.HasValue)
             {
-                // ✅ 性能优化：将日志请求发送到异步队列，由后台 Worker 处理
-                // 使用 CancellationToken.None 确保即使请求取消，日志也能成功入队
-                await _logQueue.EnqueueAsync(ToRequest(logData.Value), CancellationToken.None);
+                try
+                {
+                    await logService.LogHttpRequestAsync(ToRequest(logData.Value));
+                }
+                catch (Exception logEx)
+                {
+                    _logger.LogError(logEx, "ActivityLogMiddleware: 记录活动日志时发生错误");
+                }
             }
         }
     }
@@ -132,33 +134,26 @@ public class ActivityLogMiddleware
     /// <summary>
     /// 在请求线程中提取日志数据（避免后台线程访问 HttpContext）
     /// </summary>
-    private async Task<(string? userId, string? companyId, string? username, string httpMethod, string path, string? queryString, string scheme, string host, int statusCode, long durationMs, string? ipAddress, string? userAgent, Dictionary<string, object>? metadata)?> ExtractLogData(HttpContext context, ITenantContext tenantContext, long durationMs)
+    private async Task<(string? createdBy, string? companyId, string httpMethod, string path, string? queryString, string scheme, string host, int statusCode, long durationMs, string? ipAddress, string? userAgent, Dictionary<string, object>? metadata)?> ExtractLogData(HttpContext context, ITenantContext tenantContext, long durationMs)
     {
+        // 只记录已登录用户
+        if (context.User?.Identity?.IsAuthenticated != true)
+        {
+            return null;
+        }
+
         // 提取用户信息
-        string? userId = null;
-        string? username = null;
-        string? companyId = null;
+        string? createdBy = context.User.FindFirst("userId")?.Value
+                ?? context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? context.User.FindFirst("sub")?.Value;
 
-        if (context.User?.Identity?.IsAuthenticated == true)
+        if (string.IsNullOrEmpty(createdBy))
         {
-            userId = context.User.FindFirst("userId")?.Value
-                    ?? context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-                    ?? context.User.FindFirst("sub")?.Value;
-
-            username = context.User.FindFirst("username")?.Value
-                       ?? context.User.FindFirst("name")?.Value
-                       ?? context.User.Identity.Name;
-
-            // ⚠️ 核心修复：在请求作用域内提取当前企业 ID
-            companyId = await tenantContext.GetCurrentCompanyIdAsync();
+            return null;
         }
 
-        // 检查是否包含匿名用户 (默认开启，确保记录)
-        var includeAnonymous = _configuration.GetValue<bool>("ActivityLog:IncludeAnonymous", true);
-        if (string.IsNullOrEmpty(userId) && !includeAnonymous)
-        {
-            return null; // 不记录匿名请求
-        }
+        // 提取企业 ID
+        var companyId = await tenantContext.GetCurrentCompanyIdAsync();
 
         // 提取请求信息
         var httpMethod = context.Request.Method;
@@ -195,19 +190,18 @@ public class ActivityLogMiddleware
         // 提取云存储操作的元数据
         var metadata = ExtractCloudStorageMetadata(context, httpMethod, path);
 
-        return (userId, companyId, username, httpMethod, path, queryString, scheme, host, statusCode, durationMs, ipAddress, userAgent, metadata);
+        return (createdBy, companyId, httpMethod, path, queryString, scheme, host, statusCode, durationMs, ipAddress, userAgent, metadata);
     }
 
     /// <summary>
     /// 日志数据元组转请求对象的转换方法
     /// </summary>
-    private static LogHttpRequestRequest ToRequest((string? userId, string? companyId, string? username, string httpMethod, string path, string? queryString, string scheme, string host, int statusCode, long durationMs, string? ipAddress, string? userAgent, Dictionary<string, object>? metadata) data)
+    private static LogHttpRequestRequest ToRequest((string? createdBy, string? companyId, string httpMethod, string path, string? queryString, string scheme, string host, int statusCode, long durationMs, string? ipAddress, string? userAgent, Dictionary<string, object>? metadata) data)
     {
         return new LogHttpRequestRequest
         {
-            UserId = data.userId,
+            CreatedBy = data.createdBy,
             CompanyId = data.companyId,
-            Username = data.username,
             HttpMethod = data.httpMethod,
             Path = data.path,
             QueryString = data.queryString,

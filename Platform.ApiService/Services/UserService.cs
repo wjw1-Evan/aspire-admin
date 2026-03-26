@@ -615,9 +615,9 @@ public class UserService(
     }
 
     /// <inheritdoc/>
-    public async Task<List<UserActivityLog>> GetUserActivityLogsAsync(string userId, int limit = 50)
+    public async Task<List<UserActivityLog>> GetUserActivityLogsAsync(string createdBy, int limit = 50)
     {
-        return await _userActivityLogService.GetUserActivityLogsAsync(userId, limit);
+        return await _userActivityLogService.GetUserActivityLogsAsync(createdBy, limit);
     }
 
     /// <inheritdoc/>
@@ -642,18 +642,18 @@ public class UserService(
 
     /// <inheritdoc/>
     public async Task<(List<UserActivityLog> logs, long total)> GetAllActivityLogsAsync(
-        int page = 1, int pageSize = 20, string? userId = null, string? action = null, string? httpMethod = null,
+        int page = 1, int pageSize = 20, string? createdBy = null, string? action = null, string? httpMethod = null,
         int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null)
     {
-        return await _userActivityLogService.GetAllActivityLogsAsync(page, pageSize, userId, action, httpMethod, statusCode, ipAddress, startDate, endDate);
+        return await _userActivityLogService.GetAllActivityLogsAsync(page, pageSize, createdBy, action, httpMethod, statusCode, ipAddress, startDate, endDate);
     }
 
     /// <inheritdoc/>
     public async Task<(List<UserActivityLog> logs, long total, Dictionary<string, string> userMap)> GetAllActivityLogsWithUsersAsync(
-        int page = 1, int pageSize = 20, string? userId = null, string? action = null, string? httpMethod = null,
+        int page = 1, int pageSize = 20, string? createdBy = null, string? action = null, string? httpMethod = null,
         int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null)
     {
-        return await _userActivityLogService.GetAllActivityLogsWithUsersAsync(page, pageSize, userId, action, httpMethod, statusCode, ipAddress, startDate, endDate);
+        return await _userActivityLogService.GetAllActivityLogsWithUsersAsync(page, pageSize, createdBy, action, httpMethod, statusCode, ipAddress, startDate, endDate);
     }
 
     // Delegating to UserRoleService

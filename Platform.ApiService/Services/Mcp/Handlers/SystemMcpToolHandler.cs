@@ -43,7 +43,7 @@ public class SystemMcpToolHandler : McpToolHandlerBase
                 var (items, total) = await _logService.GetAllActivityLogsAsync(
                     page: page,
                     pageSize: pageSize,
-                    userId: args.GetValueOrDefault("userId")?.ToString(),
+                    createdBy: args.GetValueOrDefault("userId")?.ToString(),
                     action: args.GetValueOrDefault("action")?.ToString());
                 return new { items, total, page, pageSize };
             });

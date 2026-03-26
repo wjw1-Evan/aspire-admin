@@ -10,10 +10,10 @@ public interface IUserActivityLogService
     /// <summary>
     /// 获取用户活动日志
     /// </summary>
-    /// <param name="userId">用户ID</param>
+    /// <param name="createdBy">创建者ID</param>
     /// <param name="limit">返回数量限制（默认50）</param>
     /// <returns>活动日志列表</returns>
-    Task<List<UserActivityLog>> GetUserActivityLogsAsync(string userId, int limit = 50);
+    Task<List<UserActivityLog>> GetUserActivityLogsAsync(string createdBy, int limit = 50);
 
     /// <summary>
     /// 获取用户活动日志（分页）
@@ -69,7 +69,7 @@ public interface IUserActivityLogService
     Task<(List<UserActivityLog> logs, long total)> GetAllActivityLogsAsync(
         int page = 1,
         int pageSize = 20,
-        string? userId = null,
+        string? createdBy = null,
         string? action = null,
         string? httpMethod = null,
         int? statusCode = null,
@@ -83,7 +83,7 @@ public interface IUserActivityLogService
     Task<(List<UserActivityLog> logs, long total, Dictionary<string, string> userMap)> GetAllActivityLogsWithUsersAsync(
         int page = 1,
         int pageSize = 20,
-        string? userId = null,
+        string? createdBy = null,
         string? action = null,
         string? httpMethod = null,
         int? statusCode = null,

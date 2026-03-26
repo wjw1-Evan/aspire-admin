@@ -5,75 +5,35 @@ using System.Linq.Expressions;
 namespace Platform.ServiceDefaults.Services;
 
 /// <summary>
-/// EF Core 数据工厂 - 提供类型安全的 CRUD 和分页查询
-/// 审计字段（时间戳、操作人、多租户等）统一由 PlatformDbContext.SaveChangesAsync 设置
+/// 极简 EF Core 数据工厂 - 只封装写操作，查询直接使用 Query
+/// 审计字段（时间戳、操作人、多租户、软删除）统一由 PlatformDbContext.SaveChangesAsync 自动设置
 /// </summary>
 public class EFCoreDataFactory<T>(DbContext context)
     : IDataFactory<T> where T : class, IEntity, ISoftDeletable, ITimestamped
 {
     private readonly DbSet<T> _dbSet = context.Set<T>();
 
-    #region 查询操作
+    /// <summary>
+    /// 暴露 DbSet 供所有查询和操作使用（已应用全局过滤器：软删除 + 多租户）
+    /// </summary>
+    public DbSet<T> Query => _dbSet;
 
-    public async Task<T?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
-        => await _dbSet.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+    /// <summary>
+    /// 暴露 DbContext 实例（用于事务、批量操作等高级场景）
+    /// </summary>
+    public DbContext Context => context;
 
-    public async Task<bool> ExistsAsync(string id, CancellationToken cancellationToken = default)
-        => await ExistsAsync(e => e.Id == id, cancellationToken);
+    /// <summary>
+    /// 跨租户查询（绕过多租户过滤器但仍过滤软删除）
+    /// </summary>
+    public IQueryable<T> QueryWithoutTenantFilter => _dbSet.IgnoreQueryFilters().Where(e => !e.IsDeleted);
 
-    public async Task<bool> ExistsAsync(Expression<Func<T, bool>> filter, CancellationToken cancellationToken = default)
-        => await _dbSet.AnyAsync(filter, cancellationToken);
-
-    public async Task<List<T>> FindAsync(
-        Expression<Func<T, bool>>? filter = null,
-        Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,
-        int? limit = null,
-        Expression<Func<T, object>>[]? includes = null,
-        CancellationToken cancellationToken = default)
-    {
-        var query = BuildQuery(_dbSet.AsNoTracking(), filter, orderBy, includes);
-        if (limit is > 0) query = query.Take(limit.Value);
-        return await query.ToListAsync(cancellationToken);
-    }
-
-    public async Task<(List<T> items, long total)> FindPagedAsync(
-        Expression<Func<T, bool>>? filter = null,
-        Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,
-        int page = 1,
-        int pageSize = 10,
-        Expression<Func<T, object>>[]? includes = null,
-        CancellationToken cancellationToken = default)
-    {
-        page = Math.Max(1, page);
-        pageSize = Math.Clamp(pageSize, 1, 100);
-
-        IQueryable<T> baseQuery = _dbSet.AsNoTracking();
-        if (filter != null) baseQuery = baseQuery.Where(filter);
-
-        var total = await baseQuery.CountAsync(cancellationToken);
-
-        var itemsQuery = BuildQuery(baseQuery, null, orderBy, includes);
-        var items = await itemsQuery
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
-
-        return (items, total);
-    }
-
-    public async Task<long> CountAsync(Expression<Func<T, bool>>? filter = null, CancellationToken cancellationToken = default)
-        => await (filter == null ? _dbSet : _dbSet.Where(filter)).CountAsync(cancellationToken);
-
-    public async Task<long> SumAsync(Expression<Func<T, bool>>? filter, Expression<Func<T, long>> selector, CancellationToken cancellationToken = default)
-        => await (filter == null ? _dbSet : _dbSet.Where(filter)).SumAsync(selector, cancellationToken);
-
-    #endregion
-
-    #region 创建操作
+    #region 写操作（封装 SaveChanges，自动应用审计）
 
     public async Task<T> CreateAsync(T entity, CancellationToken cancellationToken = default)
     {
-        await CreateManyAsync([entity], cancellationToken);
+        await _dbSet.AddAsync(entity, cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
         return entity;
     }
 
@@ -86,10 +46,6 @@ public class EFCoreDataFactory<T>(DbContext context)
         await context.SaveChangesAsync(cancellationToken);
         return entityList;
     }
-
-    #endregion
-
-    #region 更新操作
 
     public async Task<T?> UpdateAsync(string id, Action<T> updateAction, CancellationToken cancellationToken = default)
         => await UpdateAsync(id, e => { updateAction(e); return Task.CompletedTask; }, cancellationToken);
@@ -105,11 +61,7 @@ public class EFCoreDataFactory<T>(DbContext context)
     }
 
     public async Task<int> UpdateManyAsync(Expression<Func<T, bool>> filter, Action<T> updateAction, CancellationToken cancellationToken = default)
-        => await UpdateManyAsync(filter, e => { updateAction(e); return Task.CompletedTask; }, cancellationToken);
-
-    public async Task<int> UpdateManyAsync(Expression<Func<T, bool>> filter, Func<T, Task> updateAction, CancellationToken cancellationToken = default)
     {
-        // 🚀 优化：分批加载以避免内存溢出
         const int batchSize = 1000;
         var totalUpdated = 0;
 
@@ -120,113 +72,16 @@ public class EFCoreDataFactory<T>(DbContext context)
 
             foreach (var entity in batch)
             {
-                await updateAction(entity);
+                updateAction(entity);
             }
 
             await context.SaveChangesAsync(cancellationToken);
             totalUpdated += batch.Count;
 
-            // 如果批次小于 batchSize，说明已经处理完所有数据
             if (batch.Count < batchSize) break;
         }
 
         return totalUpdated;
-    }
-
-    #endregion
-
-    #region 删除操作
-
-    public async Task<bool> SoftDeleteAsync(string id, string? reason = null, CancellationToken cancellationToken = default)
-    {
-        return await UpdateAsync(id, entity =>
-        {
-            entity.IsDeleted = true;
-            entity.DeletedReason = reason;
-        }, cancellationToken) != null;
-    }
-
-    public async Task<int> SoftDeleteManyAsync(Expression<Func<T, bool>> filter, string? reason = null, CancellationToken cancellationToken = default)
-    {
-        return await UpdateManyAsync(filter, entity =>
-        {
-            entity.IsDeleted = true;
-            entity.DeletedReason = reason;
-        }, cancellationToken);
-    }
-
-    public async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
-    {
-        // 🚀 优化：明确只删除未软删除的记录
-        var entity = await _dbSet.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
-        if (entity == null) return false;
-
-        _dbSet.Remove(entity);
-        await context.SaveChangesAsync(cancellationToken);
-        return true;
-    }
-
-    public async Task<int> DeleteManyAsync(Expression<Func<T, bool>> filter, CancellationToken cancellationToken = default)
-    {
-        // 🚀 优化：分批删除以避免内存溢出
-        const int batchSize = 1000;
-        var totalDeleted = 0;
-
-        while (true)
-        {
-            var batch = await _dbSet.Where(filter).Take(batchSize).ToListAsync(cancellationToken);
-            if (batch.Count == 0) break;
-
-            _dbSet.RemoveRange(batch);
-            await context.SaveChangesAsync(cancellationToken);
-            totalDeleted += batch.Count;
-
-            if (batch.Count < batchSize) break;
-        }
-
-        return totalDeleted;
-    }
-
-    #endregion
-
-    #region 忽略过滤器操作
-
-    public async Task<T?> GetByIdWithoutTenantFilterAsync(string id, CancellationToken cancellationToken = default)
-        => await _dbSet.IgnoreQueryFilters()
-            .Where(e => !e.IsDeleted)
-            .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
-
-    public async Task<List<T>> FindWithoutTenantFilterAsync(
-        Expression<Func<T, bool>>? filter = null,
-        Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,
-        int? limit = null,
-        Expression<Func<T, object>>[]? includes = null,
-        CancellationToken cancellationToken = default)
-    {
-        var baseQuery = _dbSet.IgnoreQueryFilters().AsNoTracking().Where(e => !e.IsDeleted);
-        var query = BuildQuery(baseQuery, filter, orderBy, includes);
-        if (limit is > 0) query = query.Take(limit.Value);
-        return await query.ToListAsync(cancellationToken);
-    }
-
-    #endregion
-
-    #region 私有工具方法
-
-    private static IQueryable<T> BuildQuery(
-        IQueryable<T> query,
-        Expression<Func<T, bool>>? filter,
-        Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy,
-        Expression<Func<T, object>>[]? includes)
-    {
-        if (filter != null) query = query.Where(filter);
-
-        if (includes != null)
-        {
-            query = includes.Aggregate(query, (current, include) => current.Include(include));
-        }
-
-        return orderBy?.Invoke(query) ?? query.OrderByDescending(e => e.CreatedAt);
     }
 
     #endregion

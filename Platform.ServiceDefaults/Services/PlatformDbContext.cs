@@ -28,22 +28,6 @@ public class PlatformDbContext : DbContext
 
     // 缓存实体类型扫描结果
     private static List<Type>? _cachedEntityTypes;
-    private static readonly List<Assembly> _extraEntityAssemblies = [];
-    private static readonly object _cacheLock = new();
-
-    /// <summary>
-    /// 注册额外的实体程序集（主要用于单元测试）
-    /// </summary>
-    public static void RegisterEntityAssembly(Assembly assembly)
-    {
-        lock (_cacheLock)
-        {
-            if (_extraEntityAssemblies.Contains(assembly)) return;
-
-            _extraEntityAssemblies.Add(assembly);
-            _cachedEntityTypes = null; // 清除缓存以重新扫描
-        }
-    }
 
     public override int SaveChanges()
     {
@@ -104,11 +88,6 @@ public class PlatformDbContext : DbContext
                 if (isAdded)
                 {
                     trackable.CreatedBy ??= trackable.UpdatedBy;
-                    trackable.LastOperationType = "CREATE";
-                }
-                else
-                {
-                    trackable.LastOperationType = "UPDATE";
                 }
             }
 
@@ -126,14 +105,11 @@ public class PlatformDbContext : DbContext
                 {
                     softDeletable.DeletedAt ??= now;
                     softDeletable.DeletedBy ??= userId;
-                    if (entity is IOperationTrackable ot) ot.LastOperationType = "DELETE";
                 }
                 else
                 {
                     softDeletable.DeletedAt = null;
                     softDeletable.DeletedBy = null;
-                    softDeletable.DeletedReason = null;
-                    if (entity is IOperationTrackable ot) ot.LastOperationType = "RESTORE";
                 }
             }
         }
@@ -168,38 +144,33 @@ public class PlatformDbContext : DbContext
     private void ApplyFilterGeneric<TEntity>(ModelBuilder modelBuilder) where TEntity : class
     {
         modelBuilder.Entity<TEntity>().HasQueryFilter(e =>
-            (e is not ISoftDeletable sd || !sd.IsDeleted) &&
-            (e is not IMultiTenant mt || IsSystemContext || mt.CompanyId == _tenantContext!.GetCurrentCompanyIdAsync().GetAwaiter().GetResult())
+            (!(e is ISoftDeletable) || !((ISoftDeletable)e).IsDeleted) &&
+            (!(e is IMultiTenant) || IsSystemContext || ((IMultiTenant)e).CompanyId == _tenantContext!.GetCurrentCompanyIdAsync().GetAwaiter().GetResult())
         );
     }
 
     private static List<Type> GetEntityTypes()
     {
+        // 🚀 使用延迟初始化模式，EF Core 模型构建在启动时单线程执行
         if (_cachedEntityTypes != null) return _cachedEntityTypes;
 
-        lock (_cacheLock)
-        {
-            if (_cachedEntityTypes != null) return _cachedEntityTypes;
+        // 🚀 使用 LINQ 简化程序集收集
+        var assemblies = new[] { Assembly.GetExecutingAssembly(), Assembly.GetEntryAssembly() }
+            .Where(a => a != null)
+            .Cast<Assembly>()
+            .Distinct()
+            .ToList();
 
-            // 🚀 使用 LINQ 简化程序集收集
-            var assemblies = new[] { Assembly.GetExecutingAssembly(), Assembly.GetEntryAssembly() }
-                .Where(a => a != null)
-                .Cast<Assembly>()
-                .Concat(_extraEntityAssemblies)
-                .Distinct()
-                .ToList();
+        // 🚀 使用 LINQ 简化实体类型扫描
+        _cachedEntityTypes = assemblies
+            .SelectMany(a =>
+            {
+                try { return a.GetTypes(); }
+                catch { return []; }
+            })
+            .Where(t => t is { IsClass: true, IsAbstract: false } && typeof(IEntity).IsAssignableFrom(t))
+            .ToList();
 
-            // 🚀 使用 LINQ 简化实体类型扫描
-            _cachedEntityTypes = assemblies
-                .SelectMany(a =>
-                {
-                    try { return a.GetTypes(); }
-                    catch { return []; }
-                })
-                .Where(t => t is { IsClass: true, IsAbstract: false } && typeof(IEntity).IsAssignableFrom(t))
-                .ToList();
-
-            return _cachedEntityTypes;
-        }
+        return _cachedEntityTypes;
     }
 }

@@ -1,6 +1,3 @@
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
-
 namespace Platform.ServiceDefaults.Models;
 
 /// <summary>
@@ -17,11 +14,6 @@ public interface IOperationTrackable
     /// 最后更新人ID
     /// </summary>
     string? UpdatedBy { get; set; }
-
-    /// <summary>
-    /// 最后操作类型（CREATE, UPDATE, DELETE）
-    /// </summary>
-    string? LastOperationType { get; set; }
 
     /// <summary>
     /// 最后操作时间

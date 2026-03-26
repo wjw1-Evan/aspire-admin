@@ -54,12 +54,6 @@ public abstract class BaseEntity : IEntity, ISoftDeletable, ITimestamped, IOpera
         set => _deletedBy = value == "" ? null : value;
     }
 
-    /// <summary>
-    /// 删除原因
-    /// </summary>
-    [BsonElement("deletedReason")]
-    public string? DeletedReason { get; set; }
-
     private string? _createdBy;
     /// <summary>
     /// 创建者ID
@@ -83,12 +77,6 @@ public abstract class BaseEntity : IEntity, ISoftDeletable, ITimestamped, IOpera
         get => _updatedBy;
         set => _updatedBy = value == "" ? null : value;
     }
-
-    /// <summary>
-    /// 最后操作类型
-    /// </summary>
-    [BsonElement("lastOperationType")]
-    public string? LastOperationType { get; set; }
 
     /// <summary>
     /// 最后操作时间
@@ -141,7 +129,6 @@ public interface ISoftDeletable
     bool IsDeleted { get; set; }
     DateTime? DeletedAt { get; set; }
     string? DeletedBy { get; set; }
-    string? DeletedReason { get; set; }
 }
 
 /// <summary>

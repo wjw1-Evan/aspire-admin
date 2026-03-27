@@ -1,33 +1,14 @@
-# 数据访问工厂使用指南
+# 数据访问规范
 
-> 2026-02 重构：由 `IDatabaseOperationFactory` 升级为 `IDataFactory`，全面支持 **LINQ 表达式**，消除对 MongoDB 特定 API 的硬编码依赖。
-
-为提升一致性与可维护性，数据工厂与构建器有如下更新与约定：
-
-- **完全数据库无关**：所有查询与更新均采用 LINQ 表达式。
-- **简化 API**：移除了繁琐的 `FilterBuilder/UpdateBuilder`，改用标准的 Lambda 表达式。
-- **分页与排序**：`FindPagedAsync` 集成了排序逻辑；排序统一使用 `Func<IQueryable<T>, IOrderedQueryable<T>>`。
-- **类型安全更新**：`UpdateAsync` 接受 `Action<T>`，在实体对象上直接操作，由工厂自动检测变更并执行审计字段更新。
-- **自动审计与租户**：保留对 `IMultiTenant`、`ISoftDeletable`、`ITimestamped` 的自动处理，逻辑集中在 `PlatformDbContext` 中。
-
-> 本文档说明如何使用 `IDataFactory<T>` 进行数据库操作，这是平台统一且未来兼容（如迁移 EF Core）的数据访问方式。
-
-## 📋 概述
-
-`IDataFactory<T>` 是平台统一的数据访问抽象，提供了以下核心能力：
-
-- **多租户隔离**：自动为实现了 `IMultiTenant` 的实体附加 `CompanyId` 过滤
-- **软删除支持**：自动处理软删除逻辑，查询时自动过滤已删除记录
-- **审计字段维护**：由 `PlatformDbContext` 自动维护 `CreatedAt`、`UpdatedAt`、`CreatedBy`、`UpdatedBy` 等审计字段
-- **原子操作**：所有操作都是原子性的，确保数据一致性
+> 2026-03 更新：平台统一使用 **DbContext** + **LINQ 表达式** 进行数据访问，由 `PlatformDbContext` 自动处理租户隔离、软删除和审计追踪。
 
 ## 🚫 禁止行为
 
 **⚠️ 重要：以下行为严格禁止**
 
-1. **禁止修改 `Platform.ServiceDefaults/Services/PlatformDbContext.cs` 文件**。
+1. **禁止修改** `Platform.ServiceDefaults/Services/PlatformDbContext.cs` 文件。
 
-2. **禁止直接注入数据库驱动特定对象**（如 `IMongoCollection<T>`、`IMongoDatabase` 或 `DbContext`）
+2. **禁止直接注入数据库驱动特定对象**（如 `IMongoCollection<T>`、`IMongoDatabase`）
 
    ```csharp
    // ❌ 错误示例
@@ -37,9 +18,7 @@
    }
    ```
 
-2. **禁止使用 MongoDB 特定构建器**（如 `Builders<T>.Filter`、`UpdateBuilder` 等）
-
-2. **禁止手动设置审计字段**
+3. **禁止手动设置审计字段**
 
    ```csharp
    // ❌ 错误示例
@@ -47,46 +26,30 @@
    entity.CreatedBy = userId; // 禁止！
    ```
 
-3. **禁止绕过工厂直接操作数据库**
-
-   ```csharp
-   // ❌ 错误示例
-   await _collection.InsertOneAsync(entity); // 禁止！
-   ```
-
 ## ✅ 正确使用方式
 
-### 1. 服务注册
+### 1. 服务注入
 
-在 `Program.cs` 中注册数据库工厂：
-
-```csharp
-// 推荐方式：一键注册平台数据库与基础设施
-builder.AddPlatformDatabase();
-```
-
-### 2. 服务注入
-
-在业务服务中通过构造函数注入：
+在业务服务中通过构造函数注入 `DbContext`：
 
 ```csharp
-public class UserService : IUserService
+public class UserService
 {
-    private readonly IDataFactory<User> _userFactory;
+    private readonly DbContext _context;
 
-    public UserService(IDataFactory<User> userFactory)
+    public UserService(DbContext context)
     {
-        _userFactory = userFactory;
+        _context = context;
     }
 }
 ```
 
-### 3. 实体设计
+### 2. 实体设计
 
-实体必须实现以下接口：
+实体实现必要接口：
 
 ```csharp
-public class User : IEntity, ISoftDeletable, ITimestamped, IMultiTenant
+public class User : BaseEntity, ISoftDeletable, IMultiTenant
 {
     public string Id { get; set; } = string.Empty;
     public bool IsDeleted { get; set; }
@@ -94,11 +57,15 @@ public class User : IEntity, ISoftDeletable, ITimestamped, IMultiTenant
     public string? DeletedBy { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
-    public string CompanyId { get; set; } = string.Empty; // 多租户
+    public string? CreatedBy { get; set; }
+    public string? UpdatedBy { get; set; }
+    public string? CompanyId { get; set; } // 多租户
 }
 ```
 
-### 4. 创建实体
+> `AppUser` 不实现 `IMultiTenant`，因为它是跨企业的全局用户模型，使用 `CurrentCompanyId` 进行动态切换。
+
+### 3. 创建实体
 
 ```csharp
 public async Task<User> CreateUserAsync(CreateUserRequest request)
@@ -106,151 +73,186 @@ public async Task<User> CreateUserAsync(CreateUserRequest request)
     var user = new User
     {
         Username = request.Username,
-        Email = request.Email,
-        // 不要设置 CreatedAt、CreatedBy 等字段，工厂会自动处理
+        Email = request.Email
+        // 不要设置 CreatedAt、CreatedBy 等字段，PlatformDbContext 会自动处理
     };
 
-    // 使用工厂创建，自动处理审计字段和多租户隔离
-    return await _userFactory.CreateAsync(user);
+    await _context.Set<User>().AddAsync(user);
+    await _context.SaveChangesAsync();
+    return user;
 }
 ```
+
+### 4. 查询数据
 
 使用 LINQ 表达式构建查询条件：
 
 ```csharp
 public async Task<User?> GetUserByIdAsync(string id)
 {
-    // 简单查询
-    return await _userFactory.GetByIdAsync(id);
+    return await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == id);
 }
 
 public async Task<List<User>> GetUsersAsync(string? keyword)
 {
-    // 使用 LINQ 表达式进行过滤和排序
-    var search = keyword?.ToLower();
+    var query = _context.Set<User>().AsQueryable();
     
-    return await _userFactory.FindAsync(
-        u => string.IsNullOrEmpty(search) || u.Username.ToLower().Contains(search),
-        q => q.OrderByDescending(u => u.CreatedAt)
-    );
+    if (!string.IsNullOrEmpty(keyword))
+    {
+        var search = keyword.ToLower();
+        query = query.Where(u => u.Username.ToLower().Contains(search));
+    }
+    
+    return await query.OrderByDescending(u => u.CreatedAt).ToListAsync();
 }
 
-public async Task<(List<User> items, int total)> GetPagedUsersAsync(int page, int pageSize, string? keyword)
+public async Task<(List<User> items, long total)> GetPagedUsersAsync(int page, int pageSize, string? keyword)
 {
-    var search = keyword?.ToLower();
-
-    return await _userFactory.FindPagedAsync(
-        u => string.IsNullOrEmpty(search) || u.Username.ToLower().Contains(search),
-        q => q.OrderByDescending(u => u.CreatedAt),
-        page,
-        pageSize
-    );
+    var filter = (User? u) => true;
+    
+    if (!string.IsNullOrEmpty(keyword))
+    {
+        var search = keyword.ToLower();
+        filter = u => u.Username.ToLower().Contains(search);
+    }
+    
+    var query = _context.Set<User>().Where(filter);
+    var total = await query.LongCountAsync();
+    var items = await query.OrderByDescending(u => u.CreatedAt)
+        .Skip((page - 1) * pageSize)
+        .Take(pageSize)
+        .ToListAsync();
+    
+    return (items, total);
 }
 ```
 
-### 6. 更新实体
+### 5. 更新实体
 
 ```csharp
 public async Task<User?> UpdateUserAsync(string id, UpdateUserRequest request)
 {
-    // 采用领域模型风格更新，工厂负责检测变更并保存，同时更新审计字段
-    var updatedUser = await _userFactory.UpdateAsync(id, u => 
-    {
-        if (!string.IsNullOrEmpty(request.Username))
-            u.Username = request.Username;
-            
-        if (!string.IsNullOrEmpty(request.Email))
-            u.Email = request.Email;
-    });
-
-    if (updatedUser == null)
-        throw new KeyNotFoundException($"用户 {id} 不存在");
-
-    return updatedUser;
+    var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == id);
+    if (user == null) return null;
+    
+    // 直接在实体上修改，EF Core 会自动跟踪变更
+    if (!string.IsNullOrEmpty(request.Username))
+        user.Username = request.Username;
+    if (!string.IsNullOrEmpty(request.Email))
+        user.Email = request.Email;
+    
+    await _context.SaveChangesAsync();
+    return user;
 }
 ```
 
-### 7. 软删除
+### 6. 软删除
 
 ```csharp
 public async Task<bool> DeleteUserAsync(string id)
 {
-    // 软删除，自动设置 IsDeleted、DeletedAt、DeletedBy
-    var updated = await _userFactory.UpdateAsync(id, u => u.IsDeleted = true);
-    return updated != null;
+    var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == id);
+    if (user == null) return false;
+    
+    user.IsDeleted = true;
+    user.DeletedAt = DateTime.UtcNow;
+    await _context.SaveChangesAsync();
+    return true;
 }
 ```
 
-### 8. 批量操作
+### 7. 批量操作
 
 ```csharp
-// 批量查询 (基于 LINQ)
+// 批量查询
 var ids = new List<string> { "1", "2" };
-var users = await _userFactory.FindAsync(u => ids.Contains(u.Id));
+var users = await _context.Set<User>().Where(u => ids.Contains(u.Id)).ToListAsync();
 
 // 批量创建
 var newUsers = new List<User> { user1, user2 };
-var createdUsers = await _userFactory.CreateManyAsync(newUsers);
-
-// 批量更新或删除 (通常建议循环调用 UpdateAsync 以确保审计完整性，或使用工厂支持的批处理方法)
-// 注意：复杂的批量逻辑请根据具体 IDataFactory 实现来扩展。
+await _context.Set<User>().AddRangeAsync(newUsers);
+await _context.SaveChangesAsync();
 ```
 
-### LINQ 常见操作对照 (取代旧 Builder)
+### 8. 跨租户查询
+
+需要查询所有企业数据时，使用 `IgnoreQueryFilters()`：
+
+```csharp
+// 查询所有用户（忽略租户过滤器）
+var allUsers = await _context.Set<User>().IgnoreQueryFilters().ToListAsync();
+
+// 查询已删除的记录
+var deletedUsers = await _context.Set<User>().IgnoreQueryFilters()
+    .Where(u => u.IsDeleted).ToListAsync();
+```
+
+> 注意：使用 `IgnoreQueryFilters()` 需要确保有明确的权限控制。
+
+## LINQ 常见操作
 
 - **等于**: `u => u.Status == "Active"`
 - **包含**: `u => ids.Contains(u.Id)`
 - **模糊匹配**: `u => u.Username.Contains("admin")`
-- **正则 (由驱动支持)**: 使用 `System.Text.RegularExpressions.Regex.IsMatch` 或对应的 LINQ 扩展
 - **组合条件**: `u => u.IsActive && u.Age > 18`
 - **排序**: `q => q.OrderBy(u => u.Name).ThenByDescending(u => u.CreatedAt)`
 
-## 🌐 多租户隔离
+## 多租户隔离
 
-对于实现了 `IMultiTenant` 的实体，工厂会自动：
+`PlatformDbContext` 会自动为实现了 `IMultiTenant` 的实体应用租户过滤器：
 
 1. **创建时**：自动设置 `CompanyId`（从 `ITenantContext` 获取）
-2. **查询时**：自动附加 `CompanyId` 过滤条件 (基于解析到的 `CurrentCompanyId`)
+2. **查询时**：自动附加 `CompanyId` 过滤条件
 3. **更新时**：确保只能更新当前企业的数据
 
 ```csharp
 // 实体实现 IMultiTenant
-public class Role : MultiTenantEntity, ISoftDeletable, ITimestamped, IEntity
+public class Role : BaseEntity, IMultiTenant, ISoftDeletable
 {
-    // CompanyId 由 MultiTenantEntity 提供
+    public string? CompanyId { get; set; }
 }
 
 // 查询时自动过滤当前企业的角色
-var roles = await _userFactory.FindAsync(u => u.Name == "Admin"); // 只返回当前企业的 Admin 角色
+var roles = await _context.Set<Role>().Where(r => r.Name == "Admin").ToListAsync();
 ```
 
-## 🔄 后台线程场景
+## 后台线程场景
 
-在后台线程中（如定时任务、消息处理），可能无法访问 `HttpContext`，此时可以使用重载方法：
+在后台线程中（如定时任务、消息处理），使用 `IServiceScopeFactory` 创建作用域：
 
 ```csharp
-// 提供用户信息，避免访问 HttpContext
-var entity = new SomeEntity { /* ... */ };
-await _userFactory.CreateAsync(entity, userId: "user123", username: "admin");
+public class MyHostedService : BackgroundService
+{
+    private readonly IServiceScopeFactory _scopeFactory;
+
+    public MyHostedService(IServiceScopeFactory scopeFactory)
+    {
+        _scopeFactory = scopeFactory;
+    }
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<DbContext>();
+        
+        // 使用 context 进行数据库操作
+    }
+}
 ```
 
-## 📝 最佳实践
+## 最佳实践
 
-1. **始终使用工厂**：所有数据库操作都通过 `IDataFactory<T>` 进行。
-2. **拥抱 LINQ**：完全弃用 `BsonDocument` 或驱动特定的构建器，确保代码可读性与跨数据库兼容性。
-3. **不要手动设置审计字段**：让工厂自动处理。
-4. **利用多租户隔离**：实现 `IMultiTenant` 接口。
-5. **优先使用 Lambda 更新**：使用 `UpdateAsync(id, entity => { ... })` 保持业务逻辑在 C# 对象上操作。
+1. **始终使用 DbContext**：所有数据库操作通过 `DbContext` 进行。
+2. **拥抱 LINQ**：完全弃用 `BsonDocument` 或驱动特定的构建器。
+3. **不要手动设置审计字段**：让 `PlatformDbContext` 自动处理。
+4. **利用多租户隔离**：实现 `IMultiTenant` 接口的实体会自动应用过滤器。
+5. **优先使用对象更新**：直接修改实体属性，EF Core 会自动跟踪变更。
 
-## 🔍 常见问题
+## 常见问题
 
 ### Q: 如何查询已删除的记录？
 
-A: 请使用 `FindIncludingDeletedAsync` 方法。工厂默认的 `FindAsync/FindPagedAsync` 会自动过滤已删除记录。
-
-### Q: 如何跨企业查询？
-
-A: 仅在系统管理员或后台任务等特殊场景下，可使用 `FindWithoutTenantFilterAsync` 方法。使用这些方法时必须确保有明确的权限控制。
+A: 使用 `IgnoreQueryFilters()` 方法。默认查询会自动过滤已删除记录。
 
 ### Q: 如何自定义集合名称？
 
@@ -258,13 +260,18 @@ A: 在实体类上使用 `[BsonCollectionName("customName")]` 特性：
 
 ```csharp
 [BsonCollectionName("customUsers")]
-public class User : IEntity, ISoftDeletable, ITimestamped
+public class User : BaseEntity
 {
     // ...
 }
 ```
 
-## 📚 相关文档
+### Q: 为什么登录/注册查询需要用 `IgnoreQueryFilters()`？
+
+A: 因为 `AppUser` 是全局用户模型，不实现 `IMultiTenant`，但全局查询过滤器会尝试检查多租户条件导致错误。登录/注册是特殊的全局操作，需要绕过过滤器。
+
+## 相关文档
 
 - [后端核心与中间件规范](BACKEND-RULES.md)
 - [统一 API 响应与控制器规范](API-RESPONSE-RULES.md)
+- [开发规范](../开发规范.md)

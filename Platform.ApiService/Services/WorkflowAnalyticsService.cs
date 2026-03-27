@@ -19,7 +19,7 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
     /// <summary>
     /// 初始化工作流分析服务
     /// </summary>
-
+    /// <param name="context">数据库上下文</param>
     /// <param name="logger">日志记录器</param>
     public WorkflowAnalyticsService(DbContext context,
         ILogger<WorkflowAnalyticsService> logger

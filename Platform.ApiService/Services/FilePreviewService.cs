@@ -17,7 +17,7 @@ public class FilePreviewService : IFilePreviewService
     private readonly DbContext _context;
 
     private readonly ICloudStorageService _cloudStorageService;
-    private readonly IFileStorageFactory _fileStorageFactory;
+    private readonly IFileStorageFactory _fileStorageFactory = null!;
     private readonly ILogger<FilePreviewService> _logger;
 
     /// <summary>

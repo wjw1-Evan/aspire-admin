@@ -47,6 +47,7 @@ public static class AuthorizationExtensions
     /// <param name="userCompanyService">用户企业服务实例</param>
     /// <param name="userId">要验证的用户ID</param>
     /// <param name="companyId">要验证的企业ID</param>
+    /// <param name="messageFactory">错误消息生成器</param>
     /// <returns>如果是管理员返回 true，否则抛出异常</returns>
     public static async Task<bool> RequireAdminAsync(
         this Services.IUserCompanyService userCompanyService,

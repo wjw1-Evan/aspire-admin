@@ -270,8 +270,8 @@ public class UserActivityLogService : IUserActivityLogService
         var invalidUserIds = logs
             .Select(log => log.CreatedBy)
             .Distinct()
-            .Where(uid => !string.IsNullOrEmpty(uid) && !IsValidObjectId(uid))
-            .Where(uid => !userMap.ContainsKey(uid))
+            .Where(uid => !string.IsNullOrEmpty(uid) && !IsValidObjectId(uid!))
+            .Where(uid => !userMap.ContainsKey(uid!))
             .ToList();
 
         foreach (var invalidUserId in invalidUserIds)
@@ -280,7 +280,7 @@ public class UserActivityLogService : IUserActivityLogService
             {
                 _ => $"用户({invalidUserId})"
             };
-            userMap[invalidUserId] = defaultUsername;
+            userMap[invalidUserId!] = defaultUsername;
         }
 
         return (logs, total, userMap);

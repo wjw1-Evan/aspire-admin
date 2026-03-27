@@ -719,22 +719,22 @@ public class UserService : IUserService
         await _context.SaveChangesAsync();
         return true;
     }
-}
 
-// 辅助类：用于参数替换
-internal class ParameterReplaceVisitor : ExpressionVisitor
-{
-    private readonly ParameterExpression _oldParameter;
-    private readonly ParameterExpression _newParameter;
-
-    public ParameterReplaceVisitor(ParameterExpression oldParameter, ParameterExpression newParameter)
+    // 辅助类：用于参数替换
+    private class ParameterReplaceVisitor : ExpressionVisitor
     {
-        _oldParameter = oldParameter;
-        _newParameter = newParameter;
-    }
+        private readonly ParameterExpression _oldParameter;
+        private readonly ParameterExpression _newParameter;
 
-    protected override Expression VisitParameter(ParameterExpression node)
-    {
-        return node == _oldParameter ? _newParameter : base.VisitParameter(node);
+        public ParameterReplaceVisitor(ParameterExpression oldParameter, ParameterExpression newParameter)
+        {
+            _oldParameter = oldParameter;
+            _newParameter = newParameter;
+        }
+
+        protected override Expression VisitParameter(ParameterExpression node)
+        {
+            return node == _oldParameter ? _newParameter : base.VisitParameter(node);
+        }
     }
 }

@@ -937,7 +937,7 @@ public class WorkflowDefinitionTests : BaseIntegrationTest
 
         // Create workflow definition with an approval node to keep it in Running state
         // Pass current user ID as approver to avoid validation error
-        var workflowRequest = TestDataGenerator.GenerateWorkflowWithNodeType(NodeTypes.Approval, new List<string> { CurrentUserId });
+        var workflowRequest = TestDataGenerator.GenerateWorkflowWithNodeType(NodeTypes.Approval, new List<string> { CurrentUserId ?? throw new InvalidOperationException("CurrentUserId is null") });
         var createWorkflowResponse = await TestClient.PostAsJsonAsync("/api/workflows", workflowRequest);
         var createWorkflowResult = await createWorkflowResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
 

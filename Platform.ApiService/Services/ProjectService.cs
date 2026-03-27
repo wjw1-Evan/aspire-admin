@@ -98,8 +98,8 @@ public class ProjectService : IProjectService
 
         if (!string.IsNullOrEmpty(request.Search))
         {
-            var search = request.Search.ToLower();
-            q = q.Where(p => p.Name.ToLower().Contains(search) || p.Description.ToLower().Contains(search));
+            string search = request.Search.ToLower();
+            q = q.Where(p => p.Name.ToLower().Contains(search) || (p.Description != null && p.Description.ToLower().Contains(search)));
         }
 
         if (request.Status.HasValue) q = q.Where(p => p.Status == (ProjectStatus)request.Status.Value);

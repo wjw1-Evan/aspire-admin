@@ -19,6 +19,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
     /// <summary>
     /// 初始化任务与项目管理 MCP 处理器
     /// </summary>
+    /// <param name="context">数据库上下文</param>
     /// <param name="taskService">任务服务</param>
     /// <param name="projectService">项目服务</param>
     /// <param name="logger">日志处理器</param>

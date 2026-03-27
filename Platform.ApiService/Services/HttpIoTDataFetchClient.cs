@@ -14,7 +14,7 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class HttpIoTDataFetchClient : IIoTDataFetchClient
 {
-    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IHttpClientFactory _httpClientFactory = null!;
     private readonly IOptionsMonitor<IoTDataCollectionOptions> _optionsMonitor;
     private readonly ILogger<HttpIoTDataFetchClient> _logger;
     private static readonly Regex PlaceholderRegex = new(@"\{deviceId\}", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -22,6 +22,7 @@ public class HttpIoTDataFetchClient : IIoTDataFetchClient
     /// <summary>
     /// 初始化 HTTP 物联网数据拉取客户端
     /// </summary>
+    /// <param name="httpClientFactory">HTTP 客户端工厂</param>
     /// <param name="optionsMonitor">数据采集配置选项监视器</param>
     /// <param name="logger">日志记录器</param>
     public HttpIoTDataFetchClient(

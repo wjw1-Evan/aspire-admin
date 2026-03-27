@@ -143,8 +143,14 @@ public class PlatformDbContext : DbContext
 
     private void ApplyFilterGeneric<TEntity>(ModelBuilder modelBuilder) where TEntity : class
     {
+        // 只对实现 IMultiTenant 的实体应用多租户过滤器
+        if (!typeof(IMultiTenant).IsAssignableFrom(typeof(TEntity)))
+        {
+            return;
+        }
+
         modelBuilder.Entity<TEntity>().HasQueryFilter(e =>
-            (!(e is IMultiTenant) || IsSystemContext || ((IMultiTenant)e).CompanyId == _tenantContext!.GetCurrentCompanyIdAsync().GetAwaiter().GetResult())
+            IsSystemContext || ((IMultiTenant)e).CompanyId == _tenantContext!.GetCurrentCompanyIdAsync().GetAwaiter().GetResult()
         );
     }
 

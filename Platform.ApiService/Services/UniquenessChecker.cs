@@ -65,6 +65,7 @@ public class UniquenessChecker : IUniquenessChecker
     /// <summary>
     /// 初始化唯一性检查服务
     /// </summary>
+    /// <param name="context">数据库上下文</param>
     /// <param name="tenantContext">租户上下文</param>
     public UniquenessChecker(DbContext context,
         ITenantContext tenantContext

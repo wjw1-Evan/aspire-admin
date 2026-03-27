@@ -18,7 +18,7 @@ public class ChatAttachmentService : IChatAttachmentService
 {
     private readonly DbContext _context;
 
-    private readonly IFileStorageFactory _fileStorageFactory;
+    private readonly IFileStorageFactory _fileStorageFactory = null!;
     private readonly ITenantContext _tenantContext;
     private readonly IChatSessionService _sessionService;
     private readonly ILogger<ChatAttachmentService> _logger;
@@ -85,7 +85,6 @@ public class ChatAttachmentService : IChatAttachmentService
 
         await _context.Set<ChatAttachment>().AddAsync(attachment);
         await _context.SaveChangesAsync();
-        attachment = attachment;
 
         return new ChatAttachmentInfo
         {

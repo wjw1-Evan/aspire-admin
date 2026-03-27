@@ -31,6 +31,7 @@ public class ChatMessagesController : BaseApiController
     /// <summary>
     /// 初始化聊天消息控制器
     /// </summary>
+    /// <param name="context">数据库上下文</param>
     /// <param name="chatService">聊天服务</param>
     /// <param name="logger">日志记录器</param>
     public ChatMessagesController(

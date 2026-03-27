@@ -88,16 +88,43 @@ public abstract class BaseIntegrationTest : IClassFixture<AppHostFixture>
         Output.WriteLine($"Registering test user: {registration.Username}");
 
         var registerResponse = await TestClient.PostAsJsonAsync("/api/auth/register", registration);
+        
+        if (!registerResponse.IsSuccessStatusCode)
+        {
+            var registerError = await registerResponse.Content.ReadAsStringAsync();
+            Output.WriteLine($"[DEBUG] Register failed: {registerResponse.StatusCode}");
+            Output.WriteLine($"[DEBUG] Register response: {registerError}");
+        }
+        
         Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
 
         var registerApiResponse = await registerResponse.Content.ReadAsJsonAsync<ApiResponse<RegisterResponseData>>();
         Assert.NotNull(registerApiResponse);
+        
+        Output.WriteLine($"[DEBUG] Register response: success={registerApiResponse.Success}, code={registerApiResponse.Code}, message={registerApiResponse.Message}");
+        
         Assert.NotNull(registerApiResponse.Data);
         Assert.NotNull(registerApiResponse.Data.Id);
         Fixture.TrackUserId(registerApiResponse.Data.Id);
 
+        // Debug: 直接使用明文密码登录
+        Output.WriteLine($"[DEBUG] Login with password: {registration.Password}");
         var loginRequest = new LoginRequest { Username = registration.Username, Password = registration.Password };
         var loginResponse = await TestClient.PostAsJsonAsync("/api/auth/login", loginRequest);
+        
+        string loginErrorContent;
+        try
+        {
+            loginErrorContent = await loginResponse.Content.ReadAsStringAsync();
+        }
+        catch
+        {
+            loginErrorContent = "(unable to read content)";
+        }
+        
+        Output.WriteLine($"[DEBUG] Login response status: {loginResponse.StatusCode}");
+        Output.WriteLine($"[DEBUG] Login response content: {loginErrorContent}");
+        
         Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
 
         var loginApiResponse = await loginResponse.Content.ReadAsJsonAsync<ApiResponse<LoginResponseData>>();

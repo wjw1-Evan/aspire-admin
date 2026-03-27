@@ -119,11 +119,7 @@ public class UserCompanyService : IUserCompanyService
     /// <summary>
     /// 初始化用户企业关联服务
     /// </summary>
-
-
-
-
-
+    /// <param name="context">数据库上下文</param>
     /// <param name="menuService">菜单服务</param>
     /// <param name="tenantContext">租户上下文</param>
     /// <param name="jwtService">JWT 服务</param>

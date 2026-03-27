@@ -1238,7 +1238,7 @@ public class DocumentApprovalTests : BaseIntegrationTest
 
         Output.WriteLine("Waiting for workflow instance to update to Completed...");
         await ApiTestHelpers.WaitForWorkflowInstanceStatus(
-            async () => await (await TestClient.GetAsync($"/api/workflows/instances/{instanceId}")).Content.ReadAsJsonAsync<ApiResponse<WorkflowInstanceResponse>>()!,
+            async () => await (await TestClient.GetAsync($"/api/workflows/instances/{instanceId}")).Content.ReadAsJsonAsync<ApiResponse<WorkflowInstanceResponse>>() ?? throw new InvalidOperationException("Response is null"),
             "Completed",
             maxAttempts: 20,
             delayMilliseconds: 1000
@@ -1335,7 +1335,7 @@ public class DocumentApprovalTests : BaseIntegrationTest
         Assert.Equal(HttpStatusCode.OK, workflowResponse.StatusCode);
         var workflowResult = await workflowResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowDefinitionResponse>>();
         Assert.True(workflowResult?.Success == true);
-        var workflowId = workflowResult.Data.Id;
+        var workflowId = workflowResult!.Data!.Id;
         Fixture.TrackDefinitionId(workflowId);
         Output.WriteLine($"用户A 创建工作流: {workflowId}");
 
@@ -1345,7 +1345,7 @@ public class DocumentApprovalTests : BaseIntegrationTest
         Assert.Equal(HttpStatusCode.OK, docResponse.StatusCode);
         var docResult = await docResponse.Content.ReadAsJsonAsync<ApiResponse<DocumentResponse>>();
         Assert.True(docResult?.Success == true);
-        var documentId = docResult.Data.Id;
+        var documentId = docResult!.Data!.Id;
         Output.WriteLine($"用户A 创建文档: {documentId}");
 
         // 提交审批
@@ -1358,7 +1358,7 @@ public class DocumentApprovalTests : BaseIntegrationTest
         Assert.Equal(HttpStatusCode.OK, submitResponse.StatusCode);
         var submitResult = await submitResponse.Content.ReadAsJsonAsync<ApiResponse<WorkflowInstanceResponse>>();
         Assert.True(submitResult?.Success == true);
-        var workflowInstanceId = submitResult.Data.Id;
+        var workflowInstanceId = submitResult!.Data!.Id;
         Fixture.TrackWorkflowId(workflowInstanceId);
         Output.WriteLine($"用户A 提交审批，实例ID: {workflowInstanceId}");
 

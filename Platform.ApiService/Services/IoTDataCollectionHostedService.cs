@@ -9,7 +9,7 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class IoTDataCollectionHostedService : BackgroundService
 {
-    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IServiceScopeFactory _scopeFactory = null!;
     private readonly IOptionsMonitor<IoTDataCollectionOptions> _optionsMonitor;
     private readonly ILogger<IoTDataCollectionHostedService> _logger;
     private CronExpression? _cronExpression;
@@ -23,6 +23,7 @@ public class IoTDataCollectionHostedService : BackgroundService
         IOptionsMonitor<IoTDataCollectionOptions> optionsMonitor,
         ILogger<IoTDataCollectionHostedService> logger)
     {
+        _scopeFactory = scopeFactory;
         _optionsMonitor = optionsMonitor;
         _logger = logger;
         _cronExpression = CreateCron(optionsMonitor.CurrentValue.Cron);

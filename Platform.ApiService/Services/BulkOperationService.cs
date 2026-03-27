@@ -20,7 +20,7 @@ public class BulkOperationService : IBulkOperationService
     /// <summary>
     /// 初始化批量操作服务
     /// </summary>
-
+    /// <param name="context">数据库上下文</param>
     /// <param name="tenantContext">租户上下文</param>
     /// <param name="logger">日志</param>
     public BulkOperationService(DbContext context,

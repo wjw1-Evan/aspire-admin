@@ -26,6 +26,7 @@ public class ChatHistoryController : BaseApiController
     /// <summary>
     /// 初始化聊天历史记录管理控制器
     /// </summary>
+    /// <param name="context">数据库上下文</param>
     /// <param name="chatService">聊天服务</param>
 
     public ChatHistoryController(
@@ -114,7 +115,7 @@ public class ChatHistoryController : BaseApiController
                 : s => (filter.Compile()(s) && matchedSessionIds.Contains(s.Id!));
         }
 
-        var total = await _context.Set<ChatSession>().LongCountAsync(filter);
+        var total = await _context.Set<ChatSession>().LongCountAsync(filter ??= s => true);
 
         var orderBy = (IQueryable<ChatSession> query) => query
             .OrderByDescending(s => s.LastMessageAt)

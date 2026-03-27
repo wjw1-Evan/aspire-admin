@@ -330,57 +330,62 @@ public class DocumentService : IDocumentService
         // 关键词搜索
         if (!string.IsNullOrEmpty(query.Keyword))
         {
-            var keyword = query.Keyword.ToLower();
-            filter = filter.And(d => (d.Title ?? "").ToLower().Contains(keyword) || (d.Content != null && d.Content.ToLower().Contains(keyword)));
+            string keyword = query.Keyword.ToLower();
+            filter = filter.And(d => (d.Title ?? "").ToLower().Contains(keyword) || (d.Content != null && d.Content.ToLower().Contains(keyword)))!;
         }
 
         // 状态筛选
         if (query.Status.HasValue)
         {
-            filter = filter.And(d => d.Status == query.Status.Value);
+            DocumentStatus statusValue = query.Status.Value;
+            filter = filter.And(d => d.Status == statusValue)!;
         }
 
         // 类型筛选
         if (!string.IsNullOrEmpty(query.DocumentType))
         {
-            filter = filter.And(d => d.DocumentType == query.DocumentType);
+            string docType = query.DocumentType;
+            filter = filter.And(d => d.DocumentType == docType)!;
         }
 
         // 分类筛选
         if (!string.IsNullOrEmpty(query.Category))
         {
-            filter = filter.And(d => d.Category == query.Category);
+            string category = query.Category;
+            filter = filter.And(d => d.Category == category)!;
         }
 
         // 创建人筛选
         if (!string.IsNullOrEmpty(query.CreatedBy))
         {
-            filter = filter.And(d => d.CreatedBy == query.CreatedBy);
+            string createdBy = query.CreatedBy;
+            filter = filter.And(d => d.CreatedBy == createdBy)!;
         }
 
         // 筛选类型
         if (!string.IsNullOrEmpty(query.FilterType))
         {
             var userId = _tenantContext.GetCurrentUserId();
-            switch (query.FilterType.ToLower())
+            string filterType = query.FilterType.ToLower();
+            switch (filterType)
             {
                 case "my":
                     if (!string.IsNullOrEmpty(userId))
-                        filter = filter.And(d => d.CreatedBy == userId);
+                        filter = filter.And(d => d.CreatedBy == userId)!;
                     break;
 
                 case "pending":
-                    filter = filter.And(d => d.Status == DocumentStatus.Approving);
+                    filter = filter.And(d => d.Status == DocumentStatus.Approving)!;
                     // 审批节点挂起时状态为 Waiting，需同时匹配 Running 和 Waiting
                     if (!string.IsNullOrEmpty(userId))
                     {
                         var pendingInstances = await _context.Set<WorkflowInstance>().Where(i =>
                             (i.Status == WorkflowStatus.Running || i.Status == WorkflowStatus.Waiting) &&
                             i.CurrentApproverIds.Contains(userId)).ToListAsync();
-                        var instanceIds = pendingInstances.Select(i => i.Id).ToList();
+                        var instanceIds = pendingInstances.Select(i => i.Id!).ToList();
                         if (instanceIds.Any())
                         {
-                            filter = filter.And(d => d.WorkflowInstanceId != null && instanceIds.Contains(d.WorkflowInstanceId));
+                            filter = filter.And(d => d.WorkflowInstanceId != null && instanceIds.Contains(d.WorkflowInstanceId))!;
                         }
                         else
                         {
@@ -390,18 +395,17 @@ public class DocumentService : IDocumentService
                     break;
 
                 case "approved":
-                    filter = filter.And(d => d.Status == DocumentStatus.Approved);
+                    filter = filter.And(d => d.Status == DocumentStatus.Approved)!;
                     break;
 
                 case "rejected":
-                    filter = filter.And(d => d.Status == DocumentStatus.Rejected);
+                    filter = filter.And(d => d.Status == DocumentStatus.Rejected)!;
                     break;
             }
         }
 
         {
-            var __fpQ = _context.Set<Document>().Where(
-            filter);
+            var __fpQ = _context.Set<Document>().Where(filter!);
             var __fpT = await __fpQ.LongCountAsync();
             var __fpI = await __fpQ.OrderByDescending(d => d.CreatedAt).Skip((query.Page - 1) * query.PageSize).Take(query.PageSize).ToListAsync();
             return (__fpI, __fpT);
@@ -663,7 +667,6 @@ public class DocumentService : IDocumentService
 
         await _context.Set<Document>().AddAsync(document);
         await _context.SaveChangesAsync();
-        document = document;
         _logger.LogInformation("基于流程表单创建公文: DocumentId={DocumentId}, WorkflowDefinitionId={DefinitionId}", document.Id, workflowDefinitionId);
         return document;
     }

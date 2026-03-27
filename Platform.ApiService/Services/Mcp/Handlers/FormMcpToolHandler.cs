@@ -17,6 +17,7 @@ public class FormMcpToolHandler : McpToolHandlerBase
     /// <summary>
     /// 初始化表单管理 MCP 处理器
     /// </summary>
+    /// <param name="context">数据库上下文</param>
     /// <param name="logger">日志处理器</param>
     public FormMcpToolHandler(DbContext context, ILogger<FormMcpToolHandler> logger)
     {

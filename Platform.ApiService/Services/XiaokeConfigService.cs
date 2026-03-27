@@ -17,6 +17,7 @@ public class XiaokeConfigService : IXiaokeConfigService
     /// <summary>
     /// 初始化晓可配置服务
     /// </summary>
+    /// <param name="context">数据库上下文</param>
     /// <param name="tenantContext">租户上下文</param>
     public XiaokeConfigService(DbContext context,
         ITenantContext tenantContext

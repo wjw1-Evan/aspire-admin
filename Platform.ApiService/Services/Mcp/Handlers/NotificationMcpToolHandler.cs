@@ -21,8 +21,8 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
     /// <summary>
     /// 初始化通知中心、工作流与小科配置 MCP 处理器
     /// </summary>
+    /// <param name="context">数据库上下文</param>
     /// <param name="unifiedNotificationService">统一通知服务</param>
-
     /// <param name="workflowEngine">工作流引擎</param>
     /// <param name="logger">日志处理器</param>
     /// <param name="xiaokeConfigService">小科配置服务</param>

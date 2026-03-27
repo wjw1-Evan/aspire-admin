@@ -8,7 +8,7 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class IoTGatewayStatusCheckHostedService : BackgroundService
 {
-    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IServiceScopeFactory _scopeFactory = null!;
     private readonly IOptionsMonitor<IoTDataCollectionOptions> _optionsMonitor;
     private readonly ILogger<IoTGatewayStatusCheckHostedService> _logger;
     private readonly SemaphoreSlim _runLock = new(1, 1);
@@ -16,6 +16,7 @@ public class IoTGatewayStatusCheckHostedService : BackgroundService
     /// <summary>
     /// 初始化网关状态检测后台服务
     /// </summary>
+    /// <param name="scopeFactory">作用域工厂</param>
     /// <param name="optionsMonitor">数据采集配置选项监视器</param>
     /// <param name="logger">日志记录器</param>
     public IoTGatewayStatusCheckHostedService(
@@ -23,6 +24,7 @@ public class IoTGatewayStatusCheckHostedService : BackgroundService
         IOptionsMonitor<IoTDataCollectionOptions> optionsMonitor,
         ILogger<IoTGatewayStatusCheckHostedService> logger)
     {
+        _scopeFactory = scopeFactory;
         _optionsMonitor = optionsMonitor;
         _logger = logger;
     }

@@ -89,7 +89,7 @@ public partial class WorkflowEngine : IWorkflowEngine
 
     private readonly IUserService _userService;
     private readonly IUnifiedNotificationService _notificationService;
-    private readonly IApproverResolverFactory _approverResolverFactory;
+    private readonly IApproverResolverFactory _approverResolverFactory = null!;
     private readonly IWorkflowExpressionEvaluator _expressionEvaluator;
     private readonly IWorkflowExpressionValidator _expressionValidator;
     private readonly ILogger<WorkflowEngine> _logger;

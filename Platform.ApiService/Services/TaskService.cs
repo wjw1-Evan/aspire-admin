@@ -100,13 +100,13 @@ public class TaskService : ITaskService
     /// <inheritdoc/>
     public async Task<TaskListResponse> QueryTasksAsync(TaskQueryRequest request)
     {
-        var search = request.Search?.ToLower();
+        string search = request.Search?.ToLower() ?? "";
         var onlyRoot = request.OnlyRoot ?? string.IsNullOrEmpty(request.Search);
 
         var q = _context.Set<WorkTask>().AsQueryable();
 
         if (!string.IsNullOrEmpty(search))
-            q = q.Where(t => t.TaskName.ToLower().Contains(search) || t.Description.ToLower().Contains(search));
+            q = q.Where(t => t.TaskName.ToLower().Contains(search) || (t.Description != null && t.Description.ToLower().Contains(search)));
         
         if (!string.IsNullOrEmpty(request.ProjectId)) q = q.Where(t => t.ProjectId == request.ProjectId);
         if (request.Status.HasValue) q = q.Where(t => t.Status == (Models.TaskStatus)request.Status.Value);
@@ -424,7 +424,7 @@ public class TaskService : ITaskService
         };
 
         var completed = tasks.Where(t => t.Status == Models.TaskStatus.Completed && t.ActualDuration.HasValue).ToList();
-        if (completed.Count > 0) stats.AverageCompletionTime = completed.Average(t => t.ActualDuration.Value);
+        if (completed.Count > 0) stats.AverageCompletionTime = completed.Average(t => t.ActualDuration!.Value);
         if (stats.TotalTasks > 0) stats.CompletionRate = (double)stats.CompletedTasks / stats.TotalTasks * 100;
 
         stats.TasksByPriority = new Dictionary<string, int>

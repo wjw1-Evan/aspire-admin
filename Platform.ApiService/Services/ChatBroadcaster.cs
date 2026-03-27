@@ -21,6 +21,7 @@ public class ChatBroadcaster : IChatBroadcaster
     /// <summary>
     /// 初始化聊天广播器
     /// </summary>
+    /// <param name="context">数据库上下文</param>
     /// <param name="sseConnectionManager">SSE 连接管理器</param>
     /// <param name="logger">日志记录器</param>
     public ChatBroadcaster(

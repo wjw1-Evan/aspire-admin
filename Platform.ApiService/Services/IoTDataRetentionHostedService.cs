@@ -12,12 +12,13 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class IoTDataRetentionHostedService : BackgroundService
 {
-    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IServiceScopeFactory _scopeFactory = null!;
     private readonly ILogger<IoTDataRetentionHostedService> _logger;
 
     /// <summary>
     /// 初始化物联网数据保留后台服务
     /// </summary>
+    /// <param name="scopeFactory">作用域工厂</param>
     /// <param name="logger">日志记录器</param>
     public IoTDataRetentionHostedService(
         IServiceScopeFactory scopeFactory,

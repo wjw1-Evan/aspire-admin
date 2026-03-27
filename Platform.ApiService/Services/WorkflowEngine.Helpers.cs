@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using System;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore;
 
 namespace Platform.ApiService.Services;
 
@@ -188,21 +187,20 @@ public partial class WorkflowEngine
     public async Task<bool> CancelWorkflowAsync(string instanceId, string reason)
     {
         var __instance1 = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
-        if (__instance1 != null)
-        {
-            __instance1.Status = WorkflowStatus.Cancelled;
-            __instance1.CompletedAt = DateTime.UtcNow;
-            __instance1.CurrentApproverIds.Clear(); // 清空待审批人
-            __instance1.ActiveApprovals.Clear(); // 清除所有活跃审批节点
-            await _context.SaveChangesAsync();
-        }
+        if (__instance1 == null) return false;
+
+        __instance1.Status = WorkflowStatus.Cancelled;
+        __instance1.CompletedAt = DateTime.UtcNow;
+        __instance1.CurrentApproverIds.Clear();
+        __instance1.ActiveApprovals.Clear();
+        await _context.SaveChangesAsync();
 
         if (!string.IsNullOrEmpty(__instance1.DocumentId))
         {
-            var __doc1 = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == __instance1.DocumentId);
+            var __doc1 = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == __instance1.DocumentId!);
             if (__doc1 != null)
             {
-                __doc1.Status = Models.Workflow.DocumentStatus.Draft; // 撤回 → 回到草稿
+                __doc1.Status = Models.Workflow.DocumentStatus.Draft;
                 __doc1.UpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
             }

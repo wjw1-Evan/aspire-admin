@@ -262,11 +262,16 @@ public class AuthService : IAuthService
         // 🔒 安全增强：解密前端加密的密码
         var rawPassword = _encryptionService.TryDecryptPassword(request.Password ?? string.Empty);
 
+        // DEBUG: 记录密码验证信息
+        _logger.LogDebug("Login debug: username={Username}, passwordLength={PasswordLength}, storedHashLength={StoredHashLength}, storedHashPrefix={StoredHashPrefix}", 
+            request.Username, rawPassword?.Length ?? 0, user.PasswordHash?.Length ?? 0, user.PasswordHash?.Length > 10 ? user.PasswordHash.Substring(0, 10) : user.PasswordHash);
+
         // BYPASS FOR TESTING SCRIPT
         var isTestUserBypass = request.Username == "admin" && request.Password == "password1";
 
         if (!isTestUserBypass && !_passwordHasher.VerifyPassword(rawPassword, user.PasswordHash))
         {
+            _logger.LogDebug("Password verification failed: rawPassword={RawPassword}, storedHash={StoredHash}", rawPassword, user.PasswordHash);
             await RecordFailureAsync(clientId, "login");
             return ServiceResult<LoginData>.Failure("INVALID_CREDENTIALS", "用户名或密码错误");
         }
@@ -276,8 +281,7 @@ public class AuthService : IAuthService
         bool shouldClearInvalidCompanyId = false;
         if (!string.IsNullOrEmpty(user.CurrentCompanyId))
         {
-            // 使用 IgnoreQueryFilters 绕过过滤器，确保登录时能找到企业
-            var companies = await _context.Set<Company>().IgnoreQueryFilters().Where(c => c.Id == user.CurrentCompanyId).ToListAsync();
+            var companies = await _context.Set<Company>().Where(c => c.Id == user.CurrentCompanyId).ToListAsync();
             var company = companies.FirstOrDefault();
 
             if (company == null)
@@ -464,17 +468,20 @@ public class AuthService : IAuthService
             adminRole = companyResult.Role;
             userCompany = companyResult.UserCompany;
 
-            var __userToUpdate = await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == user.Id!);
+            var __userToUpdate = await _context.Set<User>().IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Id == user.Id!);
             if (__userToUpdate != null)
             {
                 __userToUpdate.CurrentCompanyId = personalCompany.Id;
                 __userToUpdate.PersonalCompanyId = personalCompany.Id;
+                _logger.LogDebug("Register: Setting CurrentCompanyId={CompanyId}, PersonalCompanyId={PersonalCompanyId}, PasswordHash before={PasswordHash}", 
+                    personalCompany.Id, personalCompany.Id, __userToUpdate.PasswordHash?.Length > 10 ? __userToUpdate.PasswordHash.Substring(0, 10) + "..." : __userToUpdate.PasswordHash);
                 await _context.SaveChangesAsync();
             }
 
             user.CurrentCompanyId = personalCompany.Id;
             user.PersonalCompanyId = personalCompany.Id;
-            user.PasswordHash = string.Empty;
+            // 不要清空密码哈希！user 对象返回给调用方后可能需要验证密码
+            // user.PasswordHash = string.Empty;
 
             _logger.LogInformation("用户 {Username} 注册完成，个人企业: {CompanyName}", user.Username, personalCompany.Name);
 
@@ -531,7 +538,7 @@ public class AuthService : IAuthService
 
             if (user != null)
             {
-                var __u = await _context.Set<User>().FirstOrDefaultAsync(x => x.Id == user.Id!);
+        var __u = await _context.Set<User>().FirstOrDefaultAsync(x => x.Id == user.Id!);
                 if (__u != null) { _context.Set<User>().Remove(__u); await _context.SaveChangesAsync(); }
                 _logger.LogInformation("回滚：删除用户 {UserId}", user.Id);
             }
@@ -711,7 +718,7 @@ public class AuthService : IAuthService
 
                 if (company?.Id != null)
                 {
-                    var __c = await _context.Set<Company>().FirstOrDefaultAsync(c => c.Id == company.Id);
+                    var __c = await _context.Set<Company>().IgnoreQueryFilters().FirstOrDefaultAsync(c => c.Id == company.Id);
                     if (__c != null) { _context.Set<Company>().Remove(__c); await _context.SaveChangesAsync(); }
                     _logger.LogInformation("已清理企业");
                 }
@@ -786,11 +793,10 @@ public class AuthService : IAuthService
             return ServiceResult<RefreshTokenResult>.Failure("REFRESH_TOKEN_USER_NOT_FOUND", "无法从刷新token中获取用户信息");
 
         Expression<Func<RefreshToken, bool>> baseFilter = rt => rt.Token == request.RefreshToken && rt.UserId == userId && rt.IsRevoked == false;
-        var existingToken = await _context.Set<RefreshToken>().IgnoreQueryFilters().Where(baseFilter).FirstOrDefaultAsync();
-
+        var existingToken = await _context.Set<RefreshToken>().Where(baseFilter).FirstOrDefaultAsync();
         if (existingToken == null)
         {
-            var userTokens = await _context.Set<RefreshToken>().IgnoreQueryFilters().Where(rt => rt.UserId == userId && rt.IsRevoked == false).ToListAsync();
+            var userTokens = await _context.Set<RefreshToken>().Where(rt => rt.UserId == userId && rt.IsRevoked == false).ToListAsync();
             if (userTokens.Any())
             {
                 foreach(var rt in userTokens)

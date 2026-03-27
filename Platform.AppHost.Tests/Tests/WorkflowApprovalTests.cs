@@ -1486,8 +1486,8 @@ public class WorkflowApprovalTests : BaseIntegrationTest
                             type = "sequential",
                             approvers = new[]
                             {
-                                new { type = "user", userId = CurrentUserId },
-                                new { type = "user", userId = secondUser.UserId }
+                                new { type = "user", userId = CurrentUserId! },
+                                new { type = "user", userId = secondUser.UserId! }
                             }
                         }
                     }

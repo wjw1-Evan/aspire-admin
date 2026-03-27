@@ -31,10 +31,9 @@ public class DocumentController : BaseApiController
     /// <summary>
     /// 初始化公文管理控制器
     /// </summary>
+    /// <param name="context">数据库上下文</param>
     /// <param name="documentService">公文服务</param>
     /// <param name="workflowEngine">工作流引擎</param>
-
-
     /// <param name="logger">日志记录器</param>
     public DocumentController(
         DbContext context,

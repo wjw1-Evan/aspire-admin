@@ -37,9 +37,7 @@ public class WorkflowController : BaseApiController
     /// <summary>
     /// 初始化工作流管理控制器
     /// </summary>
-
-
-
+    /// <param name="context">数据库上下文</param>
     /// <param name="workflowEngine">工作流引擎</param>
     /// <param name="userService">用户服务</param>
     /// <param name="fieldValidationService">字段验证服务</param>
@@ -260,8 +258,7 @@ public class WorkflowController : BaseApiController
             };
 
             await _context.Set<WorkflowDefinition>().AddAsync(workflow);
-        await _context.SaveChangesAsync();
-        workflow = workflow;
+            await _context.SaveChangesAsync();
             return Success(workflow);
         }
         catch (Exception ex)
@@ -422,21 +419,21 @@ public class WorkflowController : BaseApiController
         {
             Expression<Func<WorkflowInstance, bool>> filter = i => true;
 
-            // Bug 17 修复：使用 .And() 组合条件而非赋值覆盖
             if (!string.IsNullOrEmpty(workflowDefinitionId))
             {
-                filter = filter.And(i => i.WorkflowDefinitionId == workflowDefinitionId);
+                string wfId = workflowDefinitionId;
+                filter = filter.And(i => i.WorkflowDefinitionId == wfId)!;
             }
 
             if (status.HasValue)
             {
-                var statusValue = status.Value;
-                filter = filter.And(i => i.Status == statusValue);
+                WorkflowStatus statusValue = status.Value;
+                filter = filter.And(i => i.Status == statusValue)!;
             }
 
             Func<IQueryable<WorkflowInstance>, IOrderedQueryable<WorkflowInstance>> sort = q => q.OrderByDescending(i => i.CreatedAt);
 
-            var queryable = _context.Set<WorkflowInstance>().Where(filter);
+            var queryable = _context.Set<WorkflowInstance>().Where(filter!);
             var totalCount = await queryable.LongCountAsync();
             var items = await sort(queryable).Skip((current - 1) * pageSize).Take(pageSize).ToListAsync();
             return SuccessPaged(items, totalCount, current, pageSize);

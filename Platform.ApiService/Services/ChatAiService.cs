@@ -394,7 +394,6 @@ public class ChatAiService : IChatAiService
         if (message != null)
         {
             message.Content = newContent;
-            message.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
     }
@@ -408,7 +407,6 @@ public class ChatAiService : IChatAiService
         meta.Remove("streaming");
         
         msg.Content = finalContent;
-        msg.UpdatedAt = DateTime.UtcNow;
         msg.Metadata = meta;
         await _context.SaveChangesAsync();
     }

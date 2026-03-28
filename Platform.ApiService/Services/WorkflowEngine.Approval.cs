@@ -107,7 +107,6 @@ public partial class WorkflowEngine
             {
                 __instanceToUpdate.ApprovalRecords ??= new List<ApprovalRecord>();
                 __instanceToUpdate.ApprovalRecords.Add(record);
-                __instanceToUpdate.UpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
             }
         }
@@ -428,7 +427,6 @@ public partial class WorkflowEngine
             __targetInstance.ApprovalRecords.Add(approvalRecord);
             __targetInstance.ActiveApprovals?.Clear();
             __targetInstance.CurrentApproverIds?.Clear();
-            __targetInstance.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
 

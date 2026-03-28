@@ -201,7 +201,6 @@ public partial class WorkflowEngine
             if (document != null)
             {
                 document.Status = Models.Workflow.DocumentStatus.Draft;
-                document.UpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
             }
         }
@@ -253,8 +252,7 @@ public partial class WorkflowEngine
         if (instance != null)
         {
             instance.CurrentNodeId = nodeId;
-            instance.CurrentApproverIds.Clear(); // Bug 6: 切换节点时清空审批人
-            instance.UpdatedAt = DateTime.UtcNow;
+            instance.CurrentApproverIds.Clear();
             await _context.SaveChangesAsync();
         }
     }
@@ -290,7 +288,6 @@ public partial class WorkflowEngine
             if (document != null)
             {
                 document.Status = documentStatus;
-                document.UpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
             }
         }
@@ -348,7 +345,6 @@ public partial class WorkflowEngine
             }
 
             instance.CurrentApproverIds = instance.ActiveApprovals.SelectMany(x => x.ApproverIds).Distinct().ToList();
-            instance.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
     }
@@ -365,7 +361,6 @@ public partial class WorkflowEngine
             {
                 instance.RemoveActiveApprovers(nodeId);
                 instance.CurrentApproverIds = instance.ActiveApprovals.SelectMany(x => x.ApproverIds).Distinct().ToList();
-                instance.UpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
             }
         }

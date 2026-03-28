@@ -92,7 +92,6 @@ public class ImageCaptchaService : IImageCaptchaService
                 __entity.Type = type;
                 __entity.ClientIp = clientIp!;
                 __entity.IsUsed = false;
-                __entity.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
 
@@ -145,9 +144,7 @@ public class ImageCaptchaService : IImageCaptchaService
         var __entity = await _context.Set<CaptchaImage>().FirstOrDefaultAsync(x => x.Id == result.Id);
         if (__entity != null)
         {
-    
             __entity.IsUsed = true;
-            __entity.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
 

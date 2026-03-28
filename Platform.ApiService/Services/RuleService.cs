@@ -113,7 +113,6 @@ public class RuleService : IRuleService
         if (request.Status.HasValue) r.Status = request.Status.Value;
         if (request.Progress.HasValue) r.Progress = request.Progress.Value;
         if (request.Disabled.HasValue) r.Disabled = request.Disabled.Value;
-        r.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
         return r;

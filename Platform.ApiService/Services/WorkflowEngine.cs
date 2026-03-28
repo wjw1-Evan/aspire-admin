@@ -232,10 +232,8 @@ public partial class WorkflowEngine : IWorkflowEngine
             var __entity = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == documentId);
         if (__entity != null)
         {
-    
                 __entity.Status = Models.Workflow.DocumentStatus.Approving;
                 __entity.WorkflowInstanceId = instance.Id;
-                __entity.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
 

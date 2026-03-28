@@ -324,10 +324,8 @@ public class UserCompanyService : IUserCompanyService
         var existingRequest = await _context.Set<CompanyJoinRequest>().FirstOrDefaultAsync(x => x.Id == requestId);
         if (existingRequest != null)
         {
-    
             existingRequest.Status = "cancelled";
             existingRequest.RejectReason = "User Cancelled";
-            existingRequest.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
 
@@ -379,7 +377,6 @@ public class UserCompanyService : IUserCompanyService
             existingRequest.ReviewedBy = currentUserId;
             existingRequest.ReviewedAt = DateTime.UtcNow;
             existingRequest.RejectReason = approved ? null : (rejectReason ?? "管理员修改了审核结果");
-            existingRequest.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
 
@@ -399,7 +396,6 @@ public class UserCompanyService : IUserCompanyService
                         existingMember.RoleIds = roleIds ?? new List<string>();
                         existingMember.ApprovedBy = currentUserId;
                         existingMember.ApprovedAt = DateTime.UtcNow;
-                        existingMember.UpdatedAt = DateTime.UtcNow;
                         await _context.SaveChangesAsync();
 
                     _logger.LogInformation("用户 {UserId} 的企业成员身份已恢复并更新角色", request.UserId);
@@ -618,9 +614,7 @@ public class UserCompanyService : IUserCompanyService
         var existingRequest = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == userId);
         if (existingRequest != null)
         {
-    
             existingRequest.CurrentCompanyId = targetCompanyId;
-            existingRequest.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
 
@@ -740,9 +734,7 @@ public class UserCompanyService : IUserCompanyService
         var existingRequest = await _context.Set<UserCompany>().FirstOrDefaultAsync(x => x.Id == membership.Id!);
         if (existingRequest != null)
         {
-    
             existingRequest.RoleIds = roleIds;
-            existingRequest.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
         var updatedUserCompany = existingRequest;
@@ -773,7 +765,6 @@ public class UserCompanyService : IUserCompanyService
         {
     
             existingRequest.IsAdmin = isAdmin;
-            existingRequest.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
         var updatedUserCompany = existingRequest;

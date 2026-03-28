@@ -39,7 +39,7 @@ public abstract class BaseIntegrationTest : IClassFixture<AppHostFixture>
         TestClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authResult.Token);
         
         // 获取当前用户的公司ID
-        var meResponse = await TestClient.GetAsync("/api/auth/me");
+        var meResponse = await TestClient.GetAsync("/api/auth/current-user");
         if (meResponse.IsSuccessStatusCode)
         {
             var meJson = await meResponse.Content.ReadAsStringAsync();

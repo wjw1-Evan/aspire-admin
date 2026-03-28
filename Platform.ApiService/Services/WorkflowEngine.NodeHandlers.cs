@@ -186,7 +186,12 @@ public partial class WorkflowEngine
             if (sourceHandle == "waiting")
             {
                 _logger.LogInformation("DEBUG_WORKFLOW: 节点 {NodeId} 处于等待状态，停止执行", node.Id);
-                await _context.Set<WorkflowInstance>().Where(x => x.Id == instanceId).ExecuteUpdateAsync(s => s.SetProperty(i => i.Status, WorkflowStatus.Waiting));
+                var waitingInstance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
+                if (waitingInstance != null)
+                {
+                    waitingInstance.Status = WorkflowStatus.Waiting;
+                    await _context.SaveChangesAsync();
+                }
                 return;
             }
 
@@ -195,7 +200,12 @@ public partial class WorkflowEngine
         catch (Exception ex)
         {
             _logger.LogError(ex, "DEBUG_WORKFLOW: 节点 {NodeId} 处理异常", node.Id);
-            await _context.Set<WorkflowInstance>().Where(x => x.Id == instanceId).ExecuteUpdateAsync(s => s.SetProperty(i => i.Status, WorkflowStatus.Cancelled));
+            var errorInstance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
+            if (errorInstance != null)
+            {
+                errorInstance.Status = WorkflowStatus.Cancelled;
+                await _context.SaveChangesAsync();
+            }
         }
     }
 

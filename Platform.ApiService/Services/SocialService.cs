@@ -97,9 +97,13 @@ public class SocialService : ISocialService
                 var geocodeResult = await ReverseGeocodeAsync(request.Latitude, request.Longitude);
                 if (geocodeResult != null && (!string.IsNullOrEmpty(geocodeResult.City) || !string.IsNullOrEmpty(geocodeResult.Country)))
                 {
-                    await db.Set<UserLocationBeacon>().Where(b => b.Id == beaconId).ExecuteUpdateAsync(s => s
-                        .SetProperty(b => b.City, b => geocodeResult.City ?? b.City)
-                        .SetProperty(b => b.Country, b => geocodeResult.Country ?? b.Country));
+                    var beacon = await db.Set<UserLocationBeacon>().FirstOrDefaultAsync(b => b.Id == beaconId);
+                    if (beacon != null)
+                    {
+                        if (!string.IsNullOrEmpty(geocodeResult.City)) beacon.City = geocodeResult.City;
+                        if (!string.IsNullOrEmpty(geocodeResult.Country)) beacon.Country = geocodeResult.Country;
+                        await db.SaveChangesAsync();
+                    }
                 }
             }
             catch (Exception ex) { _logger.LogWarning(ex, "后台逆地理编码失败: {Id}", beaconId); }

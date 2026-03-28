@@ -283,20 +283,20 @@ public class DocumentService : IDocumentService
 
             if (request.Category != null)
             {
-                document.Category = request.Category;
+                existingDocument.Category = request.Category;
                 hasUpdate = true;
             }
 
             if (request.AttachmentIds != null)
             {
-                document.AttachmentIds = request.AttachmentIds;
+                existingDocument.AttachmentIds = request.AttachmentIds;
                 hasUpdate = true;
             }
 
             if (request.FormData != null)
             {
                 var sanitized = SerializationExtensions.SanitizeDictionary(request.FormData);
-                document.FormData = sanitized;
+                existingDocument.FormData = sanitized;
                 hasUpdate = true;
             }
             await _context.SaveChangesAsync();

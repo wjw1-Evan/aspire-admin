@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using User = Platform.ApiService.Models.AppUser;
 using System.Linq.Expressions;
+using System.Security.Cryptography;
 using Platform.ApiService.Constants;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
@@ -234,8 +235,6 @@ public class AuthService : IAuthService
 
         if (requiresCaptcha)
         {
-            // BYPASS FOR TESTING SCRIPT
-            /*
             if (string.IsNullOrEmpty(request.CaptchaId) || string.IsNullOrEmpty(request.CaptchaAnswer))
             {
                 return ServiceResult<LoginData>.Failure("CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN", "CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN");
@@ -247,11 +246,9 @@ public class AuthService : IAuthService
                 await RecordFailureAsync(clientId, "login");
                 return ServiceResult<LoginData>.Failure("CAPTCHA_INVALID", "CAPTCHA_INVALID");
             }
-            */
         }
 
-        var users = await _context.Set<User>().Where(u => u.Username == request.Username && u.IsActive == true).ToListAsync();
-        var user = users.FirstOrDefault();
+        var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Username == request.Username && u.IsActive == true);
 
         if (user == null)
         {
@@ -259,13 +256,9 @@ public class AuthService : IAuthService
             return ServiceResult<LoginData>.Failure("INVALID_CREDENTIALS", "用户名或密码错误");
         }
 
-        // 🔒 安全增强：解密前端加密的密码
         var rawPassword = _encryptionService.TryDecryptPassword(request.Password ?? string.Empty);
 
-        // BYPASS FOR TESTING SCRIPT
-        var isTestUserBypass = request.Username == "admin" && request.Password == "password1";
-
-        if (!isTestUserBypass && !_passwordHasher.VerifyPassword(rawPassword, user.PasswordHash))
+        if (!_passwordHasher.VerifyPassword(rawPassword, user.PasswordHash))
         {
             await RecordFailureAsync(clientId, "login");
             return ServiceResult<LoginData>.Failure("INVALID_CREDENTIALS", "用户名或密码错误");
@@ -298,17 +291,12 @@ public class AuthService : IAuthService
             }
         }
 
-        // 统一更新用户信息（最后登录时间 + 可选的无效企业 ID 清理）
-        var userToUpdate = await _context.Set<User>().FirstOrDefaultAsync(x => x.Id == user.Id!);
-        if (userToUpdate != null)
+        user.LastLoginAt = DateTime.UtcNow;
+        if (shouldClearInvalidCompanyId)
         {
-            userToUpdate.LastLoginAt = DateTime.UtcNow;
-            if (shouldClearInvalidCompanyId)
-            {
-                userToUpdate.CurrentCompanyId = null;
-            }
-            await _context.SaveChangesAsync();
+            user.CurrentCompanyId = null;
         }
+        await _context.SaveChangesAsync();
 
         var httpContext = _httpContextAccessor.HttpContext;
         var ipAddress = httpContext?.Connection?.RemoteIpAddress?.ToString();
@@ -856,11 +844,10 @@ public class AuthService : IAuthService
         if (user == null)
             return ServiceResult<bool>.Failure("USER_NOT_FOUND", "该邮箱未绑定任何活动账户，或账户已被禁用");
 
-        // 生成6位验证码
-        var random = new Random();
-        var code = random.Next(100000, 999999).ToString();
+        var bytes = new byte[4];
+        RandomNumberGenerator.Fill(bytes);
+        var code = (BitConverter.ToUInt32(bytes, 0) % 900000 + 100000).ToString();
 
-        // 存入缓存，5分钟有效
         var cacheKey = $"PasswordResetCode_{request.Email}";
         _memoryCache.Set(cacheKey, code, TimeSpan.FromMinutes(5));
 

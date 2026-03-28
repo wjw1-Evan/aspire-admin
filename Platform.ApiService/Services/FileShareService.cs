@@ -404,17 +404,9 @@ public class FileShareService : IFileShareService
     /// </summary>
     private static string GenerateShareToken()
     {
-        // 生成32字符的随机令牌
-        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        var random = new Random();
-        var token = new char[32];
-
-        for (int i = 0; i < token.Length; i++)
-        {
-            token[i] = chars[random.Next(chars.Length)];
-        }
-
-        return new string(token);
+        var bytes = new byte[32];
+        RandomNumberGenerator.Fill(bytes);
+        return Convert.ToBase64String(bytes)[..32];
     }
 
     /// <summary>

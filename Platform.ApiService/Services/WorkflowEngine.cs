@@ -112,6 +112,7 @@ public partial class WorkflowEngine : IWorkflowEngine
         _context = context;
         _userService = userService;
         _notificationService = notificationService;
+        _approverResolverFactory = approverResolverFactory;
         _expressionEvaluator = expressionEvaluator;
         _expressionValidator = expressionValidator;
         _logger = logger;

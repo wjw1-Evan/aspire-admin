@@ -186,22 +186,22 @@ public partial class WorkflowEngine
     /// </summary>
     public async Task<bool> CancelWorkflowAsync(string instanceId, string reason)
     {
-        var __instance1 = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
-        if (__instance1 == null) return false;
+        var instance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
+        if (instance == null) return false;
 
-        __instance1.Status = WorkflowStatus.Cancelled;
-        __instance1.CompletedAt = DateTime.UtcNow;
-        __instance1.CurrentApproverIds.Clear();
-        __instance1.ActiveApprovals.Clear();
+        instance.Status = WorkflowStatus.Cancelled;
+        instance.CompletedAt = DateTime.UtcNow;
+        instance.CurrentApproverIds.Clear();
+        instance.ActiveApprovals.Clear();
         await _context.SaveChangesAsync();
 
-        if (!string.IsNullOrEmpty(__instance1.DocumentId))
+        if (!string.IsNullOrEmpty(instance.DocumentId))
         {
-            var __doc1 = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == __instance1.DocumentId!);
-            if (__doc1 != null)
+            var document = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == instance.DocumentId!);
+            if (document != null)
             {
-                __doc1.Status = Models.Workflow.DocumentStatus.Draft;
-                __doc1.UpdatedAt = DateTime.UtcNow;
+                document.Status = Models.Workflow.DocumentStatus.Draft;
+                document.UpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
             }
         }
@@ -249,12 +249,12 @@ public partial class WorkflowEngine
     /// </summary>
     private async Task SetCurrentNodeAsync(string instanceId, string nodeId)
     {
-        var __instance2 = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
-        if (__instance2 != null)
+        var instance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
+        if (instance != null)
         {
-            __instance2.CurrentNodeId = nodeId;
-            __instance2.CurrentApproverIds.Clear(); // Bug 6: 切换节点时清空审批人
-            __instance2.UpdatedAt = DateTime.UtcNow;
+            instance.CurrentNodeId = nodeId;
+            instance.CurrentApproverIds.Clear(); // Bug 6: 切换节点时清空审批人
+            instance.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
     }
@@ -269,13 +269,13 @@ public partial class WorkflowEngine
 
         _logger.LogInformation("DEBUG_WORKFLOW: Completing Workflow {InstanceId} with Status {Status}", instanceId, status);
 
-        var __instance3 = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
-        if (__instance3 != null)
+        var workflowInstance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
+        if (workflowInstance != null)
         {
-            __instance3.Status = status;
-            __instance3.CompletedAt = DateTime.UtcNow;
-            __instance3.CurrentApproverIds.Clear(); // Bug 6: 流程结束清空审批人
-            __instance3.ActiveApprovals.Clear(); // 清除任务映射
+            workflowInstance.Status = status;
+            workflowInstance.CompletedAt = DateTime.UtcNow;
+            workflowInstance.CurrentApproverIds.Clear(); // Bug 6: 流程结束清空审批人
+            workflowInstance.ActiveApprovals.Clear(); // 清除任务映射
             await _context.SaveChangesAsync();
         }
 
@@ -286,11 +286,11 @@ public partial class WorkflowEngine
 
         if (!string.IsNullOrEmpty(instance.DocumentId))
         {
-            var __doc2 = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == instance.DocumentId);
-            if (__doc2 != null)
+            var document = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == instance.DocumentId);
+            if (document != null)
             {
-                __doc2.Status = documentStatus;
-                __doc2.UpdatedAt = DateTime.UtcNow;
+                document.Status = documentStatus;
+                document.UpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
             }
         }
@@ -335,20 +335,20 @@ public partial class WorkflowEngine
     /// </summary>
     private async Task UpdateCurrentApproverIdsAsync(string instanceId, string nodeId, List<string> approverIds)
     {
-        var __instance4 = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
-        if (__instance4 != null)
+        var instance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
+        if (instance != null)
         {
             if (approverIds == null || approverIds.Count == 0)
             {
-                __instance4.RemoveActiveApprovers(nodeId);
+                instance.RemoveActiveApprovers(nodeId);
             }
             else
             {
-                __instance4.SetActiveApprovers(nodeId, approverIds.Distinct().ToList());
+                instance.SetActiveApprovers(nodeId, approverIds.Distinct().ToList());
             }
 
-            __instance4.CurrentApproverIds = __instance4.ActiveApprovals.SelectMany(x => x.ApproverIds).Distinct().ToList();
-            __instance4.UpdatedAt = DateTime.UtcNow;
+            instance.CurrentApproverIds = instance.ActiveApprovals.SelectMany(x => x.ApproverIds).Distinct().ToList();
+            instance.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
     }
@@ -358,14 +358,14 @@ public partial class WorkflowEngine
     /// </summary>
     private async Task ClearNodeApproversAsync(string instanceId, string nodeId)
     {
-        var __instance5 = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
-        if (__instance5 != null)
+        var instance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
+        if (instance != null)
         {
-            if (__instance5.ActiveApprovals.Any(a => a.NodeId == nodeId))
+            if (instance.ActiveApprovals.Any(a => a.NodeId == nodeId))
             {
-                __instance5.RemoveActiveApprovers(nodeId);
-                __instance5.CurrentApproverIds = __instance5.ActiveApprovals.SelectMany(x => x.ApproverIds).Distinct().ToList();
-                __instance5.UpdatedAt = DateTime.UtcNow;
+                instance.RemoveActiveApprovers(nodeId);
+                instance.CurrentApproverIds = instance.ActiveApprovals.SelectMany(x => x.ApproverIds).Distinct().ToList();
+                instance.UpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
             }
         }

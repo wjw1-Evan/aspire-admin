@@ -38,6 +38,7 @@ public class UserApproverResolver : IApproverResolver
         var uc = await _context.Set<UserCompany>().FirstOrDefaultAsync(x => x.UserId == rule.UserId && x.CompanyId == companyId && x.Status == "active");
         if (uc != null) return new List<string> { rule.UserId };
 
+        // 用户可能在其他企业有活跃成员关系
         var anyUc = await _context.Set<UserCompany>().IgnoreQueryFilters().FirstOrDefaultAsync(x => x.UserId == rule.UserId && x.Status == "active");
         if (anyUc != null) return new List<string> { rule.UserId };
 

@@ -259,44 +259,44 @@ public class DocumentService : IDocumentService
 
         bool hasUpdate = false;
 
-        var __entity = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == id);
-        if (__entity != null)
+        var existingDocument = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == id);
+        if (existingDocument != null)
         {
     
             if (!string.IsNullOrEmpty(request.Title))
             {
-                __entity.Title = request.Title;
+                existingDocument.Title = request.Title;
                 hasUpdate = true;
             }
 
             if (request.Content != null)
             {
-                __entity.Content = request.Content;
+                existingDocument.Content = request.Content;
                 hasUpdate = true;
             }
 
             if (!string.IsNullOrEmpty(request.DocumentType))
             {
-                __entity.DocumentType = request.DocumentType;
+                existingDocument.DocumentType = request.DocumentType;
                 hasUpdate = true;
             }
 
             if (request.Category != null)
             {
-                __entity.Category = request.Category;
+                document.Category = request.Category;
                 hasUpdate = true;
             }
 
             if (request.AttachmentIds != null)
             {
-                __entity.AttachmentIds = request.AttachmentIds;
+                document.AttachmentIds = request.AttachmentIds;
                 hasUpdate = true;
             }
 
             if (request.FormData != null)
             {
                 var sanitized = SerializationExtensions.SanitizeDictionary(request.FormData);
-                __entity.FormData = sanitized;
+                document.FormData = sanitized;
                 hasUpdate = true;
             }
             await _context.SaveChangesAsync();
@@ -405,10 +405,10 @@ public class DocumentService : IDocumentService
         }
 
         {
-            var __fpQ = _context.Set<Document>().Where(filter!);
-            var __fpT = await __fpQ.LongCountAsync();
-            var __fpI = await __fpQ.OrderByDescending(d => d.CreatedAt).Skip((query.Page - 1) * query.PageSize).Take(query.PageSize).ToListAsync();
-            return (__fpI, __fpT);
+            var filteredQuery = _context.Set<Document>().Where(filter!);
+            var totalCount = await filteredQuery.LongCountAsync();
+            var items = await filteredQuery.OrderByDescending(d => d.CreatedAt).Skip((query.Page - 1) * query.PageSize).Take(query.PageSize).ToListAsync();
+            return (items, totalCount);
         }
     }
 
@@ -429,8 +429,8 @@ public class DocumentService : IDocumentService
             throw new InvalidOperationException("只有草稿状态的公文可以删除");
         }
 
-                    var __sd2 = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == id);
-            if (__sd2 != null) { __sd2.IsDeleted = true; await _context.SaveChangesAsync(); }
+        document.IsDeleted = true;
+        await _context.SaveChangesAsync();
 
         return true;
     }
@@ -479,12 +479,12 @@ public class DocumentService : IDocumentService
         var instance = await _workflowEngine.StartWorkflowAsync(workflowDefinitionId, documentId, userId, allVariables);
 
         // 更新文档的 WorkflowInstanceId 字段
-        var __entity = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == documentId);
-        if (__entity != null)
+        var existingDocument = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == documentId);
+        if (existingDocument != null)
         {
     
-            __entity.WorkflowInstanceId = instance.Id;
-            __entity.Status = DocumentStatus.Approving;
+            existingDocument.WorkflowInstanceId = instance.Id;
+            existingDocument.Status = DocumentStatus.Approving;
             await _context.SaveChangesAsync();
         }
 

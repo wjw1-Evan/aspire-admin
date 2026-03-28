@@ -321,13 +321,13 @@ public class UserCompanyService : IUserCompanyService
             throw new InvalidOperationException($"申请状态为 {request.Status}，无法撤销");
 
         // 4. 更新状态为 cancelled
-        var __entity = await _context.Set<CompanyJoinRequest>().FirstOrDefaultAsync(x => x.Id == requestId);
-        if (__entity != null)
+        var existingRequest = await _context.Set<CompanyJoinRequest>().FirstOrDefaultAsync(x => x.Id == requestId);
+        if (existingRequest != null)
         {
     
-            __entity.Status = "cancelled";
-            __entity.RejectReason = "User Cancelled";
-            __entity.UpdatedAt = DateTime.UtcNow;
+            existingRequest.Status = "cancelled";
+            existingRequest.RejectReason = "User Cancelled";
+            existingRequest.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
 
@@ -363,23 +363,23 @@ public class UserCompanyService : IUserCompanyService
             var membership = await GetUserCompanyAsync(request.UserId, request.CompanyId);
             if (membership != null)
             {
-                var __sd2 = await _context.Set<UserCompany>().FirstOrDefaultAsync(x => x.Id == membership.Id!);
-                if (__sd2 != null) { _context.Set<UserCompany>().Remove(__sd2); await _context.SaveChangesAsync(); }
+                var membershipToDelete = await _context.Set<UserCompany>().FirstOrDefaultAsync(x => x.Id == membership.Id!);
+                if (membershipToDelete != null) { _context.Set<UserCompany>().Remove(membershipToDelete); await _context.SaveChangesAsync(); }
 
                 _logger.LogInformation("由于申请状态变更为拒绝，已移除用户 {UserId} 在企业 {CompanyId} 的成员身份", request.UserId, request.CompanyId);
             }
         }
 
         // 5. 更新申请状态
-        var __entity = await _context.Set<CompanyJoinRequest>().FirstOrDefaultAsync(x => x.Id == requestId);
-        if (__entity != null)
+        var existingRequest = await _context.Set<CompanyJoinRequest>().FirstOrDefaultAsync(x => x.Id == requestId);
+        if (existingRequest != null)
         {
     
-            __entity.Status = approved ? "approved" : "rejected";
-            __entity.ReviewedBy = currentUserId;
-            __entity.ReviewedAt = DateTime.UtcNow;
-            __entity.RejectReason = approved ? null : (rejectReason ?? "管理员修改了审核结果");
-            __entity.UpdatedAt = DateTime.UtcNow;
+            existingRequest.Status = approved ? "approved" : "rejected";
+            existingRequest.ReviewedBy = currentUserId;
+            existingRequest.ReviewedAt = DateTime.UtcNow;
+            existingRequest.RejectReason = approved ? null : (rejectReason ?? "管理员修改了审核结果");
+            existingRequest.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
 
@@ -615,12 +615,12 @@ public class UserCompanyService : IUserCompanyService
         }
 
         // 3. 更新用户当前企业（使用原子操作）
-        var __entity = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == userId);
-        if (__entity != null)
+        var existingRequest = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == userId);
+        if (existingRequest != null)
         {
     
-            __entity.CurrentCompanyId = targetCompanyId;
-            __entity.UpdatedAt = DateTime.UtcNow;
+            existingRequest.CurrentCompanyId = targetCompanyId;
+            existingRequest.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
 
@@ -737,15 +737,15 @@ public class UserCompanyService : IUserCompanyService
         if (membership == null)
             throw new KeyNotFoundException("未找到该用户的企业成员记录");
 
-        var __entity = await _context.Set<UserCompany>().FirstOrDefaultAsync(x => x.Id == membership.Id!);
-        if (__entity != null)
+        var existingRequest = await _context.Set<UserCompany>().FirstOrDefaultAsync(x => x.Id == membership.Id!);
+        if (existingRequest != null)
         {
     
-            __entity.RoleIds = roleIds;
-            __entity.UpdatedAt = DateTime.UtcNow;
+            existingRequest.RoleIds = roleIds;
+            existingRequest.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
-        var updatedUserCompany = __entity;
+        var updatedUserCompany = existingRequest;
         return updatedUserCompany != null;
     }
 
@@ -768,15 +768,15 @@ public class UserCompanyService : IUserCompanyService
         if (membership == null)
             throw new KeyNotFoundException("未找到该用户的企业成员记录");
 
-        var __entity = await _context.Set<UserCompany>().FirstOrDefaultAsync(x => x.Id == membership.Id!);
-        if (__entity != null)
+        var existingRequest = await _context.Set<UserCompany>().FirstOrDefaultAsync(x => x.Id == membership.Id!);
+        if (existingRequest != null)
         {
     
-            __entity.IsAdmin = isAdmin;
-            __entity.UpdatedAt = DateTime.UtcNow;
+            existingRequest.IsAdmin = isAdmin;
+            existingRequest.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
-        var updatedUserCompany = __entity;
+        var updatedUserCompany = existingRequest;
         return updatedUserCompany != null;
     }
 
@@ -798,9 +798,9 @@ public class UserCompanyService : IUserCompanyService
         var membership = await GetUserCompanyAsync(userId, companyId);
         if (membership != null)
         {
-            var __sdE = await _context.Set<UserCompany>().FirstOrDefaultAsync(x => x.Id == membership.Id!);
-            if (__sdE != null) { _context.Set<UserCompany>().Remove(__sdE); await _context.SaveChangesAsync(); }
-            var result = __sdE != null;
+            var membershipToDelete = await _context.Set<UserCompany>().FirstOrDefaultAsync(x => x.Id == membership.Id!);
+            if (membershipToDelete != null) { _context.Set<UserCompany>().Remove(membershipToDelete); await _context.SaveChangesAsync(); }
+            var result = membershipToDelete != null;
             return result;
         }
         return false;
@@ -838,19 +838,19 @@ public class UserCompanyService : IUserCompanyService
         }
 
         // 4. 执行删除
-        var membershipToDelete = await GetUserCompanyAsync(userId, companyId);
-        var __sdE = await _context.Set<UserCompany>().FirstOrDefaultAsync(x => x.Id == membershipToDelete!.Id!);
-        if (__sdE != null) { _context.Set<UserCompany>().Remove(__sdE); await _context.SaveChangesAsync(); }
-        var result = __sdE != null;
+        var userMembership = await GetUserCompanyAsync(userId, companyId);
+        var membershipEntity = await _context.Set<UserCompany>().FirstOrDefaultAsync(x => x.Id == userMembership!.Id!);
+        if (membershipEntity != null) { _context.Set<UserCompany>().Remove(membershipEntity); await _context.SaveChangesAsync(); }
+        var result = membershipEntity != null;
 
         // 5. 如果当前正在使用该企业，需要重置 CurrentCompanyId
         if (user != null && user.CurrentCompanyId == companyId)
         {
-            var __entity = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == userId);
-        if (__entity != null)
+            var existingRequest = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == userId);
+        if (existingRequest != null)
         {
     
-                __entity.CurrentCompanyId = user.PersonalCompanyId ?? "";
+                existingRequest.CurrentCompanyId = user.PersonalCompanyId ?? "";
             await _context.SaveChangesAsync();
         }
 

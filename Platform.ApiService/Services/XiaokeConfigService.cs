@@ -190,30 +190,7 @@ public class XiaokeConfigService : IXiaokeConfigService
             existingConfig.IsDefault = request.IsDefault.Value;
         }
 
-        var __entity = await _context.Set<XiaokeConfig>().FirstOrDefaultAsync(x => x.Id == id);
-        if (__entity != null)
-        {
-    
-            if (!string.IsNullOrEmpty(request.Name)) __entity.Name = request.Name;
-            if (!string.IsNullOrEmpty(request.Model)) __entity.Model = request.Model;
-            if (request.SystemPrompt != null) __entity.SystemPrompt = request.SystemPrompt;
-            if (request.Temperature.HasValue) __entity.Temperature = request.Temperature.Value;
-            if (request.MaxTokens.HasValue) __entity.MaxTokens = request.MaxTokens.Value;
-            if (request.TopP.HasValue) __entity.TopP = request.TopP.Value;
-            if (request.FrequencyPenalty.HasValue) __entity.FrequencyPenalty = request.FrequencyPenalty.Value;
-            if (request.PresencePenalty.HasValue) __entity.PresencePenalty = request.PresencePenalty.Value;
-            if (request.IsEnabled.HasValue) __entity.IsEnabled = request.IsEnabled.Value;
-            if (request.IsDefault.HasValue && request.IsDefault.Value)
-            {
-                __entity.IsDefault = true;
-            }
-            else if (request.IsDefault.HasValue)
-            {
-                __entity.IsDefault = false;
-            }
-            await _context.SaveChangesAsync();
-        }
-
+        await _context.SaveChangesAsync();
 
         return await GetConfigByIdAsync(id);
     }
@@ -221,13 +198,11 @@ public class XiaokeConfigService : IXiaokeConfigService
     /// <inheritdoc/>
     public async Task<bool> DeleteConfigAsync(string id)
     {
-        {
-            var __sd = await _context.Set<XiaokeConfig>().FirstOrDefaultAsync(x => x.Id == id);
-            if (__sd == null) return false;
-            __sd.IsDeleted = true;
-            await _context.SaveChangesAsync();
-            return true;
-        }
+        var existingConfig = await _context.Set<XiaokeConfig>().FirstOrDefaultAsync(x => x.Id == id);
+        if (existingConfig == null) return false;
+        existingConfig.IsDeleted = true;
+        await _context.SaveChangesAsync();
+        return true;
     }
 
     /// <inheritdoc/>
@@ -235,10 +210,10 @@ public class XiaokeConfigService : IXiaokeConfigService
     {
         await UnsetOtherDefaultConfigsAsync(id);
 
-        var __configToUpdate = await _context.Set<XiaokeConfig>().FirstOrDefaultAsync(x => x.Id == id);
-        if (__configToUpdate != null)
+        var existingConfig = await _context.Set<XiaokeConfig>().FirstOrDefaultAsync(x => x.Id == id);
+        if (existingConfig != null)
         {
-            __configToUpdate.IsDefault = true;
+            existingConfig.IsDefault = true;
             await _context.SaveChangesAsync();
         }
 

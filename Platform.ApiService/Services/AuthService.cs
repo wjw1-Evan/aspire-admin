@@ -262,16 +262,11 @@ public class AuthService : IAuthService
         // 🔒 安全增强：解密前端加密的密码
         var rawPassword = _encryptionService.TryDecryptPassword(request.Password ?? string.Empty);
 
-        // DEBUG: 记录密码验证信息
-        _logger.LogDebug("Login debug: username={Username}, passwordLength={PasswordLength}, storedHashLength={StoredHashLength}, storedHashPrefix={StoredHashPrefix}", 
-            request.Username, rawPassword?.Length ?? 0, user.PasswordHash?.Length ?? 0, user.PasswordHash?.Length > 10 ? user.PasswordHash.Substring(0, 10) : user.PasswordHash);
-
         // BYPASS FOR TESTING SCRIPT
         var isTestUserBypass = request.Username == "admin" && request.Password == "password1";
 
         if (!isTestUserBypass && !_passwordHasher.VerifyPassword(rawPassword, user.PasswordHash))
         {
-            _logger.LogDebug("Password verification failed: rawPassword={RawPassword}, storedHash={StoredHash}", rawPassword, user.PasswordHash);
             await RecordFailureAsync(clientId, "login");
             return ServiceResult<LoginData>.Failure("INVALID_CREDENTIALS", "用户名或密码错误");
         }
@@ -281,12 +276,11 @@ public class AuthService : IAuthService
         bool shouldClearInvalidCompanyId = false;
         if (!string.IsNullOrEmpty(user.CurrentCompanyId))
         {
-            var companies = await _context.Set<Company>().Where(c => c.Id == user.CurrentCompanyId).ToListAsync();
-            var company = companies.FirstOrDefault();
+            var company = await _context.Set<Company>().FirstOrDefaultAsync(c => c.Id == user.CurrentCompanyId);
 
             if (company == null)
             {
-                // 鲁棒性修复：记录警告并标记清理，但不在此处立即执行异步任务避免 DbContext 并发错误
+                _logger.LogWarning("LoginAsync: 用户 {UserId} 的 CurrentCompanyId 为 '{CompanyId}'，但在数据库中未找到。将在后续步骤中清理。", user.Id, user.CurrentCompanyId);
                 _logger.LogWarning("LoginAsync: [发现无效数据] 用户 {UserId} 的 CurrentCompanyId 为 '{CompanyId}'，但在数据库中未找到。将在后续步骤中清理。", user.Id, user.CurrentCompanyId);
                 shouldClearInvalidCompanyId = true;
             }
@@ -305,13 +299,13 @@ public class AuthService : IAuthService
         }
 
         // 统一更新用户信息（最后登录时间 + 可选的无效企业 ID 清理）
-        var __u = await _context.Set<User>().FirstOrDefaultAsync(x => x.Id == user.Id!);
-        if (__u != null)
+        var userToUpdate = await _context.Set<User>().FirstOrDefaultAsync(x => x.Id == user.Id!);
+        if (userToUpdate != null)
         {
-            __u.LastLoginAt = DateTime.UtcNow;
+            userToUpdate.LastLoginAt = DateTime.UtcNow;
             if (shouldClearInvalidCompanyId)
             {
-                __u.CurrentCompanyId = null;
+                userToUpdate.CurrentCompanyId = null;
             }
             await _context.SaveChangesAsync();
         }
@@ -468,20 +462,16 @@ public class AuthService : IAuthService
             adminRole = companyResult.Role;
             userCompany = companyResult.UserCompany;
 
-            var __userToUpdate = await _context.Set<User>().IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Id == user.Id!);
-            if (__userToUpdate != null)
+            var userToUpdate = await _context.Set<User>().IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Id == user.Id!);
+            if (userToUpdate != null)
             {
-                __userToUpdate.CurrentCompanyId = personalCompany.Id;
-                __userToUpdate.PersonalCompanyId = personalCompany.Id;
-                _logger.LogDebug("Register: Setting CurrentCompanyId={CompanyId}, PersonalCompanyId={PersonalCompanyId}, PasswordHash before={PasswordHash}", 
-                    personalCompany.Id, personalCompany.Id, __userToUpdate.PasswordHash?.Length > 10 ? __userToUpdate.PasswordHash.Substring(0, 10) + "..." : __userToUpdate.PasswordHash);
+                userToUpdate.CurrentCompanyId = personalCompany.Id;
+                userToUpdate.PersonalCompanyId = personalCompany.Id;
                 await _context.SaveChangesAsync();
             }
 
             user.CurrentCompanyId = personalCompany.Id;
             user.PersonalCompanyId = personalCompany.Id;
-            // 不要清空密码哈希！user 对象返回给调用方后可能需要验证密码
-            // user.PasswordHash = string.Empty;
 
             _logger.LogInformation("用户 {Username} 注册完成，个人企业: {CompanyName}", user.Username, personalCompany.Name);
 
@@ -517,29 +507,19 @@ public class AuthService : IAuthService
         {
             if (userCompany != null)
             {
-                var __uc = await _context.Set<UserCompany>().FirstOrDefaultAsync(x => x.Id == userCompany.Id!);
-                if (__uc != null) { _context.Set<UserCompany>().Remove(__uc); await _context.SaveChangesAsync(); }
-                _logger.LogInformation("回滚：删除用户-企业关联 {UserCompanyId}", userCompany.Id);
-            }
-
-            if (role != null)
-            {
-                var __r = await _context.Set<Role>().FirstOrDefaultAsync(x => x.Id == role.Id!);
-                if (__r != null) { _context.Set<Role>().Remove(__r); await _context.SaveChangesAsync(); }
-                _logger.LogInformation("回滚：删除角色 {RoleId}", role.Id);
-            }
-
-            if (company != null)
-            {
-                var __c = await _context.Set<Company>().FirstOrDefaultAsync(x => x.Id == company.Id!);
-                if (__c != null) { _context.Set<Company>().Remove(__c); await _context.SaveChangesAsync(); }
+                var uc = await _context.Set<UserCompany>().FirstOrDefaultAsync(x => x.Id == userCompany.Id!);
+                if (uc != null) { _context.Set<UserCompany>().Remove(uc); await _context.SaveChangesAsync(); }
+                var r = await _context.Set<Role>().FirstOrDefaultAsync(x => x.Id == role.Id!);
+                if (r != null) { _context.Set<Role>().Remove(r); await _context.SaveChangesAsync(); }
+                var c = await _context.Set<Company>().FirstOrDefaultAsync(x => x.Id == company.Id!);
+                if (c != null) { _context.Set<Company>().Remove(c); await _context.SaveChangesAsync(); }
                 _logger.LogInformation("回滚：删除企业 {CompanyId}", company.Id);
             }
 
             if (user != null)
             {
-        var __u = await _context.Set<User>().FirstOrDefaultAsync(x => x.Id == user.Id!);
-                if (__u != null) { _context.Set<User>().Remove(__u); await _context.SaveChangesAsync(); }
+                var userToDelete = await _context.Set<User>().FirstOrDefaultAsync(x => x.Id == user.Id!);
+                if (userToDelete != null) { _context.Set<User>().Remove(userToDelete); await _context.SaveChangesAsync(); }
                 _logger.LogInformation("回滚：删除用户 {UserId}", user.Id);
             }
 
@@ -711,15 +691,15 @@ public class AuthService : IAuthService
 
                 if (adminRole?.Id != null)
                 {
-                    var __r = await _context.Set<Role>().FirstOrDefaultAsync(r => r.Id == adminRole.Id);
-                    if (__r != null) { _context.Set<Role>().Remove(__r); await _context.SaveChangesAsync(); }
+                    var role = await _context.Set<Role>().FirstOrDefaultAsync(r => r.Id == adminRole.Id);
+                    if (role != null) { _context.Set<Role>().Remove(role); await _context.SaveChangesAsync(); }
                     _logger.LogInformation("已清理角色");
                 }
 
                 if (company?.Id != null)
                 {
-                    var __c = await _context.Set<Company>().IgnoreQueryFilters().FirstOrDefaultAsync(c => c.Id == company.Id);
-                    if (__c != null) { _context.Set<Company>().Remove(__c); await _context.SaveChangesAsync(); }
+                    var companyToDelete = await _context.Set<Company>().IgnoreQueryFilters().FirstOrDefaultAsync(c => c.Id == company.Id);
+                    if (companyToDelete != null) { _context.Set<Company>().Remove(companyToDelete); await _context.SaveChangesAsync(); }
                     _logger.LogInformation("已清理企业");
                 }
             }

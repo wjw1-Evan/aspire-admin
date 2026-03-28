@@ -15,7 +15,7 @@
 **核心项目结构**：
 - `Platform.AppHost/AppHost.cs`：所有微服务、数据库、Redis 资源的统筹编排入口。
 - `Platform.ApiService`：统一的后端核心业务网关与逻辑层。
-- `Platform.ServiceDefaults`：共享的扩展、实体基类及 `IDataFactory` 数据工厂层。
+- `Platform.ServiceDefaults`：共享的扩展、实体基类及 `PlatformDbContext` 基础设施层。
 - `Platform.Admin` / `Platform.App` / `Platform.MiniApp`：多端前端应用。
 
 ## 2. 交互与代码流基础纪律

@@ -50,4 +50,4 @@ const handleSubmit = async (values: any) => {};
 ## 相关文档
 
 - [`00-通用原则.md`](../00-通用原则.md) - 核心架构原则
-- [`docs/features/FRONTEND-RULES.md`](../features/FRONTEND-RULES.md) - 前端开发规范（详细）
+- [`AGENTS.md`](../../../AGENTS.md) - 项目总纲与 AI 交互指南

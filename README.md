@@ -8,10 +8,10 @@
   - 系统内置 **18 种语言支持**：中文（简/繁）、英语、日语、韩语、阿拉伯语、波斯语、孟加拉语、德语、西班牙语、法语、印尼语、意大利语、葡萄牙语、俄语、泰语、土耳其语、越南语。
   - 支持自动检测浏览器语言并平滑切换。
   - 特别适配 RTL 布局（如阿拉伯语、波斯语），确保全球化体验。
-- **现代化数据模型 (IDataFactory)**
-  - 核心逻辑基于 **IDataFactory<T>** 接口，完全屏蔽底层数据库 API（如 MongoDB 驱动）。
+- **现代化数据访问 (DbContext)**
+  - 核心逻辑基于 **DbContext** (EF Core) 接口，直接注入并在 `Platform.ServiceDefaults` 中统筹。
   - 全面支持 **LINQ 表达式**，实现业务逻辑在内存与数据库间的透明映射。
-  - **Security & Efficiency**：内置多租户隔离（通过继承 `MultiTenantEntity`）、软删除、字段级自动审计及原子化 Lambda 更新。
+  - **Security & Efficiency**：内置多租户隔离（通过继承 `MultiTenantEntity`）、软删除、字段级自动审计。
 - **国产密码算法支持 (Guomi Support)**
   - 全面适配国家密码管理局标准（GB/T 39786-2021）。
   - **SM2**：用于多端登录的非对称加密传输。
@@ -100,7 +100,7 @@ aspire-admin
 │   ├── Options/              # 配置选项类
 │   └── docs/                 # 服务文档
 ├── Platform.ServiceDefaults   # 通用弹性配置、服务目录与公共实体定义
-│   ├── Services/             # 数据工厂、数据库上下文
+│   ├── Services/             # 数据库上下文 (PlatformDbContext)
 │   └── Models/               # 基础实体、接口定义
 ├── Platform.DataInitializer   # 数据库索引初始化与基础数据种子填充
 ├── Platform.Admin             # 管理后台 (React 19 + Ant Design 6 + UmiJS 4)
@@ -240,14 +240,13 @@ dotnet run --project Platform.AppHost
 
 ## 💡 核心设计理念 (Core Design)
 
-### 1. 声明式数据工厂 (IDataFactory)
+### 1. 声明式数据访问 (PlatformDbContext)
 
-本项目核心逻辑完全解耦于具体的数据库驱动。通过 `IDataFactory<T>`，开发者仅需关注业务模型。该层级自动处理：
+本项目核心逻辑基于 `PlatformDbContext` (EF Core)。开发者仅需直接注入 `DbContext` 即可。该层级自动处理：
 
 - **多租户透明过滤**：根据操作上下文自动追加 `CompanyId` 过滤（通过 EF Core 全局查询过滤器）
 - **审计追踪**：全自动记录实体创建、修改的时间与人员（CreatedAt/By, UpdatedAt/By）
 - **软删除**：支持逻辑删除，自动过滤已删除数据
-- **原子化更新**：集成性能极佳的 Lambda 表达式更新，降低数据库并发冲突
 - **LINQ 支持**：完全支持 LINQ 表达式，实现业务逻辑在内存与数据库间的透明映射
 
 ### 2. 闭环工作流引擎
@@ -300,7 +299,7 @@ dotnet run --project Platform.AppHost
 
 - 遵循 **Clean Architecture** 架构规范
 - UI 变更符合项目的 **高品质设计准则**
-- 后端逻辑优先考虑 **多租户隔离**（业务实体必须继承 `MultiTenantEntity`） 与 **IDataFactory 兼容性**
+- 后端逻辑优先考虑 **多租户隔离**（业务实体必须继承 `MultiTenantEntity`） 与 **DbContext 兼容性**
 - 代码通过编译且无警告
 - 添加必要的单元测试
 - 更新相关文档

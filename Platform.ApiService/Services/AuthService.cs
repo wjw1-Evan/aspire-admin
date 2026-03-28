@@ -497,11 +497,17 @@ public class AuthService : IAuthService
             {
                 var uc = await _context.Set<UserCompany>().FirstOrDefaultAsync(x => x.Id == userCompany.Id!);
                 if (uc != null) { _context.Set<UserCompany>().Remove(uc); await _context.SaveChangesAsync(); }
-                var r = await _context.Set<Role>().FirstOrDefaultAsync(x => x.Id == role.Id!);
-                if (r != null) { _context.Set<Role>().Remove(r); await _context.SaveChangesAsync(); }
-                var c = await _context.Set<Company>().FirstOrDefaultAsync(x => x.Id == company.Id!);
-                if (c != null) { _context.Set<Company>().Remove(c); await _context.SaveChangesAsync(); }
-                _logger.LogInformation("回滚：删除企业 {CompanyId}", company.Id);
+                if (role != null)
+                {
+                    var r = await _context.Set<Role>().FirstOrDefaultAsync(x => x.Id == role.Id!);
+                    if (r != null) { _context.Set<Role>().Remove(r); await _context.SaveChangesAsync(); }
+                }
+                if (company != null)
+                {
+                    var c = await _context.Set<Company>().FirstOrDefaultAsync(x => x.Id == company.Id!);
+                    if (c != null) { _context.Set<Company>().Remove(c); await _context.SaveChangesAsync(); }
+                    _logger.LogInformation("回滚：删除企业 {CompanyId}", company.Id);
+                }
             }
 
             if (user != null)

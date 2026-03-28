@@ -69,7 +69,7 @@ public class TenantContext(
 
     private async Task<string?> LoadCompanyIdAsync(string userId)
     {
-        var collection = database.GetCollection<BsonDocument>("appusers");
+        var collection = database.GetCollection<BsonDocument>("users");
 
         // 构建简单的过滤器
         var filter = Builders<BsonDocument>.Filter.And(

@@ -117,31 +117,16 @@ public abstract class BaseApiController : ControllerBase
 
         if (result.IsSuccess) return Ok(response);
 
-        // 调试：添加详细信息到响应中
-        var debugResponse = new
-        {
-            success = result.IsSuccess,
-            code = result.Code ?? "ERROR",
-            message = result.Message ?? "操作失败",
-            data = result.Data,
-            _debug = new
-            {
-                resultType = result.GetType().Name,
-                code = result.Code,
-                message = result.Message
-            }
-        };
-
         // 如果 Result 返回的是特定的业务错误码，可以直接交由 Result 映射
         return result.Code switch
         {
-            "NOT_FOUND" => NotFound(debugResponse),
-            "UNAUTHORIZED" => Unauthorized(debugResponse),
-            "FORBIDDEN" => StatusCode(403, debugResponse),
-            "VALIDATION_ERROR" => BadRequest(debugResponse),
-            "ALREADY_EXISTS" => Conflict(debugResponse),
-            "INTERNAL_ERROR" => StatusCode(500, debugResponse),
-            _ => BadRequest(debugResponse)
+            "NOT_FOUND" => NotFound(response),
+            "UNAUTHORIZED" => Unauthorized(response),
+            "FORBIDDEN" => StatusCode(403, response),
+            "VALIDATION_ERROR" => BadRequest(response),
+            "ALREADY_EXISTS" => Conflict(response),
+            "INTERNAL_ERROR" => StatusCode(500, response),
+            _ => BadRequest(response)
         };
     }
 

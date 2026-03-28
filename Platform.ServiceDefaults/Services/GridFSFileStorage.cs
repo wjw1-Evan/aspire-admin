@@ -380,17 +380,29 @@ public class GridFSFileStorage : IFileStorageFactory
         try
         {
             var filesCollection = _database.GetCollection<BsonDocument>($"{bucketName}.files");
-            var files = await filesCollection.Find(Builders<BsonDocument>.Filter.Empty)
-                .ToListAsync(cancellationToken);
 
-            stats.FileCount = files.Count;
-            stats.SizeBytes = files.Sum(f => GetInt64Safe(f, "length"));
-            stats.ChunksCount = files.Sum(f =>
+            stats.FileCount = await filesCollection.CountDocumentsAsync(
+                Builders<BsonDocument>.Filter.Empty, cancellationToken: cancellationToken);
+
+            var agg = new[]
             {
-                var length = GetInt64Safe(f, "length");
-                var chunkSize = GetInt64Safe(f, "chunkSize", 261120);
-                return (long)Math.Ceiling((double)length / chunkSize);
-            });
+                new BsonDocument("$group", new BsonDocument
+                {
+                    { "_id", BsonNull.Value },
+                    { "totalSize", new BsonDocument("$sum", "$length") },
+                    { "totalChunks", new BsonDocument("$sum", 1) }
+                })
+            };
+
+            var result = await filesCollection
+                .Aggregate<BsonDocument>(agg)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (result != null)
+            {
+                stats.SizeBytes = result.GetValue("totalSize", 0).ToInt64();
+                stats.ChunksCount = result.GetValue("totalChunks", 0).ToInt64();
+            }
         }
         catch (Exception ex)
         {

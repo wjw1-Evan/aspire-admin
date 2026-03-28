@@ -39,15 +39,12 @@ public class SM3PasswordHasher : IPasswordHasher
     {
         if (string.IsNullOrEmpty(password)) throw new ArgumentNullException(nameof(password));
 
-        // 生成随机盐
         var salt = new byte[SaltSize];
         System.Security.Cryptography.RandomNumberGenerator.Fill(salt);
         var saltHex = Hex.ToHexString(salt);
 
-        // 计算 SM3(password + salt)
         var hashHex = ComputeSM3Hash(password, saltHex);
 
-        // 返回包含算法前缀和盐的字符串
         return $"{SM3_PREFIX}{saltHex}${hashHex}";
     }
 
@@ -62,10 +59,8 @@ public class SM3PasswordHasher : IPasswordHasher
         if (string.IsNullOrEmpty(password) || string.IsNullOrEmpty(hashedPassword))
             return false;
 
-        // 检查前缀
         if (!hashedPassword.StartsWith(SM3_PREFIX))
         {
-            // 兼容之前没有前缀的格式 {salt}${hash}
             var legacyParts = hashedPassword.Split('$');
             if (legacyParts.Length == 2)
             {
@@ -85,7 +80,6 @@ public class SM3PasswordHasher : IPasswordHasher
     {
         var actualHashHex = ComputeSM3Hash(password, saltHex);
 
-        // 固定时间比较防止时序攻击 (Constant-time comparison)
         return System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
             Encoding.UTF8.GetBytes(expectedHashHex),
             Encoding.UTF8.GetBytes(actualHashHex)
@@ -95,6 +89,10 @@ public class SM3PasswordHasher : IPasswordHasher
     private string ComputeSM3Hash(string password, string saltHex)
     {
         var inputBytes = Encoding.UTF8.GetBytes(password + saltHex);
-        return Hex.ToHexString(DigestUtilities.CalculateDigest("SM3", inputBytes));
+        var digest = new SM3Digest();
+        digest.BlockUpdate(inputBytes, 0, inputBytes.Length);
+        var result = new byte[digest.GetDigestSize()];
+        digest.DoFinal(result, 0);
+        return Hex.ToHexString(result);
     }
 }

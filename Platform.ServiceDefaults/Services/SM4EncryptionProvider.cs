@@ -27,7 +27,20 @@ public class SM4EncryptionProvider : ISM4EncryptionProvider
     {
         _logger = logger;
         var keyHex = configuration["Security:SM4Key"] ?? "0123456789ABCDEF0123456789ABCDEF";
-        _key = Hex.Decode(keyHex);
+        try
+        {
+            _key = Hex.Decode(keyHex);
+            if (_key.Length != 16)
+            {
+                _logger.LogWarning("SM4 key length is {Length}, expected 16 bytes. Using default key.", _key.Length);
+                _key = Hex.Decode("0123456789ABCDEF0123456789ABCDEF");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Invalid SM4 key hex string. Using default key.");
+            _key = Hex.Decode("0123456789ABCDEF0123456789ABCDEF");
+        }
     }
 
     public string Encrypt(string plainText)

@@ -1,6 +1,5 @@
-using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using System.ComponentModel.DataAnnotations.Schema;
+using Platform.ServiceDefaults.Attributes;
 
 namespace Platform.ServiceDefaults.Models;
 
@@ -9,31 +8,16 @@ namespace Platform.ServiceDefaults.Models;
 /// </summary>
 public enum EmailStatus
 {
-    /// <summary>
-    /// 待发送
-    /// </summary>
     Pending = 0,
-
-    /// <summary>
-    /// 发送中
-    /// </summary>
     Sending = 1,
-
-    /// <summary>
-    /// 已发送
-    /// </summary>
     Sent = 2,
-
-    /// <summary>
-    /// 发送失败
-    /// </summary>
     Failed = 3
 }
 
 /// <summary>
 /// 邮件发送日志
 /// </summary>
-[Table("emaillogs")]
+[BsonCollectionName("emaillogs")]
 public class EmailLog : BaseEntity
 {
     /// <summary>

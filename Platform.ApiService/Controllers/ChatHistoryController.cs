@@ -121,9 +121,9 @@ public class ChatHistoryController : BaseApiController
             .OrderByDescending(s => s.LastMessageAt)
             .ThenByDescending(s => s.CreatedAt);
 
-        var __fpQ = _context.Set<ChatSession>().Where(filter);
-        var _ = await __fpQ.LongCountAsync();
-        var sessions = await orderBy(__fpQ).Skip((request.Current - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
+        var query = _context.Set<ChatSession>().Where(filter);
+        var _ = await query.LongCountAsync();
+        var sessions = await orderBy(query).Skip((request.Current - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
 
         var sessionIds = sessions.Select(s => s.Id!).ToList();
         var messageCounts = new Dictionary<string, int>();
@@ -199,9 +199,9 @@ public class ChatHistoryController : BaseApiController
     [RequireMenu("xiaoke-management-chat-history")]
     public async Task<IActionResult> DeleteChatHistory(string sessionId)
     {
-        var __sdE = await _context.Set<ChatSession>().FirstOrDefaultAsync(x => x.Id == sessionId);
-        if (__sdE != null) { __sdE.IsDeleted = true; await _context.SaveChangesAsync(); }
-        var result = __sdE != null;
+        var entity = await _context.Set<ChatSession>().FirstOrDefaultAsync(x => x.Id == sessionId);
+        if (entity != null) { _context.Set<ChatSession>().Remove(entity); await _context.SaveChangesAsync(); }
+        var result = entity != null;
 
         if (!result)
         {

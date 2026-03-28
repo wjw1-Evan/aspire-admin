@@ -57,9 +57,9 @@ public class FormController : BaseApiController
 
             var orderBy = (IQueryable<FormDefinition> query) => query.OrderByDescending(f => f.CreatedAt);
 
-            var __fpQ = filter == null ? _context.Set<FormDefinition>() : _context.Set<FormDefinition>().Where(filter);
-        var total = await __fpQ.LongCountAsync();
-        var items = await orderBy(__fpQ).Skip((current - 1) * pageSize).Take(pageSize).ToListAsync();
+            var query = filter == null ? _context.Set<FormDefinition>() : _context.Set<FormDefinition>().Where(filter);
+        var total = await query.LongCountAsync();
+        var items = await orderBy(query).Skip((current - 1) * pageSize).Take(pageSize).ToListAsync();
             return SuccessPaged(items, total, current, pageSize);
         }
         catch (Exception ex)
@@ -139,21 +139,14 @@ public class FormController : BaseApiController
                 return NotFoundError("表单定义", id);
             }
 
-            var __entity = await _context.Set<FormDefinition>().FirstOrDefaultAsync(x => x.Id == id);
-        if (__entity != null)
-        {
-    
-                __entity.Name = form.Name;
-                __entity.Description = form.Description;
-                __entity.Fields = form.Fields;
-                __entity.IsActive = form.IsActive;
-                __entity.Version = form.Version;
+            existing.Name = form.Name;
+            existing.Description = form.Description;
+            existing.Fields = form.Fields;
+            existing.IsActive = form.IsActive;
+            existing.Version = form.Version;
             await _context.SaveChangesAsync();
-        }
 
-
-            var updated = await _context.Set<FormDefinition>().FirstOrDefaultAsync(x => x.Id == id);
-            return Success(updated);
+            return Success(existing);
         }
         catch (Exception ex)
         {
@@ -172,9 +165,9 @@ public class FormController : BaseApiController
     {
         try
         {
-            var __sdE = await _context.Set<FormDefinition>().FirstOrDefaultAsync(x => x.Id == id);
-        if (__sdE != null) { __sdE.IsDeleted = true; await _context.SaveChangesAsync(); }
-        var result = __sdE != null;
+            var entity = await _context.Set<FormDefinition>().FirstOrDefaultAsync(x => x.Id == id);
+            if (entity != null) { _context.Set<FormDefinition>().Remove(entity); await _context.SaveChangesAsync(); }
+            var result = entity != null;
             if (!result)
             {
                 return NotFoundError("表单定义", id);

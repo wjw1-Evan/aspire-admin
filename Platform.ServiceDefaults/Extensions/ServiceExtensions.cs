@@ -3,6 +3,7 @@ using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
+using Aspire.MongoDB.EntityFrameworkCore;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -25,8 +26,11 @@ public static class ServiceExtensions
     public static IHostApplicationBuilder AddPlatformDatabase(this IHostApplicationBuilder builder, string connectionName = "mongodb")
     {
         // ── Aspire 组件 ──────────────────────────────────
-        // 自动从 AppHost 资源解析连接信息，注册 IMongoClient + IMongoDatabase
+        // 自动从 AppHost 资源解析连接信息并注册：
+        // 1. IMongoClient / IMongoDatabase (提供给 GridFS / Native Driver)
+        // 2. PlatformDbContext (提供给 Entity Framework Core)
         builder.AddMongoDBClient(connectionName);
+        builder.AddMongoDbContext<PlatformDbContext>(connectionName);
 
         // ── MongoDB 全局约定 ─────────────────────────────
         // 集中在此注册，确保所有微服务行为一致
@@ -39,13 +43,8 @@ public static class ServiceExtensions
             },
             _ => true);
 
-        // ── EF Core ──────────────────────────────────────
-        // 复用 Aspire 已注册的 IMongoDatabase 获取 Client 和数据库名
-        builder.Services.AddDbContext<PlatformDbContext>((sp, options) =>
-        {
-            var db = sp.GetRequiredService<MongoDB.Driver.IMongoDatabase>();
-            options.UseMongoDB(db.Client, db.DatabaseNamespace.DatabaseName);
-        });
+        // ── EF Core 基类注册 ──────────────────────────────
+        // 确保所有注入 DbContext 的服务都能获取到 PlatformDbContext 实例
         builder.Services.AddScoped<DbContext>(sp => sp.GetRequiredService<PlatformDbContext>());
 
         // ── 基础设施服务 ─────────────────────────────────

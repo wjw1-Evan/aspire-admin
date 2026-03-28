@@ -339,9 +339,9 @@ public class WorkflowController : BaseApiController
     {
         try
         {
-            var __sdE = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == id);
-        if (__sdE != null) { __sdE.IsDeleted = true; await _context.SaveChangesAsync(); }
-        var result = __sdE != null;
+            var entity = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == id);
+            if (entity != null) { _context.Set<WorkflowDefinition>().Remove(entity); await _context.SaveChangesAsync(); }
+            var result = entity != null;
             if (!result)
             {
                 return NotFoundError("流程定义", id);

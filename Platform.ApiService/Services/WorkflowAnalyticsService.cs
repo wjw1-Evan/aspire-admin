@@ -36,12 +36,12 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
         
         try
         {
-            var __entity = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
-        if (__entity != null)
+            var entity = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
+        if (entity != null)
         {
     
-                __entity.Analytics.UsageCount++;
-                __entity.Analytics.LastUsedAt = DateTime.UtcNow;
+                entity.Analytics.UsageCount++;
+                entity.Analytics.LastUsedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
 
@@ -74,12 +74,12 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
             // 计算完成率（假设所有使用都会完成，实际应该基于实际完成数据）
             var completionRate = Math.Min(100.0, (totalCompletions * 100.0) / Math.Max(analytics.UsageCount, 1));
 
-            var __entity = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
-        if (__entity != null)
+            var entity = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
+        if (entity != null)
         {
     
-                __entity.Analytics.AverageCompletionTimeHours = newAverageTime;
-                __entity.Analytics.CompletionRate = completionRate;
+                entity.Analytics.AverageCompletionTimeHours = newAverageTime;
+                entity.Analytics.CompletionRate = completionRate;
             await _context.SaveChangesAsync();
         }
 
@@ -130,11 +130,11 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
             score = usageScore + completionScore + efficiencyScore;
 
             // 更新性能评分
-            var __entity = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
-        if (__entity != null)
+            var entity = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
+        if (entity != null)
         {
     
-                __entity.Analytics.PerformanceScore = score;
+                entity.Analytics.PerformanceScore = score;
             await _context.SaveChangesAsync();
         }
 
@@ -236,11 +236,11 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
             }
 
             // 更新性能问题列表
-            var __entity = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
-        if (__entity != null)
+            var entity = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
+        if (entity != null)
         {
     
-                __entity.Analytics.PerformanceIssues = issues;
+                entity.Analytics.PerformanceIssues = issues;
             await _context.SaveChangesAsync();
         }
 
@@ -422,11 +422,11 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
             var cutoffDate = DateTime.UtcNow.AddDays(-30).Date;
             trendData.RemoveAll(t => t.Date < cutoffDate);
 
-            var __entity = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
-        if (__entity != null)
+            var entity = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
+        if (entity != null)
         {
     
-                __entity.Analytics.TrendData = trendData;
+                entity.Analytics.TrendData = trendData;
             await _context.SaveChangesAsync();
         }
 

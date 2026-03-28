@@ -46,11 +46,11 @@ public class ParkVisitService : IParkVisitService
         var search = request.Search?.ToLower();
         var status = request.Status;
 
-        var __fpQ = _context.Set<VisitTask>().Where(
+        var query = _context.Set<VisitTask>().Where(
             t => (string.IsNullOrEmpty(search) || (t.ManagerName != null && t.ManagerName.ToLower().Contains(search)) || (t.Phone != null && t.Phone.ToLower().Contains(search))) &&
                  (string.IsNullOrEmpty(status) || t.Status == status));
-        var total = await __fpQ.LongCountAsync();
-        var items = await __fpQ.OrderByDescending(t => t.CreatedAt).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
+        var total = await query.LongCountAsync();
+        var items = await query.OrderByDescending(t => t.CreatedAt).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
 
         var tasks = new List<VisitTaskDto>();
         foreach (var item in items)
@@ -224,13 +224,13 @@ public class ParkVisitService : IParkVisitService
     {
         var search = request.Search?.ToLower();
 
-        var __fpQ = _context.Set<VisitAssessment>().Where(
+        var query = _context.Set<VisitAssessment>().Where(
             a => string.IsNullOrEmpty(search) ||
                  (a.VisitorName != null && a.VisitorName.ToLower().Contains(search)) ||
                  (a.Phone != null && a.Phone.ToLower().Contains(search)) ||
                  (a.TaskDescription != null && a.TaskDescription.ToLower().Contains(search)));
-        var total = await __fpQ.LongCountAsync();
-        var items = await __fpQ.OrderByDescending(a => a.CreatedAt).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
+        var total = await query.LongCountAsync();
+        var items = await query.OrderByDescending(a => a.CreatedAt).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
 
         return new VisitAssessmentListResponse
         {
@@ -304,11 +304,11 @@ public class ParkVisitService : IParkVisitService
         var search = request.Search?.ToLower();
         var category = request.Category;
 
-        var __fpQ = _context.Set<VisitQuestion>().Where(
+        var query = _context.Set<VisitQuestion>().Where(
             q => (string.IsNullOrEmpty(search) || (q.Content != null && q.Content.ToLower().Contains(search))) &&
                  (string.IsNullOrEmpty(category) || q.Category == category));
-        var total = await __fpQ.LongCountAsync();
-        var items = await __fpQ.OrderByDescending(q => q.CreatedAt).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
+        var total = await query.LongCountAsync();
+        var items = await query.OrderByDescending(q => q.CreatedAt).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
 
         return new VisitQuestionListResponse
         {

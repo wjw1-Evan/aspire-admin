@@ -59,10 +59,10 @@ public class UserActivityLogService : IUserActivityLogService
             (!endDate.HasValue || log.CreatedAt <= endDate.Value);
 
         var total = await _context.Set<UserActivityLog>().LongCountAsync(filter);
-        var __fpQ = _context.Set<UserActivityLog>().Where(
+        var query = _context.Set<UserActivityLog>().Where(
             filter);
-        var _ = await __fpQ.LongCountAsync();
-        var logs = await __fpQ.OrderByDescending(log => log.CreatedAt).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
+        var _ = await query.LongCountAsync();
+        var logs = await query.OrderByDescending(log => log.CreatedAt).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
         var totalPages = (int)Math.Ceiling(total / (double)request.PageSize);
 
         return new UserActivityLogPagedResponse
@@ -160,9 +160,9 @@ public class UserActivityLogService : IUserActivityLogService
             return query.OrderByDescending(log => log.CreatedAt);
         };
 
-        var __fpQ = _context.Set<UserActivityLog>().Where(filter);
-        var _ = await __fpQ.LongCountAsync();
-        var logs = await orderBy(__fpQ).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var query = _context.Set<UserActivityLog>().Where(filter);
+        var _ = await query.LongCountAsync();
+        var logs = await orderBy(query).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
         var logDtos = logs.Select(log => new ActivityLogListItemResponse
         {
@@ -249,10 +249,10 @@ public class UserActivityLogService : IUserActivityLogService
             (!endDate.HasValue || log.CreatedAt <= endDate.Value);
 
         var total = await _context.Set<UserActivityLog>().LongCountAsync(filter);
-        var __fpQ = _context.Set<UserActivityLog>().Where(
+        var query = _context.Set<UserActivityLog>().Where(
             filter);
-        var _ = await __fpQ.LongCountAsync();
-        var logs = await __fpQ.OrderByDescending(log => log.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var _ = await query.LongCountAsync();
+        var logs = await query.OrderByDescending(log => log.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
         var validUserIds = logs
             .Select(log => log.CreatedBy)
@@ -298,10 +298,9 @@ public class UserActivityLogService : IUserActivityLogService
 
         if (logIds.Any())
         {
-                        var __sdm = await _context.Set<UserActivityLog>().Where(log => log.Id != null && logIds.Contains(log.Id)).ToListAsync();
-            foreach (var __e in __sdm) __e.IsDeleted = true;
+            var logsToDelete = await _context.Set<UserActivityLog>().Where(log => log.Id != null && logIds.Contains(log.Id)).ToListAsync();
+            foreach (var log in logsToDelete) log.IsDeleted = true;
             await _context.SaveChangesAsync();
-
         }
 
         return logIds.Count;

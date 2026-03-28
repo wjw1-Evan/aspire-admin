@@ -185,10 +185,10 @@ public class SystemResourceService : ISystemResourceService
                         if (p.ExitCode == 0 && long.TryParse(output.Trim(), out var mem)) return mem;
                     }
                 }
-                catch { }
+                catch { /* 忽略 macOS 内存查询错误 */ }
             }
         }
-        catch { }
+        catch { /* 忽略进程执行错误 */ }
         return 0;
     }
 
@@ -270,10 +270,10 @@ public class SystemResourceService : ISystemResourceService
                         }
                     }
                 }
-                catch { }
+                catch { /* 忽略 Linux 内存查询错误 */ }
             }
         }
-        catch { }
+        catch { /* 忽略系统内存查询错误 */ }
         return 0;
     }
 

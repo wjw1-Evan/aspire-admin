@@ -102,11 +102,11 @@ public partial class WorkflowEngine
             await _context.Set<ApprovalRecord>().AddAsync(record);
             await _context.SaveChangesAsync();
 
-            var __instanceToUpdate = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
-            if (__instanceToUpdate != null)
+            var instanceToUpdate = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
+            if (instanceToUpdate != null)
             {
-                __instanceToUpdate.ApprovalRecords ??= new List<ApprovalRecord>();
-                __instanceToUpdate.ApprovalRecords.Add(record);
+                instanceToUpdate.ApprovalRecords ??= new List<ApprovalRecord>();
+                instanceToUpdate.ApprovalRecords.Add(record);
                 await _context.SaveChangesAsync();
             }
         }
@@ -168,10 +168,10 @@ public partial class WorkflowEngine
             throw new UnauthorizedAccessException("无权提交此人工输入");
         }
 
-        var __instanceForUpdate = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
-        if (__instanceForUpdate != null)
+        var instanceForUpdate = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
+        if (instanceForUpdate != null)
         {
-            __instanceForUpdate.Status = WorkflowStatus.Running;
+            instanceForUpdate.Status = WorkflowStatus.Running;
             await _context.SaveChangesAsync();
         }
         await MoveToNextNodeAsync(instanceId, nodeId);

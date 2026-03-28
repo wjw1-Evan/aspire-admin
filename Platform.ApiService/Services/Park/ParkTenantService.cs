@@ -57,9 +57,9 @@ public class ParkTenantService : IParkTenantService
             orderBy = q => q.OrderByDescending(t => t.CreatedAt);
         }
 
-        var __fpQ = _context.Set<ParkTenant>().Where(filter);
-        var total = await __fpQ.LongCountAsync();
-        var items = await orderBy(__fpQ).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
+        var query = _context.Set<ParkTenant>().Where(filter);
+        var total = await query.LongCountAsync();
+        var items = await orderBy(query).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
 
         var tenants = new List<ParkTenantDto>();
         foreach (var item in items)
@@ -213,9 +213,9 @@ public class ParkTenantService : IParkTenantService
             orderBy = q => q.OrderByDescending(c => c.CreatedAt);
         }
 
-        var __fpQ = _context.Set<LeaseContract>().Where(filter);
-        var total = await __fpQ.LongCountAsync();
-        var items = await orderBy(__fpQ).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
+        var query = _context.Set<LeaseContract>().Where(filter);
+        var total = await query.LongCountAsync();
+        var items = await orderBy(query).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
 
         var contracts = new List<LeaseContractDto>();
         foreach (var item in items)
@@ -337,8 +337,8 @@ public class ParkTenantService : IParkTenantService
         contract.Terms = request.Terms;
         contract.Attachments = request.Attachments;
 
-        var __entity = await _context.Set<LeaseContract>().FirstOrDefaultAsync(x => x.Id == id);
-        if (__entity != null)
+        var entity = await _context.Set<LeaseContract>().FirstOrDefaultAsync(x => x.Id == id);
+        if (entity != null)
         {
     
             await _context.SaveChangesAsync();
@@ -426,8 +426,8 @@ public class ParkTenantService : IParkTenantService
 
         // 将旧合同标记为已续签
         oldContract.Status = "Renewed";
-        var __entity = await _context.Set<LeaseContract>().FirstOrDefaultAsync(x => x.Id == id);
-        if (__entity != null)
+        var entity = await _context.Set<LeaseContract>().FirstOrDefaultAsync(x => x.Id == id);
+        if (entity != null)
         {
     
             await _context.SaveChangesAsync();

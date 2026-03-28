@@ -246,7 +246,7 @@ public class CompanyService : ICompanyService
                         await _context.SaveChangesAsync();
                     }
                 }
-                catch { }
+                catch { /* 忽略清理失败，不影响主流程 */ }
             }
 
             if (adminRole != null)
@@ -261,7 +261,7 @@ public class CompanyService : ICompanyService
                         await _context.SaveChangesAsync();
                     }
                 }
-                catch { }
+                catch { /* 忽略清理失败，不影响主流程 */ }
             }
 
             if (company != null)
@@ -276,7 +276,7 @@ public class CompanyService : ICompanyService
                         await _context.SaveChangesAsync();
                     }
                 }
-                catch { }
+                catch { /* 忽略清理失败，不影响主流程 */ }
             }
 
             _logger.LogError(ex, "创建企业失败: {CompanyName}", company?.Name);

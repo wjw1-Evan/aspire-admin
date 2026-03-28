@@ -82,16 +82,16 @@ public class ImageCaptchaService : IImageCaptchaService
         {
             // Update existing captcha
             captcha = existingCaptchas.First();
-            var __entity = await _context.Set<CaptchaImage>().FirstOrDefaultAsync(x => x.Id == captcha.Id);
-        if (__entity != null)
+            var entity = await _context.Set<CaptchaImage>().FirstOrDefaultAsync(x => x.Id == captcha.Id);
+        if (entity != null)
         {
     
-                __entity.CaptchaId = captchaId;
-                __entity.Answer = encryptedAnswer;
-                __entity.ExpiresAt = expiresAt;
-                __entity.Type = type;
-                __entity.ClientIp = clientIp!;
-                __entity.IsUsed = false;
+                entity.CaptchaId = captchaId;
+                entity.Answer = encryptedAnswer;
+                entity.ExpiresAt = expiresAt;
+                entity.Type = type;
+                entity.ClientIp = clientIp!;
+                entity.IsUsed = false;
             await _context.SaveChangesAsync();
         }
 
@@ -141,10 +141,10 @@ public class ImageCaptchaService : IImageCaptchaService
         }
 
         // Mark as used
-        var __entity = await _context.Set<CaptchaImage>().FirstOrDefaultAsync(x => x.Id == result.Id);
-        if (__entity != null)
+        var entity = await _context.Set<CaptchaImage>().FirstOrDefaultAsync(x => x.Id == result.Id);
+        if (entity != null)
         {
-            __entity.IsUsed = true;
+            entity.IsUsed = true;
             await _context.SaveChangesAsync();
         }
 

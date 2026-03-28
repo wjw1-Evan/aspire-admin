@@ -188,9 +188,9 @@ public class BulkOperationService : IBulkOperationService
 
         var orderBy = (IQueryable<BulkOperation> query) => query.OrderByDescending(b => b.CreatedAt);
 
-        var __fpQ = _context.Set<BulkOperation>().Where(filter);
-        var _ = await __fpQ.LongCountAsync();
-        var operations = await orderBy(__fpQ).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var query = _context.Set<BulkOperation>().Where(filter);
+        var _ = await query.LongCountAsync();
+        var operations = await orderBy(query).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
         return operations;
     }
 
@@ -217,8 +217,8 @@ public class BulkOperationService : IBulkOperationService
         {
             if (operation.Id != null)
             {
-                            var __sd2 = await _context.Set<BulkOperation>().FirstOrDefaultAsync(x => x.Id == operation.Id);
-            if (__sd2 != null) { __sd2.IsDeleted = true; await _context.SaveChangesAsync(); }
+                            var item2 = await _context.Set<BulkOperation>().FirstOrDefaultAsync(x => x.Id == operation.Id);
+            if (item2 != null) { item2.IsDeleted = true; await _context.SaveChangesAsync(); }
 
                 deletedCount++;
             }
@@ -230,13 +230,13 @@ public class BulkOperationService : IBulkOperationService
 
     private async Task UpdateOperationStatusAsync(string operationId, BulkOperationStatus status, DateTime? startedAt = null, DateTime? completedAt = null)
     {
-        var __entity = await _context.Set<BulkOperation>().FirstOrDefaultAsync(x => x.Id == operationId);
-        if (__entity != null)
+        var entity = await _context.Set<BulkOperation>().FirstOrDefaultAsync(x => x.Id == operationId);
+        if (entity != null)
         {
     
-            __entity.Status = status;
-            if (startedAt.HasValue) __entity.StartedAt = startedAt.Value;
-            if (completedAt.HasValue) __entity.CompletedAt = completedAt.Value;
+            entity.Status = status;
+            if (startedAt.HasValue) entity.StartedAt = startedAt.Value;
+            if (completedAt.HasValue) entity.CompletedAt = completedAt.Value;
             await _context.SaveChangesAsync();
         }
 
@@ -250,11 +250,11 @@ public class BulkOperationService : IBulkOperationService
 
             try
             {
-                var __entity = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId!);
-        if (__entity != null)
+                var entity = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId!);
+        if (entity != null)
         {
     
-                    __entity.IsActive = true;
+                    entity.IsActive = true;
             await _context.SaveChangesAsync();
         }
 
@@ -285,11 +285,11 @@ public class BulkOperationService : IBulkOperationService
 
             try
             {
-                var __entity = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId!);
-        if (__entity != null)
+                var entity = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId!);
+        if (entity != null)
         {
     
-                    __entity.IsActive = false;
+                    entity.IsActive = false;
             await _context.SaveChangesAsync();
         }
 
@@ -322,9 +322,9 @@ public class BulkOperationService : IBulkOperationService
             {
                 if (workflowId != null)
                 {
-                    var __sdE = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
-        if (__sdE != null) { __sdE.IsDeleted = true; await _context.SaveChangesAsync(); }
-        var result = __sdE != null;
+                    var itemE = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
+        if (itemE != null) { itemE.IsDeleted = true; await _context.SaveChangesAsync(); }
+        var result = itemE != null;
                     if (result)
                     {
                         operation.SuccessCount++;
@@ -370,11 +370,11 @@ public class BulkOperationService : IBulkOperationService
 
             try
             {
-                var __entity = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId!);
-        if (__entity != null)
+                var entity = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId!);
+        if (entity != null)
         {
     
-                    __entity.Category = category;
+                    entity.Category = category;
             await _context.SaveChangesAsync();
         }
 
@@ -401,14 +401,14 @@ public class BulkOperationService : IBulkOperationService
     {
         if (operation.Id == null) return;
 
-        var __entity = await _context.Set<BulkOperation>().FirstOrDefaultAsync(x => x.Id == operation.Id);
-        if (__entity != null)
+        var entity = await _context.Set<BulkOperation>().FirstOrDefaultAsync(x => x.Id == operation.Id);
+        if (entity != null)
         {
     
-            __entity.ProcessedCount = operation.ProcessedCount;
-            __entity.SuccessCount = operation.SuccessCount;
-            __entity.FailureCount = operation.FailureCount;
-            __entity.Errors = operation.Errors;
+            entity.ProcessedCount = operation.ProcessedCount;
+            entity.SuccessCount = operation.SuccessCount;
+            entity.FailureCount = operation.FailureCount;
+            entity.Errors = operation.Errors;
             await _context.SaveChangesAsync();
         }
 

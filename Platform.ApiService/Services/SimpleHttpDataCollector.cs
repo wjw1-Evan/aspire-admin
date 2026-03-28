@@ -223,7 +223,7 @@ public class SimpleHttpDataCollector
                     if (headers != null)
                         foreach (var h in headers) request.Headers.TryAddWithoutValidation(h.Key, h.Value);
                 }
-                catch { }
+                catch { /* 忽略请求头解析错误 */ }
             }
 
             using var response = await httpClient.SendAsync(request, cancellationToken);

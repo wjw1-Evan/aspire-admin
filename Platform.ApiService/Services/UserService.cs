@@ -693,7 +693,7 @@ public class UserService : IUserService
                 var layouts = JsonSerializer.Deserialize<List<CardLayoutConfig>>(currentUser.WelcomeLayoutConfig);
                 if (layouts != null && layouts.Any()) return new WelcomeLayoutResponse { Layouts = layouts, UpdatedAt = currentUser.UpdatedAt };
             }
-            catch {}
+            catch { /* 忽略配置解析错误，使用默认布局 */ }
         }
 
         var defaultLayouts = new List<CardLayoutConfig>

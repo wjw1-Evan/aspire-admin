@@ -89,25 +89,25 @@ public class StorageQuotaService : IStorageQuotaService
 
         var quota = await EnsureQuotaForSettingAsync(userId, totalQuota, warningThreshold, isEnabled);
 
-        var __entity = await _context.Set<StorageQuota>().FirstOrDefaultAsync(x => x.Id == quota.Id!);
-        if (__entity != null)
+        var entity = await _context.Set<StorageQuota>().FirstOrDefaultAsync(x => x.Id == quota.Id!);
+        if (entity != null)
         {
     
-            __entity.TotalQuota = totalQuota;
-            __entity.LastCalculatedAt = DateTime.UtcNow;
+            entity.TotalQuota = totalQuota;
+            entity.LastCalculatedAt = DateTime.UtcNow;
 
             if (warningThreshold.HasValue)
             {
-                __entity.WarningThreshold = warningThreshold.Value;
+                entity.WarningThreshold = warningThreshold.Value;
             }
 
             if (isEnabled.HasValue)
             {
-                __entity.IsEnabled = isEnabled.Value;
+                entity.IsEnabled = isEnabled.Value;
             }
             await _context.SaveChangesAsync();
         }
-        var updatedQuota = __entity;
+        var updatedQuota = entity;
 
         if (updatedQuota == null)
             throw new InvalidOperationException("更新配额失败");
@@ -134,15 +134,15 @@ public class StorageQuotaService : IStorageQuotaService
         // 计算新的使用量
         var newUsedSpace = Math.Max(0, quota.UsedSpace + sizeChange);
 
-        var __entity = await _context.Set<StorageQuota>().FirstOrDefaultAsync(x => x.Id == quota.Id!);
-        if (__entity != null)
+        var entity = await _context.Set<StorageQuota>().FirstOrDefaultAsync(x => x.Id == quota.Id!);
+        if (entity != null)
         {
     
-            __entity.UsedSpace = newUsedSpace;
-            __entity.LastCalculatedAt = DateTime.UtcNow;
+            entity.UsedSpace = newUsedSpace;
+            entity.LastCalculatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
-        var updatedQuota = __entity;
+        var updatedQuota = entity;
 
         if (updatedQuota == null)
             throw new InvalidOperationException("更新存储使用量失败");
@@ -271,17 +271,17 @@ public class StorageQuotaService : IStorageQuotaService
         var quota = await FindUserQuotaAsync(userId)
             ?? throw new InvalidOperationException("用户尚未分配存储配额，无法重新计算使用量");
 
-        var __entity = await _context.Set<StorageQuota>().FirstOrDefaultAsync(x => x.Id == quota.Id!);
-        if (__entity != null)
+        var entity = await _context.Set<StorageQuota>().FirstOrDefaultAsync(x => x.Id == quota.Id!);
+        if (entity != null)
         {
     
-            __entity.UsedSpace = actualUsedSpace;
-            __entity.FileCount = fileCount;
-            __entity.TypeUsage = typeUsage;
-            __entity.LastCalculatedAt = DateTime.UtcNow;
+            entity.UsedSpace = actualUsedSpace;
+            entity.FileCount = fileCount;
+            entity.TypeUsage = typeUsage;
+            entity.LastCalculatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
-        var updatedQuota = __entity;
+        var updatedQuota = entity;
 
         if (updatedQuota == null)
             throw new InvalidOperationException("重新计算存储使用量失败");
@@ -450,10 +450,10 @@ public class StorageQuotaService : IStorageQuotaService
                 try
                 {
                     // 真实删除配额记录
-                    var __sdQ = await _context.Set<StorageQuota>().FirstOrDefaultAsync(x => x.Id == quota.Id);
-                    if (__sdQ != null)
+                    var quotaItem = await _context.Set<StorageQuota>().FirstOrDefaultAsync(x => x.Id == quota.Id);
+                    if (quotaItem != null)
                     {
-                        _context.Set<StorageQuota>().Remove(__sdQ);
+                        _context.Set<StorageQuota>().Remove(quotaItem);
                         await _context.SaveChangesAsync();
                     }
 

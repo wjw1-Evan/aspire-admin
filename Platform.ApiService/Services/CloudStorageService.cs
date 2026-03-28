@@ -646,7 +646,7 @@ public class CloudStorageService : ICloudStorageService
                 var content = Encoding.UTF8.GetString(bytes, 0, (int)Math.Min(bytes.Length, 1024 * 1024));
                 if (content.Contains(keyword, StringComparison.OrdinalIgnoreCase)) matched.Add(file);
             }
-            catch { }
+            catch { /* 忽略文件读取错误，不影响搜索结果 */ }
         }
 
         var paged = matched.Skip((query.Page - 1) * query.PageSize).Take(query.PageSize).ToList();

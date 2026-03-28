@@ -166,9 +166,9 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
             orderBy = q => q.OrderByDescending(r => r.CreatedAt);
         }
 
-        var __fpQ = _context.Set<ServiceRequest>().Where(filter);
-        var total = await __fpQ.LongCountAsync();
-        var items = await orderBy(__fpQ).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
+        var query = _context.Set<ServiceRequest>().Where(filter);
+        var total = await query.LongCountAsync();
+        var items = await orderBy(query).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
 
         var requestDtos = new List<ServiceRequestDto>();
         foreach (var item in items)

@@ -144,9 +144,7 @@ public class WorkflowExpressionEvaluator : IWorkflowExpressionEvaluator
 
             if (leftValue != null)
             {
-                var res = CompareValues(leftValue, rightValueStr, foundOp);
-                System.Console.WriteLine($"DEBUG_EVALUATOR: Compare Variable '{leftKeyClean}' Value '{leftValue}' ({leftValue?.GetType().Name}) {foundOp} '{rightValueStr}' -> {res}");
-                return res;
+                return CompareValues(leftValue, rightValueStr, foundOp);
             }
 
             // 变量不存在时的宽容处理

@@ -38,18 +38,18 @@ public class ParkInvestmentService : IParkInvestmentService
         var priority = request.Priority;
         var assignedTo = request.AssignedTo;
 
-        var __fpQ = _context.Set<InvestmentLead>().Where(
+        var baseQuery = _context.Set<InvestmentLead>().Where(
             l => (string.IsNullOrEmpty(search) || l.CompanyName.ToLower().Contains(search)) &&
                  (string.IsNullOrEmpty(status) || l.Status == status) &&
                  (string.IsNullOrEmpty(source) || l.Source == source) &&
                  (string.IsNullOrEmpty(priority) || l.Priority == priority) &&
                  (string.IsNullOrEmpty(assignedTo) || l.AssignedTo == assignedTo));
-        var total = await __fpQ.LongCountAsync();
-        var query = (request.SortOrder?.ToLower() == "asc")
-            ? __fpQ.OrderBy(l => l.CreatedAt)
-            : __fpQ.OrderByDescending(l => l.CreatedAt);
+        var total = await baseQuery.LongCountAsync();
+        var orderedQuery = (request.SortOrder?.ToLower() == "asc")
+            ? baseQuery.OrderBy(l => l.CreatedAt)
+            : baseQuery.OrderByDescending(l => l.CreatedAt);
             
-        var items = await query.Skip((request.Page - 1) * request.PageSize)
+        var items = await orderedQuery.Skip((request.Page - 1) * request.PageSize)
                                .Take(request.PageSize)
                                .ToListAsync();
 
@@ -202,16 +202,16 @@ public class ParkInvestmentService : IParkInvestmentService
         var stage = request.Stage;
         var assignedTo = request.AssignedTo;
 
-        var __fpQ = _context.Set<InvestmentProject>().Where(
+        var baseQuery = _context.Set<InvestmentProject>().Where(
             p => (string.IsNullOrEmpty(search) || p.ProjectName.ToLower().Contains(search)) &&
                  (string.IsNullOrEmpty(stage) || p.Stage == stage) &&
                  (string.IsNullOrEmpty(assignedTo) || p.AssignedTo == assignedTo));
-        var total = await __fpQ.LongCountAsync();
-        var query = (request.SortOrder?.ToLower() == "asc")
-            ? __fpQ.OrderBy(p => p.CreatedAt)
-            : __fpQ.OrderByDescending(p => p.CreatedAt);
+        var total = await baseQuery.LongCountAsync();
+        var orderedQuery = (request.SortOrder?.ToLower() == "asc")
+            ? baseQuery.OrderBy(p => p.CreatedAt)
+            : baseQuery.OrderByDescending(p => p.CreatedAt);
             
-        var items = await query.Skip((request.Page - 1) * request.PageSize)
+        var items = await orderedQuery.Skip((request.Page - 1) * request.PageSize)
                                .Take(request.PageSize)
                                .ToListAsync();
 

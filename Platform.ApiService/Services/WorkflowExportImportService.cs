@@ -526,16 +526,11 @@ public class WorkflowExportImportService : IWorkflowExportImportService
         if (existing != null && overwriteExisting)
         {
             // 更新现有工作流
-            var __entity = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == existing.Id);
-        if (__entity != null)
-        {
-    
-                __entity.Description = workflow.Description;
-                __entity.Category = workflow.Category;
-                __entity.Graph = workflow.Graph;
-                __entity.IsActive = workflow.IsActive;
+            existing.Description = workflow.Description;
+            existing.Category = workflow.Category;
+            existing.Graph = workflow.Graph;
+            existing.IsActive = workflow.IsActive;
             await _context.SaveChangesAsync();
-        }
 
             result.ImportedWorkflowIds.Add(existing.Id);
         }

@@ -171,10 +171,10 @@ public class SimpleHttpDataCollector
         {
             if (!matchedDataPointIds.Contains(dataPoint.DataPointId))
             {
-                var __entity = await _context.Set<IoTDataPoint>().FirstOrDefaultAsync(x => x.Id == dataPoint.Id, cancellationToken);
-                if (__entity != null)
+                var entity = await _context.Set<IoTDataPoint>().FirstOrDefaultAsync(x => x.Id == dataPoint.Id, cancellationToken);
+                if (entity != null)
                 {
-                    __entity.LastUpdatedAt = reportedAt;
+                    entity.LastUpdatedAt = reportedAt;
                     await _context.SaveChangesAsync(cancellationToken);
                 }
             }
@@ -327,21 +327,21 @@ public class SimpleHttpDataCollector
 
     private async Task UpdateDataPointLastValueAsync(IoTDataPoint dataPoint, string value, DateTime reportedAt, CancellationToken cancellationToken)
     {
-        var __entity = await _context.Set<IoTDataPoint>().FirstOrDefaultAsync(x => x.Id == dataPoint.Id, cancellationToken);
-        if (__entity != null)
+        var entity = await _context.Set<IoTDataPoint>().FirstOrDefaultAsync(x => x.Id == dataPoint.Id, cancellationToken);
+        if (entity != null)
         {
-            __entity.LastValue = value;
-            __entity.LastUpdatedAt = reportedAt;
+            entity.LastValue = value;
+            entity.LastUpdatedAt = reportedAt;
             await _context.SaveChangesAsync(cancellationToken);
         }
     }
 
     private async Task UpdateDeviceLastReportedAsync(IoTDevice device, DateTime reportedAt, CancellationToken cancellationToken)
     {
-        var __entity = await _context.Set<IoTDevice>().FirstOrDefaultAsync(x => x.Id == device.Id, cancellationToken);
-        if (__entity != null)
+        var entity = await _context.Set<IoTDevice>().FirstOrDefaultAsync(x => x.Id == device.Id, cancellationToken);
+        if (entity != null)
         {
-            __entity.LastReportedAt = reportedAt;
+            entity.LastReportedAt = reportedAt;
             await _context.SaveChangesAsync(cancellationToken);
         }
     }

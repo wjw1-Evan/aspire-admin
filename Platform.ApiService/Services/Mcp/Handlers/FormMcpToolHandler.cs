@@ -35,11 +35,11 @@ public class FormMcpToolHandler : McpToolHandlerBase
             {
                 var keyword = args.GetValueOrDefault("keyword")?.ToString();
                 var (page, pageSize) = ParsePaginationArgs(args);
-                var __fpQ = _context.Set<FormDefinition>().Where(
+                var query = _context.Set<FormDefinition>().Where(
                     f => (string.IsNullOrEmpty(keyword) || f.Name.Contains(keyword)) &&
                          (!args.ContainsKey("isActive") || f.IsActive == (args.GetValueOrDefault("isActive") as bool? ?? true)));
-                var total = await __fpQ.LongCountAsync();
-                var items = await __fpQ.OrderByDescending(f => f.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+                var total = await query.LongCountAsync();
+                var items = await query.OrderByDescending(f => f.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
                 return new { items, total, page, pageSize };
             });
 

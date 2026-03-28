@@ -35,10 +35,10 @@ public partial class WorkflowEngine
 
         if (node.Data.Config?.Approval?.TimeoutHours != null)
         {
-            var __instance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
-            if (__instance != null)
+            var workflowInstance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
+            if (workflowInstance != null)
             {
-                __instance.TimeoutAt = DateTime.UtcNow.AddHours(node.Data.Config.Approval.TimeoutHours.Value);
+                workflowInstance.TimeoutAt = DateTime.UtcNow.AddHours(node.Data.Config.Approval.TimeoutHours.Value);
                 await _context.SaveChangesAsync();
             }
         }

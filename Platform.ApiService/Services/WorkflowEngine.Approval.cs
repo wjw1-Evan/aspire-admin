@@ -419,14 +419,14 @@ public partial class WorkflowEngine
         await _context.Set<ApprovalRecord>().AddAsync(approvalRecord);
         await _context.SaveChangesAsync();
 
-        var __targetInstance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
-        if (__targetInstance != null)
+        var targetInstance = await _context.Set<WorkflowInstance>().FirstOrDefaultAsync(x => x.Id == instanceId);
+        if (targetInstance != null)
         {
-            __targetInstance.CurrentNodeId = targetNodeId;
-            __targetInstance.ApprovalRecords ??= new List<ApprovalRecord>();
-            __targetInstance.ApprovalRecords.Add(approvalRecord);
-            __targetInstance.ActiveApprovals?.Clear();
-            __targetInstance.CurrentApproverIds?.Clear();
+            targetInstance.CurrentNodeId = targetNodeId;
+            targetInstance.ApprovalRecords ??= new List<ApprovalRecord>();
+            targetInstance.ApprovalRecords.Add(approvalRecord);
+            targetInstance.ActiveApprovals?.Clear();
+            targetInstance.CurrentApproverIds?.Clear();
             await _context.SaveChangesAsync();
         }
 

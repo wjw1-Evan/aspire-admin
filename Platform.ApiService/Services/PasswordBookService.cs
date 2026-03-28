@@ -164,7 +164,7 @@ public class PasswordBookService : IPasswordBookService
         var keywordLower = request.Keyword?.Trim().ToLowerInvariant();
         var tags = request.Tags;
 
-        var __fpQ = _context.Set<PasswordBookEntry>().Where(
+        var query = _context.Set<PasswordBookEntry>().Where(
             e =>
                 (e.UserId == userId || e.IsPublic) &&
                 (string.IsNullOrEmpty(platform) || e.Platform.Contains(platform)) &&
@@ -175,8 +175,8 @@ public class PasswordBookService : IPasswordBookService
                  e.Platform.ToLower().Contains(keywordLower) ||
                  e.Account.ToLower().Contains(keywordLower) ||
                  (e.Notes != null && e.Notes.ToLower().Contains(keywordLower))));
-        var total = await __fpQ.LongCountAsync();
-        var items = await __fpQ
+        var total = await query.LongCountAsync();
+        var items = await query
                 .OrderByDescending(e => e.LastUsedAt)
                 .ThenByDescending(e => e.CreatedAt).Skip((request.Current - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
 

@@ -229,11 +229,11 @@ public partial class WorkflowEngine : IWorkflowEngine
         // 更新公文状态
         if (!string.IsNullOrEmpty(documentId))
         {
-            var __entity = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == documentId);
-        if (__entity != null)
+            var entity = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == documentId);
+        if (entity != null)
         {
-                __entity.Status = Models.Workflow.DocumentStatus.Approving;
-                __entity.WorkflowInstanceId = instance.Id;
+                entity.Status = Models.Workflow.DocumentStatus.Approving;
+                entity.WorkflowInstanceId = instance.Id;
             await _context.SaveChangesAsync();
         }
 

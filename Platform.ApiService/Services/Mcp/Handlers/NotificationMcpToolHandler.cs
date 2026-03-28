@@ -203,9 +203,9 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
             {
                 var keyword = args.ContainsKey("keyword") ? args["keyword"]?.ToString() : null;
                 var (page, pageSize) = ParsePaginationArgs(args);
-                var __fpQ = _context.Set<WorkflowDefinition>().Where(d => string.IsNullOrEmpty(keyword) || (d.Name != null && d.Name.Contains(keyword)));
-        var total = await __fpQ.LongCountAsync();
-        var items = await __fpQ.OrderByDescending(d => d.UpdatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+                var query = _context.Set<WorkflowDefinition>().Where(d => string.IsNullOrEmpty(keyword) || (d.Name != null && d.Name.Contains(keyword)));
+        var total = await query.LongCountAsync();
+        var items = await query.OrderByDescending(d => d.UpdatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
                 return new { items, total, page, pageSize };
             });
 
@@ -218,9 +218,9 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
             {
                 var (page, pageSize) = ParsePaginationArgs(args);
                 var status = args.ContainsKey("status") && int.TryParse(args["status"]?.ToString(), out var s) ? (WorkflowStatus)s : (WorkflowStatus?)null;
-                var __fpQ = _context.Set<WorkflowInstance>().Where(i => status == null || i.Status == status);
-        var total = await __fpQ.LongCountAsync();
-        var items = await __fpQ.OrderByDescending(i => i.UpdatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+                var query = _context.Set<WorkflowInstance>().Where(i => status == null || i.Status == status);
+        var total = await query.LongCountAsync();
+        var items = await query.OrderByDescending(i => i.UpdatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
                 return new { items, total, page, pageSize };
             });
 

@@ -44,10 +44,10 @@ public class EmailBackgroundWorker : BackgroundService
                 var dbContext = scope.ServiceProvider.GetRequiredService<PlatformDbContext>();
 
                 // 2. 更新日志状态为“发送中”
-                var __log1 = await dbContext.Set<EmailLog>().FirstOrDefaultAsync(x => x.Id == taskItem.LogId);
-                if (__log1 != null)
+                var log1 = await dbContext.Set<EmailLog>().FirstOrDefaultAsync(x => x.Id == taskItem.LogId);
+                if (log1 != null)
                 {
-                    __log1.Status = EmailStatus.Sending;
+                    log1.Status = EmailStatus.Sending;
                     await dbContext.SaveChangesAsync();
                 }
 
@@ -57,11 +57,11 @@ public class EmailBackgroundWorker : BackgroundService
                     await emailService.ExecuteRawSendAsync(taskItem.ToEmail, taskItem.Subject, taskItem.HtmlBody);
 
                     // 4. 发送成功，更新状态
-                    var __log2 = await dbContext.Set<EmailLog>().FirstOrDefaultAsync(x => x.Id == taskItem.LogId);
-                    if (__log2 != null)
+                    var log2 = await dbContext.Set<EmailLog>().FirstOrDefaultAsync(x => x.Id == taskItem.LogId);
+                    if (log2 != null)
                     {
-                        __log2.Status = EmailStatus.Sent;
-                        __log2.SentAt = DateTime.UtcNow;
+                        log2.Status = EmailStatus.Sent;
+                        log2.SentAt = DateTime.UtcNow;
                         await dbContext.SaveChangesAsync();
                     }
                     _logger.LogInformation("邮件后台发送成功：ID={LogId}", taskItem.LogId);
@@ -71,11 +71,11 @@ public class EmailBackgroundWorker : BackgroundService
                     _logger.LogError(sendEx, "邮件后台发送失败：ID={LogId}", taskItem.LogId);
 
                     // 5. 发送失败，记录错误
-                    var __log3 = await dbContext.Set<EmailLog>().FirstOrDefaultAsync(x => x.Id == taskItem.LogId);
-                    if (__log3 != null)
+                    var log3 = await dbContext.Set<EmailLog>().FirstOrDefaultAsync(x => x.Id == taskItem.LogId);
+                    if (log3 != null)
                     {
-                        __log3.Status = EmailStatus.Failed;
-                        __log3.ErrorMessage = sendEx.Message;
+                        log3.Status = EmailStatus.Failed;
+                        log3.ErrorMessage = sendEx.Message;
                         await dbContext.SaveChangesAsync();
                     }
                 }

@@ -33,11 +33,11 @@ public class KnowledgeDocumentService : IKnowledgeDocumentService, IScopedDepend
         }
 
         {
-            var __fpQ = _context.Set<KnowledgeDocument>().Where(
+            var query = _context.Set<KnowledgeDocument>().Where(
             filter);
-            var __fpT = await __fpQ.LongCountAsync();
-            var __fpI = await __fpQ.OrderBy(d => d.SortOrder).ThenByDescending(d => d.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-            return (__fpI, __fpT);
+            var total = await query.LongCountAsync();
+            var items = await query.OrderBy(d => d.SortOrder).ThenByDescending(d => d.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+            return (items, total);
         }
     }
 
@@ -68,9 +68,9 @@ public class KnowledgeDocumentService : IKnowledgeDocumentService, IScopedDepend
         var doc = await _context.Set<KnowledgeDocument>().FirstOrDefaultAsync(x => x.Id == id);
         if (doc == null) return false;
 
-        var __sdE = await _context.Set<KnowledgeDocument>().FirstOrDefaultAsync(x => x.Id == id);
-        if (__sdE != null) { __sdE.IsDeleted = true; await _context.SaveChangesAsync(); }
-        var result = __sdE != null;
+        var entity = await _context.Set<KnowledgeDocument>().FirstOrDefaultAsync(x => x.Id == id);
+        if (entity != null) { _context.Set<KnowledgeDocument>().Remove(entity); await _context.SaveChangesAsync(); }
+        var result = entity != null;
         if (result)
         {
             await UpdateKnowledgeBaseItemCount(doc.KnowledgeBaseId, -1);
@@ -84,13 +84,8 @@ public class KnowledgeDocumentService : IKnowledgeDocumentService, IScopedDepend
         if (kb == null) return;
 
         var newCount = Math.Max(0, kb.ItemCount + delta);
-        var __entity = await _context.Set<KnowledgeBase>().FirstOrDefaultAsync(x => x.Id == knowledgeBaseId);
-        if (__entity != null)
-        {
-    
-            __entity.ItemCount = newCount;
-            await _context.SaveChangesAsync();
-        }
+        kb.ItemCount = newCount;
+        await _context.SaveChangesAsync();
 
     }
 }

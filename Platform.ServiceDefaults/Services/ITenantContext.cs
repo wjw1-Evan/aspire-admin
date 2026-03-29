@@ -25,6 +25,7 @@ public class TenantContext(
     ILogger<TenantContext> logger) : ITenantContext
 {
     private static readonly ConcurrentDictionary<string, TenantCache> _caches = new();
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> _userLocks = new();
 
     public bool IsSystemContext => httpContextAccessor.HttpContext == null;
 
@@ -68,16 +69,32 @@ public class TenantContext(
             return cache.CompanyId;
         }
 
-        cache.CompanyId = await LoadCompanyIdAsync(userId);
-        
-        if (cache.CompanyId != null)
+        var userLock = _userLocks.GetOrAdd(userId, _ => new SemaphoreSlim(1, 1));
+        await userLock.WaitAsync();
+        try
         {
-            cache.CompanyLoaded = true;
-            logger.LogInformation("【TenantContext】GetCurrentCompanyIdAsync: loaded companyId = {CompanyId}", cache.CompanyId);
+            if (cache.CompanyLoaded)
+            {
+                logger.LogInformation("【TenantContext】GetCurrentCompanyIdAsync: cache hit after lock, companyId = {CompanyId}", cache.CompanyId);
+                return cache.CompanyId;
+            }
+
+            cache.CompanyId = await LoadCompanyIdAsync(userId);
+            
+            if (cache.CompanyId != null)
+            {
+                cache.CompanyLoaded = true;
+                logger.LogInformation("【TenantContext】GetCurrentCompanyIdAsync: loaded companyId = {CompanyId}", cache.CompanyId);
+            }
+            else
+            {
+                logger.LogWarning("【TenantContext】GetCurrentCompanyIdAsync: companyId is null, will retry on next request");
+            }
         }
-        else
+        finally
         {
-            logger.LogWarning("【TenantContext】GetCurrentCompanyIdAsync: companyId is null, will retry on next request");
+            userLock.Release();
+            _userLocks.TryRemove(userId, out _);
         }
         
         return cache.CompanyId;

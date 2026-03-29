@@ -38,8 +38,8 @@ public interface IImageCaptchaService
 public class ImageCaptchaService : IImageCaptchaService
 {
     private readonly DbContext _context;
+    private readonly IConfiguration _configuration;
 
-    // 常量配置
     private const int EXPIRATION_MINUTES = 5;
     private const int IMAGE_WIDTH = 130;
     private const int IMAGE_HEIGHT = 40;
@@ -47,7 +47,8 @@ public class ImageCaptchaService : IImageCaptchaService
     private const int CHAR_HEIGHT = 24;
     private const int NOISE_LINES = 5;
     private const int NOISE_DOTS = 50;
-    private const string ENCRYPTION_KEY = "CaptchaKey2024";
+
+    private string EncryptionKey => _configuration["Captcha:EncryptionKey"] ?? GenerateFallbackKey();
 
     // 验证码字符集（全数字）
     private static readonly string[] CHARACTERS = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
@@ -55,10 +56,15 @@ public class ImageCaptchaService : IImageCaptchaService
     /// <summary>
     /// 初始化图形验证码服务
     /// </summary>
-    public ImageCaptchaService(DbContext context)
+    public ImageCaptchaService(DbContext context, IConfiguration configuration)
     {
         _context = context;
-        
+        _configuration = configuration;
+    }
+
+    private static string GenerateFallbackKey()
+    {
+        return Convert.ToBase64String(Guid.NewGuid().ToByteArray())[..16];
     }
 
     /// <summary>
@@ -69,7 +75,7 @@ public class ImageCaptchaService : IImageCaptchaService
         var answer = GenerateRandomAnswer();
         var captchaId = Guid.NewGuid().ToString("N")[..16];
         var imageData = GenerateCaptchaImage(answer);
-        var encryptedAnswer = EncryptAnswer(answer);
+        var encryptedAnswer = EncryptAnswer(answer, EncryptionKey);
         var expiresAt = DateTime.UtcNow.AddMinutes(EXPIRATION_MINUTES);
 
         // Try to find existing captcha for this type and client IP
@@ -149,7 +155,7 @@ public class ImageCaptchaService : IImageCaptchaService
         }
 
 
-        var decryptedAnswer = DecryptAnswer(result.Answer);
+        var decryptedAnswer = DecryptAnswer(result.Answer, EncryptionKey);
         return string.Equals(decryptedAnswer, answer.Trim(), StringComparison.OrdinalIgnoreCase);
     }
 
@@ -500,9 +506,8 @@ public class ImageCaptchaService : IImageCaptchaService
     /// <summary>
     /// 加密验证码答案
     /// </summary>
-    private static string EncryptAnswer(string answer)
+    private static string EncryptAnswer(string answer, string key)
     {
-        var key = ENCRYPTION_KEY;
         var result = new StringBuilder(answer.Length);
 
         for (int i = 0; i < answer.Length; i++)
@@ -516,13 +521,12 @@ public class ImageCaptchaService : IImageCaptchaService
     /// <summary>
     /// 解密验证码答案
     /// </summary>
-    private static string DecryptAnswer(string encryptedAnswer)
+    private static string DecryptAnswer(string encryptedAnswer, string key)
     {
         try
         {
             var encryptedBytes = Convert.FromBase64String(encryptedAnswer);
             var encrypted = Encoding.UTF8.GetString(encryptedBytes);
-            var key = ENCRYPTION_KEY;
             var result = new StringBuilder(encrypted.Length);
 
             for (int i = 0; i < encrypted.Length; i++)

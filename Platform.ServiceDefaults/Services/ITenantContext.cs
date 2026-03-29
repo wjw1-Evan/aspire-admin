@@ -1,93 +1,124 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
-using MongoDB.Bson;
+using System.Collections.Concurrent;
 
 namespace Platform.ServiceDefaults.Services;
 
-/// <summary>
-/// 租户上下文接口 - 提供多租户支持。
-/// userId 从 JWT token 读取，companyId 从数据库异步加载并缓存于 Scoped 生命周期内。
-/// </summary>
 public interface ITenantContext
 {
     string? GetCurrentUserId();
     Task<string?> GetCurrentCompanyIdAsync();
-    void ClearUserCache(string userId);
     bool IsSystemContext { get; }
+    void ClearUserCache(string userId);
 }
 
-/// <summary>
-/// 租户上下文实现 - userId 从 JWT token 读取，companyId 从数据库加载（Scoped 缓存）
-/// </summary>
+internal class TenantCache
+{
+    public string? CompanyId { get; set; }
+    public bool CompanyLoaded { get; set; }
+}
+
 public class TenantContext(
     IHttpContextAccessor httpContextAccessor,
     IMongoDatabase database,
     ILogger<TenantContext> logger) : ITenantContext
 {
-    private string? _cachedCompanyId;
-    private bool _companyLoaded;
+    private static readonly ConcurrentDictionary<string, TenantCache> _caches = new();
 
     public bool IsSystemContext => httpContextAccessor.HttpContext == null;
 
-    public string? GetCurrentUserId()
+    private string? GetCachedUserId()
     {
         try
         {
-            var user = httpContextAccessor.HttpContext?.User;
-            return user?.FindFirst("userId")?.Value
-                   ?? user?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-                   ?? user?.FindFirst("sub")?.Value;
+            return httpContextAccessor.HttpContext?.Items["UserId"] as string;
         }
-        catch (ObjectDisposedException) { return null; }
+        catch (ObjectDisposedException)
+        {
+            return null;
+        }
+    }
+
+    public string? GetCurrentUserId()
+    {
+        return GetCachedUserId();
     }
 
     public async Task<string?> GetCurrentCompanyIdAsync()
     {
-        if (_companyLoaded) return _cachedCompanyId;
-
-        var userId = GetCurrentUserId();
+        var userId = GetCachedUserId();
         if (string.IsNullOrEmpty(userId))
         {
-            _companyLoaded = true;
+            logger.LogWarning("【TenantContext】GetCurrentCompanyIdAsync: userId is null or empty");
             return null;
         }
 
-        try { _cachedCompanyId = await LoadCompanyIdAsync(userId); }
-        catch (Exception ex) { logger.LogError(ex, "加载用户企业信息失败: {UserId}", userId); }
+        logger.LogInformation("【TenantContext】GetCurrentCompanyIdAsync: userId = {UserId}", userId);
 
-        _companyLoaded = true;
-        return _cachedCompanyId;
+        if (!_caches.TryGetValue(userId, out var cache))
+        {
+            cache = new TenantCache();
+            _caches.TryAdd(userId, cache);
+        }
+
+        if (cache.CompanyLoaded) 
+        {
+            logger.LogInformation("【TenantContext】GetCurrentCompanyIdAsync: cache hit, companyId = {CompanyId}", cache.CompanyId);
+            return cache.CompanyId;
+        }
+
+        cache.CompanyId = await LoadCompanyIdAsync(userId);
+        
+        if (cache.CompanyId != null)
+        {
+            cache.CompanyLoaded = true;
+            logger.LogInformation("【TenantContext】GetCurrentCompanyIdAsync: loaded companyId = {CompanyId}", cache.CompanyId);
+        }
+        else
+        {
+            logger.LogWarning("【TenantContext】GetCurrentCompanyIdAsync: companyId is null, will retry on next request");
+        }
+        
+        return cache.CompanyId;
     }
 
     public void ClearUserCache(string userId)
     {
-        _cachedCompanyId = null;
-        _companyLoaded = false;
-        logger.LogDebug("TenantContext: 缓存已清除: {UserId}", userId);
+        _caches.TryRemove(userId, out _);
     }
 
     private async Task<string?> LoadCompanyIdAsync(string userId)
     {
-        var collection = database.GetCollection<BsonDocument>("users");
+        var collection = database.GetCollection<MongoDB.Bson.BsonDocument>("appusers");
 
-        // 构建简单的过滤器
-        var filter = Builders<BsonDocument>.Filter.And(
-            Builders<BsonDocument>.Filter.Eq("_id", ObjectId.TryParse(userId, out var oid) ? (object)oid : userId),
-            Builders<BsonDocument>.Filter.Ne("isDeleted", true)
+        var filter = MongoDB.Driver.Builders<MongoDB.Bson.BsonDocument>.Filter.And(
+            MongoDB.Driver.Builders<MongoDB.Bson.BsonDocument>.Filter.Eq("_id", MongoDB.Bson.ObjectId.TryParse(userId, out var oid) ? (object)oid : userId),
+            MongoDB.Driver.Builders<MongoDB.Bson.BsonDocument>.Filter.Ne("isDeleted", true)
         );
 
-        var projection = Builders<BsonDocument>.Projection
+        var projection = MongoDB.Driver.Builders<MongoDB.Bson.BsonDocument>.Projection
             .Include("isActive").Include("currentCompanyId").Include("personalCompanyId");
 
         var userDoc = await collection.Find(filter).Project(projection).FirstOrDefaultAsync();
 
-        if (userDoc == null || !userDoc.GetValue("isActive", false).AsBoolean) return null;
+        if (userDoc == null)
+        {
+            logger.LogWarning("【TenantContext】LoadCompanyIdAsync: user not found, userId = {UserId}, parsed as ObjectId: {IsObjectId}", 
+                userId, 
+                MongoDB.Bson.ObjectId.TryParse(userId, out _));
+            return null;
+        }
 
-        // 获取 ID 的辅助方法
+        if (!userDoc.GetValue("isActive", false).AsBoolean)
+        {
+            logger.LogWarning("【TenantContext】LoadCompanyIdAsync: user is not active, userId = {UserId}", userId);
+            return null;
+        }
+
         string? GetId(string field)
         {
-            var val = userDoc.GetValue(field, BsonNull.Value);
+            var val = userDoc.GetValue(field, MongoDB.Bson.BsonNull.Value);
             return val switch
             {
                 { IsString: true } => val.AsString,
@@ -96,6 +127,12 @@ public class TenantContext(
             };
         }
 
-        return GetId("currentCompanyId") ?? GetId("personalCompanyId");
+        var currentCompanyId = GetId("currentCompanyId");
+        var personalCompanyId = GetId("personalCompanyId");
+        
+        logger.LogInformation("【TenantContext】LoadCompanyIdAsync: currentCompanyId = {CurrentCompanyId}, personalCompanyId = {PersonalCompanyId}", 
+            currentCompanyId, personalCompanyId);
+
+        return currentCompanyId ?? personalCompanyId;
     }
 }

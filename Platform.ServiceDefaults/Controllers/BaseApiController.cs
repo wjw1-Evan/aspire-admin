@@ -3,39 +3,32 @@ using Microsoft.AspNetCore.Mvc;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Exceptions;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Platform.ServiceDefaults.Controllers;
 
 /// <summary>
 /// API 控制器基类 - 提供统一的响应格式和常用的用户上下文属性
 /// </summary>
-/// <remarks>
-/// 所有的 Web API 控制器都应该继承此类。
-/// 提供了成功、错误、分页、验证失败等多种标准返回方法。
-/// </remarks>
-/// <example>
-/// <code>
-/// [Route("api/[controller]")]
-/// public class MyController : BaseApiController {
-///     [HttpGet]
-///     public IActionResult Get() => Success(new { Name = "Test" });
-/// }
-/// </code>
-/// </example>
 [ApiController]
 public abstract class BaseApiController : ControllerBase
 {
     protected string? CurrentUserId 
-        => HttpContext.RequestServices.GetRequiredService<ITenantContext>().GetCurrentUserId();
+        => HttpContext.Items["UserId"] as string;
 
     protected bool IsAuthenticated => !string.IsNullOrEmpty(CurrentUserId);
 
     protected string GetRequiredUserId()
         => CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
 
-    protected Task<string?> GetCurrentCompanyIdAsync()
-        => HttpContext.RequestServices.GetRequiredService<ITenantContext>().GetCurrentCompanyIdAsync();
+    protected async Task<string?> GetCurrentCompanyIdAsync()
+    {
+        var tenantContext = HttpContext.RequestServices.GetService(typeof(ITenantContext)) as ITenantContext;
+        if (tenantContext != null)
+        {
+            return await tenantContext.GetCurrentCompanyIdAsync();
+        }
+        return null;
+    }
 
     protected async Task<string> GetRequiredCompanyIdAsync()
     {

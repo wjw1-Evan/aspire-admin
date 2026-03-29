@@ -3,102 +3,97 @@ using MongoDB.EntityFrameworkCore.Extensions;
 using Platform.ServiceDefaults.Models;
 using System.Reflection;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Http;
 
 namespace Platform.ServiceDefaults.Services;
 
-/// <summary>
-/// 平台数据库上下文 - 基于 MongoDB Entity Framework Core 
-/// </summary>
 public class PlatformDbContext : DbContext
 {
-    private readonly ITenantContext? _tenantContext;
+    private readonly IHttpContextAccessor? _httpContextAccessor;
 
     public PlatformDbContext(
         DbContextOptions<PlatformDbContext> options,
-        ITenantContext? tenantContext = null)
+        IHttpContextAccessor? httpContextAccessor = null)
         : base(options)
     {
-        _tenantContext = tenantContext;
-
-        // 🚀 兼容性修复：MongoDB 单机模式不支持事务，禁用自动事务
+        _httpContextAccessor = httpContextAccessor;
         Database.AutoTransactionBehavior = AutoTransactionBehavior.Never;
     }
 
-    protected bool IsSystemContext => _tenantContext?.IsSystemContext ?? true;
+    private ITenantContext? TenantContext
+    {
+        get
+        {
+            if (_httpContextAccessor?.HttpContext == null) return null;
+            return _httpContextAccessor.HttpContext.RequestServices.GetService(typeof(ITenantContext)) as ITenantContext;
+        }
+    }
 
-    // 缓存实体类型扫描结果
+    protected string? CurrentUserId => _httpContextAccessor?.HttpContext?.Items["UserId"] as string;
+    protected string? CurrentCompanyId
+    {
+        get
+        {
+            var companyId = _httpContextAccessor?.HttpContext?.Items["CompanyId"] as string;
+            if (string.IsNullOrEmpty(companyId) && !IsSystemContext)
+            {
+                companyId = TenantContext?.GetCurrentCompanyIdAsync().GetAwaiter().GetResult();
+                if (!string.IsNullOrEmpty(companyId))
+                {
+                    _httpContextAccessor!.HttpContext!.Items["CompanyId"] = companyId;
+                }
+            }
+            return companyId;
+        }
+    }
+    protected bool IsSystemContext => _httpContextAccessor?.HttpContext == null;
+
+    public Task<string> GetCurrentCompanyIdAsync()
+        => Task.FromResult(CurrentCompanyId ?? string.Empty);
+
     private static List<Type>? _cachedEntityTypes;
 
     public override int SaveChanges()
     {
-        ApplyAuditInfo();
+        ApplyAuditInfoCore();
         return base.SaveChanges();
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        await ApplyAuditInfoAsync();
-        return await base.SaveChangesAsync(cancellationToken);
+        ApplyAuditInfoCore();
+        return await base.SaveChangesAsync();
     }
 
-    private void ApplyAuditInfo()
-    {
-        var userId = _tenantContext?.GetCurrentUserId();
-        var companyId = _tenantContext?.GetCurrentCompanyIdAsync().GetAwaiter().GetResult();
-        ApplyAuditInfoCore(userId, companyId);
-    }
-
-    private async Task ApplyAuditInfoAsync()
-    {
-        var userId = _tenantContext?.GetCurrentUserId();
-        var companyId = _tenantContext != null ? await _tenantContext.GetCurrentCompanyIdAsync() : null;
-        ApplyAuditInfoCore(userId, companyId);
-    }
-
-    private void ApplyAuditInfoCore(string? userId, string? companyId)
+    private void ApplyAuditInfoCore()
     {
         var now = DateTime.UtcNow;
+        var userId = CurrentUserId;
+        var companyId = CurrentCompanyId;
 
-        // 🚀 使用 LINQ 筛选需要审计的实体
-        var modifiedEntries = ChangeTracker.Entries()
-            .Where(e => e.State is EntityState.Added or EntityState.Modified)
-            .ToList();
-
-        if (modifiedEntries.Count == 0) return;
-
-        // 🚀 使用 LINQ 分组处理不同类型的审计
-        foreach (var entry in modifiedEntries)
+        foreach (var entry in ChangeTracker.Entries()
+            .Where(e => e.State is EntityState.Added or EntityState.Modified))
         {
             var entity = entry.Entity;
             var isAdded = entry.State == EntityState.Added;
 
-            // 1. 时间戳审计
-            if (entity is ITimestamped timestamped)
+            if (entity is ITimestamped { } timestamped)
             {
                 if (isAdded) timestamped.CreatedAt = now;
                 timestamped.UpdatedAt = now;
             }
 
-            // 2. 操作追踪审计
-            if (entity is IOperationTrackable trackable)
+            if (entity is IOperationTrackable { } trackable)
             {
-                trackable.UpdatedBy = string.IsNullOrEmpty(userId) ? null : userId;
+                trackable.UpdatedBy = userId;
                 trackable.LastOperationAt = now;
-
-                if (isAdded)
-                {
-                    trackable.CreatedBy ??= trackable.UpdatedBy;
-                }
+                if (isAdded) trackable.CreatedBy ??= userId;
             }
 
-            // 3. 多租户审计
             if (isAdded && entity is IMultiTenant { CompanyId: "" or null } tenant)
-            {
                 tenant.CompanyId = companyId ?? string.Empty;
-            }
 
-            // 4. 软删除审计
-            if (!isAdded && entity is ISoftDeletable softDeletable &&
+            if (!isAdded && entity is ISoftDeletable { } softDeletable &&
                 entry.Property(nameof(ISoftDeletable.IsDeleted)).IsModified)
             {
                 if (softDeletable.IsDeleted)
@@ -119,63 +114,48 @@ public class PlatformDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // 🚀 使用 LINQ 批量配置实体
-        GetEntityTypes().ForEach(type => ConfigureEntity(modelBuilder, type));
-    }
-
-    private void ConfigureEntity(ModelBuilder modelBuilder, Type type)
-    {
-        var entityBuilder = modelBuilder.Entity(type);
-
-        // 🚀 使用 LINQ 简化集合名称获取
-        var collectionName = type.GetCustomAttribute<Attributes.BsonCollectionNameAttribute>()?.Name
-                          ?? type.GetCustomAttribute<TableAttribute>()?.Name
-                          ?? $"{type.Name.ToLowerInvariant()}s";
-
-        entityBuilder.ToCollection(collectionName);
-
-        // 🚀 应用全局查询过滤器（软删除 + 多租户）
-        typeof(PlatformDbContext)
-            .GetMethod(nameof(ApplyFilterGeneric), BindingFlags.NonPublic | BindingFlags.Instance)
-            ?.MakeGenericMethod(type)
-            .Invoke(this, [modelBuilder]);
-    }
-
-    private void ApplyFilterGeneric<TEntity>(ModelBuilder modelBuilder) where TEntity : class
-    {
-        // 只对实现 IMultiTenant 的实体应用多租户过滤器
-        if (!typeof(IMultiTenant).IsAssignableFrom(typeof(TEntity)))
+        foreach (var type in GetEntityTypes())
         {
-            return;
-        }
+            var entityBuilder = modelBuilder.Entity(type);
+            var collectionName = type.GetCustomAttribute<Attributes.BsonCollectionNameAttribute>()?.Name
+                              ?? type.GetCustomAttribute<TableAttribute>()?.Name
+                              ?? $"{type.Name.ToLowerInvariant()}s";
 
-        modelBuilder.Entity<TEntity>().HasQueryFilter(e =>
-            IsSystemContext || ((IMultiTenant)e).CompanyId == _tenantContext!.GetCurrentCompanyIdAsync().GetAwaiter().GetResult()
-        );
+            entityBuilder.ToCollection(collectionName);
+
+            if (typeof(IMultiTenant).IsAssignableFrom(type))
+            {
+                typeof(PlatformDbContext)
+                    .GetMethod(nameof(ApplyQueryFilter), BindingFlags.NonPublic | BindingFlags.Instance)!
+                    .MakeGenericMethod(type)
+                    .Invoke(this, [modelBuilder]);
+            }
+        }
+    }
+
+    private void ApplyQueryFilter<TEntity>(ModelBuilder modelBuilder) where TEntity : class
+    {
+        modelBuilder.Entity<TEntity>().HasQueryFilter(e => IsSystemContext || ((IMultiTenant)e).CompanyId == CurrentCompanyId);
     }
 
     private static List<Type> GetEntityTypes()
     {
-        // 🚀 使用延迟初始化模式，EF Core 模型构建在启动时单线程执行
         if (_cachedEntityTypes != null) return _cachedEntityTypes;
 
-        // 🚀 使用 LINQ 简化程序集收集
-        var assemblies = new[] { Assembly.GetExecutingAssembly(), Assembly.GetEntryAssembly() }
+        _cachedEntityTypes = new[] { Assembly.GetExecutingAssembly(), Assembly.GetEntryAssembly() }
             .Where(a => a != null)
             .Cast<Assembly>()
             .Distinct()
-            .ToList();
-
-        // 🚀 使用 LINQ 简化实体类型扫描
-        _cachedEntityTypes = assemblies
-            .SelectMany(a =>
-            {
-                try { return a.GetTypes(); }
-                catch { return []; }
-            })
+            .SelectMany(a => TryGetTypes(a))
             .Where(t => t is { IsClass: true, IsAbstract: false } && typeof(IEntity).IsAssignableFrom(t))
             .ToList();
 
         return _cachedEntityTypes;
+    }
+
+    private static Type[] TryGetTypes(Assembly a)
+    {
+        try { return a.GetTypes(); }
+        catch { return []; }
     }
 }

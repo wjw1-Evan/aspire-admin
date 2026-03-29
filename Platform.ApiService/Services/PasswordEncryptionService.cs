@@ -44,9 +44,10 @@ public class PasswordEncryptionService : IPasswordEncryptionService, ISingletonD
             gen.Init(new ECKeyGenerationParameters(ecDomain, new SecureRandom()));
             _keyPair = gen.GenerateKeyPair();
 
-            // 获取无压缩公钥（前端 sm-crypto 默认需要 04 开始的 130 字符 Hex）
+            // 获取无压缩公钥，移除 04 前缀（前端 sm-crypto 需要 128 字符纯坐标）
             var pubKey = (ECPublicKeyParameters)_keyPair.Public;
-            _publicKeyHex = Hex.ToHexString(pubKey.Q.GetEncoded(false));
+            var fullKey = pubKey.Q.GetEncoded(false);
+            _publicKeyHex = Hex.ToHexString(fullKey).Substring(2); // 去掉开头的 04
         }
         catch (Exception ex)
         {

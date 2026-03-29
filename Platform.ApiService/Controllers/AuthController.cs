@@ -6,6 +6,7 @@ using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
 using Platform.ServiceDefaults.Models;
+using Microsoft.Extensions.Logging;
 
 namespace Platform.ApiService.Controllers;
 
@@ -20,6 +21,7 @@ public class AuthController : BaseApiController
     private readonly IAuthService _authService;
     private readonly IImageCaptchaService _imageCaptchaService;
     private readonly IPasswordEncryptionService _encryptionService;
+    private readonly ILogger<AuthController> _logger;
 
     /// <summary>
     /// 初始化认证控制器
@@ -30,11 +32,13 @@ public class AuthController : BaseApiController
     public AuthController(
         IAuthService authService,
         IImageCaptchaService imageCaptchaService,
-        IPasswordEncryptionService encryptionService)
+        IPasswordEncryptionService encryptionService,
+        ILogger<AuthController> logger)
     {
         _authService = authService ?? throw new ArgumentNullException(nameof(authService));
         _imageCaptchaService = imageCaptchaService ?? throw new ArgumentNullException(nameof(imageCaptchaService));
         _encryptionService = encryptionService ?? throw new ArgumentNullException(nameof(encryptionService));
+        _logger = logger;
     }
 
     /// <summary>
@@ -93,9 +97,16 @@ public class AuthController : BaseApiController
 
     public async Task<IActionResult> GetCurrentUser()
     {
+        _logger.LogInformation("【AuthController.GetCurrentUser】IsAuthenticated: {IsAuth}, CurrentUserId: {UserId}, HttpContext.User: {User}, Claims: {Claims}",
+            IsAuthenticated,
+            CurrentUserId,
+            HttpContext.User.Identity?.Name,
+            string.Join(", ", HttpContext.User.Claims.Select(c => $"{c.Type}={c.Value}")));
+
         // 检查用户是否已认证
         if (!IsAuthenticated)
         {
+            _logger.LogWarning("【AuthController.GetCurrentUser】用户未认证，返回 401");
             return UnauthorizedError("用户未认证");
         }
 

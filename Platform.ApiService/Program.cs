@@ -291,6 +291,7 @@ app.UseMiddleware<ActivityLogMiddleware>();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseUserContext();
 app.UseGlobalAuthentication();
 
 // 端点映射

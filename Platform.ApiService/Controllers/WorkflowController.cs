@@ -37,6 +37,7 @@ public class WorkflowController : BaseApiController
     private readonly IWorkflowInstanceQueryService _workflowInstanceQueryService;
     private readonly IWorkflowFilterPreferenceService _filterPreferenceService;
     private readonly IFormDefinitionService _formDefinitionService;
+    private readonly IWorkflowTodoService _workflowTodoService;
     private readonly ILogger<WorkflowController> _logger;
 
     /// <summary>
@@ -53,6 +54,7 @@ public class WorkflowController : BaseApiController
     /// <param name="workflowInstanceQueryService">工作流实例查询服务</param>
     /// <param name="filterPreferenceService">过滤器偏好服务</param>
     /// <param name="formDefinitionService">表单定义服务</param>
+    /// <param name="workflowTodoService">工作流待办服务</param>
     /// <param name="logger">日志记录器</param>
     public WorkflowController(DbContext context,
         IWorkflowEngine workflowEngine,
@@ -65,6 +67,7 @@ public class WorkflowController : BaseApiController
         IWorkflowInstanceQueryService workflowInstanceQueryService,
         IWorkflowFilterPreferenceService filterPreferenceService,
         IFormDefinitionService formDefinitionService,
+        IWorkflowTodoService workflowTodoService,
         ILogger<WorkflowController> logger
     ) {
         _context = context;
@@ -78,6 +81,7 @@ public class WorkflowController : BaseApiController
         _workflowInstanceQueryService = workflowInstanceQueryService;
         _filterPreferenceService = filterPreferenceService;
         _formDefinitionService = formDefinitionService;
+        _workflowTodoService = workflowTodoService;
         _logger = logger;
     }
 
@@ -559,69 +563,7 @@ public class WorkflowController : BaseApiController
         try
         {
             var userId = GetRequiredUserId();
-            Expression<Func<WorkflowInstance, bool>> filter = i => i.Status == WorkflowStatus.Running &&
-                i.CurrentApproverIds.Contains(userId);
-
-            Func<IQueryable<WorkflowInstance>, IOrderedQueryable<WorkflowInstance>> sort = q => q.OrderByDescending(i => i.CreatedAt);
-
-            var queryable = _context.Set<WorkflowInstance>().Where(filter);
-            var totalCount = await queryable.LongCountAsync();
-            var items = await sort(queryable).Skip((current - 1) * pageSize).Take(pageSize).ToListAsync();
-            var todos = new List<object>();
-
-            foreach (var instance in items)
-            {
-                var definition = instance.WorkflowDefinitionSnapshot ?? await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == instance.WorkflowDefinitionId);
-                if (definition == null) continue;
-
-                if (instance.ActiveApprovals == null || instance.ActiveApprovals.Count == 0) continue;
-
-                Document? document = null;
-                if (!string.IsNullOrEmpty(instance.DocumentId))
-                {
-                    document = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == instance.DocumentId);
-                }
-
-                foreach (var activeApproval in instance.ActiveApprovals)
-                {
-                    var nodeId = activeApproval.NodeId;
-                    var approvers = activeApproval.ApproverIds;
-
-                    if (!approvers.Contains(userId)) continue;
-
-                    var currentNode = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
-                    if (currentNode == null || currentNode.Type != "approval" || currentNode.Data.Config?.Approval == null)
-                    {
-                        continue;
-                    }
-
-                    todos.Add(new
-                    {
-                        instance.Id,
-                        instance.WorkflowDefinitionId,
-                        instance.DocumentId,
-                        instance.Status,
-                        CurrentNodeId = nodeId,
-                        instance.StartedBy,
-                        instance.StartedAt,
-                        instance.TimeoutAt,
-                        DefinitionName = definition.Name,
-                        DefinitionCategory = definition.Category,
-                        CurrentNode = new { currentNode.Id, currentNode.Data.Label, currentNode.Data.NodeType },
-                        Document = document == null ? null : new
-                        {
-                            document.Id,
-                            document.Title,
-                            document.Status,
-                            document.DocumentType,
-                            document.Category,
-                            document.CreatedAt,
-                            document.CreatedBy
-                        }
-                    });
-                }
-            }
-
+            var (todos, totalCount) = await _workflowTodoService.GetTodoInstancesAsync(userId, current, pageSize);
             return SuccessPaged(todos, totalCount, current, pageSize);
         }
         catch (Exception ex)

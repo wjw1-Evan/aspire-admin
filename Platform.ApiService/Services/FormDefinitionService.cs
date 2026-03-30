@@ -45,6 +45,14 @@ public class FormDefinitionService : IFormDefinitionService
         return await _context.Set<FormDefinition>().FirstOrDefaultAsync(x => x.Id == id);
     }
 
+    public async Task<List<FormDefinition>> GetFormsByIdsAsync(List<string> ids)
+    {
+        return await _context.Set<FormDefinition>()
+            .Include(f => f.Fields)
+            .Where(f => ids.Contains(f.Id))
+            .ToListAsync();
+    }
+
     public async Task<FormDefinition> CreateFormAsync(FormDefinition form)
     {
         if (string.IsNullOrEmpty(form.Name))

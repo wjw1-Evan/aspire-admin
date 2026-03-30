@@ -496,7 +496,7 @@ public class WorkflowController : BaseApiController
     {
         try
         {
-            var definition = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == id);
+            var definition = await _workflowQueryService.GetWorkflowByIdAsync(id);
             if (definition == null)
             {
                 return NotFoundError("流程定义", id);
@@ -523,10 +523,7 @@ public class WorkflowController : BaseApiController
 
             // 获取所有表单定义
             var formIds = formBindings.Keys.ToList();
-            var forms = await _context.Set<FormDefinition>()
-                .Include(f => f.Fields)
-                .Where(f => formIds.Contains(f.Id))
-                .ToListAsync();
+            var forms = await _formDefinitionService.GetFormsByIdsAsync(formIds);
 
             // 构建返回数据：表单列表，每个表单包含其字段
             var result = forms.Select(form => new

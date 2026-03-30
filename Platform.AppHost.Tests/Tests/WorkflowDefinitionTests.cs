@@ -1402,17 +1402,3 @@ public class WorkflowDefinitionTests : BaseIntegrationTest
 
 
 }
-
-
-/// <summary>
-/// Response model for workflow definition (matches API response structure).
-/// </summary>
-public record WorkflowDefinitionResponse
-{
-    public string Id { get; init; } = string.Empty;
-    public string Name { get; init; } = string.Empty;
-    public string? Description { get; init; }
-    public string Category { get; init; } = string.Empty;
-    public WorkflowGraphRequest Graph { get; init; } = new();
-    public bool IsActive { get; init; }
-}

@@ -20,6 +20,7 @@ public class CompanyController : BaseApiController
     private readonly ICompanyService _companyService;
     private readonly IAuthService _authService;
     private readonly IUserCompanyService _userCompanyService;
+    private readonly IUserService _userService;
 
     /// <summary>
     /// 初始化企业控制器
@@ -27,14 +28,17 @@ public class CompanyController : BaseApiController
     /// <param name="companyService">企业服务</param>
     /// <param name="authService">认证服务</param>
     /// <param name="userCompanyService">用户企业关联服务</param>
+    /// <param name="userService">用户服务</param>
     public CompanyController(
         ICompanyService companyService,
         IAuthService authService,
-        IUserCompanyService userCompanyService)
+        IUserCompanyService userCompanyService,
+        IUserService userService)
     {
         _companyService = companyService ?? throw new ArgumentNullException(nameof(companyService));
         _authService = authService ?? throw new ArgumentNullException(nameof(authService));
         _userCompanyService = userCompanyService ?? throw new ArgumentNullException(nameof(userCompanyService));
+        _userService = userService ?? throw new ArgumentNullException(nameof(userService));
     }
 
     /// <summary>
@@ -103,14 +107,12 @@ public class CompanyController : BaseApiController
     /// <response code="401">未授权，需要登录</response>
     /// <response code="404">企业不存在</response>
     [HttpGet("current")]
-
     public async Task<IActionResult> GetCurrentCompany()
     {
         var logger = HttpContext.RequestServices.GetRequiredService<ILogger<CompanyController>>();
         // 尝试从数据库获取当前用户的企业ID（JWT 已移除 companyId）
         var userId = GetRequiredUserId();
-        var dbContext = HttpContext.RequestServices.GetRequiredService<DbContext>();
-        var user = await dbContext.Set<AppUser>().FirstOrDefaultAsync(u => u.Id == userId);
+        var user = await _userService.GetUserByIdWithoutTenantFilterAsync(userId);
 
         if (user == null)
         {
@@ -163,19 +165,8 @@ public class CompanyController : BaseApiController
         var company = await _companyService.GetCompanyByIdAsync(companyId);
         if (company == null)
         {
-            logger.LogError("GetCurrentCompany: [企业详情缺失] CompanyId: {CompanyId}. 正在尝试不带过滤器再次获取...", companyId);
-            // 尝试直接通过直接获取（绕过可能的过滤器）
-            var companies = await dbContext.Set<Company>().IgnoreQueryFilters().Where(c => c.Id == companyId).ToListAsync();
-            company = companies.FirstOrDefault();
-
-            if (company != null)
-            {
-                logger.LogInformation("GetCurrentCompany: [成功] 通过非过滤查询找回了企业: {CompanyId}", companyId);
-            }
-            else
-            {
-                logger.LogError("GetCurrentCompany: [失败] 即使非过滤查询也找不到该企业: {CompanyId}", companyId);
-            }
+            logger.LogError("GetCurrentCompany: [企业详情缺失] CompanyId: {CompanyId}", companyId);
+            throw new UnauthorizedAccessException("企业信息不存在");
         }
 
         return Success(company.EnsureFound("企业"));
@@ -189,10 +180,8 @@ public class CompanyController : BaseApiController
 
     public async Task<IActionResult> UpdateCurrentCompany([FromBody] UpdateCompanyRequest request)
     {
-        // 从数据库获取当前用户的企业ID
         var userId = GetRequiredUserId();
-        var dbContext = HttpContext.RequestServices.GetRequiredService<DbContext>();
-        var user = await dbContext.Set<AppUser>().FirstOrDefaultAsync(u => u.Id == userId);
+        var user = await _userService.GetUserByIdWithoutTenantFilterAsync(userId);
         if (user == null || string.IsNullOrEmpty(user.CurrentCompanyId))
         {
             throw new UnauthorizedAccessException("未找到企业信息");
@@ -212,10 +201,8 @@ public class CompanyController : BaseApiController
 
     public async Task<IActionResult> GetStatistics()
     {
-        // 从数据库获取当前用户的企业ID
         var userId = GetRequiredUserId();
-        var dbContext = HttpContext.RequestServices.GetRequiredService<DbContext>();
-        var user = await dbContext.Set<AppUser>().FirstOrDefaultAsync(u => u.Id == userId);
+        var user = await _userService.GetUserByIdWithoutTenantFilterAsync(userId);
         if (user == null || string.IsNullOrEmpty(user.CurrentCompanyId))
         {
             throw new UnauthorizedAccessException("未找到企业信息");
@@ -495,4 +482,3 @@ public class SetAdminRequest
     /// </summary>
     public bool IsAdmin { get; set; }
 }
-

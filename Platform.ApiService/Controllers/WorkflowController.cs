@@ -34,6 +34,7 @@ public class WorkflowController : BaseApiController
     private readonly IWorkflowExportImportService _exportImportService;
     private readonly IWorkflowDefinitionQueryService _workflowQueryService;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
+    private readonly IWorkflowInstanceQueryService _workflowInstanceQueryService;
     private readonly IWorkflowFilterPreferenceService _filterPreferenceService;
     private readonly ILogger<WorkflowController> _logger;
 
@@ -48,6 +49,7 @@ public class WorkflowController : BaseApiController
     /// <param name="exportImportService">工作流导出导入服务</param>
     /// <param name="workflowQueryService">工作流查询服务</param>
     /// <param name="workflowDefinitionService">工作流定义服务</param>
+    /// <param name="workflowInstanceQueryService">工作流实例查询服务</param>
     /// <param name="filterPreferenceService">过滤器偏好服务</param>
     /// <param name="logger">日志记录器</param>
     public WorkflowController(DbContext context,
@@ -58,6 +60,7 @@ public class WorkflowController : BaseApiController
         IWorkflowExportImportService exportImportService,
         IWorkflowDefinitionQueryService workflowQueryService,
         IWorkflowDefinitionService workflowDefinitionService,
+        IWorkflowInstanceQueryService workflowInstanceQueryService,
         IWorkflowFilterPreferenceService filterPreferenceService,
         ILogger<WorkflowController> logger
     ) {
@@ -69,6 +72,7 @@ public class WorkflowController : BaseApiController
         _exportImportService = exportImportService;
         _workflowQueryService = workflowQueryService;
         _workflowDefinitionService = workflowDefinitionService;
+        _workflowInstanceQueryService = workflowInstanceQueryService;
         _filterPreferenceService = filterPreferenceService;
         _logger = logger;
     }
@@ -406,25 +410,7 @@ public class WorkflowController : BaseApiController
     {
         try
         {
-            Expression<Func<WorkflowInstance, bool>> filter = i => true;
-
-            if (!string.IsNullOrEmpty(workflowDefinitionId))
-            {
-                string wfId = workflowDefinitionId;
-                filter = filter.And(i => i.WorkflowDefinitionId == wfId)!;
-            }
-
-            if (status.HasValue)
-            {
-                WorkflowStatus statusValue = status.Value;
-                filter = filter.And(i => i.Status == statusValue)!;
-            }
-
-            Func<IQueryable<WorkflowInstance>, IOrderedQueryable<WorkflowInstance>> sort = q => q.OrderByDescending(i => i.CreatedAt);
-
-            var queryable = _context.Set<WorkflowInstance>().Where(filter!);
-            var totalCount = await queryable.LongCountAsync();
-            var items = await sort(queryable).Skip((current - 1) * pageSize).Take(pageSize).ToListAsync();
+            var (items, totalCount) = await _workflowInstanceQueryService.GetInstancesAsync(current, pageSize, workflowDefinitionId, status);
             return SuccessPaged(items, totalCount, current, pageSize);
         }
         catch (Exception ex)

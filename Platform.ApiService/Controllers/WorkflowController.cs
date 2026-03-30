@@ -33,6 +33,7 @@ public class WorkflowController : BaseApiController
     private readonly IWorkflowGraphValidator _graphValidator;
     private readonly IWorkflowExportImportService _exportImportService;
     private readonly IWorkflowDefinitionQueryService _workflowQueryService;
+    private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowFilterPreferenceService _filterPreferenceService;
     private readonly ILogger<WorkflowController> _logger;
 
@@ -46,6 +47,7 @@ public class WorkflowController : BaseApiController
     /// <param name="graphValidator">流程图形校验服务</param>
     /// <param name="exportImportService">工作流导出导入服务</param>
     /// <param name="workflowQueryService">工作流查询服务</param>
+    /// <param name="workflowDefinitionService">工作流定义服务</param>
     /// <param name="filterPreferenceService">过滤器偏好服务</param>
     /// <param name="logger">日志记录器</param>
     public WorkflowController(DbContext context,
@@ -55,6 +57,7 @@ public class WorkflowController : BaseApiController
         IWorkflowGraphValidator graphValidator,
         IWorkflowExportImportService exportImportService,
         IWorkflowDefinitionQueryService workflowQueryService,
+        IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowFilterPreferenceService filterPreferenceService,
         ILogger<WorkflowController> logger
     ) {
@@ -65,6 +68,7 @@ public class WorkflowController : BaseApiController
         _graphValidator = graphValidator;
         _exportImportService = exportImportService;
         _workflowQueryService = workflowQueryService;
+        _workflowDefinitionService = workflowDefinitionService;
         _filterPreferenceService = filterPreferenceService;
         _logger = logger;
     }
@@ -216,7 +220,7 @@ public class WorkflowController : BaseApiController
     {
         try
         {
-            var workflow = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == id);
+            var workflow = await _workflowQueryService.GetWorkflowByIdAsync(id);
             if (workflow == null)
             {
                 return NotFoundError("流程定义", id);
@@ -265,9 +269,8 @@ public class WorkflowController : BaseApiController
                 IsActive = request.IsActive ?? true
             };
 
-            await _context.Set<WorkflowDefinition>().AddAsync(workflow);
-            await _context.SaveChangesAsync();
-            return Success(workflow);
+            var result = await _workflowDefinitionService.CreateWorkflowAsync(workflow);
+            return Success(result);
         }
         catch (Exception ex)
         {
@@ -284,49 +287,29 @@ public class WorkflowController : BaseApiController
     {
         try
         {
-            var workflow = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == id);
-            if (workflow == null)
+            var existing = await _workflowQueryService.GetWorkflowByIdAsync(id);
+            if (existing == null)
             {
                 return NotFoundError("流程定义", id);
             }
 
-            Action<WorkflowDefinition> updateAction = w =>
+            if (request.Graph != null)
             {
-                if (!string.IsNullOrEmpty(request.Name))
+                var (isGraphValid, graphError) = _graphValidator.Validate(request.Graph);
+                if (!isGraphValid)
                 {
-                    w.Name = request.Name;
+                    return ValidationError($"流程图形定义不合法: {graphError}");
                 }
+            }
 
-                if (request.Description != null)
-                {
-                    w.Description = request.Description;
-                }
+            if (!string.IsNullOrEmpty(request.Name)) existing.Name = request.Name;
+            if (request.Description != null) existing.Description = request.Description;
+            if (!string.IsNullOrEmpty(request.Category)) existing.Category = request.Category;
+            if (request.Graph != null) existing.Graph = request.Graph;
+            if (request.IsActive.HasValue) existing.IsActive = request.IsActive.Value;
 
-                if (!string.IsNullOrEmpty(request.Category))
-                {
-                    w.Category = request.Category;
-                }
-
-                if (request.Graph != null)
-                {
-                    var (isGraphValid, graphError) = _graphValidator.Validate(request.Graph);
-                    if (!isGraphValid)
-                    {
-                        throw new ArgumentException($"流程图形定义不合法: {graphError}");
-                    }
-
-                    w.Graph = request.Graph;
-                }
-
-                if (request.IsActive.HasValue)
-                {
-                    w.IsActive = request.IsActive.Value;
-                }
-            };
-
-            updateAction(workflow);
-            await _context.SaveChangesAsync();
-            return Success(workflow);
+            var result = await _workflowDefinitionService.UpdateWorkflowAsync(id, existing);
+            return Success(result);
         }
         catch (ArgumentException ex)
         {
@@ -347,9 +330,7 @@ public class WorkflowController : BaseApiController
     {
         try
         {
-            var entity = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == id);
-            if (entity != null) { _context.Set<WorkflowDefinition>().Remove(entity); await _context.SaveChangesAsync(); }
-            var result = entity != null;
+            var result = await _workflowDefinitionService.DeleteWorkflowAsync(id);
             if (!result)
             {
                 return NotFoundError("流程定义", id);

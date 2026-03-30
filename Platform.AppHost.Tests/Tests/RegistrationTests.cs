@@ -15,22 +15,12 @@ namespace Platform.AppHost.Tests.Tests;
 /// See: https://aspire.dev/zh-cn/testing/overview/
 /// </remarks>
 [Collection("AppHost Collection")]
-public class RegistrationTests : IClassFixture<AppHostFixture>
+public class RegistrationTests : BaseIntegrationTest
 {
-    private readonly AppHostFixture _fixture;
-    private readonly ITestOutputHelper _output;
-
     public RegistrationTests(AppHostFixture fixture, ITestOutputHelper output)
+        : base(fixture, output)
     {
-        _fixture = fixture;
-        _output = output;
     }
-
-    /// <summary>
-    /// Gets the HttpClient from the fixture.
-    /// See: https://aspire.dev/zh-cn/testing/accessing-resources/
-    /// </summary>
-    private System.Net.Http.HttpClient TestClient => _fixture.HttpClient;
 
     /// <summary>
     /// Property 1: Valid registration succeeds and returns complete response.
@@ -48,15 +38,15 @@ public class RegistrationTests : IClassFixture<AppHostFixture>
     public async Task ValidRegistration_ShouldSucceed_WithCompleteResponse()
     {
         const int iterations = 10;
-        _output.WriteLine($"Running property test with {iterations} iterations");
+        Output.WriteLine($"Running property test with {iterations} iterations");
 
         for (int i = 0; i < iterations; i++)
         {
             // Generate random valid registration data
             var request = TestDataGenerator.GenerateValidRegistration();
 
-            _output.WriteLine($"\n--- Iteration {i + 1}/{iterations} ---");
-            _output.WriteLine($"Request: Username={request.Username}, Email={request.Email}");
+            Output.WriteLine($"\n--- Iteration {i + 1}/{iterations} ---");
+            Output.WriteLine($"Request: Username={request.Username}, Email={request.Email}");
 
             // Send registration request
             var response = await TestClient.PostAsJsonAsync(
@@ -64,8 +54,8 @@ public class RegistrationTests : IClassFixture<AppHostFixture>
 
             // Log response details
             var responseBody = await response.Content.ReadAsStringAsync();
-            _output.WriteLine($"Response Status: {response.StatusCode}");
-            _output.WriteLine($"Response Body: {responseBody}");
+            Output.WriteLine($"Response Status: {response.StatusCode}");
+            Output.WriteLine($"Response Body: {responseBody}");
 
             // Verify status code
             Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
@@ -82,10 +72,10 @@ public class RegistrationTests : IClassFixture<AppHostFixture>
             Assert.NotEmpty(apiResponse.Data.Id);
             Assert.Equal(request.Username, apiResponse.Data.Username);
 
-            _output.WriteLine($"✓ Iteration {i + 1} passed: User created with ID={apiResponse.Data.Id}");
+            Output.WriteLine($"✓ Iteration {i + 1} passed: User created with ID={apiResponse.Data.Id}");
         }
 
-        _output.WriteLine($"\n✓ All {iterations} iterations passed successfully");
+        Output.WriteLine($"\n✓ All {iterations} iterations passed successfully");
     }
 
     /// <summary>
@@ -103,23 +93,23 @@ public class RegistrationTests : IClassFixture<AppHostFixture>
     public async Task DuplicateUsername_ShouldFail_WithErrorResponse()
     {
         const int iterations = 10;
-        _output.WriteLine($"Running property test with {iterations} iterations");
+        Output.WriteLine($"Running property test with {iterations} iterations");
 
         for (int i = 0; i < iterations; i++)
         {
             // Generate random valid registration data
             var request = TestDataGenerator.GenerateValidRegistration();
 
-            _output.WriteLine($"\n--- Iteration {i + 1}/{iterations} ---");
-            _output.WriteLine($"Request: Username={request.Username}, Email={request.Email}");
+            Output.WriteLine($"\n--- Iteration {i + 1}/{iterations} ---");
+            Output.WriteLine($"Request: Username={request.Username}, Email={request.Email}");
 
             // First registration - should succeed
             var firstResponse = await TestClient.PostAsJsonAsync(
                 "/api/auth/register", request);
 
             var firstResponseBody = await firstResponse.Content.ReadAsStringAsync();
-            _output.WriteLine($"First Registration Status: {firstResponse.StatusCode}");
-            _output.WriteLine($"First Registration Body: {firstResponseBody}");
+            Output.WriteLine($"First Registration Status: {firstResponse.StatusCode}");
+            Output.WriteLine($"First Registration Body: {firstResponseBody}");
 
             // Verify first registration succeeded
             Assert.Equal(System.Net.HttpStatusCode.OK, firstResponse.StatusCode);
@@ -130,14 +120,14 @@ public class RegistrationTests : IClassFixture<AppHostFixture>
                 Email = $"different_{request.Email}"
             };
 
-            _output.WriteLine($"Attempting duplicate registration with same username: {duplicateRequest.Username}");
+            Output.WriteLine($"Attempting duplicate registration with same username: {duplicateRequest.Username}");
 
             var secondResponse = await TestClient.PostAsJsonAsync(
                 "/api/auth/register", duplicateRequest);
 
             var secondResponseBody = await secondResponse.Content.ReadAsStringAsync();
-            _output.WriteLine($"Second Registration Status: {secondResponse.StatusCode}");
-            _output.WriteLine($"Second Registration Body: {secondResponseBody}");
+            Output.WriteLine($"Second Registration Status: {secondResponse.StatusCode}");
+            Output.WriteLine($"Second Registration Body: {secondResponseBody}");
 
             // Verify second registration failed (non-2xx status code)
             Assert.False(secondResponse.IsSuccessStatusCode,
@@ -151,13 +141,13 @@ public class RegistrationTests : IClassFixture<AppHostFixture>
             {
                 Assert.False(apiResponse.Success,
                     "Expected Success=false for duplicate username registration");
-                _output.WriteLine($"Error Message: {apiResponse.Message}");
+                Output.WriteLine($"Error Message: {apiResponse.Message}");
             }
 
-            _output.WriteLine($"✓ Iteration {i + 1} passed: Duplicate username correctly rejected");
+            Output.WriteLine($"✓ Iteration {i + 1} passed: Duplicate username correctly rejected");
         }
 
-        _output.WriteLine($"\n✓ All {iterations} iterations passed successfully");
+        Output.WriteLine($"\n✓ All {iterations} iterations passed successfully");
     }
 
     /// <summary>
@@ -176,7 +166,7 @@ public class RegistrationTests : IClassFixture<AppHostFixture>
     public async Task InvalidRegistration_ShouldFail_WithValidationError()
     {
         const int iterations = 10;
-        _output.WriteLine($"Running property test with {iterations} iterations");
+        Output.WriteLine($"Running property test with {iterations} iterations");
 
         // Test each type of validation error across iterations
         var validationTypes = Enum.GetValues<InvalidationType>();
@@ -188,9 +178,9 @@ public class RegistrationTests : IClassFixture<AppHostFixture>
             var validationType = validationTypes[i % validationTypes.Length];
             var request = TestDataGenerator.GenerateInvalidRegistration(validationType);
 
-            _output.WriteLine($"\n--- Iteration {i + 1}/{iterations} ---");
-            _output.WriteLine($"Validation Type: {validationType}");
-            _output.WriteLine($"Request: Username='{request.Username}', Password='{request.Password}', Email='{request.Email}'");
+            Output.WriteLine($"\n--- Iteration {i + 1}/{iterations} ---");
+            Output.WriteLine($"Validation Type: {validationType}");
+            Output.WriteLine($"Request: Username='{request.Username}', Password='{request.Password}', Email='{request.Email}'");
 
             // Send registration request with invalid data
             var response = await TestClient.PostAsJsonAsync(
@@ -198,8 +188,8 @@ public class RegistrationTests : IClassFixture<AppHostFixture>
 
             // Log response details
             var responseBody = await response.Content.ReadAsStringAsync();
-            _output.WriteLine($"Response Status: {response.StatusCode}");
-            _output.WriteLine($"Response Body: {responseBody}");
+            Output.WriteLine($"Response Status: {response.StatusCode}");
+            Output.WriteLine($"Response Body: {responseBody}");
 
             // Verify that the request failed (non-2xx status code)
             Assert.False(response.IsSuccessStatusCode,
@@ -217,24 +207,24 @@ public class RegistrationTests : IClassFixture<AppHostFixture>
             Assert.False(string.IsNullOrWhiteSpace(apiResponse.Message),
                 $"Expected descriptive error message for {validationType}, but got empty or null message");
 
-            _output.WriteLine($"Error Code: {apiResponse.Code}");
-            _output.WriteLine($"Error Message: {apiResponse.Message}");
+            Output.WriteLine($"Error Code: {apiResponse.Code}");
+            Output.WriteLine($"Error Message: {apiResponse.Message}");
 
             // Optionally check for field-specific errors
             if (apiResponse.Errors != null && apiResponse.Errors.Count > 0)
             {
-                _output.WriteLine("Field-specific errors:");
+                Output.WriteLine("Field-specific errors:");
                 foreach (var error in apiResponse.Errors)
                 {
-                    _output.WriteLine($"  {error.Key}: {string.Join(", ", error.Value)}");
+                    Output.WriteLine($"  {error.Key}: {string.Join(", ", error.Value)}");
                 }
             }
 
-            _output.WriteLine($"✓ Iteration {i + 1} passed: Invalid registration correctly rejected for {validationType}");
+            Output.WriteLine($"✓ Iteration {i + 1} passed: Invalid registration correctly rejected for {validationType}");
         }
 
-        _output.WriteLine($"\n✓ All {iterations} iterations passed successfully");
-        _output.WriteLine($"Tested {validationTypes.Length} different validation error types");
+        Output.WriteLine($"\n✓ All {iterations} iterations passed successfully");
+        Output.WriteLine($"Tested {validationTypes.Length} different validation error types");
     }
 
 }

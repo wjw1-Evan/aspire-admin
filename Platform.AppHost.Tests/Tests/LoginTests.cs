@@ -15,22 +15,12 @@ namespace Platform.AppHost.Tests.Tests;
 /// See: https://aspire.dev/zh-cn/testing/overview/
 /// </remarks>
 [Collection("AppHost Collection")]
-public class LoginTests : IClassFixture<AppHostFixture>
+public class LoginTests : BaseIntegrationTest
 {
-    private readonly AppHostFixture _fixture;
-    private readonly ITestOutputHelper _output;
-
     public LoginTests(AppHostFixture fixture, ITestOutputHelper output)
+        : base(fixture, output)
     {
-        _fixture = fixture;
-        _output = output;
     }
-
-    /// <summary>
-    /// Gets the HttpClient from the fixture.
-    /// See: https://aspire.dev/zh-cn/testing/accessing-resources/
-    /// </summary>
-    private System.Net.Http.HttpClient TestClient => _fixture.HttpClient;
 
     /// <summary>
     /// Feature: aspire-apphost-auth-tests, Property 4: 有效登录成功并返回完整令牌响应
@@ -48,8 +38,8 @@ public class LoginTests : IClassFixture<AppHostFixture>
         var successCount = 0;
         var failureCount = 0;
 
-        _output.WriteLine($"Starting property test: ValidLogin_ShouldSucceed_WithCompleteTokenResponse");
-        _output.WriteLine($"Running {iterations} iterations...");
+        Output.WriteLine($"Starting property test: ValidLogin_ShouldSucceed_WithCompleteTokenResponse");
+        Output.WriteLine($"Running {iterations} iterations...");
 
         for (int i = 0; i < iterations; i++)
         {
@@ -58,8 +48,8 @@ public class LoginTests : IClassFixture<AppHostFixture>
                 // Generate unique registration data
                 var registerRequest = TestDataGenerator.GenerateValidRegistration();
 
-                _output.WriteLine($"\n--- Iteration {i + 1}/{iterations} ---");
-                _output.WriteLine($"Username: {registerRequest.Username}");
+                Output.WriteLine($"\n--- Iteration {i + 1}/{iterations} ---");
+                Output.WriteLine($"Username: {registerRequest.Username}");
 
                 // Step 1: Register a new user
                 var registerResponse = await TestClient.PostAsJsonAsync(
@@ -68,8 +58,8 @@ public class LoginTests : IClassFixture<AppHostFixture>
                 if (!registerResponse.IsSuccessStatusCode)
                 {
                     var registerError = await registerResponse.Content.ReadAsStringAsync();
-                    _output.WriteLine($"Registration failed: {registerResponse.StatusCode}");
-                    _output.WriteLine($"Response: {registerError}");
+                    Output.WriteLine($"Registration failed: {registerResponse.StatusCode}");
+                    Output.WriteLine($"Response: {registerError}");
                     Assert.Fail($"Registration failed for iteration {i + 1}: {registerResponse.StatusCode}");
                 }
 
@@ -93,8 +83,8 @@ public class LoginTests : IClassFixture<AppHostFixture>
                     "/api/auth/login", loginRequest);
 
                 var loginContent = await loginResponse.Content.ReadAsStringAsync();
-                _output.WriteLine($"Login Status: {loginResponse.StatusCode}");
-                _output.WriteLine($"Login Response: {loginContent}");
+                Output.WriteLine($"Login Status: {loginResponse.StatusCode}");
+                Output.WriteLine($"Login Response: {loginContent}");
 
                 // Verify status code is 200 OK
                 Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
@@ -129,10 +119,10 @@ public class LoginTests : IClassFixture<AppHostFixture>
 
                 if (!validationResult.IsValid)
                 {
-                    _output.WriteLine("JWT validation errors:");
+                    Output.WriteLine("JWT validation errors:");
                     foreach (var error in validationResult.Errors)
                     {
-                        _output.WriteLine($"  - {error}");
+                        Output.WriteLine($"  - {error}");
                     }
                 }
 
@@ -145,26 +135,26 @@ public class LoginTests : IClassFixture<AppHostFixture>
                 Assert.True(validationResult.ExpiresAt > DateTime.UtcNow,
                     "Token expiration time should be in the future");
 
-                _output.WriteLine($"✓ Iteration {i + 1} passed");
-                _output.WriteLine($"  User ID: {validationResult.UserId}");
-                _output.WriteLine($"  Username: {validationResult.Username}");
-                _output.WriteLine($"  Expires At: {validationResult.ExpiresAt:O}");
+                Output.WriteLine($"✓ Iteration {i + 1} passed");
+                Output.WriteLine($"  User ID: {validationResult.UserId}");
+                Output.WriteLine($"  Username: {validationResult.Username}");
+                Output.WriteLine($"  Expires At: {validationResult.ExpiresAt:O}");
 
                 successCount++;
             }
             catch (Exception ex)
             {
                 failureCount++;
-                _output.WriteLine($"✗ Iteration {i + 1} failed: {ex.Message}");
+                Output.WriteLine($"✗ Iteration {i + 1} failed: {ex.Message}");
                 throw;
             }
         }
 
-        _output.WriteLine($"\n=== Test Summary ===");
-        _output.WriteLine($"Total iterations: {iterations}");
-        _output.WriteLine($"Successful: {successCount}");
-        _output.WriteLine($"Failed: {failureCount}");
-        _output.WriteLine($"Success rate: {(successCount * 100.0 / iterations):F2}%");
+        Output.WriteLine($"\n=== Test Summary ===");
+        Output.WriteLine($"Total iterations: {iterations}");
+        Output.WriteLine($"Successful: {successCount}");
+        Output.WriteLine($"Failed: {failureCount}");
+        Output.WriteLine($"Success rate: {(successCount * 100.0 / iterations):F2}%");
     }
 
     /// <summary>
@@ -182,8 +172,8 @@ public class LoginTests : IClassFixture<AppHostFixture>
         var successCount = 0;
         var failureCount = 0;
 
-        _output.WriteLine($"Starting property test: InvalidCredentials_ShouldFail_WithErrorResponse");
-        _output.WriteLine($"Running {iterations} iterations...");
+        Output.WriteLine($"Starting property test: InvalidCredentials_ShouldFail_WithErrorResponse");
+        Output.WriteLine($"Running {iterations} iterations...");
 
         var random = new Random();
 
@@ -191,7 +181,7 @@ public class LoginTests : IClassFixture<AppHostFixture>
         {
             try
             {
-                _output.WriteLine($"\n--- Iteration {i + 1}/{iterations} ---");
+                Output.WriteLine($"\n--- Iteration {i + 1}/{iterations} ---");
 
                 LoginRequest loginRequest;
                 string scenario;
@@ -210,8 +200,8 @@ public class LoginTests : IClassFixture<AppHostFixture>
                         Password = "SomePassword123"
                     };
 
-                    _output.WriteLine($"Scenario: {scenario}");
-                    _output.WriteLine($"Username: {loginRequest.Username}");
+                    Output.WriteLine($"Scenario: {scenario}");
+                    Output.WriteLine($"Username: {loginRequest.Username}");
                 }
                 else
                 {
@@ -226,8 +216,8 @@ public class LoginTests : IClassFixture<AppHostFixture>
                     if (!registerResponse.IsSuccessStatusCode)
                     {
                         var registerError = await registerResponse.Content.ReadAsStringAsync();
-                        _output.WriteLine($"Registration failed: {registerResponse.StatusCode}");
-                        _output.WriteLine($"Response: {registerError}");
+                        Output.WriteLine($"Registration failed: {registerResponse.StatusCode}");
+                        Output.WriteLine($"Response: {registerError}");
                         Assert.Fail($"Registration failed for iteration {i + 1}: {registerResponse.StatusCode}");
                     }
 
@@ -238,9 +228,9 @@ public class LoginTests : IClassFixture<AppHostFixture>
                         Password = "WrongPassword123!" // Different from the registered password
                     };
 
-                    _output.WriteLine($"Scenario: {scenario}");
-                    _output.WriteLine($"Username: {loginRequest.Username} (registered)");
-                    _output.WriteLine($"Using wrong password");
+                    Output.WriteLine($"Scenario: {scenario}");
+                    Output.WriteLine($"Username: {loginRequest.Username} (registered)");
+                    Output.WriteLine($"Using wrong password");
                 }
 
                 // Attempt login with invalid credentials
@@ -248,8 +238,8 @@ public class LoginTests : IClassFixture<AppHostFixture>
                     "/api/auth/login", loginRequest);
 
                 var loginContent = await loginResponse.Content.ReadAsStringAsync();
-                _output.WriteLine($"Login Status: {loginResponse.StatusCode}");
-                _output.WriteLine($"Login Response: {loginContent}");
+                Output.WriteLine($"Login Status: {loginResponse.StatusCode}");
+                Output.WriteLine($"Login Response: {loginContent}");
 
                 // Verify status code is an error (401 Unauthorized or similar)
                 Assert.False(loginResponse.IsSuccessStatusCode,
@@ -280,25 +270,25 @@ public class LoginTests : IClassFixture<AppHostFixture>
                             "Response should not contain an access token");
                     }
 
-                    _output.WriteLine($"Error Code: {loginApiResponse.Code}");
-                    _output.WriteLine($"Error Message: {loginApiResponse.Message}");
+                    Output.WriteLine($"Error Code: {loginApiResponse.Code}");
+                    Output.WriteLine($"Error Message: {loginApiResponse.Message}");
                 }
 
-                _output.WriteLine($"✓ Iteration {i + 1} passed ({scenario})");
+                Output.WriteLine($"✓ Iteration {i + 1} passed ({scenario})");
                 successCount++;
             }
             catch (Exception ex)
             {
                 failureCount++;
-                _output.WriteLine($"✗ Iteration {i + 1} failed: {ex.Message}");
+                Output.WriteLine($"✗ Iteration {i + 1} failed: {ex.Message}");
                 throw;
             }
         }
 
-        _output.WriteLine($"\n=== Test Summary ===");
-        _output.WriteLine($"Total iterations: {iterations}");
-        _output.WriteLine($"Successful: {successCount}");
-        _output.WriteLine($"Failed: {failureCount}");
-        _output.WriteLine($"Success rate: {(successCount * 100.0 / iterations):F2}%");
+        Output.WriteLine($"\n=== Test Summary ===");
+        Output.WriteLine($"Total iterations: {iterations}");
+        Output.WriteLine($"Successful: {successCount}");
+        Output.WriteLine($"Failed: {failureCount}");
+        Output.WriteLine($"Success rate: {(successCount * 100.0 / iterations):F2}%");
     }
 }

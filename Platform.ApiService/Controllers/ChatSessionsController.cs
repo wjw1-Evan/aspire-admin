@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ApiService.Models;
@@ -10,71 +9,22 @@ using Platform.ServiceDefaults.Services;
 
 namespace Platform.ApiService.Controllers;
 
-/// <summary>
-/// 聊天会话接口
-/// </summary>
 [ApiController]
 [Route("api/chat/sessions")]
-
 public class ChatSessionsController : BaseApiController
 {
-    private readonly DbContext _context;
-
     private readonly IChatService _chatService;
     private readonly ILogger<ChatSessionsController> _logger;
 
-    /// <summary>
-    /// 初始化聊天会话控制器
-    /// </summary>
-    /// <param name="context">数据库上下文</param>
-    /// <param name="chatService">聊天服务</param>
-    /// <param name="logger">日志记录器</param>
     public ChatSessionsController(
-        DbContext context,
         IChatService chatService,
         ILogger<ChatSessionsController> logger
-    ) {
-        _context = context;
-        
+    )
+    {
         _chatService = chatService ?? throw new ArgumentNullException(nameof(chatService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    /// <summary>
-    /// 获取当前用户的会话列表
-    /// </summary>
-    /// <param name="request">查询参数</param>
-    /// <returns>会话分页结果</returns>
-    /// <remarks>
-    /// 示例请求：
-    /// 
-    /// ```
-    /// GET /api/chat/sessions?page=1&amp;pageSize=20
-    /// Authorization: Bearer {token}
-    /// ```
-    /// 
-    /// 示例响应：
-    /// ```json
-    /// {
-    ///   "success": true,
-    ///   "data": {
-    ///     "data": [
-    ///       {
-    ///         "id": "64f...",
-    ///         "participants": ["64f...", "64a..."],
-    ///         "lastMessageExcerpt": "你好",
-    ///         "lastMessageAt": "2025-11-07T10:15:00Z",
-    ///         "unreadCounts": {"64a...": 2}
-    ///       }
-    ///     ],
-    ///     "total": 1,
-    ///     "page": 1,
-    ///     "pageSize": 20
-    ///   }
-    /// }
-    /// ```
-    /// </remarks>
-    /// <response code="200">成功返回会话列表</response>
     [HttpGet]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetSessions([FromQuery] ChatSessionListRequest request)
@@ -82,5 +32,4 @@ public class ChatSessionsController : BaseApiController
         var (sessions, total) = await _chatService.GetSessionsAsync(request);
         return SuccessPaged(sessions, total, request.Page, request.PageSize);
     }
-
 }

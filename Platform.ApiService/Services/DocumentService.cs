@@ -69,6 +69,11 @@ public interface IDocumentService
     /// 获取公文统计信息
     /// </summary>
     Task<DocumentStatisticsResponse> GetStatisticsAsync();
+
+    /// <summary>
+    /// 获取工作流定义（用于公文创建表单）
+    /// </summary>
+    Task<WorkflowDefinition?> GetWorkflowDefinitionAsync(string definitionId);
 }
 
 /// <summary>
@@ -776,6 +781,11 @@ public class DocumentService : IDocumentService
             RejectedCount = (int)rejectedCount,
             MyCreatedCount = (int)myCreatedCount
         };
+    }
+
+    public async Task<WorkflowDefinition?> GetWorkflowDefinitionAsync(string definitionId)
+    {
+        return await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(w => w.Id == definitionId);
     }
 }
 

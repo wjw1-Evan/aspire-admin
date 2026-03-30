@@ -102,4 +102,7 @@ public class ChatService : IChatService
 
     public Task<ChatSession> GetOrCreateDirectSessionAsync(string participantUserId)
         => _sessionService.GetOrCreateDirectSessionAsync(participantUserId);
+
+    public Task<ChatSession?> GetSessionByIdAsync(string sessionId)
+        => _sessionService.GetSessionByIdAsync(sessionId);
 }

@@ -25,6 +25,11 @@ public interface IChatSessionService
     Task<ChatSession> GetOrCreateDirectSessionAsync(string participantUserId);
 
     /// <summary>
+    /// 根据ID获取会话
+    /// </summary>
+    Task<ChatSession?> GetSessionByIdAsync(string sessionId);
+
+    /// <summary>
     /// 将会话标记为已读
     /// </summary>
     Task MarkSessionReadAsync(string sessionId, string lastMessageId);

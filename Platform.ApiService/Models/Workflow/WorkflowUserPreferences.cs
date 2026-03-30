@@ -127,3 +127,69 @@ public class UsageRangeFilter
     /// </summary>
     public int? Max { get; set; }
 }
+
+/// <summary>
+/// 工作流搜索请求
+/// </summary>
+public class WorkflowSearchRequest
+{
+    /// <summary>
+    /// 页码
+    /// </summary>
+    public int Page { get; set; } = 1;
+
+    /// <summary>
+    /// 每页数量
+    /// </summary>
+    public int PageSize { get; set; } = 10;
+
+    /// <summary>
+    /// 关键词（在名称、描述、类别中搜索）
+    /// </summary>
+    public string? Keyword { get; set; }
+
+    /// <summary>
+    /// 单个类别过滤（用于简单查询）
+    /// </summary>
+    public string? Category { get; set; }
+
+    /// <summary>
+    /// 类别列表
+    /// </summary>
+    public List<string>? Categories { get; set; }
+
+    /// <summary>
+    /// 是否启用过滤（用于简单查询）
+    /// </summary>
+    public bool? IsActive { get; set; }
+
+    /// <summary>
+    /// 状态列表（active, inactive, draft, archived）
+    /// </summary>
+    public List<string>? Statuses { get; set; }
+
+    /// <summary>
+    /// 日期范围过滤
+    /// </summary>
+    public DateRangeFilter? DateRange { get; set; }
+
+    /// <summary>
+    /// 使用次数范围
+    /// </summary>
+    public UsageRangeFilter? UsageRange { get; set; }
+
+    /// <summary>
+    /// 创建者ID列表
+    /// </summary>
+    public List<string>? CreatedBy { get; set; }
+
+    /// <summary>
+    /// 排序字段
+    /// </summary>
+    public string? SortBy { get; set; }
+
+    /// <summary>
+    /// 排序方向（asc, desc）
+    /// </summary>
+    public string? SortOrder { get; set; }
+}

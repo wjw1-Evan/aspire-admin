@@ -145,6 +145,11 @@ public class ChatSessionService : IChatSessionService
         return session;
     }
 
+    public async Task<ChatSession?> GetSessionByIdAsync(string sessionId)
+    {
+        return await _context.Set<ChatSession>().FirstOrDefaultAsync(x => x.Id == sessionId);
+    }
+
     public async Task MarkSessionReadAsync(string sessionId, string lastMessageId)
     {
         var session = await EnsureSessionAccessibleAsync(sessionId);

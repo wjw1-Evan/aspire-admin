@@ -70,6 +70,13 @@ public interface IChatService
     Task<ChatSession> GetOrCreateDirectSessionAsync(string participantUserId);
 
     /// <summary>
+    /// 根据ID获取会话
+    /// </summary>
+    /// <param name="sessionId">会话ID</param>
+    /// <returns>会话实体</returns>
+    Task<ChatSession?> GetSessionByIdAsync(string sessionId);
+
+    /// <summary>
     /// 发送消息并流式生成 AI 回复（支持回调）
     /// </summary>
     /// <param name="request">发送请求</param>

@@ -32,6 +32,8 @@ public class WorkflowController : BaseApiController
     private readonly IFieldValidationService _fieldValidationService;
     private readonly IWorkflowGraphValidator _graphValidator;
     private readonly IWorkflowExportImportService _exportImportService;
+    private readonly IWorkflowDefinitionQueryService _workflowQueryService;
+    private readonly IWorkflowFilterPreferenceService _filterPreferenceService;
     private readonly ILogger<WorkflowController> _logger;
 
     /// <summary>
@@ -43,6 +45,8 @@ public class WorkflowController : BaseApiController
     /// <param name="fieldValidationService">字段验证服务</param>
     /// <param name="graphValidator">流程图形校验服务</param>
     /// <param name="exportImportService">工作流导出导入服务</param>
+    /// <param name="workflowQueryService">工作流查询服务</param>
+    /// <param name="filterPreferenceService">过滤器偏好服务</param>
     /// <param name="logger">日志记录器</param>
     public WorkflowController(DbContext context,
         IWorkflowEngine workflowEngine,
@@ -50,6 +54,8 @@ public class WorkflowController : BaseApiController
         IFieldValidationService fieldValidationService,
         IWorkflowGraphValidator graphValidator,
         IWorkflowExportImportService exportImportService,
+        IWorkflowDefinitionQueryService workflowQueryService,
+        IWorkflowFilterPreferenceService filterPreferenceService,
         ILogger<WorkflowController> logger
     ) {
         _context = context;
@@ -58,6 +64,8 @@ public class WorkflowController : BaseApiController
         _fieldValidationService = fieldValidationService;
         _graphValidator = graphValidator;
         _exportImportService = exportImportService;
+        _workflowQueryService = workflowQueryService;
+        _filterPreferenceService = filterPreferenceService;
         _logger = logger;
     }
 
@@ -1067,11 +1075,7 @@ public class WorkflowController : BaseApiController
         try
         {
             var userId = GetRequiredUserId();
-            var preferences = await _context.Set<UserWorkflowFilterPreference>()
-                .Where(p => p.UserId == userId)
-                .OrderByDescending(p => p.IsDefault)
-                .ThenBy(p => p.Name)
-                .ToListAsync();
+            var preferences = await _filterPreferenceService.GetPreferencesAsync(userId);
             return Success(preferences);
         }
         catch (Exception ex)
@@ -1096,31 +1100,17 @@ public class WorkflowController : BaseApiController
 
             var userId = GetRequiredUserId();
 
-            var existing = await _context.Set<UserWorkflowFilterPreference>()
-                .FirstOrDefaultAsync(p => p.UserId == userId && p.Name == request.Name);
-            if (existing != null)
+            var existing = await _filterPreferenceService.HasPreferenceByNameAsync(userId, request.Name);
+            if (existing)
             {
                 return ValidationError("已存在同名的过滤器偏好");
             }
 
-            if (request.IsDefault)
-            {
-                var defaultPrefs = await _context.Set<UserWorkflowFilterPreference>()
-                    .Where(p => p.UserId == userId && p.IsDefault)
-                    .ToListAsync();
-                foreach (var p in defaultPrefs) p.IsDefault = false;
-            }
-
-            var preference = new UserWorkflowFilterPreference
-            {
-                UserId = userId,
-                Name = request.Name,
-                IsDefault = request.IsDefault,
-                FilterConfig = request.FilterConfig ?? new WorkflowFilterConfig()
-            };
-
-            _context.Set<UserWorkflowFilterPreference>().Add(preference);
-            await _context.SaveChangesAsync();
+            var preference = await _filterPreferenceService.SavePreferenceAsync(
+                userId, 
+                request.Name, 
+                request.FilterConfig, 
+                request.IsDefault);
             return Success(preference);
         }
         catch (Exception ex)

@@ -631,7 +631,7 @@ public class WorkflowController : BaseApiController
             WorkflowDefinition? definition = instance.WorkflowDefinitionSnapshot;
             if (definition == null)
             {
-                definition = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == instance.WorkflowDefinitionId);
+                definition = await _workflowQueryService.GetWorkflowByIdAsync(instance.WorkflowDefinitionId);
                 if (definition == null)
                 {
                     return NotFoundError("流程定义", instance.WorkflowDefinitionId);
@@ -659,8 +659,7 @@ public class WorkflowController : BaseApiController
 
             if (form == null)
             {
-                var forms = await _context.Set<FormDefinition>().Where(f => f.Id == binding.FormDefinitionId).ToListAsync();
-                form = forms.FirstOrDefault();
+                form = await _formDefinitionService.GetFormByIdAsync(binding.FormDefinitionId);
                 if (form == null)
                 {
                     return NotFoundError("表单定义", binding.FormDefinitionId);
@@ -738,7 +737,7 @@ public class WorkflowController : BaseApiController
             WorkflowDefinition? definition = instance.WorkflowDefinitionSnapshot;
             if (definition == null)
             {
-                definition = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == instance.WorkflowDefinitionId);
+                definition = await _workflowQueryService.GetWorkflowByIdAsync(instance.WorkflowDefinitionId);
                 if (definition == null)
                 {
                     return NotFoundError("流程定义", instance.WorkflowDefinitionId);
@@ -767,8 +766,7 @@ public class WorkflowController : BaseApiController
 
             if (form == null)
             {
-                var forms = await _context.Set<FormDefinition>().Where(f => f.Id == binding.FormDefinitionId).ToListAsync();
-                form = forms.FirstOrDefault();
+                form = await _formDefinitionService.GetFormByIdAsync(binding.FormDefinitionId);
                 if (form == null)
                 {
                     return NotFoundError("表单定义", binding.FormDefinitionId);

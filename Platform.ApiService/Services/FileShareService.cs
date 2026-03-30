@@ -142,7 +142,7 @@ public class FileShareService : IFileShareService
         if (share == null)
             throw new ArgumentException("分享不存在", nameof(id));
 
-        share.IsDeleted = true;
+        _context.Set<Models.FileShare>().Remove(share);
         await _context.SaveChangesAsync();
         _logger.LogInformation("Deleted share {ShareId}", id);
     }

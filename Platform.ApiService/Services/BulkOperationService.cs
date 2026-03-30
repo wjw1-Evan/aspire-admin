@@ -218,7 +218,7 @@ public class BulkOperationService : IBulkOperationService
             if (operation.Id != null)
             {
                             var item2 = await _context.Set<BulkOperation>().FirstOrDefaultAsync(x => x.Id == operation.Id);
-            if (item2 != null) { item2.IsDeleted = true; await _context.SaveChangesAsync(); }
+            if (item2 != null) { _context.Set<BulkOperation>().Remove(item2); await _context.SaveChangesAsync(); }
 
                 deletedCount++;
             }
@@ -323,7 +323,7 @@ public class BulkOperationService : IBulkOperationService
                 if (workflowId != null)
                 {
                     var itemE = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
-        if (itemE != null) { itemE.IsDeleted = true; await _context.SaveChangesAsync(); }
+        if (itemE != null) { _context.Set<WorkflowDefinition>().Remove(itemE); await _context.SaveChangesAsync(); }
         var result = itemE != null;
                     if (result)
                     {

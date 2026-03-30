@@ -197,7 +197,7 @@ public class ChatAiService : IChatAiService
             }
             else if (assistantMessage != null)
             {
-                assistantMessage.IsDeleted = true;
+                _context.Set<ChatMessage>().Remove(assistantMessage);
                 await _context.SaveChangesAsync();
             }
             return null;
@@ -206,7 +206,7 @@ public class ChatAiService : IChatAiService
         {
             if (assistantMessage != null)
             {
-                assistantMessage.IsDeleted = true;
+                _context.Set<ChatMessage>().Remove(assistantMessage);
                 await _context.SaveChangesAsync();
             }
             return null;

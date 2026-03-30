@@ -172,7 +172,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
         var todo = await _context.Set<NoticeIconItem>().FirstOrDefaultAsync(x => x.Id == id);
         if (todo == null) return false;
 
-        todo.IsDeleted = true;
+        _context.Set<NoticeIconItem>().Remove(todo);
         await _context.SaveChangesAsync();
         return true;
     }

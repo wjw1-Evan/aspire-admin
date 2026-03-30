@@ -429,7 +429,7 @@ public class DocumentService : IDocumentService
             throw new InvalidOperationException("只有草稿状态的公文可以删除");
         }
 
-        document.IsDeleted = true;
+        _context.Set<Document>().Remove(document);
         await _context.SaveChangesAsync();
 
         return true;

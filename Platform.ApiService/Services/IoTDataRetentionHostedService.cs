@@ -81,7 +81,7 @@ public class IoTDataRetentionHostedService : BackgroundService
             foreach (var record in expired)
             {
                 var recordToDelete = await dbContext.Set<IoTDataRecord>().FirstOrDefaultAsync(x => x.Id == record.Id);
-                if (recordToDelete != null) { recordToDelete.IsDeleted = true; await dbContext.SaveChangesAsync(); }
+                if (recordToDelete != null) { dbContext.Set<IoTDataRecord>().Remove(recordToDelete); await dbContext.SaveChangesAsync(); }
                 deletedRecords++;
             }
         }

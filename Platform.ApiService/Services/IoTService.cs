@@ -98,7 +98,7 @@ public class IoTService : IIoTService
         var gateway = await _context.Set<IoTGateway>().FirstOrDefaultAsync(x => x.Id == id);
         if (gateway == null) return false;
 
-        gateway.IsDeleted = true;
+        _context.Set<IoTGateway>().Remove(gateway);
         await _context.SaveChangesAsync();
         _logger.LogInformation("Gateway deleted: {GatewayId}", gateway.GatewayId);
         return true;
@@ -240,11 +240,10 @@ public class IoTService : IIoTService
         var device = await _context.Set<IoTDevice>().FirstOrDefaultAsync(x => x.Id == id);
         if (device == null) return false;
 
-        device.IsDeleted = true;
-        
         var gateway = await GetGatewayByGatewayIdAsync(device.GatewayId);
         if (gateway != null) gateway.DeviceCount = Math.Max(0, gateway.DeviceCount - 1);
 
+        _context.Set<IoTDevice>().Remove(device);
         await _context.SaveChangesAsync();
         _logger.LogInformation("Device deleted: {DeviceId}", device.DeviceId);
         return true;
@@ -259,11 +258,11 @@ public class IoTService : IIoTService
 
         foreach (var device in devices)
         {
-            device.IsDeleted = true;
             var gateway = await GetGatewayByGatewayIdAsync(device.GatewayId);
             if (gateway != null) gateway.DeviceCount = Math.Max(0, gateway.DeviceCount - 1);
         }
 
+        _context.Set<IoTDevice>().RemoveRange(devices);
         await _context.SaveChangesAsync();
         _logger.LogInformation("Batch deleted {Count} devices", devices.Count);
         return devices.Count;
@@ -404,7 +403,7 @@ public class IoTService : IIoTService
         var dataPoint = await _context.Set<IoTDataPoint>().FirstOrDefaultAsync(x => x.Id == id);
         if (dataPoint == null) return false;
 
-        dataPoint.IsDeleted = true;
+        _context.Set<IoTDataPoint>().Remove(dataPoint);
         await _context.SaveChangesAsync();
         _logger.LogInformation("DataPoint deleted: {DataPointId}", dataPoint.DataPointId);
         return true;

@@ -136,7 +136,7 @@ public class NoticeService : INoticeService
     {
         var entity = await _context.Set<NoticeIconItem>().FirstOrDefaultAsync(x => x.Id == id);
         if (entity == null) return false;
-        entity.IsDeleted = true;
+        _context.Set<NoticeIconItem>().Remove(entity);
         await _context.SaveChangesAsync();
         return true;
     }

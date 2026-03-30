@@ -35,7 +35,6 @@ public class UserActivityLogService : IUserActivityLogService
             Description = description,
             IpAddress = ipAddress,
             UserAgent = userAgent,
-            CreatedBy = userId,
         };
 
         await _context.Set<UserActivityLog>().AddAsync(log);
@@ -299,7 +298,7 @@ public class UserActivityLogService : IUserActivityLogService
         if (logIds.Any())
         {
             var logsToDelete = await _context.Set<UserActivityLog>().Where(log => log.Id != null && logIds.Contains(log.Id)).ToListAsync();
-            foreach (var log in logsToDelete) log.IsDeleted = true;
+            _context.Set<UserActivityLog>().RemoveRange(logsToDelete);
             await _context.SaveChangesAsync();
         }
 

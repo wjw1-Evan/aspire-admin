@@ -234,7 +234,7 @@ public class JoinRequestService : IJoinRequestService
         if (request.Status == "approved")
         {
             var memberships = await _context.Set<UserCompany>().Where(uc => uc.UserId == request.UserId && uc.CompanyId == request.CompanyId).ToListAsync();
-            foreach (var m in memberships) m.IsDeleted = true;
+            _context.Set<UserCompany>().RemoveRange(memberships);
         }
 
         request.Status = "rejected";

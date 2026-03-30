@@ -104,7 +104,7 @@ public class OrganizationService : IOrganizationService
         if (existing == null) throw new KeyNotFoundException(OrganizationErrorMessages.OrganizationNotFound);
         if (await _context.Set<OrganizationUnit>().AnyAsync(o => o.ParentId == id)) throw new InvalidOperationException(OrganizationErrorMessages.CannotDeleteWithChildren);
 
-        existing.IsDeleted = true;
+        _context.Set<OrganizationUnit>().Remove(existing);
         await _context.SaveChangesAsync();
         return true;
     }
@@ -202,7 +202,7 @@ public class OrganizationService : IOrganizationService
         var mapping = await _context.Set<UserOrganization>().FirstOrDefaultAsync(m => m.UserId == user.Id && m.OrganizationUnitId == request.OrganizationUnitId);
         if (mapping == null) return false;
 
-        mapping.IsDeleted = true;
+        _context.Set<UserOrganization>().Remove(mapping);
         await _context.SaveChangesAsync();
         return true;
     }

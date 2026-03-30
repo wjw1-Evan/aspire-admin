@@ -97,7 +97,7 @@ public class FileVersionService : IFileVersionService
         var version = await GetVersionAsync(versionId);
         if (version == null) throw new ArgumentException("版本不存在");
         if (version.IsCurrentVersion) throw new InvalidOperationException("不能删除当前版本");
-        version.IsDeleted = true;
+        _context.Set<FileVersion>().Remove(version);
         await _context.SaveChangesAsync();
     }
 

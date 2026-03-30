@@ -85,7 +85,7 @@ public class KnowledgeService : IKnowledgeService, IScopedDependency
     {
         var entity = await _context.Set<KnowledgeBase>().FirstOrDefaultAsync(x => x.Id == id);
         if (entity == null) return false;
-        entity.IsDeleted = true;
+        _context.Set<KnowledgeBase>().Remove(entity);
         await _context.SaveChangesAsync();
         return true;
     }

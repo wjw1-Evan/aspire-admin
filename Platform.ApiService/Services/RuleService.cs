@@ -125,7 +125,7 @@ public class RuleService : IRuleService
     {
         var entity = await _context.Set<RuleListItem>().FirstOrDefaultAsync(x => x.Id == id);
         if (entity == null) return false;
-        entity.IsDeleted = true;
+        _context.Set<RuleListItem>().Remove(entity);
         await _context.SaveChangesAsync();
         return true;
     }
@@ -138,8 +138,7 @@ public class RuleService : IRuleService
         if (!keys.Any()) return false;
 
         var items = await _context.Set<RuleListItem>().Where(r => keys.Contains(r.Key)).ToListAsync();
-        foreach (var item in items)
-            item.IsDeleted = true;
+        _context.Set<RuleListItem>().RemoveRange(items);
         await _context.SaveChangesAsync();
         return true;
     }

@@ -34,9 +34,9 @@ public class WrongController : ControllerBase { }
 
 ### 权限控制必读
 ```csharp
-// ✅ 正确：使用 RequireMenu
+// ✅ 正确：使用 RequireMenu（菜单名称使用连字符格式）
 [HttpGet("list")]
-[RequireMenu("user-management:list")]
+[RequireMenu("user-management")]
 public async Task<IActionResult> GetUsers() { }
 
 // ❌ 禁止：使用废弃方法

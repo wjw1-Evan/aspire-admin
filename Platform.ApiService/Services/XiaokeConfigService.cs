@@ -200,7 +200,7 @@ public class XiaokeConfigService : IXiaokeConfigService
     {
         var existingConfig = await _context.Set<XiaokeConfig>().FirstOrDefaultAsync(x => x.Id == id);
         if (existingConfig == null) return false;
-        existingConfig.IsDeleted = true;
+        _context.Set<XiaokeConfig>().Remove(existingConfig);
         await _context.SaveChangesAsync();
         return true;
     }

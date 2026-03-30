@@ -11,8 +11,8 @@
 
 ### 1.2 定义与实现服务 (Service)
 1. **接口**：在 `Services/` 下定义接口，定义 CRUD 操作。
-2. **实现**：实现该接口，并注入 `IDataFactory<T>` 进行数据操作。
-- **关键点**：使用 LINQ 表达式进行查询，严禁直连数据库驱动。
+2. **实现**：实现该接口，并注入 `DbContext` 进行数据操作。
+- **关键点**：使用 LINQ 表达式进行查询，严禁直连数据库驱动（禁止 IMongoCollection/IMongoDatabase）。
 - **示例**：`IKnowledgeService.cs` 和 `KnowledgeService.cs`
 
 ### 1.3 创建控制器 (Controller)

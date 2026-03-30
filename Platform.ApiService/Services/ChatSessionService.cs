@@ -238,7 +238,7 @@ public class ChatSessionService : IChatSessionService
         var message = await _context.Set<ChatMessage>().FirstOrDefaultAsync(x => x.Id == messageId);
         if (message != null)
         {
-            message.IsDeleted = true;
+            _context.Set<ChatMessage>().Remove(message);
             await _context.SaveChangesAsync();
         }
     }

@@ -39,9 +39,9 @@ docs/rules/
 ## 核心原则速查
 
 ### 后端
-- **数据操作**：必须使用 `IDataFactory<T>`，严禁直接访问 MongoDB
+- **数据操作**：必须使用 `DbContext`，严禁直接访问 MongoDB
 - **企业上下文**：通过 `ITenantContext` 获取，禁止直读 JWT
-- **权限控制**：使用 `[RequireMenu("module:resource:action")]`
+- **权限控制**：使用 `[RequireMenu("menu-name")]`
 - **响应格式**：返回 `ApiResponse<T>`，统一 camelCase
 - **N+1 防护**：严禁循环内单条查询，使用批量查询
 

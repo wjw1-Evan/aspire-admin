@@ -77,7 +77,7 @@ if (entry.State == EntityState.Deleted && entry.Entity is ISoftDeletable softDel
 ## 5. 发现与建议
 
 ### 发现 (Findings)
-1. **数据工厂适配**：`EFCoreDataFactory<T>` 已全面集成 `PlatformDbContext`，所有 CRUD 操作均符合软删除规范。
+1. **DbContext 集成**：所有服务通过注入 `DbContext` 进行数据操作，由 `PlatformDbContext` 统一处理软删除，所有 CRUD 操作均符合软删除规范。
 2. **多租户集成**：软删除过滤器与多租户过滤器（`IMultiTenant`）在 `PlatformDbContext` 中协同工作，逻辑严密。
 
 ### 建议 (Recommendations)

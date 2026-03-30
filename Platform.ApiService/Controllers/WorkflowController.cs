@@ -36,6 +36,7 @@ public class WorkflowController : BaseApiController
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowInstanceQueryService _workflowInstanceQueryService;
     private readonly IWorkflowFilterPreferenceService _filterPreferenceService;
+    private readonly IFormDefinitionService _formDefinitionService;
     private readonly ILogger<WorkflowController> _logger;
 
     /// <summary>
@@ -51,6 +52,7 @@ public class WorkflowController : BaseApiController
     /// <param name="workflowDefinitionService">工作流定义服务</param>
     /// <param name="workflowInstanceQueryService">工作流实例查询服务</param>
     /// <param name="filterPreferenceService">过滤器偏好服务</param>
+    /// <param name="formDefinitionService">表单定义服务</param>
     /// <param name="logger">日志记录器</param>
     public WorkflowController(DbContext context,
         IWorkflowEngine workflowEngine,
@@ -62,6 +64,7 @@ public class WorkflowController : BaseApiController
         IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowInstanceQueryService workflowInstanceQueryService,
         IWorkflowFilterPreferenceService filterPreferenceService,
+        IFormDefinitionService formDefinitionService,
         ILogger<WorkflowController> logger
     ) {
         _context = context;
@@ -74,6 +77,7 @@ public class WorkflowController : BaseApiController
         _workflowDefinitionService = workflowDefinitionService;
         _workflowInstanceQueryService = workflowInstanceQueryService;
         _filterPreferenceService = filterPreferenceService;
+        _formDefinitionService = formDefinitionService;
         _logger = logger;
     }
 
@@ -428,7 +432,7 @@ public class WorkflowController : BaseApiController
     {
         try
         {
-            var definition = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == id);
+            var definition = await _workflowQueryService.GetWorkflowByIdAsync(id);
             if (definition == null)
             {
                 return NotFoundError("流程定义", id);
@@ -449,8 +453,7 @@ public class WorkflowController : BaseApiController
                 return Success(new { form = (FormDefinition?)null, dataScopeKey = (string?)null, initialValues = (object?)null });
             }
 
-            var forms = await _context.Set<FormDefinition>().Where(f => f.Id == binding.FormDefinitionId).ToListAsync();
-            var form = forms.FirstOrDefault();
+            var form = await _formDefinitionService.GetFormByIdAsync(binding.FormDefinitionId);
 
             if (form == null)
             {

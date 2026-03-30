@@ -1130,53 +1130,27 @@ public class WorkflowController : BaseApiController
         {
             var userId = GetRequiredUserId();
 
-            var preference = await _context.Set<UserWorkflowFilterPreference>()
-                .FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId);
-            if (preference == null)
+            var existing = await _filterPreferenceService.GetPreferenceByIdAsync(id);
+            if (existing == null || existing.UserId != userId)
             {
                 return NotFoundError("过滤器偏好", id);
             }
 
-            // Bug 21 修复：将异步操作提到 lambda 外部，避免 GetAwaiter().GetResult() 死锁
-            if (!string.IsNullOrEmpty(request.Name) && request.Name != preference.Name)
+            if (!string.IsNullOrEmpty(request.Name) && request.Name != existing.Name)
             {
-                var existingWithName = await _context.Set<UserWorkflowFilterPreference>()
-                    .FirstOrDefaultAsync(p => p.UserId == userId && p.Name == request.Name && p.Id != id);
-                if (existingWithName != null)
+                var hasName = await _filterPreferenceService.HasPreferenceByNameAsync(userId, request.Name);
+                if (hasName)
                 {
                     return ValidationError("已存在同名的过滤器偏好");
                 }
             }
 
-            if (request.IsDefault.HasValue && request.IsDefault.Value && !preference.IsDefault)
-            {
-                var defaultPrefs = await _context.Set<UserWorkflowFilterPreference>()
-                    .Where(p => p.UserId == userId && p.IsDefault && p.Id != id)
-                    .ToListAsync();
-                foreach (var p in defaultPrefs) p.IsDefault = false;
-            }
+            var name = string.IsNullOrEmpty(request.Name) ? existing.Name : request.Name;
+            var filterConfig = request.FilterConfig ?? existing.FilterConfig;
+            var isDefault = request.IsDefault ?? existing.IsDefault;
 
-            Action<UserWorkflowFilterPreference> updateAction = p =>
-            {
-                if (!string.IsNullOrEmpty(request.Name))
-                {
-                    p.Name = request.Name;
-                }
-
-                if (request.FilterConfig != null)
-                {
-                    p.FilterConfig = request.FilterConfig;
-                }
-
-                if (request.IsDefault.HasValue)
-                {
-                    p.IsDefault = request.IsDefault.Value;
-                }
-            };
-
-            updateAction(preference);
-            await _context.SaveChangesAsync();
-            return Success(preference);
+            var result = await _filterPreferenceService.UpdatePreferenceAsync(id, name, filterConfig, isDefault);
+            return Success(result);
         }
         catch (ArgumentException ex)
         {
@@ -1199,15 +1173,17 @@ public class WorkflowController : BaseApiController
         {
             var userId = GetRequiredUserId();
 
-            var preference = await _context.Set<UserWorkflowFilterPreference>()
-                .FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId);
-            if (preference == null)
+            var preference = await _filterPreferenceService.GetPreferenceByIdAsync(id);
+            if (preference == null || preference.UserId != userId)
             {
                 return NotFoundError("过滤器偏好", id);
             }
 
-            _context.Set<UserWorkflowFilterPreference>().Remove(preference);
-            await _context.SaveChangesAsync();
+            var result = await _filterPreferenceService.DeletePreferenceAsync(id);
+            if (!result)
+            {
+                return NotFoundError("过滤器偏好", id);
+            }
 
             return Success("过滤器偏好已删除");
         }
@@ -1228,9 +1204,8 @@ public class WorkflowController : BaseApiController
         {
             var userId = GetRequiredUserId();
 
-            var defaultPreference = await _context.Set<UserWorkflowFilterPreference>()
-                .FirstOrDefaultAsync(p => p.UserId == userId && p.IsDefault);
-            return Success(defaultPreference);
+            var preference = await _filterPreferenceService.GetDefaultPreferenceAsync(userId);
+            return Success(preference);
         }
         catch (Exception ex)
         {

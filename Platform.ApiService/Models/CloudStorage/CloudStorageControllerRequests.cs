@@ -3,8 +3,6 @@ using System.Collections.Generic;
 
 namespace Platform.ApiService.Models;
 
-#region 云存储请求模型
-
 /// <summary>
 /// 创建文件夹请求模型
 /// </summary>
@@ -103,5 +101,3 @@ public class BatchCopyRequest
     /// <summary>目标父文件夹ID</summary>
     public string TargetParentId { get; set; } = string.Empty;
 }
-
-#endregion

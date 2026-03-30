@@ -25,8 +25,6 @@ namespace Platform.ApiService.Controllers;
 [Route("api/workflows")]
 public class WorkflowController : BaseApiController
 {
-    private readonly DbContext _context;
-
     private readonly IWorkflowEngine _workflowEngine;
     private readonly IUserService _userService;
     private readonly IFieldValidationService _fieldValidationService;
@@ -38,12 +36,13 @@ public class WorkflowController : BaseApiController
     private readonly IWorkflowFilterPreferenceService _filterPreferenceService;
     private readonly IFormDefinitionService _formDefinitionService;
     private readonly IWorkflowTodoService _workflowTodoService;
+    private readonly IDocumentService _documentService;
+    private readonly IWorkflowInstanceService _workflowInstanceService;
     private readonly ILogger<WorkflowController> _logger;
 
     /// <summary>
     /// 初始化工作流管理控制器
     /// </summary>
-    /// <param name="context">数据库上下文</param>
     /// <param name="workflowEngine">工作流引擎</param>
     /// <param name="userService">用户服务</param>
     /// <param name="fieldValidationService">字段验证服务</param>
@@ -55,8 +54,10 @@ public class WorkflowController : BaseApiController
     /// <param name="filterPreferenceService">过滤器偏好服务</param>
     /// <param name="formDefinitionService">表单定义服务</param>
     /// <param name="workflowTodoService">工作流待办服务</param>
+    /// <param name="documentService">公文服务</param>
+    /// <param name="workflowInstanceService">工作流实例服务</param>
     /// <param name="logger">日志记录器</param>
-    public WorkflowController(DbContext context,
+    public WorkflowController(
         IWorkflowEngine workflowEngine,
         IUserService userService,
         IFieldValidationService fieldValidationService,
@@ -68,9 +69,10 @@ public class WorkflowController : BaseApiController
         IWorkflowFilterPreferenceService filterPreferenceService,
         IFormDefinitionService formDefinitionService,
         IWorkflowTodoService workflowTodoService,
+        IDocumentService documentService,
+        IWorkflowInstanceService workflowInstanceService,
         ILogger<WorkflowController> logger
     ) {
-        _context = context;
         _workflowEngine = workflowEngine;
         _userService = userService;
         _fieldValidationService = fieldValidationService;
@@ -82,6 +84,8 @@ public class WorkflowController : BaseApiController
         _filterPreferenceService = filterPreferenceService;
         _formDefinitionService = formDefinitionService;
         _workflowTodoService = workflowTodoService;
+        _documentService = documentService;
+        _workflowInstanceService = workflowInstanceService;
         _logger = logger;
     }
 
@@ -207,10 +211,7 @@ public class WorkflowController : BaseApiController
                 return q.OrderByDescending(w => w.CreatedAt);
             };
 
-            var queryable = _context.Set<WorkflowDefinition>().Where(filter ?? (w => true));
-            var totalCount = await queryable.LongCountAsync();
-            var items = await sort(queryable).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
-
+            var (items, totalCount) = await _workflowQueryService.GetWorkflowsAsync(request);
             return SuccessPaged(items, totalCount, request.Page, request.PageSize);
         }
         catch (ArgumentException ex)
@@ -672,7 +673,7 @@ public class WorkflowController : BaseApiController
                 Document? document = null;
                 if (!string.IsNullOrEmpty(instance.DocumentId))
                 {
-                    document = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == instance.DocumentId);
+                    document = await _documentService.GetDocumentAsync(instance.DocumentId);
                 }
                 if (document != null)
                 {
@@ -794,7 +795,7 @@ public class WorkflowController : BaseApiController
             {
                 if (string.IsNullOrEmpty(instance.DocumentId)) return ValidationError("当前实例未关联公文");
                 // Bug 15 修复：提前 await 获取 document，避免 GetAwaiter().GetResult() 同步阻塞
-                var existingDoc = await _context.Set<Document>().FirstOrDefaultAsync(x => x.Id == instance.DocumentId);
+                var existingDoc = await _documentService.GetDocumentAsync(instance.DocumentId);
                 Action<Document> updateAction = d =>
                 {
                     if (!string.IsNullOrWhiteSpace(binding.DataScopeKey))
@@ -817,7 +818,7 @@ public class WorkflowController : BaseApiController
                 if (existingDoc != null)
                 {
                     updateAction(existingDoc);
-                    await _context.SaveChangesAsync();
+                    await _documentService.UpdateDocumentAsync(existingDoc);
                 }
                 return Success(existingDoc?.FormData ?? (object)sanitizedValues);
             }
@@ -836,7 +837,7 @@ public class WorkflowController : BaseApiController
                 };
 
                 updateAction(instance);
-                await _context.SaveChangesAsync();
+                await _workflowInstanceService.SaveChangesAsync();
                 return Success(instance.GetVariablesDict() ?? valuesWithNulls);
             }
         }
@@ -1429,71 +1430,6 @@ public class WorkflowController : BaseApiController
             return ServerError($"解决导入冲突失败: {ex.Message}");
         }
     }
-}
-/// <summary>
-/// 工作流搜索请求
-/// </summary>
-public class WorkflowSearchRequest
-{
-    /// <summary>
-    /// 页码
-    /// </summary>
-    public int Page { get; set; } = 1;
-
-    /// <summary>
-    /// 每页数量
-    /// </summary>
-    public int PageSize { get; set; } = 10;
-
-    /// <summary>
-    /// 关键词（在名称、描述、类别中搜索）
-    /// </summary>
-    public string? Keyword { get; set; }
-
-    /// <summary>
-    /// 单个类别过滤（用于简单查询）
-    /// </summary>
-    public string? Category { get; set; }
-
-    /// <summary>
-    /// 类别列表
-    /// </summary>
-    public List<string>? Categories { get; set; }
-
-    /// <summary>
-    /// 是否启用过滤（用于简单查询）
-    /// </summary>
-    public bool? IsActive { get; set; }
-
-    /// <summary>
-    /// 状态列表（active, inactive, draft, archived）
-    /// </summary>
-    public List<string>? Statuses { get; set; }
-
-    /// <summary>
-    /// 日期范围过滤
-    /// </summary>
-    public DateRangeFilter? DateRange { get; set; }
-
-    /// <summary>
-    /// 使用次数范围
-    /// </summary>
-    public UsageRangeFilter? UsageRange { get; set; }
-
-    /// <summary>
-    /// 创建者ID列表
-    /// </summary>
-    public List<string>? CreatedBy { get; set; }
-
-    /// <summary>
-    /// 排序字段
-    /// </summary>
-    public string? SortBy { get; set; }
-
-    /// <summary>
-    /// 排序方向（asc, desc）
-    /// </summary>
-    public string? SortOrder { get; set; }
 }
 
 /// <summary>

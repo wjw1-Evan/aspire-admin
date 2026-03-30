@@ -32,6 +32,11 @@ public interface IDocumentService
     Task<Document?> UpdateDocumentAsync(string id, UpdateDocumentRequest request);
 
     /// <summary>
+    /// 直接更新公文实体
+    /// </summary>
+    Task UpdateDocumentAsync(Document document);
+
+    /// <summary>
     /// 获取公文详情
     /// </summary>
     Task<Document?> GetDocumentAsync(string id);
@@ -243,6 +248,15 @@ public class DocumentService : IDocumentService
         await _context.Set<Document>().AddAsync(document);
         await _context.SaveChangesAsync();
         return document;
+    }
+
+    /// <summary>
+    /// 直接更新公文实体
+    /// </summary>
+    public async Task UpdateDocumentAsync(Document document)
+    {
+        _context.Set<Document>().Update(document);
+        await _context.SaveChangesAsync();
     }
 
     /// <summary>

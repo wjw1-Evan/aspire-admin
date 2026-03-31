@@ -1,6 +1,7 @@
-using Platform.AppHost.Tests.Helpers;
-using Platform.AppHost.Tests.Models;
+using System.Collections.Generic;
+using Platform.AppHost.Tests;
 using Xunit;
+using Platform.AppHost.Tests.Helpers;
 
 namespace Platform.AppHost.Tests.Tests;
 
@@ -10,6 +11,7 @@ namespace Platform.AppHost.Tests.Tests;
 /// </summary>
 public class DocumentDataGeneratorTests
 {
+    [TestOrder(1)]
     [Fact]
     public void GenerateValidDocument_ShouldCreateDocumentWithUniqueTitle()
     {
@@ -17,17 +19,11 @@ public class DocumentDataGeneratorTests
         var document = TestDataGenerator.GenerateValidDocument();
 
         // Assert
-        Assert.NotNull(document);
-        Assert.NotNull(document.Title);
-        Assert.NotEmpty(document.Title);
-        Assert.StartsWith("doc_", document.Title);
-        Assert.NotNull(document.Content);
-        Assert.NotEmpty(document.Content);
-        Assert.Equal("Document", document.DocumentType);
-        Assert.Equal("General", document.Category);
+        AssertHelpers.AssertDocumentBasicFields(document);
         Assert.Null(document.FormData);
     }
 
+    [TestOrder(2)]
     [Fact]
     public void GenerateValidDocument_ShouldCreateUniqueTitles()
     {
@@ -39,6 +35,7 @@ public class DocumentDataGeneratorTests
         Assert.NotEqual(document1.Title, document2.Title);
     }
 
+    [TestOrder(3)]
     [Fact]
     public void GenerateDocumentWithFormData_ShouldIncludeFormData()
     {
@@ -54,14 +51,7 @@ public class DocumentDataGeneratorTests
         var document = TestDataGenerator.GenerateDocumentWithFormData(formData);
 
         // Assert
-        Assert.NotNull(document);
-        Assert.NotNull(document.Title);
-        Assert.NotEmpty(document.Title);
-        Assert.StartsWith("doc_", document.Title);
-        Assert.NotNull(document.Content);
-        Assert.NotEmpty(document.Content);
-        Assert.Equal("Document", document.DocumentType);
-        Assert.Equal("General", document.Category);
+        AssertHelpers.AssertDocumentBasicFields(document);
         Assert.NotNull(document.FormData);
         Assert.Equal(3, document.FormData.Count);
         Assert.Equal("value1", document.FormData["field1"]);
@@ -69,6 +59,7 @@ public class DocumentDataGeneratorTests
         Assert.Equal(true, document.FormData["field3"]);
     }
 
+    [TestOrder(4)]
     [Fact]
     public void GenerateDocumentWithFormData_ShouldCreateUniqueTitles()
     {
@@ -83,6 +74,7 @@ public class DocumentDataGeneratorTests
         Assert.NotEqual(document1.Title, document2.Title);
     }
 
+    [TestOrder(5)]
     [Fact]
     public void GenerateDocumentWithFormData_ShouldHandleEmptyFormData()
     {

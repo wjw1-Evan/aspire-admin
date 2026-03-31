@@ -10,18 +10,30 @@ public class TestOrderer : ITestCaseOrderer
 {
     public IEnumerable<TTestCase> OrderTestCases<TTestCase>(IEnumerable<TTestCase> testCases) where TTestCase : ITestCase
     {
-        return testCases.Select(tc => new { TestCase = tc, Order = GetOrder(tc) })
-            .OrderBy(x => x.Order)
-            .Select(x => x.TestCase);
+        // Order primarily by explicit TestOrder attribute, then fall back to DisplayName for stability
+        return testCases
+            .OrderBy(tc => GetOrder(tc))
+            .ThenBy(tc => tc.DisplayName);
     }
 
     private int GetOrder(ITestCase testCase)
     {
-        var methodInfo = testCase.TestMethod.Method;
-        var orderAttr = methodInfo.GetCustomAttributes(typeof(TestOrderAttribute))
-            .FirstOrDefault();
-
-        return orderAttr != null ? (int)orderAttr.GetType().GetProperty("Order")!.GetValue(orderAttr)! : int.MaxValue;
+        // Be defensive: if method info is unavailable, fall back to max value
+        var methodInfo = testCase?.TestMethod?.Method;
+        if (methodInfo == null)
+        {
+            return int.MaxValue;
+        }
+        try
+        {
+            var orderAttrs = methodInfo.GetCustomAttributes(typeof(TestOrderAttribute));
+            var orderAttr = orderAttrs?.FirstOrDefault() as TestOrderAttribute;
+            return orderAttr != null ? orderAttr.Order : int.MaxValue;
+        }
+        catch
+        {
+            return int.MaxValue;
+        }
     }
 }
 

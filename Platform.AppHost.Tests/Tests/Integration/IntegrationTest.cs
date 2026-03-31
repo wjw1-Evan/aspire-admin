@@ -6,6 +6,7 @@ namespace Platform.AppHost.Tests.Integration
     public class IntegrationTest
     {
         [RunIfIntegrationEnabled]
+        [Trait("Category", "Integration")]
         public async Task Connectivity_ShouldBeAvailable()
         {
             // Placeholder integration assertion. Real integration would call AppHost endpoints here.

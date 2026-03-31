@@ -4,10 +4,10 @@ using Xunit;
 namespace Platform.AppHost.Tests.Integration
 {
     [Collection("Integration")]
-    [Trait("Category", "Integration")]
     public class IntegrationTest
     {
         [Fact]
+        [Trait("Category", "Integration")]
         public async Task Connectivity_ShouldBeAvailable()
         {
             // Aspire integration test placeholder: always pass in this simplified local setup

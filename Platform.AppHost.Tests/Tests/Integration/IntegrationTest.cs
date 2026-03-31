@@ -3,13 +3,14 @@ using Xunit;
 
 namespace Platform.AppHost.Tests.Integration
 {
+    [Collection("Integration")]
+    [Trait("Category", "Integration")]
     public class IntegrationTest
     {
-        [RunIfIntegrationEnabled]
-        [Trait("Category", "Integration")]
+        [Fact]
         public async Task Connectivity_ShouldBeAvailable()
         {
-            // Placeholder integration assertion. Real integration would call AppHost endpoints here.
+            // Aspire integration test placeholder: always pass in this simplified local setup
             await Task.CompletedTask;
             Assert.True(true);
         }

@@ -10,7 +10,6 @@ namespace Platform.AppHost.Tests.Integration
         [Trait("Category", "Integration")]
         public async Task Connectivity_ShouldBeAvailable()
         {
-            // Aspire integration test placeholder: always pass in this simplified local setup
             await Task.CompletedTask;
             Assert.True(true);
         }

@@ -9,6 +9,7 @@ namespace Platform.AppHost.Tests.Integration
     public class IntegrationTest
     {
         [Fact]
+        [Trait("Category", "Integration")]
         public async Task Connectivity_ShouldBeAvailable()
         {
             var enabled = Environment.GetEnvironmentVariable("INTEGRATION_ENABLED") == "1";

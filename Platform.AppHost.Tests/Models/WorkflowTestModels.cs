@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace Platform.AppHost.Tests.Models;
 
 /// <summary>
@@ -257,7 +259,7 @@ public record WorkflowDefinitionResponse
     /// <summary>
     /// The version of the workflow definition.
     /// </summary>
-    public int Version { get; init; }
+    public JsonElement? Version { get; init; }
 
     /// <summary>
     /// Indicates whether the workflow definition is active.
@@ -277,5 +279,3 @@ public static class NodeTypes
     public const string Approval = "approval";
     public const string Condition = "condition";
 }
-
-

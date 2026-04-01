@@ -1,15 +1,100 @@
 /**
- * 统一的 API 响应入口（来自后端统一定义）
- * 直接在此处定义 ApiResponse，共享给全端使用
+ * API 响应处理工具文件（统一来源，匹配后端新格式）
+ */
+
+// 统一 API 响应格式
+/**
+ * 统一 API 响应格式（与后端 Platform.ServiceDefaults.Models.ApiResponse 完全一致）
  */
 export interface ApiResponse<T = any> {
   success: boolean;
-  code?: string;
-  data?: T;
   message?: string;
+  data?: T;
+  errors?: any;
+  details?: any;
   timestamp?: string;
   traceId?: string;
 }
+
+/**
+ * 分页响应格式 (PagedResult<T>)
+ * 统一分页结构，所有分页接口均使用，完全对齐后端：
+ * {
+ *   queryable: T[];
+ *   currentPage: number;
+ *   pageSize: number;
+ *   rowCount: number;
+ *   pageCount: number;
+ * }
+ */
+export interface PagedResult<T> {
+  queryable: T[];
+  currentPage: number;
+  pageSize: number;
+  rowCount: number;
+  pageCount: number;
+}
+
+/**
+ * 检查 API 响应是否成功
+ * @param response API 响应对象
+ * @returns 是否成功
+ */
+export function isResponseSuccess<T>(response: ApiResponse<T>): boolean {
+  return response?.success === true;
+}
+
+/**
+ * 获取 API 响应的成功消息
+ * @param response API 响应对象
+ * @returns 成功消息
+ */
+export function getSuccessMessage<T>(response: ApiResponse<T>): string {
+  return response?.message ?? '';
+}
+
+/**
+ * 检查 API 响应中的数据是否有效
+ * @param response API 响应对象
+ */
+export function isDataValid<T extends { isLogin?: boolean }>(response: ApiResponse<T>): boolean {
+  if (!isResponseSuccess(response)) {
+    return false;
+  }
+  if (response.data && 'isLogin' in (response.data as any)) {
+    return (response.data as any).isLogin !== false;
+  }
+  return true;
+}
+
+/**
+ * 获取 API 响应的错误消息
+ * @param response API 响应对象
+ * @param defaultMessage 默认错误消息
+ */
+export function getErrorMessage<T>(response: ApiResponse<T>, defaultMessage = '操作失败，请稍后重试'): string {
+  return response?.message ?? defaultMessage;
+}
+
+/**
+ * 提取 API 响应中的数据
+ * @param response API 响应对象
+ * @param defaultValue 默认值
+ */
+export function extractData<T>(response: ApiResponse<T>, defaultValue: T | null = null): T | null {
+  if (isResponseSuccess(response)) {
+    return response?.data as T;
+  }
+  return defaultValue;
+}
+
+/**
+ * 处理认证相关的 API 响应
+ */
+export function isAuthResponseValid<T extends { isLogin?: boolean }>(response: ApiResponse<T>): boolean {
+  return isResponseSuccess(response) && isDataValid(response);
+}
+
 
 // 登录请求参数
 export interface LoginRequest {
@@ -79,13 +164,8 @@ export interface ChangePasswordRequest {
   confirmPassword: string;
 }
 
-// 更新用户资料请求
-export interface UpdateProfileParams {
-  name?: string;
-  email?: string;
-  age?: number;
-  avatar?: string;
-}
+
+// UpdateProfileParams 已废弃，请统一使用 UpdateProfileRequest
 
 // 刷新令牌请求
 export interface RefreshTokenRequest {
@@ -119,19 +199,7 @@ export enum ApiErrorCode {
   REFRESH_TOKEN_ERROR = 'REFRESH_TOKEN_ERROR',
 }
 
-// ApiResponseLegacy 已废弃，统一使用 ApiResponse<T> 结构
-
-// 登录结果（向后兼容）
-export interface LoginResult {
-  status?: string;
-  type?: string;
-  currentAuthority?: string;
-  token?: string;
-  refreshToken?: string;
-  expiresAt?: string;
-  code?: string;
-  message?: string;
-}
+// 兼容类型已移除，如需兼容旧接口请单独引入 legacy-types.ts
 
 // 用户列表请求
 export interface UserListRequest {
@@ -144,13 +212,7 @@ export interface UserListRequest {
   sortOrder?: 'asc' | 'desc';
 }
 
-// 用户列表响应
-export interface UserListResponse {
-  queryable: AppUser[];
-  rowCount: number;
-  currentPage: number;
-  pageSize: number;
-}
+// 用户列表响应（推荐直接使用 PagedResult<AppUser>）
 
 // 用户统计信息
 export interface UserStatisticsResponse {
@@ -190,13 +252,7 @@ export interface CreateUserManagementRequest {
   isActive: boolean;
 }
 
-// 更新用户管理请求
-export interface UpdateUserManagementRequest {
-  username?: string;
-  email?: string;
-  role?: string;
-  isActive?: boolean;
-}
+// UpdateProfileParams 已废弃，请统一使用 UpdateProfileRequest
 
 // 更新用户资料请求（个人中心）
 export interface UpdateProfileRequest {
@@ -205,17 +261,9 @@ export interface UpdateProfileRequest {
   age?: number;
 }
 
-// 创建用户请求（旧版本）
-export interface CreateUserRequest {
-  name: string;
-  email: string;
-}
 
-// 更新用户请求（旧版本）
-export interface UpdateUserRequest {
-  name?: string;
-  email?: string;
-}
+// CreateUserRequest、UpdateUserRequest 已废弃，请统一使用 CreateUserManagementRequest/UpdateUserManagementRequest
+// 如需兼容旧接口请单独引入 legacy-types.ts
 
 // 增强的认证状态类型 - 与Admin端保持统一
 export interface AuthState {

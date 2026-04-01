@@ -97,18 +97,10 @@ public class AuthController : BaseApiController
 
     public async Task<IActionResult> GetCurrentUser()
     {
-        _logger.LogInformation("【AuthController.GetCurrentUser】!string.IsNullOrEmpty(CurrentUserId): {IsAuth}, CurrentUserId: {UserId}, HttpContext.User: {User}, Claims: {Claims}",
-            !string.IsNullOrEmpty(CurrentUserId),
+        _logger.LogInformation("【AuthController.GetCurrentUser】UserId: {UserId}, HttpContext.User: {User}, Claims: {Claims}",
             CurrentUserId,
             HttpContext.User.Identity?.Name,
             string.Join(", ", HttpContext.User.Claims.Select(c => $"{c.Type}={c.Value}")));
-
-        // 检查用户是否已认证
-        if (!string.IsNullOrEmpty(CurrentUserId) == false)
-        {
-            _logger.LogWarning("【AuthController.GetCurrentUser】用户未认证，返回 401");
-            throw new UnauthorizedAccessException("未授权访问");
-        }
 
         var user = await _authService.GetCurrentUserAsync();
         return Success(user.EnsureFound("用户"));

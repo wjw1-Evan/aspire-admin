@@ -254,8 +254,7 @@ public class UserController : BaseApiController
     public async Task<IActionResult> DeleteUser(string id, [FromQuery] string? reason = null)
     {
         // 检查是否删除自己（不允许）
-        var currentUserId = CurrentUserId;
-        if (currentUserId == id)
+        if (RequiredUserId == id)
             throw new ServiceException("不能删除当前登录用户", 400);
 
         var deleted = await _userService.DeleteUserAsync(id, reason);
@@ -325,11 +324,9 @@ public class UserController : BaseApiController
     [HttpGet("{id}/activity-logs")]
     public async Task<IActionResult> GetUserActivityLogs(string id, [FromQuery] int limit = 50)
     {
-        // 🔒 安全修复：增加 IDOR 权限检查
-        var currentUserId = CurrentUserId;
-        if (!string.IsNullOrEmpty(currentUserId))
+        if (!string.IsNullOrEmpty(CurrentUserId))
         {
-            await _userService.EnsureUserAccessAsync(currentUserId, id);
+            await _userService.EnsureUserAccessAsync(CurrentUserId, id);
         }
 
         var logs = await _activityLogService.GetUserActivityLogsAsync(id, limit);
@@ -451,7 +448,7 @@ public class UserController : BaseApiController
     public async Task<IActionResult> GetCurrentUserProfile()
     {
         var currentUser = await _authService.GetCurrentUserAsync();
-        return Success(currentUser.EnsureFound("用户", CurrentUserId ?? "未知"));
+        return Success(currentUser.EnsureFound("用户", RequiredUserId));
     }
 
     /// <summary>

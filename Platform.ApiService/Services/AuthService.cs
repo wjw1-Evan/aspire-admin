@@ -91,7 +91,7 @@ public class AuthService : IAuthService
         {
             existingRecord.FailureCount++;
             existingRecord.LastFailureAt = DateTime.UtcNow;
-            existingRecord.ExpiresAt = DateTime.UtcNow.AddMinutes(30);
+            existingRecord.ExpiresAt = DateTime.UtcNow.AddMinutes(AuthConstants.LoginFailureExpiresMinutes);
         }
         else
         {
@@ -101,7 +101,7 @@ public class AuthService : IAuthService
                 Type = type,
                 FailureCount = 1,
                 LastFailureAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(30)
+                ExpiresAt = DateTime.UtcNow.AddMinutes(AuthConstants.LoginFailureExpiresMinutes)
             };
             await _context.Set<LoginFailureRecord>().AddAsync(newRecord);
         }
@@ -306,8 +306,8 @@ public class AuthService : IAuthService
         var token = _jwtService.GenerateToken(user);
         var refreshToken = _jwtService.GenerateRefreshToken(user);
 
-        var expirationMinutes = int.Parse(_configuration["Jwt:ExpirationMinutes"] ?? "1440");
-        var refreshTokenExpirationDays = int.Parse(_configuration["Jwt:RefreshTokenExpirationDays"] ?? "7");
+        var expirationMinutes = int.Parse(_configuration["Jwt:ExpirationMinutes"] ?? AuthConstants.DefaultTokenExpirationMinutes.ToString());
+        var refreshTokenExpirationDays = int.Parse(_configuration["Jwt:RefreshTokenExpirationDays"] ?? AuthConstants.DefaultRefreshTokenExpirationDays.ToString());
         var refreshTokenEntity = new RefreshToken
         {
             UserId = user.Id!,
@@ -544,8 +544,8 @@ public class AuthService : IAuthService
         {
             company = new Company
             {
-                Name = $"{user.Username} 的企业",
-                Code = $"personal-{user.Id}",
+                Name = $"{user.Username}{CompanyConstants.PersonalCompanyNameSuffix}",
+                Code = $"{CompanyConstants.PersonalCompanyCodePrefix}{user.Id}",
                 Description = "个人企业",
                 IsActive = true
             };
@@ -614,11 +614,11 @@ public class AuthService : IAuthService
         {
             company = new Company
             {
-                Name = $"{user.Username} 的企业",
-                Code = $"personal-{user.Id}",
+                Name = $"{user.Username}{CompanyConstants.PersonalCompanyNameSuffix}",
+                Code = $"{CompanyConstants.PersonalCompanyCodePrefix}{user.Id}",
                 Description = "个人企业",
                 IsActive = true,
-                MaxUsers = 50
+                MaxUsers = CompanyConstants.DefaultPersonalCompanyMaxUsers
             };
 
             await _context.Set<Company>().AddAsync(company);
@@ -854,10 +854,10 @@ public class AuthService : IAuthService
 
         var bytes = new byte[4];
         RandomNumberGenerator.Fill(bytes);
-        var code = (BitConverter.ToUInt32(bytes, 0) % 900000 + 100000).ToString();
+        var code = (BitConverter.ToUInt32(bytes, 0) % AuthConstants.PasswordResetCodeMax + AuthConstants.PasswordResetCodeMin).ToString();
 
         var cacheKey = $"PasswordResetCode_{request.Email}";
-        _memoryCache.Set(cacheKey, code, TimeSpan.FromMinutes(5));
+        _memoryCache.Set(cacheKey, code, TimeSpan.FromMinutes(AuthConstants.PasswordResetCodeExpiresMinutes));
 
         var htmlBody = $@"
 <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;'>

@@ -27,15 +27,18 @@ public abstract class BaseApiController : ControllerBase
     protected IActionResult Success(object data, string? message = null)
         => Ok(CreateResponse(true, message, data));
 
-    protected IActionResult Fail(string message, int httpStatusCode = 400)
-        => throw new ServiceException(message, httpStatusCode);
-
     protected IActionResult? ValidateModelState()
-        => ModelState.IsValid ? null : Fail(
-            string.Join("; ", ModelState.Values
+    {
+        if (!ModelState.IsValid)
+        {
+            var message = string.Join("; ", ModelState.Values
                 .Where(x => x?.Errors.Count > 0)
                 .SelectMany(x => x!.Errors)
-                .Select(x => x.ErrorMessage)));
+                .Select(x => x.ErrorMessage));
+            throw new ArgumentException(message);
+        }
+        return null;
+    }
 
     protected string GetClientIpAddress()
         => Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim()

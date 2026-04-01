@@ -28,7 +28,7 @@ public class FormController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
     }
 
@@ -41,14 +41,14 @@ public class FormController : BaseApiController
             var form = await _formService.GetFormByIdAsync(id);
             if (form == null)
             {
-                return Fail("表单定义 {id} 不存在");
+                throw new ArgumentException("表单定义 {id} 不存在");
             }
 
             return Success(form);
         }
         catch (Exception ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
     }
 
@@ -63,11 +63,11 @@ public class FormController : BaseApiController
         }
         catch (ArgumentException ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (Exception ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
     }
 
@@ -80,14 +80,14 @@ public class FormController : BaseApiController
             var result = await _formService.UpdateFormAsync(id, form);
             if (result == null)
             {
-                return Fail("表单定义 {id} 不存在");
+                throw new ArgumentException("表单定义 {id} 不存在");
             }
 
             return Success(result);
         }
         catch (Exception ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
     }
 
@@ -100,14 +100,14 @@ public class FormController : BaseApiController
             var result = await _formService.DeleteFormAsync(id);
             if (!result)
             {
-                return Fail("表单定义 {id} 不存在");
+                throw new ArgumentException("表单定义 {id} 不存在");
             }
 
             return Success(null, "表单定义已删除");
         }
         catch (Exception ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
     }
 }

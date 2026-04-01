@@ -96,7 +96,7 @@ public class IoTController : BaseApiController
     {
         var result = await _iotService.DeleteGatewayAsync(id);
         if (!result)
-            return Fail("Gateway {id} 不存在");
+            throw new ArgumentException("Gateway {id} 不存在");
 
         return Success(null, "模拟：网关已重写");
     }
@@ -179,7 +179,7 @@ public class IoTController : BaseApiController
     {
         var result = await _iotService.DeleteDeviceAsync(id);
         if (!result)
-            return Fail("Device {id} 不存在");
+            throw new ArgumentException("Device {id} 不存在");
 
         return Success(null, "Device deleted successfully");
     }
@@ -216,7 +216,7 @@ public class IoTController : BaseApiController
     {
         var result = await _iotService.HandleDeviceConnectAsync(request);
         if (!result)
-            return Fail("Device not found");
+            throw new ArgumentException("Device not found");
 
         return Success(null, "Device connected successfully");
     }
@@ -238,7 +238,7 @@ public class IoTController : BaseApiController
     {
         var result = await _iotService.HandleDeviceDisconnectAsync(request);
         if (!result)
-            return Fail("Device not found");
+            throw new ArgumentException("Device not found");
 
         return Success(null, "Device disconnected successfully");
     }
@@ -321,7 +321,7 @@ public class IoTController : BaseApiController
     {
         var result = await _iotService.DeleteDataPointAsync(id);
         if (!result)
-            return Fail("DataPoint {id} 不存在");
+            throw new ArgumentException("DataPoint {id} 不存在");
 
         return Success(null, "DataPoint deleted successfully");
     }
@@ -390,14 +390,14 @@ public class IoTController : BaseApiController
         {
             var stats = await _iotService.GetDataStatisticsAsync(dataPointId, startTime, endTime);
             if (stats == null)
-                return Fail("Data {dataPointId} 不存在");
+                throw new ArgumentException("Data {dataPointId} 不存在");
 
             return Success(stats);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting data statistics");
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
     }
 
@@ -428,7 +428,7 @@ public class IoTController : BaseApiController
     {
         var result = await _iotService.HandleEventAsync(eventId, request.Remarks ?? "");
         if (!result)
-            return Fail("Event {eventId} 不存在");
+            throw new ArgumentException("Event {eventId} 不存在");
 
         return Success(null, "Event handled successfully");
     }

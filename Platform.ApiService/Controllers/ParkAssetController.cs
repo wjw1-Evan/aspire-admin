@@ -44,7 +44,7 @@ public class ParkAssetController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取楼宇列表失败");
-            return Fail("获取楼宇列表失败");
+            throw new ArgumentException("获取楼宇列表失败");
         }
     }
 
@@ -58,13 +58,13 @@ public class ParkAssetController : BaseApiController
         {
             var result = await _assetService.GetBuildingByIdAsync(id);
             if (result == null)
-                return Fail("楼宇不存在");
+                throw new ArgumentException("楼宇不存在");
             return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取楼宇详情失败: {Id}", id);
-            return Fail("获取楼宇详情失败");
+            throw new ArgumentException("获取楼宇详情失败");
         }
     }
 
@@ -82,7 +82,7 @@ public class ParkAssetController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "创建楼宇失败");
-            return Fail("创建楼宇失败: " + ex.Message);
+            throw new ArgumentException("创建楼宇失败: " + ex.Message);
         }
     }
 
@@ -96,13 +96,13 @@ public class ParkAssetController : BaseApiController
         {
             var result = await _assetService.UpdateBuildingAsync(id, request);
             if (result == null)
-                return Fail("楼宇不存在");
+                throw new ArgumentException("楼宇不存在");
             return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "更新楼宇失败: {Id}", id);
-            return Fail("更新楼宇失败: " + ex.Message);
+            throw new ArgumentException("更新楼宇失败: " + ex.Message);
         }
     }
 
@@ -116,13 +116,13 @@ public class ParkAssetController : BaseApiController
         {
             var result = await _assetService.DeleteBuildingAsync(id);
             if (!result)
-                return Fail("楼宇不存在或无法删除");
+                throw new ArgumentException("楼宇不存在或无法删除");
             return Success(true);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "删除楼宇失败: {Id}", id);
-            return Fail("删除楼宇失败: " + ex.Message);
+            throw new ArgumentException("删除楼宇失败: " + ex.Message);
         }
     }
 
@@ -144,7 +144,7 @@ public class ParkAssetController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取房源列表失败");
-            return Fail("获取房源列表失败");
+            throw new ArgumentException("获取房源列表失败");
         }
     }
 
@@ -158,13 +158,13 @@ public class ParkAssetController : BaseApiController
         {
             var result = await _assetService.GetPropertyUnitByIdAsync(id);
             if (result == null)
-                return Fail("房源不存在");
+                throw new ArgumentException("房源不存在");
             return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取房源详情失败: {Id}", id);
-            return Fail("获取房源详情失败");
+            throw new ArgumentException("获取房源详情失败");
         }
     }
 
@@ -182,7 +182,7 @@ public class ParkAssetController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "创建房源失败");
-            return Fail("创建房源失败: " + ex.Message);
+            throw new ArgumentException("创建房源失败: " + ex.Message);
         }
     }
 
@@ -196,13 +196,13 @@ public class ParkAssetController : BaseApiController
         {
             var result = await _assetService.UpdatePropertyUnitAsync(id, request);
             if (result == null)
-                return Fail("房源不存在");
+                throw new ArgumentException("房源不存在");
             return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "更新房源失败: {Id}", id);
-            return Fail("更新房源失败: " + ex.Message);
+            throw new ArgumentException("更新房源失败: " + ex.Message);
         }
     }
 
@@ -216,13 +216,13 @@ public class ParkAssetController : BaseApiController
         {
             var result = await _assetService.DeletePropertyUnitAsync(id);
             if (!result)
-                return Fail("房源不存在或无法删除");
+                throw new ArgumentException("房源不存在或无法删除");
             return Success(true);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "删除房源失败: {Id}", id);
-            return Fail("删除房源失败: " + ex.Message);
+            throw new ArgumentException("删除房源失败: " + ex.Message);
         }
     }
 
@@ -246,7 +246,7 @@ public class ParkAssetController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取资产统计失败");
-            return Fail("获取资产统计失败");
+            throw new ArgumentException("获取资产统计失败");
         }
     }
 

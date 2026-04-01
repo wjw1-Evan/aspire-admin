@@ -52,7 +52,7 @@ public class ProjectStatisticsController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取项目统计数据失败");
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
     }
 
@@ -77,7 +77,7 @@ public class ProjectStatisticsController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "生成 AI 报告失败");
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
     }
 }

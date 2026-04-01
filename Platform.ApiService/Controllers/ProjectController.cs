@@ -39,7 +39,7 @@ public class ProjectController : BaseApiController
             return validationResult;
 
         if (string.IsNullOrEmpty(request.Name))
-            return Fail("项目名称不能为空");
+            throw new ArgumentException("项目名称不能为空");
 
         try
         {
@@ -48,7 +48,7 @@ public class ProjectController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
     }
 
@@ -73,15 +73,15 @@ public class ProjectController : BaseApiController
         }
         catch (KeyNotFoundException)
         {
-            return Fail("项目 {id} 不存在");
+            throw new ArgumentException("项目 {id} 不存在");
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (Exception ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
     }
 
@@ -97,17 +97,17 @@ public class ProjectController : BaseApiController
             var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
             var deleted = await _projectService.DeleteProjectAsync(id, userId, reason);
             if (!deleted)
-                return Fail("项目 {id} 不存在");
+                throw new ArgumentException("项目 {id} 不存在");
 
             return Success(null, "项目已删除");
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (Exception ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
     }
 
@@ -122,13 +122,13 @@ public class ProjectController : BaseApiController
         {
             var project = await _projectService.GetProjectByIdAsync(id);
             if (project == null)
-                return Fail("项目 {id} 不存在");
+                throw new ArgumentException("项目 {id} 不存在");
 
             return Success(project);
         }
         catch (Exception ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
     }
 
@@ -146,7 +146,7 @@ public class ProjectController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
     }
 
@@ -164,7 +164,7 @@ public class ProjectController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
     }
 
@@ -188,15 +188,15 @@ public class ProjectController : BaseApiController
         }
         catch (KeyNotFoundException)
         {
-            return Fail("项目 {projectId} 不存在");
+            throw new ArgumentException("项目 {projectId} 不存在");
         }
         catch (InvalidOperationException ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (Exception ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
     }
 
@@ -211,13 +211,13 @@ public class ProjectController : BaseApiController
         {
             var removed = await _projectService.RemoveProjectMemberAsync(projectId, userId);
             if (!removed)
-                return Fail("项目成员 {userId} 不存在");
+                throw new ArgumentException("项目成员 {userId} 不存在");
 
             return Success(null, "成员已移除");
         }
         catch (Exception ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
     }
 
@@ -235,7 +235,7 @@ public class ProjectController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
     }
 }

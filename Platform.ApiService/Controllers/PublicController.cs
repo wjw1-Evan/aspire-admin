@@ -96,7 +96,7 @@ public class PublicController : BaseApiController
     {
         if (User?.Identity?.IsAuthenticated != true)
         {
-            return Fail("未授权访问", 401);
+            throw new UnauthorizedAccessException("未授权访问");
         }
 
         var userInfo = new

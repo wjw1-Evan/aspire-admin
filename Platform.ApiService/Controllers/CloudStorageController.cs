@@ -84,7 +84,7 @@ public class CloudStorageController : BaseApiController
     public async Task<IActionResult> BatchUploadFiles([FromForm] IList<IFormFile> files, [FromForm] string? parentId = null)
     {
         if (files == null || files.Count == 0)
-            return Fail("文件列表不能为空");
+            throw new ArgumentException("文件列表不能为空");
 
         var result = await _cloudStorageService.UploadMultipleFilesAsync(files, parentId ?? string.Empty);
         _logger.LogInformation("批量上传文件, Count: {Count}", files.Count);
@@ -100,11 +100,11 @@ public class CloudStorageController : BaseApiController
     public async Task<IActionResult> GetFileItem(string id)
     {
         if (string.IsNullOrWhiteSpace(id))
-            return Fail("文件项ID不能为空");
+            throw new ArgumentException("文件项ID不能为空");
 
         var fileItem = await _cloudStorageService.GetFileItemAsync(id);
         if (fileItem == null)
-            return Fail("文件项 {id} 不存在");
+            throw new ArgumentException("文件项 {id} 不存在");
 
         return Success(fileItem);
     }
@@ -135,7 +135,7 @@ public class CloudStorageController : BaseApiController
     public async Task<IActionResult> RenameFileItem(string id, [FromBody] RenameRequest request)
     {
         if (string.IsNullOrWhiteSpace(id))
-            return Fail("文件项ID不能为空");
+            throw new ArgumentException("文件项ID不能为空");
 
         var fileItem = await _cloudStorageService.RenameFileItemAsync(id, request.NewName);
         _logger.LogInformation("重命名文件, Id: {Id}", id);
@@ -153,7 +153,7 @@ public class CloudStorageController : BaseApiController
     public async Task<IActionResult> MoveFileItem(string id, [FromBody] MoveRequest request)
     {
         if (string.IsNullOrWhiteSpace(id))
-            return Fail("文件项ID不能为空");
+            throw new ArgumentException("文件项ID不能为空");
 
         var fileItem = await _cloudStorageService.MoveFileItemAsync(id, request.NewParentId);
         _logger.LogInformation("移动文件, Id: {Id}", id);
@@ -171,7 +171,7 @@ public class CloudStorageController : BaseApiController
     public async Task<IActionResult> CopyFileItem(string id, [FromBody] CopyRequest request)
     {
         if (string.IsNullOrWhiteSpace(id))
-            return Fail("文件项ID不能为空");
+            throw new ArgumentException("文件项ID不能为空");
 
         var fileItem = await _cloudStorageService.CopyFileItemAsync(id, request.NewParentId, request.NewName);
         _logger.LogInformation("复制文件, Id: {Id}", id);
@@ -188,7 +188,7 @@ public class CloudStorageController : BaseApiController
     public async Task<IActionResult> DeleteFileItem(string id)
     {
         if (string.IsNullOrWhiteSpace(id))
-            return Fail("文件项ID不能为空");
+            throw new ArgumentException("文件项ID不能为空");
 
         await _cloudStorageService.DeleteFileItemAsync(id);
         _logger.LogInformation("删除文件项 (移动到回收站), Id: {Id}", id);
@@ -208,11 +208,11 @@ public class CloudStorageController : BaseApiController
     public async Task<IActionResult> DownloadFile(string id)
     {
         if (string.IsNullOrWhiteSpace(id))
-            return Fail("文件ID不能为空");
+            throw new ArgumentException("文件ID不能为空");
 
         var fileItem = await _cloudStorageService.GetFileItemAsync(id);
         if (fileItem == null)
-            return Fail("文件 {id} 不存在");
+            throw new ArgumentException("文件 {id} 不存在");
 
         var stream = await _cloudStorageService.DownloadFileAsync(id);
         _logger.LogInformation("下载文件, Id: {Id}", id);
@@ -230,7 +230,7 @@ public class CloudStorageController : BaseApiController
     public async Task<IActionResult> DownloadFolderAsZip(string id)
     {
         if (string.IsNullOrWhiteSpace(id))
-            return Fail("文件夹ID不能为空");
+            throw new ArgumentException("文件夹ID不能为空");
 
         var stream = await _cloudStorageService.DownloadFolderAsZipAsync(id);
         _logger.LogInformation("下载文件夹ZIP, Id: {Id}", id);
@@ -246,7 +246,7 @@ public class CloudStorageController : BaseApiController
     public async Task<IActionResult> PreviewFile(string id)
     {
         if (string.IsNullOrWhiteSpace(id))
-            return Fail("文件ID不能为空");
+            throw new ArgumentException("文件ID不能为空");
 
         var previewInfo = await _cloudStorageService.GetPreviewInfoAsync(id);
         return Success(previewInfo);
@@ -261,7 +261,7 @@ public class CloudStorageController : BaseApiController
     public async Task<IActionResult> GetThumbnail(string id)
     {
         if (string.IsNullOrWhiteSpace(id))
-            return Fail("文件ID不能为空");
+            throw new ArgumentException("文件ID不能为空");
 
         var stream = await _cloudStorageService.GetThumbnailAsync(id);
         return File(stream, "image/jpeg");
@@ -288,7 +288,7 @@ public class CloudStorageController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "搜索失败");
-            return Fail("服务器内部错误", 500);
+            throw new ArgumentException("服务器内部错误");
         }
     }
 
@@ -302,7 +302,7 @@ public class CloudStorageController : BaseApiController
     public async Task<IActionResult> GetRecentFiles([FromQuery] int count = 10)
     {
         if (count < 1 || count > 100)
-            return Fail("返回数量必须在 1-100 之间");
+            throw new ArgumentException("返回数量必须在 1-100 之间");
 
         try
         {
@@ -312,7 +312,7 @@ public class CloudStorageController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取最近文件失败");
-            return Fail("服务器内部错误", 500);
+            throw new ArgumentException("服务器内部错误");
         }
     }
 
@@ -336,7 +336,7 @@ public class CloudStorageController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取回收站统计失败");
-            return Fail("服务器内部错误", 500);
+            throw new ArgumentException("服务器内部错误");
         }
     }
 
@@ -394,7 +394,7 @@ public class CloudStorageController : BaseApiController
     public async Task<IActionResult> RestoreFileItem(string id, [FromBody] RestoreRequest request)
     {
         if (string.IsNullOrWhiteSpace(id))
-            return Fail("文件项ID不能为空");
+            throw new ArgumentException("文件项ID不能为空");
 
         var fileItem = await _cloudStorageService.RestoreFileItemAsync(id, request?.NewParentId);
         _logger.LogInformation("恢复文件, Id: {Id}", id);
@@ -411,7 +411,7 @@ public class CloudStorageController : BaseApiController
     public async Task<IActionResult> PermanentDeleteFileItem(string id)
     {
         if (string.IsNullOrWhiteSpace(id))
-            return Fail("文件项ID不能为空");
+            throw new ArgumentException("文件项ID不能为空");
 
         await _cloudStorageService.PermanentDeleteFileItemAsync(id);
         _logger.LogInformation("永久删除文件, Id: {Id}", id);
@@ -478,7 +478,7 @@ public class CloudStorageController : BaseApiController
     public async Task<IActionResult> BatchPermanentDelete([FromBody] BatchOperationRequest request)
     {
         if (request?.Ids == null || request.Ids.Count == 0)
-            return Fail("文件项ID列表不能为空");
+            throw new ArgumentException("文件项ID列表不能为空");
 
         var successCount = 0;
         var failureCount = 0;
@@ -514,7 +514,7 @@ public class CloudStorageController : BaseApiController
     public async Task<IActionResult> BatchDelete([FromBody] BatchOperationRequest request)
     {
         if (request.Ids == null || request.Ids.Count == 0)
-            return Fail("文件项ID列表不能为空");
+            throw new ArgumentException("文件项ID列表不能为空");
 
         var result = await _cloudStorageService.BatchDeleteAsync(request.Ids);
         _logger.LogInformation("批量删除, Success: {SuccessCount}, Failure: {FailureCount}", result.SuccessCount, result.FailureCount);
@@ -531,7 +531,7 @@ public class CloudStorageController : BaseApiController
     public async Task<IActionResult> BatchMove([FromBody] BatchMoveRequest request)
     {
         if (request.Ids == null || request.Ids.Count == 0)
-            return Fail("文件项ID列表不能为空");
+            throw new ArgumentException("文件项ID列表不能为空");
 
         var result = await _cloudStorageService.BatchMoveAsync(request.Ids, request.TargetParentId);
         _logger.LogInformation("批量移动, Success: {SuccessCount}, Failure: {FailureCount}", result.SuccessCount, result.FailureCount);
@@ -548,7 +548,7 @@ public class CloudStorageController : BaseApiController
     public async Task<IActionResult> BatchCopy([FromBody] BatchCopyRequest request)
     {
         if (request.Ids == null || request.Ids.Count == 0)
-            return Fail("文件项ID列表不能为空");
+            throw new ArgumentException("文件项ID列表不能为空");
 
         var result = await _cloudStorageService.BatchCopyAsync(request.Ids, request.TargetParentId);
         _logger.LogInformation("批量复制, Success: {SuccessCount}, Failure: {FailureCount}", result.SuccessCount, result.FailureCount);

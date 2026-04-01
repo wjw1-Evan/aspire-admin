@@ -43,7 +43,7 @@ public class KnowledgeBaseController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取知识库列表失败");
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
     }
 
@@ -57,12 +57,12 @@ public class KnowledgeBaseController : BaseApiController
         try
         {
             var kb = await _knowledgeService.GetByIdAsync(id);
-            if (kb == null) return Fail("知识库 {id} 不存在");
+            if (kb == null) throw new ArgumentException("知识库 {id} 不存在");
             return Success(kb);
         }
         catch (Exception ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
     }
 
@@ -75,14 +75,14 @@ public class KnowledgeBaseController : BaseApiController
     {
         try
         {
-            if (string.IsNullOrEmpty(knowledgeBase.Name)) return Fail("名称不能为空");
+            if (string.IsNullOrEmpty(knowledgeBase.Name)) throw new ArgumentException("名称不能为空");
             
             var created = await _knowledgeService.CreateAsync(knowledgeBase);
             return Success(created);
         }
         catch (Exception ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
     }
 
@@ -103,12 +103,12 @@ public class KnowledgeBaseController : BaseApiController
                 kb.IsActive = request.IsActive;
             });
 
-            if (updated == null) return Fail("知识库 {id} 不存在");
+            if (updated == null) throw new ArgumentException("知识库 {id} 不存在");
             return Success(updated);
         }
         catch (Exception ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
     }
 
@@ -122,12 +122,12 @@ public class KnowledgeBaseController : BaseApiController
         try
         {
             var result = await _knowledgeService.DeleteAsync(id);
-            if (!result) return Fail("知识库 {id} 不存在");
+            if (!result) throw new ArgumentException("知识库 {id} 不存在");
             return Success(null, "删除成功");
         }
         catch (Exception ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
     }
 }

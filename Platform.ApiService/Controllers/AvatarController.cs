@@ -42,7 +42,7 @@ public class AvatarController : BaseApiController
     {
         if (file == null || file.Length == 0)
         {
-            return Fail("请选择要上传的文件");
+            throw new ArgumentException("请选择要上传的文件");
         }
 
         // 验证文件类型
@@ -50,13 +50,13 @@ public class AvatarController : BaseApiController
         var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
         if (!allowedExtensions.Contains(extension))
         {
-            return Fail("仅支持 JPG, PNG, GIF, WEBP 格式的图片");
+            throw new ArgumentException("仅支持 JPG, PNG, GIF, WEBP 格式的图片");
         }
 
         // 验证文件大小 (5MB)
         if (file.Length > 5 * 1024 * 1024)
         {
-            return Fail("图片大小不能超过 5MB");
+            throw new ArgumentException("图片大小不能超过 5MB");
         }
 
         try
@@ -90,7 +90,7 @@ public class AvatarController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "头像上传失败");
-            return Fail($"头像上传失败: {ex.Message}", 500);
+            throw new ArgumentException($"头像上传失败: {ex.Message}");
         }
     }
 
@@ -106,7 +106,7 @@ public class AvatarController : BaseApiController
     {
         if (string.IsNullOrEmpty(fileName))
         {
-            return Fail("文件名不能为空");
+            throw new ArgumentException("文件名不能为空");
         }
 
         try
@@ -116,7 +116,7 @@ public class AvatarController : BaseApiController
 
             if (fileInfo == null)
             {
-                return Fail("头像文件 {fileName} 不存在");
+                throw new ArgumentException("头像文件 {fileName} 不存在");
             }
 
             // 下载文件到流
@@ -134,7 +134,7 @@ public class AvatarController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "读取头像失败: {FileName}", fileName);
-            return Fail("头像文件 {fileName} 不存在");
+            throw new ArgumentException("头像文件 {fileName} 不存在");
         }
     }
 

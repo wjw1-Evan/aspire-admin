@@ -43,11 +43,11 @@ public class KnowledgeDocumentController : BaseApiController
     {
         try
         {
-            if (page < 1 || page > 10000) return Fail("page 必须在 1-10000 之间");
-            if (pageSize < 1 || pageSize > 100) return Fail("pageSize 必须在 1-100 之间");
+            if (page < 1 || page > 10000) throw new ArgumentException("page 必须在 1-10000 之间");
+            if (pageSize < 1 || pageSize > 100) throw new ArgumentException("pageSize 必须在 1-100 之间");
 
             var kb = await _knowledgeService.GetByIdAsync(knowledgeBaseId);
-            if (kb == null) return Fail("知识库 {knowledgeBaseId} 不存在");
+            if (kb == null) throw new ArgumentException("知识库 {knowledgeBaseId} 不存在");
 
             var pagedResult = await _documentService.GetDocumentsAsync(knowledgeBaseId, page, pageSize, keyword);
             return Success(pagedResult);
@@ -55,7 +55,7 @@ public class KnowledgeDocumentController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取知识库文档列表失败");
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
     }
 
@@ -69,13 +69,13 @@ public class KnowledgeDocumentController : BaseApiController
         try
         {
             var doc = await _documentService.GetByIdAsync(id);
-            if (doc == null) return Fail("文档 {id} 不存在");
-            if (doc.KnowledgeBaseId != knowledgeBaseId) return Fail("文档 {id} 不存在");
+            if (doc == null) throw new ArgumentException("文档 {id} 不存在");
+            if (doc.KnowledgeBaseId != knowledgeBaseId) throw new ArgumentException("文档 {id} 不存在");
             return Success(doc);
         }
         catch (Exception ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
     }
 
@@ -88,11 +88,11 @@ public class KnowledgeDocumentController : BaseApiController
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(request.Title)) return Fail("标题不能为空");
-            if (string.IsNullOrWhiteSpace(request.Content)) return Fail("内容不能为空");
+            if (string.IsNullOrWhiteSpace(request.Title)) throw new ArgumentException("标题不能为空");
+            if (string.IsNullOrWhiteSpace(request.Content)) throw new ArgumentException("内容不能为空");
 
             var kb = await _knowledgeService.GetByIdAsync(knowledgeBaseId);
-            if (kb == null) return Fail("知识库 {knowledgeBaseId} 不存在");
+            if (kb == null) throw new ArgumentException("知识库 {knowledgeBaseId} 不存在");
 
             var doc = new KnowledgeDocument
             {
@@ -109,7 +109,7 @@ public class KnowledgeDocumentController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "创建知识库文档失败");
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
     }
 
@@ -123,8 +123,8 @@ public class KnowledgeDocumentController : BaseApiController
         try
         {
             var doc = await _documentService.GetByIdAsync(id);
-            if (doc == null) return Fail("文档 {id} 不存在");
-            if (doc.KnowledgeBaseId != knowledgeBaseId) return Fail("文档 {id} 不存在");
+            if (doc == null) throw new ArgumentException("文档 {id} 不存在");
+            if (doc.KnowledgeBaseId != knowledgeBaseId) throw new ArgumentException("文档 {id} 不存在");
 
             var updated = await _documentService.UpdateAsync(id, d =>
             {
@@ -134,12 +134,12 @@ public class KnowledgeDocumentController : BaseApiController
                 if (request.SortOrder.HasValue) d.SortOrder = request.SortOrder.Value;
             });
 
-            if (updated == null) return Fail("文档 {id} 不存在");
+            if (updated == null) throw new ArgumentException("文档 {id} 不存在");
             return Success(updated);
         }
         catch (Exception ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
     }
 
@@ -153,16 +153,16 @@ public class KnowledgeDocumentController : BaseApiController
         try
         {
             var doc = await _documentService.GetByIdAsync(id);
-            if (doc == null) return Fail("文档 {id} 不存在");
-            if (doc.KnowledgeBaseId != knowledgeBaseId) return Fail("文档 {id} 不存在");
+            if (doc == null) throw new ArgumentException("文档 {id} 不存在");
+            if (doc.KnowledgeBaseId != knowledgeBaseId) throw new ArgumentException("文档 {id} 不存在");
 
             var result = await _documentService.DeleteAsync(id);
-            if (!result) return Fail("文档 {id} 不存在");
+            if (!result) throw new ArgumentException("文档 {id} 不存在");
             return Success(null, "删除成功");
         }
         catch (Exception ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
     }
 }

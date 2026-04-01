@@ -44,7 +44,7 @@ public class ParkEnterpriseServiceController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取服务类别列表失败");
-            return Fail("获取服务类别列表失败");
+            throw new ArgumentException("获取服务类别列表失败");
         }
     }
 
@@ -62,7 +62,7 @@ public class ParkEnterpriseServiceController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "创建服务类别失败");
-            return Fail("创建服务类别失败: " + ex.Message);
+            throw new ArgumentException("创建服务类别失败: " + ex.Message);
         }
     }
 
@@ -76,13 +76,13 @@ public class ParkEnterpriseServiceController : BaseApiController
         {
             var result = await _enterpriseService.UpdateCategoryAsync(id, request);
             if (result == null)
-                return Fail("服务类别不存在");
+                throw new ArgumentException("服务类别不存在");
             return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "更新服务类别失败: {Id}", id);
-            return Fail("更新服务类别失败: " + ex.Message);
+            throw new ArgumentException("更新服务类别失败: " + ex.Message);
         }
     }
 
@@ -96,13 +96,13 @@ public class ParkEnterpriseServiceController : BaseApiController
         {
             var result = await _enterpriseService.DeleteCategoryAsync(id);
             if (!result)
-                return Fail("服务类别不存在或无法删除");
+                throw new ArgumentException("服务类别不存在或无法删除");
             return Success(true);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "删除服务类别失败: {Id}", id);
-            return Fail("删除服务类别失败: " + ex.Message);
+            throw new ArgumentException("删除服务类别失败: " + ex.Message);
         }
     }
 
@@ -116,13 +116,13 @@ public class ParkEnterpriseServiceController : BaseApiController
         {
             var result = await _enterpriseService.ToggleCategoryStatusAsync(id);
             if (!result)
-                return Fail("服务类别不存在");
+                throw new ArgumentException("服务类别不存在");
             return Success(true);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "切换服务类别状态失败: {Id}", id);
-            return Fail("切换服务类别状态失败: " + ex.Message);
+            throw new ArgumentException("切换服务类别状态失败: " + ex.Message);
         }
     }
 
@@ -144,7 +144,7 @@ public class ParkEnterpriseServiceController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取服务申请列表失败");
-            return Fail("获取服务申请列表失败");
+            throw new ArgumentException("获取服务申请列表失败");
         }
     }
 
@@ -158,13 +158,13 @@ public class ParkEnterpriseServiceController : BaseApiController
         {
             var result = await _enterpriseService.GetRequestByIdAsync(id);
             if (result == null)
-                return Fail("服务申请不存在");
+                throw new ArgumentException("服务申请不存在");
             return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取服务申请详情失败: {Id}", id);
-            return Fail("获取服务申请详情失败");
+            throw new ArgumentException("获取服务申请详情失败");
         }
     }
 
@@ -182,7 +182,7 @@ public class ParkEnterpriseServiceController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "创建服务申请失败");
-            return Fail("创建服务申请失败: " + ex.Message);
+            throw new ArgumentException("创建服务申请失败: " + ex.Message);
         }
     }
 
@@ -196,13 +196,13 @@ public class ParkEnterpriseServiceController : BaseApiController
         {
             var result = await _enterpriseService.UpdateRequestStatusAsync(id, request);
             if (result == null)
-                return Fail("服务申请不存在");
+                throw new ArgumentException("服务申请不存在");
             return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "更新服务申请状态失败: {Id}", id);
-            return Fail("更新服务申请状态失败: " + ex.Message);
+            throw new ArgumentException("更新服务申请状态失败: " + ex.Message);
         }
     }
 
@@ -216,13 +216,13 @@ public class ParkEnterpriseServiceController : BaseApiController
         {
             var result = await _enterpriseService.DeleteRequestAsync(id);
             if (!result)
-                return Fail("服务申请不存在或无法删除");
+                throw new ArgumentException("服务申请不存在或无法删除");
             return Success(true);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "删除服务申请失败: {Id}", id);
-            return Fail("删除服务申请失败: " + ex.Message);
+            throw new ArgumentException("删除服务申请失败: " + ex.Message);
         }
     }
 
@@ -236,13 +236,13 @@ public class ParkEnterpriseServiceController : BaseApiController
         {
             var result = await _enterpriseService.RateRequestAsync(id, request.Rating, request.Feedback);
             if (!result)
-                return Fail("服务申请不存在或未完成");
+                throw new ArgumentException("服务申请不存在或未完成");
             return Success(true);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "评价服务失败: {Id}", id);
-            return Fail("评价服务失败: " + ex.Message);
+            throw new ArgumentException("评价服务失败: " + ex.Message);
         }
     }
 
@@ -266,7 +266,7 @@ public class ParkEnterpriseServiceController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取服务统计失败");
-            return Fail("获取服务统计失败");
+            throw new ArgumentException("获取服务统计失败");
         }
     }
 

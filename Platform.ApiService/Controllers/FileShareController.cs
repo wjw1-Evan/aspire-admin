@@ -43,7 +43,7 @@ public class FileShareController : BaseApiController
     public async Task<IActionResult> CreateShare(string fileItemId, [FromBody] CreateShareRequest request)
     {
         if (string.IsNullOrWhiteSpace(fileItemId))
-            return Fail("文件项ID不能为空");
+            throw new ArgumentException("文件项ID不能为空");
 
         var validation = ValidateModelState();
         if (validation != null) return validation;
@@ -56,16 +56,16 @@ public class FileShareController : BaseApiController
         }
         catch (ArgumentException ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (InvalidOperationException ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "创建分享失败, FileItemId: {FileItemId}", fileItemId);
-            return Fail("服务器内部错误", 500);
+            throw new ArgumentException("服务器内部错误");
         }
     }
 
@@ -79,20 +79,20 @@ public class FileShareController : BaseApiController
     public async Task<IActionResult> GetShare(string id)
     {
         if (string.IsNullOrWhiteSpace(id))
-            return Fail("分享ID不能为空");
+            throw new ArgumentException("分享ID不能为空");
 
         try
         {
             var share = await _fileShareService.GetShareByIdAsync(id);
             if (share == null)
-                return Fail("分享 {id} 不存在");
+                throw new ArgumentException("分享 {id} 不存在");
 
             return Success(share);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取分享信息失败, ShareId: {ShareId}", id);
-            return Fail("服务器内部错误", 500);
+            throw new ArgumentException("服务器内部错误");
         }
     }
 
@@ -107,7 +107,7 @@ public class FileShareController : BaseApiController
     public async Task<IActionResult> UpdateShare(string id, [FromBody] UpdateShareRequest request)
     {
         if (string.IsNullOrWhiteSpace(id))
-            return Fail("分享ID不能为空");
+            throw new ArgumentException("分享ID不能为空");
 
         var validation = ValidateModelState();
         if (validation != null) return validation;
@@ -120,16 +120,16 @@ public class FileShareController : BaseApiController
         }
         catch (ArgumentException ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (InvalidOperationException ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "更新分享失败, ShareId: {ShareId}", id);
-            return Fail("服务器内部错误", 500);
+            throw new ArgumentException("服务器内部错误");
         }
     }
 
@@ -143,7 +143,7 @@ public class FileShareController : BaseApiController
     public async Task<IActionResult> DeleteShare(string id)
     {
         if (string.IsNullOrWhiteSpace(id))
-            return Fail("分享ID不能为空");
+            throw new ArgumentException("分享ID不能为空");
 
         try
         {
@@ -153,12 +153,12 @@ public class FileShareController : BaseApiController
         }
         catch (ArgumentException ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "删除分享失败, ShareId: {ShareId}", id);
-            return Fail("服务器内部错误", 500);
+            throw new ArgumentException("服务器内部错误");
         }
     }
 
@@ -179,7 +179,7 @@ public class FileShareController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取分享列表失败");
-            return Fail("服务器内部错误", 500);
+            throw new ArgumentException("服务器内部错误");
         }
     }
 
@@ -200,7 +200,7 @@ public class FileShareController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取共享文件列表失败");
-            return Fail("服务器内部错误", 500);
+            throw new ArgumentException("服务器内部错误");
         }
     }
 
@@ -217,10 +217,10 @@ public class FileShareController : BaseApiController
         if (validation != null) return validation;
 
         if (request.Ids == null || request.Ids.Count == 0)
-            return Fail("分享ID列表不能为空");
+            throw new ArgumentException("分享ID列表不能为空");
 
         if (request.Ids.Count > 100)
-            return Fail("批量操作最多支持100个分享");
+            throw new ArgumentException("批量操作最多支持100个分享");
 
         try
         {
@@ -231,7 +231,7 @@ public class FileShareController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "批量删除分享失败");
-            return Fail("服务器内部错误", 500);
+            throw new ArgumentException("服务器内部错误");
         }
     }
 
@@ -250,20 +250,20 @@ public class FileShareController : BaseApiController
     public async Task<IActionResult> AccessPublicShare(string shareToken, [FromQuery] string? password = null)
     {
         if (string.IsNullOrWhiteSpace(shareToken))
-            return Fail("分享令牌不能为空");
+            throw new ArgumentException("分享令牌不能为空");
 
         try
         {
             // 验证分享访问权限
             var hasAccess = await _fileShareService.ValidateShareAccessAsync(shareToken, password);
             if (!hasAccess)
-                return Fail("禁止访问", 403);
+                throw new UnauthorizedAccessException("禁止访问");
 
             // 获取分享和文件信息
             var share = await _fileShareService.GetShareAsync(shareToken);
             var fileInfo = await _fileShareService.GetSharedFileInfoAsync(shareToken, password);
             if (share == null || fileInfo == null)
-                return Fail("分享文件 {shareToken} 不存在");
+                throw new ArgumentException("分享文件 {shareToken} 不存在");
 
             // 记录访问日志
             var accessorInfo = $"IP: {GetClientIpAddress()}, UserAgent: {Request.Headers["User-Agent"].FirstOrDefault() ?? "Unknown"}";
@@ -296,16 +296,16 @@ public class FileShareController : BaseApiController
         }
         catch (ArgumentException ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (InvalidOperationException ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "访问公开分享失败: {ShareToken}", shareToken);
-            return Fail("服务器内部错误", 500);
+            throw new ArgumentException("服务器内部错误");
         }
     }
 
@@ -320,19 +320,19 @@ public class FileShareController : BaseApiController
     public async Task<IActionResult> DownloadSharedFile(string shareToken, [FromQuery] string? password = null)
     {
         if (string.IsNullOrWhiteSpace(shareToken))
-            return Fail("分享令牌不能为空");
+            throw new ArgumentException("分享令牌不能为空");
 
         try
         {
             // 验证分享访问权限
             var hasAccess = await _fileShareService.ValidateShareAccessAsync(shareToken, password);
             if (!hasAccess)
-                return Fail("禁止访问", 403);
+                throw new UnauthorizedAccessException("禁止访问");
 
             // 获取分享文件信息
             var fileInfo = await _fileShareService.GetSharedFileInfoAsync(shareToken, password);
             if (fileInfo == null)
-                return Fail("分享文件 {shareToken} 不存在");
+                throw new ArgumentException("分享文件 {shareToken} 不存在");
 
             // 获取文件流
             var stream = await _fileShareService.GetSharedFileContentAsync(shareToken, password);
@@ -345,16 +345,16 @@ public class FileShareController : BaseApiController
         }
         catch (ArgumentException ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (InvalidOperationException ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "下载分享文件失败: {ShareToken}", shareToken);
-            return Fail("服务器内部错误", 500);
+            throw new ArgumentException("服务器内部错误");
         }
     }
 
@@ -369,19 +369,19 @@ public class FileShareController : BaseApiController
     public async Task<IActionResult> PreviewSharedFile(string shareToken, [FromQuery] string? password = null)
     {
         if (string.IsNullOrWhiteSpace(shareToken))
-            return Fail("分享令牌不能为空");
+            throw new ArgumentException("分享令牌不能为空");
 
         try
         {
             // 验证分享访问权限
             var hasAccess = await _fileShareService.ValidateShareAccessAsync(shareToken, password);
             if (!hasAccess)
-                return Fail("禁止访问", 403);
+                throw new UnauthorizedAccessException("禁止访问");
 
             // 获取分享文件信息
             var fileInfo = await _fileShareService.GetSharedFileInfoAsync(shareToken, password);
             if (fileInfo == null)
-                return Fail("分享文件 {shareToken} 不存在");
+                throw new ArgumentException("分享文件 {shareToken} 不存在");
 
             // 记录访问日志
             var accessorInfo = $"IP: {GetClientIpAddress()}, UserAgent: {Request.Headers["User-Agent"].FirstOrDefault() ?? "Unknown"}, Action: Preview";
@@ -403,16 +403,16 @@ public class FileShareController : BaseApiController
         }
         catch (ArgumentException ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (InvalidOperationException ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "预览分享文件失败: {ShareToken}", shareToken);
-            return Fail("服务器内部错误", 500);
+            throw new ArgumentException("服务器内部错误");
         }
     }
 

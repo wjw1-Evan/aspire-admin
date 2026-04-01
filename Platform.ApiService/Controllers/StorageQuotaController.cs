@@ -50,12 +50,12 @@ public class StorageQuotaController : BaseApiController
         }
         catch (InvalidOperationException ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取我的配额失败");
-            return Fail("操作失败", 500);
+            throw new ArgumentException("操作失败");
         }
     }
 
@@ -74,16 +74,16 @@ public class StorageQuotaController : BaseApiController
         }
         catch (ArgumentException ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (InvalidOperationException ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取用户配额失败, UserId: {UserId}", userId);
-            return Fail("操作失败", 500);
+            throw new ArgumentException("操作失败");
         }
     }
 
@@ -98,7 +98,7 @@ public class StorageQuotaController : BaseApiController
     public async Task<IActionResult> SetUserQuota(string userId, [FromBody] SetQuotaRequest request)
     {
         if (string.IsNullOrWhiteSpace(userId))
-            return Fail("用户ID不能为空");
+            throw new ArgumentException("用户ID不能为空");
 
         var validation = ValidateModelState();
         if (validation != null) return validation;
@@ -115,12 +115,12 @@ public class StorageQuotaController : BaseApiController
         }
         catch (ArgumentException ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "设置用户配额失败, UserId: {UserId}", userId);
-            return Fail("操作失败", 500);
+            throw new ArgumentException("操作失败");
         }
     }
 
@@ -137,10 +137,10 @@ public class StorageQuotaController : BaseApiController
         if (validation != null) return validation;
 
         if (request.QuotaSettings == null || request.QuotaSettings.Count == 0)
-            return Fail("配额设置列表不能为空");
+            throw new ArgumentException("配额设置列表不能为空");
 
         if (request.QuotaSettings.Count > 100)
-            return Fail("批量操作最多支持100个用户");
+            throw new ArgumentException("批量操作最多支持100个用户");
 
         try
         {
@@ -151,7 +151,7 @@ public class StorageQuotaController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "批量设置配额失败");
-            return Fail("操作失败", 500);
+            throw new ArgumentException("操作失败");
         }
     }
 
@@ -165,7 +165,7 @@ public class StorageQuotaController : BaseApiController
     public async Task<IActionResult> RecalculateUserStorage(string userId)
     {
         if (string.IsNullOrWhiteSpace(userId))
-            return Fail("用户ID不能为空");
+            throw new ArgumentException("用户ID不能为空");
 
         try
         {
@@ -175,16 +175,16 @@ public class StorageQuotaController : BaseApiController
         }
         catch (ArgumentException ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (InvalidOperationException ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "重新计算存储失败, UserId: {UserId}", userId);
-            return Fail("操作失败", 500);
+            throw new ArgumentException("操作失败");
         }
     }
 
@@ -198,7 +198,7 @@ public class StorageQuotaController : BaseApiController
     public async Task<IActionResult> DeleteUserQuota(string userId)
     {
         if (string.IsNullOrWhiteSpace(userId))
-            return Fail("用户ID不能为空");
+            throw new ArgumentException("用户ID不能为空");
 
         try
         {
@@ -210,16 +210,16 @@ public class StorageQuotaController : BaseApiController
         }
         catch (ArgumentException ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (InvalidOperationException ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "删除配额失败, UserId: {UserId}", userId);
-            return Fail("操作失败", 500);
+            throw new ArgumentException("操作失败");
         }
     }
 
@@ -243,7 +243,7 @@ public class StorageQuotaController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取存储统计失败");
-            return Fail("操作失败", 500);
+            throw new ArgumentException("操作失败");
         }
     }
 
@@ -276,10 +276,10 @@ public class StorageQuotaController : BaseApiController
         // 验证排序参数
         var validSortFields = new[] { "usedQuota", "totalQuota", "usagePercentage", "fileCount", "createdAt", "lastCalculatedAt" };
         if (!validSortFields.Contains(sortBy))
-            return Fail($"排序字段必须是以下之一: {string.Join(", ", validSortFields)}");
+            throw new ArgumentException($"排序字段必须是以下之一: {string.Join(", ", validSortFields)}");
 
         if (sortOrder != "asc" && sortOrder != "desc")
-            return Fail("排序方向必须是 asc 或 desc");
+            throw new ArgumentException("排序方向必须是 asc 或 desc");
 
         try
         {
@@ -300,7 +300,7 @@ public class StorageQuotaController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取存储配额列表失败");
-            return Fail("操作失败", 500);
+            throw new ArgumentException("操作失败");
         }
     }
 
@@ -324,7 +324,7 @@ public class StorageQuotaController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取企业存储统计失败");
-            return Fail("操作失败", 500);
+            throw new ArgumentException("操作失败");
         }
     }
 
@@ -338,7 +338,7 @@ public class StorageQuotaController : BaseApiController
     public async Task<IActionResult> GetStorageUsageRanking([FromQuery] int topCount = 10)
     {
         if (topCount < 1 || topCount > 100)
-            return Fail("返回数量必须在 1-100 之间");
+            throw new ArgumentException("返回数量必须在 1-100 之间");
 
         try
         {
@@ -348,7 +348,7 @@ public class StorageQuotaController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取存储排行失败");
-            return Fail("操作失败", 500);
+            throw new ArgumentException("操作失败");
         }
     }
 
@@ -362,7 +362,7 @@ public class StorageQuotaController : BaseApiController
     public async Task<IActionResult> GetQuotaWarnings([FromQuery] double warningThreshold = 0.8)
     {
         if (warningThreshold < 0.1 || warningThreshold > 1.0)
-            return Fail("警告阈值必须在 0.1-1.0 之间");
+            throw new ArgumentException("警告阈值必须在 0.1-1.0 之间");
 
         try
         {
@@ -376,7 +376,7 @@ public class StorageQuotaController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取配额警告失败");
-            return Fail("操作失败", 500);
+            throw new ArgumentException("操作失败");
         }
     }
 
@@ -402,7 +402,7 @@ public class StorageQuotaController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "清理配额记录失败");
-            return Fail("操作失败", 500);
+            throw new ArgumentException("操作失败");
         }
     }
 
@@ -416,10 +416,10 @@ public class StorageQuotaController : BaseApiController
     public async Task<IActionResult> CheckStorageAvailability(string userId, [FromQuery] long requiredSize)
     {
         if (string.IsNullOrWhiteSpace(userId))
-            return Fail("用户ID不能为空");
+            throw new ArgumentException("用户ID不能为空");
 
         if (requiredSize < 0)
-            return Fail("需要的空间大小不能为负数");
+            throw new ArgumentException("需要的空间大小不能为负数");
 
         try
         {
@@ -435,16 +435,16 @@ public class StorageQuotaController : BaseApiController
         }
         catch (ArgumentException ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (InvalidOperationException ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "检查存储可用性失败, UserId: {UserId}", userId);
-            return Fail("操作失败", 500);
+            throw new ArgumentException("操作失败");
         }
     }
 
@@ -459,7 +459,7 @@ public class StorageQuotaController : BaseApiController
     public async Task<IActionResult> UpdateStorageUsage(string userId, [FromBody] UpdateStorageUsageRequest request)
     {
         if (string.IsNullOrWhiteSpace(userId))
-            return Fail("用户ID不能为空");
+            throw new ArgumentException("用户ID不能为空");
 
         var validation = ValidateModelState();
         if (validation != null) return validation;
@@ -472,16 +472,16 @@ public class StorageQuotaController : BaseApiController
         }
         catch (ArgumentException ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (InvalidOperationException ex)
         {
-            return Fail(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "更新存储使用量失败, UserId: {UserId}", userId);
-            return Fail("操作失败", 500);
+            throw new ArgumentException("操作失败");
         }
     }
 

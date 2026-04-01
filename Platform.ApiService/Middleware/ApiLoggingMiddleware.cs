@@ -36,6 +36,16 @@ public class ApiLoggingMiddleware
         var stopwatch = Stopwatch.StartNew();
         var requestTime = DateTime.UtcNow;
         var traceId = context.TraceIdentifier;
+        string? requestBody = null;
+
+        // 读取请求体（仅对小请求读取）
+        if (context.Request.ContentLength > 0 && context.Request.ContentLength < 1024 * 10)
+        {
+            context.Request.EnableBuffering();
+            using var reader = new StreamReader(context.Request.Body, leaveOpen: true);
+            requestBody = await reader.ReadToEndAsync();
+            context.Request.Body.Position = 0;
+        }
 
         try
         {
@@ -74,10 +84,6 @@ public class ApiLoggingMiddleware
             {
                 try
                 {
-                    var (resourceType, operationType) = AnalyzeOperation(
-                        context.Request.Method,
-                        context.Request.Path.Value ?? string.Empty);
-
                     var log = new LogHttpRequestRequest
                     {
                         CreatedBy = userId == "Anonymous" ? null : userId,
@@ -95,9 +101,15 @@ public class ApiLoggingMiddleware
                         {
                             ["RequestTime"] = requestTime,
                             ["TraceId"] = traceId,
-                            ["ResourceType"] = resourceType,
-                            ["OperationType"] = operationType,
-                            ["IsSuccess"] = context.Response.StatusCode >= 200 && context.Response.StatusCode < 400
+                            ["RequestBody"] = requestBody ?? string.Empty,
+                            ["ContentType"] = context.Request.ContentType ?? string.Empty,
+                            ["Accept"] = context.Request.Headers["Accept"].ToString(),
+                            ["Referer"] = context.Request.Headers["Referer"].ToString(),
+                            ["Origin"] = context.Request.Headers["Origin"].ToString(),
+                            ["RequestId"] = context.TraceIdentifier,
+                            ["ResponseTime"] = DateTime.UtcNow,
+                            ["RequestContentLength"] = context.Request.ContentLength ?? 0,
+                            ["ResponseContentLength"] = context.Response.ContentLength ?? 0
                         }
                     };
 
@@ -109,56 +121,6 @@ public class ApiLoggingMiddleware
                 }
             }
         }
-    }
-
-    private static (string resourceType, string operationType) AnalyzeOperation(string httpMethod, string path)
-    {
-        var pathLower = path.ToLower();
-        
-        // 根据路径推断资源类型和操作类型
-        return (httpMethod.ToUpper(), pathLower) switch
-        {
-            // 用户相关
-            ("GET", var p) when p.Contains("/api/users") => ("user", p.Contains("/me") ? "get_current_user" : "list_user"),
-            ("POST", var p) when p.Contains("/api/users") => ("user", "create_user"),
-            ("PUT", var p) when p.Contains("/api/users") => ("user", "update_user"),
-            ("DELETE", var p) when p.Contains("/api/users") => ("user", "delete_user"),
-            
-            // 企业相关
-            ("GET", var p) when p.Contains("/api/companies") => ("company", "get_company"),
-            ("POST", var p) when p.Contains("/api/companies") => ("company", "create_company"),
-            ("PUT", var p) when p.Contains("/api/companies") => ("company", "update_company"),
-            ("DELETE", var p) when p.Contains("/api/companies") => ("company", "delete_company"),
-            
-            // 认证相关
-            ("POST", var p) when p.Contains("/api/auth/login") => ("auth", "login"),
-            ("POST", var p) when p.Contains("/api/auth/register") => ("auth", "register"),
-            ("POST", var p) when p.Contains("/api/auth/logout") => ("auth", "logout"),
-            
-            // 文件存储相关
-            ("GET", var p) when p.Contains("/api/cloud-storage") => ("file", "download_file"),
-            ("POST", var p) when p.Contains("/api/cloud-storage") => ("file", "upload_file"),
-            ("PUT", var p) when p.Contains("/api/cloud-storage") => ("file", "update_file"),
-            ("DELETE", var p) when p.Contains("/api/cloud-storage") => ("file", "delete_file"),
-            
-            // 流程相关
-            ("GET", var p) when p.Contains("/api/workflow") => ("workflow", "query_workflow"),
-            ("POST", var p) when p.Contains("/api/workflow") => ("workflow", "create_workflow"),
-            ("PUT", var p) when p.Contains("/api/workflow") => ("workflow", "update_workflow"),
-            
-            // 任务相关
-            ("GET", var p) when p.Contains("/api/tasks") => ("task", "get_task"),
-            ("POST", var p) when p.Contains("/api/tasks") => ("task", "create_task"),
-            ("PUT", var p) when p.Contains("/api/tasks") => ("task", "update_task"),
-            ("DELETE", var p) when p.Contains("/api/tasks") => ("task", "delete_task"),
-            
-            // 通知相关
-            ("GET", var p) when p.Contains("/api/notifications") => ("notification", "get_notification"),
-            ("POST", var p) when p.Contains("/api/notifications") => ("notification", "send_notification"),
-            
-            // 默认
-            _ => ("unknown", "unknown")
-        };
     }
 
     private bool ShouldExclude(PathString path)

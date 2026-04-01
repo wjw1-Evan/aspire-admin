@@ -1,5 +1,7 @@
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Services;
 using System.Collections.Generic;
+using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 
 namespace Platform.ApiService.Services;
@@ -12,7 +14,7 @@ public interface IChatSessionService
     /// <summary>
     /// 获取聊天会话列表
     /// </summary>
-    Task<(List<ChatSession> sessions, long total)> GetSessionsAsync(ChatSessionListRequest request);
+    Task<PagedResult<ChatSession>> GetSessionsAsync(ChatSessionListRequest request);
 
     /// <summary>
     /// 获取某个会话下的聊天消息列表

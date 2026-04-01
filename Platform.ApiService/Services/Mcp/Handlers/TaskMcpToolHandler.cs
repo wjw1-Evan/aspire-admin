@@ -187,9 +187,10 @@ public class TaskMcpToolHandler : McpToolHandlerBase
         };
 
         var response = await _taskService.QueryTasksAsync(request);
+        var tasks = await response.Queryable.ToListAsync();
         return new
         {
-            tasks = response.Tasks.Select(t => new
+            tasks = tasks.Select(t => new
             {
                 t.Id,
                 t.TaskName,
@@ -204,10 +205,10 @@ public class TaskMcpToolHandler : McpToolHandlerBase
                 t.CreatedAt,
                 t.UpdatedAt
             }).ToList(),
-            total = response.Total,
-            page = response.Page,
+            total = response.RowCount,
+            page = response.CurrentPage,
             pageSize = response.PageSize,
-            totalPages = (int)Math.Ceiling(response.Total / (double)response.PageSize)
+            totalPages = (int)Math.Ceiling(response.RowCount / (double)response.PageSize)
         };
     }
 
@@ -221,7 +222,8 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             if (string.IsNullOrEmpty(taskName)) return new { error = "参数错误: taskId 或 taskName 必填" };
 
             var searchResult = await _taskService.QueryTasksAsync(new TaskQueryRequest { Search = taskName, Page = 1, PageSize = 1 });
-            if (searchResult.Tasks.Any()) taskId = searchResult.Tasks.First().Id;
+            var searchTasks = await searchResult.Queryable.ToListAsync();
+            if (searchTasks.Any()) taskId = searchTasks.First().Id;
             else return new { error = "未找到该任务" };
         }
 
@@ -411,9 +413,10 @@ public class TaskMcpToolHandler : McpToolHandlerBase
         };
 
         var response = await _taskService.QueryTasksAsync(request);
+        var tasks = await response.Queryable.ToListAsync();
         return new
         {
-            tasks = response.Tasks.Select(t => new
+            tasks = tasks.Select(t => new
             {
                 t.Id,
                 t.TaskName,
@@ -428,10 +431,10 @@ public class TaskMcpToolHandler : McpToolHandlerBase
                 t.CreatedAt,
                 t.UpdatedAt
             }).ToList(),
-            total = response.Total,
-            page = response.Page,
+            total = response.RowCount,
+            page = response.CurrentPage,
             pageSize = response.PageSize,
-            totalPages = (int)Math.Ceiling(response.Total / (double)response.PageSize)
+            totalPages = (int)Math.Ceiling(response.RowCount / (double)response.PageSize)
         };
     }
 
@@ -451,9 +454,10 @@ public class TaskMcpToolHandler : McpToolHandlerBase
         };
 
         var response = await _projectService.GetProjectsListAsync(request);
+        var projects = await Task.Run(() => response.Projects.ToList());
         return new
         {
-            projects = response.Projects.Select(p => new { p.Id, p.Name, p.Description, p.StartDate, p.EndDate, p.Status, p.StatusName, memberCount = response.Total, p.Progress }).ToList(),
+            projects = projects.Select(p => new { p.Id, p.Name, p.Description, p.StartDate, p.EndDate, p.Status, p.StatusName, memberCount = response.Total, p.Progress }).ToList(),
             total = response.Total,
             page = response.Page,
             pageSize = response.PageSize

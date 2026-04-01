@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Exceptions;
+using System.Linq.Dynamic.Core;
 
 namespace Platform.ServiceDefaults.Controllers;
 
@@ -12,7 +14,7 @@ namespace Platform.ServiceDefaults.Controllers;
 [ApiController]
 public abstract class BaseApiController : ControllerBase
 {
-    protected string? CurrentUserId 
+    protected string? CurrentUserId
         => HttpContext.Items["UserId"] as string;
 
     protected bool IsAuthenticated => !string.IsNullOrEmpty(CurrentUserId);
@@ -51,16 +53,24 @@ public abstract class BaseApiController : ControllerBase
     /// <summary>
     /// 返回标准分页成功的 API 响应 (可附加复杂的统计报告或汇总数据)
     /// </summary>
-    protected IActionResult SuccessPaged<T>(IEnumerable<T> data, long total, int page, int pageSize, object? summary = null, string? message = null)
+    protected IActionResult SuccessPaged<T>(IEnumerable<T> data, long total, int page, int pageSize, string? message = null)
         => Ok(CreateResponse(true, "OK", new
         {
             list = data,
             total,
             page,
             pageSize,
-            totalPages = (int)Math.Ceiling((double)total / pageSize),
-            summary
+            totalPages = (int)Math.Ceiling((double)total / pageSize)
         }, message));
+
+    /// <summary>
+    /// 返回标准分页成功的 API 响应（直接传入 PagedResult）
+    /// </summary>
+    protected async Task<IActionResult> SuccessPagedAsync<T>(PagedResult<T> pagedResult, string? message = null)
+    {
+        var data = await pagedResult.Queryable.ToListAsync();
+        return SuccessPaged(data, pagedResult.RowCount, pagedResult.CurrentPage, pagedResult.PageSize, message);
+    }
 
     /// <summary>
     /// 返回自定义错误信息的标准响应

@@ -37,8 +37,8 @@ public class KnowledgeBaseController : BaseApiController
     {
         try
         {
-            var (items, total) = await _knowledgeService.FindPagedAsync(current, pageSize, keyword);
-            return SuccessPaged(items, total, current, pageSize);
+            var pagedResult = await _knowledgeService.GetKnowledgeBasesAsync(current, pageSize, keyword);
+            return await SuccessPagedAsync(pagedResult);
         }
         catch (Exception ex)
         {

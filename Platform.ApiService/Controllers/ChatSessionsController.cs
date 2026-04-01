@@ -29,7 +29,7 @@ public class ChatSessionsController : BaseApiController
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetSessions([FromQuery] ChatSessionListRequest request)
     {
-        var (sessions, total) = await _chatService.GetSessionsAsync(request);
-        return SuccessPaged(sessions, total, request.Page, request.PageSize);
+        var result = await _chatService.GetSessionsAsync(request);
+        return SuccessPaged(result.Queryable.ToList(), result.RowCount, result.CurrentPage, result.PageSize);
     }
 }

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Platform.ApiService.Models;
 using System.Collections.Generic;
+using System.Linq.Dynamic.Core;
 using System.Threading;
 
 namespace Platform.ApiService.Services;
@@ -14,8 +15,8 @@ public interface IChatService
     /// 获取当前企业下的会话列表
     /// </summary>
     /// <param name="request">查询参数</param>
-    /// <returns>会话集合与总数</returns>
-    Task<(List<ChatSession> sessions, long total)> GetSessionsAsync(ChatSessionListRequest request);
+    /// <returns>分页结果</returns>
+    Task<PagedResult<ChatSession>> GetSessionsAsync(ChatSessionListRequest request);
 
     /// <summary>
     /// 获取指定会话的消息时间线

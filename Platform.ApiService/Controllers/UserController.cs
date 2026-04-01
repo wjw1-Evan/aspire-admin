@@ -270,7 +270,7 @@ public class UserController : BaseApiController
     public async Task<IActionResult> GetUsersList([FromBody] UserListRequest request)
     {
         var result = await _userService.GetUsersWithRolesAsync(request);
-        return SuccessPaged(result.Users, result.Total, result.Page, result.PageSize);
+        return await SuccessPagedAsync(result);
     }
 
     /// <summary>
@@ -604,8 +604,7 @@ public class UserController : BaseApiController
             response.Data,
             response.Total,
             response.Page,
-            response.PageSize,
-            response.Statistics);
+            response.PageSize);
     }
 
     /// <summary>

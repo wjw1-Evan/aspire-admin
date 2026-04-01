@@ -35,7 +35,7 @@ public class ChatSessionService : IChatSessionService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<(List<ChatSession> sessions, long total)> GetSessionsAsync(ChatSessionListRequest request)
+    public async Task<PagedResult<ChatSession>> GetSessionsAsync(ChatSessionListRequest request)
     {
         await _aiAssistantCoordinator.EnsureAssistantSessionForCurrentUserAsync();
         request ??= new ChatSessionListRequest();
@@ -50,13 +50,9 @@ public class ChatSessionService : IChatSessionService
         }
 
         var query = _context.Set<ChatSession>().Where(filter);
-        var pagedResult = query.OrderByDescending(s => s.UpdatedAt)
-            .PageResult(request.Page, Math.Min(Math.Max(request.PageSize, 1), MaxPageSize));
-        var items = await pagedResult.Queryable.ToListAsync();
-        var total = pagedResult.RowCount;
 
-        await EnrichParticipantMetadataAsync(items);
-        return (items, total);
+        return query.OrderByDescending(s => s.UpdatedAt)
+            .PageResult(request.Page, Math.Min(Math.Max(request.PageSize, 1), MaxPageSize));
     }
 
     public async Task<(List<ChatMessage> messages, bool hasMore, string? nextCursor)> GetMessagesAsync(string sessionId, ChatMessageListRequest request)

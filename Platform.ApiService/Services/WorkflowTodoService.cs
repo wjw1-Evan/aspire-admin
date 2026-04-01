@@ -27,7 +27,7 @@ public class WorkflowTodoService : IWorkflowTodoService
         _formDefinitionService = formDefinitionService;
     }
 
-    public async Task<(List<object> Items, long Total)> GetTodoInstancesAsync(string userId, int current, int pageSize)
+    public async Task<PagedResult<object>> GetTodoInstancesAsync(string userId, int current, int pageSize)
     {
         Expression<Func<WorkflowInstance, bool>> filter = i => i.Status == WorkflowStatus.Running &&
             i.CurrentApproverIds.Contains(userId);
@@ -94,7 +94,7 @@ public class WorkflowTodoService : IWorkflowTodoService
             }
         }
 
-        return (todos, totalCount);
+        return todos.AsQueryable().PageResult(current, pageSize);
     }
 
     public async Task<object?> GetNodeFormAsync(string instanceId, string nodeId)

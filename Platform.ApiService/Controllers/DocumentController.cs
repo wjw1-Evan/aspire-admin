@@ -55,7 +55,7 @@ public class DocumentController : BaseApiController
         try
         {
             var result = await _documentService.GetDocumentsAsync(query);
-            return SuccessPaged(result.items, result.total, query.Page, query.PageSize);
+            return await SuccessPagedAsync(result);
         }
         catch (Exception ex)
         {
@@ -556,7 +556,7 @@ public class DocumentController : BaseApiController
             query.FilterType = "pending";
 
             var result = await _documentService.GetDocumentsAsync(query);
-            return SuccessPaged(result.items, result.total, query.Page, query.PageSize);
+            return await SuccessPagedAsync(result);
         }
         catch (ArgumentException ex)
         {

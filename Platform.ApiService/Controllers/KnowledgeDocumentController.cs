@@ -49,8 +49,8 @@ public class KnowledgeDocumentController : BaseApiController
             var kb = await _knowledgeService.GetByIdAsync(knowledgeBaseId);
             if (kb == null) return NotFoundError("知识库", knowledgeBaseId);
 
-            var (items, total) = await _documentService.FindPagedAsync(knowledgeBaseId, page, pageSize, keyword);
-            return SuccessPaged(items, total, page, pageSize);
+            var pagedResult = await _documentService.GetDocumentsAsync(knowledgeBaseId, page, pageSize, keyword);
+            return await SuccessPagedAsync(pagedResult);
         }
         catch (Exception ex)
         {

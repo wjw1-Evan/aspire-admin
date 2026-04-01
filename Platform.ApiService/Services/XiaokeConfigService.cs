@@ -59,7 +59,7 @@ public class XiaokeConfigService : IXiaokeConfigService
     }
 
     /// <inheritdoc/>
-    public async Task<XiaokeConfigListResponse> GetConfigsAsync(XiaokeConfigQueryParams queryParams)
+    public async Task<PagedResult<XiaokeConfigDto>> GetConfigsAsync(XiaokeConfigQueryParams queryParams)
     {
         Expression<Func<XiaokeConfig, bool>>? filter = null;
 
@@ -86,18 +86,13 @@ public class XiaokeConfigService : IXiaokeConfigService
         var pagedResult = query.OrderByDescending(c => c.UpdatedAt).PageResult(queryParams.Current, queryParams.PageSize);
         var configs = await pagedResult.Queryable.ToListAsync();
 
-        if (!string.IsNullOrEmpty(queryParams.Sorter))
+        return new PagedResult<XiaokeConfigDto>
         {
-            configs = configs.OrderBy(c => c.Name).ToList();
-        }
-
-        return new XiaokeConfigListResponse
-        {
-            Data = configs.Select(ToDto).ToList(),
-            Total = (int)total,
-            Success = true,
+            Queryable = configs.Select(ToDto).AsQueryable(),
+            CurrentPage = queryParams.Current,
             PageSize = queryParams.PageSize,
-            Current = queryParams.Current
+            RowCount = (int)total,
+            PageCount = (int)Math.Ceiling((double)total / queryParams.PageSize)
         };
     }
 

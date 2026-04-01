@@ -53,8 +53,9 @@ public class DocumentMcpToolHandler : McpToolHandlerBase
                     FilterType = args.GetValueOrDefault("filterType")?.ToString()
                 };
                 if (args.ContainsKey("status") && Enum.TryParse<DocumentStatus>(args.GetValueOrDefault("status")?.ToString(), out var status)) request.Status = status;
-                var (items, total) = await _documentService.GetDocumentsAsync(request);
-                return new { documents = items.Select(d => new { d.Id, d.Title, d.DocumentType, d.Category, d.Status, d.CreatedBy, d.CreatedAt, d.WorkflowInstanceId }).ToList(), total, page, pageSize };
+                var result = await _documentService.GetDocumentsAsync(request);
+                var items = await result.Queryable.ToListAsync();
+                return new { documents = items.Select(d => new { d.Id, d.Title, d.DocumentType, d.Category, d.Status, d.CreatedBy, d.CreatedAt, d.WorkflowInstanceId }).ToList(), total = result.RowCount, page = result.CurrentPage, pageSize = result.PageSize };
             });
 
         RegisterTool("get_document_detail", "获取公文详情。关键词：公文,详情",

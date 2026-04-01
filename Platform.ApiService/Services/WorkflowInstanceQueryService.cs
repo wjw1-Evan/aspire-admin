@@ -1,9 +1,6 @@
 using System.Linq.Dynamic.Core;
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models.Workflow;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 
@@ -18,7 +15,7 @@ public class WorkflowInstanceQueryService : IWorkflowInstanceQueryService
         _context = context;
     }
 
-    public async Task<(List<WorkflowInstance> Items, long Total)> GetInstancesAsync(int page, int pageSize, string? workflowDefinitionId, WorkflowStatus? status)
+    public async Task<PagedResult<WorkflowInstance>> GetInstancesAsync(int page, int pageSize, string? workflowDefinitionId, WorkflowStatus? status)
     {
         Expression<Func<WorkflowInstance, bool>>? filter = null;
 
@@ -40,13 +37,9 @@ public class WorkflowInstanceQueryService : IWorkflowInstanceQueryService
             ? _context.Set<WorkflowInstance>() 
             : _context.Set<WorkflowInstance>().Where(filter);
 
-        var pagedResult = queryable
+        return queryable
             .OrderByDescending(i => i.StartedAt)
             .PageResult(page, pageSize);
-        var items = await pagedResult.Queryable.ToListAsync();
-        var total = pagedResult.RowCount;
-
-        return (items, total);
     }
 
     public async Task<WorkflowInstance?> GetInstanceByIdAsync(string id)

@@ -62,7 +62,8 @@ public class UserMcpToolHandler : McpToolHandlerBase
                 if (!string.IsNullOrEmpty(username))
                 {
                     var list = await _userService.GetUsersWithPaginationAsync(new UserListRequest { Search = username, Page = 1, PageSize = 1 });
-                    if (list.Users.Any()) return await _userService.GetUserByIdAsync(list.Users.First().Id);
+                    var users = await list.Queryable.ToListAsync();
+                    if (users.Any()) return await _userService.GetUserByIdAsync(users.First().Id);
                 }
                 return new { error = "用户未找到" };
             });

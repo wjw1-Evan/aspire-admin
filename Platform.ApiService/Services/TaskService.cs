@@ -99,7 +99,7 @@ public class TaskService : ITaskService
     }
 
     /// <inheritdoc/>
-    public async Task<TaskListResponse> QueryTasksAsync(TaskQueryRequest request)
+    public async Task<PagedResult<TaskDto>> QueryTasksAsync(TaskQueryRequest request)
     {
         string search = request.Search?.ToLower() ?? "";
         var onlyRoot = request.OnlyRoot ?? string.IsNullOrEmpty(request.Search);
@@ -157,7 +157,14 @@ public class TaskService : ITaskService
             }
         }
 
-        return new TaskListResponse { Tasks = taskDtos, Total = (int)total, Page = request.Page, PageSize = request.PageSize };
+        return new PagedResult<TaskDto>
+        {
+            Queryable = taskDtos.AsQueryable(),
+            CurrentPage = request.Page,
+            PageSize = request.PageSize,
+            RowCount = total,
+            PageCount = (int)Math.Ceiling((double)total / request.PageSize)
+        };
     }
 
     /// <inheritdoc/>

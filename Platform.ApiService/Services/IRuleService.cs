@@ -1,4 +1,6 @@
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Models;
+using System.Linq.Dynamic.Core;
 
 namespace Platform.ApiService.Services;
 
@@ -12,7 +14,7 @@ public interface IRuleService
     /// </summary>
     /// <param name="queryParams">查询参数</param>
     /// <returns>规则列表响应</returns>
-    Task<RuleListResponse> GetRulesAsync(RuleQueryParams queryParams);
+    Task<PagedResult<RuleListItem>> GetRulesAsync(RuleQueryParams queryParams);
     
     /// <summary>
     /// 根据ID获取规则

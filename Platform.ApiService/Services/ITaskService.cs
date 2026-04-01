@@ -1,6 +1,7 @@
 using Platform.ApiService.Models;
 using System;
 using System.Collections.Generic;
+using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 
 namespace Platform.ApiService.Services;
@@ -29,7 +30,7 @@ public interface ITaskService
     /// </summary>
     /// <param name="request">查询请求</param>
     /// <returns>任务列表</returns>
-    Task<TaskListResponse> QueryTasksAsync(TaskQueryRequest request);
+    Task<PagedResult<TaskDto>> QueryTasksAsync(TaskQueryRequest request);
 
     /// <summary>
     /// 更新任务

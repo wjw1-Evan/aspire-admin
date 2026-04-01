@@ -23,7 +23,7 @@ public class KnowledgeDocumentService : IKnowledgeDocumentService, IScopedDepend
         
     }
 
-    public async Task<(List<KnowledgeDocument> items, long total)> FindPagedAsync(string knowledgeBaseId, int page, int pageSize, string? keyword = null)
+    public async Task<PagedResult<KnowledgeDocument>> GetDocumentsAsync(string knowledgeBaseId, int page, int pageSize, string? keyword = null)
     {
         Expression<Func<KnowledgeDocument, bool>> filter = d => d.KnowledgeBaseId == knowledgeBaseId;
         if (!string.IsNullOrEmpty(keyword))
@@ -33,14 +33,8 @@ public class KnowledgeDocumentService : IKnowledgeDocumentService, IScopedDepend
                 (d.Title.Contains(k) || (d.Content != null && d.Content.Contains(k)) || (d.Summary != null && d.Summary.Contains(k)));
         }
 
-        {
-            var query = _context.Set<KnowledgeDocument>().Where(
-            filter);
-            var total = await query.LongCountAsync();
-            var pagedResult = query.OrderBy(d => d.SortOrder).ThenByDescending(d => d.CreatedAt).PageResult(page, pageSize);
-            var items = await pagedResult.Queryable.ToListAsync();
-            return (items, total);
-        }
+        var query = _context.Set<KnowledgeDocument>().Where(filter);
+        return query.OrderBy(d => d.SortOrder).ThenByDescending(d => d.CreatedAt).PageResult(page, pageSize);
     }
 
     public async Task<KnowledgeDocument?> GetByIdAsync(string id)

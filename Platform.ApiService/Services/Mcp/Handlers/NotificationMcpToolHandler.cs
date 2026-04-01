@@ -280,8 +280,9 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
         var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 10, maxPageSize: 100);
         var queryParams = new XiaokeConfigQueryParams { Current = page, PageSize = pageSize, Name = name, IsEnabled = isEnabled };
         var response = await _xiaokeConfigService.GetConfigsAsync(queryParams);
-        var configs = response.Data == null ? new List<object>() : response.Data.Select(c => new { c.Id, c.Name, c.Model, c.SystemPrompt, c.Temperature, c.MaxTokens, c.TopP, c.FrequencyPenalty, c.PresencePenalty, c.IsEnabled, c.IsDefault, c.CreatedAt, c.UpdatedAt }).Cast<object>().ToList();
-        return new { configs, total = response.Total, page = response.Current, pageSize = response.PageSize, totalPages = response.Total > 0 ? (int)Math.Ceiling(response.Total / (double)response.PageSize) : 0 };
+        var items = response.Queryable?.ToList() ?? new List<XiaokeConfigDto>();
+        var configs = items.Select(c => new { c.Id, c.Name, c.Model, c.SystemPrompt, c.Temperature, c.MaxTokens, c.TopP, c.FrequencyPenalty, c.PresencePenalty, c.IsEnabled, c.IsDefault, c.CreatedAt, c.UpdatedAt }).Cast<object>().ToList();
+        return new { configs, total = response.RowCount, page = response.CurrentPage, pageSize = response.PageSize, totalPages = response.PageCount };
     }
 
     private async Task<object?> HandleGetXiaokeConfigAsync(Dictionary<string, object> arguments, string currentUserId)

@@ -45,7 +45,7 @@ public interface IDocumentService
     /// <summary>
     /// 获取公文列表
     /// </summary>
-    Task<(List<Document> items, long total)> GetDocumentsAsync(DocumentQueryParams query);
+    Task<PagedResult<Document>> GetDocumentsAsync(DocumentQueryParams query);
 
     /// <summary>
     /// 删除公文
@@ -343,7 +343,7 @@ public class DocumentService : IDocumentService
     /// <summary>
     /// 获取公文列表
     /// </summary>
-    public async Task<(List<Document> items, long total)> GetDocumentsAsync(DocumentQueryParams query)
+    public async Task<PagedResult<Document>> GetDocumentsAsync(DocumentQueryParams query)
     {
         Expression<Func<Document, bool>> filter = d => true;
 
@@ -409,7 +409,8 @@ public class DocumentService : IDocumentService
                         }
                         else
                         {
-                            return (new List<Document>(), 0);
+                            var emptyQuery = _context.Set<Document>().Where(d => false);
+                            return emptyQuery.PageResult(query.Page, query.PageSize);
                         }
                     }
                     break;
@@ -426,10 +427,7 @@ public class DocumentService : IDocumentService
 
         {
             var filteredQuery = _context.Set<Document>().Where(filter!);
-            var pagedResult = filteredQuery.OrderByDescending(d => d.CreatedAt).PageResult(query.Page, query.PageSize);
-            var items = await pagedResult.Queryable.ToListAsync();
-            var totalCount = pagedResult.RowCount;
-            return (items, totalCount);
+            return filteredQuery.OrderByDescending(d => d.CreatedAt).PageResult(query.Page, query.PageSize);
         }
     }
 

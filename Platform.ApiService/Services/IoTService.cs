@@ -45,7 +45,7 @@ public class IoTService : IIoTService
         return gateway;
     }
 
-    public async Task<(List<IoTGateway> Items, long Total)> GetGatewaysAsync(string? keyword = null, IoTDeviceStatus? status = null, int pageIndex = 1, int pageSize = 20)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<IoTGateway>> GetGatewaysAsync(string? keyword = null, IoTDeviceStatus? status = null, int pageIndex = 1, int pageSize = 20)
     {
         var keywordLower = keyword?.ToLowerInvariant();
         var query = _context.Set<IoTGateway>().Where(g =>
@@ -53,12 +53,9 @@ public class IoTService : IIoTService
              (g.Name != null && g.Name.ToLower().Contains(keywordLower)) ||
              (g.Title != null && g.Title.ToLower().Contains(keywordLower)) ||
              (g.GatewayId != null && g.GatewayId.ToLower().Contains(keywordLower))) &&
-            (!status.HasValue || g.Status == status.Value)).AsQueryable();
+            (!status.HasValue || g.Status == status.Value));
 
-        var total = await query.LongCountAsync();
-        var pagedResult = query.OrderByDescending(g => g.CreatedAt).PageResult(pageIndex, pageSize);
-        var items = await pagedResult.Queryable.ToListAsync();
-        return (items, total);
+        return query.OrderByDescending(g => g.CreatedAt).PageResult(pageIndex, pageSize);
     }
 
     public async Task<IoTGateway?> GetGatewayByIdAsync(string id)
@@ -186,7 +183,7 @@ public class IoTService : IIoTService
         return device;
     }
 
-    public async Task<(List<IoTDevice> Items, long Total)> GetDevicesAsync(string? gatewayId = null, string? keyword = null, int pageIndex = 1, int pageSize = 20)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<IoTDevice>> GetDevicesAsync(string? gatewayId = null, string? keyword = null, int pageIndex = 1, int pageSize = 20)
     {
         var keywordLower = keyword?.ToLowerInvariant();
         var query = _context.Set<IoTDevice>().Where(d =>
@@ -195,12 +192,8 @@ public class IoTService : IIoTService
              (d.Name != null && d.Name.ToLower().Contains(keywordLower)) ||
              (d.Title != null && d.Title.ToLower().Contains(keywordLower)) ||
              (d.DeviceId != null && d.DeviceId.ToLower().Contains(keywordLower))));
-        
-        var total = await query.LongCountAsync();
-        var pagedResult = query.OrderByDescending(d => d.CreatedAt).PageResult(pageIndex, pageSize);
-        var items = await pagedResult.Queryable.ToListAsync();
 
-        return (items, total);
+        return query.OrderByDescending(d => d.CreatedAt).PageResult(pageIndex, pageSize);
     }
 
     public async Task<IoTDevice?> GetDeviceByIdAsync(string id)
@@ -348,7 +341,7 @@ public class IoTService : IIoTService
         return dataPoint;
     }
 
-    public async Task<(List<IoTDataPoint> Items, long Total)> GetDataPointsAsync(string? deviceId = null, string? keyword = null, int pageIndex = 1, int pageSize = 20)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<IoTDataPoint>> GetDataPointsAsync(string? deviceId = null, string? keyword = null, int pageIndex = 1, int pageSize = 20)
     {
         var keywordLower = keyword?.ToLowerInvariant();
         var query = _context.Set<IoTDataPoint>().Where(dp =>
@@ -358,11 +351,7 @@ public class IoTService : IIoTService
              (dp.Title != null && dp.Title.ToLower().Contains(keywordLower)) ||
              (dp.DataPointId != null && dp.DataPointId.ToLower().Contains(keywordLower))));
 
-        var total = await query.LongCountAsync();
-        var pagedResult = query.OrderByDescending(dp => dp.CreatedAt).PageResult(pageIndex, pageSize);
-        var items = await pagedResult.Queryable.ToListAsync();
-
-        return (items, total);
+        return query.OrderByDescending(dp => dp.CreatedAt).PageResult(pageIndex, pageSize);
     }
 
     public async Task<IoTDataPoint?> GetDataPointByIdAsync(string id)

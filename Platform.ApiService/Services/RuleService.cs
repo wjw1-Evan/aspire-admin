@@ -28,7 +28,7 @@ public class RuleService : IRuleService
     /// <summary>
     /// 获取规则列表
     /// </summary>
-    public async Task<RuleListResponse> GetRulesAsync(RuleQueryParams queryParams)
+    public async Task<PagedResult<RuleListItem>> GetRulesAsync(RuleQueryParams queryParams)
     {
         var query = _context.Set<RuleListItem>().AsQueryable();
 
@@ -50,14 +50,7 @@ public class RuleService : IRuleService
             }
         }
 
-        return new RuleListResponse
-        {
-            Data = rules,
-            Total = pagedResult.RowCount,
-            Success = true,
-            PageSize = queryParams.PageSize,
-            Current = queryParams.Current
-        };
+        return pagedResult;
     }
 
     /// <summary>

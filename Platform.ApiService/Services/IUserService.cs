@@ -1,6 +1,7 @@
 using User = Platform.ApiService.Models.AppUser;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
+using System.Linq.Dynamic.Core;
 
 namespace Platform.ApiService.Services;
 
@@ -79,14 +80,14 @@ public interface IUserService
     /// </summary>
     /// <param name="request">用户列表请求</param>
     /// <returns>用户列表响应</returns>
-    Task<UserListResponse> GetUsersWithPaginationAsync(UserListRequest request);
+    Task<PagedResult<AppUser>> GetUsersWithPaginationAsync(UserListRequest request);
 
     /// <summary>
     /// 分页获取用户列表（包含角色信息）
     /// </summary>
     /// <param name="request">用户列表请求</param>
     /// <returns>带角色信息的用户列表响应</returns>
-    Task<UserListWithRolesResponse> GetUsersWithRolesAsync(UserListRequest request);
+    Task<PagedResult<AppUser>> GetUsersWithRolesAsync(UserListRequest request);
 
     /// <summary>
     /// 确保当前用户有权访问目标用户的数据

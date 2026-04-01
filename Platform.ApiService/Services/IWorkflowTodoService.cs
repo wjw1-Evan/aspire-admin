@@ -1,3 +1,4 @@
+using System.Linq.Dynamic.Core;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Workflow;
 using System.Collections.Generic;
@@ -7,6 +8,6 @@ namespace Platform.ApiService.Services;
 
 public interface IWorkflowTodoService
 {
-    Task<(List<object> Items, long Total)> GetTodoInstancesAsync(string userId, int current, int pageSize);
+    Task<PagedResult<object>> GetTodoInstancesAsync(string userId, int current, int pageSize);
     Task<object?> GetNodeFormAsync(string instanceId, string nodeId);
 }

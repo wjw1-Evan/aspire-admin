@@ -51,14 +51,11 @@ public class KnowledgeService : IKnowledgeService, IScopedDependency
     }
 
     /// <inheritdoc/>
-    public async Task<(List<KnowledgeBase> items, long total)> FindPagedAsync(int page, int pageSize, string? keyword = null)
+    public async Task<PagedResult<KnowledgeBase>> GetKnowledgeBasesAsync(int page, int pageSize, string? keyword = null)
     {
         var q = _context.Set<KnowledgeBase>().AsQueryable();
         if (!string.IsNullOrEmpty(keyword)) q = q.Where(kb => kb.Name.Contains(keyword) || (kb.Description != null && kb.Description.Contains(keyword)));
-        var total = await q.LongCountAsync();
-        var pagedResult = q.OrderByDescending(kb => kb.CreatedAt).PageResult(page, pageSize);
-        var items = await pagedResult.Queryable.ToListAsync();
-        return (items, total);
+        return q.OrderByDescending(kb => kb.CreatedAt).PageResult(page, pageSize);
     }
 
     /// <inheritdoc/>

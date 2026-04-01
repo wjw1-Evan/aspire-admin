@@ -310,38 +310,11 @@ public class UserService : IUserService
     }
 
     /// <inheritdoc/>
-    public async Task<UserListResponse> GetUsersWithPaginationAsync(UserListRequest request)
-    {
-        var result = await GetUsersWithRolesAsync(request);
-        var basicUsers = result.Users.Select(userWithRoles => new User
-        {
-            Id = userWithRoles.Id ?? string.Empty,
-            Username = userWithRoles.Username,
-            Name = userWithRoles.Name,
-            Email = userWithRoles.Email,
-            PhoneNumber = userWithRoles.PhoneNumber,
-            Age = userWithRoles.Age,
-            IsActive = userWithRoles.IsActive,
-            LastLoginAt = userWithRoles.LastLoginAt,
-            CreatedAt = userWithRoles.CreatedAt,
-            UpdatedAt = userWithRoles.UpdatedAt
-        }).ToList();
-
-        return new UserListResponse
-        {
-            Users = basicUsers,
-            Total = result.Total,
-            Page = result.Page,
-            PageSize = result.PageSize
-        };
-    }
-
-    /// <inheritdoc/>
-    public async Task<UserListWithRolesResponse> GetUsersWithRolesAsync(UserListRequest request)
+    public async Task<PagedResult<User>> GetUsersWithPaginationAsync(UserListRequest request)
     {
         var filter = await BuildUserListFilterAsync(request);
-
         var query = _context.Set<User>().Where(filter);
+
         var sortBy = request.SortBy?.Trim().ToLowerInvariant();
         var isAscending = string.Equals(request.SortOrder, "asc", StringComparison.OrdinalIgnoreCase);
 
@@ -356,19 +329,12 @@ public class UserService : IUserService
             _ => isAscending ? query.OrderBy(u => u.CreatedAt) : query.OrderByDescending(u => u.CreatedAt)
         };
 
-        var pagedResult = query.PageResult(request.Page, request.PageSize);
-        var users = await pagedResult.Queryable.ToListAsync();
-        var total = pagedResult.RowCount;
+        return query.PageResult(request.Page, request.PageSize);
+    }
 
-        var usersWithRoles = await EnrichUsersWithRolesAsync(users);
-
-        return new UserListWithRolesResponse
-        {
-            Users = usersWithRoles,
-            Total = (int)total,
-            Page = request.Page,
-            PageSize = request.PageSize
-        };
+    public async Task<PagedResult<User>> GetUsersWithRolesAsync(UserListRequest request)
+    {
+        return await GetUsersWithPaginationAsync(request);
     }
 
     private async Task<Expression<Func<User, bool>>> BuildUserListFilterAsync(UserListRequest request)

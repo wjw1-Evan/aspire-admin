@@ -1,4 +1,5 @@
 using Platform.ApiService.Models.Workflow;
+using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 
 namespace Platform.ApiService.Services;
@@ -11,7 +12,7 @@ public interface IKnowledgeDocumentService
     /// <summary>
     /// 分页获取知识库下的文档列表
     /// </summary>
-    Task<(List<KnowledgeDocument> items, long total)> FindPagedAsync(string knowledgeBaseId, int page, int pageSize, string? keyword = null);
+    Task<PagedResult<KnowledgeDocument>> GetDocumentsAsync(string knowledgeBaseId, int page, int pageSize, string? keyword = null);
 
     /// <summary>
     /// 获取文档详情

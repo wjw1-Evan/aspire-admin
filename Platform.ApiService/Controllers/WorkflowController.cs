@@ -205,8 +205,8 @@ public class WorkflowController : BaseApiController
                 return q.OrderByDescending(w => w.CreatedAt);
             };
 
-            var (items, totalCount) = await _workflowQueryService.GetWorkflowsAsync(request);
-            return SuccessPaged(items, totalCount, request.Page, request.PageSize);
+            var result = await _workflowQueryService.GetWorkflowsAsync(request);
+            return await SuccessPagedAsync(result);
         }
         catch (ArgumentException ex)
         {
@@ -413,8 +413,8 @@ public class WorkflowController : BaseApiController
     {
         try
         {
-            var (items, totalCount) = await _workflowInstanceQueryService.GetInstancesAsync(current, pageSize, workflowDefinitionId, status);
-            return SuccessPaged(items, totalCount, current, pageSize);
+            var result = await _workflowInstanceQueryService.GetInstancesAsync(current, pageSize, workflowDefinitionId, status);
+            return await SuccessPagedAsync(result);
         }
         catch (Exception ex)
         {
@@ -558,8 +558,8 @@ public class WorkflowController : BaseApiController
         try
         {
             var userId = GetRequiredUserId();
-            var (todos, totalCount) = await _workflowTodoService.GetTodoInstancesAsync(userId, current, pageSize);
-            return SuccessPaged(todos, totalCount, current, pageSize);
+            var result = await _workflowTodoService.GetTodoInstancesAsync(userId, current, pageSize);
+            return await SuccessPagedAsync(result);
         }
         catch (Exception ex)
         {

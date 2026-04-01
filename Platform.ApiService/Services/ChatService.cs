@@ -6,6 +6,7 @@ using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using System;
 using System.Collections.Generic;
+using System.Linq.Dynamic.Core;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -34,7 +35,7 @@ public class ChatService : IChatService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public Task<(List<ChatSession> sessions, long total)> GetSessionsAsync(ChatSessionListRequest request)
+    public Task<PagedResult<ChatSession>> GetSessionsAsync(ChatSessionListRequest request)
         => _sessionService.GetSessionsAsync(request);
 
     public Task<(List<ChatMessage> messages, bool hasMore, string? nextCursor)> GetMessagesAsync(string sessionId, ChatMessageListRequest request)

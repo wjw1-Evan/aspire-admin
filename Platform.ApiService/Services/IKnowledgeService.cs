@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Workflow;
+using System.Linq.Dynamic.Core;
 
 namespace Platform.ApiService.Services;
 
@@ -23,7 +24,7 @@ public interface IKnowledgeService
     /// <summary>
     /// 分页获取知识库列表
     /// </summary>
-    Task<(List<KnowledgeBase> items, long total)> FindPagedAsync(int page, int pageSize, string? keyword = null);
+    Task<PagedResult<KnowledgeBase>> GetKnowledgeBasesAsync(int page, int pageSize, string? keyword = null);
 
     /// <summary>
     /// 获取知识库详情

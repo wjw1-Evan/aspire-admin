@@ -57,8 +57,8 @@ public class IoTController : BaseApiController
     [HttpGet("gateways")]
     public async Task<IActionResult> GetGateways([FromQuery] string? keyword = null, [FromQuery] IoTDeviceStatus? status = null, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20)
     {
-        var (items, total) = await _iotService.GetGatewaysAsync(keyword, status, pageIndex, pageSize);
-        return SuccessPaged(items, total, pageIndex, pageSize);
+        var result = await _iotService.GetGatewaysAsync(keyword, status, pageIndex, pageSize);
+        return await SuccessPagedAsync(result);
     }
 
     /// <summary>
@@ -140,8 +140,8 @@ public class IoTController : BaseApiController
     [HttpGet("devices")]
     public async Task<IActionResult> GetDevices([FromQuery] string? gatewayId = null, [FromQuery] string? keyword = null, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20)
     {
-        var (items, total) = await _iotService.GetDevicesAsync(gatewayId, keyword, pageIndex, pageSize);
-        return SuccessPaged(items, total, pageIndex, pageSize);
+        var result = await _iotService.GetDevicesAsync(gatewayId, keyword, pageIndex, pageSize);
+        return await SuccessPagedAsync(result);
     }
 
     /// <summary>
@@ -282,8 +282,8 @@ public class IoTController : BaseApiController
     [HttpGet("datapoints")]
     public async Task<IActionResult> GetDataPoints([FromQuery] string? deviceId = null, [FromQuery] string? keyword = null, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20)
     {
-        var (items, total) = await _iotService.GetDataPointsAsync(deviceId, keyword, pageIndex, pageSize);
-        return SuccessPaged(items, total, pageIndex, pageSize);
+        var result = await _iotService.GetDataPointsAsync(deviceId, keyword, pageIndex, pageSize);
+        return await SuccessPagedAsync(result);
     }
 
     /// <summary>

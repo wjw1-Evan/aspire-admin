@@ -23,8 +23,8 @@ public class FormController : BaseApiController
     {
         try
         {
-            var (items, total) = await _formService.GetFormsAsync(current, pageSize, keyword, isActive);
-            return SuccessPaged(items, total, current, pageSize);
+            var result = await _formService.GetFormsAsync(current, pageSize, keyword, isActive);
+            return await SuccessPagedAsync(result);
         }
         catch (Exception ex)
         {

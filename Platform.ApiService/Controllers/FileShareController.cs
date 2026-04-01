@@ -174,7 +174,7 @@ public class FileShareController : BaseApiController
         try
         {
             var result = await _fileShareService.GetMySharesAsync(query);
-            return SuccessPaged(await result.Queryable.ToListAsync(), result.RowCount, result.CurrentPage, result.PageSize);
+            return await SuccessPagedAsync(result);
         }
         catch (Exception ex)
         {
@@ -195,7 +195,7 @@ public class FileShareController : BaseApiController
         try
         {
             var result = await _fileShareService.GetSharedWithMeAsync(query);
-            return SuccessPaged(await result.Queryable.ToListAsync(), result.RowCount, result.CurrentPage, result.PageSize);
+            return await SuccessPagedAsync(result);
         }
         catch (Exception ex)
         {

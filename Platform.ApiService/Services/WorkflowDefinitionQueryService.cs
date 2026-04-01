@@ -19,7 +19,7 @@ public class WorkflowDefinitionQueryService : IWorkflowDefinitionQueryService
         _context = context;
     }
 
-    public async Task<(List<WorkflowDefinition> Items, long Total)> GetWorkflowsAsync(WorkflowSearchRequest request)
+    public async Task<PagedResult<WorkflowDefinition>> GetWorkflowsAsync(WorkflowSearchRequest request)
     {
         Expression<Func<WorkflowDefinition, bool>>? filter = null;
 
@@ -110,11 +110,7 @@ public class WorkflowDefinitionQueryService : IWorkflowDefinitionQueryService
             return q.OrderByDescending(w => w.CreatedAt);
         };
 
-        var pagedResult = sort(queryable).PageResult(request.Page, request.PageSize);
-        var items = await pagedResult.Queryable.ToListAsync();
-        var total = pagedResult.RowCount;
-
-        return (items, total);
+        return sort(queryable).PageResult(request.Page, request.PageSize);
     }
 
     public async Task<WorkflowDefinition?> GetWorkflowByIdAsync(string id)

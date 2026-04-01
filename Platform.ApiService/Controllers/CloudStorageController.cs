@@ -121,7 +121,7 @@ public class CloudStorageController : BaseApiController
     public async Task<IActionResult> GetFileItems([FromQuery] string? parentId, [FromQuery] FileListQuery query)
     {
         var result = await _cloudStorageService.GetFileItemsAsync(parentId ?? string.Empty, query);
-        return SuccessPaged(await result.Queryable.ToListAsync(), result.RowCount, result.CurrentPage, result.PageSize);
+        return await SuccessPagedAsync(result);
     }
 
     /// <summary>
@@ -283,7 +283,7 @@ public class CloudStorageController : BaseApiController
         try
         {
             var result = await _cloudStorageService.SearchFilesAsync(query);
-            return SuccessPaged(await result.Queryable.ToListAsync(), result.RowCount, result.CurrentPage, result.PageSize);
+            return await SuccessPagedAsync(result);
         }
         catch (Exception ex)
         {
@@ -367,7 +367,7 @@ public class CloudStorageController : BaseApiController
             Type = type
         };
         var result = await _cloudStorageService.GetRecycleBinItemsAsync(query);
-        return SuccessPaged(await result.Queryable.ToListAsync(), result.RowCount, result.CurrentPage, result.PageSize);
+        return await SuccessPagedAsync(result);
     }
 
     /// <summary>
@@ -380,7 +380,7 @@ public class CloudStorageController : BaseApiController
     public async Task<IActionResult> GetRecycleBinItems([FromQuery] RecycleBinQuery query)
     {
         var result = await _cloudStorageService.GetRecycleBinItemsAsync(query);
-        return SuccessPaged(await result.Queryable.ToListAsync(), result.RowCount, result.CurrentPage, result.PageSize);
+        return await SuccessPagedAsync(result);
     }
 
     /// <summary>

@@ -1,4 +1,5 @@
 using Platform.ApiService.Models;
+using System.Linq.Dynamic.Core;
 
 namespace Platform.ApiService.Services;
 
@@ -12,7 +13,7 @@ public interface IXiaokeConfigService
     /// </summary>
     /// <param name="queryParams">查询参数</param>
     /// <returns>配置列表响应</returns>
-    Task<XiaokeConfigListResponse> GetConfigsAsync(XiaokeConfigQueryParams queryParams);
+    Task<PagedResult<XiaokeConfigDto>> GetConfigsAsync(XiaokeConfigQueryParams queryParams);
 
     /// <summary>
     /// 根据ID获取配置详情

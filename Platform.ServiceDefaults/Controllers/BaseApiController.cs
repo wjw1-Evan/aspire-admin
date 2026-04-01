@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
-using Platform.ServiceDefaults.Exceptions;
 
 namespace Platform.ServiceDefaults.Controllers;
 
@@ -10,6 +9,9 @@ public abstract class BaseApiController : ControllerBase
 {
     protected string? CurrentUserId
         => HttpContext.Items["UserId"] as string;
+
+    protected string RequiredUserId
+        => CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
 
     protected async Task<string?> GetCompanyId(bool required = false)
     {
@@ -23,6 +25,9 @@ public abstract class BaseApiController : ControllerBase
 
         return companyId;
     }
+
+    protected async Task<string> GetRequiredCompanyId()
+        => await GetCompanyId(true);
 
     protected IActionResult Success(object data, string? message = null)
         => Ok(CreateResponse(true, message, data));

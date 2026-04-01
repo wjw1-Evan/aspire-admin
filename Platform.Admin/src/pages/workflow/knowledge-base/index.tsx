@@ -212,9 +212,9 @@ const KnowledgeBaseManagement: React.FC = () => {
               ...searchValues,
             });
             if (res.success && res.data) {
-              return { data: res.data.queryable, total: res.data.rowCount, success: true };
+              return { data: res.data.queryable, rowCount: res.data.rowCount, success: true };
             }
-            return { data: [], total: 0, success: false };
+            return { data: [], rowCount: 0, success: false };
           }}
           actionRef={actionRef}
           rowKey="id"

@@ -542,11 +542,9 @@ const MyActivity: React.FC = () => {
       });
 
       if (response.success && response.data) {
-        // 后端返回的数据结构：{ data: { data: [...], total: xxx, ... } }
-
         const result = response.data as any;
-        const list: UserActivityLog[] = result.list || [];
-        const total: number = result.total || 0;
+        const list: UserActivityLog[] = result.queryable || [];
+        const total: number = result.rowCount || 0;
         const stats = result.summary || {};
 
         // 前端计算部分统计信息 (平均耗时, 操作类型数)

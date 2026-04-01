@@ -206,7 +206,7 @@ export const iotService = {
     let url = `${API_PREFIX}/gateways?pageIndex=${pageIndex}&pageSize=${pageSize}`;
     if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
     if (status) url += `&status=${encodeURIComponent(status)}`;
-    return request<{ success: boolean; data: { list: IoTGateway[]; total: number; page: number; pageSize: number } }>(
+    return request<{ success: boolean; data: { queryable: IoTGateway[]; rowCount: number; currentPage: number; pageSize: number } }>(
       url,
       { method: 'GET' }
     );
@@ -232,7 +232,7 @@ export const iotService = {
     let url = `${API_PREFIX}/devices?pageIndex=${pageIndex}&pageSize=${pageSize}`;
     if (gatewayId) url += `&gatewayId=${gatewayId}`;
     if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
-    return request<{ success: boolean; data: { list: IoTDevice[]; total: number; page: number; pageSize: number } }>(url, { method: 'GET' });
+    return request<{ success: boolean; data: { queryable: IoTDevice[]; rowCount: number; currentPage: number; pageSize: number } }>(url, { method: 'GET' });
   },
 
   getDevice: (id: string) =>
@@ -298,7 +298,7 @@ export const iotService = {
     let url = `${API_PREFIX}/datapoints?pageIndex=${pageIndex}&pageSize=${pageSize}`;
     if (deviceId) url += `&deviceId=${deviceId}`;
     if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
-    return request<{ success: boolean; data: { list: IoTDataPoint[]; total: number; page: number; pageSize: number } }>(url, { method: 'GET' });
+    return request<{ success: boolean; data: { queryable: IoTDataPoint[]; rowCount: number; currentPage: number; pageSize: number } }>(url, { method: 'GET' });
   },
 
   getDataPoint: (id: string) =>

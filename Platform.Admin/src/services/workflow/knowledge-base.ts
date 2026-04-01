@@ -22,7 +22,7 @@ export async function getKnowledgeBases(params: {
   current?: number;
   pageSize?: number;
   keyword?: string;
-}): Promise<ApiResponse<{ list: KnowledgeBase[]; total: number; page: number; pageSize: number }>> {
+}): Promise<ApiResponse<{ queryable: KnowledgeBase[]; rowCount: number; currentPage: number; pageSize: number }>> {
   return request('/api/workflow/knowledge-bases', {
     method: 'GET',
     params,
@@ -88,7 +88,7 @@ export interface KnowledgeDocument {
 export async function getKnowledgeDocuments(
   knowledgeBaseId: string,
   params: { page?: number; pageSize?: number; keyword?: string }
-): Promise<ApiResponse<{ list: KnowledgeDocument[]; total: number; page: number; pageSize: number }>> {
+): Promise<ApiResponse<{ queryable: KnowledgeDocument[]; rowCount: number; currentPage: number; pageSize: number }>> {
   return request(`/api/workflow/knowledge-bases/${knowledgeBaseId}/documents`, {
     method: 'GET',
     params,

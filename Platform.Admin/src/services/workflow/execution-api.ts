@@ -43,7 +43,7 @@ export async function getWorkflowList(params?: {
   category?: string;
   isActive?: boolean;
   keyword?: string;
-}): Promise<ApiResponse<{ list: WorkflowDefinition[]; total: number }>> {
+}): Promise<ApiResponse<{ queryable: WorkflowDefinition[]; rowCount: number }>> {
   return request('/api/workflow/definitions', {
     method: 'GET',
     params,

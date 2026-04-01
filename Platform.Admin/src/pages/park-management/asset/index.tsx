@@ -291,7 +291,7 @@ const AssetManagement: React.FC = () => {
                 ...formValues,
             });
             if (res.success && res.data) {
-                return { data: res.data.buildings, total: res.data.rowCount, success: true };
+                return { data: res.data.queryable, total: res.data.rowCount, success: true };
             }
             return { data: [], total: 0, success: false };
         } catch (error) {
@@ -309,7 +309,7 @@ const AssetManagement: React.FC = () => {
                 ...formValues,
             });
             if (res.success && res.data) {
-                return { data: res.data.units, total: res.data.rowCount, success: true };
+                return { data: res.data.queryable, total: res.data.rowCount, success: true };
             }
             return { data: [], total: 0, success: false };
         } catch (error) {

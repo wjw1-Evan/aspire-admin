@@ -327,7 +327,7 @@ const VisitKnowledgeBase: React.FC = () => {
                                                 ...searchValues,
                                             });
                                             if (res.success && res.data) {
-                                                return { data: res.data.questions, total: res.data.rowCount, success: true };
+                                                return { data: res.data.queryable, total: res.data.rowCount, success: true };
                                             }
                                             return { data: [], total: 0, success: false };
                                         }}
@@ -349,7 +349,7 @@ const VisitKnowledgeBase: React.FC = () => {
                                     request={async () => {
                                         const res = await visitService.getQuestionnaires();
                                         if (res.success && res.data) {
-                                            return { data: res.data.questionnaires, total: res.data.rowCount, success: true };
+                                            return { data: res.data.queryable, total: res.data.rowCount, success: true };
                                         }
                                         return { data: [], total: 0, success: false };
                                     }}

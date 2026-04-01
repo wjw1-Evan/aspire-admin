@@ -107,9 +107,9 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
           if (data.records && Array.isArray(data.records)) {
             records = data.records;
             total = data.total || 0;
-          } else if (data.list && Array.isArray(data.list)) {
-            records = data.list;
-            total = data.total || 0;
+          } else if (data.queryable && Array.isArray(data.queryable)) {
+            records = data.queryable;
+            total = data.rowCount || 0;
           }
         }
 

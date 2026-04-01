@@ -66,21 +66,21 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
           return {
             data: response.data.queryable || [],
             success: true,
-            total: response.data.rowCount ?? 0,
+            rowCount: response.data.rowCount ?? 0,
           };
         }
 
         return {
           data: [],
           success: false,
-          total: 0,
+          rowCount: 0,
         };
       } catch (error) {
         console.error('获取聊天记录列表失败:', error);
         return {
           data: [],
           success: false,
-          total: 0,
+          rowCount: 0,
         };
       }
     },

@@ -46,9 +46,9 @@ export interface UserListRequest {
  * 与后端 UserListWithRolesResponse 对应
  */
 export interface UserListResponse {
-  list: AppUser[];
-  total: number;
-  page: number;
+  queryable: AppUser[];
+  rowCount: number;
+  currentPage: number;
   pageSize: number;
   totalPages?: number;
 }

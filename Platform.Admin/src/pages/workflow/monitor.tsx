@@ -205,10 +205,10 @@ const WorkflowMonitor: React.FC = () => {
             return {
               data: response.data.queryable || [],
               success: true,
-              total: response.data.rowCount ?? 0,
+              rowCount: response.data.rowCount ?? 0,
             };
           }
-          return { data: [], success: false, total: 0 };
+          return { data: [], success: false, rowCount: 0 };
         }}
         rowKey="id"
         search={true}

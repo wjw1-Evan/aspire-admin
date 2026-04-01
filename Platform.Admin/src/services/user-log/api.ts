@@ -10,9 +10,9 @@ export async function getUserActivityLogs(
 ) {
   return request<
     API.ApiResponse<{
-      list: UserActivityLog[];
-      total: number;
-      page: number;
+      queryable: UserActivityLog[];
+      rowCount: number;
+      currentPage: number;
       pageSize: number;
       totalPages?: number;
     }>
@@ -55,9 +55,9 @@ export async function getCurrentUserActivityLogs(
   options?: Record<string, any>,
 ) {
   return request<API.ApiResponse<{
-    list: UserActivityLog[];
-    total: number;
-    page: number;
+    queryable: UserActivityLog[];
+    rowCount: number;
+    currentPage: number;
     pageSize: number;
     summary: {
       totalCount: number;

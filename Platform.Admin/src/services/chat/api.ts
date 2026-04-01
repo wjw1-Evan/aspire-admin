@@ -58,9 +58,9 @@ export interface ChatMessage {
  * 会话列表响应
  */
 export interface SessionListResponse {
-  list: ChatSession[];
-  total: number;
-  page: number;
+  queryable: ChatSession[];
+  rowCount: number;
+  currentPage: number;
   pageSize: number;
   totalPages?: number;
   hasPreviousPage?: boolean;

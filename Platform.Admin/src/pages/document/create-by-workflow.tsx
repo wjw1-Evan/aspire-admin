@@ -35,7 +35,7 @@ const CreateAndStartByWorkflow: React.FC = () => {
 
                 const resp = await getWorkflowList({ current: 1, pageSize: 100 });
                 if (resp.success && resp.data) {
-                    const options = (resp.data.list || []).map((wf) => ({ label: wf.name, value: wf.id! }));
+                    const options = (resp.data.queryable || []).map((wf) => ({ label: wf.name, value: wf.id! }));
                     setWorkflows(options);
                     // 从查询参数预选流程
                     const params = new URLSearchParams(location.search || '');

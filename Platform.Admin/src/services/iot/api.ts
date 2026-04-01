@@ -35,9 +35,9 @@ export interface IoTEventQueryRequest {
 }
 
 export interface IoTEventQueryResponse {
-    list: IoTDeviceEvent[];
-    total: number;
-    page: number;
+    queryable: IoTDeviceEvent[];
+    rowCount: number;
+    currentPage: number;
     pageSize: number;
 }
 

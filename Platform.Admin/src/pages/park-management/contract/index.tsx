@@ -180,7 +180,7 @@ const ContractManagement: React.FC = () => {
                 status: params.status,
                 expiringWithin30Days: params.expiringWithin30Days
             });
-            if (res.success && res.data) return { data: res.data.contracts, total: res.data.rowCount, success: true };
+            if (res.success && res.data) return { data: res.data.queryable, total: res.data.rowCount, success: true };
             return { data: [], total: 0, success: false };
         } catch (error) { return { data: [], total: 0, success: false }; }
     };

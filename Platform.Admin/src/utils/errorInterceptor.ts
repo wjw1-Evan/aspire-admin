@@ -223,13 +223,12 @@ class UnifiedErrorInterceptor {
     if (error.info?.code) {
       errorInfo.code = error.info.code;
       errorInfo.details = error.info;
-    } else if (error.response) {
-      errorInfo.code = error.response.data?.code;
+    } else if (error.response?.data?.code) {
+      errorInfo.code = error.response.data.code;
       errorInfo.details = error.response.data;
-    } else if (error.code) {
-      // 如果错误对象直接包含 code
-      errorInfo.code = error.code;
-      errorInfo.details = error;
+    } else if (error.response?.status) {
+      errorInfo.code = `HTTP_${error.response.status}`;
+      errorInfo.details = error.response.data;
     }
 
     if (context) {

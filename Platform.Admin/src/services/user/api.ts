@@ -22,9 +22,8 @@ export interface AppUser {
  * 用户列表响应
  */
 export interface UserListResponse {
-  list: AppUser[];
-  users: AppUser[];
-  total: number;
+  queryable: AppUser[];
+  rowCount: number;
 }
 
 /**

@@ -116,13 +116,13 @@ const WorkflowManagement: React.FC = () => {
         return {
           data: response.data.queryable || [],
           success: true,
-          total: response.data.rowCount ?? 0,
+          rowCount: response.data.rowCount ?? 0,
         };
       }
-      return { data: [], success: false, total: 0 };
+      return { data: [], success: false, rowCount: 0 };
     } catch (error) {
       console.error('获取工作流列表失败:', error);
-      return { data: [], success: false, total: 0 };
+      return { data: [], success: false, rowCount: 0 };
     }
   }, []); // 🔧 空依赖数组，避免函数重新创建
 
@@ -316,7 +316,7 @@ const WorkflowManagement: React.FC = () => {
           pageSizeOptions: [10, 20, 50, 100],
           showSizeChanger: true,
           showQuickJumper: true,
-          showTotal: (total) => `共 ${total} 条`,
+          showTotal: (rowCount) => `共 ${rowCount} 条`,
         }}
         scroll={{ x: 'max-content' }}
       />

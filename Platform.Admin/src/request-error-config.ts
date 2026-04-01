@@ -27,7 +27,6 @@ enum ErrorShowType {
 // 与后端约定的响应数据格式 - 统一 API 标准
 interface ResponseStructure {
   success: boolean;
-  code: string;
   data?: any;
   message?: string;
   timestamp?: string;
@@ -79,7 +78,6 @@ export const errorConfig: RequestConfig = {
       // 3. 检查是否是标准错误响应格式（有 success 字段但为 false）
       const tempRes = res as any;
       const success = tempRes.success;
-      const code = tempRes.code;
       const message = tempRes.message;
       const data = tempRes.data;
       const showType = tempRes.showType;
@@ -87,7 +85,7 @@ export const errorConfig: RequestConfig = {
       if (success === false) {
         const error: any = new Error(message || '请求失败');
         error.name = 'BizError';
-        error.info = { code, message, showType, data, errors: tempRes.errors };
+        error.info = { message, showType, data, errors: tempRes.errors };
         throw error;
       }
 
@@ -117,7 +115,7 @@ export const errorConfig: RequestConfig = {
         error?.response?.data?.title ||
         error?.message;
 
-      const errorCode = error?.info?.code || error?.response?.data?.code;
+      const errorCode = error?.response?.data?.code;
       const isLoginRequest = error.config?.url?.includes('/api/auth/login') ||
         error.config?.url?.includes('/login');
 

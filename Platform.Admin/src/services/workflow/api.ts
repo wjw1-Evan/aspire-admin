@@ -485,7 +485,7 @@ export async function getWorkflowList(params: {
   keyword?: string;
   category?: string;
   isActive?: boolean;
-}): Promise<ApiResponse<{ list: WorkflowDefinition[]; total: number; page: number; pageSize: number }>> {
+}): Promise<ApiResponse<{ queryable: WorkflowDefinition[]; rowCount: number; currentPage: number; pageSize: number }>> {
   return request('/api/workflows', {
     method: 'GET',
     params,
@@ -548,7 +548,7 @@ export async function getWorkflowInstances(params: {
   pageSize?: number;
   workflowDefinitionId?: string;
   status?: WorkflowStatus;
-}): Promise<ApiResponse<{ list: WorkflowInstance[]; total: number; page: number; pageSize: number }>> {
+}): Promise<ApiResponse<{ queryable: WorkflowInstance[]; rowCount: number; currentPage: number; pageSize: number }>> {
   return request('/api/workflows/instances', {
     method: 'GET',
     params,
@@ -561,7 +561,7 @@ export async function getWorkflowInstances(params: {
 export async function getTodoInstances(params: {
   page?: number;
   pageSize?: number;
-}): Promise<ApiResponse<{ list: any[]; total: number; page: number; pageSize: number }>> {
+}): Promise<ApiResponse<{ queryable: any[]; rowCount: number; currentPage: number; pageSize: number }>> {
   return request('/api/workflows/instances/todo', {
     method: 'GET',
     params,
@@ -732,7 +732,7 @@ export async function getBulkOperations(params: {
   page?: number;
   pageSize?: number;
   status?: BulkOperationStatus;
-}): Promise<ApiResponse<{ list: BulkOperation[]; total: number; page: number; pageSize: number }>> {
+}): Promise<ApiResponse<{ queryable: BulkOperation[]; rowCount: number; currentPage: number; pageSize: number }>> {
   return request('/api/workflows/bulk-operations', {
     method: 'GET',
     params,
@@ -901,7 +901,7 @@ export async function getOrganizationTree(): Promise<ApiResponse<OrganizationTre
 export async function getOrganizationMembers(orgId: string, params?: {
   page?: number;
   pageSize?: number;
-}): Promise<ApiResponse<{ list: Array<{ userId: string; username: string; email?: string }>; total: number }>> {
+}): Promise<ApiResponse<{ queryable: Array<{ userId: string; username: string; email?: string }>; rowCount: number }>> {
   return request(`/api/organizations/${orgId}/members`, {
     method: 'GET',
     params,

@@ -85,9 +85,8 @@ const UserLog: React.FC = () => {
       });
 
       if (response.success && response.data) {
-        // 后端返回的数据结构：{ data: { list: [...], total: xxx, ... } }
         const result = response.data as any;
-        let list: UserActivityLog[] = result.list || [];
+        let list: UserActivityLog[] = result.queryable || [];
 
         const successCount = list.filter((item) => (item.statusCode ?? 0) >= 200 && (item.statusCode ?? 0) < 400).length;
         const errorCount = list.filter((item) => (item.statusCode ?? 0) >= 400).length;

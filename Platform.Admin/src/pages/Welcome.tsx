@@ -186,7 +186,7 @@ const Welcome: React.FC = () => {
         ]);
 
         if (docStatsRes?.success && docStatsRes.data) setDocStatistics(docStatsRes.data);
-        if (pendingDocsRes?.success && pendingDocsRes.data?.list) setPendingDocs(pendingDocsRes.data.list);
+        if (pendingDocsRes?.success && pendingDocsRes.data?.queryable) setPendingDocs(pendingDocsRes.data.queryable);
       } catch (docError) {
         console.warn('获取审批统计失败', docError);
       }

@@ -448,13 +448,13 @@ const FormsPage: React.FC = () => {
                 return {
                     data: response.data.queryable || [],
                     success: true,
-                    total: response.data.rowCount ?? 0,
+                    rowCount: response.data.rowCount ?? 0,
                 };
             }
-            return { data: [], success: false, total: 0 };
+            return { data: [], success: false, rowCount: 0 };
         } catch (error) {
             console.error('Failed to load forms:', error);
-            return { data: [], success: false, total: 0 };
+            return { data: [], success: false, rowCount: 0 };
         }
     }, []);
 
@@ -557,7 +557,7 @@ const FormsPage: React.FC = () => {
                     pageSizeOptions: [10, 20, 50, 100],
                     showSizeChanger: true,
                     showQuickJumper: true,
-                    showTotal: (total) => `共 ${total} 条`,
+                    showTotal: (rowCount) => `共 ${rowCount} 条`,
                 }}
                 scroll={{ x: 'max-content' }}
             />

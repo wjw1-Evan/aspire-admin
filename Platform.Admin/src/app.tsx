@@ -597,7 +597,7 @@ export const request: RequestConfig = {
   ],
 
   responseInterceptors: [
-    (response) => {
+    (response: any) => {
       return handleCurrentUserResponse(response);
     },
     async (error: any) => {

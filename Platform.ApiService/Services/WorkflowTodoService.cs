@@ -1,3 +1,4 @@
+using System.Linq.Dynamic.Core;
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Workflow;
@@ -32,11 +33,10 @@ public class WorkflowTodoService : IWorkflowTodoService
             i.CurrentApproverIds.Contains(userId);
 
         var queryable = _context.Set<WorkflowInstance>().Where(filter);
-        var totalCount = await queryable.LongCountAsync();
-        var items = await queryable.OrderByDescending(i => i.CreatedAt)
-            .Skip((current - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
+        var pagedResult = queryable.OrderByDescending(i => i.CreatedAt)
+            .PageResult(current, pageSize);
+        var items = await pagedResult.Queryable.ToListAsync();
+        var totalCount = pagedResult.RowCount;
 
         var todos = new List<object>();
 

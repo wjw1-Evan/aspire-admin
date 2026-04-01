@@ -85,7 +85,7 @@ public interface IStorageQuotaService
     /// </summary>
     /// <param name="query">查询参数</param>
     /// <returns>分页的存储配额列表</returns>
-    Task<PagedResult<StorageQuotaListItem>> GetStorageQuotaListAsync(StorageQuotaListQuery query);
+    Task<System.Linq.Dynamic.Core.PagedResult<StorageQuotaListItem>> GetStorageQuotaListAsync(StorageQuotaListQuery query);
 
     /// <summary>
     /// 获取存储使用统计信息

@@ -5,6 +5,7 @@ using Platform.ServiceDefaults.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 
 namespace Platform.ApiService.Services;
@@ -52,13 +53,11 @@ public class IoTService : IIoTService
              (g.Name != null && g.Name.ToLower().Contains(keywordLower)) ||
              (g.Title != null && g.Title.ToLower().Contains(keywordLower)) ||
              (g.GatewayId != null && g.GatewayId.ToLower().Contains(keywordLower))) &&
-            (!status.HasValue || g.Status == status.Value));
+            (!status.HasValue || g.Status == status.Value)).AsQueryable();
 
         var total = await query.LongCountAsync();
-        var items = await query.OrderByDescending(g => g.CreatedAt)
-            .Skip((pageIndex - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
+        var pagedResult = query.OrderByDescending(g => g.CreatedAt).PageResult(pageIndex, pageSize);
+        var items = await pagedResult.Queryable.ToListAsync();
         return (items, total);
     }
 
@@ -198,10 +197,8 @@ public class IoTService : IIoTService
              (d.DeviceId != null && d.DeviceId.ToLower().Contains(keywordLower))));
         
         var total = await query.LongCountAsync();
-        var items = await query.OrderByDescending(d => d.CreatedAt)
-            .Skip((pageIndex - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
+        var pagedResult = query.OrderByDescending(d => d.CreatedAt).PageResult(pageIndex, pageSize);
+        var items = await pagedResult.Queryable.ToListAsync();
 
         return (items, total);
     }
@@ -362,10 +359,8 @@ public class IoTService : IIoTService
              (dp.DataPointId != null && dp.DataPointId.ToLower().Contains(keywordLower))));
 
         var total = await query.LongCountAsync();
-        var items = await query.OrderByDescending(dp => dp.CreatedAt)
-            .Skip((pageIndex - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
+        var pagedResult = query.OrderByDescending(dp => dp.CreatedAt).PageResult(pageIndex, pageSize);
+        var items = await pagedResult.Queryable.ToListAsync();
 
         return (items, total);
     }
@@ -509,10 +504,8 @@ public class IoTService : IIoTService
             (!request.EndTime.HasValue || r.ReportedAt <= request.EndTime.Value));
 
         var total = await query.LongCountAsync();
-        var records = await query.OrderByDescending(r => r.ReportedAt)
-            .Skip((request.PageIndex - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .ToListAsync();
+        var pagedResult = query.OrderByDescending(r => r.ReportedAt).PageResult(request.PageIndex, request.PageSize);
+        var records = await pagedResult.Queryable.ToListAsync();
 
         return (records, total);
     }
@@ -582,10 +575,8 @@ public class IoTService : IIoTService
             (!request.EndTime.HasValue || e.OccurredAt <= request.EndTime.Value));
 
         var total = await query.LongCountAsync();
-        var events = await query.OrderByDescending(e => e.OccurredAt)
-            .Skip((request.PageIndex - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .ToListAsync();
+        var pagedResult = query.OrderByDescending(e => e.OccurredAt).PageResult(request.PageIndex, request.PageSize);
+        var events = await pagedResult.Queryable.ToListAsync();
 
         return (events, total);
     }

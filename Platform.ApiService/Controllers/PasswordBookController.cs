@@ -89,11 +89,6 @@ public class PasswordBookController : BaseApiController
     [RequireMenu("password-book")]
     public async Task<IActionResult> GetEntries([FromBody] PasswordBookQueryRequest request)
     {
-        if (request.Current < 1 || request.Current > 10000)
-            return Error("INVALID_REQUEST", "页码必须在 1-10000 之间");
-        if (request.PageSize < 1 || request.PageSize > 100)
-            return Error("INVALID_REQUEST", "每页数量必须在 1-100 之间");
-
         var userId = GetRequiredUserId();
         var (items, total) = await _passwordBookService.GetEntriesAsync(request, userId);
         var response = new PasswordBookListResponse

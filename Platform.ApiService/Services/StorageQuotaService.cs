@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
+using Platform.ApiService.Extensions;
 using Platform.ServiceDefaults.Services;
+using System.Linq.Dynamic.Core;
 
 namespace Platform.ApiService.Services;
 
@@ -494,7 +496,7 @@ public class StorageQuotaService : IStorageQuotaService
     /// 获取存储配额列表（分页）
     /// 修复：基于所有用户查询，而不仅仅是已有配额记录的用户
     /// </summary>
-    public async Task<PagedResult<StorageQuotaListItem>> GetStorageQuotaListAsync(StorageQuotaListQuery query)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<StorageQuotaListItem>> GetStorageQuotaListAsync(StorageQuotaListQuery query)
     {
         // 获取当前企业ID
         var currentCompanyId = await _tenantContext.GetCurrentCompanyIdAsync();
@@ -706,19 +708,13 @@ public class StorageQuotaService : IStorageQuotaService
             _ => allItems.OrderByDescending(item => item.UsedSpace).ToList() // 默认按使用量降序
         };
 
-        // 应用分页
-        var total = sortedItems.Count;
-        var pagedItems = sortedItems
-            .Skip((query.Page - 1) * query.PageSize)
-            .Take(query.PageSize)
-            .ToList();
-
-        return new PagedResult<StorageQuotaListItem>
+        return new System.Linq.Dynamic.Core.PagedResult<StorageQuotaListItem>
         {
-            Data = pagedItems,
-            Total = total,
-            Page = query.Page,
-            PageSize = query.PageSize
+            Queryable = sortedItems.AsQueryable(),
+            CurrentPage = query.Page,
+            PageSize = query.PageSize,
+            RowCount = sortedItems.Count,
+            PageCount = (int)Math.Ceiling((double)sortedItems.Count / query.PageSize)
         };
     }
 

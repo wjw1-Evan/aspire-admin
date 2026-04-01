@@ -273,13 +273,6 @@ public class StorageQuotaController : BaseApiController
         [FromQuery] string? companyId = null,
         [FromQuery] bool? isEnabled = null)
     {
-        // 验证分页参数
-        if (page < 1 || page > 10000)
-            return ValidationError("页码必须在 1-10000 之间");
-
-        if (pageSize < 1 || pageSize > 100)
-            return ValidationError("每页数量必须在 1-100 之间");
-
         // 验证排序参数
         var validSortFields = new[] { "usedQuota", "totalQuota", "usagePercentage", "fileCount", "createdAt", "lastCalculatedAt" };
         if (!validSortFields.Contains(sortBy))

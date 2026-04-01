@@ -5,6 +5,7 @@ using Platform.ServiceDefaults.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 
@@ -121,9 +122,9 @@ public class ProjectService : IProjectService
             _ => isAsc ? q.OrderBy(p => p.CreatedAt) : q.OrderByDescending(p => p.CreatedAt)
         };
 
-        var total = await q.LongCountAsync();
-        var projects = await q.Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
-        return new ProjectListResponse { Projects = await ConvertToProjectDtosAsync(projects), Total = (int)total, Page = request.Page, PageSize = request.PageSize };
+        var pagedResult = q.PageResult(request.Page, request.PageSize);
+        var projects = await pagedResult.Queryable.ToListAsync();
+        return new ProjectListResponse { Projects = await ConvertToProjectDtosAsync(projects), Total = pagedResult.RowCount, Page = pagedResult.CurrentPage, PageSize = pagedResult.PageSize };
     }
 
     /// <inheritdoc/>

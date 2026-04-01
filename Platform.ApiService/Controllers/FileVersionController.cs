@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Linq.Dynamic.Core;
 using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
@@ -50,16 +52,13 @@ public class FileVersionController : BaseApiController
         try
         {
             var versions = await _fileVersionService.GetVersionHistoryAsync(fileId);
-            var ordered = versions.OrderByDescending(v => v.VersionNumber).ToList();
-            var total = ordered.Count;
-            var paged = ordered
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
+            var ordered = versions.OrderByDescending(v => v.VersionNumber).AsQueryable();
+            var pagedResult = ordered.PageResult(page, pageSize);
+            var total = pagedResult.RowCount;
 
             return Success(new
             {
-                data = paged,
+                data = await pagedResult.Queryable.ToListAsync(),
                 total,
                 page,
                 pageSize

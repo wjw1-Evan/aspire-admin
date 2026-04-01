@@ -98,12 +98,6 @@ public class WorkflowController : BaseApiController
     {
         try
         {
-            if (request.Page < 1 || request.Page > 10000)
-                throw new ArgumentException("页码必须在 1-10000 之间");
-
-            if (request.PageSize < 1 || request.PageSize > 100)
-                throw new ArgumentException("每页数量必须在 1-100 之间");
-
             Expression<Func<WorkflowDefinition, bool>>? filter = null;
 
             if (!string.IsNullOrEmpty(request.Keyword))

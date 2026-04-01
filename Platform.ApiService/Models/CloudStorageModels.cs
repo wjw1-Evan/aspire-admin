@@ -466,34 +466,6 @@ public class FileVersionComparison
 }
 
 /// <summary>
-/// 分页结果模型
-/// </summary>
-/// <typeparam name="T">数据类型</typeparam>
-public class PagedResult<T>
-{
-    /// <summary>数据列表</summary>
-    public List<T> Data { get; set; } = [];
-
-    /// <summary>总数量</summary>
-    public int Total { get; set; } = 0;
-
-    /// <summary>当前页码</summary>
-    public int Page { get; set; } = 1;
-
-    /// <summary>每页数量</summary>
-    public int PageSize { get; set; } = 20;
-
-    /// <summary>总页数</summary>
-    public int TotalPages => PageSize > 0 ? (int)Math.Ceiling((double)Total / PageSize) : 0;
-
-    /// <summary>是否有下一页</summary>
-    public bool HasNextPage => Page < TotalPages;
-
-    /// <summary>是否有上一页</summary>
-    public bool HasPreviousPage => Page > 1;
-}
-
-/// <summary>
 /// 文件列表查询参数
 /// </summary>
 public class FileListQuery

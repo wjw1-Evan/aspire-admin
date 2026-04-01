@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
+using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 
 namespace Platform.ApiService.Services;
@@ -32,10 +33,8 @@ public class FormDefinitionService : IFormDefinitionService
 
         var query = filter == null ? _context.Set<FormDefinition>() : _context.Set<FormDefinition>().Where(filter);
         var total = await query.LongCountAsync();
-        var items = await query.OrderByDescending(f => f.CreatedAt)
-            .Skip((current - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
+        var pagedResult = query.OrderByDescending(f => f.CreatedAt).PageResult(current, pageSize);
+        var items = await pagedResult.Queryable.ToListAsync();
 
         return (items, total);
     }

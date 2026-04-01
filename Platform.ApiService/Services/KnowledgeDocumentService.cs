@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Platform.ApiService.Models.Workflow;
@@ -36,7 +37,8 @@ public class KnowledgeDocumentService : IKnowledgeDocumentService, IScopedDepend
             var query = _context.Set<KnowledgeDocument>().Where(
             filter);
             var total = await query.LongCountAsync();
-            var items = await query.OrderBy(d => d.SortOrder).ThenByDescending(d => d.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+            var pagedResult = query.OrderBy(d => d.SortOrder).ThenByDescending(d => d.CreatedAt).PageResult(page, pageSize);
+            var items = await pagedResult.Queryable.ToListAsync();
             return (items, total);
         }
     }

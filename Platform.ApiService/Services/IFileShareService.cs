@@ -49,14 +49,14 @@ public interface IFileShareService
     /// </summary>
     /// <param name="query">查询参数</param>
     /// <returns>分享列表</returns>
-    Task<PagedResult<Models.FileShare>> GetMySharesAsync(ShareListQuery query);
+    Task<System.Linq.Dynamic.Core.PagedResult<Models.FileShare>> GetMySharesAsync(ShareListQuery query);
 
     /// <summary>
     /// 获取分享给我的文件列表
     /// </summary>
     /// <param name="query">查询参数</param>
     /// <returns>分享文件列表</returns>
-    Task<PagedResult<Models.FileShare>> GetSharedWithMeAsync(ShareListQuery query);
+    Task<System.Linq.Dynamic.Core.PagedResult<Models.FileShare>> GetSharedWithMeAsync(ShareListQuery query);
 
     /// <summary>
     /// 验证分享访问权限

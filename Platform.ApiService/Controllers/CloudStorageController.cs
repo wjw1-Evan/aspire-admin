@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
@@ -119,15 +120,8 @@ public class CloudStorageController : BaseApiController
     [RequireMenu("cloud-storage-files")]
     public async Task<IActionResult> GetFileItems([FromQuery] string? parentId, [FromQuery] FileListQuery query)
     {
-        // 验证分页参数
-        if (query.Page < 1 || query.Page > 10000)
-            return ValidationError("页码必须在 1-10000 之间");
-
-        if (query.PageSize < 1 || query.PageSize > 100)
-            return ValidationError("每页数量必须在 1-100 之间");
-
         var result = await _cloudStorageService.GetFileItemsAsync(parentId ?? string.Empty, query);
-        return SuccessPaged(result.Data, result.Total, result.Page, result.PageSize);
+        return SuccessPaged(await result.Queryable.ToListAsync(), result.RowCount, result.CurrentPage, result.PageSize);
     }
 
     /// <summary>
@@ -286,17 +280,10 @@ public class CloudStorageController : BaseApiController
     [RequireMenu("cloud-storage-files")]
     public async Task<IActionResult> SearchFiles([FromQuery] FileSearchQuery query)
     {
-        // 验证分页参数
-        if (query.Page < 1 || query.Page > 10000)
-            return ValidationError("页码必须在 1-10000 之间");
-
-        if (query.PageSize < 1 || query.PageSize > 100)
-            return ValidationError("每页数量必须在 1-100 之间");
-
         try
         {
             var result = await _cloudStorageService.SearchFilesAsync(query);
-            return SuccessPaged(result.Data, result.Total, result.Page, result.PageSize);
+            return SuccessPaged(await result.Queryable.ToListAsync(), result.RowCount, result.CurrentPage, result.PageSize);
         }
         catch (Exception ex)
         {
@@ -380,7 +367,7 @@ public class CloudStorageController : BaseApiController
             Type = type
         };
         var result = await _cloudStorageService.GetRecycleBinItemsAsync(query);
-        return SuccessPaged(result.Data, result.Total, result.Page, result.PageSize);
+        return SuccessPaged(await result.Queryable.ToListAsync(), result.RowCount, result.CurrentPage, result.PageSize);
     }
 
     /// <summary>
@@ -393,7 +380,7 @@ public class CloudStorageController : BaseApiController
     public async Task<IActionResult> GetRecycleBinItems([FromQuery] RecycleBinQuery query)
     {
         var result = await _cloudStorageService.GetRecycleBinItemsAsync(query);
-        return SuccessPaged(result.Data, result.Total, result.Page, result.PageSize);
+        return SuccessPaged(await result.Queryable.ToListAsync(), result.RowCount, result.CurrentPage, result.PageSize);
     }
 
     /// <summary>

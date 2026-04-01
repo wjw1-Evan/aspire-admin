@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Dynamic.Core;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Workflow;
 using Platform.ServiceDefaults.Services;
@@ -205,7 +206,8 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
                 var (page, pageSize) = ParsePaginationArgs(args);
                 var query = _context.Set<WorkflowDefinition>().Where(d => string.IsNullOrEmpty(keyword) || (d.Name != null && d.Name.Contains(keyword)));
         var total = await query.LongCountAsync();
-        var items = await query.OrderByDescending(d => d.UpdatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+                var pagedResult = query.OrderByDescending(d => d.UpdatedAt).PageResult(page, pageSize);
+                var items = await pagedResult.Queryable.ToListAsync();
                 return new { items, total, page, pageSize };
             });
 
@@ -220,7 +222,8 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
                 var status = args.ContainsKey("status") && int.TryParse(args["status"]?.ToString(), out var s) ? (WorkflowStatus)s : (WorkflowStatus?)null;
                 var query = _context.Set<WorkflowInstance>().Where(i => status == null || i.Status == status);
         var total = await query.LongCountAsync();
-        var items = await query.OrderByDescending(i => i.UpdatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+                var pagedResult = query.OrderByDescending(i => i.UpdatedAt).PageResult(page, pageSize);
+                var items = await pagedResult.Queryable.ToListAsync();
                 return new { items, total, page, pageSize };
             });
 

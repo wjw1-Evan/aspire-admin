@@ -1,8 +1,10 @@
 using Platform.ApiService.Models;
+using Platform.ApiService.Extensions;
 using Platform.ServiceDefaults.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
@@ -150,7 +152,7 @@ public class FileShareService : IFileShareService
     /// <summary>
     /// 获取我创建的分享列表
     /// </summary>
-    public async Task<PagedResult<Models.FileShare>> GetMySharesAsync(ShareListQuery query)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<Models.FileShare>> GetMySharesAsync(ShareListQuery query)
     {
         IQueryable<Models.FileShare> queryable = _context.Set<Models.FileShare>();
 
@@ -191,25 +193,14 @@ public class FileShareService : IFileShareService
             queryable = queryable.Where(s => s.ExpiresAt <= query.ExpiresBefore.Value);
         }
 
-        var total = await queryable.LongCountAsync();
-        var items = await queryable.OrderByDescending(s => s.CreatedAt)
-                                 .Skip((query.Page - 1) * query.PageSize)
-                                 .Take(query.PageSize)
-                                 .ToListAsync();
-
-        return new PagedResult<Models.FileShare>
-        {
-            Data = items,
-            Total = (int)total,
-            Page = query.Page,
-            PageSize = query.PageSize
-        };
+        return queryable.OrderByDescending(s => s.CreatedAt)
+                        .PageResult(query.Page, query.PageSize);
     }
 
     /// <summary>
     /// 获取分享给我的文件列表
     /// </summary>
-    public async Task<PagedResult<Models.FileShare>> GetSharedWithMeAsync(ShareListQuery query)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<Models.FileShare>> GetSharedWithMeAsync(ShareListQuery query)
     {
         IQueryable<Models.FileShare> queryable = _context.Set<Models.FileShare>()
             .Where(s => s.Type == ShareType.Internal && s.IsActive);
@@ -240,19 +231,8 @@ public class FileShareService : IFileShareService
             queryable = queryable.Where(s => s.ExpiresAt <= query.ExpiresBefore.Value);
         }
 
-        var total = await queryable.LongCountAsync();
-        var items = await queryable.OrderByDescending(s => s.CreatedAt)
-                                 .Skip((query.Page - 1) * query.PageSize)
-                                 .Take(Math.Min(query.PageSize, 100))
-                                 .ToListAsync();
-
-        return new PagedResult<Models.FileShare>
-        {
-            Data = items,
-            Total = (int)total,
-            Page = query.Page,
-            PageSize = query.PageSize
-        };
+        return queryable.OrderByDescending(s => s.CreatedAt)
+                        .PageResult(query.Page, Math.Min(query.PageSize, 100));
     }
 
     /// <summary>

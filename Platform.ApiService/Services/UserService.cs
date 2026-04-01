@@ -6,6 +6,7 @@ using Platform.ApiService.Models.Response;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using System.Linq.Expressions;
+using System.Linq.Dynamic.Core;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -341,8 +342,6 @@ public class UserService : IUserService
         var filter = await BuildUserListFilterAsync(request);
 
         var query = _context.Set<User>().Where(filter);
-        var total = await query.LongCountAsync();
-
         var sortBy = request.SortBy?.Trim().ToLowerInvariant();
         var isAscending = string.Equals(request.SortOrder, "asc", StringComparison.OrdinalIgnoreCase);
 
@@ -357,10 +356,9 @@ public class UserService : IUserService
             _ => isAscending ? query.OrderBy(u => u.CreatedAt) : query.OrderByDescending(u => u.CreatedAt)
         };
 
-        var users = await query
-            .Skip((Math.Max(1, request.Page) - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .ToListAsync();
+        var pagedResult = query.PageResult(request.Page, request.PageSize);
+        var users = await pagedResult.Queryable.ToListAsync();
+        var total = pagedResult.RowCount;
 
         var usersWithRoles = await EnrichUsersWithRolesAsync(users);
 

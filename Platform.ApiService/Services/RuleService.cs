@@ -3,6 +3,7 @@ using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
+using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 using System.Text.Json;
 
@@ -37,13 +38,8 @@ public class RuleService : IRuleService
             query = query.Where(r => r.Name != null && r.Name.ToLower().Contains(nameLower));
         }
 
-        var total = await query.LongCountAsync();
-
-        var rules = await query
-            .OrderByDescending(r => r.UpdatedAt)
-            .Skip((queryParams.Current - 1) * queryParams.PageSize)
-            .Take(queryParams.PageSize)
-            .ToListAsync();
+        var pagedResult = query.OrderByDescending(r => r.UpdatedAt).PageResult(queryParams.Current, queryParams.PageSize);
+        var rules = await pagedResult.Queryable.ToListAsync();
 
         if (!string.IsNullOrEmpty(queryParams.Sorter))
         {
@@ -57,7 +53,7 @@ public class RuleService : IRuleService
         return new RuleListResponse
         {
             Data = rules,
-            Total = (int)total,
+            Total = pagedResult.RowCount,
             Success = true,
             PageSize = queryParams.PageSize,
             Current = queryParams.Current

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
+using System.Linq.Dynamic.Core;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 
@@ -49,9 +50,8 @@ public class ParkInvestmentService : IParkInvestmentService
             ? baseQuery.OrderBy(l => l.CreatedAt)
             : baseQuery.OrderByDescending(l => l.CreatedAt);
             
-        var items = await orderedQuery.Skip((request.Page - 1) * request.PageSize)
-                               .Take(request.PageSize)
-                               .ToListAsync();
+        var pagedResult = orderedQuery.PageResult(request.Page, request.PageSize);
+        var items = await pagedResult.Queryable.ToListAsync();
 
         return new InvestmentLeadListResponse
         {
@@ -211,9 +211,8 @@ public class ParkInvestmentService : IParkInvestmentService
             ? baseQuery.OrderBy(p => p.CreatedAt)
             : baseQuery.OrderByDescending(p => p.CreatedAt);
             
-        var items = await orderedQuery.Skip((request.Page - 1) * request.PageSize)
-                               .Take(request.PageSize)
-                               .ToListAsync();
+        var pagedResult = orderedQuery.PageResult(request.Page, request.PageSize);
+        var items = await pagedResult.Queryable.ToListAsync();
 
         return new InvestmentProjectListResponse
         {

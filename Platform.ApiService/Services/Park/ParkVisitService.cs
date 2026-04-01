@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
+using System.Linq.Dynamic.Core;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using OpenAI;
@@ -50,7 +51,8 @@ public class ParkVisitService : IParkVisitService
             t => (string.IsNullOrEmpty(search) || (t.ManagerName != null && t.ManagerName.ToLower().Contains(search)) || (t.Phone != null && t.Phone.ToLower().Contains(search))) &&
                  (string.IsNullOrEmpty(status) || t.Status == status));
         var total = await query.LongCountAsync();
-        var items = await query.OrderByDescending(t => t.CreatedAt).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
+        var pagedResult = query.OrderByDescending(t => t.CreatedAt).PageResult(request.Page, request.PageSize);
+        var items = await pagedResult.Queryable.ToListAsync();
 
         var tasks = new List<VisitTaskDto>();
         foreach (var item in items)
@@ -230,7 +232,8 @@ public class ParkVisitService : IParkVisitService
                  (a.Phone != null && a.Phone.ToLower().Contains(search)) ||
                  (a.TaskDescription != null && a.TaskDescription.ToLower().Contains(search)));
         var total = await query.LongCountAsync();
-        var items = await query.OrderByDescending(a => a.CreatedAt).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
+        var pagedResult = query.OrderByDescending(a => a.CreatedAt).PageResult(request.Page, request.PageSize);
+        var items = await pagedResult.Queryable.ToListAsync();
 
         return new VisitAssessmentListResponse
         {
@@ -308,7 +311,8 @@ public class ParkVisitService : IParkVisitService
             q => (string.IsNullOrEmpty(search) || (q.Content != null && q.Content.ToLower().Contains(search))) &&
                  (string.IsNullOrEmpty(category) || q.Category == category));
         var total = await query.LongCountAsync();
-        var items = await query.OrderByDescending(q => q.CreatedAt).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
+        var pagedResult = query.OrderByDescending(q => q.CreatedAt).PageResult(request.Page, request.PageSize);
+        var items = await pagedResult.Queryable.ToListAsync();
 
         return new VisitQuestionListResponse
         {

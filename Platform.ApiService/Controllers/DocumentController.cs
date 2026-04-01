@@ -552,13 +552,6 @@ public class DocumentController : BaseApiController
     {
         try
         {
-            // 验证分页参数
-            if (query.Page < 1 || query.Page > 10000)
-                throw new ArgumentException("页码必须在 1-10000 之间");
-
-            if (query.PageSize < 1 || query.PageSize > 100)
-                throw new ArgumentException("每页数量必须在 1-100 之间");
-
             // 强制设置为 pending 类型
             query.FilterType = "pending";
 

@@ -1,6 +1,7 @@
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Workflow;
 using Platform.ServiceDefaults.Services;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Platform.ApiService.Services.Mcp.Handlers;
@@ -121,11 +122,12 @@ public class DocumentMcpToolHandler : McpToolHandlerBase
             query.Type = type;
 
         var response = await _cloudStorageService.GetFileItemsAsync(parentId, query);
+        var items = await response.Queryable.ToListAsync();
         return new
         {
-            items = response.Data.Select(i => new { i.Id, i.Name, i.Type, i.Size, i.MimeType, i.ParentId, i.UpdatedAt }).ToList(),
-            total = response.Total,
-            page = response.Page,
+            items = items.Select(i => new { i.Id, i.Name, i.Type, i.Size, i.MimeType, i.ParentId, i.UpdatedAt }).ToList(),
+            total = response.RowCount,
+            page = response.CurrentPage,
             pageSize = response.PageSize
         };
     }
@@ -138,11 +140,12 @@ public class DocumentMcpToolHandler : McpToolHandlerBase
         var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
         var request = new FileSearchQuery { Keyword = keyword, Page = page, PageSize = pageSize };
         var response = await _cloudStorageService.SearchFilesAsync(request);
+        var items = await response.Queryable.ToListAsync();
         return new
         {
-            items = response.Data.Select(i => new { i.Id, i.Name, i.Type, i.Size, i.Path, i.UpdatedAt }).ToList(),
-            total = response.Total,
-            page = response.Page,
+            items = items.Select(i => new { i.Id, i.Name, i.Type, i.Size, i.Path, i.UpdatedAt }).ToList(),
+            total = response.RowCount,
+            page = response.CurrentPage,
             pageSize = response.PageSize
         };
     }

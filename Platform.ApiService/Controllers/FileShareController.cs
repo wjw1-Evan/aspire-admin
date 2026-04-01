@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
@@ -170,17 +171,10 @@ public class FileShareController : BaseApiController
     [RequireMenu("cloud-storage-shared")]
     public async Task<IActionResult> GetMyShares([FromQuery] ShareListQuery query)
     {
-        // 验证分页参数
-        if (query.Page < 1 || query.Page > 10000)
-            return ValidationError("页码必须在 1-10000 之间");
-
-        if (query.PageSize < 1 || query.PageSize > 100)
-            return ValidationError("每页数量必须在 1-100 之间");
-
         try
         {
             var result = await _fileShareService.GetMySharesAsync(query);
-            return SuccessPaged(result.Data, result.Total, result.Page, result.PageSize);
+            return SuccessPaged(await result.Queryable.ToListAsync(), result.RowCount, result.CurrentPage, result.PageSize);
         }
         catch (Exception ex)
         {
@@ -198,17 +192,10 @@ public class FileShareController : BaseApiController
     [RequireMenu("cloud-storage-shared")]
     public async Task<IActionResult> GetSharedWithMe([FromQuery] ShareListQuery query)
     {
-        // 验证分页参数
-        if (query.Page < 1 || query.Page > 10000)
-            return ValidationError("页码必须在 1-10000 之间");
-
-        if (query.PageSize < 1 || query.PageSize > 100)
-            return ValidationError("每页数量必须在 1-100 之间");
-
         try
         {
             var result = await _fileShareService.GetSharedWithMeAsync(query);
-            return SuccessPaged(result.Data, result.Total, result.Page, result.PageSize);
+            return SuccessPaged(await result.Queryable.ToListAsync(), result.RowCount, result.CurrentPage, result.PageSize);
         }
         catch (Exception ex)
         {

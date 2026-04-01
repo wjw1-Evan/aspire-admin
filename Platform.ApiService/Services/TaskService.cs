@@ -4,6 +4,7 @@ using Platform.ServiceDefaults.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -131,8 +132,9 @@ public class TaskService : ITaskService
             _ => isAsc ? q.OrderBy(t => t.CreatedAt) : q.OrderByDescending(t => t.CreatedAt)
         };
 
-        var total = await q.LongCountAsync();
-        var tasks = await q.Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
+        var pagedResult = q.PageResult(request.Page, request.PageSize);
+        var tasks = await pagedResult.Queryable.ToListAsync();
+        var total = pagedResult.RowCount;
         var taskDtos = await ConvertToTaskDtosAsync(tasks);
 
         if (onlyRoot)
@@ -443,8 +445,9 @@ public class TaskService : ITaskService
     public async Task<(List<TaskExecutionLogDto> logs, int total)> GetTaskExecutionLogsAsync(string taskId, int page = 1, int pageSize = 10)
     {
         var q = _context.Set<TaskExecutionLog>().Where(l => l.TaskId == taskId);
-        var total = await q.LongCountAsync();
-        var logs = await q.OrderByDescending(l => l.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var pagedResult = q.OrderByDescending(l => l.CreatedAt).PageResult(page, pageSize);
+        var logs = await pagedResult.Queryable.ToListAsync();
+        var total = pagedResult.RowCount;
         var dtos = new List<TaskExecutionLogDto>();
         foreach (var l in logs) dtos.Add(await ConvertToTaskExecutionLogDtoAsync(l));
         return (dtos, (int)total);
@@ -474,8 +477,9 @@ public class TaskService : ITaskService
     public async Task<(List<TaskDto> tasks, int total)> GetUserCreatedTasksAsync(string userId, int page = 1, int pageSize = 10)
     {
         var q = _context.Set<WorkTask>().Where(t => t.CreatedBy == userId);
-        var total = await q.LongCountAsync();
-        var tasks = await q.OrderByDescending(t => t.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var pagedResult = q.OrderByDescending(t => t.CreatedAt).PageResult(page, pageSize);
+        var tasks = await pagedResult.Queryable.ToListAsync();
+        var total = pagedResult.RowCount;
         return (await ConvertToTaskDtosAsync(tasks), (int)total);
     }
 

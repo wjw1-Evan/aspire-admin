@@ -569,12 +569,6 @@ public class UserController : BaseApiController
         [FromQuery] string? sortOrder = null)
     {
         // ✅ 添加输入验证
-        if (page < 1 || page > 10000)
-            return ValidationError("页码必须在 1-10000 之间");
-
-        if (pageSize < 1 || pageSize > 100)
-            return ValidationError("每页数量必须在 1-100 之间");
-
         // 验证日期范围
         if (startDate.HasValue && endDate.HasValue && startDate.Value > endDate.Value)
             return ValidationError("开始日期不能晚于结束日期");

@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using System.Linq.Dynamic.Core;
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
@@ -59,7 +60,8 @@ public class ParkTenantService : IParkTenantService
 
         var query = _context.Set<ParkTenant>().Where(filter);
         var total = await query.LongCountAsync();
-        var items = await orderBy(query).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
+        var pagedResult = orderBy(query).PageResult(request.Page, request.PageSize);
+        var items = await pagedResult.Queryable.ToListAsync();
 
         var tenants = new List<ParkTenantDto>();
         foreach (var item in items)
@@ -215,7 +217,8 @@ public class ParkTenantService : IParkTenantService
 
         var query = _context.Set<LeaseContract>().Where(filter);
         var total = await query.LongCountAsync();
-        var items = await orderBy(query).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
+        var pagedResult = orderBy(query).PageResult(request.Page, request.PageSize);
+        var items = await pagedResult.Queryable.ToListAsync();
 
         var contracts = new List<LeaseContractDto>();
         foreach (var item in items)

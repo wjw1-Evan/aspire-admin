@@ -24,12 +24,6 @@ public class ChatHistoryController : BaseApiController
     [RequireMenu("xiaoke-management-chat-history")]
     public async Task<IActionResult> GetChatHistory([FromBody] ChatHistoryQueryRequest request)
     {
-        if (request.Current < 1 || request.Current > 10000)
-            return ValidationError("页码必须在 1-10000 之间");
-
-        if (request.PageSize < 1 || request.PageSize > 100)
-            return ValidationError("每页数量必须在 1-100 之间");
-
         if (request.StartTime.HasValue && request.EndTime.HasValue && request.StartTime.Value > request.EndTime.Value)
         {
             return Error("INVALID_DATE_RANGE", "开始时间不能晚于结束时间");

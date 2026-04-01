@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 
 namespace Platform.ApiService.Services;
@@ -61,7 +62,8 @@ public class UnifiedNotificationService : IUnifiedNotificationService
         };
 
         var total = await query.LongCountAsync();
-        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var pagedResult = query.PageResult(page, pageSize);
+        var items = await pagedResult.Queryable.ToListAsync();
         var unreadCount = await _context.Set<NoticeIconItem>().LongCountAsync(BuildFilter(true));
 
         return new UnifiedNotificationListResponse
@@ -88,7 +90,8 @@ public class UnifiedNotificationService : IUnifiedNotificationService
         };
 
         var total = await query.LongCountAsync();
-        var todos = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var pagedResult = query.PageResult(page, pageSize);
+        var todos = await pagedResult.Queryable.ToListAsync();
 
         return new TodoListResponse { Todos = todos, Total = (int)total, Page = page, PageSize = pageSize, Success = true };
     }
@@ -98,7 +101,8 @@ public class UnifiedNotificationService : IUnifiedNotificationService
     {
         var query = _context.Set<NoticeIconItem>().Where(n => n.IsSystemMessage).OrderByDescending(n => n.Datetime);
         var total = await query.LongCountAsync();
-        var messages = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var pagedResult = query.PageResult(page, pageSize);
+        var messages = await pagedResult.Queryable.ToListAsync();
 
         return new SystemMessageListResponse { Messages = messages, Total = (int)total, Page = page, PageSize = pageSize, Success = true };
     }
@@ -112,7 +116,8 @@ public class UnifiedNotificationService : IUnifiedNotificationService
             .OrderByDescending(n => n.Datetime);
 
         var total = await query.LongCountAsync();
-        var notifications = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var pagedResult = query.PageResult(page, pageSize);
+        var notifications = await pagedResult.Queryable.ToListAsync();
 
         return new TaskNotificationListResponse { Notifications = notifications, Total = (int)total, Page = page, PageSize = pageSize, Success = true };
     }

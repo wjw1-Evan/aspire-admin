@@ -6,6 +6,7 @@ using Platform.ServiceDefaults.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 
@@ -49,11 +50,10 @@ public class ChatSessionService : IChatSessionService
         }
 
         var query = _context.Set<ChatSession>().Where(filter);
-        var total = await query.LongCountAsync();
-        var items = await query.OrderByDescending(s => s.UpdatedAt)
-            .Skip((Math.Max(1, request.Page) - 1) * Math.Min(Math.Max(request.PageSize, 1), MaxPageSize))
-            .Take(Math.Min(Math.Max(request.PageSize, 1), MaxPageSize))
-            .ToListAsync();
+        var pagedResult = query.OrderByDescending(s => s.UpdatedAt)
+            .PageResult(request.Page, Math.Min(Math.Max(request.PageSize, 1), MaxPageSize));
+        var items = await pagedResult.Queryable.ToListAsync();
+        var total = pagedResult.RowCount;
 
         await EnrichParticipantMetadataAsync(items);
         return (items, total);

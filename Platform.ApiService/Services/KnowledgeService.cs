@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Platform.ServiceDefaults.Services;
 using Platform.ApiService.Models.Workflow;
@@ -55,7 +56,8 @@ public class KnowledgeService : IKnowledgeService, IScopedDependency
         var q = _context.Set<KnowledgeBase>().AsQueryable();
         if (!string.IsNullOrEmpty(keyword)) q = q.Where(kb => kb.Name.Contains(keyword) || (kb.Description != null && kb.Description.Contains(keyword)));
         var total = await q.LongCountAsync();
-        var items = await q.OrderByDescending(kb => kb.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var pagedResult = q.OrderByDescending(kb => kb.CreatedAt).PageResult(page, pageSize);
+        var items = await pagedResult.Queryable.ToListAsync();
         return (items, total);
     }
 

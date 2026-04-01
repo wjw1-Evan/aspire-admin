@@ -3,6 +3,7 @@ using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Models;
 using System.Linq.Expressions;
+using System.Linq.Dynamic.Core;
 
 using Platform.ApiService.Models.Response;
 
@@ -57,11 +58,10 @@ public class UserActivityLogService : IUserActivityLogService
             (!startDate.HasValue || log.CreatedAt >= startDate.Value) &&
             (!endDate.HasValue || log.CreatedAt <= endDate.Value);
 
-        var total = await _context.Set<UserActivityLog>().LongCountAsync(filter);
-        var query = _context.Set<UserActivityLog>().Where(
-            filter);
-        var _ = await query.LongCountAsync();
-        var logs = await query.OrderByDescending(log => log.CreatedAt).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
+        var query = _context.Set<UserActivityLog>().Where(filter);
+        var pagedResult = query.OrderByDescending(log => log.CreatedAt).PageResult(request.Page, request.PageSize);
+        var logs = await pagedResult.Queryable.ToListAsync();
+        var total = pagedResult.RowCount;
         var totalPages = (int)Math.Ceiling(total / (double)request.PageSize);
 
         return new UserActivityLogPagedResponse
@@ -160,8 +160,9 @@ public class UserActivityLogService : IUserActivityLogService
         };
 
         var query = _context.Set<UserActivityLog>().Where(filter);
-        var _ = await query.LongCountAsync();
-        var logs = await orderBy(query).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var pagedResult = orderBy(query).PageResult(page, pageSize);
+        var logs = await pagedResult.Queryable.ToListAsync();
+        var totalCount = pagedResult.RowCount;
 
         var logDtos = logs.Select(log => new ActivityLogListItemResponse
         {
@@ -180,12 +181,12 @@ public class UserActivityLogService : IUserActivityLogService
         return new UserActivityPagedWithStatsResponse
         {
             Data = logDtos,
-            Total = total,
+            Total = totalCount,
             Page = page,
             PageSize = pageSize,
             Statistics = new UserActivityStatistics
             {
-                TotalCount = total,
+                TotalCount = totalCount,
                 SuccessCount = successCount,
                 ErrorCount = errorCount,
                 ActionTypesCount = actionTypesCount // 暂时禁用，优化性能
@@ -247,11 +248,10 @@ public class UserActivityLogService : IUserActivityLogService
             (!startDate.HasValue || log.CreatedAt >= startDate.Value) &&
             (!endDate.HasValue || log.CreatedAt <= endDate.Value);
 
-        var total = await _context.Set<UserActivityLog>().LongCountAsync(filter);
-        var query = _context.Set<UserActivityLog>().Where(
-            filter);
-        var _ = await query.LongCountAsync();
-        var logs = await query.OrderByDescending(log => log.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var query = _context.Set<UserActivityLog>().Where(filter);
+        var pagedResult = query.OrderByDescending(log => log.CreatedAt).PageResult(page, pageSize);
+        var logs = await pagedResult.Queryable.ToListAsync();
+        var total = pagedResult.RowCount;
 
         var validUserIds = logs
             .Select(log => log.CreatedBy)

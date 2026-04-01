@@ -1,5 +1,6 @@
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
+using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 
@@ -82,7 +83,8 @@ public class XiaokeConfigService : IXiaokeConfigService
         }
 
         var total = await query.LongCountAsync();
-        var configs = await query.OrderByDescending(c => c.UpdatedAt).Skip((queryParams.Current - 1) * queryParams.PageSize).Take(queryParams.PageSize).ToListAsync();
+        var pagedResult = query.OrderByDescending(c => c.UpdatedAt).PageResult(queryParams.Current, queryParams.PageSize);
+        var configs = await pagedResult.Queryable.ToListAsync();
 
         if (!string.IsNullOrEmpty(queryParams.Sorter))
         {

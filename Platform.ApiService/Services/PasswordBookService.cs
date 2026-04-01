@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
+using System.Linq.Dynamic.Core;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -176,9 +177,11 @@ public class PasswordBookService : IPasswordBookService
                  e.Account.ToLower().Contains(keywordLower) ||
                  (e.Notes != null && e.Notes.ToLower().Contains(keywordLower))));
         var total = await query.LongCountAsync();
-        var items = await query
+        var pagedResult = query
                 .OrderByDescending(e => e.LastUsedAt)
-                .ThenByDescending(e => e.CreatedAt).Skip((request.Current - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
+                .ThenByDescending(e => e.CreatedAt)
+                .PageResult(request.Current, request.PageSize);
+        var items = await pagedResult.Queryable.ToListAsync();
 
         var dtos = items.Select(e => new PasswordBookEntryDto
         {

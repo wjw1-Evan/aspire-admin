@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using System.Linq.Dynamic.Core;
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
@@ -168,7 +169,8 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
 
         var query = _context.Set<ServiceRequest>().Where(filter);
         var total = await query.LongCountAsync();
-        var items = await orderBy(query).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
+        var pagedResult = orderBy(query).PageResult(request.Page, request.PageSize);
+        var items = await pagedResult.Queryable.ToListAsync();
 
         var requestDtos = new List<ServiceRequestDto>();
         foreach (var item in items)

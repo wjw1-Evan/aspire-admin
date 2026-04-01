@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Workflow;
 using Platform.ServiceDefaults.Services;
+using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 
 namespace Platform.ApiService.Services;
@@ -189,8 +190,8 @@ public class BulkOperationService : IBulkOperationService
         var orderBy = (IQueryable<BulkOperation> query) => query.OrderByDescending(b => b.CreatedAt);
 
         var query = _context.Set<BulkOperation>().Where(filter);
-        var _ = await query.LongCountAsync();
-        var operations = await orderBy(query).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var pagedResult = orderBy(query).PageResult(page, pageSize);
+        var operations = await pagedResult.Queryable.ToListAsync();
         return operations;
     }
 

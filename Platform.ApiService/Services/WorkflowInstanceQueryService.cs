@@ -1,3 +1,4 @@
+using System.Linq.Dynamic.Core;
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models.Workflow;
 using System;
@@ -39,12 +40,11 @@ public class WorkflowInstanceQueryService : IWorkflowInstanceQueryService
             ? _context.Set<WorkflowInstance>() 
             : _context.Set<WorkflowInstance>().Where(filter);
 
-        var total = await queryable.LongCountAsync();
-        var items = await queryable
+        var pagedResult = queryable
             .OrderByDescending(i => i.StartedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
+            .PageResult(page, pageSize);
+        var items = await pagedResult.Queryable.ToListAsync();
+        var total = pagedResult.RowCount;
 
         return (items, total);
     }

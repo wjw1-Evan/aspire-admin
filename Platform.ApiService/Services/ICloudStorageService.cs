@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Platform.ApiService.Models;
+using System.Linq.Dynamic.Core;
 
 namespace Platform.ApiService.Services;
 
@@ -40,7 +41,7 @@ public interface ICloudStorageService
     /// <param name="parentId">父文件夹ID</param>
     /// <param name="query">查询参数</param>
     /// <returns>文件项列表</returns>
-    Task<PagedResult<FileItem>> GetFileItemsAsync(string parentId, FileListQuery query);
+        Task<System.Linq.Dynamic.Core.PagedResult<FileItem>> GetFileItemsAsync(string parentId, FileListQuery query);
 
     /// <summary>
     /// 重命名文件或文件夹
@@ -127,7 +128,7 @@ public interface ICloudStorageService
     /// </summary>
     /// <param name="query">搜索查询参数</param>
     /// <returns>搜索结果</returns>
-    Task<PagedResult<FileItem>> SearchFilesAsync(FileSearchQuery query);
+        Task<System.Linq.Dynamic.Core.PagedResult<FileItem>> SearchFilesAsync(FileSearchQuery query);
 
     /// <summary>
     /// 获取最近访问的文件
@@ -142,7 +143,7 @@ public interface ICloudStorageService
     /// <param name="keyword">搜索关键词</param>
     /// <param name="query">搜索查询参数</param>
     /// <returns>搜索结果</returns>
-    Task<PagedResult<FileItem>> SearchByContentAsync(string keyword, FileContentSearchQuery query);
+        Task<System.Linq.Dynamic.Core.PagedResult<FileItem>> SearchByContentAsync(string keyword, FileContentSearchQuery query);
 
     // 回收站管理
 
@@ -151,7 +152,7 @@ public interface ICloudStorageService
     /// </summary>
     /// <param name="query">查询参数</param>
     /// <returns>回收站文件列表</returns>
-    Task<PagedResult<FileItem>> GetRecycleBinItemsAsync(RecycleBinQuery query);
+        Task<System.Linq.Dynamic.Core.PagedResult<FileItem>> GetRecycleBinItemsAsync(RecycleBinQuery query);
 
     /// <summary>
     /// 清空回收站

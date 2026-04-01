@@ -1,3 +1,4 @@
+using System.Linq.Dynamic.Core;
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models.Workflow;
 using Platform.ApiService.Services;
@@ -109,11 +110,9 @@ public class WorkflowDefinitionQueryService : IWorkflowDefinitionQueryService
             return q.OrderByDescending(w => w.CreatedAt);
         };
 
-        var total = await queryable.LongCountAsync();
-        var items = await sort(queryable)
-            .Skip((request.Page - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .ToListAsync();
+        var pagedResult = sort(queryable).PageResult(request.Page, request.PageSize);
+        var items = await pagedResult.Queryable.ToListAsync();
+        var total = pagedResult.RowCount;
 
         return (items, total);
     }

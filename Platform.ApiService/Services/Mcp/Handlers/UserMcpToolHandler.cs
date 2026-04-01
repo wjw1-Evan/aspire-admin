@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Dynamic.Core;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using Microsoft.Extensions.Logging;

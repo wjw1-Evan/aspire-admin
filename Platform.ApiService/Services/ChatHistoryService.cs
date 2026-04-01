@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
+using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 
 namespace Platform.ApiService.Services;
@@ -75,13 +76,12 @@ public class ChatHistoryService : IChatHistoryService
 
         var total = await _context.Set<ChatSession>().LongCountAsync(filter ??= s => true);
 
-        var sessions = await _context.Set<ChatSession>()
+        var pagedResult = _context.Set<ChatSession>()
             .Where(filter)
             .OrderByDescending(s => s.LastMessageAt)
             .ThenByDescending(s => s.CreatedAt)
-            .Skip((request.Current - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .ToListAsync();
+            .PageResult(request.Current, request.PageSize);
+        var sessions = await pagedResult.Queryable.ToListAsync();
 
         var sessionIds = sessions.Select(s => s.Id!).ToList();
         var messageCounts = new Dictionary<string, int>();

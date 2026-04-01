@@ -12,6 +12,7 @@ using System.Security.Cryptography;
 using System.Threading.Tasks;
 using UserCompany = Platform.ApiService.Models.UserCompany;
 using Platform.ApiService.Extensions;
+using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 
 namespace Platform.ApiService.Services;
@@ -425,8 +426,9 @@ public class DocumentService : IDocumentService
 
         {
             var filteredQuery = _context.Set<Document>().Where(filter!);
-            var totalCount = await filteredQuery.LongCountAsync();
-            var items = await filteredQuery.OrderByDescending(d => d.CreatedAt).Skip((query.Page - 1) * query.PageSize).Take(query.PageSize).ToListAsync();
+            var pagedResult = filteredQuery.OrderByDescending(d => d.CreatedAt).PageResult(query.Page, query.PageSize);
+            var items = await pagedResult.Queryable.ToListAsync();
+            var totalCount = pagedResult.RowCount;
             return (items, totalCount);
         }
     }

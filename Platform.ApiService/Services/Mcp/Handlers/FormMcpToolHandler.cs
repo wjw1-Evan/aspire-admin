@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Dynamic.Core;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using Microsoft.Extensions.Logging;
@@ -39,7 +40,8 @@ public class FormMcpToolHandler : McpToolHandlerBase
                     f => (string.IsNullOrEmpty(keyword) || f.Name.Contains(keyword)) &&
                          (!args.ContainsKey("isActive") || f.IsActive == (args.GetValueOrDefault("isActive") as bool? ?? true)));
                 var total = await query.LongCountAsync();
-                var items = await query.OrderByDescending(f => f.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+                var pagedResult = query.OrderByDescending(f => f.CreatedAt).PageResult(page, pageSize);
+                var items = await pagedResult.Queryable.ToListAsync();
                 return new { items, total, page, pageSize };
             });
 

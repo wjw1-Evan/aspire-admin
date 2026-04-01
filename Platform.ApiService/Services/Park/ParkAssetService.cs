@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using System.Linq.Dynamic.Core;
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
@@ -39,7 +40,8 @@ public class ParkAssetService : IParkAssetService
         else q = q.OrderByDescending(b => b.CreatedAt);
 
         var total = await q.LongCountAsync();
-        var items = await q.Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
+        var pagedResult = q.PageResult(request.Page, request.PageSize);
+        var items = await pagedResult.Queryable.ToListAsync();
 
         var buildings = new List<BuildingDto>();
         foreach (var b in items) buildings.Add(await MapToBuildingDtoAsync(b));
@@ -129,7 +131,8 @@ public class ParkAssetService : IParkAssetService
         else q = q.OrderByDescending(p => p.CreatedAt);
 
         var total = await q.LongCountAsync();
-        var items = await q.Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).ToListAsync();
+        var pagedResult = q.PageResult(request.Page, request.PageSize);
+        var items = await pagedResult.Queryable.ToListAsync();
 
         var units = new List<PropertyUnitDto>();
         foreach (var item in items) units.Add(await MapToPropertyUnitDtoAsync(item));

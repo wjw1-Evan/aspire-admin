@@ -1,12 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using User = Platform.ApiService.Models.AppUser;
+using Menu = Platform.ServiceDefaults.Models.Menu;
 using System.Linq.Expressions;
 using System.Security.Cryptography;
 using Platform.ApiService.Constants;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
-using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Exceptions;
 using System.Security.Claims;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -227,7 +228,7 @@ public class AuthService : IAuthService
     /// </summary>
     /// <param name="request">登录请求</param>
     /// <returns>登录结果</returns>
-    public async Task<ServiceResult<LoginData>> LoginAsync(LoginRequest request)
+    public async Task<LoginData> LoginAsync(LoginRequest request)
     {
         var clientId = GetClientIdentifier(request.Username);
         var failureCount = await GetFailureCountAsync(clientId, "login");
@@ -237,14 +238,14 @@ public class AuthService : IAuthService
         {
             if (string.IsNullOrEmpty(request.CaptchaId) || string.IsNullOrEmpty(request.CaptchaAnswer))
             {
-                return ServiceResult<LoginData>.Failure(ErrorCodes.CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN, "需要验证码");
+                throw new BusinessException("需要验证码");
             }
 
             var captchaValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.CaptchaAnswer, "login");
             if (!captchaValid)
             {
                 await RecordFailureAsync(clientId, "login");
-                return ServiceResult<LoginData>.Failure(ErrorCodes.CAPTCHA_INVALID, "验证码无效");
+                throw new BusinessException("验证码无效");
             }
         }
 
@@ -253,7 +254,7 @@ public class AuthService : IAuthService
         if (user == null)
         {
             await RecordFailureAsync(clientId, "login");
-            return ServiceResult<LoginData>.Failure(ErrorCodes.INVALID_CREDENTIALS, "用户名或密码错误");
+            throw new BusinessException("用户名或密码错误");
         }
 
         var rawPassword = _encryptionService.TryDecryptPassword(request.Password ?? string.Empty);
@@ -261,7 +262,7 @@ public class AuthService : IAuthService
         if (!_passwordHasher.VerifyPassword(rawPassword, user.PasswordHash))
         {
             await RecordFailureAsync(clientId, "login");
-            return ServiceResult<LoginData>.Failure(ErrorCodes.INVALID_CREDENTIALS, "用户名或密码错误");
+            throw new BusinessException("用户名或密码错误");
         }
 
         await ClearFailureAsync(clientId, "login");
@@ -281,12 +282,12 @@ public class AuthService : IAuthService
             {
                 if (!company.IsActive)
                 {
-                    return ServiceResult<LoginData>.Failure(ErrorCodes.COMPANY_INACTIVE, ErrorMessages.CompanyInactive);
+                    throw new BusinessException(ErrorMessages.CompanyInactive);
                 }
 
                 if (company.ExpiresAt.HasValue && company.ExpiresAt.Value < DateTime.UtcNow)
                 {
-                    return ServiceResult<LoginData>.Failure(ErrorCodes.COMPANY_EXPIRED, ErrorMessages.CompanyExpired);
+                    throw new BusinessException(ErrorMessages.CompanyExpired);
                 }
             }
         }
@@ -329,7 +330,7 @@ public class AuthService : IAuthService
             ExpiresAt = DateTime.UtcNow.AddMinutes(expirationMinutes)
         };
 
-        return ServiceResult<LoginData>.Success(loginData);
+        return loginData;
     }
 
     /// <summary>
@@ -357,7 +358,7 @@ public class AuthService : IAuthService
     /// </summary>
     /// <param name="request">注册请求</param>
     /// <returns>注册结果</returns>
-    public async Task<ServiceResult<User>> RegisterAsync(RegisterRequest request)
+    public async Task<User> RegisterAsync(RegisterRequest request)
     {
         var clientId = GetClientIdentifier(request.Username);
         var failureCount = await GetFailureCountAsync(clientId, "register");
@@ -367,14 +368,14 @@ public class AuthService : IAuthService
         {
             if (string.IsNullOrEmpty(request.CaptchaId) || string.IsNullOrEmpty(request.CaptchaAnswer))
             {
-                return ServiceResult<User>.Failure(ErrorCodes.CAPTCHA_REQUIRED, "需要验证码");
+                throw new BusinessException("需要验证码");
             }
 
             var captchaValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.CaptchaAnswer, "register");
             if (!captchaValid)
             {
                 await RecordFailureAsync(clientId, "register");
-                return ServiceResult<User>.Failure(ErrorCodes.CAPTCHA_INVALID, "验证码无效");
+                throw new BusinessException("验证码无效");
             }
         }
 
@@ -425,7 +426,6 @@ public class AuthService : IAuthService
 
         try
         {
-            // 🔒 安全增强：解密前端加密的密码
             var rawPassword = _encryptionService.TryDecryptPassword(request.Password);
 
             user = new User
@@ -465,29 +465,26 @@ public class AuthService : IAuthService
 
             await ClearFailureAsync(clientId, "register");
 
-            return ServiceResult<User>.Success(user, "REGISTER_SUCCESS_PERSONAL_COMPANY_CREATED");
+            return user;
         }
         catch (ArgumentException ex)
         {
             await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
             await RecordFailureAsync(clientId, "register");
-            return ServiceResult<User>.Failure(ErrorCodes.VALIDATION_ERROR, ex.Message);
+            throw new BusinessException(ex.Message);
         }
         catch (InvalidOperationException ex)
         {
             await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
             await RecordFailureAsync(clientId, "register");
-            var errorCode = ex.Message.Contains("USER_NAME_EXISTS") 
-                ? ErrorCodes.USER_NAME_EXISTS 
-                : ErrorCodes.EMAIL_EXISTS;
-            return ServiceResult<User>.Failure(errorCode, ex.Message);
+            throw new BusinessException(ex.Message);
         }
         catch (Exception ex)
         {
             await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
             await RecordFailureAsync(clientId, "register");
             _logger.LogError(ex, "用户注册失败，已执行回滚操作");
-            return ServiceResult<User>.Failure(ErrorCodes.SERVER_ERROR, $"注册失败: {ex.Message}");
+            throw new BusinessException($"注册失败: {ex.Message}");
         }
     }
 
@@ -713,24 +710,23 @@ public class AuthService : IAuthService
     /// </summary>
     /// <param name="request">修改密码请求</param>
     /// <returns>操作结果</returns>
-    public async Task<ServiceResult<bool>> ChangePasswordAsync(ChangePasswordRequest request)
+    public async Task<bool> ChangePasswordAsync(ChangePasswordRequest request)
     {
         try
         {
             var userId = _httpContextAccessor.HttpContext?.User?.FindFirst("userId")?.Value;
             if (string.IsNullOrEmpty(userId))
-                return ServiceResult<bool>.Failure(ErrorCodes.UNAUTHORIZED, "未授权访问");
+                throw new BusinessException("未授权访问");
 
             var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == userId && u.IsActive == true);
             if (user == null)
-                return ServiceResult<bool>.Failure(ErrorCodes.USER_NOT_FOUND, "用户不存在或已被禁用");
+                throw new BusinessException("用户不存在或已被禁用");
 
-            // 🔒 安全增强：解密前端加密的密码
             var oldPassword = _encryptionService.TryDecryptPassword(request.CurrentPassword);
             var newPassword = _encryptionService.TryDecryptPassword(request.NewPassword);
 
             if (!_passwordHasher.VerifyPassword(oldPassword, user.PasswordHash))
-                return ServiceResult<bool>.Failure(ErrorCodes.INVALID_OLD_PASSWORD, "旧密码不正确");
+                throw new BusinessException("旧密码不正确");
 
             _validationService.ValidatePassword(newPassword);
 
@@ -741,12 +737,16 @@ public class AuthService : IAuthService
             var userAgent = _httpContextAccessor.HttpContext?.Request?.Headers["User-Agent"].ToString();
             await _userService.LogUserActivityAsync(userId, "change_password", "修改密码", ipAddress, userAgent);
 
-            return ServiceResult<bool>.Success(true);
+            return true;
+        }
+        catch (BusinessException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "修改密码失败");
-            return ServiceResult<bool>.Failure(ErrorCodes.INTERNAL_ERROR, "修改密码失败");
+            throw new BusinessException("修改密码失败");
         }
     }
 
@@ -755,18 +755,18 @@ public class AuthService : IAuthService
     /// </summary>
     /// <param name="request">刷新令牌请求</param>
     /// <returns>刷新结果</returns>
-    public async Task<ServiceResult<RefreshTokenResult>> RefreshTokenAsync(RefreshTokenRequest request)
+    public async Task<RefreshTokenResult> RefreshTokenAsync(RefreshTokenRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.RefreshToken))
-            return ServiceResult<RefreshTokenResult>.Failure(ErrorCodes.REFRESH_TOKEN_EMPTY, "刷新token不能为空");
+            throw new BusinessException("刷新token不能为空");
 
         var principal = _jwtService.ValidateRefreshToken(request.RefreshToken);
         if (principal == null)
-            return ServiceResult<RefreshTokenResult>.Failure(ErrorCodes.REFRESH_TOKEN_INVALID, "无效的刷新token");
+            throw new BusinessException("无效的刷新token");
 
         var userId = _jwtService.GetUserIdFromRefreshToken(request.RefreshToken);
         if (string.IsNullOrEmpty(userId))
-            return ServiceResult<RefreshTokenResult>.Failure(ErrorCodes.REFRESH_TOKEN_USER_NOT_FOUND, "无法从刷新token中获取用户信息");
+            throw new BusinessException("无法从刷新token中获取用户信息");
 
         Expression<Func<RefreshToken, bool>> baseFilter = rt => rt.Token == request.RefreshToken && rt.UserId == userId && rt.IsRevoked == false;
         var existingToken = await _context.Set<RefreshToken>().Where(baseFilter).FirstOrDefaultAsync();
@@ -784,7 +784,7 @@ public class AuthService : IAuthService
                 await _context.SaveChangesAsync();
                 _logger.LogWarning("检测到用户 {UserId} 的旧token重用攻击，已撤销所有token", userId);
             }
-            return ServiceResult<RefreshTokenResult>.Failure(ErrorCodes.REFRESH_TOKEN_REVOKED, "刷新token无效或已被撤销");
+            throw new BusinessException("刷新token无效或已被撤销");
         }
 
         if (existingToken.ExpiresAt < DateTime.UtcNow)
@@ -793,12 +793,12 @@ public class AuthService : IAuthService
             existingToken.RevokedAt = DateTime.UtcNow;
             existingToken.RevokedReason = "Token已过期";
             await _context.SaveChangesAsync();
-            return ServiceResult<RefreshTokenResult>.Failure(ErrorCodes.REFRESH_TOKEN_EXPIRED, "刷新token已过期");
+            throw new BusinessException("刷新token已过期");
         }
 
         var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == userId && u.IsActive == true);
         if (user == null)
-            return ServiceResult<RefreshTokenResult>.Failure(ErrorCodes.USER_NOT_FOUND, "用户不存在或已被禁用");
+            throw new BusinessException("用户不存在或已被禁用");
 
         var newToken = _jwtService.GenerateToken(user);
         var newRefreshToken = _jwtService.GenerateRefreshToken(user);
@@ -838,7 +838,7 @@ public class AuthService : IAuthService
             ExpiresAt = DateTime.UtcNow.AddMinutes(expirationMinutes)
         };
 
-        return ServiceResult<RefreshTokenResult>.Success(refreshTokenResult);
+        return refreshTokenResult;
     }
 
     /// <summary>
@@ -846,11 +846,11 @@ public class AuthService : IAuthService
     /// </summary>
     /// <param name="request">请求数据</param>
     /// <returns>操作结果</returns>
-    public async Task<ServiceResult<bool>> SendPasswordResetCodeAsync(SendResetCodeRequest request)
+    public async Task<bool> SendPasswordResetCodeAsync(SendResetCodeRequest request)
     {
         var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive == true);
         if (user == null)
-            return ServiceResult<bool>.Failure(ErrorCodes.USER_NOT_FOUND, "该邮箱未绑定任何活动账户，或账户已被禁用");
+            throw new BusinessException("该邮箱未绑定任何活动账户，或账户已被禁用");
 
         var bytes = new byte[4];
         RandomNumberGenerator.Fill(bytes);
@@ -876,12 +876,12 @@ public class AuthService : IAuthService
         {
             await _emailService.SendEmailAsync(request.Email, "找回密码验证码", htmlBody);
             _logger.LogInformation("【重置密码】为用户 {Username}({Email}) 发送了验证码邮件: {Code}", user.Username, request.Email, code);
-            return ServiceResult<bool>.Success(true, "验证码已发送至您的邮箱");
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "发送重置密码邮件失败: {Email}", request.Email);
-            return ServiceResult<bool>.Failure(ErrorCodes.SEND_EMAIL_FAILED, "发送邮件失败，请稍后再试");
+            throw new BusinessException("发送邮件失败，请稍后再试");
         }
     }
 
@@ -890,33 +890,29 @@ public class AuthService : IAuthService
     /// </summary>
     /// <param name="request">重置密码请求</param>
     /// <returns>操作结果</returns>
-    public async Task<ServiceResult<bool>> ResetPasswordAsync(ResetPasswordRequest request)
+    public async Task<bool> ResetPasswordAsync(ResetPasswordRequest request)
     {
         var cacheKey = $"PasswordResetCode_{request.Email}";
         if (!_memoryCache.TryGetValue(cacheKey, out string? cachedCode))
-            return ServiceResult<bool>.Failure(ErrorCodes.CODE_EXPIRED, "验证码已过期，请重新获取");
+            throw new BusinessException("验证码已过期，请重新获取");
 
         if (cachedCode != request.Code)
-            return ServiceResult<bool>.Failure(ErrorCodes.INVALID_CODE, "验证码不正确");
+            throw new BusinessException("验证码不正确");
 
         var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive == true);
         if (user == null)
-            return ServiceResult<bool>.Failure(ErrorCodes.USER_NOT_FOUND, "该邮箱未绑定任何活动账户");
+            throw new BusinessException("该邮箱未绑定任何活动账户");
 
         var newPassword = _encryptionService.TryDecryptPassword(request.NewPassword);
         _validationService.ValidatePassword(newPassword);
 
-        // 如果配置了加密服务并且收到了前端原样传来的加密密码（而没有用RSA），解密可能会返回原字符串。
-        // 所以，我们需要确保解密后的密码也进行相同的安全校验。
-
         user.PasswordHash = _passwordHasher.HashPassword(newPassword);
         await _context.SaveChangesAsync();
 
-        // 重置成功后，清除验证码
         _memoryCache.Remove(cacheKey);
 
         _logger.LogInformation("用户 {Username} 通过邮箱找回密码成功", user.Username);
 
-        return ServiceResult<bool>.Success(true, "密码重置成功");
+        return true;
     }
 }

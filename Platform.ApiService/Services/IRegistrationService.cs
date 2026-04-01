@@ -1,6 +1,5 @@
 using User = Platform.ApiService.Models.AppUser;
 using Platform.ApiService.Models;
-using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Services;
 
@@ -12,7 +11,7 @@ public interface IRegistrationService
     /// <summary>
     /// 用户注册
     /// </summary>
-    Task<ServiceResult<AppUser>> RegisterAsync(RegisterRequest request);
+    Task<AppUser> RegisterAsync(RegisterRequest request);
 
     /// <summary>
     /// 回滚用户注册

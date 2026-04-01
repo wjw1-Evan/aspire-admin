@@ -4,8 +4,8 @@ using Microsoft.Extensions.Logging;
 using Platform.ApiService.Constants;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
-using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Exceptions;
 using System.Security.Cryptography;
 using User = Platform.ApiService.Models.AppUser;
 
@@ -49,23 +49,23 @@ public class PasswordService : IPasswordService
     }
 
     /// <inheritdoc/>
-    public async Task<ServiceResult<bool>> ChangePasswordAsync(ChangePasswordRequest request)
+    public async Task<bool> ChangePasswordAsync(ChangePasswordRequest request)
     {
         try
         {
             var userId = _httpContextAccessor.HttpContext?.User?.FindFirst("userId")?.Value;
             if (string.IsNullOrEmpty(userId))
-                return ServiceResult<bool>.Failure(ErrorCodes.UNAUTHORIZED, "未授权访问");
+                throw new BusinessException("未授权访问");
 
             var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == userId && u.IsActive == true);
             if (user == null)
-                return ServiceResult<bool>.Failure(ErrorCodes.USER_NOT_FOUND, "用户不存在或已被禁用");
+                throw new BusinessException("用户不存在或已被禁用");
 
             var oldPassword = _encryptionService.TryDecryptPassword(request.CurrentPassword);
             var newPassword = _encryptionService.TryDecryptPassword(request.NewPassword);
 
             if (!_passwordHasher.VerifyPassword(oldPassword, user.PasswordHash))
-                return ServiceResult<bool>.Failure(ErrorCodes.INVALID_OLD_PASSWORD, "旧密码不正确");
+                throw new BusinessException("旧密码不正确");
 
             _validationService.ValidatePassword(newPassword);
 
@@ -76,21 +76,25 @@ public class PasswordService : IPasswordService
             var userAgent = _httpContextAccessor.HttpContext?.Request?.Headers["User-Agent"].ToString();
             await _userService.LogUserActivityAsync(userId, "change_password", "修改密码", ipAddress, userAgent);
 
-            return ServiceResult<bool>.Success(true);
+            return true;
+        }
+        catch (BusinessException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "修改密码失败");
-            return ServiceResult<bool>.Failure(ErrorCodes.INTERNAL_ERROR, "修改密码失败");
+            throw new BusinessException("修改密码失败");
         }
     }
 
     /// <inheritdoc/>
-    public async Task<ServiceResult<bool>> SendPasswordResetCodeAsync(SendResetCodeRequest request)
+    public async Task<bool> SendPasswordResetCodeAsync(SendResetCodeRequest request)
     {
         var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive == true);
         if (user == null)
-            return ServiceResult<bool>.Failure(ErrorCodes.USER_NOT_FOUND, "该邮箱未绑定任何活动账户，或账户已被禁用");
+            throw new BusinessException("该邮箱未绑定任何活动账户，或账户已被禁用");
 
         var bytes = new byte[4];
         RandomNumberGenerator.Fill(bytes);
@@ -116,28 +120,28 @@ public class PasswordService : IPasswordService
         {
             await _emailService.SendEmailAsync(request.Email, "找回密码验证码", htmlBody);
             _logger.LogInformation("【重置密码】为用户 {Username}({Email}) 发送了验证码邮件: {Code}", user.Username, request.Email, code);
-            return ServiceResult<bool>.Success(true, "验证码已发送至您的邮箱");
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "发送重置密码邮件失败: {Email}", request.Email);
-            return ServiceResult<bool>.Failure(ErrorCodes.SEND_EMAIL_FAILED, "发送邮件失败，请稍后再试");
+            throw new BusinessException("发送邮件失败，请稍后再试");
         }
     }
 
     /// <inheritdoc/>
-    public async Task<ServiceResult<bool>> ResetPasswordAsync(ResetPasswordRequest request)
+    public async Task<bool> ResetPasswordAsync(ResetPasswordRequest request)
     {
         var cacheKey = $"PasswordResetCode_{request.Email}";
         if (!_memoryCache.TryGetValue(cacheKey, out string? cachedCode))
-            return ServiceResult<bool>.Failure(ErrorCodes.CODE_EXPIRED, "验证码已过期，请重新获取");
+            throw new BusinessException("验证码已过期，请重新获取");
 
         if (cachedCode != request.Code)
-            return ServiceResult<bool>.Failure(ErrorCodes.INVALID_CODE, "验证码不正确");
+            throw new BusinessException("验证码不正确");
 
         var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive == true);
         if (user == null)
-            return ServiceResult<bool>.Failure(ErrorCodes.USER_NOT_FOUND, "该邮箱未绑定任何活动账户");
+            throw new BusinessException("该邮箱未绑定任何活动账户");
 
         var newPassword = _encryptionService.TryDecryptPassword(request.NewPassword);
         _validationService.ValidatePassword(newPassword);
@@ -149,6 +153,6 @@ public class PasswordService : IPasswordService
 
         _logger.LogInformation("用户 {Username} 通过邮箱找回密码成功", user.Username);
 
-        return ServiceResult<bool>.Success(true, "密码重置成功");
+        return true;
     }
 }

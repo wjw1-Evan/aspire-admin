@@ -1,6 +1,5 @@
 using User = Platform.ApiService.Models.AppUser;
 using Platform.ApiService.Models;
-using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Services;
 
@@ -20,7 +19,7 @@ public interface IAuthService
     /// </summary>
     /// <param name="request">登录请求</param>
     /// <returns>登录结果，包含 Token 和用户信息</returns>
-    Task<ServiceResult<LoginData>> LoginAsync(LoginRequest request);
+    Task<LoginData> LoginAsync(LoginRequest request);
 
     /// <summary>
     /// 用户登出
@@ -33,33 +32,33 @@ public interface IAuthService
     /// </summary>
     /// <param name="request">注册请求</param>
     /// <returns>注册结果，包含用户信息</returns>
-    Task<ServiceResult<AppUser>> RegisterAsync(RegisterRequest request);
+    Task<AppUser> RegisterAsync(RegisterRequest request);
 
     /// <summary>
     /// 修改密码
     /// </summary>
     /// <param name="request">修改密码请求</param>
     /// <returns>是否成功修改</returns>
-    Task<ServiceResult<bool>> ChangePasswordAsync(ChangePasswordRequest request);
+    Task<bool> ChangePasswordAsync(ChangePasswordRequest request);
 
     /// <summary>
     /// 刷新 Token
     /// </summary>
     /// <param name="request">刷新 Token 请求</param>
     /// <returns>新的 Token 信息</returns>
-    Task<ServiceResult<RefreshTokenResult>> RefreshTokenAsync(RefreshTokenRequest request);
+    Task<RefreshTokenResult> RefreshTokenAsync(RefreshTokenRequest request);
 
     /// <summary>
     /// 发送密码重置验证码
     /// </summary>
     /// <param name="request">请求数据</param>
     /// <returns>操作结果</returns>
-    Task<ServiceResult<bool>> SendPasswordResetCodeAsync(SendResetCodeRequest request);
+    Task<bool> SendPasswordResetCodeAsync(SendResetCodeRequest request);
 
     /// <summary>
     /// 通过验证码重置密码
     /// </summary>
     /// <param name="request">重置密码请求</param>
     /// <returns>操作结果</returns>
-    Task<ServiceResult<bool>> ResetPasswordAsync(ResetPasswordRequest request);
+    Task<bool> ResetPasswordAsync(ResetPasswordRequest request);
 }

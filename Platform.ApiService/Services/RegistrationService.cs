@@ -3,8 +3,9 @@ using Microsoft.Extensions.Logging;
 using Platform.ApiService.Constants;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
-using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Exceptions;
+using Menu = Platform.ServiceDefaults.Models.Menu;
 using User = Platform.ApiService.Models.AppUser;
 
 namespace Platform.ApiService.Services;
@@ -105,7 +106,7 @@ public class RegistrationService : IRegistrationService
     }
 
     /// <inheritdoc/>
-    public async Task<ServiceResult<User>> RegisterAsync(RegisterRequest request)
+    public async Task<User> RegisterAsync(RegisterRequest request)
     {
         var clientId = GetClientIdentifier(request.Username);
         var failureCount = await GetFailureCountAsync(clientId, "register");
@@ -115,14 +116,14 @@ public class RegistrationService : IRegistrationService
         {
             if (string.IsNullOrEmpty(request.CaptchaId) || string.IsNullOrEmpty(request.CaptchaAnswer))
             {
-                return ServiceResult<User>.Failure(ErrorCodes.CAPTCHA_REQUIRED, "需要验证码");
+                throw new BusinessException("需要验证码");
             }
 
             var captchaValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.CaptchaAnswer, "register");
             if (!captchaValid)
             {
                 await RecordFailureAsync(clientId, "register");
-                return ServiceResult<User>.Failure(ErrorCodes.CAPTCHA_INVALID, "验证码无效");
+                throw new BusinessException("验证码无效");
             }
         }
 
@@ -212,29 +213,26 @@ public class RegistrationService : IRegistrationService
 
             await ClearFailureAsync(clientId, "register");
 
-            return ServiceResult<User>.Success(user, "REGISTER_SUCCESS_PERSONAL_COMPANY_CREATED");
+            return user;
         }
         catch (ArgumentException ex)
         {
             await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
             await RecordFailureAsync(clientId, "register");
-            return ServiceResult<User>.Failure(ErrorCodes.VALIDATION_ERROR, ex.Message);
+            throw new BusinessException(ex.Message);
         }
         catch (InvalidOperationException ex)
         {
             await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
             await RecordFailureAsync(clientId, "register");
-            var errorCode = ex.Message.Contains("USER_NAME_EXISTS")
-                ? ErrorCodes.USER_NAME_EXISTS
-                : ErrorCodes.EMAIL_EXISTS;
-            return ServiceResult<User>.Failure(errorCode, ex.Message);
+            throw new BusinessException(ex.Message);
         }
         catch (Exception ex)
         {
             await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
             await RecordFailureAsync(clientId, "register");
             _logger.LogError(ex, "用户注册失败，已执行回滚操作");
-            return ServiceResult<User>.Failure(ErrorCodes.SERVER_ERROR, $"注册失败: {ex.Message}");
+            throw new BusinessException($"注册失败: {ex.Message}");
         }
     }
 

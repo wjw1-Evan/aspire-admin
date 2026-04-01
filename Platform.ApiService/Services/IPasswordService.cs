@@ -1,5 +1,4 @@
 using Platform.ApiService.Models;
-using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Services;
 
@@ -11,15 +10,15 @@ public interface IPasswordService
     /// <summary>
     /// 修改密码
     /// </summary>
-    Task<ServiceResult<bool>> ChangePasswordAsync(ChangePasswordRequest request);
+    Task<bool> ChangePasswordAsync(ChangePasswordRequest request);
 
     /// <summary>
     /// 发送密码重置验证码
     /// </summary>
-    Task<ServiceResult<bool>> SendPasswordResetCodeAsync(SendResetCodeRequest request);
+    Task<bool> SendPasswordResetCodeAsync(SendResetCodeRequest request);
 
     /// <summary>
     /// 通过验证码重置密码
     /// </summary>
-    Task<ServiceResult<bool>> ResetPasswordAsync(ResetPasswordRequest request);
+    Task<bool> ResetPasswordAsync(ResetPasswordRequest request);
 }

@@ -107,7 +107,7 @@ public class AuthController : BaseApiController
         if (!!string.IsNullOrEmpty(CurrentUserId))
         {
             _logger.LogWarning("【AuthController.GetCurrentUser】用户未认证，返回 401");
-            return Fail("UNAUTHORIZED", "用户未认证", 401);
+            return Fail("未授权访问", 401);
         }
 
         var user = await _authService.GetCurrentUserAsync();
@@ -154,9 +154,7 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         var result = await _authService.LoginAsync(request);
-        return result.IsSuccess 
-            ? Success(result.Data!, result.Message) 
-            : Fail(result.Code ?? "ERROR", result.Message ?? "操作失败", 400);
+        return Success(result);
     }
 
     /// <summary>
@@ -224,7 +222,7 @@ public class AuthController : BaseApiController
     {
         if (type != "login" && type != "register")
         {
-            return Fail("VALIDATION_ERROR", "验证码类型只能是 login 或 register");
+            return Fail("验证码类型只能是 login 或 register");
         }
 
         var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString();
@@ -266,15 +264,15 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> VerifyImageCaptcha([FromBody] VerifyCaptchaImageRequest request)
     {
         if (string.IsNullOrEmpty(request.CaptchaId))
-            return Fail("VALIDATION_ERROR", "验证码ID不能为空");
+            return Fail("验证码ID不能为空");
 
         if (string.IsNullOrEmpty(request.Answer))
-            return Fail("VALIDATION_ERROR", "验证码答案不能为空");
+            return Fail("验证码答案不能为空");
 
         var isValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.Answer, request.Type);
 
         if (!isValid)
-            return Fail("INVALID_CAPTCHA", "验证码不正确或已过期");
+            return Fail("验证码不正确或已过期");
 
         return Success(null, "验证码正确");
     }
@@ -319,9 +317,7 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
         var result = await _authService.RegisterAsync(request);
-        return result.IsSuccess 
-            ? Success(result.Data!, result.Message) 
-            : Fail(result.Code ?? "ERROR", result.Message ?? "操作失败", 400);
+        return Success(result);
     }
 
     /// <summary>
@@ -360,10 +356,8 @@ public class AuthController : BaseApiController
 
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
     {
-        var result = await _authService.ChangePasswordAsync(request);
-        return result.IsSuccess 
-            ? Success(result.Data!, result.Message) 
-            : Fail(result.Code ?? "ERROR", result.Message ?? "操作失败", 400);
+        await _authService.ChangePasswordAsync(request);
+        return Success(true, "密码修改成功");
     }
 
     /// <summary>
@@ -403,9 +397,7 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
     {
         var result = await _authService.RefreshTokenAsync(request);
-        return result.IsSuccess 
-            ? Success(result.Data!, result.Message) 
-            : Fail(result.Code ?? "ERROR", result.Message ?? "操作失败", 400);
+        return Success(result);
     }
 
     /// <summary>
@@ -419,10 +411,8 @@ public class AuthController : BaseApiController
     [AllowAnonymous]
     public async Task<IActionResult> SendResetCode([FromBody] SendResetCodeRequest request)
     {
-        var result = await _authService.SendPasswordResetCodeAsync(request);
-        return result.IsSuccess 
-            ? Success(result.Data!, result.Message) 
-            : Fail(result.Code ?? "ERROR", result.Message ?? "操作失败", 400);
+        await _authService.SendPasswordResetCodeAsync(request);
+        return Success(true, "验证码已发送至您的邮箱");
     }
 
     /// <summary>
@@ -436,9 +426,7 @@ public class AuthController : BaseApiController
     [AllowAnonymous]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
     {
-        var result = await _authService.ResetPasswordAsync(request);
-        return result.IsSuccess 
-            ? Success(result.Data!, result.Message) 
-            : Fail(result.Code ?? "ERROR", result.Message ?? "操作失败", 400);
+        await _authService.ResetPasswordAsync(request);
+        return Success(true, "密码重置成功");
     }
 }

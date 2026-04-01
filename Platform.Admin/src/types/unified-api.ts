@@ -16,17 +16,12 @@ export interface ApiResponse<T = any> {
   traceId?: string;
 }
 
+
 /**
- * 分页响应格式 (PagedResult<T>)
+ * 分页响应格式(PagedResult<T>)
  * 统一分页结构，所有分页接口均使用，完全对齐后端：
- * {
- *   queryable: T[];
- *   currentPage: number;
- *   pageSize: number;
- *   rowCount: number;
- *   pageCount: number;
- * }
  */
+
 export interface PagedResult<T> {
   queryable: T[];
   currentPage: number;

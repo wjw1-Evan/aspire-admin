@@ -61,8 +61,8 @@ public class PasswordEncryptionService : IPasswordEncryptionService, ISingletonD
     /// </summary>
     public string GetPublicKey()
     {
-        // 配合前端 sm-crypto 组件，这里只需直接返回包含 04 前缀的 130 字符 Hex
-        return _publicKeyHex;
+        // 配合前端 sm-crypto 组件，返回带 04 前缀的 130 字符 Hex
+        return "04" + _publicKeyHex;
     }
 
     /// <summary>

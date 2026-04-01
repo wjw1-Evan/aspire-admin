@@ -21,8 +21,6 @@ public class BusinessExceptionFilter : IExceptionFilter
     {
         var exception = context.Exception;
 
-
-
         if (exception is ArgumentException)
         {
             var response = new ApiResponse(

@@ -13,7 +13,7 @@
     <PackageReference Include="Aspire.MongoDB.EntityFrameworkCore" Version="13.2.1" />
     <PackageReference Include="Aspire.OpenAI" Version="13.2.1-preview.1.26180.6" />
     <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.2" />
-    <PackageReference Include="Microsoft.Agents.AI" Version="1.0.0-rc4" />
+    <PackageReference Include="Microsoft.Agents.AI" Version="1.0.0-rc5" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.DynamicLinq" Version="10.7.1" />
     <PackageReference Include="Microsoft.Extensions.AI" Version="10.4.1" />
@@ -35,7 +35,7 @@
     <PackageReference Include="System.Management" Version="10.0.5" />
     <PackageReference Include="Cronos" Version="0.11.1" />
     <PackageReference Include="MailKit" Version="4.15.1" />
-    <PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.0.0-rc4" />
+    <PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.0.0-rc5" />
     <PackageReference Include="MimeKit" Version="4.15.1" />
   </ItemGroup>
 

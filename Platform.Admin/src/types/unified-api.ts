@@ -1,9 +1,15 @@
 /**
- * 统一的 API 响应格式入口（由后端统一定义在 apiResponse.ts 中）
- * 通过类型别名将 ApiResponse 统一暴露给全局使用
+ * 统一的 API 响应入口（来自后端统一定义）
+ * 直接在此处定义 ApiResponse，共享给全端使用
  */
-import type { ApiResponse as ApiResponseNew } from '../utils/apiResponse';
-export type ApiResponse<T = any> = ApiResponseNew<T>;
+export interface ApiResponse<T = any> {
+  success: boolean;
+  code?: string;
+  data?: T;
+  message?: string;
+  timestamp?: string;
+  traceId?: string;
+}
 
 // 登录请求参数
 export interface LoginRequest {
@@ -113,13 +119,7 @@ export enum ApiErrorCode {
   REFRESH_TOKEN_ERROR = 'REFRESH_TOKEN_ERROR',
 }
 
-// 向后兼容的 API 响应格式（用于内部转换）
-export interface ApiResponseLegacy<T> {
-  success: boolean;
-  code: string;
-  data?: T;
-  message?: string;
-}
+// ApiResponseLegacy 已废弃，统一使用 ApiResponse<T> 结构
 
 // 登录结果（向后兼容）
 export interface LoginResult {

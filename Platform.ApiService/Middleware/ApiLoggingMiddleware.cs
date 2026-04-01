@@ -12,7 +12,6 @@ public class ApiLoggingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<ApiLoggingMiddleware> _logger;
-    private readonly IConfiguration _configuration;
 
     private static readonly string[] ExcludedPaths =
     {
@@ -26,19 +25,14 @@ public class ApiLoggingMiddleware
         "/chat/sse"
     };
 
-    public ApiLoggingMiddleware(
-        RequestDelegate next,
-        ILogger<ApiLoggingMiddleware> logger,
-        IConfiguration configuration)
+    public ApiLoggingMiddleware(RequestDelegate next, ILogger<ApiLoggingMiddleware> logger)
     {
         _next = next;
         _logger = logger;
-        _configuration = configuration;
     }
 
     public async Task InvokeAsync(HttpContext context, ITenantContext tenantContext, IUserActivityLogService logService)
     {
-        var enabled = _configuration.GetValue<bool>("ActivityLog:Enabled", true);
         var stopwatch = Stopwatch.StartNew();
 
         try
@@ -74,7 +68,7 @@ public class ApiLoggingMiddleware
             );
 
             // 2. 保存到数据库（业务审计）
-            if (enabled && !ShouldExclude(context.Request.Path))
+            if (!ShouldExclude(context.Request.Path))
             {
                 try
                 {

@@ -8,6 +8,7 @@ using Platform.ApiService.Models.Response;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
 using Platform.ServiceDefaults.Models;
+using Platform.ServiceDefaults.Exceptions;
 using System.Linq.Dynamic.Core;
 
 
@@ -255,11 +256,11 @@ public class UserController : BaseApiController
         // 检查是否删除自己（不允许）
         var currentUserId = CurrentUserId;
         if (currentUserId == id)
-            return Fail(ErrorMessages.CannotDeleteSelf);
+            throw new ServiceException("不能删除当前登录用户", 400);
 
         var deleted = await _userService.DeleteUserAsync(id, reason);
         if (!deleted)
-            return Fail("用户 {id} 不存在");
+            throw new KeyNotFoundException("用户不存在");
         return NoContent();
     }
 
@@ -310,7 +311,7 @@ public class UserController : BaseApiController
 
         var success = await _userService.BulkUpdateUsersAsync(request, request.Reason);
         if (!success)
-            return Fail(ErrorMessages.OperationFailed);
+            throw new ServiceException(ErrorMessages.OperationFailed, 500);
 
         return Success(null, ErrorMessages.OperationSuccess);
     }
@@ -383,7 +384,7 @@ public class UserController : BaseApiController
     {
         var log = await _activityLogService.GetActivityLogByIdAsync(logId);
         if (log == null)
-            return Fail("活动日志 {logId} 不存在");
+            throw new KeyNotFoundException("活动日志不存在");
 
         return Success(log);
     }
@@ -468,7 +469,7 @@ public class UserController : BaseApiController
             var phoneNumber = request.PhoneNumber.Trim();
             if (phoneNumber.Length != 11 || !phoneNumber.StartsWith("1") || !phoneNumber.All(char.IsDigit))
             {
-                return Fail("手机号格式不正确");
+                throw new ArgumentException("手机号格式不正确");
             }
         }
 
@@ -492,7 +493,7 @@ public class UserController : BaseApiController
         var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
         var success = await _userService.ChangePasswordAsync(userId, request);
         if (!success)
-            return Fail("当前密码错误或修改失败");
+            throw new ArgumentException("当前密码错误或修改失败");
 
         return Success(null, "密码修改成功");
     }
@@ -574,21 +575,20 @@ public class UserController : BaseApiController
         // ✅ 添加输入验证
         // 验证日期范围
         if (startDate.HasValue && endDate.HasValue && startDate.Value > endDate.Value)
-            return Fail("开始日期不能晚于结束日期");
+            throw new ArgumentException("开始日期不能晚于结束日期");
 
-        // 验证排序参数
         if (!string.IsNullOrEmpty(sortBy))
         {
             var allowedSortFields = new[] { "createdAt", "action" };
             if (!allowedSortFields.Contains(sortBy, StringComparer.OrdinalIgnoreCase))
-                return Fail($"不支持的排序字段: {sortBy}，支持字段: {string.Join(", ", allowedSortFields)}");
+                throw new ArgumentException($"不支持的排序字段: {sortBy}，支持字段: {string.Join(", ", allowedSortFields)}");
         }
 
         if (!string.IsNullOrEmpty(sortOrder))
         {
             var allowedSortOrders = new[] { "asc", "desc" };
             if (!allowedSortOrders.Contains(sortOrder, StringComparer.OrdinalIgnoreCase))
-                return Fail($"不支持的排序方向: {sortOrder}，支持: asc、desc");
+                throw new ArgumentException($"不支持的排序方向: {sortOrder}，支持: asc、desc");
         }
 
         var response = await _activityLogService.GetCurrentUserActivityLogsAsync(
@@ -663,13 +663,13 @@ public class UserController : BaseApiController
     {
         // ✅ 验证日志ID格式
         if (!MongoDB.Bson.ObjectId.TryParse(logId, out _))
-            return Fail("日志ID格式不正确");
+            throw new ArgumentException("日志ID格式不正确");
 
         var log = await _activityLogService.GetCurrentUserActivityLogByIdAsync(logId);
 
 
         if (log == null)
-            return Fail("日志 {logId} 不存在");
+            throw new KeyNotFoundException("日志不存在");
 
         return Success(log);
     }
@@ -775,7 +775,7 @@ public class UserController : BaseApiController
         var success = await _userService.UpdateAiRoleDefinitionAsync(userId, request.RoleDefinition);
 
         if (!success)
-            return Fail("更新角色定义失败");
+            throw new ServiceException("更新角色定义失败", 500);
 
         return Success(null, "角色定义更新成功");
     }
@@ -869,9 +869,8 @@ public class UserController : BaseApiController
         var success = await _userService.SaveWelcomeLayoutAsync(userId, request);
 
         if (!success)
-            return Fail("保存布局配置失败");
+            throw new ServiceException("保存布局配置失败", 500);
 
         return Success(null, "布局配置保存成功");
     }
-
 }

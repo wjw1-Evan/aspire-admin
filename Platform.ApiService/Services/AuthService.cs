@@ -738,7 +738,7 @@ public class AuthService : IAuthService
 
             return true;
         }
-        catch (BusinessException)
+        catch (ArgumentException)
         {
             throw;
         }

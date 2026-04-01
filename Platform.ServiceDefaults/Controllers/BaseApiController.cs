@@ -18,7 +18,7 @@ public abstract class BaseApiController : ControllerBase
             : null;
 
         if (required && string.IsNullOrEmpty(companyId))
-            throw new InvalidOperationException("未找到当前用户的企业信息");
+            throw new KeyNotFoundException("未找到当前用户的企业信息");
 
         return companyId;
     }

@@ -77,7 +77,7 @@ public class PasswordService : IPasswordService
 
             return true;
         }
-        catch (BusinessException)
+        catch (ArgumentException)
         {
             throw;
         }

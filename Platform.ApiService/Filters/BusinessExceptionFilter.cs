@@ -42,6 +42,19 @@ public class BusinessExceptionFilter : IExceptionFilter
             return;
         }
 
+        if (exception is KeyNotFoundException)
+        {
+            var response = new ApiResponse(
+                success: false,
+                message: exception.Message,
+                traceId: context.HttpContext.TraceIdentifier
+            );
+
+            context.Result = new NotFoundObjectResult(response);
+            context.ExceptionHandled = true;
+            return;
+        }
+
         if (exception is UnauthorizedAccessException)
         {
             var response = new ApiResponse(

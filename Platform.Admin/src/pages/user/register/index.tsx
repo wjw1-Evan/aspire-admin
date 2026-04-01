@@ -20,6 +20,7 @@ import ImageCaptcha, { type ImageCaptchaRef } from '@/components/ImageCaptcha';
 import { checkUsernameExists, register } from '@/services/ant-design-pro/api';
 import { PasswordEncryption } from '@/utils/encryption';
 import Settings from '../../../../config/defaultSettings';
+import { REGISTER_KNOWN_ERRORS, CAPTCHA_INVALID, CAPTCHA_REQUIRED } from '@/constants/errorCodes';
 
 const useStyles = createStyles(({ token }) => {
   return {
@@ -230,17 +231,13 @@ export default function Register() {
       const errorMsg = response.message || intl.formatMessage({ id: 'pages.login.failure' }); // Using existing login failure as fallback or add new one
 
       // 注册失败后显示验证码（业务逻辑）
-      if (errorCode === 'USER_EXISTS' || errorCode === 'EMAIL_EXISTS' ||
-        errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED' ||
-        errorCode === 'SERVER_ERROR') {
+      if (REGISTER_KNOWN_ERRORS.includes(errorCode as any)) {
         setShowCaptcha(true);
-        // 如果是验证码错误，自动刷新验证码
-        if (errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED') {
+        if ([CAPTCHA_INVALID, CAPTCHA_REQUIRED].includes(errorCode as any)) {
           if (captchaRef.current) {
             await captchaRef.current.refresh();
           }
         } else {
-          // 第一次失败，获取新的验证码
           if (captchaRef.current) {
             await captchaRef.current.refresh();
           }
@@ -257,17 +254,13 @@ export default function Register() {
         error?.response?.data?.code;
 
       // 注册失败后显示验证码（业务逻辑）
-      if (errorCode === 'USER_EXISTS' || errorCode === 'EMAIL_EXISTS' ||
-        errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED' ||
-        errorCode === 'SERVER_ERROR') {
+      if (REGISTER_KNOWN_ERRORS.includes(errorCode as any)) {
         setShowCaptcha(true);
-        // 如果是验证码错误，自动刷新验证码
-        if (errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED') {
+        if ([CAPTCHA_INVALID, CAPTCHA_REQUIRED].includes(errorCode as any)) {
           if (captchaRef.current) {
             await captchaRef.current.refresh();
           }
         } else {
-          // 第一次失败，获取新的验证码
           if (captchaRef.current) {
             await captchaRef.current.refresh();
           }

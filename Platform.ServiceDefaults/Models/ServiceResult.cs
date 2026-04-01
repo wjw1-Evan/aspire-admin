@@ -29,23 +29,33 @@ public class ServiceResult<T>
     public string? Message { get; private set; }
 
     /// <summary>
+    /// HTTP 状态码
+    /// </summary>
+    public int StatusCode { get; private set; } = 200;
+
+    /// <summary>
     /// 成功响应
     /// </summary>
     public static ServiceResult<T> Success(T data, string? message = null) => new()
     {
         IsSuccess = true,
         Data = data,
-        Message = message
+        Message = message,
+        StatusCode = 200
     };
 
     /// <summary>
     /// 失败响应
     /// </summary>
-    public static ServiceResult<T> Failure(string code, string message) => new()
+    /// <param name="code">错误码</param>
+    /// <param name="message">错误消息</param>
+    /// <param name="statusCode">HTTP 状态码，默认 400</param>
+    public static ServiceResult<T> Failure(string code, string message, int statusCode = 400) => new()
     {
         IsSuccess = false,
         Code = code,
-        Message = message
+        Message = message,
+        StatusCode = statusCode
     };
 
     /// <summary>

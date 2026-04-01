@@ -20,6 +20,7 @@ import { login } from '@/services/ant-design-pro/api';
 import { tokenUtils } from '@/utils/token';
 import { PasswordEncryption } from '@/utils/encryption';
 import Settings from '../../../../config/defaultSettings';
+import { LOGIN_KNOWN_ERRORS, INVALID_CREDENTIALS, CAPTCHA_INVALID, CAPTCHA_REQUIRED, CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN } from '@/constants/errorCodes';
 
 const useStyles = createStyles(({ token }) => {
   return {
@@ -260,9 +261,8 @@ const Login: React.FC = () => {
       const errorCode = response.code;
       const backendMessage = response.message;
 
-      const knownErrors = ['INVALID_CREDENTIALS', 'ACCOUNT_LOCKED', 'ACCOUNT_DISABLED', 'USER_NOT_FOUND', 'PASSWORD_EXPIRED', 'TOO_MANY_ATTEMPTS', 'UNKNOWN', 'CAPTCHA_INVALID', 'CAPTCHA_REQUIRED', 'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN', 'LOGIN_FAILED'];
       let errorMsg = backendMessage;
-      if (errorCode && knownErrors.includes(errorCode)) {
+      if (errorCode && LOGIN_KNOWN_ERRORS.includes(errorCode as any)) {
         errorMsg = intl.formatMessage({
           id: `pages.login.error.${errorCode}`,
           defaultMessage: backendMessage || intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }),
@@ -272,15 +272,14 @@ const Login: React.FC = () => {
       }
 
       // 登录失败后显示验证码（业务逻辑）
-      if (errorCode === 'INVALID_CREDENTIALS' || errorCode === 'LOGIN_FAILED' || errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED' || errorCode === 'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN') {
+      const captchaErrors = [INVALID_CREDENTIALS, CAPTCHA_INVALID, CAPTCHA_REQUIRED, CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN];
+      if (captchaErrors.includes(errorCode as any)) {
         setShowCaptcha(true);
-        // 如果是验证码错误，自动刷新验证码
-        if (errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED' || errorCode === 'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN') {
+        if ([CAPTCHA_INVALID, CAPTCHA_REQUIRED, CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN].includes(errorCode as any)) {
           if (captchaRef.current) {
             await captchaRef.current.refresh();
           }
         } else {
-          // 第一次失败，获取新的验证码
           if (captchaRef.current) {
             await captchaRef.current.refresh();
           }
@@ -309,9 +308,8 @@ const Login: React.FC = () => {
       // 设置错误状态（用于表单显示）
       const backendMessage = error?.response?.data?.message || error?.info?.message || error?.message;
 
-      const knownErrors = ['INVALID_CREDENTIALS', 'ACCOUNT_LOCKED', 'ACCOUNT_DISABLED', 'USER_NOT_FOUND', 'PASSWORD_EXPIRED', 'TOO_MANY_ATTEMPTS', 'UNKNOWN', 'CAPTCHA_INVALID', 'CAPTCHA_REQUIRED', 'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN', 'LOGIN_FAILED'];
       let errorMsg = backendMessage;
-      if (errorCode && knownErrors.includes(errorCode)) {
+      if (errorCode && LOGIN_KNOWN_ERRORS.includes(errorCode as any)) {
         errorMsg = intl.formatMessage({
           id: `pages.login.error.${errorCode}`,
           defaultMessage: backendMessage || intl.formatMessage({ id: 'pages.login.failure', defaultMessage: '登录失败，请重试！' }),
@@ -322,15 +320,14 @@ const Login: React.FC = () => {
       setUserLoginState({ status: 'error', message: errorMsg });
 
       // 登录失败后显示验证码（业务逻辑）
-      if (errorCode === 'INVALID_CREDENTIALS' || errorCode === 'LOGIN_FAILED' || errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED' || errorCode === 'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN') {
+      const captchaErrors = [INVALID_CREDENTIALS, CAPTCHA_INVALID, CAPTCHA_REQUIRED, CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN];
+      if (captchaErrors.includes(errorCode as any)) {
         setShowCaptcha(true);
-        // 如果是验证码错误，自动刷新验证码
-        if (errorCode === 'CAPTCHA_INVALID' || errorCode === 'CAPTCHA_REQUIRED' || errorCode === 'CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN') {
+        if ([CAPTCHA_INVALID, CAPTCHA_REQUIRED, CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN].includes(errorCode as any)) {
           if (captchaRef.current) {
             await captchaRef.current.refresh();
           }
         } else {
-          // 第一次失败，获取新的验证码
           if (captchaRef.current) {
             await captchaRef.current.refresh();
           }

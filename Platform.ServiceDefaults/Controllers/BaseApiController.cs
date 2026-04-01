@@ -103,22 +103,23 @@ public abstract class BaseApiController : ControllerBase
     /// </summary>
     protected IActionResult Result<T>(ServiceResult<T> result)
     {
-        var response = CreateResponse(result.IsSuccess,
+        var response = CreateResponse(
+            result.IsSuccess,
             result.Code ?? (result.IsSuccess ? "OK" : "ERROR"),
             result.Data,
-            result.Message ?? (result.IsSuccess ? null : "操作失败"));
+            result.Message ?? (result.IsSuccess ? null : "操作失败")
+        );
 
         if (result.IsSuccess) return Ok(response);
 
-        // 如果 Result 返回的是特定的业务错误码，可以直接交由 Result 映射
-        return result.Code switch
+        return result.StatusCode switch
         {
-            "NOT_FOUND" => NotFound(response),
-            "UNAUTHORIZED" => Unauthorized(response),
-            "FORBIDDEN" => StatusCode(403, response),
-            "VALIDATION_ERROR" => BadRequest(response),
-            "ALREADY_EXISTS" => Conflict(response),
-            "INTERNAL_ERROR" => StatusCode(500, response),
+            400 => BadRequest(response),
+            401 => Unauthorized(response),
+            403 => StatusCode(403, response),
+            404 => NotFound(response),
+            409 => Conflict(response),
+            500 => StatusCode(500, response),
             _ => BadRequest(response)
         };
     }

@@ -237,14 +237,14 @@ public class AuthService : IAuthService
         {
             if (string.IsNullOrEmpty(request.CaptchaId) || string.IsNullOrEmpty(request.CaptchaAnswer))
             {
-                return ServiceResult<LoginData>.Failure("CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN", "CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN");
+                return ServiceResult<LoginData>.Failure(ErrorCodes.CAPTCHA_REQUIRED_AFTER_FAILED_LOGIN, "需要验证码");
             }
 
             var captchaValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.CaptchaAnswer, "login");
             if (!captchaValid)
             {
                 await RecordFailureAsync(clientId, "login");
-                return ServiceResult<LoginData>.Failure("CAPTCHA_INVALID", "CAPTCHA_INVALID");
+                return ServiceResult<LoginData>.Failure(ErrorCodes.CAPTCHA_INVALID, "验证码无效");
             }
         }
 
@@ -253,7 +253,7 @@ public class AuthService : IAuthService
         if (user == null)
         {
             await RecordFailureAsync(clientId, "login");
-            return ServiceResult<LoginData>.Failure("INVALID_CREDENTIALS", "用户名或密码错误");
+            return ServiceResult<LoginData>.Failure(ErrorCodes.INVALID_CREDENTIALS, "用户名或密码错误");
         }
 
         var rawPassword = _encryptionService.TryDecryptPassword(request.Password ?? string.Empty);
@@ -261,7 +261,7 @@ public class AuthService : IAuthService
         if (!_passwordHasher.VerifyPassword(rawPassword, user.PasswordHash))
         {
             await RecordFailureAsync(clientId, "login");
-            return ServiceResult<LoginData>.Failure("INVALID_CREDENTIALS", "用户名或密码错误");
+            return ServiceResult<LoginData>.Failure(ErrorCodes.INVALID_CREDENTIALS, "用户名或密码错误");
         }
 
         await ClearFailureAsync(clientId, "login");
@@ -281,12 +281,12 @@ public class AuthService : IAuthService
             {
                 if (!company.IsActive)
                 {
-                    return ServiceResult<LoginData>.Failure("COMPANY_INACTIVE", ErrorMessages.CompanyInactive);
+                    return ServiceResult<LoginData>.Failure(ErrorCodes.COMPANY_INACTIVE, ErrorMessages.CompanyInactive);
                 }
 
                 if (company.ExpiresAt.HasValue && company.ExpiresAt.Value < DateTime.UtcNow)
                 {
-                    return ServiceResult<LoginData>.Failure("COMPANY_EXPIRED", ErrorMessages.CompanyExpired);
+                    return ServiceResult<LoginData>.Failure(ErrorCodes.COMPANY_EXPIRED, ErrorMessages.CompanyExpired);
                 }
             }
         }
@@ -367,14 +367,14 @@ public class AuthService : IAuthService
         {
             if (string.IsNullOrEmpty(request.CaptchaId) || string.IsNullOrEmpty(request.CaptchaAnswer))
             {
-                return ServiceResult<User>.Failure("CAPTCHA_REQUIRED", "CAPTCHA_REQUIRED_AFTER_FAILED_REGISTER");
+                return ServiceResult<User>.Failure(ErrorCodes.CAPTCHA_REQUIRED, "需要验证码");
             }
 
             var captchaValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.CaptchaAnswer, "register");
             if (!captchaValid)
             {
                 await RecordFailureAsync(clientId, "register");
-                return ServiceResult<User>.Failure("CAPTCHA_INVALID", "CAPTCHA_INVALID");
+                return ServiceResult<User>.Failure(ErrorCodes.CAPTCHA_INVALID, "验证码无效");
             }
         }
 
@@ -471,21 +471,23 @@ public class AuthService : IAuthService
         {
             await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
             await RecordFailureAsync(clientId, "register");
-            return ServiceResult<User>.Failure("VALIDATION_ERROR", ex.Message);
+            return ServiceResult<User>.Failure(ErrorCodes.VALIDATION_ERROR, ex.Message);
         }
         catch (InvalidOperationException ex)
         {
             await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
             await RecordFailureAsync(clientId, "register");
-            var errorCode = ex.Message.Contains("USER_NAME_EXISTS") ? "USER_EXISTS" : "EMAIL_EXISTS";
-            return ServiceResult<User>.Failure(errorCode, ex.Message);
+            var errorCode = ex.Message.Contains("USER_NAME_EXISTS") 
+                ? ErrorCodes.USER_NAME_EXISTS 
+                : ErrorCodes.EMAIL_EXISTS;
+            return ServiceResult<User>.Failure(errorCode, ex.Message, 409);
         }
         catch (Exception ex)
         {
             await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
             await RecordFailureAsync(clientId, "register");
             _logger.LogError(ex, "用户注册失败，已执行回滚操作");
-            return ServiceResult<User>.Failure("SERVER_ERROR", $"REGISTER_FAILED: {ex.Message}");
+            return ServiceResult<User>.Failure(ErrorCodes.SERVER_ERROR, $"注册失败: {ex.Message}");
         }
     }
 
@@ -717,18 +719,18 @@ public class AuthService : IAuthService
         {
             var userId = _httpContextAccessor.HttpContext?.User?.FindFirst("userId")?.Value;
             if (string.IsNullOrEmpty(userId))
-                return ServiceResult<bool>.Failure("UNAUTHORIZED", "未授权访问");
+                return ServiceResult<bool>.Failure(ErrorCodes.UNAUTHORIZED, "未授权访问", 401);
 
             var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == userId && u.IsActive == true);
             if (user == null)
-                return ServiceResult<bool>.Failure("USER_NOT_FOUND", "用户不存在或已被禁用");
+                return ServiceResult<bool>.Failure(ErrorCodes.USER_NOT_FOUND, "用户不存在或已被禁用", 404);
 
             // 🔒 安全增强：解密前端加密的密码
             var oldPassword = _encryptionService.TryDecryptPassword(request.CurrentPassword);
             var newPassword = _encryptionService.TryDecryptPassword(request.NewPassword);
 
             if (!_passwordHasher.VerifyPassword(oldPassword, user.PasswordHash))
-                return ServiceResult<bool>.Failure("INVALID_OLD_PASSWORD", "旧密码不正确");
+                return ServiceResult<bool>.Failure(ErrorCodes.INVALID_OLD_PASSWORD, "旧密码不正确");
 
             _validationService.ValidatePassword(newPassword);
 
@@ -744,7 +746,7 @@ public class AuthService : IAuthService
         catch (Exception ex)
         {
             _logger.LogError(ex, "修改密码失败");
-            return ServiceResult<bool>.Failure("INTERNAL_ERROR", "修改密码失败");
+            return ServiceResult<bool>.Failure(ErrorCodes.INTERNAL_ERROR, "修改密码失败", 500);
         }
     }
 
@@ -756,15 +758,15 @@ public class AuthService : IAuthService
     public async Task<ServiceResult<RefreshTokenResult>> RefreshTokenAsync(RefreshTokenRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.RefreshToken))
-            return ServiceResult<RefreshTokenResult>.Failure("REFRESH_TOKEN_EMPTY", "刷新token不能为空");
+            return ServiceResult<RefreshTokenResult>.Failure(ErrorCodes.REFRESH_TOKEN_EMPTY, "刷新token不能为空");
 
         var principal = _jwtService.ValidateRefreshToken(request.RefreshToken);
         if (principal == null)
-            return ServiceResult<RefreshTokenResult>.Failure("REFRESH_TOKEN_INVALID", "无效的刷新token");
+            return ServiceResult<RefreshTokenResult>.Failure(ErrorCodes.REFRESH_TOKEN_INVALID, "无效的刷新token", 401);
 
         var userId = _jwtService.GetUserIdFromRefreshToken(request.RefreshToken);
         if (string.IsNullOrEmpty(userId))
-            return ServiceResult<RefreshTokenResult>.Failure("REFRESH_TOKEN_USER_NOT_FOUND", "无法从刷新token中获取用户信息");
+            return ServiceResult<RefreshTokenResult>.Failure(ErrorCodes.REFRESH_TOKEN_USER_NOT_FOUND, "无法从刷新token中获取用户信息", 401);
 
         Expression<Func<RefreshToken, bool>> baseFilter = rt => rt.Token == request.RefreshToken && rt.UserId == userId && rt.IsRevoked == false;
         var existingToken = await _context.Set<RefreshToken>().Where(baseFilter).FirstOrDefaultAsync();
@@ -782,7 +784,7 @@ public class AuthService : IAuthService
                 await _context.SaveChangesAsync();
                 _logger.LogWarning("检测到用户 {UserId} 的旧token重用攻击，已撤销所有token", userId);
             }
-            return ServiceResult<RefreshTokenResult>.Failure("REFRESH_TOKEN_REVOKED", "刷新token无效或已被撤销");
+            return ServiceResult<RefreshTokenResult>.Failure(ErrorCodes.REFRESH_TOKEN_REVOKED, "刷新token无效或已被撤销", 401);
         }
 
         if (existingToken.ExpiresAt < DateTime.UtcNow)
@@ -791,12 +793,12 @@ public class AuthService : IAuthService
             existingToken.RevokedAt = DateTime.UtcNow;
             existingToken.RevokedReason = "Token已过期";
             await _context.SaveChangesAsync();
-            return ServiceResult<RefreshTokenResult>.Failure("REFRESH_TOKEN_EXPIRED", "刷新token已过期");
+            return ServiceResult<RefreshTokenResult>.Failure(ErrorCodes.REFRESH_TOKEN_EXPIRED, "刷新token已过期", 401);
         }
 
         var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == userId && u.IsActive == true);
         if (user == null)
-            return ServiceResult<RefreshTokenResult>.Failure("USER_NOT_FOUND", "用户不存在或已被禁用");
+            return ServiceResult<RefreshTokenResult>.Failure(ErrorCodes.USER_NOT_FOUND, "用户不存在或已被禁用", 404);
 
         var newToken = _jwtService.GenerateToken(user);
         var newRefreshToken = _jwtService.GenerateRefreshToken(user);
@@ -848,7 +850,7 @@ public class AuthService : IAuthService
     {
         var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive == true);
         if (user == null)
-            return ServiceResult<bool>.Failure("USER_NOT_FOUND", "该邮箱未绑定任何活动账户，或账户已被禁用");
+            return ServiceResult<bool>.Failure(ErrorCodes.USER_NOT_FOUND, "该邮箱未绑定任何活动账户，或账户已被禁用", 404);
 
         var bytes = new byte[4];
         RandomNumberGenerator.Fill(bytes);
@@ -879,7 +881,7 @@ public class AuthService : IAuthService
         catch (Exception ex)
         {
             _logger.LogError(ex, "发送重置密码邮件失败: {Email}", request.Email);
-            return ServiceResult<bool>.Failure("SEND_EMAIL_FAILED", "发送邮件失败，请稍后再试");
+            return ServiceResult<bool>.Failure(ErrorCodes.SEND_EMAIL_FAILED, "发送邮件失败，请稍后再试", 500);
         }
     }
 
@@ -892,14 +894,14 @@ public class AuthService : IAuthService
     {
         var cacheKey = $"PasswordResetCode_{request.Email}";
         if (!_memoryCache.TryGetValue(cacheKey, out string? cachedCode))
-            return ServiceResult<bool>.Failure("CODE_EXPIRED", "验证码已过期，请重新获取");
+            return ServiceResult<bool>.Failure(ErrorCodes.CODE_EXPIRED, "验证码已过期，请重新获取");
 
         if (cachedCode != request.Code)
-            return ServiceResult<bool>.Failure("INVALID_CODE", "验证码不正确");
+            return ServiceResult<bool>.Failure(ErrorCodes.INVALID_CODE, "验证码不正确");
 
         var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive == true);
         if (user == null)
-            return ServiceResult<bool>.Failure("USER_NOT_FOUND", "该邮箱未绑定任何活动账户");
+            return ServiceResult<bool>.Failure(ErrorCodes.USER_NOT_FOUND, "该邮箱未绑定任何活动账户", 404);
 
         var newPassword = _encryptionService.TryDecryptPassword(request.NewPassword);
         _validationService.ValidatePassword(newPassword);

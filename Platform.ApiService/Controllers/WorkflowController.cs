@@ -360,7 +360,7 @@ public class WorkflowController : BaseApiController
     {
         try
         {
-            var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+            var userId = RequiredUserId;
             Dictionary<string, object?>? sanitizedVars = null;
 
             if (request.Variables != null)
@@ -557,7 +557,7 @@ public class WorkflowController : BaseApiController
     {
         try
         {
-            var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+            var userId = RequiredUserId;
             var result = await _workflowTodoService.GetTodoInstancesAsync(userId, current, pageSize);
             return Success(result);
         }
@@ -850,7 +850,7 @@ public class WorkflowController : BaseApiController
     {
         try
         {
-            var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+            var userId = RequiredUserId;
 
             if (string.IsNullOrWhiteSpace(request.Action))
             {
@@ -932,7 +932,7 @@ public class WorkflowController : BaseApiController
                 throw new ArgumentException("仅运行中或等待审批的流程可以撤回");
             }
 
-            var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+            var userId = RequiredUserId;
             if (!string.Equals(instance.StartedBy, userId, StringComparison.OrdinalIgnoreCase))
             {
                 throw new ArgumentException("仅流程发起人可以撤回");
@@ -976,7 +976,7 @@ public class WorkflowController : BaseApiController
     {
         try
         {
-            var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+            var userId = RequiredUserId;
             var preferences = await _filterPreferenceService.GetPreferencesAsync(userId);
             return Success(preferences);
         }
@@ -1000,7 +1000,7 @@ public class WorkflowController : BaseApiController
                 throw new ArgumentException("偏好名称不能为空");
             }
 
-            var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+            var userId = RequiredUserId;
 
             var existing = await _filterPreferenceService.HasPreferenceByNameAsync(userId, request.Name);
             if (existing)
@@ -1030,7 +1030,7 @@ public class WorkflowController : BaseApiController
     {
         try
         {
-            var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+            var userId = RequiredUserId;
 
             var existing = await _filterPreferenceService.GetPreferenceByIdAsync(id);
             if (existing == null || existing.UserId != userId)
@@ -1073,7 +1073,7 @@ public class WorkflowController : BaseApiController
     {
         try
         {
-            var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+            var userId = RequiredUserId;
 
             var preference = await _filterPreferenceService.GetPreferenceByIdAsync(id);
             if (preference == null || preference.UserId != userId)
@@ -1104,7 +1104,7 @@ public class WorkflowController : BaseApiController
     {
         try
         {
-            var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+            var userId = RequiredUserId;
 
             var preference = await _filterPreferenceService.GetDefaultPreferenceAsync(userId);
             return Success(preference);
@@ -1124,7 +1124,7 @@ public class WorkflowController : BaseApiController
     {
         try
         {
-            var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+            var userId = RequiredUserId;
             var docService = HttpContext.RequestServices.GetRequiredService<IDocumentService>();
             var document = await docService.CreateDocumentForWorkflowAsync(id, request.Values ?? new Dictionary<string, object>(), request.AttachmentIds);
 

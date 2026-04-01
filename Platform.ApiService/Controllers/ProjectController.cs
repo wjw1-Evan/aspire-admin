@@ -67,7 +67,7 @@ public class ProjectController : BaseApiController
 
         try
         {
-            var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+            var userId = RequiredUserId;
             var project = await _projectService.UpdateProjectAsync(request, userId);
             return Success(project);
         }
@@ -94,7 +94,7 @@ public class ProjectController : BaseApiController
     {
         try
         {
-            var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+            var userId = RequiredUserId;
             var deleted = await _projectService.DeleteProjectAsync(id, userId, reason);
             if (!deleted)
                 throw new ArgumentException("项目 {id} 不存在");

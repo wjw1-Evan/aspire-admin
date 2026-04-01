@@ -49,7 +49,7 @@ public class PasswordBookController : BaseApiController
         if (string.IsNullOrEmpty(request.Password))
             throw new ArgumentException("密码不能为空");
 
-        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+        var userId = RequiredUserId;
         var entry = await _passwordBookService.CreateEntryAsync(request, userId);
         return Success(entry);
     }
@@ -61,7 +61,7 @@ public class PasswordBookController : BaseApiController
     [RequireMenu("password-book")]
     public async Task<IActionResult> UpdateEntry(string id, [FromBody] UpdatePasswordBookEntryRequest request)
     {
-        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+        var userId = RequiredUserId;
         var entry = await _passwordBookService.UpdateEntryAsync(id, request, userId);
         if (entry == null)
             throw new ArgumentException("条目不存在");
@@ -75,7 +75,7 @@ public class PasswordBookController : BaseApiController
     [RequireMenu("password-book")]
     public async Task<IActionResult> GetEntry(string id)
     {
-        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+        var userId = RequiredUserId;
         var entry = await _passwordBookService.GetEntryByIdAsync(id, userId);
         if (entry == null)
             throw new ArgumentException("条目不存在");
@@ -89,7 +89,7 @@ public class PasswordBookController : BaseApiController
     [RequireMenu("password-book")]
     public async Task<IActionResult> GetEntries([FromBody] PasswordBookQueryRequest request)
     {
-        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+        var userId = RequiredUserId;
         var (items, total) = await _passwordBookService.GetEntriesAsync(request, userId);
         var response = new PasswordBookListResponse
         {
@@ -109,7 +109,7 @@ public class PasswordBookController : BaseApiController
     [RequireMenu("password-book")]
     public async Task<IActionResult> DeleteEntry(string id)
     {
-        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+        var userId = RequiredUserId;
         try
         {
             var result = await _passwordBookService.DeleteEntryAsync(id, userId);
@@ -195,7 +195,7 @@ public class PasswordBookController : BaseApiController
         if (request.Format != "json" && request.Format != "csv")
             throw new ArgumentException("导出格式必须是 json 或 csv");
 
-        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+        var userId = RequiredUserId;
         var entries = await _passwordBookService.ExportEntriesAsync(request, userId);
 
         if (request.Format == "json")

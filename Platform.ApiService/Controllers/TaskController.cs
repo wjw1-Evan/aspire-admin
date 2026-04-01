@@ -147,7 +147,7 @@ public class TaskController : BaseApiController
 
         try
         {
-            var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+            var userId = RequiredUserId;
             var task = await _taskService.UpdateTaskAsync(request, userId);
             return Success(task);
         }
@@ -325,7 +325,7 @@ public class TaskController : BaseApiController
     {
         try
         {
-            var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+            var userId = RequiredUserId;
             var result = await _taskService.DeleteTaskAsync(taskId, userId);
             if (!result)
                 throw new ArgumentException("任务 {taskId} 不存在");
@@ -356,7 +356,7 @@ public class TaskController : BaseApiController
     {
         try
         {
-            var currentUserId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+            var currentUserId = RequiredUserId;
             var statistics = await _taskService.GetTaskStatisticsAsync(userId ?? currentUserId);
             return Success(statistics);
         }
@@ -412,7 +412,7 @@ public class TaskController : BaseApiController
     {
         try
         {
-            var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+            var userId = RequiredUserId;
             var tasks = await _taskService.GetUserTodoTasksAsync(userId);
             return Success(tasks);
         }
@@ -433,7 +433,7 @@ public class TaskController : BaseApiController
     {
         try
         {
-            var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+            var userId = RequiredUserId;
             var result = await _taskService.GetUserCreatedTasksAsync(userId, page, pageSize);
             return Success(result);
         }
@@ -462,7 +462,7 @@ public class TaskController : BaseApiController
     {
         try
         {
-            var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+            var userId = RequiredUserId;
             var (tasks, total) = await _taskService.GetUserCreatedTasksAsync(userId, page, pageSize);
             return Success(new { tasks, total, page, pageSize });
         }

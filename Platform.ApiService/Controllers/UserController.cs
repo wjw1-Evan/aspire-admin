@@ -473,7 +473,7 @@ public class UserController : BaseApiController
             }
         }
 
-        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+        var userId = RequiredUserId;
         var user = await _userService.UpdateUserProfileAsync(userId, request);
 
         var currentUser = await _authService.GetCurrentUserAsync();
@@ -490,7 +490,7 @@ public class UserController : BaseApiController
     [HttpPut("me/password")]
     public async Task<IActionResult> ChangeCurrentUserPassword([FromBody] ChangePasswordRequest request)
     {
-        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+        var userId = RequiredUserId;
         var success = await _userService.ChangePasswordAsync(userId, request);
         if (!success)
             throw new ArgumentException("当前密码错误或修改失败");
@@ -509,7 +509,7 @@ public class UserController : BaseApiController
 
     public async Task<IActionResult> GetCurrentUserActivityLogs([FromQuery] int limit = 20)
     {
-        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+        var userId = RequiredUserId;
         var logs = await _userService.GetUserActivityLogsAsync(userId, limit);
         return Success(logs);
     }
@@ -684,7 +684,7 @@ public class UserController : BaseApiController
 
     public async Task<IActionResult> GetMyPermissions()
     {
-        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+        var userId = RequiredUserId;
         var permissions = await _userService.GetUserPermissionsAsync(userId);
         return Success(permissions);
     }
@@ -718,7 +718,7 @@ public class UserController : BaseApiController
 
     public async Task<IActionResult> GetAiRoleDefinition()
     {
-        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+        var userId = RequiredUserId;
         var roleDefinition = await _userService.GetAiRoleDefinitionAsync(userId);
 
         // 确保返回的角色定义不为空（应该总是有值，要么是用户自定义的，要么是默认值）
@@ -771,7 +771,7 @@ public class UserController : BaseApiController
         if (validationResult != null)
             return validationResult;
 
-        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+        var userId = RequiredUserId;
         var success = await _userService.UpdateAiRoleDefinitionAsync(userId, request.RoleDefinition);
 
         if (!success)
@@ -816,7 +816,7 @@ public class UserController : BaseApiController
     [HttpGet("welcome-layout")]
     public async Task<IActionResult> GetWelcomeLayout()
     {
-        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+        var userId = RequiredUserId;
         var layout = await _userService.GetWelcomeLayoutAsync(userId);
         return Success(layout);
     }
@@ -865,7 +865,7 @@ public class UserController : BaseApiController
         if (validationResult != null)
             return validationResult;
 
-        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+        var userId = RequiredUserId;
         var success = await _userService.SaveWelcomeLayoutAsync(userId, request);
 
         if (!success)

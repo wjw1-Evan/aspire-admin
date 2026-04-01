@@ -234,7 +234,7 @@ public class DocumentController : BaseApiController
                 throw new ArgumentException("流程实例当前无待处理节点");
             }
 
-            var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+            var userId = RequiredUserId;
             var result = await _workflowEngine.ProcessApprovalAsync(
                 document.WorkflowInstanceId,
                 instance.CurrentNodeId,
@@ -294,7 +294,7 @@ public class DocumentController : BaseApiController
                 throw new ArgumentException("流程实例当前无待处理节点");
             }
 
-            var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+            var userId = RequiredUserId;
             var result = await _workflowEngine.ProcessApprovalAsync(
                 document.WorkflowInstanceId,
                 instance.CurrentNodeId,
@@ -320,7 +320,7 @@ public class DocumentController : BaseApiController
     {
         try
         {
-            var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+            var userId = RequiredUserId;
 
             if (string.IsNullOrEmpty(request.TargetNodeId))
             {
@@ -385,7 +385,7 @@ public class DocumentController : BaseApiController
                 throw new ArgumentException("流程实例当前无待处理节点");
             }
 
-            var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+            var userId = RequiredUserId;
             var result = await _workflowEngine.ProcessApprovalAsync(
                 document.WorkflowInstanceId,
                 instance.CurrentNodeId,

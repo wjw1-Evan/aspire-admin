@@ -61,7 +61,7 @@ public class AvatarController : BaseApiController
 
         try
         {
-            var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+            var userId = RequiredUserId;
             var fileName = $"{userId}_{DateTime.UtcNow.Ticks}{extension}";
 
             // 上传到 GridFS

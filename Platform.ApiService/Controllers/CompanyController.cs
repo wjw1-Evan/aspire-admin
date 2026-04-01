@@ -67,7 +67,7 @@ public class CompanyController : BaseApiController
         request.Name.EnsureNotEmpty("企业名称");
         // 注意：Code 字段不再需要，系统会自动生成
 
-        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+        var userId = RequiredUserId;
         var company = await _companyService.CreateCompanyAsync(request, userId);
 
         return Success(company, "企业创建成功！您已成为该企业的管理员。");
@@ -111,7 +111,7 @@ public class CompanyController : BaseApiController
     {
         var logger = HttpContext.RequestServices.GetRequiredService<ILogger<CompanyController>>();
         // 尝试从数据库获取当前用户的企业ID（JWT 已移除 companyId）
-        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+        var userId = RequiredUserId;
         var user = await _userService.GetUserByIdWithoutTenantFilterAsync(userId);
 
         if (user == null)
@@ -180,7 +180,7 @@ public class CompanyController : BaseApiController
 
     public async Task<IActionResult> UpdateCurrentCompany([FromBody] UpdateCompanyRequest request)
     {
-        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+        var userId = RequiredUserId;
         var user = await _userService.GetUserByIdWithoutTenantFilterAsync(userId);
         if (user == null || string.IsNullOrEmpty(user.CurrentCompanyId))
         {
@@ -201,7 +201,7 @@ public class CompanyController : BaseApiController
 
     public async Task<IActionResult> GetStatistics()
     {
-        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+        var userId = RequiredUserId;
         var user = await _userService.GetUserByIdWithoutTenantFilterAsync(userId);
         if (user == null || string.IsNullOrEmpty(user.CurrentCompanyId))
         {
@@ -251,7 +251,7 @@ public class CompanyController : BaseApiController
 
     public async Task<IActionResult> GetMyCompanies()
     {
-        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+        var userId = RequiredUserId;
         var companies = await _userCompanyService.GetUserCompaniesAsync(userId);
         return Success(companies);
     }
@@ -277,7 +277,7 @@ public class CompanyController : BaseApiController
     public async Task<IActionResult> GetCompanyMembers(string companyId)
     {
         // 验证当前用户是否是该企业的管理员
-        if (!await _userCompanyService.IsUserAdminInCompanyAsync(CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息"), companyId))
+        if (!await _userCompanyService.IsUserAdminInCompanyAsync(RequiredUserId, companyId))
         {
             throw new UnauthorizedAccessException("只有企业管理员可以查看成员列表");
         }
@@ -297,7 +297,7 @@ public class CompanyController : BaseApiController
         [FromBody] UpdateMemberRolesRequest request)
     {
         // 验证当前用户是否是该企业的管理员
-        if (!await _userCompanyService.IsUserAdminInCompanyAsync(CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息"), companyId))
+        if (!await _userCompanyService.IsUserAdminInCompanyAsync(RequiredUserId, companyId))
         {
             throw new UnauthorizedAccessException("只有企业管理员可以分配角色");
         }
@@ -320,7 +320,7 @@ public class CompanyController : BaseApiController
         [FromBody] SetAdminRequest request)
     {
         // 验证当前用户是否是该企业的管理员
-        if (!await _userCompanyService.IsUserAdminInCompanyAsync(CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息"), companyId))
+        if (!await _userCompanyService.IsUserAdminInCompanyAsync(RequiredUserId, companyId))
         {
             throw new UnauthorizedAccessException("只有企业管理员可以设置管理员权限");
         }
@@ -340,7 +340,7 @@ public class CompanyController : BaseApiController
     public async Task<IActionResult> RemoveMember(string companyId, string userId)
     {
         // 验证当前用户是否是该企业的管理员
-        if (!await _userCompanyService.IsUserAdminInCompanyAsync(CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息"), companyId))
+        if (!await _userCompanyService.IsUserAdminInCompanyAsync(RequiredUserId, companyId))
         {
             throw new UnauthorizedAccessException("只有企业管理员可以移除成员");
         }
@@ -359,7 +359,7 @@ public class CompanyController : BaseApiController
 
     public async Task<IActionResult> LeaveCompany(string companyId)
     {
-        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+        var userId = RequiredUserId;
         var success = await _userCompanyService.LeaveCompanyAsync(userId, companyId);
         if (!success)
             throw new KeyNotFoundException("退出失败");
@@ -376,7 +376,7 @@ public class CompanyController : BaseApiController
     {
         request.CompanyId.EnsureNotEmpty("企业ID");
 
-        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+        var userId = RequiredUserId;
         await _userCompanyService.ApplyToJoinCompanyAsync(userId, request.CompanyId, request.Reason);
 
         return Success(null, "申请已提交，请等待管理员审核");
@@ -389,7 +389,7 @@ public class CompanyController : BaseApiController
 
     public async Task<IActionResult> GetMyJoinRequests()
     {
-        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+        var userId = RequiredUserId;
         var requests = await _userCompanyService.GetUserJoinRequestsAsync(userId);
         return Success(requests);
     }
@@ -401,7 +401,7 @@ public class CompanyController : BaseApiController
 
     public async Task<IActionResult> CancelJoinRequest(string requestId)
     {
-        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+        var userId = RequiredUserId;
         await _userCompanyService.CancelJoinRequestAsync(userId, requestId);
         return Success(null, "申请已撤销");
     }
@@ -414,7 +414,7 @@ public class CompanyController : BaseApiController
     public async Task<IActionResult> GetJoinRequests(string companyId, [FromQuery] string? status = null)
     {
         // 验证当前用户是否是该企业的管理员
-        if (!await _userCompanyService.IsUserAdminInCompanyAsync(CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息"), companyId))
+        if (!await _userCompanyService.IsUserAdminInCompanyAsync(RequiredUserId, companyId))
         {
             throw new UnauthorizedAccessException("只有企业管理员可以查看申请列表");
         }

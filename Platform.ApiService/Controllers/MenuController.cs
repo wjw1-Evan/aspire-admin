@@ -74,7 +74,7 @@ public class MenuController : BaseApiController
     [HttpGet("user")]
     public async Task<IActionResult> GetUserMenus()
     {
-        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+        var userId = RequiredUserId;
 
         // 获取当前用户的企业ID
         var currentCompanyId = await GetCompanyId();

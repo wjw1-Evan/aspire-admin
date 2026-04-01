@@ -75,7 +75,7 @@ public class ChatMessagesController : BaseApiController
 
         try
         {
-            var currentUserId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
+            var currentUserId = RequiredUserId;
             var session = await _chatService.GetSessionByIdAsync(request.SessionId);
             if (session == null || !session.Participants.Contains(currentUserId))
             {

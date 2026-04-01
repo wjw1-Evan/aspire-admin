@@ -234,10 +234,10 @@ const KnowledgeBaseDocuments: React.FC = () => {
               ...searchValues,
             });
             if (res.success && res.data) {
-              const { data, total } = require('@/utils/paged').toPaged(res);
-              return { data, total, success: true };
+              const d = res.data as any;
+              return { data: d.queryable ??  [], total: d.rowCount  ?? 0, success: true };
             }
-            return { data: [], rowCount: 0, success: false };
+            return { data: [], total: 0, success: false };
           }}
           actionRef={actionRef}
           rowKey="id"

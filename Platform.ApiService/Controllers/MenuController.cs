@@ -74,10 +74,10 @@ public class MenuController : BaseApiController
     [HttpGet("user")]
     public async Task<IActionResult> GetUserMenus()
     {
-        var userId = GetRequiredUserId();
+        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
 
         // 获取当前用户的企业ID
-        var currentCompanyId = await GetCurrentCompanyIdAsync();
+        var currentCompanyId = await GetCompanyId();
         if (string.IsNullOrEmpty(currentCompanyId))
         {
             _logger.LogWarning("用户 {UserId} 没有关联的企业ID", userId);

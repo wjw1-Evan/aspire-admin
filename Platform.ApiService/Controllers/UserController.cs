@@ -8,6 +8,8 @@ using Platform.ApiService.Models.Response;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
 using Platform.ServiceDefaults.Models;
+using System.Linq.Dynamic.Core;
+
 
 namespace Platform.ApiService.Controllers;
 
@@ -253,11 +255,11 @@ public class UserController : BaseApiController
         // 检查是否删除自己（不允许）
         var currentUserId = CurrentUserId;
         if (currentUserId == id)
-            return Error("CANNOT_DELETE_SELF", ErrorMessages.CannotDeleteSelf);
+            return Fail("CANNOT_DELETE_SELF", ErrorMessages.CannotDeleteSelf);
 
         var deleted = await _userService.DeleteUserAsync(id, reason);
         if (!deleted)
-            return NotFoundError("用户", id);
+            return Fail("NOT_FOUND", "用户 {id} 不存在");
         return NoContent();
     }
 
@@ -270,7 +272,7 @@ public class UserController : BaseApiController
     public async Task<IActionResult> GetUsersList([FromBody] UserListRequest request)
     {
         var result = await _userService.GetUsersWithRolesAsync(request);
-        return await SuccessPagedAsync(result);
+        return Success(result);
     }
 
     /// <summary>
@@ -308,9 +310,9 @@ public class UserController : BaseApiController
 
         var success = await _userService.BulkUpdateUsersAsync(request, request.Reason);
         if (!success)
-            return Error("OPERATION_FAILED", ErrorMessages.OperationFailed);
+            return Fail("OPERATION_FAILED", ErrorMessages.OperationFailed);
 
-        return Success(ErrorMessages.OperationSuccess);
+        return Success(null, ErrorMessages.OperationSuccess);
     }
 
 
@@ -365,9 +367,10 @@ public class UserController : BaseApiController
             StatusCode = log.StatusCode,
             Duration = log.Duration,
             CreatedAt = log.CreatedAt
-        }).ToList();
+        }).AsQueryable();
 
-        return SuccessPaged(logsWithUserInfo, total, query.Page, query.PageSize);
+        var pagedResult = logsWithUserInfo.PageResult(query.Page, query.PageSize);
+        return Success(pagedResult);
     }
 
     /// <summary>
@@ -380,7 +383,7 @@ public class UserController : BaseApiController
     {
         var log = await _activityLogService.GetActivityLogByIdAsync(logId);
         if (log == null)
-            return NotFoundError("活动日志", logId);
+            return Fail("NOT_FOUND", "活动日志 {logId} 不存在");
 
         return Success(log);
     }
@@ -421,7 +424,7 @@ public class UserController : BaseApiController
     {
         var success = await _userService.ActivateUserAsync(id);
         success.EnsureSuccess("用户", id);
-        return Success("用户已启用");
+        return Success(null, "用户已启用");
     }
 
     /// <summary>
@@ -434,7 +437,7 @@ public class UserController : BaseApiController
     {
         var success = await _userService.DeactivateUserAsync(id);
         success.EnsureSuccess("用户", id);
-        return Success("用户已禁用");
+        return Success(null, "用户已禁用");
     }
 
     /// <summary>
@@ -465,11 +468,11 @@ public class UserController : BaseApiController
             var phoneNumber = request.PhoneNumber.Trim();
             if (phoneNumber.Length != 11 || !phoneNumber.StartsWith("1") || !phoneNumber.All(char.IsDigit))
             {
-                return ValidationError("手机号格式不正确");
+                return Fail("VALIDATION_ERROR", "手机号格式不正确");
             }
         }
 
-        var userId = GetRequiredUserId();
+        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
         var user = await _userService.UpdateUserProfileAsync(userId, request);
 
         var currentUser = await _authService.GetCurrentUserAsync();
@@ -486,12 +489,12 @@ public class UserController : BaseApiController
     [HttpPut("me/password")]
     public async Task<IActionResult> ChangeCurrentUserPassword([FromBody] ChangePasswordRequest request)
     {
-        var userId = GetRequiredUserId();
+        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
         var success = await _userService.ChangePasswordAsync(userId, request);
         if (!success)
-            return Error("CHANGE_PASSWORD_FAILED", "当前密码错误或修改失败");
+            return Fail("CHANGE_PASSWORD_FAILED", "当前密码错误或修改失败");
 
-        return Success("密码修改成功");
+        return Success(null, "密码修改成功");
     }
 
     /// <summary>
@@ -505,7 +508,7 @@ public class UserController : BaseApiController
 
     public async Task<IActionResult> GetCurrentUserActivityLogs([FromQuery] int limit = 20)
     {
-        var userId = GetRequiredUserId();
+        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
         var logs = await _userService.GetUserActivityLogsAsync(userId, limit);
         return Success(logs);
     }
@@ -571,21 +574,21 @@ public class UserController : BaseApiController
         // ✅ 添加输入验证
         // 验证日期范围
         if (startDate.HasValue && endDate.HasValue && startDate.Value > endDate.Value)
-            return ValidationError("开始日期不能晚于结束日期");
+            return Fail("VALIDATION_ERROR", "开始日期不能晚于结束日期");
 
         // 验证排序参数
         if (!string.IsNullOrEmpty(sortBy))
         {
             var allowedSortFields = new[] { "createdAt", "action" };
             if (!allowedSortFields.Contains(sortBy, StringComparer.OrdinalIgnoreCase))
-                return ValidationError($"不支持的排序字段: {sortBy}，支持字段: {string.Join(", ", allowedSortFields)}");
+                return Fail("VALIDATION_ERROR", $"不支持的排序字段: {sortBy}，支持字段: {string.Join(", ", allowedSortFields)}");
         }
 
         if (!string.IsNullOrEmpty(sortOrder))
         {
             var allowedSortOrders = new[] { "asc", "desc" };
             if (!allowedSortOrders.Contains(sortOrder, StringComparer.OrdinalIgnoreCase))
-                return ValidationError($"不支持的排序方向: {sortOrder}，支持: asc、desc");
+                return Fail("VALIDATION_ERROR", $"不支持的排序方向: {sortOrder}，支持: asc、desc");
         }
 
         var response = await _activityLogService.GetCurrentUserActivityLogsAsync(
@@ -600,11 +603,15 @@ public class UserController : BaseApiController
             sortBy,
             sortOrder);
 
-        return SuccessPaged(
-            response.Data,
-            response.Total,
-            response.Page,
-            response.PageSize);
+        var pagedResult = new PagedResult<ActivityLogListItemResponse>
+        {
+            Queryable = response.Data.AsQueryable(),
+            CurrentPage = response.Page,
+            PageSize = response.PageSize,
+            RowCount = (int)response.Total,
+            PageCount = (int)Math.Ceiling((double)response.Total / response.PageSize)
+        };
+        return Success(pagedResult);
     }
 
     /// <summary>
@@ -656,13 +663,13 @@ public class UserController : BaseApiController
     {
         // ✅ 验证日志ID格式
         if (!MongoDB.Bson.ObjectId.TryParse(logId, out _))
-            return ValidationError("日志ID格式不正确");
+            return Fail("VALIDATION_ERROR", "日志ID格式不正确");
 
         var log = await _activityLogService.GetCurrentUserActivityLogByIdAsync(logId);
 
 
         if (log == null)
-            return NotFoundError("日志", logId);
+            return Fail("NOT_FOUND", "日志 {logId} 不存在");
 
         return Success(log);
     }
@@ -677,7 +684,7 @@ public class UserController : BaseApiController
 
     public async Task<IActionResult> GetMyPermissions()
     {
-        var userId = GetRequiredUserId();
+        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
         var permissions = await _userService.GetUserPermissionsAsync(userId);
         return Success(permissions);
     }
@@ -711,7 +718,7 @@ public class UserController : BaseApiController
 
     public async Task<IActionResult> GetAiRoleDefinition()
     {
-        var userId = GetRequiredUserId();
+        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
         var roleDefinition = await _userService.GetAiRoleDefinitionAsync(userId);
 
         // 确保返回的角色定义不为空（应该总是有值，要么是用户自定义的，要么是默认值）
@@ -764,13 +771,13 @@ public class UserController : BaseApiController
         if (validationResult != null)
             return validationResult;
 
-        var userId = GetRequiredUserId();
+        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
         var success = await _userService.UpdateAiRoleDefinitionAsync(userId, request.RoleDefinition);
 
         if (!success)
-            return Error("UPDATE_FAILED", "更新角色定义失败");
+            return Fail("UPDATE_FAILED", "更新角色定义失败");
 
-        return SuccessMessage("角色定义更新成功");
+        return Success(null, "角色定义更新成功");
     }
 
     /// <summary>
@@ -809,7 +816,7 @@ public class UserController : BaseApiController
     [HttpGet("welcome-layout")]
     public async Task<IActionResult> GetWelcomeLayout()
     {
-        var userId = GetRequiredUserId();
+        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
         var layout = await _userService.GetWelcomeLayoutAsync(userId);
         return Success(layout);
     }
@@ -858,13 +865,13 @@ public class UserController : BaseApiController
         if (validationResult != null)
             return validationResult;
 
-        var userId = GetRequiredUserId();
+        var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
         var success = await _userService.SaveWelcomeLayoutAsync(userId, request);
 
         if (!success)
-            return Error("SAVE_FAILED", "保存布局配置失败");
+            return Fail("SAVE_FAILED", "保存布局配置失败");
 
-        return SuccessMessage("布局配置保存成功");
+        return Success(null, "布局配置保存成功");
     }
 
 }

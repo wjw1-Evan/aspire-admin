@@ -227,7 +227,7 @@ public class RegistrationService : IRegistrationService
             var errorCode = ex.Message.Contains("USER_NAME_EXISTS")
                 ? ErrorCodes.USER_NAME_EXISTS
                 : ErrorCodes.EMAIL_EXISTS;
-            return ServiceResult<User>.Failure(errorCode, ex.Message, 409);
+            return ServiceResult<User>.Failure(errorCode, ex.Message);
         }
         catch (Exception ex)
         {

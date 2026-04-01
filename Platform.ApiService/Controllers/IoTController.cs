@@ -58,7 +58,7 @@ public class IoTController : BaseApiController
     public async Task<IActionResult> GetGateways([FromQuery] string? keyword = null, [FromQuery] IoTDeviceStatus? status = null, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20)
     {
         var result = await _iotService.GetGatewaysAsync(keyword, status, pageIndex, pageSize);
-        return await SuccessPagedAsync(result);
+        return Success(result);
     }
 
     /// <summary>
@@ -96,7 +96,7 @@ public class IoTController : BaseApiController
     {
         var result = await _iotService.DeleteGatewayAsync(id);
         if (!result)
-            return NotFoundError("Gateway", id);
+            return Fail("NOT_FOUND", "Gateway {id} 不存在");
 
         return Success(null, "模拟：网关已重写");
     }
@@ -141,7 +141,7 @@ public class IoTController : BaseApiController
     public async Task<IActionResult> GetDevices([FromQuery] string? gatewayId = null, [FromQuery] string? keyword = null, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20)
     {
         var result = await _iotService.GetDevicesAsync(gatewayId, keyword, pageIndex, pageSize);
-        return await SuccessPagedAsync(result);
+        return Success(result);
     }
 
     /// <summary>
@@ -179,7 +179,7 @@ public class IoTController : BaseApiController
     {
         var result = await _iotService.DeleteDeviceAsync(id);
         if (!result)
-            return NotFoundError("Device", id);
+            return Fail("NOT_FOUND", "Device {id} 不存在");
 
         return Success(null, "Device deleted successfully");
     }
@@ -216,7 +216,7 @@ public class IoTController : BaseApiController
     {
         var result = await _iotService.HandleDeviceConnectAsync(request);
         if (!result)
-            return Error("DEVICE_NOT_FOUND", "Device not found");
+            return Fail("DEVICE_NOT_FOUND", "Device not found");
 
         return Success(null, "Device connected successfully");
     }
@@ -238,7 +238,7 @@ public class IoTController : BaseApiController
     {
         var result = await _iotService.HandleDeviceDisconnectAsync(request);
         if (!result)
-            return Error("DEVICE_NOT_FOUND", "Device not found");
+            return Fail("DEVICE_NOT_FOUND", "Device not found");
 
         return Success(null, "Device disconnected successfully");
     }
@@ -283,7 +283,7 @@ public class IoTController : BaseApiController
     public async Task<IActionResult> GetDataPoints([FromQuery] string? deviceId = null, [FromQuery] string? keyword = null, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20)
     {
         var result = await _iotService.GetDataPointsAsync(deviceId, keyword, pageIndex, pageSize);
-        return await SuccessPagedAsync(result);
+        return Success(result);
     }
 
     /// <summary>
@@ -321,7 +321,7 @@ public class IoTController : BaseApiController
     {
         var result = await _iotService.DeleteDataPointAsync(id);
         if (!result)
-            return NotFoundError("DataPoint", id);
+            return Fail("NOT_FOUND", "DataPoint {id} 不存在");
 
         return Success(null, "DataPoint deleted successfully");
     }
@@ -390,14 +390,14 @@ public class IoTController : BaseApiController
         {
             var stats = await _iotService.GetDataStatisticsAsync(dataPointId, startTime, endTime);
             if (stats == null)
-                return NotFoundError("Data", dataPointId);
+                return Fail("NOT_FOUND", "Data {dataPointId} 不存在");
 
             return Success(stats);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting data statistics");
-            return Error("GET_DATA_STATISTICS_ERROR", ex.Message);
+            return Fail("GET_DATA_STATISTICS_ERROR", ex.Message);
         }
     }
 
@@ -428,7 +428,7 @@ public class IoTController : BaseApiController
     {
         var result = await _iotService.HandleEventAsync(eventId, request.Remarks ?? "");
         if (!result)
-            return NotFoundError("Event", eventId);
+            return Fail("NOT_FOUND", "Event {eventId} 不存在");
 
         return Success(null, "Event handled successfully");
     }

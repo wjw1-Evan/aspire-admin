@@ -54,7 +54,7 @@ public class McpController : BaseApiController
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> CallTool([FromBody] McpCallToolRequest request)
     {
-        var currentUserId = GetRequiredUserId();
+        var currentUserId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
         var response = await _mcpService.CallToolAsync(request, currentUserId);
         return Success(response);
     }

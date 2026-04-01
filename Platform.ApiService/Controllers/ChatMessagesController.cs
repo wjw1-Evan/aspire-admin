@@ -75,7 +75,7 @@ public class ChatMessagesController : BaseApiController
 
         try
         {
-            var currentUserId = GetRequiredUserId();
+            var currentUserId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
             var session = await _chatService.GetSessionByIdAsync(request.SessionId);
             if (session == null || !session.Participants.Contains(currentUserId))
             {
@@ -184,7 +184,7 @@ public class ChatMessagesController : BaseApiController
     public async Task<IActionResult> MarkRead(string sessionId, [FromBody] MarkSessionReadRequest request)
     {
         await _chatService.MarkSessionReadAsync(sessionId, request.LastMessageId);
-        return Success("已更新会话已读状态");
+        return Success(null, "已更新会话已读状态");
     }
 
     [HttpDelete("{sessionId}/{messageId}")]
@@ -192,6 +192,6 @@ public class ChatMessagesController : BaseApiController
     public async Task<IActionResult> DeleteMessage(string sessionId, string messageId)
     {
         await _chatService.DeleteMessageAsync(sessionId, messageId);
-        return Success("消息已删除");
+        return Success(null, "消息已删除");
     }
 }

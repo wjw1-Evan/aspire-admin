@@ -55,11 +55,11 @@ public class PasswordService : IPasswordService
         {
             var userId = _httpContextAccessor.HttpContext?.User?.FindFirst("userId")?.Value;
             if (string.IsNullOrEmpty(userId))
-                return ServiceResult<bool>.Failure(ErrorCodes.UNAUTHORIZED, "未授权访问", 401);
+                return ServiceResult<bool>.Failure(ErrorCodes.UNAUTHORIZED, "未授权访问");
 
             var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == userId && u.IsActive == true);
             if (user == null)
-                return ServiceResult<bool>.Failure(ErrorCodes.USER_NOT_FOUND, "用户不存在或已被禁用", 404);
+                return ServiceResult<bool>.Failure(ErrorCodes.USER_NOT_FOUND, "用户不存在或已被禁用");
 
             var oldPassword = _encryptionService.TryDecryptPassword(request.CurrentPassword);
             var newPassword = _encryptionService.TryDecryptPassword(request.NewPassword);
@@ -81,7 +81,7 @@ public class PasswordService : IPasswordService
         catch (Exception ex)
         {
             _logger.LogError(ex, "修改密码失败");
-            return ServiceResult<bool>.Failure(ErrorCodes.INTERNAL_ERROR, "修改密码失败", 500);
+            return ServiceResult<bool>.Failure(ErrorCodes.INTERNAL_ERROR, "修改密码失败");
         }
     }
 
@@ -90,7 +90,7 @@ public class PasswordService : IPasswordService
     {
         var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive == true);
         if (user == null)
-            return ServiceResult<bool>.Failure(ErrorCodes.USER_NOT_FOUND, "该邮箱未绑定任何活动账户，或账户已被禁用", 404);
+            return ServiceResult<bool>.Failure(ErrorCodes.USER_NOT_FOUND, "该邮箱未绑定任何活动账户，或账户已被禁用");
 
         var bytes = new byte[4];
         RandomNumberGenerator.Fill(bytes);
@@ -121,7 +121,7 @@ public class PasswordService : IPasswordService
         catch (Exception ex)
         {
             _logger.LogError(ex, "发送重置密码邮件失败: {Email}", request.Email);
-            return ServiceResult<bool>.Failure(ErrorCodes.SEND_EMAIL_FAILED, "发送邮件失败，请稍后再试", 500);
+            return ServiceResult<bool>.Failure(ErrorCodes.SEND_EMAIL_FAILED, "发送邮件失败，请稍后再试");
         }
     }
 
@@ -137,7 +137,7 @@ public class PasswordService : IPasswordService
 
         var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive == true);
         if (user == null)
-            return ServiceResult<bool>.Failure(ErrorCodes.USER_NOT_FOUND, "该邮箱未绑定任何活动账户", 404);
+            return ServiceResult<bool>.Failure(ErrorCodes.USER_NOT_FOUND, "该邮箱未绑定任何活动账户");
 
         var newPassword = _encryptionService.TryDecryptPassword(request.NewPassword);
         _validationService.ValidatePassword(newPassword);

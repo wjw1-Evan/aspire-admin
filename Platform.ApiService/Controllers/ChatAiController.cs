@@ -45,7 +45,7 @@ public class ChatAiController : BaseApiController
     public async Task<IActionResult> GetSmartReplies([FromBody] AiSmartReplyRequest request, CancellationToken cancellationToken)
     {
         request.EnsureNotNull(nameof(request));
-        var currentUserId = GetRequiredUserId();
+        var currentUserId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
         var result = await _aiSuggestionService.GetSmartRepliesAsync(request, currentUserId, cancellationToken);
         return Success(result);
     }
@@ -59,7 +59,7 @@ public class ChatAiController : BaseApiController
     public async Task<IActionResult> GetMatchSuggestions([FromBody] MatchSuggestionRequest request)
     {
         request.EnsureNotNull(nameof(request));
-        var currentUserId = GetRequiredUserId();
+        var currentUserId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
         var response = await _aiSuggestionService.GetMatchSuggestionsAsync(request, currentUserId);
         return Success(response);
     }

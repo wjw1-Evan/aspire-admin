@@ -143,6 +143,6 @@ public class NoticeController : BaseApiController
     {
         var deleted = await _noticeService.DeleteNoticeAsync(id);
         deleted.EnsureSuccess("通知", id);
-        return SuccessMessage("删除成功");
+        return Success(null, "删除成功");
     }
 }

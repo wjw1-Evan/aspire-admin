@@ -96,7 +96,7 @@ public class PublicController : BaseApiController
     {
         if (User?.Identity?.IsAuthenticated != true)
         {
-            return UnauthorizedError("用户未认证");
+            return Fail("UNAUTHORIZED", "用户未认证", 401);
         }
 
         var userInfo = new
@@ -119,6 +119,6 @@ public class PublicController : BaseApiController
     [HttpGet("test")]
     public IActionResult TestEndpoint()
     {
-        return SuccessMessage("公共接口测试成功");
+        return Success(null, "公共接口测试成功");
     }
 }

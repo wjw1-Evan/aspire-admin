@@ -73,7 +73,7 @@ public class OrganizationController : BaseApiController
     {
         var updated = await _organizationService.UpdateAsync(id, request).ConfigureAwait(false);
         updated.EnsureSuccess("组织节点", id);
-        return Success(ErrorMessages.UpdateSuccess);
+        return Success(null, ErrorMessages.UpdateSuccess);
     }
 
     /// <summary>
@@ -85,7 +85,7 @@ public class OrganizationController : BaseApiController
     {
         var deleted = await _organizationService.DeleteAsync(id).ConfigureAwait(false);
         deleted.EnsureSuccess("组织节点", id);
-        return Success(ErrorMessages.DeleteSuccess);
+        return Success(null, ErrorMessages.DeleteSuccess);
     }
 
     /// <summary>
@@ -97,7 +97,7 @@ public class OrganizationController : BaseApiController
     {
         var ok = await _organizationService.ReorderAsync(items).ConfigureAwait(false);
         ok.EnsureSuccess("组织重排");
-        return Success(ErrorMessages.UpdateSuccess);
+        return Success(null, ErrorMessages.UpdateSuccess);
     }
 
     /// <summary>
@@ -144,7 +144,7 @@ public class OrganizationController : BaseApiController
     {
         var ok = await _organizationService.AssignUserAsync(request).ConfigureAwait(false);
         ok.EnsureSuccess("设置用户组织");
-        return Success(ErrorMessages.OperationSuccess);
+        return Success(null, ErrorMessages.OperationSuccess);
     }
 
     /// <summary>
@@ -156,6 +156,6 @@ public class OrganizationController : BaseApiController
     {
         var ok = await _organizationService.RemoveUserAsync(request).ConfigureAwait(false);
         ok.EnsureSuccess("移除用户组织");
-        return Success(ErrorMessages.DeleteSuccess);
+        return Success(null, ErrorMessages.DeleteSuccess);
     }
 }

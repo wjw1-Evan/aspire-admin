@@ -120,7 +120,7 @@ public class XiaokeConfigController : BaseApiController
     {
         var deleted = await _xiaokeConfigService.DeleteConfigAsync(id);
         deleted.EnsureSuccess("配置", id);
-        return Success();
+        return Success(true);
     }
 
     /// <summary>
@@ -133,6 +133,6 @@ public class XiaokeConfigController : BaseApiController
     {
         var success = await _xiaokeConfigService.SetDefaultConfigAsync(id);
         success.EnsureSuccess("配置", id);
-        return Success();
+        return Success(true);
     }
 }

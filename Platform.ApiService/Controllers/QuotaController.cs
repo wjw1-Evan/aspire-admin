@@ -36,7 +36,7 @@ namespace Platform.ApiService.Controllers
         public async Task<IActionResult> RemoveQuota([FromQuery] string userId, [FromQuery] long amount)
         {
             if (amount <= 0)
-                return ValidationError("减少的配额量必须大于 0");
+                return Fail("VALIDATION_ERROR", "减少的配额量必须大于 0");
 
             var current = await storageQuotaService.GetUserQuotaAsync(userId);
             var newQuota = Math.Max(0, current.TotalQuota - amount);

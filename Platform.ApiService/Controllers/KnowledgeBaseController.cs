@@ -38,12 +38,12 @@ public class KnowledgeBaseController : BaseApiController
         try
         {
             var pagedResult = await _knowledgeService.GetKnowledgeBasesAsync(current, pageSize, keyword);
-            return await SuccessPagedAsync(pagedResult);
+            return Success(pagedResult);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取知识库列表失败");
-            return Error("GET_FAILED", ex.Message);
+            return Fail("GET_FAILED", ex.Message);
         }
     }
 
@@ -57,12 +57,12 @@ public class KnowledgeBaseController : BaseApiController
         try
         {
             var kb = await _knowledgeService.GetByIdAsync(id);
-            if (kb == null) return NotFoundError("知识库", id);
+            if (kb == null) return Fail("NOT_FOUND", "知识库 {id} 不存在");
             return Success(kb);
         }
         catch (Exception ex)
         {
-            return Error("GET_FAILED", ex.Message);
+            return Fail("GET_FAILED", ex.Message);
         }
     }
 
@@ -75,14 +75,14 @@ public class KnowledgeBaseController : BaseApiController
     {
         try
         {
-            if (string.IsNullOrEmpty(knowledgeBase.Name)) return ValidationError("名称不能为空");
+            if (string.IsNullOrEmpty(knowledgeBase.Name)) return Fail("VALIDATION_ERROR", "名称不能为空");
             
             var created = await _knowledgeService.CreateAsync(knowledgeBase);
             return Success(created);
         }
         catch (Exception ex)
         {
-            return Error("CREATE_FAILED", ex.Message);
+            return Fail("CREATE_FAILED", ex.Message);
         }
     }
 
@@ -103,12 +103,12 @@ public class KnowledgeBaseController : BaseApiController
                 kb.IsActive = request.IsActive;
             });
 
-            if (updated == null) return NotFoundError("知识库", id);
+            if (updated == null) return Fail("NOT_FOUND", "知识库 {id} 不存在");
             return Success(updated);
         }
         catch (Exception ex)
         {
-            return Error("UPDATE_FAILED", ex.Message);
+            return Fail("UPDATE_FAILED", ex.Message);
         }
     }
 
@@ -122,12 +122,12 @@ public class KnowledgeBaseController : BaseApiController
         try
         {
             var result = await _knowledgeService.DeleteAsync(id);
-            if (!result) return NotFoundError("知识库", id);
-            return Success("删除成功");
+            if (!result) return Fail("NOT_FOUND", "知识库 {id} 不存在");
+            return Success(null, "删除成功");
         }
         catch (Exception ex)
         {
-            return Error("DELETE_FAILED", ex.Message);
+            return Fail("DELETE_FAILED", ex.Message);
         }
     }
 }

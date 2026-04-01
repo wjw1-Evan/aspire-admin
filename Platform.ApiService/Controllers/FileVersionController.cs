@@ -44,10 +44,10 @@ public class FileVersionController : BaseApiController
     public async Task<IActionResult> GetVersionList([FromQuery] string fileId, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
     {
         if (string.IsNullOrWhiteSpace(fileId))
-            return ValidationError("文件ID不能为空");
+            return Fail("VALIDATION_ERROR", "文件ID不能为空");
 
         if (page < 1 || pageSize < 1 || pageSize > 500)
-            return ValidationError("分页参数不合法");
+            return Fail("VALIDATION_ERROR", "分页参数不合法");
 
         try
         {
@@ -67,7 +67,7 @@ public class FileVersionController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取版本列表失败, FileId: {FileId}", fileId);
-            return ServerError("获取版本列表失败，请稍后重试");
+            return Fail("INTERNAL_ERROR", "获取版本列表失败，请稍后重试", 500);
         }
     }
 
@@ -81,7 +81,7 @@ public class FileVersionController : BaseApiController
     public async Task<IActionResult> CreateVersion(string fileId, [FromForm] CreateVersionRequest request)
     {
         if (string.IsNullOrWhiteSpace(fileId))
-            return ValidationError("文件ID不能为空");
+            return Fail("VALIDATION_ERROR", "文件ID不能为空");
 
         var validation = ValidateModelState();
         if (validation != null) return validation;
@@ -94,16 +94,16 @@ public class FileVersionController : BaseApiController
         }
         catch (ArgumentException ex)
         {
-            return ValidationError(ex.Message);
+            return Fail("VALIDATION_ERROR", ex.Message);
         }
         catch (InvalidOperationException ex)
         {
-            return ValidationError(ex.Message);
+            return Fail("VALIDATION_ERROR", ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "创建版本失败, FileId: {FileId}", fileId);
-            return ServerError("创建版本失败，请稍后重试");
+            return Fail("INTERNAL_ERROR", "创建版本失败，请稍后重试", 500);
         }
     }
 
@@ -116,7 +116,7 @@ public class FileVersionController : BaseApiController
     public async Task<IActionResult> GetVersionHistory(string fileId)
     {
         if (string.IsNullOrWhiteSpace(fileId))
-            return ValidationError("文件ID不能为空");
+            return Fail("VALIDATION_ERROR", "文件ID不能为空");
 
         try
         {
@@ -126,7 +126,7 @@ public class FileVersionController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取版本历史失败, FileId: {FileId}", fileId);
-            return ServerError("获取版本历史失败，请稍后重试");
+            return Fail("INTERNAL_ERROR", "获取版本历史失败，请稍后重试", 500);
         }
     }
 
@@ -139,20 +139,20 @@ public class FileVersionController : BaseApiController
     public async Task<IActionResult> GetVersion(string versionId)
     {
         if (string.IsNullOrWhiteSpace(versionId))
-            return ValidationError("版本ID不能为空");
+            return Fail("VALIDATION_ERROR", "版本ID不能为空");
 
         try
         {
             var version = await _fileVersionService.GetVersionAsync(versionId);
             if (version == null)
-                return NotFoundError("版本", versionId);
+                return Fail("NOT_FOUND", "版本 {versionId} 不存在");
 
             return Success(version);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取版本详情失败, VersionId: {VersionId}", versionId);
-            return ServerError("获取版本详情失败，请稍后重试");
+            return Fail("INTERNAL_ERROR", "获取版本详情失败，请稍后重试", 500);
         }
     }
 
@@ -166,10 +166,10 @@ public class FileVersionController : BaseApiController
     public async Task<IActionResult> RestoreVersion(string fileId, int versionNumber)
     {
         if (string.IsNullOrWhiteSpace(fileId))
-            return ValidationError("文件ID不能为空");
+            return Fail("VALIDATION_ERROR", "文件ID不能为空");
 
         if (versionNumber < 1)
-            return ValidationError("版本号必须大于0");
+            return Fail("VALIDATION_ERROR", "版本号必须大于0");
 
         try
         {
@@ -179,16 +179,16 @@ public class FileVersionController : BaseApiController
         }
         catch (ArgumentException ex)
         {
-            return ValidationError(ex.Message);
+            return Fail("VALIDATION_ERROR", ex.Message);
         }
         catch (InvalidOperationException ex)
         {
-            return ValidationError(ex.Message);
+            return Fail("VALIDATION_ERROR", ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "恢复版本失败, FileId: {FileId}", fileId);
-            return ServerError("版本恢复失败，请稍后重试");
+            return Fail("INTERNAL_ERROR", "版本恢复失败，请稍后重试", 500);
         }
     }
 
@@ -201,26 +201,26 @@ public class FileVersionController : BaseApiController
     public async Task<IActionResult> DeleteVersion(string versionId)
     {
         if (string.IsNullOrWhiteSpace(versionId))
-            return ValidationError("版本ID不能为空");
+            return Fail("VALIDATION_ERROR", "版本ID不能为空");
 
         try
         {
             await _fileVersionService.DeleteVersionAsync(versionId);
             _logger.LogInformation("删除版本, VersionId: {VersionId}", versionId);
-            return Success("版本已删除");
+            return Success(null, "版本已删除");
         }
         catch (ArgumentException ex)
         {
-            return ValidationError(ex.Message);
+            return Fail("VALIDATION_ERROR", ex.Message);
         }
         catch (InvalidOperationException ex)
         {
-            return ValidationError(ex.Message);
+            return Fail("VALIDATION_ERROR", ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "删除版本失败, VersionId: {VersionId}", versionId);
-            return ServerError("删除版本失败，请稍后重试");
+            return Fail("INTERNAL_ERROR", "删除版本失败，请稍后重试", 500);
         }
     }
 
@@ -233,13 +233,13 @@ public class FileVersionController : BaseApiController
     public async Task<IActionResult> DownloadVersion(string versionId)
     {
         if (string.IsNullOrWhiteSpace(versionId))
-            return ValidationError("版本ID不能为空");
+            return Fail("VALIDATION_ERROR", "版本ID不能为空");
 
         try
         {
             var version = await _fileVersionService.GetVersionAsync(versionId);
             if (version == null)
-                return NotFoundError("版本", versionId);
+                return Fail("NOT_FOUND", "版本 {versionId} 不存在");
 
             var stream = await _fileVersionService.DownloadVersionAsync(versionId);
             _logger.LogInformation("下载版本, VersionId: {VersionId}", versionId);
@@ -249,16 +249,16 @@ public class FileVersionController : BaseApiController
         }
         catch (ArgumentException ex)
         {
-            return ValidationError(ex.Message);
+            return Fail("VALIDATION_ERROR", ex.Message);
         }
         catch (InvalidOperationException ex)
         {
-            return ValidationError(ex.Message);
+            return Fail("VALIDATION_ERROR", ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "下载版本失败, VersionId: {VersionId}", versionId);
-            return ServerError("下载版本失败，请稍后重试");
+            return Fail("INTERNAL_ERROR", "下载版本失败，请稍后重试", 500);
         }
     }
 
@@ -272,13 +272,13 @@ public class FileVersionController : BaseApiController
     public async Task<IActionResult> CompareVersions(string versionId1, string versionId2)
     {
         if (string.IsNullOrWhiteSpace(versionId1))
-            return ValidationError("版本1 ID不能为空");
+            return Fail("VALIDATION_ERROR", "版本1 ID不能为空");
 
         if (string.IsNullOrWhiteSpace(versionId2))
-            return ValidationError("版本2 ID不能为空");
+            return Fail("VALIDATION_ERROR", "版本2 ID不能为空");
 
         if (versionId1 == versionId2)
-            return ValidationError("不能比较相同的版本");
+            return Fail("VALIDATION_ERROR", "不能比较相同的版本");
 
         try
         {
@@ -288,16 +288,16 @@ public class FileVersionController : BaseApiController
         }
         catch (ArgumentException ex)
         {
-            return ValidationError(ex.Message);
+            return Fail("VALIDATION_ERROR", ex.Message);
         }
         catch (InvalidOperationException ex)
         {
-            return ValidationError(ex.Message);
+            return Fail("VALIDATION_ERROR", ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "版本比较失败");
-            return ServerError("版本比较失败，请稍后重试");
+            return Fail("INTERNAL_ERROR", "版本比较失败，请稍后重试", 500);
         }
     }
 
@@ -310,20 +310,20 @@ public class FileVersionController : BaseApiController
     public async Task<IActionResult> GetCurrentVersion(string fileId)
     {
         if (string.IsNullOrWhiteSpace(fileId))
-            return ValidationError("文件ID不能为空");
+            return Fail("VALIDATION_ERROR", "文件ID不能为空");
 
         try
         {
             var version = await _fileVersionService.GetCurrentVersionAsync(fileId);
             if (version == null)
-                return NotFoundError("当前版本", fileId);
+                return Fail("NOT_FOUND", "当前版本 {fileId} 不存在");
 
             return Success(version);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取当前版本失败, FileId: {FileId}", fileId);
-            return ServerError("获取当前版本失败，请稍后重试");
+            return Fail("INTERNAL_ERROR", "获取当前版本失败，请稍后重试", 500);
         }
     }
 
@@ -336,7 +336,7 @@ public class FileVersionController : BaseApiController
     public async Task<IActionResult> SetAsCurrentVersion(string versionId)
     {
         if (string.IsNullOrWhiteSpace(versionId))
-            return ValidationError("版本ID不能为空");
+            return Fail("VALIDATION_ERROR", "版本ID不能为空");
 
         try
         {
@@ -346,16 +346,16 @@ public class FileVersionController : BaseApiController
         }
         catch (ArgumentException ex)
         {
-            return ValidationError(ex.Message);
+            return Fail("VALIDATION_ERROR", ex.Message);
         }
         catch (InvalidOperationException ex)
         {
-            return ValidationError(ex.Message);
+            return Fail("VALIDATION_ERROR", ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "设置当前版本失败, VersionId: {VersionId}", versionId);
-            return ServerError("设置当前版本失败，请稍后重试");
+            return Fail("INTERNAL_ERROR", "设置当前版本失败，请稍后重试", 500);
         }
     }
 
@@ -372,7 +372,7 @@ public class FileVersionController : BaseApiController
     public async Task<IActionResult> GetVersionStatistics(string fileId)
     {
         if (string.IsNullOrWhiteSpace(fileId))
-            return ValidationError("文件ID不能为空");
+            return Fail("VALIDATION_ERROR", "文件ID不能为空");
 
         try
         {
@@ -382,7 +382,7 @@ public class FileVersionController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取版本统计失败, FileId: {FileId}", fileId);
-            return ServerError("获取版本统计失败，请稍后重试");
+            return Fail("INTERNAL_ERROR", "获取版本统计失败，请稍后重试", 500);
         }
     }
 
@@ -396,10 +396,10 @@ public class FileVersionController : BaseApiController
     public async Task<IActionResult> CleanupOldVersions(string fileId, [FromQuery] int keepCount = 10)
     {
         if (string.IsNullOrWhiteSpace(fileId))
-            return ValidationError("文件ID不能为空");
+            return Fail("VALIDATION_ERROR", "文件ID不能为空");
 
         if (keepCount < 1 || keepCount > 100)
-            return ValidationError("保留版本数量必须在 1-100 之间");
+            return Fail("VALIDATION_ERROR", "保留版本数量必须在 1-100 之间");
 
         try
         {
@@ -410,7 +410,7 @@ public class FileVersionController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "清理版本失败, FileId: {FileId}", fileId);
-            return ServerError("清理版本失败，请稍后重试");
+            return Fail("INTERNAL_ERROR", "清理版本失败，请稍后重试", 500);
         }
     }
 
@@ -426,10 +426,10 @@ public class FileVersionController : BaseApiController
         if (validation != null) return validation;
 
         if (request.VersionIds == null || request.VersionIds.Count == 0)
-            return ValidationError("版本ID列表不能为空");
+            return Fail("VALIDATION_ERROR", "版本ID列表不能为空");
 
         if (request.VersionIds.Count > 100)
-            return ValidationError("批量操作最多支持100个版本");
+            return Fail("VALIDATION_ERROR", "批量操作最多支持100个版本");
 
         try
         {
@@ -440,7 +440,7 @@ public class FileVersionController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "批量删除版本失败");
-            return ServerError("批量删除版本失败，请稍后重试");
+            return Fail("INTERNAL_ERROR", "批量删除版本失败，请稍后重试", 500);
         }
     }
 

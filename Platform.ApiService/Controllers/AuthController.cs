@@ -97,17 +97,17 @@ public class AuthController : BaseApiController
 
     public async Task<IActionResult> GetCurrentUser()
     {
-        _logger.LogInformation("【AuthController.GetCurrentUser】IsAuthenticated: {IsAuth}, CurrentUserId: {UserId}, HttpContext.User: {User}, Claims: {Claims}",
-            IsAuthenticated,
+        _logger.LogInformation("【AuthController.GetCurrentUser】!string.IsNullOrEmpty(CurrentUserId): {IsAuth}, CurrentUserId: {UserId}, HttpContext.User: {User}, Claims: {Claims}",
+            !string.IsNullOrEmpty(CurrentUserId),
             CurrentUserId,
             HttpContext.User.Identity?.Name,
             string.Join(", ", HttpContext.User.Claims.Select(c => $"{c.Type}={c.Value}")));
 
         // 检查用户是否已认证
-        if (!IsAuthenticated)
+        if (!!string.IsNullOrEmpty(CurrentUserId))
         {
             _logger.LogWarning("【AuthController.GetCurrentUser】用户未认证，返回 401");
-            return UnauthorizedError("用户未认证");
+            return Fail("UNAUTHORIZED", "用户未认证", 401);
         }
 
         var user = await _authService.GetCurrentUserAsync();
@@ -154,7 +154,9 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         var result = await _authService.LoginAsync(request);
-        return Result(result);
+        return result.IsSuccess 
+            ? Success(result.Data!, result.Message) 
+            : Fail(result.Code ?? "ERROR", result.Message ?? "操作失败", 400);
     }
 
     /// <summary>
@@ -185,7 +187,7 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> Logout()
     {
         await _authService.LogoutAsync();
-        return Success("登出成功");
+        return Success(null, "登出成功");
     }
 
 
@@ -222,7 +224,7 @@ public class AuthController : BaseApiController
     {
         if (type != "login" && type != "register")
         {
-            return ValidationError("验证码类型只能是 login 或 register");
+            return Fail("VALIDATION_ERROR", "验证码类型只能是 login 或 register");
         }
 
         var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString();
@@ -264,17 +266,17 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> VerifyImageCaptcha([FromBody] VerifyCaptchaImageRequest request)
     {
         if (string.IsNullOrEmpty(request.CaptchaId))
-            return ValidationError("验证码ID不能为空");
+            return Fail("VALIDATION_ERROR", "验证码ID不能为空");
 
         if (string.IsNullOrEmpty(request.Answer))
-            return ValidationError("验证码答案不能为空");
+            return Fail("VALIDATION_ERROR", "验证码答案不能为空");
 
         var isValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.Answer, request.Type);
 
         if (!isValid)
-            return Error("INVALID_CAPTCHA", "验证码不正确或已过期");
+            return Fail("INVALID_CAPTCHA", "验证码不正确或已过期");
 
-        return SuccessMessage("验证码正确");
+        return Success(null, "验证码正确");
     }
 
 
@@ -317,7 +319,9 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
         var result = await _authService.RegisterAsync(request);
-        return Result(result);
+        return result.IsSuccess 
+            ? Success(result.Data!, result.Message) 
+            : Fail(result.Code ?? "ERROR", result.Message ?? "操作失败", 400);
     }
 
     /// <summary>
@@ -357,7 +361,9 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
     {
         var result = await _authService.ChangePasswordAsync(request);
-        return Result(result);
+        return result.IsSuccess 
+            ? Success(result.Data!, result.Message) 
+            : Fail(result.Code ?? "ERROR", result.Message ?? "操作失败", 400);
     }
 
     /// <summary>
@@ -397,7 +403,9 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
     {
         var result = await _authService.RefreshTokenAsync(request);
-        return Result(result);
+        return result.IsSuccess 
+            ? Success(result.Data!, result.Message) 
+            : Fail(result.Code ?? "ERROR", result.Message ?? "操作失败", 400);
     }
 
     /// <summary>
@@ -412,7 +420,9 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> SendResetCode([FromBody] SendResetCodeRequest request)
     {
         var result = await _authService.SendPasswordResetCodeAsync(request);
-        return Result(result);
+        return result.IsSuccess 
+            ? Success(result.Data!, result.Message) 
+            : Fail(result.Code ?? "ERROR", result.Message ?? "操作失败", 400);
     }
 
     /// <summary>
@@ -427,6 +437,8 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
     {
         var result = await _authService.ResetPasswordAsync(request);
-        return Result(result);
+        return result.IsSuccess 
+            ? Success(result.Data!, result.Message) 
+            : Fail(result.Code ?? "ERROR", result.Message ?? "操作失败", 400);
     }
 }

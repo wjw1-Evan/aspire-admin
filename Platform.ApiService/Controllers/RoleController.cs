@@ -81,7 +81,7 @@ public class RoleController : BaseApiController
     {
         var success = await _roleService.UpdateRoleAsync(id, request);
         success.EnsureSuccess("角色", id);
-        return Success(ErrorMessages.UpdateSuccess);
+        return Success(null, ErrorMessages.UpdateSuccess);
     }
 
     /// <summary>
@@ -95,7 +95,7 @@ public class RoleController : BaseApiController
     {
         var success = await _roleService.DeleteRoleAsync(id, reason);
         success.EnsureSuccess("角色", id);
-        return Success(ErrorMessages.DeleteSuccess);
+        return Success(null, ErrorMessages.DeleteSuccess);
     }
 
     /// <summary>
@@ -107,7 +107,7 @@ public class RoleController : BaseApiController
     {
         var success = await _roleService.AssignMenusToRoleAsync(id, request.MenuIds);
         success.EnsureSuccess("角色", id);
-        return Success("菜单权限分配成功");
+        return Success(null, "菜单权限分配成功");
     }
 
     /// <summary>

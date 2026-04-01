@@ -480,7 +480,7 @@ public class AuthService : IAuthService
             var errorCode = ex.Message.Contains("USER_NAME_EXISTS") 
                 ? ErrorCodes.USER_NAME_EXISTS 
                 : ErrorCodes.EMAIL_EXISTS;
-            return ServiceResult<User>.Failure(errorCode, ex.Message, 409);
+            return ServiceResult<User>.Failure(errorCode, ex.Message);
         }
         catch (Exception ex)
         {
@@ -719,11 +719,11 @@ public class AuthService : IAuthService
         {
             var userId = _httpContextAccessor.HttpContext?.User?.FindFirst("userId")?.Value;
             if (string.IsNullOrEmpty(userId))
-                return ServiceResult<bool>.Failure(ErrorCodes.UNAUTHORIZED, "未授权访问", 401);
+                return ServiceResult<bool>.Failure(ErrorCodes.UNAUTHORIZED, "未授权访问");
 
             var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == userId && u.IsActive == true);
             if (user == null)
-                return ServiceResult<bool>.Failure(ErrorCodes.USER_NOT_FOUND, "用户不存在或已被禁用", 404);
+                return ServiceResult<bool>.Failure(ErrorCodes.USER_NOT_FOUND, "用户不存在或已被禁用");
 
             // 🔒 安全增强：解密前端加密的密码
             var oldPassword = _encryptionService.TryDecryptPassword(request.CurrentPassword);
@@ -746,7 +746,7 @@ public class AuthService : IAuthService
         catch (Exception ex)
         {
             _logger.LogError(ex, "修改密码失败");
-            return ServiceResult<bool>.Failure(ErrorCodes.INTERNAL_ERROR, "修改密码失败", 500);
+            return ServiceResult<bool>.Failure(ErrorCodes.INTERNAL_ERROR, "修改密码失败");
         }
     }
 
@@ -762,11 +762,11 @@ public class AuthService : IAuthService
 
         var principal = _jwtService.ValidateRefreshToken(request.RefreshToken);
         if (principal == null)
-            return ServiceResult<RefreshTokenResult>.Failure(ErrorCodes.REFRESH_TOKEN_INVALID, "无效的刷新token", 401);
+            return ServiceResult<RefreshTokenResult>.Failure(ErrorCodes.REFRESH_TOKEN_INVALID, "无效的刷新token");
 
         var userId = _jwtService.GetUserIdFromRefreshToken(request.RefreshToken);
         if (string.IsNullOrEmpty(userId))
-            return ServiceResult<RefreshTokenResult>.Failure(ErrorCodes.REFRESH_TOKEN_USER_NOT_FOUND, "无法从刷新token中获取用户信息", 401);
+            return ServiceResult<RefreshTokenResult>.Failure(ErrorCodes.REFRESH_TOKEN_USER_NOT_FOUND, "无法从刷新token中获取用户信息");
 
         Expression<Func<RefreshToken, bool>> baseFilter = rt => rt.Token == request.RefreshToken && rt.UserId == userId && rt.IsRevoked == false;
         var existingToken = await _context.Set<RefreshToken>().Where(baseFilter).FirstOrDefaultAsync();
@@ -784,7 +784,7 @@ public class AuthService : IAuthService
                 await _context.SaveChangesAsync();
                 _logger.LogWarning("检测到用户 {UserId} 的旧token重用攻击，已撤销所有token", userId);
             }
-            return ServiceResult<RefreshTokenResult>.Failure(ErrorCodes.REFRESH_TOKEN_REVOKED, "刷新token无效或已被撤销", 401);
+            return ServiceResult<RefreshTokenResult>.Failure(ErrorCodes.REFRESH_TOKEN_REVOKED, "刷新token无效或已被撤销");
         }
 
         if (existingToken.ExpiresAt < DateTime.UtcNow)
@@ -793,12 +793,12 @@ public class AuthService : IAuthService
             existingToken.RevokedAt = DateTime.UtcNow;
             existingToken.RevokedReason = "Token已过期";
             await _context.SaveChangesAsync();
-            return ServiceResult<RefreshTokenResult>.Failure(ErrorCodes.REFRESH_TOKEN_EXPIRED, "刷新token已过期", 401);
+            return ServiceResult<RefreshTokenResult>.Failure(ErrorCodes.REFRESH_TOKEN_EXPIRED, "刷新token已过期");
         }
 
         var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == userId && u.IsActive == true);
         if (user == null)
-            return ServiceResult<RefreshTokenResult>.Failure(ErrorCodes.USER_NOT_FOUND, "用户不存在或已被禁用", 404);
+            return ServiceResult<RefreshTokenResult>.Failure(ErrorCodes.USER_NOT_FOUND, "用户不存在或已被禁用");
 
         var newToken = _jwtService.GenerateToken(user);
         var newRefreshToken = _jwtService.GenerateRefreshToken(user);
@@ -850,7 +850,7 @@ public class AuthService : IAuthService
     {
         var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive == true);
         if (user == null)
-            return ServiceResult<bool>.Failure(ErrorCodes.USER_NOT_FOUND, "该邮箱未绑定任何活动账户，或账户已被禁用", 404);
+            return ServiceResult<bool>.Failure(ErrorCodes.USER_NOT_FOUND, "该邮箱未绑定任何活动账户，或账户已被禁用");
 
         var bytes = new byte[4];
         RandomNumberGenerator.Fill(bytes);
@@ -881,7 +881,7 @@ public class AuthService : IAuthService
         catch (Exception ex)
         {
             _logger.LogError(ex, "发送重置密码邮件失败: {Email}", request.Email);
-            return ServiceResult<bool>.Failure(ErrorCodes.SEND_EMAIL_FAILED, "发送邮件失败，请稍后再试", 500);
+            return ServiceResult<bool>.Failure(ErrorCodes.SEND_EMAIL_FAILED, "发送邮件失败，请稍后再试");
         }
     }
 
@@ -901,7 +901,7 @@ public class AuthService : IAuthService
 
         var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive == true);
         if (user == null)
-            return ServiceResult<bool>.Failure(ErrorCodes.USER_NOT_FOUND, "该邮箱未绑定任何活动账户", 404);
+            return ServiceResult<bool>.Failure(ErrorCodes.USER_NOT_FOUND, "该邮箱未绑定任何活动账户");
 
         var newPassword = _encryptionService.TryDecryptPassword(request.NewPassword);
         _validationService.ValidatePassword(newPassword);

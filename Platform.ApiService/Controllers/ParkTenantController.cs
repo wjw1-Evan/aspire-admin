@@ -43,7 +43,7 @@ public class ParkTenantController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取租户列表失败");
-            return Error("ERROR", "获取租户列表失败");
+            return Fail("ERROR", "获取租户列表失败");
         }
     }
 
@@ -57,13 +57,13 @@ public class ParkTenantController : BaseApiController
         {
             var result = await _tenantService.GetTenantByIdAsync(id);
             if (result == null)
-                return Error("ERROR", "租户不存在");
+                return Fail("ERROR", "租户不存在");
             return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取租户详情失败: {Id}", id);
-            return Error("ERROR", "获取租户详情失败");
+            return Fail("ERROR", "获取租户详情失败");
         }
     }
 
@@ -81,7 +81,7 @@ public class ParkTenantController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "创建租户失败");
-            return Error("ERROR", "创建租户失败: " + ex.Message);
+            return Fail("ERROR", "创建租户失败: " + ex.Message);
         }
     }
 
@@ -95,13 +95,13 @@ public class ParkTenantController : BaseApiController
         {
             var result = await _tenantService.UpdateTenantAsync(id, request);
             if (result == null)
-                return Error("ERROR", "租户不存在");
+                return Fail("ERROR", "租户不存在");
             return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "更新租户失败: {Id}", id);
-            return Error("ERROR", "更新租户失败: " + ex.Message);
+            return Fail("ERROR", "更新租户失败: " + ex.Message);
         }
     }
 
@@ -115,13 +115,13 @@ public class ParkTenantController : BaseApiController
         {
             var result = await _tenantService.DeleteTenantAsync(id);
             if (!result)
-                return Error("ERROR", "租户不存在或无法删除");
+                return Fail("ERROR", "租户不存在或无法删除");
             return Success(true);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "删除租户失败: {Id}", id);
-            return Error("ERROR", "删除租户失败: " + ex.Message);
+            return Fail("ERROR", "删除租户失败: " + ex.Message);
         }
     }
 
@@ -143,7 +143,7 @@ public class ParkTenantController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取合同列表失败");
-            return Error("ERROR", "获取合同列表失败");
+            return Fail("ERROR", "获取合同列表失败");
         }
     }
 
@@ -157,13 +157,13 @@ public class ParkTenantController : BaseApiController
         {
             var result = await _tenantService.GetContractByIdAsync(id);
             if (result == null)
-                return Error("ERROR", "合同不存在");
+                return Fail("ERROR", "合同不存在");
             return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取合同详情失败: {Id}", id);
-            return Error("ERROR", "获取合同详情失败");
+            return Fail("ERROR", "获取合同详情失败");
         }
     }
 
@@ -181,7 +181,7 @@ public class ParkTenantController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "创建合同失败");
-            return Error("ERROR", "创建合同失败: " + ex.Message);
+            return Fail("ERROR", "创建合同失败: " + ex.Message);
         }
     }
 
@@ -195,13 +195,13 @@ public class ParkTenantController : BaseApiController
         {
             var result = await _tenantService.UpdateContractAsync(id, request);
             if (result == null)
-                return Error("ERROR", "合同不存在");
+                return Fail("ERROR", "合同不存在");
             return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "更新合同失败: {Id}", id);
-            return Error("ERROR", "更新合同失败: " + ex.Message);
+            return Fail("ERROR", "更新合同失败: " + ex.Message);
         }
     }
 
@@ -215,13 +215,13 @@ public class ParkTenantController : BaseApiController
         {
             var result = await _tenantService.DeleteContractAsync(id);
             if (!result)
-                return Error("ERROR", "合同不存在或无法删除");
+                return Fail("ERROR", "合同不存在或无法删除");
             return Success(true);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "删除合同失败: {Id}", id);
-            return Error("ERROR", "删除合同失败: " + ex.Message);
+            return Fail("ERROR", "删除合同失败: " + ex.Message);
         }
     }
 
@@ -235,13 +235,13 @@ public class ParkTenantController : BaseApiController
         {
             var result = await _tenantService.RenewContractAsync(id, request);
             if (result == null)
-                return Error("ERROR", "合同不存在或无法续签");
+                return Fail("ERROR", "合同不存在或无法续签");
             return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "续签合同失败: {Id}", id);
-            return Error("ERROR", "续签合同失败: " + ex.Message);
+            return Fail("ERROR", "续签合同失败: " + ex.Message);
         }
     }
 
@@ -259,7 +259,7 @@ public class ParkTenantController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "创建合同付款记录失败");
-            return Error("ERROR", "创建合同付款记录失败: " + ex.Message);
+            return Fail("ERROR", "创建合同付款记录失败: " + ex.Message);
         }
     }
 
@@ -277,7 +277,7 @@ public class ParkTenantController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取合同付款记录列表失败: {Id}", id);
-            return Error("ERROR", "获取合同付款记录列表失败");
+            return Fail("ERROR", "获取合同付款记录列表失败");
         }
     }
 
@@ -295,7 +295,7 @@ public class ParkTenantController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "删除合同付款记录失败: {Id}", id);
-            return Error("ERROR", "删除合同付款记录失败: " + ex.Message);
+            return Fail("ERROR", "删除合同付款记录失败: " + ex.Message);
         }
     }
     #endregion
@@ -318,7 +318,7 @@ public class ParkTenantController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取租户统计失败");
-            return Error("ERROR", "获取租户统计失败");
+            return Fail("ERROR", "获取租户统计失败");
         }
     }
 

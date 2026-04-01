@@ -1,65 +1,27 @@
 namespace Platform.ServiceDefaults.Models;
 
-/// <summary>
-/// 通用的服务层返回结果 - 剥离了 API/HTTP 细节
-/// </summary>
-/// <typeparam name="T">数据类型</typeparam>
-public class ServiceResult<T>
+public class ServiceResult
 {
-    private ServiceResult() { }
+    public bool IsSuccess { get; protected set; }
+    public string? Code { get; protected set; }
+    public string? Message { get; protected set; }
 
-    /// <summary>
-    /// 操作是否成功
-    /// </summary>
-    public bool IsSuccess { get; private set; }
+    public static ServiceResult Success(string? message = null)
+        => new() { IsSuccess = true, Message = message };
 
-    /// <summary>
-    /// 返回数据
-    /// </summary>
+    public static ServiceResult Failure(string code, string message)
+        => new() { IsSuccess = false, Code = code, Message = message };
+}
+
+public class ServiceResult<T> : ServiceResult
+{
     public T? Data { get; private set; }
 
-    /// <summary>
-    /// 错误代码
-    /// </summary>
-    public string? Code { get; private set; }
+    public new static ServiceResult<T> Success(T data, string? message = null)
+        => new() { IsSuccess = true, Data = data, Message = message };
 
-    /// <summary>
-    /// 错误/提示消息
-    /// </summary>
-    public string? Message { get; private set; }
+    public new static ServiceResult<T> Failure(string code, string message)
+        => new() { IsSuccess = false, Code = code, Message = message };
 
-    /// <summary>
-    /// HTTP 状态码
-    /// </summary>
-    public int StatusCode { get; private set; } = 200;
-
-    /// <summary>
-    /// 成功响应
-    /// </summary>
-    public static ServiceResult<T> Success(T data, string? message = null) => new()
-    {
-        IsSuccess = true,
-        Data = data,
-        Message = message,
-        StatusCode = 200
-    };
-
-    /// <summary>
-    /// 失败响应
-    /// </summary>
-    /// <param name="code">错误码</param>
-    /// <param name="message">错误消息</param>
-    /// <param name="statusCode">HTTP 状态码，默认 400</param>
-    public static ServiceResult<T> Failure(string code, string message, int statusCode = 400) => new()
-    {
-        IsSuccess = false,
-        Code = code,
-        Message = message,
-        StatusCode = statusCode
-    };
-
-    /// <summary>
-    /// 从原始数据隐式转换（快捷写法）
-    /// </summary>
     public static implicit operator ServiceResult<T>(T data) => Success(data);
 }

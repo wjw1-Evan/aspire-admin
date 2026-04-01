@@ -55,11 +55,11 @@ public class DocumentController : BaseApiController
         try
         {
             var result = await _documentService.GetDocumentsAsync(query);
-            return await SuccessPagedAsync(result);
+            return Success(result);
         }
         catch (Exception ex)
         {
-            return Error("GET_FAILED", ex.Message);
+            return Fail("GET_FAILED", ex.Message);
         }
     }
 
@@ -77,7 +77,7 @@ public class DocumentController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Error("GET_STATISTICS_FAILED", ex.Message);
+            return Fail("GET_STATISTICS_FAILED", ex.Message);
         }
     }
 
@@ -93,14 +93,14 @@ public class DocumentController : BaseApiController
             var document = await _documentService.GetDocumentAsync(id);
             if (document == null)
             {
-                return NotFoundError("公文", id);
+                return Fail("NOT_FOUND", "公文 {id} 不存在");
             }
 
             return Success(document);
         }
         catch (Exception ex)
         {
-            return Error("GET_FAILED", ex.Message);
+            return Fail("GET_FAILED", ex.Message);
         }
     }
 
@@ -115,7 +115,7 @@ public class DocumentController : BaseApiController
         {
             if (string.IsNullOrEmpty(request.Title))
             {
-                return ValidationError("公文标题不能为空");
+                return Fail("VALIDATION_ERROR", "公文标题不能为空");
             }
 
             var document = await _documentService.CreateDocumentAsync(request);
@@ -123,7 +123,7 @@ public class DocumentController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Error("CREATE_FAILED", ex.Message);
+            return Fail("CREATE_FAILED", ex.Message);
         }
     }
 
@@ -139,14 +139,14 @@ public class DocumentController : BaseApiController
             var document = await _documentService.UpdateDocumentAsync(id, request);
             if (document == null)
             {
-                return NotFoundError("公文", id);
+                return Fail("NOT_FOUND", "公文 {id} 不存在");
             }
 
             return Success(document);
         }
         catch (Exception ex)
         {
-            return Error("UPDATE_FAILED", ex.Message);
+            return Fail("UPDATE_FAILED", ex.Message);
         }
     }
 
@@ -162,14 +162,14 @@ public class DocumentController : BaseApiController
             var result = await _documentService.DeleteDocumentAsync(id);
             if (!result)
             {
-                return NotFoundError("公文", id);
+                return Fail("NOT_FOUND", "公文 {id} 不存在");
             }
 
-            return Success("公文已删除");
+            return Success(null, "公文已删除");
         }
         catch (Exception ex)
         {
-            return Error("DELETE_FAILED", ex.Message);
+            return Fail("DELETE_FAILED", ex.Message);
         }
     }
 
@@ -184,7 +184,7 @@ public class DocumentController : BaseApiController
         {
             if (string.IsNullOrEmpty(request.WorkflowDefinitionId))
             {
-                return ValidationError("流程定义ID不能为空");
+                return Fail("VALIDATION_ERROR", "流程定义ID不能为空");
             }
 
             var instance = await _documentService.SubmitDocumentAsync(id, request.WorkflowDefinitionId, request.Variables);
@@ -192,7 +192,7 @@ public class DocumentController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Error("SUBMIT_FAILED", ex.Message);
+            return Fail("SUBMIT_FAILED", ex.Message);
         }
     }
 
@@ -208,33 +208,33 @@ public class DocumentController : BaseApiController
             // 输入验证
             if (string.IsNullOrEmpty(id))
             {
-                return ValidationError("文档ID不能为空");
+                return Fail("VALIDATION_ERROR", "文档ID不能为空");
             }
 
             if (request == null)
             {
-                return ValidationError("请求参数不能为空");
+                return Fail("VALIDATION_ERROR", "请求参数不能为空");
             }
 
             var document = await _documentService.GetDocumentAsync(id);
             if (document == null || string.IsNullOrEmpty(document.WorkflowInstanceId))
             {
-                return NotFoundError("公文或流程实例", id);
+                return Fail("NOT_FOUND", "公文或流程实例 {id} 不存在");
             }
 
             var instance = await _workflowEngine.GetInstanceAsync(document.WorkflowInstanceId);
             if (instance == null)
             {
-                return NotFoundError("流程实例", document.WorkflowInstanceId);
+                return Fail("NOT_FOUND", "流程实例 {document.WorkflowInstanceId} 不存在");
             }
 
             // Bug 25 修复：检查 CurrentNodeId
             if (string.IsNullOrEmpty(instance.CurrentNodeId))
             {
-                return ValidationError("流程实例当前无待处理节点");
+                return Fail("VALIDATION_ERROR", "流程实例当前无待处理节点");
             }
 
-            var userId = GetRequiredUserId();
+            var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
             var result = await _workflowEngine.ProcessApprovalAsync(
                 document.WorkflowInstanceId,
                 instance.CurrentNodeId,
@@ -247,7 +247,7 @@ public class DocumentController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Error("APPROVE_FAILED", ex.Message);
+            return Fail("APPROVE_FAILED", ex.Message);
         }
     }
 
@@ -263,38 +263,38 @@ public class DocumentController : BaseApiController
             // 输入验证
             if (string.IsNullOrEmpty(id))
             {
-                return ValidationError("文档ID不能为空");
+                return Fail("VALIDATION_ERROR", "文档ID不能为空");
             }
 
             if (request == null)
             {
-                return ValidationError("请求参数不能为空");
+                return Fail("VALIDATION_ERROR", "请求参数不能为空");
             }
 
             if (string.IsNullOrEmpty(request.Comment))
             {
-                return ValidationError("拒绝原因不能为空");
+                return Fail("VALIDATION_ERROR", "拒绝原因不能为空");
             }
 
             var document = await _documentService.GetDocumentAsync(id);
             if (document == null || string.IsNullOrEmpty(document.WorkflowInstanceId))
             {
-                return NotFoundError("公文或流程实例", id);
+                return Fail("NOT_FOUND", "公文或流程实例 {id} 不存在");
             }
 
             var instance = await _workflowEngine.GetInstanceAsync(document.WorkflowInstanceId);
             if (instance == null)
             {
-                return NotFoundError("流程实例", document.WorkflowInstanceId);
+                return Fail("NOT_FOUND", "流程实例 {document.WorkflowInstanceId} 不存在");
             }
 
             // Bug 25 修复：检查 CurrentNodeId
             if (string.IsNullOrEmpty(instance.CurrentNodeId))
             {
-                return ValidationError("流程实例当前无待处理节点");
+                return Fail("VALIDATION_ERROR", "流程实例当前无待处理节点");
             }
 
-            var userId = GetRequiredUserId();
+            var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
             var result = await _workflowEngine.ProcessApprovalAsync(
                 document.WorkflowInstanceId,
                 instance.CurrentNodeId,
@@ -307,7 +307,7 @@ public class DocumentController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Error("REJECT_FAILED", ex.Message);
+            return Fail("REJECT_FAILED", ex.Message);
         }
     }
 
@@ -320,22 +320,22 @@ public class DocumentController : BaseApiController
     {
         try
         {
-            var userId = GetRequiredUserId();
+            var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
 
             if (string.IsNullOrEmpty(request.TargetNodeId))
             {
-                return ValidationError("退回目标节点不能为空");
+                return Fail("VALIDATION_ERROR", "退回目标节点不能为空");
             }
 
             if (string.IsNullOrEmpty(request.Comment))
             {
-                return ValidationError("退回原因不能为空");
+                return Fail("VALIDATION_ERROR", "退回原因不能为空");
             }
 
             var document = await _documentService.GetDocumentAsync(id);
             if (document == null || string.IsNullOrEmpty(document.WorkflowInstanceId))
             {
-                return NotFoundError("公文或流程实例", id);
+                return Fail("NOT_FOUND", "公文或流程实例 {id} 不存在");
             }
 
             var result = await _workflowEngine.ReturnToNodeAsync(
@@ -349,7 +349,7 @@ public class DocumentController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Error("RETURN_FAILED", ex.Message);
+            return Fail("RETURN_FAILED", ex.Message);
         }
     }
 
@@ -364,28 +364,28 @@ public class DocumentController : BaseApiController
         {
             if (string.IsNullOrEmpty(request.DelegateToUserId))
             {
-                return ValidationError("转办目标用户不能为空");
+                return Fail("VALIDATION_ERROR", "转办目标用户不能为空");
             }
 
             var document = await _documentService.GetDocumentAsync(id);
             if (document == null || string.IsNullOrEmpty(document.WorkflowInstanceId))
             {
-                return NotFoundError("公文或流程实例", id);
+                return Fail("NOT_FOUND", "公文或流程实例 {id} 不存在");
             }
 
             var instance = await _workflowEngine.GetInstanceAsync(document.WorkflowInstanceId);
             if (instance == null)
             {
-                return NotFoundError("流程实例", document.WorkflowInstanceId);
+                return Fail("NOT_FOUND", "流程实例 {document.WorkflowInstanceId} 不存在");
             }
 
             // Bug 25 修复：检查 CurrentNodeId
             if (string.IsNullOrEmpty(instance.CurrentNodeId))
             {
-                return ValidationError("流程实例当前无待处理节点");
+                return Fail("VALIDATION_ERROR", "流程实例当前无待处理节点");
             }
 
-            var userId = GetRequiredUserId();
+            var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
             var result = await _workflowEngine.ProcessApprovalAsync(
                 document.WorkflowInstanceId,
                 instance.CurrentNodeId,
@@ -399,7 +399,7 @@ public class DocumentController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Error("DELEGATE_FAILED", ex.Message);
+            return Fail("DELEGATE_FAILED", ex.Message);
         }
     }
 
@@ -417,7 +417,7 @@ public class DocumentController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Error("UPLOAD_FAILED", ex.Message);
+            return Fail("UPLOAD_FAILED", ex.Message);
         }
     }
 
@@ -433,13 +433,13 @@ public class DocumentController : BaseApiController
             var document = await _documentService.GetDocumentAsync(id);
             if (document == null || string.IsNullOrEmpty(document.WorkflowInstanceId))
             {
-                return NotFoundError("公文或流程实例", id);
+                return Fail("NOT_FOUND", "公文或流程实例 {id} 不存在");
             }
 
             var instance = await _workflowEngine.GetInstanceAsync(document.WorkflowInstanceId);
             if (instance == null)
             {
-                return NotFoundError("流程实例", document.WorkflowInstanceId);
+                return Fail("NOT_FOUND", "流程实例 {document.WorkflowInstanceId} 不存在");
             }
 
             // 优先使用实例中的流程定义快照
@@ -450,7 +450,7 @@ public class DocumentController : BaseApiController
                 definition = await _documentService.GetWorkflowDefinitionAsync(instance.WorkflowDefinitionId);
                 if (definition == null)
                 {
-                    return NotFoundError("流程定义", instance.WorkflowDefinitionId);
+                    return Fail("NOT_FOUND", "流程定义 {instance.WorkflowDefinitionId} 不存在");
                 }
             }
 
@@ -486,13 +486,13 @@ public class DocumentController : BaseApiController
             {
                 if (string.IsNullOrEmpty(binding.FormDefinitionId))
                 {
-                    return ValidationError("流程节点未配置表单定义ID");
+                    return Fail("VALIDATION_ERROR", "流程节点未配置表单定义ID");
                 }
                 // 如果没有快照，使用最新定义（向后兼容）
                 form = await _formDefinitionService.GetFormByIdAsync(binding.FormDefinitionId);
                 if (form == null)
                 {
-                    return NotFoundError("表单定义", binding.FormDefinitionId);
+                    return Fail("NOT_FOUND", "表单定义 {binding.FormDefinitionId} 不存在");
                 }
             }
 
@@ -515,7 +515,7 @@ public class DocumentController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Error("GET_FAILED", ex.Message);
+            return Fail("GET_FAILED", ex.Message);
         }
     }
 
@@ -531,7 +531,7 @@ public class DocumentController : BaseApiController
             var result = await _documentService.DownloadAttachmentAsync(attachmentId);
             if (result == null)
             {
-                return NotFoundError("附件", attachmentId);
+                return Fail("NOT_FOUND", "附件 {attachmentId} 不存在");
             }
 
             Response.Headers.ContentLength = result.ContentLength;
@@ -539,7 +539,7 @@ public class DocumentController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Error("DOWNLOAD_FAILED", ex.Message);
+            return Fail("DOWNLOAD_FAILED", ex.Message);
         }
     }
 
@@ -556,15 +556,15 @@ public class DocumentController : BaseApiController
             query.FilterType = "pending";
 
             var result = await _documentService.GetDocumentsAsync(query);
-            return await SuccessPagedAsync(result);
+            return Success(result);
         }
         catch (ArgumentException ex)
         {
-            return ValidationError(ex.Message);
+            return Fail("VALIDATION_ERROR", ex.Message);
         }
         catch (Exception ex)
         {
-            return ServerError($"获取待审批公文失败: {ex.Message}");
+            return Fail("INTERNAL_ERROR", $"获取待审批公文失败: {ex.Message}", 500);
         }
     }
 }

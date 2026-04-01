@@ -47,7 +47,7 @@ public class SocialController : BaseApiController
     public async Task<IActionResult> UpdateLocation([FromBody] UpdateLocationBeaconRequest request)
     {
         await _socialService.UpdateLocationAsync(request);
-        return Success("定位已更新");
+        return Success(null, "定位已更新");
     }
 
     /// <summary>
@@ -117,11 +117,11 @@ public class SocialController : BaseApiController
         }
         else
         {
-            return Error("INVALID_REQUEST", "请求参数无效：需要提供有效的定位信息");
+            return Fail("INVALID_REQUEST", "请求参数无效：需要提供有效的定位信息");
         }
 
         await _socialService.UpdateLocationAsync(locationRequest);
-        return Success("定位已更新");
+        return Success(null, "定位已更新");
     }
 
     /// <summary>

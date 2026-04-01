@@ -24,11 +24,11 @@ public class FormController : BaseApiController
         try
         {
             var result = await _formService.GetFormsAsync(current, pageSize, keyword, isActive);
-            return await SuccessPagedAsync(result);
+            return Success(result);
         }
         catch (Exception ex)
         {
-            return Error("GET_FAILED", ex.Message);
+            return Fail("GET_FAILED", ex.Message);
         }
     }
 
@@ -41,14 +41,14 @@ public class FormController : BaseApiController
             var form = await _formService.GetFormByIdAsync(id);
             if (form == null)
             {
-                return NotFoundError("表单定义", id);
+                return Fail("NOT_FOUND", "表单定义 {id} 不存在");
             }
 
             return Success(form);
         }
         catch (Exception ex)
         {
-            return Error("GET_FAILED", ex.Message);
+            return Fail("GET_FAILED", ex.Message);
         }
     }
 
@@ -63,11 +63,11 @@ public class FormController : BaseApiController
         }
         catch (ArgumentException ex)
         {
-            return ValidationError(ex.Message);
+            return Fail("VALIDATION_ERROR", ex.Message);
         }
         catch (Exception ex)
         {
-            return Error("CREATE_FAILED", ex.Message);
+            return Fail("CREATE_FAILED", ex.Message);
         }
     }
 
@@ -80,14 +80,14 @@ public class FormController : BaseApiController
             var result = await _formService.UpdateFormAsync(id, form);
             if (result == null)
             {
-                return NotFoundError("表单定义", id);
+                return Fail("NOT_FOUND", "表单定义 {id} 不存在");
             }
 
             return Success(result);
         }
         catch (Exception ex)
         {
-            return Error("UPDATE_FAILED", ex.Message);
+            return Fail("UPDATE_FAILED", ex.Message);
         }
     }
 
@@ -100,14 +100,14 @@ public class FormController : BaseApiController
             var result = await _formService.DeleteFormAsync(id);
             if (!result)
             {
-                return NotFoundError("表单定义", id);
+                return Fail("NOT_FOUND", "表单定义 {id} 不存在");
             }
 
-            return Success("表单定义已删除");
+            return Success(null, "表单定义已删除");
         }
         catch (Exception ex)
         {
-            return Error("DELETE_FAILED", ex.Message);
+            return Fail("DELETE_FAILED", ex.Message);
         }
     }
 }

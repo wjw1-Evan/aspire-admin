@@ -57,7 +57,7 @@ public class JoinRequestController : BaseApiController
         if (!success)
             throw new KeyNotFoundException("申请不存在或已处理");
 
-        return SuccessMessage("申请已撤回");
+        return Success(null, "申请已撤回");
     }
 
     /// <summary>
@@ -70,7 +70,7 @@ public class JoinRequestController : BaseApiController
         // 如果没有指定企业ID，使用当前企业
         if (string.IsNullOrEmpty(companyId))
         {
-            companyId = await GetRequiredCompanyIdAsync();
+            companyId = await GetCompanyId(true);
         }
 
         var requests = await _joinRequestService.GetPendingRequestsAsync(companyId, keyword);

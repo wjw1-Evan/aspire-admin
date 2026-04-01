@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
-using Platform.ServiceDefaults.Exceptions;
 
 namespace Platform.ServiceDefaults.Controllers;
 
@@ -19,7 +18,7 @@ public abstract class BaseApiController : ControllerBase
             : null;
 
         if (required && string.IsNullOrEmpty(companyId))
-            throw new BusinessException("未找到当前用户的企业信息", 404);
+            throw new InvalidOperationException("未找到当前用户的企业信息");
 
         return companyId;
     }

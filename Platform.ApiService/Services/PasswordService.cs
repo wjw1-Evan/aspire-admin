@@ -5,7 +5,6 @@ using Platform.ApiService.Constants;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
-using Platform.ServiceDefaults.Exceptions;
 using System.Security.Cryptography;
 using User = Platform.ApiService.Models.AppUser;
 
@@ -55,17 +54,17 @@ public class PasswordService : IPasswordService
         {
             var userId = _httpContextAccessor.HttpContext?.User?.FindFirst("userId")?.Value;
             if (string.IsNullOrEmpty(userId))
-                throw new BusinessException("未授权访问");
+                throw new ArgumentException("未授权访问");
 
             var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == userId && u.IsActive == true);
             if (user == null)
-                throw new BusinessException("用户不存在或已被禁用");
+                throw new ArgumentException("用户不存在或已被禁用");
 
             var oldPassword = _encryptionService.TryDecryptPassword(request.CurrentPassword);
             var newPassword = _encryptionService.TryDecryptPassword(request.NewPassword);
 
             if (!_passwordHasher.VerifyPassword(oldPassword, user.PasswordHash))
-                throw new BusinessException("旧密码不正确");
+                throw new ArgumentException("旧密码不正确");
 
             _validationService.ValidatePassword(newPassword);
 
@@ -85,7 +84,7 @@ public class PasswordService : IPasswordService
         catch (Exception ex)
         {
             _logger.LogError(ex, "修改密码失败");
-            throw new BusinessException("修改密码失败");
+            throw new ArgumentException("修改密码失败");
         }
     }
 
@@ -94,7 +93,7 @@ public class PasswordService : IPasswordService
     {
         var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive == true);
         if (user == null)
-            throw new BusinessException("该邮箱未绑定任何活动账户，或账户已被禁用");
+            throw new ArgumentException("该邮箱未绑定任何活动账户，或账户已被禁用");
 
         var bytes = new byte[4];
         RandomNumberGenerator.Fill(bytes);
@@ -125,7 +124,7 @@ public class PasswordService : IPasswordService
         catch (Exception ex)
         {
             _logger.LogError(ex, "发送重置密码邮件失败: {Email}", request.Email);
-            throw new BusinessException("发送邮件失败，请稍后再试");
+            throw new ArgumentException("发送邮件失败，请稍后再试");
         }
     }
 
@@ -134,14 +133,14 @@ public class PasswordService : IPasswordService
     {
         var cacheKey = $"PasswordResetCode_{request.Email}";
         if (!_memoryCache.TryGetValue(cacheKey, out string? cachedCode))
-            throw new BusinessException("验证码已过期，请重新获取");
+            throw new ArgumentException("验证码已过期，请重新获取");
 
         if (cachedCode != request.Code)
-            throw new BusinessException("验证码不正确");
+            throw new ArgumentException("验证码不正确");
 
         var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive == true);
         if (user == null)
-            throw new BusinessException("该邮箱未绑定任何活动账户");
+            throw new ArgumentException("该邮箱未绑定任何活动账户");
 
         var newPassword = _encryptionService.TryDecryptPassword(request.NewPassword);
         _validationService.ValidatePassword(newPassword);

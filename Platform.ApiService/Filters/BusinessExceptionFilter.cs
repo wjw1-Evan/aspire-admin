@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Platform.ServiceDefaults.Models;
-using Platform.ServiceDefaults.Exceptions;
 using System.Net;
 
 namespace Platform.ApiService.Filters;
@@ -30,28 +29,10 @@ public class BusinessExceptionFilter : IExceptionFilter
     {
         var exception = context.Exception;
 
-        // 处理已知的业务异常
-        if (exception is BusinessException bizEx)
-        {
-            var response = new ApiResponse(
-                success: false,
-                message: bizEx.Message,
-                traceId: context.HttpContext.TraceIdentifier
-            );
-
-            context.Result = new ObjectResult(response)
-            {
-                StatusCode = bizEx.StatusCode
-            };
-            context.ExceptionHandled = true;
-            return;
-        }
-
         if (exception is ArgumentException || exception is InvalidOperationException)
         {
             var response = new ApiResponse(
                 success: false,
-                
                 message: exception.Message,
                 traceId: context.HttpContext.TraceIdentifier
             );
@@ -61,12 +42,10 @@ public class BusinessExceptionFilter : IExceptionFilter
             return;
         }
 
-        // 可以添加更多异常类型处理，例如 UnauthorizedAccessException -> 401
         if (exception is UnauthorizedAccessException)
         {
             var response = new ApiResponse(
                 success: false,
-                
                 message: exception.Message,
                 traceId: context.HttpContext.TraceIdentifier
             );

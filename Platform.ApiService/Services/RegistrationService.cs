@@ -4,7 +4,6 @@ using Platform.ApiService.Constants;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
-using Platform.ServiceDefaults.Exceptions;
 using Menu = Platform.ServiceDefaults.Models.Menu;
 using User = Platform.ApiService.Models.AppUser;
 
@@ -116,14 +115,14 @@ public class RegistrationService : IRegistrationService
         {
             if (string.IsNullOrEmpty(request.CaptchaId) || string.IsNullOrEmpty(request.CaptchaAnswer))
             {
-                throw new BusinessException("需要验证码");
+                throw new ArgumentException("需要验证码");
             }
 
             var captchaValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.CaptchaAnswer, "register");
             if (!captchaValid)
             {
                 await RecordFailureAsync(clientId, "register");
-                throw new BusinessException("验证码无效");
+                throw new ArgumentException("验证码无效");
             }
         }
 
@@ -219,20 +218,20 @@ public class RegistrationService : IRegistrationService
         {
             await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
             await RecordFailureAsync(clientId, "register");
-            throw new BusinessException(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (InvalidOperationException ex)
         {
             await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
             await RecordFailureAsync(clientId, "register");
-            throw new BusinessException(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (Exception ex)
         {
             await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
             await RecordFailureAsync(clientId, "register");
             _logger.LogError(ex, "用户注册失败，已执行回滚操作");
-            throw new BusinessException($"注册失败: {ex.Message}");
+            throw new ArgumentException($"注册失败: {ex.Message}");
         }
     }
 

@@ -7,7 +7,6 @@ using Platform.ApiService.Constants;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
-using Platform.ServiceDefaults.Exceptions;
 using System.Security.Claims;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -238,14 +237,14 @@ public class AuthService : IAuthService
         {
             if (string.IsNullOrEmpty(request.CaptchaId) || string.IsNullOrEmpty(request.CaptchaAnswer))
             {
-                throw new BusinessException("需要验证码");
+                throw new ArgumentException("需要验证码");
             }
 
             var captchaValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.CaptchaAnswer, "login");
             if (!captchaValid)
             {
                 await RecordFailureAsync(clientId, "login");
-                throw new BusinessException("验证码无效");
+                throw new ArgumentException("验证码无效");
             }
         }
 
@@ -254,7 +253,7 @@ public class AuthService : IAuthService
         if (user == null)
         {
             await RecordFailureAsync(clientId, "login");
-            throw new BusinessException("用户名或密码错误");
+            throw new ArgumentException("用户名或密码错误");
         }
 
         var rawPassword = _encryptionService.TryDecryptPassword(request.Password ?? string.Empty);
@@ -262,7 +261,7 @@ public class AuthService : IAuthService
         if (!_passwordHasher.VerifyPassword(rawPassword, user.PasswordHash))
         {
             await RecordFailureAsync(clientId, "login");
-            throw new BusinessException("用户名或密码错误");
+            throw new ArgumentException("用户名或密码错误");
         }
 
         await ClearFailureAsync(clientId, "login");
@@ -282,12 +281,12 @@ public class AuthService : IAuthService
             {
                 if (!company.IsActive)
                 {
-                    throw new BusinessException(ErrorMessages.CompanyInactive);
+                    throw new ArgumentException(ErrorMessages.CompanyInactive);
                 }
 
                 if (company.ExpiresAt.HasValue && company.ExpiresAt.Value < DateTime.UtcNow)
                 {
-                    throw new BusinessException(ErrorMessages.CompanyExpired);
+                    throw new ArgumentException(ErrorMessages.CompanyExpired);
                 }
             }
         }
@@ -368,14 +367,14 @@ public class AuthService : IAuthService
         {
             if (string.IsNullOrEmpty(request.CaptchaId) || string.IsNullOrEmpty(request.CaptchaAnswer))
             {
-                throw new BusinessException("需要验证码");
+                throw new ArgumentException("需要验证码");
             }
 
             var captchaValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.CaptchaAnswer, "register");
             if (!captchaValid)
             {
                 await RecordFailureAsync(clientId, "register");
-                throw new BusinessException("验证码无效");
+                throw new ArgumentException("验证码无效");
             }
         }
 
@@ -471,20 +470,20 @@ public class AuthService : IAuthService
         {
             await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
             await RecordFailureAsync(clientId, "register");
-            throw new BusinessException(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (InvalidOperationException ex)
         {
             await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
             await RecordFailureAsync(clientId, "register");
-            throw new BusinessException(ex.Message);
+            throw new ArgumentException(ex.Message);
         }
         catch (Exception ex)
         {
             await RollbackUserRegistrationAsync(user, personalCompany, adminRole, userCompany);
             await RecordFailureAsync(clientId, "register");
             _logger.LogError(ex, "用户注册失败，已执行回滚操作");
-            throw new BusinessException($"注册失败: {ex.Message}");
+            throw new ArgumentException($"注册失败: {ex.Message}");
         }
     }
 
@@ -716,17 +715,17 @@ public class AuthService : IAuthService
         {
             var userId = _httpContextAccessor.HttpContext?.User?.FindFirst("userId")?.Value;
             if (string.IsNullOrEmpty(userId))
-                throw new BusinessException("未授权访问");
+                throw new ArgumentException("未授权访问");
 
             var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == userId && u.IsActive == true);
             if (user == null)
-                throw new BusinessException("用户不存在或已被禁用");
+                throw new ArgumentException("用户不存在或已被禁用");
 
             var oldPassword = _encryptionService.TryDecryptPassword(request.CurrentPassword);
             var newPassword = _encryptionService.TryDecryptPassword(request.NewPassword);
 
             if (!_passwordHasher.VerifyPassword(oldPassword, user.PasswordHash))
-                throw new BusinessException("旧密码不正确");
+                throw new ArgumentException("旧密码不正确");
 
             _validationService.ValidatePassword(newPassword);
 
@@ -746,7 +745,7 @@ public class AuthService : IAuthService
         catch (Exception ex)
         {
             _logger.LogError(ex, "修改密码失败");
-            throw new BusinessException("修改密码失败");
+            throw new ArgumentException("修改密码失败");
         }
     }
 
@@ -758,15 +757,15 @@ public class AuthService : IAuthService
     public async Task<RefreshTokenResult> RefreshTokenAsync(RefreshTokenRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.RefreshToken))
-            throw new BusinessException("刷新token不能为空");
+            throw new ArgumentException("刷新token不能为空");
 
         var principal = _jwtService.ValidateRefreshToken(request.RefreshToken);
         if (principal == null)
-            throw new BusinessException("无效的刷新token");
+            throw new ArgumentException("无效的刷新token");
 
         var userId = _jwtService.GetUserIdFromRefreshToken(request.RefreshToken);
         if (string.IsNullOrEmpty(userId))
-            throw new BusinessException("无法从刷新token中获取用户信息");
+            throw new ArgumentException("无法从刷新token中获取用户信息");
 
         Expression<Func<RefreshToken, bool>> baseFilter = rt => rt.Token == request.RefreshToken && rt.UserId == userId && rt.IsRevoked == false;
         var existingToken = await _context.Set<RefreshToken>().Where(baseFilter).FirstOrDefaultAsync();
@@ -784,7 +783,7 @@ public class AuthService : IAuthService
                 await _context.SaveChangesAsync();
                 _logger.LogWarning("检测到用户 {UserId} 的旧token重用攻击，已撤销所有token", userId);
             }
-            throw new BusinessException("刷新token无效或已被撤销");
+            throw new ArgumentException("刷新token无效或已被撤销");
         }
 
         if (existingToken.ExpiresAt < DateTime.UtcNow)
@@ -793,12 +792,12 @@ public class AuthService : IAuthService
             existingToken.RevokedAt = DateTime.UtcNow;
             existingToken.RevokedReason = "Token已过期";
             await _context.SaveChangesAsync();
-            throw new BusinessException("刷新token已过期");
+            throw new ArgumentException("刷新token已过期");
         }
 
         var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == userId && u.IsActive == true);
         if (user == null)
-            throw new BusinessException("用户不存在或已被禁用");
+            throw new ArgumentException("用户不存在或已被禁用");
 
         var newToken = _jwtService.GenerateToken(user);
         var newRefreshToken = _jwtService.GenerateRefreshToken(user);
@@ -850,7 +849,7 @@ public class AuthService : IAuthService
     {
         var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive == true);
         if (user == null)
-            throw new BusinessException("该邮箱未绑定任何活动账户，或账户已被禁用");
+            throw new ArgumentException("该邮箱未绑定任何活动账户，或账户已被禁用");
 
         var bytes = new byte[4];
         RandomNumberGenerator.Fill(bytes);
@@ -881,7 +880,7 @@ public class AuthService : IAuthService
         catch (Exception ex)
         {
             _logger.LogError(ex, "发送重置密码邮件失败: {Email}", request.Email);
-            throw new BusinessException("发送邮件失败，请稍后再试");
+            throw new ArgumentException("发送邮件失败，请稍后再试");
         }
     }
 
@@ -894,14 +893,14 @@ public class AuthService : IAuthService
     {
         var cacheKey = $"PasswordResetCode_{request.Email}";
         if (!_memoryCache.TryGetValue(cacheKey, out string? cachedCode))
-            throw new BusinessException("验证码已过期，请重新获取");
+            throw new ArgumentException("验证码已过期，请重新获取");
 
         if (cachedCode != request.Code)
-            throw new BusinessException("验证码不正确");
+            throw new ArgumentException("验证码不正确");
 
         var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive == true);
         if (user == null)
-            throw new BusinessException("该邮箱未绑定任何活动账户");
+            throw new ArgumentException("该邮箱未绑定任何活动账户");
 
         var newPassword = _encryptionService.TryDecryptPassword(request.NewPassword);
         _validationService.ValidatePassword(newPassword);

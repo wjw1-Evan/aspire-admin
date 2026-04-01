@@ -318,6 +318,7 @@ public class UserActivityLogService : IUserActivityLogService
         var log = new UserActivityLog
         {
             CreatedBy = request.CreatedBy,
+            CompanyId = request.CompanyId ?? string.Empty,
             Action = request.HttpMethod + request.Path,
             HttpMethod = request.HttpMethod,
             Path = request.Path,

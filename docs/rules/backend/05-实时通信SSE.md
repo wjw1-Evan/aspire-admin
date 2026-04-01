@@ -1,63 +1,44 @@
-# 实时通信 SSE
+# 实时通信 SSE 规范
 
-## SSE 概述
+本规范结合 AGENTS.md 最高准则，统一后端实时通信实现方式。
 
-SSE（Server-Sent Events）用于实现服务器向客户端的**单向实时推送**，替代 SignalR。
+## 1. SignalR 禁用，SSE 统一
 
-### 与 WebSocket 的区别
-| 特性 | SSE | WebSocket |
-|------|------|-----------|
-| 方向 | 单向（服务端→客户端） | 双向 |
-| 连接 | 基于 HTTP，自动重连 | 独立协议 |
-| 兼容性 | 现代浏览器均支持 | 需要降级处理 |
-| 实现复杂度 | 简单 | 复杂 |
+- 后端**禁止**再向前端使用 SignalR 发送实时数据，全部改为 SSE（Server-Sent Events）。
+- SSE 连接管理器接口为 `IChatSseConnectionManager`，所有推送、连接、断开等操作均通过该接口实现。
+- SSE 响应需跳过统一响应中间件格式化（详见 03-中间件与响应.md）。
 
----
-
-## 连接管理
-
-### IChatSseConnectionManager
-使用 `IChatSseConnectionManager` 管理用户连接：
+## 2. 连接管理接口
 
 ```csharp
 public interface IChatSseConnectionManager
 {
-    // 添加连接
-    Task AddConnectionAsync(string userId, string connectionId, CancellationToken cancellationToken = default);
-    
-    // 移除连接
-    Task RemoveConnectionAsync(string connectionId);
-    
-    // 获取用户的所有连接
-    IReadOnlyList<string> GetConnections(string userId);
-    
-    // 检查连接是否存在
-    bool HasConnection(string connectionId);
+  Task AddConnectionAsync(string userId, string connectionId, CancellationToken cancellationToken = default);
+  Task RemoveConnectionAsync(string connectionId);
+  IReadOnlyList<string> GetConnections(string userId);
+  bool HasConnection(string connectionId);
 }
 ```
 
-### 连接建立
+## 3. SSE 连接建立示例
+
 ```csharp
 [HttpGet("sse")]
 public async Task SseConnect()
 {
-    // SSE 连接通过 JWT token 验证用户身份
-    var userId = await _tenantContext.GetCurrentUserIdAsync();
-    var connectionId = Guid.NewGuid().ToString();
-    
-    await _connectionManager.AddConnectionAsync(userId, connectionId);
-    
-    // 返回 SSE 流
-    Response.ContentType = "text/event-stream";
-    return new EmptyResult();
+  // SSE 连接通过 JWT token 验证用户身份
+  var userId = await _tenantContext.GetCurrentUserIdAsync();
+  var connectionId = Guid.NewGuid().ToString();
+  await _connectionManager.AddConnectionAsync(userId, connectionId);
+  Response.ContentType = "text/event-stream";
+  return new EmptyResult();
 }
 ```
 
----
+## 4. 变更与维护建议
 
-## 消息广播
-
-### IChatBroadcaster
+- 实时推送如需扩展，优先通过 IChatSseConnectionManager 扩展，禁止自定义推送通道。
+- 发现实现与本规范或 AGENTS.md 不符时，优先以本规范为准，及时修订文档与代码。
 使用 `IChatBroadcaster` 接口进行消息广播：
 
 ```csharp
@@ -65,16 +46,16 @@ public interface IChatBroadcaster
 {
     // 发送消息
     Task SendMessageAsync(string userId, ChatMessage message);
-    
+
     // 广播消息给多个用户
     Task BroadcastAsync(IEnumerable<string> userIds, ChatMessage message);
-    
+
     // 发送会话更新
     Task SendSessionUpdateAsync(string userId, SessionUpdate update);
-    
+
     // 发送消息删除事件
     Task SendMessageDeletedAsync(string userId, string messageId);
-    
+
     // 发送已读状态同步
     Task SendReadStatusAsync(string userId, ReadStatus status);
 }
@@ -85,6 +66,7 @@ public interface IChatBroadcaster
 ## 事件类型
 
 ### 标准事件类型
+
 | 事件类型 | 说明 | 数据结构 |
 |----------|------|----------|
 | `Connected` | 连接建立 | `{ connectionId, userId, timestamp }` |
@@ -97,6 +79,7 @@ public interface IChatBroadcaster
 | `Error` | 错误通知 | `{ code, message }` |
 
 ### SSE 事件格式
+
 ```
 event: Connected\ndata: {"connectionId":"xxx","userId":"yyy"}\n\n
 event: Keepalive\ndata: {"timestamp":"2026-03-22T10:00:00Z"}\n\n
@@ -108,6 +91,7 @@ event: Message\ndata: {"messageId":"msg001","content":"Hello","from":"user1","to
 ## 心跳保活
 
 ### 配置
+
 ```csharp
 // appsettings.json
 {
@@ -121,6 +105,7 @@ event: Message\ndata: {"messageId":"msg001","content":"Hello","from":"user1","to
 ```
 
 ### 后台服务实现
+
 ```csharp
 public class SseKeepaliveService : BackgroundService
 {
@@ -131,7 +116,7 @@ public class SseKeepaliveService : BackgroundService
             try
             {
                 await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
-                
+
                 // 遍历所有连接，发送心跳
                 foreach (var connection in _connectionManager.GetAllConnections())
                 {
@@ -152,6 +137,7 @@ public class SseKeepaliveService : BackgroundService
 ## 错误处理与重连
 
 ### 客户端重连策略
+
 ```typescript
 // 指数退避重连
 const connect = () => {
@@ -174,6 +160,7 @@ const connect = () => {
 ```
 
 ### 服务端清理
+
 ```csharp
 // 检测断开连接
 context.RequestAborted.Register(async () =>

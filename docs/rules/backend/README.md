@@ -23,7 +23,6 @@ public class UserController : BaseApiController
 {
     // 使用统一响应方法
     return Success(data);
-    return SuccessPaged(items, total, page, pageSize);
     return ValidationError("参数错误");
     return NotFoundError("用户", id);
 }

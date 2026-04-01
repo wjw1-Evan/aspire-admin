@@ -95,7 +95,7 @@ public class UserController : BaseApiController
     [HttpGet("{id}")]
     public async Task<IActionResult> GetUserById(string id)
     {
-        var currentUserId = CurrentUserId;
+        var currentUserId = RequiredUserId;
         await _userService.EnsureUserAccessAsync(currentUserId!, id);
 
         var user = await _userService.GetUserByIdAsync(id);

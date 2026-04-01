@@ -26,9 +26,6 @@ public abstract class BaseApiController : ControllerBase
         return companyId;
     }
 
-    protected async Task<string> GetRequiredCompanyId()
-        => await GetCompanyId(true);
-
     protected IActionResult Success(object data, string? message = null)
         => Ok(CreateResponse(true, message, data));
 

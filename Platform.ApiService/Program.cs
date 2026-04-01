@@ -292,7 +292,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseUserContext();
 app.UseGlobalAuthentication();
-app.UseMiddleware<ActivityLogMiddleware>();
+app.UseApiLogging();
 
 // 端点映射
 app.MapControllers();

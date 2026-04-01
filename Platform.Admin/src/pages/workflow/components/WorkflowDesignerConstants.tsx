@@ -1,5 +1,12 @@
 import React from 'react';
 import {
+  NodeProps,
+  EdgeProps,
+  Position,
+  getBezierPath,
+  Handle,
+} from 'reactflow';
+import {
   PlayCircleOutlined,
   StopOutlined,
   CheckOutlined,
@@ -274,5 +281,3 @@ export const nodeTypes: Record<string, React.FC<NodeProps>> = {
 export const edgeTypes: Record<string, React.FC<EdgeProps>> = {
   workflowEdge: ConditionEdge,
 };
-
-import { NodeProps, EdgeProps, Position, getBezierPath, Handle } from 'reactflow';

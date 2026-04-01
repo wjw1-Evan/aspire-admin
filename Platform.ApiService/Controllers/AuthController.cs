@@ -104,10 +104,10 @@ public class AuthController : BaseApiController
             string.Join(", ", HttpContext.User.Claims.Select(c => $"{c.Type}={c.Value}")));
 
         // 检查用户是否已认证
-        if (!!string.IsNullOrEmpty(CurrentUserId))
+        if (!string.IsNullOrEmpty(CurrentUserId) == false)
         {
             _logger.LogWarning("【AuthController.GetCurrentUser】用户未认证，返回 401");
-            return Fail("未授权访问", 401);
+            throw new UnauthorizedAccessException("未授权访问");
         }
 
         var user = await _authService.GetCurrentUserAsync();
@@ -222,7 +222,7 @@ public class AuthController : BaseApiController
     {
         if (type != "login" && type != "register")
         {
-            return Fail("验证码类型只能是 login 或 register");
+            throw new ArgumentException("验证码类型只能是 login 或 register");
         }
 
         var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString();
@@ -264,15 +264,15 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> VerifyImageCaptcha([FromBody] VerifyCaptchaImageRequest request)
     {
         if (string.IsNullOrEmpty(request.CaptchaId))
-            return Fail("验证码ID不能为空");
+            throw new ArgumentException("验证码ID不能为空");
 
         if (string.IsNullOrEmpty(request.Answer))
-            return Fail("验证码答案不能为空");
+            throw new ArgumentException("验证码答案不能为空");
 
         var isValid = await _imageCaptchaService.ValidateCaptchaAsync(request.CaptchaId, request.Answer, request.Type);
 
         if (!isValid)
-            return Fail("验证码不正确或已过期");
+            throw new ArgumentException("验证码不正确或已过期");
 
         return Success(null, "验证码正确");
     }

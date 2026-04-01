@@ -383,7 +383,11 @@ const VisitTask: React.FC = () => {
                             ...searchValues,
                         });
                         if (res.success && res.data) {
-                            return { data: res.data.queryable, total: res.data.rowCount, success: true };
+                          return {
+                            data: (res.data as any).queryable ?? [],
+                            total: (res.data as any).rowCount ?? 0,
+                            success: true,
+                          };
                         }
                         return { data: [], total: 0, success: false };
                     }}

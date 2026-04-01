@@ -4,73 +4,82 @@
 
 ## 表单处理
 
-### **[强制]** 为每个表单定义明确的类型接口
+# TypeScript 类型安全与后端 DTO 对齐
+
+本规范重点强调所有类型定义需与后端 DTO 保持同步，禁止 any，接口类型与后端标准一致。
+
+## 1. 禁止 any，类型必须明确
+>
+> **[强制]** 禁止使用 `any` 类型，所有表单、接口、数据结构必须定义明确类型。
+
+## 2. 表单与接口类型同步后端 DTO
+
+- 表单、接口、分页等类型必须与后端 DTO 保持同步，推荐通过 openapi/ts-auto-generate 工具自动生成。
 
 ```tsx
-// ✅ 正确：定义明确的表单值类型
-import type { Dayjs } from 'dayjs';
+// ✅ 正确：类型与后端 DTO 对齐
+import type { UserDto } from '@/services/user/types';
 
-interface TaskFormValues {
+interface TaskFormValues /* 对应后端 TaskCreateDto */ {
   taskName: string;
   description?: string;
-  taskType: string | string[];
-  priority?: number;
-  assignedUserIds?: string[];
-  plannedStartTime?: Dayjs;
-  plannedEndTime?: Dayjs;
-  estimatedDuration?: number;
-  tags?: string[];
+  // ... 其余字段与后端一致
 }
 
 const handleSubmit = async (values: TaskFormValues) => {
-  // 处理表单提交
-  const data = {
-    taskName: values.taskName,
-    priority: values.priority,
-    // ...
-  };
-  await createTask(data);
+  await createTask(values);
 };
 
 <Form onFinish={handleSubmit}>
   {/* 表单项 */}
 </Form>
 
-// ❌ 禁止：使用 any 类型
+// ❌ 错误：使用 any 类型
 const handleSubmit = async (values: any) => {
   await createTask(values);  // 类型不安全
 };
 ```
 
-### ProTable 请求函数
+## 3. 分页类型标准化
+
+- 分页、批量接口统一使用与后端一致的 PagedResult<T> 类型。
+
+```typescript
+interface PagedResult<T> {
+  data: T[];
+  currentPage: number;
+  pageSize: number;
+  rowCount: number;
+  pageCount: number;
+}
+```
+
+## 4. ProTable/Antd Table 请求函数
 
 ```tsx
 import type { RequestParams } from '@/types/pro-components';
-
-// ✅ 正确：使用 RequestParams
 const requestFunction = useCallback(
   async (params: RequestParams, sort?: Record<string, 'ascend' | 'descend'>) => {
     const response = await queryTasks({
-      Page: params.current,
-      PageSize: params.pageSize,
-      SortBy: sort?.field,
-      SortOrder: sort?.order === 'ascend' ? 'asc' : 'desc',
+      page: params.current,
+      pageSize: params.pageSize,
+      sortBy: sort?.field,
+      sortOrder: sort?.order === 'ascend' ? 'asc' : 'desc',
     });
-    
     return {
-      data: response.data?.tasks || [],
+      data: response.data.data,
       success: response.success,
-      total: response.data?.total || 0,
+      total: response.data.rowCount,
     };
   },
-  []
+  [],
 );
-
-// ❌ 禁止：使用 any
-const requestFunction = useCallback(async (params: any, sort: any) => {
-  // ...
-}, []);
 ```
+
+## 5. 变更与维护建议
+
+- 类型如需扩展，优先同步后端 DTO，禁止自定义 any。
+- 发现类型实现与本规范或后端标准不符时，优先以本规范为准，及时修订文档与代码。
 
 ---
 
@@ -139,6 +148,7 @@ export interface TaskQueryParams {
 ## 类型导出规范
 
 ### 从 services 导出
+
 ```typescript
 // src/services/task/api.ts
 
@@ -179,6 +189,7 @@ export { TaskStatus, TaskPriority } from './types';
 ```
 
 ### 在页面中使用
+
 ```tsx
 // ✅ 正确：导入所有需要的类型
 import {
@@ -204,6 +215,7 @@ const statusOptions = [
 ## 常见错误示例
 
 ### ❌ 错误 1：表单值使用 any
+
 ```tsx
 // ❌ 禁止
 const handleSubmit = (values: any) => {
@@ -220,6 +232,7 @@ const handleSubmit = (values: TaskFormValues) => {
 ```
 
 ### ❌ 错误 2：请求参数使用 any
+
 ```tsx
 // ❌ 禁止
 const fetchData = async (params: any) => {
@@ -236,6 +249,7 @@ const fetchData = async (params: RequestParams) => {
 ```
 
 ### ❌ 错误 3：重复定义后端已有类型
+
 ```tsx
 // ❌ 禁止：重复定义 TaskDto
 // 在 pages/task-management/types.ts 中
@@ -250,6 +264,7 @@ import type { TaskDto } from '@/services/task/api';
 ```
 
 ### ❌ 错误 4：硬编码类型
+
 ```tsx
 // ❌ 禁止：硬编码类型
 const columns = [
@@ -281,6 +296,7 @@ const columns = [
 ## 严格模式配置
 
 ### tsconfig.json
+
 ```json
 {
   "compilerOptions": {
@@ -295,6 +311,7 @@ const columns = [
 ```
 
 ### eslint 配置
+
 ```json
 {
   "@typescript-eslint/no-explicit-any": "error",

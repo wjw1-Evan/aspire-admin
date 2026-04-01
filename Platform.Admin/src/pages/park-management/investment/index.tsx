@@ -10,6 +10,7 @@ import StatCard from '@/components/StatCard';
 import * as parkService from '@/services/park';
 import type { InvestmentLead, InvestmentProject, InvestmentStatistics } from '@/services/park';
 import dayjs from 'dayjs';
+import { toPaged } from '@/utils/paged';
 import styles from './index.less';
 
 const { Text } = Typography;
@@ -272,7 +273,8 @@ const InvestmentManagement: React.FC = () => {
                 priority: params.priority,
             });
             if (res.success && res.data) {
-                return { data: res.data.queryable, total: res.data.rowCount, success: true };
+                const { data, total } = require('@/utils/paged').toPaged(res);
+                return { data, total, success: true };
             }
             return { data: [], total: 0, success: false };
         } catch (error) {
@@ -289,7 +291,8 @@ const InvestmentManagement: React.FC = () => {
                 stage: params.stage,
             });
             if (res.success && res.data) {
-                return { data: res.data.queryable, total: res.data.rowCount, success: true };
+                const paged = toPaged(res as any);
+                return { data: paged.data, total: paged.total, success: true };
             }
             return { data: [], total: 0, success: false };
         } catch (error) {

@@ -102,14 +102,11 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
           records = response.data;
           total = response.data.length;
         } else {
-          // 兼容其他可能的格式
+          // 后端统一返回：queryable + rowCount
           const data = response.data as any;
-          if (data.records && Array.isArray(data.records)) {
-            records = data.records;
-            total = data.total || 0;
-          } else if (data.queryable && Array.isArray(data.queryable)) {
+          if (data.queryable && Array.isArray(data.queryable)) {
             records = data.queryable;
-            total = data.rowCount || 0;
+            total = data.rowCount ?? 0;
           }
         }
 
@@ -465,4 +462,3 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
 DataCenter.displayName = 'DataCenter';
 
 export default DataCenter;
-

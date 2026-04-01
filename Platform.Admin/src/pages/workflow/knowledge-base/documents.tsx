@@ -234,7 +234,8 @@ const KnowledgeBaseDocuments: React.FC = () => {
               ...searchValues,
             });
             if (res.success && res.data) {
-              return { data: res.data.queryable, rowCount: res.data.rowCount, success: true };
+              const { data, total } = require('@/utils/paged').toPaged(res);
+              return { data, total, success: true };
             }
             return { data: [], rowCount: 0, success: false };
           }}

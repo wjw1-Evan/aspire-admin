@@ -189,7 +189,9 @@ const EnterpriseService: React.FC = () => {
     const fetchRequests = async (params: any) => {
         try {
             const res = await parkService.getServiceRequests({ page: params.current || 1, pageSize: params.pageSize || 10, search: params.search, status: params.status, categoryId: params.categoryId, priority: params.priority });
-            if (res.success && res.data) return { data: res.data.queryable, total: res.data.rowCount, success: true };
+            if (res.success && res.data) {
+              return { data: (res.data as any).queryable ?? [], total: (res.data as any).rowCount ?? 0, success: true };
+            }
             return { data: [], total: 0, success: false };
         } catch (error) { return { data: [], total: 0, success: false }; }
     };

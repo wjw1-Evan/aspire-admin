@@ -113,11 +113,10 @@ const WorkflowManagement: React.FC = () => {
     try {
       const response = await getWorkflowList(requestData);
       if (response.success && response.data) {
-        return {
-          data: response.data.queryable || [],
-          success: true,
-          rowCount: response.data.rowCount ?? 0,
-        };
+        // 直接使用后端分页字段
+        const dataArr = (response.data as any).queryable ?? (response.data as any).list ?? [];
+        const totalVal = (response.data as any).rowCount ?? (response.data as any).total ?? 0;
+        return { data: dataArr, total: totalVal, success: true };
       }
       return { data: [], success: false, rowCount: 0 };
     } catch (error) {

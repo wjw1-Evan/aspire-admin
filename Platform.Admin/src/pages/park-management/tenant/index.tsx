@@ -155,7 +155,10 @@ const TenantManagement: React.FC = () => {
                 status: params.status,
                 industry: params.industry
             });
-            if (res.success && res.data) return { data: res.data.queryable, total: res.data.rowCount, success: true };
+            // 使用后端统一的分页字段
+            if (res.success && res.data) {
+              return { data: (res.data as any).queryable ?? [], total: (res.data as any).rowCount ?? 0, success: true };
+            }
             return { data: [], total: 0, success: false };
         } catch (error) { return { data: [], total: 0, success: false }; }
     };
@@ -424,3 +427,4 @@ const TenantManagement: React.FC = () => {
 };
 
 export default TenantManagement;
+// 统一后端分页字段，无需前置转换

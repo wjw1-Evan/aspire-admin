@@ -86,7 +86,7 @@ const UserLog: React.FC = () => {
 
       if (response.success && response.data) {
         const result = response.data as any;
-        let list: UserActivityLog[] = result.queryable || [];
+        const list: UserActivityLog[] = (result.queryable ?? result.list ?? []) as UserActivityLog[];
 
         const successCount = list.filter((item) => (item.statusCode ?? 0) >= 200 && (item.statusCode ?? 0) < 400).length;
         const errorCount = list.filter((item) => (item.statusCode ?? 0) >= 400).length;
@@ -105,7 +105,7 @@ const UserLog: React.FC = () => {
 
         return {
           data: list,
-          total: filters.username ? list.length : result.total || list.length || 0,
+          total: (result.rowCount ?? result.total ?? list.length) as number,
           success: true,
         };
       }

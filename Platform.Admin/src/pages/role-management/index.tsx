@@ -98,7 +98,7 @@ const RoleManagement: FC = () => {
 
         return {
           data: roles,
-          total: response.data.rowCount,
+          total: response.data?.rowCount ?? 0,
           success: true,
         };
       }

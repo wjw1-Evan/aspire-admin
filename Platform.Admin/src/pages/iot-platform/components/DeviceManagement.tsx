@@ -144,8 +144,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
       const { keyword } = searchForm.getFieldsValue();
       const response = await iotService.getDevices(undefined, params.current || 1, params.pageSize || 20, keyword);
       if (response.success && response.data) {
-        const list = Array.isArray(response.data.list) ? response.data.list : [];
-        return { data: list, success: true, total: response.data.total || 0 };
+        return { data: response.data.queryable || [], success: true, total: response.data.rowCount ?? 0 };
       }
       return { data: [], success: false, total: 0 };
     } catch {
@@ -158,7 +157,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
     try {
       const response = await iotService.getGateways(1, 1000);
       if (response.success && response.data) {
-        setGateways(Array.isArray(response.data.list) ? response.data.list : []);
+        setGateways(response.data.queryable || []);
       } else {
         setGateways([]);
       }

@@ -210,11 +210,11 @@ public class WorkflowController : BaseApiController
         }
         catch (ArgumentException ex)
         {
-            return Fail("VALIDATION_ERROR", ex.Message);
+            return Fail(ex.Message);
         }
         catch (Exception ex)
         {
-            return Fail("INTERNAL_ERROR", $"获取流程定义列表失败: {ex.Message}", 500);
+            return Fail($"获取流程定义列表失败: {ex.Message}", 500);
         }
     }
 
@@ -230,14 +230,14 @@ public class WorkflowController : BaseApiController
             var workflow = await _workflowQueryService.GetWorkflowByIdAsync(id);
             if (workflow == null)
             {
-                return Fail("NOT_FOUND", "流程定义 {id} 不存在");
+                return Fail("流程定义 {id} 不存在");
             }
 
             return Success(workflow);
         }
         catch (Exception ex)
         {
-            return Fail("GET_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -252,18 +252,18 @@ public class WorkflowController : BaseApiController
         {
             if (string.IsNullOrEmpty(request.Name))
             {
-                return Fail("VALIDATION_ERROR", "流程名称不能为空");
+                return Fail("流程名称不能为空");
             }
 
             if (request.Graph == null || request.Graph.Nodes == null || !request.Graph.Nodes.Any())
             {
-                return Fail("VALIDATION_ERROR", "流程图形定义不能为空");
+                return Fail("流程图形定义不能为空");
             }
 
             var (isGraphValid, graphError) = _graphValidator.Validate(request.Graph);
             if (!isGraphValid)
             {
-                return Fail("VALIDATION_ERROR", $"流程图形定义不合法: {graphError}");
+                return Fail($"流程图形定义不合法: {graphError}");
             }
 
             var workflow = new WorkflowDefinition
@@ -281,7 +281,7 @@ public class WorkflowController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("CREATE_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -297,7 +297,7 @@ public class WorkflowController : BaseApiController
             var existing = await _workflowQueryService.GetWorkflowByIdAsync(id);
             if (existing == null)
             {
-                return Fail("NOT_FOUND", "流程定义 {id} 不存在");
+                return Fail("流程定义 {id} 不存在");
             }
 
             if (request.Graph != null)
@@ -305,7 +305,7 @@ public class WorkflowController : BaseApiController
                 var (isGraphValid, graphError) = _graphValidator.Validate(request.Graph);
                 if (!isGraphValid)
                 {
-                    return Fail("VALIDATION_ERROR", $"流程图形定义不合法: {graphError}");
+                    return Fail($"流程图形定义不合法: {graphError}");
                 }
             }
 
@@ -320,11 +320,11 @@ public class WorkflowController : BaseApiController
         }
         catch (ArgumentException ex)
         {
-            return Fail("VALIDATION_ERROR", ex.Message);
+            return Fail(ex.Message);
         }
         catch (Exception ex)
         {
-            return Fail("UPDATE_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -340,14 +340,14 @@ public class WorkflowController : BaseApiController
             var result = await _workflowDefinitionService.DeleteWorkflowAsync(id);
             if (!result)
             {
-                return Fail("NOT_FOUND", "流程定义 {id} 不存在");
+                return Fail("流程定义 {id} 不存在");
             }
 
             return Success(null, "流程定义已删除");
         }
         catch (Exception ex)
         {
-            return Fail("DELETE_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -373,7 +373,7 @@ public class WorkflowController : BaseApiController
                 {
                     _logger.LogError(ex, "变量清洗失败: WorkflowId={WorkflowId}, Variables={Variables}",
                         id, System.Text.Json.JsonSerializer.Serialize(request.Variables));
-                    return Fail("VARIABLE_SANITIZATION_FAILED", "流程变量处理失败，请检查变量格式");
+                    return Fail("流程变量处理失败，请检查变量格式");
                 }
             }
 
@@ -384,13 +384,13 @@ public class WorkflowController : BaseApiController
         {
             _logger.LogWarning(ex, "启动流程失败: WorkflowId={WorkflowId}, DocumentId={DocumentId}",
                 id, request.DocumentId);
-            return Fail("START_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "启动流程时发生未预期错误: WorkflowId={WorkflowId}, DocumentId={DocumentId}",
                 id, request.DocumentId);
-            return Fail("START_FAILED", "启动流程时发生错误，请稍后重试");
+            return Fail("启动流程时发生错误，请稍后重试");
         }
     }
 
@@ -418,7 +418,7 @@ public class WorkflowController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("GET_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -434,7 +434,7 @@ public class WorkflowController : BaseApiController
             var definition = await _workflowQueryService.GetWorkflowByIdAsync(id);
             if (definition == null)
             {
-                return Fail("NOT_FOUND", "流程定义 {id} 不存在");
+                return Fail("流程定义 {id} 不存在");
             }
 
             var startNode = definition.Graph.Nodes.FirstOrDefault(n => n.Data.NodeType == "start");
@@ -456,7 +456,7 @@ public class WorkflowController : BaseApiController
 
             if (form == null)
             {
-                return Fail("NOT_FOUND", "表单定义 {binding.FormDefinitionId} 不存在");
+                return Fail("表单定义 {binding.FormDefinitionId} 不存在");
             }
 
             var initialValues = new Dictionary<string, object>();
@@ -478,7 +478,7 @@ public class WorkflowController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("GET_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -498,7 +498,7 @@ public class WorkflowController : BaseApiController
             var definition = await _workflowQueryService.GetWorkflowByIdAsync(id);
             if (definition == null)
             {
-                return Fail("NOT_FOUND", "流程定义 {id} 不存在");
+                return Fail("流程定义 {id} 不存在");
             }
 
             // 收集流程中所有节点绑定的表单
@@ -544,7 +544,7 @@ public class WorkflowController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("GET_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -563,7 +563,7 @@ public class WorkflowController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("GET_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -579,14 +579,14 @@ public class WorkflowController : BaseApiController
             var instance = await _workflowEngine.GetInstanceAsync(id);
             if (instance == null)
             {
-                return Fail("NOT_FOUND", "流程实例 {id} 不存在");
+                return Fail("流程实例 {id} 不存在");
             }
 
             return Success(instance);
         }
         catch (Exception ex)
         {
-            return Fail("GET_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -604,7 +604,7 @@ public class WorkflowController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("GET_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -620,7 +620,7 @@ public class WorkflowController : BaseApiController
             var instance = await _workflowEngine.GetInstanceAsync(id);
             if (instance == null)
             {
-                return Fail("NOT_FOUND", "流程实例 {id} 不存在");
+                return Fail("流程实例 {id} 不存在");
             }
 
             WorkflowDefinition? definition = instance.WorkflowDefinitionSnapshot;
@@ -629,14 +629,14 @@ public class WorkflowController : BaseApiController
                 definition = await _workflowQueryService.GetWorkflowByIdAsync(instance.WorkflowDefinitionId);
                 if (definition == null)
                 {
-                    return Fail("NOT_FOUND", "流程定义 {instance.WorkflowDefinitionId} 不存在");
+                    return Fail("流程定义 {instance.WorkflowDefinitionId} 不存在");
                 }
             }
 
             var node = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
             if (node == null)
             {
-                return Fail("VALIDATION_ERROR", "节点不存在");
+                return Fail("节点不存在");
             }
 
             var binding = node.Data.Config?.Form;
@@ -657,7 +657,7 @@ public class WorkflowController : BaseApiController
                 form = await _formDefinitionService.GetFormByIdAsync(binding.FormDefinitionId);
                 if (form == null)
                 {
-                    return Fail("NOT_FOUND", "表单定义 {binding.FormDefinitionId} 不存在");
+                    return Fail("表单定义 {binding.FormDefinitionId} 不存在");
                 }
             }
 
@@ -710,7 +710,7 @@ public class WorkflowController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("GET_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -726,7 +726,7 @@ public class WorkflowController : BaseApiController
             var instance = await _workflowEngine.GetInstanceAsync(id);
             if (instance == null)
             {
-                return Fail("NOT_FOUND", "流程实例 {id} 不存在");
+                return Fail("流程实例 {id} 不存在");
             }
 
             WorkflowDefinition? definition = instance.WorkflowDefinitionSnapshot;
@@ -735,21 +735,21 @@ public class WorkflowController : BaseApiController
                 definition = await _workflowQueryService.GetWorkflowByIdAsync(instance.WorkflowDefinitionId);
                 if (definition == null)
                 {
-                    return Fail("NOT_FOUND", "流程定义 {instance.WorkflowDefinitionId} 不存在");
+                    return Fail("流程定义 {instance.WorkflowDefinitionId} 不存在");
                 }
             }
 
             var node = definition.Graph.Nodes.FirstOrDefault(n => n.Id == nodeId);
             if (node == null)
             {
-                return Fail("VALIDATION_ERROR", "节点不存在");
+                return Fail("节点不存在");
             }
 
             var binding = node.Data.Config?.Form;
 
             if (binding == null || string.IsNullOrEmpty(binding.FormDefinitionId))
             {
-                return Fail("VALIDATION_ERROR", "该节点未绑定完整表单定义");
+                return Fail("该节点未绑定完整表单定义");
             }
 
             FormDefinition? form = null;
@@ -764,13 +764,13 @@ public class WorkflowController : BaseApiController
                 form = await _formDefinitionService.GetFormByIdAsync(binding.FormDefinitionId);
                 if (form == null)
                 {
-                    return Fail("NOT_FOUND", "表单定义 {binding.FormDefinitionId} 不存在");
+                    return Fail("表单定义 {binding.FormDefinitionId} 不存在");
                 }
             }
 
             if (binding.Required && (values == null || values.Count == 0))
             {
-                return Fail("VALIDATION_ERROR", "表单数据不能为空");
+                return Fail("表单数据不能为空");
             }
 
             if (values != null && values.Any())
@@ -778,7 +778,7 @@ public class WorkflowController : BaseApiController
                 var validationErrors = _fieldValidationService.ValidateFormData(form, values);
                 if (validationErrors.Any())
                 {
-                    return Fail("VALIDATION_ERROR", string.Join("; ", validationErrors));
+                    return Fail(string.Join("; ", validationErrors));
                 }
             }
 
@@ -787,7 +787,7 @@ public class WorkflowController : BaseApiController
 
             if (binding.Target == FormTarget.Document)
             {
-                if (string.IsNullOrEmpty(instance.DocumentId)) return Fail("VALIDATION_ERROR", "当前实例未关联公文");
+                if (string.IsNullOrEmpty(instance.DocumentId)) return Fail("当前实例未关联公文");
                 // Bug 15 修复：提前 await 获取 document，避免 GetAwaiter().GetResult() 同步阻塞
                 var existingDoc = await _documentService.GetDocumentAsync(instance.DocumentId);
                 Action<Document> updateAction = d =>
@@ -837,7 +837,7 @@ public class WorkflowController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("INTERNAL_ERROR", $"提交表单数据失败: {ex.Message}", 500);
+            return Fail($"提交表单数据失败: {ex.Message}", 500);
         }
     }
 
@@ -854,7 +854,7 @@ public class WorkflowController : BaseApiController
 
             if (string.IsNullOrWhiteSpace(request.Action))
             {
-                return Fail("VALIDATION_ERROR", "操作类型不能为空");
+                return Fail("操作类型不能为空");
             }
 
             if (request.FormData != null && request.FormData.Any())
@@ -877,7 +877,7 @@ public class WorkflowController : BaseApiController
                 case "reject":
                     if (string.IsNullOrWhiteSpace(request.Comment))
                     {
-                        return Fail("VALIDATION_ERROR", "拒绝原因不能为空");
+                        return Fail("拒绝原因不能为空");
                     }
                     await _workflowEngine.ProcessApprovalAsync(id, nodeId, ApprovalAction.Reject, userId, request.Comment);
                     return Success(null, "审批已拒绝");
@@ -885,11 +885,11 @@ public class WorkflowController : BaseApiController
                 case "return":
                     if (string.IsNullOrEmpty(request.TargetNodeId))
                     {
-                        return Fail("VALIDATION_ERROR", "退回目标节点不能为空");
+                        return Fail("退回目标节点不能为空");
                     }
                     if (string.IsNullOrWhiteSpace(request.Comment))
                     {
-                        return Fail("VALIDATION_ERROR", "退回原因不能为空");
+                        return Fail("退回原因不能为空");
                     }
                     await _workflowEngine.ReturnToNodeAsync(id, request.TargetNodeId, request.Comment, userId);
                     return Success(null, "已退回");
@@ -897,18 +897,18 @@ public class WorkflowController : BaseApiController
                 case "delegate":
                     if (string.IsNullOrEmpty(request.DelegateToUserId))
                     {
-                        return Fail("VALIDATION_ERROR", "转办目标用户不能为空");
+                        return Fail("转办目标用户不能为空");
                     }
                     await _workflowEngine.ProcessApprovalAsync(id, nodeId, ApprovalAction.Delegate, userId, request.Comment, request.DelegateToUserId);
                     return Success(null, "已转办");
 
                 default:
-                    return Fail("VALIDATION_ERROR", "不支持的操作类型");
+                    return Fail("不支持的操作类型");
             }
         }
         catch (Exception ex)
         {
-            return Fail("ACTION_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -924,18 +924,18 @@ public class WorkflowController : BaseApiController
             var instance = await _workflowEngine.GetInstanceAsync(id);
             if (instance == null)
             {
-                return Fail("NOT_FOUND", "流程实例 {id} 不存在");
+                return Fail("流程实例 {id} 不存在");
             }
 
             if (instance.Status != WorkflowStatus.Running && instance.Status != WorkflowStatus.Waiting)
             {
-                return Fail("VALIDATION_ERROR", "仅运行中或等待审批的流程可以撤回");
+                return Fail("仅运行中或等待审批的流程可以撤回");
             }
 
             var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
             if (!string.Equals(instance.StartedBy, userId, StringComparison.OrdinalIgnoreCase))
             {
-                return Fail("VALIDATION_ERROR", "仅流程发起人可以撤回");
+                return Fail("仅流程发起人可以撤回");
             }
 
             var reason = string.IsNullOrWhiteSpace(request?.Reason) ? "发起人撤回" : request!.Reason!;
@@ -944,7 +944,7 @@ public class WorkflowController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("WITHDRAW_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -963,7 +963,7 @@ public class WorkflowController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("CREATE_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -982,7 +982,7 @@ public class WorkflowController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("INTERNAL_ERROR", $"获取过滤器偏好失败: {ex.Message}", 500);
+            return Fail($"获取过滤器偏好失败: {ex.Message}", 500);
         }
     }
 
@@ -997,7 +997,7 @@ public class WorkflowController : BaseApiController
         {
             if (string.IsNullOrEmpty(request.Name))
             {
-                return Fail("VALIDATION_ERROR", "偏好名称不能为空");
+                return Fail("偏好名称不能为空");
             }
 
             var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
@@ -1005,7 +1005,7 @@ public class WorkflowController : BaseApiController
             var existing = await _filterPreferenceService.HasPreferenceByNameAsync(userId, request.Name);
             if (existing)
             {
-                return Fail("VALIDATION_ERROR", "已存在同名的过滤器偏好");
+                return Fail("已存在同名的过滤器偏好");
             }
 
             var preference = await _filterPreferenceService.SavePreferenceAsync(
@@ -1017,7 +1017,7 @@ public class WorkflowController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("INTERNAL_ERROR", $"保存过滤器偏好失败: {ex.Message}", 500);
+            return Fail($"保存过滤器偏好失败: {ex.Message}", 500);
         }
     }
 
@@ -1035,7 +1035,7 @@ public class WorkflowController : BaseApiController
             var existing = await _filterPreferenceService.GetPreferenceByIdAsync(id);
             if (existing == null || existing.UserId != userId)
             {
-                return Fail("NOT_FOUND", "过滤器偏好 {id} 不存在");
+                return Fail("过滤器偏好 {id} 不存在");
             }
 
             if (!string.IsNullOrEmpty(request.Name) && request.Name != existing.Name)
@@ -1043,7 +1043,7 @@ public class WorkflowController : BaseApiController
                 var hasName = await _filterPreferenceService.HasPreferenceByNameAsync(userId, request.Name);
                 if (hasName)
                 {
-                    return Fail("VALIDATION_ERROR", "已存在同名的过滤器偏好");
+                    return Fail("已存在同名的过滤器偏好");
                 }
             }
 
@@ -1056,11 +1056,11 @@ public class WorkflowController : BaseApiController
         }
         catch (ArgumentException ex)
         {
-            return Fail("VALIDATION_ERROR", ex.Message);
+            return Fail(ex.Message);
         }
         catch (Exception ex)
         {
-            return Fail("INTERNAL_ERROR", $"更新过滤器偏好失败: {ex.Message}", 500);
+            return Fail($"更新过滤器偏好失败: {ex.Message}", 500);
         }
     }
 
@@ -1078,20 +1078,20 @@ public class WorkflowController : BaseApiController
             var preference = await _filterPreferenceService.GetPreferenceByIdAsync(id);
             if (preference == null || preference.UserId != userId)
             {
-                return Fail("NOT_FOUND", "过滤器偏好 {id} 不存在");
+                return Fail("过滤器偏好 {id} 不存在");
             }
 
             var result = await _filterPreferenceService.DeletePreferenceAsync(id);
             if (!result)
             {
-                return Fail("NOT_FOUND", "过滤器偏好 {id} 不存在");
+                return Fail("过滤器偏好 {id} 不存在");
             }
 
             return Success(null, "过滤器偏好已删除");
         }
         catch (Exception ex)
         {
-            return Fail("INTERNAL_ERROR", $"删除过滤器偏好失败: {ex.Message}", 500);
+            return Fail($"删除过滤器偏好失败: {ex.Message}", 500);
         }
     }
 
@@ -1111,7 +1111,7 @@ public class WorkflowController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("INTERNAL_ERROR", $"获取默认过滤器偏好失败: {ex.Message}", 500);
+            return Fail($"获取默认过滤器偏好失败: {ex.Message}", 500);
         }
     }
 
@@ -1147,7 +1147,7 @@ public class WorkflowController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("START_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -1162,12 +1162,12 @@ public class WorkflowController : BaseApiController
         {
             if (request.WorkflowIds == null || request.WorkflowIds.Count == 0)
             {
-                return Fail("VALIDATION_ERROR", "工作流ID列表不能为空");
+                return Fail("工作流ID列表不能为空");
             }
 
             if (request.WorkflowIds.Count > 100)
             {
-                return Fail("VALIDATION_ERROR", "批量操作最多支持100个工作流");
+                return Fail("批量操作最多支持100个工作流");
             }
 
             var bulkService = HttpContext.RequestServices.GetRequiredService<IBulkOperationService>();
@@ -1180,11 +1180,11 @@ public class WorkflowController : BaseApiController
         }
         catch (ArgumentException ex)
         {
-            return Fail("VALIDATION_ERROR", ex.Message);
+            return Fail(ex.Message);
         }
         catch (Exception ex)
         {
-            return Fail("INTERNAL_ERROR", $"创建批量操作失败: {ex.Message}", 500);
+            return Fail($"创建批量操作失败: {ex.Message}", 500);
         }
     }
 
@@ -1206,12 +1206,12 @@ public class WorkflowController : BaseApiController
             }
             else
             {
-                return Fail("VALIDATION_ERROR", "批量操作执行失败，请检查操作状态");
+                return Fail("批量操作执行失败，请检查操作状态");
             }
         }
         catch (Exception ex)
         {
-            return Fail("INTERNAL_ERROR", $"执行批量操作失败: {ex.Message}", 500);
+            return Fail($"执行批量操作失败: {ex.Message}", 500);
         }
     }
 
@@ -1233,12 +1233,12 @@ public class WorkflowController : BaseApiController
             }
             else
             {
-                return Fail("VALIDATION_ERROR", "无法取消该批量操作");
+                return Fail("无法取消该批量操作");
             }
         }
         catch (Exception ex)
         {
-            return Fail("INTERNAL_ERROR", $"取消批量操作失败: {ex.Message}", 500);
+            return Fail($"取消批量操作失败: {ex.Message}", 500);
         }
     }
 
@@ -1256,14 +1256,14 @@ public class WorkflowController : BaseApiController
 
             if (operation == null)
             {
-                return Fail("NOT_FOUND", "批量操作 {operationId} 不存在");
+                return Fail("批量操作 {operationId} 不存在");
             }
 
             return Success(operation);
         }
         catch (Exception ex)
         {
-            return Fail("INTERNAL_ERROR", $"获取批量操作失败: {ex.Message}", 500);
+            return Fail($"获取批量操作失败: {ex.Message}", 500);
         }
     }
 
@@ -1278,7 +1278,7 @@ public class WorkflowController : BaseApiController
         {
             if (request.WorkflowIds == null || request.WorkflowIds.Count == 0)
             {
-                return Fail("VALIDATION_ERROR", "工作流ID列表不能为空");
+                return Fail("工作流ID列表不能为空");
             }
 
             var fileContent = await _exportImportService.ExportWorkflowsAsync(request.WorkflowIds, request.Config ?? new WorkflowExportConfig());
@@ -1288,7 +1288,7 @@ public class WorkflowController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("INTERNAL_ERROR", $"导出工作流失败: {ex.Message}", 500);
+            return Fail($"导出工作流失败: {ex.Message}", 500);
         }
     }
 
@@ -1308,7 +1308,7 @@ public class WorkflowController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("INTERNAL_ERROR", $"导出过滤结果失败: {ex.Message}", 500);
+            return Fail($"导出过滤结果失败: {ex.Message}", 500);
         }
     }
 
@@ -1323,7 +1323,7 @@ public class WorkflowController : BaseApiController
         {
             if (request.File == null || request.File.Length == 0)
             {
-                return Fail("VALIDATION_ERROR", "导入文件不能为空");
+                return Fail("导入文件不能为空");
             }
 
             using var memoryStream = new MemoryStream();
@@ -1335,7 +1335,7 @@ public class WorkflowController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("INTERNAL_ERROR", $"验证导入文件失败: {ex.Message}", 500);
+            return Fail($"验证导入文件失败: {ex.Message}", 500);
         }
     }
 
@@ -1350,7 +1350,7 @@ public class WorkflowController : BaseApiController
         {
             if (request.File == null || request.File.Length == 0)
             {
-                return Fail("VALIDATION_ERROR", "导入文件不能为空");
+                return Fail("导入文件不能为空");
             }
 
             using var memoryStream = new MemoryStream();
@@ -1362,7 +1362,7 @@ public class WorkflowController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("INTERNAL_ERROR", $"导入工作流失败: {ex.Message}", 500);
+            return Fail($"导入工作流失败: {ex.Message}", 500);
         }
     }
 
@@ -1377,7 +1377,7 @@ public class WorkflowController : BaseApiController
         {
             if (request.File == null || request.File.Length == 0)
             {
-                return Fail("VALIDATION_ERROR", "导入文件不能为空");
+                return Fail("导入文件不能为空");
             }
 
             using var memoryStream = new MemoryStream();
@@ -1389,7 +1389,7 @@ public class WorkflowController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("INTERNAL_ERROR", $"预览导入失败: {ex.Message}", 500);
+            return Fail($"预览导入失败: {ex.Message}", 500);
         }
     }
 
@@ -1404,12 +1404,12 @@ public class WorkflowController : BaseApiController
         {
             if (request.File == null || request.File.Length == 0)
             {
-                return Fail("VALIDATION_ERROR", "导入文件不能为空");
+                return Fail("导入文件不能为空");
             }
 
             if (request.Resolutions == null || request.Resolutions.Count == 0)
             {
-                return Fail("VALIDATION_ERROR", "冲突解决方案不能为空");
+                return Fail("冲突解决方案不能为空");
             }
 
             using var memoryStream = new MemoryStream();
@@ -1421,7 +1421,7 @@ public class WorkflowController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("INTERNAL_ERROR", $"解决导入冲突失败: {ex.Message}", 500);
+            return Fail($"解决导入冲突失败: {ex.Message}", 500);
         }
     }
 }

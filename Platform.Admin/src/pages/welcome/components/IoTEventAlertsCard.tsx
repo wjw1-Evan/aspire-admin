@@ -46,8 +46,8 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
                 sortBy: 'occurredAt',
                 sortOrder: 'desc'
             });
-            if (res?.data?.list) {
-                setEvents(res.data.list);
+            if (res?.data) {
+                setEvents(res.data.queryable || []);
             }
         } catch (error) {
             console.warn(intl.formatMessage({ id: 'pages.welcome.iotEvents.fetchEventsFailed' }), error);

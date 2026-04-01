@@ -140,8 +140,8 @@ const CloudStorageQuotaPage: React.FC = () => {
             const response = await getQuotaList(listRequest);
 
             if (response.success && response.data) {
-                const rawData = response.data.data || [];
-                const totalCount = response.data.total || 0;
+                const rawData = response.data.queryable || [];
+                const totalCount = response.data.rowCount ?? 0;
 
                 setQuotaTotalCount(totalCount);
 
@@ -275,7 +275,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                 search: keyword,
             });
             if (res.success && res.data) {
-                setUserOptions(res.data.list || []);
+                setUserOptions(res.data.queryable || []);
             }
         } catch (err) {
             console.error('Failed to load users:', err);

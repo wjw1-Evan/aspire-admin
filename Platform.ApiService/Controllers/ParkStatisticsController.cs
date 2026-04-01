@@ -45,7 +45,7 @@ public class ParkStatisticsController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "生成 AI 报告失败");
-            return Fail("ERROR", "生成 AI 报告失败");
+            return Fail("生成 AI 报告失败");
         }
     }
 }

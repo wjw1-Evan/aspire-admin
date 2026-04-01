@@ -442,13 +442,13 @@ const FormsPage: React.FC = () => {
             isActive: searchParamsRef.current.isActive,
         };
 
-        try {
+            try {
             const response = await getFormList(requestData);
             if (response.success && response.data) {
                 return {
-                    data: response.data.list || [],
+                    data: response.data.queryable || [],
                     success: true,
-                    total: response.data.total || 0,
+                    total: response.data.rowCount ?? 0,
                 };
             }
             return { data: [], success: false, total: 0 };

@@ -196,8 +196,7 @@ const CloudStorageSharedPage: React.FC = () => {
             }
 
             if (response.success && response.data) {
-                const list = response.data.data || [];
-                const transformed = list.map(transformShare);
+                const transformed = (response.data.queryable || []).map(transformShare);
 
                 // 补齐文件名（接口只返回 fileItemId）
                 const missingIds = transformed
@@ -239,7 +238,7 @@ const CloudStorageSharedPage: React.FC = () => {
 
                 return {
                     data: transformed,
-                    total: response.data.total || list.length,
+                    total: response.data.rowCount ?? transformed.length,
                     success: true,
                 };
             }

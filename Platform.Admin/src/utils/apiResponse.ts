@@ -11,12 +11,32 @@ export interface ApiResponse<T = any> {
 }
 
 /**
+ * 分页响应格式 (PagedResult<T>)
+ */
+export interface PagedResult<T> {
+  queryable: T[];
+  currentPage: number;
+  pageSize: number;
+  rowCount: number;
+  pageCount: number;
+}
+
+/**
  * 检查 API 响应是否成功
  * @param response API 响应对象
  * @returns 是否成功
  */
 export function isResponseSuccess<T>(response: ApiResponse<T>): boolean {
-  return response.success === true && response.data !== undefined;
+  return response.success === true;
+}
+
+/**
+ * 获取 API 响应的成功消息
+ * @param response API 响应对象
+ * @returns 成功消息，如果不存在则返回空字符串
+ */
+export function getSuccessMessage<T>(response: ApiResponse<T>): string {
+  return response.message || '';
 }
 
 /**

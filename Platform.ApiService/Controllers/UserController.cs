@@ -255,11 +255,11 @@ public class UserController : BaseApiController
         // 检查是否删除自己（不允许）
         var currentUserId = CurrentUserId;
         if (currentUserId == id)
-            return Fail("CANNOT_DELETE_SELF", ErrorMessages.CannotDeleteSelf);
+            return Fail(ErrorMessages.CannotDeleteSelf);
 
         var deleted = await _userService.DeleteUserAsync(id, reason);
         if (!deleted)
-            return Fail("NOT_FOUND", "用户 {id} 不存在");
+            return Fail("用户 {id} 不存在");
         return NoContent();
     }
 
@@ -310,7 +310,7 @@ public class UserController : BaseApiController
 
         var success = await _userService.BulkUpdateUsersAsync(request, request.Reason);
         if (!success)
-            return Fail("OPERATION_FAILED", ErrorMessages.OperationFailed);
+            return Fail(ErrorMessages.OperationFailed);
 
         return Success(null, ErrorMessages.OperationSuccess);
     }
@@ -383,7 +383,7 @@ public class UserController : BaseApiController
     {
         var log = await _activityLogService.GetActivityLogByIdAsync(logId);
         if (log == null)
-            return Fail("NOT_FOUND", "活动日志 {logId} 不存在");
+            return Fail("活动日志 {logId} 不存在");
 
         return Success(log);
     }
@@ -468,7 +468,7 @@ public class UserController : BaseApiController
             var phoneNumber = request.PhoneNumber.Trim();
             if (phoneNumber.Length != 11 || !phoneNumber.StartsWith("1") || !phoneNumber.All(char.IsDigit))
             {
-                return Fail("VALIDATION_ERROR", "手机号格式不正确");
+                return Fail("手机号格式不正确");
             }
         }
 
@@ -492,7 +492,7 @@ public class UserController : BaseApiController
         var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
         var success = await _userService.ChangePasswordAsync(userId, request);
         if (!success)
-            return Fail("CHANGE_PASSWORD_FAILED", "当前密码错误或修改失败");
+            return Fail("当前密码错误或修改失败");
 
         return Success(null, "密码修改成功");
     }
@@ -574,21 +574,21 @@ public class UserController : BaseApiController
         // ✅ 添加输入验证
         // 验证日期范围
         if (startDate.HasValue && endDate.HasValue && startDate.Value > endDate.Value)
-            return Fail("VALIDATION_ERROR", "开始日期不能晚于结束日期");
+            return Fail("开始日期不能晚于结束日期");
 
         // 验证排序参数
         if (!string.IsNullOrEmpty(sortBy))
         {
             var allowedSortFields = new[] { "createdAt", "action" };
             if (!allowedSortFields.Contains(sortBy, StringComparer.OrdinalIgnoreCase))
-                return Fail("VALIDATION_ERROR", $"不支持的排序字段: {sortBy}，支持字段: {string.Join(", ", allowedSortFields)}");
+                return Fail($"不支持的排序字段: {sortBy}，支持字段: {string.Join(", ", allowedSortFields)}");
         }
 
         if (!string.IsNullOrEmpty(sortOrder))
         {
             var allowedSortOrders = new[] { "asc", "desc" };
             if (!allowedSortOrders.Contains(sortOrder, StringComparer.OrdinalIgnoreCase))
-                return Fail("VALIDATION_ERROR", $"不支持的排序方向: {sortOrder}，支持: asc、desc");
+                return Fail($"不支持的排序方向: {sortOrder}，支持: asc、desc");
         }
 
         var response = await _activityLogService.GetCurrentUserActivityLogsAsync(
@@ -663,13 +663,13 @@ public class UserController : BaseApiController
     {
         // ✅ 验证日志ID格式
         if (!MongoDB.Bson.ObjectId.TryParse(logId, out _))
-            return Fail("VALIDATION_ERROR", "日志ID格式不正确");
+            return Fail("日志ID格式不正确");
 
         var log = await _activityLogService.GetCurrentUserActivityLogByIdAsync(logId);
 
 
         if (log == null)
-            return Fail("NOT_FOUND", "日志 {logId} 不存在");
+            return Fail("日志 {logId} 不存在");
 
         return Success(log);
     }
@@ -775,7 +775,7 @@ public class UserController : BaseApiController
         var success = await _userService.UpdateAiRoleDefinitionAsync(userId, request.RoleDefinition);
 
         if (!success)
-            return Fail("UPDATE_FAILED", "更新角色定义失败");
+            return Fail("更新角色定义失败");
 
         return Success(null, "角色定义更新成功");
     }
@@ -869,7 +869,7 @@ public class UserController : BaseApiController
         var success = await _userService.SaveWelcomeLayoutAsync(userId, request);
 
         if (!success)
-            return Fail("SAVE_FAILED", "保存布局配置失败");
+            return Fail("保存布局配置失败");
 
         return Success(null, "布局配置保存成功");
     }

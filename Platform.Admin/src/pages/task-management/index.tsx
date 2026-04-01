@@ -289,9 +289,9 @@ const TaskManagement: React.FC = () => {
 
       if (response.success && response.data) {
         return {
-          data: response.data.tasks,
+          data: response.data.queryable || [],
           success: true,
-          total: response.data.total,
+          total: response.data.rowCount ?? 0,
         };
       }
       return {

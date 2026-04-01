@@ -52,7 +52,7 @@ public class TaskController : BaseApiController
     public async Task<IActionResult> CreateTask([FromBody] CreateTaskRequest request)
     {
         if (string.IsNullOrEmpty(request.TaskName))
-            return Fail("VALIDATION_ERROR", "任务名称不能为空");
+            return Fail("任务名称不能为空");
 
         try
         {
@@ -61,7 +61,7 @@ public class TaskController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("CREATE_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -86,13 +86,13 @@ public class TaskController : BaseApiController
         {
             var task = await _taskService.GetTaskByIdAsync(taskId);
             if (task == null)
-                return Fail("NOT_FOUND", "任务 {taskId} 不存在");
+                return Fail("任务 {taskId} 不存在");
 
             return Success(task);
         }
         catch (Exception ex)
         {
-            return Fail("GET_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -120,7 +120,7 @@ public class TaskController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("QUERY_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -143,7 +143,7 @@ public class TaskController : BaseApiController
     public async Task<IActionResult> UpdateTask([FromBody] UpdateTaskRequest request)
     {
         if (string.IsNullOrEmpty(request.TaskId))
-            return Fail("VALIDATION_ERROR", "任务ID不能为空");
+            return Fail("任务ID不能为空");
 
         try
         {
@@ -153,15 +153,15 @@ public class TaskController : BaseApiController
         }
         catch (KeyNotFoundException)
         {
-            return Fail("NOT_FOUND", "任务 {request.TaskId} 不存在");
+            return Fail("任务 {request.TaskId} 不存在");
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Fail("UNAUTHORIZED", ex.Message);
+            return Fail(ex.Message);
         }
         catch (Exception ex)
         {
-            return Fail("UPDATE_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -184,7 +184,7 @@ public class TaskController : BaseApiController
     public async Task<IActionResult> AssignTask([FromBody] AssignTaskRequest request)
     {
         if (string.IsNullOrEmpty(request.TaskId) || string.IsNullOrEmpty(request.AssignedTo))
-            return Fail("VALIDATION_ERROR", "任务ID和分配用户不能为空");
+            return Fail("任务ID和分配用户不能为空");
 
         try
         {
@@ -193,11 +193,11 @@ public class TaskController : BaseApiController
         }
         catch (KeyNotFoundException)
         {
-            return Fail("NOT_FOUND", "任务 {request.TaskId} 不存在");
+            return Fail("任务 {request.TaskId} 不存在");
         }
         catch (Exception ex)
         {
-            return Fail("ASSIGN_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -220,7 +220,7 @@ public class TaskController : BaseApiController
     public async Task<IActionResult> ExecuteTask([FromBody] ExecuteTaskRequest request)
     {
         if (string.IsNullOrEmpty(request.TaskId))
-            return Fail("VALIDATION_ERROR", "任务ID不能为空");
+            return Fail("任务ID不能为空");
 
         try
         {
@@ -229,11 +229,11 @@ public class TaskController : BaseApiController
         }
         catch (KeyNotFoundException)
         {
-            return Fail("NOT_FOUND", "任务 {request.TaskId} 不存在");
+            return Fail("任务 {request.TaskId} 不存在");
         }
         catch (Exception ex)
         {
-            return Fail("EXECUTE_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -256,7 +256,7 @@ public class TaskController : BaseApiController
     public async Task<IActionResult> CompleteTask([FromBody] CompleteTaskRequest request)
     {
         if (string.IsNullOrEmpty(request.TaskId))
-            return Fail("VALIDATION_ERROR", "任务ID不能为空");
+            return Fail("任务ID不能为空");
 
         try
         {
@@ -265,11 +265,11 @@ public class TaskController : BaseApiController
         }
         catch (KeyNotFoundException)
         {
-            return Fail("NOT_FOUND", "任务 {request.TaskId} 不存在");
+            return Fail("任务 {request.TaskId} 不存在");
         }
         catch (Exception ex)
         {
-            return Fail("COMPLETE_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -298,11 +298,11 @@ public class TaskController : BaseApiController
         }
         catch (KeyNotFoundException)
         {
-            return Fail("NOT_FOUND", "任务 {taskId} 不存在");
+            return Fail("任务 {taskId} 不存在");
         }
         catch (Exception ex)
         {
-            return Fail("CANCEL_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -328,13 +328,13 @@ public class TaskController : BaseApiController
             var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
             var result = await _taskService.DeleteTaskAsync(taskId, userId);
             if (!result)
-                return Fail("NOT_FOUND", "任务 {taskId} 不存在");
+                return Fail("任务 {taskId} 不存在");
 
             return Success(new { message = "任务已删除" });
         }
         catch (Exception ex)
         {
-            return Fail("DELETE_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -362,7 +362,7 @@ public class TaskController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("GET_STATISTICS_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -391,7 +391,7 @@ public class TaskController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("GET_LOGS_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -418,7 +418,7 @@ public class TaskController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("GET_TODO_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -439,7 +439,7 @@ public class TaskController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("GET_TODO_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -468,7 +468,7 @@ public class TaskController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("GET_CREATED_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -490,7 +490,7 @@ public class TaskController : BaseApiController
     public async Task<IActionResult> BatchUpdateTaskStatus([FromBody] BatchUpdateTaskStatusRequest request)
     {
         if (request.TaskIds == null || request.TaskIds.Count == 0)
-            return Fail("VALIDATION_ERROR", "任务ID列表不能为空");
+            return Fail("任务ID列表不能为空");
 
         try
         {
@@ -502,7 +502,7 @@ public class TaskController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("BATCH_UPDATE_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -520,7 +520,7 @@ public class TaskController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("GET_TASKS_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -538,7 +538,7 @@ public class TaskController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("GET_TREE_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -556,11 +556,11 @@ public class TaskController : BaseApiController
         }
         catch (KeyNotFoundException)
         {
-            return Fail("NOT_FOUND", "任务 {id} 不存在");
+            return Fail("任务 {id} 不存在");
         }
         catch (Exception ex)
         {
-            return Fail("UPDATE_PROGRESS_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -606,15 +606,15 @@ public class TaskController : BaseApiController
                 taskId = request.PredecessorTaskId;
             }
 
-            return Fail("NOT_FOUND", "任务 {taskId} 不存在");
+            return Fail("任务 {taskId} 不存在");
         }
         catch (InvalidOperationException ex)
         {
-            return Fail("VALIDATION_ERROR", ex.Message);
+            return Fail(ex.Message);
         }
         catch (Exception ex)
         {
-            return Fail("ADD_DEPENDENCY_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -629,13 +629,13 @@ public class TaskController : BaseApiController
         {
             var removed = await _taskService.RemoveTaskDependencyAsync(id);
             if (!removed)
-                return Fail("NOT_FOUND", "依赖关系 {id} 不存在");
+                return Fail("依赖关系 {id} 不存在");
 
             return Success(null, "依赖关系已移除");
         }
         catch (Exception ex)
         {
-            return Fail("REMOVE_DEPENDENCY_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -653,7 +653,7 @@ public class TaskController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("GET_DEPENDENCIES_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -671,7 +671,7 @@ public class TaskController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("GET_CRITICAL_PATH_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 }

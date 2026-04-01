@@ -126,8 +126,7 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
     try {
       const response = await iotService.getDevices(undefined, 1, 1000); // 加载所有设备用于下拉选择
       if (response.success && response.data) {
-        const list = Array.isArray(response.data.list) ? response.data.list : [];
-        setDevices(list);
+        setDevices(response.data.queryable || []);
       } else {
         setDevices([]);
       }

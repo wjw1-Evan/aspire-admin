@@ -64,7 +64,7 @@ const VisitAssessmentList: React.FC = () => {
 
             if (res.success && res.data) {
                 setData(res.data.tasks);
-                setTotal(res.data.total);
+                setTotal(res.data.rowCount);
             }
         } catch (error) {
             console.error('Failed to load visit data:', error);

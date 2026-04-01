@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
@@ -20,19 +19,18 @@ public abstract class BaseApiController : ControllerBase
             : null;
 
         if (required && string.IsNullOrEmpty(companyId))
-            throw new BusinessException("未找到当前用户的企业信息", "NOT_FOUND", 404);
+            throw new BusinessException("未找到当前用户的企业信息", 404);
 
         return companyId;
     }
 
     protected IActionResult Success(object data, string? message = null)
-        => Ok(CreateResponse(true, "OK", data, message));
+        => Ok(CreateResponse(true, message, data));
 
-    protected IActionResult Fail(string code, string message, int? httpStatusCode = null)
+    protected IActionResult Fail(string message, int httpStatusCode = 400)
     {
-        var statusCode = httpStatusCode ?? GetStatusCodeFromErrorCode(code);
-        var response = CreateResponse(false, code, null, message);
-        return statusCode switch
+        var response = CreateResponse(false, message, null);
+        return httpStatusCode switch
         {
             401 => Unauthorized(response),
             403 => StatusCode(403, response),
@@ -42,21 +40,8 @@ public abstract class BaseApiController : ControllerBase
         };
     }
 
-    private static int GetStatusCodeFromErrorCode(string code)
-    {
-        if (code.Contains("UNAUTHORIZED") || code.Contains("AUTH") || code.Contains("TOKEN") || code.Contains("CREDENTIAL"))
-            return 401;
-        if (code.Contains("FORBIDDEN") || code.Contains("PERMISSION"))
-            return 403;
-        if (code.Contains("NOT_FOUND") || code.Contains("USER_NOT_FOUND") || code.Contains("COMPANY") || code.Contains("EXPIRED") || code.Contains("INACTIVE"))
-            return 404;
-        if (code.Contains("ERROR") || code.Contains("FAILED") || code.Contains("EXCEPTION"))
-            return 500;
-        return 400;
-    }
-
     protected IActionResult? ValidateModelState()
-        => ModelState.IsValid ? null : Fail("VALIDATION_ERROR",
+        => ModelState.IsValid ? null : Fail(
             string.Join("; ", ModelState.Values
                 .Where(x => x?.Errors.Count > 0)
                 .SelectMany(x => x!.Errors)
@@ -68,6 +53,6 @@ public abstract class BaseApiController : ControllerBase
         ?? HttpContext.Connection.RemoteIpAddress?.ToString()
         ?? "Unknown";
 
-    private ApiResponse CreateResponse(bool success, string code, object? data, string? message)
-        => new(success, code, message, data, HttpContext.TraceIdentifier);
+    private ApiResponse CreateResponse(bool success, string? message, object? data)
+        => new(success, message, data, HttpContext.TraceIdentifier);
 }

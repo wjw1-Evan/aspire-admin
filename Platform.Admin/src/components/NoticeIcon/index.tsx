@@ -17,7 +17,7 @@ export default function NoticeIcon() {
     try {
       const res = await getUnreadStatistics();
       if (res?.success && res.data) {
-        setUnreadCount(res.data.total || 0);
+        setUnreadCount(res.data.rowCount || 0);
       }
     } catch {
       // 静默失败

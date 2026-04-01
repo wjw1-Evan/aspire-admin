@@ -272,7 +272,7 @@ const InvestmentManagement: React.FC = () => {
                 priority: params.priority,
             });
             if (res.success && res.data) {
-                return { data: res.data.leads, total: res.data.total, success: true };
+                return { data: res.data.leads, total: res.data.rowCount, success: true };
             }
             return { data: [], total: 0, success: false };
         } catch (error) {
@@ -289,7 +289,7 @@ const InvestmentManagement: React.FC = () => {
                 stage: params.stage,
             });
             if (res.success && res.data) {
-                return { data: res.data.projects, total: res.data.total, success: true };
+                return { data: res.data.projects, total: res.data.rowCount, success: true };
             }
             return { data: [], total: 0, success: false };
         } catch (error) {

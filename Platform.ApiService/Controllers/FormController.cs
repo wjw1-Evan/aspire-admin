@@ -28,7 +28,7 @@ public class FormController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("GET_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -41,14 +41,14 @@ public class FormController : BaseApiController
             var form = await _formService.GetFormByIdAsync(id);
             if (form == null)
             {
-                return Fail("NOT_FOUND", "表单定义 {id} 不存在");
+                return Fail("表单定义 {id} 不存在");
             }
 
             return Success(form);
         }
         catch (Exception ex)
         {
-            return Fail("GET_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -63,11 +63,11 @@ public class FormController : BaseApiController
         }
         catch (ArgumentException ex)
         {
-            return Fail("VALIDATION_ERROR", ex.Message);
+            return Fail(ex.Message);
         }
         catch (Exception ex)
         {
-            return Fail("CREATE_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -80,14 +80,14 @@ public class FormController : BaseApiController
             var result = await _formService.UpdateFormAsync(id, form);
             if (result == null)
             {
-                return Fail("NOT_FOUND", "表单定义 {id} 不存在");
+                return Fail("表单定义 {id} 不存在");
             }
 
             return Success(result);
         }
         catch (Exception ex)
         {
-            return Fail("UPDATE_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -100,14 +100,14 @@ public class FormController : BaseApiController
             var result = await _formService.DeleteFormAsync(id);
             if (!result)
             {
-                return Fail("NOT_FOUND", "表单定义 {id} 不存在");
+                return Fail("表单定义 {id} 不存在");
             }
 
             return Success(null, "表单定义已删除");
         }
         catch (Exception ex)
         {
-            return Fail("DELETE_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 }

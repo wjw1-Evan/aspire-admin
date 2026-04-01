@@ -114,9 +114,9 @@ const WorkflowManagement: React.FC = () => {
       const response = await getWorkflowList(requestData);
       if (response.success && response.data) {
         return {
-          data: response.data.list || [], // 根据 API 定义返回 list
+          data: response.data.queryable || [],
           success: true,
-          total: response.data.total || 0,
+          total: response.data.rowCount ?? 0,
         };
       }
       return { data: [], success: false, total: 0 };

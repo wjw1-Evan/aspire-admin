@@ -153,16 +153,14 @@ const CloudStorageRecyclePage: React.FC = () => {
             const response = await getRecycleList(listRequest);
 
             if (response.success && response.data) {
-                const list = response.data.data || [];
-                const normalizedList = (list || []).map((item: RecycleItem) => ({
+                const normalizedList = (response.data.queryable || []).map((item: RecycleItem) => ({
                     ...item,
-                    // 兼容后端未直接返回 isFolder 的情况
                     isFolder: item.isFolder ?? (item.type === 'folder' || item.type === 'Folder' || item.type === 1),
                 }));
 
                 return {
                     data: normalizedList,
-                    total: response.data.total || 0,
+                    total: response.data.rowCount ?? 0,
                     success: true,
                 };
             }

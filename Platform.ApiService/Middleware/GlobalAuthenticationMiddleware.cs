@@ -291,7 +291,7 @@ public class GlobalAuthenticationMiddleware
 
         var response = new ApiResponse(
             success: false,
-            code: "UNAUTHORIZED",
+            
             message: errorMessage,
             traceId: context.TraceIdentifier
         );

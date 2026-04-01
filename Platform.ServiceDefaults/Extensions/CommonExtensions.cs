@@ -23,7 +23,7 @@ public static class CommonExtensions
             var message = id != null
                 ? $"{entityName} (ID: {id}) 不存在"
                 : $"{entityName} 不存在";
-            throw new BusinessException(message, "NOT_FOUND", 404);
+            throw new BusinessException(message, 404);
         }
         return obj;
     }
@@ -39,7 +39,7 @@ public static class CommonExtensions
     {
         if (string.IsNullOrWhiteSpace(str))
         {
-            throw new BusinessException($"{paramName} 不能为空", "VALIDATION_ERROR", 400);
+            throw new BusinessException($"{paramName} 不能为空", 400);
         }
         return str;
     }

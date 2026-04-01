@@ -212,7 +212,7 @@ const KnowledgeBaseManagement: React.FC = () => {
               ...searchValues,
             });
             if (res.success && res.data) {
-              return { data: res.data.list, total: res.data.total, success: true };
+              return { data: res.data.queryable, total: res.data.rowCount, success: true };
             }
             return { data: [], total: 0, success: false };
           }}

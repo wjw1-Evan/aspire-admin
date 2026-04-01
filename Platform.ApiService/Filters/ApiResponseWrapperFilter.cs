@@ -82,7 +82,7 @@ public class ApiResponseWrapperFilter : IAsyncResultFilter
                         // 使用 ApiResponse 来统一返回成功结构
                         objectResult.Value = new ApiResponse(
                             success: true,
-                            code: "OK",
+                            
                             message: "操作成功",
                             data: objectResult.Value,
                             traceId: context.HttpContext.TraceIdentifier

@@ -35,7 +35,6 @@ public class BusinessExceptionFilter : IExceptionFilter
         {
             var response = new ApiResponse(
                 success: false,
-                code: bizEx.Code,
                 message: bizEx.Message,
                 traceId: context.HttpContext.TraceIdentifier
             );
@@ -52,7 +51,7 @@ public class BusinessExceptionFilter : IExceptionFilter
         {
             var response = new ApiResponse(
                 success: false,
-                code: "VALIDATION_ERROR",
+                
                 message: exception.Message,
                 traceId: context.HttpContext.TraceIdentifier
             );
@@ -67,7 +66,7 @@ public class BusinessExceptionFilter : IExceptionFilter
         {
             var response = new ApiResponse(
                 success: false,
-                code: "UNAUTHORIZED",
+                
                 message: exception.Message,
                 traceId: context.HttpContext.TraceIdentifier
             );

@@ -43,7 +43,7 @@ public class ParkInvestmentController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取线索列表失败");
-            return Fail("ERROR", "获取线索列表失败");
+            return Fail("获取线索列表失败");
         }
     }
 
@@ -57,13 +57,13 @@ public class ParkInvestmentController : BaseApiController
         {
             var result = await _investmentService.GetLeadByIdAsync(id);
             if (result == null)
-                return Fail("ERROR", "线索不存在");
+                return Fail("线索不存在");
             return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取线索详情失败: {Id}", id);
-            return Fail("ERROR", "获取线索详情失败");
+            return Fail("获取线索详情失败");
         }
     }
 
@@ -81,7 +81,7 @@ public class ParkInvestmentController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "创建线索失败");
-            return Fail("ERROR", "创建线索失败: " + ex.Message);
+            return Fail("创建线索失败: " + ex.Message);
         }
     }
 
@@ -95,13 +95,13 @@ public class ParkInvestmentController : BaseApiController
         {
             var result = await _investmentService.UpdateLeadAsync(id, request);
             if (result == null)
-                return Fail("ERROR", "线索不存在");
+                return Fail("线索不存在");
             return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "更新线索失败: {Id}", id);
-            return Fail("ERROR", "更新线索失败: " + ex.Message);
+            return Fail("更新线索失败: " + ex.Message);
         }
     }
 
@@ -115,13 +115,13 @@ public class ParkInvestmentController : BaseApiController
         {
             var result = await _investmentService.DeleteLeadAsync(id);
             if (!result)
-                return Fail("ERROR", "线索不存在或无法删除");
+                return Fail("线索不存在或无法删除");
             return Success(true);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "删除线索失败: {Id}", id);
-            return Fail("ERROR", "删除线索失败: " + ex.Message);
+            return Fail("删除线索失败: " + ex.Message);
         }
     }
 
@@ -135,13 +135,13 @@ public class ParkInvestmentController : BaseApiController
         {
             var result = await _investmentService.ConvertLeadToProjectAsync(id);
             if (result == null)
-                return Fail("ERROR", "线索不存在或状态不正确");
+                return Fail("线索不存在或状态不正确");
             return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "转化线索失败: {Id}", id);
-            return Fail("ERROR", "转化线索失败: " + ex.Message);
+            return Fail("转化线索失败: " + ex.Message);
         }
     }
 
@@ -163,7 +163,7 @@ public class ParkInvestmentController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取项目列表失败");
-            return Fail("ERROR", "获取项目列表失败");
+            return Fail("获取项目列表失败");
         }
     }
 
@@ -177,13 +177,13 @@ public class ParkInvestmentController : BaseApiController
         {
             var result = await _investmentService.GetProjectByIdAsync(id);
             if (result == null)
-                return Fail("ERROR", "项目不存在");
+                return Fail("项目不存在");
             return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取项目详情失败: {Id}", id);
-            return Fail("ERROR", "获取项目详情失败");
+            return Fail("获取项目详情失败");
         }
     }
 
@@ -201,7 +201,7 @@ public class ParkInvestmentController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "创建项目失败");
-            return Fail("ERROR", "创建项目失败: " + ex.Message);
+            return Fail("创建项目失败: " + ex.Message);
         }
     }
 
@@ -215,13 +215,13 @@ public class ParkInvestmentController : BaseApiController
         {
             var result = await _investmentService.UpdateProjectAsync(id, request);
             if (result == null)
-                return Fail("ERROR", "项目不存在");
+                return Fail("项目不存在");
             return Success(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "更新项目失败: {Id}", id);
-            return Fail("ERROR", "更新项目失败: " + ex.Message);
+            return Fail("更新项目失败: " + ex.Message);
         }
     }
 
@@ -235,13 +235,13 @@ public class ParkInvestmentController : BaseApiController
         {
             var result = await _investmentService.DeleteProjectAsync(id);
             if (!result)
-                return Fail("ERROR", "项目不存在或无法删除");
+                return Fail("项目不存在或无法删除");
             return Success(true);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "删除项目失败: {Id}", id);
-            return Fail("ERROR", "删除项目失败: " + ex.Message);
+            return Fail("删除项目失败: " + ex.Message);
         }
     }
 
@@ -265,7 +265,7 @@ public class ParkInvestmentController : BaseApiController
         catch (Exception ex)
         {
             _logger.LogError(ex, "获取招商统计失败");
-            return Fail("ERROR", "获取招商统计失败");
+            return Fail("获取招商统计失败");
         }
     }
 

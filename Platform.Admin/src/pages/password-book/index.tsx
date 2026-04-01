@@ -151,9 +151,9 @@ const PasswordBook: React.FC = () => {
         const response = await getPasswordBookList(requestData);
         if (response.success && response.data) {
           return {
-            data: response.data.data,
+            data: response.data.queryable || [],
             success: true,
-            total: response.data.total,
+            total: response.data.rowCount ?? 0,
           };
         }
         return { data: [], success: false, total: 0 };

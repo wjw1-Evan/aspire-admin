@@ -101,7 +101,7 @@ public class UnifiedNotificationController : BaseApiController
     public async Task<IActionResult> CreateTodo([FromBody] CreateTodoRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Title))
-            return Fail("VALIDATION_ERROR", "待办项标题不能为空");
+            return Fail("待办项标题不能为空");
 
         var todo = await _unifiedNotificationService.CreateTodoAsync(request);
         return Success(todo, "待办项创建成功");
@@ -118,7 +118,7 @@ public class UnifiedNotificationController : BaseApiController
     {
         var todo = await _unifiedNotificationService.UpdateTodoAsync(id, request);
         if (todo == null)
-            return Fail("NOT_FOUND", "待办项 {id} 不存在");
+            return Fail("待办项 {id} 不存在");
 
         return Success(todo, "待办项更新成功");
     }
@@ -133,7 +133,7 @@ public class UnifiedNotificationController : BaseApiController
     {
         var success = await _unifiedNotificationService.CompleteTodoAsync(id);
         if (!success)
-            return Fail("NOT_FOUND", "待办项 {id} 不存在");
+            return Fail("待办项 {id} 不存在");
 
         return Success(null, "待办项已完成");
     }
@@ -148,7 +148,7 @@ public class UnifiedNotificationController : BaseApiController
     {
         var success = await _unifiedNotificationService.DeleteTodoAsync(id);
         if (!success)
-            return Fail("NOT_FOUND", "待办项 {id} 不存在");
+            return Fail("待办项 {id} 不存在");
 
         return Success(null, "待办项已删除");
     }
@@ -163,7 +163,7 @@ public class UnifiedNotificationController : BaseApiController
     {
         var success = await _unifiedNotificationService.MarkAsReadAsync(id);
         if (!success)
-            return Fail("NOT_FOUND", "通知 {id} 不存在");
+            return Fail("通知 {id} 不存在");
 
         return Success(null, "通知已标记为已读");
     }
@@ -177,7 +177,7 @@ public class UnifiedNotificationController : BaseApiController
     public async Task<IActionResult> MarkMultipleAsRead([FromBody] MarkMultipleAsReadRequest request)
     {
         if (request.Ids == null || request.Ids.Count == 0)
-            return Fail("VALIDATION_ERROR", "通知ID列表不能为空");
+            return Fail("通知ID列表不能为空");
 
         var success = await _unifiedNotificationService.MarkMultipleAsReadAsync(request.Ids);
         return Success(null, "通知已标记为已读");

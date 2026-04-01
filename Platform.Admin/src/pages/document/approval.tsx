@@ -114,8 +114,8 @@ const ApprovalPage: React.FC = () => {
   const loadUsers = async () => {
     try {
       const response = await getUserList({ page: 1, pageSize: 100, isActive: true });
-      if (response.success && response.data?.list) {
-        setUsers(response.data.list);
+      if (response.success && response.data) {
+        setUsers(response.data.queryable || []);
       }
     } catch (error) {
       // 静默处理

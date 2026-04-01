@@ -128,9 +128,9 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       const response = await getProjectList(requestData);
       if (response.success && response.data) {
         return {
-          data: response.data.projects,
+          data: response.data.queryable || [],
           success: true,
-          total: response.data.total,
+          total: response.data.rowCount ?? 0,
         };
       }
       return { data: [], success: false, total: 0 };

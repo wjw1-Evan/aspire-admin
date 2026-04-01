@@ -26,7 +26,7 @@ public class ChatHistoryController : BaseApiController
     {
         if (request.StartTime.HasValue && request.EndTime.HasValue && request.StartTime.Value > request.EndTime.Value)
         {
-            return Fail("INVALID_DATE_RANGE", "开始时间不能晚于结束时间");
+            return Fail("开始时间不能晚于结束时间");
         }
 
         try
@@ -36,7 +36,7 @@ public class ChatHistoryController : BaseApiController
         }
         catch (Exception ex)
         {
-            return Fail("GET_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -49,14 +49,14 @@ public class ChatHistoryController : BaseApiController
             var result = await _chatHistoryService.GetChatHistoryDetailAsync(sessionId);
             if (result == null)
             {
-                return Fail("SESSION_NOT_FOUND", $"会话 {sessionId} 不存在");
+                return Fail($"会话 {sessionId} 不存在");
             }
 
             return Success(result);
         }
         catch (Exception ex)
         {
-            return Fail("GET_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 
@@ -69,14 +69,14 @@ public class ChatHistoryController : BaseApiController
             var result = await _chatHistoryService.DeleteChatHistoryAsync(sessionId);
             if (!result)
             {
-                return Fail("SESSION_NOT_FOUND", $"会话 {sessionId} 不存在");
+                return Fail($"会话 {sessionId} 不存在");
             }
 
             return Success(true);
         }
         catch (Exception ex)
         {
-            return Fail("DELETE_FAILED", ex.Message);
+            return Fail(ex.Message);
         }
     }
 }

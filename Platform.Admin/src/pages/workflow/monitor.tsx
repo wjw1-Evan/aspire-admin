@@ -203,9 +203,9 @@ const WorkflowMonitor: React.FC = () => {
           });
           if (response.success && response.data) {
             return {
-              data: response.data.list,
+              data: response.data.queryable || [],
               success: true,
-              total: response.data.total,
+              total: response.data.rowCount ?? 0,
             };
           }
           return { data: [], success: false, total: 0 };

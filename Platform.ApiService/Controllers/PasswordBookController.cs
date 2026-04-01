@@ -43,11 +43,11 @@ public class PasswordBookController : BaseApiController
     public async Task<IActionResult> CreateEntry([FromBody] CreatePasswordBookEntryRequest request)
     {
         if (string.IsNullOrEmpty(request.Platform))
-            return Fail("INVALID_REQUEST", "平台名称不能为空");
+            return Fail("平台名称不能为空");
         if (string.IsNullOrEmpty(request.Account))
-            return Fail("INVALID_REQUEST", "账号不能为空");
+            return Fail("账号不能为空");
         if (string.IsNullOrEmpty(request.Password))
-            return Fail("INVALID_REQUEST", "密码不能为空");
+            return Fail("密码不能为空");
 
         var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
         var entry = await _passwordBookService.CreateEntryAsync(request, userId);
@@ -64,7 +64,7 @@ public class PasswordBookController : BaseApiController
         var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
         var entry = await _passwordBookService.UpdateEntryAsync(id, request, userId);
         if (entry == null)
-            return Fail("NOT_FOUND", "条目不存在");
+            return Fail("条目不存在");
         return Success(entry);
     }
 
@@ -78,7 +78,7 @@ public class PasswordBookController : BaseApiController
         var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
         var entry = await _passwordBookService.GetEntryByIdAsync(id, userId);
         if (entry == null)
-            return Fail("NOT_FOUND", "条目不存在");
+            return Fail("条目不存在");
         return Success(entry);
     }
 
@@ -114,12 +114,12 @@ public class PasswordBookController : BaseApiController
         {
             var result = await _passwordBookService.DeleteEntryAsync(id, userId);
             if (!result)
-                return Fail("NOT_FOUND", "条目不存在");
+                return Fail("条目不存在");
             return Success(true);
         }
         catch (UnauthorizedAccessException)
         {
-            return Fail("FORBIDDEN", "无权删除此条目");
+            return Fail("无权删除此条目");
         }
     }
 
@@ -153,11 +153,11 @@ public class PasswordBookController : BaseApiController
     public IActionResult GeneratePassword([FromBody] GeneratePasswordRequest request)
     {
         if (request.Length < 8 || request.Length > 32)
-            return Fail("INVALID_REQUEST", "密码长度必须在8-32之间");
+            return Fail("密码长度必须在8-32之间");
 
         if (!request.IncludeUppercase && !request.IncludeLowercase &&
             !request.IncludeNumbers && !request.IncludeSpecialChars)
-            return Fail("INVALID_REQUEST", "至少需要选择一种字符类型");
+            return Fail("至少需要选择一种字符类型");
 
         var password = _passwordGeneratorService.GeneratePassword(request);
         var strength = _passwordStrengthService.CheckStrength(password);
@@ -179,7 +179,7 @@ public class PasswordBookController : BaseApiController
     public IActionResult CheckPasswordStrength([FromBody] Dictionary<string, string> request)
     {
         if (!request.TryGetValue("password", out var password) || string.IsNullOrEmpty(password))
-            return Fail("INVALID_REQUEST", "密码不能为空");
+            return Fail("密码不能为空");
 
         var strength = _passwordStrengthService.CheckStrength(password);
         return Success(strength);
@@ -193,7 +193,7 @@ public class PasswordBookController : BaseApiController
     public async Task<IActionResult> ExportEntries([FromBody] ExportPasswordBookRequest request)
     {
         if (request.Format != "json" && request.Format != "csv")
-            return Fail("INVALID_REQUEST", "导出格式必须是 json 或 csv");
+            return Fail("导出格式必须是 json 或 csv");
 
         var userId = CurrentUserId ?? throw new UnauthorizedAccessException("未找到用户信息");
         var entries = await _passwordBookService.ExportEntriesAsync(request, userId);

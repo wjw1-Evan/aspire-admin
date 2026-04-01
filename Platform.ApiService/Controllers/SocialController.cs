@@ -117,7 +117,7 @@ public class SocialController : BaseApiController
         }
         else
         {
-            return Fail("INVALID_REQUEST", "请求参数无效：需要提供有效的定位信息");
+            return Fail("请求参数无效：需要提供有效的定位信息");
         }
 
         await _socialService.UpdateLocationAsync(locationRequest);

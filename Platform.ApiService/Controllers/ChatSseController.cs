@@ -73,7 +73,7 @@ public class ChatSseController : BaseApiController
         if (string.IsNullOrWhiteSpace(userId))
         {
             _logger.LogWarning("SSE 连接失败: 未提供有效的 token");
-            return Fail("UNAUTHORIZED", "未提供有效的认证令牌", 401);
+            return Fail("未授权访问", 401);
         }
 
         // 设置 SSE 响应头

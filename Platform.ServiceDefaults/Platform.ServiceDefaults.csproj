@@ -9,9 +9,9 @@
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Aspire.MongoDB.Driver" Version="13.2.0" />
-    <PackageReference Include="Aspire.MongoDB.EntityFrameworkCore" Version="13.2.0" />
-    <PackageReference Include="Aspire.OpenAI" Version="13.2.0-preview.1.26170.3" />
+    <PackageReference Include="Aspire.MongoDB.Driver" Version="13.2.1" />
+    <PackageReference Include="Aspire.MongoDB.EntityFrameworkCore" Version="13.2.1" />
+    <PackageReference Include="Aspire.OpenAI" Version="13.2.1-preview.1.26180.6" />
     <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.2" />
     <PackageReference Include="Microsoft.Agents.AI" Version="1.0.0-rc4" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.5" />

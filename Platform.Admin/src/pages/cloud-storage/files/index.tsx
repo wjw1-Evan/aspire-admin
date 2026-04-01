@@ -240,12 +240,11 @@ const CloudStorageFilesPage: React.FC = () => {
             }
 
             if (response.success && response.data) {
-                const rawData = response.data.list || response.data.data || [];
-                const transformedData = rawData.map(transformFileItem);
+                const transformedData = (response.data.queryable || []).map(transformFileItem);
 
                 return {
                     data: transformedData,
-                    total: response.data.total || 0,
+                    total: response.data.rowCount ?? 0,
                     success: true,
                 };
             }

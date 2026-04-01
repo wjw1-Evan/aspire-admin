@@ -1,5 +1,3 @@
-using System;
-
 namespace Platform.ServiceDefaults.Models;
 
 /// <summary>
@@ -7,7 +5,6 @@ namespace Platform.ServiceDefaults.Models;
 /// </summary>
 public class ApiResponse(
     bool success,
-    string code,
     string? message = null,
     object? data = default,
     string? traceId = null,
@@ -15,7 +12,6 @@ public class ApiResponse(
     object? details = null)
 {
     public bool Success { get; set; } = success;
-    public string Code { get; set; } = code;
     public string? Message { get; set; } = message;
     public object? Data { get; set; } = data;
     public object? Errors { get; set; } = errors;

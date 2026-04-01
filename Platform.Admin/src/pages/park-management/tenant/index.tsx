@@ -155,7 +155,7 @@ const TenantManagement: React.FC = () => {
                 status: params.status,
                 industry: params.industry
             });
-            if (res.success && res.data) return { data: res.data.tenants, total: res.data.total, success: true };
+            if (res.success && res.data) return { data: res.data.tenants, total: res.data.rowCount, success: true };
             return { data: [], total: 0, success: false };
         } catch (error) { return { data: [], total: 0, success: false }; }
     };

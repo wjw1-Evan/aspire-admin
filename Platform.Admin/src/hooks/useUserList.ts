@@ -48,19 +48,20 @@ export function useUserList() {
           },
         );
 
-        // ✅ 适配标准化分页响应格式 (list 字段)
-        const users = response.data?.list || [];
-        const total = response.data?.total || 0;
-
+        if (response.success && response.data) {
+          return {
+            data: response.data.queryable || [],
+            success: true,
+            total: response.data.rowCount ?? 0,
+          };
+        }
         return {
-          data: users,
-          success: true,
-          total: total,
+          data: [],
+          success: false,
+          total: 0,
         };
       } catch (error) {
         console.error('获取用户列表失败:', error);
-        // 不在这里显示错误消息，让全局错误处理器统一处理
-        // 这样可以避免重复显示错误提示
         return {
           data: [],
           success: false,

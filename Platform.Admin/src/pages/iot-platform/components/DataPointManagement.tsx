@@ -77,15 +77,14 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
   // 获取概览统计
   const fetchOverviewStats = useCallback(async () => {
     try {
-      // 获取所有数据点用于统计
       const response = await iotService.getDataPoints(undefined, 1, 1000);
       if (response.success && response.data) {
-        const list = Array.isArray(response.data.list) ? response.data.list : [];
+        const data = response.data.queryable || [];
         setOverviewStats({
-          total: list.length,
-          enabled: list.filter((dp: IoTDataPoint) => dp.isEnabled).length,
-          disabled: list.filter((dp: IoTDataPoint) => !dp.isEnabled).length,
-          withAlarm: list.filter((dp: IoTDataPoint) => dp.alarmConfig?.isEnabled).length,
+          total: data.length,
+          enabled: data.filter((dp: IoTDataPoint) => dp.isEnabled).length,
+          disabled: data.filter((dp: IoTDataPoint) => !dp.isEnabled).length,
+          withAlarm: data.filter((dp: IoTDataPoint) => dp.alarmConfig?.isEnabled).length,
         });
       }
     } catch (error) {
@@ -99,12 +98,10 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
       const { keyword } = searchForm.getFieldsValue();
       const response = await iotService.getDataPoints(undefined, params.current || 1, params.pageSize || 20, keyword);
       if (response.success && response.data) {
-        const data = response.data;
-        const list = Array.isArray(data.list) ? data.list : [];
         return {
-          data: list,
+          data: response.data.queryable || [],
           success: true,
-          total: data.total || 0,
+          total: response.data.rowCount ?? 0,
         };
       }
       return {
@@ -127,8 +124,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
     try {
       const response = await iotService.getDevices(undefined, 1, 1000); // 加载所有设备用于下拉选择
       if (response.success && response.data) {
-        const list = Array.isArray(response.data.list) ? response.data.list : [];
-        setDevices(list);
+        setDevices(response.data.queryable || []);
       } else {
         setDevices([]);
       }

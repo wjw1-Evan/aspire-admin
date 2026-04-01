@@ -81,18 +81,14 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
     try {
       const response = await iotService.getGateways(1, 1);
       if (response.success && response.data) {
-        // 获取所有网关用于统计
         const allResponse = await iotService.getGateways(1, 1000);
         if (allResponse.success && allResponse.data) {
-          const list = Array.isArray(allResponse.data.list) ? allResponse.data.list : [];
+          const data = allResponse.data.queryable || [];
           setOverviewStats({
-            total: list.length,
-
-            online: list.filter((g: IoTGateway) => g.status === 'Online').length,
-
-            offline: list.filter((g: IoTGateway) => g.status === 'Offline').length,
-
-            fault: list.filter((g: IoTGateway) => g.status === 'Fault').length,
+            total: data.length,
+            online: data.filter((g: IoTGateway) => g.status === 'Online').length,
+            offline: data.filter((g: IoTGateway) => g.status === 'Offline').length,
+            fault: data.filter((g: IoTGateway) => g.status === 'Fault').length,
           });
         }
       }
@@ -111,12 +107,10 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
       const { keyword, status } = searchForm.getFieldsValue();
       const response = await iotService.getGateways(params.current || 1, params.pageSize || 20, keyword, status);
       if (response.success && response.data) {
-        const data = response.data;
-        const list = Array.isArray(data.list) ? data.list : [];
         return {
-          data: list,
+          data: response.data.queryable || [],
           success: true,
-          total: data.total || 0,
+          total: response.data.rowCount ?? 0,
         };
       }
       return {

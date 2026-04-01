@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Exceptions;
 
 namespace Platform.ServiceDefaults.Controllers;
 
@@ -27,17 +28,7 @@ public abstract class BaseApiController : ControllerBase
         => Ok(CreateResponse(true, message, data));
 
     protected IActionResult Fail(string message, int httpStatusCode = 400)
-    {
-        var response = CreateResponse(false, message, null);
-        return httpStatusCode switch
-        {
-            401 => Unauthorized(response),
-            403 => StatusCode(403, response),
-            404 => NotFound(response),
-            500 => StatusCode(500, response),
-            _ => BadRequest(response)
-        };
-    }
+        => throw new ServiceException(message, httpStatusCode);
 
     protected IActionResult? ValidateModelState()
         => ModelState.IsValid ? null : Fail(

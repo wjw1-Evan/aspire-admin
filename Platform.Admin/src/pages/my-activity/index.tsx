@@ -14,6 +14,7 @@ import {
   ThunderboltOutlined,
   ReloadOutlined,
   DashboardOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { useIntl } from '@umijs/max';

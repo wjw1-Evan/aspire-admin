@@ -77,14 +77,16 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
   // 获取概览统计
   const fetchOverviewStats = useCallback(async () => {
     try {
-      const response = await iotService.getDataPoints(undefined, 1, 1000);
+      // 使用分页接口获取总数
+      const response = await iotService.getDataPoints(undefined, 1, 1);
       if (response.success && response.data) {
-        const data = response.data.queryable || [];
+        const total = response.data.rowCount || 0;
+        // 注意：完整统计需要后端新增统计接口
         setOverviewStats({
-          total: data.length,
-          enabled: data.filter((dp: IoTDataPoint) => dp.isEnabled).length,
-          disabled: data.filter((dp: IoTDataPoint) => !dp.isEnabled).length,
-          withAlarm: data.filter((dp: IoTDataPoint) => dp.alarmConfig?.isEnabled).length,
+          total,
+          enabled: 0,
+          disabled: 0,
+          withAlarm: 0,
         });
       }
     } catch (error) {

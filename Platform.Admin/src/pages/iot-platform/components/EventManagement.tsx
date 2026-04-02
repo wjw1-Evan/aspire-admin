@@ -63,14 +63,13 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
   // 获取概览统计
   const fetchOverviewStats = useCallback(async () => {
     try {
-      const response = await iotService.queryEvents({ pageIndex: 1, pageSize: 100 });
+      const response = await iotService.getUnhandledEventCount();
       if (response.success && response.data) {
-        const eventsList = response.data.queryable || [];
         setOverviewStats({
-          total: response.data.rowCount || 0,
-          unhandled: eventsList.filter((e: IoTDeviceEvent) => !e.isHandled).length,
-          handled: eventsList.filter((e: IoTDeviceEvent) => e.isHandled).length,
-          critical: eventsList.filter((e: IoTDeviceEvent) => e.level === 'Critical').length,
+          total: response.data.Count || 0,
+          unhandled: response.data.Count || 0,
+          handled: 0,
+          critical: 0,
         });
       }
     } catch (error) {

@@ -79,18 +79,14 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
   // 获取概览统计
   const fetchOverviewStats = useCallback(async () => {
     try {
-      const response = await iotService.getGateways(1, 1);
+      const response = await iotService.getPlatformStatistics();
       if (response.success && response.data) {
-        const allResponse = await iotService.getGateways(1, 1000);
-        if (allResponse.success && allResponse.data) {
-          const data = allResponse.data.queryable || [];
-          setOverviewStats({
-            total: data.length,
-            online: data.filter((g: IoTGateway) => g.status === 'Online').length,
-            offline: data.filter((g: IoTGateway) => g.status === 'Offline').length,
-            fault: data.filter((g: IoTGateway) => g.status === 'Fault').length,
-          });
-        }
+        setOverviewStats({
+          total: response.data.totalGateways || 0,
+          online: response.data.onlineGateways || 0,
+          offline: (response.data.totalGateways || 0) - (response.data.onlineGateways || 0),
+          fault: 0,
+        });
       }
     } catch (error) {
       console.error('获取统计信息失败:', error);

@@ -89,6 +89,29 @@ public class RoleService : IRoleService
     }
 
     /// <summary>
+    /// 获取角色统计信息（基于全部数据）
+    /// </summary>
+    public async Task<RoleStatistics> GetRoleStatisticsAsync()
+    {
+        var roles = await _context.Set<Role>().ToListAsync();
+        var totalRoles = roles.Count;
+        var activeRoles = roles.Count(r => r.IsActive);
+        var totalMenus = roles.Sum(r => r.MenuIds?.Count ?? 0);
+
+        var userCount = await _context.Set<UserCompany>()
+            .Where(uc => uc.Status == "active")
+            .LongCountAsync();
+
+        return new RoleStatistics
+        {
+            TotalRoles = totalRoles,
+            ActiveRoles = activeRoles,
+            TotalUsers = (int)userCount,
+            TotalMenus = totalMenus
+        };
+    }
+
+    /// <summary>
     /// 根据ID获取角色
     /// </summary>
     public async Task<Role?> GetRoleByIdAsync(string id)

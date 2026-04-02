@@ -11,6 +11,7 @@ import {
 import { PageContainer } from '@/components';
 import DataTable from '@/components/DataTable';
 import type { ActionType } from '@/types/pro-components';
+import type { PagedResult } from '@/types/unified-api';
 import { useIntl } from '@umijs/max';
 import { Badge, Button, Input, Modal, Space, Tag, Row, Col, Card, Grid, type TableColumnsType, Descriptions, Drawer, theme, Form } from 'antd';
 import { useMessage } from '@/hooks/useMessage';
@@ -20,8 +21,8 @@ import SearchFormCard from '@/components/SearchFormCard';
 
 const { useBreakpoint } = Grid;
 import { type ChangeEvent, type FC, useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { deleteRole, getAllRolesWithStats } from '@/services/role/api';
-import type { Role } from '@/services/role/types';
+import { deleteRole, getAllRoles, getRoleStatistics } from '@/services/role/api';
+import type { Role, RoleWithStats, RoleStatistics } from '@/services/role/types';
 import RoleForm from './components/RoleForm';
 import { StatCard } from '@/components';
 import dayjs from 'dayjs';
@@ -51,50 +52,40 @@ const RoleManagement: FC = () => {
   const tableRef = useRef<HTMLDivElement>(null);
   const [searchForm] = Form.useForm();
   const [modalVisible, setModalVisible] = useState(false);
-  const [currentRole, setCurrentRole] = useState<Role | undefined>();
+  const [currentRole, setCurrentRole] = useState<RoleWithStats | undefined>();
   const [detailVisible, setDetailVisible] = useState(false);
-  const [viewingRole, setViewingRole] = useState<Role | null>(null);
-  const [statistics, setStatistics] = useState<{
-    totalRoles: number;
-    activeRoles: number;
-    totalUsers: number;
-    totalMenus: number;
-  } | null>(null);
+  const [viewingRole, setViewingRole] = useState<RoleWithStats | null>(null);
+  const [statistics, setStatistics] = useState<RoleStatistics | null>(null);
 
   /**
-   * 加载角色数据（带统计信息）- 使用 useCallback 避免死循环
+   * 加载统计数据
+   */
+  const loadStatistics = useCallback(async () => {
+    try {
+      const response = await getRoleStatistics();
+      if (response.success && response.data) {
+        setStatistics(response.data);
+      }
+    } catch (error) {
+      console.error('加载角色统计失败:', error);
+    }
+  }, []);
+
+  /**
+   * 加载角色数据 - 使用 useCallback 避免死循环
    */
   const loadRoleData = useCallback(async (params: any) => {
     try {
       // 提取 keyword 搜索参数
       const keyword = searchForm.getFieldValue('keyword');
-      const response = await getAllRolesWithStats({
+      const response = await getAllRoles({
         params: {
           ...params,
           keyword: keyword || undefined,
         }
       });
       if (response.success && response.data) {
-        const roles = response.data.roles || [];
-
-        // 计算统计信息，统一用于顶部统计卡片
-        const totalRoles = roles.length;
-        const activeRoles = roles.filter((r: any) => r.isActive).length;
-        const totalUsers = roles.reduce(
-          (sum: number, r: any) => sum + (r.userCount || 0),
-          0,
-        );
-        const totalMenus = roles.reduce(
-          (sum: number, r: any) => sum + (r.menuCount || 0),
-          0,
-        );
-
-        setStatistics({
-          totalRoles,
-          activeRoles,
-          totalUsers,
-          totalMenus,
-        });
+        const roles = (response.data as PagedResult<RoleWithStats>).queryable || [];
 
         return {
           data: roles,
@@ -165,6 +156,7 @@ const RoleManagement: FC = () => {
             message.success(
               intl.formatMessage({ id: 'pages.message.deleteSuccess' }),
             );
+            loadStatistics();
             if (actionRef.current?.reload) {
               actionRef.current.reload();
             }
@@ -182,14 +174,20 @@ const RoleManagement: FC = () => {
         }
       },
     });
-  }, [intl]);
+  }, [intl, loadStatistics]);
 
   // 刷新处理
   const handleRefresh = useCallback(() => {
+    loadStatistics();
     if (actionRef.current?.reload) {
       actionRef.current.reload();
     }
-  }, []);
+  }, [loadStatistics]);
+
+  // 加载统计数据
+  useEffect(() => {
+    loadStatistics();
+  }, [loadStatistics]);
 
   // 打开创建角色表单
   const handleCreateRole = useCallback(() => {
@@ -213,10 +211,11 @@ const RoleManagement: FC = () => {
   const handleFormSuccess = useCallback(() => {
     setModalVisible(false);
     setCurrentRole(undefined);
+    loadStatistics();
     if (actionRef.current?.reload) {
       actionRef.current.reload();
     }
-  }, []);
+  }, [loadStatistics]);
 
   // 打开详情
   const handleViewDetail = useCallback((record: Role) => {
@@ -384,12 +383,12 @@ const RoleManagement: FC = () => {
   /**
    * 表格列定义（使用 useMemo 避免每次渲染都重新创建）
    */
-  const columns: TableColumnsType<Role> = useMemo(() => [
+  const columns: TableColumnsType<RoleWithStats> = useMemo(() => [
     {
       title: intl.formatMessage({ id: 'pages.table.roleName' }),
       dataIndex: 'name',
       key: 'name',
-      render: (text: string, record: Role) => (
+      render: (text: string, record: RoleWithStats) => (
         <Space>
           <a
             onClick={() => handleViewDetail(record)}
@@ -431,7 +430,7 @@ const RoleManagement: FC = () => {
     {
       title: intl.formatMessage({ id: 'pages.table.stats' }),
       key: 'stats',
-      render: (_, record: any) => (
+      render: (_, record: RoleWithStats) => (
         <Space separator="|">
           <span>
             {intl.formatMessage({ id: 'pages.table.user' })}:{' '}
@@ -455,7 +454,7 @@ const RoleManagement: FC = () => {
       key: 'action',
       fixed: 'right',
       width: 150,
-      render: (_, record) => {
+      render: (_, record: RoleWithStats) => {
         return (
           <Space size="small">
             <Button
@@ -586,7 +585,7 @@ const RoleManagement: FC = () => {
       </SearchFormCard>
 
       <div ref={tableRef}>
-        <DataTable<Role>
+        <DataTable<RoleWithStats>
           actionRef={actionRef}
           rowKey="id"
           scroll={{ x: 'max-content' }}

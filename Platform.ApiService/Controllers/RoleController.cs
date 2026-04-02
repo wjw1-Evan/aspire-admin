@@ -51,6 +51,17 @@ public class RoleController : BaseApiController
     }
 
     /// <summary>
+    /// 获取角色统计信息（基于全部数据）
+    /// </summary>
+    [HttpGet("statistics")]
+    [RequireMenu("role-management")]
+    public async Task<IActionResult> GetRoleStatistics()
+    {
+        var statistics = await _roleService.GetRoleStatisticsAsync();
+        return Success(statistics);
+    }
+
+    /// <summary>
     /// 根据ID获取角色
     /// </summary>
     [HttpGet("{id}")]

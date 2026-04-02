@@ -1,7 +1,19 @@
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Models;
 using System.Linq.Dynamic.Core;
 
 namespace Platform.ApiService.Services;
+
+/// <summary>
+/// 角色统计信息
+/// </summary>
+public class RoleStatistics
+{
+    public int TotalRoles { get; set; }
+    public int ActiveRoles { get; set; }
+    public int TotalUsers { get; set; }
+    public int TotalMenus { get; set; }
+}
 
 /// <summary>
 /// 角色服务接口
@@ -19,6 +31,12 @@ public interface IRoleService
     /// </summary>
     /// <returns>带统计信息的角色列表响应</returns>
     Task<PagedResult<RoleWithStats>> GetAllRolesWithStatsAsync();
+
+    /// <summary>
+    /// 获取角色统计信息（基于全部数据）
+    /// </summary>
+    /// <returns>角色统计信息</returns>
+    Task<RoleStatistics> GetRoleStatisticsAsync();
     
     /// <summary>
     /// 根据ID获取角色

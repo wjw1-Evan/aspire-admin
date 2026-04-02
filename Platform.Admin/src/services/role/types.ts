@@ -9,9 +9,24 @@ export interface Role {
   isActive: boolean;
   createdAt?: string;
   updatedAt?: string;
-  // 统计字段
+}
+
+/**
+ * 带统计信息的角色
+ */
+export interface RoleWithStats extends Role {
   userCount?: number;
   menuCount?: number;
+}
+
+/**
+ * 角色统计信息
+ */
+export interface RoleStatistics {
+  totalRoles: number;
+  activeRoles: number;
+  totalUsers: number;
+  totalMenus: number;
 }
 
 /**

@@ -2,12 +2,14 @@ import { request } from '@umijs/max';
 import type { ApiResponse, PagedResult } from '@/types/unified-api';
 import type {
   Role,
+  RoleWithStats,
+  RoleStatistics,
   CreateRoleRequest,
   UpdateRoleRequest,
   AssignMenusToRoleRequest,
 } from './types';
 
-export type { Role, CreateRoleRequest, UpdateRoleRequest, AssignMenusToRoleRequest };
+export type { Role, RoleWithStats, RoleStatistics, CreateRoleRequest, UpdateRoleRequest, AssignMenusToRoleRequest };
 
 /**
  * 获取所有角色
@@ -23,7 +25,17 @@ export async function getAllRoles(options?: Record<string, any>) {
  * 获取所有角色（带统计信息）
  */
 export async function getAllRolesWithStats(options?: Record<string, any>) {
-  return request<ApiResponse<any>>('/api/role/with-stats', {
+  return request<ApiResponse<PagedResult<RoleWithStats>>>('/api/role/with-stats', {
+    method: 'GET',
+    ...(options || {}),
+  });
+}
+
+/**
+ * 获取角色统计信息
+ */
+export async function getRoleStatistics(options?: Record<string, any>) {
+  return request<ApiResponse<RoleStatistics>>('/api/role/statistics', {
     method: 'GET',
     ...(options || {}),
   });

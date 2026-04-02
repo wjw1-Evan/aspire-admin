@@ -46,7 +46,7 @@ export async function register(body: API.RegisterParams, options?: { [key: strin
 
 /** 刷新token接口 POST /api/auth/refresh-token */
 export async function refreshToken(body: API.POST_API_REFRESH_TOKEN_PAYLOAD, options?: { [key: string]: any }) {
-  return request<API.ApiResponse<API.POST_API_REFRESH_TOKEN_RES>>('/api/auth/refresh-token', {
+  return request<ApiResponse<API.POST_API_REFRESH_TOKEN_RES>>('/api/auth/refresh-token', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

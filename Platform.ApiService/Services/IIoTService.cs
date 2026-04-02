@@ -19,7 +19,7 @@ public interface IIoTService
     /// <summary>
     /// 获取网关列表
     /// </summary>
-    Task<System.Linq.Dynamic.Core.PagedResult<IoTGateway>> GetGatewaysAsync(string? keyword = null, IoTDeviceStatus? status = null, int pageIndex = 1, int pageSize = 20);
+    Task<PagedResult<IoTGateway>> GetGatewaysAsync(string? keyword = null, IoTDeviceStatus? status = null, int pageIndex = 1, int pageSize = 20);
 
     /// <summary>
     /// 获取网关详情
@@ -63,7 +63,7 @@ public interface IIoTService
     /// <summary>
     /// 获取设备列表
     /// </summary>
-    Task<System.Linq.Dynamic.Core.PagedResult<IoTDevice>> GetDevicesAsync(string? gatewayId = null, string? keyword = null, int pageIndex = 1, int pageSize = 20);
+    Task<PagedResult<IoTDevice>> GetDevicesAsync(string? gatewayId = null, string? keyword = null, int pageIndex = 1, int pageSize = 20);
 
     /// <summary>
     /// 获取设备详情
@@ -122,7 +122,7 @@ public interface IIoTService
     /// <summary>
     /// 获取数据点列表
     /// </summary>
-    Task<System.Linq.Dynamic.Core.PagedResult<IoTDataPoint>> GetDataPointsAsync(string? deviceId = null, string? keyword = null, int pageIndex = 1, int pageSize = 20);
+    Task<PagedResult<IoTDataPoint>> GetDataPointsAsync(string? deviceId = null, string? keyword = null, int pageIndex = 1, int pageSize = 20);
 
     /// <summary>
     /// 获取数据点详情

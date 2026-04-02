@@ -152,7 +152,7 @@ public class FileShareService : IFileShareService
     /// <summary>
     /// 获取我创建的分享列表
     /// </summary>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<Models.FileShare>> GetMySharesAsync(ShareListQuery query)
+    public async Task<PagedResult<Models.FileShare>> GetMySharesAsync(ShareListQuery query)
     {
         IQueryable<Models.FileShare> queryable = _context.Set<Models.FileShare>();
 
@@ -200,7 +200,7 @@ public class FileShareService : IFileShareService
     /// <summary>
     /// 获取分享给我的文件列表
     /// </summary>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<Models.FileShare>> GetSharedWithMeAsync(ShareListQuery query)
+    public async Task<PagedResult<Models.FileShare>> GetSharedWithMeAsync(ShareListQuery query)
     {
         IQueryable<Models.FileShare> queryable = _context.Set<Models.FileShare>()
             .Where(s => s.Type == ShareType.Internal && s.IsActive);

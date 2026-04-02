@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse } from '@/types/unified-api';
+import type { ApiResponse, PagedResult } from '@/types/unified-api';
 
 export interface KnowledgeBase {
   id: string;
@@ -22,7 +22,7 @@ export async function getKnowledgeBases(params: {
   current?: number;
   pageSize?: number;
   keyword?: string;
-}): Promise<ApiResponse<{ queryable: KnowledgeBase[]; rowCount: number; currentPage: number; pageSize: number }>> {
+}): Promise<ApiResponse<PagedResult<KnowledgeBase>>> {
   return request('/api/workflow/knowledge-bases', {
     method: 'GET',
     params,
@@ -88,7 +88,7 @@ export interface KnowledgeDocument {
 export async function getKnowledgeDocuments(
   knowledgeBaseId: string,
   params: { page?: number; pageSize?: number; keyword?: string }
-): Promise<ApiResponse<{ queryable: KnowledgeDocument[]; rowCount: number; currentPage: number; pageSize: number }>> {
+): Promise<ApiResponse<PagedResult<KnowledgeDocument>>> {
   return request(`/api/workflow/knowledge-bases/${knowledgeBaseId}/documents`, {
     method: 'GET',
     params,

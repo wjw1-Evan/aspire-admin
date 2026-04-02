@@ -2,17 +2,6 @@
 /* eslint-disable */
 
 declare namespace API {
-  // 统一的 API 响应格式
-  type ApiResponse<T = any> = {
-    success: boolean;
-    data?: T;
-    code?: string;
-    message?: string;
-    errors?: Record<string, string[]>; // 验证字段错误
-    timestamp: string;
-    traceId?: string;
-  };
-
   type MenuTreeNode = {
     id?: string;
     name: string;

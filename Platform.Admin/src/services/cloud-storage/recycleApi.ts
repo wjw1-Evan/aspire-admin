@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse } from '@/types/unified-api';
+import type { ApiResponse, PagedResult } from '@/types/unified-api';
 import type { FileItem } from './api';
 
 // 回收站相关类型
@@ -23,13 +23,7 @@ export interface RecycleListRequest {
     sortOrder?: 'asc' | 'desc';
 }
 
-export interface RecycleListResponse {
-    queryable: RecycleItem[];
-    rowCount: number;
-    currentPage: number;
-    pageSize: number;
-    pageCount: number;
-}
+export type RecycleListResponse = PagedResult<RecycleItem>;
 
 export interface RestoreItemRequest {
     itemId: string;

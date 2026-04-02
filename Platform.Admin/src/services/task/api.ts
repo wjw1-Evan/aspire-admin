@@ -187,13 +187,7 @@ export interface TaskQueryRequest {
 /**
  * 任务列表响应 (PagedResult 格式)
  */
-export interface TaskListResponse {
-  queryable: TaskDto[];
-  rowCount: number;
-  currentPage: number;
-  pageSize: number;
-  pageCount: number;
-}
+export type TaskListResponse = PagedResult<TaskDto>;
 
 /**
  * 任务执行日志DTO

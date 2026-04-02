@@ -23,7 +23,7 @@ export async function getAllRoles(options?: Record<string, any>) {
  * 获取所有角色（带统计信息）
  */
 export async function getAllRolesWithStats(options?: Record<string, any>) {
-  return request<API.ApiResponse<any>>('/api/role/with-stats', {
+  return request<ApiResponse<any>>('/api/role/with-stats', {
     method: 'GET',
     ...(options || {}),
   });
@@ -33,7 +33,7 @@ export async function getAllRolesWithStats(options?: Record<string, any>) {
  * 根据ID获取角色
  */
 export async function getRoleById(id: string, options?: Record<string, any>) {
-  return request<API.ApiResponse<Role>>(`/api/role/${id}`, {
+  return request<ApiResponse<Role>>(`/api/role/${id}`, {
     method: 'GET',
     ...(options || {}),
   });
@@ -43,7 +43,7 @@ export async function getRoleById(id: string, options?: Record<string, any>) {
  * 创建角色
  */
 export async function createRole(data: CreateRoleRequest, options?: Record<string, any>) {
-  return request<API.ApiResponse<Role>>('/api/role', {
+  return request<ApiResponse<Role>>('/api/role', {
     method: 'POST',
     data,
     ...(options || {}),
@@ -58,7 +58,7 @@ export async function updateRole(
   data: UpdateRoleRequest,
   options?: Record<string, any>,
 ) {
-  return request<API.ApiResponse<boolean>>(`/api/role/${id}`, {
+  return request<ApiResponse<boolean>>(`/api/role/${id}`, {
     method: 'PUT',
     data,
     ...(options || {}),
@@ -69,7 +69,7 @@ export async function updateRole(
  * 删除角色
  */
 export async function deleteRole(id: string, reason?: string, options?: Record<string, any>) {
-  return request<API.ApiResponse<boolean>>(`/api/role/${id}`, {
+  return request<ApiResponse<boolean>>(`/api/role/${id}`, {
     method: 'DELETE',
     params: { reason },
     ...(options || {}),
@@ -84,7 +84,7 @@ export async function assignMenusToRole(
   data: AssignMenusToRoleRequest,
   options?: Record<string, any>,
 ) {
-  return request<API.ApiResponse<boolean>>(`/api/role/${id}/menus`, {
+  return request<ApiResponse<boolean>>(`/api/role/${id}/menus`, {
     method: 'POST',
     data,
     ...(options || {}),
@@ -95,7 +95,7 @@ export async function assignMenusToRole(
  * 获取角色的菜单权限
  */
 export async function getRoleMenus(id: string, options?: Record<string, any>) {
-  return request<API.ApiResponse<string[]>>(`/api/role/${id}/menus`, {
+  return request<ApiResponse<string[]>>(`/api/role/${id}/menus`, {
     method: 'GET',
     ...(options || {}),
   });

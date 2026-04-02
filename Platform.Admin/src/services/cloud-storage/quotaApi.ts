@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse } from '@/types/unified-api';
+import type { ApiResponse, PagedResult } from '@/types/unified-api';
 
 // 存储配额相关类型
 export interface StorageQuota {
@@ -39,13 +39,7 @@ export interface QuotaListRequest {
     companyId?: string;
 }
 
-export interface QuotaListResponse {
-    queryable: StorageQuota[];
-    rowCount: number;
-    currentPage: number;
-    pageSize: number;
-    pageCount: number;
-}
+export type QuotaListResponse = PagedResult<StorageQuota>;
 
 export interface QuotaUsageStats {
     totalUsers: number;
@@ -78,13 +72,7 @@ export interface QuotaWarning {
     createdAt: string;
 }
 
-export interface QuotaWarningListResponse {
-    queryable: QuotaWarning[];
-    rowCount: number;
-    currentPage: number;
-    pageSize: number;
-    pageCount: number;
-}
+export type QuotaWarningListResponse = PagedResult<QuotaWarning>;
 
 // 存储配额管理 API
 

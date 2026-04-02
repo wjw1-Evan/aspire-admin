@@ -1,3 +1,5 @@
+import type { PagedResult } from '@/types/unified-api';
+
 /**
  * 密码本相关类型定义
  */
@@ -77,13 +79,7 @@ export interface PasswordBookQueryRequest {
 /**
  * 密码本列表响应
  */
-export interface PasswordBookListResponse {
-  data: PasswordBookEntry[];
-  total: number;
-  success: boolean;
-  current: number;
-  pageSize: number;
-}
+export type PasswordBookListResponse = PagedResult<PasswordBookEntry>;
 
 /**
  * 密码强度检测结果

@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react';
 import { request } from '@umijs/max';
 import type { UserListRequest } from '@/pages/user-management/types';
+import type { ApiResponse, PagedResult } from '@/types/unified-api';
+import type { AppUser } from '@/pages/user-management/types';
 
 /**
  * 用户列表管理 Hook
@@ -40,7 +42,7 @@ export function useUserList() {
       };
 
       try {
-        const response = await request<{ success: boolean; data: any }>(
+        const response = await request<ApiResponse<PagedResult<AppUser>>>(
           '/api/users/list',
           {
             method: 'POST',

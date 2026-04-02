@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse } from '@/types/unified-api';
+import type { ApiResponse, PagedResult } from '@/types/unified-api';
 import { AI_ASSISTANT_ID } from '@/constants/ai';
 import { tokenUtils } from '@/utils/token';
 import { getApiBaseUrl } from '@/utils/request';
@@ -57,15 +57,7 @@ export interface ChatMessage {
 /**
  * 会话列表响应
  */
-export interface SessionListResponse {
-  queryable: ChatSession[];
-  rowCount: number;
-  currentPage: number;
-  pageSize: number;
-  pageCount?: number;
-  hasPreviousPage?: boolean;
-  hasNextPage?: boolean;
-}
+export type SessionListResponse = PagedResult<ChatSession>;
 
 /**
  * 消息时间线响应

@@ -496,7 +496,7 @@ public class StorageQuotaService : IStorageQuotaService
     /// 获取存储配额列表（分页）
     /// 修复：基于所有用户查询，而不仅仅是已有配额记录的用户
     /// </summary>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<StorageQuotaListItem>> GetStorageQuotaListAsync(StorageQuotaListQuery query)
+    public async Task<PagedResult<StorageQuotaListItem>> GetStorageQuotaListAsync(StorageQuotaListQuery query)
     {
         // 获取当前企业ID
         var currentCompanyId = await _tenantContext.GetCurrentCompanyIdAsync();
@@ -708,7 +708,7 @@ public class StorageQuotaService : IStorageQuotaService
             _ => allItems.OrderByDescending(item => item.UsedSpace).ToList() // 默认按使用量降序
         };
 
-        return new System.Linq.Dynamic.Core.PagedResult<StorageQuotaListItem>
+        return new PagedResult<StorageQuotaListItem>
         {
             Queryable = sortedItems.AsQueryable(),
             CurrentPage = query.Page,

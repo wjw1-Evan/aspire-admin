@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse } from '@/types/unified-api';
+import type { ApiResponse, PagedResult } from '@/types/unified-api';
 
 // 文件分享相关类型
 export interface FileShare {
@@ -47,13 +47,7 @@ export interface ShareListRequest {
     pageSize?: number;
 }
 
-export interface ShareListResponse {
-    queryable: FileShare[];
-    rowCount: number;
-    currentPage: number;
-    pageSize: number;
-    pageCount: number;
-}
+export type ShareListResponse = PagedResult<FileShare>;
 
 export interface ShareAccessRequest {
     shareToken: string;

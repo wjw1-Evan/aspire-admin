@@ -1,10 +1,8 @@
 import { request } from '@umijs/max';
+import type { ApiResponse, PagedResult } from '@/types/unified-api';
 
 const API_PREFIX = '/api/iot';
 
-// ─────────────────────────────────────────────────────────────────
-// 类型定义
-// ─────────────────────────────────────────────────────────────────
 export type IoTDeviceStatus = 'Online' | 'Offline' | 'Fault' | 'Maintenance';
 export type IoTDeviceType = 'Sensor' | 'Actuator' | 'Gateway' | 'Other';
 
@@ -34,22 +32,10 @@ export interface IoTEventQueryRequest {
     endTime?: string;
 }
 
-export interface IoTEventQueryResponse {
-    queryable: IoTDeviceEvent[];
-    rowCount: number;
-    currentPage: number;
-    pageSize: number;
-}
+export type IoTEventQueryResponse = PagedResult<IoTDeviceEvent>;
 
-// ─────────────────────────────────────────────────────────────────
-// API 方法
-// ─────────────────────────────────────────────────────────────────
-
-/**
- * 查询 IoT 事件
- */
 export const queryIoTEvents = (params: IoTEventQueryRequest) =>
-    request<{ success: boolean; data: IoTEventQueryResponse }>(`${API_PREFIX}/events/query`, {
+    request<ApiResponse<IoTEventQueryResponse>>(`${API_PREFIX}/events/query`, {
         method: 'POST',
         data: params,
     });

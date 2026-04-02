@@ -1,26 +1,29 @@
 import { request } from '@umijs/max';
+import type { ApiResponse, PagedResult } from '@/types/unified-api';
 import type { UserActivityLog, GetUserActivityLogsParams } from './types';
 
-/**
- * 获取所有用户活动日志
- */
 export async function getUserActivityLogs(
   params?: GetUserActivityLogsParams,
   options?: Record<string, any>,
 ) {
-  return request<
-    API.ApiResponse<{
-      queryable: UserActivityLog[];
-      rowCount: number;
-      currentPage: number;
-      pageSize: number;
-      totalPages?: number;
-    }>
-  >('/api/users/activity-logs', {
+  return request<ApiResponse<PagedResult<UserActivityLog>>>('/api/users/activity-logs', {
     method: 'GET',
     params,
     ...(options || {}),
   });
+}
+
+export interface ActivityLogWithSummary {
+  queryable: UserActivityLog[];
+  rowCount: number;
+  currentPage: number;
+  pageSize: number;
+  summary: {
+    totalCount: number;
+    successCount: number;
+    errorCount: number;
+    actionTypesCount: number;
+  };
 }
 
 /**
@@ -30,7 +33,7 @@ export async function getActivityLogById(
   logId: string,
   options?: Record<string, any>,
 ) {
-  return request<API.ApiResponse<UserActivityLog>>(`/api/users/activity-logs/${logId}`, {
+  return request<ApiResponse<UserActivityLog>>(`/api/users/activity-logs/${logId}`, {
     method: 'GET',
     ...(options || {}),
   });
@@ -54,18 +57,7 @@ export async function getCurrentUserActivityLogs(
   },
   options?: Record<string, any>,
 ) {
-  return request<API.ApiResponse<{
-    queryable: UserActivityLog[];
-    rowCount: number;
-    currentPage: number;
-    pageSize: number;
-    summary: {
-      totalCount: number;
-      successCount: number;
-      errorCount: number;
-      actionTypesCount: number;
-    };
-  }>>('/api/users/me/activity-logs-paged', {
+  return request<ApiResponse<ActivityLogWithSummary>>('/api/users/me/activity-logs-paged', {
     method: 'GET',
     params,
     ...(options || {}),
@@ -80,7 +72,7 @@ export async function getCurrentUserActivityLogById(
   logId: string,
   options?: Record<string, any>,
 ) {
-  return request<API.ApiResponse<UserActivityLog>>(`/api/users/me/activity-logs/${logId}`, {
+  return request<ApiResponse<UserActivityLog>>(`/api/users/me/activity-logs/${logId}`, {
     method: 'GET',
     ...(options || {}),
   });

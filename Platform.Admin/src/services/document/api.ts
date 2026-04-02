@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse } from '@/types/unified-api';
+import type { ApiResponse, PagedResult } from '@/types/unified-api';
 
 /**
  * 公文状态枚举
@@ -122,7 +122,7 @@ export interface DelegateDocumentRequest {
 /**
  * 获取公文列表
  */
-export async function getDocumentList(params: DocumentQueryParams): Promise<ApiResponse<{ queryable: Document[]; rowCount: number; currentPage: number; pageSize: number }>> {
+export async function getDocumentList(params: DocumentQueryParams): Promise<ApiResponse<PagedResult<Document>>> {
   return request('/api/documents', {
     method: 'GET',
     params,
@@ -243,7 +243,7 @@ export async function delegateDocument(id: string, data: DelegateDocumentRequest
 /**
  * 获取待审批列表
  */
-export async function getPendingDocuments(params: DocumentQueryParams): Promise<ApiResponse<{ queryable: Document[]; rowCount: number; currentPage: number; pageSize: number }>> {
+export async function getPendingDocuments(params: DocumentQueryParams): Promise<ApiResponse<PagedResult<Document>>> {
   return request('/api/documents/pending', {
     method: 'GET',
     params,

@@ -124,7 +124,7 @@ export async function getXiaokeConfigs(params?: {
  * 根据ID获取配置详情
  */
 export async function getXiaokeConfigById(id: string) {
-  return request<API.ApiResponse<XiaokeConfig>>(`/api/xiaoke/config/${id}`, {
+  return request<ApiResponse<XiaokeConfig>>(`/api/xiaoke/config/${id}`, {
     method: 'GET',
   });
 }
@@ -133,7 +133,7 @@ export async function getXiaokeConfigById(id: string) {
  * 获取默认配置
  */
 export async function getDefaultXiaokeConfig() {
-  return request<API.ApiResponse<XiaokeConfig>>('/api/xiaoke/config/default', {
+  return request<ApiResponse<XiaokeConfig>>('/api/xiaoke/config/default', {
     method: 'GET',
   });
 }
@@ -142,7 +142,7 @@ export async function getDefaultXiaokeConfig() {
  * 创建配置
  */
 export async function createXiaokeConfig(data: CreateXiaokeConfigRequest) {
-  return request<API.ApiResponse<XiaokeConfig>>('/api/xiaoke/config', {
+  return request<ApiResponse<XiaokeConfig>>('/api/xiaoke/config', {
     method: 'POST',
     data,
   });
@@ -152,7 +152,7 @@ export async function createXiaokeConfig(data: CreateXiaokeConfigRequest) {
  * 更新配置
  */
 export async function updateXiaokeConfig(id: string, data: UpdateXiaokeConfigRequest) {
-  return request<API.ApiResponse<XiaokeConfig>>(`/api/xiaoke/config/${id}`, {
+  return request<ApiResponse<XiaokeConfig>>(`/api/xiaoke/config/${id}`, {
     method: 'PUT',
     data,
   });
@@ -162,7 +162,7 @@ export async function updateXiaokeConfig(id: string, data: UpdateXiaokeConfigReq
  * 删除配置
  */
 export async function deleteXiaokeConfig(id: string) {
-  return request<API.ApiResponse<void>>(`/api/xiaoke/config/${id}`, {
+  return request<ApiResponse<void>>(`/api/xiaoke/config/${id}`, {
     method: 'DELETE',
   });
 }
@@ -171,7 +171,7 @@ export async function deleteXiaokeConfig(id: string) {
  * 设置默认配置
  */
 export async function setDefaultXiaokeConfig(id: string) {
-  return request<API.ApiResponse<void>>(`/api/xiaoke/config/${id}/set-default`, {
+  return request<ApiResponse<void>>(`/api/xiaoke/config/${id}/set-default`, {
     method: 'POST',
   });
 }
@@ -190,7 +190,7 @@ export async function getChatHistory(data: ChatHistoryQueryRequest) {
  * 获取会话详情和消息
  */
 export async function getChatHistoryDetail(sessionId: string) {
-  return request<API.ApiResponse<ChatHistoryDetailResponse>>(
+  return request<ApiResponse<ChatHistoryDetailResponse>>(
     `/api/xiaoke/chat-history/${sessionId}`,
     {
       method: 'GET',
@@ -202,7 +202,7 @@ export async function getChatHistoryDetail(sessionId: string) {
  * 删除会话
  */
 export async function deleteChatHistory(sessionId: string) {
-  return request<API.ApiResponse<void>>(`/api/xiaoke/chat-history/${sessionId}`, {
+  return request<ApiResponse<void>>(`/api/xiaoke/chat-history/${sessionId}`, {
     method: 'DELETE',
   });
 }

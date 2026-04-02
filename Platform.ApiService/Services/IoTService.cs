@@ -45,7 +45,7 @@ public class IoTService : IIoTService
         return gateway;
     }
 
-    public async Task<System.Linq.Dynamic.Core.PagedResult<IoTGateway>> GetGatewaysAsync(string? keyword = null, IoTDeviceStatus? status = null, int pageIndex = 1, int pageSize = 20)
+    public async Task<PagedResult<IoTGateway>> GetGatewaysAsync(string? keyword = null, IoTDeviceStatus? status = null, int pageIndex = 1, int pageSize = 20)
     {
         var keywordLower = keyword?.ToLowerInvariant();
         var query = _context.Set<IoTGateway>().Where(g =>
@@ -183,7 +183,7 @@ public class IoTService : IIoTService
         return device;
     }
 
-    public async Task<System.Linq.Dynamic.Core.PagedResult<IoTDevice>> GetDevicesAsync(string? gatewayId = null, string? keyword = null, int pageIndex = 1, int pageSize = 20)
+    public async Task<PagedResult<IoTDevice>> GetDevicesAsync(string? gatewayId = null, string? keyword = null, int pageIndex = 1, int pageSize = 20)
     {
         var keywordLower = keyword?.ToLowerInvariant();
         var query = _context.Set<IoTDevice>().Where(d =>
@@ -341,7 +341,7 @@ public class IoTService : IIoTService
         return dataPoint;
     }
 
-    public async Task<System.Linq.Dynamic.Core.PagedResult<IoTDataPoint>> GetDataPointsAsync(string? deviceId = null, string? keyword = null, int pageIndex = 1, int pageSize = 20)
+    public async Task<PagedResult<IoTDataPoint>> GetDataPointsAsync(string? deviceId = null, string? keyword = null, int pageIndex = 1, int pageSize = 20)
     {
         var keywordLower = keyword?.ToLowerInvariant();
         var query = _context.Set<IoTDataPoint>().Where(dp =>

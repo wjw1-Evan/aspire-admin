@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse } from '@/types/unified-api';
+import type { ApiResponse, PagedResult } from '@/types/unified-api';
 import type { WorkflowDefinition, WorkflowGraph, WorkflowNode, WorkflowEdge, NodeConfig } from './api';
 
 /**
@@ -43,7 +43,7 @@ export async function getWorkflowList(params?: {
   category?: string;
   isActive?: boolean;
   keyword?: string;
-}): Promise<ApiResponse<{ queryable: WorkflowDefinition[]; rowCount: number }>> {
+}): Promise<ApiResponse<PagedResult<WorkflowDefinition>>> {
   return request('/api/workflow/definitions', {
     method: 'GET',
     params,
@@ -138,31 +138,36 @@ export async function stopWorkflowExecution(executionId: string): Promise<ApiRes
   });
 }
 
-/**
- * 获取工作流执行历史
- */
+export interface WorkflowExecutionRecord {
+  executionId: string;
+  status: string;
+  startedAt: string;
+  completedAt?: string;
+  duration: number;
+  inputs: Record<string, any>;
+  outputs: Record<string, any>;
+}
+
 export async function getExecutionHistory(
   definitionId: string,
   params?: {
     page?: number;
     pageSize?: number;
   }
-): Promise<ApiResponse<{
-  queryable: Array<{
-    executionId: string;
-    status: string;
-    startedAt: string;
-    completedAt?: string;
-    duration: number;
-    inputs: Record<string, any>;
-    outputs: Record<string, any>;
-  }>;
-  rowCount: number;
-}>> {
+): Promise<ApiResponse<PagedResult<WorkflowExecutionRecord>>> {
   return request(`/api/workflow/definitions/${definitionId}/executions`, {
     method: 'GET',
     params,
   });
+}
+
+export interface ExecutionLogEntry {
+  id: string;
+  timestamp: string;
+  nodeId?: string;
+  level: string;
+  message: string;
+  data?: Record<string, any>;
 }
 
 /**
@@ -234,17 +239,7 @@ export async function getExecutionLogs(
     page?: number;
     pageSize?: number;
   }
-): Promise<ApiResponse<{
-  queryable: Array<{
-    id: string;
-    timestamp: string;
-    nodeId?: string;
-    level: string;
-    message: string;
-    data?: Record<string, any>;
-  }>;
-  rowCount: number;
-}>> {
+): Promise<ApiResponse<PagedResult<ExecutionLogEntry>>> {
   return request(`/api/workflow/executions/${executionId}/logs`, {
     method: 'GET',
     params,

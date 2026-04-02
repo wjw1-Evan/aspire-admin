@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse } from '@/types/unified-api';
+import type { ApiResponse, PagedResult } from '@/types/unified-api';
 
 // 文件和文件夹相关类型
 export interface FileItem {
@@ -87,13 +87,7 @@ export interface FileListRequest {
     sortOrder?: 'asc' | 'desc';
 }
 
-export interface FileListResponse {
-    queryable: FileItem[];
-    rowCount: number;
-    currentPage: number;
-    pageSize: number;
-    pageCount: number;
-}
+export type FileListResponse = PagedResult<FileItem>;
 
 export interface StorageStatistics {
     totalFiles: number;

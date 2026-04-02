@@ -9,6 +9,7 @@ import SearchFormCard from '@/components/SearchFormCard';
 import StatCard from '@/components/StatCard';
 import * as parkService from '@/services/park';
 import type { ParkTenant, LeaseContract, TenantStatistics, ServiceRequest, LeasePaymentRecord } from '@/services/park';
+import type { PagedResult } from '@/types/unified-api';
 import dayjs from 'dayjs';
 
 const { Text } = Typography;
@@ -155,9 +156,9 @@ const TenantManagement: React.FC = () => {
                 status: params.status,
                 industry: params.industry
             });
-            // 使用后端统一的分页字段
             if (res.success && res.data) {
-              return { data: (res.data as any).queryable ?? [], total: (res.data as any).rowCount ?? 0, success: true };
+              const paged = res.data as PagedResult<ParkTenant>;
+              return { data: paged.queryable ?? [], total: paged.rowCount ?? 0, success: true };
             }
             return { data: [], total: 0, success: false };
         } catch (error) { return { data: [], total: 0, success: false }; }

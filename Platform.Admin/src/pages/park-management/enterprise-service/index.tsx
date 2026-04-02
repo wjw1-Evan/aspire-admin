@@ -9,6 +9,7 @@ import SearchFormCard from '@/components/SearchFormCard';
 import StatCard from '@/components/StatCard';
 import * as parkService from '@/services/park';
 import type { ServiceCategory, ServiceRequest, ServiceStatistics, ParkTenant } from '@/services/park';
+import type { PagedResult } from '@/types/unified-api';
 import dayjs from 'dayjs';
 import styles from './index.less';
 
@@ -190,7 +191,8 @@ const EnterpriseService: React.FC = () => {
         try {
             const res = await parkService.getServiceRequests({ page: params.current || 1, pageSize: params.pageSize || 10, search: params.search, status: params.status, categoryId: params.categoryId, priority: params.priority });
             if (res.success && res.data) {
-              return { data: (res.data as any).queryable ?? [], total: (res.data as any).rowCount ?? 0, success: true };
+              const paged = res.data as PagedResult<ServiceRequest>;
+              return { data: paged.queryable ?? [], total: paged.rowCount ?? 0, success: true };
             }
             return { data: [], total: 0, success: false };
         } catch (error) { return { data: [], total: 0, success: false }; }

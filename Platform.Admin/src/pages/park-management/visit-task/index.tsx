@@ -44,6 +44,7 @@ import * as visitService from '@/services/visit';
 import { getTenants } from '@/services/park';
 import type { ParkTenant } from '@/services/park';
 import type { VisitTask as VisitTaskType, VisitStatistics } from '@/services/visit';
+import type { PagedResult } from '@/types/unified-api';
 import dayjs from 'dayjs';
 import styles from './index.less';
 
@@ -383,9 +384,10 @@ const VisitTask: React.FC = () => {
                             ...searchValues,
                         });
                         if (res.success && res.data) {
+                          const paged = res.data as PagedResult<VisitTaskType>;
                           return {
-                            data: (res.data as any).queryable ?? [],
-                            total: (res.data as any).rowCount ?? 0,
+                            data: paged.queryable ?? [],
+                            total: paged.rowCount ?? 0,
                             success: true,
                           };
                         }

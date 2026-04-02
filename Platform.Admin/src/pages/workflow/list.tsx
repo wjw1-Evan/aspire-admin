@@ -20,6 +20,7 @@ import {
   updateWorkflow,
   type WorkflowDefinition,
 } from '@/services/workflow/api';
+import type { PagedResult } from '@/types/unified-api';
 import WorkflowCreateForm from './components/WorkflowCreateForm';
 import WorkflowEditForm from './components/WorkflowEditForm';
 import { useIntl } from '@umijs/max';
@@ -113,10 +114,8 @@ const WorkflowManagement: React.FC = () => {
     try {
       const response = await getWorkflowList(requestData);
       if (response.success && response.data) {
-        // 直接使用后端分页字段
-        const dataArr = (response.data as any).queryable ?? (response.data as any).list ?? [];
-        const totalVal = (response.data as any).rowCount ?? (response.data as any).total ?? 0;
-        return { data: dataArr, total: totalVal, success: true };
+        const paged = response.data as PagedResult<WorkflowDefinition>;
+        return { data: paged.queryable, total: paged.rowCount, success: true };
       }
       return { data: [], success: false, rowCount: 0 };
     } catch (error) {

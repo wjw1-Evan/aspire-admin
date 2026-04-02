@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse } from '@/types/unified-api';
+import type { ApiResponse, PagedResult } from '@/types/unified-api';
 
 export enum FormFieldType {
     Text = 'Text',
@@ -43,7 +43,7 @@ export interface FormDefinition {
     updatedAt?: string;
 }
 
-export async function getFormList(params: { current?: number; pageSize?: number; keyword?: string; isActive?: boolean }): Promise<ApiResponse<{ queryable: FormDefinition[]; rowCount: number; currentPage: number; pageSize: number }>> {
+export async function getFormList(params: { current?: number; pageSize?: number; keyword?: string; isActive?: boolean }): Promise<ApiResponse<PagedResult<FormDefinition>>> {
     return request('/api/forms', {
         method: 'GET',
         params,

@@ -400,7 +400,7 @@ public class CloudStorageService : ICloudStorageService
     }
 
     /// <inheritdoc/>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<FileItem>> GetFileItemsAsync(string parentId, FileListQuery query)
+    public async Task<PagedResult<FileItem>> GetFileItemsAsync(string parentId, FileListQuery query)
     {
         var normalizedParentId = string.IsNullOrWhiteSpace(parentId) ? string.Empty : parentId;
         var q = _context.Set<FileItem>().Where(x => x.Status == FileStatus.Active && x.ParentId == normalizedParentId);
@@ -595,7 +595,7 @@ public class CloudStorageService : ICloudStorageService
     }
 
     /// <inheritdoc/>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<FileItem>> SearchFilesAsync(FileSearchQuery query)
+    public async Task<PagedResult<FileItem>> SearchFilesAsync(FileSearchQuery query)
     {
         var keyword = query.Keyword?.ToLower();
         var q = _context.Set<FileItem>().Where(x => x.Status == FileStatus.Active);
@@ -626,7 +626,7 @@ public class CloudStorageService : ICloudStorageService
     }
 
     /// <inheritdoc/>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<FileItem>> SearchByContentAsync(string keyword, FileContentSearchQuery query)
+    public async Task<PagedResult<FileItem>> SearchByContentAsync(string keyword, FileContentSearchQuery query)
     {
         if (string.IsNullOrWhiteSpace(keyword)) throw new ArgumentException("搜索关键词不能为空");
         var allFiles = await _context.Set<FileItem>().Where(x => x.Type == FileItemType.File && x.Status == FileStatus.Active)
@@ -646,7 +646,7 @@ public class CloudStorageService : ICloudStorageService
             catch { /* 忽略文件读取错误，不影响搜索结果 */ }
         }
 
-        return new System.Linq.Dynamic.Core.PagedResult<FileItem>
+        return new PagedResult<FileItem>
         {
             Queryable = matched.AsQueryable(),
             CurrentPage = query.Page,
@@ -657,7 +657,7 @@ public class CloudStorageService : ICloudStorageService
     }
 
     /// <inheritdoc/>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<FileItem>> GetRecycleBinItemsAsync(RecycleBinQuery query)
+    public async Task<PagedResult<FileItem>> GetRecycleBinItemsAsync(RecycleBinQuery query)
     {
         var q = _context.Set<FileItem>().Where(x => x.Status == FileStatus.InRecycleBin);
         if (query.Type.HasValue) q = q.Where(x => x.Type == query.Type.Value);

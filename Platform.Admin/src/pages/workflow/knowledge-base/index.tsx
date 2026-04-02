@@ -25,6 +25,7 @@ import DataTable from '@/components/DataTable';
 import SearchFormCard from '@/components/SearchFormCard';
 import * as kbService from '@/services/workflow/knowledge-base';
 import type { KnowledgeBase } from '@/services/workflow/knowledge-base';
+import type { PagedResult } from '@/types/unified-api';
 import dayjs from 'dayjs';
 
 const { Text } = Typography;
@@ -212,9 +213,10 @@ const KnowledgeBaseManagement: React.FC = () => {
               ...searchValues,
             });
             if (res.success && res.data) {
+              const paged = res.data as PagedResult<KnowledgeBase>;
               return {
-                data: (res.data as any).queryable ?? [],
-                total: (res.data as any).rowCount ?? 0,
+                data: paged.queryable ?? [],
+                total: paged.rowCount ?? 0,
                 success: true,
               };
             }

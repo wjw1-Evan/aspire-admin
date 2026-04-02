@@ -24,6 +24,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/zh-cn';
 import type { UserActivityLog } from '@/services/user-log/types';
 import { getCurrentUserActivityLogById } from '@/services/user-log/api';
+import type { ApiResponse } from '@/types/unified-api';
 
 dayjs.extend(relativeTime);
 dayjs.locale('zh-cn');
@@ -36,7 +37,7 @@ interface LogDetailDrawerProps {
   readonly logId?: string; // 可选：如果提供 logId，将从 API 获取完整数据
   readonly onClose: () => void;
   readonly fetchFromApi?: boolean; // 是否从 API 获取完整数据（默认：如果提供了 logId 则自动获取）
-  readonly fetcher?: (logId: string) => Promise<API.ApiResponse<UserActivityLog>>; // 自定义获取详情的 API（管理员端 / 用户端）
+  readonly fetcher?: (logId: string) => Promise<ApiResponse<UserActivityLog>>; // 自定义获取详情的 API（管理员端 / 用户端）
 }
 
 export default function LogDetailDrawer({

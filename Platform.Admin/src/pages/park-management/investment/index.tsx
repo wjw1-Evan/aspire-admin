@@ -9,6 +9,7 @@ import SearchFormCard from '@/components/SearchFormCard';
 import StatCard from '@/components/StatCard';
 import * as parkService from '@/services/park';
 import type { InvestmentLead, InvestmentProject, InvestmentStatistics } from '@/services/park';
+import type { PagedResult } from '@/types/unified-api';
 import dayjs from 'dayjs';
 import styles from './index.less';
 
@@ -272,8 +273,8 @@ const InvestmentManagement: React.FC = () => {
                 priority: params.priority,
             });
             if (res.success && res.data) {
-                const d = res.data as any;
-                return { data: d.queryable ??  [], total: d.rowCount ??  0, success: true };
+                const d = res.data as PagedResult<InvestmentLead>;
+                return { data: d.queryable ?? [], total: d.rowCount ?? 0, success: true };
             }
             return { data: [], total: 0, success: false };
         } catch (error) {
@@ -290,8 +291,8 @@ const InvestmentManagement: React.FC = () => {
                 stage: params.stage,
             });
             if (res.success && res.data) {
-                const d = res.data as any;
-                return { data: d.queryable ??  [], total: d.rowCount ??  0, success: true };
+                const d = res.data as PagedResult<InvestmentLead>;
+                return { data: d.queryable ?? [], total: d.rowCount ?? 0, success: true };
             }
             return { data: [], total: 0, success: false };
         } catch (error) {

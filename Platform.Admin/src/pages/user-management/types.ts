@@ -1,3 +1,5 @@
+import type { PagedResult } from '@/types/unified-api';
+
 // 用户相关类型定义
 
 /**
@@ -43,15 +45,8 @@ export interface UserListRequest {
 
 /**
  * 用户列表响应
- * 与后端 UserListWithRolesResponse 对应
  */
-export interface UserListResponse {
-  queryable: AppUser[];
-  rowCount: number;
-  currentPage: number;
-  pageSize: number;
-  totalPages?: number;
-}
+export type UserListResponse = PagedResult<AppUser>;
 
 export interface UserStatisticsResponse {
   totalUsers: number;

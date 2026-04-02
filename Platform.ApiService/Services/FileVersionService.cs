@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -71,6 +73,12 @@ public class FileVersionService : IFileVersionService
     }
 
     public async Task<List<FileVersion>> GetVersionHistoryAsync(string fileItemId) => await _context.Set<FileVersion>().Where(v => v.FileItemId == fileItemId).OrderByDescending(v => v.VersionNumber).ToListAsync();
+
+    public async Task<PagedResult<FileVersion>> GetVersionHistoryPaginatedAsync(string fileItemId, int page, int pageSize)
+    {
+        var query = _context.Set<FileVersion>().Where(v => v.FileItemId == fileItemId).OrderByDescending(v => v.VersionNumber);
+        return await Task.FromResult(query.PageResult(page, pageSize));
+    }
 
     public async Task<FileVersion?> GetVersionAsync(string versionId) => await _context.Set<FileVersion>().FirstOrDefaultAsync(x => x.Id == versionId);
 

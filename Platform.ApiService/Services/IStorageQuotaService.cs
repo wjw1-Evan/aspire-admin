@@ -1,4 +1,5 @@
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Models;
 using System.Linq.Dynamic.Core;
 
 namespace Platform.ApiService.Services;
@@ -74,6 +75,15 @@ public interface IStorageQuotaService
     /// <param name="warningThreshold">警告阈值（百分比，默认80%）</param>
     /// <returns>配额警告列表</returns>
     Task<List<StorageQuotaWarning>> GetQuotaWarningsAsync(double warningThreshold = 0.8);
+
+    /// <summary>
+    /// 获取存储配额警告列表（分页）
+    /// </summary>
+    /// <param name="warningThreshold">警告阈值（百分比，默认80%）</param>
+    /// <param name="page">页码</param>
+    /// <param name="pageSize">每页数量</param>
+    /// <returns>分页配额警告列表</returns>
+    Task<PagedResult<StorageQuotaWarning>> GetQuotaWarningsPaginatedAsync(double warningThreshold = 0.8, int page = 1, int pageSize = 50);
 
     /// <summary>
     /// 清理未使用的存储配额记录

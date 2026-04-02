@@ -1,4 +1,6 @@
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Models;
+using System.Linq.Dynamic.Core;
 
 namespace Platform.ApiService.Services;
 
@@ -22,6 +24,15 @@ public interface IFileVersionService
     /// <param name="fileItemId">文件项ID</param>
     /// <returns>版本历史列表</returns>
     Task<List<FileVersion>> GetVersionHistoryAsync(string fileItemId);
+
+    /// <summary>
+    /// 获取文件版本历史（分页）
+    /// </summary>
+    /// <param name="fileItemId">文件项ID</param>
+    /// <param name="page">页码</param>
+    /// <param name="pageSize">每页数量</param>
+    /// <returns>分页版本列表</returns>
+    Task<PagedResult<FileVersion>> GetVersionHistoryPaginatedAsync(string fileItemId, int page, int pageSize);
 
     /// <summary>
     /// 获取版本详情

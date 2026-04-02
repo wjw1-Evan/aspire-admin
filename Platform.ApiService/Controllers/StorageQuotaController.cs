@@ -368,15 +368,8 @@ public class StorageQuotaController : BaseApiController
 
         try
         {
-            var warnings = await _storageQuotaService.GetQuotaWarningsAsync(warningThreshold);
-            return Success(new PagedResult<StorageQuotaWarning>
-            {
-                Queryable = warnings.AsQueryable(),
-                CurrentPage = 1,
-                PageSize = warnings.Count,
-                RowCount = warnings.Count,
-                PageCount = 1
-            });
+            var pagedResult = await _storageQuotaService.GetQuotaWarningsPaginatedAsync(warningThreshold);
+            return Success(pagedResult);
         }
         catch (Exception ex)
         {

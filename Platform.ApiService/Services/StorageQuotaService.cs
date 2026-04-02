@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ApiService.Extensions;
+using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using System.Linq.Dynamic.Core;
 
@@ -422,6 +423,16 @@ public class StorageQuotaService : IStorageQuotaService
         }
 
         return warnings.OrderByDescending(w => w.UsagePercentage).ToList();
+    }
+
+    /// <summary>
+    /// 获取存储配额警告列表（分页）
+    /// </summary>
+    public async Task<PagedResult<StorageQuotaWarning>> GetQuotaWarningsPaginatedAsync(double warningThreshold = 0.8, int page = 1, int pageSize = 50)
+    {
+        var warnings = await GetQuotaWarningsAsync(warningThreshold);
+        var ordered = warnings.AsQueryable().OrderByDescending(w => w.UsagePercentage);
+        return ordered.PageResult(page, pageSize);
     }
 
     /// <summary>

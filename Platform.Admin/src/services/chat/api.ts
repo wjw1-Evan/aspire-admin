@@ -62,7 +62,7 @@ export interface SessionListResponse {
   rowCount: number;
   currentPage: number;
   pageSize: number;
-  totalPages?: number;
+  pageCount?: number;
   hasPreviousPage?: boolean;
   hasNextPage?: boolean;
 }

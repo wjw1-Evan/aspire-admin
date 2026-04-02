@@ -83,6 +83,40 @@ public async Task<IActionResult> GetFiles([FromQuery] FileListQuery query)
 
 > **注意**：控制器层不应处理分页逻辑，分页应在服务层完成。
 
+### 统计与分页分离必读
+
+```csharp
+// ✅ 正确：分离统计和分页接口
+[HttpGet]
+public async Task<IActionResult> GetRoles([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+{
+    var result = await _roleService.GetRolesPaginatedAsync(page, pageSize);
+    return Success(result);
+}
+
+[HttpGet("statistics")]
+public async Task<IActionResult> GetRoleStatistics()
+{
+    var statistics = await _roleService.GetRoleStatisticsAsync();
+    return Success(statistics);
+}
+
+// ❌ 禁止：在分页接口中计算统计数据
+public async Task<IActionResult> GetRoles([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+{
+    var allRoles = await _roleService.GetAllRolesAsync();
+    // 在控制器中计算统计 - 这是错误的做法
+    var stats = new {
+        Total = allRoles.Count,
+        Active = allRoles.Count(r => r.IsActive)
+    };
+    var paged = allRoles.Skip((page - 1) * pageSize).Take(pageSize);
+    return Success(new { Data = paged, Statistics = stats });
+}
+```
+
+> **原因**：统计应基于全部数据计算，分页接口只返回当前页数据。
+
 ## 相关文档
 
 - [`00-通用原则.md`](../00-通用原则.md) - 核心架构原则

@@ -407,3 +407,89 @@ if (response.success && response.data) {
   // pageCount: 总页数
 }
 ```
+
+---
+
+## 9. 统计与分页数据分离
+
+### 设计原则
+
+统计数据和分页数据必须**分离为两个独立接口**：
+
+| 接口类型 | 用途 | 数据范围 |
+|----------|------|----------|
+| 统计接口 | 计算全局统计 | 基于全部数据 |
+| 分页接口 | 表格展示 | 只返回当前页 |
+
+### ❌ 错误做法
+
+```typescript
+// ❌ 错误：为计算统计加载大量数据
+const response = await getRoles({ page: 1, pageSize: 1000 });
+const data = response.data.queryable;
+
+// 计算的统计不准确（只统计了第一页）
+const stats = {
+  total: data.length,
+  active: data.filter(r => r.isActive).length,
+};
+```
+
+### ✅ 正确做法
+
+```typescript
+// 1. 服务层定义统计接口
+export async function getRoleStatistics() {
+  return request<ApiResponse<RoleStatistics>>('/api/roles/statistics');
+}
+
+// 2. 服务层定义分页接口
+export async function getRoles(params) {
+  return request<ApiResponse<PagedResult<Role>>>('/api/roles', { params });
+}
+
+// 3. 页面组件分别加载
+const loadStatistics = useCallback(async () => {
+  const response = await getRoleStatistics();
+  if (response.success && response.data) {
+    setStatistics(response.data);  // 使用统计接口返回的完整统计
+  }
+}, []);
+
+const loadRoleData = useCallback(async (params) => {
+  const response = await getRoles(params);
+  if (response.success && response.data) {
+    // 只处理分页数据，不计算统计
+    return {
+      data: response.data.queryable,
+      total: response.data.rowCount,
+      success: true,
+    };
+  }
+}, []);
+
+// 4. 初始化时分别加载
+useEffect(() => {
+  loadStatistics();
+}, [loadStatistics]);
+```
+
+### 统计接口类型定义
+
+```typescript
+// types.ts
+export interface RoleStatistics {
+  totalRoles: number;
+  activeRoles: number;
+  totalUsers: number;
+  totalMenus: number;
+}
+```
+
+### 常见统计接口
+
+| 模块 | 接口 | 类型 |
+|------|------|------|
+| 角色管理 | `/api/role/statistics` | `RoleStatistics` |
+| IoT 平台 | `/api/iot/statistics/platform` | `PlatformStatistics` |
+| 设备事件 | `/api/iot/events/unhandled-count` | `{ Count: number }` |

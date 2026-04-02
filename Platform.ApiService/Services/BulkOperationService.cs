@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Workflow;
+using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
@@ -179,7 +180,7 @@ public class BulkOperationService : IBulkOperationService
     /// <param name="page">页码</param>
     /// <param name="pageSize">每页数量</param>
     /// <returns>批量操作列表</returns>
-    public async Task<List<BulkOperation>> GetUserBulkOperationsAsync(int page = 1, int pageSize = 20)
+    public Task<PagedResult<BulkOperation>> GetUserBulkOperationsAsync(int page = 1, int pageSize = 20)
     {
         var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
 
@@ -190,9 +191,7 @@ public class BulkOperationService : IBulkOperationService
         var orderBy = (IQueryable<BulkOperation> query) => query.OrderByDescending(b => b.CreatedAt);
 
         var query = _context.Set<BulkOperation>().Where(filter);
-        var pagedResult = orderBy(query).PageResult(page, pageSize);
-        var operations = await pagedResult.Queryable.ToListAsync();
-        return operations;
+        return Task.FromResult(orderBy(query).PageResult(page, pageSize));
     }
 
     /// <summary>

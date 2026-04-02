@@ -1,5 +1,7 @@
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Workflow;
+using Platform.ServiceDefaults.Models;
+using System.Linq.Dynamic.Core;
 
 namespace Platform.ApiService.Services;
 
@@ -31,7 +33,7 @@ public interface IBulkOperationService
     /// <summary>
     /// 获取用户的批量操作列表
     /// </summary>
-    Task<List<BulkOperation>> GetUserBulkOperationsAsync(int page = 1, int pageSize = 20);
+    Task<PagedResult<BulkOperation>> GetUserBulkOperationsAsync(int page = 1, int pageSize = 20);
 
     /// <summary>
     /// 清理已完成的批量操作

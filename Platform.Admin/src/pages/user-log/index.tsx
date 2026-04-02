@@ -5,7 +5,7 @@ import { Tag, Button, Badge, Space, Grid, Form, Select, DatePicker, Card, Row, C
 import type { ColumnsType } from 'antd/es/table';
 
 const { useBreakpoint } = Grid;
-import { ReloadOutlined, FileTextOutlined, CheckCircleOutlined, CloseCircleOutlined, DashboardOutlined } from '@ant-design/icons';
+import { ReloadOutlined, FileTextOutlined, CheckCircleOutlined, CloseCircleOutlined, ThunderboltOutlined, DashboardOutlined } from '@ant-design/icons';
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useIntl } from '@umijs/max';
 import { getActivityLogById, getUserActivityLogs, getActivityLogStatistics } from '@/services/user-log/api';

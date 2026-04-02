@@ -13,6 +13,7 @@ import {
   CloseCircleOutlined,
   ThunderboltOutlined,
   ReloadOutlined,
+  DashboardOutlined,
 } from '@ant-design/icons';
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { useIntl } from '@umijs/max';
@@ -198,6 +199,7 @@ const MyActivity: React.FC = () => {
     successCount: number;
     errorCount: number;
     actionTypes: number;
+    avgDuration: number;
   } | null>(null);
   const [searchForm] = Form.useForm();
   const [searchParams, setSearchParams] = useState<any>({});
@@ -562,6 +564,7 @@ const MyActivity: React.FC = () => {
             successCount: statsData.successCount || 0,
             errorCount: statsData.errorCount || 0,
             actionTypes: statsData.actionTypes?.length || 0,
+            avgDuration: Math.round(statsData.avgDuration || 0),
           });
         }
 
@@ -708,6 +711,15 @@ const MyActivity: React.FC = () => {
                 value={statistics.actionTypes}
                 icon={<ThunderboltOutlined />}
                 color="#faad14"
+              />
+            </Col>
+            <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}>
+              <StatCard
+                title={intl.formatMessage({ id: 'pages.myActivity.statistics.avgDuration' })}
+                value={statistics.avgDuration}
+                suffix="ms"
+                icon={<DashboardOutlined />}
+                color="#722ed1"
               />
             </Col>
           </Row>

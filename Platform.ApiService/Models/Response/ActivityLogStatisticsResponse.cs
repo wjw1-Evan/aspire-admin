@@ -21,6 +21,11 @@ public class ActivityLogStatisticsResponse
     public long ErrorCount { get; set; }
 
     /// <summary>
+    /// 平均耗时（毫秒）
+    /// </summary>
+    public double AvgDuration { get; set; }
+
+    /// <summary>
     /// 操作类型统计
     /// </summary>
     public List<ActionTypeStatistic> ActionTypes { get; set; } = new();

@@ -17,6 +17,7 @@ export interface ActivityLogStatistics {
   total: number;
   successCount: number;
   errorCount: number;
+  avgDuration: number;
   actionTypes: Array<{
     action: string;
     count: number;

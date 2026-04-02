@@ -393,7 +393,12 @@ public class UserActivityLogService : IUserActivityLogService
         var errorFilter = baseFilter.And(log => log.StatusCode >= 400)!;
         var errorTask = _context.Set<UserActivityLog>().LongCountAsync(errorFilter);
 
-        await Task.WhenAll(totalTask, successTask, errorTask);
+        var avgDurationTask = _context.Set<UserActivityLog>()
+            .Where(baseFilter)
+            .Select(log => (long?)log.Duration)
+            .AverageAsync();
+
+        await Task.WhenAll(totalTask, successTask, errorTask, avgDurationTask);
 
         var allLogs = await _context.Set<UserActivityLog>()
             .Where(baseFilter)
@@ -417,6 +422,7 @@ public class UserActivityLogService : IUserActivityLogService
             Total = totalTask.Result,
             SuccessCount = successTask.Result,
             ErrorCount = errorTask.Result,
+            AvgDuration = avgDurationTask.Result ?? 0,
             ActionTypes = actionTypeStats
         };
     }

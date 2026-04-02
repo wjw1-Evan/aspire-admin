@@ -54,6 +54,7 @@ const UserLog: React.FC = () => {
     success: 0,
     error: 0,
     actions: 0,
+    avgDuration: 0,
   });
 
   const handleViewDetail = useCallback((record: UserActivityLog) => {
@@ -99,6 +100,7 @@ const UserLog: React.FC = () => {
             success: statsData.successCount || 0,
             error: statsData.errorCount || 0,
             actions: statsData.actionTypes?.length || 0,
+            avgDuration: Math.round(statsData.avgDuration || 0),
           });
         }
 
@@ -686,6 +688,15 @@ const UserLog: React.FC = () => {
               value={stats.actions}
               icon={<ThunderboltOutlined />}
               color="#faad14"
+            />
+          </Col>
+          <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}>
+            <StatCard
+              title={intl.formatMessage({ id: 'pages.userLog.stats.avgDuration', defaultMessage: '平均耗时(ms)' })}
+              value={stats.avgDuration}
+              suffix="ms"
+              icon={<DashboardOutlined />}
+              color="#722ed1"
             />
           </Col>
         </Row>

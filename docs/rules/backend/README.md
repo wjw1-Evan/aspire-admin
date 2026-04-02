@@ -55,7 +55,7 @@ private readonly IMongoCollection<User> _collection;
 ### 分页处理必读
 
 ```csharp
-// ✅ 正确：使用 PagedResult<T>
+// ✅ 正确：服务层处理分页
 using System.Linq.Dynamic.Core;
 
 public async Task<PagedResult<FileItem>> GetFileItemsAsync(FileListQuery query)
@@ -65,15 +65,23 @@ public async Task<PagedResult<FileItem>> GetFileItemsAsync(FileListQuery query)
     return q.PageResult(query.Page, query.PageSize);
 }
 
-// 控制器返回
+// ✅ 正确：控制器直接调用服务层分页方法
 public async Task<IActionResult> GetFiles([FromQuery] FileListQuery query)
 {
     var result = await _service.GetFileItemsAsync(query);
     return Success(result);  // 直接返回 PagedResult
 }
+
+// ❌ 禁止：控制器中处理分页逻辑
+public async Task<IActionResult> GetFiles([FromQuery] FileListQuery query)
+{
+    var items = await _service.GetItemsAsync();  // 返回 List<T>
+    var pagedResult = items.AsQueryable().PageResult(page, pageSize);  // 不应在控制器中
+    return Success(pagedResult);
+}
 ```
 
-> **注意**：`Platform.ServiceDefaults/Extensions/ServiceCollectionExtensions.cs` 中已注册全局 using 别名 `PagedResult = System.Linq.Dynamic.Core.PagedResult<T>`，可直接使用。
+> **注意**：控制器层不应处理分页逻辑，分页应在服务层完成。
 
 ## 相关文档
 

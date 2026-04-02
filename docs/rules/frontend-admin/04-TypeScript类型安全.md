@@ -364,3 +364,46 @@ const columns = [
 | 统一类型定义 | `Platform.Admin/src/types/unified-api.ts` |
 | 服务层参考 | `Platform.Admin/src/services/cloud-storage/api.ts` |
 | 后端分页规范 | `docs/rules/backend/04-分页处理规范.md` |
+
+---
+
+## 8. 非分页响应处理
+
+### 返回数组的 API
+
+某些 API 返回普通数组而非分页结果，应使用对应的数组类型：
+
+```typescript
+import type { ApiResponse } from '@/types/unified-api';
+import type { Role } from '@/services/role/api';
+import type { AppUser } from '@/services/user/api';
+
+// ✅ 正确：返回数组的 API
+export async function getAllRoles() {
+  return request<ApiResponse<Role[]>>('/api/roles/all', { method: 'GET' });
+}
+
+export async function getAllUsers() {
+  return request<ApiResponse<AppUser[]>>('/api/users/all', { method: 'GET' });
+}
+
+// 使用示例
+const response = await getAllRoles();
+if (response.success && response.data) {
+  const roles: Role[] = response.data;
+  // ...
+}
+```
+
+### 访问分页数据
+
+```typescript
+// 分页响应
+const response = await getUserList(params);
+if (response.success && response.data) {
+  const { queryable, rowCount, pageCount, currentPage, pageSize } = response.data;
+  // queryable: 数据数组
+  // rowCount: 总记录数
+  // pageCount: 总页数
+}
+```

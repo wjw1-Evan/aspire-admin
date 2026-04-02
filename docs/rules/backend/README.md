@@ -120,5 +120,6 @@ public async Task<IActionResult> GetRoles([FromQuery] int page = 1, [FromQuery] 
 ## 相关文档
 
 - [`00-通用原则.md`](../00-通用原则.md) - 核心架构原则
+- [`00-分页规范.md`](../00-分页规范.md) - 统一分页规范（前后端通用）
 - [`AGENTS.md`](../../../AGENTS.md) - 项目总纲与 AI 交互指南
 - [`frontend-admin/04-TypeScript类型安全.md`](../frontend-admin/04-TypeScript类型安全.md) - 前端分页类型规范

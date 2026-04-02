@@ -5,6 +5,7 @@ using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
+using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
 
 namespace Platform.ApiService.Controllers;
@@ -368,8 +369,14 @@ public class StorageQuotaController : BaseApiController
         try
         {
             var warnings = await _storageQuotaService.GetQuotaWarningsAsync(warningThreshold);
-            var pagedResult = warnings.AsQueryable().PageResult(1, warnings.Count);
-            return Success(pagedResult);
+            return Success(new PagedResult<StorageQuotaWarning>
+            {
+                Queryable = warnings.AsQueryable(),
+                CurrentPage = 1,
+                PageSize = warnings.Count,
+                RowCount = warnings.Count,
+                PageCount = 1
+            });
         }
         catch (Exception ex)
         {

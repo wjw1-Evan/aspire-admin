@@ -71,7 +71,7 @@ const UserLog: React.FC = () => {
     const { current = 1, pageSize = 20 } = params;
 
     try {
-      // 并行请求分页数据和统计数据
+      // 并行请求分页数据和统计数据（统计数据不传筛选条件，获取全局统计）
       const [logsResponse, statsResponse] = await Promise.all([
         getUserActivityLogs({
           page: current,
@@ -84,15 +84,7 @@ const UserLog: React.FC = () => {
           endDate: filters.endDate,
           createdBy: filters.createdBy,
         }),
-        getActivityLogStatistics({
-          action: filters.action,
-          httpMethod: filters.httpMethod,
-          statusCode: filters.statusCode,
-          ipAddress: filters.ipAddress,
-          startDate: filters.startDate,
-          endDate: filters.endDate,
-          createdBy: filters.createdBy,
-        }),
+        getActivityLogStatistics(),
       ]);
 
       if (logsResponse.success && logsResponse.data) {

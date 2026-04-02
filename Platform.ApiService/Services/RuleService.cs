@@ -38,7 +38,7 @@ public class RuleService : IRuleService
             query = query.Where(r => r.Name != null && r.Name.ToLower().Contains(nameLower));
         }
 
-        var pagedResult = query.OrderByDescending(r => r.UpdatedAt).PageResult(queryParams.Current, queryParams.PageSize);
+        var pagedResult = query.OrderByDescending(r => r.UpdatedAt).PageResult(queryParams.Page, queryParams.PageSize);
         var rules = await pagedResult.Queryable.ToListAsync();
 
         if (!string.IsNullOrEmpty(queryParams.Sorter))

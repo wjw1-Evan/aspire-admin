@@ -62,7 +62,7 @@ public class ChatHistoryService : IChatHistoryService
                 return new PagedResult<ChatHistoryListItemDto>
                 {
                     Queryable = new List<ChatHistoryListItemDto>().AsQueryable(),
-                    CurrentPage = request.Current,
+                    CurrentPage = request.Page,
                     PageSize = request.PageSize,
                     RowCount = 0,
                     PageCount = 0
@@ -80,7 +80,7 @@ public class ChatHistoryService : IChatHistoryService
             .Where(filter)
             .OrderByDescending(s => s.LastMessageAt)
             .ThenByDescending(s => s.CreatedAt)
-            .PageResult(request.Current, request.PageSize);
+            .PageResult(request.Page, request.PageSize);
         var sessions = await pagedResult.Queryable.ToListAsync();
 
         var sessionIds = sessions.Select(s => s.Id!).ToList();
@@ -108,7 +108,7 @@ public class ChatHistoryService : IChatHistoryService
         return new PagedResult<ChatHistoryListItemDto>
         {
             Queryable = listItems.AsQueryable(),
-            CurrentPage = request.Current,
+            CurrentPage = request.Page,
             PageSize = request.PageSize,
             RowCount = (int)total,
             PageCount = (int)Math.Ceiling((double)total / request.PageSize)

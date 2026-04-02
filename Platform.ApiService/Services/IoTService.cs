@@ -45,7 +45,7 @@ public class IoTService : IIoTService
         return gateway;
     }
 
-    public async Task<PagedResult<IoTGateway>> GetGatewaysAsync(string? keyword = null, IoTDeviceStatus? status = null, int pageIndex = 1, int pageSize = 20)
+    public async Task<PagedResult<IoTGateway>> GetGatewaysAsync(string? keyword = null, IoTDeviceStatus? status = null, int page = 1, int pageSize = 20)
     {
         var keywordLower = keyword?.ToLowerInvariant();
         var query = _context.Set<IoTGateway>().Where(g =>
@@ -55,7 +55,7 @@ public class IoTService : IIoTService
              (g.GatewayId != null && g.GatewayId.ToLower().Contains(keywordLower))) &&
             (!status.HasValue || g.Status == status.Value));
 
-        return query.OrderByDescending(g => g.CreatedAt).PageResult(pageIndex, pageSize);
+        return query.OrderByDescending(g => g.CreatedAt).PageResult(page, pageSize);
     }
 
     public async Task<IoTGateway?> GetGatewayByIdAsync(string id)
@@ -183,7 +183,7 @@ public class IoTService : IIoTService
         return device;
     }
 
-    public async Task<PagedResult<IoTDevice>> GetDevicesAsync(string? gatewayId = null, string? keyword = null, int pageIndex = 1, int pageSize = 20)
+    public async Task<PagedResult<IoTDevice>> GetDevicesAsync(string? gatewayId = null, string? keyword = null, int page = 1, int pageSize = 20)
     {
         var keywordLower = keyword?.ToLowerInvariant();
         var query = _context.Set<IoTDevice>().Where(d =>
@@ -193,7 +193,7 @@ public class IoTService : IIoTService
              (d.Title != null && d.Title.ToLower().Contains(keywordLower)) ||
              (d.DeviceId != null && d.DeviceId.ToLower().Contains(keywordLower))));
 
-        return query.OrderByDescending(d => d.CreatedAt).PageResult(pageIndex, pageSize);
+        return query.OrderByDescending(d => d.CreatedAt).PageResult(page, pageSize);
     }
 
     public async Task<IoTDevice?> GetDeviceByIdAsync(string id)
@@ -341,7 +341,7 @@ public class IoTService : IIoTService
         return dataPoint;
     }
 
-    public async Task<PagedResult<IoTDataPoint>> GetDataPointsAsync(string? deviceId = null, string? keyword = null, int pageIndex = 1, int pageSize = 20)
+    public async Task<PagedResult<IoTDataPoint>> GetDataPointsAsync(string? deviceId = null, string? keyword = null, int page = 1, int pageSize = 20)
     {
         var keywordLower = keyword?.ToLowerInvariant();
         var query = _context.Set<IoTDataPoint>().Where(dp =>
@@ -351,7 +351,7 @@ public class IoTService : IIoTService
              (dp.Title != null && dp.Title.ToLower().Contains(keywordLower)) ||
              (dp.DataPointId != null && dp.DataPointId.ToLower().Contains(keywordLower))));
 
-        return query.OrderByDescending(dp => dp.CreatedAt).PageResult(pageIndex, pageSize);
+        return query.OrderByDescending(dp => dp.CreatedAt).PageResult(page, pageSize);
     }
 
     public async Task<IoTDataPoint?> GetDataPointByIdAsync(string id)
@@ -492,7 +492,7 @@ public class IoTService : IIoTService
             (!request.StartTime.HasValue || r.ReportedAt >= request.StartTime.Value) &&
             (!request.EndTime.HasValue || r.ReportedAt <= request.EndTime.Value));
 
-        return Task.FromResult(query.OrderByDescending(r => r.ReportedAt).PageResult(request.PageIndex, request.PageSize));
+        return Task.FromResult(query.OrderByDescending(r => r.ReportedAt).PageResult(request.Page, request.PageSize));
     }
 
     public async Task<IoTDataRecord?> GetLatestDataAsync(string dataPointId)
@@ -559,7 +559,7 @@ public class IoTService : IIoTService
             (!request.StartTime.HasValue || e.OccurredAt >= request.StartTime.Value) &&
             (!request.EndTime.HasValue || e.OccurredAt <= request.EndTime.Value));
 
-        return Task.FromResult(query.OrderByDescending(e => e.OccurredAt).PageResult(request.PageIndex, request.PageSize));
+        return Task.FromResult(query.OrderByDescending(e => e.OccurredAt).PageResult(request.Page, request.PageSize));
     }
 
     public async Task<bool> HandleEventAsync(string eventId, string remarks)

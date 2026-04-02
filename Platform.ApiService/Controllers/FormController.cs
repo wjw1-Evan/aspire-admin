@@ -19,11 +19,11 @@ public class FormController : BaseApiController
 
     [HttpGet]
     [RequireMenu("workflow-list")]
-    public async Task<IActionResult> GetForms([FromQuery] int current = 1, [FromQuery] int pageSize = 10, [FromQuery] string? keyword = null, [FromQuery] bool? isActive = null)
+    public async Task<IActionResult> GetForms([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? keyword = null, [FromQuery] bool? isActive = null)
     {
         try
         {
-            var result = await _formService.GetFormsAsync(current, pageSize, keyword, isActive);
+            var result = await _formService.GetFormsAsync(page, pageSize, keyword, isActive);
             return Success(result);
         }
         catch (Exception ex)

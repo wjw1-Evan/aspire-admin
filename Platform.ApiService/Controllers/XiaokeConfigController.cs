@@ -42,16 +42,11 @@ public class XiaokeConfigController : BaseApiController
         [FromQuery] bool? isEnabled = null,
         [FromQuery] string? sorter = null)
     {
-        // 验证分页参数
-        if (page < 1 || page > 10000)
-            throw new ArgumentException("页码必须在 1-10000 之间");
         
-        if (pageSize < 1 || pageSize > 100)
-            throw new ArgumentException("每页数量必须在 1-100 之间");
 
         var queryParams = new XiaokeConfigQueryParams
         {
-            Current = page, // PageParams 使用 Current，但 API 参数使用 page
+            Page = page,
             PageSize = pageSize,
             Name = name,
             IsEnabled = isEnabled,

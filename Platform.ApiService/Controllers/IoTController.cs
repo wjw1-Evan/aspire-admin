@@ -51,13 +51,13 @@ public class IoTController : BaseApiController
     /// </summary>
     /// <param name="keyword">关键词</param>
     /// <param name="status">对网关状态筛选</param>
-    /// <param name="pageIndex">页码</param>
+    /// <param name="page">页码</param>
     /// <param name="pageSize">每页大小</param>
     /// <returns>分页网关列表</returns>
     [HttpGet("gateways")]
-    public async Task<IActionResult> GetGateways([FromQuery] string? keyword = null, [FromQuery] IoTDeviceStatus? status = null, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20)
+    public async Task<IActionResult> GetGateways([FromQuery] string? keyword = null, [FromQuery] IoTDeviceStatus? status = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var result = await _iotService.GetGatewaysAsync(keyword, status, pageIndex, pageSize);
+        var result = await _iotService.GetGatewaysAsync(keyword, status, page, pageSize);
         return Success(result);
     }
 
@@ -134,13 +134,13 @@ public class IoTController : BaseApiController
     /// </summary>
     /// <param name="gatewayId">网关ID</param>
     /// <param name="keyword">关键词</param>
-    /// <param name="pageIndex">页码</param>
+    /// <param name="page">页码</param>
     /// <param name="pageSize">每页大小</param>
     /// <returns>分页设备列表</returns>
     [HttpGet("devices")]
-    public async Task<IActionResult> GetDevices([FromQuery] string? gatewayId = null, [FromQuery] string? keyword = null, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20)
+    public async Task<IActionResult> GetDevices([FromQuery] string? gatewayId = null, [FromQuery] string? keyword = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var result = await _iotService.GetDevicesAsync(gatewayId, keyword, pageIndex, pageSize);
+        var result = await _iotService.GetDevicesAsync(gatewayId, keyword, page, pageSize);
         return Success(result);
     }
 
@@ -276,13 +276,13 @@ public class IoTController : BaseApiController
     /// </summary>
     /// <param name="deviceId">设备ID（可选）</param>
     /// <param name="keyword">关键词搜索（可选）</param>
-    /// <param name="pageIndex">页码</param>
+    /// <param name="page">页码</param>
     /// <param name="pageSize">每页大小</param>
     /// <returns>分页数据点列表</returns>
     [HttpGet("datapoints")]
-    public async Task<IActionResult> GetDataPoints([FromQuery] string? deviceId = null, [FromQuery] string? keyword = null, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20)
+    public async Task<IActionResult> GetDataPoints([FromQuery] string? deviceId = null, [FromQuery] string? keyword = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var result = await _iotService.GetDataPointsAsync(deviceId, keyword, pageIndex, pageSize);
+        var result = await _iotService.GetDataPointsAsync(deviceId, keyword, page, pageSize);
         return Success(result);
     }
 

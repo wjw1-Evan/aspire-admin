@@ -36,7 +36,7 @@ public class RuleController : BaseApiController
     /// <param name="filter">过滤条件</param>
     [HttpGet]
     public async Task<IActionResult> GetRules(
-        [FromQuery] int current = 1,
+        [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         [FromQuery] string? name = null,
         [FromQuery] string? sorter = null,
@@ -44,7 +44,7 @@ public class RuleController : BaseApiController
     {
         var queryParams = new RuleQueryParams
         {
-            Current = current,
+            Page = page,
             PageSize = pageSize,
             Name = name,
             Sorter = sorter,

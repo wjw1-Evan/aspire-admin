@@ -276,7 +276,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
         var name = arguments.ContainsKey("name") ? arguments["name"]?.ToString() : null;
         var isEnabled = arguments.ContainsKey("isEnabled") && bool.TryParse(arguments["isEnabled"]?.ToString(), out var enabled) ? enabled : (bool?)null;
         var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 10, maxPageSize: 100);
-        var queryParams = new XiaokeConfigQueryParams { Current = page, PageSize = pageSize, Name = name, IsEnabled = isEnabled };
+        var queryParams = new XiaokeConfigQueryParams { Page = page, PageSize = pageSize, Name = name, IsEnabled = isEnabled };
         var response = await _xiaokeConfigService.GetConfigsAsync(queryParams);
         var items = response.Queryable?.ToList() ?? new List<XiaokeConfigDto>();
         var configs = items.Select(c => new { c.Id, c.Name, c.Model, c.SystemPrompt, c.Temperature, c.MaxTokens, c.TopP, c.FrequencyPenalty, c.PresencePenalty, c.IsEnabled, c.IsDefault, c.CreatedAt, c.UpdatedAt }).Cast<object>().ToList();

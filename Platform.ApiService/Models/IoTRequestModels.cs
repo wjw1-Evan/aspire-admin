@@ -207,7 +207,7 @@ public class QueryIoTDataRequest
     /// <summary>结束时间</summary>
     public DateTime? EndTime { get; set; }
     /// <summary>页码</summary>
-    public int PageIndex { get; set; } = 1;
+    public int Page { get; set; } = 1;
     /// <summary>每页数量</summary>
     public int PageSize { get; set; } = 20;
 }
@@ -230,7 +230,7 @@ public class QueryIoTEventRequest
     /// <summary>结束时间</summary>
     public DateTime? EndTime { get; set; }
     /// <summary>页码</summary>
-    public int PageIndex { get; set; } = 1;
+    public int Page { get; set; } = 1;
     /// <summary>每页数量</summary>
     public int PageSize { get; set; } = 20;
 }

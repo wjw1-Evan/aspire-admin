@@ -137,7 +137,7 @@ public class UpdatePasswordBookEntryRequest
 public class PasswordBookQueryRequest
 {
     /// <summary>当前页码</summary>
-    public int Current { get; set; } = 1;
+    public int Page { get; set; } = 1;
 
     /// <summary>每页数量</summary>
     public int PageSize { get; set; } = 10;

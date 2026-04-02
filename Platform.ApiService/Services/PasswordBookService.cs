@@ -180,7 +180,7 @@ public class PasswordBookService : IPasswordBookService
         var pagedResult = query
                 .OrderByDescending(e => e.LastUsedAt)
                 .ThenByDescending(e => e.CreatedAt)
-                .PageResult(request.Current, request.PageSize);
+                .PageResult(request.Page, request.PageSize);
         var items = await pagedResult.Queryable.ToListAsync();
 
         var dtos = items.Select(e => new PasswordBookEntryDto
@@ -201,7 +201,7 @@ public class PasswordBookService : IPasswordBookService
         return new PagedResult<PasswordBookEntryDto>
         {
             Queryable = dtos.AsQueryable(),
-            CurrentPage = request.Current,
+            CurrentPage = request.Page,
             PageSize = request.PageSize,
             RowCount = (int)total,
             PageCount = (int)Math.Ceiling((double)total / request.PageSize)

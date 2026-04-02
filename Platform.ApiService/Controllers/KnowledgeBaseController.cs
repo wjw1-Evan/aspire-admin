@@ -33,11 +33,11 @@ public class KnowledgeBaseController : BaseApiController
     /// </summary>
     [HttpGet]
     [RequireMenu("workflow-list")]
-    public async Task<IActionResult> GetKnowledgeBases([FromQuery] int current = 1, [FromQuery] int pageSize = 10, [FromQuery] string? keyword = null)
+    public async Task<IActionResult> GetKnowledgeBases([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? keyword = null)
     {
         try
         {
-            var pagedResult = await _knowledgeService.GetKnowledgeBasesAsync(current, pageSize, keyword);
+            var pagedResult = await _knowledgeService.GetKnowledgeBasesAsync(page, pageSize, keyword);
             return Success(pagedResult);
         }
         catch (Exception ex)

@@ -83,13 +83,13 @@ public class XiaokeConfigService : IXiaokeConfigService
         }
 
         var total = await query.LongCountAsync();
-        var pagedResult = query.OrderByDescending(c => c.UpdatedAt).PageResult(queryParams.Current, queryParams.PageSize);
+        var pagedResult = query.OrderByDescending(c => c.UpdatedAt).PageResult(queryParams.Page, queryParams.PageSize);
         var configs = await pagedResult.Queryable.ToListAsync();
 
         return new PagedResult<XiaokeConfigDto>
         {
             Queryable = configs.Select(ToDto).AsQueryable(),
-            CurrentPage = queryParams.Current,
+            CurrentPage = queryParams.Page,
             PageSize = queryParams.PageSize,
             RowCount = (int)total,
             PageCount = (int)Math.Ceiling((double)total / queryParams.PageSize)

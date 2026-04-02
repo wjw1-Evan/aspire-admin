@@ -409,11 +409,11 @@ public class WorkflowController : BaseApiController
     /// </summary>
     [HttpGet("instances")]
     [RequireMenu("workflow-monitor")]
-    public async Task<IActionResult> GetInstances([FromQuery] int current = 1, [FromQuery] int pageSize = 10, [FromQuery] string? workflowDefinitionId = null, [FromQuery] WorkflowStatus? status = null)
+    public async Task<IActionResult> GetInstances([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? workflowDefinitionId = null, [FromQuery] WorkflowStatus? status = null)
     {
         try
         {
-            var result = await _workflowInstanceQueryService.GetInstancesAsync(current, pageSize, workflowDefinitionId, status);
+            var result = await _workflowInstanceQueryService.GetInstancesAsync(page, pageSize, workflowDefinitionId, status);
             return Success(result);
         }
         catch (Exception ex)
@@ -553,12 +553,12 @@ public class WorkflowController : BaseApiController
     /// </summary>
     [HttpGet("instances/todo")]
     [RequireMenu("document-approval")]
-    public async Task<IActionResult> GetTodoInstances([FromQuery] int current = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetTodoInstances([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         try
         {
             var userId = RequiredUserId;
-            var result = await _workflowTodoService.GetTodoInstancesAsync(userId, current, pageSize);
+            var result = await _workflowTodoService.GetTodoInstancesAsync(userId, page, pageSize);
             return Success(result);
         }
         catch (Exception ex)

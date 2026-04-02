@@ -393,17 +393,22 @@ public class UserActivityLogService : IUserActivityLogService
 
         await Task.WhenAll(totalTask, successTask, errorTask);
 
-        var actionTypeStats = await _context.Set<UserActivityLog>()
+        var allLogs = await _context.Set<UserActivityLog>()
             .Where(baseFilter)
-            .GroupBy(log => log.Action)
+            .Select(log => log.Action)
+            .ToListAsync();
+
+        var actionTypeStats = allLogs
+            .Where(a => !string.IsNullOrEmpty(a))
+            .GroupBy(a => a!)
             .Select(g => new ActionTypeStatistic
             {
-                Action = g.Key ?? string.Empty,
-                Count = g.Count()
+                Action = g.Key,
+                Count = g.LongCount()
             })
             .OrderByDescending(s => s.Count)
             .Take(10)
-            .ToListAsync();
+            .ToList();
 
         return new ActivityLogStatisticsResponse
         {

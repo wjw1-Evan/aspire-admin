@@ -65,15 +65,16 @@ public class JoinRequestController : BaseApiController
     /// </summary>
     [HttpGet("pending")]
 
-    public async Task<IActionResult> GetPendingRequests([FromQuery] string? companyId = null, [FromQuery] string? keyword = null)
+    public async Task<IActionResult> GetPendingRequests([FromQuery] string? companyIdQuery = null, [FromQuery] string? keyword = null)
     {
+        var companyId = companyIdQuery;
         // 如果没有指定企业ID，使用当前企业
         if (string.IsNullOrEmpty(companyId))
         {
             companyId = await GetCompanyId(true);
         }
 
-        var requests = await _joinRequestService.GetPendingRequestsAsync(companyId, keyword);
+        var requests = await _joinRequestService.GetPendingRequestsAsync(companyId!, keyword);
         return Success(requests);
     }
 

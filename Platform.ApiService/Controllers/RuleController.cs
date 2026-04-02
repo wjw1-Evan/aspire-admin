@@ -29,7 +29,7 @@ public class RuleController : BaseApiController
     /// <summary>
     /// 获取规则列表
     /// </summary>
-    /// <param name="current">当前页码</param>
+    /// <param name="page">当前页码</param>
     /// <param name="pageSize">页面大小</param>
     /// <param name="name">规则名称</param>
     /// <param name="sorter">排序字段</param>

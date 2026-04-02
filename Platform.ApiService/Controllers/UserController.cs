@@ -355,6 +355,25 @@ public class UserController : BaseApiController
     }
 
     /// <summary>
+    /// 获取所有用户活动日志统计数据（需要权限）
+    /// </summary>
+    /// <param name="query">活动日志查询参数</param>
+    [HttpGet("activity-logs/statistics")]
+    [RequireMenu("user-log")]
+    public async Task<IActionResult> GetActivityLogStatistics([FromQuery] ActivityLogQuery query)
+    {
+        var statistics = await _activityLogService.GetActivityLogStatisticsAsync(
+            query.CreatedBy,
+            query.Action,
+            query.HttpMethod,
+            query.StatusCode,
+            query.IpAddress,
+            query.StartDate,
+            query.EndDate);
+        return Success(statistics);
+    }
+
+    /// <summary>
     /// 获取指定活动日志详情（管理员查看）
     /// </summary>
     /// <param name="logId">活动日志ID</param>

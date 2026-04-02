@@ -135,7 +135,6 @@ public class UserActivityLogService : IUserActivityLogService
         var total = totalTask.Result;
         var successCount = successTask.Result;
         var errorCount = errorTask.Result;
-        var actionTypesCount = 0; // 暂时禁用，优化性能
 
         Func<IQueryable<UserActivityLog>, IOrderedQueryable<UserActivityLog>> orderBy = query =>
         {
@@ -359,6 +358,60 @@ public class UserActivityLogService : IUserActivityLogService
 
         await _context.Set<UserActivityLog>().AddAsync(log);
         await _context.SaveChangesAsync();
+    }
+
+    /// <inheritdoc/>
+    public async Task<ActivityLogStatisticsResponse> GetActivityLogStatisticsAsync(
+        string? createdBy = null,
+        string? action = null,
+        string? httpMethod = null,
+        int? statusCode = null,
+        string? ipAddress = null,
+        DateTime? startDate = null,
+        DateTime? endDate = null)
+    {
+        var actionLower = action?.ToLowerInvariant();
+        var ipLower = ipAddress?.ToLowerInvariant();
+        var httpMethodUpper = httpMethod?.ToUpperInvariant();
+
+        Expression<Func<UserActivityLog, bool>> baseFilter = log =>
+            (string.IsNullOrEmpty(createdBy) || log.CreatedBy == createdBy) &&
+            (string.IsNullOrEmpty(actionLower) || (log.Action != null && log.Action.ToLower().Contains(actionLower))) &&
+            (string.IsNullOrEmpty(httpMethodUpper) || log.HttpMethod == httpMethodUpper) &&
+            (!statusCode.HasValue || log.StatusCode == statusCode.Value) &&
+            (string.IsNullOrEmpty(ipLower) || (log.IpAddress != null && log.IpAddress.ToLower().Contains(ipLower))) &&
+            (!startDate.HasValue || log.CreatedAt >= startDate.Value) &&
+            (!endDate.HasValue || log.CreatedAt <= endDate.Value);
+
+        var totalTask = _context.Set<UserActivityLog>().LongCountAsync(baseFilter);
+
+        var successFilter = baseFilter.And(log => log.StatusCode >= 200 && log.StatusCode < 300)!;
+        var successTask = _context.Set<UserActivityLog>().LongCountAsync(successFilter);
+
+        var errorFilter = baseFilter.And(log => log.StatusCode >= 400)!;
+        var errorTask = _context.Set<UserActivityLog>().LongCountAsync(errorFilter);
+
+        await Task.WhenAll(totalTask, successTask, errorTask);
+
+        var actionTypeStats = await _context.Set<UserActivityLog>()
+            .Where(baseFilter)
+            .GroupBy(log => log.Action)
+            .Select(g => new ActionTypeStatistic
+            {
+                Action = g.Key ?? string.Empty,
+                Count = g.Count()
+            })
+            .OrderByDescending(s => s.Count)
+            .Take(10)
+            .ToListAsync();
+
+        return new ActivityLogStatisticsResponse
+        {
+            Total = totalTask.Result,
+            SuccessCount = successTask.Result,
+            ErrorCount = errorTask.Result,
+            ActionTypes = actionTypeStats
+        };
     }
 
     private static bool IsValidObjectId(string? value)

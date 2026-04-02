@@ -26,7 +26,7 @@ public abstract class BaseApiController : ControllerBase
         return companyId;
     }
 
-    protected IActionResult Success(object data, string? message = null)
+    protected IActionResult Success(object? data, string? message = null)
         => Ok(CreateResponse(true, message, data));
 
     protected IActionResult? ValidateModelState()

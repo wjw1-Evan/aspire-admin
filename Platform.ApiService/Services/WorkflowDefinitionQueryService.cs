@@ -91,7 +91,7 @@ public class WorkflowDefinitionQueryService : IWorkflowDefinitionQueryService
         if (request.CreatedBy != null && request.CreatedBy.Any())
         {
             var createdBy = request.CreatedBy;
-            Expression<Func<WorkflowDefinition, bool>> createdByFilter = w => createdBy.Contains(w.CreatedBy);
+            Expression<Func<WorkflowDefinition, bool>> createdByFilter = w => createdBy.Contains(w.CreatedBy ?? "");
             filter = filter == null ? createdByFilter : filter.And(createdByFilter);
         }
 

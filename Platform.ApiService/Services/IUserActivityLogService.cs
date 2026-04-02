@@ -92,4 +92,16 @@ public interface IUserActivityLogService
         string? ipAddress = null,
         DateTime? startDate = null,
         DateTime? endDate = null);
+
+    /// <summary>
+    /// 获取所有活动日志统计数据（管理员功能）
+    /// </summary>
+    Task<ActivityLogStatisticsResponse> GetActivityLogStatisticsAsync(
+        string? createdBy = null,
+        string? action = null,
+        string? httpMethod = null,
+        int? statusCode = null,
+        string? ipAddress = null,
+        DateTime? startDate = null,
+        DateTime? endDate = null);
 }

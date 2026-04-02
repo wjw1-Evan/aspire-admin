@@ -5,10 +5,10 @@ import { Tag, Button, Badge, Space, Grid, Form, Select, DatePicker, Card, Row, C
 import type { ColumnsType } from 'antd/es/table';
 
 const { useBreakpoint } = Grid;
-import { ReloadOutlined, FileTextOutlined, CheckCircleOutlined, CloseCircleOutlined, ThunderboltOutlined, DashboardOutlined } from '@ant-design/icons';
+import { ReloadOutlined, FileTextOutlined, CheckCircleOutlined, CloseCircleOutlined, DashboardOutlined } from '@ant-design/icons';
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useIntl } from '@umijs/max';
-import { getActivityLogById, getUserActivityLogs } from '@/services/user-log/api';
+import { getActivityLogById, getUserActivityLogs, getActivityLogStatistics } from '@/services/user-log/api';
 import type { UserActivityLog } from '@/services/user-log/types';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import SearchFormCard from '@/components/SearchFormCard';
@@ -53,7 +53,6 @@ const UserLog: React.FC = () => {
     total: 0,
     success: 0,
     error: 0,
-    avgDuration: 0,
     actions: 0,
   });
 
@@ -72,36 +71,44 @@ const UserLog: React.FC = () => {
     const { current = 1, pageSize = 20 } = params;
 
     try {
-      const response = await getUserActivityLogs({
-        page: current,
-        pageSize,
-        action: filters.action,
-        httpMethod: filters.httpMethod,
-        statusCode: filters.statusCode,
-        ipAddress: filters.ipAddress,
-        startDate: filters.startDate,
-        endDate: filters.endDate,
-        createdBy: filters.createdBy,
-      });
+      // 并行请求分页数据和统计数据
+      const [logsResponse, statsResponse] = await Promise.all([
+        getUserActivityLogs({
+          page: current,
+          pageSize,
+          action: filters.action,
+          httpMethod: filters.httpMethod,
+          statusCode: filters.statusCode,
+          ipAddress: filters.ipAddress,
+          startDate: filters.startDate,
+          endDate: filters.endDate,
+          createdBy: filters.createdBy,
+        }),
+        getActivityLogStatistics({
+          action: filters.action,
+          httpMethod: filters.httpMethod,
+          statusCode: filters.statusCode,
+          ipAddress: filters.ipAddress,
+          startDate: filters.startDate,
+          endDate: filters.endDate,
+          createdBy: filters.createdBy,
+        }),
+      ]);
 
-      if (response.success && response.data) {
-        const result = response.data as any;
+      if (logsResponse.success && logsResponse.data) {
+        const result = logsResponse.data as any;
         const list: UserActivityLog[] = (result.queryable ?? result.list ?? []) as UserActivityLog[];
 
-        const successCount = list.filter((item) => (item.statusCode ?? 0) >= 200 && (item.statusCode ?? 0) < 400).length;
-        const errorCount = list.filter((item) => (item.statusCode ?? 0) >= 400).length;
-        const avgDuration = list.length
-          ? Math.round(list.reduce((sum, item) => sum + (item.duration || 0), 0) / list.length)
-          : 0;
-        const actionKinds = new Set(list.map((item) => item.action || 'unknown')).size;
-
-        setStats({
-          total: result.total || list.length || 0,
-          success: successCount,
-          error: errorCount,
-          avgDuration,
-          actions: actionKinds,
-        });
+        // 使用统计数据接口返回的数据
+        if (statsResponse.success && statsResponse.data) {
+          const statsData = statsResponse.data;
+          setStats({
+            total: statsData.total || 0,
+            success: statsData.successCount || 0,
+            error: statsData.errorCount || 0,
+            actions: statsData.actionTypes?.length || 0,
+          });
+        }
 
         return {
           data: list,
@@ -117,9 +124,6 @@ const UserLog: React.FC = () => {
       };
     } catch (error) {
       console.error('Failed to load user activity logs:', error);
-      // 注意：这是 ProTable request 函数的特殊处理模式
-      // 错误已被全局错误处理捕获并显示错误提示，这里返回空数据让表格显示空状态
-      // 这是为了在错误已由全局处理显示的情况下，避免表格显示错误状态
       return {
         data: [],
         total: 0,
@@ -657,12 +661,12 @@ const UserLog: React.FC = () => {
         </Form>
       </SearchFormCard>
 
-      {/* 当前页统计：对齐“我的活动”StatCard 风格 */}
+      {/* 统计数据 */}
       <Card className={styles.card} style={{ marginBottom: 16 }}>
         <Row gutter={[12, 12]}>
           <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}>
             <StatCard
-              title={intl.formatMessage({ id: 'pages.userLog.stats.total', defaultMessage: '当前页记录' })}
+              title={intl.formatMessage({ id: 'pages.userLog.stats.total', defaultMessage: '总记录数' })}
               value={stats.total}
               icon={<DashboardOutlined />}
               color="#1890ff"
@@ -690,15 +694,6 @@ const UserLog: React.FC = () => {
               value={stats.actions}
               icon={<ThunderboltOutlined />}
               color="#faad14"
-            />
-          </Col>
-          <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}>
-            <StatCard
-              title={intl.formatMessage({ id: 'pages.userLog.stats.avgDuration', defaultMessage: '平均耗时(ms)' })}
-              value={stats.avgDuration}
-              suffix="ms"
-              icon={<DashboardOutlined />}
-              color="#722ed1"
             />
           </Col>
         </Row>

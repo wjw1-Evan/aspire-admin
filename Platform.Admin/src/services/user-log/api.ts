@@ -13,6 +13,27 @@ export async function getUserActivityLogs(
   });
 }
 
+export interface ActivityLogStatistics {
+  total: number;
+  successCount: number;
+  errorCount: number;
+  actionTypes: Array<{
+    action: string;
+    count: number;
+  }>;
+}
+
+export async function getActivityLogStatistics(
+  params?: GetUserActivityLogsParams,
+  options?: Record<string, any>,
+) {
+  return request<ApiResponse<ActivityLogStatistics>>('/api/users/activity-logs/statistics', {
+    method: 'GET',
+    params,
+    ...(options || {}),
+  });
+}
+
 export interface ActivityLogWithSummary {
   queryable: UserActivityLog[];
   rowCount: number;

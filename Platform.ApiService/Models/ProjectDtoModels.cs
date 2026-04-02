@@ -159,27 +159,7 @@ public class ProjectDto
     public DateTime UpdatedAt { get; set; }
 }
 
-/// <summary>
-/// 项目列表响应DTO
-/// </summary>
-public class ProjectListResponse
-{
-    /// <summary>项目列表</summary>
-    public List<ProjectDto> Projects { get; set; } = new();
 
-    /// <summary>总数</summary>
-    public int Total { get; set; }
-
-    /// <summary>页码</summary>
-    public int Page { get; set; }
-
-    /// <summary>每页数量</summary>
-    public int PageSize { get; set; }
-}
-
-/// <summary>
-/// 添加项目成员请求DTO
-/// </summary>
 public class AddProjectMemberRequest
 {
     /// <summary>项目ID</summary>

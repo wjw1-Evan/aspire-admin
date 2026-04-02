@@ -366,27 +366,7 @@ public class TaskAttachmentDto
     public string UploadedBy { get; set; } = string.Empty;
 }
 
-/// <summary>
-/// 任务列表响应DTO
-/// </summary>
-public class TaskListResponse
-{
-    /// <summary>任务列表</summary>
-    public List<TaskDto> Tasks { get; set; } = new();
 
-    /// <summary>总数</summary>
-    public int Total { get; set; }
-
-    /// <summary>页码</summary>
-    public int Page { get; set; }
-
-    /// <summary>每页数量</summary>
-    public int PageSize { get; set; }
-}
-
-/// <summary>
-/// 任务执行日志DTO
-/// </summary>
 public class TaskExecutionLogDto
 {
     /// <summary>日志ID</summary>

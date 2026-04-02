@@ -46,14 +46,6 @@ export interface UpdateXiaokeConfigRequest {
   isDefault?: boolean;
 }
 
-export interface XiaokeConfigListResponse {
-  data: XiaokeConfig[];
-  total: number;
-  success: boolean;
-  current: number;
-  pageSize: number;
-}
-
 export interface ChatHistoryListItem {
   sessionId: string;
   participants: string[];
@@ -62,14 +54,6 @@ export interface ChatHistoryListItem {
   lastMessageAt?: string;
   messageCount: number;
   createdAt: string;
-}
-
-export interface ChatHistoryListResponse {
-  data: ChatHistoryListItem[];
-  total: number;
-  success: boolean;
-  pageSize: number;
-  current: number;
 }
 
 export interface ChatHistoryQueryRequest {

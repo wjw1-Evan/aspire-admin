@@ -583,37 +583,6 @@ public class ActivityLogQuery
 }
 
 /// <summary>
-/// 用户活动日志分页响应
-/// </summary>
-public class UserActivityLogPagedResponse
-{
-    /// <summary>
-    /// 日志数据
-    /// </summary>
-    public List<UserActivityLog> Data { get; set; } = new();
-
-    /// <summary>
-    /// 总记录数
-    /// </summary>
-    public long Total { get; set; }
-
-    /// <summary>
-    /// 当前页码
-    /// </summary>
-    public int Page { get; set; }
-
-    /// <summary>
-    /// 每页数量
-    /// </summary>
-    public int PageSize { get; set; }
-
-    /// <summary>
-    /// 总页数
-    /// </summary>
-    public int TotalPages { get; set; }
-}
-
-/// <summary>
 /// HTTP 请求日志记录请求
 /// </summary>
 public class LogHttpRequestRequest

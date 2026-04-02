@@ -271,36 +271,6 @@ public class UpdateRuleRequest
     public UpdateMcpRuleConfigRequest? McpConfig { get; set; }
 }
 
-/// <summary>
-/// 规则列表响应
-/// </summary>
-public class RuleListResponse
-{
-    /// <summary>
-    /// 规则数据列表
-    /// </summary>
-    public List<RuleListItem> Data { get; set; } = new();
-
-    /// <summary>
-    /// 总记录数
-    /// </summary>
-    public int Total { get; set; }
-
-    /// <summary>
-    /// 是否成功
-    /// </summary>
-    public bool Success { get; set; } = true;
-
-    /// <summary>
-    /// 每页大小
-    /// </summary>
-    public int PageSize { get; set; }
-
-    /// <summary>
-    /// 当前页码
-    /// </summary>
-    public int Current { get; set; }
-}
 
 /// <summary>
 /// 规则查询参数

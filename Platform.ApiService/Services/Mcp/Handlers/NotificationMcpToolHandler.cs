@@ -280,7 +280,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
         var response = await _xiaokeConfigService.GetConfigsAsync(queryParams);
         var items = response.Queryable?.ToList() ?? new List<XiaokeConfigDto>();
         var configs = items.Select(c => new { c.Id, c.Name, c.Model, c.SystemPrompt, c.Temperature, c.MaxTokens, c.TopP, c.FrequencyPenalty, c.PresencePenalty, c.IsEnabled, c.IsDefault, c.CreatedAt, c.UpdatedAt }).Cast<object>().ToList();
-        return new { configs, total = response.RowCount, page = response.CurrentPage, pageSize = response.PageSize, totalPages = response.PageCount };
+        return new { items = configs, rowCount = response.RowCount, currentPage = response.CurrentPage, pageSize = response.PageSize, pageCount = response.PageCount };
     }
 
     private async Task<object?> HandleGetXiaokeConfigAsync(Dictionary<string, object> arguments, string currentUserId)

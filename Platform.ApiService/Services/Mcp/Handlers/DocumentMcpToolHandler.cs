@@ -55,7 +55,7 @@ public class DocumentMcpToolHandler : McpToolHandlerBase
                 if (args.ContainsKey("status") && Enum.TryParse<DocumentStatus>(args.GetValueOrDefault("status")?.ToString(), out var status)) request.Status = status;
                 var result = await _documentService.GetDocumentsAsync(request);
                 var items = await result.Queryable.ToListAsync();
-                return new { documents = items.Select(d => new { d.Id, d.Title, d.DocumentType, d.Category, d.Status, d.CreatedBy, d.CreatedAt, d.WorkflowInstanceId }).ToList(), total = result.RowCount, page = result.CurrentPage, pageSize = result.PageSize };
+                return new { items = items.Select(d => new { d.Id, d.Title, d.DocumentType, d.Category, d.Status, d.CreatedBy, d.CreatedAt, d.WorkflowInstanceId }).ToList(), rowCount = result.RowCount, currentPage = result.CurrentPage, pageSize = result.PageSize, pageCount = result.PageCount };
             });
 
         RegisterTool("get_document_detail", "获取公文详情。关键词：公文,详情",
@@ -127,9 +127,10 @@ public class DocumentMcpToolHandler : McpToolHandlerBase
         return new
         {
             items = items.Select(i => new { i.Id, i.Name, i.Type, i.Size, i.MimeType, i.ParentId, i.UpdatedAt }).ToList(),
-            total = response.RowCount,
-            page = response.CurrentPage,
-            pageSize = response.PageSize
+            rowCount = response.RowCount,
+            currentPage = response.CurrentPage,
+            pageSize = response.PageSize,
+            pageCount = response.PageCount
         };
     }
 
@@ -145,9 +146,10 @@ public class DocumentMcpToolHandler : McpToolHandlerBase
         return new
         {
             items = items.Select(i => new { i.Id, i.Name, i.Type, i.Size, i.Path, i.UpdatedAt }).ToList(),
-            total = response.RowCount,
-            page = response.CurrentPage,
-            pageSize = response.PageSize
+            rowCount = response.RowCount,
+            currentPage = response.CurrentPage,
+            pageSize = response.PageSize,
+            pageCount = response.PageCount
         };
     }
 }

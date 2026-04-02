@@ -205,10 +205,10 @@ public class TaskMcpToolHandler : McpToolHandlerBase
                 t.CreatedAt,
                 t.UpdatedAt
             }).ToList(),
-            total = response.RowCount,
-            page = response.CurrentPage,
+            rowCount = response.RowCount,
+            currentPage = response.CurrentPage,
             pageSize = response.PageSize,
-            totalPages = (int)Math.Ceiling(response.RowCount / (double)response.PageSize)
+            pageCount = response.PageCount
         };
     }
 
@@ -431,10 +431,10 @@ public class TaskMcpToolHandler : McpToolHandlerBase
                 t.CreatedAt,
                 t.UpdatedAt
             }).ToList(),
-            total = response.RowCount,
-            page = response.CurrentPage,
+            rowCount = response.RowCount,
+            currentPage = response.CurrentPage,
             pageSize = response.PageSize,
-            totalPages = (int)Math.Ceiling(response.RowCount / (double)response.PageSize)
+            pageCount = response.PageCount
         };
     }
 

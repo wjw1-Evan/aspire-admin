@@ -5,6 +5,7 @@ using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Controllers;
 
@@ -53,9 +54,17 @@ public class FileVersionController : BaseApiController
         {
             var versions = await _fileVersionService.GetVersionHistoryAsync(fileId);
             var ordered = versions.OrderByDescending(v => v.VersionNumber).AsQueryable();
-            var pagedResult = ordered.PageResult(page, pageSize);
+            var rowCount = versions.Count;
+            var pageCount = (int)Math.Ceiling((double)rowCount / pageSize);
 
-            return Success(pagedResult);
+            return Success(new PagedResult<FileVersion>
+            {
+                Queryable = ordered,
+                CurrentPage = page,
+                PageSize = pageSize,
+                RowCount = rowCount,
+                PageCount = pageCount
+            });
         }
         catch (Exception ex)
         {

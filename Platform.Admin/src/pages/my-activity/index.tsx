@@ -13,12 +13,10 @@ import {
   CloseCircleOutlined,
   ThunderboltOutlined,
   ReloadOutlined,
-  SearchOutlined,
-  DashboardOutlined,
 } from '@ant-design/icons';
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { useIntl } from '@umijs/max';
-import { getCurrentUserActivityLogs } from '@/services/user-log/api';
+import { getCurrentUserActivityLogs, getCurrentUserActivityLogStatistics } from '@/services/user-log/api';
 import type { UserActivityLog } from '@/services/user-log/types';
 import LogDetailDrawer from '../user-log/components/LogDetailDrawer';
 import { StatCard } from '@/components';
@@ -200,7 +198,6 @@ const MyActivity: React.FC = () => {
     successCount: number;
     errorCount: number;
     actionTypes: number;
-    avgDuration: number;
   } | null>(null);
   const [searchForm] = Form.useForm();
   const [searchParams, setSearchParams] = useState<any>({});
@@ -528,39 +525,45 @@ const MyActivity: React.FC = () => {
     }
 
     try {
-      const response = await getCurrentUserActivityLogs({
-        page: current,
-        pageSize,
-        action,
-        httpMethod,
-        statusCode: statusCode && statusCode !== '' ? Number(statusCode) : undefined,
-        ipAddress,
-        startDate: formattedStartDate,
-        endDate: formattedEndDate,
-        sortBy,
-        sortOrder,
-      });
+      // 并行请求分页数据和统计数据
+      const [logsResponse, statsResponse] = await Promise.all([
+        getCurrentUserActivityLogs({
+          page: current,
+          pageSize,
+          action,
+          httpMethod,
+          statusCode: statusCode && statusCode !== '' ? Number(statusCode) : undefined,
+          ipAddress,
+          startDate: formattedStartDate,
+          endDate: formattedEndDate,
+          sortBy,
+          sortOrder,
+        }),
+        getCurrentUserActivityLogStatistics({
+          action,
+          httpMethod,
+          statusCode: statusCode && statusCode !== '' ? Number(statusCode) : undefined,
+          ipAddress,
+          startDate: formattedStartDate,
+          endDate: formattedEndDate,
+        }),
+      ]);
 
-      if (response.success && response.data) {
-        const result = response.data as any;
+      if (logsResponse.success && logsResponse.data) {
+        const result = logsResponse.data as any;
         const list: UserActivityLog[] = result.queryable || [];
         const total: number = result.rowCount || 0;
-        const stats = result.summary || {};
 
-        // 前端计算部分统计信息 (平均耗时, 操作类型数)
-        // 成功和错误次数改为使用后端返回的全局统计
-        const avgDuration = list.length
-          ? Math.round(list.reduce((sum, item) => sum + (item.duration || 0), 0) / list.length)
-          : 0;
-        const actionTypes = new Set(list.map((item) => item.action || 'unknown')).size;
-
-        setStatistics({
-          total: total,
-          successCount: stats.successCount || 0,
-          errorCount: stats.errorCount || 0,
-          actionTypes: actionTypes,
-          avgDuration: avgDuration,
-        });
+        // 使用统计数据接口返回的数据
+        if (statsResponse.success && statsResponse.data) {
+          const statsData = statsResponse.data;
+          setStatistics({
+            total: statsData.total || 0,
+            successCount: statsData.successCount || 0,
+            errorCount: statsData.errorCount || 0,
+            actionTypes: statsData.actionTypes?.length || 0,
+          });
+        }
 
         return {
           data: list,
@@ -576,9 +579,6 @@ const MyActivity: React.FC = () => {
       };
     } catch (error) {
       console.error('Failed to load activity logs:', error);
-      // 注意：这是 ProTable request 函数的特殊处理模式
-      // 错误已被全局错误处理捕获并显示错误提示，这里返回空数据让表格显示空状态
-      // 这是为了在错误已由全局处理显示的情况下，避免表格显示错误状态
       return {
         data: [],
         total: 0,
@@ -708,15 +708,6 @@ const MyActivity: React.FC = () => {
                 value={statistics.actionTypes}
                 icon={<ThunderboltOutlined />}
                 color="#faad14"
-              />
-            </Col>
-            <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}>
-              <StatCard
-                title={intl.formatMessage({ id: 'pages.myActivity.statistics.avgDuration' })}
-                value={statistics.avgDuration}
-                suffix="ms"
-                icon={<DashboardOutlined />}
-                color="#722ed1"
               />
             </Col>
           </Row>

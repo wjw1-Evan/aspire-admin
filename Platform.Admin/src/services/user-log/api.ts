@@ -98,3 +98,24 @@ export async function getCurrentUserActivityLogById(
     ...(options || {}),
   });
 }
+
+/**
+ * 获取当前用户的活动日志统计信息
+ */
+export async function getCurrentUserActivityLogStatistics(
+  params?: {
+    action?: string;
+    httpMethod?: string;
+    statusCode?: number;
+    ipAddress?: string;
+    startDate?: string;
+    endDate?: string;
+  },
+  options?: Record<string, any>,
+) {
+  return request<ApiResponse<ActivityLogStatistics>>('/api/users/me/activity-logs/statistics', {
+    method: 'GET',
+    params,
+    ...(options || {}),
+  });
+}

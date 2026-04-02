@@ -4,6 +4,7 @@ using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Models;
 using System.Linq.Expressions;
 using System.Linq.Dynamic.Core;
+using Microsoft.AspNetCore.Http;
 
 using Platform.ApiService.Models.Response;
 
@@ -15,14 +16,15 @@ namespace Platform.ApiService.Services;
 public class UserActivityLogService : IUserActivityLogService
 {
     private readonly DbContext _context;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     /// <summary>
     /// 初始化用户活动日志服务
     /// </summary>
-    public UserActivityLogService(DbContext context)
+    public UserActivityLogService(DbContext context, IHttpContextAccessor httpContextAccessor)
     {
         _context = context;
-        
+        _httpContextAccessor = httpContextAccessor;
     }
 
     /// <summary>
@@ -417,6 +419,29 @@ public class UserActivityLogService : IUserActivityLogService
             ErrorCount = errorTask.Result,
             ActionTypes = actionTypeStats
         };
+    }
+
+    /// <inheritdoc/>
+    public async Task<ActivityLogStatisticsResponse> GetCurrentUserActivityLogStatisticsAsync(
+        string? action = null,
+        string? httpMethod = null,
+        int? statusCode = null,
+        string? ipAddress = null,
+        DateTime? startDate = null,
+        DateTime? endDate = null)
+    {
+        var userId = _httpContextAccessor.HttpContext?.Items["UserId"] as string;
+        if (string.IsNullOrEmpty(userId))
+            throw new UnauthorizedAccessException("无法获取当前用户ID");
+        
+        return await GetActivityLogStatisticsAsync(
+            userId,
+            action,
+            httpMethod,
+            statusCode,
+            ipAddress,
+            startDate,
+            endDate);
     }
 
     private static bool IsValidObjectId(string? value)

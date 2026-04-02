@@ -104,4 +104,15 @@ public interface IUserActivityLogService
         string? ipAddress = null,
         DateTime? startDate = null,
         DateTime? endDate = null);
+
+    /// <summary>
+    /// 获取当前用户的活动日志统计信息
+    /// </summary>
+    Task<ActivityLogStatisticsResponse> GetCurrentUserActivityLogStatisticsAsync(
+        string? action = null,
+        string? httpMethod = null,
+        int? statusCode = null,
+        string? ipAddress = null,
+        DateTime? startDate = null,
+        DateTime? endDate = null);
 }

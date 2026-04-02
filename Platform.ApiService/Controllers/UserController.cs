@@ -606,6 +606,34 @@ public class UserController : BaseApiController
     }
 
     /// <summary>
+    /// 获取当前用户的活动日志统计信息
+    /// </summary>
+    /// <param name="action">操作类型（可选）</param>
+    /// <param name="httpMethod">HTTP 请求方法（可选）</param>
+    /// <param name="statusCode">HTTP 状态码（可选）</param>
+    /// <param name="ipAddress">IP 地址（可选）</param>
+    /// <param name="startDate">开始日期（可选）</param>
+    /// <param name="endDate">结束日期（可选）</param>
+    [HttpGet("me/activity-logs/statistics")]
+    public async Task<IActionResult> GetCurrentUserActivityLogStatistics(
+        [FromQuery] string? action = null,
+        [FromQuery] string? httpMethod = null,
+        [FromQuery] int? statusCode = null,
+        [FromQuery] string? ipAddress = null,
+        [FromQuery] DateTime? startDate = null,
+        [FromQuery] DateTime? endDate = null)
+    {
+        var statistics = await _activityLogService.GetCurrentUserActivityLogStatisticsAsync(
+            action,
+            httpMethod,
+            statusCode,
+            ipAddress,
+            startDate,
+            endDate);
+        return Success(statistics);
+    }
+
+    /// <summary>
     /// 获取当前用户的活动日志详情
     /// </summary>
     /// <remarks>

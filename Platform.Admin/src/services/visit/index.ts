@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse } from '@/types/unified-api';
+import type { ApiResponse, PagedResult } from '@/types/unified-api';
 
 export enum StatisticsPeriod {
     Day = 0,
@@ -127,7 +127,7 @@ export interface VisitStatistics {
 
 // Tasks
 export async function getTasks(params: VisitTaskListRequest) {
-    return request<ApiResponse<{ tasks: VisitTask[]; total: number }>>('/api/park-management/visit/tasks', {
+    return request<ApiResponse<PagedResult<VisitTask>>>('/api/park-management/visit/tasks', {
         method: 'GET',
         params,
     });
@@ -153,7 +153,7 @@ export async function deleteTask(id: string) {
 
 // Assessments
 export async function getAssessments(params: VisitAssessmentListRequest) {
-    return request<ApiResponse<{ assessments: VisitAssessment[]; total: number }>>('/api/park-management/visit/assessments', {
+    return request<ApiResponse<PagedResult<VisitAssessment>>>('/api/park-management/visit/assessments', {
         method: 'GET',
         params,
     });
@@ -165,7 +165,7 @@ export async function createAssessment(data: any) {
 
 // Knowledge Base
 export async function getQuestions(params: VisitQuestionListRequest) {
-    return request<ApiResponse<{ questions: VisitQuestion[]; total: number }>>('/api/park-management/visit/questions', {
+    return request<ApiResponse<PagedResult<VisitQuestion>>>('/api/park-management/visit/questions', {
         method: 'GET',
         params,
     });
@@ -184,7 +184,7 @@ export async function deleteQuestion(id: string) {
 }
 
 export async function getQuestionnaires() {
-    return request<ApiResponse<{ questionnaires: VisitQuestionnaire[]; total: number }>>('/api/park-management/visit/questionnaires', {
+    return request<ApiResponse<PagedResult<VisitQuestionnaire>>>('/api/park-management/visit/questionnaires', {
         method: 'GET',
     });
 }

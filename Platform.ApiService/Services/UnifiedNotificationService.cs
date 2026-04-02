@@ -26,7 +26,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
     }
 
     /// <inheritdoc/>
-    public async Task<UnifiedNotificationListResponse> GetUnifiedNotificationsAsync(
+    public async Task<PagedResult<NoticeIconItem>> GetUnifiedNotificationsAsync(
         int page = 1,
         int pageSize = 10,
         string filterType = "all",
@@ -61,24 +61,11 @@ public class UnifiedNotificationService : IUnifiedNotificationService
             _ => query.OrderByDescending(n => n.Datetime)
         };
 
-        var total = await query.LongCountAsync();
-        var pagedResult = query.PageResult(page, pageSize);
-        var items = await pagedResult.Queryable.ToListAsync();
-        var unreadCount = await _context.Set<NoticeIconItem>().LongCountAsync(BuildFilter(true));
-
-        return new UnifiedNotificationListResponse
-        {
-            Items = items,
-            Total = (int)total,
-            Page = page,
-            PageSize = pageSize,
-            UnreadCount = (int)unreadCount,
-            Success = true
-        };
+        return query.PageResult(page, pageSize);
     }
 
     /// <inheritdoc/>
-    public async Task<TodoListResponse> GetTodosAsync(int page = 1, int pageSize = 10, string sortBy = "dueDate")
+    public Task<PagedResult<NoticeIconItem>> GetTodosAsync(int page = 1, int pageSize = 10, string sortBy = "dueDate")
     {
         var query = _context.Set<NoticeIconItem>().Where(n => n.IsTodo);
 
@@ -89,37 +76,25 @@ public class UnifiedNotificationService : IUnifiedNotificationService
             _ => query.OrderBy(n => n.TodoDueDate).ThenByDescending(n => n.Datetime)
         };
 
-        var total = await query.LongCountAsync();
-        var pagedResult = query.PageResult(page, pageSize);
-        var todos = await pagedResult.Queryable.ToListAsync();
-
-        return new TodoListResponse { Todos = todos, Total = (int)total, Page = page, PageSize = pageSize, Success = true };
+        return Task.FromResult(query.PageResult(page, pageSize));
     }
 
     /// <inheritdoc/>
-    public async Task<SystemMessageListResponse> GetSystemMessagesAsync(int page = 1, int pageSize = 10)
+    public Task<PagedResult<NoticeIconItem>> GetSystemMessagesAsync(int page = 1, int pageSize = 10)
     {
         var query = _context.Set<NoticeIconItem>().Where(n => n.IsSystemMessage).OrderByDescending(n => n.Datetime);
-        var total = await query.LongCountAsync();
-        var pagedResult = query.PageResult(page, pageSize);
-        var messages = await pagedResult.Queryable.ToListAsync();
-
-        return new SystemMessageListResponse { Messages = messages, Total = (int)total, Page = page, PageSize = pageSize, Success = true };
+        return Task.FromResult(query.PageResult(page, pageSize));
     }
 
     /// <inheritdoc/>
-    public async Task<TaskNotificationListResponse> GetTaskNotificationsAsync(int page = 1, int pageSize = 10)
+    public Task<PagedResult<NoticeIconItem>> GetTaskNotificationsAsync(int page = 1, int pageSize = 10)
     {
         var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var query = _context.Set<NoticeIconItem>()
             .Where(n => n.Type == NoticeIconItemType.Task && n.RelatedUserIds.Contains(currentUserId))
             .OrderByDescending(n => n.Datetime);
 
-        var total = await query.LongCountAsync();
-        var pagedResult = query.PageResult(page, pageSize);
-        var notifications = await pagedResult.Queryable.ToListAsync();
-
-        return new TaskNotificationListResponse { Notifications = notifications, Total = (int)total, Page = page, PageSize = pageSize, Success = true };
+        return Task.FromResult(query.PageResult(page, pageSize));
     }
 
     /// <inheritdoc/>

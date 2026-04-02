@@ -1,6 +1,7 @@
 using Platform.ApiService.Models;
 using System;
 using System.Collections.Generic;
+using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 
 namespace Platform.ApiService.Services;
@@ -46,7 +47,7 @@ public interface IProjectService
     /// </summary>
     /// <param name="request">查询请求</param>
     /// <returns>项目列表响应</returns>
-    Task<ProjectListResponse> GetProjectsListAsync(ProjectQueryRequest request);
+    Task<PagedResult<ProjectDto>> GetProjectsListAsync(ProjectQueryRequest request);
 
     /// <summary>
     /// 获取项目统计信息

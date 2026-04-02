@@ -1,4 +1,5 @@
 using Platform.ApiService.Models;
+using System.Linq.Dynamic.Core;
 
 namespace Platform.ApiService.Services;
 
@@ -11,7 +12,7 @@ public interface INoticeService
     /// 获取当前用户的通知列表
     /// </summary>
     /// <returns>通知列表响应</returns>
-    Task<NoticeIconListResponse> GetNoticesAsync();
+    Task<PagedResult<NoticeIconItem>> GetNoticesAsync();
     
     /// <summary>
     /// 根据ID获取通知详情

@@ -484,7 +484,7 @@ public class IoTService : IIoTService
         return records;
     }
 
-    public async Task<(List<IoTDataRecord> Records, long Total)> QueryDataRecordsAsync(QueryIoTDataRequest request)
+    public Task<PagedResult<IoTDataRecord>> QueryDataRecordsAsync(QueryIoTDataRequest request)
     {
         var query = _context.Set<IoTDataRecord>().Where(r =>
             (string.IsNullOrEmpty(request.DeviceId) || r.DeviceId == request.DeviceId) &&
@@ -492,11 +492,7 @@ public class IoTService : IIoTService
             (!request.StartTime.HasValue || r.ReportedAt >= request.StartTime.Value) &&
             (!request.EndTime.HasValue || r.ReportedAt <= request.EndTime.Value));
 
-        var total = await query.LongCountAsync();
-        var pagedResult = query.OrderByDescending(r => r.ReportedAt).PageResult(request.PageIndex, request.PageSize);
-        var records = await pagedResult.Queryable.ToListAsync();
-
-        return (records, total);
+        return Task.FromResult(query.OrderByDescending(r => r.ReportedAt).PageResult(request.PageIndex, request.PageSize));
     }
 
     public async Task<IoTDataRecord?> GetLatestDataAsync(string dataPointId)
@@ -553,7 +549,7 @@ public class IoTService : IIoTService
         return @event;
     }
 
-    public async Task<(List<IoTDeviceEvent> Events, long Total)> QueryEventsAsync(QueryIoTEventRequest request)
+    public Task<PagedResult<IoTDeviceEvent>> QueryEventsAsync(QueryIoTEventRequest request)
     {
         var query = _context.Set<IoTDeviceEvent>().Where(e =>
             (string.IsNullOrEmpty(request.DeviceId) || e.DeviceId == request.DeviceId) &&
@@ -563,11 +559,7 @@ public class IoTService : IIoTService
             (!request.StartTime.HasValue || e.OccurredAt >= request.StartTime.Value) &&
             (!request.EndTime.HasValue || e.OccurredAt <= request.EndTime.Value));
 
-        var total = await query.LongCountAsync();
-        var pagedResult = query.OrderByDescending(e => e.OccurredAt).PageResult(request.PageIndex, request.PageSize);
-        var events = await pagedResult.Queryable.ToListAsync();
-
-        return (events, total);
+        return Task.FromResult(query.OrderByDescending(e => e.OccurredAt).PageResult(request.PageIndex, request.PageSize));
     }
 
     public async Task<bool> HandleEventAsync(string eventId, string remarks)

@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse } from '@/types/unified-api';
+import type { ApiResponse, PagedResult } from '@/types/unified-api';
 
 /**
  * 通知中心数据项
@@ -12,52 +12,41 @@ export interface UnifiedNotificationItem {
   extra?: string;
   status?: string;
   datetime: string;
-  // 后端返回为字符串枚举：Notification | Message | Event | Task | System
   type: string;
   read: boolean;
   clickClose: boolean;
-
-  // 任务相关字段
   taskId?: string;
   taskPriority?: number;
   taskStatus?: number;
-
-  // 系统消息相关字段
   isSystemMessage?: boolean;
   messagePriority?: number;
-
-  // 其他字段
   actionType?: string;
   relatedUserIds?: string[];
+  isTodo?: boolean;
+  todoPriority?: number;
+  todoDueDate?: string;
 }
 
 /**
- * 统一通知列表响应
- */
-export interface UnifiedNotificationListResponse {
-  items: UnifiedNotificationItem[];
-  total: number;
-  page: number;
-  pageSize: number;
-  unreadCount: number;
-  success: boolean;
-}
-
-/**
- * 未读通知统计（已简化）
+ * 未读通知数量统计
  */
 export interface UnreadCountStatistics {
   total: number;
+  systemMessages: number;
+  notifications: number;
+  messages: number;
+  todos: number;
+  taskNotifications: number;
 }
 
-/** 获取统一的通知列表（仅使用 all + datetime） */
+/** 获取统一的通知列表（使用 PagedResult 格式） */
 export async function getUnifiedNotifications(
   page: number = 1,
   pageSize: number = 10,
   filterType: string = 'all',
   sortBy: string = 'datetime',
 ) {
-  return request<ApiResponse<UnifiedNotificationListResponse>>(
+  return request<ApiResponse<PagedResult<UnifiedNotificationItem>>>(
     '/api/unified-notification/center',
     {
       method: 'GET',
@@ -84,7 +73,7 @@ export async function getUnreadCount() {
   );
 }
 
-/** 获取未读通知数量统计（已简化，仅 total 使用） */
+/** 获取未读通知数量统计 */
 export async function getUnreadStatistics() {
   return request<ApiResponse<UnreadCountStatistics>>(
     '/api/unified-notification/unread-statistics',

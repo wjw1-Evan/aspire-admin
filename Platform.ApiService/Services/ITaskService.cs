@@ -91,7 +91,7 @@ public interface ITaskService
     /// <param name="page">页码</param>
     /// <param name="pageSize">每页数量</param>
     /// <returns>执行日志列表</returns>
-    Task<(List<TaskExecutionLogDto> logs, int total)> GetTaskExecutionLogsAsync(string taskId, int page = 1, int pageSize = 10);
+    Task<PagedResult<TaskExecutionLogDto>> GetTaskExecutionLogsAsync(string taskId, int page = 1, int pageSize = 10);
 
     /// <summary>
     /// 记录任务执行日志
@@ -121,7 +121,7 @@ public interface ITaskService
     /// <param name="page">页码</param>
     /// <param name="pageSize">每页数量</param>
     /// <returns>创建的任务列表</returns>
-    Task<(List<TaskDto> tasks, int total)> GetUserCreatedTasksAsync(string userId, int page = 1, int pageSize = 10);
+    Task<PagedResult<TaskDto>> GetUserCreatedTasksAsync(string userId, int page = 1, int pageSize = 10);
 
     /// <summary>
     /// 批量更新任务状态

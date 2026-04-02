@@ -364,8 +364,8 @@ public class IoTController : BaseApiController
     [HttpPost("data/query")]
     public async Task<IActionResult> QueryDataRecords([FromBody] QueryIoTDataRequest request)
     {
-        var (records, total) = await _iotService.QueryDataRecordsAsync(request);
-        return Success(new { Records = records, Total = total });
+        var result = await _iotService.QueryDataRecordsAsync(request);
+        return Success(result);
     }
 
     /// <summary>
@@ -413,8 +413,8 @@ public class IoTController : BaseApiController
     [HttpPost("events/query")]
     public async Task<IActionResult> QueryEvents([FromBody] QueryIoTEventRequest request)
     {
-        var (events, total) = await _iotService.QueryEventsAsync(request);
-        return Success(new { Events = events, Total = total });
+        var result = await _iotService.QueryEventsAsync(request);
+        return Success(result);
     }
 
     /// <summary>

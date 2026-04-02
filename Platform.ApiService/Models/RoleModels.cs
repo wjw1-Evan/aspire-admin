@@ -123,22 +123,6 @@ public class AssignMenusToRoleRequest
 }
 
 /// <summary>
-/// 角色列表响应
-/// </summary>
-public class RoleListResponse
-{
-    /// <summary>
-    /// 角色列表
-    /// </summary>
-    public List<Role> Roles { get; set; } = new();
-
-    /// <summary>
-    /// 总记录数
-    /// </summary>
-    public int Total { get; set; }
-}
-
-/// <summary>
 /// 带统计信息的角色
 /// </summary>
 public class RoleWithStats

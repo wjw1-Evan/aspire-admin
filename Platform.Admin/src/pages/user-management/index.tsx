@@ -45,7 +45,7 @@ import { useTableResize } from '@/hooks/useTableResize';
 import { getAllRoles } from '@/services/role/api';
 import { getCurrentCompany } from '@/services/company'; // Added
 import { getUserStatistics } from '@/services/ant-design-pro/api';
-import type { ApiResponse } from '@/types/unified-api';
+import type { ApiResponse, PagedResult } from '@/types/unified-api';
 import type { AppUser, UserListRequest, UserStatisticsResponse } from './types';
 const UserForm = React.lazy(() => import('./components/UserForm'));
 const UserDetail = React.lazy(() => import('./components/UserDetail'));
@@ -179,19 +179,13 @@ const UserManagement: React.FC = () => {
 
     try {
       // ✅ 后端返回 UserListWithRolesResponse，包含 Users 和 Total
-      const response = await request<ApiResponse<{
-        list: AppUser[];
-        total: number;
-        page?: number;
-        pageSize?: number;
-      }>>('/api/users/list', {
+      const response = await request<ApiResponse<PagedResult<AppUser>>>('/api/users/list', {
         method: 'POST',
         data: requestData,
       });
 
-      // ✅ 适配标准化分页响应格式 (list 字段)
-      const users = response.data?.list || [];
-      const total = response.data?.total || 0;
+      const users = response.data?.queryable || [];
+      const total = response.data?.rowCount || 0;
 
       return {
         data: users,

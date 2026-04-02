@@ -58,8 +58,8 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ open, task, onClose }) => {
     setLogsLoading(true);
     try {
       const response = await getTaskExecutionLogs(task.id, 1, 100);
-      if (response.success && response.data?.logs) {
-        setExecutionLogs(response.data.logs);
+      if (response.success && response.data?.queryable) {
+        setExecutionLogs(response.data.queryable);
       }
     } catch (error) {
       console.error('加载执行日志失败:', error);

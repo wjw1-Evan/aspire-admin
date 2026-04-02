@@ -135,7 +135,7 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
     /// <summary>
     /// 获取服务申请列表
     /// </summary>
-    public async Task<ServiceRequestListResponse> GetRequestsAsync(ServiceRequestListRequest request)
+    public async Task<PagedResult<ServiceRequestDto>> GetRequestsAsync(ServiceRequestListRequest request)
     {
         Expression<Func<ServiceRequest, bool>> filter = r => true;
 
@@ -170,15 +170,14 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
         var query = _context.Set<ServiceRequest>().Where(filter);
         var total = await query.LongCountAsync();
         var pagedResult = orderBy(query).PageResult(request.Page, request.PageSize);
-        var items = await pagedResult.Queryable.ToListAsync();
 
         var requestDtos = new List<ServiceRequestDto>();
-        foreach (var item in items)
+        foreach (var item in await pagedResult.Queryable.ToListAsync())
         {
             requestDtos.Add(await MapToRequestDtoAsync(item));
         }
 
-        return new ServiceRequestListResponse { Requests = requestDtos, Total = (int)total };
+        return new PagedResult<ServiceRequestDto> { Queryable = requestDtos.AsQueryable(), CurrentPage = pagedResult.CurrentPage, PageSize = pagedResult.PageSize, RowCount = pagedResult.RowCount, PageCount = pagedResult.PageCount };
     }
 
     /// <summary>

@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse } from '@/types/unified-api';
+import type { ApiResponse, PagedResult } from '@/types/unified-api';
 
 /**
  * 用户信息接口
@@ -19,18 +19,10 @@ export interface AppUser {
 }
 
 /**
- * 用户列表响应
- */
-export interface UserListResponse {
-  queryable: AppUser[];
-  rowCount: number;
-}
-
-/**
  * 获取所有用户
  */
 export async function getAllUsers(options?: Record<string, any>) {
-  return request<ApiResponse<UserListResponse>>('/api/users/all', {
+  return request<ApiResponse<PagedResult<AppUser>>>('/api/users/all', {
     method: 'GET',
     ...(options || {}),
   });
@@ -58,7 +50,7 @@ export async function getUserList(
   },
   options?: Record<string, any>,
 ) {
-  return request<ApiResponse<UserListResponse>>('/api/users/list', {
+  return request<ApiResponse<PagedResult<AppUser>>>('/api/users/list', {
     method: 'POST',
     data: params,
     ...(options || {}),

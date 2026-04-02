@@ -207,27 +207,6 @@ public class PasswordBookEntryDetailDto : PasswordBookEntryDto
 }
 
 /// <summary>
-/// 密码本列表响应
-/// </summary>
-public class PasswordBookListResponse
-{
-    /// <summary>条目列表</summary>
-    public List<PasswordBookEntryDto> Data { get; set; } = new();
-
-    /// <summary>总数</summary>
-    public int Total { get; set; }
-
-    /// <summary>是否成功</summary>
-    public bool Success { get; set; } = true;
-
-    /// <summary>当前页码</summary>
-    public int Current { get; set; }
-
-    /// <summary>每页数量</summary>
-    public int PageSize { get; set; }
-}
-
-/// <summary>
 /// 密码强度检测结果
 /// </summary>
 public class PasswordStrengthResult

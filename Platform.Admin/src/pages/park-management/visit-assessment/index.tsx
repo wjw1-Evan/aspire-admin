@@ -63,7 +63,7 @@ const VisitAssessmentList: React.FC = () => {
             });
 
             if (res.success && res.data) {
-                setData(res.data.tasks);
+                setData(res.data.queryable);
                 setTotal(res.data.rowCount);
             }
         } catch (error) {

@@ -1,4 +1,5 @@
 import { request } from '@umijs/max';
+import type { ApiResponse, PagedResult } from '@/types/unified-api';
 
 /**
  * 小科配置相关类型
@@ -49,8 +50,8 @@ export interface XiaokeConfigListResponse {
   data: XiaokeConfig[];
   total: number;
   success: boolean;
-  pageSize: number;
   current: number;
+  pageSize: number;
 }
 
 export interface ChatHistoryListItem {
@@ -129,7 +130,7 @@ export async function getXiaokeConfigs(params?: {
   isEnabled?: boolean;
   sorter?: string;
 }) {
-  return request<API.ApiResponse<XiaokeConfigListResponse>>('/api/xiaoke/config', {
+  return request<ApiResponse<PagedResult<XiaokeConfig>>>('/api/xiaoke/config', {
     method: 'GET',
     params,
   });
@@ -195,7 +196,7 @@ export async function setDefaultXiaokeConfig(id: string) {
  * 获取聊天记录列表
  */
 export async function getChatHistory(data: ChatHistoryQueryRequest) {
-  return request<API.ApiResponse<ChatHistoryListResponse>>('/api/xiaoke/chat-history/list', {
+  return request<ApiResponse<PagedResult<ChatHistoryListItem>>>('/api/xiaoke/chat-history/list', {
     method: 'POST',
     data,
   });

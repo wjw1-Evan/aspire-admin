@@ -328,7 +328,7 @@ const CloudStorageFilesPage: React.FC = () => {
                     try {
                         const versionResp = await getVersionList({ fileId: response.data.id, page: 1, pageSize: 50 });
                         if (versionResp.success && versionResp.data) {
-                            setVersionList(versionResp.data.data || []);
+                            setVersionList(versionResp.data.queryable || []);
                         } else {
                             setVersionList([]);
                         }

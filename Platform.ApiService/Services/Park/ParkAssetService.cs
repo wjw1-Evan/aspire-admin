@@ -23,7 +23,7 @@ public class ParkAssetService : IParkAssetService
 
     #region 楼宇管理
 
-    public async Task<BuildingListResponse> GetBuildingsAsync(BuildingListRequest request)
+    public async Task<PagedResult<BuildingDto>> GetBuildingsAsync(BuildingListRequest request)
     {
         var q = _context.Set<Building>().AsQueryable();
 
@@ -41,12 +41,11 @@ public class ParkAssetService : IParkAssetService
 
         var total = await q.LongCountAsync();
         var pagedResult = q.PageResult(request.Page, request.PageSize);
-        var items = await pagedResult.Queryable.ToListAsync();
 
         var buildings = new List<BuildingDto>();
-        foreach (var b in items) buildings.Add(await MapToBuildingDtoAsync(b));
+        foreach (var b in await pagedResult.Queryable.ToListAsync()) buildings.Add(await MapToBuildingDtoAsync(b));
 
-        return new BuildingListResponse { Buildings = buildings, Total = (int)total };
+        return new PagedResult<BuildingDto> { Queryable = buildings.AsQueryable(), CurrentPage = pagedResult.CurrentPage, PageSize = pagedResult.PageSize, RowCount = pagedResult.RowCount, PageCount = pagedResult.PageCount };
     }
 
     public async Task<BuildingDto?> GetBuildingByIdAsync(string id)
@@ -117,7 +116,7 @@ public class ParkAssetService : IParkAssetService
 
     #region 房源管理
 
-    public async Task<PropertyUnitListResponse> GetPropertyUnitsAsync(PropertyUnitListRequest request)
+    public async Task<PagedResult<PropertyUnitDto>> GetPropertyUnitsAsync(PropertyUnitListRequest request)
     {
         var q = _context.Set<PropertyUnit>().AsQueryable();
 
@@ -132,12 +131,11 @@ public class ParkAssetService : IParkAssetService
 
         var total = await q.LongCountAsync();
         var pagedResult = q.PageResult(request.Page, request.PageSize);
-        var items = await pagedResult.Queryable.ToListAsync();
 
         var units = new List<PropertyUnitDto>();
-        foreach (var item in items) units.Add(await MapToPropertyUnitDtoAsync(item));
+        foreach (var item in await pagedResult.Queryable.ToListAsync()) units.Add(await MapToPropertyUnitDtoAsync(item));
 
-        return new PropertyUnitListResponse { Units = units, Total = (int)total };
+        return new PagedResult<PropertyUnitDto> { Queryable = units.AsQueryable(), CurrentPage = pagedResult.CurrentPage, PageSize = pagedResult.PageSize, RowCount = pagedResult.RowCount, PageCount = pagedResult.PageCount };
     }
 
     public async Task<PropertyUnitDto?> GetPropertyUnitByIdAsync(string id)

@@ -1,20 +1,19 @@
 import { request } from '@umijs/max';
+import type { ApiResponse, PagedResult } from '@/types/unified-api';
 import type {
   Role,
   CreateRoleRequest,
   UpdateRoleRequest,
   AssignMenusToRoleRequest,
-  RoleListResponse,
 } from './types';
 
-// 重新导出类型
-export type { Role, CreateRoleRequest, UpdateRoleRequest, AssignMenusToRoleRequest, RoleListResponse };
+export type { Role, CreateRoleRequest, UpdateRoleRequest, AssignMenusToRoleRequest };
 
 /**
  * 获取所有角色
  */
 export async function getAllRoles(options?: Record<string, any>) {
-  return request<API.ApiResponse<RoleListResponse>>('/api/role', {
+  return request<ApiResponse<PagedResult<Role>>>('/api/role', {
     method: 'GET',
     ...(options || {}),
   });

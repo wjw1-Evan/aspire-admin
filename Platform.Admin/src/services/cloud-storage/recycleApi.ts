@@ -24,10 +24,11 @@ export interface RecycleListRequest {
 }
 
 export interface RecycleListResponse {
-    data: RecycleItem[];
-    total: number;
-    page: number;
+    queryable: RecycleItem[];
+    rowCount: number;
+    currentPage: number;
     pageSize: number;
+    pageCount: number;
 }
 
 export interface RestoreItemRequest {

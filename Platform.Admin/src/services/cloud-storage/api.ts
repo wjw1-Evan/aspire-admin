@@ -88,12 +88,11 @@ export interface FileListRequest {
 }
 
 export interface FileListResponse {
-    list?: FileItem[]; // 后端可能返回 list 字段
-    data?: FileItem[]; // 或 data 字段（兼容）
-    total: number;
-    page: number;
+    queryable: FileItem[];
+    rowCount: number;
+    currentPage: number;
     pageSize: number;
-    totalPages?: number; // 后端可能返回总页数
+    pageCount: number;
 }
 
 export interface StorageStatistics {

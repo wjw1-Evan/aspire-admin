@@ -87,7 +87,7 @@ const VisitKnowledgeBase: React.FC = () => {
         try {
             const res = await visitService.getQuestions({ page: 1, pageSize: 1000 });
             if (res.success && res.data) {
-                setAllQuestions(res.data.questions);
+                setAllQuestions(res.data.queryable);
             }
         } catch (error) {
             console.error('Failed to load questions:', error);

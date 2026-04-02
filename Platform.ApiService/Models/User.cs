@@ -319,37 +319,6 @@ public class UserOrganizationInfo
 }
 
 /// <summary>
-/// 用户列表响应
-/// </summary>
-public class UserListResponse
-{
-    /// <summary>
-    /// 用户列表
-    /// </summary>
-    public List<AppUser> Users { get; set; } = new();
-
-    /// <summary>
-    /// 总记录数
-    /// </summary>
-    public int Total { get; set; }
-
-    /// <summary>
-    /// 当前页码
-    /// </summary>
-    public int Page { get; set; }
-
-    /// <summary>
-    /// 每页大小
-    /// </summary>
-    public int PageSize { get; set; }
-
-    /// <summary>
-    /// 总页数
-    /// </summary>
-    public int TotalPages => (int)Math.Ceiling((double)Total / PageSize);
-}
-
-/// <summary>
 /// 包含角色信息的用户列表响应
 /// v6.0: 新增用户列表响应格式，包含角色信息
 /// </summary>

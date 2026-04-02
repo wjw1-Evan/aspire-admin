@@ -65,9 +65,9 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
     try {
       const response = await iotService.queryEvents({ pageIndex: 1, pageSize: 100 });
       if (response.success && response.data) {
-        const eventsList = Array.isArray(response.data.Events) ? response.data.Events : [];
+        const eventsList = response.data.queryable || [];
         setOverviewStats({
-          total: eventsList.length,
+          total: response.data.rowCount || 0,
           unhandled: eventsList.filter((e: IoTDeviceEvent) => !e.isHandled).length,
           handled: eventsList.filter((e: IoTDeviceEvent) => e.isHandled).length,
           critical: eventsList.filter((e: IoTDeviceEvent) => e.level === 'Critical').length,
@@ -99,11 +99,11 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
 
       const response = await iotService.queryEvents(filters);
       if (response.success && response.data) {
-        const eventsList = Array.isArray(response.data.Events) ? response.data.Events : [];
+        const eventsList = response.data.queryable || [];
         return {
           data: eventsList,
           success: true,
-          total: response.data.Total || eventsList.length,
+          total: response.data.rowCount || eventsList.length,
         };
       }
       return {

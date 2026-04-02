@@ -1,4 +1,5 @@
 import { request } from '@umijs/max';
+import type { ApiResponse, PagedResult } from '@/types/unified-api';
 
 const API_PREFIX = '/api/iot';
 
@@ -206,7 +207,7 @@ export const iotService = {
     let url = `${API_PREFIX}/gateways?pageIndex=${pageIndex}&pageSize=${pageSize}`;
     if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
     if (status) url += `&status=${encodeURIComponent(status)}`;
-    return request<{ success: boolean; data: { queryable: IoTGateway[]; rowCount: number; currentPage: number; pageSize: number } }>(
+    return request<ApiResponse<PagedResult<IoTGateway>>>(
       url,
       { method: 'GET' }
     );
@@ -232,7 +233,7 @@ export const iotService = {
     let url = `${API_PREFIX}/devices?pageIndex=${pageIndex}&pageSize=${pageSize}`;
     if (gatewayId) url += `&gatewayId=${gatewayId}`;
     if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
-    return request<{ success: boolean; data: { queryable: IoTDevice[]; rowCount: number; currentPage: number; pageSize: number } }>(url, { method: 'GET' });
+    return request<ApiResponse<PagedResult<IoTDevice>>>(url, { method: 'GET' });
   },
 
   getDevice: (id: string) =>
@@ -277,7 +278,7 @@ export const iotService = {
   /** 查询设备命令历史（通过事件列表模拟） */
   getCommandHistory: (deviceId: string, pageIndex = 1, pageSize = 10) => {
     const url = `${API_PREFIX}/events/query`;
-    return request<{ success: boolean; data: { Events: IoTDeviceEvent[]; Total: number } }>(url, {
+    return request<ApiResponse<PagedResult<IoTDeviceEvent>>>(url, {
       method: 'POST',
       data: { deviceId, eventType: 'Command', pageIndex, pageSize },
     });
@@ -298,7 +299,7 @@ export const iotService = {
     let url = `${API_PREFIX}/datapoints?pageIndex=${pageIndex}&pageSize=${pageSize}`;
     if (deviceId) url += `&deviceId=${deviceId}`;
     if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
-    return request<{ success: boolean; data: { queryable: IoTDataPoint[]; rowCount: number; currentPage: number; pageSize: number } }>(url, { method: 'GET' });
+    return request<ApiResponse<PagedResult<IoTDataPoint>>>(url, { method: 'GET' });
   },
 
   getDataPoint: (id: string) =>
@@ -318,7 +319,7 @@ export const iotService = {
     request<{ success: boolean; data: IoTDataRecord[] }>(`${API_PREFIX}/data/batch-report`, { method: 'POST', data }),
 
   queryDataRecords: (data: any) =>
-    request<{ success: boolean; data: { Records: IoTDataRecord[]; Total: number } }>(`${API_PREFIX}/data/query`, {
+    request<ApiResponse<PagedResult<IoTDataRecord>>>(`${API_PREFIX}/data/query`, {
       method: 'POST',
       data,
     }),
@@ -334,7 +335,7 @@ export const iotService = {
 
   // ── Events ────────────────────────────────────────────────────
   queryEvents: (data: any) =>
-    request<{ success: boolean; data: { Events: IoTDeviceEvent[]; Total: number } }>(`${API_PREFIX}/events/query`, {
+    request<ApiResponse<PagedResult<IoTDeviceEvent>>>(`${API_PREFIX}/events/query`, {
       method: 'POST',
       data,
     }),

@@ -45,7 +45,7 @@ public class UserActivityLogService : IUserActivityLogService
     /// <summary>
     /// 获取用户活动日志（分页）
     /// </summary>
-    public async Task<UserActivityLogPagedResponse> GetActivityLogsAsync(GetUserActivityLogsRequest request)
+    public async Task<PagedResult<UserActivityLog>> GetActivityLogsAsync(GetUserActivityLogsRequest request)
     {
         var createdBy = request.CreatedBy;
         var action = request.Action;
@@ -60,17 +60,14 @@ public class UserActivityLogService : IUserActivityLogService
 
         var query = _context.Set<UserActivityLog>().Where(filter);
         var pagedResult = query.OrderByDescending(log => log.CreatedAt).PageResult(request.Page, request.PageSize);
-        var logs = await pagedResult.Queryable.ToListAsync();
-        var total = pagedResult.RowCount;
-        var totalPages = (int)Math.Ceiling(total / (double)request.PageSize);
 
-        return new UserActivityLogPagedResponse
+        return new PagedResult<UserActivityLog>
         {
-            Data = logs,
-            Total = total,
-            Page = request.Page,
+            Queryable = pagedResult.Queryable,
+            CurrentPage = request.Page,
             PageSize = request.PageSize,
-            TotalPages = totalPages
+            RowCount = pagedResult.RowCount,
+            PageCount = (int)Math.Ceiling(pagedResult.RowCount / (double)request.PageSize)
         };
     }
 
@@ -83,7 +80,7 @@ public class UserActivityLogService : IUserActivityLogService
     }
 
     /// <inheritdoc/>
-    public async Task<UserActivityPagedWithStatsResponse> GetCurrentUserActivityLogsAsync(
+    public async Task<PagedResult<ActivityLogListItemResponse>> GetCurrentUserActivityLogsAsync(
         int page = 1,
         int pageSize = 20,
         string? action = null,
@@ -178,19 +175,13 @@ public class UserActivityLogService : IUserActivityLogService
             CreatedAt = log.CreatedAt
         }).ToList();
 
-        return new UserActivityPagedWithStatsResponse
+        return new PagedResult<ActivityLogListItemResponse>
         {
-            Data = logDtos,
-            Total = totalCount,
-            Page = page,
+            Queryable = logDtos.AsQueryable(),
+            CurrentPage = page,
             PageSize = pageSize,
-            Statistics = new UserActivityStatistics
-            {
-                TotalCount = totalCount,
-                SuccessCount = successCount,
-                ErrorCount = errorCount,
-                ActionTypesCount = actionTypesCount // 暂时禁用，优化性能
-            }
+            RowCount = (int)totalCount,
+            PageCount = (int)Math.Ceiling(totalCount / (double)pageSize)
         };
     }
 
@@ -209,7 +200,7 @@ public class UserActivityLogService : IUserActivityLogService
     }
 
     /// <inheritdoc/>
-    public async Task<(List<UserActivityLog> logs, long total)> GetAllActivityLogsAsync(
+    public Task<PagedResult<UserActivityLog>> GetAllActivityLogsAsync(
         int page = 1,
         int pageSize = 20,
         string? userId = null,
@@ -220,12 +211,24 @@ public class UserActivityLogService : IUserActivityLogService
         DateTime? startDate = null,
         DateTime? endDate = null)
     {
-        var (logs, total, _) = await GetAllActivityLogsWithUsersAsync(page, pageSize, userId, action, httpMethod, statusCode, ipAddress, startDate, endDate);
-        return (logs, total);
+        var actionLower = action?.ToLowerInvariant();
+        var ipLower = ipAddress?.ToLowerInvariant();
+
+        Expression<Func<UserActivityLog, bool>> filter = log =>
+            (string.IsNullOrEmpty(userId) || log.CreatedBy == userId) &&
+            (string.IsNullOrEmpty(actionLower) || (log.Action != null && log.Action.ToLower().Contains(actionLower))) &&
+            (string.IsNullOrEmpty(httpMethod) || log.HttpMethod == httpMethod) &&
+            (!statusCode.HasValue || log.StatusCode == statusCode.Value) &&
+            (string.IsNullOrEmpty(ipLower) || (log.IpAddress != null && log.IpAddress.ToLower().Contains(ipLower))) &&
+            (!startDate.HasValue || log.CreatedAt >= startDate.Value) &&
+            (!endDate.HasValue || log.CreatedAt <= endDate.Value);
+
+        var query = _context.Set<UserActivityLog>().Where(filter);
+        return Task.FromResult(query.OrderByDescending(log => log.CreatedAt).PageResult(page, pageSize));
     }
 
     /// <inheritdoc/>
-    public async Task<(List<UserActivityLog> logs, long total, Dictionary<string, string> userMap)> GetAllActivityLogsWithUsersAsync(
+    public async Task<PagedResult<ActivityLogListItemResponse>> GetAllActivityLogsWithUsersAsync(
         int page = 1,
         int pageSize = 20,
         string? createdBy = null,
@@ -282,7 +285,29 @@ public class UserActivityLogService : IUserActivityLogService
             userMap[invalidUserId!] = defaultUsername;
         }
 
-        return (logs, total, userMap);
+        var logDtos = logs.Select(log => new ActivityLogListItemResponse
+        {
+            Id = log.Id ?? string.Empty,
+            CreatedBy = log.CreatedBy,
+            Username = userMap.ContainsKey(log.CreatedBy ?? "") ? userMap[log.CreatedBy ?? ""] : null,
+            Action = log.Action,
+            Description = log.Description,
+            IpAddress = log.IpAddress,
+            HttpMethod = log.HttpMethod,
+            FullUrl = log.FullUrl,
+            StatusCode = log.StatusCode,
+            Duration = log.Duration,
+            CreatedAt = log.CreatedAt
+        }).ToList();
+
+        return new PagedResult<ActivityLogListItemResponse>
+        {
+            Queryable = logDtos.AsQueryable(),
+            CurrentPage = page,
+            PageSize = pageSize,
+            RowCount = (int)total,
+            PageCount = (int)Math.Ceiling((double)total / pageSize)
+        };
     }
 
     /// <summary>

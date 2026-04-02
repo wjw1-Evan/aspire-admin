@@ -41,7 +41,7 @@ public class ParkVisitService : IParkVisitService
     /// <summary>
     /// 获取走访任务列表
     /// </summary>
-    public async Task<VisitTaskListResponse> GetVisitTasksAsync(VisitTaskListRequest request)
+    public async Task<PagedResult<VisitTaskDto>> GetVisitTasksAsync(VisitTaskListRequest request)
     {
         
         var search = request.Search?.ToLower();
@@ -50,7 +50,7 @@ public class ParkVisitService : IParkVisitService
         var query = _context.Set<VisitTask>().Where(
             t => (string.IsNullOrEmpty(search) || (t.ManagerName != null && t.ManagerName.ToLower().Contains(search)) || (t.Phone != null && t.Phone.ToLower().Contains(search))) &&
                  (string.IsNullOrEmpty(status) || t.Status == status));
-        var total = await query.LongCountAsync();
+
         var pagedResult = query.OrderByDescending(t => t.CreatedAt).PageResult(request.Page, request.PageSize);
         var items = await pagedResult.Queryable.ToListAsync();
 
@@ -85,11 +85,7 @@ public class ParkVisitService : IParkVisitService
             });
         }
 
-        return new VisitTaskListResponse
-        {
-            Tasks = tasks,
-            Total = (int)total
-        };
+        return tasks.AsQueryable().PageResult(request.Page, request.PageSize);
     }
 
     /// <summary>
@@ -222,7 +218,7 @@ public class ParkVisitService : IParkVisitService
     /// <summary>
     /// 获取走访考核列表
     /// </summary>
-    public async Task<VisitAssessmentListResponse> GetVisitAssessmentsAsync(VisitAssessmentListRequest request)
+    public async Task<PagedResult<VisitAssessmentDto>> GetVisitAssessmentsAsync(VisitAssessmentListRequest request)
     {
         var search = request.Search?.ToLower();
 
@@ -231,26 +227,24 @@ public class ParkVisitService : IParkVisitService
                  (a.VisitorName != null && a.VisitorName.ToLower().Contains(search)) ||
                  (a.Phone != null && a.Phone.ToLower().Contains(search)) ||
                  (a.TaskDescription != null && a.TaskDescription.ToLower().Contains(search)));
-        var total = await query.LongCountAsync();
+
         var pagedResult = query.OrderByDescending(a => a.CreatedAt).PageResult(request.Page, request.PageSize);
         var items = await pagedResult.Queryable.ToListAsync();
 
-        return new VisitAssessmentListResponse
+        var dtos = items.Select(a => new VisitAssessmentDto
         {
-            Assessments = items.Select(a => new VisitAssessmentDto
-            {
-                Id = a.Id,
-                TaskId = a.TaskId,
-                VisitorName = a.VisitorName,
-                Phone = a.Phone,
-                Location = a.Location,
-                TaskDescription = a.TaskDescription,
-                Score = a.Score,
-                Comments = a.Comments,
-                CreatedAt = a.CreatedAt
-            }).ToList(),
-            Total = (int)total
-        };
+            Id = a.Id,
+            TaskId = a.TaskId,
+            VisitorName = a.VisitorName,
+            Phone = a.Phone,
+            Location = a.Location,
+            TaskDescription = a.TaskDescription,
+            Score = a.Score,
+            Comments = a.Comments,
+            CreatedAt = a.CreatedAt
+        }).ToList();
+
+        return dtos.AsQueryable().PageResult(request.Page, request.PageSize);
     }
 
     /// <summary>
@@ -302,7 +296,7 @@ public class ParkVisitService : IParkVisitService
     /// <summary>
     /// 获取知识库问题列表
     /// </summary>
-    public async Task<VisitQuestionListResponse> GetVisitQuestionsAsync(VisitQuestionListRequest request)
+    public async Task<PagedResult<VisitQuestionDto>> GetVisitQuestionsAsync(VisitQuestionListRequest request)
     {
         var search = request.Search?.ToLower();
         var category = request.Category;
@@ -310,23 +304,21 @@ public class ParkVisitService : IParkVisitService
         var query = _context.Set<VisitQuestion>().Where(
             q => (string.IsNullOrEmpty(search) || (q.Content != null && q.Content.ToLower().Contains(search))) &&
                  (string.IsNullOrEmpty(category) || q.Category == category));
-        var total = await query.LongCountAsync();
+
         var pagedResult = query.OrderByDescending(q => q.CreatedAt).PageResult(request.Page, request.PageSize);
         var items = await pagedResult.Queryable.ToListAsync();
 
-        return new VisitQuestionListResponse
+        var dtos = items.Select(q => new VisitQuestionDto
         {
-            Questions = items.Select(q => new VisitQuestionDto
-            {
-                Id = q.Id,
-                Content = q.Content,
-                Category = q.Category,
-                Answer = q.Answer,
-                IsFrequentlyUsed = q.IsFrequentlyUsed ?? false,
-                SortOrder = q.SortOrder ?? 0
-            }).ToList(),
-            Total = (int)total
-        };
+            Id = q.Id,
+            Content = q.Content,
+            Category = q.Category,
+            Answer = q.Answer,
+            IsFrequentlyUsed = q.IsFrequentlyUsed ?? false,
+            SortOrder = q.SortOrder ?? 0
+        }).ToList();
+
+        return dtos.AsQueryable().PageResult(request.Page, request.PageSize);
     }
 
     /// <summary>
@@ -408,22 +400,19 @@ public class ParkVisitService : IParkVisitService
     /// <summary>
     /// 获取走访问卷列表
     /// </summary>
-    public async Task<VisitQuestionnaireListResponse> GetVisitQuestionnairesAsync()
+    public async Task<PagedResult<VisitQuestionnaireDto>> GetVisitQuestionnairesAsync()
     {
-        var items = await _context.Set<VisitQuestionnaire>().ToListAsync();
-        return new VisitQuestionnaireListResponse
+        var items = await _context.Set<VisitQuestionnaire>().OrderBy(q => q.SortOrder).ToListAsync();
+        var dtos = items.Select(q => new VisitQuestionnaireDto
         {
-            Questionnaires = items.OrderBy(q => q.SortOrder).Select(q => new VisitQuestionnaireDto
-            {
-                Id = q.Id,
-                Title = q.Title,
-                Purpose = q.Purpose,
-                QuestionIds = q.QuestionIds,
-                CreatedAt = q.CreatedAt,
-                SortOrder = q.SortOrder ?? 0
-            }).ToList(),
-            Total = (int)await _context.Set<VisitQuestionnaire>().LongCountAsync()
-        };
+            Id = q.Id,
+            Title = q.Title,
+            Purpose = q.Purpose,
+            QuestionIds = q.QuestionIds,
+            CreatedAt = q.CreatedAt,
+            SortOrder = q.SortOrder ?? 0
+        }).ToList();
+        return dtos.AsQueryable().PageResult(1, 1000);
     }
 
     /// <summary>

@@ -48,10 +48,11 @@ export interface ShareListRequest {
 }
 
 export interface ShareListResponse {
-    data: FileShare[];
-    total: number;
-    page: number;
+    queryable: FileShare[];
+    rowCount: number;
+    currentPage: number;
     pageSize: number;
+    pageCount: number;
 }
 
 export interface ShareAccessRequest {

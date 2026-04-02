@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using Microsoft.Extensions.Logging;
@@ -152,7 +153,8 @@ public class ParkMcpToolHandler : McpToolHandlerBase
                 if (!string.IsNullOrEmpty(name))
                 {
                     var list = await _assetService.GetBuildingsAsync(new BuildingListRequest { Search = name, Page = 1, PageSize = 1 });
-                    if (list.Buildings.Any()) return await _assetService.GetBuildingByIdAsync(list.Buildings.First().Id);
+                    var buildingItems = await list.Queryable.ToListAsync();
+                    if (buildingItems.Any()) return await _assetService.GetBuildingByIdAsync(buildingItems.First().Id);
                 }
                 return new { error = "未找到指定楼宇" };
             });
@@ -176,7 +178,8 @@ public class ParkMcpToolHandler : McpToolHandlerBase
                 if (!string.IsNullOrEmpty(name))
                 {
                     var list = await _investmentService.GetLeadsAsync(new InvestmentLeadListRequest { Search = name, Page = 1, PageSize = 1 });
-                    if (list.Leads.Any()) return await _investmentService.GetLeadByIdAsync(list.Leads.First().Id);
+                    var leadItems = await list.Queryable.ToListAsync();
+                    if (leadItems.Any()) return await _investmentService.GetLeadByIdAsync(leadItems.First().Id);
                 }
                 return new { error = "未找到对应招商线索" };
             });
@@ -204,7 +207,8 @@ public class ParkMcpToolHandler : McpToolHandlerBase
                 if (!string.IsNullOrEmpty(name))
                 {
                     var list = await _tenantService.GetTenantsAsync(new ParkTenantListRequest { Search = name, Page = 1, PageSize = 1 });
-                    if (list.Tenants.Any()) return await _tenantService.GetTenantByIdAsync(list.Tenants.First().Id);
+                    var tenantItems = await list.Queryable.ToListAsync();
+                    if (tenantItems.Any()) return await _tenantService.GetTenantByIdAsync(tenantItems.First().Id);
                 }
                 return new { error = $"未找到名为 '{name}' 的租户记录。请确保名称准确或提供 ID。" };
             });

@@ -41,11 +41,3 @@ export interface AssignMenusToRoleRequest {
   menuIds: string[];
 }
 
-/**
- * 角色列表响应
- */
-export interface RoleListResponse {
-  roles: Role[];
-  total: number;
-}
-

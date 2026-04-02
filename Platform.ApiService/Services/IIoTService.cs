@@ -161,7 +161,7 @@ public interface IIoTService
     /// <summary>
     /// 查询数据记录
     /// </summary>
-    Task<(List<IoTDataRecord> Records, long Total)> QueryDataRecordsAsync(QueryIoTDataRequest request);
+    Task<PagedResult<IoTDataRecord>> QueryDataRecordsAsync(QueryIoTDataRequest request);
 
     /// <summary>
     /// 获取最新数据
@@ -185,7 +185,7 @@ public interface IIoTService
     /// <summary>
     /// 查询设备事件
     /// </summary>
-    Task<(List<IoTDeviceEvent> Events, long Total)> QueryEventsAsync(QueryIoTEventRequest request);
+    Task<PagedResult<IoTDeviceEvent>> QueryEventsAsync(QueryIoTEventRequest request);
 
     /// <summary>
     /// 处理事件

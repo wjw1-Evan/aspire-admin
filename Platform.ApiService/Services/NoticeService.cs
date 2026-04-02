@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
+using System.Linq.Dynamic.Core;
 
 namespace Platform.ApiService.Services;
 
@@ -24,17 +25,19 @@ public class NoticeService : INoticeService
     /// <summary>
     /// 获取当前用户的通知列表
     /// </summary>
-    public async Task<NoticeIconListResponse> GetNoticesAsync()
+    public async Task<PagedResult<NoticeIconItem>> GetNoticesAsync()
     {
         var notices = await _context.Set<NoticeIconItem>()
             .OrderByDescending(n => n.Datetime)
             .ToListAsync();
 
-        return new NoticeIconListResponse
+        return new PagedResult<NoticeIconItem>
         {
-            Data = notices,
-            Total = notices.Count,
-            Success = true
+            Queryable = notices.AsQueryable(),
+            CurrentPage = 1,
+            PageSize = notices.Count,
+            RowCount = notices.Count,
+            PageCount = 1
         };
     }
 

@@ -40,10 +40,11 @@ export interface QuotaListRequest {
 }
 
 export interface QuotaListResponse {
-    data: StorageQuota[];
-    total: number;
-    page: number;
+    queryable: StorageQuota[];
+    rowCount: number;
+    currentPage: number;
     pageSize: number;
+    pageCount: number;
 }
 
 export interface QuotaUsageStats {
@@ -78,8 +79,11 @@ export interface QuotaWarning {
 }
 
 export interface QuotaWarningListResponse {
-    data: QuotaWarning[];
-    total: number;
+    queryable: QuotaWarning[];
+    rowCount: number;
+    currentPage: number;
+    pageSize: number;
+    pageCount: number;
 }
 
 // 存储配额管理 API

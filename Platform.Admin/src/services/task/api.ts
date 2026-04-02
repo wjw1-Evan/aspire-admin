@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse } from '@/types/unified-api';
+import type { ApiResponse, PagedResult } from '@/types/unified-api';
 
 /**
  * 任务状态枚举
@@ -185,13 +185,14 @@ export interface TaskQueryRequest {
 }
 
 /**
- * 任务列表响应
+ * 任务列表响应 (PagedResult 格式)
  */
 export interface TaskListResponse {
-  tasks: TaskDto[];
-  total: number;
-  page: number;
+  queryable: TaskDto[];
+  rowCount: number;
+  currentPage: number;
   pageSize: number;
+  pageCount: number;
 }
 
 /**
@@ -332,17 +333,13 @@ export async function getTaskExecutionLogs(
   page: number = 1,
   pageSize: number = 10,
 ) {
-  return request<
-    ApiResponse<{
-      logs: TaskExecutionLogDto[];
-      total: number;
-      page: number;
-      pageSize: number;
-    }>
-  >(`/api/task/${taskId}/logs`, {
-    method: 'GET',
-    params: { page, pageSize },
-  });
+  return request<ApiResponse<PagedResult<TaskExecutionLogDto>>>(
+    `/api/task/${taskId}/logs`,
+    {
+      method: 'GET',
+      params: { page, pageSize },
+    },
+  );
 }
 
 /**
@@ -358,14 +355,7 @@ export async function getMyTodoTasks() {
  * 获取用户创建的任务
  */
 export async function getMyCreatedTasks(page: number = 1, pageSize: number = 10) {
-  return request<
-    ApiResponse<{
-      tasks: TaskDto[];
-      total: number;
-      page: number;
-      pageSize: number;
-    }>
-  >('/api/task/my/created', {
+  return request<ApiResponse<PagedResult<TaskDto>>>('/api/task/my/created', {
     method: 'GET',
     params: { page, pageSize },
   });

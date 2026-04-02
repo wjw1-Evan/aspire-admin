@@ -384,15 +384,8 @@ public class TaskController : BaseApiController
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> GetExecutionLogs(string taskId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        try
-        {
-            var (logs, total) = await _taskService.GetTaskExecutionLogsAsync(taskId, page, pageSize);
-            return Success(new { logs, total, page, pageSize });
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        var result = await _taskService.GetTaskExecutionLogsAsync(taskId, page, pageSize);
+        return Success(result);
     }
 
     /// <summary>
@@ -460,16 +453,9 @@ public class TaskController : BaseApiController
     [RequireMenu("project-management-task")]
     public async Task<IActionResult> GetMyCreatedTasks([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        try
-        {
-            var userId = RequiredUserId;
-            var (tasks, total) = await _taskService.GetUserCreatedTasksAsync(userId, page, pageSize);
-            return Success(new { tasks, total, page, pageSize });
-        }
-        catch (Exception ex)
-        {
-            throw new ArgumentException(ex.Message);
-        }
+        var userId = RequiredUserId;
+        var result = await _taskService.GetUserCreatedTasksAsync(userId, page, pageSize);
+        return Success(result);
     }
 
     /// <summary>

@@ -1,12 +1,11 @@
 import { request } from '@umijs/max';
-import type { ApiResponse } from '@/types/unified-api';
+import type { ApiResponse, PagedResult } from '@/types/unified-api';
 import type {
   PasswordBookEntry,
   PasswordBookEntryDetail,
   CreatePasswordBookEntryRequest,
   UpdatePasswordBookEntryRequest,
   PasswordBookQueryRequest,
-  PasswordBookListResponse,
   PasswordStrengthResult,
   GeneratePasswordRequest,
   GeneratePasswordResponse,
@@ -50,7 +49,7 @@ export async function getPasswordBookEntry(id: string) {
  * 分页查询密码本条目列表
  */
 export async function getPasswordBookList(data: PasswordBookQueryRequest) {
-  return request<ApiResponse<PasswordBookListResponse>>('/api/password-book/list', {
+  return request<ApiResponse<PagedResult<PasswordBookEntry>>>('/api/password-book/list', {
     method: 'POST',
     data,
   });

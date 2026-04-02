@@ -1,4 +1,5 @@
 using Platform.ApiService.Models;
+using System.Linq.Dynamic.Core;
 
 namespace Platform.ApiService.Services;
 
@@ -11,13 +12,13 @@ public interface IRoleService
     /// 获取所有角色
     /// </summary>
     /// <returns>角色列表响应</returns>
-    Task<RoleListResponse> GetAllRolesAsync();
+    Task<PagedResult<Role>> GetAllRolesAsync();
     
     /// <summary>
     /// 获取所有角色（包含统计信息）
     /// </summary>
     /// <returns>带统计信息的角色列表响应</returns>
-    Task<RoleListWithStatsResponse> GetAllRolesWithStatsAsync();
+    Task<PagedResult<RoleWithStats>> GetAllRolesWithStatsAsync();
     
     /// <summary>
     /// 根据ID获取角色

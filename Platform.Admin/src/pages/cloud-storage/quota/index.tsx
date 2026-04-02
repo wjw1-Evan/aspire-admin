@@ -96,7 +96,7 @@ const CloudStorageQuotaPage: React.FC = () => {
         try {
             const response = await getQuotaWarnings(currentCompanyId);
             if (response.success && response.data) {
-                setWarnings(response.data.data || []);
+                setWarnings(response.data.queryable || []);
             }
         } catch (err) {
             console.error('Failed to load warnings:', err);

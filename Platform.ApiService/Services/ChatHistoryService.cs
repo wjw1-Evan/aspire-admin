@@ -16,7 +16,7 @@ public class ChatHistoryService : IChatHistoryService
         _chatService = chatService;
     }
 
-    public async Task<ChatHistoryListResponse> GetChatHistoryAsync(ChatHistoryQueryRequest request)
+    public async Task<PagedResult<ChatHistoryListItemDto>> GetChatHistoryAsync(ChatHistoryQueryRequest request)
     {
         Expression<Func<ChatSession, bool>>? filter = null;
 
@@ -59,13 +59,13 @@ public class ChatHistoryService : IChatHistoryService
 
             if (!matchedSessionIds.Any())
             {
-                return new ChatHistoryListResponse
+                return new PagedResult<ChatHistoryListItemDto>
                 {
-                    Data = new List<ChatHistoryListItemDto>(),
-                    Total = 0,
-                    Success = true,
+                    Queryable = new List<ChatHistoryListItemDto>().AsQueryable(),
+                    CurrentPage = request.Current,
                     PageSize = request.PageSize,
-                    Current = request.Current
+                    RowCount = 0,
+                    PageCount = 0
                 };
             }
 
@@ -105,13 +105,13 @@ public class ChatHistoryService : IChatHistoryService
             CreatedAt = s.CreatedAt
         }).ToList();
 
-        return new ChatHistoryListResponse
+        return new PagedResult<ChatHistoryListItemDto>
         {
-            Data = listItems,
-            Total = (int)total,
-            Success = true,
+            Queryable = listItems.AsQueryable(),
+            CurrentPage = request.Current,
             PageSize = request.PageSize,
-            Current = request.Current
+            RowCount = (int)total,
+            PageCount = (int)Math.Ceiling((double)total / request.PageSize)
         };
     }
 

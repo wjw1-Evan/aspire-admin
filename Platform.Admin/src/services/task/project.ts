@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse } from '@/types/unified-api';
+import type { ApiResponse, PagedResult } from '@/types/unified-api';
 
 /**
  * 项目状态枚举
@@ -67,16 +67,6 @@ export interface ProjectQueryRequest {
   endDate?: string;
   sortBy?: string;
   sortOrder?: string;
-}
-
-/**
- * 项目列表响应
- */
-export interface ProjectListResponse {
-  projects: ProjectDto[];
-  total: number;
-  page: number;
-  pageSize: number;
 }
 
 /**
@@ -149,7 +139,7 @@ export interface AddProjectMemberRequest {
  * 获取项目列表
  */
 export async function getProjectList(data: ProjectQueryRequest) {
-  return request<ApiResponse<ProjectListResponse>>('/api/project/list', {
+  return request<ApiResponse<PagedResult<ProjectDto>>>('/api/project/list', {
     method: 'POST',
     data,
   });

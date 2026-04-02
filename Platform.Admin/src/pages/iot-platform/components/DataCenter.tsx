@@ -88,32 +88,11 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
       const response = await iotService.queryDataRecords(payload);
 
       if (response && response.success && response.data) {
-        // 处理不同的数据格式：优先检查小写格式（后端实际返回的格式）
-        let records: IoTDataRecord[] = [];
-        let total = 0;
-
-        // 优先检查大写格式（后端实际返回的格式）
-        if (response.data.Records && Array.isArray(response.data.Records)) {
-          // 如果是 { Records: [], Total: 0 } 格式（大写）
-          records = response.data.Records;
-          total = response.data.Total || 0;
-        } else if (Array.isArray(response.data)) {
-          // 如果 data 直接是数组
-          records = response.data;
-          total = response.data.length;
-        } else {
-          // 后端统一返回：queryable + rowCount
-          const data = response.data as any;
-          if (data.queryable && Array.isArray(data.queryable)) {
-            records = data.queryable;
-            total = data.rowCount ?? 0;
-          }
-        }
-
-        // 确保返回的数据格式符合 ProTable 的要求
+        const records = response.data.queryable || [];
+        const total = response.data.rowCount || 0;
         return {
-          data: records || [],
-          total: total || 0,
+          data: records,
+          total: total,
           success: true,
         };
       }

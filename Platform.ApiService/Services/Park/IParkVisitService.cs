@@ -1,4 +1,5 @@
 using Platform.ApiService.Models;
+using System.Linq.Dynamic.Core;
 
 namespace Platform.ApiService.Services;
 
@@ -12,7 +13,7 @@ public interface IParkVisitService
     /// <summary>
     /// 获取走访任务列表
     /// </summary>
-    Task<VisitTaskListResponse> GetVisitTasksAsync(VisitTaskListRequest request);
+    Task<PagedResult<VisitTaskDto>> GetVisitTasksAsync(VisitTaskListRequest request);
 
     /// <summary>
     /// 根据ID获取走访任务详情
@@ -43,7 +44,7 @@ public interface IParkVisitService
     /// <summary>
     /// 获取走访考核列表
     /// </summary>
-    Task<VisitAssessmentListResponse> GetVisitAssessmentsAsync(VisitAssessmentListRequest request);
+    Task<PagedResult<VisitAssessmentDto>> GetVisitAssessmentsAsync(VisitAssessmentListRequest request);
 
     /// <summary>
     /// 创建走访考核
@@ -57,7 +58,7 @@ public interface IParkVisitService
     /// <summary>
     /// 获取走访知识库问题列表
     /// </summary>
-    Task<VisitQuestionListResponse> GetVisitQuestionsAsync(VisitQuestionListRequest request);
+    Task<PagedResult<VisitQuestionDto>> GetVisitQuestionsAsync(VisitQuestionListRequest request);
 
     /// <summary>
     /// 根据分类获取走访问题
@@ -82,7 +83,7 @@ public interface IParkVisitService
     /// <summary>
     /// 获取走访问卷模板
     /// </summary>
-    Task<VisitQuestionnaireListResponse> GetVisitQuestionnairesAsync();
+    Task<PagedResult<VisitQuestionnaireDto>> GetVisitQuestionnairesAsync();
 
     /// <summary>
     /// 创建走访问卷模板

@@ -90,16 +90,8 @@ public class PasswordBookController : BaseApiController
     public async Task<IActionResult> GetEntries([FromBody] PasswordBookQueryRequest request)
     {
         var userId = RequiredUserId;
-        var (items, total) = await _passwordBookService.GetEntriesAsync(request, userId);
-        var response = new PasswordBookListResponse
-        {
-            Data = items,
-            Total = (int)total,
-            Success = true,
-            Current = request.Current,
-            PageSize = request.PageSize
-        };
-        return Success(response);
+        var result = await _passwordBookService.GetEntriesAsync(request, userId);
+        return Success(result);
     }
 
     /// <summary>

@@ -1,4 +1,5 @@
 using Platform.ApiService.Models;
+using System.Linq.Dynamic.Core;
 
 namespace Platform.ApiService.Services;
 
@@ -34,7 +35,7 @@ public interface IPasswordBookService
     /// </summary>
     /// <param name="request">查询请求</param>
     /// <param name="userId">当前用户ID</param>
-    Task<(List<PasswordBookEntryDto> Items, long Total)> GetEntriesAsync(PasswordBookQueryRequest request, string userId);
+    Task<PagedResult<PasswordBookEntryDto>> GetEntriesAsync(PasswordBookQueryRequest request, string userId);
 
     /// <summary>
     /// 删除条目（软删除）

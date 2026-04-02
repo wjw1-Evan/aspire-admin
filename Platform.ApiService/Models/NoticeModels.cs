@@ -166,27 +166,6 @@ public enum NoticeIconItemType
 }
 
 /// <summary>
-/// 通知图标列表响应
-/// </summary>
-public class NoticeIconListResponse
-{
-    /// <summary>
-    /// 通知图标数据列表
-    /// </summary>
-    public List<NoticeIconItem> Data { get; set; } = new();
-
-    /// <summary>
-    /// 总数
-    /// </summary>
-    public int Total { get; set; }
-
-    /// <summary>
-    /// 是否成功
-    /// </summary>
-    public bool Success { get; set; } = true;
-}
-
-/// <summary>
 /// 创建通知请求
 /// </summary>
 public class CreateNoticeRequest

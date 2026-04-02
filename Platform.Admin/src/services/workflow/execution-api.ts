@@ -148,7 +148,7 @@ export async function getExecutionHistory(
     pageSize?: number;
   }
 ): Promise<ApiResponse<{
-  list: Array<{
+  queryable: Array<{
     executionId: string;
     status: string;
     startedAt: string;
@@ -157,7 +157,7 @@ export async function getExecutionHistory(
     inputs: Record<string, any>;
     outputs: Record<string, any>;
   }>;
-  total: number;
+  rowCount: number;
 }>> {
   return request(`/api/workflow/definitions/${definitionId}/executions`, {
     method: 'GET',
@@ -235,7 +235,7 @@ export async function getExecutionLogs(
     pageSize?: number;
   }
 ): Promise<ApiResponse<{
-  list: Array<{
+  queryable: Array<{
     id: string;
     timestamp: string;
     nodeId?: string;
@@ -243,7 +243,7 @@ export async function getExecutionLogs(
     message: string;
     data?: Record<string, any>;
   }>;
-  total: number;
+  rowCount: number;
 }>> {
   return request(`/api/workflow/executions/${executionId}/logs`, {
     method: 'GET',

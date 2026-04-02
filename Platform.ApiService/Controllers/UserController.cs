@@ -341,7 +341,7 @@ public class UserController : BaseApiController
     [RequireMenu("user-log")]
     public async Task<IActionResult> GetAllActivityLogs([FromQuery] ActivityLogQuery query)
     {
-        var (logs, total, userMap) = await _activityLogService.GetAllActivityLogsWithUsersAsync(
+        var pagedResult = await _activityLogService.GetAllActivityLogsWithUsersAsync(
             query.Page,
             query.PageSize,
             query.CreatedBy,
@@ -351,23 +351,6 @@ public class UserController : BaseApiController
             query.IpAddress,
             query.StartDate,
             query.EndDate);
-
-        var logsWithUserInfo = logs.Select(log => new ActivityLogListItemResponse
-        {
-            Id = log.Id ?? string.Empty,
-            CreatedBy = log.CreatedBy,
-            Username = userMap.ContainsKey(log.CreatedBy ?? "") ? userMap[log.CreatedBy ?? ""] : null,
-            Action = log.Action,
-            Description = log.Description,
-            IpAddress = log.IpAddress,
-            HttpMethod = log.HttpMethod,
-            FullUrl = log.FullUrl,
-            StatusCode = log.StatusCode,
-            Duration = log.Duration,
-            CreatedAt = log.CreatedAt
-        }).AsQueryable();
-
-        var pagedResult = logsWithUserInfo.PageResult(query.Page, query.PageSize);
         return Success(pagedResult);
     }
 
@@ -588,7 +571,7 @@ public class UserController : BaseApiController
                 throw new ArgumentException($"不支持的排序方向: {sortOrder}，支持: asc、desc");
         }
 
-        var response = await _activityLogService.GetCurrentUserActivityLogsAsync(
+        var pagedResult = await _activityLogService.GetCurrentUserActivityLogsAsync(
             page,
             pageSize,
             action,
@@ -600,14 +583,6 @@ public class UserController : BaseApiController
             sortBy,
             sortOrder);
 
-        var pagedResult = new PagedResult<ActivityLogListItemResponse>
-        {
-            Queryable = response.Data.AsQueryable(),
-            CurrentPage = response.Page,
-            PageSize = response.PageSize,
-            RowCount = (int)response.Total,
-            PageCount = (int)Math.Ceiling((double)response.Total / response.PageSize)
-        };
         return Success(pagedResult);
     }
 

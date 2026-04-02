@@ -1,3 +1,4 @@
+using System.Linq.Dynamic.Core;
 using Platform.ApiService.Models;
 
 namespace Platform.ApiService.Services;
@@ -10,7 +11,7 @@ public interface IParkAssetService
     /// <summary>
     /// 获取楼宇列表
     /// </summary>
-    Task<BuildingListResponse> GetBuildingsAsync(BuildingListRequest request);
+    Task<PagedResult<BuildingDto>> GetBuildingsAsync(BuildingListRequest request);
 
     /// <summary>
     /// 根据ID获取楼宇详情
@@ -35,7 +36,7 @@ public interface IParkAssetService
     /// <summary>
     /// 获取房源列表
     /// </summary>
-    Task<PropertyUnitListResponse> GetPropertyUnitsAsync(PropertyUnitListRequest request);
+    Task<PagedResult<PropertyUnitDto>> GetPropertyUnitsAsync(PropertyUnitListRequest request);
 
     /// <summary>
     /// 根据ID获取房源详情
@@ -71,7 +72,7 @@ public interface IParkInvestmentService
     /// <summary>
     /// 获取招商线索列表
     /// </summary>
-    Task<InvestmentLeadListResponse> GetLeadsAsync(InvestmentLeadListRequest request);
+    Task<PagedResult<InvestmentLeadDto>> GetLeadsAsync(InvestmentLeadListRequest request);
 
     /// <summary>
     /// 根据ID获取线索详情
@@ -101,7 +102,7 @@ public interface IParkInvestmentService
     /// <summary>
     /// 获取招商项目列表
     /// </summary>
-    Task<InvestmentProjectListResponse> GetProjectsAsync(InvestmentProjectListRequest request);
+    Task<PagedResult<InvestmentProjectDto>> GetProjectsAsync(InvestmentProjectListRequest request);
 
     /// <summary>
     /// 根据ID获取项目详情
@@ -137,7 +138,7 @@ public interface IParkTenantService
     /// <summary>
     /// 获取租户列表
     /// </summary>
-    Task<ParkTenantListResponse> GetTenantsAsync(ParkTenantListRequest request);
+    Task<PagedResult<ParkTenantDto>> GetTenantsAsync(ParkTenantListRequest request);
 
     /// <summary>
     /// 根据ID获取租户详情
@@ -162,7 +163,7 @@ public interface IParkTenantService
     /// <summary>
     /// 获取租赁合同列表
     /// </summary>
-    Task<LeaseContractListResponse> GetContractsAsync(LeaseContractListRequest request);
+    Task<PagedResult<LeaseContractDto>> GetContractsAsync(LeaseContractListRequest request);
 
     /// <summary>
     /// 根据ID获取合同详情
@@ -243,7 +244,7 @@ public interface IParkEnterpriseServiceService
     /// <summary>
     /// 获取服务申请列表
     /// </summary>
-    Task<ServiceRequestListResponse> GetRequestsAsync(ServiceRequestListRequest request);
+    Task<PagedResult<ServiceRequestDto>> GetRequestsAsync(ServiceRequestListRequest request);
 
     /// <summary>
     /// 根据ID获取服务申请详情

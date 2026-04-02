@@ -31,7 +31,7 @@ public class ParkTenantService : IParkTenantService
     /// <summary>
     /// 获取租户列表
     /// </summary>
-    public async Task<ParkTenantListResponse> GetTenantsAsync(ParkTenantListRequest request)
+    public async Task<PagedResult<ParkTenantDto>> GetTenantsAsync(ParkTenantListRequest request)
     {
         
         Expression<Func<ParkTenant, bool>> filter = t => true;
@@ -61,15 +61,14 @@ public class ParkTenantService : IParkTenantService
         var query = _context.Set<ParkTenant>().Where(filter);
         var total = await query.LongCountAsync();
         var pagedResult = orderBy(query).PageResult(request.Page, request.PageSize);
-        var items = await pagedResult.Queryable.ToListAsync();
 
         var tenants = new List<ParkTenantDto>();
-        foreach (var item in items)
+        foreach (var item in await pagedResult.Queryable.ToListAsync())
         {
             tenants.Add(await MapToTenantDtoAsync(item));
         }
 
-        return new ParkTenantListResponse { Tenants = tenants, Total = (int)total };
+        return new PagedResult<ParkTenantDto> { Queryable = tenants.AsQueryable(), CurrentPage = pagedResult.CurrentPage, PageSize = pagedResult.PageSize, RowCount = pagedResult.RowCount, PageCount = pagedResult.PageCount };
     }
 
     /// <summary>
@@ -183,7 +182,7 @@ public class ParkTenantService : IParkTenantService
     /// <summary>
     /// 获取合同列表
     /// </summary>
-    public async Task<LeaseContractListResponse> GetContractsAsync(LeaseContractListRequest request)
+    public async Task<PagedResult<LeaseContractDto>> GetContractsAsync(LeaseContractListRequest request)
     {
         Expression<Func<LeaseContract, bool>> filter = c => true;
 
@@ -218,15 +217,14 @@ public class ParkTenantService : IParkTenantService
         var query = _context.Set<LeaseContract>().Where(filter);
         var total = await query.LongCountAsync();
         var pagedResult = orderBy(query).PageResult(request.Page, request.PageSize);
-        var items = await pagedResult.Queryable.ToListAsync();
 
         var contracts = new List<LeaseContractDto>();
-        foreach (var item in items)
+        foreach (var item in await pagedResult.Queryable.ToListAsync())
         {
             contracts.Add(await MapToContractDtoAsync(item));
         }
 
-        return new LeaseContractListResponse { Contracts = contracts, Total = (int)total };
+        return new PagedResult<LeaseContractDto> { Queryable = contracts.AsQueryable(), CurrentPage = pagedResult.CurrentPage, PageSize = pagedResult.PageSize, RowCount = pagedResult.RowCount, PageCount = pagedResult.PageCount };
     }
 
     /// <summary>

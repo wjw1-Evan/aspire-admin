@@ -54,15 +54,8 @@ public class FileVersionController : BaseApiController
             var versions = await _fileVersionService.GetVersionHistoryAsync(fileId);
             var ordered = versions.OrderByDescending(v => v.VersionNumber).AsQueryable();
             var pagedResult = ordered.PageResult(page, pageSize);
-            var total = pagedResult.RowCount;
 
-            return Success(new
-            {
-                data = await pagedResult.Queryable.ToListAsync(),
-                total,
-                page,
-                pageSize
-            });
+            return Success(pagedResult);
         }
         catch (Exception ex)
         {

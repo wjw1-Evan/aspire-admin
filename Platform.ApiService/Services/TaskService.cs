@@ -449,15 +449,14 @@ public class TaskService : ITaskService
     }
 
     /// <inheritdoc/>
-    public async Task<(List<TaskExecutionLogDto> logs, int total)> GetTaskExecutionLogsAsync(string taskId, int page = 1, int pageSize = 10)
+    public async Task<PagedResult<TaskExecutionLogDto>> GetTaskExecutionLogsAsync(string taskId, int page = 1, int pageSize = 10)
     {
         var q = _context.Set<TaskExecutionLog>().Where(l => l.TaskId == taskId);
         var pagedResult = q.OrderByDescending(l => l.CreatedAt).PageResult(page, pageSize);
         var logs = await pagedResult.Queryable.ToListAsync();
-        var total = pagedResult.RowCount;
         var dtos = new List<TaskExecutionLogDto>();
         foreach (var l in logs) dtos.Add(await ConvertToTaskExecutionLogDtoAsync(l));
-        return (dtos, (int)total);
+        return dtos.AsQueryable().PageResult(page, pageSize);
     }
 
     /// <inheritdoc/>
@@ -481,13 +480,13 @@ public class TaskService : ITaskService
     }
 
     /// <inheritdoc/>
-    public async Task<(List<TaskDto> tasks, int total)> GetUserCreatedTasksAsync(string userId, int page = 1, int pageSize = 10)
+    public async Task<PagedResult<TaskDto>> GetUserCreatedTasksAsync(string userId, int page = 1, int pageSize = 10)
     {
         var q = _context.Set<WorkTask>().Where(t => t.CreatedBy == userId);
         var pagedResult = q.OrderByDescending(t => t.CreatedAt).PageResult(page, pageSize);
         var tasks = await pagedResult.Queryable.ToListAsync();
-        var total = pagedResult.RowCount;
-        return (await ConvertToTaskDtosAsync(tasks), (int)total);
+        var dtos = await ConvertToTaskDtosAsync(tasks);
+        return dtos.AsQueryable().PageResult(page, pageSize);
     }
 
     /// <inheritdoc/>

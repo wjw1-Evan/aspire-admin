@@ -1,4 +1,5 @@
 using Platform.ApiService.Models;
+using System.Linq.Dynamic.Core;
 
 namespace Platform.ApiService.Services;
 
@@ -17,7 +18,7 @@ public interface IUnifiedNotificationService
     /// <param name="filterType">过滤类型：all, notification, message, todo, task, system, unread</param>
     /// <param name="sortBy">排序字段：datetime, priority, dueDate</param>
     /// <returns>统一的通知/待办/任务列表</returns>
-    Task<UnifiedNotificationListResponse> GetUnifiedNotificationsAsync(
+    Task<PagedResult<NoticeIconItem>> GetUnifiedNotificationsAsync(
         int page = 1,
         int pageSize = 10,
         string filterType = "all",
@@ -30,7 +31,7 @@ public interface IUnifiedNotificationService
     /// <param name="pageSize">每页数量</param>
     /// <param name="sortBy">排序字段：dueDate, priority, datetime</param>
     /// <returns>待办项列表</returns>
-    Task<TodoListResponse> GetTodosAsync(
+    Task<PagedResult<NoticeIconItem>> GetTodosAsync(
         int page = 1,
         int pageSize = 10,
         string sortBy = "dueDate");
@@ -41,7 +42,7 @@ public interface IUnifiedNotificationService
     /// <param name="page">页码</param>
     /// <param name="pageSize">每页数量</param>
     /// <returns>系统消息列表</returns>
-    Task<SystemMessageListResponse> GetSystemMessagesAsync(
+    Task<PagedResult<NoticeIconItem>> GetSystemMessagesAsync(
         int page = 1,
         int pageSize = 10);
 
@@ -51,7 +52,7 @@ public interface IUnifiedNotificationService
     /// <param name="page">页码</param>
     /// <param name="pageSize">每页数量</param>
     /// <returns>任务相关通知列表</returns>
-    Task<TaskNotificationListResponse> GetTaskNotificationsAsync(
+    Task<PagedResult<NoticeIconItem>> GetTaskNotificationsAsync(
         int page = 1,
         int pageSize = 10);
 
@@ -149,135 +150,6 @@ public interface IUnifiedNotificationService
     /// </summary>
     /// <returns>各类型的未读数量统计</returns>
     Task<UnreadCountStatistics> GetUnreadCountStatisticsAsync();
-}
-
-/// <summary>
-/// 统一通知/待办/任务列表响应
-/// </summary>
-public class UnifiedNotificationListResponse
-{
-    /// <summary>
-    /// 通知/待办/任务列表
-    /// </summary>
-    public List<NoticeIconItem> Items { get; set; } = new();
-
-    /// <summary>
-    /// 总数
-    /// </summary>
-    public int Total { get; set; }
-
-    /// <summary>
-    /// 当前页码
-    /// </summary>
-    public int Page { get; set; }
-
-    /// <summary>
-    /// 每页数量
-    /// </summary>
-    public int PageSize { get; set; }
-
-    /// <summary>
-    /// 未读数量
-    /// </summary>
-    public int UnreadCount { get; set; }
-
-    /// <summary>
-    /// 是否成功
-    /// </summary>
-    public bool Success { get; set; } = true;
-}
-
-/// <summary>
-/// 待办项列表响应
-/// </summary>
-public class TodoListResponse
-{
-    /// <summary>
-    /// 待办项列表
-    /// </summary>
-    public List<NoticeIconItem> Todos { get; set; } = new();
-
-    /// <summary>
-    /// 总数
-    /// </summary>
-    public int Total { get; set; }
-
-    /// <summary>
-    /// 当前页码
-    /// </summary>
-    public int Page { get; set; }
-
-    /// <summary>
-    /// 每页数量
-    /// </summary>
-    public int PageSize { get; set; }
-
-    /// <summary>
-    /// 是否成功
-    /// </summary>
-    public bool Success { get; set; } = true;
-}
-
-/// <summary>
-/// 系统消息列表响应
-/// </summary>
-public class SystemMessageListResponse
-{
-    /// <summary>
-    /// 系统消息列表
-    /// </summary>
-    public List<NoticeIconItem> Messages { get; set; } = new();
-
-    /// <summary>
-    /// 总数
-    /// </summary>
-    public int Total { get; set; }
-
-    /// <summary>
-    /// 当前页码
-    /// </summary>
-    public int Page { get; set; }
-
-    /// <summary>
-    /// 每页数量
-    /// </summary>
-    public int PageSize { get; set; }
-
-    /// <summary>
-    /// 是否成功
-    /// </summary>
-    public bool Success { get; set; } = true;
-}
-
-/// <summary>
-/// 任务相关通知列表响应
-/// </summary>
-public class TaskNotificationListResponse
-{
-    /// <summary>
-    /// 任务相关通知列表
-    /// </summary>
-    public List<NoticeIconItem> Notifications { get; set; } = new();
-
-    /// <summary>
-    /// 总数
-    /// </summary>
-    public int Total { get; set; }
-
-    /// <summary>
-    /// 当前页码
-    /// </summary>
-    public int Page { get; set; }
-
-    /// <summary>
-    /// 每页数量
-    /// </summary>
-    public int PageSize { get; set; }
-
-    /// <summary>
-    /// 是否成功
-    /// </summary>
-    public bool Success { get; set; } = true;
 }
 
 /// <summary>

@@ -1,7 +1,6 @@
 import { request } from '@umijs/max';
-import type { ApiResponse } from '@/types/unified-api';
+import type { ApiResponse, PagedResult } from '@/types/unified-api';
 
-// 文件版本相关类型
 export interface FileVersion {
     id: string;
     fileId: string;
@@ -26,12 +25,7 @@ export interface VersionListRequest {
     pageSize?: number;
 }
 
-export interface VersionListResponse {
-    data: FileVersion[];
-    total: number;
-    page: number;
-    pageSize: number;
-}
+export interface VersionListResponse extends PagedResult<FileVersion> {}
 
 export interface RestoreVersionRequest {
     versionId: string;

@@ -93,7 +93,7 @@ public class ProjectService : IProjectService
     }
 
     /// <inheritdoc/>
-    public async Task<ProjectListResponse> GetProjectsListAsync(ProjectQueryRequest request)
+    public async Task<PagedResult<ProjectDto>> GetProjectsListAsync(ProjectQueryRequest request)
     {
         var q = _context.Set<Project>().AsQueryable();
 
@@ -124,7 +124,15 @@ public class ProjectService : IProjectService
 
         var pagedResult = q.PageResult(request.Page, request.PageSize);
         var projects = await pagedResult.Queryable.ToListAsync();
-        return new ProjectListResponse { Projects = await ConvertToProjectDtosAsync(projects), Total = pagedResult.RowCount, Page = pagedResult.CurrentPage, PageSize = pagedResult.PageSize };
+        var projectDtos = await ConvertToProjectDtosAsync(projects);
+        return new PagedResult<ProjectDto>
+        {
+            Queryable = projectDtos.AsQueryable(),
+            CurrentPage = pagedResult.CurrentPage,
+            PageSize = pagedResult.PageSize,
+            RowCount = pagedResult.RowCount,
+            PageCount = pagedResult.PageCount
+        };
     }
 
     /// <inheritdoc/>

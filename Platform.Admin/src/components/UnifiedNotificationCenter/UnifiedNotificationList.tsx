@@ -58,8 +58,8 @@ const UnifiedNotificationList: React.FC<UnifiedNotificationListProps> = ({
     try {
       const response = await getUnifiedNotifications(page, pageSize, filterType, sortBy);
       if (response.success && response.data) {
-        setNotifications(response.data.items);
-        setTotal(response.data.total);
+        setNotifications(response.data.queryable);
+        setTotal(response.data.rowCount);
       }
     } catch {
       setNotifications([]);

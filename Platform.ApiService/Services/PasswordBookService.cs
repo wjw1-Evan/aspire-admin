@@ -154,7 +154,7 @@ public class PasswordBookService : IPasswordBookService
     /// 分页查询条目列表（不返回密码）
     /// 可见范围：自己的私有条目 + 企业内所有公有条目
     /// </summary>
-    public async Task<(List<PasswordBookEntryDto> Items, long Total)> GetEntriesAsync(PasswordBookQueryRequest request, string userId)
+    public async Task<PagedResult<PasswordBookEntryDto>> GetEntriesAsync(PasswordBookQueryRequest request, string userId)
     {
         if (string.IsNullOrEmpty(userId))
             throw new ArgumentException("用户ID不能为空", nameof(userId));
@@ -198,7 +198,14 @@ public class PasswordBookService : IPasswordBookService
             IsPublic = e.IsPublic
         }).ToList();
 
-        return (dtos, total);
+        return new PagedResult<PasswordBookEntryDto>
+        {
+            Queryable = dtos.AsQueryable(),
+            CurrentPage = request.Current,
+            PageSize = request.PageSize,
+            RowCount = (int)total,
+            PageCount = (int)Math.Ceiling((double)total / request.PageSize)
+        };
     }
 
     /// <summary>

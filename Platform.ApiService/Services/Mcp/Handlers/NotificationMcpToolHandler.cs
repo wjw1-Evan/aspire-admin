@@ -57,7 +57,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
                 var filterType = args.ContainsKey("filterType") ? (args["filterType"]?.ToString() ?? "all") : "all";
                 var sortBy = args.ContainsKey("sortBy") ? (args["sortBy"]?.ToString() ?? "datetime") : "datetime";
                 var result = await _unifiedNotificationService.GetUnifiedNotificationsAsync(page, pageSize, filterType, sortBy);
-                return new { result.Items, result.Total, result.Page, result.PageSize, result.UnreadCount, result.Success };
+                return new { items = result.Queryable, rowCount = result.RowCount, currentPage = result.CurrentPage, pageSize = result.PageSize, pageCount = result.PageCount };
             });
 
         RegisterTool("get_unread_notification_stats", "获取未读通知统计信息。关键词：未读统计,未读消息",
@@ -82,7 +82,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
             {
                 var (page, pageSize) = ParsePaginationArgs(args, defaultPageSize: 10, maxPageSize: 100);
                 var result = await _unifiedNotificationService.GetTaskNotificationsAsync(page, pageSize);
-                return new { items = result.Notifications, result.Total, result.Page, result.PageSize, result.Success };
+                return new { items = result.Queryable, rowCount = result.RowCount, currentPage = result.CurrentPage, pageSize = result.PageSize, pageCount = result.PageCount };
             });
 
         RegisterTool("get_todos", "获取待办事项列表。关键词：待办,备忘,要做的事情",
@@ -95,7 +95,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
                 var (page, pageSize) = ParsePaginationArgs(args, defaultPageSize: 10, maxPageSize: 100);
                 var sortBy = args.ContainsKey("sortBy") ? (args["sortBy"]?.ToString() ?? "dueDate") : "dueDate";
                 var result = await _unifiedNotificationService.GetTodosAsync(page, pageSize, sortBy);
-                return new { result.Todos, result.Total, result.Page, result.PageSize, result.Success };
+                return new { items = result.Queryable, rowCount = result.RowCount, currentPage = result.CurrentPage, pageSize = result.PageSize, pageCount = result.PageCount };
             });
 
         RegisterTool("create_todo", "创建一个新的待办事项。关键词：新增待办,创建待办",
@@ -160,7 +160,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
             {
                 var (page, pageSize) = ParsePaginationArgs(args, defaultPageSize: 10, maxPageSize: 100);
                 var result = await _unifiedNotificationService.GetSystemMessagesAsync(page, pageSize);
-                return new { result.Messages, result.Total, result.Page, result.PageSize, result.Success };
+                return new { items = result.Queryable, rowCount = result.RowCount, currentPage = result.CurrentPage, pageSize = result.PageSize, pageCount = result.PageCount };
             });
 
         RegisterTool("mark_multiple_notifications_read", "批量将通知标记为已读。关键词：批量已读",
@@ -205,10 +205,9 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
                 var keyword = args.ContainsKey("keyword") ? args["keyword"]?.ToString() : null;
                 var (page, pageSize) = ParsePaginationArgs(args);
                 var query = _context.Set<WorkflowDefinition>().Where(d => string.IsNullOrEmpty(keyword) || (d.Name != null && d.Name.Contains(keyword)));
-        var total = await query.LongCountAsync();
                 var pagedResult = query.OrderByDescending(d => d.UpdatedAt).PageResult(page, pageSize);
                 var items = await pagedResult.Queryable.ToListAsync();
-                return new { items, total, page, pageSize };
+                return new { items, rowCount = pagedResult.RowCount, currentPage = page, pageSize, pageCount = (int)Math.Ceiling((double)pagedResult.RowCount / pageSize) };
             });
 
         RegisterTool("get_workflow_instances", "获取工作流实例列表。关键词：审批记录,流程状态",
@@ -221,10 +220,9 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
                 var (page, pageSize) = ParsePaginationArgs(args);
                 var status = args.ContainsKey("status") && int.TryParse(args["status"]?.ToString(), out var s) ? (WorkflowStatus)s : (WorkflowStatus?)null;
                 var query = _context.Set<WorkflowInstance>().Where(i => status == null || i.Status == status);
-        var total = await query.LongCountAsync();
                 var pagedResult = query.OrderByDescending(i => i.UpdatedAt).PageResult(page, pageSize);
                 var items = await pagedResult.Queryable.ToListAsync();
-                return new { items, total, page, pageSize };
+                return new { items, rowCount = pagedResult.RowCount, currentPage = page, pageSize, pageCount = (int)Math.Ceiling((double)pagedResult.RowCount / pageSize) };
             });
 
         RegisterTool("get_workflow_instance_detail", "获取工作流实例详情。关键词：审批详情",

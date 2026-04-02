@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using System.Linq.Dynamic.Core;
 using Platform.ApiService.Attributes;
 using Platform.ApiService.Models;
 using Platform.ApiService.Services;
@@ -367,11 +368,8 @@ public class StorageQuotaController : BaseApiController
         try
         {
             var warnings = await _storageQuotaService.GetQuotaWarningsAsync(warningThreshold);
-            return Success(new
-            {
-                data = warnings,
-                total = warnings.Count
-            });
+            var pagedResult = warnings.AsQueryable().PageResult(1, warnings.Count);
+            return Success(pagedResult);
         }
         catch (Exception ex)
         {

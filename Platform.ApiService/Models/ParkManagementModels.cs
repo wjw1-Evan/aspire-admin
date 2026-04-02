@@ -1180,18 +1180,6 @@ public class BuildingListRequest
 }
 
 /// <summary>
-/// 楼宇列表响应
-/// </summary>
-public class BuildingListResponse
-{
-    /// <summary>楼宇列表</summary>
-    public List<BuildingDto> Buildings { get; set; } = new();
-
-    /// <summary>总数</summary>
-    public int Total { get; set; }
-}
-
-/// <summary>
 /// 楼宇数据传输对象
 /// </summary>
 public class BuildingDto
@@ -1333,18 +1321,6 @@ public class PropertyUnitListRequest
 
     /// <summary>排序顺序</summary>
     public string? SortOrder { get; set; }
-}
-
-/// <summary>
-/// 房源列表响应
-/// </summary>
-public class PropertyUnitListResponse
-{
-    /// <summary>房源列表</summary>
-    public List<PropertyUnitDto> Units { get; set; } = new();
-
-    /// <summary>总数</summary>
-    public int Total { get; set; }
 }
 
 /// <summary>
@@ -1521,18 +1497,6 @@ public class InvestmentLeadListRequest
 }
 
 /// <summary>
-/// 招商线索列表响应
-/// </summary>
-public class InvestmentLeadListResponse
-{
-    /// <summary>线索列表</summary>
-    public List<InvestmentLeadDto> Leads { get; set; } = new();
-
-    /// <summary>总数</summary>
-    public int Total { get; set; }
-}
-
-/// <summary>
 /// 招商线索数据传输对象
 /// </summary>
 public class InvestmentLeadDto
@@ -1651,18 +1615,6 @@ public class InvestmentProjectListRequest
 
     /// <summary>排序顺序</summary>
     public string? SortOrder { get; set; }
-}
-
-/// <summary>
-/// 招商项目列表响应
-/// </summary>
-public class InvestmentProjectListResponse
-{
-    /// <summary>项目列表</summary>
-    public List<InvestmentProjectDto> Projects { get; set; } = new();
-
-    /// <summary>总数</summary>
-    public int Total { get; set; }
 }
 
 /// <summary>
@@ -1823,18 +1775,6 @@ public class ParkTenantListRequest
 }
 
 /// <summary>
-/// 租户列表响应
-/// </summary>
-public class ParkTenantListResponse
-{
-    /// <summary>租户列表</summary>
-    public List<ParkTenantDto> Tenants { get; set; } = new();
-
-    /// <summary>总数</summary>
-    public int Total { get; set; }
-}
-
-/// <summary>
 /// 租户数据传输对象
 /// </summary>
 public class ParkTenantDto
@@ -1938,18 +1878,6 @@ public class LeaseContractListRequest
 
     /// <summary>排序顺序</summary>
     public string? SortOrder { get; set; }
-}
-
-/// <summary>
-/// 租赁合同列表响应
-/// </summary>
-public class LeaseContractListResponse
-{
-    /// <summary>合同列表</summary>
-    public List<LeaseContractDto> Contracts { get; set; } = new();
-
-    /// <summary>总数</summary>
-    public int Total { get; set; }
 }
 
 /// <summary>
@@ -2277,18 +2205,6 @@ public class ServiceRequestListRequest
 }
 
 /// <summary>
-/// 服务请求列表响应
-/// </summary>
-public class ServiceRequestListResponse
-{
-    /// <summary>请求列表</summary>
-    public List<ServiceRequestDto> Requests { get; set; } = new();
-
-    /// <summary>总数</summary>
-    public int Total { get; set; }
-}
-
-/// <summary>
 /// 服务请求数据传输对象
 /// </summary>
 public class ServiceRequestDto
@@ -2466,17 +2382,6 @@ public class VisitTaskListRequest
 }
 
 /// <summary>
-/// 走访任务响应
-/// </summary>
-public class VisitTaskListResponse
-{
-    /// <summary>任务列表</summary>
-    public List<VisitTaskDto> Tasks { get; set; } = new();
-    /// <summary>总数</summary>
-    public int Total { get; set; }
-}
-
-/// <summary>
 /// 走访任务数据对象
 /// </summary>
 public class VisitTaskDto
@@ -2596,17 +2501,6 @@ public class VisitAssessmentListRequest
 }
 
 /// <summary>
-/// 走访考核列表响应
-/// </summary>
-public class VisitAssessmentListResponse
-{
-    /// <summary>考核记录列表</summary>
-    public List<VisitAssessmentDto> Assessments { get; set; } = new();
-    /// <summary>总数</summary>
-    public int Total { get; set; }
-}
-
-/// <summary>
 /// 走访考核数据对象
 /// </summary>
 public class VisitAssessmentDto
@@ -2647,17 +2541,6 @@ public class VisitQuestionListRequest
 }
 
 /// <summary>
-/// 知识库问题列表响应
-/// </summary>
-public class VisitQuestionListResponse
-{
-    /// <summary>问题列表</summary>
-    public List<VisitQuestionDto> Questions { get; set; } = new();
-    /// <summary>总数</summary>
-    public int Total { get; set; }
-}
-
-/// <summary>
 /// 知识库问题数据对象
 /// </summary>
 public class VisitQuestionDto
@@ -2674,17 +2557,6 @@ public class VisitQuestionDto
     public bool IsFrequentlyUsed { get; set; }
     /// <summary>排序值</summary>
     public int? SortOrder { get; set; }
-}
-
-/// <summary>
-/// 走访问卷列表响应
-/// </summary>
-public class VisitQuestionnaireListResponse
-{
-    /// <summary>问卷列表</summary>
-    public List<VisitQuestionnaireDto> Questionnaires { get; set; } = new();
-    /// <summary>总数</summary>
-    public int Total { get; set; }
 }
 
 /// <summary>

@@ -30,7 +30,7 @@ public class ParkInvestmentService : IParkInvestmentService
     /// <summary>
     /// 获取线索列表
     /// </summary>
-    public async Task<InvestmentLeadListResponse> GetLeadsAsync(InvestmentLeadListRequest request)
+    public async Task<PagedResult<InvestmentLeadDto>> GetLeadsAsync(InvestmentLeadListRequest request)
     {
         
         var search = request.Search?.ToLower();
@@ -53,11 +53,9 @@ public class ParkInvestmentService : IParkInvestmentService
         var pagedResult = orderedQuery.PageResult(request.Page, request.PageSize);
         var items = await pagedResult.Queryable.ToListAsync();
 
-        return new InvestmentLeadListResponse
-        {
-            Leads = items.Select(MapToLeadDto).ToList(),
-            Total = (int)total
-        };
+        var leads = items.Select(MapToLeadDto).ToList();
+
+        return new PagedResult<InvestmentLeadDto> { Queryable = leads.AsQueryable(), CurrentPage = pagedResult.CurrentPage, PageSize = pagedResult.PageSize, RowCount = pagedResult.RowCount, PageCount = pagedResult.PageCount };
     }
 
     /// <summary>
@@ -196,7 +194,7 @@ public class ParkInvestmentService : IParkInvestmentService
     /// <summary>
     /// 获取项目列表
     /// </summary>
-    public async Task<InvestmentProjectListResponse> GetProjectsAsync(InvestmentProjectListRequest request)
+    public async Task<PagedResult<InvestmentProjectDto>> GetProjectsAsync(InvestmentProjectListRequest request)
     {
         var search = request.Search?.ToLower();
         var stage = request.Stage;
@@ -214,11 +212,9 @@ public class ParkInvestmentService : IParkInvestmentService
         var pagedResult = orderedQuery.PageResult(request.Page, request.PageSize);
         var items = await pagedResult.Queryable.ToListAsync();
 
-        return new InvestmentProjectListResponse
-        {
-            Projects = items.Select(MapToProjectDto).ToList(),
-            Total = (int)total
-        };
+        var projects = items.Select(MapToProjectDto).ToList();
+
+        return new PagedResult<InvestmentProjectDto> { Queryable = projects.AsQueryable(), CurrentPage = pagedResult.CurrentPage, PageSize = pagedResult.PageSize, RowCount = pagedResult.RowCount, PageCount = pagedResult.PageCount };
     }
 
     /// <summary>

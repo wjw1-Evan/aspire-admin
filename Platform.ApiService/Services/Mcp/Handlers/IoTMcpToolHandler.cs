@@ -29,7 +29,7 @@ public class IoTMcpToolHandler : McpToolHandlerBase
                 new Dictionary<string, object> { ["keyword"] = new Dictionary<string, object> { ["type"] = "string" } },
                 PaginationSchema()
             )),
-            async (args, uid) => { var keyword = args.GetValueOrDefault("keyword")?.ToString(); var (page, pageSize) = ParsePaginationArgs(args); var result = await _iotService.GetGatewaysAsync(keyword, null, page, pageSize); var items = await result.Queryable.ToListAsync(); return new { items, total = result.RowCount, page = result.CurrentPage, pageSize = result.PageSize }; });
+            async (args, uid) => { var keyword = args.GetValueOrDefault("keyword")?.ToString(); var (page, pageSize) = ParsePaginationArgs(args); var result = await _iotService.GetGatewaysAsync(keyword, null, page, pageSize); var items = await result.Queryable.ToListAsync(); return new { items = items, rowCount = result.RowCount, currentPage = result.CurrentPage, pageSize = result.PageSize, pageCount = result.PageCount }; });
 
         RegisterTool("get_iot_devices", "获取物联网设备列表。关键词：物联网,设备,器械,传感器,探头",
             ObjectSchema(MergeProperties(
@@ -40,7 +40,7 @@ public class IoTMcpToolHandler : McpToolHandlerBase
                 },
                 PaginationSchema()
             )),
-            async (args, uid) => { var gatewayId = args.GetValueOrDefault("gatewayId")?.ToString(); var keyword = args.GetValueOrDefault("keyword")?.ToString(); var (page, pageSize) = ParsePaginationArgs(args); var result = await _iotService.GetDevicesAsync(gatewayId, keyword, page, pageSize); var items = await result.Queryable.ToListAsync(); return new { items, total = result.RowCount, page = result.CurrentPage, pageSize = result.PageSize }; });
+            async (args, uid) => { var gatewayId = args.GetValueOrDefault("gatewayId")?.ToString(); var keyword = args.GetValueOrDefault("keyword")?.ToString(); var (page, pageSize) = ParsePaginationArgs(args); var result = await _iotService.GetDevicesAsync(gatewayId, keyword, page, pageSize); var items = await result.Queryable.ToListAsync(); return new { items = items, rowCount = result.RowCount, currentPage = result.CurrentPage, pageSize = result.PageSize, pageCount = result.PageCount }; });
 
         RegisterTool("get_iot_platform_statistics", "获取物联网平台整体统计数据。关键词：物联网统计,设备概览",
             async (args, uid) => await _iotService.GetPlatformStatisticsAsync());

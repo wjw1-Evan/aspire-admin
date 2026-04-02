@@ -3,6 +3,7 @@ using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Constants;
 using Platform.ApiService.Models;
+using System.Linq.Dynamic.Core;
 
 namespace Platform.ApiService.Services;
 
@@ -29,23 +30,26 @@ public class RoleService : IRoleService
     /// <summary>
     /// 获取所有角色
     /// </summary>
-    public async Task<RoleListResponse> GetAllRolesAsync()
+    public async Task<PagedResult<Role>> GetAllRolesAsync()
     {
         var roles = await _context.Set<Role>()
             .OrderBy(r => r.CreatedAt)
             .ToListAsync();
 
-        return new RoleListResponse
+        return new PagedResult<Role>
         {
-            Roles = roles,
-            Total = roles.Count
+            Queryable = roles.AsQueryable(),
+            CurrentPage = 1,
+            PageSize = roles.Count,
+            RowCount = roles.Count,
+            PageCount = 1
         };
     }
 
     /// <summary>
     /// 获取所有角色（带统计信息）
     /// </summary>
-    public async Task<RoleListWithStatsResponse> GetAllRolesWithStatsAsync()
+    public async Task<PagedResult<RoleWithStats>> GetAllRolesWithStatsAsync()
     {
         var roles = await _context.Set<Role>()
             .OrderBy(r => r.CreatedAt)
@@ -74,10 +78,13 @@ public class RoleService : IRoleService
             });
         }
 
-        return new RoleListWithStatsResponse
+        return new PagedResult<RoleWithStats>
         {
-            Roles = rolesWithStats,
-            Total = rolesWithStats.Count
+            Queryable = rolesWithStats.AsQueryable(),
+            CurrentPage = 1,
+            PageSize = rolesWithStats.Count,
+            RowCount = rolesWithStats.Count,
+            PageCount = 1
         };
     }
 

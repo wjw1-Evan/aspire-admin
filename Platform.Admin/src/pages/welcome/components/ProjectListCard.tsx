@@ -32,8 +32,8 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
                 sortBy: 'createdAt',
                 sortOrder: 'desc'
             });
-            if (res?.data?.projects) {
-                setProjects(res.data.projects);
+            if (res?.data?.queryable) {
+                setProjects(res.data.queryable);
             }
         } catch (error) {
             console.warn(intl.formatMessage({ id: 'pages.welcome.projectList.fetchFailed' }), error);

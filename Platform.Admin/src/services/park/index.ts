@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse } from '@/types/unified-api';
+import type { ApiResponse, PagedResult } from '@/types/unified-api';
 
 export enum StatisticsPeriod {
     Day = 0,
@@ -137,7 +137,7 @@ export interface PropertyUnitListRequest {
 
 // Buildings
 export async function getBuildings(params: BuildingListRequest) {
-    return request<ApiResponse<{ buildings: Building[]; total: number }>>('/api/park/buildings/list', {
+    return request<ApiResponse<PagedResult<Building>>>('/api/park/buildings/list', {
         method: 'POST',
         data: params,
     });
@@ -161,7 +161,7 @@ export async function deleteBuilding(id: string) {
 
 // Property Units
 export async function getPropertyUnits(params: PropertyUnitListRequest) {
-    return request<ApiResponse<{ units: PropertyUnit[]; total: number }>>('/api/park/properties/list', {
+    return request<ApiResponse<PagedResult<PropertyUnit>>>('/api/park/properties/list', {
         method: 'POST',
         data: params,
     });
@@ -259,7 +259,7 @@ export interface ProjectListRequest {
 
 // Leads
 export async function getLeads(params: LeadListRequest) {
-    return request<ApiResponse<{ leads: InvestmentLead[]; total: number }>>('/api/park/investment/leads/list', {
+    return request<ApiResponse<PagedResult<InvestmentLead>>>('/api/park/investment/leads/list', {
         method: 'POST',
         data: params,
     });
@@ -283,7 +283,7 @@ export async function convertLeadToProject(id: string) {
 
 // Projects
 export async function getProjects(params: ProjectListRequest) {
-    return request<ApiResponse<{ projects: InvestmentProject[]; total: number }>>('/api/park/investment/projects/list', {
+    return request<ApiResponse<PagedResult<InvestmentProject>>>('/api/park/investment/projects/list', {
         method: 'POST',
         data: params,
     });
@@ -418,7 +418,7 @@ export interface ContractListRequest {
 
 // Tenants
 export async function getTenants(params: TenantListRequest) {
-    return request<ApiResponse<{ tenants: ParkTenant[]; total: number }>>('/api/park/tenants/list', {
+    return request<ApiResponse<PagedResult<ParkTenant>>>('/api/park/tenants/list', {
         method: 'POST',
         data: params,
     });
@@ -442,7 +442,7 @@ export async function deleteTenant(id: string) {
 
 // Contracts
 export async function getContracts(params: ContractListRequest) {
-    return request<ApiResponse<{ contracts: LeaseContract[]; total: number }>>('/api/park/contracts/list', {
+    return request<ApiResponse<PagedResult<LeaseContract>>>('/api/park/contracts/list', {
         method: 'POST',
         data: params,
     });
@@ -564,7 +564,7 @@ export async function toggleServiceCategoryStatus(id: string) {
 
 // Service Requests
 export async function getServiceRequests(params: ServiceRequestListRequest) {
-    return request<ApiResponse<{ requests: ServiceRequest[]; total: number }>>('/api/park/services/requests/list', {
+    return request<ApiResponse<PagedResult<ServiceRequest>>>('/api/park/services/requests/list', {
         method: 'POST',
         data: params,
     });

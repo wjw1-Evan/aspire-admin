@@ -278,37 +278,6 @@ public class UpdateXiaokeConfigRequest
 }
 
 /// <summary>
-/// 小科配置列表响应
-/// </summary>
-public class XiaokeConfigListResponse
-{
-    /// <summary>
-    /// 配置数据列表
-    /// </summary>
-    public List<XiaokeConfigDto> Data { get; set; } = new();
-
-    /// <summary>
-    /// 总记录数
-    /// </summary>
-    public int Total { get; set; }
-
-    /// <summary>
-    /// 是否成功
-    /// </summary>
-    public bool Success { get; set; } = true;
-
-    /// <summary>
-    /// 每页大小
-    /// </summary>
-    public int PageSize { get; set; }
-
-    /// <summary>
-    /// 当前页码
-    /// </summary>
-    public int Current { get; set; }
-}
-
-/// <summary>
 /// 小科配置查询参数
 /// </summary>
 public class XiaokeConfigQueryParams : PageParams
@@ -404,37 +373,6 @@ public class ChatHistoryListItemDto
     /// 创建时间
     /// </summary>
     public DateTime CreatedAt { get; set; }
-}
-
-/// <summary>
-/// 聊天记录列表响应
-/// </summary>
-public class ChatHistoryListResponse
-{
-    /// <summary>
-    /// 会话数据列表
-    /// </summary>
-    public List<ChatHistoryListItemDto> Data { get; set; } = new();
-
-    /// <summary>
-    /// 总记录数
-    /// </summary>
-    public int Total { get; set; }
-
-    /// <summary>
-    /// 是否成功
-    /// </summary>
-    public bool Success { get; set; } = true;
-
-    /// <summary>
-    /// 每页大小
-    /// </summary>
-    public int PageSize { get; set; }
-
-    /// <summary>
-    /// 当前页码
-    /// </summary>
-    public int Current { get; set; }
 }
 
 /// <summary>

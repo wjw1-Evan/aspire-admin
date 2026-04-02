@@ -92,7 +92,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
     try {
       const response = await getProjectList({ page: 1, pageSize: 100 });
       if (response.success && response.data) {
-        setProjects(response.data.projects);
+        setProjects(response.data.queryable);
       }
     } catch (error) {
       console.error('加载项目列表失败:', error);

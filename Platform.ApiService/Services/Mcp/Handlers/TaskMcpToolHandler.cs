@@ -453,14 +453,15 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             Status = arguments.ContainsKey("status") && int.TryParse(arguments["status"]?.ToString(), out var status) ? status : null
         };
 
-        var response = await _projectService.GetProjectsListAsync(request);
-        var projects = await Task.Run(() => response.Projects.ToList());
+        var result = await _projectService.GetProjectsListAsync(request);
+        var items = await result.Queryable.ToListAsync();
         return new
         {
-            projects = projects.Select(p => new { p.Id, p.Name, p.Description, p.StartDate, p.EndDate, p.Status, p.StatusName, memberCount = response.Total, p.Progress }).ToList(),
-            total = response.Total,
-            page = response.Page,
-            pageSize = response.PageSize
+            items = items.Select(p => new { p.Id, p.Name, p.Description, p.StartDate, p.EndDate, p.Status, p.StatusName, memberCount = result.RowCount, p.Progress }).ToList(),
+            rowCount = result.RowCount,
+            currentPage = result.CurrentPage,
+            pageSize = result.PageSize,
+            pageCount = result.PageCount
         };
     }
 
@@ -474,7 +475,8 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             if (string.IsNullOrEmpty(name)) return new { error = "未提供项目ID或名称" };
 
             var searchResult = await _projectService.GetProjectsListAsync(new ProjectQueryRequest { Search = name, Page = 1, PageSize = 1 });
-            if (searchResult.Projects.Any()) projectId = searchResult.Projects.First().Id;
+            var searchItems = await searchResult.Queryable.ToListAsync();
+            if (searchItems.Any()) projectId = searchItems.First().Id;
             else return new { error = "未找到该项目" };
         }
 

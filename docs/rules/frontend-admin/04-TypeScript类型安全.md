@@ -1,52 +1,39 @@
 # TypeScript 类型安全
 
-> **[强制]** 禁止使用 `any` 类型，确保代码的类型安全性。
-
-## 表单处理
-
-# TypeScript 类型安全与后端 DTO 对齐
-
 本规范重点强调所有类型定义需与后端 DTO 保持同步，禁止 any，接口类型与后端标准一致。
 
-## 1. 禁止 any，类型必须明确
->
-> **[强制]** 禁止使用 `any` 类型，所有表单、接口、数据结构必须定义明确类型。
+> **[强制]** 禁止使用 `any` 类型，确保代码的类型安全性。
 
-## 2. 表单与接口类型同步后端 DTO
+---
 
-- 表单、接口、分页等类型必须与后端 DTO 保持同步，推荐通过 openapi/ts-auto-generate 工具自动生成。
+## 1. 统一类型来源
 
-```tsx
-// ✅ 正确：类型与后端 DTO 对齐
-import type { UserDto } from '@/services/user/types';
+### 类型定义位置
 
-interface TaskFormValues /* 对应后端 TaskCreateDto */ {
-  taskName: string;
-  description?: string;
-  // ... 其余字段与后端一致
-}
-
-const handleSubmit = async (values: TaskFormValues) => {
-  await createTask(values);
-};
-
-<Form onFinish={handleSubmit}>
-  {/* 表单项 */}
-</Form>
-
-// ❌ 错误：使用 any 类型
-const handleSubmit = async (values: any) => {
-  await createTask(values);  // 类型不安全
-};
-```
-
-## 3. 分页类型标准化
-
-- 分页、批量接口统一使用与后端一致的 PagedResult<T> 类型。
+所有 API 相关类型统一定义在 `@/types/unified-api.ts`：
 
 ```typescript
-interface PagedResult<T> {
-  data: T[];
+// src/types/unified-api.ts
+
+/**
+ * 统一 API 响应格式（与后端 Platform.ServiceDefaults.Models.ApiResponse 完全一致）
+ */
+export interface ApiResponse<T = any> {
+  success: boolean;
+  message?: string;
+  data?: T;
+  errors?: any;
+  details?: any;
+  timestamp?: string;
+  traceId?: string;
+}
+
+/**
+ * 分页响应格式(PagedResult<T>)
+ * 统一分页结构，所有分页接口均使用
+ */
+export interface PagedResult<T> {
+  queryable: T[];
   currentPage: number;
   pageSize: number;
   rowCount: number;
@@ -54,38 +41,76 @@ interface PagedResult<T> {
 }
 ```
 
-## 4. ProTable/Antd Table 请求函数
+### 服务层使用
 
-```tsx
-import type { RequestParams } from '@/types/pro-components';
-const requestFunction = useCallback(
-  async (params: RequestParams, sort?: Record<string, 'ascend' | 'descend'>) => {
-    const response = await queryTasks({
-      page: params.current,
-      pageSize: params.pageSize,
-      sortBy: sort?.field,
-      sortOrder: sort?.order === 'ascend' ? 'asc' : 'desc',
-    });
-    return {
-      data: response.data.data,
-      success: response.success,
-      total: response.data.rowCount,
-    };
-  },
-  [],
-);
+所有服务层 API 统一使用 `ApiResponse<T>` 和 `PagedResult<T>`：
+
+```typescript
+import { request } from '@umijs/max';
+import type { ApiResponse, PagedResult } from '@/types/unified-api';
+import type { User, FileItem, TaskDto } from './types';
+
+// ✅ 正确：分页接口
+export async function getUsers(params: UserQueryParams) {
+  return request<ApiResponse<PagedResult<User>>>('/api/users/list', {
+    method: 'POST',
+    data: params,
+  });
+}
+
+// ✅ 正确：普通接口
+export async function getUser(id: string) {
+  return request<ApiResponse<User>>(`/api/users/${id}`, {
+    method: 'GET',
+  });
+}
 ```
-
-## 5. 变更与维护建议
-
-- 类型如需扩展，优先同步后端 DTO，禁止自定义 any。
-- 发现类型实现与本规范或后端标准不符时，优先以本规范为准，及时修订文档与代码。
 
 ---
 
-## DTO 类型复用
+## 2. 分页类型标准化
 
-### **[强制]** 从 services 层导入已定义的 DTO 类型
+### PagedResult<T> 结构
+
+| 属性 | 类型 | 说明 |
+|------|------|------|
+| `queryable` | `T[]` | 分页后的数据数组 |
+| `currentPage` | `number` | 当前页码 |
+| `pageSize` | `number` | 每页数量 |
+| `rowCount` | `number` | 总行数 |
+| `pageCount` | `number` | 总页数 |
+
+### DataTable 请求函数
+
+```tsx
+import type { PagedResult } from '@/types/unified-api';
+import type { WorkflowDefinition } from '@/services/workflow/api';
+
+const fetchWorkflows = async (params: any) => {
+  const response = await getWorkflowList({
+    current: params.current || 1,
+    pageSize: params.pageSize || 10,
+    keyword: params.keyword,
+  });
+  
+  if (response.success && response.data) {
+    const paged = response.data as PagedResult<WorkflowDefinition>;
+    return {
+      data: paged.queryable,
+      total: paged.rowCount,
+      success: true,
+    };
+  }
+  
+  return { data: [], total: 0, success: false };
+};
+```
+
+---
+
+## 3. DTO 类型复用
+
+### 从 services 层导入已定义的 DTO 类型
 
 ```tsx
 // ✅ 正确：从 services 导入类型
@@ -109,6 +134,7 @@ interface TaskDto {
 
 ```tsx
 // src/pages/task-management/types.ts
+import type { PagedResult } from '@/types/unified-api';
 import type { TaskDto as TaskDtoBase } from '@/services/task/api';
 
 // 扩展或定义页面级别类型
@@ -130,27 +156,19 @@ export interface SearchFormValues {
   projectId?: string;
 }
 
-export interface TaskQueryParams {
-  Page: number;
-  PageSize: number;
-  Search?: string;
-  Status?: number;
-  Priority?: number;
-  AssignedTo?: string;
-  SortBy: string;
-  SortOrder: string;
-  [key: string]: unknown;  // 允许其他参数
-}
+// 分页响应类型
+export type TaskListResponse = PagedResult<TaskDtoBase>;
 ```
 
 ---
 
-## 类型导出规范
+## 4. 类型导出规范
 
 ### 从 services 导出
 
 ```typescript
 // src/services/task/api.ts
+import type { PagedResult } from '@/types/unified-api';
 
 // 枚举
 export enum TaskStatus {
@@ -176,15 +194,11 @@ export interface TaskDto {
   // ...
 }
 
-// Request
-export interface CreateTaskRequest {
-  taskName: string;
-  priority?: number;
-  // ...
-}
+// 分页响应
+export type TaskListResponse = PagedResult<TaskDto>;
 
 // 导出类型和枚举
-export type { TaskDto, CreateTaskRequest, UpdateTaskRequest } from './types';
+export type { TaskDto, TaskListResponse } from './types';
 export { TaskStatus, TaskPriority } from './types';
 ```
 
@@ -194,7 +208,7 @@ export { TaskStatus, TaskPriority } from './types';
 // ✅ 正确：导入所有需要的类型
 import {
   type TaskDto,
-  type CreateTaskRequest,
+  type TaskListResponse,
   TaskStatus,
   TaskPriority,
   queryTasks,
@@ -212,22 +226,19 @@ const statusOptions = [
 
 ---
 
-## 常见错误示例
+## 5. 常见错误示例
 
 ### ❌ 错误 1：表单值使用 any
 
 ```tsx
 // ❌ 禁止
 const handleSubmit = (values: any) => {
-  createTask(values);  // values 是 any
+  createTask(values);
 };
 
 // ✅ 正确
 const handleSubmit = (values: TaskFormValues) => {
-  createTask({
-    taskName: values.taskName,
-    priority: values.priority,
-  });
+  createTask(values);
 };
 ```
 
@@ -252,7 +263,6 @@ const fetchData = async (params: RequestParams) => {
 
 ```tsx
 // ❌ 禁止：重复定义 TaskDto
-// 在 pages/task-management/types.ts 中
 interface TaskDto {
   id: string;
   taskName: string;
@@ -263,7 +273,25 @@ interface TaskDto {
 import type { TaskDto } from '@/services/task/api';
 ```
 
-### ❌ 错误 4：硬编码类型
+### ❌ 错误 4：使用 `as any` 强制类型转换
+
+```tsx
+// ❌ 禁止
+const response = await getUsers(params);
+const users = (response.data as any).queryable || [];
+const total = (response.data as any).rowCount || 0;
+
+// ✅ 正确：使用强类型
+import type { PagedResult } from '@/types/unified-api';
+
+const response = await getUsers(params);
+if (response.success && response.data) {
+  const paged = response.data as PagedResult<User>;
+  return { data: paged.queryable, total: paged.rowCount, success: true };
+}
+```
+
+### ❌ 错误 5：硬编码类型
 
 ```tsx
 // ❌ 禁止：硬编码类型
@@ -271,7 +299,7 @@ const columns = [
   {
     title: '状态',
     dataIndex: 'status',
-    render: (status: number) => {  // 硬编码
+    render: (status: number) => {
       return status === 0 ? '待分配' : '已分配';
     },
   },
@@ -293,7 +321,7 @@ const columns = [
 
 ---
 
-## 严格模式配置
+## 6. 严格模式配置
 
 ### tsconfig.json
 
@@ -318,3 +346,21 @@ const columns = [
   "@typescript-eslint/explicit-module-boundary-types": "off"
 }
 ```
+
+---
+
+## 7. 变更与维护建议
+
+- 类型如需扩展，优先同步后端 DTO，禁止自定义 any。
+- 发现类型实现与本规范或后端标准不符时，优先以本规范为准，及时修订文档与代码。
+- 所有新 API 必须使用 `@/types/unified-api.ts` 中定义的基础类型。
+
+---
+
+## 相关代码位置
+
+| 组件 | 位置 |
+|------|------|
+| 统一类型定义 | `Platform.Admin/src/types/unified-api.ts` |
+| 服务层参考 | `Platform.Admin/src/services/cloud-storage/api.ts` |
+| 后端分页规范 | `docs/rules/backend/04-分页处理规范.md` |

@@ -52,7 +52,31 @@ private readonly DbContext _context;
 private readonly IMongoCollection<User> _collection;
 ```
 
+### 分页处理必读
+
+```csharp
+// ✅ 正确：使用 PagedResult<T>
+using System.Linq.Dynamic.Core;
+
+public async Task<PagedResult<FileItem>> GetFileItemsAsync(FileListQuery query)
+{
+    var q = _context.Set<FileItem>().Where(x => x.Status == FileStatus.Active);
+    q = q.OrderByDescending(x => x.CreatedAt);  // 必须先排序
+    return q.PageResult(query.Page, query.PageSize);
+}
+
+// 控制器返回
+public async Task<IActionResult> GetFiles([FromQuery] FileListQuery query)
+{
+    var result = await _service.GetFileItemsAsync(query);
+    return Success(result);  // 直接返回 PagedResult
+}
+```
+
+> **注意**：`Platform.ServiceDefaults/Extensions/ServiceCollectionExtensions.cs` 中已注册全局 using 别名 `PagedResult = System.Linq.Dynamic.Core.PagedResult<T>`，可直接使用。
+
 ## 相关文档
 
 - [`00-通用原则.md`](../00-通用原则.md) - 核心架构原则
 - [`AGENTS.md`](../../../AGENTS.md) - 项目总纲与 AI 交互指南
+- [`frontend-admin/04-TypeScript类型安全.md`](../frontend-admin/04-TypeScript类型安全.md) - 前端分页类型规范

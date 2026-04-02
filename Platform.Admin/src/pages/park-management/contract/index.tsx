@@ -49,8 +49,8 @@ const ContractManagement: React.FC = () => {
     const loadTenants = useCallback(async () => {
         try {
             const res = await parkService.getTenants({ page: 1, pageSize: 500 });
-            if (res.success && res.data?.tenants) {
-                setTenants(res.data.tenants);
+            if (res.success && res.data) {
+                setTenants(res.data.queryable);
             }
         } catch (error) {
             console.error('Failed to load tenants:', error);
@@ -60,8 +60,8 @@ const ContractManagement: React.FC = () => {
     const loadUnits = useCallback(async () => {
         try {
             const res = await parkService.getPropertyUnits({ page: 1, pageSize: 1000 });
-            if (res.success && res.data?.units) {
-                setAllUnits(res.data.units);
+            if (res.success && res.data) {
+                setAllUnits(res.data.queryable);
             }
         } catch (error) {
             console.error('Failed to load units:', error);

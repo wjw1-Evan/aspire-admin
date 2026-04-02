@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Button, Card, Drawer, Form, Input, Select, Switch, Space, Divider, Tabs, FormInstance, Tree } from 'antd';
+import { Button, Card, Drawer, Form, Input, Select, Switch, Space, Divider, Tabs, FormInstance, Tree, TreeSelect } from 'antd';
 import { DeleteOutlined, SaveOutlined, PlusOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import { NODE_CONFIGS } from './WorkflowDesignerConstants';
@@ -12,18 +12,18 @@ import type { SelectProps } from 'antd';
 import type { DataNode } from 'antd/es/tree';
 
 interface WorkflowFormField {
-  Id: string;
-  Label: string;
-  DataKey: string;
-  Type: string;
-  Required: boolean;
+  id: string;
+  label: string;
+  dataKey: string;
+  type: string;
+  required: boolean;
 }
 
 interface WorkflowForm {
-  Id: string;
-  Name: string;
-  Key: string;
-  Fields: WorkflowFormField[];
+  id: string;
+  name: string;
+  key: string;
+  fields: WorkflowFormField[];
 }
 
 export interface NodeConfigDrawerProps {
@@ -78,15 +78,15 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
         const formDef = forms.find(f => f.id === formId);
         if (formDef && !formMap.has(formId)) {
           formMap.set(formId, {
-            Id: formDef.id || 'unknown',
-            Name: formDef.name || '',
-            Key: formDef.key || '',
-            Fields: (formDef.fields || []).map(field => ({
-              Id: field.id || 'unknown',
-              Label: field.label || '',
-              DataKey: field.dataKey || '',
-              Type: field.type,
-              Required: field.required || false,
+            id: formDef.id || 'unknown',
+            name: formDef.name || '',
+            key: formDef.key || '',
+            fields: (formDef.fields || []).map(field => ({
+              id: field.id || 'unknown',
+              label: field.label || '',
+              dataKey: field.dataKey || '',
+              type: field.type,
+              required: field.required || false,
             })),
           });
         }
@@ -148,6 +148,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
   const organizationTreeToTreeData = (nodes: OrganizationTreeNode[]): DataNode[] => {
     return nodes.map(node => ({
       title: node.name,
+      key: node.id,
       value: node.id,
       children: node.children?.length > 0 ? organizationTreeToTreeData(node.children) : undefined,
     }));
@@ -254,9 +255,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                                           <Select
                                             placeholder="选择部门"
                                             showSearch
-                                            treeDefaultExpandAll
-                                            treeData={organizationTreeToTreeData(organizationTree)}
-                                            treeNodeFilterProp="title"
+                                            {...({ treeDefaultExpandAll: true, treeData: organizationTreeToTreeData(organizationTree), treeNodeFilterProp: "title" } as any)}
                                           />
                                         </Form.Item>
                                       );
@@ -539,7 +538,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                                       const type = getFieldValue(['ccRules', name, 'type']);
                                       if (type === 0) return <Form.Item {...restField} name={[name, 'userIds']} rules={[{ required: true }]}><Select mode="multiple" placeholder="选择用户" options={users.map(u => ({ label: u.name || u.username, value: u.id }))} /></Form.Item>;
                                       if (type === 1) return <Form.Item {...restField} name={[name, 'roleIds']} rules={[{ required: true }]}><Select mode="multiple" placeholder="选择角色" options={roles.map(r => ({ label: r.name, value: r.id }))} /></Form.Item>;
-                                      if (type === 2) return <Form.Item {...restField} name={[name, 'departmentId']} rules={[{ required: true }]}><Select placeholder="选择部门" showSearch treeDefaultExpandAll treeData={organizationTreeToTreeData(organizationTree)} /></Form.Item>;
+                                      if (type === 2) return <Form.Item {...restField} name={[name, 'departmentId']} rules={[{ required: true }]}><TreeSelect placeholder="选择部门" showSearch treeDefaultExpandAll treeData={organizationTreeToTreeData(organizationTree)} /></Form.Item>;
                                       return null;
                                     }}
                                   </Form.Item>

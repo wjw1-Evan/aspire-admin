@@ -647,9 +647,9 @@ const CloudStorageQuotaPage: React.FC = () => {
                                                 ...sort,
                                             });
                                             return {
-                                                data: res.data?.data || [],
+                                                data: res.data?.queryable || [],
                                                 success: res.success,
-                                                total: res.data?.total || 0,
+                                                total: res.data?.rowCount || 0,
                                             };
                                         }}
                                         pagination={{

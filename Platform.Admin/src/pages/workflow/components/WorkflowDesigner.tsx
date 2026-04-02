@@ -217,7 +217,7 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
           getFormList({ pageSize: 200, current: 1, isActive: true }),
         ]);
         if (usersResponse.success && usersResponse.data) setUsers(usersResponse.data.queryable);
-        if (rolesResponse.success && rolesResponse.data) setRoles(rolesResponse.data.roles.filter(r => r.isActive));
+        if (rolesResponse.success && rolesResponse.data) setRoles(rolesResponse.data.filter((r: Role) => r.isActive));
         if (formsResponse.success && formsResponse.data) setForms(formsResponse.data.queryable || []);
       } catch (error) {
         console.error('加载列表失败:', error);

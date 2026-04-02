@@ -22,7 +22,7 @@ export interface AppUser {
  * 获取所有用户
  */
 export async function getAllUsers(options?: Record<string, any>) {
-  return request<ApiResponse<PagedResult<AppUser>>>('/api/users/all', {
+  return request<ApiResponse<AppUser[]>>('/api/users/all', {
     method: 'GET',
     ...(options || {}),
   });

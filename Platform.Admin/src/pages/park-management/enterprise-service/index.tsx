@@ -58,7 +58,7 @@ const EnterpriseService: React.FC = () => {
     const loadTenants = useCallback(async () => {
         try {
             const res = await parkService.getTenants({ page: 1, pageSize: 500 });
-            if (res.success && res.data?.tenants) setTenants(res.data.tenants);
+            if (res.success && res.data) setTenants(res.data.queryable);
         } catch (error) { console.error(error); }
     }, []);
 

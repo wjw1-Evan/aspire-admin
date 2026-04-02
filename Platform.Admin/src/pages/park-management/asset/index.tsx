@@ -58,8 +58,8 @@ const AssetManagement: React.FC = () => {
     const loadBuildings = useCallback(async () => {
         try {
             const res = await parkService.getBuildings({ page: 1, pageSize: 100 });
-            if (res.success && res.data?.buildings) {
-                setBuildings(res.data.buildings);
+            if (res.success && res.data) {
+                setBuildings(res.data.queryable);
             }
         } catch (error) {
             console.error('Failed to load buildings:', error);

@@ -52,15 +52,15 @@ const RecentActivitiesCard: React.FC<RecentActivitiesCardProps> = ({ currentUser
     // 使用 useInfiniteScroll 加载数据
     const { data, loading, loadingMore, noMore } = useInfiniteScroll(
         async (d) => {
-            const nextPage = d ? (Math.floor(d.list.length / 10) + 1) : 1;
+            const nextPage = d ? (Math.floor((d.list?.length || 0) / 10) + 1) : 1;
             const res = await getCurrentUserActivityLogs({
                 page: nextPage,
                 pageSize: 10,
             });
 
             return {
-                list: res?.data?.list || [],
-                total: res?.data?.total || 0,
+                list: res?.data?.queryable || [],
+                total: res?.data?.rowCount || 0,
             };
         },
         {

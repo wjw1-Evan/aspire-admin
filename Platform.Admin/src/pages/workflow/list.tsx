@@ -117,10 +117,10 @@ const WorkflowManagement: React.FC = () => {
         const paged = response.data as PagedResult<WorkflowDefinition>;
         return { data: paged.queryable, total: paged.rowCount, success: true };
       }
-      return { data: [], success: false, rowCount: 0 };
+      return { data: [], success: false, total: 0 };
     } catch (error) {
       console.error('获取工作流列表失败:', error);
-      return { data: [], success: false, rowCount: 0 };
+      return { data: [], success: false, total: 0 };
     }
   }, []); // 🔧 空依赖数组，避免函数重新创建
 

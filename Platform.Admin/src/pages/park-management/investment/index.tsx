@@ -291,8 +291,7 @@ const InvestmentManagement: React.FC = () => {
                 stage: params.stage,
             });
             if (res.success && res.data) {
-                const d = res.data as PagedResult<InvestmentLead>;
-                return { data: d.queryable ?? [], total: d.rowCount ?? 0, success: true };
+                return { data: res.data.queryable ?? [], total: res.data.rowCount ?? 0, success: true };
             }
             return { data: [], total: 0, success: false };
         } catch (error) {

@@ -38,8 +38,7 @@ const ProjectMemberManagement: React.FC<ProjectMemberManagementProps> = ({
     try {
       const response = await getAllUsers();
       if (response.success && response.data) {
-
-        setUsers(response.data.users || []);
+        setUsers(response.data);
       }
     } catch (error) {
       console.error('获取用户列表失败:', error);

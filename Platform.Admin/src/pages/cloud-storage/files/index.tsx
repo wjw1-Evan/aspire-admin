@@ -448,9 +448,9 @@ const CloudStorageFilesPage: React.FC = () => {
             setUserLoading(true);
             const resp = await getAllUsers();
 
-            if (resp.success && resp.data?.users) {
+            if (resp.success && resp.data) {
 
-                setUserOptions(resp.data.users);
+                setUserOptions(resp.data);
             }
         } catch (e) {
             console.error('加载用户列表失败', e);

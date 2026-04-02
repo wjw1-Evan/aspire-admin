@@ -81,8 +81,8 @@ export const useDocumentManagement = () => {
     const fetchActiveWorkflows = async () => {
         try {
             const resp = await getWorkflowList({ page: 1, pageSize: 100, isActive: true });
-            if (resp.success) {
-                setWorkflows(resp.data?.list || []);
+            if (resp.success && resp.data) {
+                setWorkflows(resp.data.queryable || []);
             }
         } catch (e) {
             console.error('加载流程列表失败', e);

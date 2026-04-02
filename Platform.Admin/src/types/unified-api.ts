@@ -14,6 +14,7 @@ export interface ApiResponse<T = any> {
   details?: any;
   timestamp?: string;
   traceId?: string;
+  code?: string;
 }
 
 

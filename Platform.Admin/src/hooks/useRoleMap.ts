@@ -25,12 +25,11 @@ export function useRoleMap() {
       try {
         const response = await getAllRoles();
         if (response.success && response.data) {
-          const roles = response.data.roles;
-          setRoleList(roles);
+          setRoleList(response.data);
 
           // 构建 ID -> Name 映射
           const map: Record<string, string> = {};
-          for (const role of roles) {
+          for (const role of response.data) {
             if (role.id) {
               map[role.id] = role.name;
             }

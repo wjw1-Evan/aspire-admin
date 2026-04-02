@@ -59,7 +59,6 @@ export interface TableSort {
 export type {
   ProjectDto,
   ProjectQueryRequest,
-  ProjectListResponse,
   CreateProjectRequest,
   UpdateProjectRequest,
   ProjectStatistics,

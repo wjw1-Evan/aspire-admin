@@ -170,13 +170,13 @@ const TenantManagement: React.FC = () => {
         setDetailLoading(true);
         try {
             const serviceRes = await parkService.getServiceRequests({ page: 1, pageSize: 100, tenantId: tenant.id });
-            if (serviceRes.success && serviceRes.data) setTenantServiceRequests(serviceRes.data.requests);
+            if (serviceRes.success && serviceRes.data) setTenantServiceRequests(serviceRes.data.queryable);
 
             const contractRes = await parkService.getContracts({ page: 1, pageSize: 100, tenantId: tenant.id });
             if (contractRes.success && contractRes.data) {
-                setTenantContracts(contractRes.data.contracts);
+                setTenantContracts(contractRes.data.queryable);
                 const allPayments: LeasePaymentRecord[] = [];
-                for (const contract of contractRes.data.contracts) {
+                for (const contract of contractRes.data.queryable) {
                     const paymentRes = await parkService.getPaymentRecords(contract.id);
                     if (paymentRes.success && paymentRes.data) {
                         allPayments.push(...paymentRes.data.map(p => ({ ...p, contractNumber: contract.contractNumber })));

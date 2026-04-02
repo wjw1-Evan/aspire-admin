@@ -43,6 +43,7 @@ import useCommonStyles from '@/hooks/useCommonStyles';
 import SearchFormCard from '@/components/SearchFormCard';
 import { useTableResize } from '@/hooks/useTableResize';
 import { getAllRoles } from '@/services/role/api';
+import type { Role } from '@/services/role/types';
 import { getCurrentCompany } from '@/services/company'; // Added
 import { getUserStatistics } from '@/services/ant-design-pro/api';
 import type { ApiResponse, PagedResult } from '@/types/unified-api';
@@ -120,7 +121,7 @@ const UserManagement: React.FC = () => {
         const response = await getAllRoles();
         if (response.success && response.data) {
           const map: Record<string, string> = {};
-          response.data.roles.forEach((role) => {
+          response.data.forEach((role: Role) => {
             if (role.id) {
               map[role.id] = role.name;
             }

@@ -129,15 +129,21 @@ export async function getSessions(
  * 如果会话不存在，返回 null，由组件处理首次消息发送
  */
 export async function getOrCreateAssistantSession(): Promise<ChatSession | null> {
-  // 先尝试查找包含小科的会话
-  const sessionsResponse = await getSessions({ page: 1, pageSize: 100 });
-  const assistantSession = sessionsResponse.list.find(
-    (session) =>
-      session.participants.includes(AI_ASSISTANT_ID) &&
-      session.participants.length === 2
-  );
+  try {
+    // 先尝试查找包含小科的会话
+    const sessionsPaged = await getSessions({ page: 1, pageSize: 100 });
+    
+    const assistantSession = sessionsPaged.queryable.find(
+      (session: ChatSession) =>
+        session.participants.includes(AI_ASSISTANT_ID) &&
+        session.participants.length === 2
+    );
 
-  return assistantSession || null;
+    return assistantSession || null;
+  } catch (error) {
+    console.error('获取小科会话失败:', error);
+    return null;
+  }
 }
 
 /**

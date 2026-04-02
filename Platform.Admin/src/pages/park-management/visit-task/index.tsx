@@ -70,7 +70,7 @@ const VisitTask: React.FC = () => {
         try {
             const res = await getTenants({ page: 1, pageSize: 100 });
             if (res.success && res.data) {
-                setTenants(res.data.tenants);
+                setTenants(res.data.queryable);
             }
         } catch (error) {
             console.error('Failed to load tenants:', error);

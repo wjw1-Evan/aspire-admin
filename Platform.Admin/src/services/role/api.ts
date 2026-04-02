@@ -13,7 +13,7 @@ export type { Role, CreateRoleRequest, UpdateRoleRequest, AssignMenusToRoleReque
  * 获取所有角色
  */
 export async function getAllRoles(options?: Record<string, any>) {
-  return request<ApiResponse<PagedResult<Role>>>('/api/role', {
+  return request<ApiResponse<Role[]>>('/api/role', {
     method: 'GET',
     ...(options || {}),
   });

@@ -23,6 +23,7 @@ import {
 } from '@ant-design/icons';
 import { request, useIntl } from '@umijs/max';
 import { getAllRoles } from '@/services/role/api';
+import type { Role } from '@/services/role/api';
 import type { AppUser, UserActivityLog } from '../types';
 import dayjs from 'dayjs';
 
@@ -52,7 +53,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
       const response = await getAllRoles();
       if (response.success && response.data) {
         const map: Record<string, string> = {};
-        response.data.roles.forEach((role) => {
+        response.data.forEach((role: Role) => {
           if (role.id) {
             map[role.id] = role.name;
           }

@@ -93,7 +93,7 @@ public class WorkflowTodoService : IWorkflowTodoService
             }
         }
 
-        return todos.AsQueryable().PageResult(request.Page, request.PageSize);
+        return todos.AsQueryable().ToPagedList(request);
     }
 
     public async Task<object?> GetNodeFormAsync(string instanceId, string nodeId)

@@ -1,5 +1,8 @@
 using System.Linq.Expressions;
 using System.Linq.Dynamic.Core;
+using System.Reflection;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace Platform.ServiceDefaults.Extensions;
 
@@ -39,31 +42,32 @@ public static class QueryableExtensions
     /// </summary>
     private static Expression<Func<T, bool>> BuildSearchFilter<T>(string keyword)
     {
-        var parameter = Expression.Parameter(typeof(T), "x");
-        Expression? combined = null;
+        // 排除 BsonId 和 BsonRepresentation(ObjectId) 标注的字段，
+        // 这些字段在 MongoDB 中存储为 ObjectId 类型，$indexOfCP 无法处理
+        var searchableProperties = typeof(T).GetProperties()
+            .Where(p => p.PropertyType == typeof(string) && p.CanRead)
+            .Where(p => !p.IsDefined(typeof(BsonIdAttribute), true))
+            .Where(p =>
+            {
+                var bsonRep = p.GetCustomAttribute<BsonRepresentationAttribute>();
+                return bsonRep == null || bsonRep.Representation != BsonType.ObjectId;
+            })
+            .Select(p => p.Name)
+            .ToList();
 
-        var stringProperties = typeof(T).GetProperties()
-            .Where(p => p.PropertyType == typeof(string) && p.CanRead);
-
-        foreach (var prop in stringProperties)
-        {
-            var propertyAccess = Expression.Property(parameter, prop);
-            var toLowerMethod = typeof(string).GetMethod("ToLower", Type.EmptyTypes);
-            var containsMethod = typeof(string).GetMethod("Contains", new[] { typeof(string) });
-
-            var toLowerCall = Expression.Call(propertyAccess, toLowerMethod!);
-            var keywordConstant = Expression.Constant(keyword.ToLower());
-            var containsExpression = Expression.Call(toLowerCall, containsMethod!, keywordConstant);
-
-            combined = combined == null
-                ? (Expression)containsExpression
-                : Expression.OrElse(combined, containsExpression);
-        }
-
-        if (combined == null)
+        if (searchableProperties.Count == 0)
             return _ => true;
 
-        return Expression.Lambda<Func<T, bool>>(combined, parameter);
+        var conditions = searchableProperties
+            .Select(prop => $"iif({prop} != null, {prop}.Contains(@0), false)")
+            .ToList();
+
+        var dynamicExpression = string.Join(" || ", conditions);
+        return DynamicExpressionParser.ParseLambda<T, bool>(
+            ParsingConfig.Default,
+            false,
+            dynamicExpression,
+            keyword);
     }
 
     /// <summary>
@@ -82,6 +86,18 @@ public static class QueryableExtensions
         var isDescending = string.IsNullOrWhiteSpace(sortOrder)
             ? defaultIsDescending
             : sortOrder.Equals("desc", StringComparison.OrdinalIgnoreCase);
+
+        // 验证字段是否存在，避免 MongoDB 聚合管道错误
+        var validFields = typeof(T).GetProperties()
+            .Where(p => p.CanRead)
+            .Select(p => p.Name)
+            .ToHashSet();
+
+        if (!validFields.Contains(field))
+        {
+            field = defaultSortBy;
+            isDescending = defaultIsDescending;
+        }
 
         var expression = isDescending ? $"{field} descending" : field;
         return query.OrderBy(expression);

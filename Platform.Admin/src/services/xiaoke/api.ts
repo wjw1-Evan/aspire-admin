@@ -1,5 +1,6 @@
 import { request } from '@umijs/max';
 import type { ApiResponse, PagedResult } from '@/types/unified-api';
+import type { PageParams } from '@/types/page-params';
 
 /**
  * 小科配置相关类型
@@ -56,15 +57,12 @@ export interface ChatHistoryListItem {
   createdAt: string;
 }
 
-export interface ChatHistoryQueryRequest {
-  current?: number;
-  pageSize?: number;
+export interface ChatHistoryQueryRequest extends PageParams {
   sessionId?: string;
   userId?: string;
   content?: string;
   startTime?: string;
   endTime?: string;
-  sorter?: string;
 }
 
 export interface ChatMessage {

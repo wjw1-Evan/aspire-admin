@@ -1,5 +1,6 @@
 import { request } from '@umijs/max';
 import type { ApiResponse, PagedResult } from '@/types/unified-api';
+import type { PageParams } from '@/types/page-params';
 
 /**
  * 批量操作类型
@@ -478,11 +479,7 @@ export interface StartWorkflowRequest {
 /**
  * 获取流程定义列表
  */
-export async function getWorkflowList(params: {
-  page?: number;
-  current?: number;
-  pageSize?: number;
-  keyword?: string;
+export async function getWorkflowList(params: PageParams & {
   category?: string;
   isActive?: boolean;
 }): Promise<ApiResponse<PagedResult<WorkflowDefinition>>> {

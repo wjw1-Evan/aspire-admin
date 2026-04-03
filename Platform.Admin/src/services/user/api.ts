@@ -1,5 +1,6 @@
 import { request } from '@umijs/max';
 import type { ApiResponse, PagedResult } from '@/types/unified-api';
+import type { PageParams } from '@/types/page-params';
 
 /**
  * 用户信息接口
@@ -42,10 +43,7 @@ export async function getUserById(id: string, options?: Record<string, any>) {
  * 获取用户列表（分页）
  */
 export async function getUserList(
-  params: {
-    page?: number;
-    pageSize?: number;
-    search?: string;
+  params: PageParams & {
     isActive?: boolean;
   },
   options?: Record<string, any>,

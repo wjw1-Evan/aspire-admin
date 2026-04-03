@@ -1,5 +1,6 @@
 import { request } from '@umijs/max';
 import type { ApiResponse, PagedResult } from '@/types/unified-api';
+import type { PageParams } from '@/types/page-params';
 
 const API_PREFIX = '/api/iot';
 
@@ -19,12 +20,8 @@ export interface IoTDeviceEvent {
     createdAt: string;
 }
 
-export interface IoTEventQueryRequest {
+export interface IoTEventQueryRequest extends PageParams {
     isHandled?: boolean;
-    pageIndex?: number;
-    pageSize?: number;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
     deviceId?: string;
     eventType?: string;
     level?: string;

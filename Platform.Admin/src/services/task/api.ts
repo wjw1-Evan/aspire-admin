@@ -1,5 +1,6 @@
 import { request } from '@umijs/max';
 import type { ApiResponse, PagedResult } from '@/types/unified-api';
+import type { PageParams } from '@/types/page-params';
 
 /**
  * 任务状态枚举
@@ -167,10 +168,7 @@ export interface CompleteTaskRequest {
 /**
  * 任务查询请求
  */
-export interface TaskQueryRequest {
-  page?: number;
-  pageSize?: number;
-  search?: string;
+export interface TaskQueryRequest extends PageParams {
   status?: number;
   priority?: number;
   assignedTo?: string;
@@ -178,8 +176,6 @@ export interface TaskQueryRequest {
   taskType?: string;
   startDate?: string;
   endDate?: string;
-  sortBy?: string;
-  sortOrder?: string;
   tags?: string[];
   projectId?: string;
 }

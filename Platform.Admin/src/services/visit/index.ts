@@ -1,5 +1,6 @@
 import { request } from '@umijs/max';
 import type { ApiResponse, PagedResult } from '@/types/unified-api';
+import type { PageParams } from '@/types/page-params';
 
 export enum StatisticsPeriod {
     Day = 0,
@@ -87,22 +88,14 @@ export interface VisitQuestionnaire {
     sortOrder: number;
 }
 
-export interface VisitTaskListRequest {
-    page: number;
-    pageSize: number;
-    search?: string;
+export interface VisitTaskListRequest extends PageParams {
     status?: string;
     visitType?: string;
     managerName?: string;
     tenantId?: string;
-    sortBy?: string;
-    sortOrder?: string;
 }
 
-export interface VisitAssessmentListRequest {
-    page: number;
-    pageSize: number;
-    search?: string;
+export interface VisitAssessmentListRequest extends PageParams {
 }
 
 export interface VisitQuestionListRequest {

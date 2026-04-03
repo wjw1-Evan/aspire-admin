@@ -1,5 +1,6 @@
 import { request } from '@umijs/max';
 import type { ApiResponse, PagedResult } from '@/types/unified-api';
+import type { PageParams } from '@/types/page-params';
 
 // 文件和文件夹相关类型
 export interface FileItem {
@@ -79,12 +80,8 @@ export interface FileSearchRequest {
     sortOrder?: 'asc' | 'desc';
 }
 
-export interface FileListRequest {
+export interface FileListRequest extends PageParams {
     parentId?: string;
-    page?: number;
-    pageSize?: number;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
 }
 
 export type FileListResponse = PagedResult<FileItem>;

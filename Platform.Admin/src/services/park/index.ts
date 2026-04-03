@@ -1,5 +1,6 @@
 import { request } from '@umijs/max';
 import type { ApiResponse, PagedResult } from '@/types/unified-api';
+import type { PageParams } from '@/types/page-params';
 
 export enum StatisticsPeriod {
     Day = 0,
@@ -113,26 +114,16 @@ export interface AssetStatistics {
     totalBuildingsMoM?: number;
 }
 
-export interface BuildingListRequest {
-    page: number;
-    pageSize: number;
-    search?: string;
+export interface BuildingListRequest extends PageParams {
     status?: string;
     buildingType?: string;
-    sortBy?: string;
-    sortOrder?: string;
 }
 
-export interface PropertyUnitListRequest {
-    page: number;
-    pageSize: number;
+export interface PropertyUnitListRequest extends PageParams {
     buildingId?: string;
-    search?: string;
     status?: string;
     unitType?: string;
     floor?: number;
-    sortBy?: string;
-    sortOrder?: string;
 }
 
 // Buildings
@@ -395,25 +386,15 @@ export interface TenantStatistics {
     rentIncome?: number;
 }
 
-export interface TenantListRequest {
-    page: number;
-    pageSize: number;
-    search?: string;
+export interface TenantListRequest extends PageParams {
     status?: string;
     industry?: string;
-    sortBy?: string;
-    sortOrder?: string;
 }
 
-export interface ContractListRequest {
-    page: number;
-    pageSize: number;
+export interface ContractListRequest extends PageParams {
     tenantId?: string;
-    search?: string;
     status?: string;
     expiringWithin30Days?: boolean;
-    sortBy?: string;
-    sortOrder?: string;
 }
 
 // Tenants

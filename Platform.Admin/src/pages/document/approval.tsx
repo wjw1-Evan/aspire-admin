@@ -539,20 +539,22 @@ const ApprovalPage: React.FC = () => {
 
 
   const columns: ColumnsType<Document> = [
-    { title: intl.formatMessage({ id: 'pages.document.table.title' }), dataIndex: 'title', ellipsis: true },
-    { title: intl.formatMessage({ id: 'pages.document.table.type' }), dataIndex: 'documentType', ellipsis: true },
+    { title: intl.formatMessage({ id: 'pages.document.table.title' }), dataIndex: 'title', ellipsis: true, sorter: true },
+    { title: intl.formatMessage({ id: 'pages.document.table.type' }), dataIndex: 'documentType', ellipsis: true, sorter: true },
     {
       title: intl.formatMessage({ id: 'pages.document.table.status' }),
       dataIndex: 'status',
+      sorter: true,
       render: (_, record) => {
         const status = getDocStatus(record.status);
         return <Tag color={status.color}>{status.text}</Tag>;
       },
     },
-    { title: intl.formatMessage({ id: 'pages.document.table.createdBy' }), dataIndex: 'createdBy', ellipsis: true },
+    { title: intl.formatMessage({ id: 'pages.document.table.createdBy' }), dataIndex: 'createdBy', ellipsis: true, sorter: true },
     {
       title: intl.formatMessage({ id: 'pages.document.table.createdAt' }),
       dataIndex: 'createdAt',
+      sorter: true,
       render: (text: string) => (text ? dayjs(text).format('YYYY-MM-DD HH:mm:ss') : '-'),
     },
     {
@@ -593,8 +595,10 @@ const ApprovalPage: React.FC = () => {
         <DataTable<Document>
           actionRef={actionRef}
           columns={columns}
-          request={async (params) => {
-            const response = await getPendingDocuments({ page: params.current, pageSize: params.pageSize, ...searchParamsRef.current });
+          request={async (params, sort) => {
+            const sortKey = sort ? Object.keys(sort)[0] : undefined;
+            const sortValue = sortKey ? sort[sortKey] : undefined;
+            const response = await getPendingDocuments({ page: params.current, pageSize: params.pageSize, sortBy: sortKey, sortOrder: sortValue === 'ascend' ? 'asc' : sortValue === 'descend' ? 'desc' : undefined, ...searchParamsRef.current });
             if (response.success && response.data) {
               const resData: any = response.data;
               return { data: resData.list || resData.data || [], success: true, total: resData.total || 0 };
@@ -613,8 +617,10 @@ const ApprovalPage: React.FC = () => {
         <DataTable<Document>
           actionRef={actionRef}
           columns={columns}
-          request={async (params) => {
-            const response = await getDocumentList({ page: params.current, pageSize: params.pageSize, filterType: 'approved', ...searchParamsRef.current });
+          request={async (params, sort) => {
+            const sortKey = sort ? Object.keys(sort)[0] : undefined;
+            const sortValue = sortKey ? sort[sortKey] : undefined;
+            const response = await getDocumentList({ page: params.current, pageSize: params.pageSize, filterType: 'approved', sortBy: sortKey, sortOrder: sortValue === 'ascend' ? 'asc' : sortValue === 'descend' ? 'desc' : undefined, ...searchParamsRef.current });
             if (response.success && response.data) {
               const resData: any = response.data;
               return { data: resData.list || resData.data || [], success: true, total: resData.total || 0 };
@@ -633,8 +639,10 @@ const ApprovalPage: React.FC = () => {
         <DataTable<Document>
           actionRef={actionRef}
           columns={columns}
-          request={async (params) => {
-            const response = await getDocumentList({ page: params.current, pageSize: params.pageSize, filterType: 'my', ...searchParamsRef.current });
+          request={async (params, sort) => {
+            const sortKey = sort ? Object.keys(sort)[0] : undefined;
+            const sortValue = sortKey ? sort[sortKey] : undefined;
+            const response = await getDocumentList({ page: params.current, pageSize: params.pageSize, filterType: 'my', sortBy: sortKey, sortOrder: sortValue === 'ascend' ? 'asc' : sortValue === 'descend' ? 'desc' : undefined, ...searchParamsRef.current });
             if (response.success && response.data) {
               const resData: any = response.data;
               return { data: resData.list || resData.data || [], success: true, total: resData.total || 0 };

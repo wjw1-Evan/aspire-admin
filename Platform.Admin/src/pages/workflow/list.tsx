@@ -58,11 +58,26 @@ const WorkflowManagement: React.FC = () => {
 
 
   // 🔧 使用 useCallback 定义 request 函数，依赖数组为空，避免函数重新创建
-  const fetchWorkflows = useCallback(async (params: any) => {
+  const fetchWorkflows = useCallback(async (params: any, sort: any) => {
+    let sortBy: string | undefined;
+    let sortOrder: string | undefined;
+    if (sort && Object.keys(sort).length > 0) {
+      const sortKey = Object.keys(sort)[0];
+      const sortValue = sort[sortKey];
+      if (sortValue === 'ascend') {
+        sortBy = sortKey;
+        sortOrder = 'asc';
+      } else if (sortValue === 'descend') {
+        sortBy = sortKey;
+        sortOrder = 'desc';
+      }
+    }
     const requestData = {
       page: params.current || 1,
       pageSize: params.pageSize || 20,
       search: searchParamsRef.current.search,
+      sortBy,
+      sortOrder,
     };
 
     try {
@@ -83,6 +98,7 @@ const WorkflowManagement: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.workflow.table.name' }),
       dataIndex: 'name',
       ellipsis: true,
+      sorter: true,
       render: (name, record) => (
         <Button
           type="link"
@@ -100,6 +116,7 @@ const WorkflowManagement: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.workflow.table.category' }),
       dataIndex: 'category',
       ellipsis: true,
+      sorter: true,
     },
     {
       title: intl.formatMessage({ id: 'pages.workflow.table.version' }),
@@ -109,6 +126,7 @@ const WorkflowManagement: React.FC = () => {
     {
       title: intl.formatMessage({ id: 'pages.workflow.table.status' }),
       dataIndex: 'isActive',
+      sorter: true,
       render: (_, record) => (
         <Tag color={record.isActive ? 'green' : 'default'}>
           {record.isActive
@@ -120,6 +138,7 @@ const WorkflowManagement: React.FC = () => {
     {
       title: intl.formatMessage({ id: 'pages.workflow.table.createdAt' }),
       dataIndex: 'createdAt',
+      sorter: true,
       render: (text) => text ? dayjs(text).format('YYYY-MM-DD HH:mm:ss') : '',
     },
     {

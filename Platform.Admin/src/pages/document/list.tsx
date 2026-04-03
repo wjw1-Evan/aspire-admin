@@ -83,20 +83,24 @@ const DocumentManagement: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.document.table.title' }),
       dataIndex: 'title',
       ellipsis: true,
+      sorter: true,
     },
     {
       title: intl.formatMessage({ id: 'pages.document.table.type' }),
       dataIndex: 'documentType',
       ellipsis: true,
+      sorter: true,
     },
     {
       title: intl.formatMessage({ id: 'pages.document.table.category' }),
       dataIndex: 'category',
       ellipsis: true,
+      sorter: true,
     },
     {
       title: intl.formatMessage({ id: 'pages.document.table.status' }),
       dataIndex: 'status',
+      sorter: true,
       render: (_, record: Document) => {
         const status = getDocStatus(record.status);
         return <Tag color={status.color}>{status.text}</Tag>;
@@ -106,10 +110,12 @@ const DocumentManagement: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.document.table.createdBy' }),
       dataIndex: 'createdBy',
       ellipsis: true,
+      sorter: true,
     },
     {
       title: intl.formatMessage({ id: 'pages.document.table.createdAt' }),
       dataIndex: 'createdAt',
+      sorter: true,
       render: (text: string) => dayjs(text).format('YYYY-MM-DD HH:mm:ss'),
     },
     {
@@ -221,11 +227,15 @@ const DocumentManagement: React.FC = () => {
       <DataTable<Document>
         actionRef={actionRef}
         columns={columns}
-        request={async (params) => {
+        request={async (params, sort) => {
+          const sortKey = sort ? Object.keys(sort)[0] : undefined;
+          const sortValue = sortKey ? sort[sortKey] : undefined;
           const response = await getDocumentList({
             ...searchParams,
             page: params.current,
             pageSize: params.pageSize,
+            sortBy: sortKey,
+            sortOrder: sortValue === 'ascend' ? 'asc' : sortValue === 'descend' ? 'desc' : undefined,
           });
           if (response.success && response.data) {
             return {

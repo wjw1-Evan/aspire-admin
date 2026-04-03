@@ -69,8 +69,19 @@ const UserLog: React.FC = () => {
   }, []);
 
   // 获取用户活动日志列表（使用 useCallback 避免死循环）
-  const fetchUserLogs = useCallback(async (params: any, _sort?: Record<string, any>) => {
+  const fetchUserLogs = useCallback(async (params: any, sort?: Record<string, any>) => {
     const { current = 1, pageSize = 20 } = params;
+
+    // 处理排序参数
+    let sortBy = 'createdAt';
+    let sortOrder: 'asc' | 'desc' = 'desc';
+
+    if (sort && Object.keys(sort).length > 0) {
+      const sortKey = Object.keys(sort)[0];
+      const sortValue = sort[sortKey];
+      sortBy = sortKey;
+      sortOrder = sortValue === 'ascend' ? 'asc' : 'desc';
+    }
 
     try {
       // 并行请求分页数据和统计数据（统计数据不传筛选条件，获取全局统计）
@@ -86,6 +97,8 @@ const UserLog: React.FC = () => {
           startDate: filters.startDate,
           endDate: filters.endDate,
           createdBy: filters.createdBy,
+          sortBy,
+          sortOrder,
         }),
         getActivityLogStatistics(),
       ]);
@@ -459,6 +472,7 @@ const UserLog: React.FC = () => {
       dataIndex: 'username',
       key: 'username',
       ellipsis: true,
+      sorter: true,
       render: (text: string, record: UserActivityLog) => (
         <a
           onClick={() => handleViewDetail(record)}
@@ -472,6 +486,7 @@ const UserLog: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.table.action' }),
       dataIndex: 'action',
       key: 'action',
+      sorter: true,
       render: (_: any, record: UserActivityLog) => (
         <Tag color={getActionTagColor(record.action)}>
           {getActionText(record.action)}
@@ -482,6 +497,7 @@ const UserLog: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.table.httpMethod' }),
       dataIndex: 'httpMethod',
       key: 'httpMethod',
+      sorter: true,
       render: (_: any, record: UserActivityLog) => {
         if (!record.httpMethod) return '-';
         return (
@@ -495,6 +511,7 @@ const UserLog: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.table.statusCode' }),
       dataIndex: 'statusCode',
       key: 'statusCode',
+      sorter: true,
       render: (_: any, record: UserActivityLog) => getStatusBadge(record.statusCode),
     },
     {
@@ -502,6 +519,7 @@ const UserLog: React.FC = () => {
       dataIndex: 'fullUrl',
       key: 'fullUrl',
       ellipsis: true,
+      sorter: true,
       render: (_: any, record: UserActivityLog) => {
         if (!record.fullUrl) return '-';
         return <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{record.fullUrl}</span>;
@@ -511,7 +529,7 @@ const UserLog: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.table.duration' }),
       dataIndex: 'duration',
       key: 'duration',
-      sorter: (a: UserActivityLog, b: UserActivityLog) => (a.duration || 0) - (b.duration || 0),
+      sorter: true,
       render: (dom: any, record: UserActivityLog) => {
         if (record.duration === undefined || record.duration === null) return '-';
         let color = 'green';
@@ -525,6 +543,7 @@ const UserLog: React.FC = () => {
       dataIndex: 'ipAddress',
       key: 'ipAddress',
       ellipsis: true,
+      sorter: true,
     },
 
     {
@@ -532,6 +551,7 @@ const UserLog: React.FC = () => {
       dataIndex: 'createdAt',
       key: 'createdAt',
       sorter: true,
+      defaultSortOrder: 'descend',
       render: (_: any, record: UserActivityLog) => formatDateTime(record.createdAt),
     },
   ];

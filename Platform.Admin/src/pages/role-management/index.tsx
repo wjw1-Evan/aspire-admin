@@ -75,13 +75,22 @@ const RoleManagement: FC = () => {
   /**
    * 加载角色数据 - 使用 useCallback 避免死循环
    */
-  const loadRoleData = useCallback(async (params: any) => {
+  const loadRoleData = useCallback(async (params: any, sort?: Record<string, 'ascend' | 'descend'>) => {
     try {
+      const requestParams: any = {
+        ...params,
+        keyword: keywordRef.current || undefined,
+      };
+
+      if (sort && Object.keys(sort).length > 0) {
+        const sortKey = Object.keys(sort)[0];
+        const sortValue = sort[sortKey];
+        requestParams.sortBy = sortKey;
+        requestParams.sortOrder = sortValue === 'ascend' ? 'asc' : sortValue === 'descend' ? 'desc' : undefined;
+      }
+
       const response = await getAllRolesWithStats({
-        params: {
-          ...params,
-          keyword: keywordRef.current || undefined,
-        }
+        params: requestParams,
       });
       if (response.success && response.data) {
         const roles = (response.data as PagedResult<RoleWithStats>).queryable || [];
@@ -376,6 +385,7 @@ const RoleManagement: FC = () => {
       title: intl.formatMessage({ id: 'pages.table.roleName' }),
       dataIndex: 'name',
       key: 'name',
+      sorter: true,
       render: (text: string, record: RoleWithStats) => (
         <Space>
           <a
@@ -401,12 +411,14 @@ const RoleManagement: FC = () => {
       title: intl.formatMessage({ id: 'pages.table.description' }),
       dataIndex: 'description',
       key: 'description',
+      sorter: true,
       ellipsis: true,
     },
     {
       title: intl.formatMessage({ id: 'pages.table.status' }),
       dataIndex: 'isActive',
       key: 'isActive',
+      sorter: true,
       render: (_, record) => (
         <Tag color={record.isActive ? 'success' : 'default'}>
           {record.isActive
@@ -435,6 +447,7 @@ const RoleManagement: FC = () => {
       title: intl.formatMessage({ id: 'pages.table.createdAt' }),
       dataIndex: 'createdAt',
       key: 'createdAt',
+      sorter: true,
       render: (value: string) => formatDateTime(value),
     },
     {

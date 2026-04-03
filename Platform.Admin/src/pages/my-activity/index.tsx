@@ -369,7 +369,7 @@ const MyActivity: React.FC = () => {
           </Tag>
         </a>
       ),
-      sorter: (a: UserActivityLog, b: UserActivityLog) => (a.action || '').localeCompare(b.action || ''),
+      sorter: true,
     },
     {
       title: intl.formatMessage({ id: 'pages.table.httpMethod' }),
@@ -383,14 +383,14 @@ const MyActivity: React.FC = () => {
           </Tag>
         );
       },
-      sorter: (a: UserActivityLog, b: UserActivityLog) => (a.httpMethod || '').localeCompare(b.httpMethod || ''),
+      sorter: true,
     },
     {
       title: intl.formatMessage({ id: 'pages.table.statusCode' }),
       dataIndex: 'statusCode',
       key: 'statusCode',
       render: (_, record: UserActivityLog) => getStatusBadge(record.statusCode),
-      sorter: (a: UserActivityLog, b: UserActivityLog) => (a.statusCode || 0) - (b.statusCode || 0),
+      sorter: true,
     },
 
     {
@@ -402,13 +402,13 @@ const MyActivity: React.FC = () => {
         if (!record.fullUrl) return '-';
         return <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{record.fullUrl}</span>;
       },
-      sorter: (a: UserActivityLog, b: UserActivityLog) => (a.fullUrl || '').localeCompare(b.fullUrl || ''),
+      sorter: true,
     },
     {
       title: intl.formatMessage({ id: 'pages.table.duration' }),
       dataIndex: 'duration',
       key: 'duration',
-      sorter: (a: UserActivityLog, b: UserActivityLog) => (a.duration || 0) - (b.duration || 0),
+      sorter: true,
       render: (_, record: UserActivityLog) => {
         if (record.duration === undefined || record.duration === null) return '-';
         let color = 'green';
@@ -422,18 +422,15 @@ const MyActivity: React.FC = () => {
       dataIndex: 'ipAddress',
       key: 'ipAddress',
       ellipsis: true,
-      sorter: (a: UserActivityLog, b: UserActivityLog) => (a.ipAddress || '').localeCompare(b.ipAddress || ''),
+      sorter: true,
     },
 
     {
       title: intl.formatMessage({ id: 'pages.table.actionTime' }),
       dataIndex: 'createdAt',
       key: 'createdAt',
-      sorter: (a: UserActivityLog, b: UserActivityLog) => {
-        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return dateB - dateA; // Descending order
-      },
+      sorter: true,
+      defaultSortOrder: 'descend',
       render: (_, record: UserActivityLog) => {
         if (!record.createdAt) return '-';
         try {

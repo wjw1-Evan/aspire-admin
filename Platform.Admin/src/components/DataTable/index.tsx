@@ -104,20 +104,21 @@ function DataTableInner<T extends Record<string, any> = any>(
    * 核心加载逻辑
    * 依赖项仅限基础值，避免闭包陷阱和冗余触发
    */
-  const loadData = useCallback(async (page?: number, pageSize?: number) => {
+  const loadData = useCallback(async (page?: number, pageSize?: number, overrideSorter?: Record<string, 'ascend' | 'descend'>) => {
     if (!request) return;
 
     setLoading(true);
     try {
       const targetPage = page || paginationStateRef.current.current;
       const targetPageSize = pageSize || paginationStateRef.current.pageSize;
+      const currentSorter = overrideSorter ?? sorterRef.current;
 
       const params: RequestParams = {
         current: targetPage,
         pageSize: targetPageSize,
       };
 
-      const result = await request(params, sorterRef.current);
+      const result = await request(params, currentSorter);
 
       if (result.success) {
         setDataSource(result.data || []);
@@ -192,8 +193,8 @@ function DataTableInner<T extends Record<string, any> = any>(
     const newCurrent = pag.current ?? paginationStateRef.current.current;
     const newPageSize = pag.pageSize ?? paginationStateRef.current.pageSize;
 
-    // 立即加载新参数下的数据
-    loadData(newCurrent, newPageSize);
+    // 立即加载新参数下的数据，直接传入新的排序参数
+    loadData(newCurrent, newPageSize, newSorter);
   }, [loadData]);
 
   const mergedPagination: TableProps<T>['pagination'] = useMemo(() => {

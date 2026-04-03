@@ -112,7 +112,7 @@ public static class QueryableExtensions
     }
 
     /// <summary>
-    /// 获取可排序的属性名称集合
+    /// 获取可排序的属性名称集合（不区分大小写）
     /// </summary>
     private static HashSet<string> GetSortableProperties<T>()
     {
@@ -123,7 +123,7 @@ public static class QueryableExtensions
         var props = type.GetProperties()
             .Where(p => p.CanRead)
             .Select(p => p.Name)
-            .ToHashSet();
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         _sortablePropertiesCache[type] = props;
         return props;

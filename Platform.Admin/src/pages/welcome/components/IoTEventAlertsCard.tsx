@@ -41,7 +41,7 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
             setLoading(true);
             const res = await queryIoTEvents({
                 isHandled: false,
-                pageIndex: 1,
+                page: 1,
                 pageSize: 5,
                 sortBy: 'occurredAt',
                 sortOrder: 'desc'

@@ -257,39 +257,20 @@ public class StorageQuotaController : BaseApiController
     /// <summary>
     /// 获取存储配额列表（分页）
     /// </summary>
-    /// <param name="page">页码</param>
-    /// <param name="pageSize">每页数量</param>
-    /// <param name="sortBy">排序字段</param>
-    /// <param name="sortOrder">排序方向</param>
-    /// <param name="keyword">搜索关键词</param>
+    /// <param name="pageParams">分页参数</param>
     /// <param name="companyId">企业ID（可选）</param>
     /// <param name="isEnabled">启用状态筛选（可选）</param>
     /// <returns>分页的存储配额列表</returns>
     [HttpGet("list")]
     [RequireMenu("cloud-storage-quota")]
     public async Task<IActionResult> GetStorageQuotaList(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20,
-        [FromQuery] string sortBy = "usedQuota",
-        [FromQuery] string sortOrder = "desc",
-        [FromQuery] string? keyword = null,
+        [FromQuery] Platform.ServiceDefaults.Models.PageParams pageParams,
         [FromQuery] string? companyId = null,
         [FromQuery] bool? isEnabled = null)
     {
         try
         {
-            var query = new StorageQuotaListRequest
-            {
-                Page = page,
-                PageSize = pageSize,
-                SortBy = sortBy,
-                SortOrder = sortOrder,
-                Search = keyword,
-                CompanyId = companyId,
-                IsEnabled = isEnabled
-            };
-
-            var result = await _storageQuotaService.GetStorageQuotaListAsync(query);
+            var result = await _storageQuotaService.GetStorageQuotaListAsync(pageParams, companyId, isEnabled);
             return Success(result);
         }
         catch (Exception ex)
@@ -350,18 +331,21 @@ public class StorageQuotaController : BaseApiController
     /// <summary>
     /// 获取存储配额警告列表
     /// </summary>
+    /// <param name="pageParams">分页参数</param>
     /// <param name="warningThreshold">警告阈值（百分比，默认80%）</param>
     /// <returns>配额警告列表</returns>
     [HttpGet("warnings")]
     [RequireMenu("cloud-storage-quota")]
-    public async Task<IActionResult> GetQuotaWarnings([FromQuery] double warningThreshold = 0.8)
+    public async Task<IActionResult> GetQuotaWarnings(
+        [FromQuery] Platform.ServiceDefaults.Models.PageParams pageParams,
+        [FromQuery] double warningThreshold = 0.8)
     {
         if (warningThreshold < 0.1 || warningThreshold > 1.0)
             throw new ArgumentException("警告阈值必须在 0.1-1.0 之间");
 
         try
         {
-            var pagedResult = await _storageQuotaService.GetQuotaWarningsPaginatedAsync(warningThreshold);
+            var pagedResult = await _storageQuotaService.GetQuotaWarningsPaginatedAsync(pageParams, warningThreshold);
             return Success(pagedResult);
         }
         catch (Exception ex)

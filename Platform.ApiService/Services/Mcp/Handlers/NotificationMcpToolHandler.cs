@@ -3,6 +3,7 @@ using System.Linq.Dynamic.Core;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Workflow;
 using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Extensions;
 using Microsoft.Extensions.Logging;
 
 namespace Platform.ApiService.Services.Mcp.Handlers;
@@ -210,7 +211,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
                 var keyword = args.ContainsKey("keyword") ? args["keyword"]?.ToString() : null;
                 var (page, pageSize) = ParsePaginationArgs(args);
                 var query = _context.Set<WorkflowDefinition>().Where(d => string.IsNullOrEmpty(keyword) || (d.Name != null && d.Name.Contains(keyword)));
-                var pagedResult = query.OrderByDescending(d => d.UpdatedAt).PageResult(page, pageSize);
+                var pagedResult = query.OrderByDescending(d => d.UpdatedAt).AsQueryable().ToPagedList(new Platform.ServiceDefaults.Models.PageParams { Page = page, PageSize = pageSize });
                 var items = await pagedResult.Queryable.ToListAsync();
                 return new { items, rowCount = pagedResult.RowCount, currentPage = page, pageSize, pageCount = (int)Math.Ceiling((double)pagedResult.RowCount / pageSize) };
             });
@@ -225,7 +226,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
                 var (page, pageSize) = ParsePaginationArgs(args);
                 var status = args.ContainsKey("status") && int.TryParse(args["status"]?.ToString(), out var s) ? (WorkflowStatus)s : (WorkflowStatus?)null;
                 var query = _context.Set<WorkflowInstance>().Where(i => status == null || i.Status == status);
-                var pagedResult = query.OrderByDescending(i => i.UpdatedAt).PageResult(page, pageSize);
+                var pagedResult = query.OrderByDescending(i => i.UpdatedAt).AsQueryable().ToPagedList(new Platform.ServiceDefaults.Models.PageParams { Page = page, PageSize = pageSize });
                 var items = await pagedResult.Queryable.ToListAsync();
                 return new { items, rowCount = pagedResult.RowCount, currentPage = page, pageSize, pageCount = (int)Math.Ceiling((double)pagedResult.RowCount / pageSize) };
             });

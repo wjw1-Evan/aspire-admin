@@ -50,11 +50,17 @@ public class DocumentController : BaseApiController
     /// </summary>
     [HttpGet]
     [RequireMenu("document-list")]
-    public async Task<IActionResult> GetDocuments([FromQuery] DocumentListRequest query)
+    public async Task<IActionResult> GetDocuments(
+        [FromQuery] Platform.ServiceDefaults.Models.PageParams pageParams,
+        [FromQuery] DocumentStatus? status = null,
+        [FromQuery] string? documentType = null,
+        [FromQuery] string? category = null,
+        [FromQuery] string? createdBy = null,
+        [FromQuery] string? filterType = null)
     {
         try
         {
-            var result = await _documentService.GetDocumentsAsync(query);
+            var result = await _documentService.GetDocumentsAsync(pageParams, status, documentType, category, createdBy, filterType);
             return Success(result);
         }
         catch (Exception ex)
@@ -548,14 +554,16 @@ public class DocumentController : BaseApiController
     /// </summary>
     [HttpGet("pending")]
     [RequireMenu("document-approval")]
-    public async Task<IActionResult> GetPendingDocuments([FromQuery] DocumentListRequest query)
+    public async Task<IActionResult> GetPendingDocuments(
+        [FromQuery] Platform.ServiceDefaults.Models.PageParams pageParams,
+        [FromQuery] DocumentStatus? status = null,
+        [FromQuery] string? documentType = null,
+        [FromQuery] string? category = null,
+        [FromQuery] string? createdBy = null)
     {
         try
         {
-            // 强制设置为 pending 类型
-            query.FilterType = "pending";
-
-            var result = await _documentService.GetDocumentsAsync(query);
+            var result = await _documentService.GetDocumentsAsync(pageParams, status, documentType, category, createdBy, "pending");
             return Success(result);
         }
         catch (ArgumentException ex)

@@ -155,6 +155,10 @@ public class PasswordBookService : IPasswordBookService
     /// 分页查询条目列表（不返回密码）
     /// 可见范围：自己的私有条目 + 企业内所有公有条目
     /// </summary>
+    /// <summary>
+    /// 分页查询条目列表（不返回密码）
+    /// 可见范围：自己的私有条目 + 企业内所有公有条目
+    /// </summary>
     public async Task<System.Linq.Dynamic.Core.PagedResult<PasswordBookEntryDto>> GetEntriesAsync(
         Platform.ServiceDefaults.Models.PageParams pageParams,
         string userId,

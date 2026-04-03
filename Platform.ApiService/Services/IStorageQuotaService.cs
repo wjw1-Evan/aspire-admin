@@ -79,11 +79,10 @@ public interface IStorageQuotaService
     /// <summary>
     /// 获取存储配额警告列表（分页）
     /// </summary>
+    /// <param name="pageParams">分页参数</param>
     /// <param name="warningThreshold">警告阈值（百分比，默认80%）</param>
-    /// <param name="page">页码</param>
-    /// <param name="pageSize">每页数量</param>
     /// <returns>分页配额警告列表</returns>
-    Task<System.Linq.Dynamic.Core.PagedResult<StorageQuotaWarning>> GetQuotaWarningsPaginatedAsync(double warningThreshold = 0.8, int page = 1, int pageSize = 50);
+    Task<System.Linq.Dynamic.Core.PagedResult<StorageQuotaWarning>> GetQuotaWarningsPaginatedAsync(Platform.ServiceDefaults.Models.PageParams pageParams, double warningThreshold = 0.8);
 
     /// <summary>
     /// 清理未使用的存储配额记录
@@ -94,9 +93,11 @@ public interface IStorageQuotaService
     /// <summary>
     /// 获取存储配额列表（分页）
     /// </summary>
-    /// <param name="query">查询参数</param>
+    /// <param name="pageParams">分页参数</param>
+    /// <param name="companyId">企业ID</param>
+    /// <param name="isEnabled">是否启用（筛选）</param>
     /// <returns>分页的存储配额列表</returns>
-    Task<System.Linq.Dynamic.Core.PagedResult<StorageQuotaListItem>> GetStorageQuotaListAsync(StorageQuotaListRequest query);
+    Task<System.Linq.Dynamic.Core.PagedResult<StorageQuotaListItem>> GetStorageQuotaListAsync(Platform.ServiceDefaults.Models.PageParams pageParams, string? companyId = null, bool? isEnabled = null);
 
     /// <summary>
     /// 获取存储使用统计信息
@@ -254,21 +255,6 @@ public enum WarningLevel
 
     /// <summary>紧急</summary>
     Emergency = 3
-}
-
-/// <summary>
-/// 存储配额列表查询参数
-/// </summary>
-public class StorageQuotaListRequest : Platform.ServiceDefaults.Models.PageParams
-{
-    /// <summary>排序字段默认值覆盖</summary>
-    public new string SortBy { get; set; } = "usedQuota";
-
-    /// <summary>企业ID</summary>
-    public string? CompanyId { get; set; }
-
-    /// <summary>是否启用（筛选）</summary>
-    public bool? IsEnabled { get; set; }
 }
 
 /// <summary>

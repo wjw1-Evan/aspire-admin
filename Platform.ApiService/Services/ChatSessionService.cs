@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
-using System;
+using Platform.ServiceDefaults.Extensions;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
@@ -35,24 +35,22 @@ public class ChatSessionService : IChatSessionService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<System.Linq.Dynamic.Core.PagedResult<ChatSession>> GetSessionsAsync(ChatSessionListRequest request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<ChatSession>> GetSessionsAsync(Platform.ServiceDefaults.Models.PageParams request)
     {
         await _aiAssistantCoordinator.EnsureAssistantSessionForCurrentUserAsync();
-        request ??= new ChatSessionListRequest();
+        request ??= new Platform.ServiceDefaults.Models.PageParams { PageSize = 20 };
         var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
 
-        Expression<Func<ChatSession, bool>> filter = session => session.Participants.Contains(currentUserId);
+        var query = _context.Set<ChatSession>().Where(session => session.Participants.Contains(currentUserId));
+
         if (!string.IsNullOrWhiteSpace(request.Search))
         {
-            filter = session => session.Participants.Contains(currentUserId) &&
+            query = query.Where(session =>
                               session.TopicTags != null &&
-                              session.TopicTags.Any(tag => tag.Contains(request.Search, StringComparison.OrdinalIgnoreCase));
+                              session.TopicTags.Any(tag => tag.Contains(request.Search, StringComparison.OrdinalIgnoreCase)));
         }
 
-        var query = _context.Set<ChatSession>().Where(filter);
-
-        return query.OrderByDescending(s => s.UpdatedAt)
-            .PageResult(request.Page, Math.Min(Math.Max(request.PageSize, 1), MaxPageSize));
+        return query.OrderByDescending(s => s.UpdatedAt).ToPagedList(request);
     }
 
     public async Task<(List<ChatMessage> messages, bool hasMore, string? nextCursor)> GetMessagesAsync(string sessionId, ChatMessageListRequest request)

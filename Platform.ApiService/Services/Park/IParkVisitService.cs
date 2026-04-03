@@ -58,7 +58,7 @@ public interface IParkVisitService
     /// <summary>
     /// 获取走访知识库问题列表
     /// </summary>
-    Task<System.Linq.Dynamic.Core.PagedResult<VisitQuestionDto>> GetVisitQuestionsAsync(VisitQuestionListRequest request);
+    Task<System.Linq.Dynamic.Core.PagedResult<VisitQuestionDto>> GetVisitQuestionsAsync(Platform.ServiceDefaults.Models.PageParams request, string? category = null);
 
     /// <summary>
     /// 根据分类获取走访问题

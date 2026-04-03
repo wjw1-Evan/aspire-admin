@@ -85,18 +85,23 @@ public class PasswordBookController : BaseApiController
     /// <summary>
     /// 分页查询条目列表
     /// </summary>
-    [HttpPost("list")]
+    [HttpGet("list")]
     [RequireMenu("password-book")]
-    public async Task<IActionResult> GetEntries([FromBody] PasswordBookListRequest request)
+    public async Task<IActionResult> GetEntries(
+        [FromQuery] Platform.ServiceDefaults.Models.PageParams request,
+        [FromQuery] string? platform = null,
+        [FromQuery] string? account = null,
+        [FromQuery] string? category = null,
+        [FromQuery] List<string>? tags = null)
     {
         var userId = RequiredUserId;
         var result = await _passwordBookService.GetEntriesAsync(
             request,
             userId,
-            request.Platform,
-            request.Account,
-            request.Category,
-            request.Tags);
+            platform,
+            account,
+            category,
+            tags);
         return Success(result);
     }
 

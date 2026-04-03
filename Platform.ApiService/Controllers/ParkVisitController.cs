@@ -118,9 +118,11 @@ public class ParkVisitController : BaseApiController
     /// </summary>
     [HttpGet("questions")]
     [RequireMenu("park-management-visit-knowledge-base")]
-    public async Task<IActionResult> GetQuestions([FromQuery] VisitQuestionListRequest request)
+    public async Task<IActionResult> GetQuestions(
+        [FromQuery] Platform.ServiceDefaults.Models.PageParams request,
+        [FromQuery] string? category = null)
     {
-        var result = await _visitService.GetVisitQuestionsAsync(request);
+        var result = await _visitService.GetVisitQuestionsAsync(request, category);
         return Success(result);
     }
 

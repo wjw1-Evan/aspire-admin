@@ -361,18 +361,6 @@ public class ChatMessage : MultiTenantEntity
 }
 
 /// <summary>
-/// 聊天会话查询请求
-/// </summary>
-public class ChatSessionListRequest : Platform.ServiceDefaults.Models.PageParams
-{
-    /// <summary>
-    /// 每页数量
-    /// </summary>
-    [Range(1, 100)]
-    public new int PageSize { get; set; } = 20;
-}
-
-/// <summary>
 /// 聊天消息查询请求
 /// </summary>
 public class ChatMessageListRequest

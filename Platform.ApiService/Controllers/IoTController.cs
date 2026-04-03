@@ -353,12 +353,21 @@ public class IoTController : BaseApiController
     /// <summary>
     /// 查询设备历史数据记录
     /// </summary>
-    /// <param name="request">数据查询请求</param>
+    /// <param name="request">分页请求参数</param>
+    /// <param name="deviceId">设备ID</param>
+    /// <param name="dataPointId">数据点ID</param>
+    /// <param name="startTime">开始时间</param>
+    /// <param name="endTime">结束时间</param>
     /// <returns>历史数据列表</returns>
     [HttpGet("data/query")]
-    public async Task<IActionResult> QueryDataRecords([FromQuery] PageParams request)
+    public async Task<IActionResult> QueryDataRecords(
+        [FromQuery] PageParams request,
+        [FromQuery] string? deviceId = null,
+        [FromQuery] string? dataPointId = null,
+        [FromQuery] DateTime? startTime = null,
+        [FromQuery] DateTime? endTime = null)
     {
-        var result = await _iotService.QueryDataRecordsAsync(request);
+        var result = await _iotService.QueryDataRecordsAsync(request, deviceId, dataPointId, startTime, endTime);
         return Success(result);
     }
 
@@ -402,12 +411,25 @@ public class IoTController : BaseApiController
     /// <summary>
     /// 查询设备事件
     /// </summary>
-    /// <param name="request">事件查询请求</param>
+    /// <param name="request">分页请求参数</param>
+    /// <param name="deviceId">设备ID</param>
+    /// <param name="eventType">事件类型</param>
+    /// <param name="level">级别</param>
+    /// <param name="isHandled">是否已处理</param>
+    /// <param name="startTime">开始时间</param>
+    /// <param name="endTime">结束时间</param>
     /// <returns>事件分页列表</returns>
     [HttpGet("events/query")]
-    public async Task<IActionResult> QueryEvents([FromQuery] PageParams request)
+    public async Task<IActionResult> QueryEvents(
+        [FromQuery] PageParams request,
+        [FromQuery] string? deviceId = null,
+        [FromQuery] string? eventType = null,
+        [FromQuery] string? level = null,
+        [FromQuery] bool? isHandled = null,
+        [FromQuery] DateTime? startTime = null,
+        [FromQuery] DateTime? endTime = null)
     {
-        var result = await _iotService.QueryEventsAsync(request);
+        var result = await _iotService.QueryEventsAsync(request, deviceId, eventType, level, isHandled, startTime, endTime);
         return Success(result);
     }
 

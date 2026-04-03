@@ -83,7 +83,7 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
       // 使用 ref 确保获取最新的搜索参数
       const formValues = searchParamsRef.current;
       const filters: any = {
-        pageIndex: params.current || 1,
+        page: params.current || 1,
         pageSize: params.pageSize || 20,
       };
 

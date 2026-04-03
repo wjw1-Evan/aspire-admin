@@ -193,40 +193,6 @@ public class DataPointValue
 
 #region Query Requests
 
-/// <summary>
-/// 查询物联网数据请求
-/// </summary>
-public class QueryIoTDataRequest : Platform.ServiceDefaults.Models.PageParams
-{
-    /// <summary>设备ID</summary>
-    public string? DeviceId { get; set; }
-    /// <summary>数据点ID</summary>
-    public string? DataPointId { get; set; }
-    /// <summary>开始时间</summary>
-    public DateTime? StartTime { get; set; }
-    /// <summary>结束时间</summary>
-    public DateTime? EndTime { get; set; }
-}
-
-/// <summary>
-/// 查询设备事件请求
-/// </summary>
-public class QueryIoTEventRequest : Platform.ServiceDefaults.Models.PageParams
-{
-    /// <summary>设备ID</summary>
-    public string? DeviceId { get; set; }
-    /// <summary>事件类型</summary>
-    public string? EventType { get; set; }
-    /// <summary>事件级别</summary>
-    public string? Level { get; set; }
-    /// <summary>是否已处理</summary>
-    public bool? IsHandled { get; set; }
-    /// <summary>开始时间</summary>
-    public DateTime? StartTime { get; set; }
-    /// <summary>结束时间</summary>
-    public DateTime? EndTime { get; set; }
-}
-
 #endregion
 
 #region Device Status Requests

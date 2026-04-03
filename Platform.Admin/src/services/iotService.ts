@@ -276,11 +276,11 @@ export const iotService = {
     }),
 
   /** 查询设备命令历史（通过事件列表模拟） */
-  getCommandHistory: (deviceId: string, pageIndex = 1, pageSize = 10) => {
+  getCommandHistory: (deviceId: string, page = 1, pageSize = 10) => {
     const url = `${API_PREFIX}/events/query`;
     return request<ApiResponse<PagedResult<IoTDeviceEvent>>>(url, {
       method: 'POST',
-      data: { deviceId, eventType: 'Command', pageIndex, pageSize },
+      data: { deviceId, eventType: 'Command', page, pageSize },
     });
   },
 

@@ -281,16 +281,15 @@ public class ParkVisitService : IParkVisitService
     /// <summary>
     /// 获取知识库问题列表
     /// </summary>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<VisitQuestionDto>> GetVisitQuestionsAsync(VisitQuestionListRequest request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<VisitQuestionDto>> GetVisitQuestionsAsync(Platform.ServiceDefaults.Models.PageParams request, string? category = null)
     {
         var search = request.Search?.ToLower();
-        var category = request.Category;
 
         var query = _context.Set<VisitQuestion>().Where(
             q => (string.IsNullOrEmpty(search) || (q.Content != null && q.Content.ToLower().Contains(search))) &&
                  (string.IsNullOrEmpty(category) || q.Category == category));
 
-        var pagedResult = query.OrderByDescending(q => q.CreatedAt).PageResult(request.Page, request.PageSize);
+        var pagedResult = query.OrderByDescending(q => q.CreatedAt).ToPagedList(request);
         var items = await pagedResult.Queryable.ToListAsync();
 
         var dtos = items.Select(q => new VisitQuestionDto
@@ -303,7 +302,14 @@ public class ParkVisitService : IParkVisitService
             SortOrder = q.SortOrder ?? 0
         }).ToList();
 
-        return dtos.AsQueryable().PageResult(request.Page, request.PageSize);
+        return new System.Linq.Dynamic.Core.PagedResult<VisitQuestionDto>
+        {
+            Queryable = dtos.AsQueryable(),
+            CurrentPage = pagedResult.CurrentPage,
+            PageSize = pagedResult.PageSize,
+            RowCount = pagedResult.RowCount,
+            PageCount = pagedResult.PageCount
+        };
     }
 
     /// <summary>
@@ -397,7 +403,14 @@ public class ParkVisitService : IParkVisitService
             CreatedAt = q.CreatedAt,
             SortOrder = q.SortOrder ?? 0
         }).ToList();
-        return dtos.AsQueryable().PageResult(1, 1000);
+        return new System.Linq.Dynamic.Core.PagedResult<VisitQuestionnaireDto>
+        {
+            Queryable = dtos.AsQueryable(),
+            CurrentPage = 1,
+            PageSize = 1000,
+            RowCount = dtos.Count,
+            PageCount = 1
+        };
     }
 
     /// <summary>

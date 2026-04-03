@@ -46,7 +46,13 @@ public interface IDocumentService
     /// <summary>
     /// 获取公文列表
     /// </summary>
-    Task<System.Linq.Dynamic.Core.PagedResult<Document>> GetDocumentsAsync(DocumentListRequest query);
+    Task<System.Linq.Dynamic.Core.PagedResult<Document>> GetDocumentsAsync(
+        Platform.ServiceDefaults.Models.PageParams pageParams,
+        DocumentStatus? status = null,
+        string? documentType = null,
+        string? category = null,
+        string? createdBy = null,
+        string? filterType = null);
 
     /// <summary>
     /// 删除公文
@@ -155,36 +161,7 @@ public class UpdateDocumentRequest
     public Dictionary<string, object>? FormData { get; set; }
 }
 
-/// <summary>
-/// 公文查询参数
-/// </summary>
-public class DocumentListRequest : Platform.ServiceDefaults.Models.PageParams
-{
-    /// <summary>
-    /// 状态筛选
-    /// </summary>
-    public DocumentStatus? Status { get; set; }
 
-    /// <summary>
-    /// 公文类型筛选
-    /// </summary>
-    public string? DocumentType { get; set; }
-
-    /// <summary>
-    /// 分类筛选
-    /// </summary>
-    public string? Category { get; set; }
-
-    /// <summary>
-    /// 创建人筛选
-    /// </summary>
-    public string? CreatedBy { get; set; }
-
-    /// <summary>
-    /// 筛选类型：all, my, pending, approved, rejected
-    /// </summary>
-    public string? FilterType { get; set; }
-}
 
 /// <summary>
 /// 公文服务实现
@@ -329,51 +306,57 @@ public class DocumentService : IDocumentService
     /// <summary>
     /// 获取公文列表
     /// </summary>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<Document>> GetDocumentsAsync(DocumentListRequest query)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<Document>> GetDocumentsAsync(
+        Platform.ServiceDefaults.Models.PageParams pageParams,
+        DocumentStatus? status = null,
+        string? documentType = null,
+        string? category = null,
+        string? createdBy = null,
+        string? filterType = null)
     {
         Expression<Func<Document, bool>> filter = d => true;
 
         // 关键词搜索（使用继承的 Search 属性）
-        if (!string.IsNullOrEmpty(query.Search))
+        if (!string.IsNullOrEmpty(pageParams.Search))
         {
-            string keyword = query.Search.ToLower();
+            string keyword = pageParams.Search.ToLower();
             filter = filter.And(d => (d.Title ?? "").ToLower().Contains(keyword) || (d.Content != null && d.Content.ToLower().Contains(keyword)))!;
         }
 
         // 状态筛选
-        if (query.Status.HasValue)
+        if (status.HasValue)
         {
-            DocumentStatus statusValue = query.Status.Value;
+            DocumentStatus statusValue = status.Value;
             filter = filter.And(d => d.Status == statusValue)!;
         }
 
         // 类型筛选
-        if (!string.IsNullOrEmpty(query.DocumentType))
+        if (!string.IsNullOrEmpty(documentType))
         {
-            string docType = query.DocumentType;
+            string docType = documentType;
             filter = filter.And(d => d.DocumentType == docType)!;
         }
 
         // 分类筛选
-        if (!string.IsNullOrEmpty(query.Category))
+        if (!string.IsNullOrEmpty(category))
         {
-            string category = query.Category;
-            filter = filter.And(d => d.Category == category)!;
+            string cat = category;
+            filter = filter.And(d => d.Category == cat)!;
         }
 
         // 创建人筛选
-        if (!string.IsNullOrEmpty(query.CreatedBy))
+        if (!string.IsNullOrEmpty(createdBy))
         {
-            string createdBy = query.CreatedBy;
-            filter = filter.And(d => d.CreatedBy == createdBy)!;
+            string creator = createdBy;
+            filter = filter.And(d => d.CreatedBy == creator)!;
         }
 
         // 筛选类型
-        if (!string.IsNullOrEmpty(query.FilterType))
+        if (!string.IsNullOrEmpty(filterType))
         {
             var userId = _tenantContext.GetCurrentUserId();
-            string filterType = query.FilterType.ToLower();
-            switch (filterType)
+            string ft = filterType.ToLower();
+            switch (ft)
             {
                 case "my":
                     if (!string.IsNullOrEmpty(userId))
@@ -396,7 +379,7 @@ public class DocumentService : IDocumentService
                         else
                         {
                             var emptyQuery = _context.Set<Document>().Where(d => false);
-                            return emptyQuery.ToPagedList(query);
+                            return emptyQuery.ToPagedList(pageParams);
                         }
                     }
                     break;
@@ -413,7 +396,7 @@ public class DocumentService : IDocumentService
 
         {
             var filteredQuery = _context.Set<Document>().Where(filter!);
-            return filteredQuery.ToPagedList(query);
+            return filteredQuery.ToPagedList(pageParams);
         }
     }
 

@@ -190,7 +190,7 @@ public class BulkOperationService : IBulkOperationService
             b.IsDeleted != true;
 
         var query = _context.Set<BulkOperation>().Where(filter);
-        return Task.FromResult(Platform.ServiceDefaults.Extensions.QueryableExtensions.ApplySort(query, new Platform.ServiceDefaults.Models.PageParams()).PageResult(page, pageSize));
+        return Task.FromResult(query.ToPagedList(new Platform.ServiceDefaults.Models.PageParams { Page = page, PageSize = pageSize }));
     }
 
     /// <summary>

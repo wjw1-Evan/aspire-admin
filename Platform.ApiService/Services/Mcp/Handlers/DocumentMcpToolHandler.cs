@@ -43,17 +43,23 @@ public class DocumentMcpToolHandler : McpToolHandlerBase
             async (args, uid) =>
             {
                 var (page, pageSize) = ParsePaginationArgs(args, defaultPageSize: 20, maxPageSize: 100);
-                var request = new DocumentListRequest
+                var pageParams = new Platform.ServiceDefaults.Models.PageParams
                 {
                     Page = page,
                     PageSize = pageSize,
-                    Search = args.GetValueOrDefault("keyword")?.ToString(),
-                    DocumentType = args.GetValueOrDefault("documentType")?.ToString(),
-                    Category = args.GetValueOrDefault("category")?.ToString(),
-                    FilterType = args.GetValueOrDefault("filterType")?.ToString()
+                    Search = args.GetValueOrDefault("keyword")?.ToString()
                 };
-                if (args.ContainsKey("status") && Enum.TryParse<DocumentStatus>(args.GetValueOrDefault("status")?.ToString(), out var status)) request.Status = status;
-                var result = await _documentService.GetDocumentsAsync(request);
+                
+                var documentType = args.GetValueOrDefault("documentType")?.ToString();
+                var category = args.GetValueOrDefault("category")?.ToString();
+                var filterType = args.GetValueOrDefault("filterType")?.ToString();
+                DocumentStatus? status = null;
+                if (args.ContainsKey("status") && Enum.TryParse<DocumentStatus>(args.GetValueOrDefault("status")?.ToString(), out var s)) 
+                {
+                    status = s;
+                }
+
+                var result = await _documentService.GetDocumentsAsync(pageParams, status, documentType, category, null, filterType);
                 var items = await result.Queryable.ToListAsync();
                 return new { items = items.Select(d => new { d.Id, d.Title, d.DocumentType, d.Category, d.Status, d.CreatedBy, d.CreatedAt, d.WorkflowInstanceId }).ToList(), rowCount = result.RowCount, currentPage = result.CurrentPage, pageSize = result.PageSize, pageCount = result.PageCount };
             });

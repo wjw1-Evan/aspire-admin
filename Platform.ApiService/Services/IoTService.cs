@@ -482,9 +482,31 @@ public class IoTService : IIoTService
         return records;
     }
 
-    public Task<System.Linq.Dynamic.Core.PagedResult<IoTDataRecord>> QueryDataRecordsAsync(Platform.ServiceDefaults.Models.PageParams request)
+    public Task<System.Linq.Dynamic.Core.PagedResult<IoTDataRecord>> QueryDataRecordsAsync(Platform.ServiceDefaults.Models.PageParams request, string? deviceId = null, string? dataPointId = null, DateTime? startTime = null, DateTime? endTime = null)
     {
-        return Task.FromResult(_context.Set<IoTDataRecord>().ToPagedList(request));
+        var query = _context.Set<IoTDataRecord>().AsQueryable();
+
+        if (!string.IsNullOrEmpty(deviceId))
+        {
+            query = query.Where(r => r.DeviceId == deviceId);
+        }
+
+        if (!string.IsNullOrEmpty(dataPointId))
+        {
+            query = query.Where(r => r.DataPointId == dataPointId);
+        }
+
+        if (startTime.HasValue)
+        {
+            query = query.Where(r => r.ReportedAt >= startTime.Value);
+        }
+
+        if (endTime.HasValue)
+        {
+            query = query.Where(r => r.ReportedAt <= endTime.Value);
+        }
+
+        return Task.FromResult(query.OrderByDescending(r => r.ReportedAt).ToPagedList(request));
     }
 
     public async Task<IoTDataRecord?> GetLatestDataAsync(string dataPointId)
@@ -541,9 +563,41 @@ public class IoTService : IIoTService
         return @event;
     }
 
-    public Task<System.Linq.Dynamic.Core.PagedResult<IoTDeviceEvent>> QueryEventsAsync(Platform.ServiceDefaults.Models.PageParams request)
+    public Task<System.Linq.Dynamic.Core.PagedResult<IoTDeviceEvent>> QueryEventsAsync(Platform.ServiceDefaults.Models.PageParams request, string? deviceId = null, string? eventType = null, string? level = null, bool? isHandled = null, DateTime? startTime = null, DateTime? endTime = null)
     {
-        return Task.FromResult(_context.Set<IoTDeviceEvent>().ToPagedList(request));
+        var query = _context.Set<IoTDeviceEvent>().AsQueryable();
+
+        if (!string.IsNullOrEmpty(deviceId))
+        {
+            query = query.Where(e => e.DeviceId == deviceId);
+        }
+
+        if (!string.IsNullOrEmpty(eventType))
+        {
+            query = query.Where(e => e.EventType == eventType);
+        }
+
+        if (!string.IsNullOrEmpty(level))
+        {
+            query = query.Where(e => e.Level == level);
+        }
+
+        if (isHandled.HasValue)
+        {
+            query = query.Where(e => e.IsHandled == isHandled.Value);
+        }
+
+        if (startTime.HasValue)
+        {
+            query = query.Where(e => e.OccurredAt >= startTime.Value);
+        }
+
+        if (endTime.HasValue)
+        {
+            query = query.Where(e => e.OccurredAt <= endTime.Value);
+        }
+
+        return Task.FromResult(query.OrderByDescending(e => e.OccurredAt).ToPagedList(request));
     }
 
     public async Task<bool> HandleEventAsync(string eventId, string remarks)

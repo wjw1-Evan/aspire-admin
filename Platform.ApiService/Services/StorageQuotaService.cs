@@ -3,6 +3,7 @@ using Platform.ApiService.Models;
 using Platform.ApiService.Extensions;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Extensions;
 using System.Linq.Dynamic.Core;
 
 namespace Platform.ApiService.Services;
@@ -428,11 +429,11 @@ public class StorageQuotaService : IStorageQuotaService
     /// <summary>
     /// 获取存储配额警告列表（分页）
     /// </summary>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<StorageQuotaWarning>> GetQuotaWarningsPaginatedAsync(double warningThreshold = 0.8, int page = 1, int pageSize = 50)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<StorageQuotaWarning>> GetQuotaWarningsPaginatedAsync(Platform.ServiceDefaults.Models.PageParams pageParams, double warningThreshold = 0.8)
     {
         var warnings = await GetQuotaWarningsAsync(warningThreshold);
         var ordered = warnings.AsQueryable().OrderByDescending(w => w.UsagePercentage);
-        return ordered.PageResult(page, pageSize);
+        return ordered.AsQueryable().ToPagedList(pageParams);
     }
 
     /// <summary>
@@ -507,7 +508,7 @@ public class StorageQuotaService : IStorageQuotaService
     /// 获取存储配额列表（分页）。
     /// 修复：基于所有用户查询，而不仅仅是已有配额记录的用户
     /// </summary>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<StorageQuotaListItem>> GetStorageQuotaListAsync(StorageQuotaListRequest query)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<StorageQuotaListItem>> GetStorageQuotaListAsync(Platform.ServiceDefaults.Models.PageParams pageParams, string? companyId = null, bool? isEnabled = null)
     {
         // 获取当前企业ID
         var currentCompanyId = await _tenantContext.GetCurrentCompanyIdAsync();
@@ -676,9 +677,9 @@ public class StorageQuotaService : IStorageQuotaService
         }
 
         // 应用关键词搜索
-        if (!string.IsNullOrWhiteSpace(query.Search))
+        if (!string.IsNullOrWhiteSpace(pageParams.Search))
         {
-            var keyword = query.Search.ToLowerInvariant();
+            var keyword = pageParams.Search.ToLowerInvariant();
             allItems = allItems.Where(item =>
                 item.UserId.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
                 item.Username.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
@@ -688,32 +689,32 @@ public class StorageQuotaService : IStorageQuotaService
         }
 
         // 应用启用状态过滤
-        if (query.IsEnabled.HasValue)
+        if (isEnabled.HasValue)
         {
             allItems = allItems
-                .Where(item => item.IsEnabled == query.IsEnabled.Value)
+                .Where(item => item.IsEnabled == isEnabled.Value)
                 .ToList();
         }
 
         // 应用排序
-        var sortedItems = query.SortBy.ToLowerInvariant() switch
+        var sortedItems = pageParams.SortBy?.ToLowerInvariant() switch
         {
-            "usedquota" or "usedspace" => query.SortOrder == "asc"
+            "usedquota" or "usedspace" => pageParams.SortOrder == "asc"
                 ? allItems.OrderBy(item => item.UsedSpace).ToList()
                 : allItems.OrderByDescending(item => item.UsedSpace).ToList(),
-            "totalquota" => query.SortOrder == "asc"
+            "totalquota" => pageParams.SortOrder == "asc"
                 ? allItems.OrderBy(item => item.TotalQuota).ToList()
                 : allItems.OrderByDescending(item => item.TotalQuota).ToList(),
-            "usagepercentage" => query.SortOrder == "asc"
+            "usagepercentage" => pageParams.SortOrder == "asc"
                 ? allItems.OrderBy(item => item.UsagePercentage).ToList()
                 : allItems.OrderByDescending(item => item.UsagePercentage).ToList(),
-            "filecount" => query.SortOrder == "asc"
+            "filecount" => pageParams.SortOrder == "asc"
                 ? allItems.OrderBy(item => item.FileCount).ToList()
                 : allItems.OrderByDescending(item => item.FileCount).ToList(),
-            "createdat" => query.SortOrder == "asc"
+            "createdat" => pageParams.SortOrder == "asc"
                 ? allItems.OrderBy(item => item.CreatedAt).ToList()
                 : allItems.OrderByDescending(item => item.CreatedAt).ToList(),
-            "lastcalculatedat" => query.SortOrder == "asc"
+            "lastcalculatedat" => pageParams.SortOrder == "asc"
                 ? allItems.OrderBy(item => item.LastCalculatedAt).ToList()
                 : allItems.OrderByDescending(item => item.LastCalculatedAt).ToList(),
             _ => allItems.OrderByDescending(item => item.UsedSpace).ToList() // 默认按使用量降序
@@ -722,10 +723,10 @@ public class StorageQuotaService : IStorageQuotaService
         return new System.Linq.Dynamic.Core.PagedResult<StorageQuotaListItem>
         {
             Queryable = sortedItems.AsQueryable(),
-            CurrentPage = query.Page,
-            PageSize = query.PageSize,
+            CurrentPage = pageParams.Page,
+            PageSize = pageParams.PageSize,
             RowCount = sortedItems.Count,
-            PageCount = (int)Math.Ceiling((double)sortedItems.Count / query.PageSize)
+            PageCount = (int)Math.Ceiling((double)sortedItems.Count / pageParams.PageSize)
         };
     }
 

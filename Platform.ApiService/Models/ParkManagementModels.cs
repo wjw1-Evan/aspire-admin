@@ -2297,21 +2297,6 @@ public class VisitAssessmentDto
 }
 
 /// <summary>
-/// 知识库问题列表请求
-/// </summary>
-public class VisitQuestionListRequest
-{
-    /// <summary>当前页码</summary>
-    public int Page { get; set; } = 1;
-    /// <summary>每页数量</summary>
-    public int PageSize { get; set; } = 10;
-    /// <summary>搜索关键词（问题内容）</summary>
-    public string? Search { get; set; }
-    /// <summary>分类（问题分类/场景）</summary>
-    public string? Category { get; set; }
-}
-
-/// <summary>
 /// 知识库问题数据对象
 /// </summary>
 public class VisitQuestionDto

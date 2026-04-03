@@ -54,7 +54,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
     try {
       const { current = 1, pageSize = 20 } = params;
       const payload: any = {
-        pageIndex: current,
+        page: current,
         pageSize,
       };
 

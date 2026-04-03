@@ -131,24 +131,6 @@ public class UpdatePasswordBookEntryRequest
     public bool? IsPublic { get; set; }
 }
 
-/// <summary>
-/// 密码本列表查询请求
-/// </summary>
-public class PasswordBookListRequest : Platform.ServiceDefaults.Models.PageParams
-{
-    /// <summary>平台名称搜索</summary>
-    public string? Platform { get; set; }
-
-    /// <summary>账号搜索</summary>
-    public string? Account { get; set; }
-
-    /// <summary>分类筛选</summary>
-    public string? Category { get; set; }
-
-    /// <summary>标签筛选</summary>
-    public List<string>? Tags { get; set; }
-}
-
 
 /// <summary>
 /// 密码本条目DTO（列表显示，不包含密码）

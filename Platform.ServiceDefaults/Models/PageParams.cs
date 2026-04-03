@@ -2,8 +2,9 @@ namespace Platform.ServiceDefaults.Models;
 
 /// <summary>
 /// 分页参数
+/// 该类型不可被继承，后续扩展通过组合而非继承实现。
 /// </summary>
-public class PageParams
+public sealed class PageParams
 {
     /// <summary>
     /// 当前页码

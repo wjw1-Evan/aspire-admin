@@ -69,14 +69,8 @@ public class UpdateProjectRequest
 /// <summary>
 /// 项目查询请求DTO
 /// </summary>
-public class ProjectQueryRequest
+public class ProjectQueryRequest : PageParams
 {
-    /// <summary>页码</summary>
-    public int Page { get; set; } = 1;
-
-    /// <summary>每页数量</summary>
-    public int PageSize { get; set; } = 10;
-
     /// <summary>搜索关键词</summary>
     public string? Search { get; set; }
 
@@ -96,10 +90,7 @@ public class ProjectQueryRequest
     public DateTime? EndDate { get; set; }
 
     /// <summary>排序字段</summary>
-    public string SortBy { get; set; } = "CreatedAt";
-
-    /// <summary>排序顺序</summary>
-    public string SortOrder { get; set; } = "desc";
+    public new string SortBy { get; set; } = "CreatedAt";
 }
 
 /// <summary>

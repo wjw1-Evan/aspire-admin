@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Extensions;
 
 namespace Platform.ApiService.Services;
 
@@ -48,19 +49,9 @@ public class ParkTenantService : IParkTenantService
         if (!string.IsNullOrEmpty(request.Industry))
             filter = CombineFilters(filter, t => t.Industry == request.Industry);
 
-        Func<IQueryable<ParkTenant>, IOrderedQueryable<ParkTenant>>? orderBy = null;
-        if (request.SortOrder?.ToLower() == "asc")
-        {
-            orderBy = q => q.OrderBy(t => t.CreatedAt);
-        }
-        else
-        {
-            orderBy = q => q.OrderByDescending(t => t.CreatedAt);
-        }
-
         var query = _context.Set<ParkTenant>().Where(filter);
         var total = await query.LongCountAsync();
-        var pagedResult = orderBy(query).PageResult(request.Page, request.PageSize);
+        var pagedResult = query.ApplySort(request).PageResult(request.Page, request.PageSize);
 
         var tenants = new List<ParkTenantDto>();
         foreach (var item in await pagedResult.Queryable.ToListAsync())
@@ -204,19 +195,9 @@ public class ParkTenantService : IParkTenantService
             filter = CombineFilters(filter, c => c.EndDate <= threshold && c.Status == "Active");
         }
 
-        Func<IQueryable<LeaseContract>, IOrderedQueryable<LeaseContract>>? orderBy = null;
-        if (request.SortOrder?.ToLower() == "asc")
-        {
-            orderBy = q => q.OrderBy(c => c.CreatedAt);
-        }
-        else
-        {
-            orderBy = q => q.OrderByDescending(c => c.CreatedAt);
-        }
-
         var query = _context.Set<LeaseContract>().Where(filter);
         var total = await query.LongCountAsync();
-        var pagedResult = orderBy(query).PageResult(request.Page, request.PageSize);
+        var pagedResult = query.ApplySort(request).PageResult(request.Page, request.PageSize);
 
         var contracts = new List<LeaseContractDto>();
         foreach (var item in await pagedResult.Queryable.ToListAsync())

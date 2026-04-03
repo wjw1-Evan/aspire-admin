@@ -1466,14 +1466,8 @@ public class AssetStatisticsResponse
 /// <summary>
 /// 招商线索列表请求参数
 /// </summary>
-public class InvestmentLeadListRequest
+public class InvestmentLeadListRequest : PageParams
 {
-    /// <summary>页码</summary>
-    public int Page { get; set; } = 1;
-
-    /// <summary>每页大小</summary>
-    public int PageSize { get; set; } = 10;
-
     /// <summary>搜索关键词</summary>
     public string? Search { get; set; }
 
@@ -1488,12 +1482,6 @@ public class InvestmentLeadListRequest
 
     /// <summary>分配给</summary>
     public string? AssignedTo { get; set; }
-
-    /// <summary>排序字段</summary>
-    public string? SortBy { get; set; }
-
-    /// <summary>排序顺序</summary>
-    public string? SortOrder { get; set; }
 }
 
 /// <summary>
@@ -1593,14 +1581,8 @@ public class CreateInvestmentLeadRequest
 /// <summary>
 /// 招商项目列表请求参数
 /// </summary>
-public class InvestmentProjectListRequest
+public class InvestmentProjectListRequest : PageParams
 {
-    /// <summary>页码</summary>
-    public int Page { get; set; } = 1;
-
-    /// <summary>每页大小</summary>
-    public int PageSize { get; set; } = 10;
-
     /// <summary>搜索关键词</summary>
     public string? Search { get; set; }
 
@@ -1609,12 +1591,6 @@ public class InvestmentProjectListRequest
 
     /// <summary>分配给</summary>
     public string? AssignedTo { get; set; }
-
-    /// <summary>排序字段</summary>
-    public string? SortBy { get; set; }
-
-    /// <summary>排序顺序</summary>
-    public string? SortOrder { get; set; }
 }
 
 /// <summary>
@@ -1756,22 +1732,14 @@ public class InvestmentStatisticsResponse
 /// <summary>
 /// 租户列表请求
 /// </summary>
-public class ParkTenantListRequest
+public class ParkTenantListRequest : PageParams
 {
-    /// <summary>页码</summary>
-    public int Page { get; set; } = 1;
-    /// <summary>每页大小</summary>
-    public int PageSize { get; set; } = 10;
     /// <summary>搜索关键词</summary>
     public string? Search { get; set; }
     /// <summary>状态</summary>
     public string? Status { get; set; }
     /// <summary>行业</summary>
     public string? Industry { get; set; }
-    /// <summary>排序字段</summary>
-    public string? SortBy { get; set; }
-    /// <summary>排序顺序</summary>
-    public string? SortOrder { get; set; }
 }
 
 /// <summary>
@@ -1853,14 +1821,8 @@ public class CreateParkTenantRequest
 /// <summary>
 /// 租赁合同列表请求参数
 /// </summary>
-public class LeaseContractListRequest
+public class LeaseContractListRequest : PageParams
 {
-    /// <summary>页码</summary>
-    public int Page { get; set; } = 1;
-
-    /// <summary>每页大小</summary>
-    public int PageSize { get; set; } = 10;
-
     /// <summary>租户ID</summary>
     public string? TenantId { get; set; }
 
@@ -1872,12 +1834,6 @@ public class LeaseContractListRequest
 
     /// <summary>是否即将到期（30天内）</summary>
     public bool? ExpiringWithin30Days { get; set; }
-
-    /// <summary>排序字段</summary>
-    public string? SortBy { get; set; }
-
-    /// <summary>排序顺序</summary>
-    public string? SortOrder { get; set; }
 }
 
 /// <summary>
@@ -2171,14 +2127,8 @@ public class CreateServiceCategoryRequest
 /// <summary>
 /// 服务请求列表请求参数
 /// </summary>
-public class ServiceRequestListRequest
+public class ServiceRequestListRequest : PageParams
 {
-    /// <summary>页码</summary>
-    public int Page { get; set; } = 1;
-
-    /// <summary>每页大小</summary>
-    public int PageSize { get; set; } = 10;
-
     /// <summary>分类ID</summary>
     public string? CategoryId { get; set; }
 
@@ -2196,12 +2146,6 @@ public class ServiceRequestListRequest
 
     /// <summary>分配给</summary>
     public string? AssignedTo { get; set; }
-
-    /// <summary>排序字段</summary>
-    public string? SortBy { get; set; }
-
-    /// <summary>排序顺序</summary>
-    public string? SortOrder { get; set; }
 }
 
 /// <summary>

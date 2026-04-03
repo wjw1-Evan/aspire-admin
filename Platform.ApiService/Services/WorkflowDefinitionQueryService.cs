@@ -2,6 +2,7 @@ using System.Linq.Dynamic.Core;
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models.Workflow;
 using Platform.ApiService.Services;
+using Platform.ServiceDefaults.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -97,20 +98,7 @@ public class WorkflowDefinitionQueryService : IWorkflowDefinitionQueryService
 
         var queryable = filter == null ? _context.Set<WorkflowDefinition>() : _context.Set<WorkflowDefinition>().Where(filter);
 
-        Func<IQueryable<WorkflowDefinition>, IOrderedQueryable<WorkflowDefinition>> sort = q =>
-        {
-            if (!string.IsNullOrEmpty(request.SortBy))
-            {
-                var sortField = request.SortBy.ToLowerInvariant();
-                var ascending = request.SortOrder?.ToLowerInvariant() == "asc";
-                return ascending
-                    ? q.OrderBy(w => w.CreatedAt)
-                    : q.OrderByDescending(w => w.CreatedAt);
-            }
-            return q.OrderByDescending(w => w.CreatedAt);
-        };
-
-        return sort(queryable).PageResult(request.Page, request.PageSize);
+        return queryable.ApplySort(new Models.PageParams { SortBy = request.SortBy, SortOrder = request.SortOrder ?? "desc" }).PageResult(request.Page, request.PageSize);
     }
 
     public async Task<WorkflowDefinition?> GetWorkflowByIdAsync(string id)

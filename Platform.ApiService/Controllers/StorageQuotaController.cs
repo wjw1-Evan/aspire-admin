@@ -7,6 +7,7 @@ using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Extensions;
 
 namespace Platform.ApiService.Controllers;
 
@@ -275,14 +276,6 @@ public class StorageQuotaController : BaseApiController
         [FromQuery] string? companyId = null,
         [FromQuery] bool? isEnabled = null)
     {
-        // 验证排序参数
-        var validSortFields = new[] { "usedQuota", "totalQuota", "usagePercentage", "fileCount", "createdAt", "lastCalculatedAt" };
-        if (!validSortFields.Contains(sortBy))
-            throw new ArgumentException($"排序字段必须是以下之一: {string.Join(", ", validSortFields)}");
-
-        if (sortOrder != "asc" && sortOrder != "desc")
-            throw new ArgumentException("排序方向必须是 asc 或 desc");
-
         try
         {
             var query = new StorageQuotaListQuery

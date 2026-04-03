@@ -5,6 +5,7 @@ using Platform.ApiService.Models;
 using System.Linq.Expressions;
 using System.Linq.Dynamic.Core;
 using Microsoft.AspNetCore.Http;
+using Platform.ServiceDefaults.Extensions;
 
 using Platform.ApiService.Models.Response;
 
@@ -138,27 +139,8 @@ public class UserActivityLogService : IUserActivityLogService
         var successCount = successTask.Result;
         var errorCount = errorTask.Result;
 
-        Func<IQueryable<UserActivityLog>, IOrderedQueryable<UserActivityLog>> orderBy = query =>
-        {
-            if (string.IsNullOrEmpty(sortBy) || sortBy.Equals("createdAt", StringComparison.OrdinalIgnoreCase))
-            {
-                return string.IsNullOrEmpty(sortOrder) || sortOrder.Equals("desc", StringComparison.OrdinalIgnoreCase)
-                    ? query.OrderByDescending(log => log.CreatedAt)
-                    : query.OrderBy(log => log.CreatedAt);
-            }
-
-            if (sortBy.Equals("action", StringComparison.OrdinalIgnoreCase))
-            {
-                return string.IsNullOrEmpty(sortOrder) || sortOrder.Equals("desc", StringComparison.OrdinalIgnoreCase)
-                    ? query.OrderByDescending(log => log.Action).ThenByDescending(log => log.CreatedAt)
-                    : query.OrderBy(log => log.Action).ThenByDescending(log => log.CreatedAt);
-            }
-
-            return query.OrderByDescending(log => log.CreatedAt);
-        };
-
         var query = _context.Set<UserActivityLog>().Where(filter);
-        var pagedResult = orderBy(query).PageResult(page, pageSize);
+        var pagedResult = query.ApplySort(new Models.PageParams { SortBy = sortBy, SortOrder = sortOrder ?? "desc" }).PageResult(page, pageSize);
         var logs = await pagedResult.Queryable.ToListAsync();
         var totalCount = pagedResult.RowCount;
 

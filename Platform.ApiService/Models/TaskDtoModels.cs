@@ -165,14 +165,8 @@ public class CompleteTaskRequest
 /// <summary>
 /// 任务查询请求DTO
 /// </summary>
-public class TaskQueryRequest
+public class TaskQueryRequest : PageParams
 {
-    /// <summary>页码</summary>
-    public int Page { get; set; } = 1;
-
-    /// <summary>每页数量</summary>
-    public int PageSize { get; set; } = 10;
-
     /// <summary>搜索关键词</summary>
     public string? Search { get; set; }
 
@@ -198,10 +192,7 @@ public class TaskQueryRequest
     public DateTime? EndDate { get; set; }
 
     /// <summary>排序字段</summary>
-    public string SortBy { get; set; } = "CreatedAt";
-
-    /// <summary>排序顺序</summary>
-    public string SortOrder { get; set; } = "desc";
+    public new string SortBy { get; set; } = "CreatedAt";
 
     /// <summary>是否只查询根任务（默认为 true，搜索时除外）</summary>
     public bool? OnlyRoot { get; set; }

@@ -159,18 +159,8 @@ public class UpdateUserManagementRequest
 /// <summary>
 /// 用户列表查询请求
 /// </summary>
-public class UserListRequest
+public class UserListRequest : PageParams
 {
-    /// <summary>
-    /// 页码（默认1）
-    /// </summary>
-    public int Page { get; set; } = 1;
-
-    /// <summary>
-    /// 每页大小（默认10）
-    /// </summary>
-    public int PageSize { get; set; } = 10;
-
     /// <summary>
     /// 搜索关键词（用户名、邮箱）
     /// </summary>
@@ -189,12 +179,7 @@ public class UserListRequest
     /// <summary>
     /// 排序字段（默认CreatedAt）
     /// </summary>
-    public string? SortBy { get; set; } = "CreatedAt";
-
-    /// <summary>
-    /// 排序方向（asc/desc，默认desc）
-    /// </summary>
-    public string? SortOrder { get; set; } = "desc";
+    public new string? SortBy { get; set; } = "CreatedAt";
 
     /// <summary>
     /// 开始日期（按创建时间范围搜索）
@@ -546,14 +531,8 @@ public class GetUserActivityLogsRequest
 /// <summary>
 /// 活动日志查询参数
 /// </summary>
-public class ActivityLogQuery
+public class ActivityLogQuery : PageParams
 {
-    /// <summary>页码</summary>
-    public int Page { get; set; } = 1;
-
-    /// <summary>每页数量</summary>
-    public int PageSize { get; set; } = 20;
-
     /// <summary>创建者ID</summary>
     public string? CreatedBy { get; set; }
 
@@ -574,12 +553,6 @@ public class ActivityLogQuery
 
     /// <summary>结束日期</summary>
     public DateTime? EndDate { get; set; }
-
-    /// <summary>排序字段</summary>
-    public string? SortBy { get; set; }
-
-    /// <summary>排序方向</summary>
-    public string? SortOrder { get; set; }
 }
 
 /// <summary>

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -54,12 +55,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
 
         var query = _context.Set<NoticeIconItem>().Where(BuildFilter(false));
 
-        query = sortBy switch
-        {
-            "priority" => query.OrderByDescending(n => n.Datetime),
-            "dueDate" => query.OrderBy(n => n.TodoDueDate).ThenByDescending(n => n.Datetime),
-            _ => query.OrderByDescending(n => n.Datetime)
-        };
+        query = query.ApplySort(new Models.PageParams { SortBy = sortBy });
 
         return query.PageResult(page, pageSize);
     }
@@ -69,12 +65,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
     {
         var query = _context.Set<NoticeIconItem>().Where(n => n.IsTodo);
 
-        query = sortBy switch
-        {
-            "priority" => query.OrderByDescending(n => n.TodoPriority ?? 0).ThenBy(n => n.TodoDueDate),
-            "datetime" => query.OrderByDescending(n => n.Datetime),
-            _ => query.OrderBy(n => n.TodoDueDate).ThenByDescending(n => n.Datetime)
-        };
+        query = query.ApplySort(new Models.PageParams { SortBy = sortBy });
 
         return Task.FromResult(query.PageResult(page, pageSize));
     }

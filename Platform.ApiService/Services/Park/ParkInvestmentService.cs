@@ -3,6 +3,7 @@ using Platform.ApiService.Models;
 using System.Linq.Dynamic.Core;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Extensions;
 
 namespace Platform.ApiService.Services;
 
@@ -46,11 +47,7 @@ public class ParkInvestmentService : IParkInvestmentService
                  (string.IsNullOrEmpty(priority) || l.Priority == priority) &&
                  (string.IsNullOrEmpty(assignedTo) || l.AssignedTo == assignedTo));
         var total = await baseQuery.LongCountAsync();
-        var orderedQuery = (request.SortOrder?.ToLower() == "asc")
-            ? baseQuery.OrderBy(l => l.CreatedAt)
-            : baseQuery.OrderByDescending(l => l.CreatedAt);
-            
-        var pagedResult = orderedQuery.PageResult(request.Page, request.PageSize);
+        var pagedResult = baseQuery.ApplySort(request).PageResult(request.Page, request.PageSize);
         var items = await pagedResult.Queryable.ToListAsync();
 
         var leads = items.Select(MapToLeadDto).ToList();
@@ -205,11 +202,7 @@ public class ParkInvestmentService : IParkInvestmentService
                  (string.IsNullOrEmpty(stage) || p.Stage == stage) &&
                  (string.IsNullOrEmpty(assignedTo) || p.AssignedTo == assignedTo));
         var total = await baseQuery.LongCountAsync();
-        var orderedQuery = (request.SortOrder?.ToLower() == "asc")
-            ? baseQuery.OrderBy(p => p.CreatedAt)
-            : baseQuery.OrderByDescending(p => p.CreatedAt);
-            
-        var pagedResult = orderedQuery.PageResult(request.Page, request.PageSize);
+        var pagedResult = baseQuery.ApplySort(request).PageResult(request.Page, request.PageSize);
         var items = await pagedResult.Queryable.ToListAsync();
 
         var projects = items.Select(MapToProjectDto).ToList();

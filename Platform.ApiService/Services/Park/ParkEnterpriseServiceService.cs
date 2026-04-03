@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Extensions;
 
 namespace Platform.ApiService.Services;
 
@@ -157,19 +158,9 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
         if (!string.IsNullOrEmpty(request.AssignedTo))
             filter = CombineFilters(filter, r => r.AssignedTo == request.AssignedTo);
 
-        Func<IQueryable<ServiceRequest>, IOrderedQueryable<ServiceRequest>>? orderBy = null;
-        if (request.SortOrder?.ToLower() == "asc")
-        {
-            orderBy = q => q.OrderBy(r => r.CreatedAt);
-        }
-        else
-        {
-            orderBy = q => q.OrderByDescending(r => r.CreatedAt);
-        }
-
         var query = _context.Set<ServiceRequest>().Where(filter);
         var total = await query.LongCountAsync();
-        var pagedResult = orderBy(query).PageResult(request.Page, request.PageSize);
+        var pagedResult = query.ApplySort(request).PageResult(request.Page, request.PageSize);
 
         var requestDtos = new List<ServiceRequestDto>();
         foreach (var item in await pagedResult.Queryable.ToListAsync())

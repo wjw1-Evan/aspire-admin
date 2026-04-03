@@ -248,19 +248,10 @@ public class LoginData
 }
 
 /// <summary>
-/// 分页参数
+/// 分页参数（继承自 ServiceDefaults）
 /// </summary>
-public class PageParams
+public class PageParams : Platform.ServiceDefaults.Models.PageParams
 {
-    /// <summary>
-    /// 当前页码
-    /// </summary>
-    public int Page { get; set; } = 1;
-
-    /// <summary>
-    /// 每页大小
-    /// </summary>
-    public int PageSize { get; set; } = 10;
 }
 
 /// <summary>

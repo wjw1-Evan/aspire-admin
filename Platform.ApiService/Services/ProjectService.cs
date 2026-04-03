@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -110,17 +111,7 @@ public class ProjectService : IProjectService
         if (request.StartDate.HasValue) q = q.Where(p => p.CreatedAt >= request.StartDate.Value.ToUniversalTime());
         if (request.EndDate.HasValue) q = q.Where(p => p.CreatedAt <= request.EndDate.Value.ToUniversalTime().Date.AddDays(1).AddMilliseconds(-1));
 
-        var isAsc = (request.SortOrder ?? "desc").ToLower() == "asc";
-        q = (request.SortBy ?? "CreatedAt").ToLower() switch
-        {
-            "name" => isAsc ? q.OrderBy(p => p.Name) : q.OrderByDescending(p => p.Name),
-            "status" => isAsc ? q.OrderBy(p => p.Status) : q.OrderByDescending(p => p.Status),
-            "priority" => isAsc ? q.OrderBy(p => p.Priority) : q.OrderByDescending(p => p.Priority),
-            "progress" => isAsc ? q.OrderBy(p => p.Progress) : q.OrderByDescending(p => p.Progress),
-            "startdate" => isAsc ? q.OrderBy(p => p.StartDate) : q.OrderByDescending(p => p.StartDate),
-            "enddate" => isAsc ? q.OrderBy(p => p.EndDate) : q.OrderByDescending(p => p.EndDate),
-            _ => isAsc ? q.OrderBy(p => p.CreatedAt) : q.OrderByDescending(p => p.CreatedAt)
-        };
+        q = q.ApplySort(request);
 
         var pagedResult = q.PageResult(request.Page, request.PageSize);
         var projects = await pagedResult.Queryable.ToListAsync();

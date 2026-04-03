@@ -524,7 +524,7 @@ public class UserController : BaseApiController
     /// <param name="ipAddress">IP 地址（可选，支持模糊搜索）</param>
     /// <param name="startDate">开始日期（可选）</param>
     /// <param name="endDate">结束日期（可选）</param>
-    /// <param name="sortBy">排序字段（可选，默认：createdAt，支持：createdAt、action）</param>
+    /// <param name="sortBy">排序字段（可选，默认：createdAt，支持：createdAt、action、duration）</param>
     /// <param name="sortOrder">排序方向（可选，默认：desc，支持：asc、desc）</param>
     /// <remarks>
     /// 获取当前登录用户的活动日志，支持分页、操作类型筛选（模糊搜索）、HTTP 方法筛选、状态码筛选、IP 地址筛选（模糊搜索）、日期范围筛选和排序。
@@ -534,6 +534,7 @@ public class UserController : BaseApiController
     /// 支持的排序字段：
     /// - createdAt：创建时间（默认）
     /// - action：操作类型
+    /// - duration：请求持续时间
     ///
     /// 示例请求：
     /// ```
@@ -575,20 +576,6 @@ public class UserController : BaseApiController
         // 验证日期范围
         if (startDate.HasValue && endDate.HasValue && startDate.Value > endDate.Value)
             throw new ArgumentException("开始日期不能晚于结束日期");
-
-        if (!string.IsNullOrEmpty(sortBy))
-        {
-            var allowedSortFields = new[] { "createdAt", "action" };
-            if (!allowedSortFields.Contains(sortBy, StringComparer.OrdinalIgnoreCase))
-                throw new ArgumentException($"不支持的排序字段: {sortBy}，支持字段: {string.Join(", ", allowedSortFields)}");
-        }
-
-        if (!string.IsNullOrEmpty(sortOrder))
-        {
-            var allowedSortOrders = new[] { "asc", "desc" };
-            if (!allowedSortOrders.Contains(sortOrder, StringComparer.OrdinalIgnoreCase))
-                throw new ArgumentException($"不支持的排序方向: {sortOrder}，支持: asc、desc");
-        }
 
         var pagedResult = await _activityLogService.GetCurrentUserActivityLogsAsync(
             page,

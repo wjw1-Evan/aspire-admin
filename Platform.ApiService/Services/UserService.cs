@@ -5,6 +5,7 @@ using Platform.ApiService.Models;
 using Platform.ApiService.Models.Response;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Extensions;
 using System.Linq.Expressions;
 using System.Linq.Dynamic.Core;
 using Microsoft.EntityFrameworkCore;
@@ -315,19 +316,7 @@ public class UserService : IUserService
         var filter = await BuildUserListFilterAsync(request);
         var query = _context.Set<User>().Where(filter);
 
-        var sortBy = request.SortBy?.Trim().ToLowerInvariant();
-        var isAscending = string.Equals(request.SortOrder, "asc", StringComparison.OrdinalIgnoreCase);
-
-        query = sortBy switch
-        {
-            "username" => isAscending ? query.OrderBy(u => u.Username) : query.OrderByDescending(u => u.Username),
-            "email" => isAscending ? query.OrderBy(u => u.Email) : query.OrderByDescending(u => u.Email),
-            "lastloginat" => isAscending ? query.OrderBy(u => u.LastLoginAt) : query.OrderByDescending(u => u.LastLoginAt),
-            "updatedat" => isAscending ? query.OrderBy(u => u.UpdatedAt) : query.OrderByDescending(u => u.UpdatedAt),
-            "name" => isAscending ? query.OrderBy(u => u.Name) : query.OrderByDescending(u => u.Name),
-            "isactive" => isAscending ? query.OrderBy(u => u.IsActive) : query.OrderByDescending(u => u.IsActive),
-            _ => isAscending ? query.OrderBy(u => u.CreatedAt) : query.OrderByDescending(u => u.CreatedAt)
-        };
+        query = query.ApplySort(request);
 
         return query.PageResult(request.Page, request.PageSize);
     }

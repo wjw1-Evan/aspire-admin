@@ -468,19 +468,10 @@ public class FileVersionComparison
 /// <summary>
 /// 文件列表查询参数
 /// </summary>
-public class FileListQuery
+public class FileListQuery : PageParams
 {
-    /// <summary>页码</summary>
-    public int Page { get; set; } = 1;
-
-    /// <summary>每页数量</summary>
-    public int PageSize { get; set; } = 20;
-
     /// <summary>排序字段</summary>
-    public string SortBy { get; set; } = "name";
-
-    /// <summary>排序方向</summary>
-    public string SortOrder { get; set; } = "asc";
+    public new string SortBy { get; set; } = "name";
 
     /// <summary>文件类型筛选</summary>
     public FileItemType? Type { get; set; }
@@ -492,16 +483,10 @@ public class FileListQuery
 /// <summary>
 /// 文件搜索查询参数
 /// </summary>
-public class FileSearchQuery
+public class FileSearchQuery : PageParams
 {
     /// <summary>搜索关键词</summary>
     public string Keyword { get; set; } = string.Empty;
-
-    /// <summary>页码</summary>
-    public int Page { get; set; } = 1;
-
-    /// <summary>每页数量</summary>
-    public int PageSize { get; set; } = 20;
 
     /// <summary>文件类型筛选</summary>
     public FileItemType? Type { get; set; }
@@ -531,10 +516,7 @@ public class FileSearchQuery
     public List<string> Tags { get; set; } = [];
 
     /// <summary>排序字段</summary>
-    public string SortBy { get; set; } = "name";
-
-    /// <summary>排序方向</summary>
-    public string SortOrder { get; set; } = "asc";
+    public new string SortBy { get; set; } = "name";
 
     /// <summary>是否搜索文件内容</summary>
     public bool SearchContent { get; set; } = false;
@@ -567,19 +549,10 @@ public class FileContentSearchQuery
 /// <summary>
 /// 回收站查询参数
 /// </summary>
-public class RecycleBinQuery
+public class RecycleBinQuery : PageParams
 {
-    /// <summary>页码</summary>
-    public int Page { get; set; } = 1;
-
-    /// <summary>每页数量</summary>
-    public int PageSize { get; set; } = 20;
-
     /// <summary>排序字段</summary>
-    public string SortBy { get; set; } = "deletedAt";
-
-    /// <summary>排序方向</summary>
-    public string SortOrder { get; set; } = "desc";
+    public new string SortBy { get; set; } = "deletedAt";
 
     /// <summary>文件类型筛选</summary>
     public FileItemType? Type { get; set; }

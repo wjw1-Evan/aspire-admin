@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -120,17 +121,7 @@ public class TaskService : ITaskService
         if (request.EndDate.HasValue) q = q.Where(t => t.CreatedAt <= request.EndDate.Value);
         if (request.Tags != null && request.Tags.Count > 0) q = q.Where(t => t.Tags.Any(tag => request.Tags.Contains(tag)));
 
-        var isAsc = request.SortOrder?.ToLower() == "asc";
-        q = request.SortBy?.ToLower() switch
-        {
-            "taskname" => isAsc ? q.OrderBy(t => t.TaskName) : q.OrderByDescending(t => t.TaskName),
-            "priority" => isAsc ? q.OrderBy(t => t.Priority) : q.OrderByDescending(t => t.Priority),
-            "status" => isAsc ? q.OrderBy(t => t.Status) : q.OrderByDescending(t => t.Status),
-            "plannedstarttime" => isAsc ? q.OrderBy(t => t.PlannedStartTime) : q.OrderByDescending(t => t.PlannedStartTime),
-            "plannedendtime" => isAsc ? q.OrderBy(t => t.PlannedEndTime) : q.OrderByDescending(t => t.PlannedEndTime),
-            "sortorder" => isAsc ? q.OrderBy(t => t.SortOrder) : q.OrderByDescending(t => t.SortOrder),
-            _ => isAsc ? q.OrderBy(t => t.CreatedAt) : q.OrderByDescending(t => t.CreatedAt)
-        };
+        q = q.ApplySort(request);
 
         var pagedResult = q.PageResult(request.Page, request.PageSize);
         var tasks = await pagedResult.Queryable.ToListAsync();

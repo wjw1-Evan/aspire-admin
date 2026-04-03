@@ -4,6 +4,7 @@ using Platform.ApiService.Models;
 using Platform.ApiService.Models.Workflow;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Extensions;
 using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 
@@ -188,10 +189,8 @@ public class BulkOperationService : IBulkOperationService
             b.CreatedBy == userId &&
             b.IsDeleted != true;
 
-        var orderBy = (IQueryable<BulkOperation> query) => query.OrderByDescending(b => b.CreatedAt);
-
         var query = _context.Set<BulkOperation>().Where(filter);
-        return Task.FromResult(orderBy(query).PageResult(page, pageSize));
+        return Task.FromResult(query.ApplySort(new Models.PageParams()).PageResult(page, pageSize));
     }
 
     /// <summary>

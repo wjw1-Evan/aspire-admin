@@ -9,6 +9,7 @@ using Platform.ApiService.Models.Workflow;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
 using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -180,30 +181,6 @@ public class WorkflowController : BaseApiController
                 Expression<Func<WorkflowDefinition, bool>> createdByFilter = w => w.CreatedBy != null && createdByList.Contains(w.CreatedBy);
                 filter = filter == null ? createdByFilter : filter.And(createdByFilter);
             }
-
-            Func<IQueryable<WorkflowDefinition>, IOrderedQueryable<WorkflowDefinition>> sort = q =>
-            {
-                if (!string.IsNullOrEmpty(request.SortBy))
-                {
-                    var isDescending = request.SortOrder?.ToLowerInvariant() == "desc";
-                    switch (request.SortBy.ToLowerInvariant())
-                    {
-                        case "name":
-                            return isDescending ? q.OrderByDescending(w => w.Name) : q.OrderBy(w => w.Name);
-                        case "category":
-                            return isDescending ? q.OrderByDescending(w => w.Category) : q.OrderBy(w => w.Category);
-                        case "createdat":
-                            return isDescending ? q.OrderByDescending(w => w.CreatedAt) : q.OrderBy(w => w.CreatedAt);
-                        case "updatedat":
-                            return isDescending ? q.OrderByDescending(w => w.UpdatedAt) : q.OrderBy(w => w.UpdatedAt);
-                        case "usagecount":
-                            return isDescending ? q.OrderByDescending(w => w.Analytics.UsageCount) : q.OrderBy(w => w.Analytics.UsageCount);
-                        default:
-                            return q.OrderByDescending(w => w.CreatedAt);
-                    }
-                }
-                return q.OrderByDescending(w => w.CreatedAt);
-            };
 
             var result = await _workflowQueryService.GetWorkflowsAsync(request);
             return Success(result);

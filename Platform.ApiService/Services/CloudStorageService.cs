@@ -4,6 +4,7 @@ using Platform.ApiService.Models;
 using Platform.ApiService.Validators;
 using Platform.ApiService.Extensions;
 using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Extensions;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
@@ -407,17 +408,7 @@ public class CloudStorageService : ICloudStorageService
         
         if (query.Type.HasValue) q = q.Where(x => x.Type == query.Type.Value);
 
-        var sortBy = query.SortBy.ToLower();
-        var isDesc = query.SortOrder.ToLower() == "desc";
-
-        q = sortBy switch
-        {
-            "name" => isDesc ? q.OrderByDescending(f => f.Name) : q.OrderBy(f => f.Name),
-            "size" => isDesc ? q.OrderByDescending(f => f.Size) : q.OrderBy(f => f.Size),
-            "createdat" => isDesc ? q.OrderByDescending(f => f.CreatedAt) : q.OrderBy(f => f.CreatedAt),
-            "updatedat" => isDesc ? q.OrderByDescending(f => f.UpdatedAt) : q.OrderBy(f => f.UpdatedAt),
-            _ => q.OrderBy(f => f.Name)
-        };
+        q = q.ApplySort(query);
 
         return q.PageResult(query.Page, query.PageSize);
     }
@@ -602,15 +593,7 @@ public class CloudStorageService : ICloudStorageService
         if (!string.IsNullOrWhiteSpace(keyword)) q = q.Where(x => x.Name.ToLower().Contains(keyword));
         if (query.Type.HasValue) q = q.Where(x => x.Type == query.Type.Value);
 
-        var isDesc = query.SortOrder.ToLower() == "desc";
-        q = query.SortBy.ToLower() switch
-        {
-            "name" => isDesc ? q.OrderByDescending(f => f.Name) : q.OrderBy(f => f.Name),
-            "size" => isDesc ? q.OrderByDescending(f => f.Size) : q.OrderBy(f => f.Size),
-            "createdat" => isDesc ? q.OrderByDescending(f => f.CreatedAt) : q.OrderBy(f => f.CreatedAt),
-            "updatedat" => isDesc ? q.OrderByDescending(f => f.UpdatedAt) : q.OrderBy(f => f.UpdatedAt),
-            _ => q.OrderBy(f => f.Name)
-        };
+        q = q.ApplySort(query);
 
         return q.PageResult(query.Page, query.PageSize);
     }
@@ -662,14 +645,7 @@ public class CloudStorageService : ICloudStorageService
         var q = _context.Set<FileItem>().Where(x => x.Status == FileStatus.InRecycleBin);
         if (query.Type.HasValue) q = q.Where(x => x.Type == query.Type.Value);
 
-        var isDesc = query.SortOrder.ToLower() == "desc";
-        q = query.SortBy.ToLower() switch
-        {
-            "name" => isDesc ? q.OrderByDescending(f => f.Name) : q.OrderBy(f => f.Name),
-            "size" => isDesc ? q.OrderByDescending(f => f.Size) : q.OrderBy(f => f.Size),
-            "deletedat" => isDesc ? q.OrderByDescending(f => f.DeletedAt) : q.OrderBy(f => f.DeletedAt),
-            _ => q.OrderByDescending(f => f.DeletedAt)
-        };
+        q = q.ApplySort(query);
 
         return q.PageResult(query.Page, query.PageSize);
     }

@@ -67,6 +67,7 @@ const KnowledgeBaseManagement: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.workflow.knowledgeBase.name' }),
       dataIndex: 'name',
       key: 'name',
+      sorter: true,
       render: (text: string) => (
         <Space>
           <BookOutlined style={{ color: '#1890ff' }} />
@@ -79,6 +80,7 @@ const KnowledgeBaseManagement: React.FC = () => {
       dataIndex: 'description',
       key: 'description',
       ellipsis: true,
+      sorter: true,
     },
     {
       title: intl.formatMessage({ id: 'pages.workflow.knowledgeBase.category' }),

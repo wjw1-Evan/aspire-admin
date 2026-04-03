@@ -59,10 +59,12 @@ const WorkflowMonitor: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.workflow.monitor.table.instanceId' }),
       dataIndex: 'id',
       ellipsis: true,
+      sorter: true,
     },
     {
       title: intl.formatMessage({ id: 'pages.workflow.monitor.table.status' }),
       dataIndex: 'status',
+      sorter: true,
       render: (_, record) => {
         const status = getFlowStatus(record.status);
         return <Tag color={status.color}>{status.text}</Tag>;
@@ -72,15 +74,18 @@ const WorkflowMonitor: React.FC = () => {
       title: intl.formatMessage({ id: 'pages.workflow.monitor.table.startedBy' }),
       dataIndex: 'startedBy',
       ellipsis: true,
+      sorter: true,
     },
     {
       title: intl.formatMessage({ id: 'pages.workflow.monitor.table.startedAt' }),
       dataIndex: 'startedAt',
+      sorter: true,
       render: (text) => (text ? dayjs(text as string).format('YYYY-MM-DD HH:mm:ss') : '-'),
     },
     {
       title: intl.formatMessage({ id: 'pages.workflow.monitor.table.completedAt' }),
       dataIndex: 'completedAt',
+      sorter: true,
       render: (text) => (text ? dayjs(text).format('YYYY-MM-DD HH:mm:ss') : '-'),
     },
     {
@@ -209,11 +214,26 @@ const WorkflowMonitor: React.FC = () => {
       <DataTable<WorkflowInstance>
         actionRef={actionRef}
         columns={columns}
-        request={async (params) => {
+        request={async (params, sort) => {
+          let sortBy: string | undefined;
+          let sortOrder: string | undefined;
+          if (sort && Object.keys(sort).length > 0) {
+            const sortKey = Object.keys(sort)[0];
+            const sortValue = sort[sortKey];
+            if (sortValue === 'ascend') {
+              sortBy = sortKey;
+              sortOrder = 'asc';
+            } else if (sortValue === 'descend') {
+              sortBy = sortKey;
+              sortOrder = 'desc';
+            }
+          }
           const response = await getWorkflowInstances({
             page: params.current,
             pageSize: params.pageSize,
             search: searchParamsRef.current.search,
+            sortBy,
+            sortOrder,
           });
           if (response.success && response.data) {
             return {

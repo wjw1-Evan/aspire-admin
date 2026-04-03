@@ -388,10 +388,10 @@ const FormsPage: React.FC = () => {
     });
 
     const columns: ColumnsType<FormDefinition> = [
-        { title: '名称', dataIndex: 'name', ellipsis: true },
-        { title: '键', dataIndex: 'key', ellipsis: true },
-        { title: '版本', dataIndex: 'version', width: 80 },
-        { title: '启用', dataIndex: 'isActive', width: 80, render: (_, r) => (r.isActive ? '是' : '否') },
+        { title: '名称', dataIndex: 'name', ellipsis: true, sorter: true },
+        { title: '键', dataIndex: 'key', ellipsis: true, sorter: true },
+        { title: '版本', dataIndex: 'version', width: 80, sorter: true },
+        { title: '启用', dataIndex: 'isActive', width: 80, sorter: true, render: (_, r) => (r.isActive ? '是' : '否') },
         {
             title: '操作',
             key: 'action',
@@ -434,12 +434,27 @@ const FormsPage: React.FC = () => {
     ];
 
     // 数据请求函数
-    const fetchData = useCallback(async (params: any) => {
+    const fetchData = useCallback(async (params: any, sort: any) => {
+        let sortBy: string | undefined;
+        let sortOrder: string | undefined;
+        if (sort && Object.keys(sort).length > 0) {
+            const sortKey = Object.keys(sort)[0];
+            const sortValue = sort[sortKey];
+            if (sortValue === 'ascend') {
+                sortBy = sortKey;
+                sortOrder = 'asc';
+            } else if (sortValue === 'descend') {
+                sortBy = sortKey;
+                sortOrder = 'desc';
+            }
+        }
         const requestData = {
             current: params.current || searchParamsRef.current.current,
             pageSize: params.pageSize || searchParamsRef.current.pageSize,
             keyword: searchParamsRef.current.keyword,
             isActive: searchParamsRef.current.isActive,
+            sortBy,
+            sortOrder,
         };
 
             try {

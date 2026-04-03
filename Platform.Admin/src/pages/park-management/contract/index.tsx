@@ -5,7 +5,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, FileTextOutlin
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import PageContainer from '@/components/PageContainer';
 import { DataTable } from '@/components/DataTable';
-import SearchFormCard from '@/components/SearchFormCard';
+import SearchBar from '@/components/SearchBar';
 import StatCard from '@/components/StatCard';
 import * as parkService from '@/services/park';
 import type { LeaseContract, TenantStatistics, PropertyUnit, LeasePaymentRecord, ParkTenant } from '@/services/park';
@@ -21,7 +21,7 @@ const ContractManagement: React.FC = () => {
     const contractTableRef = useRef<ActionType>(null);
     const { message } = App.useApp();
     const [contractForm] = Form.useForm();
-    const [searchForm] = Form.useForm();
+    const searchParamsRef = useRef<any>({ search: '' });
     const [paymentForm] = Form.useForm();
 
     const [statistics, setStatistics] = useState<TenantStatistics | null>(null);
@@ -342,8 +342,6 @@ const ContractManagement: React.FC = () => {
         }
     };
 
-    const handleSearch = () => { contractTableRef.current?.reload(); };
-    const handleReset = () => { searchForm.resetFields(); handleSearch(); };
 
     const handleRefresh = () => {
         contractTableRef.current?.reload();
@@ -369,25 +367,14 @@ const ContractManagement: React.FC = () => {
                 </Row>
             )}
 
-            <SearchFormCard>
-                <Form form={searchForm} layout="inline" onFinish={handleSearch}>
-                    <Form.Item name="search"><Input placeholder="搜索合同编号/租户..." style={{ width: 220 }} allowClear /></Form.Item>
-                    <Form.Item name="status"><Select placeholder="合同状态" style={{ width: 120 }} allowClear options={contractStatusOptions} /></Form.Item>
-                    <Form.Item name="expiringWithin30Days" valuePropName="checked">
-                        <Button
-                            type={searchForm.getFieldValue('expiringWithin30Days') ? 'primary' : 'default'}
-                            onClick={() => {
-                                const val = !searchForm.getFieldValue('expiringWithin30Days');
-                                searchForm.setFieldValue('expiringWithin30Days', val);
-                                handleSearch();
-                            }}
-                        >
-                            30天内到期
-                        </Button>
-                    </Form.Item>
-                    <Form.Item><Space><Button type="primary" htmlType="submit">搜索</Button><Button onClick={handleReset}>重置</Button></Space></Form.Item>
-                </Form>
-            </SearchFormCard>
+            <SearchBar
+                initialParams={searchParamsRef.current}
+                onSearch={(params) => {
+                    searchParamsRef.current = { ...searchParamsRef.current, ...params };
+                    contractTableRef.current?.reload();
+                }}
+                style={{ marginBottom: 16 }}
+            />
 
             <Card>
                 <DataTable<LeaseContract>

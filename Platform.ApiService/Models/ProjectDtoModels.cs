@@ -67,33 +67,6 @@ public class UpdateProjectRequest
 }
 
 /// <summary>
-/// 项目查询请求DTO
-/// </summary>
-public class ProjectQueryRequest : PageParams
-{
-    /// <summary>搜索关键词</summary>
-    public string? Search { get; set; }
-
-    /// <summary>项目状态</summary>
-    public int? Status { get; set; }
-
-    /// <summary>优先级</summary>
-    public int? Priority { get; set; }
-
-    /// <summary>项目经理ID</summary>
-    public string? ManagerId { get; set; }
-
-    /// <summary>开始日期</summary>
-    public DateTime? StartDate { get; set; }
-
-    /// <summary>结束日期</summary>
-    public DateTime? EndDate { get; set; }
-
-    /// <summary>排序字段</summary>
-    public new string SortBy { get; set; } = "CreatedAt";
-}
-
-/// <summary>
 /// 项目响应DTO
 /// </summary>
 public class ProjectDto

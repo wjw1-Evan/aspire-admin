@@ -118,7 +118,7 @@ public class CloudStorageController : BaseApiController
     [HttpGet("list")]
     [HttpGet("files")] // 兼容客户端使用 /files 路径
     [RequireMenu("cloud-storage-files")]
-    public async Task<IActionResult> GetFileItems([FromQuery] string? parentId, [FromQuery] FileListQuery query)
+    public async Task<IActionResult> GetFileItems([FromQuery] string? parentId, [FromQuery] Platform.ServiceDefaults.Models.PageParams query)
     {
         var result = await _cloudStorageService.GetFileItemsAsync(parentId ?? string.Empty, query);
         return Success(result);
@@ -278,7 +278,7 @@ public class CloudStorageController : BaseApiController
     /// <returns>搜索结果</returns>
     [HttpGet("search")]
     [RequireMenu("cloud-storage-files")]
-    public async Task<IActionResult> SearchFiles([FromQuery] FileSearchQuery query)
+    public async Task<IActionResult> SearchFiles([FromQuery] Platform.ServiceDefaults.Models.PageParams query)
     {
         try
         {
@@ -358,13 +358,12 @@ public class CloudStorageController : BaseApiController
         [FromQuery] string sortOrder = "desc",
         [FromQuery] FileItemType? type = null)
     {
-        var query = new RecycleBinQuery
+        var query = new Platform.ServiceDefaults.Models.PageParams
         {
             Page = page,
             PageSize = pageSize,
             SortBy = sortBy,
-            SortOrder = sortOrder,
-            Type = type
+            SortOrder = sortOrder
         };
         var result = await _cloudStorageService.GetRecycleBinItemsAsync(query);
         return Success(result);
@@ -377,7 +376,7 @@ public class CloudStorageController : BaseApiController
     /// <returns>分页回收站项目列表</returns>
     [HttpGet("recycle-bin")]
     [RequireMenu("cloud-storage-recycle")]
-    public async Task<IActionResult> GetRecycleBinItems([FromQuery] RecycleBinQuery query)
+    public async Task<IActionResult> GetRecycleBinItems([FromQuery] Platform.ServiceDefaults.Models.PageParams query)
     {
         var result = await _cloudStorageService.GetRecycleBinItemsAsync(query);
         return Success(result);

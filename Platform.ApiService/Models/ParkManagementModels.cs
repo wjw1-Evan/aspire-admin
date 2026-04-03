@@ -1153,33 +1153,6 @@ public class VisitQuestionnaire : MultiTenantEntity
 // ===== 资产管理 DTOs =====
 
 /// <summary>
-/// 楼宇列表请求参数
-/// </summary>
-public class BuildingListRequest
-{
-    /// <summary>页码</summary>
-    public int Page { get; set; } = 1;
-
-    /// <summary>每页大小</summary>
-    public int PageSize { get; set; } = 10;
-
-    /// <summary>搜索关键词</summary>
-    public string? Search { get; set; }
-
-    /// <summary>状态</summary>
-    public string? Status { get; set; }
-
-    /// <summary>楼宇类型</summary>
-    public string? BuildingType { get; set; }
-
-    /// <summary>排序字段</summary>
-    public string? SortBy { get; set; }
-
-    /// <summary>排序顺序</summary>
-    public string? SortOrder { get; set; }
-}
-
-/// <summary>
 /// 楼宇数据传输对象
 /// </summary>
 public class BuildingDto
@@ -1288,39 +1261,6 @@ public class UpdateBuildingRequest : CreateBuildingRequest
 {
     /// <summary>状态</summary>
     public string? Status { get; set; }
-}
-
-/// <summary>
-/// 房源列表请求参数
-/// </summary>
-public class PropertyUnitListRequest
-{
-    /// <summary>页码</summary>
-    public int Page { get; set; } = 1;
-
-    /// <summary>每页大小</summary>
-    public int PageSize { get; set; } = 10;
-
-    /// <summary>楼宇ID</summary>
-    public string? BuildingId { get; set; }
-
-    /// <summary>搜索关键词</summary>
-    public string? Search { get; set; }
-
-    /// <summary>状态</summary>
-    public string? Status { get; set; }
-
-    /// <summary>单元类型</summary>
-    public string? UnitType { get; set; }
-
-    /// <summary>楼层</summary>
-    public int? Floor { get; set; }
-
-    /// <summary>排序字段</summary>
-    public string? SortBy { get; set; }
-
-    /// <summary>排序顺序</summary>
-    public string? SortOrder { get; set; }
 }
 
 /// <summary>
@@ -1464,27 +1404,6 @@ public class AssetStatisticsResponse
 // ===== 招商管理 DTOs =====
 
 /// <summary>
-/// 招商线索列表请求参数
-/// </summary>
-public class InvestmentLeadListRequest : PageParams
-{
-    /// <summary>搜索关键词</summary>
-    public string? Search { get; set; }
-
-    /// <summary>状态</summary>
-    public string? Status { get; set; }
-
-    /// <summary>来源</summary>
-    public string? Source { get; set; }
-
-    /// <summary>优先级</summary>
-    public string? Priority { get; set; }
-
-    /// <summary>分配给</summary>
-    public string? AssignedTo { get; set; }
-}
-
-/// <summary>
 /// 招商线索数据传输对象
 /// </summary>
 public class InvestmentLeadDto
@@ -1578,20 +1497,7 @@ public class CreateInvestmentLeadRequest
     public DateTime? NextFollowUpDate { get; set; }
 }
 
-/// <summary>
-/// 招商项目列表请求参数
-/// </summary>
-public class InvestmentProjectListRequest : PageParams
-{
-    /// <summary>搜索关键词</summary>
-    public string? Search { get; set; }
 
-    /// <summary>项目阶段</summary>
-    public string? Stage { get; set; }
-
-    /// <summary>分配给</summary>
-    public string? AssignedTo { get; set; }
-}
 
 /// <summary>
 /// 招商项目数据传输对象
@@ -1729,18 +1635,7 @@ public class InvestmentStatisticsResponse
 
 // ===== 租户管理 DTOs =====
 
-/// <summary>
-/// 租户列表请求
-/// </summary>
-public class ParkTenantListRequest : PageParams
-{
-    /// <summary>搜索关键词</summary>
-    public string? Search { get; set; }
-    /// <summary>状态</summary>
-    public string? Status { get; set; }
-    /// <summary>行业</summary>
-    public string? Industry { get; set; }
-}
+
 
 /// <summary>
 /// 租户数据传输对象
@@ -1818,23 +1713,7 @@ public class CreateParkTenantRequest
     public string? Notes { get; set; }
 }
 
-/// <summary>
-/// 租赁合同列表请求参数
-/// </summary>
-public class LeaseContractListRequest : PageParams
-{
-    /// <summary>租户ID</summary>
-    public string? TenantId { get; set; }
 
-    /// <summary>搜索关键词</summary>
-    public string? Search { get; set; }
-
-    /// <summary>状态</summary>
-    public string? Status { get; set; }
-
-    /// <summary>是否即将到期（30天内）</summary>
-    public bool? ExpiringWithin30Days { get; set; }
-}
 
 /// <summary>
 /// 租赁合同数据传输对象
@@ -2124,29 +2003,7 @@ public class CreateServiceCategoryRequest
     public int SortOrder { get; set; }
 }
 
-/// <summary>
-/// 服务请求列表请求参数
-/// </summary>
-public class ServiceRequestListRequest : PageParams
-{
-    /// <summary>分类ID</summary>
-    public string? CategoryId { get; set; }
 
-    /// <summary>租户ID</summary>
-    public string? TenantId { get; set; }
-
-    /// <summary>搜索关键词</summary>
-    public string? Search { get; set; }
-
-    /// <summary>状态</summary>
-    public string? Status { get; set; }
-
-    /// <summary>优先级</summary>
-    public string? Priority { get; set; }
-
-    /// <summary>分配给</summary>
-    public string? AssignedTo { get; set; }
-}
 
 /// <summary>
 /// 服务请求数据传输对象
@@ -2304,26 +2161,7 @@ public class ServiceStatisticsResponse
 
 // ===== 走访管理 DTOs =====
 
-/// <summary>
-/// 走访任务列表请求
-/// </summary>
-public class VisitTaskListRequest
-{
-    /// <summary>当前页码</summary>
-    public int Page { get; set; } = 1;
-    /// <summary>每页数量</summary>
-    public int PageSize { get; set; } = 10;
-    /// <summary>搜索关键词（标题/负责人）</summary>
-    public string? Search { get; set; }
-    /// <summary>任务状态（未开始/进行中/已完成）</summary>
-    public string? Status { get; set; }
-    /// <summary>走访类型（日常走访/专项检查等）</summary>
-    public string? VisitType { get; set; }
-    /// <summary>开始时间</summary>
-    public DateTime? StartDate { get; set; }
-    /// <summary>结束时间</summary>
-    public DateTime? EndDate { get; set; }
-}
+
 
 /// <summary>
 /// 走访任务数据对象
@@ -2431,18 +2269,7 @@ public class CreateVisitTaskRequest
     public string? Feedback { get; set; }
 }
 
-/// <summary>
-/// 走访考核列表请求
-/// </summary>
-public class VisitAssessmentListRequest
-{
-    /// <summary>当前页码</summary>
-    public int Page { get; set; } = 1;
-    /// <summary>每页数量</summary>
-    public int PageSize { get; set; } = 10;
-    /// <summary>搜索关键词（走访对象/评估人）</summary>
-    public string? Search { get; set; }
-}
+
 
 /// <summary>
 /// 走访考核数据对象

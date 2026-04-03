@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
+using Platform.ServiceDefaults.Extensions;
 using Platform.ServiceDefaults.Services;
 using Platform.ApiService.Models.Workflow;
 
@@ -35,7 +36,8 @@ public class KnowledgeService : IKnowledgeService, IScopedDependency
             return results.Select(d => new KnowledgeSnippet
             {
                 Content = d.Content.Length > 500 ? d.Content[..500] + "..." : d.Content,
-                Source = d.Title, Score = 0.8
+                Source = d.Title,
+                Score = 0.8
             }).ToList();
         }
 
@@ -51,11 +53,10 @@ public class KnowledgeService : IKnowledgeService, IScopedDependency
     }
 
     /// <inheritdoc/>
-    public async Task<PagedResult<KnowledgeBase>> GetKnowledgeBasesAsync(int page, int pageSize, string? keyword = null)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<KnowledgeBase>> GetKnowledgeBasesAsync(Platform.ServiceDefaults.Models.PageParams request)
     {
         var q = _context.Set<KnowledgeBase>().AsQueryable();
-        if (!string.IsNullOrEmpty(keyword)) q = q.Where(kb => kb.Name.Contains(keyword) || (kb.Description != null && kb.Description.Contains(keyword)));
-        return q.OrderByDescending(kb => kb.CreatedAt).PageResult(page, pageSize);
+        return q.OrderByDescending(kb => kb.CreatedAt).ToPagedList(request);
     }
 
     /// <inheritdoc/>

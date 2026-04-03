@@ -100,55 +100,33 @@ public class TaskService : ITaskService
     }
 
     /// <inheritdoc/>
-    public async Task<PagedResult<TaskDto>> QueryTasksAsync(TaskQueryRequest request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> QueryTasksAsync(Platform.ServiceDefaults.Models.PageParams request)
     {
-        string search = request.Search?.ToLower() ?? "";
-        var onlyRoot = request.OnlyRoot ?? string.IsNullOrEmpty(request.Search);
-
         var q = _context.Set<WorkTask>().AsQueryable();
 
-        if (!string.IsNullOrEmpty(search))
-            q = q.Where(t => t.TaskName.ToLower().Contains(search) || (t.Description != null && t.Description.ToLower().Contains(search)));
-        
-        if (!string.IsNullOrEmpty(request.ProjectId)) q = q.Where(t => t.ProjectId == request.ProjectId);
-        if (request.Status.HasValue) q = q.Where(t => t.Status == (Models.TaskStatus)request.Status.Value);
-        if (request.Priority.HasValue) q = q.Where(t => t.Priority == (TaskPriority)request.Priority.Value);
-        if (!string.IsNullOrEmpty(request.AssignedTo)) q = q.Where(t => t.AssignedTo == request.AssignedTo);
-        if (!string.IsNullOrEmpty(request.CreatedBy)) q = q.Where(t => t.CreatedBy == request.CreatedBy);
-        if (!string.IsNullOrEmpty(request.TaskType)) q = q.Where(t => t.TaskType == request.TaskType);
-        if (onlyRoot) q = q.Where(t => string.IsNullOrEmpty(t.ParentTaskId));
-        if (request.StartDate.HasValue) q = q.Where(t => t.CreatedAt >= request.StartDate.Value);
-        if (request.EndDate.HasValue) q = q.Where(t => t.CreatedAt <= request.EndDate.Value);
-        if (request.Tags != null && request.Tags.Count > 0) q = q.Where(t => t.Tags.Any(tag => request.Tags.Contains(tag)));
-
-        q = q.ApplySort(request);
-
-        var pagedResult = q.PageResult(request.Page, request.PageSize);
+        var pagedResult = q.ToPagedList(request);
         var tasks = await pagedResult.Queryable.ToListAsync();
         var total = pagedResult.RowCount;
         var taskDtos = await ConvertToTaskDtosAsync(tasks);
 
-        if (onlyRoot)
-        {
-            var parentIds = tasks.Select(t => t.Id!).ToList();
-            var children = await _context.Set<WorkTask>()
-                .Where(t => parentIds.Contains(t.ParentTaskId!))
-                .OrderBy(c => c.SortOrder)
-                .ThenBy(c => c.CreatedAt)
-                .ToListAsync();
+        var parentIds = tasks.Select(t => t.Id!).ToList();
+        var children = await _context.Set<WorkTask>()
+            .Where(t => parentIds.Contains(t.ParentTaskId!))
+            .OrderBy(c => c.SortOrder)
+            .ThenBy(c => c.CreatedAt)
+            .ToListAsync();
 
-            if (children.Any())
+        if (children.Any())
+        {
+            var childDtos = await ConvertToTaskDtosAsync(children);
+            var childMap = childDtos.GroupBy(c => c.ParentTaskId!).ToDictionary(g => g.Key, g => g.ToList());
+            foreach (var dto in taskDtos)
             {
-                var childDtos = await ConvertToTaskDtosAsync(children);
-                var childMap = childDtos.GroupBy(c => c.ParentTaskId!).ToDictionary(g => g.Key, g => g.ToList());
-                foreach (var dto in taskDtos)
-                {
-                    if (childMap.TryGetValue(dto.Id!, out var dtoChildren)) dto.Children = dtoChildren;
-                }
+                if (childMap.TryGetValue(dto.Id!, out var dtoChildren)) dto.Children = dtoChildren;
             }
         }
 
-        return new PagedResult<TaskDto>
+        return new System.Linq.Dynamic.Core.PagedResult<TaskDto>
         {
             Queryable = taskDtos.AsQueryable(),
             CurrentPage = request.Page,
@@ -276,7 +254,7 @@ public class TaskService : ITaskService
             task.ActualStartTime = DateTime.UtcNow;
 
         if (request.CompletionPercentage.HasValue) task.CompletionPercentage = request.CompletionPercentage.Value;
-        
+
         await _context.SaveChangesAsync();
 
         await LogTaskExecutionAsync(request.TaskId, TaskExecutionResult.Success, request.Message, request.CompletionPercentage ?? 0);
@@ -440,14 +418,26 @@ public class TaskService : ITaskService
     }
 
     /// <inheritdoc/>
-    public async Task<PagedResult<TaskExecutionLogDto>> GetTaskExecutionLogsAsync(string taskId, int page = 1, int pageSize = 10)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<TaskExecutionLogDto>> GetTaskExecutionLogsAsync(string taskId, Platform.ServiceDefaults.Models.PageParams request)
     {
-        var q = _context.Set<TaskExecutionLog>().Where(l => l.TaskId == taskId);
-        var pagedResult = q.OrderByDescending(l => l.CreatedAt).PageResult(page, pageSize);
-        var logs = await pagedResult.Queryable.ToListAsync();
-        var dtos = new List<TaskExecutionLogDto>();
-        foreach (var l in logs) dtos.Add(await ConvertToTaskExecutionLogDtoAsync(l));
-        return dtos.AsQueryable().PageResult(page, pageSize);
+        var query = _context.Set<TaskExecutionLog>()
+            .Where(log => log.TaskId == taskId)
+            .OrderByDescending(log => log.CreatedAt)
+            .Select(log => new TaskExecutionLogDto
+            {
+                Id = log.Id,
+                TaskId = log.TaskId,
+                ExecutedBy = log.ExecutedBy,
+                StartTime = log.StartTime,
+                EndTime = log.EndTime,
+                Status = (int)log.Status,
+                Message = log.Message,
+                ErrorMessage = log.ErrorMessage,
+                ProgressPercentage = log.ProgressPercentage,
+                CreatedAt = log.CreatedAt
+            });
+
+        return query.ToPagedList(request);
     }
 
     /// <inheritdoc/>
@@ -456,7 +446,19 @@ public class TaskService : ITaskService
         var log = new TaskExecutionLog { TaskId = taskId, StartTime = DateTime.UtcNow, Status = status, Message = msg, ProgressPercentage = progress };
         await _context.Set<TaskExecutionLog>().AddAsync(log);
         await _context.SaveChangesAsync();
-        return await ConvertToTaskExecutionLogDtoAsync(log);
+        return new TaskExecutionLogDto
+        {
+            Id = log.Id,
+            TaskId = log.TaskId,
+            ExecutedBy = log.ExecutedBy,
+            StartTime = log.StartTime,
+            EndTime = log.EndTime,
+            Status = (int)log.Status,
+            Message = log.Message,
+            ErrorMessage = log.ErrorMessage,
+            ProgressPercentage = log.ProgressPercentage,
+            CreatedAt = log.CreatedAt
+        };
     }
 
     /// <inheritdoc/>
@@ -471,13 +473,20 @@ public class TaskService : ITaskService
     }
 
     /// <inheritdoc/>
-    public async Task<PagedResult<TaskDto>> GetUserCreatedTasksAsync(string userId, int page = 1, int pageSize = 10)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> GetUserCreatedTasksAsync(string userId, Platform.ServiceDefaults.Models.PageParams request)
     {
         var q = _context.Set<WorkTask>().Where(t => t.CreatedBy == userId);
-        var pagedResult = q.OrderByDescending(t => t.CreatedAt).PageResult(page, pageSize);
+        var pagedResult = q.ToPagedList(request);
         var tasks = await pagedResult.Queryable.ToListAsync();
         var dtos = await ConvertToTaskDtosAsync(tasks);
-        return dtos.AsQueryable().PageResult(page, pageSize);
+        return new System.Linq.Dynamic.Core.PagedResult<TaskDto>
+        {
+            Queryable = dtos.AsQueryable(),
+            CurrentPage = pagedResult.CurrentPage,
+            PageSize = pagedResult.PageSize,
+            RowCount = pagedResult.RowCount,
+            PageCount = pagedResult.PageCount
+        };
     }
 
     /// <inheritdoc/>
@@ -561,14 +570,36 @@ public class TaskService : ITaskService
 
     private TaskDto MapToDto(WorkTask t) => new TaskDto
     {
-        Id = t.Id, TaskName = t.TaskName, Description = t.Description, TaskType = t.TaskType,
-        Status = (int)t.Status, StatusName = GetStatusName(t.Status),
-        Priority = (int)t.Priority, PriorityName = GetPriorityName(t.Priority),
-        CreatedBy = t.CreatedBy ?? "", CreatedAt = t.CreatedAt, AssignedTo = t.AssignedTo, AssignedAt = t.AssignedAt,
-        PlannedStartTime = t.PlannedStartTime, PlannedEndTime = t.PlannedEndTime, ActualStartTime = t.ActualStartTime, ActualEndTime = t.ActualEndTime,
-        EstimatedDuration = t.EstimatedDuration, ActualDuration = t.ActualDuration, ExecutionResult = (int)t.ExecutionResult, ExecutionResultName = GetExecutionResultName(t.ExecutionResult),
-        CompletionPercentage = t.CompletionPercentage, Remarks = t.Remarks, ParticipantIds = t.ParticipantIds, Tags = t.Tags,
-        UpdatedAt = t.UpdatedAt, UpdatedBy = t.UpdatedBy, ProjectId = t.ProjectId, ParentTaskId = t.ParentTaskId, SortOrder = t.SortOrder, Duration = t.Duration,
+        Id = t.Id,
+        TaskName = t.TaskName,
+        Description = t.Description,
+        TaskType = t.TaskType,
+        Status = (int)t.Status,
+        StatusName = GetStatusName(t.Status),
+        Priority = (int)t.Priority,
+        PriorityName = GetPriorityName(t.Priority),
+        CreatedBy = t.CreatedBy ?? "",
+        CreatedAt = t.CreatedAt,
+        AssignedTo = t.AssignedTo,
+        AssignedAt = t.AssignedAt,
+        PlannedStartTime = t.PlannedStartTime,
+        PlannedEndTime = t.PlannedEndTime,
+        ActualStartTime = t.ActualStartTime,
+        ActualEndTime = t.ActualEndTime,
+        EstimatedDuration = t.EstimatedDuration,
+        ActualDuration = t.ActualDuration,
+        ExecutionResult = (int)t.ExecutionResult,
+        ExecutionResultName = GetExecutionResultName(t.ExecutionResult),
+        CompletionPercentage = t.CompletionPercentage,
+        Remarks = t.Remarks,
+        ParticipantIds = t.ParticipantIds,
+        Tags = t.Tags,
+        UpdatedAt = t.UpdatedAt,
+        UpdatedBy = t.UpdatedBy,
+        ProjectId = t.ProjectId,
+        ParentTaskId = t.ParentTaskId,
+        SortOrder = t.SortOrder,
+        Duration = t.Duration,
         Attachments = t.Attachments?.Select(a => new TaskAttachmentDto { Id = a.Id, FileName = a.FileName, FileUrl = a.FileUrl, FileSize = a.FileSize, UploadedAt = a.UploadedAt, UploadedBy = a.UploadedBy }).ToList() ?? new List<TaskAttachmentDto>()
     };
 
@@ -650,7 +681,7 @@ public class TaskService : ITaskService
         var tasks = await _context.Set<WorkTask>().Where(t => t.ProjectId == pid).ToListAsync();
         if (!tasks.Any()) return new List<string>();
         var deps = await _context.Set<TaskDependency>().Where(d => tasks.Select(t => t.Id).Contains(d.PredecessorTaskId) || tasks.Select(t => t.Id).Contains(d.SuccessorTaskId)).ToListAsync();
-        
+
         var graph = tasks.ToDictionary(t => t.Id!, t => new List<string>());
         var inDeg = tasks.ToDictionary(t => t.Id!, t => 0);
         foreach (var d in deps) if (graph.ContainsKey(d.PredecessorTaskId) && graph.ContainsKey(d.SuccessorTaskId)) { graph[d.PredecessorTaskId].Add(d.SuccessorTaskId); inDeg[d.SuccessorTaskId]++; }
@@ -672,13 +703,13 @@ public class TaskService : ITaskService
         var lStart = tasks.ToDictionary(t => t.Id!, t => eStart.Values.Max());
         var rGraph = tasks.ToDictionary(t => t.Id!, t => new List<string>());
         foreach (var d in deps) if (rGraph.ContainsKey(d.SuccessorTaskId) && rGraph.ContainsKey(d.PredecessorTaskId)) rGraph[d.SuccessorTaskId].Add(d.PredecessorTaskId);
-        
+
         var ends = tasks.Where(t => !graph[t.Id!].Any()).ToList();
         if (ends.Any())
         {
             var maxE = ends.Max(t => eStart[t.Id!] + (t.Duration ?? (t.PlannedEndTime.HasValue && t.PlannedStartTime.HasValue ? (int)(t.PlannedEndTime.Value - t.PlannedStartTime.Value).TotalDays : 1)));
             foreach (var e in ends) lStart[e.Id!] = maxE - (e.Duration ?? (e.PlannedEndTime.HasValue && e.PlannedStartTime.HasValue ? (int)(e.PlannedEndTime.Value - e.PlannedStartTime.Value).TotalDays : 1));
-            
+
             var visited = new HashSet<string>(); q = new Queue<string>(ends.Select(t => t.Id!));
             while (q.Any())
             {

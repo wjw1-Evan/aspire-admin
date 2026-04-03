@@ -5,7 +5,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, UserOutlined, 
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import PageContainer from '@/components/PageContainer';
 import { DataTable } from '@/components/DataTable';
-import SearchFormCard from '@/components/SearchFormCard';
+import SearchBar from '@/components/SearchBar';
 import StatCard from '@/components/StatCard';
 import * as parkService from '@/services/park';
 import type { ParkTenant, LeaseContract, TenantStatistics, ServiceRequest, LeasePaymentRecord } from '@/services/park';
@@ -19,7 +19,7 @@ const TenantManagement: React.FC = () => {
     const tenantTableRef = useRef<ActionType>(null);
     const { message } = App.useApp();
     const [tenantForm] = Form.useForm();
-    const [searchForm] = Form.useForm();
+    const searchParamsRef = useRef<any>({ search: '' });
 
     const [statistics, setStatistics] = useState<TenantStatistics | null>(null);
     const [loading, setLoading] = useState(false);
@@ -265,18 +265,14 @@ const TenantManagement: React.FC = () => {
                 </Row>
             )}
 
-            <SearchFormCard>
-                <Form form={searchForm} layout="inline" onFinish={() => tenantTableRef.current?.reload()}>
-                    <Form.Item name="search"><Input placeholder="搜索租户名称..." style={{ width: 200 }} allowClear /></Form.Item>
-                    <Form.Item name="status"><Select placeholder="状态" style={{ width: 120 }} allowClear options={tenantStatusOptions} /></Form.Item>
-                    <Form.Item>
-                        <Space>
-                            <Button type="primary" htmlType="submit">搜索</Button>
-                            <Button onClick={() => { searchForm.resetFields(); tenantTableRef.current?.reload(); }} icon={<ReloadOutlined />}>重置</Button>
-                        </Space>
-                    </Form.Item>
-                </Form>
-            </SearchFormCard>
+            <SearchBar
+                initialParams={searchParamsRef.current}
+                onSearch={(params) => {
+                    searchParamsRef.current = { ...searchParamsRef.current, ...params };
+                    tenantTableRef.current?.reload();
+                }}
+                style={{ marginBottom: 16 }}
+            />
 
             <Card>
                 <DataTable<ParkTenant>

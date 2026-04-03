@@ -39,7 +39,7 @@ public class TaskController : BaseApiController
     /// <param name="request">创建任务请求</param>
     /// <remarks>
     /// 创建一个新的任务。任务创建者可以指定任务的基本信息、优先级、计划时间等。
-    /// 
+    ///
     /// 权限要求：需要 project-management-task 菜单权限
     /// </remarks>
     /// <returns>创建的任务信息</returns>
@@ -71,7 +71,7 @@ public class TaskController : BaseApiController
     /// <param name="taskId">任务ID</param>
     /// <remarks>
     /// 获取指定任务的详细信息，包括任务的所有属性、参与者、附件等。
-    /// 
+    ///
     /// 权限要求：需要 project-management-task 菜单权限
     /// </remarks>
     /// <returns>任务详情</returns>
@@ -102,7 +102,7 @@ public class TaskController : BaseApiController
     /// <param name="request">查询请求</param>
     /// <remarks>
     /// 查询任务列表，支持多条件过滤和排序。
-    /// 
+    ///
     /// 权限要求：需要 project-management-task 菜单权限
     /// </remarks>
     /// <returns>任务列表</returns>
@@ -111,7 +111,7 @@ public class TaskController : BaseApiController
     /// <response code="401">未授权，需要登录</response>
     [HttpPost("query")]
     [RequireMenu("project-management-task")]
-    public async Task<IActionResult> QueryTasks([FromBody] TaskQueryRequest request)
+    public async Task<IActionResult> QueryTasks([FromBody] Platform.ServiceDefaults.Models.PageParams request)
     {
         try
         {
@@ -130,7 +130,7 @@ public class TaskController : BaseApiController
     /// <param name="request">更新请求</param>
     /// <remarks>
     /// 更新任务的信息。只有任务创建者或管理员可以更新任务。
-    /// 
+    ///
     /// 权限要求：需要 project-management-task 菜单权限
     /// </remarks>
     /// <returns>更新后的任务</returns>
@@ -171,7 +171,7 @@ public class TaskController : BaseApiController
     /// <param name="request">分配请求</param>
     /// <remarks>
     /// 将任务分配给指定的用户。分配后任务状态变为"已分配"。
-    /// 
+    ///
     /// 权限要求：需要 project-management-task 菜单权限
     /// </remarks>
     /// <returns>分配后的任务</returns>
@@ -207,7 +207,7 @@ public class TaskController : BaseApiController
     /// <param name="request">执行请求</param>
     /// <remarks>
     /// 更新任务的执行状态和进度。通常用于标记任务为"执行中"或更新进度。
-    /// 
+    ///
     /// 权限要求：需要 project-management-task 菜单权限
     /// </remarks>
     /// <returns>执行后的任务</returns>
@@ -243,7 +243,7 @@ public class TaskController : BaseApiController
     /// <param name="request">完成请求</param>
     /// <remarks>
     /// 标记任务为已完成。需要指定执行结果（成功/失败/超时等）。
-    /// 
+    ///
     /// 权限要求：需要 project-management-task 菜单权限
     /// </remarks>
     /// <returns>完成后的任务</returns>
@@ -280,7 +280,7 @@ public class TaskController : BaseApiController
     /// <param name="remarks">取消备注</param>
     /// <remarks>
     /// 取消指定的任务。任务状态变为"已取消"。
-    /// 
+    ///
     /// 权限要求：需要 project-management-task 菜单权限
     /// </remarks>
     /// <returns>取消后的任务</returns>
@@ -312,7 +312,7 @@ public class TaskController : BaseApiController
     /// <param name="taskId">任务ID</param>
     /// <remarks>
     /// 删除指定的任务。这是软删除，任务数据仍保留在数据库中。
-    /// 
+    ///
     /// 权限要求：需要 project-management-task 菜单权限
     /// </remarks>
     /// <returns>删除结果</returns>
@@ -344,7 +344,7 @@ public class TaskController : BaseApiController
     /// <param name="userId">用户ID（可选）</param>
     /// <remarks>
     /// 获取企业或用户的任务统计信息，包括各状态任务数、完成率、平均完成时间等。
-    /// 
+    ///
     /// 权限要求：需要 project-management-task 菜单权限
     /// </remarks>
     /// <returns>统计信息</returns>
@@ -370,21 +370,20 @@ public class TaskController : BaseApiController
     /// 获取任务执行日志
     /// </summary>
     /// <param name="taskId">任务ID</param>
-    /// <param name="page">页码</param>
-    /// <param name="pageSize">每页数量</param>
+    /// <param name="request">分页参数</param>
     /// <remarks>
     /// 获取指定任务的执行日志列表。
-    /// 
+    ///
     /// 权限要求：需要 project-management-task 菜单权限
     /// </remarks>
     /// <returns>执行日志列表</returns>
     /// <response code="200">成功获取执行日志</response>
     /// <response code="401">未授权，需要登录</response>
-    [HttpGet("{taskId}/logs")]
+    [HttpPost("{taskId}/logs")]
     [RequireMenu("project-management-task")]
-    public async Task<IActionResult> GetExecutionLogs(string taskId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetExecutionLogs(string taskId, [FromBody] Platform.ServiceDefaults.Models.PageParams request)
     {
-        var result = await _taskService.GetTaskExecutionLogsAsync(taskId, page, pageSize);
+        var result = await _taskService.GetTaskExecutionLogsAsync(taskId, request);
         return Success(result);
     }
 
@@ -393,7 +392,7 @@ public class TaskController : BaseApiController
     /// </summary>
     /// <remarks>
     /// 获取当前用户的待办任务列表（已分配且未完成的任务）。
-    /// 
+    ///
     /// 权限要求：需要 project-management-task 菜单权限
     /// </remarks>
     /// <returns>待办任务列表</returns>
@@ -418,16 +417,16 @@ public class TaskController : BaseApiController
     /// <summary>
     /// 获取用户创建的任务
     /// </summary>
-    /// <param name="page">页码</param>
-    /// <param name="pageSize">每页数量</param>
+    /// <param name="request">分页参数</param>
     /// <returns>用户创建的任务列表</returns>
-    [HttpGet("created")]
-    public async Task<IActionResult> GetUserCreatedTasks([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    [HttpPost("created")]
+    [RequireMenu("project-management-task")]
+    public async Task<IActionResult> GetUserCreatedTasks([FromBody] Platform.ServiceDefaults.Models.PageParams request)
     {
         try
         {
             var userId = RequiredUserId;
-            var result = await _taskService.GetUserCreatedTasksAsync(userId, page, pageSize);
+            var result = await _taskService.GetUserCreatedTasksAsync(userId, request);
             return Success(result);
         }
         catch (Exception ex)
@@ -439,22 +438,20 @@ public class TaskController : BaseApiController
     /// <summary>
     /// 获取用户创建的任务
     /// </summary>
-    /// <param name="page">页码</param>
-    /// <param name="pageSize">每页数量</param>
     /// <remarks>
     /// 获取当前用户创建的任务列表。
-    /// 
+    ///
     /// 权限要求：需要 project-management-task 菜单权限
     /// </remarks>
     /// <returns>创建的任务列表</returns>
     /// <response code="200">成功获取创建的任务</response>
     /// <response code="401">未授权，需要登录</response>
-    [HttpGet("my/created")]
+    [HttpPost("my/created")]
     [RequireMenu("project-management-task")]
-    public async Task<IActionResult> GetMyCreatedTasks([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetMyCreatedTasks([FromBody] Platform.ServiceDefaults.Models.PageParams request)
     {
         var userId = RequiredUserId;
-        var result = await _taskService.GetUserCreatedTasksAsync(userId, page, pageSize);
+        var result = await _taskService.GetUserCreatedTasksAsync(userId, request);
         return Success(result);
     }
 
@@ -464,7 +461,7 @@ public class TaskController : BaseApiController
     /// <param name="request">批量更新任务状态请求</param>
     /// <remarks>
     /// 批量更新多个任务的状态。
-    /// 
+    ///
     /// 权限要求：需要 project-management-task 菜单权限
     /// </remarks>
     /// <returns>更新的任务数量</returns>

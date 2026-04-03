@@ -30,13 +30,13 @@ public class RoleService : IRoleService
     /// <summary>
     /// 获取所有角色
     /// </summary>
-    public async Task<PagedResult<Role>> GetAllRolesAsync()
+    public async Task<System.Linq.Dynamic.Core.PagedResult<Role>> GetAllRolesAsync()
     {
         var roles = await _context.Set<Role>()
             .OrderBy(r => r.CreatedAt)
             .ToListAsync();
 
-        return new PagedResult<Role>
+        return new System.Linq.Dynamic.Core.PagedResult<Role>
         {
             Queryable = roles.AsQueryable(),
             CurrentPage = 1,
@@ -49,7 +49,7 @@ public class RoleService : IRoleService
     /// <summary>
     /// 获取所有角色（带统计信息）
     /// </summary>
-    public async Task<PagedResult<RoleWithStats>> GetAllRolesWithStatsAsync()
+    public async Task<System.Linq.Dynamic.Core.PagedResult<RoleWithStats>> GetAllRolesWithStatsAsync()
     {
         var roles = await _context.Set<Role>()
             .OrderBy(r => r.CreatedAt)
@@ -78,7 +78,7 @@ public class RoleService : IRoleService
             });
         }
 
-        return new PagedResult<RoleWithStats>
+        return new System.Linq.Dynamic.Core.PagedResult<RoleWithStats>
         {
             Queryable = rolesWithStats.AsQueryable(),
             CurrentPage = 1,

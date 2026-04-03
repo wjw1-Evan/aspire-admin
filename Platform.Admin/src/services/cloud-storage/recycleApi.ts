@@ -13,6 +13,7 @@ export interface RecycleItem extends FileItem {
 
 export interface RecycleListRequest {
     keyword?: string;
+    search?: string;
     fileType?: string;
     deletedBy?: string;
     startDate?: string;

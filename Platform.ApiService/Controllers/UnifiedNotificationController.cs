@@ -28,67 +28,52 @@ public class UnifiedNotificationController : BaseApiController
     /// <summary>
     /// 获取统一的通知/待办/任务中心数据
     /// </summary>
-    /// <param name="page">页码（从1开始）</param>
-    /// <param name="pageSize">每页数量</param>
     /// <param name="filterType">过滤类型：all, notification, message, todo, task, system, unread</param>
-    /// <param name="sortBy">排序字段：datetime, priority, dueDate</param>
     /// <returns>统一的通知/待办/任务列表</returns>
+    /// <param name="request">分页请求参数</param>
     [HttpGet("center")]
     public async Task<IActionResult> GetUnifiedNotifications(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10,
-        [FromQuery] string filterType = "all",
-        [FromQuery] string sortBy = "datetime")
+        [FromQuery] Platform.ServiceDefaults.Models.PageParams request,
+        [FromQuery] string filterType = "all")
     {
-        var result = await _unifiedNotificationService.GetUnifiedNotificationsAsync(
-            page, pageSize, filterType, sortBy);
+        var result = await _unifiedNotificationService.GetUnifiedNotificationsAsync(request, filterType);
         return Success(result);
     }
 
     /// <summary>
     /// 获取待办项列表
     /// </summary>
-    /// <param name="page">页码</param>
-    /// <param name="pageSize">每页数量</param>
-    /// <param name="sortBy">排序字段：dueDate, priority, datetime</param>
     /// <returns>待办项列表</returns>
     [HttpGet("todos")]
     public async Task<IActionResult> GetTodos(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10,
+        [FromQuery] Platform.ServiceDefaults.Models.PageParams request,
         [FromQuery] string sortBy = "dueDate")
     {
-        var result = await _unifiedNotificationService.GetTodosAsync(page, pageSize, sortBy);
+        var result = await _unifiedNotificationService.GetTodosAsync(request, sortBy);
         return Success(result);
     }
 
     /// <summary>
     /// 获取系统消息列表
     /// </summary>
-    /// <param name="page">页码</param>
-    /// <param name="pageSize">每页数量</param>
     /// <returns>系统消息列表</returns>
     [HttpGet("system-messages")]
     public async Task<IActionResult> GetSystemMessages(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] Platform.ServiceDefaults.Models.PageParams request)
     {
-        var result = await _unifiedNotificationService.GetSystemMessagesAsync(page, pageSize);
+        var result = await _unifiedNotificationService.GetSystemMessagesAsync(request);
         return Success(result);
     }
 
     /// <summary>
     /// 获取任务相关通知列表
     /// </summary>
-    /// <param name="page">页码</param>
-    /// <param name="pageSize">每页数量</param>
     /// <returns>任务相关通知列表</returns>
     [HttpGet("task-notifications")]
     public async Task<IActionResult> GetTaskNotifications(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] Platform.ServiceDefaults.Models.PageParams request)
     {
-        var result = await _unifiedNotificationService.GetTaskNotificationsAsync(page, pageSize);
+        var result = await _unifiedNotificationService.GetTaskNotificationsAsync(request);
         return Success(result);
     }
 

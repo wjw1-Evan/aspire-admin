@@ -78,6 +78,7 @@ export interface UpdateDocumentRequest {
  * 公文查询参数
  */
 export interface DocumentQueryParams {
+  search?: string;
   page?: number;
   pageSize?: number;
   keyword?: string;

@@ -277,62 +277,6 @@ public class UpdateXiaokeConfigRequest
     public bool? IsDefault { get; set; }
 }
 
-/// <summary>
-/// 小科配置查询参数
-/// </summary>
-public class XiaokeConfigQueryParams : PageParams
-{
-    /// <summary>
-    /// 配置名称（搜索关键词）
-    /// </summary>
-    public string? Name { get; set; }
-
-    /// <summary>
-    /// 是否启用（筛选）
-    /// </summary>
-    public bool? IsEnabled { get; set; }
-
-    /// <summary>
-    /// 排序字段
-    /// </summary>
-    public string? Sorter { get; set; }
-}
-
-/// <summary>
-/// 聊天记录查询请求
-/// </summary>
-public class ChatHistoryQueryRequest : PageParams
-{
-    /// <summary>
-    /// 会话ID（搜索）
-    /// </summary>
-    public string? SessionId { get; set; }
-
-    /// <summary>
-    /// 用户ID（搜索）
-    /// </summary>
-    public string? UserId { get; set; }
-
-    /// <summary>
-    /// 消息内容（搜索）
-    /// </summary>
-    public string? Content { get; set; }
-
-    /// <summary>
-    /// 开始时间
-    /// </summary>
-    public DateTime? StartTime { get; set; }
-
-    /// <summary>
-    /// 结束时间
-    /// </summary>
-    public DateTime? EndTime { get; set; }
-
-    /// <summary>
-    /// 排序字段
-    /// </summary>
-    public string? Sorter { get; set; }
-}
 
 /// <summary>
 /// 聊天记录列表项DTO

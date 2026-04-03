@@ -24,4 +24,9 @@ public class PageParams
     /// 排序方向（asc/desc）
     /// </summary>
     public string SortOrder { get; set; } = "desc";
+
+    /// <summary>
+    /// 搜索关键词（全文搜索）
+    /// </summary>
+    public string? Search { get; set; }
 }

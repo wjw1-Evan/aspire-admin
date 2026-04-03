@@ -181,7 +181,7 @@ public class BulkOperationService : IBulkOperationService
     /// <param name="page">页码</param>
     /// <param name="pageSize">每页数量</param>
     /// <returns>批量操作列表</returns>
-    public Task<PagedResult<BulkOperation>> GetUserBulkOperationsAsync(int page = 1, int pageSize = 20)
+    public Task<System.Linq.Dynamic.Core.PagedResult<BulkOperation>> GetUserBulkOperationsAsync(int page = 1, int pageSize = 20)
     {
         var userId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
 
@@ -190,7 +190,7 @@ public class BulkOperationService : IBulkOperationService
             b.IsDeleted != true;
 
         var query = _context.Set<BulkOperation>().Where(filter);
-        return Task.FromResult(query.ApplySort(new Models.PageParams()).PageResult(page, pageSize));
+        return Task.FromResult(Platform.ServiceDefaults.Extensions.QueryableExtensions.ApplySort(query, new Platform.ServiceDefaults.Models.PageParams()).PageResult(page, pageSize));
     }
 
     /// <summary>

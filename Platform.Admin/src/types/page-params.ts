@@ -14,6 +14,7 @@ export interface PageParams {
   sortOrder?: string;
   /** 搜索关键词 */
   search?: string;
+  /** 其他字段（如级联过滤等） */
   [key: string]: any;
 }
 
@@ -43,14 +44,37 @@ export function createPageParams(overrides?: Partial<PageParams>): PageParams {
 }
 
 /**
- * 后端使用 PascalCase，转换为请求参数
+ * 将前端 camelCase 的 PageParams 转换为后端 PascalCase 的请求参数
+ * 会自动处理 searchStart/searchEnd 等字段映射
  */
-export function toRequestParams(params: Record<string, any>): Record<string, any> {
+export function toBackendPageParams(params: PageParams): Record<string, any> {
   const result: Record<string, any> = {};
+  
+  // 处理基础分页参数的映射
+  const mapping: Record<string, string> = {
+    page: 'Page',
+    pageSize: 'PageSize',
+    sortBy: 'SortBy',
+    sortOrder: 'SortOrder',
+    search: 'Search',
+  };
+
   for (const [key, value] of Object.entries(params)) {
-    const pascalKey = key.charAt(0).toUpperCase() + key.slice(1);
-    result[pascalKey] = value;
+    // 忽略 undefined 和 null
+    if (value === undefined || value === null) continue;
+
+    const backendKey = mapping[key] || (key.charAt(0).toUpperCase() + key.slice(1));
+    
+    // 特殊处理日期范围映射 (searchStart -> StartDate, searchEnd -> EndDate)
+    if (backendKey === 'SearchStart') {
+      result['StartDate'] = value;
+    } else if (backendKey === 'SearchEnd') {
+      result['EndDate'] = value;
+    } else {
+      result[backendKey] = value;
+    }
   }
+
   return result;
 }
 

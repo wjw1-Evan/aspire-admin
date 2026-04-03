@@ -6,7 +6,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, HomeOutlined, 
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import PageContainer from '@/components/PageContainer';
 import { DataTable } from '@/components/DataTable';
-import SearchFormCard from '@/components/SearchFormCard';
+import SearchBar from '@/components/SearchBar';
 import StatCard from '@/components/StatCard';
 import * as parkService from '@/services/park';
 import * as cloudService from '@/services/cloud-storage/api';
@@ -24,7 +24,7 @@ const AssetManagement: React.FC = () => {
     const { message } = App.useApp();
     const [buildingForm] = Form.useForm();
     const [unitForm] = Form.useForm();
-    const [searchForm] = Form.useForm();
+    const searchParamsRef = useRef<any>({ search: '' });
 
     const [activeTab, setActiveTab] = useState<string>('buildings');
     const [statistics, setStatistics] = useState<AssetStatistics | null>(null);
@@ -141,7 +141,7 @@ const AssetManagement: React.FC = () => {
                         style={{ fontWeight: 'bold', fontSize: 16 }}
                         onClick={() => {
                             setActiveTab('units');
-                            searchForm.setFieldsValue({ buildingId: record.id });
+                            searchParamsRef.current = { ...searchParamsRef.current, buildingId: record.id };
                             // Timeout to ensure tab switch and state update
                             setTimeout(() => {
                                 unitTableRef.current?.reload();
@@ -284,11 +284,10 @@ const AssetManagement: React.FC = () => {
     // 楼宇请求
     const fetchBuildings = async (params: any) => {
         try {
-            const formValues = searchForm.getFieldsValue();
             const res = await parkService.getBuildings({
                 page: params.current || 1,
                 pageSize: params.pageSize || 10,
-                ...formValues,
+                ...searchParamsRef.current,
             });
             if (res.success && res.data) {
                 return { data: res.data.queryable, total: res.data.rowCount, success: true };
@@ -302,11 +301,10 @@ const AssetManagement: React.FC = () => {
     // 房源请求
     const fetchUnits = async (params: any) => {
         try {
-            const formValues = searchForm.getFieldsValue();
             const res = await parkService.getPropertyUnits({
                 page: params.current || 1,
                 pageSize: params.pageSize || 10,
-                ...formValues,
+                ...searchParamsRef.current,
             });
             if (res.success && res.data) {
                 return { data: res.data.queryable, total: res.data.rowCount, success: true };
@@ -500,18 +498,6 @@ const AssetManagement: React.FC = () => {
         }
     };
 
-    const handleSearch = () => {
-        if (activeTab === 'buildings') {
-            buildingTableRef.current?.reload();
-        } else {
-            unitTableRef.current?.reload();
-        }
-    };
-
-    const handleReset = () => {
-        searchForm.resetFields();
-        handleSearch();
-    };
 
     const handleRefresh = () => {
         if (activeTab === 'buildings') {
@@ -596,50 +582,18 @@ const AssetManagement: React.FC = () => {
             )}
 
             {/* 搜索表单 */}
-            <SearchFormCard>
-                <Form form={searchForm} layout="inline" onFinish={handleSearch}>
-                    <Form.Item name="search">
-                        <Input
-                            placeholder={intl.formatMessage({ id: 'common.search.placeholder', defaultMessage: '搜索...' })}
-                            style={{ width: 200 }}
-                            allowClear
-                        />
-                    </Form.Item>
-                    <Form.Item name="status">
-                        <Select
-                            placeholder={intl.formatMessage({ id: 'common.status', defaultMessage: '状态' })}
-                            style={{ width: 120 }}
-                            allowClear
-                            options={[
-                                { label: '正常', value: 'Active' },
-                                { label: '维护中', value: 'Maintenance' },
-                                { label: '停用', value: 'Inactive' },
-                            ]}
-                        />
-                    </Form.Item>
-                    {activeTab === 'units' && (
-                        <Form.Item name="buildingId">
-                            <Select
-                                placeholder="所属楼宇"
-                                style={{ width: 160 }}
-                                allowClear
-                                options={buildings.map(b => ({ label: b.name, value: b.id }))}
-                                onChange={() => unitTableRef.current?.reload()}
-                            />
-                        </Form.Item>
-                    )}
-                    <Form.Item>
-                        <Space>
-                            <Button type="primary" htmlType="submit">
-                                {intl.formatMessage({ id: 'common.search', defaultMessage: '搜索' })}
-                            </Button>
-                            <Button onClick={handleReset} icon={<ReloadOutlined />}>
-                                {intl.formatMessage({ id: 'common.reset', defaultMessage: '重置' })}
-                            </Button>
-                        </Space>
-                    </Form.Item>
-                </Form>
-            </SearchFormCard>
+            <SearchBar
+                initialParams={searchParamsRef.current}
+                onSearch={(params) => {
+                    searchParamsRef.current = { ...searchParamsRef.current, ...params };
+                    if (activeTab === 'buildings') {
+                        buildingTableRef.current?.reload();
+                    } else {
+                        unitTableRef.current?.reload();
+                    }
+                }}
+                style={{ marginBottom: 16 }}
+            />
 
             {/* 数据表格 */}
             <Card>

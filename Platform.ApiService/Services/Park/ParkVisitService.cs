@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Extensions;
 using System.Linq.Dynamic.Core;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
@@ -41,17 +42,9 @@ public class ParkVisitService : IParkVisitService
     /// <summary>
     /// 获取走访任务列表
     /// </summary>
-    public async Task<PagedResult<VisitTaskDto>> GetVisitTasksAsync(VisitTaskListRequest request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<VisitTaskDto>> GetVisitTasksAsync(Platform.ServiceDefaults.Models.PageParams request)
     {
-        
-        var search = request.Search?.ToLower();
-        var status = request.Status;
-
-        var query = _context.Set<VisitTask>().Where(
-            t => (string.IsNullOrEmpty(search) || (t.ManagerName != null && t.ManagerName.ToLower().Contains(search)) || (t.Phone != null && t.Phone.ToLower().Contains(search))) &&
-                 (string.IsNullOrEmpty(status) || t.Status == status));
-
-        var pagedResult = query.OrderByDescending(t => t.CreatedAt).PageResult(request.Page, request.PageSize);
+        var pagedResult = _context.Set<VisitTask>().ToPagedList(request);
         var items = await pagedResult.Queryable.ToListAsync();
 
         var tasks = new List<VisitTaskDto>();
@@ -85,7 +78,7 @@ public class ParkVisitService : IParkVisitService
             });
         }
 
-        return tasks.AsQueryable().PageResult(request.Page, request.PageSize);
+        return new System.Linq.Dynamic.Core.PagedResult<VisitTaskDto> { Queryable = tasks.AsQueryable(), CurrentPage = pagedResult.CurrentPage, PageSize = pagedResult.PageSize, RowCount = pagedResult.RowCount, PageCount = pagedResult.PageCount };
     }
 
     /// <summary>
@@ -218,17 +211,9 @@ public class ParkVisitService : IParkVisitService
     /// <summary>
     /// 获取走访考核列表
     /// </summary>
-    public async Task<PagedResult<VisitAssessmentDto>> GetVisitAssessmentsAsync(VisitAssessmentListRequest request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<VisitAssessmentDto>> GetVisitAssessmentsAsync(Platform.ServiceDefaults.Models.PageParams request)
     {
-        var search = request.Search?.ToLower();
-
-        var query = _context.Set<VisitAssessment>().Where(
-            a => string.IsNullOrEmpty(search) ||
-                 (a.VisitorName != null && a.VisitorName.ToLower().Contains(search)) ||
-                 (a.Phone != null && a.Phone.ToLower().Contains(search)) ||
-                 (a.TaskDescription != null && a.TaskDescription.ToLower().Contains(search)));
-
-        var pagedResult = query.OrderByDescending(a => a.CreatedAt).PageResult(request.Page, request.PageSize);
+        var pagedResult = _context.Set<VisitAssessment>().ToPagedList(request);
         var items = await pagedResult.Queryable.ToListAsync();
 
         var dtos = items.Select(a => new VisitAssessmentDto
@@ -244,7 +229,7 @@ public class ParkVisitService : IParkVisitService
             CreatedAt = a.CreatedAt
         }).ToList();
 
-        return dtos.AsQueryable().PageResult(request.Page, request.PageSize);
+        return new System.Linq.Dynamic.Core.PagedResult<VisitAssessmentDto> { Queryable = dtos.AsQueryable(), CurrentPage = pagedResult.CurrentPage, PageSize = pagedResult.PageSize, RowCount = pagedResult.RowCount, PageCount = pagedResult.PageCount };
     }
 
     /// <summary>
@@ -296,7 +281,7 @@ public class ParkVisitService : IParkVisitService
     /// <summary>
     /// 获取知识库问题列表
     /// </summary>
-    public async Task<PagedResult<VisitQuestionDto>> GetVisitQuestionsAsync(VisitQuestionListRequest request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<VisitQuestionDto>> GetVisitQuestionsAsync(VisitQuestionListRequest request)
     {
         var search = request.Search?.ToLower();
         var category = request.Category;
@@ -400,7 +385,7 @@ public class ParkVisitService : IParkVisitService
     /// <summary>
     /// 获取走访问卷列表
     /// </summary>
-    public async Task<PagedResult<VisitQuestionnaireDto>> GetVisitQuestionnairesAsync()
+    public async Task<System.Linq.Dynamic.Core.PagedResult<VisitQuestionnaireDto>> GetVisitQuestionnairesAsync()
     {
         var items = await _context.Set<VisitQuestionnaire>().OrderBy(q => q.SortOrder).ToListAsync();
         var dtos = items.Select(q => new VisitQuestionnaireDto

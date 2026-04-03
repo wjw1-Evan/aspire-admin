@@ -1,5 +1,6 @@
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Extensions;
 using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
@@ -59,40 +60,18 @@ public class XiaokeConfigService : IXiaokeConfigService
     }
 
     /// <inheritdoc/>
-    public async Task<PagedResult<XiaokeConfigDto>> GetConfigsAsync(XiaokeConfigQueryParams queryParams)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<XiaokeConfigDto>> GetConfigsAsync(Platform.ServiceDefaults.Models.PageParams queryParams)
     {
-        Expression<Func<XiaokeConfig, bool>>? filter = null;
-
-        if (!string.IsNullOrEmpty(queryParams.Name))
-        {
-            filter = c => c.Name != null && c.Name.Contains(queryParams.Name);
-        }
-
-        if (queryParams.IsEnabled.HasValue)
-        {
-            var isEnabledFilter = queryParams.IsEnabled.Value;
-            filter = filter == null
-                ? c => c.IsEnabled == isEnabledFilter
-                : c => (filter.Compile()(c) && c.IsEnabled == isEnabledFilter);
-        }
-
-        IQueryable<XiaokeConfig> query = _context.Set<XiaokeConfig>();
-        if (filter != null)
-        {
-            query = query.Where(filter);
-        }
-
-        var total = await query.LongCountAsync();
-        var pagedResult = query.OrderByDescending(c => c.UpdatedAt).PageResult(queryParams.Page, queryParams.PageSize);
+        var pagedResult = _context.Set<XiaokeConfig>().ToPagedList(queryParams);
         var configs = await pagedResult.Queryable.ToListAsync();
 
-        return new PagedResult<XiaokeConfigDto>
+        return new System.Linq.Dynamic.Core.PagedResult<XiaokeConfigDto>
         {
             Queryable = configs.Select(ToDto).AsQueryable(),
-            CurrentPage = queryParams.Page,
-            PageSize = queryParams.PageSize,
-            RowCount = (int)total,
-            PageCount = (int)Math.Ceiling((double)total / queryParams.PageSize)
+            CurrentPage = pagedResult.CurrentPage,
+            PageSize = pagedResult.PageSize,
+            RowCount = pagedResult.RowCount,
+            PageCount = pagedResult.PageCount
         };
     }
 

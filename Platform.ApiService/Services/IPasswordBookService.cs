@@ -33,9 +33,19 @@ public interface IPasswordBookService
     /// <summary>
     /// 分页查询条目列表（不返回密码）
     /// </summary>
-    /// <param name="request">查询请求</param>
+    /// <param name="pageParams">分页参数</param>
     /// <param name="userId">当前用户ID</param>
-    Task<PagedResult<PasswordBookEntryDto>> GetEntriesAsync(PasswordBookQueryRequest request, string userId);
+    /// <param name="platform">平台名称筛选</param>
+    /// <param name="account">账号筛选</param>
+    /// <param name="category">分类筛选</param>
+    /// <param name="tags">标签筛选</param>
+    Task<System.Linq.Dynamic.Core.PagedResult<PasswordBookEntryDto>> GetEntriesAsync(
+        Platform.ServiceDefaults.Models.PageParams pageParams,
+        string userId,
+        string? platform = null,
+        string? account = null,
+        string? category = null,
+        List<string>? tags = null);
 
     /// <summary>
     /// 删除条目（软删除）

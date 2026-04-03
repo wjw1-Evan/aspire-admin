@@ -205,10 +205,10 @@ public class UserService : IUserService
     {
         var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == id);
         if (user == null) return null;
-        
+
         if (!string.IsNullOrEmpty(request.Name)) user.Username = request.Name;
         if (!string.IsNullOrEmpty(request.Email)) user.Email = request.Email;
-        
+
         await _context.SaveChangesAsync();
         return user;
     }
@@ -270,7 +270,7 @@ public class UserService : IUserService
                 await _context.Set<UserCompany>().AddAsync(newUserCompany);
             }
         }
-        
+
         await _context.SaveChangesAsync();
         return user;
     }
@@ -290,13 +290,13 @@ public class UserService : IUserService
         if (membership != null)
         {
             _context.Set<UserCompany>().Remove(membership);
-            
+
             var user = await _context.Set<User>().FirstOrDefaultAsync(u => u.Id == id && u.CurrentCompanyId == currentCompanyId);
             if (user != null)
             {
                 user.CurrentCompanyId = string.Empty;
             }
-            
+
             await _context.SaveChangesAsync();
             return true;
         }
@@ -311,49 +311,16 @@ public class UserService : IUserService
     }
 
     /// <inheritdoc/>
-    public async Task<PagedResult<User>> GetUsersWithPaginationAsync(UserListRequest request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<User>> GetUsersWithPaginationAsync(Platform.ServiceDefaults.Models.PageParams request)
     {
-        var filter = await BuildUserListFilterAsync(request);
-        var query = _context.Set<User>().Where(filter);
+        var query = _context.Set<User>().Where(u => u.IsActive);
 
-        query = query.ApplySort(request);
-
-        return query.PageResult(request.Page, request.PageSize);
+        return query.ToPagedList(request);
     }
 
-    public async Task<PagedResult<User>> GetUsersWithRolesAsync(UserListRequest request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<User>> GetUsersWithRolesAsync(Platform.ServiceDefaults.Models.PageParams request)
     {
         return await GetUsersWithPaginationAsync(request);
-    }
-
-    private async Task<Expression<Func<User, bool>>> BuildUserListFilterAsync(UserListRequest request)
-    {
-        List<string> memberUserIds;
-        if (request.RoleIds != null && request.RoleIds.Count > 0)
-        {
-            memberUserIds = await _userRoleService.GetUserIdsByRolesAsync(request.RoleIds);
-        }
-        else
-        {
-            var memberships = await _context.Set<UserCompany>().Where(uc => uc.Status == SystemConstants.UserStatus.Active).ToListAsync();
-            memberUserIds = memberships.Select(uc => uc.UserId).Distinct().ToList();
-        }
-
-        if (!memberUserIds.Any()) return u => false;
-
-        Expression<Func<User, bool>> filter = u => memberUserIds.Contains(u.Id);
-
-        if (!string.IsNullOrEmpty(request.Search))
-        {
-            var search = request.Search.ToLower();
-            filter = CombineFilters(filter, u => u.Username.ToLower().Contains(search) || (u.Email != null && u.Email.ToLower().Contains(search)));
-        }
-
-        if (request.StartDate.HasValue) filter = CombineFilters(filter, u => u.CreatedAt >= request.StartDate.Value);
-        if (request.EndDate.HasValue) filter = CombineFilters(filter, u => u.CreatedAt <= request.EndDate.Value);
-        if (request.IsActive.HasValue) filter = CombineFilters(filter, u => u.IsActive == request.IsActive.Value);
-
-        return filter;
     }
 
     private static Expression<Func<T, bool>> CombineFilters<T>(Expression<Func<T, bool>> first, Expression<Func<T, bool>> second)
@@ -414,7 +381,7 @@ public class UserService : IUserService
     {
         var currentCompanyId = await _tenantContext.GetCurrentCompanyIdAsync();
         if (string.IsNullOrEmpty(currentCompanyId)) throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
-        
+
         var memberships = await _context.Set<UserCompany>().Where(uc => uc.CompanyId == currentCompanyId && uc.Status == SystemConstants.UserStatus.Active).ToListAsync();
         var memberUserIds = memberships.Select(uc => uc.UserId).Distinct().ToList();
 
@@ -459,7 +426,7 @@ public class UserService : IUserService
         var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var currentCompanyId = await _tenantContext.GetCurrentCompanyIdAsync();
         if (string.IsNullOrEmpty(currentCompanyId)) throw new UnauthorizedAccessException("CURRENT_COMPANY_NOT_FOUND");
-        
+
         var memberships = await _context.Set<UserCompany>().Where(uc => uc.CompanyId == currentCompanyId && request.UserIds.Contains(uc.UserId)).ToListAsync();
         var validUserIds = memberships.Select(uc => uc.UserId).ToList();
 
@@ -487,7 +454,7 @@ public class UserService : IUserService
             default:
                 return false;
         }
-        
+
         await _context.SaveChangesAsync();
         return true;
     }
@@ -525,11 +492,11 @@ public class UserService : IUserService
     }
 
     /// <inheritdoc/>
-    public async Task<PagedResult<ActivityLogListItemResponse>> GetCurrentUserActivityLogsAsync(
-        int page = 1, int pageSize = 20, string? action = null, string? httpMethod = null, int? statusCode = null,
-        string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null, string? sortBy = null, string? sortOrder = null)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<ActivityLogListItemResponse>> GetCurrentUserActivityLogsAsync(
+        Platform.ServiceDefaults.Models.PageParams request, string? action = null, string? httpMethod = null, int? statusCode = null,
+        string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null)
     {
-        return await _userActivityLogService.GetCurrentUserActivityLogsAsync(page, pageSize, action, httpMethod, statusCode, ipAddress, startDate, endDate, sortBy, sortOrder);
+        return await _userActivityLogService.GetCurrentUserActivityLogsAsync(request, action, httpMethod, statusCode, ipAddress, startDate, endDate);
     }
 
     /// <inheritdoc/>
@@ -545,19 +512,19 @@ public class UserService : IUserService
     }
 
     /// <inheritdoc/>
-    public async Task<PagedResult<UserActivityLog>> GetAllActivityLogsAsync(
+    public async Task<System.Linq.Dynamic.Core.PagedResult<UserActivityLog>> GetAllActivityLogsAsync(
         int page = 1, int pageSize = 20, string? createdBy = null, string? action = null, string? httpMethod = null,
         int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null)
     {
-        return await _userActivityLogService.GetAllActivityLogsAsync(page, pageSize, createdBy, action, httpMethod, statusCode, ipAddress, startDate, endDate);
+        return await _userActivityLogService.GetAllActivityLogsAsync(new PageParams { Page = page, PageSize = pageSize, Search = action });
     }
 
     /// <inheritdoc/>
-    public async Task<PagedResult<ActivityLogListItemResponse>> GetAllActivityLogsWithUsersAsync(
+    public async Task<System.Linq.Dynamic.Core.PagedResult<ActivityLogListItemResponse>> GetAllActivityLogsWithUsersAsync(
         int page = 1, int pageSize = 20, string? createdBy = null, string? action = null, string? httpMethod = null,
         int? statusCode = null, string? ipAddress = null, DateTime? startDate = null, DateTime? endDate = null)
     {
-        return await _userActivityLogService.GetAllActivityLogsWithUsersAsync(page, pageSize, createdBy, action, httpMethod, statusCode, ipAddress, startDate, endDate);
+        return await _userActivityLogService.GetAllActivityLogsWithUsersAsync(new PageParams { Page = page, PageSize = pageSize, Search = action });
     }
 
     /// <inheritdoc/>
@@ -583,7 +550,7 @@ public class UserService : IUserService
         if (request.Age.HasValue) user.Age = request.Age.Value;
         if (request.Avatar != null) user.Avatar = request.Avatar.Trim();
         if (request.PhoneNumber != null) user.PhoneNumber = request.PhoneNumber.Trim();
-        
+
         await _context.SaveChangesAsync();
         return user;
     }

@@ -54,7 +54,8 @@ public class FileShareMcpToolHandler : McpToolHandlerBase
             async (args, uid) =>
             {
                 var (page, pageSize) = ParsePaginationArgs(args);
-                return await _shareService.GetMySharesAsync(new ShareListQuery { Page = page, PageSize = pageSize });
+                var pageParams = new Platform.ServiceDefaults.Models.PageParams { Page = page, PageSize = pageSize };
+                return await _shareService.GetMySharesAsync(pageParams);
             });
 
         RegisterTool("get_shared_with_me", "获取他人分享给我的文件列表。关键词：收到分享,他人分享",
@@ -62,7 +63,8 @@ public class FileShareMcpToolHandler : McpToolHandlerBase
             async (args, uid) =>
             {
                 var (page, pageSize) = ParsePaginationArgs(args);
-                return await _shareService.GetSharedWithMeAsync(new ShareListQuery { Page = page, PageSize = pageSize });
+                var pageParams = new Platform.ServiceDefaults.Models.PageParams { Page = page, PageSize = pageSize };
+                return await _shareService.GetSharedWithMeAsync(pageParams);
             });
     }
 }

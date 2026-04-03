@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Extensions;
 using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 
@@ -16,71 +17,9 @@ public class ChatHistoryService : IChatHistoryService
         _chatService = chatService;
     }
 
-    public async Task<PagedResult<ChatHistoryListItemDto>> GetChatHistoryAsync(ChatHistoryQueryRequest request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<ChatHistoryListItemDto>> GetChatHistoryAsync(Platform.ServiceDefaults.Models.PageParams request)
     {
-        Expression<Func<ChatSession, bool>>? filter = null;
-
-        if (!string.IsNullOrEmpty(request.SessionId))
-        {
-            filter = s => s.Id == request.SessionId;
-        }
-
-        if (!string.IsNullOrEmpty(request.UserId))
-        {
-            var userId = request.UserId;
-            filter = filter == null
-                ? s => s.Participants != null && s.Participants.Contains(userId)
-                : s => (filter.Compile()(s) && s.Participants != null && s.Participants.Contains(userId));
-        }
-
-        if (request.StartTime.HasValue)
-        {
-            var startTime = request.StartTime.Value;
-            filter = filter == null
-                ? s => s.LastMessageAt >= startTime
-                : s => (filter.Compile()(s) && s.LastMessageAt >= startTime);
-        }
-
-        if (request.EndTime.HasValue)
-        {
-            var endTime = request.EndTime.Value;
-            filter = filter == null
-                ? s => s.LastMessageAt <= endTime
-                : s => (filter.Compile()(s) && s.LastMessageAt <= endTime);
-        }
-
-        List<string>? matchedSessionIds = null;
-        if (!string.IsNullOrEmpty(request.Content))
-        {
-            var content = request.Content;
-            Expression<Func<ChatMessage, bool>> messageFilter = m => m.Content != null && m.Content.Contains(content);
-            var messages = await _context.Set<ChatMessage>().Where(messageFilter).ToListAsync();
-            matchedSessionIds = messages.Where(m => !string.IsNullOrEmpty(m.SessionId)).Select(m => m.SessionId!).Distinct().ToList();
-
-            if (!matchedSessionIds.Any())
-            {
-                return new PagedResult<ChatHistoryListItemDto>
-                {
-                    Queryable = new List<ChatHistoryListItemDto>().AsQueryable(),
-                    CurrentPage = request.Page,
-                    PageSize = request.PageSize,
-                    RowCount = 0,
-                    PageCount = 0
-                };
-            }
-
-            filter = filter == null
-                ? s => matchedSessionIds.Contains(s.Id!)
-                : s => (filter.Compile()(s) && matchedSessionIds.Contains(s.Id!));
-        }
-
-        var total = await _context.Set<ChatSession>().LongCountAsync(filter ??= s => true);
-
-        var pagedResult = _context.Set<ChatSession>()
-            .Where(filter)
-            .OrderByDescending(s => s.LastMessageAt)
-            .ThenByDescending(s => s.CreatedAt)
-            .PageResult(request.Page, request.PageSize);
+        var pagedResult = _context.Set<ChatSession>().ToPagedList(request);
         var sessions = await pagedResult.Queryable.ToListAsync();
 
         var sessionIds = sessions.Select(s => s.Id!).ToList();
@@ -105,13 +44,13 @@ public class ChatHistoryService : IChatHistoryService
             CreatedAt = s.CreatedAt
         }).ToList();
 
-        return new PagedResult<ChatHistoryListItemDto>
+        return new System.Linq.Dynamic.Core.PagedResult<ChatHistoryListItemDto>
         {
             Queryable = listItems.AsQueryable(),
-            CurrentPage = request.Page,
-            PageSize = request.PageSize,
-            RowCount = (int)total,
-            PageCount = (int)Math.Ceiling((double)total / request.PageSize)
+            CurrentPage = pagedResult.CurrentPage,
+            PageSize = pagedResult.PageSize,
+            RowCount = pagedResult.RowCount,
+            PageCount = pagedResult.PageCount
         };
     }
 

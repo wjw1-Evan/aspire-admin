@@ -1,5 +1,6 @@
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Response;
+using Platform.ServiceDefaults.Models;
 using System.Linq.Dynamic.Core;
 
 namespace Platform.ApiService.Services;
@@ -22,7 +23,7 @@ public interface IUserActivityLogService
     /// </summary>
     /// <param name="request">查询请求</param>
     /// <returns>分页的活动日志响应</returns>
-    Task<PagedResult<UserActivityLog>> GetActivityLogsAsync(GetUserActivityLogsRequest request);
+    Task<System.Linq.Dynamic.Core.PagedResult<UserActivityLog>> GetActivityLogsAsync(PageParams request);
 
     /// <summary>
     /// 记录HTTP请求日志
@@ -43,17 +44,14 @@ public interface IUserActivityLogService
     /// <summary>
     /// 获取当前用户的活动日志（分页，带统计信息）
     /// </summary>
-    Task<PagedResult<ActivityLogListItemResponse>> GetCurrentUserActivityLogsAsync(
-        int page = 1,
-        int pageSize = 20,
+    Task<System.Linq.Dynamic.Core.PagedResult<ActivityLogListItemResponse>> GetCurrentUserActivityLogsAsync(
+        Platform.ServiceDefaults.Models.PageParams request,
         string? action = null,
         string? httpMethod = null,
         int? statusCode = null,
         string? ipAddress = null,
         DateTime? startDate = null,
-        DateTime? endDate = null,
-        string? sortBy = null,
-        string? sortOrder = null);
+        DateTime? endDate = null);
 
     /// <summary>
     /// 获取当前用户的活动日志详情（根据日志ID）
@@ -68,30 +66,12 @@ public interface IUserActivityLogService
     /// <summary>
     /// 获取所有活动日志（分页，管理员功能，兼容旧方法）
     /// </summary>
-    Task<PagedResult<UserActivityLog>> GetAllActivityLogsAsync(
-        int page = 1,
-        int pageSize = 20,
-        string? createdBy = null,
-        string? action = null,
-        string? httpMethod = null,
-        int? statusCode = null,
-        string? ipAddress = null,
-        DateTime? startDate = null,
-        DateTime? endDate = null);
+    Task<System.Linq.Dynamic.Core.PagedResult<UserActivityLog>> GetAllActivityLogsAsync(PageParams request);
 
     /// <summary>
     /// 获取所有活动日志（包含用户信息，分页，管理员功能）
     /// </summary>
-    Task<PagedResult<ActivityLogListItemResponse>> GetAllActivityLogsWithUsersAsync(
-        int page = 1,
-        int pageSize = 20,
-        string? createdBy = null,
-        string? action = null,
-        string? httpMethod = null,
-        int? statusCode = null,
-        string? ipAddress = null,
-        DateTime? startDate = null,
-        DateTime? endDate = null);
+    Task<System.Linq.Dynamic.Core.PagedResult<ActivityLogListItemResponse>> GetAllActivityLogsWithUsersAsync(PageParams request);
 
     /// <summary>
     /// 获取所有活动日志统计数据（管理员功能）

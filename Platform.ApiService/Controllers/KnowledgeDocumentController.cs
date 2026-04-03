@@ -37,19 +37,17 @@ public class KnowledgeDocumentController : BaseApiController
     [RequireMenu("workflow-list")]
     public async Task<IActionResult> GetDocuments(
         string knowledgeBaseId,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10,
-        [FromQuery] string? keyword = null)
+        [FromQuery] Platform.ServiceDefaults.Models.PageParams request)
     {
         try
         {
-            if (page < 1 || page > 10000) throw new ArgumentException("page 必须在 1-10000 之间");
-            if (pageSize < 1 || pageSize > 100) throw new ArgumentException("pageSize 必须在 1-100 之间");
+            if (request.Page < 1 || request.Page > 10000) throw new ArgumentException("page 必须在 1-10000 之间");
+            if (request.PageSize < 1 || request.PageSize > 100) throw new ArgumentException("pageSize 必须在 1-100 之间");
 
             var kb = await _knowledgeService.GetByIdAsync(knowledgeBaseId);
             if (kb == null) throw new ArgumentException("知识库 {knowledgeBaseId} 不存在");
 
-            var pagedResult = await _documentService.GetDocumentsAsync(knowledgeBaseId, page, pageSize, keyword);
+            var pagedResult = await _documentService.GetDocumentsAsync(knowledgeBaseId, request);
             return Success(pagedResult);
         }
         catch (Exception ex)

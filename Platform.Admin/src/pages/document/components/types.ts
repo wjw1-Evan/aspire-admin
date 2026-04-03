@@ -77,12 +77,6 @@ export interface DocumentStatisticsProps {
     statistics: DocumentStatistics | null;
 }
 
-// 搜索组件 Props
-export interface DocumentSearchFormProps {
-    form: FormInstance;
-    onSearch: (values: any) => void;
-    onReset: () => void;
-}
 
 // 提交审核 Modal Props
 export interface DocumentSubmitModalProps {

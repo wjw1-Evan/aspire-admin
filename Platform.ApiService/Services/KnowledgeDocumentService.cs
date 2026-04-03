@@ -6,6 +6,7 @@ using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Platform.ApiService.Models.Workflow;
+using Platform.ServiceDefaults.Extensions;
 using Platform.ServiceDefaults.Services;
 
 namespace Platform.ApiService.Services;
@@ -20,21 +21,20 @@ public class KnowledgeDocumentService : IKnowledgeDocumentService, IScopedDepend
     public KnowledgeDocumentService(DbContext context)
     {
         _context = context;
-        
+
     }
 
-    public async Task<PagedResult<KnowledgeDocument>> GetDocumentsAsync(string knowledgeBaseId, int page, int pageSize, string? keyword = null)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<KnowledgeDocument>> GetDocumentsAsync(string knowledgeBaseId, Platform.ServiceDefaults.Models.PageParams request)
     {
-        Expression<Func<KnowledgeDocument, bool>> filter = d => d.KnowledgeBaseId == knowledgeBaseId;
-        if (!string.IsNullOrEmpty(keyword))
+        var query = _context.Set<KnowledgeDocument>().Where(d => d.KnowledgeBaseId == knowledgeBaseId);
+
+        if (!string.IsNullOrEmpty(request.Search))
         {
-            var k = keyword.Trim();
-            filter = d => d.KnowledgeBaseId == knowledgeBaseId &&
-                (d.Title.Contains(k) || (d.Content != null && d.Content.Contains(k)) || (d.Summary != null && d.Summary.Contains(k)));
+            var keyword = request.Search.Trim();
+            query = query.Where(d => d.Title.Contains(keyword) || (d.Content != null && d.Content.Contains(keyword)) || (d.Summary != null && d.Summary.Contains(keyword)));
         }
 
-        var query = _context.Set<KnowledgeDocument>().Where(filter);
-        return query.OrderBy(d => d.SortOrder).ThenByDescending(d => d.CreatedAt).PageResult(page, pageSize);
+        return query.OrderBy(d => d.SortOrder).ThenByDescending(d => d.CreatedAt).ToPagedList(request);
     }
 
     public async Task<KnowledgeDocument?> GetByIdAsync(string id)

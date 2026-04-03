@@ -1,12 +1,11 @@
+using Platform.ServiceDefaults.Models;
 using Microsoft.EntityFrameworkCore;
 using Platform.ServiceDefaults.Services;
-using Platform.ServiceDefaults.Models;
 using Platform.ApiService.Models;
 using System.Linq.Expressions;
 using System.Linq.Dynamic.Core;
 using Microsoft.AspNetCore.Http;
 using Platform.ServiceDefaults.Extensions;
-
 using Platform.ApiService.Models.Response;
 
 namespace Platform.ApiService.Services;
@@ -48,30 +47,9 @@ public class UserActivityLogService : IUserActivityLogService
     /// <summary>
     /// 获取用户活动日志（分页）
     /// </summary>
-    public async Task<PagedResult<UserActivityLog>> GetActivityLogsAsync(GetUserActivityLogsRequest request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<UserActivityLog>> GetActivityLogsAsync(PageParams request)
     {
-        var createdBy = request.CreatedBy;
-        var action = request.Action;
-        var startDate = request.StartDate;
-        var endDate = request.EndDate;
-
-        Expression<Func<UserActivityLog, bool>> filter = log =>
-            (string.IsNullOrEmpty(createdBy) || log.CreatedBy == createdBy) &&
-            (string.IsNullOrEmpty(action) || log.Action == action) &&
-            (!startDate.HasValue || log.CreatedAt >= startDate.Value) &&
-            (!endDate.HasValue || log.CreatedAt <= endDate.Value);
-
-        var query = _context.Set<UserActivityLog>().Where(filter);
-        var pagedResult = query.OrderByDescending(log => log.CreatedAt).PageResult(request.Page, request.PageSize);
-
-        return new PagedResult<UserActivityLog>
-        {
-            Queryable = pagedResult.Queryable,
-            CurrentPage = request.Page,
-            PageSize = request.PageSize,
-            RowCount = pagedResult.RowCount,
-            PageCount = (int)Math.Ceiling(pagedResult.RowCount / (double)request.PageSize)
-        };
+        return _context.Set<UserActivityLog>().ToPagedList(request);
     }
 
     /// <inheritdoc/>
@@ -83,88 +61,53 @@ public class UserActivityLogService : IUserActivityLogService
     }
 
     /// <inheritdoc/>
-    public async Task<PagedResult<ActivityLogListItemResponse>> GetCurrentUserActivityLogsAsync(
-        int page = 1,
-        int pageSize = 20,
+    public async Task<System.Linq.Dynamic.Core.PagedResult<ActivityLogListItemResponse>> GetCurrentUserActivityLogsAsync(
+        PageParams request,
         string? action = null,
         string? httpMethod = null,
         int? statusCode = null,
         string? ipAddress = null,
         DateTime? startDate = null,
-        DateTime? endDate = null,
-        string? sortBy = null,
-        string? sortOrder = null)
+        DateTime? endDate = null)
     {
-        var actionLower = action?.ToLowerInvariant();
-        var ipLower = ipAddress?.ToLowerInvariant();
-        var httpMethodUpper = httpMethod?.ToUpperInvariant();
+        var userId = _httpContextAccessor.HttpContext?.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
+                     ?? _httpContextAccessor.HttpContext?.Items["UserId"] as string;
+        
+        if (string.IsNullOrEmpty(userId)) throw new UnauthorizedAccessException();
+        
+        var query = _context.Set<UserActivityLog>().Where(l => l.CreatedBy == userId);
 
-        Expression<Func<UserActivityLog, bool>> filter = log =>
+        if (!string.IsNullOrEmpty(action)) query = query.Where(l => l.Action != null && l.Action.Contains(action));
+        if (!string.IsNullOrEmpty(httpMethod)) query = query.Where(l => l.HttpMethod == httpMethod);
+        if (statusCode.HasValue) query = query.Where(l => l.StatusCode == statusCode.Value);
+        if (!string.IsNullOrEmpty(ipAddress)) query = query.Where(l => l.IpAddress != null && l.IpAddress.Contains(ipAddress));
+        if (startDate.HasValue) query = query.Where(l => l.CreatedAt >= startDate.Value);
+        if (endDate.HasValue) query = query.Where(l => l.CreatedAt <= endDate.Value);
 
-            (string.IsNullOrEmpty(actionLower) || (log.Action != null && log.Action.ToLower().Contains(actionLower))) &&
-            (string.IsNullOrEmpty(httpMethodUpper) || log.HttpMethod == httpMethodUpper) &&
-            (!statusCode.HasValue || log.StatusCode == statusCode.Value) &&
-            (string.IsNullOrEmpty(ipLower) || (log.IpAddress != null && log.IpAddress.ToLower().Contains(ipLower))) &&
-            (!startDate.HasValue || log.CreatedAt >= startDate.Value) &&
-            (!endDate.HasValue || log.CreatedAt <= endDate.Value);
+        var pagedResult = query.ToPagedList(request);
+        var logs = pagedResult.Queryable.ToList();
+        
+        var userNames = await _context.Set<AppUser>().ToDictionaryAsync(u => u.Id!, u => u.Username);
 
-        // 核心：在后台线程中并行执行统计查询，提高响应速度
-        var totalTask = _context.Set<UserActivityLog>().LongCountAsync(filter);
-
-        // 成功记录统计 (2xx)
-        var successTask = _context.Set<UserActivityLog>().LongCountAsync(log =>
-
-            (string.IsNullOrEmpty(actionLower) || (log.Action != null && log.Action.ToLower().Contains(actionLower))) &&
-            (string.IsNullOrEmpty(httpMethodUpper) || log.HttpMethod == httpMethodUpper) &&
-            (!statusCode.HasValue || log.StatusCode == statusCode.Value) &&
-            (string.IsNullOrEmpty(ipLower) || (log.IpAddress != null && log.IpAddress.ToLower().Contains(ipLower))) &&
-            (!startDate.HasValue || log.CreatedAt >= startDate.Value) &&
-            (!endDate.HasValue || log.CreatedAt <= endDate.Value) &&
-            log.StatusCode >= 200 && log.StatusCode < 300);
-
-        // 错误记录统计 (>= 400)
-        var errorTask = _context.Set<UserActivityLog>().LongCountAsync(log =>
-
-            (string.IsNullOrEmpty(actionLower) || (log.Action != null && log.Action.ToLower().Contains(actionLower))) &&
-            (string.IsNullOrEmpty(httpMethodUpper) || log.HttpMethod == httpMethodUpper) &&
-            (!statusCode.HasValue || log.StatusCode == statusCode.Value) &&
-            (string.IsNullOrEmpty(ipLower) || (log.IpAddress != null && log.IpAddress.ToLower().Contains(ipLower))) &&
-            (!startDate.HasValue || log.CreatedAt >= startDate.Value) &&
-            (!endDate.HasValue || log.CreatedAt <= endDate.Value) &&
-            log.StatusCode >= 400);
-
-        await Task.WhenAll(totalTask, successTask, errorTask);
-
-        var total = totalTask.Result;
-        var successCount = successTask.Result;
-        var errorCount = errorTask.Result;
-
-        var query = _context.Set<UserActivityLog>().Where(filter);
-        var pagedResult = query.ApplySort(new Models.PageParams { SortBy = sortBy, SortOrder = sortOrder ?? "desc" }).PageResult(page, pageSize);
-        var logs = await pagedResult.Queryable.ToListAsync();
-        var totalCount = pagedResult.RowCount;
-
-        var logDtos = logs.Select(log => new ActivityLogListItemResponse
+        return new System.Linq.Dynamic.Core.PagedResult<ActivityLogListItemResponse>
         {
-            Id = log.Id ?? string.Empty,
-            CreatedBy = log.CreatedBy,
-            Action = log.Action,
-            Description = log.Description,
-            IpAddress = log.IpAddress,
-            HttpMethod = log.HttpMethod,
-            FullUrl = log.FullUrl,
-            StatusCode = log.StatusCode,
-            Duration = log.Duration,
-            CreatedAt = log.CreatedAt
-        }).ToList();
-
-        return new PagedResult<ActivityLogListItemResponse>
-        {
-            Queryable = logDtos.AsQueryable(),
-            CurrentPage = page,
-            PageSize = pageSize,
-            RowCount = (int)totalCount,
-            PageCount = (int)Math.Ceiling(totalCount / (double)pageSize)
+            RowCount = pagedResult.RowCount,
+            CurrentPage = pagedResult.CurrentPage,
+            PageSize = pagedResult.PageSize,
+            Queryable = logs.Select(log => new ActivityLogListItemResponse
+            {
+                Id = log.Id ?? string.Empty,
+                CreatedBy = log.CreatedBy,
+                Action = log.Action,
+                Description = log.Description,
+                IpAddress = log.IpAddress,
+                HttpMethod = log.HttpMethod,
+                FullUrl = log.FullUrl,
+                StatusCode = log.StatusCode,
+                Duration = log.Duration,
+                CreatedAt = log.CreatedAt,
+                Username = userNames.GetValueOrDefault(log.CreatedBy ?? "") ?? "Unknown"
+            }).AsQueryable()
         };
     }
 
@@ -183,113 +126,37 @@ public class UserActivityLogService : IUserActivityLogService
     }
 
     /// <inheritdoc/>
-    public Task<PagedResult<UserActivityLog>> GetAllActivityLogsAsync(
-        int page = 1,
-        int pageSize = 20,
-        string? userId = null,
-        string? action = null,
-        string? httpMethod = null,
-        int? statusCode = null,
-        string? ipAddress = null,
-        DateTime? startDate = null,
-        DateTime? endDate = null)
+    public Task<System.Linq.Dynamic.Core.PagedResult<UserActivityLog>> GetAllActivityLogsAsync(PageParams request)
     {
-        var actionLower = action?.ToLowerInvariant();
-        var ipLower = ipAddress?.ToLowerInvariant();
-
-        Expression<Func<UserActivityLog, bool>> filter = log =>
-            (string.IsNullOrEmpty(userId) || log.CreatedBy == userId) &&
-            (string.IsNullOrEmpty(actionLower) || (log.Action != null && log.Action.ToLower().Contains(actionLower))) &&
-            (string.IsNullOrEmpty(httpMethod) || log.HttpMethod == httpMethod) &&
-            (!statusCode.HasValue || log.StatusCode == statusCode.Value) &&
-            (string.IsNullOrEmpty(ipLower) || (log.IpAddress != null && log.IpAddress.ToLower().Contains(ipLower))) &&
-            (!startDate.HasValue || log.CreatedAt >= startDate.Value) &&
-            (!endDate.HasValue || log.CreatedAt <= endDate.Value);
-
-        var query = _context.Set<UserActivityLog>().Where(filter);
-        return Task.FromResult(query.OrderByDescending(log => log.CreatedAt).PageResult(page, pageSize));
+        return Task.FromResult(_context.Set<UserActivityLog>().ToPagedList(request));
     }
 
     /// <inheritdoc/>
-    public async Task<PagedResult<ActivityLogListItemResponse>> GetAllActivityLogsWithUsersAsync(
-        int page = 1,
-        int pageSize = 20,
-        string? createdBy = null,
-        string? action = null,
-        string? httpMethod = null,
-        int? statusCode = null,
-        string? ipAddress = null,
-        DateTime? startDate = null,
-        DateTime? endDate = null)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<ActivityLogListItemResponse>> GetAllActivityLogsWithUsersAsync(PageParams request)
     {
-        var actionLower = action?.ToLowerInvariant();
-        var ipLower = ipAddress?.ToLowerInvariant();
+        var pagedResult = _context.Set<UserActivityLog>().ToPagedList(request);
+        var logs = pagedResult.Queryable.ToList();
+        var userNames = await _context.Set<AppUser>().ToDictionaryAsync(u => u.Id!, u => u.Username);
 
-        Expression<Func<UserActivityLog, bool>> filter = log =>
-            (string.IsNullOrEmpty(createdBy) || log.CreatedBy == createdBy) &&
-            (string.IsNullOrEmpty(actionLower) || (log.Action != null && log.Action.ToLower().Contains(actionLower))) &&
-            (string.IsNullOrEmpty(httpMethod) || log.HttpMethod == httpMethod) &&
-            (!statusCode.HasValue || log.StatusCode == statusCode.Value) &&
-            (string.IsNullOrEmpty(ipLower) || (log.IpAddress != null && log.IpAddress.ToLower().Contains(ipLower))) &&
-            (!startDate.HasValue || log.CreatedAt >= startDate.Value) &&
-            (!endDate.HasValue || log.CreatedAt <= endDate.Value);
-
-        var query = _context.Set<UserActivityLog>().Where(filter);
-        var pagedResult = query.OrderByDescending(log => log.CreatedAt).PageResult(page, pageSize);
-        var logs = await pagedResult.Queryable.ToListAsync();
-        var total = pagedResult.RowCount;
-
-        var validUserIds = logs
-            .Select(log => log.CreatedBy)
-            .Distinct()
-            .Where(uid => !string.IsNullOrEmpty(uid) && IsValidObjectId(uid))
-            .ToList();
-
-        var users = new List<AppUser>();
-        if (validUserIds.Any())
+        return new System.Linq.Dynamic.Core.PagedResult<ActivityLogListItemResponse>
         {
-            users = await _context.Set<AppUser>().Where(u => validUserIds.Contains(u.Id)).ToListAsync();
-        }
-
-        var userMap = users.ToDictionary(u => u.Id!, u => u.Username);
-        var invalidUserIds = logs
-            .Select(log => log.CreatedBy)
-            .Distinct()
-            .Where(uid => !string.IsNullOrEmpty(uid) && !IsValidObjectId(uid!))
-            .Where(uid => !userMap.ContainsKey(uid!))
-            .ToList();
-
-        foreach (var invalidUserId in invalidUserIds)
-        {
-            string defaultUsername = invalidUserId switch
+            RowCount = pagedResult.RowCount,
+            CurrentPage = pagedResult.CurrentPage,
+            PageSize = pagedResult.PageSize,
+            Queryable = logs.Select(log => new ActivityLogListItemResponse
             {
-                _ => $"用户({invalidUserId})"
-            };
-            userMap[invalidUserId!] = defaultUsername;
-        }
-
-        var logDtos = logs.Select(log => new ActivityLogListItemResponse
-        {
-            Id = log.Id ?? string.Empty,
-            CreatedBy = log.CreatedBy,
-            Username = userMap.ContainsKey(log.CreatedBy ?? "") ? userMap[log.CreatedBy ?? ""] : null,
-            Action = log.Action,
-            Description = log.Description,
-            IpAddress = log.IpAddress,
-            HttpMethod = log.HttpMethod,
-            FullUrl = log.FullUrl,
-            StatusCode = log.StatusCode,
-            Duration = log.Duration,
-            CreatedAt = log.CreatedAt
-        }).ToList();
-
-        return new PagedResult<ActivityLogListItemResponse>
-        {
-            Queryable = logDtos.AsQueryable(),
-            CurrentPage = page,
-            PageSize = pageSize,
-            RowCount = (int)total,
-            PageCount = (int)Math.Ceiling((double)total / pageSize)
+                Id = log.Id ?? string.Empty,
+                CreatedBy = log.CreatedBy,
+                Action = log.Action,
+                Description = log.Description,
+                IpAddress = log.IpAddress,
+                HttpMethod = log.HttpMethod,
+                FullUrl = log.FullUrl,
+                StatusCode = log.StatusCode,
+                Duration = log.Duration,
+                CreatedAt = log.CreatedAt,
+                Username = userNames.GetValueOrDefault(log.CreatedBy ?? "") ?? "Unknown"
+            }).AsQueryable()
         };
     }
 
@@ -421,7 +288,7 @@ public class UserActivityLogService : IUserActivityLogService
         var userId = _httpContextAccessor.HttpContext?.Items["UserId"] as string;
         if (string.IsNullOrEmpty(userId))
             throw new UnauthorizedAccessException("无法获取当前用户ID");
-        
+
         return await GetActivityLogStatisticsAsync(
             userId,
             action,

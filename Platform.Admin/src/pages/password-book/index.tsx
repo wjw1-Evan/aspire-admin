@@ -61,7 +61,7 @@ import ExportDialog from './components/ExportDialog';
 import { StatCard } from '@/components';
 import { getPasswordBookEntry } from '@/services/password-book/api';
 import useCommonStyles from '@/hooks/useCommonStyles';
-import SearchFormCard from '@/components/SearchFormCard';
+import SearchBar from '@/components/SearchBar';
 
 const PasswordBook: React.FC = () => {
   const intl = useIntl();
@@ -71,7 +71,6 @@ const PasswordBook: React.FC = () => {
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
   const actionRef = useRef<ActionType>(null);
-  const [searchForm] = Form.useForm();
   const [formVisible, setFormVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
   const [exportVisible, setExportVisible] = useState(false);
@@ -164,40 +163,6 @@ const PasswordBook: React.FC = () => {
     [], // 🔧 修复：移除 searchParams 依赖，使用 ref 避免函数重新创建
   );
 
-  // 搜索
-  const handleSearch = useCallback(
-    (values: any) => {
-      const newParams: PasswordBookQueryRequest = {
-        current: 1,
-        pageSize: searchParamsRef.current.pageSize,
-        platform: values.platform,
-        account: values.account,
-        category: values.category,
-        tags: values.tags,
-        keyword: values.keyword,
-      };
-      // 更新 ref 和 state
-      searchParamsRef.current = newParams;
-      setSearchParams(newParams);
-      // 手动触发重新加载
-      actionRef.current?.reload?.();
-    },
-    [],
-  );
-
-  // 重置搜索
-  const handleReset = useCallback(() => {
-    searchForm.resetFields();
-    const resetParams: PasswordBookQueryRequest = {
-      current: 1,
-      pageSize: searchParamsRef.current.pageSize,
-    };
-    // 更新 ref 和 state
-    searchParamsRef.current = resetParams;
-    setSearchParams(resetParams);
-    // 手动触发重新加载
-    actionRef.current?.reload?.();
-  }, [searchForm]);
 
   // 创建
   const handleCreate = useCallback(() => {
@@ -437,62 +402,15 @@ const PasswordBook: React.FC = () => {
       )}
 
       {/* 搜索表单 */}
-      <SearchFormCard>
-        <Form
-          form={searchForm}
-          layout={isMobile ? 'vertical' : 'inline'}
-          onFinish={handleSearch}
-        >
-          <Form.Item name="keyword" label="关键词">
-            <Input placeholder="关键词搜索（平台、账号、备注）" allowClear style={{ width: isMobile ? '100%' : 200 }} />
-          </Form.Item>
-          <Form.Item name="platform" label="平台名称">
-            <Input placeholder="平台名称" allowClear style={{ width: isMobile ? '100%' : 150 }} />
-          </Form.Item>
-          <Form.Item name="category" label="分类">
-            <Select
-              placeholder="选择分类"
-              allowClear
-              style={{ width: isMobile ? '100%' : 150 }}
-              showSearch
-              filterOption={(input, option) =>
-                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-              }
-              options={categories.map((cat) => ({ label: cat, value: cat }))}
-            />
-          </Form.Item>
-          <Form.Item name="tags" label="标签">
-            <Select
-              mode="multiple"
-              placeholder="选择标签"
-              allowClear
-              style={{ width: isMobile ? '100%' : 200 }}
-              showSearch
-              filterOption={(input, option) =>
-                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-              }
-              options={tags.map((tag) => ({ label: tag, value: tag }))}
-            />
-          </Form.Item>
-          <Form.Item>
-            <Space wrap>
-              <Button
-                type="primary"
-                htmlType="submit"
-                style={isMobile ? { width: '100%' } : {}}
-              >
-                搜索
-              </Button>
-              <Button
-                onClick={handleReset}
-                style={isMobile ? { width: '100%' } : {}}
-              >
-                重置
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </SearchFormCard>
+      <SearchBar
+        initialParams={searchParamsRef.current}
+        onSearch={(params) => {
+          searchParamsRef.current = { ...searchParamsRef.current, ...params };
+          setSearchParams({ ...searchParamsRef.current });
+          actionRef.current?.reload?.();
+        }}
+        style={{ marginBottom: 16 }}
+      />
 
       {/* 数据表格 */}
       <DataTable<PasswordBookEntry>

@@ -5,7 +5,7 @@ namespace Platform.ApiService.Services;
 
 public interface IFormDefinitionService
 {
-    Task<PagedResult<FormDefinition>> GetFormsAsync(int current, int pageSize, string? keyword, bool? isActive);
+    Task<System.Linq.Dynamic.Core.PagedResult<FormDefinition>> GetFormsAsync(Platform.ServiceDefaults.Models.PageParams request, bool? isActive);
     Task<FormDefinition?> GetFormByIdAsync(string id);
     Task<List<FormDefinition>> GetFormsByIdsAsync(List<string> ids);
     Task<FormDefinition> CreateFormAsync(FormDefinition form);

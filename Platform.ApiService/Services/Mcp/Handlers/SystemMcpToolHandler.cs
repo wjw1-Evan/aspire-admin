@@ -2,6 +2,7 @@ using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Platform.ServiceDefaults.Models;
 
 namespace Platform.ApiService.Services.Mcp.Handlers;
 
@@ -41,11 +42,8 @@ public class SystemMcpToolHandler : McpToolHandlerBase
             async (args, uid) =>
             {
                 var (page, pageSize) = ParsePaginationArgs(args);
-                var result = await _logService.GetAllActivityLogsAsync(
-                    page: page,
-                    pageSize: pageSize,
-                    createdBy: args.GetValueOrDefault("userId")?.ToString(),
-                    action: args.GetValueOrDefault("action")?.ToString());
+                var actionArg = args.GetValueOrDefault("action")?.ToString();
+                var result = await _logService.GetAllActivityLogsAsync(new PageParams { Page = page, PageSize = pageSize, Search = actionArg });
                 var items = await result.Queryable.ToListAsync();
                 return new { items = items, rowCount = result.RowCount, currentPage = result.CurrentPage, pageSize = result.PageSize, pageCount = result.PageCount };
             });

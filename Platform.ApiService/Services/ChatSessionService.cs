@@ -35,18 +35,18 @@ public class ChatSessionService : IChatSessionService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<PagedResult<ChatSession>> GetSessionsAsync(ChatSessionListRequest request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<ChatSession>> GetSessionsAsync(ChatSessionListRequest request)
     {
         await _aiAssistantCoordinator.EnsureAssistantSessionForCurrentUserAsync();
         request ??= new ChatSessionListRequest();
         var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
 
         Expression<Func<ChatSession, bool>> filter = session => session.Participants.Contains(currentUserId);
-        if (!string.IsNullOrWhiteSpace(request.Keyword))
+        if (!string.IsNullOrWhiteSpace(request.Search))
         {
             filter = session => session.Participants.Contains(currentUserId) &&
                               session.TopicTags != null &&
-                              session.TopicTags.Any(tag => tag.Contains(request.Keyword, StringComparison.OrdinalIgnoreCase));
+                              session.TopicTags.Any(tag => tag.Contains(request.Search, StringComparison.OrdinalIgnoreCase));
         }
 
         var query = _context.Set<ChatSession>().Where(filter);

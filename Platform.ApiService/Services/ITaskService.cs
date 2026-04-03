@@ -30,7 +30,7 @@ public interface ITaskService
     /// </summary>
     /// <param name="request">查询请求</param>
     /// <returns>任务列表</returns>
-    Task<PagedResult<TaskDto>> QueryTasksAsync(TaskQueryRequest request);
+    Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> QueryTasksAsync(Platform.ServiceDefaults.Models.PageParams request);
 
     /// <summary>
     /// 更新任务
@@ -88,10 +88,9 @@ public interface ITaskService
     /// 获取任务执行日志
     /// </summary>
     /// <param name="taskId">任务ID</param>
-    /// <param name="page">页码</param>
-    /// <param name="pageSize">每页数量</param>
     /// <returns>执行日志列表</returns>
-    Task<PagedResult<TaskExecutionLogDto>> GetTaskExecutionLogsAsync(string taskId, int page = 1, int pageSize = 10);
+    /// <param name="request">分页请求参数</param>
+    Task<System.Linq.Dynamic.Core.PagedResult<TaskExecutionLogDto>> GetTaskExecutionLogsAsync(string taskId, Platform.ServiceDefaults.Models.PageParams request);
 
     /// <summary>
     /// 记录任务执行日志
@@ -118,10 +117,9 @@ public interface ITaskService
     /// 获取用户创建的任务
     /// </summary>
     /// <param name="userId">用户ID</param>
-    /// <param name="page">页码</param>
-    /// <param name="pageSize">每页数量</param>
     /// <returns>创建的任务列表</returns>
-    Task<PagedResult<TaskDto>> GetUserCreatedTasksAsync(string userId, int page = 1, int pageSize = 10);
+    /// <param name="request">分页请求参数</param>
+    Task<System.Linq.Dynamic.Core.PagedResult<TaskDto>> GetUserCreatedTasksAsync(string userId, Platform.ServiceDefaults.Models.PageParams request);
 
     /// <summary>
     /// 批量更新任务状态

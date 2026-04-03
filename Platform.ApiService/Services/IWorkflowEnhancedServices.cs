@@ -33,7 +33,7 @@ public interface IBulkOperationService
     /// <summary>
     /// 获取用户的批量操作列表
     /// </summary>
-    Task<PagedResult<BulkOperation>> GetUserBulkOperationsAsync(int page = 1, int pageSize = 20);
+    Task<System.Linq.Dynamic.Core.PagedResult<BulkOperation>> GetUserBulkOperationsAsync(int page = 1, int pageSize = 20);
 
     /// <summary>
     /// 清理已完成的批量操作

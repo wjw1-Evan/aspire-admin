@@ -47,11 +47,11 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "@types/node": "^25.5.0",
+    "@types/node": "^25.5.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@types/sm-crypto": "^0.3.4",
-    "@umijs/max": "^4.6.37",
+    "@umijs/max": "^4.6.39",
     "cross-env": "^10.1.0",
     "typescript": "^6.0.2",
     "umi-presets-pro": "^2.0.3"

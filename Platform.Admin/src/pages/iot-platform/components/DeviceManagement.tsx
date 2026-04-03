@@ -55,7 +55,7 @@ import {
 } from '@/services/iotService';
 import { StatCard } from '@/components';
 import useCommonStyles from '@/hooks/useCommonStyles';
-import SearchFormCard from '@/components/SearchFormCard';
+import SearchBar from '@/components/SearchBar';
 import { useModal } from '@/hooks/useModal';
 import DeviceTwinPanel from './DeviceTwinPanel';
 import CommandCenterPanel from './CommandCenterPanel';
@@ -108,7 +108,8 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
   const [statistics, setStatistics] = useState<DeviceStatistics | null>(null);
   const [form] = Form.useForm();
   const [overviewStats, setOverviewStats] = useState({ total: 0, online: 0, offline: 0, fault: 0 });
-  const [searchForm] = Form.useForm();
+  const searchParamsRef = useRef<any>({ page: 1, pageSize: 20 });
+
   // ApiKey 弹窗
   const [apiKeyResult, setApiKeyResult] = useState<GenerateApiKeyResult | null>(null);
   const [isApiKeyModalVisible, setIsApiKeyModalVisible] = useState(false);
@@ -141,8 +142,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
 
   const fetchDevices = useCallback(async (params: any) => {
     try {
-      const { keyword } = searchForm.getFieldsValue();
-      const response = await iotService.getDevices(undefined, params.current || 1, params.pageSize || 20, keyword);
+      const response = await iotService.getDevices(undefined, params.current || 1, params.pageSize || 20, searchParamsRef.current.search);
       if (response.success && response.data) {
         return { data: response.data.queryable || [], success: true, total: response.data.rowCount ?? 0 };
       }
@@ -426,19 +426,13 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
       </Card>
 
       {/* 搜索 */}
-      <SearchFormCard style={{ marginBottom: 16 }}>
-        <Form form={searchForm} layout="inline" onFinish={() => actionRef.current?.reload?.()} style={{ gap: 8 }}>
-          <Form.Item name="keyword" style={{ marginBottom: 0 }}>
-            <Input placeholder="搜索设备名称/ID" allowClear onPressEnter={() => actionRef.current?.reload?.()} style={{ width: 220 }} />
-          </Form.Item>
-          <Form.Item style={{ marginBottom: 0 }}>
-            <Space>
-              <Button type="primary" onClick={() => actionRef.current?.reload?.()}>搜索</Button>
-              <Button onClick={() => { searchForm.resetFields(); actionRef.current?.reload?.(); }}>重置</Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </SearchFormCard>
+      <SearchBar
+        initialParams={searchParamsRef.current}
+        onSearch={(params) => {
+          searchParamsRef.current = params;
+          actionRef.current?.reload?.();
+        }}
+      />
 
       {/* 设备列表 */}
       {selectedRowKeys.length > 0 && (

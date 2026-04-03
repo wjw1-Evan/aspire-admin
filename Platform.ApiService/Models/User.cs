@@ -157,42 +157,6 @@ public class UpdateUserManagementRequest
 }
 
 /// <summary>
-/// 用户列表查询请求
-/// </summary>
-public class UserListRequest : PageParams
-{
-    /// <summary>
-    /// 搜索关键词（用户名、邮箱）
-    /// </summary>
-    public string? Search { get; set; }
-
-    /// <summary>
-    /// 角色ID列表（按角色筛选）
-    /// </summary>
-    public List<string>? RoleIds { get; set; }
-
-    /// <summary>
-    /// 是否激活（按状态筛选）
-    /// </summary>
-    public bool? IsActive { get; set; }
-
-    /// <summary>
-    /// 排序字段（默认CreatedAt）
-    /// </summary>
-    public new string? SortBy { get; set; } = "CreatedAt";
-
-    /// <summary>
-    /// 开始日期（按创建时间范围搜索）
-    /// </summary>
-    public DateTime? StartDate { get; set; }
-
-    /// <summary>
-    /// 结束日期（按创建时间范围搜索）
-    /// </summary>
-    public DateTime? EndDate { get; set; }
-}
-
-/// <summary>
 /// 包含角色信息的用户响应DTO
 /// v6.0: 添加角色信息支持，解决前端缺少roleIds字段的问题
 /// </summary>
@@ -492,68 +456,7 @@ public class UserActivityLog : MultiTenantEntity
     public Dictionary<string, object> Metadata { get; set; } = new();
 }
 
-/// <summary>
-/// 获取用户活动日志请求参数
-/// </summary>
-public class GetUserActivityLogsRequest
-{
-    /// <summary>
-    /// 页码（默认1）
-    /// </summary>
-    public int Page { get; set; } = 1;
 
-    /// <summary>
-    /// 每页大小（默认20）
-    /// </summary>
-    public int PageSize { get; set; } = 20;
-
-    /// <summary>
-    /// 创建者ID（可选，按用户筛选）
-    /// </summary>
-    public string? CreatedBy { get; set; }
-
-    /// <summary>
-    /// 操作类型（可选，按操作类型筛选）
-    /// </summary>
-    public string? Action { get; set; }
-
-    /// <summary>
-    /// 开始日期（可选，按时间范围筛选）
-    /// </summary>
-    public DateTime? StartDate { get; set; }
-
-    /// <summary>
-    /// 结束日期（可选，按时间范围筛选）
-    /// </summary>
-    public DateTime? EndDate { get; set; }
-}
-
-/// <summary>
-/// 活动日志查询参数
-/// </summary>
-public class ActivityLogQuery : PageParams
-{
-    /// <summary>创建者ID</summary>
-    public string? CreatedBy { get; set; }
-
-    /// <summary>操作类型</summary>
-    public string? Action { get; set; }
-
-    /// <summary>HTTP方法</summary>
-    public string? HttpMethod { get; set; }
-
-    /// <summary>状态码</summary>
-    public int? StatusCode { get; set; }
-
-    /// <summary>IP地址</summary>
-    public string? IpAddress { get; set; }
-
-    /// <summary>开始日期</summary>
-    public DateTime? StartDate { get; set; }
-
-    /// <summary>结束日期</summary>
-    public DateTime? EndDate { get; set; }
-}
 
 /// <summary>
 /// HTTP 请求日志记录请求

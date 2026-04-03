@@ -48,16 +48,42 @@ public interface IFileShareService
     /// <summary>
     /// 获取我创建的分享列表
     /// </summary>
-    /// <param name="query">查询参数</param>
+    /// <param name="pageParams">分页参数</param>
+    /// <param name="type">分享类型筛选</param>
+    /// <param name="permission">分享权限筛选</param>
+    /// <param name="isActive">是否激活筛选</param>
+    /// <param name="createdAfter">创建时间范围（开始）</param>
+    /// <param name="createdBefore">创建时间范围（结束）</param>
+    /// <param name="expiresAfter">过期时间范围（开始）</param>
+    /// <param name="expiresBefore">过期时间范围（结束）</param>
     /// <returns>分享列表</returns>
-    Task<PagedResult<Models.FileShare>> GetMySharesAsync(ShareListQuery query);
+    Task<System.Linq.Dynamic.Core.PagedResult<Models.FileShare>> GetMySharesAsync(
+        Platform.ServiceDefaults.Models.PageParams pageParams,
+        ShareType? type = null,
+        SharePermission? permission = null,
+        bool? isActive = null,
+        DateTime? createdAfter = null,
+        DateTime? createdBefore = null,
+        DateTime? expiresAfter = null,
+        DateTime? expiresBefore = null);
 
     /// <summary>
     /// 获取分享给我的文件列表
     /// </summary>
-    /// <param name="query">查询参数</param>
+    /// <param name="pageParams">分页参数</param>
+    /// <param name="permission">分享权限筛选</param>
+    /// <param name="createdAfter">创建时间范围（开始）</param>
+    /// <param name="createdBefore">创建时间范围（结束）</param>
+    /// <param name="expiresAfter">过期时间范围（开始）</param>
+    /// <param name="expiresBefore">过期时间范围（结束）</param>
     /// <returns>分享文件列表</returns>
-    Task<PagedResult<Models.FileShare>> GetSharedWithMeAsync(ShareListQuery query);
+    Task<System.Linq.Dynamic.Core.PagedResult<Models.FileShare>> GetSharedWithMeAsync(
+        Platform.ServiceDefaults.Models.PageParams pageParams,
+        SharePermission? permission = null,
+        DateTime? createdAfter = null,
+        DateTime? createdBefore = null,
+        DateTime? expiresAfter = null,
+        DateTime? expiresBefore = null);
 
     /// <summary>
     /// 验证分享访问权限
@@ -147,44 +173,3 @@ public class UpdateShareRequest
     public Dictionary<string, object>? Settings { get; set; }
 }
 
-/// <summary>
-/// 分享列表查询参数
-/// </summary>
-public class ShareListQuery
-{
-    /// <summary>页码</summary>
-    public int Page { get; set; } = 1;
-
-    /// <summary>每页数量</summary>
-    public int PageSize { get; set; } = 20;
-
-    /// <summary>排序字段</summary>
-    public string SortBy { get; set; } = "createdAt";
-
-    /// <summary>排序方向</summary>
-    public string SortOrder { get; set; } = "desc";
-
-    /// <summary>分享类型筛选</summary>
-    public ShareType? Type { get; set; }
-
-    /// <summary>分享权限筛选</summary>
-    public SharePermission? Permission { get; set; }
-
-    /// <summary>是否激活筛选</summary>
-    public bool? IsActive { get; set; }
-
-    /// <summary>创建时间范围（开始）</summary>
-    public DateTime? CreatedAfter { get; set; }
-
-    /// <summary>创建时间范围（结束）</summary>
-    public DateTime? CreatedBefore { get; set; }
-
-    /// <summary>过期时间范围（开始）</summary>
-    public DateTime? ExpiresAfter { get; set; }
-
-    /// <summary>过期时间范围（结束）</summary>
-    public DateTime? ExpiresBefore { get; set; }
-
-    /// <summary>搜索关键词（文件名）</summary>
-    public string Keyword { get; set; } = string.Empty;
-}

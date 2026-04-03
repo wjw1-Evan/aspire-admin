@@ -1,7 +1,7 @@
 import { PageContainer, StatCard } from '@/components';
 import DataTable from '@/components/DataTable';
 import type { ActionType, ProColumns } from '@/types/pro-components';
-import { Tag, Button, Badge, Space, Grid, Form, Select, DatePicker, Card, Row, Col, Input } from 'antd';
+import { Tag, Button, Badge, Space, Grid, Form, Select, DatePicker, Card, Row, Col } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 
 const { useBreakpoint } = Grid;
@@ -11,7 +11,7 @@ import { useIntl } from '@umijs/max';
 import { getActivityLogById, getUserActivityLogs, getActivityLogStatistics } from '@/services/user-log/api';
 import type { UserActivityLog } from '@/services/user-log/types';
 import useCommonStyles from '@/hooks/useCommonStyles';
-import SearchFormCard from '@/components/SearchFormCard';
+import SearchBar from '@/components/SearchBar';
 import LogDetailDrawer from './components/LogDetailDrawer';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
@@ -38,8 +38,8 @@ const UserLog: React.FC = () => {
   const tableRef = useRef<HTMLDivElement>(null);
   const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<UserActivityLog | null>(null);
-  const [form] = Form.useForm();
   const [filters, setFilters] = useState<{
+    search?: string;
     action?: string;
     startDate?: string;
     endDate?: string;
@@ -47,6 +47,7 @@ const UserLog: React.FC = () => {
     httpMethod?: string;
     statusCode?: number;
     ipAddress?: string;
+    username?: string;
   }>({});
   const initialLoadRef = useRef(true);
   const [stats, setStats] = useState({
@@ -77,6 +78,7 @@ const UserLog: React.FC = () => {
         getUserActivityLogs({
           page: current,
           pageSize,
+          search: filters.search,
           action: filters.action,
           httpMethod: filters.httpMethod,
           statusCode: filters.statusCode,
@@ -130,40 +132,6 @@ const UserLog: React.FC = () => {
   const handleRefresh = useCallback(() => {
     actionRef.current?.reload?.();
   }, []);
-
-  // 提交筛选
-  const handleSearch = useCallback(() => {
-    const { dateRange, statusCode, ...rest } = form.getFieldsValue();
-    const [start, end]: [Dayjs | undefined, Dayjs | undefined] = dateRange || [];
-    const parsedStatus = statusCode === '' || statusCode === undefined || statusCode === null
-      ? undefined
-      : Number(statusCode);
-
-    setFilters({
-      ...rest,
-      username: rest.username?.trim() || undefined,
-      action: rest.action || undefined,
-      httpMethod: rest.httpMethod?.trim() || undefined,
-      ipAddress: rest.ipAddress?.trim() || undefined,
-      statusCode: Number.isNaN(parsedStatus) ? undefined : parsedStatus,
-      startDate: start ? start.toISOString() : undefined,
-      endDate: end ? end.toISOString() : undefined,
-    });
-  }, [form]);
-
-  // 筛选变更后刷新表格（跳过首次渲染，避免双请求）
-  useEffect(() => {
-    if (initialLoadRef.current) {
-      initialLoadRef.current = false;
-      return;
-    }
-    actionRef.current?.reload?.();
-  }, [filters]);
-
-  const handleReset = useCallback(() => {
-    form.resetFields();
-    setFilters({});
-  }, [form]);
 
   /**
    * 获取操作类型标签颜色
@@ -589,71 +557,16 @@ const UserLog: React.FC = () => {
         </Space>
       }
     >
-      {/* 筛选区域 */}
-      <SearchFormCard>
-        <Form
-          form={form}
-          layout={isMobile ? 'vertical' : 'inline'}
-          onFinish={handleSearch}
-        >
-          <Form.Item name="action" label={intl.formatMessage({ id: 'pages.table.action' })}>
-            <Input
-              allowClear
-              placeholder={intl.formatMessage({ id: 'pages.table.action' })}
-              style={{ minWidth: 160 }}
-            />
-          </Form.Item>
-
-          <Form.Item name="httpMethod" label={intl.formatMessage({ id: 'pages.table.httpMethod' })}>
-            <Select
-              allowClear
-              placeholder={intl.formatMessage({ id: 'pages.placeholder.select' })}
-              style={{ minWidth: 140 }}
-              options={['GET', 'POST', 'PUT', 'DELETE', 'PATCH'].map((m) => ({ label: m, value: m }))}
-            />
-          </Form.Item>
-
-          <Form.Item name="statusCode" label={intl.formatMessage({ id: 'pages.table.statusCode' })}>
-            <Input
-              allowClear
-              placeholder={intl.formatMessage({ id: 'pages.table.statusCode' })}
-              style={{ minWidth: 120 }}
-              type="number"
-            />
-          </Form.Item>
-
-          <Form.Item name="ipAddress" label={intl.formatMessage({ id: 'pages.table.ipAddress' })}>
-            <Input
-              allowClear
-              placeholder={intl.formatMessage({ id: 'pages.table.ipAddress' })}
-              style={{ minWidth: 160 }}
-            />
-          </Form.Item>
-
-          <Form.Item name="username" label={intl.formatMessage({ id: 'pages.table.username' })}>
-            <Input
-              allowClear
-              placeholder={intl.formatMessage({ id: 'pages.table.username' })}
-              style={{ minWidth: 180 }}
-            />
-          </Form.Item>
-
-          <Form.Item name="dateRange" label={intl.formatMessage({ id: 'pages.logDetail.actionTime' })}>
-            <DatePicker.RangePicker showTime style={{ minWidth: 280 }} />
-          </Form.Item>
-
-          <Form.Item>
-            <Space>
-              <Button type="primary" htmlType="submit">
-                {intl.formatMessage({ id: 'pages.search.submit' }, { defaultMessage: '查询' })}
-              </Button>
-              <Button onClick={handleReset}>
-                {intl.formatMessage({ id: 'pages.search.reset' }, { defaultMessage: '重置' })}
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </SearchFormCard>
+      <SearchBar
+        initialParams={filters}
+        onSearch={(params) => {
+          setFilters({
+            ...filters,
+            search: params.search,
+          });
+          actionRef.current?.reload?.();
+        }}
+      />
 
       {/* 统计数据 */}
       <Card className={styles.card} style={{ marginBottom: 16 }}>

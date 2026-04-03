@@ -12,7 +12,7 @@ public interface INoticeService
     /// 获取当前用户的通知列表
     /// </summary>
     /// <returns>通知列表响应</returns>
-    Task<PagedResult<NoticeIconItem>> GetNoticesAsync();
+    Task<System.Linq.Dynamic.Core.PagedResult<NoticeIconItem>> GetNoticesAsync();
     
     /// <summary>
     /// 根据ID获取通知详情

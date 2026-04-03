@@ -16,7 +16,7 @@ public interface IChatService
     /// </summary>
     /// <param name="request">查询参数</param>
     /// <returns>分页结果</returns>
-    Task<PagedResult<ChatSession>> GetSessionsAsync(ChatSessionListRequest request);
+    Task<System.Linq.Dynamic.Core.PagedResult<ChatSession>> GetSessionsAsync(ChatSessionListRequest request);
 
     /// <summary>
     /// 获取指定会话的消息时间线

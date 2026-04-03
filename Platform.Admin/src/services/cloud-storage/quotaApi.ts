@@ -31,6 +31,7 @@ export interface UpdateQuotaRequest {
 
 export interface QuotaListRequest {
     username?: string;
+    search?: string;
     isEnabled?: boolean;
     page?: number;
     pageSize?: number;

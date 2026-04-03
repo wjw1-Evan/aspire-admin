@@ -39,10 +39,9 @@ public class UserMcpToolHandler : McpToolHandlerBase
             async (args, uid) =>
             {
                 var pagination = ParsePaginationArgs(args);
-                return await _userService.GetUsersWithPaginationAsync(new UserListRequest
+                return await _userService.GetUsersWithPaginationAsync(new Platform.ServiceDefaults.Models.PageParams
                 {
                     Search = args.GetValueOrDefault("search")?.ToString(),
-                    IsActive = args.ContainsKey("isActive") && bool.TryParse(args["isActive"].ToString(), out var a) ? a : null,
                     Page = pagination.page,
                     PageSize = pagination.pageSize
                 });
@@ -61,7 +60,7 @@ public class UserMcpToolHandler : McpToolHandlerBase
                 if (!string.IsNullOrEmpty(id)) return await _userService.GetUserByIdAsync(id);
                 if (!string.IsNullOrEmpty(username))
                 {
-                    var list = await _userService.GetUsersWithPaginationAsync(new UserListRequest { Search = username, Page = 1, PageSize = 1 });
+                    var list = await _userService.GetUsersWithPaginationAsync(new Platform.ServiceDefaults.Models.PageParams { Search = username, Page = 1, PageSize = 1 });
                     var users = await list.Queryable.ToListAsync();
                     if (users.Any()) return await _userService.GetUserByIdAsync(users.First().Id);
                 }

@@ -73,7 +73,8 @@ public class WorkflowController : BaseApiController
         IDocumentService documentService,
         IWorkflowInstanceService workflowInstanceService,
         ILogger<WorkflowController> logger
-    ) {
+    )
+    {
         _workflowEngine = workflowEngine;
         _userService = userService;
         _fieldValidationService = fieldValidationService;
@@ -95,93 +96,10 @@ public class WorkflowController : BaseApiController
     /// </summary>
     [HttpGet]
     [RequireMenu("workflow-list", "workflow-monitor")]
-    public async Task<IActionResult> GetWorkflows([FromQuery] WorkflowSearchRequest request)
+    public async Task<IActionResult> GetWorkflows([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
     {
         try
         {
-            Expression<Func<WorkflowDefinition, bool>>? filter = null;
-
-            if (!string.IsNullOrEmpty(request.Keyword))
-            {
-                filter = w => w.Name.Contains(request.Keyword) ||
-                              (w.Description != null && w.Description.Contains(request.Keyword)) ||
-                              w.Category.Contains(request.Keyword);
-            }
-
-            // Support both single category and Categories array
-            if (!string.IsNullOrEmpty(request.Category))
-            {
-                var category = request.Category;
-                Expression<Func<WorkflowDefinition, bool>> categoryFilter = w => w.Category == category;
-                filter = filter == null ? categoryFilter : filter.And(categoryFilter);
-            }
-            else if (request.Categories != null && request.Categories.Any())
-            {
-                var categories = request.Categories;
-                Expression<Func<WorkflowDefinition, bool>> categoryFilter = w => categories.Contains(w.Category);
-                filter = filter == null ? categoryFilter : filter.And(categoryFilter);
-            }
-
-            // Support both IsActive boolean and Statuses array
-            if (request.IsActive.HasValue)
-            {
-                var isActive = request.IsActive.Value;
-                Expression<Func<WorkflowDefinition, bool>> statusFilter = w => w.IsActive == isActive;
-                filter = filter == null ? statusFilter : filter.And(statusFilter);
-            }
-            else if (request.Statuses != null && request.Statuses.Any())
-            {
-                var statusValues = request.Statuses.Select(s => s == "active").ToList();
-                Expression<Func<WorkflowDefinition, bool>> statusFilter = w => statusValues.Contains(w.IsActive);
-                filter = filter == null ? statusFilter : filter.And(statusFilter);
-            }
-
-            if (request.DateRange != null)
-            {
-                Expression<Func<WorkflowDefinition, bool>> dateFilter = w => true;
-                switch (request.DateRange.Field?.ToLowerInvariant())
-                {
-                    case "createdat":
-                    case "created":
-                        if (request.DateRange.Start.HasValue)
-                            dateFilter = w => w.CreatedAt >= request.DateRange.Start.Value;
-                        if (request.DateRange.End.HasValue)
-                            dateFilter = w => w.CreatedAt <= request.DateRange.End.Value;
-                        break;
-                    case "updatedat":
-                    case "updated":
-                        if (request.DateRange.Start.HasValue)
-                            dateFilter = w => w.UpdatedAt >= request.DateRange.Start.Value;
-                        if (request.DateRange.End.HasValue)
-                            dateFilter = w => w.UpdatedAt <= request.DateRange.End.Value;
-                        break;
-                    case "lastused":
-                        if (request.DateRange.Start.HasValue)
-                            dateFilter = w => w.Analytics.LastUsedAt >= request.DateRange.Start.Value;
-                        if (request.DateRange.End.HasValue)
-                            dateFilter = w => w.Analytics.LastUsedAt <= request.DateRange.End.Value;
-                        break;
-                }
-                filter = filter == null ? dateFilter : filter.And(dateFilter);
-            }
-
-            if (request.UsageRange != null)
-            {
-                Expression<Func<WorkflowDefinition, bool>> usageFilter = w => true;
-                if (request.UsageRange.Min.HasValue)
-                    usageFilter = w => w.Analytics.UsageCount >= request.UsageRange.Min.Value;
-                if (request.UsageRange.Max.HasValue)
-                    usageFilter = w => w.Analytics.UsageCount <= request.UsageRange.Max.Value;
-                filter = filter == null ? usageFilter : filter.And(usageFilter);
-            }
-
-            if (request.CreatedBy != null && request.CreatedBy.Any())
-            {
-                var createdByList = request.CreatedBy;
-                Expression<Func<WorkflowDefinition, bool>> createdByFilter = w => w.CreatedBy != null && createdByList.Contains(w.CreatedBy);
-                filter = filter == null ? createdByFilter : filter.And(createdByFilter);
-            }
-
             var result = await _workflowQueryService.GetWorkflowsAsync(request);
             return Success(result);
         }
@@ -386,11 +304,11 @@ public class WorkflowController : BaseApiController
     /// </summary>
     [HttpGet("instances")]
     [RequireMenu("workflow-monitor")]
-    public async Task<IActionResult> GetInstances([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? workflowDefinitionId = null, [FromQuery] WorkflowStatus? status = null)
+    public async Task<IActionResult> GetInstances([FromQuery] Platform.ServiceDefaults.Models.PageParams request, [FromQuery] string? workflowDefinitionId = null, [FromQuery] WorkflowStatus? status = null)
     {
         try
         {
-            var result = await _workflowInstanceQueryService.GetInstancesAsync(page, pageSize, workflowDefinitionId, status);
+            var result = await _workflowInstanceQueryService.GetInstancesAsync(request, workflowDefinitionId, status);
             return Success(result);
         }
         catch (Exception ex)
@@ -530,12 +448,12 @@ public class WorkflowController : BaseApiController
     /// </summary>
     [HttpGet("instances/todo")]
     [RequireMenu("document-approval")]
-    public async Task<IActionResult> GetTodoInstances([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetTodoInstances([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
     {
         try
         {
             var userId = RequiredUserId;
-            var result = await _workflowTodoService.GetTodoInstancesAsync(userId, page, pageSize);
+            var result = await _workflowTodoService.GetTodoInstancesAsync(userId, request);
             return Success(result);
         }
         catch (Exception ex)
@@ -986,9 +904,9 @@ public class WorkflowController : BaseApiController
             }
 
             var preference = await _filterPreferenceService.SavePreferenceAsync(
-                userId, 
-                request.Name, 
-                request.FilterConfig, 
+                userId,
+                request.Name,
+                request.FilterConfig,
                 request.IsDefault);
             return Success(preference);
         }

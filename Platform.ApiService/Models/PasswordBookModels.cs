@@ -132,16 +132,10 @@ public class UpdatePasswordBookEntryRequest
 }
 
 /// <summary>
-/// 密码本查询请求
+/// 密码本列表查询请求
 /// </summary>
-public class PasswordBookQueryRequest
+public class PasswordBookListRequest : Platform.ServiceDefaults.Models.PageParams
 {
-    /// <summary>当前页码</summary>
-    public int Page { get; set; } = 1;
-
-    /// <summary>每页数量</summary>
-    public int PageSize { get; set; } = 10;
-
     /// <summary>平台名称搜索</summary>
     public string? Platform { get; set; }
 
@@ -153,10 +147,8 @@ public class PasswordBookQueryRequest
 
     /// <summary>标签筛选</summary>
     public List<string>? Tags { get; set; }
-
-    /// <summary>关键词搜索（平台、账号、备注）</summary>
-    public string? Keyword { get; set; }
 }
+
 
 /// <summary>
 /// 密码本条目DTO（列表显示，不包含密码）

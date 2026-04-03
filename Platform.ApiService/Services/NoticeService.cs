@@ -25,13 +25,13 @@ public class NoticeService : INoticeService
     /// <summary>
     /// 获取当前用户的通知列表
     /// </summary>
-    public async Task<PagedResult<NoticeIconItem>> GetNoticesAsync()
+    public async Task<System.Linq.Dynamic.Core.PagedResult<NoticeIconItem>> GetNoticesAsync()
     {
         var notices = await _context.Set<NoticeIconItem>()
             .OrderByDescending(n => n.Datetime)
             .ToListAsync();
 
-        return new PagedResult<NoticeIconItem>
+        return new System.Linq.Dynamic.Core.PagedResult<NoticeIconItem>
         {
             Queryable = notices.AsQueryable(),
             CurrentPage = 1,

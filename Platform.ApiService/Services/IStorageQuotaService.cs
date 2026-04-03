@@ -83,7 +83,7 @@ public interface IStorageQuotaService
     /// <param name="page">页码</param>
     /// <param name="pageSize">每页数量</param>
     /// <returns>分页配额警告列表</returns>
-    Task<PagedResult<StorageQuotaWarning>> GetQuotaWarningsPaginatedAsync(double warningThreshold = 0.8, int page = 1, int pageSize = 50);
+    Task<System.Linq.Dynamic.Core.PagedResult<StorageQuotaWarning>> GetQuotaWarningsPaginatedAsync(double warningThreshold = 0.8, int page = 1, int pageSize = 50);
 
     /// <summary>
     /// 清理未使用的存储配额记录
@@ -96,7 +96,7 @@ public interface IStorageQuotaService
     /// </summary>
     /// <param name="query">查询参数</param>
     /// <returns>分页的存储配额列表</returns>
-    Task<PagedResult<StorageQuotaListItem>> GetStorageQuotaListAsync(StorageQuotaListQuery query);
+    Task<System.Linq.Dynamic.Core.PagedResult<StorageQuotaListItem>> GetStorageQuotaListAsync(StorageQuotaListRequest query);
 
     /// <summary>
     /// 获取存储使用统计信息
@@ -259,22 +259,10 @@ public enum WarningLevel
 /// <summary>
 /// 存储配额列表查询参数
 /// </summary>
-public class StorageQuotaListQuery
+public class StorageQuotaListRequest : Platform.ServiceDefaults.Models.PageParams
 {
-    /// <summary>页码</summary>
-    public int Page { get; set; } = 1;
-
-    /// <summary>每页数量</summary>
-    public int PageSize { get; set; } = 20;
-
-    /// <summary>排序字段</summary>
-    public string SortBy { get; set; } = "usedQuota";
-
-    /// <summary>排序方向</summary>
-    public string SortOrder { get; set; } = "desc";
-
-    /// <summary>搜索关键词</summary>
-    public string? Keyword { get; set; }
+    /// <summary>排序字段默认值覆盖</summary>
+    public new string SortBy { get; set; } = "usedQuota";
 
     /// <summary>企业ID</summary>
     public string? CompanyId { get; set; }

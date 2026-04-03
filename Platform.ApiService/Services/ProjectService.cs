@@ -94,29 +94,14 @@ public class ProjectService : IProjectService
     }
 
     /// <inheritdoc/>
-    public async Task<PagedResult<ProjectDto>> GetProjectsListAsync(ProjectQueryRequest request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<ProjectDto>> GetProjectsListAsync(Platform.ServiceDefaults.Models.PageParams request)
     {
         var q = _context.Set<Project>().AsQueryable();
 
-        if (!string.IsNullOrEmpty(request.Search))
-        {
-            string search = request.Search.ToLower();
-            q = q.Where(p => p.Name.ToLower().Contains(search) || (p.Description != null && p.Description.ToLower().Contains(search)));
-        }
-
-        if (request.Status.HasValue) q = q.Where(p => p.Status == (ProjectStatus)request.Status.Value);
-        if (request.Priority.HasValue) q = q.Where(p => p.Priority == (ProjectPriority)request.Priority.Value);
-        if (!string.IsNullOrEmpty(request.ManagerId)) q = q.Where(p => p.ManagerId == request.ManagerId);
-
-        if (request.StartDate.HasValue) q = q.Where(p => p.CreatedAt >= request.StartDate.Value.ToUniversalTime());
-        if (request.EndDate.HasValue) q = q.Where(p => p.CreatedAt <= request.EndDate.Value.ToUniversalTime().Date.AddDays(1).AddMilliseconds(-1));
-
-        q = q.ApplySort(request);
-
-        var pagedResult = q.PageResult(request.Page, request.PageSize);
+        var pagedResult = q.ToPagedList(request);
         var projects = await pagedResult.Queryable.ToListAsync();
         var projectDtos = await ConvertToProjectDtosAsync(projects);
-        return new PagedResult<ProjectDto>
+        return new System.Linq.Dynamic.Core.PagedResult<ProjectDto>
         {
             Queryable = projectDtos.AsQueryable(),
             CurrentPage = pagedResult.CurrentPage,

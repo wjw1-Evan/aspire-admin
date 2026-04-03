@@ -1,6 +1,7 @@
 using Platform.ApiService.Models;
 using Platform.ApiService.Extensions;
 using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -152,87 +153,96 @@ public class FileShareService : IFileShareService
     /// <summary>
     /// 获取我创建的分享列表
     /// </summary>
-    public async Task<PagedResult<Models.FileShare>> GetMySharesAsync(ShareListQuery query)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<Models.FileShare>> GetMySharesAsync(
+        Platform.ServiceDefaults.Models.PageParams pageParams,
+        ShareType? type = null,
+        SharePermission? permission = null,
+        bool? isActive = null,
+        DateTime? createdAfter = null,
+        DateTime? createdBefore = null,
+        DateTime? expiresAfter = null,
+        DateTime? expiresBefore = null)
     {
         IQueryable<Models.FileShare> queryable = _context.Set<Models.FileShare>();
 
-        if (query.Type.HasValue)
+        if (type.HasValue)
         {
-            var typeFilter = query.Type.Value;
-            queryable = queryable.Where(s => s.Type == typeFilter);
+            queryable = queryable.Where(s => s.Type == type.Value);
         }
 
-        if (query.Permission.HasValue)
+        if (permission.HasValue)
         {
-            var permissionFilter = query.Permission.Value;
-            queryable = queryable.Where(s => s.Permission == permissionFilter);
+            queryable = queryable.Where(s => s.Permission == permission.Value);
         }
 
-        if (query.IsActive.HasValue)
+        if (isActive.HasValue)
         {
-            queryable = queryable.Where(s => s.IsActive == query.IsActive.Value);
+            queryable = queryable.Where(s => s.IsActive == isActive.Value);
         }
 
-        if (query.CreatedAfter.HasValue)
+        if (createdAfter.HasValue)
         {
-            queryable = queryable.Where(s => s.CreatedAt >= query.CreatedAfter.Value);
+            queryable = queryable.Where(s => s.CreatedAt >= createdAfter.Value);
         }
 
-        if (query.CreatedBefore.HasValue)
+        if (createdBefore.HasValue)
         {
-            queryable = queryable.Where(s => s.CreatedAt <= query.CreatedBefore.Value);
+            queryable = queryable.Where(s => s.CreatedAt <= createdBefore.Value);
         }
 
-        if (query.ExpiresAfter.HasValue)
+        if (expiresAfter.HasValue)
         {
-            queryable = queryable.Where(s => s.ExpiresAt >= query.ExpiresAfter.Value);
+            queryable = queryable.Where(s => s.ExpiresAt >= expiresAfter.Value);
         }
 
-        if (query.ExpiresBefore.HasValue)
+        if (expiresBefore.HasValue)
         {
-            queryable = queryable.Where(s => s.ExpiresAt <= query.ExpiresBefore.Value);
+            queryable = queryable.Where(s => s.ExpiresAt <= expiresBefore.Value);
         }
 
-        return queryable.OrderByDescending(s => s.CreatedAt)
-                        .PageResult(query.Page, query.PageSize);
+        return queryable.ToPagedList(pageParams);
     }
 
     /// <summary>
     /// 获取分享给我的文件列表
     /// </summary>
-    public async Task<PagedResult<Models.FileShare>> GetSharedWithMeAsync(ShareListQuery query)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<Models.FileShare>> GetSharedWithMeAsync(
+        Platform.ServiceDefaults.Models.PageParams pageParams,
+        SharePermission? permission = null,
+        DateTime? createdAfter = null,
+        DateTime? createdBefore = null,
+        DateTime? expiresAfter = null,
+        DateTime? expiresBefore = null)
     {
         IQueryable<Models.FileShare> queryable = _context.Set<Models.FileShare>()
             .Where(s => s.Type == ShareType.Internal && s.IsActive);
 
-        if (query.Permission.HasValue)
+        if (permission.HasValue)
         {
-            var permissionFilter = query.Permission.Value;
-            queryable = queryable.Where(s => s.Permission == permissionFilter);
+            queryable = queryable.Where(s => s.Permission == permission.Value);
         }
 
-        if (query.CreatedAfter.HasValue)
+        if (createdAfter.HasValue)
         {
-            queryable = queryable.Where(s => s.CreatedAt >= query.CreatedAfter.Value);
+            queryable = queryable.Where(s => s.CreatedAt >= createdAfter.Value);
         }
 
-        if (query.CreatedBefore.HasValue)
+        if (createdBefore.HasValue)
         {
-            queryable = queryable.Where(s => s.CreatedAt <= query.CreatedBefore.Value);
+            queryable = queryable.Where(s => s.CreatedAt <= createdBefore.Value);
         }
 
-        if (query.ExpiresAfter.HasValue)
+        if (expiresAfter.HasValue)
         {
-            queryable = queryable.Where(s => s.ExpiresAt >= query.ExpiresAfter.Value);
+            queryable = queryable.Where(s => s.ExpiresAt >= expiresAfter.Value);
         }
 
-        if (query.ExpiresBefore.HasValue)
+        if (expiresBefore.HasValue)
         {
-            queryable = queryable.Where(s => s.ExpiresAt <= query.ExpiresBefore.Value);
+            queryable = queryable.Where(s => s.ExpiresAt <= expiresBefore.Value);
         }
 
-        return queryable.OrderByDescending(s => s.CreatedAt)
-                        .PageResult(query.Page, Math.Min(query.PageSize, 100));
+        return queryable.ToPagedList(pageParams);
     }
 
     /// <summary>

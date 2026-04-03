@@ -24,13 +24,13 @@ public interface IRoleService
     /// 获取所有角色
     /// </summary>
     /// <returns>角色列表响应</returns>
-    Task<PagedResult<Role>> GetAllRolesAsync();
+    Task<System.Linq.Dynamic.Core.PagedResult<Role>> GetAllRolesAsync();
     
     /// <summary>
     /// 获取所有角色（包含统计信息）
     /// </summary>
     /// <returns>带统计信息的角色列表响应</returns>
-    Task<PagedResult<RoleWithStats>> GetAllRolesWithStatsAsync();
+    Task<System.Linq.Dynamic.Core.PagedResult<RoleWithStats>> GetAllRolesWithStatsAsync();
 
     /// <summary>
     /// 获取角色统计信息（基于全部数据）

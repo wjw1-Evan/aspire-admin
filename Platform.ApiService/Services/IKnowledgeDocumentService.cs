@@ -12,7 +12,7 @@ public interface IKnowledgeDocumentService
     /// <summary>
     /// 分页获取知识库下的文档列表
     /// </summary>
-    Task<PagedResult<KnowledgeDocument>> GetDocumentsAsync(string knowledgeBaseId, int page, int pageSize, string? keyword = null);
+    Task<System.Linq.Dynamic.Core.PagedResult<KnowledgeDocument>> GetDocumentsAsync(string knowledgeBaseId, Platform.ServiceDefaults.Models.PageParams request);
 
     /// <summary>
     /// 获取文档详情

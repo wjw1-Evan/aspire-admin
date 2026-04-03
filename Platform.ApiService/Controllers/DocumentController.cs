@@ -50,7 +50,7 @@ public class DocumentController : BaseApiController
     /// </summary>
     [HttpGet]
     [RequireMenu("document-list")]
-    public async Task<IActionResult> GetDocuments([FromQuery] DocumentQueryParams query)
+    public async Task<IActionResult> GetDocuments([FromQuery] DocumentListRequest query)
     {
         try
         {
@@ -548,7 +548,7 @@ public class DocumentController : BaseApiController
     /// </summary>
     [HttpGet("pending")]
     [RequireMenu("document-approval")]
-    public async Task<IActionResult> GetPendingDocuments([FromQuery] DocumentQueryParams query)
+    public async Task<IActionResult> GetPendingDocuments([FromQuery] DocumentListRequest query)
     {
         try
         {

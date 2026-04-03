@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     Card,
     Typography,
@@ -6,29 +6,24 @@ import {
     Table,
     Button,
     Tag,
-    Input,
     Rate,
     App,
-    Row,
-    Col,
     Drawer,
     Descriptions,
     Divider,
     Form,
     Modal,
+    Input,
 } from 'antd';
 import {
-    SearchOutlined,
     ReloadOutlined,
     StarFilled,
     FileSearchOutlined,
-    EditOutlined,
     StarOutlined,
-    HistoryOutlined,
-    CheckCircleOutlined,
 } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import PageContainer from '@/components/PageContainer';
+import SearchBar from '@/components/SearchBar';
 import * as visitService from '@/services/visit';
 import dayjs from 'dayjs';
 import styles from './index.less';
@@ -43,7 +38,7 @@ const VisitAssessmentList: React.FC = () => {
     const [total, setTotal] = useState(0);
     const [current, setCurrent] = useState(1);
     const [pageSize, setPageSize] = useState(10);
-    const [search, setSearch] = useState('');
+    const searchParamsRef = useRef<any>({ search: '' });
 
     const [detailVisible, setDetailVisible] = useState(false);
     const [selectedAssessment, setSelectedAssessment] = useState<visitService.VisitAssessment | null>(null);
@@ -52,13 +47,13 @@ const VisitAssessmentList: React.FC = () => {
     const [selectedTask, setSelectedTask] = useState<visitService.VisitTask | null>(null);
     const [assessmentForm] = Form.useForm();
 
-    const loadData = useCallback(async (page: number, size: number, query: string) => {
+    const loadData = useCallback(async (page: number, size: number) => {
         setLoading(true);
         try {
             const res = await visitService.getTasks({
                 page,
                 pageSize: size,
-                search: query,
+                search: searchParamsRef.current.search,
                 status: 'Completed',
             });
 
@@ -75,25 +70,17 @@ const VisitAssessmentList: React.FC = () => {
     }, [intl, message]);
 
     useEffect(() => {
-        loadData(current, pageSize, search);
-    }, [loadData, current, pageSize, search]);
-
-    const handleSearch = (value: string) => {
-        setSearch(value);
-        setCurrent(1);
-    };
+        loadData(current, pageSize);
+    }, [loadData, current, pageSize]);
 
     const handleRefresh = () => {
-        loadData(current, pageSize, search);
+        loadData(current, pageSize);
     };
 
     const showDetail = async (record: visitService.VisitTask) => {
         if (!record.assessmentId) return;
 
         try {
-            // We fetch the full assessment detail to be sure we have everything
-            // or we use what we have in the task DTO.
-            // Given the current Drawer needs a VisitAssessment type:
             const assessmentDetail: visitService.VisitAssessment = {
                 id: record.assessmentId,
                 taskId: record.id,
@@ -102,7 +89,7 @@ const VisitAssessmentList: React.FC = () => {
                 location: record.visitLocation || '',
                 taskDescription: record.title,
                 score: record.assessmentScore || 0,
-                comments: record.feedback || '', // Map feedback to comments if appropriate
+                comments: record.feedback || '',
                 createdAt: record.createdAt,
             };
 
@@ -150,7 +137,7 @@ const VisitAssessmentList: React.FC = () => {
                 setAssessmentVisible(false);
                 setSelectedTask(null);
                 assessmentForm.resetFields();
-                loadData(current, pageSize, search);
+                loadData(current, pageSize);
             }
         } catch (error) {
             console.error('Failed to submit assessment:', error);
@@ -230,24 +217,21 @@ const VisitAssessmentList: React.FC = () => {
     return (
         <PageContainer
             title={intl.formatMessage({ id: 'pages.park.visit.assessment', defaultMessage: '走访评价管理' })}
+            extra={
+                <Button icon={<ReloadOutlined />} onClick={handleRefresh} loading={loading}>
+                    {intl.formatMessage({ id: 'pages.park.common.refresh', defaultMessage: '刷新' })}
+                </Button>
+            }
         >
-            <Card className={styles.searchCard}>
-                <Row gutter={16}>
-                    <Col flex="auto">
-                        <Input.Search
-                            placeholder={intl.formatMessage({ id: 'pages.park.common.search.placeholder', defaultMessage: '搜索受访企业或企管员' })}
-                            onSearch={handleSearch}
-                            enterButton={<SearchOutlined />}
-                            allowClear
-                        />
-                    </Col>
-                    <Col>
-                        <Button icon={<ReloadOutlined />} onClick={handleRefresh} loading={loading}>
-                            {intl.formatMessage({ id: 'pages.park.common.refresh', defaultMessage: '刷新' })}
-                        </Button>
-                    </Col>
-                </Row>
-            </Card>
+            <SearchBar
+                initialParams={searchParamsRef.current}
+                onSearch={(params) => {
+                    searchParamsRef.current = { ...searchParamsRef.current, ...params };
+                    setCurrent(1);
+                    loadData(1, pageSize);
+                }}
+                style={{ marginBottom: 16 }}
+            />
 
             <Card className={styles.tableCard} styles={{ body: { padding: '16px 24px' } }}>
                 <Table

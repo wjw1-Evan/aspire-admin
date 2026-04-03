@@ -42,15 +42,11 @@ public class XiaokeConfigController : BaseApiController
         [FromQuery] bool? isEnabled = null,
         [FromQuery] string? sorter = null)
     {
-        
-
-        var queryParams = new XiaokeConfigQueryParams
+        var queryParams = new Platform.ServiceDefaults.Models.PageParams
         {
             Page = page,
             PageSize = pageSize,
-            Name = name,
-            IsEnabled = isEnabled,
-            Sorter = sorter
+            Search = name
         };
 
         var result = await _xiaokeConfigService.GetConfigsAsync(queryParams);

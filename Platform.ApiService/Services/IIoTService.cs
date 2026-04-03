@@ -19,7 +19,7 @@ public interface IIoTService
     /// <summary>
     /// 获取网关列表
     /// </summary>
-    Task<PagedResult<IoTGateway>> GetGatewaysAsync(string? keyword = null, IoTDeviceStatus? status = null, int page = 1, int pageSize = 20);
+    Task<System.Linq.Dynamic.Core.PagedResult<IoTGateway>> GetGatewaysAsync(Platform.ServiceDefaults.Models.PageParams request, IoTDeviceStatus? status = null);
 
     /// <summary>
     /// 获取网关详情
@@ -63,7 +63,7 @@ public interface IIoTService
     /// <summary>
     /// 获取设备列表
     /// </summary>
-    Task<PagedResult<IoTDevice>> GetDevicesAsync(string? gatewayId = null, string? keyword = null, int page = 1, int pageSize = 20);
+    Task<System.Linq.Dynamic.Core.PagedResult<IoTDevice>> GetDevicesAsync(Platform.ServiceDefaults.Models.PageParams request, string? gatewayId = null);
 
     /// <summary>
     /// 获取设备详情
@@ -122,7 +122,7 @@ public interface IIoTService
     /// <summary>
     /// 获取数据点列表
     /// </summary>
-    Task<PagedResult<IoTDataPoint>> GetDataPointsAsync(string? deviceId = null, string? keyword = null, int page = 1, int pageSize = 20);
+    Task<System.Linq.Dynamic.Core.PagedResult<IoTDataPoint>> GetDataPointsAsync(Platform.ServiceDefaults.Models.PageParams request, string? deviceId = null);
 
     /// <summary>
     /// 获取数据点详情
@@ -161,7 +161,7 @@ public interface IIoTService
     /// <summary>
     /// 查询数据记录
     /// </summary>
-    Task<PagedResult<IoTDataRecord>> QueryDataRecordsAsync(QueryIoTDataRequest request);
+    Task<System.Linq.Dynamic.Core.PagedResult<IoTDataRecord>> QueryDataRecordsAsync(Platform.ServiceDefaults.Models.PageParams request);
 
     /// <summary>
     /// 获取最新数据
@@ -185,7 +185,7 @@ public interface IIoTService
     /// <summary>
     /// 查询设备事件
     /// </summary>
-    Task<PagedResult<IoTDeviceEvent>> QueryEventsAsync(QueryIoTEventRequest request);
+    Task<System.Linq.Dynamic.Core.PagedResult<IoTDeviceEvent>> QueryEventsAsync(Platform.ServiceDefaults.Models.PageParams request);
 
     /// <summary>
     /// 处理事件

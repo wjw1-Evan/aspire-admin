@@ -22,13 +22,8 @@ public class ChatHistoryController : BaseApiController
 
     [HttpPost("list")]
     [RequireMenu("xiaoke-management-chat-history")]
-    public async Task<IActionResult> GetChatHistory([FromBody] ChatHistoryQueryRequest request)
+    public async Task<IActionResult> GetChatHistory([FromBody] Platform.ServiceDefaults.Models.PageParams request)
     {
-        if (request.StartTime.HasValue && request.EndTime.HasValue && request.StartTime.Value > request.EndTime.Value)
-        {
-            throw new ArgumentException("开始时间不能晚于结束时间");
-        }
-
         try
         {
             var result = await _chatHistoryService.GetChatHistoryAsync(request);

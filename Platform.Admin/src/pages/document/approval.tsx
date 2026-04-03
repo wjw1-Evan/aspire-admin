@@ -12,7 +12,7 @@ import {
   FileTextOutlined,
 } from '@ant-design/icons';
 import type { ActionType } from '@/types/pro-components';
-import type { ColumnsType } from 'antd/es/table';
+import { type ColumnsType } from 'antd/es/table';
 import { DataTable } from '@/components/DataTable';
 import {
   getPendingDocuments,
@@ -26,6 +26,7 @@ import {
   DocumentStatus,
 } from '@/services/document/api';
 import { StatCard } from '@/components';
+import SearchBar from '@/components/SearchBar';
 import {
   FormFieldType,
   type FormDefinition,
@@ -91,8 +92,7 @@ const ApprovalPage: React.FC = () => {
   const [returnableNodes, setReturnableNodes] = useState<ReturnableNode[]>([]);
 
   // 搜索相关
-  const [searchForm] = Form.useForm();
-  const [searchParams, setSearchParams] = useState<DocumentQueryParams>({ page: 1, pageSize: 10 });
+  const searchParamsRef = useRef<any>({ search: '' });
   const [statistics, setStatistics] = useState<DocumentStatistics | null>(null);
 
   React.useEffect(() => {
@@ -537,16 +537,6 @@ const ApprovalPage: React.FC = () => {
     }
   };
 
-  const handleSearch = (values: any) => {
-    setSearchParams((prev) => ({ ...prev, ...values, page: 1 }));
-    actionRef.current?.reloadAndReset?.();
-  };
-
-  const handleReset = () => {
-    searchForm.resetFields();
-    setSearchParams((prev) => ({ page: 1, pageSize: prev.pageSize }));
-    actionRef.current?.reloadAndReset?.();
-  };
 
   const columns: ColumnsType<Document> = [
     { title: intl.formatMessage({ id: 'pages.document.table.title' }), dataIndex: 'title', ellipsis: true },
@@ -604,7 +594,7 @@ const ApprovalPage: React.FC = () => {
           actionRef={actionRef}
           columns={columns}
           request={async (params) => {
-            const response = await getPendingDocuments({ page: params.current, pageSize: params.pageSize, ...searchParams });
+            const response = await getPendingDocuments({ page: params.current, pageSize: params.pageSize, ...searchParamsRef.current });
             if (response.success && response.data) {
               const resData: any = response.data;
               return { data: resData.list || resData.data || [], success: true, total: resData.total || 0 };
@@ -624,7 +614,7 @@ const ApprovalPage: React.FC = () => {
           actionRef={actionRef}
           columns={columns}
           request={async (params) => {
-            const response = await getDocumentList({ page: params.current, pageSize: params.pageSize, filterType: 'approved', ...searchParams });
+            const response = await getDocumentList({ page: params.current, pageSize: params.pageSize, filterType: 'approved', ...searchParamsRef.current });
             if (response.success && response.data) {
               const resData: any = response.data;
               return { data: resData.list || resData.data || [], success: true, total: resData.total || 0 };
@@ -644,7 +634,7 @@ const ApprovalPage: React.FC = () => {
           actionRef={actionRef}
           columns={columns}
           request={async (params) => {
-            const response = await getDocumentList({ page: params.current, pageSize: params.pageSize, filterType: 'my', ...searchParams });
+            const response = await getDocumentList({ page: params.current, pageSize: params.pageSize, filterType: 'my', ...searchParamsRef.current });
             if (response.success && response.data) {
               const resData: any = response.data;
               return { data: resData.list || resData.data || [], success: true, total: resData.total || 0 };
@@ -692,27 +682,14 @@ const ApprovalPage: React.FC = () => {
         </Card>
       )}
 
-      <Card style={{ marginBottom: 16 }}>
-        <Form form={searchForm} layout="inline" onFinish={handleSearch}>
-          <Form.Item name="keyword" label={intl.formatMessage({ id: 'pages.document.form.search', defaultMessage: '关键词' })}>
-            <Input placeholder={intl.formatMessage({ id: 'pages.document.form.search', defaultMessage: '搜索关键词' })} allowClear />
-          </Form.Item>
-          <Form.Item name="documentType" label={intl.formatMessage({ id: 'pages.document.table.type', defaultMessage: '公文类型' })}>
-            <Input placeholder={intl.formatMessage({ id: 'pages.document.table.type', defaultMessage: '输入类型' })} allowClear />
-          </Form.Item>
-          <Form.Item name="category" label={intl.formatMessage({ id: 'pages.document.table.category', defaultMessage: '分类' })}>
-            <Input placeholder={intl.formatMessage({ id: 'pages.document.table.category', defaultMessage: '输入分类' })} allowClear />
-          </Form.Item>
-          <Form.Item>
-            <Space>
-              <Button type="primary" htmlType="submit" icon={<ReloadOutlined />}>
-                {intl.formatMessage({ id: 'pages.searchTable.search', defaultMessage: '查询' })}
-              </Button>
-              <Button onClick={handleReset}>{intl.formatMessage({ id: 'pages.searchTable.reset', defaultMessage: '重置' })}</Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </Card>
+      <SearchBar
+        initialParams={searchParamsRef.current}
+        onSearch={(params) => {
+          searchParamsRef.current = { ...searchParamsRef.current, ...params };
+          actionRef.current?.reload?.();
+        }}
+        style={{ marginBottom: 16 }}
+      />
 
       <Tabs
         activeKey={activeTab}

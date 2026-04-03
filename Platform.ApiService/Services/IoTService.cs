@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -45,17 +46,16 @@ public class IoTService : IIoTService
         return gateway;
     }
 
-    public async Task<PagedResult<IoTGateway>> GetGatewaysAsync(string? keyword = null, IoTDeviceStatus? status = null, int page = 1, int pageSize = 20)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<IoTGateway>> GetGatewaysAsync(Platform.ServiceDefaults.Models.PageParams request, IoTDeviceStatus? status = null)
     {
-        var keywordLower = keyword?.ToLowerInvariant();
-        var query = _context.Set<IoTGateway>().Where(g =>
-            (string.IsNullOrEmpty(keywordLower) ||
-             (g.Name != null && g.Name.ToLower().Contains(keywordLower)) ||
-             (g.Title != null && g.Title.ToLower().Contains(keywordLower)) ||
-             (g.GatewayId != null && g.GatewayId.ToLower().Contains(keywordLower))) &&
-            (!status.HasValue || g.Status == status.Value));
+        var query = _context.Set<IoTGateway>().AsQueryable();
 
-        return query.OrderByDescending(g => g.CreatedAt).PageResult(page, pageSize);
+        if (status.HasValue)
+        {
+            query = query.Where(g => g.Status == status.Value);
+        }
+
+        return query.OrderByDescending(g => g.CreatedAt).ToPagedList(request);
     }
 
     public async Task<IoTGateway?> GetGatewayByIdAsync(string id)
@@ -107,7 +107,7 @@ public class IoTService : IIoTService
 
         gateway.Status = status;
         if (status == IoTDeviceStatus.Online) gateway.LastConnectedAt = DateTime.UtcNow;
-        
+
         await _context.SaveChangesAsync();
         return true;
     }
@@ -183,17 +183,16 @@ public class IoTService : IIoTService
         return device;
     }
 
-    public async Task<PagedResult<IoTDevice>> GetDevicesAsync(string? gatewayId = null, string? keyword = null, int page = 1, int pageSize = 20)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<IoTDevice>> GetDevicesAsync(Platform.ServiceDefaults.Models.PageParams request, string? gatewayId = null)
     {
-        var keywordLower = keyword?.ToLowerInvariant();
-        var query = _context.Set<IoTDevice>().Where(d =>
-            (string.IsNullOrEmpty(gatewayId) || d.GatewayId == gatewayId) &&
-            (string.IsNullOrEmpty(keywordLower) ||
-             (d.Name != null && d.Name.ToLower().Contains(keywordLower)) ||
-             (d.Title != null && d.Title.ToLower().Contains(keywordLower)) ||
-             (d.DeviceId != null && d.DeviceId.ToLower().Contains(keywordLower))));
+        var query = _context.Set<IoTDevice>().AsQueryable();
 
-        return query.OrderByDescending(d => d.CreatedAt).PageResult(page, pageSize);
+        if (!string.IsNullOrEmpty(gatewayId))
+        {
+            query = query.Where(d => d.GatewayId == gatewayId);
+        }
+
+        return query.OrderByDescending(d => d.CreatedAt).ToPagedList(request);
     }
 
     public async Task<IoTDevice?> GetDeviceByIdAsync(string id)
@@ -277,7 +276,7 @@ public class IoTService : IIoTService
 
         device.LastReportedAt = DateTime.UtcNow;
         device.Status = IoTDeviceStatus.Online;
-        
+
         await _context.SaveChangesAsync();
         await CreateEventAsync(request.DeviceId, "Connected", "Info", "Device connected");
         _logger.LogInformation("Device connected: {DeviceId}", request.DeviceId);
@@ -341,17 +340,16 @@ public class IoTService : IIoTService
         return dataPoint;
     }
 
-    public async Task<PagedResult<IoTDataPoint>> GetDataPointsAsync(string? deviceId = null, string? keyword = null, int page = 1, int pageSize = 20)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<IoTDataPoint>> GetDataPointsAsync(Platform.ServiceDefaults.Models.PageParams request, string? deviceId = null)
     {
-        var keywordLower = keyword?.ToLowerInvariant();
-        var query = _context.Set<IoTDataPoint>().Where(dp =>
-            (string.IsNullOrEmpty(deviceId) || dp.DeviceId == deviceId) &&
-            (string.IsNullOrEmpty(keywordLower) ||
-             (dp.Name != null && dp.Name.ToLower().Contains(keywordLower)) ||
-             (dp.Title != null && dp.Title.ToLower().Contains(keywordLower)) ||
-             (dp.DataPointId != null && dp.DataPointId.ToLower().Contains(keywordLower))));
+        var query = _context.Set<IoTDataPoint>().AsQueryable();
 
-        return query.OrderByDescending(dp => dp.CreatedAt).PageResult(page, pageSize);
+        if (!string.IsNullOrEmpty(deviceId))
+        {
+            query = query.Where(dp => dp.DeviceId == deviceId);
+        }
+
+        return query.OrderByDescending(dp => dp.CreatedAt).ToPagedList(request);
     }
 
     public async Task<IoTDataPoint?> GetDataPointByIdAsync(string id)
@@ -420,7 +418,7 @@ public class IoTService : IIoTService
         }
 
         await _context.Set<IoTDataRecord>().AddAsync(record);
-        
+
         dataPoint.LastValue = request.Value;
         dataPoint.LastUpdatedAt = DateTime.UtcNow;
 
@@ -484,15 +482,9 @@ public class IoTService : IIoTService
         return records;
     }
 
-    public Task<PagedResult<IoTDataRecord>> QueryDataRecordsAsync(QueryIoTDataRequest request)
+    public Task<System.Linq.Dynamic.Core.PagedResult<IoTDataRecord>> QueryDataRecordsAsync(Platform.ServiceDefaults.Models.PageParams request)
     {
-        var query = _context.Set<IoTDataRecord>().Where(r =>
-            (string.IsNullOrEmpty(request.DeviceId) || r.DeviceId == request.DeviceId) &&
-            (string.IsNullOrEmpty(request.DataPointId) || r.DataPointId == request.DataPointId) &&
-            (!request.StartTime.HasValue || r.ReportedAt >= request.StartTime.Value) &&
-            (!request.EndTime.HasValue || r.ReportedAt <= request.EndTime.Value));
-
-        return Task.FromResult(query.OrderByDescending(r => r.ReportedAt).PageResult(request.Page, request.PageSize));
+        return Task.FromResult(_context.Set<IoTDataRecord>().ToPagedList(request));
     }
 
     public async Task<IoTDataRecord?> GetLatestDataAsync(string dataPointId)
@@ -505,7 +497,7 @@ public class IoTService : IIoTService
 
     public async Task<DataStatistics?> GetDataStatisticsAsync(string dataPointId, DateTime startTime, DateTime endTime)
     {
-        var records = await _context.Set<IoTDataRecord>().Where(r => 
+        var records = await _context.Set<IoTDataRecord>().Where(r =>
             r.DataPointId == dataPointId &&
             r.ReportedAt >= startTime &&
             r.ReportedAt <= endTime).ToListAsync();
@@ -549,17 +541,9 @@ public class IoTService : IIoTService
         return @event;
     }
 
-    public Task<PagedResult<IoTDeviceEvent>> QueryEventsAsync(QueryIoTEventRequest request)
+    public Task<System.Linq.Dynamic.Core.PagedResult<IoTDeviceEvent>> QueryEventsAsync(Platform.ServiceDefaults.Models.PageParams request)
     {
-        var query = _context.Set<IoTDeviceEvent>().Where(e =>
-            (string.IsNullOrEmpty(request.DeviceId) || e.DeviceId == request.DeviceId) &&
-            (string.IsNullOrEmpty(request.EventType) || e.EventType == request.EventType) &&
-            (string.IsNullOrEmpty(request.Level) || e.Level == request.Level) &&
-            (!request.IsHandled.HasValue || e.IsHandled == request.IsHandled.Value) &&
-            (!request.StartTime.HasValue || e.OccurredAt >= request.StartTime.Value) &&
-            (!request.EndTime.HasValue || e.OccurredAt <= request.EndTime.Value));
-
-        return Task.FromResult(query.OrderByDescending(e => e.OccurredAt).PageResult(request.Page, request.PageSize));
+        return Task.FromResult(_context.Set<IoTDeviceEvent>().ToPagedList(request));
     }
 
     public async Task<bool> HandleEventAsync(string eventId, string remarks)
@@ -679,7 +663,7 @@ public class IoTService : IIoTService
         twin.DesiredVersion++;
         twin.ETag = Guid.NewGuid().ToString("N");
         twin.DesiredUpdatedAt = DateTime.UtcNow;
-        
+
         await _context.SaveChangesAsync();
         return twin;
     }
@@ -695,7 +679,7 @@ public class IoTService : IIoTService
         twin.ReportedProperties = updated;
         twin.ReportedVersion++;
         twin.ReportedUpdatedAt = DateTime.UtcNow;
-        
+
         await _context.SaveChangesAsync();
         return twin;
     }
@@ -726,7 +710,7 @@ public class IoTService : IIoTService
         if (!await ValidateApiKeyAsync(deviceId, apiKey)) throw new UnauthorizedAccessException($"Invalid ApiKey for device {deviceId}");
 
         var now = DateTime.UtcNow;
-        var commands = await _context.Set<IoTDeviceCommand>().Where(c => 
+        var commands = await _context.Set<IoTDeviceCommand>().Where(c =>
             c.DeviceId == deviceId &&
             c.Status == CommandStatus.Pending &&
             c.ExpiresAt > now).ToListAsync();
@@ -755,7 +739,7 @@ public class IoTService : IIoTService
         command.ExecutedAt = DateTime.UtcNow;
         command.ResponsePayload = request.ResponsePayload;
         command.ErrorMessage = request.ErrorMessage;
-        
+
         await _context.SaveChangesAsync();
         return true;
     }

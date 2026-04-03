@@ -5,7 +5,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, UserAddOutline
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import PageContainer from '@/components/PageContainer';
 import { DataTable } from '@/components/DataTable';
-import SearchFormCard from '@/components/SearchFormCard';
+import SearchBar from '@/components/SearchBar';
 import StatCard from '@/components/StatCard';
 import * as parkService from '@/services/park';
 import type { InvestmentLead, InvestmentProject, InvestmentStatistics } from '@/services/park';
@@ -23,7 +23,7 @@ const InvestmentManagement: React.FC = () => {
     const { message } = App.useApp();
     const [leadForm] = Form.useForm();
     const [projectForm] = Form.useForm();
-    const [searchForm] = Form.useForm();
+    const searchParamsRef = useRef<any>({ search: '' });
 
     const [activeTab, setActiveTab] = useState<string>('leads');
     const [statistics, setStatistics] = useState<InvestmentStatistics | null>(null);
@@ -268,9 +268,7 @@ const InvestmentManagement: React.FC = () => {
             const res = await parkService.getLeads({
                 page: params.current || 1,
                 pageSize: params.pageSize || 10,
-                search: params.search,
-                status: params.status,
-                priority: params.priority,
+                ...searchParamsRef.current,
             });
             if (res.success && res.data) {
                 const d = res.data as PagedResult<InvestmentLead>;
@@ -287,8 +285,7 @@ const InvestmentManagement: React.FC = () => {
             const res = await parkService.getProjects({
                 page: params.current || 1,
                 pageSize: params.pageSize || 10,
-                search: params.search,
-                stage: params.stage,
+                ...searchParamsRef.current,
             });
             if (res.success && res.data) {
                 return { data: res.data.queryable ?? [], total: res.data.rowCount ?? 0, success: true };
@@ -453,18 +450,6 @@ const InvestmentManagement: React.FC = () => {
         }
     };
 
-    const handleSearch = () => {
-        if (activeTab === 'leads') {
-            leadTableRef.current?.reload();
-        } else {
-            projectTableRef.current?.reload();
-        }
-    };
-
-    const handleReset = () => {
-        searchForm.resetFields();
-        handleSearch();
-    };
 
     const handleRefresh = () => {
         if (activeTab === 'leads') {
@@ -537,33 +522,18 @@ const InvestmentManagement: React.FC = () => {
                 </Row>
             )}
 
-            <SearchFormCard>
-                <Form form={searchForm} layout="inline" onFinish={handleSearch}>
-                    <Form.Item name="search">
-                        <Input placeholder={intl.formatMessage({ id: 'common.search.placeholder', defaultMessage: '搜索...' })} style={{ width: 200 }} allowClear />
-                    </Form.Item>
-                    {activeTab === 'leads' ? (
-                        <>
-                            <Form.Item name="status">
-                                <Select placeholder="状态" style={{ width: 120 }} allowClear options={leadStatusOptions.map(o => ({ label: o.label, value: o.value }))} />
-                            </Form.Item>
-                            <Form.Item name="priority">
-                                <Select placeholder="优先级" style={{ width: 100 }} allowClear options={priorityOptions.map(o => ({ label: o.label, value: o.value }))} />
-                            </Form.Item>
-                        </>
-                    ) : (
-                        <Form.Item name="stage">
-                            <Select placeholder="阶段" style={{ width: 120 }} allowClear options={projectStageOptions.map(o => ({ label: o.label, value: o.value }))} />
-                        </Form.Item>
-                    )}
-                    <Form.Item>
-                        <Space>
-                            <Button type="primary" htmlType="submit">{intl.formatMessage({ id: 'common.search', defaultMessage: '搜索' })}</Button>
-                            <Button onClick={handleReset} icon={<ReloadOutlined />}>{intl.formatMessage({ id: 'common.reset', defaultMessage: '重置' })}</Button>
-                        </Space>
-                    </Form.Item>
-                </Form>
-            </SearchFormCard>
+            <SearchBar
+                initialParams={searchParamsRef.current}
+                onSearch={(params) => {
+                    searchParamsRef.current = { ...searchParamsRef.current, ...params };
+                    if (activeTab === 'leads') {
+                        leadTableRef.current?.reload();
+                    } else {
+                        projectTableRef.current?.reload();
+                    }
+                }}
+                style={{ marginBottom: 16 }}
+            />
 
             <Card>
                 <Tabs

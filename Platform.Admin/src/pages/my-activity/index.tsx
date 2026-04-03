@@ -1,10 +1,10 @@
 import { PageContainer } from '@/components';
-import SearchFormCard from '@/components/SearchFormCard';
+import SearchBar from '@/components/SearchBar';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import DataTable from '@/components/DataTable';
 import type { ActionType } from '@/types/pro-components';
 import type { ColumnsType } from 'antd/es/table';
-import { Button, Tag, Badge, Row, Col, Card, Space, Form, Input, Select, DatePicker, Grid } from 'antd';
+import { Button, Tag, Badge, Row, Col, Card, Space, Select, DatePicker, Grid } from 'antd';
 
 const { useBreakpoint } = Grid;
 import {
@@ -202,7 +202,6 @@ const MyActivity: React.FC = () => {
     actionTypes: number;
     avgDuration: number;
   } | null>(null);
-  const [searchForm] = Form.useForm();
   const [searchParams, setSearchParams] = useState<any>({});
   // 使用 useRef 存储最新的搜索参数，确保 request 函数能立即访问到最新值
   const searchParamsRef = useRef<any>({});
@@ -218,41 +217,6 @@ const MyActivity: React.FC = () => {
     setDetailDrawerOpen(false);
     setSelectedLogId(null);
   }, []);
-
-  // 处理搜索
-  const handleSearch = useCallback(() => {
-    const values = searchForm.getFieldsValue();
-    // 处理日期范围
-    if (values.dateRange && Array.isArray(values.dateRange) && values.dateRange.length === 2) {
-      const [start, end] = values.dateRange;
-      values.startDate = start ? dayjs(start).toISOString() : undefined;
-      values.endDate = end ? dayjs(end).toISOString() : undefined;
-      delete values.dateRange;
-    }
-    // 同时更新 state 和 ref，ref 确保 request 函数能立即访问到最新值
-    searchParamsRef.current = values;
-    setSearchParams(values);
-    // 重置到第一页并重新加载数据
-    if (actionRef.current?.reloadAndReset) {
-      actionRef.current.reloadAndReset();
-    } else if (actionRef.current?.reload) {
-      actionRef.current.reload();
-    }
-  }, [searchForm]);
-
-  // 处理重置
-  const handleReset = useCallback(() => {
-    searchForm.resetFields();
-    // 同时更新 state 和 ref
-    searchParamsRef.current = {};
-    setSearchParams({});
-    if (actionRef.current?.reloadAndReset) {
-      actionRef.current.reloadAndReset();
-    } else if (actionRef.current?.reload) {
-      actionRef.current.reload();
-    }
-  }, [searchForm]);
-
 
   /**
    * 初始化列宽调整功能
@@ -533,6 +497,7 @@ const MyActivity: React.FC = () => {
         getCurrentUserActivityLogs({
           page: current,
           pageSize,
+          search: mergedParams.search,
           action,
           httpMethod,
           statusCode: statusCode && statusCode !== '' ? Number(statusCode) : undefined,
@@ -543,6 +508,7 @@ const MyActivity: React.FC = () => {
           sortOrder,
         }),
         getCurrentUserActivityLogStatistics({
+          search: mergedParams.search,
           action,
           httpMethod,
           statusCode: statusCode && statusCode !== '' ? Number(statusCode) : undefined,
@@ -613,70 +579,14 @@ const MyActivity: React.FC = () => {
       }
     >
       {/* 搜索表单 */}
-      <SearchFormCard>
-        <Form form={searchForm} layout={isMobile ? 'vertical' : 'inline'} onFinish={handleSearch}>
-          <Form.Item name="action" label={intl.formatMessage({ id: 'pages.table.action' })}>
-            <Input
-              placeholder={intl.formatMessage({ id: 'pages.table.action' })}
-              style={{ width: 150 }}
-              allowClear
-            />
-          </Form.Item>
-          <Form.Item name="httpMethod" label={intl.formatMessage({ id: 'pages.table.httpMethod' })}>
-            <Select
-              placeholder={intl.formatMessage({ id: 'pages.table.httpMethod' })}
-              style={{ width: 120 }}
-              allowClear
-            >
-              <Select.Option value="GET">GET</Select.Option>
-              <Select.Option value="POST">POST</Select.Option>
-              <Select.Option value="PUT">PUT</Select.Option>
-              <Select.Option value="DELETE">DELETE</Select.Option>
-              <Select.Option value="PATCH">PATCH</Select.Option>
-            </Select>
-          </Form.Item>
-          <Form.Item name="statusCode" label={intl.formatMessage({ id: 'pages.table.statusCode' })}>
-            <Input
-              placeholder={intl.formatMessage({ id: 'pages.table.statusCode' })}
-              style={{ width: 120 }}
-              allowClear
-            />
-          </Form.Item>
-          <Form.Item name="ipAddress" label={intl.formatMessage({ id: 'pages.table.ipAddress' })}>
-            <Input
-              placeholder={intl.formatMessage({ id: 'pages.table.ipAddress' })}
-              style={{ width: 150 }}
-              allowClear
-            />
-          </Form.Item>
-          <Form.Item name="dateRange" label={intl.formatMessage({ id: 'pages.table.actionTime' })}>
-            <RangePicker
-              showTime
-              format="YYYY-MM-DD HH:mm:ss"
-              style={{ width: 400 }}
-            />
-          </Form.Item>
-          <Form.Item>
-            <Space wrap>
-              <Button
-                type="primary"
-                htmlType="submit"
-                icon={<SearchOutlined />}
-                style={isMobile ? { width: '100%' } : {}}
-              >
-                {intl.formatMessage({ id: 'pages.button.search' })}
-              </Button>
-              <Button
-                onClick={handleReset}
-                icon={<ReloadOutlined />}
-                style={isMobile ? { width: '100%' } : {}}
-              >
-                {intl.formatMessage({ id: 'pages.userManagement.reset' })}
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </SearchFormCard>
+      <SearchBar
+        initialParams={searchParamsRef.current}
+        onSearch={(params) => {
+          searchParamsRef.current = params;
+          setSearchParams(params);
+          actionRef.current?.reloadAndReset?.();
+        }}
+      />
 
       {/* 活动统计信息：统一使用 StatCard 风格 */}
       {statistics && (

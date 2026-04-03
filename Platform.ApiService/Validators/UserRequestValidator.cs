@@ -101,7 +101,7 @@ public static class UserRequestValidator
     /// <summary>
     /// 验证用户列表请求
     /// </summary>
-    public static List<string> ValidateUserListRequest(UserListRequest request)
+    public static List<string> ValidateUserListRequest(Platform.ServiceDefaults.Models.PageParams request)
     {
         var errors = new List<string>();
 
@@ -124,12 +124,6 @@ public static class UserRequestValidator
         if (!string.IsNullOrEmpty(request.SortOrder) && !validSortOrders.Contains(request.SortOrder, StringComparer.OrdinalIgnoreCase))
         {
             errors.Add("排序顺序必须是 asc 或 desc");
-        }
-
-        // 验证日期范围
-        if (request.StartDate.HasValue && request.EndDate.HasValue && request.StartDate > request.EndDate)
-        {
-            errors.Add("开始日期不能晚于结束日期");
         }
 
         return errors;

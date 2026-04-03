@@ -23,6 +23,7 @@ export interface UserActivityLog {
  * 获取用户活动日志参数
  */
 export interface GetUserActivityLogsParams {
+  search?: string;
   page?: number;
   pageSize?: number;
   createdBy?: string;

@@ -1,7 +1,7 @@
 import { PageContainer } from '@/components';
 import DataTable from '@/components/DataTable';
 import { Button, Space, App, Modal, Input, Grid, Form } from 'antd';
-import SearchFormCard from '@/components/SearchFormCard';
+import SearchBar from '@/components/SearchBar';
 
 const { useBreakpoint } = Grid;
 import React, { useRef, useState, useEffect, useCallback } from 'react';
@@ -44,12 +44,12 @@ const PendingJoinRequests: React.FC = () => {
   const actionRef = useRef<ActionType>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
-  const [searchForm] = Form.useForm();
+  const searchParamsRef = useRef<any>({ search: '' });
 
   // 获取待审核申请列表（使用 useCallback 避免死循环）
   const fetchPendingRequests = useCallback(async (_params: any, _sort?: Record<string, any>) => {
     try {
-      const { keyword } = searchForm.getFieldsValue();
+      const { search: keyword } = searchParamsRef.current;
       const companyId = initialState?.currentUser?.currentCompanyId;
 
       if (!companyId) {
@@ -411,38 +411,14 @@ const PendingJoinRequests: React.FC = () => {
       }
     >
       {/* 搜索表单 */}
-      <SearchFormCard style={{ marginBottom: 16 }}>
-        <Form
-          form={searchForm}
-          layout="inline"
-          onFinish={() => actionRef.current?.reload?.()}
-          style={{ gap: 8 }}
-        >
-          <Form.Item name="keyword" style={{ marginBottom: 0 }}>
-            <Input
-              placeholder={intl.formatMessage({ id: 'pages.joinRequests.search.placeholder' })}
-              allowClear
-              onPressEnter={() => actionRef.current?.reload?.()}
-              style={{ width: 220 }}
-            />
-          </Form.Item>
-          <Form.Item style={{ marginBottom: 0 }}>
-            <Space>
-              <Button type="primary" onClick={() => actionRef.current?.reload?.()}>
-                {intl.formatMessage({ id: 'pages.button.search' })}
-              </Button>
-              <Button
-                onClick={() => {
-                  searchForm.resetFields();
-                  actionRef.current?.reload?.();
-                }}
-              >
-                {intl.formatMessage({ id: 'pages.button.reset' })}
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </SearchFormCard>
+      <SearchBar
+        initialParams={searchParamsRef.current}
+        onSearch={(params) => {
+          searchParamsRef.current = { ...searchParamsRef.current, ...params };
+          actionRef.current?.reload?.();
+        }}
+        style={{ marginBottom: 16 }}
+      />
 
       <DataTable<API.JoinRequestDetail>
         columns={columns}

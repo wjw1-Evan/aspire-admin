@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Extensions;
 using System.Linq.Dynamic.Core;
 using System.Security.Cryptography;
 using System.Text;
@@ -154,33 +155,32 @@ public class PasswordBookService : IPasswordBookService
     /// 分页查询条目列表（不返回密码）
     /// 可见范围：自己的私有条目 + 企业内所有公有条目
     /// </summary>
-    public async Task<PagedResult<PasswordBookEntryDto>> GetEntriesAsync(PasswordBookQueryRequest request, string userId)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<PasswordBookEntryDto>> GetEntriesAsync(
+        Platform.ServiceDefaults.Models.PageParams pageParams,
+        string userId,
+        string? platform = null,
+        string? account = null,
+        string? category = null,
+        List<string>? tags = null)
     {
         if (string.IsNullOrEmpty(userId))
             throw new ArgumentException("用户ID不能为空", nameof(userId));
         
-        var platform = request.Platform?.Trim();
-        var account = request.Account?.Trim();
-        var category = request.Category?.Trim();
-        var keywordLower = request.Keyword?.Trim().ToLowerInvariant();
-        var tags = request.Tags;
+        var platformTrim = platform?.Trim();
+        var accountTrim = account?.Trim();
+        var categoryTrim = category?.Trim();
 
         var query = _context.Set<PasswordBookEntry>().Where(
             e =>
                 (e.UserId == userId || e.IsPublic) &&
-                (string.IsNullOrEmpty(platform) || e.Platform.Contains(platform)) &&
-                (string.IsNullOrEmpty(account) || e.Account.Contains(account)) &&
-                (string.IsNullOrEmpty(category) || e.Category == category) &&
-                (tags == null || tags.Count == 0 || (e.Tags != null && e.Tags.Any(t => tags.Contains(t)))) &&
-                (string.IsNullOrEmpty(keywordLower) ||
-                 e.Platform.ToLower().Contains(keywordLower) ||
-                 e.Account.ToLower().Contains(keywordLower) ||
-                 (e.Notes != null && e.Notes.ToLower().Contains(keywordLower))));
-        var total = await query.LongCountAsync();
-        var pagedResult = query
-                .OrderByDescending(e => e.LastUsedAt)
-                .ThenByDescending(e => e.CreatedAt)
-                .PageResult(request.Page, request.PageSize);
+                (string.IsNullOrEmpty(platformTrim) || e.Platform.Contains(platformTrim)) &&
+                (string.IsNullOrEmpty(accountTrim) || e.Account.Contains(accountTrim)) &&
+                (string.IsNullOrEmpty(categoryTrim) || e.Category == categoryTrim) &&
+                (tags == null || tags.Count == 0 || (e.Tags != null && e.Tags.Any(t => tags.Contains(t)))));
+
+        pageParams.SortBy = string.IsNullOrEmpty(pageParams.SortBy) ? "LastUsedAt" : pageParams.SortBy;
+
+        var pagedResult = query.ToPagedList(pageParams);
         var items = await pagedResult.Queryable.ToListAsync();
 
         var dtos = items.Select(e => new PasswordBookEntryDto
@@ -198,13 +198,13 @@ public class PasswordBookService : IPasswordBookService
             IsPublic = e.IsPublic
         }).ToList();
 
-        return new PagedResult<PasswordBookEntryDto>
+        return new System.Linq.Dynamic.Core.PagedResult<PasswordBookEntryDto>
         {
             Queryable = dtos.AsQueryable(),
-            CurrentPage = request.Page,
-            PageSize = request.PageSize,
-            RowCount = (int)total,
-            PageCount = (int)Math.Ceiling((double)total / request.PageSize)
+            CurrentPage = pagedResult.CurrentPage,
+            PageSize = pagedResult.PageSize,
+            RowCount = pagedResult.RowCount,
+            PageCount = pagedResult.PageCount
         };
     }
 

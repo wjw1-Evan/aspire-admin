@@ -163,48 +163,6 @@ public class CompleteTaskRequest
 }
 
 /// <summary>
-/// 任务查询请求DTO
-/// </summary>
-public class TaskQueryRequest : PageParams
-{
-    /// <summary>搜索关键词</summary>
-    public string? Search { get; set; }
-
-    /// <summary>任务状态</summary>
-    public int? Status { get; set; }
-
-    /// <summary>优先级</summary>
-    public int? Priority { get; set; }
-
-    /// <summary>分配给的用户ID</summary>
-    public string? AssignedTo { get; set; }
-
-    /// <summary>创建者ID</summary>
-    public string? CreatedBy { get; set; }
-
-    /// <summary>任务类型</summary>
-    public string? TaskType { get; set; }
-
-    /// <summary>开始日期</summary>
-    public DateTime? StartDate { get; set; }
-
-    /// <summary>结束日期</summary>
-    public DateTime? EndDate { get; set; }
-
-    /// <summary>排序字段</summary>
-    public new string SortBy { get; set; } = "CreatedAt";
-
-    /// <summary>是否只查询根任务（默认为 true，搜索时除外）</summary>
-    public bool? OnlyRoot { get; set; }
-
-    /// <summary>标签过滤</summary>
-    public List<string>? Tags { get; set; }
-
-    /// <summary>项目ID过滤</summary>
-    public string? ProjectId { get; set; }
-}
-
-/// <summary>
 /// 任务响应DTO
 /// </summary>
 public class TaskDto

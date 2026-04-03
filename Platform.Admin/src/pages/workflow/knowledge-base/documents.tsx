@@ -22,7 +22,7 @@ import {
 import { useIntl, useParams, history } from '@umijs/max';
 import PageContainer from '@/components/PageContainer';
 import DataTable from '@/components/DataTable';
-import SearchFormCard from '@/components/SearchFormCard';
+import SearchBar from '@/components/SearchBar';
 import * as kbService from '@/services/workflow/knowledge-base';
 import type { KnowledgeDocument } from '@/services/workflow/knowledge-base';
 import dayjs from 'dayjs';
@@ -37,7 +37,7 @@ const KnowledgeBaseDocuments: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingDoc, setEditingDoc] = useState<KnowledgeDocument | null>(null);
   const [form] = Form.useForm();
-  const [searchForm] = Form.useForm();
+  const searchParamsRef = useRef<any>({ search: '' });
   const [loading, setLoading] = useState(false);
   const [kbInfo, setKbInfo] = useState<{ name: string } | null>(null);
   const actionRef = useRef<any>(null);
@@ -52,14 +52,6 @@ const KnowledgeBaseDocuments: React.FC = () => {
     }
   }, [knowledgeBaseId]);
 
-  const handleSearch = () => {
-    actionRef.current?.reload?.();
-  };
-
-  const handleReset = () => {
-    searchForm.resetFields();
-    handleSearch();
-  };
 
   const handleDelete = (record: KnowledgeDocument) => {
     modal.confirm({
@@ -207,31 +199,23 @@ const KnowledgeBaseDocuments: React.FC = () => {
         </Space>
       }
     >
-      <SearchFormCard>
-        <Form form={searchForm} layout="inline" onFinish={handleSearch}>
-          <Form.Item name="keyword">
-            <Input placeholder="搜索标题或内容..." style={{ width: 300 }} allowClear />
-          </Form.Item>
-          <Form.Item>
-            <Space>
-              <Button type="primary" htmlType="submit">
-                搜索
-              </Button>
-              <Button onClick={handleReset}>重置</Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </SearchFormCard>
+      <SearchBar
+        initialParams={searchParamsRef.current}
+        onSearch={(params) => {
+          searchParamsRef.current = { ...searchParamsRef.current, ...params };
+          actionRef.current?.reload?.();
+        }}
+        style={{ marginBottom: 16 }}
+      />
 
       <Card>
         <DataTable<KnowledgeDocument>
           columns={columns}
           request={async (params: { current?: number; pageSize?: number }) => {
-            const searchValues = searchForm.getFieldsValue();
             const res = await kbService.getKnowledgeDocuments(knowledgeBaseId, {
               page: params.current ?? 1,
               pageSize: params.pageSize ?? 10,
-              ...searchValues,
+              ...searchParamsRef.current,
             });
             if (res.success && res.data) {
               const d = res.data as any;

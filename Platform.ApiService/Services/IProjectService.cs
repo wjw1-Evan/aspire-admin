@@ -47,7 +47,7 @@ public interface IProjectService
     /// </summary>
     /// <param name="request">查询请求</param>
     /// <returns>项目列表响应</returns>
-    Task<PagedResult<ProjectDto>> GetProjectsListAsync(ProjectQueryRequest request);
+    Task<System.Linq.Dynamic.Core.PagedResult<ProjectDto>> GetProjectsListAsync(Platform.ServiceDefaults.Models.PageParams request);
 
     /// <summary>
     /// 获取项目统计信息

@@ -41,7 +41,7 @@ import { useIntl } from '@umijs/max';
 import PageContainer from '@/components/PageContainer';
 import DataTable from '@/components/DataTable';
 import StatCard from '@/components/StatCard';
-import SearchFormCard from '@/components/SearchFormCard';
+import SearchBar from '@/components/SearchBar';
 import * as visitService from '@/services/visit';
 import type { VisitQuestion, VisitQuestionnaire, VisitStatistics } from '@/services/visit';
 import dayjs from 'dayjs';
@@ -60,7 +60,7 @@ const VisitKnowledgeBase: React.FC = () => {
     const [editingQuestionnaire, setEditingQuestionnaire] = useState<VisitQuestionnaire | null>(null);
     const [questionForm] = Form.useForm();
     const [questionnaireForm] = Form.useForm();
-    const [searchForm] = Form.useForm();
+    const searchParamsRef = useRef<any>({ search: '' });
     const [allQuestions, setAllQuestions] = useState<VisitQuestion[]>([]);
     const [targetKeys, setTargetKeys] = useState<string[]>([]);
     const [statistics, setStatistics] = useState<VisitStatistics | null>(null);
@@ -98,14 +98,6 @@ const VisitKnowledgeBase: React.FC = () => {
         loadStatistics();
     }, [loadStatistics]);
 
-    const handleSearch = () => {
-        actionRef.current?.reload?.();
-    };
-
-    const handleReset = () => {
-        searchForm.resetFields();
-        handleSearch();
-    };
 
     const questionColumns = [
         {
@@ -296,35 +288,22 @@ const VisitKnowledgeBase: React.FC = () => {
                         label: '高频问题库',
                         children: (
                             <>
-                                <SearchFormCard>
-                                    <Form form={searchForm} layout="inline" onFinish={handleSearch}>
-                                        <Form.Item name="search">
-                                            <Input placeholder="搜索问题内容..." style={{ width: 250 }} allowClear />
-                                        </Form.Item>
-                                        <Form.Item name="category">
-                                            <Select placeholder="所有分类" style={{ width: 150 }} allowClear>
-                                                <Select.Option value="政策咨询">政策咨询</Select.Option>
-                                                <Select.Option value="物业服务">物业服务</Select.Option>
-                                                <Select.Option value="政务代办">政务代办</Select.Option>
-                                            </Select>
-                                        </Form.Item>
-                                        <Form.Item>
-                                            <Space>
-                                                <Button type="primary" htmlType="submit">搜索</Button>
-                                                <Button onClick={handleReset} icon={<ReloadOutlined />}>重置</Button>
-                                            </Space>
-                                        </Form.Item>
-                                    </Form>
-                                </SearchFormCard>
+                                <SearchBar
+                                    initialParams={searchParamsRef.current}
+                                    onSearch={(params) => {
+                                        searchParamsRef.current = { ...searchParamsRef.current, ...params };
+                                        actionRef.current?.reload?.();
+                                    }}
+                                    style={{ marginBottom: 16 }}
+                                />
                                 <Card>
                                     <DataTable<VisitQuestion>
                                         columns={questionColumns as any}
                                         request={async (params: any) => {
-                                            const searchValues = searchForm.getFieldsValue();
                                             const res = await visitService.getQuestions({
                                                 page: params.current || 1,
                                                 pageSize: params.pageSize || 10,
-                                                ...searchValues,
+                                                ...searchParamsRef.current,
                                             });
                                             if (res.success && res.data) {
                                                 return { data: res.data.queryable, total: res.data.rowCount, success: true };

@@ -1,8 +1,8 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { PageContainer, StatCard } from '@/components';
-import SearchFormCard from '@/components/SearchFormCard';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import DataTable from '@/components/DataTable';
+import SearchBar from '@/components/SearchBar';
 import type { ActionType } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
 import { Grid } from 'antd';
@@ -91,9 +91,11 @@ const CloudStorageSharedPage: React.FC = () => {
     const [selectedRows, setSelectedRows] = useState<FileShare[]>([]);
 
     // 搜索相关状态
-    const [searchParams, setSearchParams] = useState<SearchParams>({});
-    const searchParamsRef = useRef<SearchParams>({});
-    const [searchForm] = Form.useForm();
+    const searchParamsRef = useRef<any>({
+        current: 1,
+        pageSize: 20,
+        search: '',
+    });
     const { styles } = useCommonStyles();
 
     // 弹窗状态
@@ -187,11 +189,13 @@ const CloudStorageSharedPage: React.FC = () => {
                 response = await getMyShares({
                     page: current,
                     pageSize,
+                    search: mergedParams.search,
                 });
             } else {
                 response = await getSharedWithMe({
                     page: current,
                     pageSize,
+                    search: mergedParams.search,
                 });
             }
 
@@ -258,32 +262,6 @@ const CloudStorageSharedPage: React.FC = () => {
         }
     }, [activeTab]);
 
-    // 搜索处理
-    const handleSearch = useCallback((values: any) => {
-        // 同时更新 state 和 ref
-        searchParamsRef.current = values;
-        setSearchParams(values);
-
-        // 重新加载数据
-        if (actionRef.current?.reloadAndReset) {
-            actionRef.current.reloadAndReset();
-        } else if (actionRef.current?.reload) {
-            actionRef.current.reload?.();
-        }
-    }, []);
-
-    const handleReset = useCallback(() => {
-        searchForm.resetFields();
-        // 同时更新 state 和 ref
-        searchParamsRef.current = {};
-        setSearchParams({});
-
-        if (actionRef.current?.reloadAndReset) {
-            actionRef.current.reloadAndReset();
-        } else if (actionRef.current?.reload) {
-            actionRef.current.reload?.();
-        }
-    }, [searchForm]);
 
     // Tab 切换
     const handleTabChange = useCallback((key: string) => {
@@ -579,51 +557,14 @@ const CloudStorageSharedPage: React.FC = () => {
             }
         >
             {/* 搜索表单 */}
-            <SearchFormCard>
-                <Form
-                    form={searchForm}
-                    layout={isMobile ? 'vertical' : 'inline'}
-                    onFinish={handleSearch}
-                >
-                    <Form.Item name="shareType" label={intl.formatMessage({ id: 'pages.cloud-storage.shared.label.shareType' })}>
-                        <Select
-                            placeholder={intl.formatMessage({ id: 'pages.cloud-storage.shared.placeholder.shareType' })}
-                            style={isMobile ? { width: '100%' } : { width: 120 }}
-                            allowClear
-                        >
-                            <Select.Option value="internal">{intl.formatMessage({ id: 'pages.cloud-storage.shared.type.internal' })}</Select.Option>
-                            <Select.Option value="external">{intl.formatMessage({ id: 'pages.cloud-storage.shared.type.external' })}</Select.Option>
-                        </Select>
-                    </Form.Item>
-                    <Form.Item name="isEnabled" label={intl.formatMessage({ id: 'pages.table.isEnabled' })}>
-                        <Select
-                            placeholder={intl.formatMessage({ id: 'pages.cloud-storage.shared.placeholder.status' })}
-                            style={isMobile ? { width: '100%' } : { width: 100 }}
-                            allowClear
-                        >
-                            <Select.Option value={true}>{intl.formatMessage({ id: 'pages.cloud-storage.shared.status.enabled' })}</Select.Option>
-                            <Select.Option value={false}>{intl.formatMessage({ id: 'pages.cloud-storage.shared.status.disabled' })}</Select.Option>
-                        </Select>
-                    </Form.Item>
-                    <Form.Item>
-                        <Space>
-                            <Button
-                                type="primary"
-                                htmlType="submit"
-                                style={isMobile ? { width: '100%' } : {}}
-                            >
-                                {intl.formatMessage({ id: 'pages.searchTable.search' })}
-                            </Button>
-                            <Button
-                                onClick={handleReset}
-                                style={isMobile ? { width: '100%' } : {}}
-                            >
-                                {intl.formatMessage({ id: 'pages.searchTable.reset' })}
-                            </Button>
-                        </Space>
-                    </Form.Item>
-                </Form>
-            </SearchFormCard>
+            <SearchBar
+                initialParams={searchParamsRef.current}
+                onSearch={(params) => {
+                    searchParamsRef.current = { ...searchParamsRef.current, ...params };
+                    actionRef.current?.reload?.();
+                }}
+                style={{ marginBottom: 16 }}
+            />
 
             {/* 标签页 */}
             <Card className={styles.card}>

@@ -31,28 +31,13 @@ public class ParkInvestmentService : IParkInvestmentService
     /// <summary>
     /// 获取线索列表
     /// </summary>
-    public async Task<PagedResult<InvestmentLeadDto>> GetLeadsAsync(InvestmentLeadListRequest request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<InvestmentLeadDto>> GetLeadsAsync(Platform.ServiceDefaults.Models.PageParams request)
     {
-        
-        var search = request.Search?.ToLower();
-        var status = request.Status;
-        var source = request.Source;
-        var priority = request.Priority;
-        var assignedTo = request.AssignedTo;
-
-        var baseQuery = _context.Set<InvestmentLead>().Where(
-            l => (string.IsNullOrEmpty(search) || l.CompanyName.ToLower().Contains(search)) &&
-                 (string.IsNullOrEmpty(status) || l.Status == status) &&
-                 (string.IsNullOrEmpty(source) || l.Source == source) &&
-                 (string.IsNullOrEmpty(priority) || l.Priority == priority) &&
-                 (string.IsNullOrEmpty(assignedTo) || l.AssignedTo == assignedTo));
-        var total = await baseQuery.LongCountAsync();
-        var pagedResult = baseQuery.ApplySort(request).PageResult(request.Page, request.PageSize);
+        var pagedResult = _context.Set<InvestmentLead>().ToPagedList(request);
         var items = await pagedResult.Queryable.ToListAsync();
-
         var leads = items.Select(MapToLeadDto).ToList();
 
-        return new PagedResult<InvestmentLeadDto> { Queryable = leads.AsQueryable(), CurrentPage = pagedResult.CurrentPage, PageSize = pagedResult.PageSize, RowCount = pagedResult.RowCount, PageCount = pagedResult.PageCount };
+        return new System.Linq.Dynamic.Core.PagedResult<InvestmentLeadDto> { Queryable = leads.AsQueryable(), CurrentPage = pagedResult.CurrentPage, PageSize = pagedResult.PageSize, RowCount = pagedResult.RowCount, PageCount = pagedResult.PageCount };
     }
 
     /// <summary>
@@ -191,23 +176,13 @@ public class ParkInvestmentService : IParkInvestmentService
     /// <summary>
     /// 获取项目列表
     /// </summary>
-    public async Task<PagedResult<InvestmentProjectDto>> GetProjectsAsync(InvestmentProjectListRequest request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<InvestmentProjectDto>> GetProjectsAsync(Platform.ServiceDefaults.Models.PageParams request)
     {
-        var search = request.Search?.ToLower();
-        var stage = request.Stage;
-        var assignedTo = request.AssignedTo;
-
-        var baseQuery = _context.Set<InvestmentProject>().Where(
-            p => (string.IsNullOrEmpty(search) || p.ProjectName.ToLower().Contains(search)) &&
-                 (string.IsNullOrEmpty(stage) || p.Stage == stage) &&
-                 (string.IsNullOrEmpty(assignedTo) || p.AssignedTo == assignedTo));
-        var total = await baseQuery.LongCountAsync();
-        var pagedResult = baseQuery.ApplySort(request).PageResult(request.Page, request.PageSize);
+        var pagedResult = _context.Set<InvestmentProject>().ToPagedList(request);
         var items = await pagedResult.Queryable.ToListAsync();
-
         var projects = items.Select(MapToProjectDto).ToList();
 
-        return new PagedResult<InvestmentProjectDto> { Queryable = projects.AsQueryable(), CurrentPage = pagedResult.CurrentPage, PageSize = pagedResult.PageSize, RowCount = pagedResult.RowCount, PageCount = pagedResult.PageCount };
+        return new System.Linq.Dynamic.Core.PagedResult<InvestmentProjectDto> { Queryable = projects.AsQueryable(), CurrentPage = pagedResult.CurrentPage, PageSize = pagedResult.PageSize, RowCount = pagedResult.RowCount, PageCount = pagedResult.PageCount };
     }
 
     /// <summary>

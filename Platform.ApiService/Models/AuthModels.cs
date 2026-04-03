@@ -248,13 +248,6 @@ public class LoginData
 }
 
 /// <summary>
-/// 分页参数（继承自 ServiceDefaults）
-/// </summary>
-public class PageParams : Platform.ServiceDefaults.Models.PageParams
-{
-}
-
-/// <summary>
 /// 应用用户实体（多企业模型）
 /// v3.1: 用户与企业是多对多关系，通过 UserCompany 中间表管理
 /// 用户实体 - 支持多企业登录 (EFCore + MongoDB 兼容)

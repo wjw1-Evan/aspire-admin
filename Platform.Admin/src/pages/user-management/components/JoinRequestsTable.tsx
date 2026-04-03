@@ -5,7 +5,7 @@ import { request, useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import { CheckOutlined, CloseOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import DataTable from '@/components/DataTable';
-import SearchFormCard from '@/components/SearchFormCard';
+import SearchBar from '@/components/SearchBar';
 import type { ActionType } from '@/types/pro-components';
 import type { ColumnsType } from 'antd/es/table';
 
@@ -16,7 +16,7 @@ interface JoinRequestsTableProps {
 const JoinRequestsTable: React.FC<JoinRequestsTableProps> = ({ companyId }) => {
     const actionRef = useRef<ActionType>(null);
     const intl = useIntl();
-    const [searchForm] = Form.useForm();
+    const searchParamsRef = useRef<any>({ search: '' });
     const [messageApi, contextHolder] = message.useMessage();
     const [rejectModalVisible, setRejectModalVisible] = useState(false);
     const [currentRequestId, setCurrentRequestId] = useState<string>('');
@@ -54,14 +54,6 @@ const JoinRequestsTable: React.FC<JoinRequestsTableProps> = ({ companyId }) => {
         }
     };
 
-    const handleSearch = useCallback(() => {
-        actionRef.current?.reload?.();
-    }, []);
-
-    const handleReset = useCallback(() => {
-        searchForm.resetFields();
-        actionRef.current?.reload?.();
-    }, [searchForm]);
 
     const columns: ColumnsType<JoinRequestDetail> = [
         {
@@ -168,48 +160,20 @@ const JoinRequestsTable: React.FC<JoinRequestsTableProps> = ({ companyId }) => {
     return (
         <>
             {contextHolder}
-            <SearchFormCard style={{ marginBottom: 16 }}>
-                <Form
-                    form={searchForm}
-                    layout="inline"
-                    onFinish={handleSearch}
-                    initialValues={{ status: 'all' }}
-                >
-                    <Form.Item name="keyword" label={intl.formatMessage({ id: 'pages.userManagement.search.label', defaultMessage: '关键字' })}>
-                        <Input
-                            placeholder={intl.formatMessage({ id: 'pages.joinRequests.search.placeholder', defaultMessage: '搜索用户名或邮箱' })}
-                            allowClear
-                            style={{ width: 220 }}
-                        />
-                    </Form.Item>
-                    <Form.Item name="status" label={intl.formatMessage({ id: 'pages.table.status', defaultMessage: '状态' })}>
-                        <Select style={{ width: 120 }}>
-                            <Select.Option value="all">{intl.formatMessage({ id: 'pages.unifiedNotificationCenter.all', defaultMessage: '全部' })}</Select.Option>
-                            <Select.Option value="pending">{intl.formatMessage({ id: 'pages.status.pending', defaultMessage: '待审核' })}</Select.Option>
-                            <Select.Option value="approved">{intl.formatMessage({ id: 'pages.status.approved', defaultMessage: '已批准' })}</Select.Option>
-                            <Select.Option value="rejected">{intl.formatMessage({ id: 'pages.status.rejected', defaultMessage: '已拒绝' })}</Select.Option>
-                            <Select.Option value="cancelled">{intl.formatMessage({ id: 'pages.status.cancelled', defaultMessage: '已取消' })}</Select.Option>
-                        </Select>
-                    </Form.Item>
-                    <Form.Item>
-                        <Space>
-                            <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
-                                {intl.formatMessage({ id: 'pages.button.search', defaultMessage: '搜索' })}
-                            </Button>
-                            <Button icon={<ReloadOutlined />} onClick={handleReset}>
-                                {intl.formatMessage({ id: 'pages.button.reset', defaultMessage: '重置' })}
-                            </Button>
-                        </Space>
-                    </Form.Item>
-                </Form>
-            </SearchFormCard>
+            <SearchBar
+                initialParams={searchParamsRef.current}
+                onSearch={(params) => {
+                    searchParamsRef.current = { ...searchParamsRef.current, ...params };
+                    actionRef.current?.reload?.();
+                }}
+                style={{ marginBottom: 16 }}
+            />
 
             <DataTable<JoinRequestDetail>
                 actionRef={actionRef}
                 rowKey="id"
                 request={async (params) => {
-                    const values = searchForm.getFieldsValue();
-                    const status = values.status === 'all' ? undefined : values.status;
+                    const status = searchParamsRef.current.status === 'all' ? undefined : searchParamsRef.current.status;
 
                     const result = await request(`/api/company/${companyId}/join-requests`, {
                         params: {
@@ -220,8 +184,8 @@ const JoinRequestsTable: React.FC<JoinRequestsTableProps> = ({ companyId }) => {
                     let data = result.data || [];
 
                     // 前端关键字过滤
-                    if (values.keyword) {
-                        const kw = values.keyword.toLowerCase();
+                    if (searchParamsRef.current.search) {
+                        const kw = searchParamsRef.current.search.toLowerCase();
                         data = data.filter((item: JoinRequestDetail) =>
                             item.username.toLowerCase().includes(kw) ||
                             (item.userEmail && item.userEmail.toLowerCase().includes(kw))

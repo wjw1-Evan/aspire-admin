@@ -26,7 +26,7 @@ import WorkflowEditForm from './components/WorkflowEditForm';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import useCommonStyles from '@/hooks/useCommonStyles';
-import SearchFormCard from '@/components/SearchFormCard';
+import SearchBar from '@/components/SearchBar';
 const { useBreakpoint } = Grid;
 import type { SelectProps } from 'antd';
 
@@ -45,21 +45,10 @@ const WorkflowManagement: React.FC = () => {
   const [previewVisible, setPreviewVisible] = useState(false);
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [searchForm] = Form.useForm();
-  const [searchParams, setSearchParams] = useState({
+  const searchParamsRef = useRef<any>({
     current: 1,
-    pageSize: 10,
-    keyword: '',
-    category: undefined,
-    isActive: undefined,
-  });
-
-  // 🔧 使用 ref 存储搜索参数，避免 request 函数重新创建导致重复请求
-  const searchParamsRef = useRef({
-    current: 1,
-    pageSize: 10,
-    keyword: '',
-    category: undefined,
-    isActive: undefined,
+    pageSize: 20,
+    search: '',
   });
 
   const handleRefresh = () => {
@@ -67,48 +56,13 @@ const WorkflowManagement: React.FC = () => {
   };
 
 
-  // 搜索
-  const handleSearch = (values: any) => {
-    const newParams = {
-      current: 1,
-      pageSize: searchParamsRef.current.pageSize,
-      keyword: values.keyword || '',
-      category: values.category,
-      isActive: values.isActive,
-    };
-    // 同时更新 ref 和 state
-    searchParamsRef.current = newParams;
-    setSearchParams(newParams);
-    // 手动触发重新加载
-    actionRef.current?.reload?.();
-  };
-
-  // 重置搜索
-  const handleReset = () => {
-    searchForm.resetFields();
-    const resetParams = {
-      current: 1,
-      pageSize: searchParamsRef.current.pageSize,
-      keyword: '',
-      category: undefined,
-      isActive: undefined,
-    };
-    // 同时更新 ref 和 state
-    searchParamsRef.current = resetParams;
-    setSearchParams(resetParams);
-    // 手动触发重新加载
-    actionRef.current?.reload?.();
-  };
 
   // 🔧 使用 useCallback 定义 request 函数，依赖数组为空，避免函数重新创建
   const fetchWorkflows = useCallback(async (params: any) => {
     const requestData = {
-      page: params.current || searchParamsRef.current.current, // 使用 page 参数
-      pageSize: params.pageSize || searchParamsRef.current.pageSize,
-      // 从 ref 读取搜索参数
-      keyword: searchParamsRef.current.keyword,
-      category: searchParamsRef.current.category,
-      isActive: searchParamsRef.current.isActive,
+      page: params.current || 1,
+      pageSize: params.pageSize || 20,
+      search: searchParamsRef.current.search,
     };
 
     try {
@@ -249,58 +203,14 @@ const WorkflowManagement: React.FC = () => {
       }
     >
       {/* 搜索表单 */}
-      <SearchFormCard>
-        <Form
-          form={searchForm}
-          layout={isMobile ? 'vertical' : 'inline'}
-          onFinish={handleSearch}
-        >
-          <Form.Item name="keyword" label="关键词">
-            <Input placeholder="流程名称、描述等" allowClear style={{ width: isMobile ? '100%' : 200 }} />
-          </Form.Item>
-          <Form.Item name="category" label="分类">
-            <Select
-              placeholder="选择分类"
-              allowClear
-              style={{ width: isMobile ? '100%' : 150 }}
-              showSearch
-              filterOption={((input: string, option: any) => {
-                const label = option?.label;
-                return typeof label === 'string' && label.toLowerCase().includes(input.toLowerCase());
-              }) as SelectProps['filterOption']}
-            />
-          </Form.Item>
-          <Form.Item name="isActive" label="状态">
-            <Select
-              placeholder="选择状态"
-              allowClear
-              style={{ width: isMobile ? '100%' : 150 }}
-              options={[
-                { label: '启用', value: true },
-                { label: '禁用', value: false },
-              ]}
-            />
-          </Form.Item>
-          <Form.Item>
-            <Space wrap>
-              <Button
-                type="primary"
-                htmlType="submit"
-                style={isMobile ? { width: '100%' } : {}}
-              >
-                搜索
-              </Button>
-              <Button
-                onClick={handleReset}
-                style={isMobile ? { width: '100%' } : {}}
-              >
-                重置
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-
-      </SearchFormCard>
+      <SearchBar
+        initialParams={searchParamsRef.current}
+        onSearch={(params) => {
+          searchParamsRef.current = { ...searchParamsRef.current, ...params };
+          actionRef.current?.reload?.();
+        }}
+        style={{ marginBottom: 16 }}
+      />
 
       {/* 数据表格 */}
       <DataTable<WorkflowDefinition>

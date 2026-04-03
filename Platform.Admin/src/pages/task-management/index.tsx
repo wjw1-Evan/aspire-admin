@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import type { ActionType, RequestParams } from '@/types/pro-components';
 import type { ColumnsType } from 'antd/es/table';
 import { PageContainer } from '@/components';
-import SearchFormCard from '@/components/SearchFormCard';
+import SearchBar from '@/components/SearchBar';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import DataTable from '@/components/DataTable';
 import { useIntl, history, useLocation } from '@umijs/max';
@@ -120,7 +120,6 @@ const TaskManagement: React.FC = () => {
   const isMobile = !screens.md; // md 以下为移动端
   const actionRef = useRef<ActionType>(null);
   const tableRef = useRef<HTMLDivElement>(null);
-  const [searchForm] = Form.useForm();
   const [formVisible, setFormVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
   const [executionVisible, setExecutionVisible] = useState(false);
@@ -227,9 +226,8 @@ const TaskManagement: React.FC = () => {
       shouldReload = true;
     }
 
-    // 如果有过滤参数，更新表单并重载数据
+    // 如果有过滤参数，重载数据
     if (shouldReload) {
-      searchForm.setFieldsValue(formValues);
       setSearchParams({ ...searchParamsRef.current });
       actionRef.current?.reload?.();
     }
@@ -257,7 +255,7 @@ const TaskManagement: React.FC = () => {
         setViewingTask(null);
       }
     }
-  }, [location?.search, searchForm]);
+  }, [location?.search]);
 
   // 获取任务列表
   const fetchTasks = useCallback(async (params: RequestParams, sort?: Record<string, 'ascend' | 'descend'>) => {
@@ -389,46 +387,6 @@ const TaskManagement: React.FC = () => {
     fetchStatistics();
   }, [fetchStatistics]);
 
-  // 处理搜索
-  const handleSearch = useCallback((values: SearchFormValues) => {
-    const newSearchParams = {
-      ...searchParamsRef.current,
-      page: 1,
-      search: values.search,
-      status: values.status,
-      priority: values.priority,
-      assignedTo: values.assignedTo,
-      taskType: values.taskType,
-      projectId: values.projectId,
-    };
-    // 更新 ref 和 state
-    searchParamsRef.current = newSearchParams;
-    setSearchParams(newSearchParams);
-    // 手动触发重新加载
-    actionRef.current?.reload?.();
-  }, []);
-
-  // 重置搜索
-  const handleReset = useCallback(() => {
-    searchForm.resetFields();
-    const resetParams = {
-      page: 1,
-      pageSize: searchParamsRef.current.pageSize,
-      sortBy: 'CreatedAt',
-      sortOrder: 'desc',
-      search: undefined as string | undefined,
-      status: undefined as number | undefined,
-      priority: undefined as number | undefined,
-      assignedTo: undefined as string | undefined,
-      taskType: undefined as string | undefined,
-      projectId: undefined as string | undefined,
-    };
-    // 更新 ref 和 state
-    searchParamsRef.current = resetParams;
-    setSearchParams(resetParams);
-    // 手动触发重新加载
-    actionRef.current?.reload?.();
-  }, [searchForm]);
 
   // 表格列定义（使用 useMemo 避免每次渲染都重新创建）
   const columns: ColumnsType<TaskDto> = useMemo(() => [
@@ -698,60 +656,15 @@ const TaskManagement: React.FC = () => {
       )}
 
       {/* 搜索表单 */}
-      <SearchFormCard>
-        <Form
-          form={searchForm}
-          layout="inline"
-          onFinish={handleSearch}
-        >
-          <Form.Item name="search" label={intl.formatMessage({ id: 'pages.taskManagement.search.label' })}>
-            <Input placeholder={intl.formatMessage({ id: 'pages.taskManagement.search.placeholder' })} style={{ width: 200 }} />
-          </Form.Item>
-          <Form.Item name="status" label={intl.formatMessage({ id: 'pages.taskManagement.filter.status.label' })}>
-            <Select placeholder={intl.formatMessage({ id: 'pages.taskManagement.filter.status.all' })} style={{ width: 120 }} allowClear>
-              <Select.Option value={TaskStatus.Pending}>{intl.formatMessage({ id: 'pages.taskManagement.status.pending' })}</Select.Option>
-              <Select.Option value={TaskStatus.Assigned}>{intl.formatMessage({ id: 'pages.taskManagement.status.assigned' })}</Select.Option>
-              <Select.Option value={TaskStatus.InProgress}>{intl.formatMessage({ id: 'pages.taskManagement.status.inProgress' })}</Select.Option>
-              <Select.Option value={TaskStatus.Completed}>{intl.formatMessage({ id: 'pages.taskManagement.status.completed' })}</Select.Option>
-              <Select.Option value={TaskStatus.Cancelled}>{intl.formatMessage({ id: 'pages.taskManagement.status.cancelled' })}</Select.Option>
-            </Select>
-          </Form.Item>
-          <Form.Item name="taskType" label="任务类型">
-            <Select
-              placeholder="请选择或输入"
-              style={{ width: 130 }}
-              allowClear
-              showSearch
-              options={[
-                { label: '开发', value: '开发' },
-                { label: '设计', value: '设计' },
-                { label: '测试', value: '测试' },
-                { label: '文档', value: '文档' },
-                { label: '其他', value: '其他' },
-              ]}
-            />
-          </Form.Item>
-          <Form.Item name="projectId" label="项目">
-            <Select
-              placeholder="所属项目"
-              style={{ width: 180 }}
-              allowClear
-              showSearch
-              optionFilterProp="children"
-            >
-              {projects.map(p => (
-                <Select.Option key={p.id} value={p.id}>{p.name}</Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-          <Form.Item>
-            <Space>
-              <Button type="primary" htmlType="submit">{intl.formatMessage({ id: 'pages.button.query' })}</Button>
-              <Button onClick={handleReset}>{intl.formatMessage({ id: 'pages.button.reset' })}</Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </SearchFormCard>
+      <SearchBar
+        initialParams={searchParamsRef.current}
+        onSearch={(params) => {
+          searchParamsRef.current = { ...searchParamsRef.current, ...params };
+          setSearchParams({ ...searchParamsRef.current });
+          actionRef.current?.reload?.();
+        }}
+        style={{ marginBottom: 16 }}
+      />
 
       {/* 任务列表表格 */}
       <div ref={tableRef}>

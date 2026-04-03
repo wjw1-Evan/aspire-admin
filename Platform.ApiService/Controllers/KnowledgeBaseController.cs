@@ -33,11 +33,11 @@ public class KnowledgeBaseController : BaseApiController
     /// </summary>
     [HttpGet]
     [RequireMenu("workflow-list")]
-    public async Task<IActionResult> GetKnowledgeBases([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? keyword = null)
+    public async Task<IActionResult> GetKnowledgeBases([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
     {
         try
         {
-            var pagedResult = await _knowledgeService.GetKnowledgeBasesAsync(page, pageSize, keyword);
+            var pagedResult = await _knowledgeService.GetKnowledgeBasesAsync(request);
             return Success(pagedResult);
         }
         catch (Exception ex)
@@ -76,7 +76,7 @@ public class KnowledgeBaseController : BaseApiController
         try
         {
             if (string.IsNullOrEmpty(knowledgeBase.Name)) throw new ArgumentException("名称不能为空");
-            
+
             var created = await _knowledgeService.CreateAsync(knowledgeBase);
             return Success(created);
         }

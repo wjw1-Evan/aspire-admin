@@ -38,21 +38,20 @@ public class FileVersionController : BaseApiController
     /// 获取文件版本列表（分页）
     /// </summary>
     /// <param name="fileId">文件ID</param>
-    /// <param name="page">页码（默认1）</param>
-    /// <param name="pageSize">每页数量（默认50）</param>
     /// <returns>版本列表</returns>
+    /// <param name="request">分页请求参数</param>
     [HttpGet("list")]
-    public async Task<IActionResult> GetVersionList([FromQuery] string fileId, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
+    public async Task<IActionResult> GetVersionList([FromQuery] string fileId, [FromQuery] Platform.ServiceDefaults.Models.PageParams request)
     {
         if (string.IsNullOrWhiteSpace(fileId))
             throw new ArgumentException("文件ID不能为空");
 
-        if (page < 1 || pageSize < 1 || pageSize > 500)
+        if (request.Page < 1 || request.PageSize < 1 || request.PageSize > 500)
             throw new ArgumentException("分页参数不合法");
 
         try
         {
-            var pagedResult = await _fileVersionService.GetVersionHistoryPaginatedAsync(fileId, page, pageSize);
+            var pagedResult = await _fileVersionService.GetVersionHistoryPaginatedAsync(fileId, request);
             return Success(pagedResult);
         }
         catch (Exception ex)

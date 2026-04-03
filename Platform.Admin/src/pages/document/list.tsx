@@ -22,10 +22,10 @@ import {
 import {
   DocumentDetailDrawer,
   DocumentStatistics,
-  DocumentSearchForm,
   DocumentSubmitModal,
   DocumentCreateModal,
 } from './components';
+import SearchBar from '@/components/SearchBar';
 import { useDocumentManagement } from './hooks/useDocumentManagement';
 import { getStatusMeta, documentStatusMap } from '@/utils/statusMaps';
 
@@ -211,10 +211,11 @@ const DocumentManagement: React.FC = () => {
       <DocumentStatistics statistics={statistics} />
 
       {/* 搜索表单 */}
-      <DocumentSearchForm
-        form={form}
-        onSearch={handleSearch}
-        onReset={handleReset}
+      <SearchBar
+        initialParams={searchParams}
+        onSearch={(params) => {
+          handleSearch(params);
+        }}
       />
 
       <DataTable<Document>

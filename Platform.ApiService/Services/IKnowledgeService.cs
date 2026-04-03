@@ -24,7 +24,7 @@ public interface IKnowledgeService
     /// <summary>
     /// 分页获取知识库列表
     /// </summary>
-    Task<PagedResult<KnowledgeBase>> GetKnowledgeBasesAsync(int page, int pageSize, string? keyword = null);
+    Task<System.Linq.Dynamic.Core.PagedResult<KnowledgeBase>> GetKnowledgeBasesAsync(Platform.ServiceDefaults.Models.PageParams request);
 
     /// <summary>
     /// 获取知识库详情

@@ -31,7 +31,7 @@ public class ParkVisitController : BaseApiController
     /// </summary>
     [HttpGet("tasks")]
     [RequireMenu("park-management-visit-task")]
-    public async Task<IActionResult> GetTasks([FromQuery] VisitTaskListRequest request)
+    public async Task<IActionResult> GetTasks([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
     {
         var result = await _visitService.GetVisitTasksAsync(request);
         return Success(result);
@@ -92,7 +92,7 @@ public class ParkVisitController : BaseApiController
     /// </summary>
     [HttpGet("assessments")]
     [RequireMenu("park-management-visit-assessment")]
-    public async Task<IActionResult> GetAssessments([FromQuery] VisitAssessmentListRequest request)
+    public async Task<IActionResult> GetAssessments([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
     {
         var result = await _visitService.GetVisitAssessmentsAsync(request);
         return Success(result);

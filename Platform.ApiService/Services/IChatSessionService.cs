@@ -14,7 +14,7 @@ public interface IChatSessionService
     /// <summary>
     /// 获取聊天会话列表
     /// </summary>
-    Task<PagedResult<ChatSession>> GetSessionsAsync(ChatSessionListRequest request);
+    Task<System.Linq.Dynamic.Core.PagedResult<ChatSession>> GetSessionsAsync(ChatSessionListRequest request);
 
     /// <summary>
     /// 获取某个会话下的聊天消息列表

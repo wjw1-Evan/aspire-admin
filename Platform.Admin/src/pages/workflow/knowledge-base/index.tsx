@@ -22,7 +22,7 @@ import {
 import { useIntl, history } from '@umijs/max';
 import PageContainer from '@/components/PageContainer';
 import DataTable from '@/components/DataTable';
-import SearchFormCard from '@/components/SearchFormCard';
+import SearchBar from '@/components/SearchBar';
 import * as kbService from '@/services/workflow/knowledge-base';
 import type { KnowledgeBase } from '@/services/workflow/knowledge-base';
 import type { PagedResult } from '@/types/unified-api';
@@ -36,18 +36,10 @@ const KnowledgeBaseManagement: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingKb, setEditingKb] = useState<KnowledgeBase | null>(null);
   const [form] = Form.useForm();
-  const [searchForm] = Form.useForm();
+  const searchParamsRef = useRef<any>({ search: '' });
   const [loading, setLoading] = useState(false);
   const actionRef = useRef<any>(null);
 
-  const handleSearch = () => {
-    actionRef.current?.reload?.();
-  };
-
-  const handleReset = () => {
-    searchForm.resetFields();
-    handleSearch();
-  };
 
   const handleDelete = (record: KnowledgeBase) => {
     modal.confirm({
@@ -186,31 +178,23 @@ const KnowledgeBaseManagement: React.FC = () => {
         </Space>
       }
     >
-      <SearchFormCard>
-        <Form form={searchForm} layout="inline" onFinish={handleSearch}>
-          <Form.Item name="keyword">
-            <Input placeholder="搜索知识库名称或描述..." style={{ width: 300 }} allowClear />
-          </Form.Item>
-          <Form.Item>
-            <Space>
-              <Button type="primary" htmlType="submit">
-                搜索
-              </Button>
-              <Button onClick={handleReset}>重置</Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </SearchFormCard>
+      <SearchBar
+        initialParams={searchParamsRef.current}
+        onSearch={(params) => {
+          searchParamsRef.current = { ...searchParamsRef.current, ...params };
+          actionRef.current?.reload?.();
+        }}
+        style={{ marginBottom: 16 }}
+      />
 
       <Card>
         <DataTable<KnowledgeBase>
           columns={columns as any}
           request={async (params: any) => {
-            const searchValues = searchForm.getFieldsValue();
             const res = await kbService.getKnowledgeBases({
               current: params.current || 1,
               pageSize: params.pageSize || 10,
-              ...searchValues,
+              ...searchParamsRef.current,
             });
             if (res.success && res.data) {
               const paged = res.data as PagedResult<KnowledgeBase>;

@@ -13,7 +13,7 @@ public interface IXiaokeConfigService
     /// </summary>
     /// <param name="queryParams">查询参数</param>
     /// <returns>配置列表响应</returns>
-    Task<PagedResult<XiaokeConfigDto>> GetConfigsAsync(XiaokeConfigQueryParams queryParams);
+    Task<System.Linq.Dynamic.Core.PagedResult<XiaokeConfigDto>> GetConfigsAsync(Platform.ServiceDefaults.Models.PageParams queryParams);
 
     /// <summary>
     /// 根据ID获取配置详情

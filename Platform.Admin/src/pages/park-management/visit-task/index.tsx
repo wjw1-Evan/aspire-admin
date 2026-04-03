@@ -39,7 +39,7 @@ import { useIntl } from '@umijs/max';
 import PageContainer from '@/components/PageContainer';
 import DataTable from '@/components/DataTable';
 import StatCard from '@/components/StatCard';
-import SearchFormCard from '@/components/SearchFormCard';
+import SearchBar from '@/components/SearchBar';
 import * as visitService from '@/services/visit';
 import { getTenants } from '@/services/park';
 import type { ParkTenant } from '@/services/park';
@@ -55,7 +55,7 @@ const VisitTask: React.FC = () => {
     const intl = useIntl();
     const { message, modal } = App.useApp();
     const [form] = Form.useForm();
-    const [searchForm] = Form.useForm();
+    const searchParamsRef = useRef<any>({ search: '' });
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editingTask, setEditingTask] = useState<VisitTaskType | null>(null);
     const [detailVisible, setDetailVisible] = useState(false);
@@ -282,14 +282,6 @@ const VisitTask: React.FC = () => {
         }
     };
 
-    const handleSearch = () => {
-        actionRef.current?.reload?.();
-    };
-
-    const handleReset = () => {
-        searchForm.resetFields();
-        handleSearch();
-    };
 
 
     return (
@@ -343,45 +335,23 @@ const VisitTask: React.FC = () => {
                 </Row>
             )}
 
-            <SearchFormCard>
-                <Form form={searchForm} layout="inline" onFinish={handleSearch}>
-                    <Form.Item name="search">
-                        <Input placeholder="任务标题/企管员/手机号" style={{ width: 220 }} allowClear />
-                    </Form.Item>
-                    <Form.Item name="visitType">
-                        <Select placeholder="走访类型" style={{ width: 140 }} allowClear>
-                            <Select.Option value="日常走访">日常走访</Select.Option>
-                            <Select.Option value="安全检查">安全检查</Select.Option>
-                            <Select.Option value="政策宣讲">政策宣讲</Select.Option>
-                            <Select.Option value="需求调研">需求调研</Select.Option>
-                        </Select>
-                    </Form.Item>
-                    <Form.Item name="status">
-                        <Select placeholder="状态" style={{ width: 120 }} allowClear>
-                            <Select.Option value="Pending">待派发</Select.Option>
-                            <Select.Option value="InProgress">进行中</Select.Option>
-                            <Select.Option value="Completed">已完成</Select.Option>
-                            <Select.Option value="Cancelled">已取消</Select.Option>
-                        </Select>
-                    </Form.Item>
-                    <Form.Item>
-                        <Space>
-                            <Button type="primary" htmlType="submit">搜索</Button>
-                            <Button onClick={handleReset} icon={<ReloadOutlined />}>重置</Button>
-                        </Space>
-                    </Form.Item>
-                </Form>
-            </SearchFormCard>
+            <SearchBar
+                initialParams={searchParamsRef.current}
+                onSearch={(params) => {
+                    searchParamsRef.current = { ...searchParamsRef.current, ...params };
+                    actionRef.current?.reload?.();
+                }}
+                style={{ marginBottom: 16 }}
+            />
 
             <Card>
                 <DataTable<VisitTaskType>
                     columns={columns as any}
                     request={async (params: any) => {
-                        const searchValues = searchForm.getFieldsValue();
                         const res = await visitService.getTasks({
                             page: params.current || 1,
                             pageSize: params.pageSize || 10,
-                            ...searchValues,
+                            ...searchParamsRef.current,
                         });
                         if (res.success && res.data) {
                           const paged = res.data as PagedResult<VisitTaskType>;

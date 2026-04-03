@@ -6,7 +6,7 @@ import { Tag, Button, Drawer, Descriptions, Space, Form, Input, DatePicker, Card
 import dayjs from 'dayjs';
 import { useMessage } from '@/hooks/useMessage';
 import useCommonStyles from '@/hooks/useCommonStyles';
-import SearchFormCard from '@/components/SearchFormCard';
+import SearchBar from '@/components/SearchBar';
 
 const { useBreakpoint } = Grid;
 import { ReloadOutlined, SearchOutlined } from '@ant-design/icons';
@@ -48,10 +48,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
   const actionRef = useRef<ActionType>(null);
   const [isDetailDrawerVisible, setIsDetailDrawerVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<IoTDataRecord | null>(null);
-  const [searchForm] = Form.useForm();
-  const [searchParams, setSearchParams] = useState<any>({});
-  // 使用 useRef 存储最新的搜索参数，确保 request 函数能立即访问到最新值
-  const searchParamsRef = useRef<any>({});
+  const searchParamsRef = useRef<any>({ search: '' });
 
   const fetchRecords = useCallback(async (params: any) => {
     try {
@@ -61,28 +58,9 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
         pageSize,
       };
 
-      // 合并搜索参数，使用 ref 确保获取最新的搜索参数
-      const mergedParams = { ...searchParamsRef.current, ...params };
-
-      // 只添加非空参数
-      if (mergedParams.deviceId) {
-        payload.deviceId = mergedParams.deviceId;
-      }
-      if (mergedParams.dataPointId) {
-        payload.dataPointId = mergedParams.dataPointId;
-      }
-
-      // 处理时间范围
-      const timeRange = mergedParams.dateRange || mergedParams.reportedAt;
-      if (Array.isArray(timeRange) && timeRange.length === 2) {
-        const [start, end] = timeRange;
-        if (start) {
-          // 处理 dayjs 对象
-          payload.startTime = dayjs(start).toISOString();
-        }
-        if (end) {
-          payload.endTime = dayjs(end).toISOString();
-        }
+      // 只添加搜索参数
+      if (searchParamsRef.current.search) {
+        payload.search = searchParamsRef.current.search;
       }
 
       const response = await iotService.queryDataRecords(payload);
@@ -112,32 +90,6 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
     }
   }, []);
 
-  // 处理搜索
-  const handleSearch = useCallback(() => {
-    const values = searchForm.getFieldsValue();
-    // 同时更新 state 和 ref，ref 确保 request 函数能立即访问到最新值
-    searchParamsRef.current = values;
-    setSearchParams(values);
-    // 重置到第一页并重新加载数据
-    if (actionRef.current?.reloadAndReset) {
-      actionRef.current.reloadAndReset();
-    } else if (actionRef.current?.reload) {
-      actionRef.current.reload();
-    }
-  }, [searchForm]);
-
-  // 处理重置
-  const handleReset = useCallback(() => {
-    searchForm.resetFields();
-    // 同时更新 state 和 ref
-    searchParamsRef.current = {};
-    setSearchParams({});
-    if (actionRef.current?.reloadAndReset) {
-      actionRef.current.reloadAndReset();
-    } else if (actionRef.current?.reload) {
-      actionRef.current.reload();
-    }
-  }, [searchForm]);
 
   // 处理查看详情
   const handleViewDetail = useCallback((record: IoTDataRecord) => {
@@ -259,43 +211,14 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
 
   return (
     <>
-      {/* 搜索表单 */}
-      <SearchFormCard>
-        <Form form={searchForm} layout={isMobile ? 'vertical' : 'inline'} onFinish={handleSearch}>
-          <Form.Item name="deviceId" label="设备ID">
-            <Input placeholder="请输入设备ID" style={{ width: 200 }} allowClear />
-          </Form.Item>
-          <Form.Item name="dataPointId" label="数据点ID">
-            <Input placeholder="请输入数据点ID" style={{ width: 200 }} allowClear />
-          </Form.Item>
-          <Form.Item name="dateRange" label="上报时间">
-            <RangePicker
-              showTime
-              format="YYYY-MM-DD HH:mm:ss"
-              style={{ width: 400 }}
-            />
-          </Form.Item>
-          <Form.Item>
-            <Space wrap>
-              <Button
-                type="primary"
-                htmlType="submit"
-                icon={<SearchOutlined />}
-                style={isMobile ? { width: '100%' } : {}}
-              >
-                搜索
-              </Button>
-              <Button
-                onClick={handleReset}
-                icon={<ReloadOutlined />}
-                style={isMobile ? { width: '100%' } : {}}
-              >
-                重置
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </SearchFormCard>
+      <SearchBar
+        initialParams={searchParamsRef.current}
+        onSearch={(params) => {
+          searchParamsRef.current = { ...searchParamsRef.current, ...params };
+          actionRef.current?.reload?.();
+        }}
+        style={{ marginBottom: 16 }}
+      />
 
       <DataTable<IoTDataRecord>
         actionRef={actionRef}

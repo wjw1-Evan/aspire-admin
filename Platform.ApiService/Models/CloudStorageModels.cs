@@ -465,62 +465,7 @@ public class FileVersionComparison
     public Dictionary<string, object> Metadata { get; set; } = [];
 }
 
-/// <summary>
-/// 文件列表查询参数
-/// </summary>
-public class FileListQuery : PageParams
-{
-    /// <summary>排序字段</summary>
-    public new string SortBy { get; set; } = "name";
 
-    /// <summary>文件类型筛选</summary>
-    public FileItemType? Type { get; set; }
-
-    /// <summary>文件状态筛选</summary>
-    public FileStatus? Status { get; set; }
-}
-
-/// <summary>
-/// 文件搜索查询参数
-/// </summary>
-public class FileSearchQuery : PageParams
-{
-    /// <summary>搜索关键词</summary>
-    public string Keyword { get; set; } = string.Empty;
-
-    /// <summary>文件类型筛选</summary>
-    public FileItemType? Type { get; set; }
-
-    /// <summary>MIME类型筛选</summary>
-    public string? MimeType { get; set; }
-
-    /// <summary>文件大小范围（最小值，字节）</summary>
-    public long? MinSize { get; set; }
-
-    /// <summary>文件大小范围（最大值，字节）</summary>
-    public long? MaxSize { get; set; }
-
-    /// <summary>创建时间范围（开始）</summary>
-    public DateTime? CreatedAfter { get; set; }
-
-    /// <summary>创建时间范围（结束）</summary>
-    public DateTime? CreatedBefore { get; set; }
-
-    /// <summary>修改时间范围（开始）</summary>
-    public DateTime? ModifiedAfter { get; set; }
-
-    /// <summary>修改时间范围（结束）</summary>
-    public DateTime? ModifiedBefore { get; set; }
-
-    /// <summary>标签筛选</summary>
-    public List<string> Tags { get; set; } = [];
-
-    /// <summary>排序字段</summary>
-    public new string SortBy { get; set; } = "name";
-
-    /// <summary>是否搜索文件内容</summary>
-    public bool SearchContent { get; set; } = false;
-}
 
 /// <summary>
 /// 文件内容搜索查询参数
@@ -546,23 +491,7 @@ public class FileContentSearchQuery
     public bool UseRegex { get; set; } = false;
 }
 
-/// <summary>
-/// 回收站查询参数
-/// </summary>
-public class RecycleBinQuery : PageParams
-{
-    /// <summary>排序字段</summary>
-    public new string SortBy { get; set; } = "deletedAt";
 
-    /// <summary>文件类型筛选</summary>
-    public FileItemType? Type { get; set; }
-
-    /// <summary>删除时间范围（开始）</summary>
-    public DateTime? DeletedAfter { get; set; }
-
-    /// <summary>删除时间范围（结束）</summary>
-    public DateTime? DeletedBefore { get; set; }
-}
 
 /// <summary>
 /// 批量操作结果

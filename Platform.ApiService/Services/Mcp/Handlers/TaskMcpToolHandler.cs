@@ -175,15 +175,11 @@ public class TaskMcpToolHandler : McpToolHandlerBase
     {
         var currentUser = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == currentUserId);
         var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
-        var request = new TaskQueryRequest
+        var request = new Platform.ServiceDefaults.Models.PageParams
         {
             Page = page,
             PageSize = pageSize,
-            Search = arguments.GetValueOrDefault("search")?.ToString(),
-            Status = arguments.ContainsKey("status") && int.TryParse(arguments["status"]?.ToString(), out var status) ? status : null,
-            Priority = arguments.ContainsKey("priority") && int.TryParse(arguments["priority"]?.ToString(), out var priority) ? priority : null,
-            AssignedTo = arguments.GetValueOrDefault("assignedTo")?.ToString(),
-            ProjectId = arguments.GetValueOrDefault("projectId")?.ToString()
+            Search = arguments.GetValueOrDefault("search")?.ToString()
         };
 
         var response = await _taskService.QueryTasksAsync(request);
@@ -221,7 +217,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
         {
             if (string.IsNullOrEmpty(taskName)) return new { error = "参数错误: taskId 或 taskName 必填" };
 
-            var searchResult = await _taskService.QueryTasksAsync(new TaskQueryRequest { Search = taskName, Page = 1, PageSize = 1 });
+            var searchResult = await _taskService.QueryTasksAsync(new Platform.ServiceDefaults.Models.PageParams { Search = taskName, Page = 1, PageSize = 1 });
             var searchTasks = await searchResult.Queryable.ToListAsync();
             if (searchTasks.Any()) taskId = searchTasks.First().Id;
             else return new { error = "未找到该任务" };
@@ -402,13 +398,10 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             return new { error = "无法确定当前企业" };
 
         var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
-        var request = new TaskQueryRequest
+        var request = new Platform.ServiceDefaults.Models.PageParams
         {
             Page = page,
             PageSize = pageSize,
-            AssignedTo = currentUserId,
-            Status = arguments.ContainsKey("status") && int.TryParse(arguments["status"]?.ToString(), out var status) ? status : null,
-            ProjectId = arguments.ContainsKey("projectId") ? arguments["projectId"]?.ToString() : null,
             Search = arguments.ContainsKey("search") ? arguments["search"]?.ToString() : null
         };
 
@@ -445,12 +438,11 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             return new { error = "无法确定当前企业" };
 
         var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
-        var request = new ProjectQueryRequest
+        var request = new Platform.ServiceDefaults.Models.PageParams
         {
             Page = page,
             PageSize = pageSize,
-            Search = arguments.ContainsKey("search") ? arguments["search"]?.ToString() : null,
-            Status = arguments.ContainsKey("status") && int.TryParse(arguments["status"]?.ToString(), out var status) ? status : null
+            Search = arguments.ContainsKey("search") ? arguments["search"]?.ToString() : null
         };
 
         var result = await _projectService.GetProjectsListAsync(request);
@@ -474,7 +466,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
         {
             if (string.IsNullOrEmpty(name)) return new { error = "未提供项目ID或名称" };
 
-            var searchResult = await _projectService.GetProjectsListAsync(new ProjectQueryRequest { Search = name, Page = 1, PageSize = 1 });
+            var searchResult = await _projectService.GetProjectsListAsync(new Platform.ServiceDefaults.Models.PageParams { Search = name, Page = 1, PageSize = 1 });
             var searchItems = await searchResult.Queryable.ToListAsync();
             if (searchItems.Any()) projectId = searchItems.First().Id;
             else return new { error = "未找到该项目" };

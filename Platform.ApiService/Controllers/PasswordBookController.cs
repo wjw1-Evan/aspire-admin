@@ -87,10 +87,16 @@ public class PasswordBookController : BaseApiController
     /// </summary>
     [HttpPost("list")]
     [RequireMenu("password-book")]
-    public async Task<IActionResult> GetEntries([FromBody] PasswordBookQueryRequest request)
+    public async Task<IActionResult> GetEntries([FromBody] PasswordBookListRequest request)
     {
         var userId = RequiredUserId;
-        var result = await _passwordBookService.GetEntriesAsync(request, userId);
+        var result = await _passwordBookService.GetEntriesAsync(
+            request,
+            userId,
+            request.Platform,
+            request.Account,
+            request.Category,
+            request.Tags);
         return Success(result);
     }
 

@@ -278,13 +278,13 @@ public class StorageQuotaController : BaseApiController
     {
         try
         {
-            var query = new StorageQuotaListQuery
+            var query = new StorageQuotaListRequest
             {
                 Page = page,
                 PageSize = pageSize,
                 SortBy = sortBy,
                 SortOrder = sortOrder,
-                Keyword = keyword,
+                Search = keyword,
                 CompanyId = companyId,
                 IsEnabled = isEnabled
             };

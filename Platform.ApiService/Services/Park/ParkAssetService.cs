@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Extensions;
 using Microsoft.Extensions.Logging;
 
 namespace Platform.ApiService.Services;
@@ -24,29 +25,14 @@ public class ParkAssetService : IParkAssetService
 
     #region 楼宇管理
 
-    public async Task<PagedResult<BuildingDto>> GetBuildingsAsync(BuildingListRequest request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<BuildingDto>> GetBuildingsAsync(Platform.ServiceDefaults.Models.PageParams request)
     {
-        var q = _context.Set<Building>().AsQueryable();
-
-        if (!string.IsNullOrEmpty(request.Search))
-        {
-            var search = request.Search.ToLower();
-            q = q.Where(b => b.Name.ToLower().Contains(search));
-        }
-
-        if (!string.IsNullOrEmpty(request.Status)) q = q.Where(b => b.Status == request.Status);
-        if (!string.IsNullOrEmpty(request.BuildingType)) q = q.Where(b => b.BuildingType == request.BuildingType);
-
-        if (request.SortOrder?.ToLower() == "asc") q = q.OrderBy(b => b.CreatedAt);
-        else q = q.OrderByDescending(b => b.CreatedAt);
-
-        var total = await q.LongCountAsync();
-        var pagedResult = q.PageResult(request.Page, request.PageSize);
-
+        var pagedResult = _context.Set<Building>().ToPagedList(request);
+        var items = await pagedResult.Queryable.ToListAsync();
         var buildings = new List<BuildingDto>();
-        foreach (var b in await pagedResult.Queryable.ToListAsync()) buildings.Add(await MapToBuildingDtoAsync(b));
+        foreach (var b in items) buildings.Add(await MapToBuildingDtoAsync(b));
 
-        return new PagedResult<BuildingDto> { Queryable = buildings.AsQueryable(), CurrentPage = pagedResult.CurrentPage, PageSize = pagedResult.PageSize, RowCount = pagedResult.RowCount, PageCount = pagedResult.PageCount };
+        return new System.Linq.Dynamic.Core.PagedResult<BuildingDto> { Queryable = buildings.AsQueryable(), CurrentPage = pagedResult.CurrentPage, PageSize = pagedResult.PageSize, RowCount = pagedResult.RowCount, PageCount = pagedResult.PageCount };
     }
 
     public async Task<BuildingDto?> GetBuildingByIdAsync(string id)
@@ -117,26 +103,14 @@ public class ParkAssetService : IParkAssetService
 
     #region 房源管理
 
-    public async Task<PagedResult<PropertyUnitDto>> GetPropertyUnitsAsync(PropertyUnitListRequest request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<PropertyUnitDto>> GetPropertyUnitsAsync(Platform.ServiceDefaults.Models.PageParams request)
     {
-        var q = _context.Set<PropertyUnit>().AsQueryable();
-
-        if (!string.IsNullOrEmpty(request.BuildingId)) q = q.Where(p => p.BuildingId == request.BuildingId);
-        if (!string.IsNullOrEmpty(request.Search)) q = q.Where(p => p.UnitNumber.Contains(request.Search));
-        if (!string.IsNullOrEmpty(request.Status)) q = q.Where(p => p.Status == request.Status);
-        if (!string.IsNullOrEmpty(request.UnitType)) q = q.Where(p => p.UnitType == request.UnitType);
-        if (request.Floor.HasValue) q = q.Where(p => p.Floor == request.Floor.Value);
-
-        if (request.SortOrder?.ToLower() == "asc") q = q.OrderBy(p => p.CreatedAt);
-        else q = q.OrderByDescending(p => p.CreatedAt);
-
-        var total = await q.LongCountAsync();
-        var pagedResult = q.PageResult(request.Page, request.PageSize);
-
+        var pagedResult = _context.Set<PropertyUnit>().ToPagedList(request);
+        var items = await pagedResult.Queryable.ToListAsync();
         var units = new List<PropertyUnitDto>();
-        foreach (var item in await pagedResult.Queryable.ToListAsync()) units.Add(await MapToPropertyUnitDtoAsync(item));
+        foreach (var item in items) units.Add(await MapToPropertyUnitDtoAsync(item));
 
-        return new PagedResult<PropertyUnitDto> { Queryable = units.AsQueryable(), CurrentPage = pagedResult.CurrentPage, PageSize = pagedResult.PageSize, RowCount = pagedResult.RowCount, PageCount = pagedResult.PageCount };
+        return new System.Linq.Dynamic.Core.PagedResult<PropertyUnitDto> { Queryable = units.AsQueryable(), CurrentPage = pagedResult.CurrentPage, PageSize = pagedResult.PageSize, RowCount = pagedResult.RowCount, PageCount = pagedResult.PageCount };
     }
 
     public async Task<PropertyUnitDto?> GetPropertyUnitByIdAsync(string id)

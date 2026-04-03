@@ -3,6 +3,7 @@ using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Extensions;
 using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 using System.Text.Json;
@@ -28,28 +29,10 @@ public class RuleService : IRuleService
     /// <summary>
     /// 获取规则列表
     /// </summary>
-    public async Task<PagedResult<RuleListItem>> GetRulesAsync(RuleQueryParams queryParams)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<RuleListItem>> GetRulesAsync(Platform.ServiceDefaults.Models.PageParams queryParams)
     {
-        var query = _context.Set<RuleListItem>().AsQueryable();
-
-        if (!string.IsNullOrEmpty(queryParams.Name))
-        {
-            var nameLower = queryParams.Name.ToLower();
-            query = query.Where(r => r.Name != null && r.Name.ToLower().Contains(nameLower));
-        }
-
-        var pagedResult = query.OrderByDescending(r => r.UpdatedAt).PageResult(queryParams.Page, queryParams.PageSize);
+        var pagedResult = _context.Set<RuleListItem>().ToPagedList(queryParams);
         var rules = await pagedResult.Queryable.ToListAsync();
-
-        if (!string.IsNullOrEmpty(queryParams.Sorter))
-        {
-            var sorter = JsonSerializer.Deserialize<Dictionary<string, string>>(queryParams.Sorter);
-            if (sorter != null)
-            {
-                rules = rules.OrderBy(r => r.Name).ToList();
-            }
-        }
-
         return pagedResult;
     }
 

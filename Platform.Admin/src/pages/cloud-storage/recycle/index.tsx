@@ -1,8 +1,8 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PageContainer, StatCard } from '@/components';
-import SearchFormCard from '@/components/SearchFormCard';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import DataTable from '@/components/DataTable';
+import SearchBar from '@/components/SearchBar';
 import type { ActionType } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
 import { Grid } from 'antd';
@@ -93,8 +93,11 @@ const CloudStorageRecyclePage: React.FC = () => {
     const [statistics, setStatistics] = useState<RecycleStatistics | null>(null);
 
     // 搜索相关状态
-    const [searchParams, setSearchParams] = useState<SearchParams>({});
-    const searchParamsRef = useRef<SearchParams>({});
+    const searchParamsRef = useRef<any>({
+        current: 1,
+        pageSize: 20,
+        search: '',
+    });
     const [searchForm] = Form.useForm();
     const { styles } = useCommonStyles();
 
@@ -139,11 +142,7 @@ const CloudStorageRecyclePage: React.FC = () => {
 
         try {
             const listRequest: RecycleListRequest = {
-                keyword: mergedParams.keyword,
-                fileType: mergedParams.fileType,
-                deletedBy: mergedParams.deletedBy,
-                startDate: mergedParams.startDate,
-                endDate: mergedParams.endDate,
+                search: mergedParams.search,
                 page: current,
                 pageSize,
                 sortBy: 'deletedAt',
@@ -180,40 +179,6 @@ const CloudStorageRecyclePage: React.FC = () => {
         }
     }, []);
 
-    // 搜索处理
-    const handleSearch = useCallback((values: any) => {
-        // 处理日期范围
-        if (values.dateRange && Array.isArray(values.dateRange) && values.dateRange.length === 2) {
-            const [start, end] = values.dateRange;
-            values.startDate = start ? dayjs(start).toISOString() : undefined;
-            values.endDate = end ? dayjs(end).toISOString() : undefined;
-            delete values.dateRange;
-        }
-
-        // 同时更新 state 和 ref
-        searchParamsRef.current = values;
-        setSearchParams(values);
-
-        // 重新加载数据
-        if (actionRef.current?.reloadAndReset) {
-            actionRef.current.reloadAndReset();
-        } else if (actionRef.current?.reload) {
-            actionRef.current.reload();
-        }
-    }, []);
-
-    const handleReset = useCallback(() => {
-        searchForm.resetFields();
-        // 同时更新 state 和 ref
-        searchParamsRef.current = {};
-        setSearchParams({});
-
-        if (actionRef.current?.reloadAndReset) {
-            actionRef.current.reloadAndReset();
-        } else if (actionRef.current?.reload) {
-            actionRef.current.reload();
-        }
-    }, [searchForm]);
 
     // 文件操作
     const handleView = useCallback(async (item: RecycleItem) => {
@@ -663,55 +628,14 @@ const CloudStorageRecyclePage: React.FC = () => {
             )}
 
             {/* 搜索表单 */}
-            <SearchFormCard>
-                <Form
-                    form={searchForm}
-                    layout={isMobile ? 'vertical' : 'inline'}
-                    onFinish={handleSearch}
-                >
-                    <Form.Item name="keyword" label="关键词">
-                        <Input
-                            placeholder="搜索文件名"
-                            style={isMobile ? { width: '100%' } : { width: 200 }}
-                        />
-                    </Form.Item>
-                    <Form.Item name="fileType" label="文件类型">
-                        <Select
-                            placeholder="选择文件类型"
-                            style={isMobile ? { width: '100%' } : { width: 120 }}
-                            allowClear
-                        >
-                            <Select.Option value="image">图片</Select.Option>
-                            <Select.Option value="document">文档</Select.Option>
-                            <Select.Option value="video">视频</Select.Option>
-                            <Select.Option value="audio">音频</Select.Option>
-                            <Select.Option value="archive">压缩包</Select.Option>
-                        </Select>
-                    </Form.Item>
-                    <Form.Item name="dateRange" label="删除时间">
-                        <RangePicker
-                            style={isMobile ? { width: '100%' } : { width: 240 }}
-                        />
-                    </Form.Item>
-                    <Form.Item>
-                        <Space>
-                            <Button
-                                type="primary"
-                                htmlType="submit"
-                                style={isMobile ? { width: '100%' } : {}}
-                            >
-                                搜索
-                            </Button>
-                            <Button
-                                onClick={handleReset}
-                                style={isMobile ? { width: '100%' } : {}}
-                            >
-                                重置
-                            </Button>
-                        </Space>
-                    </Form.Item>
-                </Form>
-            </SearchFormCard>
+            <SearchBar
+                initialParams={searchParamsRef.current}
+                onSearch={(params) => {
+                    searchParamsRef.current = { ...searchParamsRef.current, ...params };
+                    actionRef.current?.reload?.();
+                }}
+                style={{ marginBottom: 16 }}
+            />
 
             {/* 清理进度 */}
             {cleanupProgress !== null && (

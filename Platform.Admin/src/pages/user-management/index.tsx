@@ -17,14 +17,12 @@ import {
   Row,
   Col,
   Badge,
-  Form,
-  Input,
   Card,
-  DatePicker,
   Grid,
   Typography,
   theme,
   Spin,
+  Input,
 } from 'antd';
 
 const { useBreakpoint } = Grid;
@@ -36,18 +34,19 @@ import {
   TeamOutlined,
   CheckCircleOutlined,
   ReloadOutlined,
-  CrownOutlined, // Added
+  CrownOutlined,
 } from '@ant-design/icons';
 import { request } from '@umijs/max';
-import useCommonStyles from '@/hooks/useCommonStyles';
-import SearchFormCard from '@/components/SearchFormCard';
+import SearchBar from '@/components/SearchBar';
 import { useTableResize } from '@/hooks/useTableResize';
+import useCommonStyles from '@/hooks/useCommonStyles';
 import { getAllRoles } from '@/services/role/api';
 import type { Role } from '@/services/role/types';
-import { getCurrentCompany } from '@/services/company'; // Added
+import { getCurrentCompany } from '@/services/company';
 import { getUserStatistics } from '@/services/ant-design-pro/api';
 import type { ApiResponse, PagedResult } from '@/types/unified-api';
-import type { AppUser, UserListRequest, UserStatisticsResponse } from './types';
+import { type PageParams, toBackendPageParams, parseProTableSort } from '@/types/page-params';
+import type { AppUser, UserStatisticsResponse } from './types';
 const UserForm = React.lazy(() => import('./components/UserForm'));
 const UserDetail = React.lazy(() => import('./components/UserDetail'));
 import { StatCard } from '@/components';
@@ -70,39 +69,30 @@ const formatDateTime = (dateTime: string | null | undefined): string => {
 const UserManagement: React.FC = () => {
   const intl = useIntl();
   const message = useMessage();
-  const { styles } = useCommonStyles();
-  const { token } = theme.useToken();
   const modal = useModal();
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
+  const { styles } = useCommonStyles();
+  const { token } = theme.useToken();
   const actionRef = useRef<ActionType>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const { initialState } = useModel('@@initialState');
   const [activeTab, setActiveTab] = useState('members');
   const currentCompanyId = initialState?.currentUser?.currentCompanyId || '';
-  const [searchForm] = Form.useForm();
   const [selectedRows, setSelectedRows] = useState<AppUser[]>([]);
   const [formVisible, setFormVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
   const [editingUser, setEditingUser] = useState<AppUser | null>(null);
   const [viewingUser, setViewingUser] = useState<AppUser | null>(null);
-  const [statistics, setStatistics] = useState<UserStatisticsResponse | null>(
-    null,
-  );
+  const [statistics, setStatistics] = useState<UserStatisticsResponse | null>(null);
   const [roleMap, setRoleMap] = useState<Record<string, string>>({});
-  const [searchParams, setSearchParams] = useState<UserListRequest>({
-    Page: 1,
-    PageSize: 10,
-    SortBy: 'CreatedAt',
-    SortOrder: 'desc',
-  });
-
-  // 🔧 修复：使用 ref 存储搜索参数，避免 fetchUsers 函数重新创建导致重复请求
-  const searchParamsRef = useRef<UserListRequest>({
-    Page: 1,
-    PageSize: 10,
-    SortBy: 'CreatedAt',
-    SortOrder: 'desc',
+  
+  // 🔧 简化：直接使用标准 PageParams
+  const searchParamsRef = useRef<PageParams>({
+    page: 1,
+    pageSize: 10,
+    sortBy: 'createdAt',
+    sortOrder: 'desc',
   });
 
   // 加载角色列表
@@ -152,100 +142,33 @@ const UserManagement: React.FC = () => {
 
   // 获取用户列表
   const fetchUsers = useCallback(async (params: { current?: number; pageSize?: number }, sort?: Record<string, 'ascend' | 'descend'>) => {
-    // 处理排序参数
-    let sortBy = searchParamsRef.current.SortBy;
-    let sortOrder = searchParamsRef.current.SortOrder;
-
-    if (sort && Object.keys(sort).length > 0) {
-      // ProTable 的 sort 格式: { fieldName: 'ascend' | 'descend' }
-      const sortKey = Object.keys(sort)[0];
-      const sortValue = sort[sortKey];
-
-      // 后端使用小写字段名
-      sortBy = sortKey;
-      sortOrder = sortValue === 'ascend' ? 'asc' : 'desc';
-    }
-
-    const requestData: UserListRequest = {
-      Page: params.current || searchParamsRef.current.Page,
-      PageSize: params.pageSize || searchParamsRef.current.PageSize,
-      Search: searchParamsRef.current.Search,
-      RoleIds: searchParamsRef.current.RoleIds,
-      IsActive: searchParamsRef.current.IsActive,
-      SortBy: sortBy,
-      SortOrder: sortOrder,
-      StartDate: searchParamsRef.current.StartDate,
-      EndDate: searchParamsRef.current.EndDate,
-    };
+    // 🔧 简化：使用 parseProTableSort 和 toBackendPageParams 统一处理
+    const { sortBy, sortOrder } = parseProTableSort(sort);
+    
+    const requestData = toBackendPageParams({
+      ...searchParamsRef.current,
+      page: params.current || searchParamsRef.current.page,
+      pageSize: params.pageSize || searchParamsRef.current.pageSize,
+      sortBy: sortBy || searchParamsRef.current.sortBy,
+      sortOrder: sortOrder || searchParamsRef.current.sortOrder,
+    });
 
     try {
-      // ✅ 后端返回 UserListWithRolesResponse，包含 Users 和 Total
       const response = await request<ApiResponse<PagedResult<AppUser>>>('/api/users/list', {
         method: 'POST',
         data: requestData,
       });
 
-      const users = response.data?.queryable || [];
-      const total = response.data?.rowCount || 0;
-
       return {
-        data: users,
+        data: response.data?.queryable || [],
         success: response.success,
-        total: total,
+        total: response.data?.rowCount || 0,
       };
     } catch (error) {
       console.error('获取用户列表失败:', error);
-      // 注意：这是 ProTable request 函数的特殊处理模式
-      // 错误已被全局错误处理捕获并显示错误提示，这里返回空数据让表格显示空状态
-      // 这是为了在错误已由全局处理显示的情况下，避免表格显示错误状态
-      // 如果需要让错误传播到 ProTable，可以删除 catch，但这样表格会显示错误状态
-      return {
-        data: [],
-        success: false,
-        total: 0,
-      };
+      return { data: [], success: false, total: 0 };
     }
-  }, []); // 🔧 修复：移除 searchParams 依赖，使用 ref 避免函数重新创建
-
-  // 处理搜索
-  const handleSearch = useCallback((values: { search?: string; roleIds?: string | string[]; isActive?: boolean; dateRange?: [dayjs.Dayjs | null, dayjs.Dayjs | null] }) => {
-    const newSearchParams: UserListRequest = {
-      Page: 1,
-      PageSize: searchParamsRef.current.PageSize,
-      Search: values.search,
-      RoleIds: values.roleIds
-        ? Array.isArray(values.roleIds)
-          ? values.roleIds
-          : [values.roleIds]
-        : undefined,
-      IsActive: values.isActive,
-      SortBy: searchParamsRef.current.SortBy,
-      SortOrder: searchParamsRef.current.SortOrder,
-      StartDate: values.dateRange?.[0]?.format('YYYY-MM-DD'),
-      EndDate: values.dateRange?.[1]?.format('YYYY-MM-DD'),
-    };
-    // 更新 ref 和 state
-    searchParamsRef.current = newSearchParams;
-    setSearchParams(newSearchParams);
-    // 手动触发重新加载
-    actionRef.current?.reload?.();
   }, []);
-
-  // 重置搜索
-  const handleReset = useCallback(() => {
-    searchForm.resetFields();
-    const resetParams: UserListRequest = {
-      Page: 1,
-      PageSize: searchParamsRef.current.PageSize,
-      SortBy: 'CreatedAt',
-      SortOrder: 'desc',
-    };
-    // 更新 ref 和 state
-    searchParamsRef.current = resetParams;
-    setSearchParams(resetParams);
-    // 手动触发重新加载
-    actionRef.current?.reload?.();
-  }, [searchForm]);
 
   // 删除用户（带删除原因）
   const handleDelete = useCallback(async (userId: string) => {
@@ -681,52 +604,14 @@ const UserManagement: React.FC = () => {
           )}
 
           {/* 搜索表单 */}
-          <SearchFormCard>
-            <Form
-              form={searchForm}
-              layout={isMobile ? 'vertical' : 'inline'}
-              onFinish={handleSearch}
-              style={{ marginBottom: 16 }}
-            >
-              <Form.Item name="search" label={intl.formatMessage({ id: 'pages.userManagement.search.label' })}>
-                <Input placeholder={intl.formatMessage({ id: 'pages.userManagement.search.placeholder' })} style={{ width: 200 }} aria-label={intl.formatMessage({ id: 'pages.userManagement.search.placeholder' })} />
-              </Form.Item>
-              <Form.Item name="roleIds" label={intl.formatMessage({ id: 'pages.userManagement.role.label' })}>
-                <Select
-                  mode="multiple"
-                  allowClear
-                  placeholder={intl.formatMessage({ id: 'pages.userManagement.role.placeholder' })}
-                  style={{ width: 200 }}
-                  aria-label={intl.formatMessage({ id: 'pages.userManagement.role.placeholder' })}
-                >
-                  {Object.entries(roleMap).map(([id, name]) => (
-                    <Select.Option key={id} value={id}>
-                      {name}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-              <Form.Item name="isActive" label={intl.formatMessage({ id: 'pages.userManagement.status.label' })}>
-                <Select allowClear placeholder={intl.formatMessage({ id: 'pages.userManagement.status.placeholder' })} style={{ width: 120 }} aria-label={intl.formatMessage({ id: 'pages.userManagement.status.placeholder' })}>
-                  <Select.Option value={true}>{intl.formatMessage({ id: 'pages.userManagement.status.activated' })}</Select.Option>
-                  <Select.Option value={false}>{intl.formatMessage({ id: 'pages.userManagement.status.deactivated' })}</Select.Option>
-                </Select>
-              </Form.Item>
-              <Form.Item name="dateRange" label={intl.formatMessage({ id: 'pages.userManagement.dateRange.label' })}>
-                <DatePicker.RangePicker />
-              </Form.Item>
-              <Form.Item>
-                <Space>
-                  <Button type="primary" htmlType="submit">
-                    {intl.formatMessage({ id: 'pages.common.search', defaultMessage: 'Search' })}
-                  </Button>
-                  <Button onClick={handleReset}>
-                    {intl.formatMessage({ id: 'pages.common.reset', defaultMessage: 'Reset' })}
-                  </Button>
-                </Space>
-              </Form.Item>
-            </Form>
-          </SearchFormCard>
+          <SearchBar
+            initialParams={searchParamsRef.current}
+            onSearch={(params) => {
+              // 🔧 简化：直接存储 params，toBackendPageParams 会在 fetchUsers 中处理映射
+              searchParamsRef.current = params;
+              actionRef.current?.reload?.();
+            }}
+          />
 
           {/* 用户列表表格 */}
           <div ref={tableRef}>
@@ -770,8 +655,8 @@ const UserManagement: React.FC = () => {
                   setFormVisible(false);
                   setEditingUser(null);
                   fetchUsers({
-                    current: searchParams.Page,
-                    pageSize: searchParams.PageSize,
+                    current: searchParamsRef.current.page,
+                    pageSize: searchParamsRef.current.pageSize,
                   });
                   message.success(
                     editingUser

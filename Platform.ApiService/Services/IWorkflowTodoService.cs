@@ -8,6 +8,6 @@ namespace Platform.ApiService.Services;
 
 public interface IWorkflowTodoService
 {
-    Task<PagedResult<object>> GetTodoInstancesAsync(string userId, int current, int pageSize);
+    Task<System.Linq.Dynamic.Core.PagedResult<object>> GetTodoInstancesAsync(string userId, Platform.ServiceDefaults.Models.PageParams request);
     Task<object?> GetNodeFormAsync(string instanceId, string nodeId);
 }

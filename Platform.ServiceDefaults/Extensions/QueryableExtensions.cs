@@ -10,15 +10,15 @@ public static class QueryableExtensions
 {
     /// <summary>
     /// 分页查询（全文搜索 + 自动排序 + 分页）
-    /// 
+    ///
     /// 自动处理：
     /// 1. 全文搜索：搜索所有 string 类型字段（不区分大小写）
     /// 2. 自动排序：根据 PageParams.SortBy/SortOrder 参数，如未指定则默认按 createdAt 降序
     /// 3. 分页：根据 PageParams.Page/PageSize 参数
     /// </summary>
-    public static PagedResult<T> ToPagedList<T>(
+    public static System.Linq.Dynamic.Core.PagedResult<T> ToPagedList<T>(
         this IQueryable<T> query,
-        Models.PageParams? pageParams)
+        Platform.ServiceDefaults.Models.PageParams? pageParams)
     {
         // 1. 全文搜索
         if (!string.IsNullOrWhiteSpace(pageParams?.Search))
@@ -26,8 +26,8 @@ public static class QueryableExtensions
             query = query.Where(BuildSearchFilter<T>(pageParams.Search));
         }
 
-        // 2. 排序
-        query = query.ApplySort(pageParams);
+        // 2. 排序 - 使用 self 引用避免与其他扩展方法的歧义
+        query = ApplySort(query, pageParams);
 
         // 3. 分页
         return query.PageResult(pageParams?.Page ?? 1, pageParams?.PageSize ?? 10);
@@ -86,4 +86,6 @@ public static class QueryableExtensions
         var expression = isDescending ? $"{field} descending" : field;
         return query.OrderBy(expression);
     }
+
+    
 }

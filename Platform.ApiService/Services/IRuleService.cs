@@ -14,7 +14,7 @@ public interface IRuleService
     /// </summary>
     /// <param name="queryParams">查询参数</param>
     /// <returns>规则列表响应</returns>
-    Task<PagedResult<RuleListItem>> GetRulesAsync(RuleQueryParams queryParams);
+    Task<System.Linq.Dynamic.Core.PagedResult<RuleListItem>> GetRulesAsync(Platform.ServiceDefaults.Models.PageParams queryParams);
     
     /// <summary>
     /// 根据ID获取规则

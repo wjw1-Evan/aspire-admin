@@ -2,6 +2,7 @@ using System.Linq.Dynamic.Core;
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Workflow;
+using Platform.ServiceDefaults.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,14 +28,12 @@ public class WorkflowTodoService : IWorkflowTodoService
         _formDefinitionService = formDefinitionService;
     }
 
-    public async Task<PagedResult<object>> GetTodoInstancesAsync(string userId, int current, int pageSize)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<object>> GetTodoInstancesAsync(string userId, Platform.ServiceDefaults.Models.PageParams request)
     {
-        Expression<Func<WorkflowInstance, bool>> filter = i => i.Status == WorkflowStatus.Running &&
-            i.CurrentApproverIds.Contains(userId);
+        var queryable = _context.Set<WorkflowInstance>()
+            .Where(i => i.Status == WorkflowStatus.Running && i.CurrentApproverIds.Contains(userId));
 
-        var queryable = _context.Set<WorkflowInstance>().Where(filter);
-        var pagedResult = queryable.OrderByDescending(i => i.CreatedAt)
-            .PageResult(current, pageSize);
+        var pagedResult = queryable.OrderByDescending(i => i.CreatedAt).AsQueryable().ToPagedList(request);
         var items = await pagedResult.Queryable.ToListAsync();
         var totalCount = pagedResult.RowCount;
 
@@ -42,7 +41,7 @@ public class WorkflowTodoService : IWorkflowTodoService
 
         foreach (var instance in items)
         {
-            var definition = instance.WorkflowDefinitionSnapshot ?? 
+            var definition = instance.WorkflowDefinitionSnapshot ??
                 await _workflowQueryService.GetWorkflowByIdAsync(instance.WorkflowDefinitionId);
             if (definition == null) continue;
 
@@ -94,7 +93,7 @@ public class WorkflowTodoService : IWorkflowTodoService
             }
         }
 
-        return todos.AsQueryable().PageResult(current, pageSize);
+        return todos.AsQueryable().PageResult(request.Page, request.PageSize);
     }
 
     public async Task<object?> GetNodeFormAsync(string instanceId, string nodeId)

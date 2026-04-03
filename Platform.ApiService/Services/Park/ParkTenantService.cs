@@ -32,34 +32,17 @@ public class ParkTenantService : IParkTenantService
     /// <summary>
     /// 获取租户列表
     /// </summary>
-    public async Task<PagedResult<ParkTenantDto>> GetTenantsAsync(ParkTenantListRequest request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<ParkTenantDto>> GetTenantsAsync(Platform.ServiceDefaults.Models.PageParams request)
     {
-        
-        Expression<Func<ParkTenant, bool>> filter = t => true;
-
-        if (!string.IsNullOrEmpty(request.Search))
-        {
-            var search = request.Search.ToLower();
-            filter = CombineFilters(filter, t => t.TenantName.ToLower().Contains(search) || (t.ContactPerson != null && t.ContactPerson.ToLower().Contains(search)));
-        }
-
-        if (!string.IsNullOrEmpty(request.Status))
-            filter = CombineFilters(filter, t => t.Status == request.Status);
-
-        if (!string.IsNullOrEmpty(request.Industry))
-            filter = CombineFilters(filter, t => t.Industry == request.Industry);
-
-        var query = _context.Set<ParkTenant>().Where(filter);
-        var total = await query.LongCountAsync();
-        var pagedResult = query.ApplySort(request).PageResult(request.Page, request.PageSize);
-
+        var pagedResult = _context.Set<ParkTenant>().ToPagedList(request);
+        var items = await pagedResult.Queryable.ToListAsync();
         var tenants = new List<ParkTenantDto>();
-        foreach (var item in await pagedResult.Queryable.ToListAsync())
+        foreach (var item in items)
         {
             tenants.Add(await MapToTenantDtoAsync(item));
         }
 
-        return new PagedResult<ParkTenantDto> { Queryable = tenants.AsQueryable(), CurrentPage = pagedResult.CurrentPage, PageSize = pagedResult.PageSize, RowCount = pagedResult.RowCount, PageCount = pagedResult.PageCount };
+        return new System.Linq.Dynamic.Core.PagedResult<ParkTenantDto> { Queryable = tenants.AsQueryable(), CurrentPage = pagedResult.CurrentPage, PageSize = pagedResult.PageSize, RowCount = pagedResult.RowCount, PageCount = pagedResult.PageCount };
     }
 
     /// <summary>
@@ -173,39 +156,17 @@ public class ParkTenantService : IParkTenantService
     /// <summary>
     /// 获取合同列表
     /// </summary>
-    public async Task<PagedResult<LeaseContractDto>> GetContractsAsync(LeaseContractListRequest request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<LeaseContractDto>> GetContractsAsync(Platform.ServiceDefaults.Models.PageParams request)
     {
-        Expression<Func<LeaseContract, bool>> filter = c => true;
-
-        if (!string.IsNullOrEmpty(request.TenantId))
-            filter = CombineFilters(filter, c => c.TenantId == request.TenantId);
-
-        if (!string.IsNullOrEmpty(request.Search))
-        {
-            var searchLower = request.Search.ToLower();
-            filter = CombineFilters(filter, c => c.ContractNumber.ToLower().Contains(searchLower));
-        }
-
-        if (!string.IsNullOrEmpty(request.Status))
-            filter = CombineFilters(filter, c => c.Status == request.Status);
-
-        if (request.ExpiringWithin30Days == true)
-        {
-            var threshold = DateTime.UtcNow.AddDays(30);
-            filter = CombineFilters(filter, c => c.EndDate <= threshold && c.Status == "Active");
-        }
-
-        var query = _context.Set<LeaseContract>().Where(filter);
-        var total = await query.LongCountAsync();
-        var pagedResult = query.ApplySort(request).PageResult(request.Page, request.PageSize);
-
+        var pagedResult = _context.Set<LeaseContract>().ToPagedList(request);
+        var items = await pagedResult.Queryable.ToListAsync();
         var contracts = new List<LeaseContractDto>();
-        foreach (var item in await pagedResult.Queryable.ToListAsync())
+        foreach (var item in items)
         {
             contracts.Add(await MapToContractDtoAsync(item));
         }
 
-        return new PagedResult<LeaseContractDto> { Queryable = contracts.AsQueryable(), CurrentPage = pagedResult.CurrentPage, PageSize = pagedResult.PageSize, RowCount = pagedResult.RowCount, PageCount = pagedResult.PageCount };
+        return new System.Linq.Dynamic.Core.PagedResult<LeaseContractDto> { Queryable = contracts.AsQueryable(), CurrentPage = pagedResult.CurrentPage, PageSize = pagedResult.PageSize, RowCount = pagedResult.RowCount, PageCount = pagedResult.PageCount };
     }
 
     /// <summary>

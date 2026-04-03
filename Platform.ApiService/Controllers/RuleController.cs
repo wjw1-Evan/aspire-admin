@@ -42,13 +42,11 @@ public class RuleController : BaseApiController
         [FromQuery] string? sorter = null,
         [FromQuery] string? filter = null)
     {
-        var queryParams = new RuleQueryParams
+        var queryParams = new Platform.ServiceDefaults.Models.PageParams
         {
             Page = page,
             PageSize = pageSize,
-            Name = name,
-            Sorter = sorter,
-            Filter = filter
+            Search = name
         };
 
         var result = await _ruleService.GetRulesAsync(queryParams);

@@ -66,6 +66,7 @@ export async function getActivityLogById(
  */
 export async function getCurrentUserActivityLogs(
   params?: {
+    search?: string;
     page?: number;
     pageSize?: number;
     action?: string;
@@ -105,6 +106,7 @@ export async function getCurrentUserActivityLogById(
  */
 export async function getCurrentUserActivityLogStatistics(
   params?: {
+    search?: string;
     action?: string;
     httpMethod?: string;
     statusCode?: number;

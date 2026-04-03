@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { PageContainer } from '@/components';
 import { Card, Tag, Space, Button, Modal, Grid } from 'antd';
 import { EyeOutlined, MonitorOutlined, ReloadOutlined, HistoryOutlined, FormOutlined } from '@ant-design/icons';
@@ -23,6 +23,7 @@ import WorkflowDesigner from './components/WorkflowDesigner';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import { getStatusMeta, workflowStatusMap, approvalActionMap } from '@/utils/statusMaps';
+import SearchBar from '@/components/SearchBar';
 
 const { useBreakpoint } = Grid;
 
@@ -41,6 +42,11 @@ const WorkflowMonitor: React.FC = () => {
   const [nodeFormInitial, setNodeFormInitial] = useState<Record<string, any> | null>(null);
   const [nodeFormLoading, setNodeFormLoading] = useState(false);
   const [currentFormInstanceId, setCurrentFormInstanceId] = useState<string | null>(null);
+  const searchParamsRef = useRef<any>({
+    current: 1,
+    pageSize: 20,
+    search: '',
+  });
 
   const handleRefresh = () => {
     actionRef.current?.reload?.();
@@ -191,6 +197,15 @@ const WorkflowMonitor: React.FC = () => {
         </Button>
       }
     >
+      <SearchBar
+        initialParams={searchParamsRef.current}
+        onSearch={(params) => {
+          searchParamsRef.current = { ...searchParamsRef.current, ...params };
+          actionRef.current?.reload?.();
+        }}
+        style={{ marginBottom: 16 }}
+      />
+
       <DataTable<WorkflowInstance>
         actionRef={actionRef}
         columns={columns}
@@ -198,8 +213,7 @@ const WorkflowMonitor: React.FC = () => {
           const response = await getWorkflowInstances({
             page: params.current,
             pageSize: params.pageSize,
-            workflowDefinitionId: params.workflowDefinitionId as string,
-            status: params.status as WorkflowStatus,
+            search: searchParamsRef.current.search,
           });
           if (response.success && response.data) {
             return {
@@ -211,7 +225,7 @@ const WorkflowMonitor: React.FC = () => {
           return { data: [], success: false, total: 0 };
         }}
         rowKey="id"
-        search={true}
+        search={false}
         scroll={{ x: 'max-content' }}
       />
 

@@ -42,7 +42,7 @@ import {
 import { iotService, IoTDataPoint, IoTDevice } from '@/services/iotService';
 import { StatCard } from '@/components';
 import useCommonStyles from '@/hooks/useCommonStyles';
-import SearchFormCard from '@/components/SearchFormCard';
+import SearchBar from '@/components/SearchBar';
 
 export interface DataPointManagementRef {
   reload: () => void;
@@ -68,7 +68,8 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
     disabled: 0,
     withAlarm: 0,
   });
-  const [searchForm] = Form.useForm();
+  const searchParamsRef = useRef<any>({});
+
 
   // 确保 devices 始终是数组
   const safeDevices = Array.isArray(devices) ? devices : [];
@@ -97,8 +98,8 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
   // 获取数据点列表（用于 ProTable）- 使用 useCallback 避免死循环
   const fetchDataPoints = useCallback(async (params: any) => {
     try {
-      const { keyword } = searchForm.getFieldsValue();
-      const response = await iotService.getDataPoints(undefined, params.current || 1, params.pageSize || 20, keyword);
+      const filters = searchParamsRef.current;
+      const response = await iotService.getDataPoints(undefined, params.current || 1, params.pageSize || 20, filters.search);
       if (response.success && response.data) {
         return {
           data: response.data.queryable || [],
@@ -470,39 +471,15 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
         </Row>
       </Card>
 
-      {/* 搜索表单 */}
-      <SearchFormCard style={{ marginBottom: 16 }}>
-        <Form
-          form={searchForm}
-          layout="inline"
-          onFinish={() => actionRef.current?.reload?.()}
-          style={{ gap: 8 }}
-        >
-          <Form.Item name="keyword" style={{ marginBottom: 0 }}>
-            <Input
-              placeholder={intl.formatMessage({ id: 'pages.iotPlatform.search.placeholder' })}
-              allowClear
-              onPressEnter={() => actionRef.current?.reload?.()}
-              style={{ width: 220 }}
-            />
-          </Form.Item>
-          <Form.Item style={{ marginBottom: 0 }}>
-            <Space>
-              <Button type="primary" onClick={() => actionRef.current?.reload?.()}>
-                {intl.formatMessage({ id: 'pages.button.search' })}
-              </Button>
-              <Button
-                onClick={() => {
-                  searchForm.resetFields();
-                  actionRef.current?.reload?.();
-                }}
-              >
-                {intl.formatMessage({ id: 'pages.button.reset' })}
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </SearchFormCard>
+      {/* 搜索 */}
+      <SearchBar
+        initialParams={searchParamsRef.current}
+        onSearch={(params) => {
+          searchParamsRef.current = params;
+          actionRef.current?.reload?.();
+        }}
+        style={{ marginBottom: 16 }}
+      />
 
       {/* 数据点配置列表表格 */}
       <DataTable<IoTDataPoint>

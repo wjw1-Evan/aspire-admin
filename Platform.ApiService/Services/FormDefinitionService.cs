@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
+using Platform.ServiceDefaults.Extensions;
 using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 
@@ -14,26 +15,16 @@ public class FormDefinitionService : IFormDefinitionService
         _context = context;
     }
 
-    public async Task<PagedResult<FormDefinition>> GetFormsAsync(int current, int pageSize, string? keyword, bool? isActive)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<FormDefinition>> GetFormsAsync(Platform.ServiceDefaults.Models.PageParams request, bool? isActive)
     {
-        Expression<Func<FormDefinition, bool>>? filter = null;
-
-        if (!string.IsNullOrEmpty(keyword))
-        {
-            filter = f => f.Name != null && f.Name.Contains(keyword);
-        }
+        var query = _context.Set<FormDefinition>().AsQueryable();
 
         if (isActive.HasValue)
         {
-            var isActiveValue = isActive.Value;
-            filter = filter == null 
-                ? f => f.IsActive == isActiveValue 
-                : f => (filter.Compile()(f) && f.IsActive == isActiveValue);
+            query = query.Where(f => f.IsActive == isActive.Value);
         }
 
-        var query = filter == null ? _context.Set<FormDefinition>() : _context.Set<FormDefinition>().Where(filter);
-
-        return query.PageResult(current, pageSize);
+        return query.ToPagedList(request);
     }
 
     public async Task<FormDefinition?> GetFormByIdAsync(string id)

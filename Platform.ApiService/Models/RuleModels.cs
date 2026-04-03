@@ -272,26 +272,6 @@ public class UpdateRuleRequest
 }
 
 
-/// <summary>
-/// 规则查询参数
-/// </summary>
-public class RuleQueryParams : PageParams
-{
-    /// <summary>
-    /// 规则名称（搜索关键词）
-    /// </summary>
-    public string? Name { get; set; }
-
-    /// <summary>
-    /// 排序字段
-    /// </summary>
-    public string? Sorter { get; set; }
-
-    /// <summary>
-    /// 过滤条件
-    /// </summary>
-    public string? Filter { get; set; }
-}
 
 /// <summary>
 /// 规则操作请求

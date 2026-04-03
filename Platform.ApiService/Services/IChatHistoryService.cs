@@ -5,7 +5,7 @@ namespace Platform.ApiService.Services;
 
 public interface IChatHistoryService
 {
-    Task<PagedResult<ChatHistoryListItemDto>> GetChatHistoryAsync(ChatHistoryQueryRequest request);
+    Task<System.Linq.Dynamic.Core.PagedResult<ChatHistoryListItemDto>> GetChatHistoryAsync(Platform.ServiceDefaults.Models.PageParams request);
     Task<ChatHistoryDetailResponse?> GetChatHistoryDetailAsync(string sessionId);
     Task<bool> DeleteChatHistoryAsync(string sessionId);
 }

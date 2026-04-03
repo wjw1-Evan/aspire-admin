@@ -13,48 +13,34 @@ public interface IUnifiedNotificationService
     /// 获取统一的通知/待办/任务中心数据
     /// 包括：系统消息、待办项、任务相关通知
     /// </summary>
-    /// <param name="page">页码（从1开始）</param>
-    /// <param name="pageSize">每页数量</param>
     /// <param name="filterType">过滤类型：all, notification, message, todo, task, system, unread</param>
-    /// <param name="sortBy">排序字段：datetime, priority, dueDate</param>
     /// <returns>统一的通知/待办/任务列表</returns>
-    Task<PagedResult<NoticeIconItem>> GetUnifiedNotificationsAsync(
-        int page = 1,
-        int pageSize = 10,
-        string filterType = "all",
-        string sortBy = "datetime");
+    /// <param name="request">分页请求参数</param>
+    Task<System.Linq.Dynamic.Core.PagedResult<NoticeIconItem>> GetUnifiedNotificationsAsync(
+        Platform.ServiceDefaults.Models.PageParams request,
+        string filterType = "all");
 
     /// <summary>
     /// 获取待办项列表
     /// </summary>
-    /// <param name="page">页码</param>
-    /// <param name="pageSize">每页数量</param>
-    /// <param name="sortBy">排序字段：dueDate, priority, datetime</param>
     /// <returns>待办项列表</returns>
-    Task<PagedResult<NoticeIconItem>> GetTodosAsync(
-        int page = 1,
-        int pageSize = 10,
+    Task<System.Linq.Dynamic.Core.PagedResult<NoticeIconItem>> GetTodosAsync(
+        Platform.ServiceDefaults.Models.PageParams request,
         string sortBy = "dueDate");
 
     /// <summary>
     /// 获取系统消息列表
     /// </summary>
-    /// <param name="page">页码</param>
-    /// <param name="pageSize">每页数量</param>
     /// <returns>系统消息列表</returns>
-    Task<PagedResult<NoticeIconItem>> GetSystemMessagesAsync(
-        int page = 1,
-        int pageSize = 10);
+    Task<System.Linq.Dynamic.Core.PagedResult<NoticeIconItem>> GetSystemMessagesAsync(
+        Platform.ServiceDefaults.Models.PageParams request);
 
     /// <summary>
     /// 获取任务相关通知列表
     /// </summary>
-    /// <param name="page">页码</param>
-    /// <param name="pageSize">每页数量</param>
     /// <returns>任务相关通知列表</returns>
-    Task<PagedResult<NoticeIconItem>> GetTaskNotificationsAsync(
-        int page = 1,
-        int pageSize = 10);
+    Task<System.Linq.Dynamic.Core.PagedResult<NoticeIconItem>> GetTaskNotificationsAsync(
+        Platform.ServiceDefaults.Models.PageParams request);
 
     /// <summary>
     /// 创建待办项

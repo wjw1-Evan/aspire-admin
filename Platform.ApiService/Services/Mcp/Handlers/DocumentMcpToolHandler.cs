@@ -43,11 +43,11 @@ public class DocumentMcpToolHandler : McpToolHandlerBase
             async (args, uid) =>
             {
                 var (page, pageSize) = ParsePaginationArgs(args, defaultPageSize: 20, maxPageSize: 100);
-                var request = new DocumentQueryParams
+                var request = new DocumentListRequest
                 {
                     Page = page,
                     PageSize = pageSize,
-                    Keyword = args.GetValueOrDefault("keyword")?.ToString(),
+                    Search = args.GetValueOrDefault("keyword")?.ToString(),
                     DocumentType = args.GetValueOrDefault("documentType")?.ToString(),
                     Category = args.GetValueOrDefault("category")?.ToString(),
                     FilterType = args.GetValueOrDefault("filterType")?.ToString()
@@ -118,9 +118,7 @@ public class DocumentMcpToolHandler : McpToolHandlerBase
         if (arguments.ContainsKey("search"))
             return await HandleSearchFilesAsync(arguments, currentUserId);
 
-        var query = new FileListQuery { Page = page, PageSize = pageSize };
-        if (arguments.ContainsKey("fileType") && Enum.TryParse<FileItemType>(arguments["fileType"]?.ToString(), out var type))
-            query.Type = type;
+        var query = new Platform.ServiceDefaults.Models.PageParams { Page = page, PageSize = pageSize };
 
         var response = await _cloudStorageService.GetFileItemsAsync(parentId, query);
         var items = await response.Queryable.ToListAsync();
@@ -140,7 +138,7 @@ public class DocumentMcpToolHandler : McpToolHandlerBase
         if (string.IsNullOrEmpty(keyword)) return new { error = "关键词必填" };
 
         var (page, pageSize) = ParsePaginationArgs(arguments, defaultPageSize: 20, maxPageSize: 100);
-        var request = new FileSearchQuery { Keyword = keyword, Page = page, PageSize = pageSize };
+        var request = new Platform.ServiceDefaults.Models.PageParams { Search = keyword, Page = page, PageSize = pageSize };
         var response = await _cloudStorageService.SearchFilesAsync(request);
         var items = await response.Queryable.ToListAsync();
         return new

@@ -136,39 +136,17 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
     /// <summary>
     /// 获取服务申请列表
     /// </summary>
-    public async Task<PagedResult<ServiceRequestDto>> GetRequestsAsync(ServiceRequestListRequest request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<ServiceRequestDto>> GetRequestsAsync(Platform.ServiceDefaults.Models.PageParams request)
     {
-        Expression<Func<ServiceRequest, bool>> filter = r => true;
-
-        if (!string.IsNullOrEmpty(request.CategoryId))
-            filter = CombineFilters(filter, r => r.CategoryId == request.CategoryId);
-
-        if (!string.IsNullOrEmpty(request.TenantId))
-            filter = CombineFilters(filter, r => r.TenantId == request.TenantId);
-
-        if (!string.IsNullOrEmpty(request.Search))
-            filter = CombineFilters(filter, r => r.Title.Contains(request.Search));
-
-        if (!string.IsNullOrEmpty(request.Status))
-            filter = CombineFilters(filter, r => r.Status == request.Status);
-
-        if (!string.IsNullOrEmpty(request.Priority))
-            filter = CombineFilters(filter, r => r.Priority == request.Priority);
-
-        if (!string.IsNullOrEmpty(request.AssignedTo))
-            filter = CombineFilters(filter, r => r.AssignedTo == request.AssignedTo);
-
-        var query = _context.Set<ServiceRequest>().Where(filter);
-        var total = await query.LongCountAsync();
-        var pagedResult = query.ApplySort(request).PageResult(request.Page, request.PageSize);
-
+        var pagedResult = _context.Set<ServiceRequest>().ToPagedList(request);
+        var items = await pagedResult.Queryable.ToListAsync();
         var requestDtos = new List<ServiceRequestDto>();
-        foreach (var item in await pagedResult.Queryable.ToListAsync())
+        foreach (var item in items)
         {
             requestDtos.Add(await MapToRequestDtoAsync(item));
         }
 
-        return new PagedResult<ServiceRequestDto> { Queryable = requestDtos.AsQueryable(), CurrentPage = pagedResult.CurrentPage, PageSize = pagedResult.PageSize, RowCount = pagedResult.RowCount, PageCount = pagedResult.PageCount };
+        return new System.Linq.Dynamic.Core.PagedResult<ServiceRequestDto> { Queryable = requestDtos.AsQueryable(), CurrentPage = pagedResult.CurrentPage, PageSize = pagedResult.PageSize, RowCount = pagedResult.RowCount, PageCount = pagedResult.PageCount };
     }
 
     /// <summary>

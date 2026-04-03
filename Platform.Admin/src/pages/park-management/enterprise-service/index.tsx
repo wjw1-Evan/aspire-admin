@@ -5,7 +5,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, AppstoreOutlin
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import PageContainer from '@/components/PageContainer';
 import { DataTable } from '@/components/DataTable';
-import SearchFormCard from '@/components/SearchFormCard';
+import SearchBar from '@/components/SearchBar';
 import StatCard from '@/components/StatCard';
 import * as parkService from '@/services/park';
 import type { ServiceCategory, ServiceRequest, ServiceStatistics, ParkTenant } from '@/services/park';
@@ -25,7 +25,7 @@ const EnterpriseService: React.FC = () => {
     const [requestForm] = Form.useForm();
     const [statusForm] = Form.useForm();
     const [ratingForm] = Form.useForm();
-    const [searchForm] = Form.useForm();
+    const searchParamsRef = useRef<any>({ search: '' });
 
     const [activeTab, setActiveTab] = useState<string>('requests');
     const [statistics, setStatistics] = useState<ServiceStatistics | null>(null);
@@ -244,8 +244,6 @@ const EnterpriseService: React.FC = () => {
         } catch (e) { console.error(e); } finally { setLoading(false); }
     };
 
-    const handleSearch = () => { requestTableRef.current?.reload(); };
-    const handleReset = () => { searchForm.resetFields(); handleSearch(); };
 
     const handleRefresh = () => {
         if (activeTab === 'requests') {
@@ -304,15 +302,14 @@ const EnterpriseService: React.FC = () => {
                             ),
                             children: (
                                 <>
-                                    <SearchFormCard>
-                                        <Form form={searchForm} layout="inline" onFinish={handleSearch}>
-                                            <Form.Item name="search"><Input placeholder="搜索..." style={{ width: 200 }} allowClear /></Form.Item>
-                                            <Form.Item name="categoryId"><Select placeholder="类别" style={{ width: 120 }} allowClear options={categories.map(c => ({ label: c.name, value: c.id }))} /></Form.Item>
-                                            <Form.Item name="status"><Select placeholder="状态" style={{ width: 100 }} allowClear options={statusOptions} /></Form.Item>
-                                            <Form.Item name="priority"><Select placeholder="优先级" style={{ width: 100 }} allowClear options={priorityOptions} /></Form.Item>
-                                            <Form.Item><Space><Button type="primary" htmlType="submit">搜索</Button><Button onClick={handleReset} icon={<ReloadOutlined />}>重置</Button></Space></Form.Item>
-                                        </Form>
-                                    </SearchFormCard>
+                                    <SearchBar
+                                        initialParams={searchParamsRef.current}
+                                        onSearch={(params) => {
+                                            searchParamsRef.current = { ...searchParamsRef.current, ...params };
+                                            requestTableRef.current?.reload();
+                                        }}
+                                        style={{ marginBottom: 16 }}
+                                    />
                                     <DataTable<ServiceRequest> actionRef={requestTableRef} columns={requestColumns as any} request={fetchRequests} rowKey="id" scroll={{ x: 1200 }} search={false} />
                                 </>
                             ),

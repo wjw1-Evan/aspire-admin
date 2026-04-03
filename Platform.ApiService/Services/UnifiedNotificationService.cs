@@ -27,11 +27,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
     }
 
     /// <inheritdoc/>
-    public async Task<PagedResult<NoticeIconItem>> GetUnifiedNotificationsAsync(
-        int page = 1,
-        int pageSize = 10,
-        string filterType = "all",
-        string sortBy = "datetime")
+    public async Task<System.Linq.Dynamic.Core.PagedResult<NoticeIconItem>> GetUnifiedNotificationsAsync(Platform.ServiceDefaults.Models.PageParams request, string filterType = "all")
     {
         var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var filterTypeLower = filterType?.ToLowerInvariant() ?? "all";
@@ -55,37 +51,38 @@ public class UnifiedNotificationService : IUnifiedNotificationService
 
         var query = _context.Set<NoticeIconItem>().Where(BuildFilter(false));
 
-        query = query.ApplySort(new Models.PageParams { SortBy = sortBy });
+        var sortBy = string.IsNullOrWhiteSpace(request.SortBy) ? "datetime" : request.SortBy;
+        request.SortBy = sortBy;
 
-        return query.PageResult(page, pageSize);
+        return query.ToPagedList(request);
     }
 
     /// <inheritdoc/>
-    public Task<PagedResult<NoticeIconItem>> GetTodosAsync(int page = 1, int pageSize = 10, string sortBy = "dueDate")
+    public Task<System.Linq.Dynamic.Core.PagedResult<NoticeIconItem>> GetTodosAsync(Platform.ServiceDefaults.Models.PageParams request, string sortBy = "dueDate")
     {
         var query = _context.Set<NoticeIconItem>().Where(n => n.IsTodo);
 
-        query = query.ApplySort(new Models.PageParams { SortBy = sortBy });
+        request.SortBy = string.IsNullOrWhiteSpace(request.SortBy) ? sortBy : request.SortBy;
 
-        return Task.FromResult(query.PageResult(page, pageSize));
+        return Task.FromResult(query.ToPagedList(request));
     }
 
     /// <inheritdoc/>
-    public Task<PagedResult<NoticeIconItem>> GetSystemMessagesAsync(int page = 1, int pageSize = 10)
+    public Task<System.Linq.Dynamic.Core.PagedResult<NoticeIconItem>> GetSystemMessagesAsync(Platform.ServiceDefaults.Models.PageParams request)
     {
         var query = _context.Set<NoticeIconItem>().Where(n => n.IsSystemMessage).OrderByDescending(n => n.Datetime);
-        return Task.FromResult(query.PageResult(page, pageSize));
+        return Task.FromResult(query.ToPagedList(request));
     }
 
     /// <inheritdoc/>
-    public Task<PagedResult<NoticeIconItem>> GetTaskNotificationsAsync(int page = 1, int pageSize = 10)
+    public Task<System.Linq.Dynamic.Core.PagedResult<NoticeIconItem>> GetTaskNotificationsAsync(Platform.ServiceDefaults.Models.PageParams request)
     {
         var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
         var query = _context.Set<NoticeIconItem>()
             .Where(n => n.Type == NoticeIconItemType.Task && n.RelatedUserIds.Contains(currentUserId))
             .OrderByDescending(n => n.Datetime);
 
-        return Task.FromResult(query.PageResult(page, pageSize));
+        return Task.FromResult(query.ToPagedList(request));
     }
 
     /// <inheritdoc/>

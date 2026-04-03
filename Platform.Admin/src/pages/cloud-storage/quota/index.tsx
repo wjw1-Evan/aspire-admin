@@ -1,6 +1,6 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PageContainer, StatCard } from '@/components';
-import SearchFormCard from '@/components/SearchFormCard';
+import SearchBar from '@/components/SearchBar';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import DataTable from '@/components/DataTable';
 import type { ActionType } from '@/types/pro-components';
@@ -36,8 +36,7 @@ const CloudStorageQuotaPage: React.FC = () => {
 
     const [warnings, setWarnings] = useState<QuotaWarning[]>([]);
 
-    const searchParamsRef = useRef<SearchParams>({});
-    const [searchForm] = Form.useForm();
+    const searchParamsRef = useRef<any>({ search: '' });
     const { styles } = useCommonStyles();
 
     const [detailVisible, setDetailVisible] = useState(false);
@@ -128,13 +127,12 @@ const CloudStorageQuotaPage: React.FC = () => {
 
         try {
             const listRequest: QuotaListRequest = {
-                username: mergedParams.username,
-                isEnabled: mergedParams.isEnabled,
                 page: current,
                 pageSize,
                 sortBy: 'usedQuota',
                 sortOrder: 'desc',
                 companyId: currentCompanyId,
+                ...searchParamsRef.current,
             };
 
             const response = await getQuotaList(listRequest);
@@ -185,30 +183,6 @@ const CloudStorageQuotaPage: React.FC = () => {
         }
     }, [currentCompanyId]);
 
-    // 搜索处理
-    const handleSearch = useCallback((values: any) => {
-        // 同时更新 state 和 ref
-        searchParamsRef.current = values;
-
-        // 重新加载数据
-        if (actionRef.current?.reloadAndReset) {
-            actionRef.current?.reloadAndReset?.();
-        } else if (actionRef.current?.reload) {
-            actionRef.current?.reload?.();
-        }
-    }, []);
-
-    const handleReset = useCallback(() => {
-        searchForm.resetFields();
-        // 同时更新 state 和 ref
-        searchParamsRef.current = {};
-
-        if (actionRef.current?.reloadAndReset) {
-            actionRef.current?.reloadAndReset?.();
-        } else if (actionRef.current?.reload) {
-            actionRef.current?.reload?.();
-        }
-    }, [searchForm]);
 
     // Tab 切换
     const handleTabChange = useCallback((key: string) => {
@@ -592,58 +566,24 @@ const CloudStorageQuotaPage: React.FC = () => {
                             ),
                             children: (
                                 <div ref={tableRef}>
-                                    <Form
-                                        form={searchForm}
-                                        layout={isMobile ? 'vertical' : 'inline'}
-                                        onFinish={(values) => {
+                                    <SearchBar
+                                        initialParams={searchParamsRef.current}
+                                        onSearch={(params) => {
+                                            searchParamsRef.current = { ...searchParamsRef.current, ...params };
                                             actionRef.current?.reload?.();
                                         }}
                                         style={{ marginBottom: 16 }}
-                                    >
-                                        <Form.Item name="username" label={intl.formatMessage({ id: 'pages.table.username' })}>
-                                            <Input
-                                                placeholder={intl.formatMessage({ id: 'pages.projectManagement.search.placeholder' })}
-                                                style={{ width: 200 }}
-                                                allowClear
-                                            />
-                                        </Form.Item>
-                                        <Form.Item name="isEnabled" label={intl.formatMessage({ id: 'pages.cloud-storage.quota.field.isEnabled' })}>
-                                            <Select
-                                                placeholder={intl.formatMessage({ id: 'pages.userManagement.status.placeholder' })}
-                                                style={{ width: 120 }}
-                                                allowClear
-                                            >
-                                                <Select.Option value={true}>{intl.formatMessage({ id: 'pages.table.enable' })}</Select.Option>
-                                                <Select.Option value={false}>{intl.formatMessage({ id: 'pages.table.disable' })}</Select.Option>
-                                            </Select>
-                                        </Form.Item>
-                                        <Form.Item>
-                                            <Space>
-                                                <Button type="primary" htmlType="submit">
-                                                    {intl.formatMessage({ id: 'pages.button.search' })}
-                                                </Button>
-                                                <Button
-                                                    onClick={() => {
-                                                        searchForm.resetFields();
-                                                        actionRef.current?.reload?.();
-                                                    }}
-                                                >
-                                                    {intl.formatMessage({ id: 'pages.button.reset' })}
-                                                </Button>
-                                            </Space>
-                                        </Form.Item>
-                                    </Form>
+                                    />
 
                                     <DataTable<StorageQuota>
                                         actionRef={actionRef}
                                         rowKey="userId"
                                         columns={columns}
                                         request={async (params, sort) => {
-                                            const searchValues = searchForm.getFieldsValue();
                                             const res = await getQuotaList({
                                                 current: params.current,
                                                 pageSize: params.pageSize,
-                                                ...searchValues,
+                                                ...searchParamsRef.current,
                                                 ...sort,
                                             });
                                             return {

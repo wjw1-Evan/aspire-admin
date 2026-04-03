@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ApiService.Models.Workflow;
 using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System;
@@ -45,7 +46,7 @@ public interface IDocumentService
     /// <summary>
     /// 获取公文列表
     /// </summary>
-    Task<PagedResult<Document>> GetDocumentsAsync(DocumentQueryParams query);
+    Task<System.Linq.Dynamic.Core.PagedResult<Document>> GetDocumentsAsync(DocumentListRequest query);
 
     /// <summary>
     /// 删除公文
@@ -157,23 +158,8 @@ public class UpdateDocumentRequest
 /// <summary>
 /// 公文查询参数
 /// </summary>
-public class DocumentQueryParams
+public class DocumentListRequest : Platform.ServiceDefaults.Models.PageParams
 {
-    /// <summary>
-    /// 页码
-    /// </summary>
-    public int Page { get; set; } = 1;
-
-    /// <summary>
-    /// 每页数量
-    /// </summary>
-    public int PageSize { get; set; } = 10;
-
-    /// <summary>
-    /// 关键词搜索
-    /// </summary>
-    public string? Keyword { get; set; }
-
     /// <summary>
     /// 状态筛选
     /// </summary>
@@ -343,14 +329,14 @@ public class DocumentService : IDocumentService
     /// <summary>
     /// 获取公文列表
     /// </summary>
-    public async Task<PagedResult<Document>> GetDocumentsAsync(DocumentQueryParams query)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<Document>> GetDocumentsAsync(DocumentListRequest query)
     {
         Expression<Func<Document, bool>> filter = d => true;
 
-        // 关键词搜索
-        if (!string.IsNullOrEmpty(query.Keyword))
+        // 关键词搜索（使用继承的 Search 属性）
+        if (!string.IsNullOrEmpty(query.Search))
         {
-            string keyword = query.Keyword.ToLower();
+            string keyword = query.Search.ToLower();
             filter = filter.And(d => (d.Title ?? "").ToLower().Contains(keyword) || (d.Content != null && d.Content.ToLower().Contains(keyword)))!;
         }
 
@@ -410,7 +396,7 @@ public class DocumentService : IDocumentService
                         else
                         {
                             var emptyQuery = _context.Set<Document>().Where(d => false);
-                            return emptyQuery.PageResult(query.Page, query.PageSize);
+                            return emptyQuery.ToPagedList(query);
                         }
                     }
                     break;
@@ -427,7 +413,7 @@ public class DocumentService : IDocumentService
 
         {
             var filteredQuery = _context.Set<Document>().Where(filter!);
-            return filteredQuery.OrderByDescending(d => d.CreatedAt).PageResult(query.Page, query.PageSize);
+            return filteredQuery.ToPagedList(query);
         }
     }
 

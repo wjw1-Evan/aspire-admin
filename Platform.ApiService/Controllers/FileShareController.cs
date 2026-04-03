@@ -165,15 +165,33 @@ public class FileShareController : BaseApiController
     /// <summary>
     /// 获取我创建的分享列表
     /// </summary>
-    /// <param name="query">查询参数</param>
+    /// <param name="pageParams">分页参数</param>
+    /// <param name="type">分享类型筛选</param>
+    /// <param name="permission">分享权限筛选</param>
+    /// <param name="isActive">是否激活筛选</param>
+    /// <param name="createdAfter">创建时间范围（开始）</param>
+    /// <param name="createdBefore">创建时间范围（结束）</param>
+    /// <param name="expiresAfter">过期时间范围（开始）</param>
+    /// <param name="expiresBefore">过期时间范围（结束）</param>
     /// <returns>分享列表</returns>
     [HttpGet("my-shares")]
     [RequireMenu("cloud-storage-shared")]
-    public async Task<IActionResult> GetMyShares([FromQuery] ShareListQuery query)
+    public async Task<IActionResult> GetMyShares(
+        [FromQuery] Platform.ServiceDefaults.Models.PageParams pageParams,
+        [FromQuery] ShareType? type = null,
+        [FromQuery] SharePermission? permission = null,
+        [FromQuery] bool? isActive = null,
+        [FromQuery] DateTime? createdAfter = null,
+        [FromQuery] DateTime? createdBefore = null,
+        [FromQuery] DateTime? expiresAfter = null,
+        [FromQuery] DateTime? expiresBefore = null)
     {
         try
         {
-            var result = await _fileShareService.GetMySharesAsync(query);
+            pageParams.SortBy = string.IsNullOrEmpty(pageParams.SortBy) ? "createdAt" : pageParams.SortBy;
+            var result = await _fileShareService.GetMySharesAsync(
+                pageParams, type, permission, isActive,
+                createdAfter, createdBefore, expiresAfter, expiresBefore);
             return Success(result);
         }
         catch (Exception ex)
@@ -186,15 +204,28 @@ public class FileShareController : BaseApiController
     /// <summary>
     /// 获取分享给我的文件列表
     /// </summary>
-    /// <param name="query">查询参数</param>
+    /// <param name="pageParams">分页参数</param>
+    /// <param name="permission">分享权限筛选</param>
+    /// <param name="createdAfter">创建时间范围（开始）</param>
+    /// <param name="createdBefore">创建时间范围（结束）</param>
+    /// <param name="expiresAfter">过期时间范围（开始）</param>
+    /// <param name="expiresBefore">过期时间范围（结束）</param>
     /// <returns>分享文件列表</returns>
     [HttpGet("shared-with-me")]
     [RequireMenu("cloud-storage-shared")]
-    public async Task<IActionResult> GetSharedWithMe([FromQuery] ShareListQuery query)
+    public async Task<IActionResult> GetSharedWithMe(
+        [FromQuery] Platform.ServiceDefaults.Models.PageParams pageParams,
+        [FromQuery] SharePermission? permission = null,
+        [FromQuery] DateTime? createdAfter = null,
+        [FromQuery] DateTime? createdBefore = null,
+        [FromQuery] DateTime? expiresAfter = null,
+        [FromQuery] DateTime? expiresBefore = null)
     {
         try
         {
-            var result = await _fileShareService.GetSharedWithMeAsync(query);
+            pageParams.SortBy = string.IsNullOrEmpty(pageParams.SortBy) ? "createdAt" : pageParams.SortBy;
+            var result = await _fileShareService.GetSharedWithMeAsync(
+                pageParams, permission, createdAfter, createdBefore, expiresAfter, expiresBefore);
             return Success(result);
         }
         catch (Exception ex)

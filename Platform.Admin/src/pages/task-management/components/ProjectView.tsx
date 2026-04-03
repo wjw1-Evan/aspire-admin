@@ -45,7 +45,7 @@ import { StatCard } from '@/components';
 import ProjectForm from './ProjectForm';
 import ProjectDetail from './ProjectDetail';
 import useCommonStyles from '@/hooks/useCommonStyles';
-import SearchFormCard from '@/components/SearchFormCard';
+import SearchBar from '@/components/SearchBar';
 import { useModal } from '@/hooks/useModal';
 
 export interface ProjectViewRef {
@@ -61,7 +61,6 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
   const actionRef = useRef<ActionType>(null);
-  const [searchForm] = Form.useForm();
   const [formVisible, setFormVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
   const [editingProject, setEditingProject] = useState<ProjectDto | null>(null);
@@ -79,6 +78,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   const searchParamsRef = useRef<ProjectQueryRequest>({
     page: 1,
     pageSize: 10,
+    search: '',
     sortBy: 'CreatedAt',
     sortOrder: 'desc',
   });
@@ -114,14 +114,9 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
     const requestData: ProjectQueryRequest = {
       page: params.current || searchParamsRef.current.page,
       pageSize: params.pageSize || searchParamsRef.current.pageSize,
-      search: searchParamsRef.current.search,
-      status: searchParamsRef.current.status,
-      priority: searchParamsRef.current.priority,
-      managerId: searchParamsRef.current.managerId,
-      startDate: searchParamsRef.current.startDate,
-      endDate: searchParamsRef.current.endDate,
       sortBy,
       sortOrder,
+      ...searchParamsRef.current,
     };
 
     try {
@@ -156,46 +151,6 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
     },
   }), [fetchStatistics]);
 
-  // 处理搜索
-  const handleSearch = useCallback((values: any) => {
-    const newSearchParams: ProjectQueryRequest = {
-      page: 1,
-      pageSize: searchParamsRef.current.pageSize,
-      search: values.search,
-      status: values.status,
-      priority: values.priority,
-      managerId: values.managerId,
-      startDate: values.dateRange?.[0]?.format('YYYY-MM-DD'),
-      endDate: values.dateRange?.[1]?.format('YYYY-MM-DD'),
-      sortBy: searchParamsRef.current.sortBy,
-      sortOrder: searchParamsRef.current.sortOrder,
-    };
-    // 更新 ref 和 state
-    searchParamsRef.current = newSearchParams;
-    setSearchParams(newSearchParams);
-    // 手动触发重新加载
-    if (actionRef.current && actionRef.current.reload) {
-      actionRef.current.reload();
-    }
-  }, []);
-
-  // 重置搜索
-  const handleReset = useCallback(() => {
-    searchForm.resetFields();
-    const resetParams: ProjectQueryRequest = {
-      page: 1,
-      pageSize: searchParamsRef.current.pageSize,
-      sortBy: 'CreatedAt',
-      sortOrder: 'desc',
-    };
-    // 更新 ref 和 state
-    searchParamsRef.current = resetParams;
-    setSearchParams(resetParams);
-    // 手动触发重新加载
-    if (actionRef.current && actionRef.current.reload) {
-      actionRef.current.reload();
-    }
-  }, [searchForm]);
 
   // 删除项目
   const handleDelete = useCallback(async (projectId: string) => {
@@ -442,49 +397,14 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       )}
 
       {/* 搜索表单 */}
-      <SearchFormCard>
-        <Form form={searchForm} layout={isMobile ? 'vertical' : 'inline'} onFinish={handleSearch}>
-          <Form.Item name="search" label={intl.formatMessage({ id: 'pages.projectManagement.search.label' })}>
-            <Input placeholder={intl.formatMessage({ id: 'pages.projectManagement.search.placeholder' })} style={{ width: 200 }} />
-          </Form.Item>
-          <Form.Item name="status" label={intl.formatMessage({ id: 'pages.projectManagement.filter.status.label' })}>
-            <Select placeholder={intl.formatMessage({ id: 'pages.projectManagement.filter.status.all' })} style={{ width: 120 }} allowClear>
-              <Select.Option value={ProjectStatus.Planning}>{intl.formatMessage({ id: 'pages.projectManagement.status.planning' })}</Select.Option>
-              <Select.Option value={ProjectStatus.InProgress}>{intl.formatMessage({ id: 'pages.projectManagement.status.inProgress' })}</Select.Option>
-              <Select.Option value={ProjectStatus.OnHold}>{intl.formatMessage({ id: 'pages.projectManagement.status.onHold' })}</Select.Option>
-              <Select.Option value={ProjectStatus.Completed}>{intl.formatMessage({ id: 'pages.projectManagement.status.completed' })}</Select.Option>
-              <Select.Option value={ProjectStatus.Cancelled}>{intl.formatMessage({ id: 'pages.projectManagement.status.cancelled' })}</Select.Option>
-            </Select>
-          </Form.Item>
-          <Form.Item name="priority" label={intl.formatMessage({ id: 'pages.projectManagement.filter.priority.label' })}>
-            <Select placeholder={intl.formatMessage({ id: 'pages.projectManagement.filter.priority.all' })} style={{ width: 120 }} allowClear>
-              <Select.Option value={ProjectPriority.Low}>{intl.formatMessage({ id: 'pages.projectManagement.priority.low' })}</Select.Option>
-              <Select.Option value={ProjectPriority.Medium}>{intl.formatMessage({ id: 'pages.projectManagement.priority.medium' })}</Select.Option>
-              <Select.Option value={ProjectPriority.High}>{intl.formatMessage({ id: 'pages.projectManagement.priority.high' })}</Select.Option>
-            </Select>
-          </Form.Item>
-          <Form.Item name="dateRange" label={intl.formatMessage({ id: 'pages.projectManagement.filter.createdAt.label' })}>
-            <DatePicker.RangePicker style={{ width: 240 }} />
-          </Form.Item>
-          <Form.Item>
-            <Space wrap>
-              <Button
-                type="primary"
-                htmlType="submit"
-                style={isMobile ? { width: '100%' } : {}}
-              >
-                {intl.formatMessage({ id: 'pages.button.query' })}
-              </Button>
-              <Button
-                onClick={handleReset}
-                style={isMobile ? { width: '100%' } : {}}
-              >
-                {intl.formatMessage({ id: 'pages.button.reset' })}
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </SearchFormCard>
+      <SearchBar
+        initialParams={searchParamsRef.current}
+        onSearch={(params) => {
+          searchParamsRef.current = { ...searchParamsRef.current, ...params };
+          actionRef.current?.reload?.();
+        }}
+        style={{ marginBottom: 16 }}
+      />
 
       {/* 项目列表表格 */}
       <DataTable<ProjectDto>

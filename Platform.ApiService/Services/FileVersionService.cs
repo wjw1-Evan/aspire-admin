@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Models;
 using Platform.ServiceDefaults.Services;
+using Platform.ServiceDefaults.Extensions;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -57,8 +58,12 @@ public class FileVersionService : IFileVersionService
         {
             gridFSId = await _fileStorageFactory.UploadAsync(stream, file.FileName, file.ContentType, new Dictionary<string, object>
             {
-                ["originalName"] = file.FileName, ["contentType"] = file.ContentType ?? "application/octet-stream",
-                ["uploadedAt"] = DateTime.UtcNow, ["hash"] = fileHash, ["fileItemId"] = fileItemId, ["versionNumber"] = nextVersionNumber
+                ["originalName"] = file.FileName,
+                ["contentType"] = file.ContentType ?? "application/octet-stream",
+                ["uploadedAt"] = DateTime.UtcNow,
+                ["hash"] = fileHash,
+                ["fileItemId"] = fileItemId,
+                ["versionNumber"] = nextVersionNumber
             }, "cloud_storage_files");
         }
 
@@ -74,10 +79,10 @@ public class FileVersionService : IFileVersionService
 
     public async Task<List<FileVersion>> GetVersionHistoryAsync(string fileItemId) => await _context.Set<FileVersion>().Where(v => v.FileItemId == fileItemId).OrderByDescending(v => v.VersionNumber).ToListAsync();
 
-    public async Task<PagedResult<FileVersion>> GetVersionHistoryPaginatedAsync(string fileItemId, int page, int pageSize)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<FileVersion>> GetVersionHistoryPaginatedAsync(string fileItemId, Platform.ServiceDefaults.Models.PageParams request)
     {
         var query = _context.Set<FileVersion>().Where(v => v.FileItemId == fileItemId).OrderByDescending(v => v.VersionNumber);
-        return await Task.FromResult(query.PageResult(page, pageSize));
+        return await Task.FromResult(query.ToPagedList(request));
     }
 
     public async Task<FileVersion?> GetVersionAsync(string versionId) => await _context.Set<FileVersion>().FirstOrDefaultAsync(x => x.Id == versionId);
@@ -184,9 +189,13 @@ public class FileVersionService : IFileVersionService
         var current = versions.FirstOrDefault(v => v.IsCurrentVersion);
         return new VersionStatistics
         {
-            FileItemId = fileItemId, TotalVersions = versions.Count, CurrentVersionNumber = current?.VersionNumber ?? 0,
-            EarliestVersionDate = versions.LastOrDefault()?.CreatedAt, LatestVersionDate = versions.FirstOrDefault()?.CreatedAt,
-            TotalStorageSize = versions.Sum(v => v.Size), VersionSizes = versions.ToDictionary(v => v.VersionNumber, v => v.Size),
+            FileItemId = fileItemId,
+            TotalVersions = versions.Count,
+            CurrentVersionNumber = current?.VersionNumber ?? 0,
+            EarliestVersionDate = versions.LastOrDefault()?.CreatedAt,
+            LatestVersionDate = versions.FirstOrDefault()?.CreatedAt,
+            TotalStorageSize = versions.Sum(v => v.Size),
+            VersionSizes = versions.ToDictionary(v => v.VersionNumber, v => v.Size),
             CreatorStatistics = versions.Where(v => !string.IsNullOrEmpty(v.CreatedBy)).GroupBy(v => v.CreatedBy!).ToDictionary(g => g.Key, g => g.Count())
         };
     }

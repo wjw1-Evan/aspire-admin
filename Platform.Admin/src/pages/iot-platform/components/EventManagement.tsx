@@ -31,7 +31,7 @@ import { iotService, IoTDeviceEvent, IoTDevice } from '@/services/iotService';
 import dayjs from 'dayjs';
 import { StatCard } from '@/components';
 import useCommonStyles from '@/hooks/useCommonStyles';
-import SearchFormCard from '@/components/SearchFormCard';
+import SearchBar from '@/components/SearchBar';
 
 export interface EventManagementRef {
   reload: () => void;
@@ -47,7 +47,7 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<IoTDeviceEvent | null>(null);
   const [form] = Form.useForm();
-  const [searchForm] = Form.useForm();
+
   const [overviewStats, setOverviewStats] = useState({
     total: 0,
     unhandled: 0,
@@ -87,13 +87,8 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
         pageSize: params.pageSize || 20,
       };
 
-      if (formValues.deviceId) filters.deviceId = formValues.deviceId;
-      if (formValues.eventType) filters.eventType = formValues.eventType;
-      if (formValues.level) filters.level = formValues.level;
-      if (formValues.isHandled !== undefined) filters.isHandled = formValues.isHandled;
-      if (formValues.dateRange && formValues.dateRange.length === 2) {
-        filters.startTime = formValues.dateRange[0].toISOString();
-        filters.endTime = formValues.dateRange[1].toISOString();
+      if (formValues.search) {
+        filters.search = formValues.search;
       }
 
       const response = await iotService.queryEvents(filters);
@@ -140,17 +135,6 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
     loadDevices();
     fetchOverviewStats();
   }, [loadDevices, fetchOverviewStats]);
-
-  const handleSearch = useCallback(() => {
-    // 同时更新 ref，确保 request 函数能立即访问到最新值
-    const values = searchForm.getFieldsValue();
-    searchParamsRef.current = values;
-
-    if (actionRef.current?.reload) {
-      actionRef.current.reload();
-    }
-    fetchOverviewStats();
-  }, [searchForm, fetchOverviewStats]);
 
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
@@ -324,71 +308,16 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
         </Row>
       </Card>
 
-      {/* 搜索表单 */}
-      <SearchFormCard>
-        <Form
-          form={searchForm}
-          layout="inline"
-          onFinish={handleSearch}
-        >
-          <Form.Item name="deviceId">
-            <Select placeholder="选择设备" allowClear style={{ width: 150 }}>
-              {safeDevices.map((device) => (
-                <Select.Option key={device.deviceId} value={device.deviceId}>
-                  {device.title}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          <Form.Item name="eventType">
-            <Select placeholder="选择事件类型" allowClear style={{ width: 120 }}>
-              <Select.Option value="Connected">连接</Select.Option>
-              <Select.Option value="Disconnected">断开</Select.Option>
-              <Select.Option value="DataReceived">数据接收</Select.Option>
-              <Select.Option value="Alarm">告警</Select.Option>
-              <Select.Option value="Error">错误</Select.Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item name="level">
-            <Select placeholder="选择级别" allowClear style={{ width: 100 }}>
-              <Select.Option value="Info">信息</Select.Option>
-              <Select.Option value="Warning">警告</Select.Option>
-              <Select.Option value="Error">错误</Select.Option>
-              <Select.Option value="Critical">严重</Select.Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item name="isHandled">
-            <Select placeholder="选择状态" allowClear style={{ width: 100 }}>
-              <Select.Option value={false}>未处理</Select.Option>
-              <Select.Option value={true}>已处理</Select.Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item name="dateRange">
-            <DatePicker.RangePicker
-              format="YYYY-MM-DD"
-              placeholder={['开始日期', '结束日期']}
-            />
-          </Form.Item>
-
-          <Form.Item>
-            <Space>
-              <Button type="primary" htmlType="submit">
-                查询
-              </Button>
-              <Button onClick={() => {
-                searchForm.resetFields();
-                handleSearch();
-              }}>
-                重置
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </SearchFormCard>
+      {/* 搜索 */}
+      <SearchBar
+        initialParams={searchParamsRef.current}
+        onSearch={(params) => {
+          searchParamsRef.current = params;
+          actionRef.current?.reload?.();
+          fetchOverviewStats();
+        }}
+        style={{ marginBottom: 16 }}
+      />
 
       {/* 事件列表表格 */}
       <DataTable<IoTDeviceEvent>

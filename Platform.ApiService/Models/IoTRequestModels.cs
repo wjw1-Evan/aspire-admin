@@ -196,7 +196,7 @@ public class DataPointValue
 /// <summary>
 /// 查询物联网数据请求
 /// </summary>
-public class QueryIoTDataRequest
+public class QueryIoTDataRequest : Platform.ServiceDefaults.Models.PageParams
 {
     /// <summary>设备ID</summary>
     public string? DeviceId { get; set; }
@@ -206,16 +206,12 @@ public class QueryIoTDataRequest
     public DateTime? StartTime { get; set; }
     /// <summary>结束时间</summary>
     public DateTime? EndTime { get; set; }
-    /// <summary>页码</summary>
-    public int Page { get; set; } = 1;
-    /// <summary>每页数量</summary>
-    public int PageSize { get; set; } = 20;
 }
 
 /// <summary>
 /// 查询设备事件请求
 /// </summary>
-public class QueryIoTEventRequest
+public class QueryIoTEventRequest : Platform.ServiceDefaults.Models.PageParams
 {
     /// <summary>设备ID</summary>
     public string? DeviceId { get; set; }
@@ -229,10 +225,6 @@ public class QueryIoTEventRequest
     public DateTime? StartTime { get; set; }
     /// <summary>结束时间</summary>
     public DateTime? EndTime { get; set; }
-    /// <summary>页码</summary>
-    public int Page { get; set; } = 1;
-    /// <summary>每页数量</summary>
-    public int PageSize { get; set; } = 20;
 }
 
 #endregion

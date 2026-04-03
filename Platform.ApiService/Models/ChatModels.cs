@@ -363,25 +363,13 @@ public class ChatMessage : MultiTenantEntity
 /// <summary>
 /// 聊天会话查询请求
 /// </summary>
-public class ChatSessionListRequest
+public class ChatSessionListRequest : Platform.ServiceDefaults.Models.PageParams
 {
-    /// <summary>
-    /// 页码（从 1 开始）
-    /// </summary>
-    [Range(1, int.MaxValue)]
-    public int Page { get; set; } = 1;
-
     /// <summary>
     /// 每页数量
     /// </summary>
     [Range(1, 100)]
-    public int PageSize { get; set; } = 20;
-
-    /// <summary>
-    /// 关键字过滤
-    /// </summary>
-    public string? Keyword { get; set; }
-        = default;
+    public new int PageSize { get; set; } = 20;
 }
 
 /// <summary>

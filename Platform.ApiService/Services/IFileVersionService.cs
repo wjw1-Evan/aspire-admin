@@ -29,10 +29,9 @@ public interface IFileVersionService
     /// 获取文件版本历史（分页）
     /// </summary>
     /// <param name="fileItemId">文件项ID</param>
-    /// <param name="page">页码</param>
-    /// <param name="pageSize">每页数量</param>
+    /// <param name="request">分页请求参数</param>
     /// <returns>分页版本列表</returns>
-    Task<PagedResult<FileVersion>> GetVersionHistoryPaginatedAsync(string fileItemId, int page, int pageSize);
+    Task<System.Linq.Dynamic.Core.PagedResult<FileVersion>> GetVersionHistoryPaginatedAsync(string fileItemId, Platform.ServiceDefaults.Models.PageParams request);
 
     /// <summary>
     /// 获取版本详情

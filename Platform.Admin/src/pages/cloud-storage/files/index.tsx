@@ -6,9 +6,9 @@
 
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { PageContainer, StatCard } from '@/components';
-import SearchFormCard from '@/components/SearchFormCard';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import DataTable from '@/components/DataTable';
+import SearchBar from '@/components/SearchBar';
 import type { ActionType } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
 import { Grid } from 'antd';
@@ -117,9 +117,12 @@ const CloudStorageFilesPage: React.FC = () => {
     const [statistics, setStatistics] = useState<StorageStatistics | null>(null);
 
     // 搜索相关状态
-    const [searchParams, setSearchParams] = useState<SearchParams>({});
-    const searchParamsRef = useRef<SearchParams>({});
     const [searchForm] = Form.useForm();
+    const searchParamsRef = useRef<any>({
+        current: 1,
+        pageSize: 20,
+        search: '',
+    });
     const { styles } = useCommonStyles();
     const [isSearchMode, setIsSearchMode] = useState(false);
 
@@ -212,15 +215,9 @@ const CloudStorageFilesPage: React.FC = () => {
         try {
             let response;
 
-            if (isSearchMode && (mergedParams.keyword || mergedParams.fileType || mergedParams.tags?.length)) {
+            if (isSearchMode && searchParamsRef.current.search) {
                 const searchRequest: FileSearchRequest = {
-                    keyword: mergedParams.keyword,
-                    fileType: mergedParams.fileType,
-                    tags: mergedParams.tags,
-                    startDate: mergedParams.startDate,
-                    endDate: mergedParams.endDate,
-                    minSize: mergedParams.minSize,
-                    maxSize: mergedParams.maxSize,
+                    keyword: searchParamsRef.current.search,
                     page: current,
                     pageSize,
                     sortBy,
@@ -257,28 +254,6 @@ const CloudStorageFilesPage: React.FC = () => {
     }, [isSearchMode]);
 
     // 搜索处理
-    const handleSearch = useCallback((values: any) => {
-        if (values.dateRange && Array.isArray(values.dateRange) && values.dateRange.length === 2) {
-            const [start, end] = values.dateRange;
-            values.startDate = start ? dayjs(start).toISOString() : undefined;
-            values.endDate = end ? dayjs(end).toISOString() : undefined;
-            delete values.dateRange;
-        }
-
-        searchParamsRef.current = values;
-        setSearchParams(values);
-        setIsSearchMode(true);
-
-        actionRef.current?.reloadAndReset?.() || actionRef.current?.reload?.();
-    }, []);
-
-    const handleReset = useCallback(() => {
-        searchForm.resetFields();
-        searchParamsRef.current = {};
-        setSearchParams({});
-        setIsSearchMode(false);
-        actionRef.current?.reloadAndReset?.() || actionRef.current?.reload?.();
-    }, [searchForm]);
 
     // 文件夹导航
     const handleFolderClick = useCallback((folder: FileItem) => {
@@ -290,11 +265,9 @@ const CloudStorageFilesPage: React.FC = () => {
         setCurrentParentId(folder.id);
         setPathHistory(prev => [...prev, newPathItem]);
         setIsSearchMode(false);
-        searchForm.resetFields();
-        searchParamsRef.current = {};
-        setSearchParams({});
+        searchParamsRef.current = { ...searchParamsRef.current, search: '' };
         actionRef.current?.reload?.();
-    }, [currentPath, searchForm]);
+    }, [currentPath]);
 
     const handleBreadcrumbClick = useCallback((index: number) => {
         const targetItem = pathHistory[index];
@@ -305,11 +278,9 @@ const CloudStorageFilesPage: React.FC = () => {
         setCurrentParentId(targetItem.id);
         setPathHistory(newPathHistory);
         setIsSearchMode(false);
-        searchForm.resetFields();
-        searchParamsRef.current = {};
-        setSearchParams({});
+        searchParamsRef.current = { ...searchParamsRef.current, search: '' };
         actionRef.current?.reload?.();
-    }, [pathHistory, searchForm]);
+    }, [pathHistory]);
 
     // 文件操作
     const handleView = useCallback(async (file: FileItem) => {
@@ -893,51 +864,15 @@ const CloudStorageFilesPage: React.FC = () => {
             </Card>
 
             {/* 搜索表单 */}
-            <SearchFormCard>
-                <Form
-                    form={searchForm}
-                    layout={isMobile ? 'vertical' : 'inline'}
-                    onFinish={handleSearch}
-                >
-                    <Form.Item name="keyword" label={intl.formatMessage({ id: 'pages.cloud-storage.files.search.keyword' })}>
-                        <Input
-                            placeholder={intl.formatMessage({ id: 'pages.cloud-storage.files.search.placeholder' })}
-                            style={isMobile ? { width: '100%' } : { width: 200 }}
-                        />
-                    </Form.Item>
-                    <Form.Item name="fileType" label={intl.formatMessage({ id: 'pages.cloud-storage.files.search.fileType' })}>
-                        <Select
-                            placeholder={intl.formatMessage({ id: 'pages.cloud-storage.files.search.typePlaceholder' })}
-                            style={isMobile ? { width: '100%' } : { width: 120 }}
-                            allowClear
-                        >
-                            <Select.Option value="image">{intl.formatMessage({ id: 'pages.cloud-storage.files.search.type.image' })}</Select.Option>
-                            <Select.Option value="document">{intl.formatMessage({ id: 'pages.cloud-storage.files.search.type.document' })}</Select.Option>
-                            <Select.Option value="video">{intl.formatMessage({ id: 'pages.cloud-storage.files.search.type.video' })}</Select.Option>
-                            <Select.Option value="audio">{intl.formatMessage({ id: 'pages.cloud-storage.files.search.type.audio' })}</Select.Option>
-                            <Select.Option value="archive">{intl.formatMessage({ id: 'pages.cloud-storage.files.search.type.archive' })}</Select.Option>
-                        </Select>
-                    </Form.Item>
-                    <Form.Item>
-                        <Space>
-                            <Button
-                                type="primary"
-                                htmlType="submit"
-                                icon={<SearchOutlined />}
-                                style={isMobile ? { width: '100%' } : {}}
-                            >
-                                {intl.formatMessage({ id: 'pages.button.search' })}
-                            </Button>
-                            <Button
-                                onClick={handleReset}
-                                style={isMobile ? { width: '100%' } : {}}
-                            >
-                                {intl.formatMessage({ id: 'pages.button.reset' })}
-                            </Button>
-                        </Space>
-                    </Form.Item>
-                </Form>
-            </SearchFormCard>
+            <SearchBar
+                initialParams={searchParamsRef.current}
+                onSearch={(params) => {
+                    searchParamsRef.current = { ...searchParamsRef.current, ...params };
+                    setIsSearchMode(!!params.search);
+                    actionRef.current?.reload?.();
+                }}
+                style={{ marginBottom: 16 }}
+            />
 
             {/* 数据表格 */}
             <DataTable

@@ -545,6 +545,7 @@ export async function getWorkflowInstances(params: {
   pageSize?: number;
   workflowDefinitionId?: string;
   status?: WorkflowStatus;
+  search?: string;
 }): Promise<ApiResponse<PagedResult<WorkflowInstance>>> {
   return request('/api/workflows/instances', {
     method: 'GET',
@@ -558,6 +559,7 @@ export async function getWorkflowInstances(params: {
 export async function getTodoInstances(params: {
   page?: number;
   pageSize?: number;
+  search?: string;
 }): Promise<ApiResponse<PagedResult<any>>> {
   return request('/api/workflows/instances/todo', {
     method: 'GET',
@@ -729,6 +731,7 @@ export async function getBulkOperations(params: {
   page?: number;
   pageSize?: number;
   status?: BulkOperationStatus;
+  search?: string;
 }): Promise<ApiResponse<PagedResult<BulkOperation>>> {
   return request('/api/workflows/bulk-operations', {
     method: 'GET',

@@ -43,6 +43,7 @@ export interface ShareListRequest {
     fileId?: string;
     shareType?: 'internal' | 'external';
     isEnabled?: boolean;
+    search?: string;
     page?: number;
     pageSize?: number;
 }
@@ -248,7 +249,7 @@ export async function sendShareNotification(data: ShareNotificationRequest) {
 /**
  * 获取我的分享列表
  */
-export async function getMyShares(params?: { page?: number; pageSize?: number }) {
+export async function getMyShares(params?: { page?: number; pageSize?: number; search?: string }) {
     return request<ApiResponse<ShareListResponse>>('/api/file-share/my-shares', {
         method: 'GET',
         params,
@@ -258,7 +259,7 @@ export async function getMyShares(params?: { page?: number; pageSize?: number })
 /**
  * 获取分享给我的文件列表
  */
-export async function getSharedWithMe(params?: { page?: number; pageSize?: number }) {
+export async function getSharedWithMe(params?: { page?: number; pageSize?: number; search?: string }) {
     return request<ApiResponse<ShareListResponse>>('/api/file-share/shared-with-me', {
         method: 'GET',
         params,

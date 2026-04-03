@@ -401,16 +401,12 @@ public class CloudStorageService : ICloudStorageService
     }
 
     /// <inheritdoc/>
-    public async Task<PagedResult<FileItem>> GetFileItemsAsync(string parentId, FileListQuery query)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<FileItem>> GetFileItemsAsync(string parentId, Platform.ServiceDefaults.Models.PageParams query)
     {
         var normalizedParentId = string.IsNullOrWhiteSpace(parentId) ? string.Empty : parentId;
         var q = _context.Set<FileItem>().Where(x => x.Status == FileStatus.Active && x.ParentId == normalizedParentId);
         
-        if (query.Type.HasValue) q = q.Where(x => x.Type == query.Type.Value);
-
-        q = q.ApplySort(query);
-
-        return q.PageResult(query.Page, query.PageSize);
+        return q.ToPagedList(query);
     }
 
     /// <inheritdoc/>
@@ -586,16 +582,11 @@ public class CloudStorageService : ICloudStorageService
     }
 
     /// <inheritdoc/>
-    public async Task<PagedResult<FileItem>> SearchFilesAsync(FileSearchQuery query)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<FileItem>> SearchFilesAsync(Platform.ServiceDefaults.Models.PageParams query)
     {
-        var keyword = query.Keyword?.ToLower();
         var q = _context.Set<FileItem>().Where(x => x.Status == FileStatus.Active);
-        if (!string.IsNullOrWhiteSpace(keyword)) q = q.Where(x => x.Name.ToLower().Contains(keyword));
-        if (query.Type.HasValue) q = q.Where(x => x.Type == query.Type.Value);
 
-        q = q.ApplySort(query);
-
-        return q.PageResult(query.Page, query.PageSize);
+        return q.ToPagedList(query);
     }
 
     /// <inheritdoc/>
@@ -609,7 +600,7 @@ public class CloudStorageService : ICloudStorageService
     }
 
     /// <inheritdoc/>
-    public async Task<PagedResult<FileItem>> SearchByContentAsync(string keyword, FileContentSearchQuery query)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<FileItem>> SearchByContentAsync(string keyword, FileContentSearchQuery query)
     {
         if (string.IsNullOrWhiteSpace(keyword)) throw new ArgumentException("搜索关键词不能为空");
         var allFiles = await _context.Set<FileItem>().Where(x => x.Type == FileItemType.File && x.Status == FileStatus.Active)
@@ -629,7 +620,7 @@ public class CloudStorageService : ICloudStorageService
             catch { /* 忽略文件读取错误，不影响搜索结果 */ }
         }
 
-        return new PagedResult<FileItem>
+        return new System.Linq.Dynamic.Core.PagedResult<FileItem>
         {
             Queryable = matched.AsQueryable(),
             CurrentPage = query.Page,
@@ -640,14 +631,11 @@ public class CloudStorageService : ICloudStorageService
     }
 
     /// <inheritdoc/>
-    public async Task<PagedResult<FileItem>> GetRecycleBinItemsAsync(RecycleBinQuery query)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<FileItem>> GetRecycleBinItemsAsync(Platform.ServiceDefaults.Models.PageParams query)
     {
         var q = _context.Set<FileItem>().Where(x => x.Status == FileStatus.InRecycleBin);
-        if (query.Type.HasValue) q = q.Where(x => x.Type == query.Type.Value);
 
-        q = q.ApplySort(query);
-
-        return q.PageResult(query.Page, query.PageSize);
+        return q.ToPagedList(query);
     }
 
     /// <inheritdoc/>

@@ -1,11 +1,9 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PageContainer, StatCard } from '@/components';
 import useCommonStyles from '@/hooks/useCommonStyles';
-import DataTable from '@/components/DataTable';
 import SearchBar from '@/components/SearchBar';
-import type { ActionType } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
-import { Grid } from 'antd';
+import { Table } from 'antd';
 import {
     Button,
     Tag,
@@ -21,10 +19,8 @@ import {
     Descriptions,
     Spin,
     Tabs,
-    Popconfirm,
     DatePicker,
     Switch,
-    message,
 } from 'antd';
 import { useMessage } from '@/hooks/useMessage';
 import { useModal } from '@/hooks/useModal';
@@ -41,15 +37,13 @@ import {
     CalendarOutlined,
     UserOutlined,
     FileOutlined,
-    FolderOutlined,
     DownloadOutlined,
-    SendOutlined,
     ClockCircleOutlined,
-    TeamOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
 const { useBreakpoint } = Grid;
+import { Grid } from 'antd';
 const { RangePicker } = DatePicker;
 
 import {
@@ -67,13 +61,8 @@ import {
     type ShareNotificationRequest,
 } from '@/services/cloud-storage/shareApi';
 import { getFileDetail } from '@/services/cloud-storage';
+import type { PageParams } from '@/types/page-params';
 
-
-interface SearchParams {
-    shareType?: 'internal' | 'external';
-    isEnabled?: boolean;
-    keyword?: string;
-}
 
 const CloudStorageSharedPage: React.FC = () => {
     const intl = useIntl();
@@ -81,22 +70,22 @@ const CloudStorageSharedPage: React.FC = () => {
     const { confirm } = useModal();
     const screens = useBreakpoint();
     const isMobile = !screens.md;
-
-    // 表格引用
-    const actionRef = useRef<ActionType | null>(null);
+    const { styles } = useCommonStyles();
 
     // 状态管理
     const [activeTab, setActiveTab] = useState<'my-shares' | 'shared-with-me'>('my-shares');
+    const [data, setData] = useState<FileShare[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
     const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
     const [selectedRows, setSelectedRows] = useState<FileShare[]>([]);
 
     // 搜索相关状态
-    const searchParamsRef = useRef<any>({
-        current: 1,
+    const searchParamsRef = useRef<PageParams>({
+        page: 1,
         pageSize: 20,
         search: '',
     });
-    const { styles } = useCommonStyles();
 
     // 弹窗状态
     const [detailVisible, setDetailVisible] = useState(false);
@@ -111,22 +100,15 @@ const CloudStorageSharedPage: React.FC = () => {
     const [editShareForm] = Form.useForm();
     const [notifyForm] = Form.useForm();
 
-    // 刷新处理
-    const handleRefresh = useCallback(() => {
-        actionRef.current?.reload?.();
-    }, []);
-
     const mapShareType = (type: any): 'internal' | 'external' => {
         if (typeof type === 'string') {
             const lower = type.toLowerCase();
             return lower === 'internal' ? 'internal' : 'external';
         }
-        // 枚举：1 = Internal，其余视为外部/链接
         return type === 1 ? 'internal' : 'external';
     };
 
     const mapAccessType = (permission: any): 'view' | 'download' | 'edit' => {
-        // 0=view,1=download,2=edit,3=full
         if (typeof permission === 'number') {
             if (permission === 1) return 'download';
             if (permission >= 2) return 'edit';
@@ -175,34 +157,36 @@ const CloudStorageSharedPage: React.FC = () => {
         return fileId;
     }, [fileNameMap]);
 
-    // 数据获取函数
-    const fetchData = useCallback(async (params: any) => {
-        const { current = 1, pageSize = 20 } = params;
+    const fetchData = useCallback(async () => {
+        const currentParams = searchParamsRef.current;
 
-        // 合并搜索参数，使用 ref 确保获取最新的搜索参数
-        const mergedParams = { ...searchParamsRef.current, ...params };
-
+        setLoading(true);
         try {
+            const { page = 1, pageSize = 20, sortBy, sortOrder } = currentParams;
+
             let response;
 
             if (activeTab === 'my-shares') {
                 response = await getMyShares({
-                    page: current,
+                    page: page,
                     pageSize,
-                    search: mergedParams.search,
+                    search: currentParams.search,
+                    sortBy,
+                    sortOrder,
                 });
             } else {
                 response = await getSharedWithMe({
-                    page: current,
+                    page: page,
                     pageSize,
-                    search: mergedParams.search,
+                    search: currentParams.search,
+                    sortBy,
+                    sortOrder,
                 });
             }
 
             if (response.success && response.data) {
                 const transformed = (response.data.queryable || []).map(transformShare);
 
-                // 补齐文件名（接口只返回 fileItemId）
                 const missingIds = transformed
                     .map((item: any) => item.fileId)
                     .filter((id: string) => id && !fileNameMap[id]);
@@ -240,35 +224,63 @@ const CloudStorageSharedPage: React.FC = () => {
                     });
                 }
 
-                return {
-                    data: transformed,
-                    total: response.data.rowCount ?? transformed.length,
-                    success: true,
-                };
+                setData(transformed);
+                setPagination(prev => ({
+                    ...prev,
+                    page: currentParams.page ?? prev.page,
+                    pageSize: currentParams.pageSize ?? prev.pageSize,
+                    total: response.data.rowCount ?? 0,
+                }));
+            } else {
+                setData([]);
+                setPagination(prev => ({ ...prev, total: 0 }));
             }
-
-            return {
-                data: [],
-                total: 0,
-                success: false,
-            };
         } catch (err) {
             console.error('Failed to load shares:', err);
-            return {
-                data: [],
-                total: 0,
-                success: false,
-            };
+            setData([]);
+            setPagination(prev => ({ ...prev, total: 0 }));
+        } finally {
+            setLoading(false);
         }
-    }, [activeTab]);
+    }, [activeTab, fileNameMap]);
 
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    // 搜索处理
+    const handleSearch = useCallback((params: PageParams) => {
+        searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
+        fetchData();
+    }, [fetchData]);
+
+    // 表格分页和排序处理
+    const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+        const newPage = pag.current;
+        const newPageSize = pag.pageSize;
+        const sortBy = sorter?.field;
+        const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
+        
+        searchParamsRef.current = {
+            ...searchParamsRef.current,
+            page: newPage,
+            pageSize: newPageSize,
+            sortBy,
+            sortOrder,
+        };
+        fetchData();
+    }, [fetchData]);
+
+    // 刷新处理
+    const handleRefresh = useCallback(() => {
+        fetchData();
+    }, [fetchData]);
 
     // Tab 切换
     const handleTabChange = useCallback((key: string) => {
         setActiveTab(key as 'my-shares' | 'shared-with-me');
         setSelectedRowKeys([]);
         setSelectedRows([]);
-        actionRef.current?.reload?.();
     }, []);
 
     // 分享操作
@@ -306,21 +318,21 @@ const CloudStorageSharedPage: React.FC = () => {
         try {
             await deleteShare(share.id);
             success('删除分享成功');
-            actionRef.current?.reload?.();
+            fetchData();
         } catch (err) {
             error('删除分享失败');
         }
-    }, [success, error]);
+    }, [success, error, fetchData]);
 
     const handleToggle = useCallback(async (share: FileShare) => {
         try {
             await toggleShare(share.id, !share.isEnabled);
             success(`${share.isEnabled ? '禁用' : '启用'}分享成功`);
-            actionRef.current?.reload?.();
+            fetchData();
         } catch (err) {
             error(`${share.isEnabled ? '禁用' : '启用'}分享失败`);
         }
-    }, [success, error]);
+    }, [success, error, fetchData]);
 
     const handleNotify = useCallback((share: FileShare) => {
         setNotifyingShare(share);
@@ -334,7 +346,6 @@ const CloudStorageSharedPage: React.FC = () => {
             await navigator.clipboard.writeText(shareUrl);
             success('分享链接已复制到剪贴板');
         } catch (err) {
-            // 降级方案
             const textArea = document.createElement('textarea');
             textArea.value = shareUrl;
             document.body.appendChild(textArea);
@@ -359,11 +370,11 @@ const CloudStorageSharedPage: React.FC = () => {
             setEditShareVisible(false);
             setEditingShare(null);
             editShareForm.resetFields();
-            actionRef.current?.reload?.();
+            fetchData();
         } catch (err) {
             error('更新分享失败');
         }
-    }, [editingShare, success, error, editShareForm]);
+    }, [editingShare, success, error, editShareForm, fetchData]);
 
     // 发送通知
     const handleNotifySubmit = useCallback(async (values: any) => {
@@ -431,6 +442,7 @@ const CloudStorageSharedPage: React.FC = () => {
             title: '文件名',
             dataIndex: 'fileName',
             key: 'fileName',
+            sorter: true,
             render: (text: string, record: FileShare) => (
                 <Space>
                     <FileOutlined />
@@ -447,6 +459,7 @@ const CloudStorageSharedPage: React.FC = () => {
             title: '分享类型',
             dataIndex: 'shareType',
             key: 'shareType',
+            sorter: true,
             render: (type: string) => (
                 <Tag color={type === 'internal' ? 'blue' : 'green'}>
                     {type === 'internal' ? '内部' : '外部'}
@@ -457,6 +470,7 @@ const CloudStorageSharedPage: React.FC = () => {
             title: '访问权限',
             dataIndex: 'accessType',
             key: 'accessType',
+            sorter: true,
             render: (type: string) => getAccessTypeTag(type),
         },
         {
@@ -468,16 +482,19 @@ const CloudStorageSharedPage: React.FC = () => {
             title: '访问次数',
             dataIndex: 'accessCount',
             key: 'accessCount',
+            sorter: true,
         },
         {
             title: '下载次数',
             dataIndex: 'downloadCount',
             key: 'downloadCount',
+            sorter: true,
         },
         {
             title: '创建时间',
             dataIndex: 'createdAt',
             key: 'createdAt',
+            sorter: true,
             render: (time: string) => formatDateTime(time),
         },
         {
@@ -559,10 +576,8 @@ const CloudStorageSharedPage: React.FC = () => {
             {/* 搜索表单 */}
             <SearchBar
                 initialParams={searchParamsRef.current}
-                onSearch={(params) => {
-                    searchParamsRef.current = { ...searchParamsRef.current, ...params };
-                    actionRef.current?.reload?.();
-                }}
+                onSearch={handleSearch}
+                showResetButton={false}
                 style={{ marginBottom: 16 }}
             />
 
@@ -576,18 +591,21 @@ const CloudStorageSharedPage: React.FC = () => {
                             key: 'my-shares',
                             label: '我的分享',
                             children: (
-                                <DataTable
-                                    actionRef={actionRef}
+                                <Table<FileShare>
+                                    dataSource={data}
                                     columns={columns}
-                                    request={fetchData}
                                     rowKey="id"
-                                    search={false}
+                                    loading={loading}
                                     scroll={{ x: 'max-content' }}
+                                    onChange={handleTableChange}
                                     pagination={{
-                                        pageSize: 20,
+                                        current: pagination.page,
+                                        pageSize: pagination.pageSize,
+                                        total: pagination.total,
                                         pageSizeOptions: [10, 20, 50, 100],
                                         showSizeChanger: true,
                                         showQuickJumper: true,
+                                        showTotal: (total) => `共 ${total} 条`,
                                     }}
                                 />
                             )
@@ -596,18 +614,21 @@ const CloudStorageSharedPage: React.FC = () => {
                             key: 'shared-with-me',
                             label: '分享给我的',
                             children: (
-                                <DataTable
-                                    actionRef={actionRef}
+                                <Table<FileShare>
+                                    dataSource={data}
                                     columns={columns.filter(col => col.key !== 'action' || activeTab !== 'my-shares')}
-                                    request={fetchData}
                                     rowKey="id"
-                                    search={false}
+                                    loading={loading}
                                     scroll={{ x: 'max-content' }}
+                                    onChange={handleTableChange}
                                     pagination={{
-                                        pageSize: 20,
+                                        current: pagination.page,
+                                        pageSize: pagination.pageSize,
+                                        total: pagination.total,
                                         pageSizeOptions: [10, 20, 50, 100],
                                         showSizeChanger: true,
                                         showQuickJumper: true,
+                                        showTotal: (total) => `共 ${total} 条`,
                                     }}
                                 />
                             )

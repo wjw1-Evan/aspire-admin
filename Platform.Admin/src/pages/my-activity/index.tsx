@@ -1,10 +1,8 @@
 import { PageContainer } from '@/components';
 import SearchBar from '@/components/SearchBar';
 import useCommonStyles from '@/hooks/useCommonStyles';
-import DataTable from '@/components/DataTable';
-import type { ActionType } from '@/types/pro-components';
 import type { ColumnsType } from 'antd/es/table';
-import { Button, Tag, Badge, Row, Col, Card, Space, Select, DatePicker, Grid } from 'antd';
+import { Button, Tag, Badge, Row, Col, Card, Space, Table } from 'antd';
 
 const { useBreakpoint } = Grid;
 import {
@@ -14,7 +12,6 @@ import {
   ThunderboltOutlined,
   ReloadOutlined,
   DashboardOutlined,
-  SearchOutlined,
 } from '@ant-design/icons';
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { useIntl } from '@umijs/max';
@@ -23,10 +20,12 @@ import type { UserActivityLog } from '@/services/user-log/types';
 import LogDetailDrawer from '../user-log/components/LogDetailDrawer';
 import { StatCard } from '@/components';
 import dayjs from 'dayjs';
+import type { PageParams } from '@/types/page-params';
+import { Grid } from 'antd';
 
 const { RangePicker } = DatePicker;
+const { useBreakpoint: useBreakpointGrid } = Grid;
 
-// 提取纯函数到组件外部
 const getMethodColor = (method?: string): string => {
   const colors: Record<string, string> = {
     GET: 'blue',
@@ -40,7 +39,6 @@ const getMethodColor = (method?: string): string => {
 
 const getStatusBadge = (statusCode?: number) => {
   if (statusCode === undefined || statusCode === null) return null;
-
   if (statusCode >= 200 && statusCode < 300) {
     return <Badge status="success" text={statusCode} />;
   }
@@ -55,12 +53,10 @@ const getStatusBadge = (statusCode?: number) => {
 
 const getActionTagColor = (action: string): string => {
   const colorMap: Record<string, string> = {
-    // 认证相关
     login: 'green',
     logout: 'default',
     refresh_token: 'geekblue',
     register: 'blue',
-    // 用户相关
     view_profile: 'lime',
     update_profile: 'purple',
     change_password: 'orange',
@@ -75,37 +71,30 @@ const getActionTagColor = (action: string): string => {
     view_user: 'cyan',
     update_user: 'blue',
     delete_user: 'red',
-    // 角色相关
     view_roles: 'cyan',
     create_role: 'blue',
     update_role: 'orange',
     delete_role: 'red',
-    // 菜单相关
     view_menus: 'cyan',
     create_menu: 'blue',
     update_menu: 'orange',
     delete_menu: 'red',
-    // 通知相关
     view_notices: 'cyan',
     create_notice: 'blue',
     update_notice: 'orange',
     delete_notice: 'red',
-    // 标签相关
     view_tags: 'cyan',
     create_tag: 'blue',
     update_tag: 'orange',
     delete_tag: 'red',
-    // 规则相关
     view_rules: 'cyan',
     create_rule: 'blue',
     update_rule: 'orange',
     delete_rule: 'red',
-    // 权限相关
     view_permissions: 'cyan',
     create_permission: 'blue',
     update_permission: 'orange',
     delete_permission: 'red',
-    // 其他
     view_current_user: 'lime',
   };
   return colorMap[action] || 'default';
@@ -114,23 +103,17 @@ const getActionTagColor = (action: string): string => {
 const getActionText = (action: string): string => {
   if (!action) return '-';
   const a = action.toLowerCase();
-
   const textMap: Record<string, string> = {
-    // 认证相关
     'login': '登录',
     'logout': '登出',
     'refresh_token': '刷新令牌',
     'register': '注册',
-
-    // 基础操作
     'create': '创建',
     'update': '更新',
     'delete': '删除',
     'view': '查看',
     'export': '导出数据',
     'import': '导入数据',
-
-    // 用户与账户
     'view_profile': '查看个人信息',
     'update_profile': '更新个人资料',
     'change_password': '修改密码',
@@ -145,53 +128,40 @@ const getActionText = (action: string): string => {
     'update_user': '完善用户信息',
     'delete_user': '注销用户',
     'view_current_user': '查询当前用户',
-
-    // 资源与管理
     'view_roles': '查询角色',
     'create_role': '创建角色',
     'update_role': '修改角色',
     'delete_role': '删除角色',
-
     'view_menus': '查询菜单',
     'create_menu': '添加菜单',
     'update_menu': '配置菜单',
     'delete_menu': '删除菜单',
-
     'view_notices': '浏览通知',
     'create_notice': '发布通知',
     'update_notice': '修改通知',
     'delete_notice': '撤回通知',
-
     'view_rules': '查询规则',
     'create_rule': '新建规则',
     'update_rule': '调整规则',
     'delete_rule': '移除规则',
-
     'view_permissions': '查询权限',
     'create_permission': '定义权限',
     'update_permission': '配置权限',
     'delete_permission': '注回权限',
-
     'bulk_action': '执行批量操作',
   };
-
-  // 映射成功直接返回
   if (textMap[a]) return textMap[a];
-
-  // 尝试前缀匹配
   if (a.startsWith('create_')) return `创建${textMap[a.replace('create_', '')] || action.replace('create_', '')}`;
   if (a.startsWith('update_')) return `更新${textMap[a.replace('update_', '')] || action.replace('update_', '')}`;
   if (a.startsWith('delete_')) return `删除${textMap[a.replace('delete_', '')] || action.replace('delete_', '')}`;
   if (a.startsWith('view_')) return `查看${textMap[a.replace('view_', '')] || action.replace('view_', '')}`;
-
   return action;
 };
 
 const MyActivity: React.FC = () => {
   const intl = useIntl();
   const screens = useBreakpoint();
-  const isMobile = !screens.md; // md 以下为移动端
-  const actionRef = useRef<ActionType>(null);
+  const isMobile = !screens.md;
   const tableRef = useRef<HTMLDivElement>(null);
   const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
   const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
@@ -202,13 +172,17 @@ const MyActivity: React.FC = () => {
     actionTypes: number;
     avgDuration: number;
   } | null>(null);
-  const [searchParams, setSearchParams] = useState<any>({});
-  // 使用 useRef 存储最新的搜索参数，确保 request 函数能立即访问到最新值
-  const searchParamsRef = useRef<any>({});
+  const [data, setData] = useState<UserActivityLog[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
+  const searchParamsRef = useRef<PageParams>({
+    page: 1,
+    pageSize: 20,
+    search: '',
+  });
   const { styles } = useCommonStyles();
 
   const handleViewDetail = useCallback((record: UserActivityLog) => {
-    // ✅ 只传递 logId，让 LogDetailDrawer 从 API 获取完整数据
     setSelectedLogId(record.id);
     setDetailDrawerOpen(true);
   }, []);
@@ -218,9 +192,87 @@ const MyActivity: React.FC = () => {
     setSelectedLogId(null);
   }, []);
 
-  /**
-   * 初始化列宽调整功能
-   */
+  const fetchData = useCallback(async () => {
+    const currentParams = searchParamsRef.current;
+
+    setLoading(true);
+    try {
+      const [logsResponse, statsResponse] = await Promise.all([
+        getCurrentUserActivityLogs({
+          page: currentParams.page,
+          pageSize: currentParams.pageSize,
+          search: currentParams.search as string | undefined,
+        }),
+        getCurrentUserActivityLogStatistics({
+          search: currentParams.search as string | undefined,
+        }),
+      ]);
+
+      if (logsResponse.success && logsResponse.data) {
+        const result = logsResponse.data as any;
+        const list: UserActivityLog[] = result.queryable || [];
+        const total: number = result.rowCount || 0;
+
+        if (statsResponse.success && statsResponse.data) {
+          const statsData = statsResponse.data;
+          setStatistics({
+            total: statsData.total || 0,
+            successCount: statsData.successCount || 0,
+            errorCount: statsData.errorCount || 0,
+            actionTypes: statsData.actionTypes?.length || 0,
+            avgDuration: Math.round(statsData.avgDuration || 0),
+          });
+        }
+
+        setData(list);
+        setPagination(prev => ({
+          ...prev,
+          page: currentParams.page ?? prev.page,
+          pageSize: currentParams.pageSize ?? prev.pageSize,
+          total,
+        }));
+      } else {
+        setData([]);
+        setPagination(prev => ({ ...prev, total: 0 }));
+      }
+    } catch (error) {
+      console.error('Failed to load activity logs:', error);
+      setData([]);
+      setPagination(prev => ({ ...prev, total: 0 }));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleSearch = useCallback((params: PageParams) => {
+    searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
+    fetchData();
+  }, [fetchData]);
+
+  const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+    const newPage = pag.current;
+    const newPageSize = pag.pageSize;
+    const sortBy = sorter?.field;
+    const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
+
+    searchParamsRef.current = {
+      ...searchParamsRef.current,
+      page: newPage,
+      pageSize: newPageSize,
+      sortBy,
+      sortOrder,
+    };
+    fetchData();
+  }, [fetchData]);
+
+  const handleRefresh = useCallback(() => {
+    fetchData();
+  }, [fetchData]);
+
   useEffect(() => {
     if (!tableRef.current) return;
 
@@ -238,7 +290,6 @@ const MyActivity: React.FC = () => {
       let startWidth = 0;
 
       const handleMouseDown = (e: MouseEvent, header: HTMLElement) => {
-        // 只允许在表头右边缘 5px 内拖动
         const rect = header.getBoundingClientRect();
         const edgeThreshold = 5;
         const isNearRightEdge = e.clientX >= rect.right - edgeThreshold;
@@ -263,7 +314,7 @@ const MyActivity: React.FC = () => {
         if (!isResizing || !currentHeader) return;
 
         const diff = e.clientX - startX;
-        const newWidth = Math.max(50, startWidth + diff); // 最小宽度 50px
+        const newWidth = Math.max(50, startWidth + diff);
         currentHeader.style.width = `${newWidth}px`;
         currentHeader.style.minWidth = `${newWidth}px`;
         currentHeader.style.maxWidth = `${newWidth}px`;
@@ -306,14 +357,11 @@ const MyActivity: React.FC = () => {
       });
     };
 
-    // 延迟初始化，确保表格已渲染
     let timer: NodeJS.Timeout | null = setTimeout(() => {
       initResizeHandlers();
     }, 300);
 
-    // 监听表格变化，重新初始化
     const observer = new MutationObserver(() => {
-      // 防抖，避免频繁初始化
       if (timer) {
         clearTimeout(timer);
       }
@@ -335,7 +383,6 @@ const MyActivity: React.FC = () => {
       }
       observer.disconnect();
 
-      // 清理事件监听器
       if (tableRef.current) {
         const thead = tableRef.current.querySelector('thead');
         if (thead) {
@@ -360,10 +407,7 @@ const MyActivity: React.FC = () => {
       dataIndex: 'action',
       key: 'action',
       render: (_, record: UserActivityLog) => (
-        <a
-          onClick={() => handleViewDetail(record)}
-          style={{ cursor: 'pointer' }}
-        >
+        <a onClick={() => handleViewDetail(record)} style={{ cursor: 'pointer' }}>
           <Tag color={getActionTagColor(record.action)}>
             {getActionText(record.action)}
           </Tag>
@@ -392,7 +436,6 @@ const MyActivity: React.FC = () => {
       render: (_, record: UserActivityLog) => getStatusBadge(record.statusCode),
       sorter: true,
     },
-
     {
       title: intl.formatMessage({ id: 'pages.table.fullUrl' }),
       dataIndex: 'fullUrl',
@@ -424,7 +467,6 @@ const MyActivity: React.FC = () => {
       ellipsis: true,
       sorter: true,
     },
-
     {
       title: intl.formatMessage({ id: 'pages.table.actionTime' }),
       dataIndex: 'createdAt',
@@ -438,121 +480,11 @@ const MyActivity: React.FC = () => {
           if (!date.isValid()) return record.createdAt;
           return date.format('YYYY-MM-DD HH:mm:ss');
         } catch (error) {
-          console.error('日期格式化错误:', error, record.createdAt);
           return record.createdAt;
         }
       },
     },
   ], [intl, handleViewDetail]);
-
-  // 刷新处理
-  const handleRefresh = useCallback(() => {
-    actionRef.current?.reload?.();
-  }, []);
-
-  // 获取活动日志列表（使用 useCallback 避免死循环）
-  const fetchRecords = useCallback(async (params: any, sort?: Record<string, any>) => {
-    const { current = 1, pageSize = 20 } = params;
-
-    // 合并搜索参数，使用 ref 确保获取最新的搜索参数
-    const mergedParams = { ...searchParamsRef.current, ...params };
-    const { action, httpMethod, statusCode, ipAddress, startDate, endDate } = mergedParams;
-
-    // 处理排序参数
-    let sortBy = 'createdAt'; // 默认按创建时间排序
-    let sortOrder: 'asc' | 'desc' = 'desc'; // 默认降序
-
-    if (sort && Object.keys(sort).length > 0) {
-      // ProTable 的 sort 格式: { fieldName: 'ascend' | 'descend' }
-      const sortKey = Object.keys(sort)[0];
-      const sortValue = sort[sortKey];
-
-      // 将驼峰命名转换为后端字段名（如果需要）
-      sortBy = sortKey === 'createdAt' ? 'createdAt' : sortKey;
-      sortOrder = sortValue === 'ascend' ? 'asc' : 'desc';
-    }
-
-    // 处理日期范围参数
-    let formattedStartDate: string | undefined;
-    let formattedEndDate: string | undefined;
-
-    if (startDate) {
-      formattedStartDate = typeof startDate === 'string'
-        ? startDate
-        : new Date(startDate).toISOString();
-    }
-
-    if (endDate) {
-      formattedEndDate = typeof endDate === 'string'
-        ? endDate
-        : new Date(endDate).toISOString();
-    }
-
-    try {
-      // 并行请求分页数据和统计数据
-      const [logsResponse, statsResponse] = await Promise.all([
-        getCurrentUserActivityLogs({
-          page: current,
-          pageSize,
-          search: mergedParams.search,
-          action,
-          httpMethod,
-          statusCode: statusCode && statusCode !== '' ? Number(statusCode) : undefined,
-          ipAddress,
-          startDate: formattedStartDate,
-          endDate: formattedEndDate,
-          sortBy,
-          sortOrder,
-        }),
-        getCurrentUserActivityLogStatistics({
-          search: mergedParams.search,
-          action,
-          httpMethod,
-          statusCode: statusCode && statusCode !== '' ? Number(statusCode) : undefined,
-          ipAddress,
-          startDate: formattedStartDate,
-          endDate: formattedEndDate,
-        }),
-      ]);
-
-      if (logsResponse.success && logsResponse.data) {
-        const result = logsResponse.data as any;
-        const list: UserActivityLog[] = result.queryable || [];
-        const total: number = result.rowCount || 0;
-
-        // 使用统计数据接口返回的数据
-        if (statsResponse.success && statsResponse.data) {
-          const statsData = statsResponse.data;
-          setStatistics({
-            total: statsData.total || 0,
-            successCount: statsData.successCount || 0,
-            errorCount: statsData.errorCount || 0,
-            actionTypes: statsData.actionTypes?.length || 0,
-            avgDuration: Math.round(statsData.avgDuration || 0),
-          });
-        }
-
-        return {
-          data: list,
-          total,
-          success: true,
-        };
-      }
-
-      return {
-        data: [],
-        total: 0,
-        success: false,
-      };
-    } catch (error) {
-      console.error('Failed to load activity logs:', error);
-      return {
-        data: [],
-        total: 0,
-        success: false,
-      };
-    }
-  }, []); // 空依赖数组，因为使用 ref 来获取最新的搜索参数
 
   return (
     <PageContainer
@@ -575,17 +507,12 @@ const MyActivity: React.FC = () => {
         </Space>
       }
     >
-      {/* 搜索表单 */}
       <SearchBar
         initialParams={searchParamsRef.current}
-        onSearch={(params) => {
-          searchParamsRef.current = params;
-          setSearchParams(params);
-          actionRef.current?.reloadAndReset?.();
-        }}
+        onSearch={handleSearch}
+        showResetButton={false}
       />
 
-      {/* 活动统计信息：统一使用 StatCard 风格 */}
       {statistics && (
         <Card className={styles.card} style={{ marginBottom: 16 }}>
           <Row gutter={[12, 12]}>
@@ -635,15 +562,17 @@ const MyActivity: React.FC = () => {
       )}
 
       <div ref={tableRef}>
-        <DataTable<UserActivityLog>
-          actionRef={actionRef}
-          rowKey="id"
-          scroll={{ x: 'max-content' }}
-          search={false}
-          request={fetchRecords}
+        <Table<UserActivityLog>
+          dataSource={data}
           columns={columns}
+          rowKey="id"
+          loading={loading}
+          scroll={{ x: 'max-content' }}
+          onChange={handleTableChange}
           pagination={{
-            pageSize: 20,
+            current: pagination.page,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
             pageSizeOptions: [10, 20, 50, 100],
             showSizeChanger: true,
             showQuickJumper: true,
@@ -662,4 +591,3 @@ const MyActivity: React.FC = () => {
 };
 
 export default MyActivity;
-

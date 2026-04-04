@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Button,
   Space,
@@ -10,6 +10,7 @@ import {
   Typography,
   Tag,
   Switch,
+  Table,
 } from 'antd';
 import {
   PlusOutlined,
@@ -21,11 +22,10 @@ import {
 } from '@ant-design/icons';
 import { useIntl, history } from '@umijs/max';
 import PageContainer from '@/components/PageContainer';
-import DataTable from '@/components/DataTable';
 import SearchBar from '@/components/SearchBar';
 import * as kbService from '@/services/workflow/knowledge-base';
 import type { KnowledgeBase } from '@/services/workflow/knowledge-base';
-import type { PagedResult } from '@/types/unified-api';
+import type { PageParams } from '@/types/page-params';
 import dayjs from 'dayjs';
 
 const { Text } = Typography;
@@ -36,9 +36,71 @@ const KnowledgeBaseManagement: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingKb, setEditingKb] = useState<KnowledgeBase | null>(null);
   const [form] = Form.useForm();
-  const searchParamsRef = useRef<any>({ search: '' });
+  const [data, setData] = useState<KnowledgeBase[]>([]);
   const [loading, setLoading] = useState(false);
-  const actionRef = useRef<any>(null);
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
+
+  const searchParamsRef = useRef<PageParams>({
+    page: 1,
+    pageSize: 10,
+    search: '',
+  });
+
+  const fetchData = useCallback(async () => {
+    const currentParams = searchParamsRef.current;
+
+    setLoading(true);
+    try {
+      const res = await kbService.getKnowledgeBases({
+        current: currentParams.page,
+        pageSize: currentParams.pageSize,
+        ...currentParams,
+      });
+      if (res.success && res.data) {
+        const paged = res.data as any;
+        setData(paged.queryable ?? []);
+        setPagination(prev => ({
+          ...prev,
+          page: currentParams.page ?? prev.page,
+          pageSize: currentParams.pageSize ?? prev.pageSize,
+          total: paged.rowCount ?? 0,
+        }));
+      } else {
+        setData([]);
+        setPagination(prev => ({ ...prev, total: 0 }));
+      }
+    } catch {
+      setData([]);
+      setPagination(prev => ({ ...prev, total: 0 }));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleSearch = useCallback((params: PageParams) => {
+    searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
+    fetchData();
+  }, [fetchData]);
+
+  const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+    const newPage = pag.current;
+    const newPageSize = pag.pageSize;
+    const sortBy = sorter?.field;
+    const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
+    
+    searchParamsRef.current = {
+      ...searchParamsRef.current,
+      page: newPage,
+      pageSize: newPageSize,
+      sortBy,
+      sortOrder,
+    };
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
 
   const handleDelete = (record: KnowledgeBase) => {
@@ -53,7 +115,7 @@ const KnowledgeBaseManagement: React.FC = () => {
           const res = await kbService.deleteKnowledgeBase(record.id);
           if (res.success) {
             message.success('删除成功');
-            actionRef.current?.reload?.();
+            fetchData();
           }
         } catch (error) {
           message.error('删除失败');
@@ -87,6 +149,7 @@ const KnowledgeBaseManagement: React.FC = () => {
       dataIndex: 'category',
       key: 'category',
       width: 120,
+      sorter: true,
       render: (text: string) => <Tag color="blue">{text || '通用'}</Tag>,
     },
     {
@@ -94,6 +157,7 @@ const KnowledgeBaseManagement: React.FC = () => {
       dataIndex: 'itemCount',
       key: 'itemCount',
       width: 100,
+      sorter: true,
       render: (count: number) => <Tag color="cyan">{count || 0}</Tag>,
     },
     {
@@ -101,6 +165,7 @@ const KnowledgeBaseManagement: React.FC = () => {
       dataIndex: 'isActive',
       key: 'isActive',
       width: 100,
+      sorter: true,
       render: (active: boolean) => (
         <Tag color={active ? 'success' : 'default'}>{active ? '启用' : '禁用'}</Tag>
       ),
@@ -110,6 +175,7 @@ const KnowledgeBaseManagement: React.FC = () => {
       dataIndex: 'createdAt',
       key: 'createdAt',
       width: 180,
+      sorter: true,
       render: (text: string) => dayjs(text).format('YYYY-MM-DD HH:mm'),
     },
     {
@@ -161,7 +227,7 @@ const KnowledgeBaseManagement: React.FC = () => {
           <Button
             icon={<ReloadOutlined />}
             onClick={() => {
-              actionRef.current?.reload?.();
+              fetchData();
             }}
           >
             {intl.formatMessage({ id: 'pages.park.common.refresh' })}
@@ -182,35 +248,28 @@ const KnowledgeBaseManagement: React.FC = () => {
     >
       <SearchBar
         initialParams={searchParamsRef.current}
-        onSearch={(params) => {
-          searchParamsRef.current = { ...searchParamsRef.current, ...params };
-          actionRef.current?.reload?.();
-        }}
+        onSearch={handleSearch}
+        showResetButton={false}
         style={{ marginBottom: 16 }}
       />
 
       <Card>
-        <DataTable<KnowledgeBase>
+        <Table<KnowledgeBase>
+          dataSource={data}
           columns={columns as any}
-          request={async (params: any) => {
-            const res = await kbService.getKnowledgeBases({
-              current: params.current || 1,
-              pageSize: params.pageSize || 10,
-              ...searchParamsRef.current,
-            });
-            if (res.success && res.data) {
-              const paged = res.data as PagedResult<KnowledgeBase>;
-              return {
-                data: paged.queryable ?? [],
-                total: paged.rowCount ?? 0,
-                success: true,
-              };
-            }
-            return { data: [], total: 0, success: false };
-          }}
-          actionRef={actionRef}
           rowKey="id"
-          search={false}
+          loading={loading}
+          scroll={{ x: 'max-content' }}
+          onChange={handleTableChange}
+          pagination={{
+            current: pagination.page,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            pageSizeOptions: [10, 20, 50, 100],
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total) => `共 ${total} 条`,
+          }}
         />
       </Card>
 
@@ -232,7 +291,7 @@ const KnowledgeBaseManagement: React.FC = () => {
             if (res.success) {
               message.success('保存成功');
               setIsModalVisible(false);
-              actionRef.current?.reload?.();
+              fetchData();
             }
           } finally {
             setLoading(false);

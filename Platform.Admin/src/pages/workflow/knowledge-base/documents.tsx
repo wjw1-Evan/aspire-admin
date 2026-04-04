@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Button,
   Space,
@@ -10,6 +10,7 @@ import {
   Card,
   Typography,
   Breadcrumb,
+  Table,
 } from 'antd';
 import {
   PlusOutlined,
@@ -21,10 +22,10 @@ import {
 } from '@ant-design/icons';
 import { useIntl, useParams, history } from '@umijs/max';
 import PageContainer from '@/components/PageContainer';
-import DataTable from '@/components/DataTable';
 import SearchBar from '@/components/SearchBar';
 import * as kbService from '@/services/workflow/knowledge-base';
 import type { KnowledgeDocument } from '@/services/workflow/knowledge-base';
+import type { PageParams } from '@/types/page-params';
 import dayjs from 'dayjs';
 
 const { Text } = Typography;
@@ -37,12 +38,72 @@ const KnowledgeBaseDocuments: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingDoc, setEditingDoc] = useState<KnowledgeDocument | null>(null);
   const [form] = Form.useForm();
-  const searchParamsRef = useRef<any>({ search: '' });
+  const [data, setData] = useState<KnowledgeDocument[]>([]);
   const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
   const [kbInfo, setKbInfo] = useState<{ name: string } | null>(null);
-  const actionRef = useRef<any>(null);
 
-  React.useEffect(() => {
+  const searchParamsRef = useRef<PageParams>({
+    page: 1,
+    pageSize: 10,
+    search: '',
+  });
+
+  const fetchData = useCallback(async () => {
+    const currentParams = searchParamsRef.current;
+
+    setLoading(true);
+    try {
+      const res = await kbService.getKnowledgeDocuments(knowledgeBaseId!, {
+        page: currentParams.page,
+        pageSize: currentParams.pageSize,
+        search: currentParams.search,
+        sortBy: currentParams.sortBy,
+        sortOrder: currentParams.sortOrder,
+      });
+      if (res.success && res.data) {
+        const d = res.data as any;
+        setData(d.queryable ?? []);
+        setPagination(prev => ({
+          ...prev,
+          page: currentParams.page ?? prev.page,
+          pageSize: currentParams.pageSize ?? prev.pageSize,
+          total: d.rowCount ?? 0,
+        }));
+      } else {
+        setData([]);
+        setPagination(prev => ({ ...prev, total: 0 }));
+      }
+    } catch {
+      setData([]);
+      setPagination(prev => ({ ...prev, total: 0 }));
+    } finally {
+      setLoading(false);
+    }
+  }, [knowledgeBaseId]);
+
+  const handleSearch = useCallback((params: PageParams) => {
+    searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
+    fetchData();
+  }, [fetchData]);
+
+  const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+    const newPage = pag.current;
+    const newPageSize = pag.pageSize;
+    const sortBy = sorter?.field;
+    const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
+    
+    searchParamsRef.current = {
+      ...searchParamsRef.current,
+      page: newPage,
+      pageSize: newPageSize,
+      sortBy,
+      sortOrder,
+    };
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
     if (knowledgeBaseId) {
       kbService.getKnowledgeBase(knowledgeBaseId).then((res) => {
         if (res.success && res.data) {
@@ -51,6 +112,12 @@ const KnowledgeBaseDocuments: React.FC = () => {
       });
     }
   }, [knowledgeBaseId]);
+
+  useEffect(() => {
+    if (knowledgeBaseId) {
+      fetchData();
+    }
+  }, [knowledgeBaseId, fetchData]);
 
 
   const handleDelete = (record: KnowledgeDocument) => {
@@ -66,7 +133,7 @@ const KnowledgeBaseDocuments: React.FC = () => {
           const res = await kbService.deleteKnowledgeDocument(knowledgeBaseId, record.id);
           if (res.success) {
             message.success('删除成功');
-            actionRef.current?.reload?.();
+            fetchData();
           }
         } catch {
           message.error('删除失败');
@@ -80,6 +147,7 @@ const KnowledgeBaseDocuments: React.FC = () => {
       title: '标题',
       dataIndex: 'title',
       key: 'title',
+      sorter: true,
       render: (text: string) => (
         <Space>
           <FileTextOutlined style={{ color: '#1890ff' }} />
@@ -92,6 +160,7 @@ const KnowledgeBaseDocuments: React.FC = () => {
       dataIndex: 'summary',
       key: 'summary',
       ellipsis: true,
+      sorter: true,
       render: (t: string) => t || '-',
     },
     {
@@ -100,6 +169,7 @@ const KnowledgeBaseDocuments: React.FC = () => {
       key: 'content',
       ellipsis: true,
       width: 280,
+      sorter: true,
       render: (text: string) => (text ? (text.length > 80 ? `${text.slice(0, 80)}...` : text) : '-'),
     },
     {
@@ -107,12 +177,14 @@ const KnowledgeBaseDocuments: React.FC = () => {
       dataIndex: 'sortOrder',
       key: 'sortOrder',
       width: 80,
+      sorter: true,
     },
     {
       title: '更新时间',
       dataIndex: 'updatedAt',
       key: 'updatedAt',
       width: 180,
+      sorter: true,
       render: (text: string) => dayjs(text).format('YYYY-MM-DD HH:mm'),
     },
     {
@@ -181,7 +253,7 @@ const KnowledgeBaseDocuments: React.FC = () => {
           </Button>
           <Button
             icon={<ReloadOutlined />}
-            onClick={() => actionRef.current?.reload?.()}
+            onClick={() => fetchData()}
           >
             刷新
           </Button>
@@ -201,31 +273,28 @@ const KnowledgeBaseDocuments: React.FC = () => {
     >
       <SearchBar
         initialParams={searchParamsRef.current}
-        onSearch={(params) => {
-          searchParamsRef.current = { ...searchParamsRef.current, ...params };
-          actionRef.current?.reload?.();
-        }}
+        onSearch={handleSearch}
+        showResetButton={false}
         style={{ marginBottom: 16 }}
       />
 
       <Card>
-        <DataTable<KnowledgeDocument>
+        <Table<KnowledgeDocument>
+          dataSource={data}
           columns={columns}
-          request={async (params: { current?: number; pageSize?: number }) => {
-            const res = await kbService.getKnowledgeDocuments(knowledgeBaseId, {
-              page: params.current ?? 1,
-              pageSize: params.pageSize ?? 10,
-              ...searchParamsRef.current,
-            });
-            if (res.success && res.data) {
-              const d = res.data as any;
-              return { data: d.queryable ??  [], total: d.rowCount  ?? 0, success: true };
-            }
-            return { data: [], total: 0, success: false };
-          }}
-          actionRef={actionRef}
           rowKey="id"
-          search={false}
+          loading={loading}
+          scroll={{ x: 'max-content' }}
+          onChange={handleTableChange}
+          pagination={{
+            current: pagination.page,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            pageSizeOptions: [10, 20, 50, 100],
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total) => `共 ${total} 条`,
+          }}
         />
       </Card>
 
@@ -238,12 +307,12 @@ const KnowledgeBaseDocuments: React.FC = () => {
           setLoading(true);
           try {
             const res = editingDoc
-              ? await kbService.updateKnowledgeDocument(knowledgeBaseId, editingDoc.id, values)
-              : await kbService.createKnowledgeDocument(knowledgeBaseId, values);
+              ? await kbService.updateKnowledgeDocument(knowledgeBaseId!, editingDoc.id, values)
+              : await kbService.createKnowledgeDocument(knowledgeBaseId!, values);
             if (res.success) {
               message.success('保存成功');
               setIsModalVisible(false);
-              actionRef.current?.reload?.();
+              fetchData();
             }
           } finally {
             setLoading(false);

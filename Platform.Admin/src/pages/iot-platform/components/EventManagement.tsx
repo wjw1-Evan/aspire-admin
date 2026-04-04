@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback, useMemo, useRef as useRefHook } from 'react';
 import type { ActionType, ProColumns } from '@/types/pro-components';
-import DataTable from '@/components/DataTable';
-import { type TableColumnsType } from 'antd';
+import { Table, type TableColumnsType } from 'antd';
 import {
   Button,
   Modal,
@@ -43,6 +42,9 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
   const isMobile = !screens.md; // md 以下为移动端
   const { styles } = useCommonStyles();
   const actionRef = useRef<ActionType>(null);
+  const [dataSource, setDataSource] = useState<IoTDeviceEvent[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
   const [devices, setDevices] = useState<IoTDevice[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<IoTDeviceEvent | null>(null);
@@ -77,48 +79,49 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
     }
   }, []);
 
-  // 获取事件列表（用于 ProTable）- 使用 useCallback 避免死循环
-  const fetchEvents = useCallback(async (params: any, sort?: Record<string, any>) => {
+  // 获取事件列表
+  const fetchData = useCallback(async (page?: number, pageSize?: number, sort?: Record<string, any>) => {
+    const targetPage = page || pagination.page;
+    const targetPageSize = pageSize || pagination.pageSize;
+    const formValues = searchParamsRef.current;
+
+    const filters: any = {
+      page: targetPage,
+      pageSize: targetPageSize,
+    };
+
+    if (formValues.search) {
+      filters.search = formValues.search;
+    }
+
+    if (sort && Object.keys(sort).length > 0) {
+      const sortBy = Object.keys(sort)[0];
+      filters.sortBy = sortBy;
+      filters.sortOrder = sort[sortBy] === 'ascend' ? 'asc' : 'desc';
+    }
+
+    setLoading(true);
     try {
-      // 使用 ref 确保获取最新的搜索参数
-      const formValues = searchParamsRef.current;
-      const filters: any = {
-        page: params.current || 1,
-        pageSize: params.pageSize || 20,
-      };
-
-      if (formValues.search) {
-        filters.search = formValues.search;
-      }
-
       const response = await iotService.queryEvents(filters);
       if (response.success && response.data) {
-        const eventsList = response.data.queryable || [];
-        return {
-          data: eventsList,
-          success: true,
-          total: response.data.rowCount || eventsList.length,
-        };
+        setDataSource(response.data.queryable || []);
+        setPagination(prev => ({
+          ...prev,
+          page: targetPage,
+          pageSize: targetPageSize,
+          total: response.data.rowCount || 0,
+        }));
       }
-      return {
-        data: [],
-        success: false,
-        total: 0,
-      };
     } catch (error) {
       console.error('加载事件列表失败:', error);
-      message.error('加载事件列表失败');
-      return {
-        data: [],
-        success: false,
-        total: 0,
-      };
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  }, [pagination.page, pagination.pageSize]);
 
   const loadDevices = useCallback(async () => {
     try {
-      const response = await iotService.getDevices(undefined, 1, 1000); // 加载所有设备用于下拉选择
+      const response = await iotService.getDevices(undefined, 1, 1000);
       if (response.success && response.data) {
         setDevices(response.data.queryable || []);
       } else {
@@ -130,23 +133,29 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
     }
   }, []);
 
-  // 初始化：加载设备和统计信息
+  // 初始化
   useEffect(() => {
     loadDevices();
     fetchOverviewStats();
-  }, [loadDevices, fetchOverviewStats]);
+    fetchData();
+  }, [loadDevices, fetchOverviewStats, fetchData]);
+
+  // 表格分页和排序处理
+  const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+    const newPage = pag.current;
+    const newPageSize = pag.pageSize;
+    const sortBy = sorter?.field;
+    const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
+    
+    const sortParams = sortBy ? { [sortBy]: sortOrder } : {};
+    fetchData(newPage, newPageSize, sortParams);
+  }, [fetchData]);
 
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
-    reload: () => {
-      if (actionRef.current?.reload) {
-        actionRef.current.reload();
-      }
-    },
-    refreshStats: () => {
-      fetchOverviewStats();
-    },
-  }), [fetchOverviewStats]);
+    reload: () => fetchData(),
+    refreshStats: () => fetchOverviewStats(),
+  }), [fetchData, fetchOverviewStats]);
 
   const handleHandle = useCallback((event: IoTDeviceEvent) => {
     setSelectedEvent(event);
@@ -161,15 +170,13 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
       if (response.success) {
         message.success('事件已处理');
         handleCloseModal();
-        if (actionRef.current?.reload) {
-          actionRef.current.reload();
-        }
+        fetchData();
         fetchOverviewStats();
       }
     } catch (error) {
       message.error('处理失败');
     }
-  }, [selectedEvent, fetchOverviewStats]);
+  }, [selectedEvent, fetchData, fetchOverviewStats]);
 
   const getLevelTag = useCallback((level: string) => {
     const levelMap: Record<string, { color: string; label: string }> = {
@@ -188,6 +195,7 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
       dataIndex: 'deviceId',
       key: 'deviceId',
       width: 150,
+      sorter: true,
       render: (deviceId: string) => {
         const device = safeDevices.find((d) => d.deviceId === deviceId);
         return device?.title || deviceId;
@@ -198,12 +206,14 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
       dataIndex: 'eventType',
       key: 'eventType',
       width: 120,
+      sorter: true,
     },
     {
       title: '级别',
       dataIndex: 'level',
       key: 'level',
       width: 100,
+      sorter: true,
       render: (level: string) => getLevelTag(level),
     },
     {
@@ -212,12 +222,14 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
       key: 'description',
       width: 200,
       ellipsis: true,
+      sorter: true,
     },
     {
       title: '发生时间',
       dataIndex: 'occurredAt',
       key: 'occurredAt',
       width: 180,
+      sorter: true,
       render: (time: string) => {
         if (!time) return '-';
         try {
@@ -235,6 +247,7 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
       dataIndex: 'isHandled',
       key: 'isHandled',
       width: 100,
+      sorter: true,
       render: (isHandled: boolean) => (
         <Tag color={isHandled ? 'green' : 'red'}>{isHandled ? '已处理' : '未处理'}</Tag>
       ),
@@ -313,23 +326,28 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
         initialParams={searchParamsRef.current}
         onSearch={(params) => {
           searchParamsRef.current = params;
-          actionRef.current?.reload?.();
+          fetchData(1);
           fetchOverviewStats();
         }}
         style={{ marginBottom: 16 }}
       />
 
       {/* 事件列表表格 */}
-      <DataTable<IoTDeviceEvent>
-        actionRef={actionRef}
+      <Table<IoTDeviceEvent>
         columns={columns}
-        request={fetchEvents}
+        dataSource={dataSource}
         rowKey="id"
+        loading={loading}
         scroll={{ x: 'max-content' }}
-        search={false}
+        onChange={handleTableChange}
         pagination={{
-          pageSize: 20,
+          current: pagination.page,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
           pageSizeOptions: [10, 20, 50, 100],
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total) => `共 ${total} 条`,
         }}
       />
 

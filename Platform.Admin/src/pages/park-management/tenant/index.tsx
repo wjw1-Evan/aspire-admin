@@ -2,9 +2,8 @@ import React, { useCallback, useRef, useState, useEffect } from 'react';
 import { Card, Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typography, Descriptions, DatePicker, Drawer, List, Badge, Flex, Table, Empty, Rate, Popconfirm } from 'antd';
 import { useIntl, history } from '@umijs/max';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, UserOutlined, PhoneOutlined, WarningOutlined, ReloadOutlined, CalendarOutlined, CustomerServiceOutlined, FileTextOutlined } from '@ant-design/icons';
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import type { ProColumns } from '@ant-design/pro-components';
 import PageContainer from '@/components/PageContainer';
-import { DataTable } from '@/components/DataTable';
 import SearchBar from '@/components/SearchBar';
 import StatCard from '@/components/StatCard';
 import * as parkService from '@/services/park';
@@ -16,7 +15,6 @@ const { Text } = Typography;
 
 const TenantManagement: React.FC = () => {
     const intl = useIntl();
-    const tenantTableRef = useRef<ActionType>(null);
     const { message } = App.useApp();
     const [tenantForm] = Form.useForm();
     const searchParamsRef = useRef<any>({ search: '' });
@@ -32,6 +30,10 @@ const TenantManagement: React.FC = () => {
     const [tenantContracts, setTenantContracts] = useState<LeaseContract[]>([]);
     const [detailLoading, setDetailLoading] = useState(false);
 
+    const [tenantsData, setTenantsData] = useState<ParkTenant[]>([]);
+    const [tenantsLoading, setTenantsLoading] = useState(false);
+    const [tenantsPagination, setTenantsPagination] = useState({ page: 1, pageSize: 10, total: 0 });
+
     const loadStatistics = useCallback(async () => {
         try {
             const res = await parkService.getTenantStatistics();
@@ -46,6 +48,41 @@ const TenantManagement: React.FC = () => {
     useEffect(() => {
         loadStatistics();
     }, [loadStatistics]);
+
+    const fetchTenants = useCallback(async () => {
+        setTenantsLoading(true);
+        try {
+            const res = await parkService.getTenants({
+                page: tenantsPagination.page,
+                pageSize: tenantsPagination.pageSize,
+                search: searchParamsRef.current.search,
+            });
+            if (res.success && res.data) {
+                const paged = res.data as PagedResult<ParkTenant>;
+                setTenantsData(paged.queryable ?? []);
+                setTenantsPagination(prev => ({ ...prev, total: paged.rowCount ?? 0 }));
+            } else {
+                setTenantsData([]);
+                setTenantsPagination(prev => ({ ...prev, total: 0 }));
+            }
+        } catch {
+            setTenantsData([]);
+            setTenantsPagination(prev => ({ ...prev, total: 0 }));
+        } finally {
+            setTenantsLoading(false);
+        }
+    }, [tenantsPagination.page, tenantsPagination.pageSize]);
+
+    const handleTenantsTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+        const newPage = pag.current;
+        const newPageSize = pag.pageSize;
+        setTenantsPagination(prev => ({ ...prev, page: newPage, pageSize: newPageSize }));
+        fetchTenants();
+    }, [fetchTenants]);
+
+    useEffect(() => {
+        fetchTenants();
+    }, [fetchTenants]);
 
     const tenantStatusOptions = [
         { label: intl.formatMessage({ id: 'pages.park.tenant.status.active', defaultMessage: '活跃' }), value: 'Active', color: 'green' },
@@ -65,6 +102,7 @@ const TenantManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.tenant.name', defaultMessage: '租户名称' }),
             dataIndex: 'tenantName',
+            sorter: true,
             width: 180,
             render: (_, record) => (
                 <Space>
@@ -76,6 +114,7 @@ const TenantManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.tenant.contact', defaultMessage: '联系人' }),
             dataIndex: 'contactPerson',
+            sorter: true,
             width: 120,
             render: (text, record) => (
                 <Flex vertical gap={0}>
@@ -87,24 +126,28 @@ const TenantManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.tenant.industry', defaultMessage: '行业' }),
             dataIndex: 'industry',
+            sorter: true,
             width: 100,
             render: (text) => text || '-',
         },
         {
             title: intl.formatMessage({ id: 'pages.park.tenant.entryDate', defaultMessage: '入驻日期' }),
             dataIndex: 'entryDate',
+            sorter: true,
             width: 110,
             render: (date) => date ? dayjs(date as string).format('YYYY-MM-DD') : '-',
         },
         {
             title: intl.formatMessage({ id: 'pages.park.tenant.units', defaultMessage: '租用单元' }),
             dataIndex: 'unitCount',
+            sorter: true,
             width: 80,
             align: 'center',
         },
         {
             title: intl.formatMessage({ id: 'pages.park.tenant.contracts', defaultMessage: '有效合同' }),
             dataIndex: 'activeContracts',
+            sorter: true,
             width: 80,
             align: 'center',
             render: (count) => {
@@ -115,6 +158,7 @@ const TenantManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.tenant.status', defaultMessage: '状态' }),
             dataIndex: 'status',
+            sorter: true,
             width: 100,
             render: (status) => {
                 const opt = tenantStatusOptions.find(o => o.value === status);
@@ -147,14 +191,18 @@ const TenantManagement: React.FC = () => {
         },
     ];
 
-    const fetchTenants = async (params: any) => {
+    const fetchTenants = async (params: any, sort: any) => {
+        const sortBy = sort?.sortKey;
+        const sortOrder = sort?.sortOrder === 'ascend' ? 'asc' : sort?.sortOrder === 'descend' ? 'desc' : undefined;
         try {
             const res = await parkService.getTenants({
                 page: params.current || 1,
                 pageSize: params.pageSize || 10,
                 search: params.search,
                 status: params.status,
-                industry: params.industry
+                industry: params.industry,
+                sortBy,
+                sortOrder,
             });
             if (res.success && res.data) {
               const paged = res.data as PagedResult<ParkTenant>;
@@ -204,7 +252,7 @@ const TenantManagement: React.FC = () => {
             const res = await parkService.deleteTenant(id);
             if (res.success) {
                 message.success('删除成功');
-                tenantTableRef.current?.reload();
+                fetchTenants();
                 loadStatistics();
             }
         } catch (e) { message.error('删除失败'); }
@@ -227,7 +275,7 @@ const TenantManagement: React.FC = () => {
             if (res.success) {
                 message.success(isEdit ? '更新成功' : '创建成功');
                 setTenantModalVisible(false);
-                tenantTableRef.current?.reload();
+                fetchTenants();
                 loadStatistics();
             }
         } catch (e) {
@@ -238,7 +286,7 @@ const TenantManagement: React.FC = () => {
     };
 
     const handleRefresh = () => {
-        tenantTableRef.current?.reload();
+        fetchTenants();
         loadStatistics();
     };
 
@@ -269,19 +317,29 @@ const TenantManagement: React.FC = () => {
                 initialParams={searchParamsRef.current}
                 onSearch={(params) => {
                     searchParamsRef.current = { ...searchParamsRef.current, ...params };
-                    tenantTableRef.current?.reload();
+                    setTenantsPagination(prev => ({ ...prev, page: 1 }));
+                    fetchTenants();
                 }}
                 style={{ marginBottom: 16 }}
             />
 
             <Card>
-                <DataTable<ParkTenant>
-                    actionRef={tenantTableRef}
+                <Table<ParkTenant>
+                    dataSource={tenantsData}
                     columns={tenantColumns as any}
-                    request={fetchTenants}
                     rowKey="id"
+                    loading={tenantsLoading}
+                    onChange={handleTenantsTableChange}
+                    pagination={{
+                        current: tenantsPagination.page,
+                        pageSize: tenantsPagination.pageSize,
+                        total: tenantsPagination.total,
+                        pageSizeOptions: [10, 20, 50, 100],
+                        showSizeChanger: true,
+                        showQuickJumper: true,
+                        showTotal: (total) => `共 ${total} 条`,
+                    }}
                     scroll={{ x: 1100 }}
-                    search={false}
                 />
             </Card>
 

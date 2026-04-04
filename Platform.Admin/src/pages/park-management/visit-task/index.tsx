@@ -20,6 +20,7 @@ import {
     Popconfirm,
     Divider,
     AutoComplete,
+    Table,
 } from 'antd';
 import {
     PlusOutlined,
@@ -37,7 +38,6 @@ import {
 } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import PageContainer from '@/components/PageContainer';
-import DataTable from '@/components/DataTable';
 import StatCard from '@/components/StatCard';
 import SearchBar from '@/components/SearchBar';
 import * as visitService from '@/services/visit';
@@ -62,7 +62,9 @@ const VisitTask: React.FC = () => {
     const [selectedTask, setSelectedTask] = useState<VisitTaskType | null>(null);
     const [statistics, setStatistics] = useState<VisitStatistics | null>(null);
     const [loading, setLoading] = useState(false);
-    const actionRef = useRef<any>(null);
+    const [tasksData, setTasksData] = useState<VisitTaskType[]>([]);
+    const [tasksLoading, setTasksLoading] = useState(false);
+    const [tasksPagination, setTasksPagination] = useState({ page: 1, pageSize: 10, total: 0 });
     const [tenants, setTenants] = useState<ParkTenant[]>([]);
     const screens = useBreakpoint();
 
@@ -96,6 +98,41 @@ const VisitTask: React.FC = () => {
         loadStatistics();
     }, [loadStatistics]);
 
+    const fetchTasks = useCallback(async () => {
+        setTasksLoading(true);
+        try {
+            const res = await visitService.getTasks({
+                page: tasksPagination.page,
+                pageSize: tasksPagination.pageSize,
+                ...searchParamsRef.current,
+            });
+            if (res.success && res.data) {
+                const paged = res.data as PagedResult<VisitTaskType>;
+                setTasksData(paged.queryable ?? []);
+                setTasksPagination(prev => ({ ...prev, total: paged.rowCount ?? 0 }));
+            } else {
+                setTasksData([]);
+                setTasksPagination(prev => ({ ...prev, total: 0 }));
+            }
+        } catch {
+            setTasksData([]);
+            setTasksPagination(prev => ({ ...prev, total: 0 }));
+        } finally {
+            setTasksLoading(false);
+        }
+    }, [tasksPagination.page, tasksPagination.pageSize]);
+
+    const handleTasksTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+        const newPage = pag.current;
+        const newPageSize = pag.pageSize;
+        setTasksPagination(prev => ({ ...prev, page: newPage, pageSize: newPageSize }));
+        fetchTasks();
+    }, [fetchTasks]);
+
+    useEffect(() => {
+        fetchTasks();
+    }, [fetchTasks]);
+
     useEffect(() => {
         if (isModalVisible) {
             if (editingTask) {
@@ -124,6 +161,7 @@ const VisitTask: React.FC = () => {
             title: '任务标题',
             dataIndex: 'title',
             key: 'title',
+            sorter: true,
             width: 200,
             ellipsis: true,
             render: (text: string, record: VisitTaskType) => (
@@ -136,12 +174,14 @@ const VisitTask: React.FC = () => {
             title: '走访类型',
             dataIndex: 'visitType',
             key: 'visitType',
+            sorter: true,
             width: 120,
         },
         {
             title: '受访企业',
             dataIndex: 'tenantName',
             key: 'tenantName',
+            sorter: true,
             width: 150,
             ellipsis: true,
             render: (text: string) => text || '-',
@@ -150,12 +190,14 @@ const VisitTask: React.FC = () => {
             title: '企管员',
             dataIndex: 'managerName',
             key: 'managerName',
+            sorter: true,
             width: 120,
         },
         {
             title: '走访日期',
             dataIndex: 'visitDate',
             key: 'visitDate',
+            sorter: true,
             width: 120,
             render: (text: string) => text ? dayjs(text).format('YYYY-MM-DD') : '-',
         },
@@ -163,6 +205,7 @@ const VisitTask: React.FC = () => {
             title: '状态',
             dataIndex: 'status',
             key: 'status',
+            sorter: true,
             width: 100,
             render: (status: string) => {
                 const config = statusMap[status] || { text: status, color: 'default', icon: null };
@@ -231,7 +274,7 @@ const VisitTask: React.FC = () => {
             const res = await visitService.deleteTask(id);
             if (res.success) {
                 message.success('删除成功');
-                actionRef.current?.reload?.();
+                fetchTasks();
                 loadStatistics();
             }
         } catch (error) {
@@ -272,7 +315,7 @@ const VisitTask: React.FC = () => {
                 setIsModalVisible(false);
                 setEditingTask(null);
                 form.resetFields();
-                actionRef.current?.reload?.();
+                fetchTasks();
                 loadStatistics();
             }
         } catch (error) {
@@ -289,7 +332,7 @@ const VisitTask: React.FC = () => {
             title="走访任务管理"
             extra={
                 <Space>
-                    <Button icon={<ReloadOutlined />} onClick={() => { actionRef.current?.reload?.(); loadStatistics(); }}>
+                    <Button icon={<ReloadOutlined />} onClick={() => { fetchTasks(); loadStatistics(); }}>
                         刷新
                     </Button>
                     <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingTask(null); setIsModalVisible(true); }}>
@@ -339,33 +382,29 @@ const VisitTask: React.FC = () => {
                 initialParams={searchParamsRef.current}
                 onSearch={(params) => {
                     searchParamsRef.current = { ...searchParamsRef.current, ...params };
-                    actionRef.current?.reload?.();
+                    setTasksPagination(prev => ({ ...prev, page: 1 }));
+                    fetchTasks();
                 }}
+                showResetButton={false}
                 style={{ marginBottom: 16 }}
             />
 
             <Card>
-                <DataTable<VisitTaskType>
+                <Table<VisitTaskType>
+                    dataSource={tasksData}
                     columns={columns as any}
-                    request={async (params: any) => {
-                        const res = await visitService.getTasks({
-                            page: params.current || 1,
-                            pageSize: params.pageSize || 10,
-                            ...searchParamsRef.current,
-                        });
-                        if (res.success && res.data) {
-                          const paged = res.data as PagedResult<VisitTaskType>;
-                          return {
-                            data: paged.queryable ?? [],
-                            total: paged.rowCount ?? 0,
-                            success: true,
-                          };
-                        }
-                        return { data: [], total: 0, success: false };
-                    }}
-                    actionRef={actionRef}
                     rowKey="id"
-                    search={false}
+                    loading={tasksLoading}
+                    onChange={handleTasksTableChange}
+                    pagination={{
+                        current: tasksPagination.page,
+                        pageSize: tasksPagination.pageSize,
+                        total: tasksPagination.total,
+                        pageSizeOptions: [10, 20, 50, 100],
+                        showSizeChanger: true,
+                        showQuickJumper: true,
+                        showTotal: (total) => `共 ${total} 条`,
+                    }}
                     scroll={{ x: 1000 }}
                 />
             </Card>

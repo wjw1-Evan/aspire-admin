@@ -9,11 +9,9 @@ import {
   SafetyOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@/components';
-import DataTable from '@/components/DataTable';
-import type { ActionType } from '@/types/pro-components';
 import type { PagedResult } from '@/types/unified-api';
 import { useIntl } from '@umijs/max';
-import { Badge, Button, Modal, Space, Tag, Row, Col, Card, Grid, type TableColumnsType, Descriptions, Drawer, theme, Form, Input } from 'antd';
+import { Badge, Button, Modal, Space, Tag, Row, Col, Card, Grid, type TableColumnsType, Descriptions, Drawer, theme, Form, Input, Table } from 'antd';
 import { useMessage } from '@/hooks/useMessage';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import { useModal } from '@/hooks/useModal';
@@ -26,8 +24,8 @@ import type { Role, RoleWithStats, RoleStatistics } from '@/services/role/types'
 import RoleForm from './components/RoleForm';
 import { StatCard } from '@/components';
 import dayjs from 'dayjs';
+import type { PageParams } from '@/types/page-params';
 
-// 统一的日期时间格式化函数
 const formatDateTime = (dateTime: string | null | undefined): string => {
   if (!dateTime) return '-';
   try {
@@ -47,18 +45,23 @@ const RoleManagement: FC = () => {
   const { styles } = useCommonStyles();
   const { token } = theme.useToken();
   const screens = useBreakpoint();
-  const isMobile = !screens.md; // md 以下为移动端
-  const actionRef = useRef<ActionType>(null);
+  const isMobile = !screens.md;
   const tableRef = useRef<HTMLDivElement>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [currentRole, setCurrentRole] = useState<RoleWithStats | undefined>();
   const [detailVisible, setDetailVisible] = useState(false);
   const [viewingRole, setViewingRole] = useState<RoleWithStats | null>(null);
   const [statistics, setStatistics] = useState<RoleStatistics | null>(null);
+  const [data, setData] = useState<RoleWithStats[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
 
-  /**
-   * 加载统计数据
-   */
+  const searchParamsRef = useRef<PageParams>({
+    page: 1,
+    pageSize: 20,
+    search: '',
+  });
+
   const loadStatistics = useCallback(async () => {
     try {
       const response = await getRoleStatistics();
@@ -70,56 +73,68 @@ const RoleManagement: FC = () => {
     }
   }, []);
 
-  const keywordRef = useRef<string>('');
+  const fetchData = useCallback(async () => {
+    const currentParams = searchParamsRef.current;
 
-  /**
-   * 加载角色数据 - 使用 useCallback 避免死循环
-   */
-  const loadRoleData = useCallback(async (params: any, sort?: Record<string, 'ascend' | 'descend'>) => {
+    setLoading(true);
     try {
-      const requestParams: any = {
-        ...params,
-        keyword: keywordRef.current || undefined,
-      };
-
-      if (sort && Object.keys(sort).length > 0) {
-        const sortKey = Object.keys(sort)[0];
-        const sortValue = sort[sortKey];
-        requestParams.sortBy = sortKey;
-        requestParams.sortOrder = sortValue === 'ascend' ? 'asc' : sortValue === 'descend' ? 'desc' : undefined;
-      }
-
       const response = await getAllRolesWithStats({
-        params: requestParams,
+        params: {
+          page: currentParams.page,
+          pageSize: currentParams.pageSize,
+          keyword: currentParams.search,
+        },
       });
       if (response.success && response.data) {
         const roles = (response.data as PagedResult<RoleWithStats>).queryable || [];
-
-        return {
-          data: roles,
-          total: response.data?.rowCount ?? 0,
-          success: true,
-        };
+        setData(roles);
+        setPagination(prev => ({
+          ...prev,
+          page: currentParams.page ?? prev.page,
+          pageSize: currentParams.pageSize ?? prev.pageSize,
+          total: response.data.rowCount ?? 0,
+        }));
+      } else {
+        setData([]);
+        setPagination(prev => ({ ...prev, total: 0 }));
       }
-      return {
-        data: [],
-        total: 0,
-        success: false,
-      };
     } catch (error) {
-      // 错误由全局错误处理统一处理
-      // 这里返回空数据，避免表格显示错误
-      return {
-        data: [],
-        total: 0,
-        success: false,
-      };
+      setData([]);
+      setPagination(prev => ({ ...prev, total: 0 }));
+    } finally {
+      setLoading(false);
     }
   }, []);
 
-  /**
-   * 删除角色（带删除原因）
-   */
+  useEffect(() => {
+    loadStatistics();
+  }, [loadStatistics]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleSearch = useCallback((params: PageParams) => {
+    searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
+    fetchData();
+  }, [fetchData]);
+
+  const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+    const newPage = pag.current;
+    const newPageSize = pag.pageSize;
+    const sortBy = sorter?.field;
+    const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
+
+    searchParamsRef.current = {
+      ...searchParamsRef.current,
+      page: newPage,
+      pageSize: newPageSize,
+      sortBy,
+      sortOrder,
+    };
+    fetchData();
+  }, [fetchData]);
+
   const handleDelete = useCallback(async (id: string, roleName: string) => {
     let deleteReason = '';
     modal.confirm({
@@ -154,91 +169,65 @@ const RoleManagement: FC = () => {
               intl.formatMessage({ id: 'pages.message.deleteSuccess' }),
             );
             loadStatistics();
-            if (actionRef.current?.reload) {
-              actionRef.current.reload();
-            }
+            fetchData();
           } else {
-            // 失败时抛出错误，由全局错误处理统一处理
             throw new Error(
               response.message ||
               intl.formatMessage({ id: 'pages.message.deleteFailed' }),
             );
           }
         } catch (error) {
-          // 错误已被全局错误处理捕获并显示
-          // 重新抛出以确保 Modal.confirm 在错误时不关闭（Ant Design 默认行为）
           throw error;
         }
       },
     });
-  }, [intl, loadStatistics]);
+  }, [intl, loadStatistics, fetchData]);
 
-  // 刷新处理
   const handleRefresh = useCallback(() => {
     loadStatistics();
-    if (actionRef.current?.reload) {
-      actionRef.current.reload();
-    }
-  }, [loadStatistics]);
+    fetchData();
+  }, [loadStatistics, fetchData]);
 
-  // 加载统计数据
-  useEffect(() => {
-    loadStatistics();
-  }, [loadStatistics]);
-
-  // 打开创建角色表单
   const handleCreateRole = useCallback(() => {
     setCurrentRole(undefined);
     setModalVisible(true);
   }, []);
 
-  // 打开编辑角色表单
   const handleEditRole = useCallback((record: Role) => {
     setCurrentRole(record);
     setModalVisible(true);
   }, []);
 
-  // 关闭表单
   const handleCloseModal = useCallback(() => {
     setModalVisible(false);
     setCurrentRole(undefined);
   }, []);
 
-  // 表单成功处理
   const handleFormSuccess = useCallback(() => {
     setModalVisible(false);
     setCurrentRole(undefined);
     loadStatistics();
-    if (actionRef.current?.reload) {
-      actionRef.current.reload();
-    }
-  }, [loadStatistics]);
+    fetchData();
+  }, [loadStatistics, fetchData]);
 
-  // 打开详情
   const handleViewDetail = useCallback((record: Role) => {
     setViewingRole(record);
     setDetailVisible(true);
   }, []);
 
-  // 关闭详情
   const handleCloseDetail = useCallback(() => {
     setDetailVisible(false);
     setViewingRole(null);
   }, []);
 
-  /**
-   * 初始化列宽调整功能
-   */
   useEffect(() => {
     if (!tableRef.current) return;
 
-    // 共享状态
     let isResizing = false;
     let currentHeader: HTMLElement | null = null;
     let startX = 0;
     let startWidth = 0;
 
-    // 创建表头鼠标移动处理函数（显示调整光标）
     const createHeaderMouseMoveHandler = (headerEl: HTMLElement) => {
       return (e: MouseEvent) => {
         const rect = headerEl.getBoundingClientRect();
@@ -253,7 +242,6 @@ const RoleManagement: FC = () => {
       };
     };
 
-    // 创建表头鼠标按下处理函数（开始调整）
     const createHeaderMouseDownHandler = (headerEl: HTMLElement) => {
       return (e: MouseEvent) => {
         const rect = headerEl.getBoundingClientRect();
@@ -277,18 +265,16 @@ const RoleManagement: FC = () => {
       };
     };
 
-    // 全局鼠标移动处理（调整列宽）
     const handleGlobalMouseMove = (e: MouseEvent) => {
       if (!isResizing || !currentHeader) return;
 
       const diff = e.clientX - startX;
-      const newWidth = Math.max(50, startWidth + diff); // 最小宽度 50px
+      const newWidth = Math.max(50, startWidth + diff);
       currentHeader.style.width = `${newWidth}px`;
       currentHeader.style.minWidth = `${newWidth}px`;
       currentHeader.style.maxWidth = `${newWidth}px`;
     };
 
-    // 全局鼠标释放处理
     const handleGlobalMouseUp = () => {
       isResizing = false;
       currentHeader = null;
@@ -323,14 +309,11 @@ const RoleManagement: FC = () => {
       }
     };
 
-    // 延迟初始化，确保表格已渲染
     let timer: ReturnType<typeof setTimeout> | null = setTimeout(() => {
       initResizeHandlers();
     }, 300);
 
-    // 监听表格变化，重新初始化
     const observer = new MutationObserver(() => {
-      // 防抖，避免频繁初始化
       if (timer) {
         clearTimeout(timer);
       }
@@ -352,7 +335,6 @@ const RoleManagement: FC = () => {
       }
       observer.disconnect();
 
-      // 清理事件监听器
       if (tableRef.current) {
         const thead = tableRef.current.querySelector('thead');
         if (thead) {
@@ -377,9 +359,6 @@ const RoleManagement: FC = () => {
     };
   }, []);
 
-  /**
-   * 表格列定义（使用 useMemo 避免每次渲染都重新创建）
-   */
   const columns: TableColumnsType<RoleWithStats> = useMemo(() => [
     {
       title: intl.formatMessage({ id: 'pages.table.roleName' }),
@@ -475,7 +454,6 @@ const RoleManagement: FC = () => {
                 if (record.id) {
                   handleDelete(record.id, record.name);
                 } else {
-                  // 数据校验失败，抛出错误
                   throw new Error('角色缺少唯一标识，无法删除');
                 }
               }}
@@ -517,7 +495,6 @@ const RoleManagement: FC = () => {
         </Space>
       }
     >
-      {/* 角色统计信息：统一使用 StatCard 风格 */}
       {statistics && (
         <Card className={styles.card} style={{ marginBottom: 16 }}>
           <Row gutter={[12, 12]}>
@@ -557,25 +534,24 @@ const RoleManagement: FC = () => {
         </Card>
       )}
 
-      {/* 搜索表单 */}
       <SearchBar
-        initialParams={{ page: 1, pageSize: 20, search: keywordRef.current }}
-        onSearch={(params) => {
-          keywordRef.current = params.search || '';
-          actionRef.current?.reload?.();
-        }}
+        initialParams={searchParamsRef.current}
+        onSearch={handleSearch}
+        showResetButton={false}
       />
 
       <div ref={tableRef}>
-        <DataTable<RoleWithStats>
-          actionRef={actionRef}
-          rowKey="id"
-          scroll={{ x: 'max-content' }}
-          search={false}
-          request={loadRoleData}
+        <Table<RoleWithStats>
+          dataSource={data}
           columns={columns}
+          rowKey="id"
+          loading={loading}
+          scroll={{ x: 'max-content' }}
+          onChange={handleTableChange}
           pagination={{
-            pageSize: 20,
+            current: pagination.page,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
             pageSizeOptions: [10, 20, 50, 100],
             showSizeChanger: true,
             showQuickJumper: true,
@@ -592,7 +568,6 @@ const RoleManagement: FC = () => {
         />
       )}
 
-      {/* 角色详情抽屉 */}
       <Drawer
         title={
           viewingRole
@@ -605,7 +580,6 @@ const RoleManagement: FC = () => {
       >
         {viewingRole && (
           <div>
-            {/* 基本信息 */}
             <Card
               title={intl.formatMessage({ id: 'pages.userDetail.basicInfo' })}
               className={styles.card}

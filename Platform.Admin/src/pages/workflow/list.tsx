@@ -1,6 +1,6 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PageContainer } from '@/components';
-import { Button, Space, Modal, Tag, Switch, Card, Row, Col, Form, Input, Select, Grid } from 'antd';
+import { Button, Space, Modal, Tag, Switch, Card, Row, Col, Form, Input, Select, Grid, Table } from 'antd';
 import { useMessage } from '@/hooks/useMessage';
 import { useModal } from '@/hooks/useModal';
 import {
@@ -11,9 +11,7 @@ import {
   PartitionOutlined,
   ReloadOutlined,
 } from '@ant-design/icons';
-import type { ActionType } from '@/types/pro-components';
 import type { ColumnsType } from 'antd/es/table';
-import { DataTable } from '@/components/DataTable';
 import {
   getWorkflowList,
   deleteWorkflow,
@@ -27,6 +25,7 @@ import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import SearchBar from '@/components/SearchBar';
+import type { PageParams } from '@/types/page-params';
 const { useBreakpoint } = Grid;
 import type { SelectProps } from 'antd';
 
@@ -37,61 +36,79 @@ const WorkflowManagement: React.FC = () => {
   const message = useMessage();
   const modal = useModal();
   const { styles } = useCommonStyles();
-  const actionRef = useRef<ActionType>(null);
   const screens = useBreakpoint();
-  const isMobile = !screens.md; // md 以下为移动端
+  const isMobile = !screens.md;
   const [designerVisible, setDesignerVisible] = useState(false);
   const [editingWorkflow, setEditingWorkflow] = useState<WorkflowDefinition | null>(null);
   const [previewVisible, setPreviewVisible] = useState(false);
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [searchForm] = Form.useForm();
-  const searchParamsRef = useRef<any>({
-    current: 1,
+  const [data, setData] = useState<WorkflowDefinition[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
+
+  const searchParamsRef = useRef<PageParams>({
+    page: 1,
     pageSize: 20,
     search: '',
   });
 
-  const handleRefresh = () => {
-    actionRef.current?.reload?.();
-  };
+  const fetchData = useCallback(async () => {
+    const currentParams = searchParamsRef.current;
 
-
-
-  // 🔧 使用 useCallback 定义 request 函数，依赖数组为空，避免函数重新创建
-  const fetchWorkflows = useCallback(async (params: any, sort: any) => {
-    let sortBy: string | undefined;
-    let sortOrder: string | undefined;
-    if (sort && Object.keys(sort).length > 0) {
-      const sortKey = Object.keys(sort)[0];
-      const sortValue = sort[sortKey];
-      if (sortValue === 'ascend') {
-        sortBy = sortKey;
-        sortOrder = 'asc';
-      } else if (sortValue === 'descend') {
-        sortBy = sortKey;
-        sortOrder = 'desc';
+    setLoading(true);
+    try {
+      const response = await getWorkflowList(currentParams);
+      if (response.success && response.data) {
+        const paged = response.data as PagedResult<WorkflowDefinition>;
+        setData(paged.queryable || []);
+        setPagination(prev => ({
+          ...prev,
+          page: currentParams.page ?? prev.page,
+          pageSize: currentParams.pageSize ?? prev.pageSize,
+          total: paged.rowCount ?? 0,
+        }));
+      } else {
+        setData([]);
+        setPagination(prev => ({ ...prev, total: 0 }));
       }
+    } catch (error) {
+      console.error('获取工作流列表失败:', error);
+      setData([]);
+      setPagination(prev => ({ ...prev, total: 0 }));
+    } finally {
+      setLoading(false);
     }
-    const requestData = {
-      page: params.current || 1,
-      pageSize: params.pageSize || 20,
-      search: searchParamsRef.current.search,
+  }, []);
+
+  const handleSearch = useCallback((params: PageParams) => {
+    searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
+    fetchData();
+  }, [fetchData]);
+
+  const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+    const newPage = pag.current;
+    const newPageSize = pag.pageSize;
+    const sortBy = sorter?.field;
+    const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
+    
+    searchParamsRef.current = {
+      ...searchParamsRef.current,
+      page: newPage,
+      pageSize: newPageSize,
       sortBy,
       sortOrder,
     };
+    fetchData();
+  }, [fetchData]);
 
-    try {
-      const response = await getWorkflowList(requestData);
-      if (response.success && response.data) {
-        const paged = response.data as PagedResult<WorkflowDefinition>;
-        return { data: paged.queryable, total: paged.rowCount, success: true };
-      }
-      return { data: [], success: false, total: 0 };
-    } catch (error) {
-      console.error('获取工作流列表失败:', error);
-      return { data: [], success: false, total: 0 };
-    }
-  }, []); // 🔧 空依赖数组，避免函数重新创建
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleRefresh = () => {
+    fetchData();
+  };
 
   const columns: ColumnsType<WorkflowDefinition> = [
     {
@@ -174,7 +191,7 @@ const WorkflowManagement: React.FC = () => {
                     const response = await deleteWorkflow(record.id!);
                     if (response.success) {
                       message.success(intl.formatMessage({ id: 'pages.workflow.message.deleteSuccess' }));
-                      actionRef.current?.reload?.();
+                      fetchData();
                     }
                   } catch (error) {
                     console.error('删除失败:', error);
@@ -224,28 +241,28 @@ const WorkflowManagement: React.FC = () => {
       {/* 搜索表单 */}
       <SearchBar
         initialParams={searchParamsRef.current}
-        onSearch={(params) => {
-          searchParamsRef.current = { ...searchParamsRef.current, ...params };
-          actionRef.current?.reload?.();
-        }}
+        onSearch={handleSearch}
+        showResetButton={false}
         style={{ marginBottom: 16 }}
       />
 
       {/* 数据表格 */}
-      <DataTable<WorkflowDefinition>
-        actionRef={actionRef}
+      <Table<WorkflowDefinition>
+        dataSource={data}
         columns={columns}
-        request={fetchWorkflows}
         rowKey="id"
-        search={false}
+        loading={loading}
+        scroll={{ x: 'max-content' }}
+        onChange={handleTableChange}
         pagination={{
-          pageSize: 20,
+          current: pagination.page,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
           pageSizeOptions: [10, 20, 50, 100],
           showSizeChanger: true,
           showQuickJumper: true,
-          showTotal: (rowCount) => `共 ${rowCount} 条`,
+          showTotal: (total) => `共 ${total} 条`,
         }}
-        scroll={{ x: 'max-content' }}
       />
 
       {/* 创建流程模态窗体 */}
@@ -262,9 +279,7 @@ const WorkflowManagement: React.FC = () => {
         <WorkflowCreateForm
           onSuccess={() => {
             setCreateModalVisible(false);
-            if (actionRef.current && actionRef.current.reload) {
-              actionRef.current.reload();
-            }
+            fetchData();
           }}
           onCancel={() => setCreateModalVisible(false)}
         />
@@ -296,7 +311,7 @@ const WorkflowManagement: React.FC = () => {
             onSuccess={() => {
               setDesignerVisible(false);
               setEditingWorkflow(null);
-              actionRef.current?.reload?.();
+              fetchData();
             }}
             onCancel={() => {
               setDesignerVisible(false);

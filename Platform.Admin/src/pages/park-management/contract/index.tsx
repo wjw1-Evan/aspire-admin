@@ -2,9 +2,8 @@ import React, { useCallback, useRef, useState, useEffect } from 'react';
 import { Card, Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typography, Descriptions, InputNumber, Popconfirm, DatePicker, Drawer, List, Badge, Flex, Upload, Table, Empty } from 'antd';
 import { useIntl, history } from '@umijs/max';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, FileTextOutlined, WarningOutlined, ReloadOutlined, CalendarOutlined, SyncOutlined, UploadOutlined, DownloadOutlined, PaperClipOutlined, CheckCircleOutlined } from '@ant-design/icons';
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import type { ProColumns } from '@ant-design/pro-components';
 import PageContainer from '@/components/PageContainer';
-import { DataTable } from '@/components/DataTable';
 import SearchBar from '@/components/SearchBar';
 import StatCard from '@/components/StatCard';
 import * as parkService from '@/services/park';
@@ -18,7 +17,6 @@ const { Text } = Typography;
 
 const ContractManagement: React.FC = () => {
     const intl = useIntl();
-    const contractTableRef = useRef<ActionType>(null);
     const { message } = App.useApp();
     const [contractForm] = Form.useForm();
     const searchParamsRef = useRef<any>({ search: '' });
@@ -34,6 +32,10 @@ const ContractManagement: React.FC = () => {
     const [allUnits, setAllUnits] = useState<PropertyUnit[]>([]);
     const [isEdit, setIsEdit] = useState(false);
     const [contractFileList, setContractFileList] = useState<UploadFile[]>([]);
+
+    const [contractsData, setContractsData] = useState<LeaseContract[]>([]);
+    const [contractsLoading, setContractsLoading] = useState(false);
+    const [contractsPagination, setContractsPagination] = useState({ page: 1, pageSize: 10, total: 0 });
 
     const loadStatistics = useCallback(async () => {
         try {
@@ -74,6 +76,40 @@ const ContractManagement: React.FC = () => {
         loadUnits();
     }, [loadStatistics, loadTenants, loadUnits]);
 
+    const fetchContracts = useCallback(async () => {
+        setContractsLoading(true);
+        try {
+            const res = await parkService.getContracts({
+                page: contractsPagination.page,
+                pageSize: contractsPagination.pageSize,
+                search: searchParamsRef.current.search,
+            });
+            if (res.success && res.data) {
+                setContractsData(res.data.queryable || []);
+                setContractsPagination(prev => ({ ...prev, total: res.data.rowCount ?? 0 }));
+            } else {
+                setContractsData([]);
+                setContractsPagination(prev => ({ ...prev, total: 0 }));
+            }
+        } catch {
+            setContractsData([]);
+            setContractsPagination(prev => ({ ...prev, total: 0 }));
+        } finally {
+            setContractsLoading(false);
+        }
+    }, [contractsPagination.page, contractsPagination.pageSize]);
+
+    const handleContractsTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+        const newPage = pag.current;
+        const newPageSize = pag.pageSize;
+        setContractsPagination(prev => ({ ...prev, page: newPage, pageSize: newPageSize }));
+        fetchContracts();
+    }, [fetchContracts]);
+
+    useEffect(() => {
+        fetchContracts();
+    }, [fetchContracts]);
+
     const contractStatusOptions = [
         { label: '有效', value: 'Active', color: 'green' },
         { label: '待生效', value: 'Pending', color: 'blue' },
@@ -86,6 +122,7 @@ const ContractManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.contract.number', defaultMessage: '合同编号' }),
             dataIndex: 'contractNumber',
+            sorter: true,
             width: 140,
             render: (_, record) => (
                 <Space>
@@ -97,6 +134,7 @@ const ContractManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.contract.tenant', defaultMessage: '租户' }),
             dataIndex: 'tenantName',
+            sorter: true,
             width: 150,
         },
         {
@@ -115,6 +153,7 @@ const ContractManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.contract.period', defaultMessage: '租期' }),
             dataIndex: 'startDate',
+            sorter: true,
             width: 180,
             render: (_, record) => (
                 <Text style={{ fontSize: 12 }}>{dayjs(record.startDate as string).format('YYYY-MM-DD')} ~ {dayjs(record.endDate as string).format('YYYY-MM-DD')}</Text>
@@ -123,6 +162,7 @@ const ContractManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.contract.rent', defaultMessage: '月租金' }),
             dataIndex: 'monthlyRent',
+            sorter: true,
             width: 100,
             align: 'right',
             render: (rent) => `¥${rent?.toLocaleString()}`,
@@ -130,6 +170,7 @@ const ContractManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.contract.totalAmount', defaultMessage: '合同总额' }),
             dataIndex: 'totalAmount',
+            sorter: true,
             width: 120,
             align: 'right',
             render: (total) => total ? `¥${total?.toLocaleString()}` : '-',
@@ -137,6 +178,7 @@ const ContractManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.contract.status', defaultMessage: '状态' }),
             dataIndex: 'status',
+            sorter: true,
             width: 100,
             render: (status) => {
                 const opt = contractStatusOptions.find(o => o.value === status);
@@ -171,14 +213,18 @@ const ContractManagement: React.FC = () => {
         },
     ];
 
-    const fetchContracts = async (params: any) => {
+    const fetchContracts = async (params: any, sort: any) => {
+        const sortBy = sort?.sortKey;
+        const sortOrder = sort?.sortOrder === 'ascend' ? 'asc' : sort?.sortOrder === 'descend' ? 'desc' : undefined;
         try {
             const res = await parkService.getContracts({
                 page: params.current || 1,
                 pageSize: params.pageSize || 10,
                 search: params.search,
                 status: params.status,
-                expiringWithin30Days: params.expiringWithin30Days
+                expiringWithin30Days: params.expiringWithin30Days,
+                sortBy,
+                sortOrder,
             });
             if (res.success && res.data) return { data: res.data.queryable, total: res.data.rowCount, success: true };
             return { data: [], total: 0, success: false };
@@ -214,7 +260,7 @@ const ContractManagement: React.FC = () => {
             const res = await parkService.deleteContract(id);
             if (res.success) {
                 message.success('删除成功');
-                contractTableRef.current?.reload();
+                fetchContracts();
                 loadStatistics();
             }
         } catch (e) { message.error('删除失败'); } finally { setLoading(false); }
@@ -260,7 +306,7 @@ const ContractManagement: React.FC = () => {
                 message.success(isEdit ? '更新成功' : '创建成功');
                 setContractModalVisible(false);
                 setContractFileList([]);
-                contractTableRef.current?.reload();
+                fetchContracts();
                 loadStatistics();
             }
         } catch (e) { console.error(e); } finally { setLoading(false); }
@@ -344,7 +390,7 @@ const ContractManagement: React.FC = () => {
 
 
     const handleRefresh = () => {
-        contractTableRef.current?.reload();
+        fetchContracts();
         loadStatistics();
     };
 
@@ -371,19 +417,29 @@ const ContractManagement: React.FC = () => {
                 initialParams={searchParamsRef.current}
                 onSearch={(params) => {
                     searchParamsRef.current = { ...searchParamsRef.current, ...params };
-                    contractTableRef.current?.reload();
+                    setContractsPagination(prev => ({ ...prev, page: 1 }));
+                    fetchContracts();
                 }}
                 style={{ marginBottom: 16 }}
             />
 
             <Card>
-                <DataTable<LeaseContract>
-                    actionRef={contractTableRef}
+                <Table<LeaseContract>
+                    dataSource={contractsData}
                     columns={contractColumns as any}
-                    request={fetchContracts}
                     rowKey="id"
+                    loading={contractsLoading}
+                    onChange={handleContractsTableChange}
+                    pagination={{
+                        current: contractsPagination.page,
+                        pageSize: contractsPagination.pageSize,
+                        total: contractsPagination.total,
+                        pageSizeOptions: [10, 20, 50, 100],
+                        showSizeChanger: true,
+                        showQuickJumper: true,
+                        showTotal: (total) => `共 ${total} 条`,
+                    }}
                     scroll={{ x: 1200 }}
-                    search={false}
                 />
             </Card>
 

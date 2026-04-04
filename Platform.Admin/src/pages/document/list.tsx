@@ -1,5 +1,5 @@
-import React from 'react';
-import { Space, Tag, Button } from 'antd';
+import React, { useRef, useState, useCallback } from 'react';
+import { Space, Tag, Button, Table } from 'antd';
 import {
   FileTextOutlined,
   ReloadOutlined,
@@ -10,9 +10,9 @@ import {
   DeleteOutlined,
 } from '@ant-design/icons';
 import { PageContainer } from '@/components';
-import DataTable from '@/components/DataTable';
 import { useModal } from '@/hooks/useModal';
-import { type ColumnsType } from 'antd/es/table';
+import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
+import type { SorterResult } from 'antd/es/table/interface';
 import dayjs from 'dayjs';
 import {
   type Document,
@@ -28,12 +28,12 @@ import {
 import SearchBar from '@/components/SearchBar';
 import { useDocumentManagement } from './hooks/useDocumentManagement';
 import { getStatusMeta, documentStatusMap } from '@/utils/statusMaps';
+import type { PageParams } from '@/types/page-params';
 
 const DocumentManagement: React.FC = () => {
   const modal = useModal();
   const {
     intl,
-    actionRef,
     form,
     wfForm,
     detailVisible,
@@ -63,9 +63,7 @@ const DocumentManagement: React.FC = () => {
     workflows,
     statistics,
     searchParams,
-    handleRefresh,
-    handleSearch,
-    handleReset,
+    setSearchParams,
     handleViewDetail,
     handleSubmit,
     handleDelete,
@@ -74,6 +72,67 @@ const DocumentManagement: React.FC = () => {
     fetchActiveWorkflows,
     resetCreateModal,
   } = useDocumentManagement();
+
+  const [dataSource, setDataSource] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
+
+  const searchParamsRef = useRef<PageParams>({ page: 1, pageSize: 10, search: '' });
+
+  const fetchData = useCallback(async () => {
+    const currentParams = searchParamsRef.current;
+    setLoading(true);
+    try {
+      const response = await getDocumentList({
+        ...currentParams,
+        page: currentParams.page,
+        pageSize: currentParams.pageSize,
+      });
+      if (response.success && response.data) {
+        setDataSource(response.data.queryable || []);
+        setPagination(prev => ({
+          ...prev,
+          page: currentParams.page ?? prev.page,
+          pageSize: currentParams.pageSize ?? prev.pageSize,
+          total: response.data.rowCount ?? 0,
+        }));
+      } else {
+        setDataSource([]);
+        setPagination(prev => ({ ...prev, total: 0 }));
+      }
+    } catch {
+      setDataSource([]);
+      setPagination(prev => ({ ...prev, total: 0 }));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleTableChange = useCallback(
+    (pag: TablePaginationConfig, _filters: any, sorter: SorterResult<any> | SorterResult<any>[]) => {
+      const newPage = pag.current;
+      const newPageSize = pag.pageSize;
+      const sortBy = (sorter as any)?.field;
+      const sortOrder = (sorter as any)?.order === 'ascend' ? 'asc' : (sorter as any)?.order === 'descend' ? 'desc' : undefined;
+
+      searchParamsRef.current = { ...searchParamsRef.current, page: newPage, pageSize: newPageSize, sortBy, sortOrder };
+      fetchData();
+    },
+    [fetchData]
+  );
+
+  const handleRefresh = useCallback(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleSearch = useCallback((params: any) => {
+    searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
+    fetchData();
+  }, [fetchData]);
+
+  React.useEffect(() => {
+    fetchData();
+  }, []);
 
   const getDocStatus = (status?: DocumentStatus | null) =>
     getStatusMeta(intl, status ?? null, documentStatusMap);
@@ -218,35 +277,28 @@ const DocumentManagement: React.FC = () => {
 
       {/* 搜索表单 */}
       <SearchBar
-        initialParams={searchParams}
+        initialParams={searchParamsRef.current}
         onSearch={(params) => {
           handleSearch(params);
         }}
       />
 
-      <DataTable<Document>
-        actionRef={actionRef}
+      <Table<Document>
+        dataSource={dataSource}
         columns={columns}
-        request={async (params, sort) => {
-          const sortKey = sort ? Object.keys(sort)[0] : undefined;
-          const sortValue = sortKey ? sort[sortKey] : undefined;
-          const response = await getDocumentList({
-            ...searchParams,
-            page: params.current,
-            pageSize: params.pageSize,
-            sortBy: sortKey,
-            sortOrder: sortValue === 'ascend' ? 'asc' : sortValue === 'descend' ? 'desc' : undefined,
-          });
-          if (response.success && response.data) {
-            return {
-              data: response.data.queryable || [],
-              success: true,
-              total: response.data.rowCount ?? 0,
-            };
-          }
-          return { data: [], success: false, total: 0 };
-        }}
         rowKey="id"
+        loading={loading}
+        scroll={{ x: 'max-content' }}
+        onChange={handleTableChange}
+        pagination={{
+          current: pagination.page,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
+          pageSizeOptions: [10, 20, 50, 100],
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total) => `共 ${total} 条`,
+        }}
       />
 
       {/* 详情抽屉 */}

@@ -64,19 +64,6 @@ export interface UpdatePasswordBookEntryRequest {
 }
 
 /**
- * 密码本查询请求
- */
-export interface PasswordBookQueryRequest {
-  current: number;
-  pageSize: number;
-  platform?: string;
-  account?: string;
-  category?: string;
-  tags?: string[];
-  keyword?: string;
-}
-
-/**
  * 密码本列表响应
  */
 export type PasswordBookListResponse = PagedResult<PasswordBookEntry>;

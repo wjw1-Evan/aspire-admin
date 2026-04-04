@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback, useMemo } from 'react';
 import { useIntl } from '@umijs/max';
-import type { ActionType, ProColumns } from '@/types/pro-components';
-import DataTable from '@/components/DataTable';
+import { Table, Typography, Grid, type TableColumnsType } from 'antd';
+import type { PageParams } from '@/types/page-params';
 import {
   Button,
   Modal,
@@ -21,9 +21,6 @@ import {
   Descriptions,
   Spin,
   Empty,
-  Typography,
-  Grid,
-  type TableColumnsType,
 } from 'antd';
 import dayjs from 'dayjs';
 
@@ -54,9 +51,11 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
   const intl = useIntl();
   const { message, modal } = App.useApp();
   const screens = useBreakpoint();
-  const isMobile = !screens.md; // md 以下为移动端
+  const isMobile = !screens.md;
   const { styles } = useCommonStyles();
-  const actionRef = useRef<ActionType>(null);
+  const [data, setData] = useState<IoTDataPoint[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
   const [devices, setDevices] = useState<IoTDevice[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isDetailDrawerVisible, setIsDetailDrawerVisible] = useState(false);
@@ -68,7 +67,11 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
     disabled: 0,
     withAlarm: 0,
   });
-  const searchParamsRef = useRef<any>({});
+  const searchParamsRef = useRef<PageParams>({
+    page: 1,
+    pageSize: 20,
+    search: '',
+  });
 
 
   // 确保 devices 始终是数组
@@ -95,37 +98,44 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
     }
   }, []);
 
-  // 获取数据点列表（用于 ProTable）- 使用 useCallback 避免死循环
-  const fetchDataPoints = useCallback(async (params: any) => {
+  // 获取数据点列表
+  const fetchData = useCallback(async () => {
+    const currentParams = searchParamsRef.current;
+
+    setLoading(true);
     try {
-      const filters = searchParamsRef.current;
-      const response = await iotService.getDataPoints(undefined, params.current || 1, params.pageSize || 20, filters.search);
+      const response = await iotService.getDataPoints(
+        undefined,
+        currentParams.page,
+        currentParams.pageSize,
+        currentParams.search,
+        currentParams.sortBy,
+        currentParams.sortOrder
+      );
       if (response.success && response.data) {
-        return {
-          data: response.data.queryable || [],
-          success: true,
+        setData(response.data.queryable || []);
+        setPagination(prev => ({
+          ...prev,
+          page: currentParams.page ?? prev.page,
+          pageSize: currentParams.pageSize ?? prev.pageSize,
           total: response.data.rowCount ?? 0,
-        };
+        }));
+      } else {
+        setData([]);
+        setPagination(prev => ({ ...prev, total: 0 }));
       }
-      return {
-        data: [],
-        success: false,
-        total: 0,
-      };
     } catch (error) {
       console.error('加载数据点列表失败:', error);
-      message.error('加载数据点列表失败');
-      return {
-        data: [],
-        success: false,
-        total: 0,
-      };
+      setData([]);
+      setPagination(prev => ({ ...prev, total: 0 }));
+    } finally {
+      setLoading(false);
     }
   }, []);
 
   const loadDevices = useCallback(async () => {
     try {
-      const response = await iotService.getDevices(undefined, 1, 1000); // 加载所有设备用于下拉选择
+      const response = await iotService.getDevices(undefined, 1, 1000);
       if (response.success && response.data) {
         setDevices(response.data.queryable || []);
       } else {
@@ -137,11 +147,34 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
     }
   }, []);
 
-  // 初始化：加载设备和统计信息
+  // 初始化
   useEffect(() => {
     loadDevices();
     fetchOverviewStats();
-  }, [loadDevices, fetchOverviewStats]);
+    fetchData();
+  }, [loadDevices, fetchOverviewStats, fetchData]);
+
+  const handleSearch = useCallback((params: PageParams) => {
+    searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
+    fetchData();
+  }, [fetchData]);
+
+  // 表格分页和排序处理
+  const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+    const newPage = pag.current;
+    const newPageSize = pag.pageSize;
+    const sortBy = sorter?.field;
+    const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
+    
+    searchParamsRef.current = {
+      ...searchParamsRef.current,
+      page: newPage,
+      pageSize: newPageSize,
+      sortBy,
+      sortOrder,
+    };
+    fetchData();
+  }, [fetchData]);
 
   const handleAdd = useCallback(() => {
     form.resetFields();
@@ -151,16 +184,10 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
 
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
-    reload: () => {
-      if (actionRef.current?.reload) {
-        actionRef.current.reload();
-      }
-    },
-    refreshStats: () => {
-      fetchOverviewStats();
-    },
+    reload: () => fetchData(),
+    refreshStats: () => fetchOverviewStats(),
     handleAdd,
-  }), [fetchOverviewStats, handleAdd]);
+  }), [fetchData, fetchOverviewStats, handleAdd]);
 
   const handleEdit = useCallback((dataPoint: IoTDataPoint) => {
     setSelectedDataPoint(dataPoint);
@@ -178,13 +205,8 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
       const response = await iotService.deleteDataPoint(id);
       if (response.success) {
         message.success('删除成功');
-        // 确保刷新操作执行
-        setTimeout(() => {
-          if (actionRef.current?.reload) {
-            actionRef.current.reload();
-          }
-          fetchOverviewStats();
-        }, 100);
+        fetchData();
+        fetchOverviewStats();
       } else {
         message.error((response as any).message || '删除失败');
       }
@@ -192,7 +214,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
       console.error('删除数据点失败:', error);
       message.error(error?.message || '删除失败');
     }
-  }, [fetchOverviewStats]);
+  }, [fetchData, fetchOverviewStats]);
 
   const handleSubmit = useCallback(async (values: any) => {
     try {
@@ -214,18 +236,13 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
         }
       }
       setIsModalVisible(false);
-      // 确保刷新操作执行
-      setTimeout(() => {
-        if (actionRef.current?.reload) {
-          actionRef.current.reload();
-        }
-        fetchOverviewStats();
-      }, 100);
+      fetchData();
+      fetchOverviewStats();
     } catch (error: any) {
       console.error('操作失败:', error);
       message.error(error?.message || '操作失败');
     }
-  }, [selectedDataPoint, fetchOverviewStats]);
+  }, [selectedDataPoint, fetchData, fetchOverviewStats]);
 
   const getDataTypeLabel = useCallback((type: string) => {
     // 支持 camelCase (后端返回) 和首字母大写格式
@@ -247,6 +264,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
       key: 'title',
       width: 150,
       ellipsis: true,
+      sorter: true,
       render: (text, record) => (
         <a
           onClick={() => handleView(record)}
@@ -261,6 +279,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
       dataIndex: 'deviceId',
       key: 'deviceId',
       width: 150,
+      sorter: true,
       render: (deviceId: string) => {
         const device = safeDevices.find((d) => d.deviceId === deviceId);
         return device?.title || deviceId;
@@ -271,6 +290,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
       dataIndex: 'dataType',
       key: 'dataType',
       width: 100,
+      sorter: true,
       render: (type: string) => getDataTypeLabel(type),
     },
     {
@@ -278,18 +298,21 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
       dataIndex: 'unit',
       key: 'unit',
       width: 80,
+      sorter: true,
     },
     {
       title: '采样间隔(秒)',
       dataIndex: 'samplingInterval',
       key: 'samplingInterval',
       width: 120,
+      sorter: true,
     },
     {
       title: '最后采集值',
       dataIndex: 'lastValue',
       key: 'lastValue',
       width: 150,
+      sorter: true,
       render: (value: string, record: IoTDataPoint) => {
         if (!value) {
           return <span style={{ color: '#999' }}>暂无数据</span>;
@@ -364,6 +387,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
       dataIndex: 'alarmConfig',
       key: 'alarmConfig',
       width: 100,
+      sorter: true,
       render: (alarmConfig: any) => {
         if (alarmConfig?.isEnabled) {
           return <Tag color="orange">已配置</Tag>;
@@ -376,6 +400,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
       dataIndex: 'isEnabled',
       key: 'isEnabled',
       width: 100,
+      sorter: true,
       render: (value: boolean) => (
         <Tag color={value ? 'success' : 'default'}>
           {value ? '启用' : '禁用'}
@@ -474,24 +499,27 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
       {/* 搜索 */}
       <SearchBar
         initialParams={searchParamsRef.current}
-        onSearch={(params) => {
-          searchParamsRef.current = params;
-          actionRef.current?.reload?.();
-        }}
+        onSearch={handleSearch}
+        showResetButton={false}
         style={{ marginBottom: 16 }}
       />
 
       {/* 数据点配置列表表格 */}
-      <DataTable<IoTDataPoint>
-        actionRef={actionRef}
+      <Table<IoTDataPoint>
         columns={columns}
-        request={fetchDataPoints}
+        dataSource={data}
         rowKey="id"
+        loading={loading}
         scroll={{ x: 'max-content' }}
-        search={false}
+        onChange={handleTableChange}
         pagination={{
-          pageSize: 20,
+          current: pagination.page,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
           pageSizeOptions: [10, 20, 50, 100],
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total) => `共 ${total} 条`,
         }}
       />
 

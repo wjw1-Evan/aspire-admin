@@ -22,6 +22,7 @@ import {
     Descriptions,
     Divider,
     Transfer,
+    Table,
 } from 'antd';
 import {
     PlusOutlined,
@@ -39,7 +40,6 @@ import {
 } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import PageContainer from '@/components/PageContainer';
-import DataTable from '@/components/DataTable';
 import StatCard from '@/components/StatCard';
 import SearchBar from '@/components/SearchBar';
 import * as visitService from '@/services/visit';
@@ -72,6 +72,95 @@ const VisitKnowledgeBase: React.FC = () => {
     const actionRef = useRef<any>(null);
     const screens = useBreakpoint();
 
+    const [questionsData, setQuestionsData] = useState<VisitQuestion[]>([]);
+    const [questionnairesData, setQuestionnairesData] = useState<VisitQuestionnaire[]>([]);
+    const [questionsLoading, setQuestionsLoading] = useState(false);
+    const [questionnairesLoading, setQuestionnairesLoading] = useState(false);
+    const [questionsPagination, setQuestionsPagination] = useState({ page: 1, pageSize: 10, total: 0 });
+    const [questionnairesPagination, setQuestionnairesPagination] = useState({ page: 1, pageSize: 10, total: 0 });
+
+    const fetchQuestions = useCallback(async () => {
+        setQuestionsLoading(true);
+        try {
+            const res = await visitService.getQuestions({
+                page: questionsPagination.page,
+                pageSize: questionsPagination.pageSize,
+                ...searchParamsRef.current,
+            });
+            if (res.success && res.data) {
+                setQuestionsData(res.data.queryable || []);
+                setQuestionsPagination(prev => ({ ...prev, total: res.data.rowCount ?? 0 }));
+            } else {
+                setQuestionsData([]);
+                setQuestionsPagination(prev => ({ ...prev, total: 0 }));
+            }
+        } catch {
+            setQuestionsData([]);
+            setQuestionsPagination(prev => ({ ...prev, total: 0 }));
+        } finally {
+            setQuestionsLoading(false);
+        }
+    }, [questionsPagination.page, questionsPagination.pageSize]);
+
+    const fetchQuestionnaires = useCallback(async () => {
+        setQuestionnairesLoading(true);
+        try {
+            const res = await visitService.getQuestionnaires({
+                page: questionnairesPagination.page,
+                pageSize: questionnairesPagination.pageSize,
+            });
+            if (res.success && res.data) {
+                setQuestionnairesData(res.data.queryable || []);
+                setQuestionnairesPagination(prev => ({ ...prev, total: res.data.rowCount ?? 0 }));
+            } else {
+                setQuestionnairesData([]);
+                setQuestionnairesPagination(prev => ({ ...prev, total: 0 }));
+            }
+        } catch {
+            setQuestionnairesData([]);
+            setQuestionnairesPagination(prev => ({ ...prev, total: 0 }));
+        } finally {
+            setQuestionnairesLoading(false);
+        }
+    }, [questionnairesPagination.page, questionnairesPagination.pageSize]);
+
+    const handleQuestionsTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+        const newPage = pag.current;
+        const newPageSize = pag.pageSize;
+        const sortBy = sorter?.field;
+        const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
+        
+        setQuestionsPagination(prev => ({ ...prev, page: newPage, pageSize: newPageSize }));
+        
+        (async () => {
+            setQuestionsLoading(true);
+            try {
+                const res = await visitService.getQuestions({
+                    page: newPage,
+                    pageSize: newPageSize,
+                    ...searchParamsRef.current,
+                    sortBy,
+                    sortOrder,
+                });
+                if (res.success && res.data) {
+                    setQuestionsData(res.data.queryable || []);
+                    setQuestionsPagination(prev => ({ ...prev, total: res.data.rowCount ?? 0 }));
+                } else {
+                    setQuestionsData([]);
+                }
+            } finally {
+                setQuestionsLoading(false);
+            }
+        })();
+    }, []);
+
+    const handleQuestionnairesTableChange = useCallback((pag: any) => {
+        const newPage = pag.current;
+        const newPageSize = pag.pageSize;
+        setQuestionnairesPagination(prev => ({ ...prev, page: newPage, pageSize: newPageSize }));
+        fetchQuestionnaires();
+    }, [fetchQuestionnaires]);
+
     const loadStatistics = useCallback(async () => {
         try {
             const res = await visitService.getVisitStatistics();
@@ -98,12 +187,18 @@ const VisitKnowledgeBase: React.FC = () => {
         loadStatistics();
     }, [loadStatistics]);
 
+    useEffect(() => {
+        fetchQuestions();
+        fetchQuestionnaires();
+    }, [fetchQuestions, fetchQuestionnaires]);
+
 
     const questionColumns = [
         {
             title: '问题内容',
             dataIndex: 'content',
             key: 'content',
+            sorter: true,
             ellipsis: true,
             render: (text: string) => (
                 <Space>
@@ -116,6 +211,7 @@ const VisitKnowledgeBase: React.FC = () => {
             title: '分类',
             dataIndex: 'category',
             key: 'category',
+            sorter: true,
             width: 120,
             render: (text: string) => <Tag color="blue">{text || '通用'}</Tag>,
         },
@@ -123,6 +219,7 @@ const VisitKnowledgeBase: React.FC = () => {
             title: '常用',
             dataIndex: 'isFrequentlyUsed',
             key: 'isFrequentlyUsed',
+            sorter: true,
             width: 100,
             render: (checked: boolean) => checked ? <StarFilled style={{ color: '#fadb14' }} /> : <StarOutlined style={{ color: '#d9d9d9' }} />,
         },
@@ -145,6 +242,7 @@ const VisitKnowledgeBase: React.FC = () => {
             title: '问卷名称',
             dataIndex: 'title',
             key: 'title',
+            sorter: true,
             render: (text: string) => (
                 <Space>
                     <FileTextOutlined style={{ color: '#52c41a' }} />
@@ -156,12 +254,14 @@ const VisitKnowledgeBase: React.FC = () => {
             title: '走访目的',
             dataIndex: 'purpose',
             key: 'purpose',
+            sorter: true,
             ellipsis: true,
         },
         {
             title: '题目数量',
             dataIndex: 'questionCount',
             key: 'questionCount',
+            sorter: true,
             width: 100,
             render: (count: number) => <Tag color="cyan">{count} 题</Tag>,
         },
@@ -169,6 +269,7 @@ const VisitKnowledgeBase: React.FC = () => {
             title: '创建时间',
             dataIndex: 'createdAt',
             key: 'createdAt',
+            sorter: true,
             width: 120,
             render: (text: string) => dayjs(text).format('YYYY-MM-DD'),
         },
@@ -211,7 +312,7 @@ const VisitKnowledgeBase: React.FC = () => {
                     const res = await visitService.deleteQuestion(id);
                     if (res.success) {
                         message.success('删除成功');
-                        actionRef.current?.reload?.();
+                        fetchQuestions();
                     }
                 } catch (error) {
                     message.error('删除失败');
@@ -233,7 +334,7 @@ const VisitKnowledgeBase: React.FC = () => {
                     const res = await visitService.deleteQuestionnaire(id);
                     if (res.success) {
                         message.success('删除成功');
-                        actionRef.current?.reload?.();
+                        fetchQuestionnaires();
                     }
                 } catch (error) {
                     message.error('删除失败');
@@ -258,7 +359,7 @@ const VisitKnowledgeBase: React.FC = () => {
             title="走访知识库"
             extra={
                 <Space>
-                    <Button icon={<ReloadOutlined />} onClick={() => { actionRef.current?.reload?.(); loadStatistics(); }}>
+                    <Button icon={<ReloadOutlined />} onClick={() => { fetchQuestions(); fetchQuestionnaires(); loadStatistics(); }}>
                         刷新
                     </Button>
                     {activeTab === 'questions' ? (
@@ -292,27 +393,28 @@ const VisitKnowledgeBase: React.FC = () => {
                                     initialParams={searchParamsRef.current}
                                     onSearch={(params) => {
                                         searchParamsRef.current = { ...searchParamsRef.current, ...params };
-                                        actionRef.current?.reload?.();
+                                        setQuestionsPagination(prev => ({ ...prev, page: 1 }));
+                                        fetchQuestions();
                                     }}
                                     style={{ marginBottom: 16 }}
                                 />
                                 <Card>
-                                    <DataTable<VisitQuestion>
+                                    <Table<VisitQuestion>
+                                        dataSource={questionsData}
                                         columns={questionColumns as any}
-                                        request={async (params: any) => {
-                                            const res = await visitService.getQuestions({
-                                                page: params.current || 1,
-                                                pageSize: params.pageSize || 10,
-                                                ...searchParamsRef.current,
-                                            });
-                                            if (res.success && res.data) {
-                                                return { data: res.data.queryable, total: res.data.rowCount, success: true };
-                                            }
-                                            return { data: [], total: 0, success: false };
-                                        }}
-                                        actionRef={actionRef}
                                         rowKey="id"
-                                        search={false}
+                                        loading={questionsLoading}
+                                        onChange={handleQuestionsTableChange}
+                                        pagination={{
+                                            current: questionsPagination.page,
+                                            pageSize: questionsPagination.pageSize,
+                                            total: questionsPagination.total,
+                                            pageSizeOptions: [10, 20, 50, 100],
+                                            showSizeChanger: true,
+                                            showQuickJumper: true,
+                                            showTotal: (total) => `共 ${total} 条`,
+                                        }}
+                                        scroll={{ x: 800 }}
                                     />
                                 </Card>
                             </>
@@ -323,18 +425,22 @@ const VisitKnowledgeBase: React.FC = () => {
                         label: '问卷模板',
                         children: (
                             <Card>
-                                <DataTable<VisitQuestionnaire>
+                                <Table<VisitQuestionnaire>
+                                    dataSource={questionnairesData}
                                     columns={questionnaireColumns as any}
-                                    request={async () => {
-                                        const res = await visitService.getQuestionnaires();
-                                        if (res.success && res.data) {
-                                            return { data: res.data.queryable, total: res.data.rowCount, success: true };
-                                        }
-                                        return { data: [], total: 0, success: false };
-                                    }}
-                                    actionRef={actionRef}
                                     rowKey="id"
-                                    search={false}
+                                    loading={questionnairesLoading}
+                                    onChange={handleQuestionnairesTableChange}
+                                    pagination={{
+                                        current: questionnairesPagination.page,
+                                        pageSize: questionnairesPagination.pageSize,
+                                        total: questionnairesPagination.total,
+                                        pageSizeOptions: [10, 20, 50, 100],
+                                        showSizeChanger: true,
+                                        showQuickJumper: true,
+                                        showTotal: (total) => `共 ${total} 条`,
+                                    }}
+                                    scroll={{ x: 800 }}
                                 />
                             </Card>
                         )
@@ -356,7 +462,7 @@ const VisitKnowledgeBase: React.FC = () => {
                         if (res.success) {
                             message.success('保存成功');
                             setIsQuestionModalVisible(false);
-                            actionRef.current?.reload?.();
+                            fetchQuestions();
                         }
                     } finally {
                         setLoading(false);
@@ -405,7 +511,7 @@ const VisitKnowledgeBase: React.FC = () => {
                         if (res.success) {
                             message.success('保存成功');
                             setIsQuestionnaireModalVisible(false);
-                            actionRef.current?.reload?.();
+                            fetchQuestionnaires();
                         }
                     } finally {
                         setLoading(false);

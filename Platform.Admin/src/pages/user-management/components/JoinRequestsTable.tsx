@@ -60,6 +60,7 @@ const JoinRequestsTable: React.FC<JoinRequestsTableProps> = ({ companyId }) => {
             title: '申请人',
             dataIndex: 'username',
             key: 'username',
+            sorter: true,
             render: (_: any, record: JoinRequestDetail) => (
                 <Space direction="vertical" size={0}>
                     <span style={{ fontWeight: 500 }}>{record.username}</span>
@@ -71,6 +72,7 @@ const JoinRequestsTable: React.FC<JoinRequestsTableProps> = ({ companyId }) => {
             title: '申请理由',
             dataIndex: 'reason',
             key: 'reason',
+            sorter: true,
             ellipsis: true,
             render: (text: string) => text || '-',
         },
@@ -78,6 +80,7 @@ const JoinRequestsTable: React.FC<JoinRequestsTableProps> = ({ companyId }) => {
             title: '状态',
             dataIndex: 'status',
             key: 'status',
+            sorter: true,
             render: (status: string) => {
                 const statusMap: Record<string, { text: string; color: string }> = {
                     pending: { text: intl.formatMessage({ id: 'pages.status.pending', defaultMessage: '待审核' }), color: 'processing' },
@@ -100,12 +103,14 @@ const JoinRequestsTable: React.FC<JoinRequestsTableProps> = ({ companyId }) => {
             title: '审核人',
             dataIndex: 'reviewedByName',
             key: 'reviewedByName',
+            sorter: true,
             render: (text: string) => text || '-',
         },
         {
             title: '备注/反馈',
             dataIndex: 'rejectReason',
             key: 'rejectReason',
+            sorter: true,
             ellipsis: true,
             render: (text: string, record: JoinRequestDetail) => {
                 if (record.status === 'approved') return <span style={{ color: '#52c41a' }}>已通过</span>;
@@ -116,6 +121,7 @@ const JoinRequestsTable: React.FC<JoinRequestsTableProps> = ({ companyId }) => {
             title: '审核时间',
             dataIndex: 'reviewedAt',
             key: 'reviewedAt',
+            sorter: true,
             render: (text: string) => text ? dayjs(text).format('YYYY-MM-DD HH:mm:ss') : '-',
         },
         {
@@ -172,12 +178,26 @@ const JoinRequestsTable: React.FC<JoinRequestsTableProps> = ({ companyId }) => {
             <DataTable<JoinRequestDetail>
                 actionRef={actionRef}
                 rowKey="id"
-                request={async (params) => {
+                request={async (params, sorter) => {
                     const status = searchParamsRef.current.status === 'all' ? undefined : searchParamsRef.current.status;
+
+                    let sortBy: string | undefined;
+                    let sortOrder: 'asc' | 'desc' | undefined;
+
+                    if (sorter && Object.keys(sorter).length > 0) {
+                        const sortKey = Object.keys(sorter)[0];
+                        const sortValue = sorter[sortKey];
+                        if (sortValue) {
+                            sortBy = sortKey;
+                            sortOrder = sortValue === 'ascend' ? 'asc' : 'desc';
+                        }
+                    }
 
                     const result = await request(`/api/company/${companyId}/join-requests`, {
                         params: {
-                            status: status,
+                            status,
+                            sortBy,
+                            sortOrder,
                         },
                     });
 

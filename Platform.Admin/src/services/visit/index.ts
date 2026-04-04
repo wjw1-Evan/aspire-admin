@@ -103,6 +103,8 @@ export interface VisitQuestionListRequest {
     pageSize: number;
     search?: string;
     category?: string;
+    sortBy?: string;
+    sortOrder?: string;
 }
 
 export interface VisitStatistics {
@@ -176,9 +178,10 @@ export async function deleteQuestion(id: string) {
     return request<ApiResponse<boolean>>(`/api/park-management/visit/question/${id}`, { method: 'DELETE' });
 }
 
-export async function getQuestionnaires() {
+export async function getQuestionnaires(params?: { sortBy?: string; sortOrder?: string }) {
     return request<ApiResponse<PagedResult<VisitQuestionnaire>>>('/api/park-management/visit/questionnaires', {
         method: 'GET',
+        params,
     });
 }
 

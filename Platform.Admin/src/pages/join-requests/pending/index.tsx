@@ -1,5 +1,4 @@
 import { PageContainer } from '@/components';
-import DataTable from '@/components/DataTable';
 import { Button, Space, App, Modal, Input, Grid, Form } from 'antd';
 import SearchBar from '@/components/SearchBar';
 
@@ -12,14 +11,14 @@ import {
   rejectJoinRequest,
 } from '@/services/company';
 import { useModel } from '@umijs/max';
-import type { ActionType } from '@/types/pro-components';
 import type { ColumnsType } from 'antd/es/table';
 import { CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
+import { Table } from 'antd';
+import type { PageParams } from '@/types/page-params';
 
 const { TextArea } = Input;
 
-// 统一的日期时间格式化函数
 const formatDateTime = (dateTime: string | null | undefined): string => {
   if (!dateTime) return '-';
   try {
@@ -32,73 +31,93 @@ const formatDateTime = (dateTime: string | null | undefined): string => {
   }
 };
 
-/**
- * v3.1: 待审核的加入申请列表（管理员）
- */
 const PendingJoinRequests: React.FC = () => {
   const intl = useIntl();
   const screens = useBreakpoint();
-  const isMobile = !screens.md; // md 以下为移动端
+  const isMobile = !screens.md;
   const { message, modal } = App.useApp();
   const { initialState } = useModel('@@initialState');
-  const actionRef = useRef<ActionType>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
-  const searchParamsRef = useRef<any>({ search: '' });
+  const searchParamsRef = useRef<PageParams>({ search: '' });
+  const [data, setData] = useState<API.JoinRequestDetail[]>([]);
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
 
-  // 获取待审核申请列表（使用 useCallback 避免死循环）
-  const fetchPendingRequests = useCallback(async (_params: any, _sort?: Record<string, any>) => {
+  const fetchData = useCallback(async () => {
+    const currentParams = searchParamsRef.current;
+
+    setLoading(true);
     try {
-      const { search: keyword } = searchParamsRef.current;
       const companyId = initialState?.currentUser?.currentCompanyId;
 
       if (!companyId) {
-        return { data: [], success: true, total: 0 };
+        setData([]);
+        setPagination(prev => ({ ...prev, total: 0 }));
+        setLoading(false);
+        return;
       }
 
       const response = await getJoinRequests(companyId, 'pending');
 
       if (response.success && response.data) {
-        // 前端过滤关键字
         let filteredData = response.data;
-        if (keyword) {
+        if (currentParams.search) {
+          const keyword = currentParams.search.toLowerCase();
           filteredData = response.data.filter(item =>
-            item.username.toLowerCase().includes(keyword.toLowerCase()) ||
-            (item.reason && item.reason.toLowerCase().includes(keyword.toLowerCase()))
+            item.username.toLowerCase().includes(keyword) ||
+            (item.reason && item.reason.toLowerCase().includes(keyword))
           );
         }
 
-        return {
-          data: filteredData,
-          success: true,
+        setData(filteredData);
+        setPagination(prev => ({
+          ...prev,
+          page: currentParams.page ?? prev.page,
+          pageSize: currentParams.pageSize ?? prev.pageSize,
           total: filteredData.length,
-        };
+        }));
+      } else {
+        setData([]);
+        setPagination(prev => ({ ...prev, total: 0 }));
       }
-
-      return {
-        data: [],
-        success: false,
-        total: 0,
-      };
     } catch (error) {
       console.error('获取待审核申请失败:', error);
-      // 注意：这是 ProTable request 函数的特殊处理模式
-      // 错误已被全局错误处理捕获并显示错误提示，这里返回空数据让表格显示空状态
-      // 这是为了在错误已由全局处理显示的情况下，避免表格显示错误状态
-      return {
-        data: [],
-        success: false,
-        total: 0,
-      };
+      setData([]);
+      setPagination(prev => ({ ...prev, total: 0 }));
+    } finally {
+      setLoading(false);
     }
   }, []);
 
-  // 刷新处理
-  const handleRefresh = useCallback(() => {
-    actionRef.current?.reload?.();
-  }, []);
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
-  // 审核通过
+  const handleSearch = useCallback((params: PageParams) => {
+    searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
+    fetchData();
+  }, [fetchData]);
+
+  const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+    const newPage = pag.current;
+    const newPageSize = pag.pageSize;
+    const sortBy = sorter?.field;
+    const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
+
+    searchParamsRef.current = {
+      ...searchParamsRef.current,
+      page: newPage,
+      pageSize: newPageSize,
+      sortBy,
+      sortOrder,
+    };
+    fetchData();
+  }, [fetchData]);
+
+  const handleRefresh = useCallback(() => {
+    fetchData();
+  }, [fetchData]);
+
   const handleApprove = async (record: API.JoinRequestDetail) => {
     modal.confirm({
       title: intl.formatMessage({ id: 'pages.modal.confirmApprove' }, { username: record.username }),
@@ -117,14 +136,11 @@ const PendingJoinRequests: React.FC = () => {
 
           if (response.success) {
             message.success(intl.formatMessage({ id: 'pages.message.applicationApproved' }));
-            actionRef.current?.reload?.();
+            fetchData();
           } else {
-            // 失败时抛出错误，由全局错误处理统一处理
             throw new Error(response.message || intl.formatMessage({ id: 'pages.message.operationFailed' }));
           }
         } catch (error) {
-          // 错误已被全局错误处理捕获并显示
-          // 重新抛出以确保 Modal.confirm 在错误时不关闭（Ant Design 默认行为）
           throw error;
         } finally {
           setLoading(false);
@@ -133,7 +149,6 @@ const PendingJoinRequests: React.FC = () => {
     });
   };
 
-  // 拒绝申请
   const handleReject = (record: API.JoinRequestDetail) => {
     let rejectReason = '';
 
@@ -168,14 +183,11 @@ const PendingJoinRequests: React.FC = () => {
 
           if (response.success) {
             message.success(intl.formatMessage({ id: 'pages.message.applicationRejected' }));
-            actionRef.current?.reload?.();
+            fetchData();
           } else {
-            // 失败时抛出错误，由全局错误处理统一处理
             throw new Error(response.message || intl.formatMessage({ id: 'pages.message.operationFailed' }));
           }
         } catch (error) {
-          // 错误已被全局错误处理捕获并显示
-          // 重新抛出以确保 Modal.confirm 在错误时不关闭（Ant Design 默认行为）
           throw error;
         } finally {
           setLoading(false);
@@ -184,9 +196,6 @@ const PendingJoinRequests: React.FC = () => {
     });
   };
 
-  /**
-   * 初始化列宽调整功能
-   */
   useEffect(() => {
     if (!tableRef.current) return;
 
@@ -204,7 +213,6 @@ const PendingJoinRequests: React.FC = () => {
       let startWidth = 0;
 
       const handleMouseDown = (e: MouseEvent, header: HTMLElement) => {
-        // 只允许在表头右边缘 5px 内拖动
         const rect = header.getBoundingClientRect();
         const edgeThreshold = 5;
         const isNearRightEdge = e.clientX >= rect.right - edgeThreshold;
@@ -229,7 +237,7 @@ const PendingJoinRequests: React.FC = () => {
         if (!isResizing || !currentHeader) return;
 
         const diff = e.clientX - startX;
-        const newWidth = Math.max(50, startWidth + diff); // 最小宽度 50px
+        const newWidth = Math.max(50, startWidth + diff);
         currentHeader.style.width = `${newWidth}px`;
         currentHeader.style.minWidth = `${newWidth}px`;
         currentHeader.style.maxWidth = `${newWidth}px`;
@@ -272,14 +280,11 @@ const PendingJoinRequests: React.FC = () => {
       }
     };
 
-    // 延迟初始化，确保表格已渲染
     let timer: NodeJS.Timeout | null = setTimeout(() => {
       initResizeHandlers();
     }, 300);
 
-    // 监听表格变化，重新初始化
     const observer = new MutationObserver(() => {
-      // 防抖，避免频繁初始化
       if (timer) {
         clearTimeout(timer);
       }
@@ -301,7 +306,6 @@ const PendingJoinRequests: React.FC = () => {
       }
       observer.disconnect();
 
-      // 清理事件监听器
       if (tableRef.current) {
         const thead = tableRef.current.querySelector('thead');
         if (thead) {
@@ -324,6 +328,8 @@ const PendingJoinRequests: React.FC = () => {
     {
       title: intl.formatMessage({ id: 'pages.table.applicant' }),
       dataIndex: 'username',
+      key: 'username',
+      sorter: true,
       render: (_, record: API.JoinRequestDetail) => (
         <div>
           <div>
@@ -340,22 +346,23 @@ const PendingJoinRequests: React.FC = () => {
     {
       title: intl.formatMessage({ id: 'pages.table.applyReason' }),
       dataIndex: 'reason',
+      key: 'reason',
+      sorter: true,
       ellipsis: true,
       render: (text: string) => text || <span style={{ color: '#999' }}>{intl.formatMessage({ id: 'pages.table.noReason' })}</span>,
     },
     {
       title: intl.formatMessage({ id: 'pages.table.applyTime' }),
       dataIndex: 'createdAt',
-      sorter: (a: API.JoinRequestDetail, b: API.JoinRequestDetail) => {
-        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return dateB - dateA; // Descending order
-      },
+      key: 'createdAt',
+      sorter: true,
       render: (_, record: API.JoinRequestDetail) => formatDateTime(record.createdAt),
     },
     {
       title: intl.formatMessage({ id: 'pages.table.status' }),
       dataIndex: 'status',
+      key: 'status',
+      sorter: true,
       render: () => (
         <Space>
           <ClockCircleOutlined style={{ color: '#faad14' }} />
@@ -410,30 +417,31 @@ const PendingJoinRequests: React.FC = () => {
         </Space>
       }
     >
-      {/* 搜索表单 */}
       <SearchBar
         initialParams={searchParamsRef.current}
-        onSearch={(params) => {
-          searchParamsRef.current = { ...searchParamsRef.current, ...params };
-          actionRef.current?.reload?.();
-        }}
+        onSearch={handleSearch}
+        showResetButton={false}
         style={{ marginBottom: 16 }}
       />
 
-      <DataTable<API.JoinRequestDetail>
-        columns={columns}
-        actionRef={actionRef}
-        scroll={{ x: 'max-content' }}
-        search={false}
-        request={fetchPendingRequests}
-        rowKey="id"
-        pagination={{
-          pageSize: 10,
-          pageSizeOptions: [10, 20, 50, 100],
-          showSizeChanger: true,
-          showQuickJumper: true,
-        }}
-      />
+      <div ref={tableRef}>
+        <Table<API.JoinRequestDetail>
+          dataSource={data}
+          columns={columns}
+          rowKey="id"
+          loading={loading}
+          scroll={{ x: 'max-content' }}
+          onChange={handleTableChange}
+          pagination={{
+            current: pagination.page,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            pageSizeOptions: [10, 20, 50, 100],
+            showSizeChanger: true,
+            showQuickJumper: true,
+          }}
+        />
+      </div>
     </PageContainer>
   );
 };

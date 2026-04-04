@@ -1,11 +1,9 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PageContainer, StatCard } from '@/components';
 import useCommonStyles from '@/hooks/useCommonStyles';
-import DataTable from '@/components/DataTable';
 import SearchBar from '@/components/SearchBar';
-import type { ActionType } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
-import { Grid } from 'antd';
+import { Grid, Table } from 'antd';
 import {
     Button,
     Tag,
@@ -24,6 +22,7 @@ import {
     DatePicker,
     Progress,
     Alert,
+    DatePicker,
 } from 'antd';
 import { useMessage } from '@/hooks/useMessage';
 import { useModal } from '@/hooks/useModal';
@@ -32,22 +31,18 @@ import {
     ReloadOutlined,
     UndoOutlined,
     ClearOutlined,
-    EyeOutlined,
     DownloadOutlined,
     FileOutlined,
     FolderOutlined,
     CalendarOutlined,
     UserOutlined,
     ClockCircleOutlined,
-    ExclamationCircleOutlined,
     CloudOutlined,
     WarningOutlined,
-    HistoryOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
 const { useBreakpoint } = Grid;
-const { RangePicker } = DatePicker;
 
 import {
     getRecycleList,
@@ -68,14 +63,7 @@ import {
     type BatchPermanentDeleteRequest,
     type RecycleStatistics,
 } from '@/services/cloud-storage/recycleApi';
-
-interface SearchParams {
-    keyword?: string;
-    fileType?: string;
-    deletedBy?: string;
-    startDate?: string;
-    endDate?: string;
-}
+import type { PageParams } from '@/types/page-params';
 
 const CloudStorageRecyclePage: React.FC = () => {
     const intl = useIntl();
@@ -84,17 +72,17 @@ const CloudStorageRecyclePage: React.FC = () => {
     const screens = useBreakpoint();
     const isMobile = !screens.md;
 
-    // 表格引用
-    const actionRef = useRef<ActionType | null>(null);
-
     // 状态管理
+    const [data, setData] = useState<RecycleItem[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
     const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
     const [selectedRows, setSelectedRows] = useState<RecycleItem[]>([]);
     const [statistics, setStatistics] = useState<RecycleStatistics | null>(null);
 
     // 搜索相关状态
-    const searchParamsRef = useRef<any>({
-        current: 1,
+    const searchParamsRef = useRef<PageParams>({
+        page: 1,
         pageSize: 20,
         search: '',
     });
@@ -111,6 +99,48 @@ const CloudStorageRecyclePage: React.FC = () => {
     // 表单
     const [restoreForm] = Form.useForm();
 
+    // 数据获取函数
+    const fetchData = useCallback(async () => {
+        const currentParams = searchParamsRef.current;
+
+        setLoading(true);
+        try {
+            const listRequest: RecycleListRequest = {
+                search: currentParams.search,
+                page: currentParams.page,
+                pageSize: currentParams.pageSize,
+                sortBy: currentParams.sortBy,
+                sortOrder: currentParams.sortOrder,
+            };
+
+            const response = await getRecycleList(listRequest);
+
+            if (response.success && response.data) {
+                const normalizedList = (response.data.queryable || []).map((item: RecycleItem) => ({
+                    ...item,
+                    isFolder: item.isFolder ?? (item.type === 'folder' || item.type === 'Folder' || item.type === 1),
+                }));
+
+                setData(normalizedList);
+                setPagination(prev => ({
+                    ...prev,
+                    page: currentParams.page ?? prev.page,
+                    pageSize: currentParams.pageSize ?? prev.pageSize,
+                    total: response.data.rowCount ?? 0,
+                }));
+            } else {
+                setData([]);
+                setPagination(prev => ({ ...prev, total: 0 }));
+            }
+        } catch (err) {
+            console.error('Failed to load recycle items:', err);
+            setData([]);
+            setPagination(prev => ({ ...prev, total: 0 }));
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
     // 加载统计数据
     const loadStatistics = useCallback(async () => {
         try {
@@ -125,59 +155,37 @@ const CloudStorageRecyclePage: React.FC = () => {
 
     useEffect(() => {
         loadStatistics();
-    }, [loadStatistics]);
+        fetchData();
+    }, [loadStatistics, fetchData]);
 
     // 刷新处理
     const handleRefresh = useCallback(() => {
-        actionRef.current?.reload?.();
+        fetchData();
         loadStatistics();
-    }, [loadStatistics]);
+    }, [fetchData, loadStatistics]);
 
-    // 数据获取函数
-    const fetchData = useCallback(async (params: any) => {
-        const { current = 1, pageSize = 20 } = params;
+    // 搜索处理
+    const handleSearch = useCallback((params: PageParams) => {
+        searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
+        fetchData();
+    }, [fetchData]);
 
-        // 合并搜索参数，使用 ref 确保获取最新的搜索参数
-        const mergedParams = { ...searchParamsRef.current, ...params };
+    // 表格分页和排序处理
+    const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+        const newPage = pag.current;
+        const newPageSize = pag.pageSize;
+        const sortBy = sorter?.field;
+        const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
 
-        try {
-            const listRequest: RecycleListRequest = {
-                search: mergedParams.search,
-                page: current,
-                pageSize,
-                sortBy: 'deletedAt',
-                sortOrder: 'desc',
-            };
-
-            const response = await getRecycleList(listRequest);
-
-            if (response.success && response.data) {
-                const normalizedList = (response.data.queryable || []).map((item: RecycleItem) => ({
-                    ...item,
-                    isFolder: item.isFolder ?? (item.type === 'folder' || item.type === 'Folder' || item.type === 1),
-                }));
-
-                return {
-                    data: normalizedList,
-                    total: response.data.rowCount ?? 0,
-                    success: true,
-                };
-            }
-
-            return {
-                data: [],
-                total: 0,
-                success: false,
-            };
-        } catch (err) {
-            console.error('Failed to load recycle items:', err);
-            return {
-                data: [],
-                total: 0,
-                success: false,
-            };
-        }
-    }, []);
+        searchParamsRef.current = {
+            ...searchParamsRef.current,
+            page: newPage,
+            pageSize: newPageSize,
+            sortBy,
+            sortOrder,
+        };
+        fetchData();
+    }, [fetchData]);
 
 
     // 文件操作
@@ -214,12 +222,12 @@ const CloudStorageRecyclePage: React.FC = () => {
         try {
             await permanentDeleteItem(item.id);
             success('永久删除成功');
-            actionRef.current?.reload?.();
+            fetchData();
             loadStatistics();
         } catch (err) {
             error('永久删除失败');
         }
-    }, [success, error, loadStatistics]);
+    }, [success, error, fetchData, loadStatistics]);
 
     // 批量操作
     const handleBatchRestore = useCallback(async () => {
@@ -237,14 +245,14 @@ const CloudStorageRecyclePage: React.FC = () => {
                     success('批量恢复成功');
                     setSelectedRowKeys([]);
                     setSelectedRows([]);
-                    actionRef.current?.reload?.();
+                    fetchData();
                     loadStatistics();
                 } catch (err) {
                     error('批量恢复失败');
                 }
             },
         });
-    }, [selectedRowKeys, confirm, success, error, loadStatistics]);
+    }, [selectedRowKeys, confirm, success, error, fetchData, loadStatistics]);
 
     const handleBatchPermanentDelete = useCallback(async () => {
         if (selectedRowKeys.length === 0) {
@@ -271,14 +279,14 @@ const CloudStorageRecyclePage: React.FC = () => {
                     success('批量永久删除成功');
                     setSelectedRowKeys([]);
                     setSelectedRows([]);
-                    actionRef.current?.reload?.();
+                    fetchData();
                     loadStatistics();
                 } catch (err) {
                     error('批量永久删除失败');
                 }
             },
         });
-    }, [selectedRowKeys, confirm, success, error, loadStatistics]);
+    }, [selectedRowKeys, confirm, success, error, fetchData, loadStatistics]);
 
     // 清空回收站
     const handleEmptyRecycleBin = useCallback(async () => {
@@ -303,7 +311,7 @@ const CloudStorageRecyclePage: React.FC = () => {
                         success(`清空回收站成功，删除了 ${response.data.deletedCount} 个文件，释放了 ${formatFileSize(response.data.freedSpace)} 空间`);
                     }
                     setCleanupProgress(null);
-                    actionRef.current?.reload?.();
+                    fetchData();
                     loadStatistics();
                 } catch (err) {
                     error('清空回收站失败');
@@ -311,7 +319,7 @@ const CloudStorageRecyclePage: React.FC = () => {
                 }
             },
         });
-    }, [confirm, success, error, loadStatistics]);
+    }, [confirm, success, error, fetchData, loadStatistics]);
 
     // 自动清理过期文件
     const handleAutoCleanup = useCallback(async () => {
@@ -324,14 +332,14 @@ const CloudStorageRecyclePage: React.FC = () => {
                     if (response.success && response.data) {
                         success(`自动清理完成，删除了 ${response.data.deletedCount} 个过期文件，释放了 ${formatFileSize(response.data.freedSpace)} 空间`);
                     }
-                    actionRef.current?.reload?.();
+                    fetchData();
                     loadStatistics();
                 } catch (err) {
                     error('自动清理失败');
                 }
             },
         });
-    }, [confirm, success, error, loadStatistics]);
+    }, [confirm, success, error, fetchData, loadStatistics]);
 
     // 恢复文件
     const handleRestoreSubmit = useCallback(async (values: any) => {
@@ -349,12 +357,12 @@ const CloudStorageRecyclePage: React.FC = () => {
             setRestoreVisible(false);
             setRestoringItem(null);
             restoreForm.resetFields();
-            actionRef.current?.reload?.();
+            fetchData();
             loadStatistics();
         } catch (err) {
             error('恢复失败');
         }
-    }, [restoringItem, success, error, restoreForm, loadStatistics]);
+    }, [restoringItem, success, error, restoreForm, fetchData, loadStatistics]);
 
     // 格式化文件大小
     const formatFileSize = useCallback((bytes: number) => {
@@ -421,6 +429,7 @@ const CloudStorageRecyclePage: React.FC = () => {
             title: '名称',
             dataIndex: 'name',
             key: 'name',
+            sorter: true,
             render: (text: string, record: RecycleItem) => (
                 <Space>
                     {getFileIcon(record)}
@@ -437,11 +446,13 @@ const CloudStorageRecyclePage: React.FC = () => {
             title: '原路径',
             dataIndex: 'originalPath',
             key: 'originalPath',
+            sorter: true,
         },
         {
             title: '大小',
             dataIndex: 'size',
             key: 'size',
+            sorter: true,
             render: (size: number, record: RecycleItem) =>
                 record.isFolder ? '-' : formatFileSize(size),
         },
@@ -449,12 +460,14 @@ const CloudStorageRecyclePage: React.FC = () => {
             title: '删除时间',
             dataIndex: 'deletedAt',
             key: 'deletedAt',
+            sorter: true,
             render: (time: string) => formatDateTime(time),
         },
         {
             title: '删除者',
             dataIndex: 'deletedByName',
             key: 'deletedByName',
+            sorter: true,
         },
         {
             title: '过期状态',
@@ -630,10 +643,8 @@ const CloudStorageRecyclePage: React.FC = () => {
             {/* 搜索表单 */}
             <SearchBar
                 initialParams={searchParamsRef.current}
-                onSearch={(params) => {
-                    searchParamsRef.current = { ...searchParamsRef.current, ...params };
-                    actionRef.current?.reload?.();
-                }}
+                onSearch={handleSearch}
+                showResetButton={false}
                 style={{ marginBottom: 16 }}
             />
 
@@ -656,18 +667,21 @@ const CloudStorageRecyclePage: React.FC = () => {
             )}
 
             {/* 数据表格 */}
-            <DataTable
-                actionRef={actionRef}
+            <Table<RecycleItem>
+                dataSource={data}
                 columns={columns}
-                request={fetchData}
                 rowKey="id"
-                search={false}
+                loading={loading}
                 scroll={{ x: 'max-content' }}
+                onChange={handleTableChange}
                 pagination={{
-                    pageSize: 20,
+                    current: pagination.page,
+                    pageSize: pagination.pageSize,
+                    total: pagination.total,
                     pageSizeOptions: [10, 20, 50, 100],
                     showSizeChanger: true,
                     showQuickJumper: true,
+                    showTotal: (total) => `共 ${total} 条`,
                 }}
                 rowSelection={{
                     selectedRowKeys,

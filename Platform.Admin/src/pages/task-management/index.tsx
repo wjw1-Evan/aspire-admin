@@ -1,10 +1,9 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import type { ActionType, RequestParams } from '@/types/pro-components';
+import type { ActionType } from '@/types/pro-components';
 import type { ColumnsType } from 'antd/es/table';
 import { PageContainer } from '@/components';
 import SearchBar from '@/components/SearchBar';
 import useCommonStyles from '@/hooks/useCommonStyles';
-import DataTable from '@/components/DataTable';
 import { useIntl, history, useLocation } from '@umijs/max';
 import {
   Button,
@@ -22,6 +21,7 @@ import {
   Select,
   Progress,
   Grid,
+  Table,
 } from 'antd';
 import { useMessage } from '@/hooks/useMessage';
 import { useModal } from '@/hooks/useModal';
@@ -61,6 +61,7 @@ import UnifiedNotificationCenter from '@/components/UnifiedNotificationCenter';
 import { getProjectList, type ProjectDto } from '@/services/task/project';
 import { StatCard } from '@/components';
 import type { SearchFormValues, TaskQueryParams } from './types';
+import type { PageParams } from '@/types/page-params';
 
 // 提取纯函数到组件外部，避免每次渲染都重新创建
 const getStatusColor = (status: number) => {
@@ -129,31 +130,26 @@ const TaskManagement: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [projects, setProjects] = useState<ProjectDto[]>([]);
   const [selectedRows, setSelectedRows] = useState<TaskDto[]>([]);
-  const [searchParams, setSearchParams] = useState({
-    page: 1,
-    pageSize: 10,
-    sortBy: 'CreatedAt',
-    sortOrder: 'desc',
-    search: undefined as string | undefined,
-    status: undefined as number | undefined,
-    priority: undefined as number | undefined,
-    assignedTo: undefined as string | undefined,
-    taskType: undefined as string | undefined,
-    projectId: undefined as string | undefined,
-  });
+  const [data, setData] = useState<TaskDto[]>([]);
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
 
-  // 🔧 修复：使用 ref 存储搜索参数，避免 fetchTasks 函数重新创建导致重复请求
-  const searchParamsRef = useRef({
+  const searchParamsRef = useRef<PageParams & {
+    status?: number;
+    priority?: number;
+    assignedTo?: string;
+    taskType?: string;
+    projectId?: string;
+  }>({
     page: 1,
     pageSize: 10,
     sortBy: 'CreatedAt',
     sortOrder: 'desc',
-    search: undefined as string | undefined,
-    status: undefined as number | undefined,
-    priority: undefined as number | undefined,
-    assignedTo: undefined as string | undefined,
-    taskType: undefined as string | undefined,
-    projectId: undefined as string | undefined,
+    search: '',
+    status: undefined,
+    priority: undefined,
+    assignedTo: undefined,
+    taskType: undefined,
+    projectId: undefined,
   });
   const { styles } = useCommonStyles();
 
@@ -185,7 +181,8 @@ const TaskManagement: React.FC = () => {
   useEffect(() => {
     fetchStatistics();
     loadProjects();
-  }, [fetchStatistics, loadProjects]);
+    fetchData();
+  }, [fetchStatistics, loadProjects, fetchData]);
 
   // 处理 URL 查询参数（taskId, status, priority, search 等）
   useEffect(() => {
@@ -228,8 +225,7 @@ const TaskManagement: React.FC = () => {
 
     // 如果有过滤参数，重载数据
     if (shouldReload) {
-      setSearchParams({ ...searchParamsRef.current });
-      actionRef.current?.reload?.();
+      fetchData();
     }
 
     // 处理 taskId 弹出详情
@@ -255,57 +251,49 @@ const TaskManagement: React.FC = () => {
         setViewingTask(null);
       }
     }
-  }, [location?.search]);
+  }, [location?.search, fetchData]);
 
   // 获取任务列表
-  const fetchTasks = useCallback(async (params: RequestParams, sort?: Record<string, 'ascend' | 'descend'>) => {
-    let sortBy = searchParamsRef.current.sortBy;
-    let sortOrder = searchParamsRef.current.sortOrder;
-
-    if (sort && Object.keys(sort).length > 0) {
-      const sortKey = Object.keys(sort)[0];
-      const sortValue = sort[sortKey];
-      sortBy = sortKey;
-      sortOrder = sortValue === 'ascend' ? 'asc' : 'desc';
-    }
+  const fetchData = useCallback(async () => {
+    const currentParams = searchParamsRef.current;
 
     const requestData: TaskQueryParams = {
-      Page: params.current || searchParamsRef.current.page,
-      PageSize: params.pageSize || searchParamsRef.current.pageSize,
-      SortBy: sortBy,
-      SortOrder: sortOrder,
-      Search: searchParamsRef.current.search,
-      Status: searchParamsRef.current.status,
-      Priority: searchParamsRef.current.priority,
-      AssignedTo: searchParamsRef.current.assignedTo,
-      TaskType: searchParamsRef.current.taskType,
-      ProjectId: searchParamsRef.current.projectId,
+      Page: currentParams.page ?? 1,
+      PageSize: currentParams.pageSize ?? 10,
+      SortBy: currentParams.sortBy,
+      SortOrder: currentParams.sortOrder,
+      Search: currentParams.search,
+      Status: currentParams.status,
+      Priority: currentParams.priority,
+      AssignedTo: currentParams.assignedTo,
+      TaskType: currentParams.taskType,
+      ProjectId: currentParams.projectId,
     };
 
+    setLoading(true);
     try {
       const response = await queryTasks(requestData);
 
       if (response.success && response.data) {
-        return {
-          data: response.data.queryable || [],
-          success: true,
+        setData(response.data.queryable || []);
+        setPagination(prev => ({
+          ...prev,
+          page: currentParams.page ?? prev.page,
+          pageSize: currentParams.pageSize ?? prev.pageSize,
           total: response.data.rowCount ?? 0,
-        };
+        }));
+      } else {
+        setData([]);
+        setPagination(prev => ({ ...prev, total: 0 }));
       }
-      return {
-        data: [],
-        success: false,
-        total: 0,
-      };
     } catch (error) {
       message.error(intl.formatMessage({ id: 'pages.message.loadFailed' }));
-      return {
-        data: [],
-        success: false,
-        total: 0,
-      };
+      setData([]);
+      setPagination(prev => ({ ...prev, total: 0 }));
+    } finally {
+      setLoading(false);
     }
-  }, [intl]); // 🔧 修复：移除 searchParams 依赖，使用 ref 避免函数重新创建
+  }, [intl]);
 
   // 处理创建任务
   const handleCreateTask = useCallback(() => {
@@ -556,16 +544,34 @@ const TaskManagement: React.FC = () => {
     setSelectedRows(selectedRows);
   }, []);
 
-  // 请求函数（使用 useCallback 包装）
-  const requestFunction = useCallback(async (params: RequestParams, sort?: Record<string, 'ascend' | 'descend'>) => {
-    return fetchTasks(params, sort);
-  }, [fetchTasks]);
+  // 搜索处理
+  const handleSearch = useCallback((params: PageParams) => {
+    searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
+    fetchData();
+  }, [fetchData]);
+
+  // 表格分页和排序处理
+  const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+    const newPage = pag.current;
+    const newPageSize = pag.pageSize;
+    const sortBy = sorter?.field;
+    const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
+    
+    searchParamsRef.current = {
+      ...searchParamsRef.current,
+      page: newPage,
+      pageSize: newPageSize,
+      sortBy,
+      sortOrder,
+    };
+    fetchData();
+  }, [fetchData]);
 
   // 刷新处理
   const handleRefresh = useCallback(() => {
-    actionRef.current?.reload?.();
+    fetchData();
     fetchStatistics();
-  }, [fetchStatistics]);
+  }, [fetchData, fetchStatistics]);
 
   // 关闭表单处理
   const handleFormClose = useCallback(() => {
@@ -658,26 +664,28 @@ const TaskManagement: React.FC = () => {
       {/* 搜索表单 */}
       <SearchBar
         initialParams={searchParamsRef.current}
-        onSearch={(params) => {
-          searchParamsRef.current = { ...searchParamsRef.current, ...params };
-          setSearchParams({ ...searchParamsRef.current });
-          actionRef.current?.reload?.();
-        }}
+        onSearch={handleSearch}
+        showResetButton={false}
         style={{ marginBottom: 16 }}
       />
 
       {/* 任务列表表格 */}
       <div ref={tableRef}>
-        <DataTable<TaskDto>
-          actionRef={actionRef}
+        <Table<TaskDto>
+          dataSource={data}
           columns={columns}
-          request={requestFunction}
           rowKey="id"
+          loading={loading}
           scroll={{ x: 'max-content' }}
-          search={false}
+          onChange={handleTableChange}
           pagination={{
-            pageSize: 10,
+            current: pagination.page,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
             pageSizeOptions: [10, 20, 50, 100],
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total) => `共 ${total} 条`,
           }}
           rowSelection={{
             onChange: handleRowSelectionChange,

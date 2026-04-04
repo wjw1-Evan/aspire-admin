@@ -203,10 +203,11 @@ export const iotService = {
       data,
     }),
 
-  getGateways: (page = 1, pageSize = 20, keyword?: string, status?: string) => {
+  getGateways: (page = 1, pageSize = 20, keyword?: string, sortBy?: string, sortOrder?: string) => {
     let url = `${API_PREFIX}/gateways?page=${page}&pageSize=${pageSize}`;
     if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
-    if (status) url += `&status=${encodeURIComponent(status)}`;
+    if (sortBy) url += `&sortBy=${encodeURIComponent(sortBy)}`;
+    if (sortOrder) url += `&sortOrder=${encodeURIComponent(sortOrder)}`;
     return request<ApiResponse<PagedResult<IoTGateway>>>(
       url,
       { method: 'GET' }
@@ -229,10 +230,12 @@ export const iotService = {
   createDevice: (data: any) =>
     request<{ success: boolean; data: IoTDevice }>(`${API_PREFIX}/devices`, { method: 'POST', data }),
 
-  getDevices: (gatewayId?: string, page = 1, pageSize = 20, keyword?: string) => {
+  getDevices: (gatewayId?: string, page = 1, pageSize = 20, keyword?: string, sortBy?: string, sortOrder?: string) => {
     let url = `${API_PREFIX}/devices?page=${page}&pageSize=${pageSize}`;
     if (gatewayId) url += `&gatewayId=${gatewayId}`;
     if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
+    if (sortBy) url += `&sortBy=${encodeURIComponent(sortBy)}`;
+    if (sortOrder) url += `&sortOrder=${encodeURIComponent(sortOrder)}`;
     return request<ApiResponse<PagedResult<IoTDevice>>>(url, { method: 'GET' });
   },
 
@@ -295,10 +298,12 @@ export const iotService = {
   createDataPoint: (data: any) =>
     request<{ success: boolean; data: IoTDataPoint }>(`${API_PREFIX}/datapoints`, { method: 'POST', data }),
 
-  getDataPoints: (deviceId?: string, page = 1, pageSize = 20, keyword?: string) => {
+  getDataPoints: (deviceId?: string, page = 1, pageSize = 20, keyword?: string, sortBy?: string, sortOrder?: string) => {
     let url = `${API_PREFIX}/datapoints?page=${page}&pageSize=${pageSize}`;
     if (deviceId) url += `&deviceId=${deviceId}`;
     if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
+    if (sortBy) url += `&sortBy=${encodeURIComponent(sortBy)}`;
+    if (sortOrder) url += `&sortOrder=${encodeURIComponent(sortOrder)}`;
     return request<ApiResponse<PagedResult<IoTDataPoint>>>(url, { method: 'GET' });
   },
 

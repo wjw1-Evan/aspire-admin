@@ -1,6 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { PageContainer } from '@/components';
-import { Button, Space, message, Tag, Card, Form, Input, Tabs, Row, Col } from 'antd';
+import { Button, Space, message, Tag, Card, Form, Input, Tabs, Row, Col, Table } from 'antd';
 import {
   CheckOutlined,
   CloseOutlined,
@@ -11,9 +11,8 @@ import {
   ReloadOutlined,
   FileTextOutlined,
 } from '@ant-design/icons';
-import type { ActionType } from '@/types/pro-components';
-import { type ColumnsType } from 'antd/es/table';
-import { DataTable } from '@/components/DataTable';
+import type { ColumnsType, TablePaginationConfig } from 'antd/es/table';
+import type { SorterResult } from 'antd/es/table/interface';
 import {
   getPendingDocuments,
   getDocumentList,
@@ -54,7 +53,11 @@ import {
 const ApprovalPage: React.FC = () => {
   const intl = useIntl();
   const { initialState } = useModel('@@initialState');
-  const actionRef = useRef<ActionType>(null);
+
+  const [dataSource, setDataSource] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
+  const [currentTab, setCurrentTab] = useState('pending');
 
   // Modal 状态
   const [approvalModalVisible, setApprovalModalVisible] = useState(false);
@@ -95,10 +98,80 @@ const ApprovalPage: React.FC = () => {
   const searchParamsRef = useRef<any>({ search: '' });
   const [statistics, setStatistics] = useState<DocumentStatistics | null>(null);
 
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const sortKey = searchParamsRef.current.sortBy;
+      const sortValue = searchParamsRef.current.sortOrder;
+      let response;
+      if (currentTab === 'pending') {
+        response = await getPendingDocuments({
+          page: pagination.page,
+          pageSize: pagination.pageSize,
+          sortBy: sortKey,
+          sortOrder: sortValue === 'asc' ? 'asc' : sortValue === 'desc' ? 'desc' : undefined,
+          ...searchParamsRef.current,
+        });
+      } else if (currentTab === 'approved') {
+        response = await getDocumentList({
+          page: pagination.page,
+          pageSize: pagination.pageSize,
+          filterType: 'approved',
+          sortBy: sortKey,
+          sortOrder: sortValue === 'asc' ? 'asc' : sortValue === 'desc' ? 'desc' : undefined,
+          ...searchParamsRef.current,
+        });
+      } else {
+        response = await getDocumentList({
+          page: pagination.page,
+          pageSize: pagination.pageSize,
+          filterType: 'my',
+          sortBy: sortKey,
+          sortOrder: sortValue === 'asc' ? 'asc' : sortValue === 'desc' ? 'desc' : undefined,
+          ...searchParamsRef.current,
+        });
+      }
+      if (response.success && response.data) {
+        const resData: any = response.data;
+        setDataSource(resData.list || resData.data || []);
+        setPagination(prev => ({ ...prev, total: resData.total || 0 }));
+      } else {
+        setDataSource([]);
+        setPagination(prev => ({ ...prev, total: 0 }));
+      }
+    } catch {
+      setDataSource([]);
+      setPagination(prev => ({ ...prev, total: 0 }));
+    } finally {
+      setLoading(false);
+    }
+  }, [currentTab, pagination.page, pagination.pageSize]);
+
+  const handleTableChange = useCallback(
+    (pag: TablePaginationConfig, _filters: any, sorter: SorterResult<any> | SorterResult<any>[]) => {
+      const newPage = pag.current;
+      const newPageSize = pag.pageSize;
+      const sortBy = (sorter as any)?.field;
+      const sortOrder = (sorter as any)?.order === 'ascend' ? 'asc' : (sorter as any)?.order === 'descend' ? 'desc' : undefined;
+
+      setPagination(prev => ({ ...prev, page: newPage, pageSize: newPageSize }));
+      searchParamsRef.current = { ...searchParamsRef.current, page: newPage, pageSize: newPageSize, sortBy, sortOrder };
+      fetchData();
+    },
+    [fetchData]
+  );
+
   React.useEffect(() => {
     loadUsers();
     loadStatistics();
   }, []);
+
+  React.useEffect(() => {
+    setCurrentTab(activeTab);
+    setPagination(prev => ({ ...prev, page: 1 }));
+    searchParamsRef.current = { ...searchParamsRef.current, page: 1 };
+    fetchData();
+  }, [activeTab]);
 
   const loadStatistics = async () => {
     try {
@@ -123,7 +196,7 @@ const ApprovalPage: React.FC = () => {
   };
 
   const handleRefresh = () => {
-    actionRef.current?.reload?.();
+    fetchData();
   };
 
   const getDocStatus = (status?: DocumentStatus | null) => getStatusMeta(intl, status, documentStatusMap);
@@ -442,7 +515,7 @@ const ApprovalPage: React.FC = () => {
           setNodeFormInitialValues({});
           setCurrentInstanceId(null);
           setCurrentNodeId(null);
-          actionRef.current?.reload?.();
+          fetchData();
         }
       } else {
         message.error('缺少流程实例或节点信息');
@@ -467,7 +540,7 @@ const ApprovalPage: React.FC = () => {
           message.success(intl.formatMessage({ id: 'pages.document.approval.message.rejectSuccess' }));
           setRejectModalVisible(false);
           setCurrentDocument(null);
-          actionRef.current?.reload?.();
+          fetchData();
         }
       } else {
         message.error('缺少流程实例或节点信息');
@@ -496,7 +569,7 @@ const ApprovalPage: React.FC = () => {
           message.success(intl.formatMessage({ id: 'pages.document.approval.message.returnSuccess' }));
           setReturnModalVisible(false);
           setCurrentDocument(null);
-          actionRef.current?.reload?.();
+          fetchData();
         }
       } else {
         message.error('缺少流程实例或节点信息');
@@ -525,7 +598,7 @@ const ApprovalPage: React.FC = () => {
           message.success(intl.formatMessage({ id: 'pages.document.approval.message.delegateSuccess' }));
           setDelegateModalVisible(false);
           setCurrentDocument(null);
-          actionRef.current?.reload?.();
+          fetchData();
         }
       } else {
         message.error('缺少流程实例或节点信息');
@@ -592,21 +665,22 @@ const ApprovalPage: React.FC = () => {
       key: 'pending',
       label: intl.formatMessage({ id: 'pages.document.approval.tab.pending' }),
       children: (
-        <DataTable<Document>
-          actionRef={actionRef}
+        <Table<Document>
+          dataSource={dataSource}
           columns={columns}
-          request={async (params, sort) => {
-            const sortKey = sort ? Object.keys(sort)[0] : undefined;
-            const sortValue = sortKey ? sort[sortKey] : undefined;
-            const response = await getPendingDocuments({ page: params.current, pageSize: params.pageSize, sortBy: sortKey, sortOrder: sortValue === 'ascend' ? 'asc' : sortValue === 'descend' ? 'desc' : undefined, ...searchParamsRef.current });
-            if (response.success && response.data) {
-              const resData: any = response.data;
-              return { data: resData.list || resData.data || [], success: true, total: resData.total || 0 };
-            }
-            return { data: [], success: false, total: 0 };
-          }}
           rowKey="id"
-          search={false}
+          loading={loading}
+          scroll={{ x: 'max-content' }}
+          onChange={handleTableChange}
+          pagination={{
+            current: pagination.page,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            pageSizeOptions: [10, 20, 50, 100],
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total) => `共 ${total} 条`,
+          }}
         />
       ),
     },
@@ -614,21 +688,22 @@ const ApprovalPage: React.FC = () => {
       key: 'approved',
       label: intl.formatMessage({ id: 'pages.document.approval.tab.approved' }),
       children: (
-        <DataTable<Document>
-          actionRef={actionRef}
+        <Table<Document>
+          dataSource={dataSource}
           columns={columns}
-          request={async (params, sort) => {
-            const sortKey = sort ? Object.keys(sort)[0] : undefined;
-            const sortValue = sortKey ? sort[sortKey] : undefined;
-            const response = await getDocumentList({ page: params.current, pageSize: params.pageSize, filterType: 'approved', sortBy: sortKey, sortOrder: sortValue === 'ascend' ? 'asc' : sortValue === 'descend' ? 'desc' : undefined, ...searchParamsRef.current });
-            if (response.success && response.data) {
-              const resData: any = response.data;
-              return { data: resData.list || resData.data || [], success: true, total: resData.total || 0 };
-            }
-            return { data: [], success: false, total: 0 };
-          }}
           rowKey="id"
-          search={false}
+          loading={loading}
+          scroll={{ x: 'max-content' }}
+          onChange={handleTableChange}
+          pagination={{
+            current: pagination.page,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            pageSizeOptions: [10, 20, 50, 100],
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total) => `共 ${total} 条`,
+          }}
         />
       ),
     },
@@ -636,21 +711,22 @@ const ApprovalPage: React.FC = () => {
       key: 'my',
       label: intl.formatMessage({ id: 'pages.document.approval.tab.myInitiated' }),
       children: (
-        <DataTable<Document>
-          actionRef={actionRef}
+        <Table<Document>
+          dataSource={dataSource}
           columns={columns}
-          request={async (params, sort) => {
-            const sortKey = sort ? Object.keys(sort)[0] : undefined;
-            const sortValue = sortKey ? sort[sortKey] : undefined;
-            const response = await getDocumentList({ page: params.current, pageSize: params.pageSize, filterType: 'my', sortBy: sortKey, sortOrder: sortValue === 'ascend' ? 'asc' : sortValue === 'descend' ? 'desc' : undefined, ...searchParamsRef.current });
-            if (response.success && response.data) {
-              const resData: any = response.data;
-              return { data: resData.list || resData.data || [], success: true, total: resData.total || 0 };
-            }
-            return { data: [], success: false, total: 0 };
-          }}
           rowKey="id"
-          search={false}
+          loading={loading}
+          scroll={{ x: 'max-content' }}
+          onChange={handleTableChange}
+          pagination={{
+            current: pagination.page,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            pageSizeOptions: [10, 20, 50, 100],
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total) => `共 ${total} 条`,
+          }}
         />
       ),
     },
@@ -694,7 +770,8 @@ const ApprovalPage: React.FC = () => {
         initialParams={searchParamsRef.current}
         onSearch={(params) => {
           searchParamsRef.current = { ...searchParamsRef.current, ...params };
-          actionRef.current?.reload?.();
+          setPagination(prev => ({ ...prev, page: 1 }));
+          fetchData();
         }}
         style={{ marginBottom: 16 }}
       />
@@ -703,7 +780,6 @@ const ApprovalPage: React.FC = () => {
         activeKey={activeTab}
         onChange={(key) => {
           setActiveTab(key);
-          actionRef.current?.reload?.();
         }}
         items={tabItems}
       />

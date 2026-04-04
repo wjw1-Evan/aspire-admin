@@ -170,10 +170,10 @@ export async function getMyJoinRequests() {
 }
 
 /** 获取企业的申请列表（管理员） GET /api/company/{companyId}/join-requests */
-export async function getJoinRequests(companyId: string, status?: string) {
+export async function getJoinRequests(companyId: string, status?: string, sortBy?: string, sortOrder?: 'asc' | 'desc') {
   return request<ApiResponse<API.JoinRequestDetail[]>>(`/api/company/${companyId}/join-requests`, {
     method: 'GET',
-    params: { status },
+    params: { status, sortBy, sortOrder },
   });
 }
 

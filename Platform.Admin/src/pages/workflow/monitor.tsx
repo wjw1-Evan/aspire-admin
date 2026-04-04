@@ -1,10 +1,8 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PageContainer } from '@/components';
-import { Card, Tag, Space, Button, Modal, Grid } from 'antd';
+import { Card, Tag, Space, Button, Modal, Grid, Table } from 'antd';
 import { EyeOutlined, MonitorOutlined, ReloadOutlined, HistoryOutlined, FormOutlined } from '@ant-design/icons';
-import type { ActionType } from '@/types/pro-components';
 import type { ColumnsType } from 'antd/es/table';
-import { DataTable } from '@/components/DataTable';
 import {
   getWorkflowInstances,
   getWorkflowInstance,
@@ -24,6 +22,7 @@ import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import { getStatusMeta, workflowStatusMap, approvalActionMap } from '@/utils/statusMaps';
 import SearchBar from '@/components/SearchBar';
+import type { PageParams } from '@/types/page-params';
 
 const { useBreakpoint } = Grid;
 
@@ -31,7 +30,6 @@ const WorkflowMonitor: React.FC = () => {
   const intl = useIntl();
   const screens = useBreakpoint();
   const isMobile = !screens.md;
-  const actionRef = useRef<ActionType>(null);
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewInstance, setPreviewInstance] = useState<WorkflowInstance | null>(null);
   const [previewGraph, setPreviewGraph] = useState<WorkflowGraph | null>(null);
@@ -42,14 +40,76 @@ const WorkflowMonitor: React.FC = () => {
   const [nodeFormInitial, setNodeFormInitial] = useState<Record<string, any> | null>(null);
   const [nodeFormLoading, setNodeFormLoading] = useState(false);
   const [currentFormInstanceId, setCurrentFormInstanceId] = useState<string | null>(null);
-  const searchParamsRef = useRef<any>({
-    current: 1,
+  const [data, setData] = useState<WorkflowInstance[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
+
+  const searchParamsRef = useRef<PageParams>({
+    page: 1,
     pageSize: 20,
     search: '',
   });
 
+  const fetchData = useCallback(async () => {
+    const currentParams = searchParamsRef.current;
+
+    setLoading(true);
+    try {
+      const response = await getWorkflowInstances({
+        page: currentParams.page,
+        pageSize: currentParams.pageSize,
+        search: currentParams.search,
+        sortBy: currentParams.sortBy,
+        sortOrder: currentParams.sortOrder,
+      });
+      if (response.success && response.data) {
+        setData(response.data.queryable || []);
+        setPagination(prev => ({
+          ...prev,
+          page: currentParams.page ?? prev.page,
+          pageSize: currentParams.pageSize ?? prev.pageSize,
+          total: response.data.rowCount ?? 0,
+        }));
+      } else {
+        setData([]);
+        setPagination(prev => ({ ...prev, total: 0 }));
+      }
+    } catch (error) {
+      console.error('获取工作流实例列表失败:', error);
+      setData([]);
+      setPagination(prev => ({ ...prev, total: 0 }));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleSearch = useCallback((params: PageParams) => {
+    searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
+    fetchData();
+  }, [fetchData]);
+
+  const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+    const newPage = pag.current;
+    const newPageSize = pag.pageSize;
+    const sortBy = sorter?.field;
+    const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
+    
+    searchParamsRef.current = {
+      ...searchParamsRef.current,
+      page: newPage,
+      pageSize: newPageSize,
+      sortBy,
+      sortOrder,
+    };
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
   const handleRefresh = () => {
-    actionRef.current?.reload?.();
+    fetchData();
   };
 
   const getFlowStatus = (status?: WorkflowStatus | null) => getStatusMeta(intl, status, workflowStatusMap);
@@ -204,49 +264,27 @@ const WorkflowMonitor: React.FC = () => {
     >
       <SearchBar
         initialParams={searchParamsRef.current}
-        onSearch={(params) => {
-          searchParamsRef.current = { ...searchParamsRef.current, ...params };
-          actionRef.current?.reload?.();
-        }}
+        onSearch={handleSearch}
+        showResetButton={false}
         style={{ marginBottom: 16 }}
       />
 
-      <DataTable<WorkflowInstance>
-        actionRef={actionRef}
+      <Table<WorkflowInstance>
+        dataSource={data}
         columns={columns}
-        request={async (params, sort) => {
-          let sortBy: string | undefined;
-          let sortOrder: string | undefined;
-          if (sort && Object.keys(sort).length > 0) {
-            const sortKey = Object.keys(sort)[0];
-            const sortValue = sort[sortKey];
-            if (sortValue === 'ascend') {
-              sortBy = sortKey;
-              sortOrder = 'asc';
-            } else if (sortValue === 'descend') {
-              sortBy = sortKey;
-              sortOrder = 'desc';
-            }
-          }
-          const response = await getWorkflowInstances({
-            page: params.current,
-            pageSize: params.pageSize,
-            search: searchParamsRef.current.search,
-            sortBy,
-            sortOrder,
-          });
-          if (response.success && response.data) {
-            return {
-              data: response.data.queryable || [],
-              success: true,
-              total: response.data.rowCount ?? 0,
-            };
-          }
-          return { data: [], success: false, total: 0 };
-        }}
         rowKey="id"
-        search={false}
+        loading={loading}
         scroll={{ x: 'max-content' }}
+        onChange={handleTableChange}
+        pagination={{
+          current: pagination.page,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
+          pageSizeOptions: [10, 20, 50, 100],
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total) => `共 ${total} 条`,
+        }}
       />
 
       <Modal
@@ -364,12 +402,10 @@ const WorkflowMonitor: React.FC = () => {
               const res = await submitNodeForm(currentFormInstanceId!, previewInstance?.currentNodeId || '', values);
               if (res.success) {
                 setNodeFormVisible(false);
-                // 重置表单状态
                 setNodeFormDef(null);
                 setNodeFormInitial(null);
                 setCurrentFormInstanceId(null);
-                // 刷新表格数据
-                actionRef.current?.reload?.();
+                fetchData();
               }
             } catch (error) {
               console.error('提交表单失败:', error);

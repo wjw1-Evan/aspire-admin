@@ -1,10 +1,9 @@
 import React, { useCallback, useRef, useState, useEffect } from 'react';
-import { Card, Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typography, Descriptions, InputNumber, Tabs, Popconfirm, Rate, Switch, Drawer, List, Avatar, Empty, Flex } from 'antd';
+import { Card, Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typography, Descriptions, InputNumber, Tabs, Popconfirm, Rate, Switch, Drawer, List, Avatar, Empty, Flex, Table } from 'antd';
 import { useIntl, useSearchParams, history } from '@umijs/max';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, AppstoreOutlined, FormOutlined, CheckCircleOutlined, ClockCircleOutlined, StarOutlined, ReloadOutlined, SettingOutlined } from '@ant-design/icons';
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import type { ProColumns } from '@ant-design/pro-components';
 import PageContainer from '@/components/PageContainer';
-import { DataTable } from '@/components/DataTable';
 import SearchBar from '@/components/SearchBar';
 import StatCard from '@/components/StatCard';
 import * as parkService from '@/services/park';
@@ -19,7 +18,6 @@ const { Text, Title } = Typography;
 
 const EnterpriseService: React.FC = () => {
     const intl = useIntl();
-    const requestTableRef = useRef<ActionType>(null);
     const { message } = App.useApp();
     const [categoryForm] = Form.useForm();
     const [requestForm] = Form.useForm();
@@ -40,6 +38,10 @@ const EnterpriseService: React.FC = () => {
     const [currentRequest, setCurrentRequest] = useState<ServiceRequest | null>(null);
     const [isEdit, setIsEdit] = useState(false);
     const [tenants, setTenants] = useState<ParkTenant[]>([]);
+
+    const [requestsData, setRequestsData] = useState<ServiceRequest[]>([]);
+    const [requestsLoading, setRequestsLoading] = useState(false);
+    const [requestsPagination, setRequestsPagination] = useState({ page: 1, pageSize: 10, total: 0 });
 
     const loadStatistics = useCallback(async () => {
         try {
@@ -63,6 +65,43 @@ const EnterpriseService: React.FC = () => {
     }, []);
 
     useEffect(() => { loadStatistics(); loadCategories(); loadTenants(); }, [loadStatistics, loadCategories, loadTenants]);
+
+    const fetchRequests = useCallback(async () => {
+        setRequestsLoading(true);
+        try {
+            const res = await parkService.getServiceRequests({
+                page: requestsPagination.page,
+                pageSize: requestsPagination.pageSize,
+                search: searchParamsRef.current.search,
+            });
+            if (res.success && res.data) {
+                const paged = res.data as PagedResult<ServiceRequest>;
+                setRequestsData(paged.queryable ?? []);
+                setRequestsPagination(prev => ({ ...prev, total: paged.rowCount ?? 0 }));
+            } else {
+                setRequestsData([]);
+                setRequestsPagination(prev => ({ ...prev, total: 0 }));
+            }
+        } catch {
+            setRequestsData([]);
+            setRequestsPagination(prev => ({ ...prev, total: 0 }));
+        } finally {
+            setRequestsLoading(false);
+        }
+    }, [requestsPagination.page, requestsPagination.pageSize]);
+
+    const handleRequestsTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+        const newPage = pag.current;
+        const newPageSize = pag.pageSize;
+        setRequestsPagination(prev => ({ ...prev, page: newPage, pageSize: newPageSize }));
+        fetchRequests();
+    }, [fetchRequests]);
+
+    useEffect(() => {
+        if (activeTab === 'requests') {
+            fetchRequests();
+        }
+    }, [activeTab, fetchRequests]);
 
     // Handle URL parameters from tenant list quick action
     const [searchParams] = useSearchParams();
@@ -96,6 +135,7 @@ const EnterpriseService: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.service.request.title', defaultMessage: '服务标题' }),
             dataIndex: 'title',
+            sorter: true,
             width: 200,
             render: (_, record) => (
                 <Space>
@@ -107,18 +147,21 @@ const EnterpriseService: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.service.request.category', defaultMessage: '类别' }),
             dataIndex: 'categoryName',
+            sorter: true,
             width: 100,
             render: (text) => <Tag>{text || '-'}</Tag>,
         },
         {
             title: intl.formatMessage({ id: 'pages.park.service.request.tenant', defaultMessage: '所属租户' }),
             dataIndex: 'tenantName',
+            sorter: true,
             width: 150,
             render: (text) => text || <Text type="secondary">-</Text>,
         },
         {
             title: intl.formatMessage({ id: 'pages.park.service.request.contact', defaultMessage: '联系人' }),
             dataIndex: 'contactPerson',
+            sorter: true,
             width: 120,
             render: (text, record) => (
                 <Flex vertical gap={0}>
@@ -130,6 +173,7 @@ const EnterpriseService: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.service.request.priority', defaultMessage: '优先级' }),
             dataIndex: 'priority',
+            sorter: true,
             width: 80,
             render: (priority) => {
                 const opt = priorityOptions.find(o => o.value === priority);
@@ -139,6 +183,7 @@ const EnterpriseService: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.service.request.status', defaultMessage: '状态' }),
             dataIndex: 'status',
+            sorter: true,
             width: 100,
             render: (status) => {
                 const opt = statusOptions.find(o => o.value === status);
@@ -148,12 +193,14 @@ const EnterpriseService: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.service.request.rating', defaultMessage: '评分' }),
             dataIndex: 'rating',
+            sorter: true,
             width: 120,
             render: (rating) => rating ? <Rate disabled defaultValue={rating as number} style={{ fontSize: 12 }} /> : '-',
         },
         {
             title: intl.formatMessage({ id: 'pages.park.service.request.createdAt', defaultMessage: '创建时间' }),
             dataIndex: 'createdAt',
+            sorter: true,
             width: 120,
             render: (date) => dayjs(date as string).format('YYYY-MM-DD HH:mm'),
         },
@@ -187,9 +234,11 @@ const EnterpriseService: React.FC = () => {
         },
     ];
 
-    const fetchRequests = async (params: any) => {
+    const fetchRequests = async (params: any, sort: any) => {
+        const sortBy = sort?.sortKey;
+        const sortOrder = sort?.sortOrder === 'ascend' ? 'asc' : sort?.sortOrder === 'descend' ? 'desc' : undefined;
         try {
-            const res = await parkService.getServiceRequests({ page: params.current || 1, pageSize: params.pageSize || 10, search: params.search, status: params.status, categoryId: params.categoryId, priority: params.priority });
+            const res = await parkService.getServiceRequests({ page: params.current || 1, pageSize: params.pageSize || 10, search: params.search, status: params.status, categoryId: params.categoryId, priority: params.priority, sortBy, sortOrder });
             if (res.success && res.data) {
               const paged = res.data as PagedResult<ServiceRequest>;
               return { data: paged.queryable ?? [], total: paged.rowCount ?? 0, success: true };
@@ -201,14 +250,14 @@ const EnterpriseService: React.FC = () => {
     const handleViewRequest = (request: ServiceRequest) => { setCurrentRequest(request); setDetailDrawerVisible(true); };
     const handleUpdateStatus = (request: ServiceRequest) => { setCurrentRequest(request); statusForm.setFieldsValue({ status: request.status }); setStatusModalVisible(true); };
     const handleRateRequest = (request: ServiceRequest) => { setCurrentRequest(request); ratingForm.resetFields(); setRatingModalVisible(true); };
-    const handleDeleteRequest = async (id: string) => { setLoading(true); try { const res = await parkService.deleteServiceRequest(id); if (res.success) { message.success('删除成功'); requestTableRef.current?.reload(); loadStatistics(); } } catch (e) { message.error('删除失败'); } finally { setLoading(false); } };
+    const handleDeleteRequest = async (id: string) => { setLoading(true); try { const res = await parkService.deleteServiceRequest(id); if (res.success) { message.success('删除成功'); fetchRequests(); loadStatistics(); } } catch (e) { message.error('删除失败'); } finally { setLoading(false); } };
     const handleAddRequest = () => { setCurrentRequest(null); setIsEdit(false); requestForm.resetFields(); setRequestModalVisible(true); };
 
     const handleRequestSubmit = async () => {
         try {
             const values = await requestForm.validateFields(); setLoading(true);
             const res = await parkService.createServiceRequest(values);
-            if (res.success) { message.success('创建成功'); setRequestModalVisible(false); requestTableRef.current?.reload(); loadStatistics(); }
+            if (res.success) { message.success('创建成功'); setRequestModalVisible(false); fetchRequests(); loadStatistics(); }
         } catch (e) { console.error(e); } finally { setLoading(false); }
     };
 
@@ -217,7 +266,7 @@ const EnterpriseService: React.FC = () => {
             const values = await statusForm.validateFields(); setLoading(true);
             if (currentRequest) {
                 const res = await parkService.updateServiceRequestStatus(currentRequest.id, values);
-                if (res.success) { message.success('状态更新成功'); setStatusModalVisible(false); requestTableRef.current?.reload(); loadStatistics(); }
+                if (res.success) { message.success('状态更新成功'); setStatusModalVisible(false); fetchRequests(); loadStatistics(); }
             }
         } catch (e) { console.error(e); } finally { setLoading(false); }
     };
@@ -227,7 +276,7 @@ const EnterpriseService: React.FC = () => {
             const values = await ratingForm.validateFields(); setLoading(true);
             if (currentRequest) {
                 const res = await parkService.rateServiceRequest(currentRequest.id, values);
-                if (res.success) { message.success('评价成功'); setRatingModalVisible(false); requestTableRef.current?.reload(); loadStatistics(); }
+                if (res.success) { message.success('评价成功'); setRatingModalVisible(false); fetchRequests(); loadStatistics(); }
             }
         } catch (e) { console.error(e); } finally { setLoading(false); }
     };
@@ -247,7 +296,7 @@ const EnterpriseService: React.FC = () => {
 
     const handleRefresh = () => {
         if (activeTab === 'requests') {
-            requestTableRef.current?.reload();
+            fetchRequests();
         } else {
             loadCategories();
         }
@@ -306,11 +355,28 @@ const EnterpriseService: React.FC = () => {
                                         initialParams={searchParamsRef.current}
                                         onSearch={(params) => {
                                             searchParamsRef.current = { ...searchParamsRef.current, ...params };
-                                            requestTableRef.current?.reload();
+                                            setRequestsPagination(prev => ({ ...prev, page: 1 }));
+                                            fetchRequests();
                                         }}
                                         style={{ marginBottom: 16 }}
                                     />
-                                    <DataTable<ServiceRequest> actionRef={requestTableRef} columns={requestColumns as any} request={fetchRequests} rowKey="id" scroll={{ x: 1200 }} search={false} />
+                                    <Table<ServiceRequest>
+                                        dataSource={requestsData}
+                                        columns={requestColumns as any}
+                                        rowKey="id"
+                                        loading={requestsLoading}
+                                        onChange={handleRequestsTableChange}
+                                        pagination={{
+                                            current: requestsPagination.page,
+                                            pageSize: requestsPagination.pageSize,
+                                            total: requestsPagination.total,
+                                            pageSizeOptions: [10, 20, 50, 100],
+                                            showSizeChanger: true,
+                                            showQuickJumper: true,
+                                            showTotal: (total) => `共 ${total} 条`,
+                                        }}
+                                        scroll={{ x: 1200 }}
+                                    />
                                 </>
                             ),
                         },

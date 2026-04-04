@@ -7,11 +7,10 @@
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { PageContainer, StatCard } from '@/components';
 import useCommonStyles from '@/hooks/useCommonStyles';
-import DataTable from '@/components/DataTable';
 import SearchBar from '@/components/SearchBar';
 import type { ActionType } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
-import { Grid } from 'antd';
+import { Grid, Table } from 'antd';
 import {
     Button,
     Tag,
@@ -94,6 +93,7 @@ import {
 // 导入工具函数和类型
 import type { SearchParams, PathHistoryItem, UploadProgressItem, OfficeContent } from './types';
 import { MAX_UPLOAD_BYTES, formatFileSize, formatDateTime, getFileIcon, transformFileItem, isImageFile } from './utils';
+import type { PageParams } from '@/types/page-params';
 
 const CloudStorageFilesPage: React.FC = () => {
     const intl = useIntl();
@@ -125,6 +125,11 @@ const CloudStorageFilesPage: React.FC = () => {
     });
     const { styles } = useCommonStyles();
     const [isSearchMode, setIsSearchMode] = useState(false);
+
+    // 数据状态
+    const [data, setData] = useState<FileItem[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
 
     // 弹窗状态
     const [detailVisible, setDetailVisible] = useState(false);
@@ -177,7 +182,8 @@ const CloudStorageFilesPage: React.FC = () => {
 
     useEffect(() => {
         loadStatistics();
-    }, [loadStatistics]);
+        fetchData();
+    }, [loadStatistics, fetchData]);
 
     // 组件卸载时清理 Blob URL
     useEffect(() => {
@@ -190,36 +196,26 @@ const CloudStorageFilesPage: React.FC = () => {
 
     // 刷新处理
     const handleRefresh = useCallback(() => {
-        actionRef.current?.reload?.();
+        fetchData();
         loadStatistics();
-    }, [loadStatistics]);
+    }, [loadStatistics, fetchData]);
 
     // 数据获取函数
-    const fetchData = useCallback(async (params: any, sorter: any) => {
-        const { current = 1, pageSize = 20 } = params;
+    const fetchData = useCallback(async () => {
+        const currentParams = searchParamsRef.current;
+        const { page = 1, pageSize = 20, search } = currentParams;
+        const sortBy = currentParams.sortBy || 'updatedAt';
+        const sortOrder = currentParams.sortOrder || 'desc';
 
-        let sortBy = 'updatedAt';
-        let sortOrder: 'asc' | 'desc' = 'desc';
-
-        if (sorter && Object.keys(sorter).length > 0) {
-            const field = Object.keys(sorter)[0];
-            const order = sorter[field];
-            if (order) {
-                sortBy = field;
-                sortOrder = order === 'ascend' ? 'asc' : 'desc';
-            }
-        }
-
-        const mergedParams = { ...searchParamsRef.current, ...params };
-
+        setLoading(true);
         try {
             let response;
 
-            if (isSearchMode && searchParamsRef.current.search) {
+            if (isSearchMode && search) {
                 const searchRequest: FileSearchRequest = {
-                    keyword: searchParamsRef.current.search,
-                    page: current,
-                    pageSize,
+                    keyword: search,
+                    page: page,
+                    pageSize: pageSize,
                     sortBy,
                     sortOrder,
                 };
@@ -228,8 +224,8 @@ const CloudStorageFilesPage: React.FC = () => {
                 const parentId = currentParentIdRef.current;
                 const listRequest: FileListRequest = {
                     parentId: parentId,
-                    page: current,
-                    pageSize,
+                    page: page,
+                    pageSize: pageSize,
                     sortBy,
                     sortOrder,
                 };
@@ -238,18 +234,23 @@ const CloudStorageFilesPage: React.FC = () => {
 
             if (response.success && response.data) {
                 const transformedData = (response.data.queryable || []).map(transformFileItem);
-
-                return {
-                    data: transformedData,
+                setData(transformedData);
+                setPagination(prev => ({
+                    ...prev,
+                    page: page ?? prev.page,
+                    pageSize: pageSize ?? prev.pageSize,
                     total: response.data.rowCount ?? 0,
-                    success: true,
-                };
+                }));
+            } else {
+                setData([]);
+                setPagination(prev => ({ ...prev, total: 0 }));
             }
-
-            return { data: [], total: 0, success: false };
         } catch (err) {
             console.error('Failed to load files:', err);
-            return { data: [], total: 0, success: false };
+            setData([]);
+            setPagination(prev => ({ ...prev, total: 0 }));
+        } finally {
+            setLoading(false);
         }
     }, [isSearchMode]);
 
@@ -266,8 +267,8 @@ const CloudStorageFilesPage: React.FC = () => {
         setPathHistory(prev => [...prev, newPathItem]);
         setIsSearchMode(false);
         searchParamsRef.current = { ...searchParamsRef.current, search: '' };
-        actionRef.current?.reload?.();
-    }, [currentPath]);
+        fetchData();
+    }, [currentPath, fetchData]);
 
     const handleBreadcrumbClick = useCallback((index: number) => {
         const targetItem = pathHistory[index];
@@ -279,8 +280,32 @@ const CloudStorageFilesPage: React.FC = () => {
         setPathHistory(newPathHistory);
         setIsSearchMode(false);
         searchParamsRef.current = { ...searchParamsRef.current, search: '' };
-        actionRef.current?.reload?.();
-    }, [pathHistory]);
+        fetchData();
+    }, [pathHistory, fetchData]);
+
+    // 搜索处理
+    const handleSearch = useCallback((params: PageParams) => {
+        searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
+        setIsSearchMode(!!params.search);
+        fetchData();
+    }, [fetchData]);
+
+    // 表格分页和排序处理
+    const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+        const newPage = pag.current;
+        const newPageSize = pag.pageSize;
+        const sortBy = sorter?.field;
+        const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
+        
+        searchParamsRef.current = {
+            ...searchParamsRef.current,
+            page: newPage,
+            pageSize: newPageSize,
+            sortBy,
+            sortOrder,
+        };
+        fetchData();
+    }, [fetchData]);
 
     // 文件操作
     const handleView = useCallback(async (file: FileItem) => {
@@ -866,27 +891,27 @@ const CloudStorageFilesPage: React.FC = () => {
             {/* 搜索表单 */}
             <SearchBar
                 initialParams={searchParamsRef.current}
-                onSearch={(params) => {
-                    searchParamsRef.current = { ...searchParamsRef.current, ...params };
-                    setIsSearchMode(!!params.search);
-                    actionRef.current?.reload?.();
-                }}
+                onSearch={handleSearch}
+                showResetButton={false}
                 style={{ marginBottom: 16 }}
             />
 
             {/* 数据表格 */}
-            <DataTable
-                actionRef={actionRef}
+            <Table
+                dataSource={data}
                 columns={columns}
-                request={fetchData}
                 rowKey="id"
-                search={false}
+                loading={loading}
                 scroll={{ x: 'max-content' }}
+                onChange={handleTableChange}
                 pagination={{
-                    pageSize: 20,
+                    current: pagination.page,
+                    pageSize: pagination.pageSize,
+                    total: pagination.total,
                     pageSizeOptions: [10, 20, 50, 100],
                     showSizeChanger: true,
                     showQuickJumper: true,
+                    showTotal: (total) => `共 ${total} 条`,
                 }}
                 rowSelection={{
                     selectedRowKeys,

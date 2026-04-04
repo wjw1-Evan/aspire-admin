@@ -1,9 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PageContainer } from '@/components';
-import DataTable from '@/components/DataTable';
-import type { ActionType } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
-import { Grid } from 'antd';
+import { Grid, Table } from 'antd';
 import {
   Button,
   Tag,
@@ -52,8 +50,6 @@ import type { ApiResponse } from '@/types/unified-api';
 import type {
   PasswordBookEntry,
   PasswordBookEntryDetail,
-  PasswordBookQueryRequest,
-  PasswordBookListResponse,
   PasswordBookStatistics,
 } from './types';
 import PasswordBookForm from './components/PasswordBookForm';
@@ -62,6 +58,7 @@ import { StatCard } from '@/components';
 import { getPasswordBookEntry } from '@/services/password-book/api';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import SearchBar from '@/components/SearchBar';
+import type { PageParams } from '@/types/page-params';
 
 const PasswordBook: React.FC = () => {
   const intl = useIntl();
@@ -69,8 +66,7 @@ const PasswordBook: React.FC = () => {
   const modal = useModal();
   const { styles } = useCommonStyles();
   const screens = useBreakpoint();
-  const isMobile = !screens.md; // md 以下为移动端
-  const actionRef = useRef<ActionType>(null);
+  const isMobile = !screens.md;
   const [formVisible, setFormVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
   const [exportVisible, setExportVisible] = useState(false);
@@ -79,17 +75,41 @@ const PasswordBook: React.FC = () => {
   const [statistics, setStatistics] = useState<PasswordBookStatistics | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
-  const [searchParams, setSearchParams] = useState<PasswordBookQueryRequest>({
-    current: 1,
+  const [data, setData] = useState<PasswordBookEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
+
+  const searchParamsRef = useRef<PageParams>({
+    page: 1,
     pageSize: 10,
+    search: '',
   });
 
-  // 使用 ref 存储搜索参数，避免 fetchEntries 函数重新创建导致重复请求
-  // 🔧 修复：使用 ref 存储搜索参数，避免 fetchEntries 依赖 searchParams 导致函数重新创建
-  const searchParamsRef = useRef<PasswordBookQueryRequest>({
-    current: 1,
-    pageSize: 10,
-  });
+  const fetchData = useCallback(async () => {
+    const currentParams = searchParamsRef.current;
+
+    setLoading(true);
+    try {
+      const response = await getPasswordBookList(currentParams);
+      if (response.success && response.data) {
+        setData(response.data.queryable || []);
+        setPagination(prev => ({
+          ...prev,
+          page: currentParams.page ?? prev.page,
+          pageSize: currentParams.pageSize ?? prev.pageSize,
+          total: response.data.rowCount ?? 0,
+        }));
+      } else {
+        setData([]);
+        setPagination(prev => ({ ...prev, total: 0 }));
+      }
+    } catch {
+      setData([]);
+      setPagination(prev => ({ ...prev, total: 0 }));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   // 获取统计信息
   const fetchStatistics = useCallback(async () => {
@@ -131,38 +151,8 @@ const PasswordBook: React.FC = () => {
     fetchStatistics();
     fetchCategories();
     fetchTags();
+    fetchData();
   }, [fetchStatistics, fetchCategories, fetchTags]);
-
-  // 获取密码本列表
-  const fetchEntries = useCallback(
-    async (params: any) => {
-      const requestData: PasswordBookQueryRequest = {
-        current: params.current || searchParamsRef.current.current,
-        pageSize: params.pageSize || searchParamsRef.current.pageSize,
-        platform: searchParamsRef.current.platform,
-        account: searchParamsRef.current.account,
-        category: searchParamsRef.current.category,
-        tags: searchParamsRef.current.tags,
-        keyword: searchParamsRef.current.keyword,
-      };
-
-      try {
-        const response = await getPasswordBookList(requestData);
-        if (response.success && response.data) {
-          return {
-            data: response.data.queryable || [],
-            success: true,
-            total: response.data.rowCount ?? 0,
-          };
-        }
-        return { data: [], success: false, total: 0 };
-      } catch (error) {
-        return { data: [], success: false, total: 0 };
-      }
-    },
-    [], // 🔧 修复：移除 searchParams 依赖，使用 ref 避免函数重新创建
-  );
-
 
   // 创建
   const handleCreate = useCallback(() => {
@@ -210,7 +200,7 @@ const PasswordBook: React.FC = () => {
             const response = await deletePasswordBookEntry(entry.id);
             if (response.success) {
               message.success('删除成功');
-              actionRef.current?.reload?.();
+              fetchData();
               fetchStatistics();
             }
           } catch (error) {
@@ -219,22 +209,45 @@ const PasswordBook: React.FC = () => {
         },
       });
     },
-    [fetchStatistics],
+    [fetchData, fetchStatistics],
   );
 
   // 表单成功回调
   const handleFormSuccess = useCallback(() => {
     setFormVisible(false);
     setEditingEntry(null);
-    actionRef.current?.reload?.();
+    fetchData();
     fetchStatistics();
-  }, [fetchStatistics]);
+  }, [fetchData, fetchStatistics]);
 
   // 刷新处理
   const handleRefresh = useCallback(() => {
-    actionRef.current?.reload?.();
+    fetchData();
     fetchStatistics();
-  }, [fetchStatistics]);
+  }, [fetchData, fetchStatistics]);
+
+  // 搜索处理
+  const handleSearch = useCallback((params: PageParams) => {
+    searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
+    fetchData();
+  }, [fetchData]);
+
+  // 表格分页和排序处理
+  const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+    const newPage = pag.current;
+    const newPageSize = pag.pageSize;
+    const sortBy = sorter?.field;
+    const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
+    
+    searchParamsRef.current = {
+      ...searchParamsRef.current,
+      page: newPage,
+      pageSize: newPageSize,
+      sortBy,
+      sortOrder,
+    };
+    fetchData();
+  }, [fetchData]);
 
   // 表格列定义
   const columns = [
@@ -242,6 +255,7 @@ const PasswordBook: React.FC = () => {
       title: '平台',
       dataIndex: 'platform',
       key: 'platform',
+      sorter: true,
       render: (text: string, record: PasswordBookEntry) => (
         <a
           onClick={() => handleView(record)}
@@ -255,11 +269,13 @@ const PasswordBook: React.FC = () => {
       title: '账号',
       dataIndex: 'account',
       key: 'account',
+      sorter: true,
     },
     {
       title: '网址',
       dataIndex: 'url',
       key: 'url',
+      sorter: true,
       render: (url: string) =>
         url ? (
           <a href={url} target="_blank" rel="noopener noreferrer">
@@ -273,6 +289,7 @@ const PasswordBook: React.FC = () => {
       title: '分类',
       dataIndex: 'category',
       key: 'category',
+      sorter: true,
       render: (category: string) =>
         category ? <Tag color="blue">{category}</Tag> : '-',
     },
@@ -295,6 +312,7 @@ const PasswordBook: React.FC = () => {
       title: '最后使用',
       dataIndex: 'lastUsedAt',
       key: 'lastUsedAt',
+      sorter: true,
       render: (date: string) => (date ? new Date(date).toLocaleString('zh-CN') : '-'),
     },
     {
@@ -404,24 +422,23 @@ const PasswordBook: React.FC = () => {
       {/* 搜索表单 */}
       <SearchBar
         initialParams={searchParamsRef.current}
-        onSearch={(params) => {
-          searchParamsRef.current = { ...searchParamsRef.current, ...params };
-          setSearchParams({ ...searchParamsRef.current });
-          actionRef.current?.reload?.();
-        }}
+        onSearch={handleSearch}
+        showResetButton={false}
         style={{ marginBottom: 16 }}
       />
 
       {/* 数据表格 */}
-      <DataTable<PasswordBookEntry>
-        actionRef={actionRef}
-        request={fetchEntries}
+      <Table<PasswordBookEntry>
+        dataSource={data}
         columns={columns}
         rowKey="id"
+        loading={loading}
         scroll={{ x: 'max-content' }}
-        search={false}
+        onChange={handleTableChange}
         pagination={{
-          defaultPageSize: 10,
+          current: pagination.page,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
           pageSizeOptions: [10, 20, 50, 100],
           showSizeChanger: true,
           showQuickJumper: true,

@@ -3,9 +3,8 @@ import { Card, Form, Input, Select, Button, Modal, Drawer, App, Space, Row, Col,
 import type { UploadFile } from 'antd';
 import { useIntl, useModel } from '@umijs/max';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, HomeOutlined, BankOutlined, EnvironmentOutlined, AreaChartOutlined, SyncOutlined, ReloadOutlined, UploadOutlined, PaperClipOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import type { ProColumns } from '@ant-design/pro-components';
 import PageContainer from '@/components/PageContainer';
-import { DataTable } from '@/components/DataTable';
 import SearchBar from '@/components/SearchBar';
 import StatCard from '@/components/StatCard';
 import * as parkService from '@/services/park';
@@ -19,8 +18,6 @@ const { Text, Title } = Typography;
 
 const AssetManagement: React.FC = () => {
     const intl = useIntl();
-    const buildingTableRef = useRef<ActionType>(null);
-    const unitTableRef = useRef<ActionType>(null);
     const { message } = App.useApp();
     const [buildingForm] = Form.useForm();
     const [unitForm] = Form.useForm();
@@ -38,7 +35,13 @@ const AssetManagement: React.FC = () => {
     const [buildings, setBuildings] = useState<Building[]>([]);
     const [isEdit, setIsEdit] = useState(false);
 
-    // Upload State
+    const [buildingsData, setBuildingsData] = useState<Building[]>([]);
+    const [unitsData, setUnitsData] = useState<PropertyUnit[]>([]);
+    const [buildingsLoading, setBuildingsLoading] = useState(false);
+    const [unitsLoading, setUnitsLoading] = useState(false);
+    const [buildingsPagination, setBuildingsPagination] = useState({ page: 1, pageSize: 10, total: 0 });
+    const [unitsPagination, setUnitsPagination] = useState({ page: 1, pageSize: 10, total: 0 });
+
     const [uploadModalVisible, setUploadModalVisible] = useState(false);
     const [attachmentList, setAttachmentList] = useState<UploadFile[]>([]);
 
@@ -71,11 +74,80 @@ const AssetManagement: React.FC = () => {
         loadBuildings();
     }, [loadStatistics, loadBuildings]);
 
+    const fetchBuildings = useCallback(async () => {
+        setBuildingsLoading(true);
+        try {
+            const res = await parkService.getBuildings({
+                page: buildingsPagination.page,
+                pageSize: buildingsPagination.pageSize,
+                ...searchParamsRef.current,
+            });
+            if (res.success && res.data) {
+                setBuildingsData(res.data.queryable || []);
+                setBuildingsPagination(prev => ({ ...prev, total: res.data.rowCount ?? 0 }));
+            } else {
+                setBuildingsData([]);
+                setBuildingsPagination(prev => ({ ...prev, total: 0 }));
+            }
+        } catch {
+            setBuildingsData([]);
+            setBuildingsPagination(prev => ({ ...prev, total: 0 }));
+        } finally {
+            setBuildingsLoading(false);
+        }
+    }, [buildingsPagination.page, buildingsPagination.pageSize]);
+
+    const fetchUnits = useCallback(async () => {
+        setUnitsLoading(true);
+        try {
+            const res = await parkService.getPropertyUnits({
+                page: unitsPagination.page,
+                pageSize: unitsPagination.pageSize,
+                ...searchParamsRef.current,
+            });
+            if (res.success && res.data) {
+                setUnitsData(res.data.queryable || []);
+                setUnitsPagination(prev => ({ ...prev, total: res.data.rowCount ?? 0 }));
+            } else {
+                setUnitsData([]);
+                setUnitsPagination(prev => ({ ...prev, total: 0 }));
+            }
+        } catch {
+            setUnitsData([]);
+            setUnitsPagination(prev => ({ ...prev, total: 0 }));
+        } finally {
+            setUnitsLoading(false);
+        }
+    }, [unitsPagination.page, unitsPagination.pageSize]);
+
+    const handleBuildingsTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+        const newPage = pag.current;
+        const newPageSize = pag.pageSize;
+        setBuildingsPagination(prev => ({ ...prev, page: newPage, pageSize: newPageSize }));
+        fetchBuildings();
+    }, [fetchBuildings]);
+
+    const handleUnitsTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+        const newPage = pag.current;
+        const newPageSize = pag.pageSize;
+        setUnitsPagination(prev => ({ ...prev, page: newPage, pageSize: newPageSize }));
+        fetchUnits();
+    }, [fetchUnits]);
+
+    useEffect(() => {
+        if (activeTab === 'buildings') {
+            fetchBuildings();
+        } else {
+            fetchUnits();
+        }
+    }, [activeTab, fetchBuildings, fetchUnits]);
+
     // 楼宇表格列
     const buildingColumns: ProColumns<Building>[] = [
         {
             title: intl.formatMessage({ id: 'pages.park.asset.building.name', defaultMessage: '楼宇名称' }),
             dataIndex: 'name',
+            sorter: true,
             width: 160,
             render: (_, record) => (
                 <Space>
@@ -87,6 +159,7 @@ const AssetManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.asset.building.address', defaultMessage: '地址' }),
             dataIndex: 'address',
+            sorter: true,
             width: 200,
             ellipsis: true,
             render: (_, record) => record.address || '-',
@@ -94,6 +167,7 @@ const AssetManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.asset.building.type', defaultMessage: '类型' }),
             dataIndex: 'buildingType',
+            sorter: true,
             width: 100,
             render: (_, record) => (
                 <Tag color={record.buildingType === 'Office' ? 'blue' : record.buildingType === 'Commercial' ? 'green' : 'orange'}>
@@ -104,6 +178,7 @@ const AssetManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.asset.building.floors', defaultMessage: '楼层' }),
             dataIndex: 'totalFloors',
+            sorter: true,
             width: 80,
             align: 'center',
             render: (_, record) => `${record.totalFloors}层`,
@@ -111,6 +186,7 @@ const AssetManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.asset.building.area', defaultMessage: '总面积' }),
             dataIndex: 'totalArea',
+            sorter: true,
             width: 120,
             align: 'right',
             render: (_, record) => `${record.totalArea?.toLocaleString()} m²`,
@@ -118,6 +194,7 @@ const AssetManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.asset.building.occupancy', defaultMessage: '出租率' }),
             dataIndex: 'occupancyRate',
+            sorter: true,
             width: 120,
             render: (_, record) => (
                 <Progress
@@ -131,6 +208,7 @@ const AssetManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.asset.building.units', defaultMessage: '房源数量' }),
             dataIndex: 'totalUnits',
+            sorter: true,
             width: 140,
             align: 'center',
             render: (totalUnits, record) => (
@@ -142,10 +220,8 @@ const AssetManagement: React.FC = () => {
                         onClick={() => {
                             setActiveTab('units');
                             searchParamsRef.current = { ...searchParamsRef.current, buildingId: record.id };
-                            // Timeout to ensure tab switch and state update
-                            setTimeout(() => {
-                                unitTableRef.current?.reload();
-                            }, 0);
+                            setUnitsPagination(prev => ({ ...prev, page: 1 }));
+                            fetchUnits();
                         }}
                     >
                         {totalUnits}
@@ -157,6 +233,7 @@ const AssetManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.asset.building.status', defaultMessage: '状态' }),
             dataIndex: 'status',
+            sorter: true,
             width: 100,
             render: (_, record) => (
                 <Tag color={record.status === 'Active' ? 'green' : record.status === 'Maintenance' ? 'orange' : 'default'}>
@@ -195,6 +272,7 @@ const AssetManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.asset.unit.number', defaultMessage: '房源编号' }),
             dataIndex: 'unitNumber',
+            sorter: true,
             width: 120,
             render: (_, record) => (
                 <Space>
@@ -206,11 +284,13 @@ const AssetManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.asset.unit.building', defaultMessage: '所属楼宇' }),
             dataIndex: 'buildingName',
+            sorter: true,
             width: 150,
         },
         {
             title: intl.formatMessage({ id: 'pages.park.asset.unit.floor', defaultMessage: '楼层' }),
             dataIndex: 'floor',
+            sorter: true,
             width: 80,
             align: 'center',
             render: (_, record) => `${record.floor}F`,
@@ -218,6 +298,7 @@ const AssetManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.asset.unit.area', defaultMessage: '面积' }),
             dataIndex: 'area',
+            sorter: true,
             width: 100,
             align: 'right',
             render: (_, record) => `${record.area} m²`,
@@ -225,6 +306,7 @@ const AssetManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.asset.unit.rent', defaultMessage: '月租金' }),
             dataIndex: 'monthlyRent',
+            sorter: true,
             width: 120,
             align: 'right',
             render: (_, record) => `¥${record.monthlyRent?.toLocaleString()}`,
@@ -232,6 +314,7 @@ const AssetManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.asset.unit.type', defaultMessage: '类型' }),
             dataIndex: 'unitType',
+            sorter: true,
             width: 100,
             render: (_, record) => (
                 <Tag color={record.unitType === 'Office' ? 'blue' : record.unitType === 'Commercial' ? 'green' : 'purple'}>
@@ -242,6 +325,7 @@ const AssetManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.asset.unit.status', defaultMessage: '状态' }),
             dataIndex: 'status',
+            sorter: true,
             width: 100,
             render: (_, record) => {
                 const statusMap: Record<string, { color: string; text: string }> = {
@@ -282,12 +366,16 @@ const AssetManagement: React.FC = () => {
     ];
 
     // 楼宇请求
-    const fetchBuildings = async (params: any) => {
+    const fetchBuildings = async (params: any, sort: any) => {
+        const sortBy = sort?.sortKey;
+        const sortOrder = sort?.sortOrder === 'ascend' ? 'asc' : sort?.sortOrder === 'descend' ? 'desc' : undefined;
         try {
             const res = await parkService.getBuildings({
                 page: params.current || 1,
                 pageSize: params.pageSize || 10,
                 ...searchParamsRef.current,
+                sortBy,
+                sortOrder,
             });
             if (res.success && res.data) {
                 return { data: res.data.queryable, total: res.data.rowCount, success: true };
@@ -299,12 +387,16 @@ const AssetManagement: React.FC = () => {
     };
 
     // 房源请求
-    const fetchUnits = async (params: any) => {
+    const fetchUnits = async (params: any, sort: any) => {
+        const sortBy = sort?.sortKey;
+        const sortOrder = sort?.sortOrder === 'ascend' ? 'asc' : sort?.sortOrder === 'descend' ? 'desc' : undefined;
         try {
             const res = await parkService.getPropertyUnits({
                 page: params.current || 1,
                 pageSize: params.pageSize || 10,
                 ...searchParamsRef.current,
+                sortBy,
+                sortOrder,
             });
             if (res.success && res.data) {
                 return { data: res.data.queryable, total: res.data.rowCount, success: true };
@@ -362,7 +454,7 @@ const AssetManagement: React.FC = () => {
             const res = await parkService.deleteBuilding(id);
             if (res.success) {
                 message.success(intl.formatMessage({ id: 'common.deleteSuccess', defaultMessage: '删除成功' }));
-                buildingTableRef.current?.reload();
+                fetchBuildings();
                 loadStatistics();
                 loadBuildings();
             }
@@ -410,7 +502,7 @@ const AssetManagement: React.FC = () => {
                     defaultMessage: isEdit ? '更新成功' : '创建成功'
                 }));
                 setBuildingModalVisible(false);
-                buildingTableRef.current?.reload();
+                fetchBuildings();
                 loadStatistics();
                 loadBuildings();
             }
@@ -445,7 +537,7 @@ const AssetManagement: React.FC = () => {
             const res = await parkService.deletePropertyUnit(id);
             if (res.success) {
                 message.success(intl.formatMessage({ id: 'common.deleteSuccess', defaultMessage: '删除成功' }));
-                unitTableRef.current?.reload();
+                fetchUnits();
                 loadStatistics();
             }
         } catch (error) {
@@ -488,7 +580,7 @@ const AssetManagement: React.FC = () => {
                     defaultMessage: isEdit ? '更新成功' : '创建成功'
                 }));
                 setUnitModalVisible(false);
-                unitTableRef.current?.reload();
+                fetchUnits();
                 loadStatistics();
             }
         } catch (error) {
@@ -501,9 +593,9 @@ const AssetManagement: React.FC = () => {
 
     const handleRefresh = () => {
         if (activeTab === 'buildings') {
-            buildingTableRef.current?.reload();
+            fetchBuildings();
         } else {
-            unitTableRef.current?.reload();
+            fetchUnits();
         }
         loadStatistics();
     };
@@ -587,9 +679,11 @@ const AssetManagement: React.FC = () => {
                 onSearch={(params) => {
                     searchParamsRef.current = { ...searchParamsRef.current, ...params };
                     if (activeTab === 'buildings') {
-                        buildingTableRef.current?.reload();
+                        setBuildingsPagination(prev => ({ ...prev, page: 1 }));
+                        fetchBuildings();
                     } else {
-                        unitTableRef.current?.reload();
+                        setUnitsPagination(prev => ({ ...prev, page: 1 }));
+                        fetchUnits();
                     }
                 }}
                 style={{ marginBottom: 16 }}
@@ -610,13 +704,22 @@ const AssetManagement: React.FC = () => {
                                 </Space>
                             ),
                             children: (
-                                <DataTable<Building>
-                                    actionRef={buildingTableRef}
+                                <Table<Building>
+                                    dataSource={buildingsData}
                                     columns={buildingColumns as any}
-                                    request={fetchBuildings}
                                     rowKey="id"
+                                    loading={buildingsLoading}
+                                    onChange={handleBuildingsTableChange}
+                                    pagination={{
+                                        current: buildingsPagination.page,
+                                        pageSize: buildingsPagination.pageSize,
+                                        total: buildingsPagination.total,
+                                        pageSizeOptions: [10, 20, 50, 100],
+                                        showSizeChanger: true,
+                                        showQuickJumper: true,
+                                        showTotal: (total) => `共 ${total} 条`,
+                                    }}
                                     scroll={{ x: 1300 }}
-                                    search={false}
                                 />
                             ),
                         },
@@ -629,13 +732,22 @@ const AssetManagement: React.FC = () => {
                                 </Space>
                             ),
                             children: (
-                                <DataTable<PropertyUnit>
-                                    actionRef={unitTableRef}
+                                <Table<PropertyUnit>
+                                    dataSource={unitsData}
                                     columns={unitColumns as any}
-                                    request={fetchUnits}
                                     rowKey="id"
+                                    loading={unitsLoading}
+                                    onChange={handleUnitsTableChange}
+                                    pagination={{
+                                        current: unitsPagination.page,
+                                        pageSize: unitsPagination.pageSize,
+                                        total: unitsPagination.total,
+                                        pageSizeOptions: [10, 20, 50, 100],
+                                        showSizeChanger: true,
+                                        showQuickJumper: true,
+                                        showTotal: (total) => `共 ${total} 条`,
+                                    }}
                                     scroll={{ x: 1100 }}
-                                    search={false}
                                 />
                             ),
                         },

@@ -1,6 +1,5 @@
 import React, { useRef, useState, useMemo, useEffect, useCallback } from 'react';
 import { PageContainer } from '@/components';
-import DataTable from '@/components/DataTable';
 import type { ActionType } from '@/types/pro-components';
 import type { ColumnsType } from 'antd/es/table';
 import { useIntl, useModel } from '@umijs/max';
@@ -23,6 +22,7 @@ import {
   theme,
   Spin,
   Input,
+  Table,
 } from 'antd';
 
 const { useBreakpoint } = Grid;
@@ -45,7 +45,7 @@ import type { Role } from '@/services/role/types';
 import { getCurrentCompany } from '@/services/company';
 import { getUserStatistics } from '@/services/ant-design-pro/api';
 import type { ApiResponse, PagedResult } from '@/types/unified-api';
-import { type PageParams, toBackendPageParams, parseProTableSort } from '@/types/page-params';
+import { type PageParams, toBackendPageParams } from '@/types/page-params';
 import type { AppUser, UserStatisticsResponse } from './types';
 const UserForm = React.lazy(() => import('./components/UserForm'));
 const UserDetail = React.lazy(() => import('./components/UserDetail'));
@@ -95,6 +95,10 @@ const UserManagement: React.FC = () => {
     sortOrder: 'desc',
   });
 
+  const [data, setData] = useState<AppUser[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
+
   // 加载角色列表
   const [currentCompany, setCurrentCompany] = useState<API.Company | null>(null);
 
@@ -141,34 +145,60 @@ const UserManagement: React.FC = () => {
   }, []);
 
   // 获取用户列表
-  const fetchUsers = useCallback(async (params: { current?: number; pageSize?: number }, sort?: Record<string, 'ascend' | 'descend'>) => {
-    // 🔧 简化：使用 parseProTableSort 和 toBackendPageParams 统一处理
-    const { sortBy, sortOrder } = parseProTableSort(sort);
-    
-    const requestData = toBackendPageParams({
-      ...searchParamsRef.current,
-      page: params.current || searchParamsRef.current.page,
-      pageSize: params.pageSize || searchParamsRef.current.pageSize,
-      sortBy: sortBy || searchParamsRef.current.sortBy,
-      sortOrder: sortOrder || searchParamsRef.current.sortOrder,
-    });
+  const fetchData = useCallback(async () => {
+    const currentParams = searchParamsRef.current;
+    const requestData = toBackendPageParams(currentParams);
 
+    setLoading(true);
     try {
       const response = await request<ApiResponse<PagedResult<AppUser>>>('/api/users/list', {
         method: 'POST',
         data: requestData,
       });
 
-      return {
-        data: response.data?.queryable || [],
-        success: response.success,
-        total: response.data?.rowCount || 0,
-      };
+      if (response.success && response.data) {
+        setData(response.data?.queryable || []);
+        setPagination(prev => ({
+          ...prev,
+          page: currentParams.page ?? prev.page,
+          pageSize: currentParams.pageSize ?? prev.pageSize,
+          total: response.data?.rowCount || 0,
+        }));
+      } else {
+        setData([]);
+        setPagination(prev => ({ ...prev, total: 0 }));
+      }
     } catch (error) {
       console.error('获取用户列表失败:', error);
-      return { data: [], success: false, total: 0 };
+      setData([]);
+      setPagination(prev => ({ ...prev, total: 0 }));
+    } finally {
+      setLoading(false);
     }
   }, []);
+
+  // 搜索处理
+  const handleSearch = useCallback((params: PageParams) => {
+    searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
+    fetchData();
+  }, [fetchData]);
+
+  // 表格分页和排序处理
+  const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+    const newPage = pag.current;
+    const newPageSize = pag.pageSize;
+    const sortBy = sorter?.field;
+    const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
+    
+    searchParamsRef.current = {
+      ...searchParamsRef.current,
+      page: newPage,
+      pageSize: newPageSize,
+      sortBy,
+      sortOrder,
+    };
+    fetchData();
+  }, [fetchData]);
 
   // 删除用户（带删除原因）
   const handleDelete = useCallback(async (userId: string) => {
@@ -299,14 +329,14 @@ const UserManagement: React.FC = () => {
       });
 
       message.success(user.isActive ? intl.formatMessage({ id: 'pages.userManagement.userActivated' }) : intl.formatMessage({ id: 'pages.userManagement.userDeactivated' }));
-      actionRef.current?.reload?.();
+      fetchData();
       fetchStatistics();
     } catch (error) {
       console.error('切换用户状态失败:', error);
       // 不在这里显示错误消息，让全局错误处理器统一处理
       // 这样可以避免重复显示错误提示
     }
-  }, [intl, fetchStatistics]);
+  }, [intl, fetchData, fetchStatistics]);
 
   // 🔧 使用自定义 Hook 替代繁琐的内联 DOM 逻辑，提升代码可维护性
   useTableResize(tableRef, activeTab === 'members');
@@ -489,9 +519,9 @@ const UserManagement: React.FC = () => {
 
   // 刷新处理
   const handleRefresh = useCallback(() => {
-    actionRef.current?.reload?.();
+    fetchData();
     fetchStatistics();
-  }, [fetchStatistics]);
+  }, [fetchData, fetchStatistics]);
 
   // 关闭表单处理
   const handleFormClose = useCallback(() => {
@@ -501,9 +531,9 @@ const UserManagement: React.FC = () => {
   // 表单成功处理
   const handleFormSuccess = useCallback(() => {
     setFormVisible(false);
-    actionRef.current?.reload?.();
+    fetchData();
     fetchStatistics();
-  }, [fetchStatistics]);
+  }, [fetchData, fetchStatistics]);
 
   // 关闭详情处理
   const handleDetailClose = useCallback(() => {
@@ -512,7 +542,10 @@ const UserManagement: React.FC = () => {
 
   React.useEffect(() => {
     fetchStatistics();
-  }, [fetchStatistics]);
+    if (activeTab === 'members') {
+      fetchData();
+    }
+  }, [fetchStatistics, activeTab]);
 
   return (
     <PageContainer
@@ -606,31 +639,30 @@ const UserManagement: React.FC = () => {
           {/* 搜索表单 */}
           <SearchBar
             initialParams={searchParamsRef.current}
-            onSearch={(params) => {
-              // 🔧 简化：直接存储 params，toBackendPageParams 会在 fetchUsers 中处理映射
-              searchParamsRef.current = params;
-              actionRef.current?.reload?.();
-            }}
+            onSearch={handleSearch}
+            showResetButton={false}
           />
 
           {/* 用户列表表格 */}
           <div ref={tableRef}>
-            <DataTable<AppUser>
-              actionRef={actionRef}
-              rowKey="id"
-              scroll={{ x: 'max-content' }}
-              search={false}
-              request={fetchUsers}
+            <Table<AppUser>
+              dataSource={data}
               columns={columns}
+              rowKey="id"
+              loading={loading}
+              scroll={{ x: 'max-content' }}
+              onChange={handleTableChange}
               pagination={{
-                pageSize: 10,
+                current: pagination.page,
+                pageSize: pagination.pageSize,
+                total: pagination.total,
                 pageSizeOptions: [10, 20, 50, 100],
                 showSizeChanger: true,
                 showQuickJumper: true,
-                showTotal: (total, range) =>
+                showTotal: (total) =>
                   intl.formatMessage(
                     { id: 'pages.userManagement.pagination.total' },
-                    { start: range[0], end: range[1], total },
+                    { total },
                   ),
               }}
             />
@@ -654,10 +686,7 @@ const UserManagement: React.FC = () => {
                 onSuccess={() => {
                   setFormVisible(false);
                   setEditingUser(null);
-                  fetchUsers({
-                    current: searchParamsRef.current.page,
-                    pageSize: searchParamsRef.current.pageSize,
-                  });
+                  fetchData();
                   message.success(
                     editingUser
                       ? intl.formatMessage({ id: 'pages.message.updateSuccess' })

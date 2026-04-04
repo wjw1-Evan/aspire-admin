@@ -25,7 +25,7 @@ export interface RequestData<T = any> {
 }
 
 export type RequestParams = {
-  current?: number;
+  page?: number;
   pageSize?: number;
   [key: string]: any;
 };

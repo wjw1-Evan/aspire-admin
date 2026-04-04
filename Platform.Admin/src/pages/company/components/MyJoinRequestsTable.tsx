@@ -48,18 +48,21 @@ const MyJoinRequestsTable: React.FC<MyJoinRequestsTableProps> = () => {
             dataIndex: 'companyName',
             key: 'companyName',
             width: 200,
+            sorter: true,
         },
         {
             title: '申请理由',
             dataIndex: 'reason',
             key: 'reason',
             ellipsis: true,
+            sorter: true,
             render: (text) => text || '-',
         },
         {
             title: '状态',
             dataIndex: 'status',
             key: 'status',
+            sorter: true,
             render: (status: string) => {
                 const statusMap: Record<string, { text: string; color: string }> = {
                     pending: { text: intl.formatMessage({ id: 'pages.status.pending', defaultMessage: '待审核' }), color: 'processing' },
@@ -82,12 +85,14 @@ const MyJoinRequestsTable: React.FC<MyJoinRequestsTableProps> = () => {
             title: '审核人',
             dataIndex: 'reviewedByName',
             key: 'reviewedByName',
+            sorter: true,
             render: (text) => text || '-',
         },
         {
             title: '备注',
             dataIndex: 'rejectReason',
             key: 'rejectReason',
+            sorter: true,
             render: (text, record) => {
                 if (record.status === 'rejected') {
                     return <span style={{ color: token.colorError }}>拒绝原因: {text}</span>;
@@ -129,8 +134,22 @@ const MyJoinRequestsTable: React.FC<MyJoinRequestsTableProps> = () => {
         <DataTable<JoinRequestDetail>
             actionRef={actionRef}
             rowKey="id"
-            request={async () => {
-                const result = await request('/api/company/my-join-requests');
+            request={async (_params, sorter) => {
+                let sortBy: string | undefined;
+                let sortOrder: 'asc' | 'desc' | undefined;
+
+                if (sorter && Object.keys(sorter).length > 0) {
+                    const sortKey = Object.keys(sorter)[0];
+                    const sortValue = sorter[sortKey];
+                    if (sortValue) {
+                        sortBy = sortKey;
+                        sortOrder = sortValue === 'ascend' ? 'asc' : 'desc';
+                    }
+                }
+
+                const result = await request('/api/company/my-join-requests', {
+                    params: { sortBy, sortOrder },
+                });
                 return {
                     data: result.data || [],
                     success: true,

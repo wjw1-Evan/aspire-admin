@@ -2,17 +2,17 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PageContainer, StatCard } from '@/components';
 import SearchBar from '@/components/SearchBar';
 import useCommonStyles from '@/hooks/useCommonStyles';
-import DataTable from '@/components/DataTable';
 import type { ActionType } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
 import { PieChartOutlined, EditOutlined, ReloadOutlined, UserOutlined, CloudOutlined, WarningOutlined, CheckCircleOutlined, BarChartOutlined, TeamOutlined, FileOutlined, CalendarOutlined, PlusOutlined, DeleteOutlined, ExclamationCircleOutlined, TableOutlined, DatabaseOutlined, CloudServerOutlined, LineChartOutlined } from '@ant-design/icons';
 import { getQuotaList, getUserQuota, updateUserQuota, getQuotaWarnings, getQuotaUsageStats, setUserQuota, deleteUserQuota, type StorageQuota, type UpdateQuotaRequest, type QuotaListRequest, type QuotaUsageStats, type QuotaWarning } from '@/services/cloud-storage/quotaApi';
-import { Grid, Button, Tag, Space, Modal, Drawer, Row, Col, Card, Form, Input, Select, Descriptions, Spin, Progress, InputNumber, Switch, Alert, Statistic, Tabs, Popconfirm, Typography, Badge, List, Avatar, Empty } from 'antd';
+import { Grid, Button, Tag, Space, Modal, Drawer, Row, Col, Card, Form, Input, Select, Descriptions, Spin, Progress, InputNumber, Switch, Alert, Statistic, Tabs, Popconfirm, Typography, Badge, List, Avatar, Empty, Table } from 'antd';
 import { useMessage } from '@/hooks/useMessage';
 import { useModal } from '@/hooks/useModal';
 import dayjs from 'dayjs';
 import { getUserList, type AppUser } from '@/services/user/api';
 import { getCurrentCompany } from '@/services/company';
+import type { PageParams } from '@/types/page-params';
 
 const { useBreakpoint } = Grid;
 
@@ -38,6 +38,11 @@ const CloudStorageQuotaPage: React.FC = () => {
 
     const searchParamsRef = useRef<any>({ search: '' });
     const { styles } = useCommonStyles();
+
+    // 数据状态
+    const [data, setData] = useState<StorageQuota[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
 
     const [detailVisible, setDetailVisible] = useState(false);
     const [viewingQuota, setViewingQuota] = useState<StorageQuota | null>(null);
@@ -109,30 +114,58 @@ const CloudStorageQuotaPage: React.FC = () => {
     useEffect(() => {
         loadUsageStats();
         loadWarnings();
-    }, [loadUsageStats, loadWarnings]);
+        if (activeTab === 'quota-list') {
+            fetchData();
+        }
+    }, [loadUsageStats, loadWarnings, activeTab, fetchData]);
 
     const handleRefresh = useCallback(() => {
-        actionRef.current?.reload?.();
+        fetchData();
         if (activeTab === 'usage-stats') {
             loadUsageStats();
         } else if (activeTab === 'warnings') {
             loadWarnings();
         }
-    }, [activeTab, loadUsageStats, loadWarnings]);
+    }, [activeTab, loadUsageStats, loadWarnings, fetchData]);
 
-    const fetchData = useCallback(async (params: any) => {
-        const { current = 1, pageSize = 20 } = params;
+    // 搜索处理
+    const handleSearch = useCallback((params: PageParams) => {
+        searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
+        fetchData();
+    }, [fetchData]);
 
-        const mergedParams = { ...searchParamsRef.current, ...params };
+    // 表格分页和排序处理
+    const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+        const newPage = pag.current;
+        const newPageSize = pag.pageSize;
+        const sortBy = sorter?.field;
+        const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
+        
+        searchParamsRef.current = {
+            ...searchParamsRef.current,
+            page: newPage,
+            pageSize: newPageSize,
+            sortBy,
+            sortOrder,
+        };
+        fetchData();
+    }, [fetchData]);
 
+    const fetchData = useCallback(async () => {
+        const currentParams = searchParamsRef.current;
+        const { page = 1, pageSize = 10, search } = currentParams;
+        const sortBy = currentParams.sortBy;
+        const sortOrder = currentParams.sortOrder;
+
+        setLoading(true);
         try {
             const listRequest: QuotaListRequest = {
-                page: current,
-                pageSize,
-                sortBy: 'usedQuota',
-                sortOrder: 'desc',
+                page: page,
+                pageSize: pageSize,
+                sortBy,
+                sortOrder,
                 companyId: currentCompanyId,
-                ...searchParamsRef.current,
+                search,
             };
 
             const response = await getQuotaList(listRequest);
@@ -142,44 +175,23 @@ const CloudStorageQuotaPage: React.FC = () => {
                 const totalCount = response.data.rowCount ?? 0;
 
                 setQuotaTotalCount(totalCount);
-
-                const transformedData = rawData.map((item: any) => {
-                    const displayName = item.displayName || item.userDisplayName;
-                    const userDisplayName = displayName || item.username || item.userId || '未知用户';
-                    return {
-                        ...item,
-                        id: item.id || item.userId,
-                        userDisplayName,
-                        displayName: userDisplayName,
-                        username: item.username || item.userId || '-',
-                        usedQuota: item.usedQuota !== undefined ? item.usedQuota : (item.usedSpace || 0),
-                        usagePercentage: item.usagePercentage !== undefined
-                            ? parseFloat((item.usagePercentage).toFixed(2))
-                            : (item.totalQuota > 0 ? parseFloat(((item.usedSpace || 0) / item.totalQuota * 100).toFixed(2)) : 0),
-                        warningThreshold: item.warningThreshold !== undefined ? item.warningThreshold : 80,
-                        isEnabled: item.isEnabled !== undefined ? item.isEnabled : (item.status === 'Active'),
-                    } as StorageQuota;
-                });
-
-                return {
-                    data: transformedData,
+                setData(rawData);
+                setPagination(prev => ({
+                    ...prev,
+                    page: page ?? prev.page,
+                    pageSize: pageSize ?? prev.pageSize,
                     total: totalCount,
-                    success: true,
-                };
+                }));
+            } else {
+                setData([]);
+                setPagination(prev => ({ ...prev, total: 0 }));
             }
-
-            return {
-                data: [],
-                total: 0,
-                success: false,
-            };
         } catch (err) {
             console.error('Failed to load quota list:', err);
-            return {
-                data: [],
-                total: 0,
-                success: false,
-            };
+            setData([]);
+            setPagination(prev => ({ ...prev, total: 0 }));
+        } finally {
+            setLoading(false);
         }
     }, [currentCompanyId]);
 
@@ -400,6 +412,7 @@ const CloudStorageQuotaPage: React.FC = () => {
             title: intl.formatMessage({ id: 'pages.cloud-storage.quota.field.user' }),
             dataIndex: 'userDisplayName',
             key: 'userDisplayName',
+            sorter: true,
             render: (text: string, record: StorageQuota) => {
                 // 显示完整的用户显示名称
                 const displayText = text || record.username || record.userId || intl.formatMessage({ id: 'pages.table.unknown' });
@@ -421,6 +434,7 @@ const CloudStorageQuotaPage: React.FC = () => {
             title: intl.formatMessage({ id: 'pages.table.username' }),
             dataIndex: 'username',
             key: 'username',
+            sorter: true,
             render: (text: string, record: StorageQuota) => {
                 // 显示完整的用户名
                 const displayText = text || record.userId || '-';
@@ -435,12 +449,14 @@ const CloudStorageQuotaPage: React.FC = () => {
             title: intl.formatMessage({ id: 'pages.cloud-storage.quota.field.totalQuota' }),
             dataIndex: 'totalQuota',
             key: 'totalQuota',
+            sorter: true,
             render: (quota: number) => formatFileSize(quota),
         },
         {
             title: intl.formatMessage({ id: 'pages.cloud-storage.quota.field.usedQuota' }),
             dataIndex: 'usedQuota',
             key: 'usedQuota',
+            sorter: true,
             render: (used: number) => formatFileSize(used),
         },
         {
@@ -465,6 +481,7 @@ const CloudStorageQuotaPage: React.FC = () => {
             title: intl.formatMessage({ id: 'pages.cloud-storage.quota.field.fileCount' }),
             dataIndex: 'fileCount',
             key: 'fileCount',
+            sorter: true,
         },
         {
             title: intl.formatMessage({ id: 'pages.table.status' }),
@@ -475,6 +492,7 @@ const CloudStorageQuotaPage: React.FC = () => {
             title: intl.formatMessage({ id: 'pages.table.updatedAt', defaultMessage: '更新时间' }),
             dataIndex: 'updatedAt',
             key: 'updatedAt',
+            sorter: true,
             render: (time: string) => formatDateTime(time),
         },
         {
@@ -568,34 +586,26 @@ const CloudStorageQuotaPage: React.FC = () => {
                                 <div ref={tableRef}>
                                     <SearchBar
                                         initialParams={searchParamsRef.current}
-                                        onSearch={(params) => {
-                                            searchParamsRef.current = { ...searchParamsRef.current, ...params };
-                                            actionRef.current?.reload?.();
-                                        }}
+                                        onSearch={handleSearch}
+                                        showResetButton={false}
                                         style={{ marginBottom: 16 }}
                                     />
 
-                                    <DataTable<StorageQuota>
-                                        actionRef={actionRef}
+                                    <Table<StorageQuota>
+                                        dataSource={data}
                                         rowKey="userId"
                                         columns={columns}
-                                        request={async (params, sort) => {
-                                            const res = await getQuotaList({
-                                                current: params.current,
-                                                pageSize: params.pageSize,
-                                                ...searchParamsRef.current,
-                                                ...sort,
-                                            });
-                                            return {
-                                                data: res.data?.queryable || [],
-                                                success: res.success,
-                                                total: res.data?.rowCount || 0,
-                                            };
-                                        }}
+                                        loading={loading}
+                                        onChange={handleTableChange}
                                         pagination={{
-                                            pageSize: 10,
+                                            current: pagination.page,
+                                            pageSize: pagination.pageSize,
+                                            total: pagination.total,
+                                            pageSizeOptions: [10, 20, 50, 100],
+                                            showSizeChanger: true,
+                                            showQuickJumper: true,
+                                            showTotal: (total) => `共 ${total} 条`,
                                         }}
-                                        search={false}
                                     />
                                 </div>
                             ),

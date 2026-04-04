@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Button, Modal, Form, Input, Switch, Space, Select, Divider, Card, Grid, Row, Col, DatePicker, Radio, Checkbox, Upload } from 'antd';
+import { Button, Modal, Form, Input, Switch, Space, Select, Divider, Card, Grid, Row, Col, DatePicker, Radio, Checkbox, Upload, Table } from 'antd';
 import { PartitionOutlined, PlusOutlined, ReloadOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useMessage } from '@/hooks/useMessage';
-import { PageContainer, DataTable } from '@/components';
-import type { ActionType } from '@/types/pro-components';
+import { PageContainer } from '@/components';
 import type { ColumnsType } from 'antd/es/table';
+import type { PageParams } from '@/types/page-params';
 import {
     getFormList,
     createForm,
@@ -367,7 +367,6 @@ const FieldEditor: React.FC<{
 const { useBreakpoint } = Grid;
 
 const FormsPage: React.FC = () => {
-    const actionRef = useRef<ActionType | null>(null);
     const screens = useBreakpoint();
     const isMobile = !screens.md;
     const [open, setOpen] = useState(false);
@@ -375,17 +374,90 @@ const FormsPage: React.FC = () => {
     const [form] = Form.useForm<FormDefinition>();
     const [searchForm] = Form.useForm();
     const message = useMessage();
-    const [searchParams, setSearchParams] = useState<{ current: number; pageSize: number; keyword?: string; isActive?: boolean }>(
-        { current: 1, pageSize: 10, keyword: '', isActive: undefined }
-    );
+    const [data, setData] = useState<FormDefinition[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
 
-    // 🔧 使用 ref 存储搜索参数，避免 request 函数重新创建导致重复请求
-    const searchParamsRef = useRef<{ current: number; pageSize: number; keyword?: string; isActive?: boolean }>({
-        current: 1,
+    const searchParamsRef = useRef<PageParams>({
+        page: 1,
         pageSize: 10,
-        keyword: '',
+        search: '',
         isActive: undefined,
     });
+
+    const fetchData = useCallback(async () => {
+        const currentParams = searchParamsRef.current;
+
+        setLoading(true);
+        try {
+            const response = await getFormList({
+                current: currentParams.page,
+                pageSize: currentParams.pageSize,
+                keyword: currentParams.search,
+                isActive: currentParams.isActive as any,
+                sortBy: currentParams.sortBy,
+                sortOrder: currentParams.sortOrder,
+            });
+            if (response.success && response.data) {
+                setData(response.data.queryable || []);
+                setPagination(prev => ({
+                    ...prev,
+                    page: currentParams.page ?? prev.page,
+                    pageSize: currentParams.pageSize ?? prev.pageSize,
+                    total: response.data.rowCount ?? 0,
+                }));
+            } else {
+                setData([]);
+                setPagination(prev => ({ ...prev, total: 0 }));
+            }
+        } catch {
+            setData([]);
+            setPagination(prev => ({ ...prev, total: 0 }));
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    const handleSearch = useCallback((values: any) => {
+        searchParamsRef.current = { 
+            ...searchParamsRef.current, 
+            ...values, 
+            page: 1,
+            search: values.keyword || '',
+        };
+        fetchData();
+    }, [fetchData]);
+
+    const handleReset = useCallback(() => {
+        searchForm.resetFields();
+        searchParamsRef.current = {
+            page: 1,
+            pageSize: 10,
+            search: '',
+            isActive: undefined,
+        };
+        fetchData();
+    }, [searchForm, fetchData]);
+
+    const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+        const newPage = pag.current;
+        const newPageSize = pag.pageSize;
+        const sortBy = sorter?.field;
+        const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
+        
+        searchParamsRef.current = {
+            ...searchParamsRef.current,
+            page: newPage,
+            pageSize: newPageSize,
+            sortBy,
+            sortOrder,
+        };
+        fetchData();
+    }, [fetchData]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     const columns: ColumnsType<FormDefinition> = [
         { title: '名称', dataIndex: 'name', ellipsis: true, sorter: true },
@@ -420,7 +492,7 @@ const FormsPage: React.FC = () => {
                             const res = await deleteForm(record.id!);
                             if (res.success) {
                                 message.success('已删除');
-                                actionRef.current?.reload?.();
+                                fetchData();
                             } else {
                                 message.error('删除失败');
                             }
@@ -433,78 +505,9 @@ const FormsPage: React.FC = () => {
         },
     ];
 
-    // 数据请求函数
-    const fetchData = useCallback(async (params: any, sort: any) => {
-        let sortBy: string | undefined;
-        let sortOrder: string | undefined;
-        if (sort && Object.keys(sort).length > 0) {
-            const sortKey = Object.keys(sort)[0];
-            const sortValue = sort[sortKey];
-            if (sortValue === 'ascend') {
-                sortBy = sortKey;
-                sortOrder = 'asc';
-            } else if (sortValue === 'descend') {
-                sortBy = sortKey;
-                sortOrder = 'desc';
-            }
-        }
-        const requestData = {
-            current: params.current || searchParamsRef.current.current,
-            pageSize: params.pageSize || searchParamsRef.current.pageSize,
-            keyword: searchParamsRef.current.keyword,
-            isActive: searchParamsRef.current.isActive,
-            sortBy,
-            sortOrder,
-        };
-
-            try {
-            const response = await getFormList(requestData);
-            if (response.success && response.data) {
-                return {
-                    data: response.data.queryable || [],
-                    success: true,
-                    total: response.data.rowCount ?? 0,
-                };
-            }
-            return { data: [], success: false, total: 0 };
-        } catch (error) {
-            console.error('Failed to load forms:', error);
-            return { data: [], success: false, total: 0 };
-        }
-    }, []);
-
-    const handleSearch = useCallback((values: any) => {
-        const newParams = {
-            current: 1,
-            pageSize: searchParamsRef.current.pageSize,
-            keyword: values.keyword || '',
-            isActive: values.isActive,
-        };
-        // 同时更新 ref 和 state
-        searchParamsRef.current = newParams;
-        setSearchParams(newParams);
-        // 手动触发重新加载
-        actionRef.current?.reload?.();
-    }, []);
-
-    const handleReset = useCallback(() => {
-        searchForm.resetFields();
-        const resetParams = {
-            current: 1,
-            pageSize: searchParamsRef.current.pageSize,
-            keyword: '',
-            isActive: undefined,
-        };
-        // 同时更新 ref 和 state
-        searchParamsRef.current = resetParams;
-        setSearchParams(resetParams);
-        // 手动触发重新加载
-        actionRef.current?.reload?.();
-    }, [searchForm]);
-
     const handleRefresh = useCallback(() => {
-        actionRef.current?.reload?.();
-    }, []);
+        fetchData();
+    }, [fetchData]);
 
     return (
         <PageContainer
@@ -562,19 +565,22 @@ const FormsPage: React.FC = () => {
                 </Form>
             </Card>
 
-            <DataTable<FormDefinition>
-                actionRef={actionRef}
-                rowKey="id"
+            <Table<FormDefinition>
+                dataSource={data}
                 columns={columns}
-                request={fetchData}
+                rowKey="id"
+                loading={loading}
+                scroll={{ x: 'max-content' }}
+                onChange={handleTableChange}
                 pagination={{
-                    pageSize: 10,
+                    current: pagination.page,
+                    pageSize: pagination.pageSize,
+                    total: pagination.total,
                     pageSizeOptions: [10, 20, 50, 100],
                     showSizeChanger: true,
                     showQuickJumper: true,
-                    showTotal: (rowCount) => `共 ${rowCount} 条`,
+                    showTotal: (total) => `共 ${total} 条`,
                 }}
-                scroll={{ x: 'max-content' }}
             />
 
             <Modal
@@ -605,7 +611,7 @@ const FormsPage: React.FC = () => {
                             if (res.success) {
                                 message.success('已保存');
                                 setOpen(false);
-                                actionRef.current?.reload?.();
+                                fetchData();
                             } else {
                                 message.error('保存失败');
                             }

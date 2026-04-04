@@ -1,12 +1,11 @@
-import React, { useRef, useState, forwardRef, useImperativeHandle, useCallback, useMemo } from 'react';
-import type { ActionType } from '@/types/pro-components';
+import React, { useRef, useState, forwardRef, useImperativeHandle, useCallback, useMemo, useEffect } from 'react';
 import type { ColumnsType } from 'antd/es/table';
-import DataTable from '@/components/DataTable';
-import { Tag, Button, Drawer, Descriptions, Space, Form, Input, DatePicker, Card, Spin, Empty, Typography, Grid } from 'antd';
+import { Table, Tag, Button, Drawer, Descriptions, Space, Form, Input, DatePicker, Card, Spin, Empty, Typography, Grid } from 'antd';
 import dayjs from 'dayjs';
 import { useMessage } from '@/hooks/useMessage';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import SearchBar from '@/components/SearchBar';
+import type { PageParams } from '@/types/page-params';
 
 const { useBreakpoint } = Grid;
 import { ReloadOutlined, SearchOutlined } from '@ant-design/icons';
@@ -20,7 +19,6 @@ export interface DataCenterRef {
 }
 
 const getDataTypeLabel = (type: string) => {
-  // 支持 camelCase (后端返回) 和首字母大写格式
   const normalizedType = type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
   const typeMap: Record<string, string> = {
     Numeric: '数值',
@@ -43,74 +41,90 @@ const dataTypeLabels: Record<string, string> = {
 const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
   const message = useMessage();
   const screens = useBreakpoint();
-  const isMobile = !screens.md; // md 以下为移动端
+  const isMobile = !screens.md;
   const { styles } = useCommonStyles();
-  const actionRef = useRef<ActionType>(null);
+  const [data, setData] = useState<IoTDataRecord[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
   const [isDetailDrawerVisible, setIsDetailDrawerVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<IoTDataRecord | null>(null);
-  const searchParamsRef = useRef<any>({ search: '' });
+  const searchParamsRef = useRef<PageParams>({
+    page: 1,
+    pageSize: 20,
+    search: '',
+  });
 
-  const fetchRecords = useCallback(async (params: any) => {
+  const fetchData = useCallback(async () => {
+    const currentParams = searchParamsRef.current;
+
+    setLoading(true);
     try {
-      const { current = 1, pageSize = 20 } = params;
-      const payload: any = {
-        page: current,
-        pageSize,
-      };
-
-      // 只添加搜索参数
-      if (searchParamsRef.current.search) {
-        payload.search = searchParamsRef.current.search;
-      }
-
-      const response = await iotService.queryDataRecords(payload);
-
+      const response = await iotService.queryDataRecords({
+        page: currentParams.page,
+        pageSize: currentParams.pageSize,
+        search: currentParams.search,
+        sortBy: currentParams.sortBy,
+        sortOrder: currentParams.sortOrder,
+      });
       if (response && response.success && response.data) {
-        const records = response.data.queryable || [];
-        const total = response.data.rowCount || 0;
-        return {
-          data: records,
-          total: total,
-          success: true,
-        };
+        setData(response.data.queryable || []);
+        setPagination(prev => ({
+          ...prev,
+          page: currentParams.page ?? prev.page,
+          pageSize: currentParams.pageSize ?? prev.pageSize,
+          total: response.data.rowCount ?? 0,
+        }));
+      } else {
+        setData([]);
+        setPagination(prev => ({ ...prev, total: 0 }));
       }
-
-      return {
-        data: [],
-        total: 0,
-        success: false,
-      };
     } catch (error) {
       console.error('查询数据记录异常:', error);
-      return {
-        data: [],
-        total: 0,
-        success: false,
-      };
+      setData([]);
+      setPagination(prev => ({ ...prev, total: 0 }));
+    } finally {
+      setLoading(false);
     }
   }, []);
 
+  const handleSearch = useCallback((params: PageParams) => {
+    searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
+    fetchData();
+  }, [fetchData]);
 
-  // 处理查看详情
+  const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+    const newPage = pag.current;
+    const newPageSize = pag.pageSize;
+    const sortBy = sorter?.field;
+    const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
+    
+    searchParamsRef.current = {
+      ...searchParamsRef.current,
+      page: newPage,
+      pageSize: newPageSize,
+      sortBy,
+      sortOrder,
+    };
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  useImperativeHandle(ref, () => ({
+    reload: () => fetchData(),
+  }), [fetchData]);
+
   const handleViewDetail = useCallback((record: IoTDataRecord) => {
     setSelectedRecord(record);
     setIsDetailDrawerVisible(true);
   }, []);
 
-  // 处理关闭详情
   const handleCloseDetail = useCallback(() => {
     setIsDetailDrawerVisible(false);
     setSelectedRecord(null);
   }, []);
-
-  // 暴露方法给父组件
-  useImperativeHandle(ref, () => ({
-    reload: () => {
-      if (actionRef.current?.reload) {
-        actionRef.current.reload();
-      }
-    },
-  }), []);
 
   const columns: ColumnsType<IoTDataRecord> = useMemo(() => [
     {
@@ -119,6 +133,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
       key: 'deviceId',
       width: 200,
       ellipsis: true,
+      sorter: true,
       render: (text: string, record: IoTDataRecord) => (
         <a
           onClick={() => handleViewDetail(record)}
@@ -134,6 +149,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
       key: 'dataPointId',
       width: 200,
       ellipsis: true,
+      sorter: true,
       render: (text: string) => (
         <span
           style={{ cursor: 'pointer' }}
@@ -151,6 +167,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
       dataIndex: 'dataType',
       key: 'dataType',
       width: 100,
+      sorter: true,
       render: (_: any, record: IoTDataRecord) => <Tag>{getDataTypeLabel(record.dataType)}</Tag>,
     },
     {
@@ -161,9 +178,8 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
       ellipsis: {
         showTitle: false,
       },
-      search: false,
+      sorter: true,
       render: (value: string, record: IoTDataRecord) => {
-        // 如果是 JSON 类型，尝试格式化显示
         if (record.dataType?.toLowerCase() === 'json') {
           try {
             const parsed = JSON.parse(value);
@@ -213,25 +229,26 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
     <>
       <SearchBar
         initialParams={searchParamsRef.current}
-        onSearch={(params) => {
-          searchParamsRef.current = { ...searchParamsRef.current, ...params };
-          actionRef.current?.reload?.();
-        }}
+        onSearch={handleSearch}
+        showResetButton={false}
         style={{ marginBottom: 16 }}
       />
 
-      <DataTable<IoTDataRecord>
-        actionRef={actionRef}
+      <Table<IoTDataRecord>
+        dataSource={data}
         columns={columns}
-        request={fetchRecords}
         rowKey={(record) => record.id || `${record.deviceId}-${record.dataPointId}-${record.reportedAt}`}
+        loading={loading}
         scroll={{ x: 'max-content' }}
-        search={false}
+        onChange={handleTableChange}
         pagination={{
-          pageSize: 20,
+          current: pagination.page,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
           pageSizeOptions: [10, 20, 50, 100],
           showSizeChanger: true,
           showQuickJumper: true,
+          showTotal: (total) => `共 ${total} 条`,
         }}
       />
       <Drawer
@@ -244,7 +261,6 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
         <Spin spinning={false}>
           {selectedRecord ? (
             <>
-              {/* 基本信息 */}
               <Card title="基本信息" className={styles.card} style={{ marginBottom: 16 }}>
                 <Descriptions column={isMobile ? 1 : 2} size="small">
                   <Descriptions.Item label="记录ID" span={2}>
@@ -265,7 +281,6 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
                 </Descriptions>
               </Card>
 
-              {/* 数据值 */}
               <Card title="数据值" className={styles.card} style={{ marginBottom: 16 }}>
                 <Descriptions column={1} size="small">
                   <Descriptions.Item label="值">
@@ -307,7 +322,6 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
                 </Descriptions>
               </Card>
 
-              {/* 告警信息 */}
               {(selectedRecord.isAlarm || selectedRecord.alarmLevel) && (
                 <Card title="告警信息" className={styles.card} style={{ marginBottom: 16 }}>
                   <Descriptions column={isMobile ? 1 : 2} size="small">
@@ -327,7 +341,6 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
                 </Card>
               )}
 
-              {/* 时间信息 */}
               <Card title="时间信息" className={styles.card} style={{ marginBottom: 16 }}>
                 <Descriptions column={isMobile ? 1 : 2} size="small">
                   <Descriptions.Item label="上报时间">
@@ -343,11 +356,8 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
                 </Descriptions>
               </Card>
 
-              {/* 备注 */}
-
               {selectedRecord.remarks && (
                 <Card title="备注" className={styles.card} style={{ marginBottom: 16 }}>
-
                   <p>{selectedRecord.remarks}</p>
                 </Card>
               )}

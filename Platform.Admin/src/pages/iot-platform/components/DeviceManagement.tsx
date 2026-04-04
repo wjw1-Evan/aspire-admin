@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback, useMemo } from 'react';
 import { useIntl } from '@umijs/max';
-import type { ActionType } from '@/types/pro-components';
-import DataTable from '@/components/DataTable';
-import { type TableColumnsType } from 'antd';
+import { type TableColumnsType, Table } from 'antd';
+import type { PageParams } from '@/types/page-params';
 import {
   Button,
   Modal,
@@ -100,7 +99,9 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
   const screens = useBreakpoint();
   const isMobile = !screens.md;
   const { styles } = useCommonStyles();
-  const actionRef = useRef<ActionType>(null);
+  const [data, setData] = useState<IoTDevice[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
   const [gateways, setGateways] = useState<IoTGateway[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isDetailDrawerVisible, setIsDetailDrawerVisible] = useState(false);
@@ -108,7 +109,11 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
   const [statistics, setStatistics] = useState<DeviceStatistics | null>(null);
   const [form] = Form.useForm();
   const [overviewStats, setOverviewStats] = useState({ total: 0, online: 0, offline: 0, fault: 0 });
-  const searchParamsRef = useRef<any>({ page: 1, pageSize: 20 });
+  const searchParamsRef = useRef<PageParams>({
+    page: 1,
+    pageSize: 20,
+    search: '',
+  });
 
   // ApiKey 弹窗
   const [apiKeyResult, setApiKeyResult] = useState<GenerateApiKeyResult | null>(null);
@@ -140,16 +145,38 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
     }
   }, []);
 
-  const fetchDevices = useCallback(async (params: any) => {
+  // 获取设备列表
+  const fetchData = useCallback(async () => {
+    const currentParams = searchParamsRef.current;
+
+    setLoading(true);
     try {
-      const response = await iotService.getDevices(undefined, params.current || 1, params.pageSize || 20, searchParamsRef.current.search);
+      const response = await iotService.getDevices(
+        undefined,
+        currentParams.page,
+        currentParams.pageSize,
+        currentParams.search,
+        currentParams.sortBy,
+        currentParams.sortOrder
+      );
       if (response.success && response.data) {
-        return { data: response.data.queryable || [], success: true, total: response.data.rowCount ?? 0 };
+        setData(response.data.queryable || []);
+        setPagination(prev => ({
+          ...prev,
+          page: currentParams.page ?? prev.page,
+          pageSize: currentParams.pageSize ?? prev.pageSize,
+          total: response.data.rowCount ?? 0,
+        }));
+      } else {
+        setData([]);
+        setPagination(prev => ({ ...prev, total: 0 }));
       }
-      return { data: [], success: false, total: 0 };
-    } catch {
-      message.error('加载设备列表失败');
-      return { data: [], success: false, total: 0 };
+    } catch (error) {
+      console.error('加载设备列表失败:', error);
+      setData([]);
+      setPagination(prev => ({ ...prev, total: 0 }));
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -169,7 +196,30 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
   useEffect(() => {
     loadGateways();
     fetchOverviewStats();
-  }, [loadGateways, fetchOverviewStats]);
+    fetchData();
+  }, [loadGateways, fetchOverviewStats, fetchData]);
+
+  const handleSearch = useCallback((params: PageParams) => {
+    searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
+    fetchData();
+  }, [fetchData]);
+
+  // 表格分页和排序处理
+  const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+    const newPage = pag.current;
+    const newPageSize = pag.pageSize;
+    const sortBy = sorter?.field;
+    const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
+    
+    searchParamsRef.current = {
+      ...searchParamsRef.current,
+      page: newPage,
+      pageSize: newPageSize,
+      sortBy,
+      sortOrder,
+    };
+    fetchData();
+  }, [fetchData]);
 
   const handleAdd = useCallback(() => {
     form.resetFields();
@@ -178,10 +228,10 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
   }, [form]);
 
   useImperativeHandle(ref, () => ({
-    reload: () => actionRef.current?.reload?.(),
+    reload: () => fetchData(),
     refreshStats: fetchOverviewStats,
     handleAdd,
-  }), [fetchOverviewStats, handleAdd]);
+  }), [fetchData, fetchOverviewStats, handleAdd]);
 
   const handleEdit = useCallback((device: IoTDevice) => {
     setSelectedDevice(device);
@@ -209,13 +259,13 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
       const response = await iotService.deleteDevice(id);
       if (response.success) {
         message.success('删除成功');
-        actionRef.current?.reload?.();
+        fetchData();
         fetchOverviewStats();
       }
     } catch {
       message.error('删除失败');
     }
-  }, [fetchOverviewStats]);
+  }, [fetchData, fetchOverviewStats]);
 
   const handleSubmit = useCallback(async (values: any) => {
     // 将 tagsList 数组 ("key:value") 还原为 object
@@ -239,12 +289,12 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
         if (response.success) message.success('创建成功');
       }
       handleCloseModal();
-      actionRef.current?.reload?.();
+      fetchData();
       fetchOverviewStats();
     } catch {
       message.error('操作失败');
     }
-  }, [selectedDevice, fetchOverviewStats]);
+  }, [selectedDevice, fetchData, fetchOverviewStats]);
 
   const handleGenerateApiKey = useCallback(async (device: IoTDevice) => {
     setGeneratingKey(true);
@@ -272,6 +322,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
       dataIndex: 'title',
       key: 'title',
       width: 160,
+      sorter: true,
       render: (text, record) => (
         <a onClick={() => handleView(record)} style={{ cursor: 'pointer' }}>{text}</a>
       ),
@@ -281,6 +332,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
       dataIndex: 'deviceType',
       key: 'deviceType',
       width: 90,
+      sorter: true,
       render: (type?: string) => {
         const t = type ?? 'Sensor';
         return <Tag color={deviceTypeColor[t] ?? 'default'}>{deviceTypeLabel[t] ?? t}</Tag>;
@@ -291,6 +343,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
       dataIndex: 'gatewayId',
       key: 'gatewayId',
       width: 140,
+      sorter: true,
       render: (gatewayId: string) => {
         const gateway = safeGateways.find((g) => g.gatewayId === gatewayId);
         return gateway?.title || <Text type="secondary">独立设备</Text>;
@@ -320,12 +373,14 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
       dataIndex: 'location',
       key: 'location',
       width: 100,
+      sorter: true,
       render: (v: string) => v || <Text type="secondary">-</Text>,
     },
     {
       title: '状态',
       key: 'status',
       width: 80,
+      sorter: true,
       render: (_: any, device: IoTDevice) => getStatusTag(device),
     },
     {
@@ -333,6 +388,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
       dataIndex: 'isEnabled',
       key: 'isEnabled',
       width: 70,
+      sorter: true,
       render: (v: boolean) => <Tag color={v ? 'green' : 'red'}>{v ? '是' : '否'}</Tag>,
     },
     {
@@ -394,7 +450,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
           if (res.success) {
             message.success(`成功删除 ${res.data.deletedCount} 个设备`);
             setSelectedRowKeys([]);
-            actionRef.current?.reload?.();
+            fetchData();
             fetchOverviewStats();
           }
         } catch {
@@ -404,7 +460,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
         }
       },
     });
-  }, [selectedRowKeys, confirm, fetchOverviewStats]);
+  }, [selectedRowKeys, confirm, fetchData, fetchOverviewStats]);
   return (
     <>
       {/* 统计卡片 */}
@@ -428,10 +484,9 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
       {/* 搜索 */}
       <SearchBar
         initialParams={searchParamsRef.current}
-        onSearch={(params) => {
-          searchParamsRef.current = params;
-          actionRef.current?.reload?.();
-        }}
+        onSearch={handleSearch}
+        showResetButton={false}
+        style={{ marginBottom: 16 }}
       />
 
       {/* 设备列表 */}
@@ -463,14 +518,22 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
           <Button size="small" onClick={() => setSelectedRowKeys([])}>取消选择</Button>
         </div>
       )}
-      <DataTable<IoTDevice>
-        actionRef={actionRef}
+      <Table<IoTDevice>
         columns={columns}
-        request={fetchDevices}
+        dataSource={data}
         rowKey="id"
+        loading={loading}
         scroll={{ x: 'max-content' }}
-        search={false}
-        pagination={{ pageSize: 20, pageSizeOptions: [10, 20, 50, 100] }}
+        onChange={handleTableChange}
+        pagination={{
+          current: pagination.page,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
+          pageSizeOptions: [10, 20, 50, 100],
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total) => `共 ${total} 条`,
+        }}
         rowSelection={{
           selectedRowKeys,
           onChange: (keys) => setSelectedRowKeys(keys),

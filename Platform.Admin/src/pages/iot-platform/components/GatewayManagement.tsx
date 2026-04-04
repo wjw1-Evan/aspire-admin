@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback, useMemo } from 'react';
 import { useIntl } from '@umijs/max';
-import type { ActionType, ProColumns } from '@/types/pro-components';
-import DataTable from '@/components/DataTable';
-import { type TableColumnsType } from 'antd';
+import { type TableColumnsType, Table } from 'antd';
+import type { PageParams } from '@/types/page-params';
 import {
   Button,
   Modal,
@@ -51,9 +50,11 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
   const intl = useIntl();
   const { confirm } = useModal();
   const screens = useBreakpoint();
-  const isMobile = !screens.md; // md 以下为移动端
+  const isMobile = !screens.md;
   const { styles } = useCommonStyles();
-  const actionRef = useRef<ActionType>(null);
+  const [data, setData] = useState<IoTGateway[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isDetailDrawerVisible, setIsDetailDrawerVisible] = useState(false);
   const [selectedGateway, setSelectedGateway] = useState<IoTGateway | null>(null);
@@ -65,7 +66,11 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
     offline: 0,
     fault: 0,
   });
-  const searchParamsRef = useRef<any>({});
+  const searchParamsRef = useRef<PageParams>({
+    page: 1,
+    pageSize: 20,
+    search: '',
+  });
 
 
   const normalizeStatus = (status?: string) => (status ? (status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()) : '') as IoTDeviceStatus;
@@ -96,35 +101,30 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
 
   useEffect(() => {
     fetchOverviewStats();
-  }, [fetchOverviewStats]);
+    fetchData();
+  }, [fetchOverviewStats, fetchData]);
 
-  // 获取网关列表（用于 ProTable）- 使用 useCallback 避免死循环
-  const fetchGateways = useCallback(async (params: any) => {
-    try {
-      const filters = searchParamsRef.current;
-      const response = await iotService.getGateways(params.current || 1, params.pageSize || 20, filters.search);
-      if (response.success && response.data) {
-        return {
-          data: response.data.queryable || [],
-          success: true,
-          total: response.data.rowCount ?? 0,
-        };
-      }
-      return {
-        data: [],
-        success: false,
-        total: 0,
-      };
-    } catch (error) {
-      console.error('加载网关列表失败:', error);
-      message.error('加载网关列表失败');
-      return {
-        data: [],
-        success: false,
-        total: 0,
-      };
-    }
-  }, []);
+  const handleSearch = useCallback((params: PageParams) => {
+    searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
+    fetchData();
+  }, [fetchData]);
+
+  // 表格分页和排序处理
+  const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+    const newPage = pag.current;
+    const newPageSize = pag.pageSize;
+    const sortBy = sorter?.field;
+    const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
+    
+    searchParamsRef.current = {
+      ...searchParamsRef.current,
+      page: newPage,
+      pageSize: newPageSize,
+      sortBy,
+      sortOrder,
+    };
+    fetchData();
+  }, [fetchData]);
 
   const handleAdd = useCallback(() => {
     form.resetFields();
@@ -132,18 +132,44 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
     setIsModalVisible(true);
   }, [form]);
 
+  // 获取网关列表
+  const fetchData = useCallback(async () => {
+    const currentParams = searchParamsRef.current;
+
+    setLoading(true);
+    try {
+      const response = await iotService.getGateways(currentParams.page, currentParams.pageSize, currentParams.search);
+      if (response.success && response.data) {
+        setData(response.data.queryable || []);
+        setPagination(prev => ({
+          ...prev,
+          page: currentParams.page ?? prev.page,
+          pageSize: currentParams.pageSize ?? prev.pageSize,
+          total: response.data.rowCount ?? 0,
+        }));
+      } else {
+        setData([]);
+        setPagination(prev => ({ ...prev, total: 0 }));
+      }
+    } catch (error) {
+      console.error('加载网关列表失败:', error);
+      setData([]);
+      setPagination(prev => ({ ...prev, total: 0 }));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
     reload: () => {
-      if (actionRef.current?.reload) {
-        actionRef.current.reload();
-      }
+      fetchData();
     },
     refreshStats: () => {
       fetchOverviewStats();
     },
     handleAdd,
-  }), [fetchOverviewStats, handleAdd]);
+  }), [fetchData, fetchOverviewStats, handleAdd]);
 
   const handleEdit = useCallback((gateway: IoTGateway) => {
     setSelectedGateway(gateway);
@@ -174,15 +200,13 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
       const response = await iotService.deleteGateway(id);
       if (response.success) {
         message.success('删除成功');
-        if (actionRef.current?.reload) {
-          actionRef.current.reload();
-        }
+        fetchData();
         fetchOverviewStats();
       }
     } catch (error) {
       message.error('删除失败');
     }
-  }, [fetchOverviewStats]);
+  }, [fetchData, fetchOverviewStats]);
 
   const handleSubmit = useCallback(async (values: any) => {
     // 后端仍可能需要 name 字段，这里与 title 保持一致
@@ -216,14 +240,12 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
         }
       }
       handleCloseModal();
-      if (actionRef.current?.reload) {
-        actionRef.current.reload();
-      }
+      fetchData();
       fetchOverviewStats();
     } catch (error) {
       message.error('操作失败');
     }
-  }, [selectedGateway, fetchOverviewStats]);
+  }, [selectedGateway, fetchData, fetchOverviewStats]);
 
   const getStatusTag = useCallback((status: string) => {
     const normalized = normalizeStatus(status);
@@ -239,6 +261,7 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
       dataIndex: 'title',
       key: 'title',
       width: 150,
+      sorter: true,
       render: (text, record) => (
         <a
           onClick={() => handleView(record)}
@@ -253,6 +276,7 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
       dataIndex: 'protocolType',
       key: 'protocolType',
       width: 100,
+      sorter: true,
     },
     {
       title: '请求方式',
@@ -269,12 +293,14 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
       dataIndex: 'address',
       key: 'address',
       width: 150,
+      sorter: true,
     },
     {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
       width: 100,
+      sorter: true,
       render: (status: string) => getStatusTag(status),
     },
     {
@@ -283,12 +309,14 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
       key: 'deviceCount',
       width: 80,
       align: 'center',
+      sorter: true,
     },
     {
       title: '启用',
       dataIndex: 'isEnabled',
       key: 'isEnabled',
       width: 80,
+      sorter: true,
       render: (isEnabled: boolean) => (
         <Tag color={isEnabled ? 'green' : 'red'}>{isEnabled ? '是' : '否'}</Tag>
       ),
@@ -386,24 +414,27 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
       {/* 搜索 */}
       <SearchBar
         initialParams={searchParamsRef.current}
-        onSearch={(params) => {
-          searchParamsRef.current = params;
-          actionRef.current?.reload?.();
-        }}
+        onSearch={handleSearch}
+        showResetButton={false}
         style={{ marginBottom: 16 }}
       />
 
       {/* 网关列表表格 */}
-      <DataTable<IoTGateway>
-        actionRef={actionRef}
+      <Table<IoTGateway>
         columns={columns}
-        request={fetchGateways}
+        dataSource={data}
         rowKey="id"
+        loading={loading}
         scroll={{ x: 'max-content' }}
-        search={false}
+        onChange={handleTableChange}
         pagination={{
-          pageSize: 20,
+          current: pagination.page,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
           pageSizeOptions: [10, 20, 50, 100],
+          showSizeChanger: true,
+          showQuickJumper: true,
+          showTotal: (total) => `共 ${total} 条`,
         }}
       />
 

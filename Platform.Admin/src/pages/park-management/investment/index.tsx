@@ -1,10 +1,9 @@
 import React, { useCallback, useRef, useState, useEffect } from 'react';
-import { Card, Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typography, Descriptions, InputNumber, Tabs, Progress, Popconfirm, DatePicker, Flex, Drawer } from 'antd';
+import { Card, Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typography, Descriptions, InputNumber, Tabs, Progress, Popconfirm, DatePicker, Flex, Drawer, Table } from 'antd';
 import { useIntl } from '@umijs/max';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, UserAddOutlined, ProjectOutlined, PhoneOutlined, MailOutlined, ReloadOutlined, SwapOutlined, TeamOutlined } from '@ant-design/icons';
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import type { ProColumns } from '@ant-design/pro-components';
 import PageContainer from '@/components/PageContainer';
-import { DataTable } from '@/components/DataTable';
 import SearchBar from '@/components/SearchBar';
 import StatCard from '@/components/StatCard';
 import * as parkService from '@/services/park';
@@ -18,8 +17,6 @@ const { Text } = Typography;
 
 const InvestmentManagement: React.FC = () => {
     const intl = useIntl();
-    const leadTableRef = useRef<ActionType>(null);
-    const projectTableRef = useRef<ActionType>(null);
     const { message } = App.useApp();
     const [leadForm] = Form.useForm();
     const [projectForm] = Form.useForm();
@@ -36,6 +33,13 @@ const InvestmentManagement: React.FC = () => {
     const [currentProject, setCurrentProject] = useState<InvestmentProject | null>(null);
     const [isEdit, setIsEdit] = useState(false);
 
+    const [leadsData, setLeadsData] = useState<InvestmentLead[]>([]);
+    const [projectsData, setProjectsData] = useState<InvestmentProject[]>([]);
+    const [leadsLoading, setLeadsLoading] = useState(false);
+    const [projectsLoading, setProjectsLoading] = useState(false);
+    const [leadsPagination, setLeadsPagination] = useState({ page: 1, pageSize: 10, total: 0 });
+    const [projectsPagination, setProjectsPagination] = useState({ page: 1, pageSize: 10, total: 0 });
+
     const loadStatistics = useCallback(async () => {
         try {
             const res = await parkService.getInvestmentStatistics();
@@ -50,6 +54,74 @@ const InvestmentManagement: React.FC = () => {
     useEffect(() => {
         loadStatistics();
     }, [loadStatistics]);
+
+    const fetchLeads = useCallback(async () => {
+        setLeadsLoading(true);
+        try {
+            const res = await parkService.getLeads({
+                page: leadsPagination.page,
+                pageSize: leadsPagination.pageSize,
+                ...searchParamsRef.current,
+            });
+            if (res.success && res.data) {
+                setLeadsData(res.data.queryable || []);
+                setLeadsPagination(prev => ({ ...prev, total: res.data.rowCount ?? 0 }));
+            } else {
+                setLeadsData([]);
+                setLeadsPagination(prev => ({ ...prev, total: 0 }));
+            }
+        } catch {
+            setLeadsData([]);
+            setLeadsPagination(prev => ({ ...prev, total: 0 }));
+        } finally {
+            setLeadsLoading(false);
+        }
+    }, [leadsPagination.page, leadsPagination.pageSize]);
+
+    const fetchProjects = useCallback(async () => {
+        setProjectsLoading(true);
+        try {
+            const res = await parkService.getProjects({
+                page: projectsPagination.page,
+                pageSize: projectsPagination.pageSize,
+                ...searchParamsRef.current,
+            });
+            if (res.success && res.data) {
+                setProjectsData(res.data.queryable || []);
+                setProjectsPagination(prev => ({ ...prev, total: res.data.rowCount ?? 0 }));
+            } else {
+                setProjectsData([]);
+                setProjectsPagination(prev => ({ ...prev, total: 0 }));
+            }
+        } catch {
+            setProjectsData([]);
+            setProjectsPagination(prev => ({ ...prev, total: 0 }));
+        } finally {
+            setProjectsLoading(false);
+        }
+    }, [projectsPagination.page, projectsPagination.pageSize]);
+
+    const handleLeadsTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+        const newPage = pag.current;
+        const newPageSize = pag.pageSize;
+        setLeadsPagination(prev => ({ ...prev, page: newPage, pageSize: newPageSize }));
+        fetchLeads();
+    }, [fetchLeads]);
+
+    const handleProjectsTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+        const newPage = pag.current;
+        const newPageSize = pag.pageSize;
+        setProjectsPagination(prev => ({ ...prev, page: newPage, pageSize: newPageSize }));
+        fetchProjects();
+    }, [fetchProjects]);
+
+    useEffect(() => {
+        if (activeTab === 'leads') {
+            fetchLeads();
+        } else {
+            fetchProjects();
+        }
+    }, [activeTab, fetchLeads, fetchProjects]);
 
     const priorityOptions = [
         { label: '高', value: 'High', color: 'red' },
@@ -79,6 +151,7 @@ const InvestmentManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.investment.lead.company', defaultMessage: '意向企业' }),
             dataIndex: 'companyName',
+            sorter: true,
             width: 180,
             render: (_, record) => (
                 <Space onClick={() => handleViewLead(record)} style={{ cursor: 'pointer', color: '#1890ff' }}>
@@ -90,6 +163,7 @@ const InvestmentManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.investment.lead.contact', defaultMessage: '联系人' }),
             dataIndex: 'contactPerson',
+            sorter: true,
             width: 120,
             render: (text, record) => (
                 <Flex vertical gap={0}>
@@ -101,12 +175,14 @@ const InvestmentManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.investment.lead.industry', defaultMessage: '行业' }),
             dataIndex: 'industry',
+            sorter: true,
             width: 100,
             render: (text) => text || '-',
         },
         {
             title: intl.formatMessage({ id: 'pages.park.investment.lead.source', defaultMessage: '来源' }),
             dataIndex: 'source',
+            sorter: true,
             width: 100,
             render: (source) => {
                 const sourceMap: Record<string, string> = {
@@ -123,6 +199,7 @@ const InvestmentManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.investment.lead.intendedArea', defaultMessage: '意向面积' }),
             dataIndex: 'intendedArea',
+            sorter: true,
             width: 100,
             align: 'right',
             render: (area) => area ? `${area} m²` : '-',
@@ -130,6 +207,7 @@ const InvestmentManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.investment.lead.priority', defaultMessage: '优先级' }),
             dataIndex: 'priority',
+            sorter: true,
             width: 80,
             render: (priority) => {
                 const opt = priorityOptions.find(o => o.value === priority);
@@ -139,6 +217,7 @@ const InvestmentManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.investment.lead.status', defaultMessage: '状态' }),
             dataIndex: 'status',
+            sorter: true,
             width: 100,
             render: (status) => {
                 const opt = leadStatusOptions.find(o => o.value === status);
@@ -148,6 +227,7 @@ const InvestmentManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.investment.lead.nextFollowUp', defaultMessage: '下次跟进' }),
             dataIndex: 'nextFollowUpDate',
+            sorter: true,
             width: 110,
             render: (date) => date ? dayjs(date as string).format('YYYY-MM-DD') : '-',
         },
@@ -187,6 +267,7 @@ const InvestmentManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.investment.project.name', defaultMessage: '项目名称' }),
             dataIndex: 'projectName',
+            sorter: true,
             width: 200,
             render: (_, record) => (
                 <Space onClick={() => handleViewProject(record)} style={{ cursor: 'pointer', color: '#52c41a' }}>
@@ -198,16 +279,19 @@ const InvestmentManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.investment.project.company', defaultMessage: '企业名称' }),
             dataIndex: 'companyName',
+            sorter: true,
             width: 150,
         },
         {
             title: intl.formatMessage({ id: 'pages.park.investment.project.contact', defaultMessage: '联系人' }),
             dataIndex: 'contactPerson',
+            sorter: true,
             width: 100,
         },
         {
             title: intl.formatMessage({ id: 'pages.park.investment.project.area', defaultMessage: '意向面积' }),
             dataIndex: 'intendedArea',
+            sorter: true,
             width: 100,
             align: 'right',
             render: (area) => area ? `${area} m²` : '-',
@@ -215,6 +299,7 @@ const InvestmentManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.investment.project.rent', defaultMessage: '报价租金' }),
             dataIndex: 'proposedRent',
+            sorter: true,
             width: 120,
             align: 'right',
             render: (rent) => rent ? `¥${rent?.toLocaleString()}/月` : '-',
@@ -222,6 +307,7 @@ const InvestmentManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.investment.project.stage', defaultMessage: '阶段' }),
             dataIndex: 'stage',
+            sorter: true,
             width: 100,
             render: (stage) => {
                 const opt = projectStageOptions.find(o => o.value === stage);
@@ -231,12 +317,14 @@ const InvestmentManagement: React.FC = () => {
         {
             title: intl.formatMessage({ id: 'pages.park.investment.project.probability', defaultMessage: '成功率' }),
             dataIndex: 'probability',
+            sorter: true,
             width: 100,
             render: (prob) => prob ? <Progress percent={prob as number} size="small" style={{ width: 80 }} /> : '-',
         },
         {
             title: intl.formatMessage({ id: 'pages.park.investment.project.expectedDate', defaultMessage: '预计签约' }),
             dataIndex: 'expectedSignDate',
+            sorter: true,
             width: 110,
             render: (date) => date ? dayjs(date as string).format('YYYY-MM-DD') : '-',
         },
@@ -263,12 +351,16 @@ const InvestmentManagement: React.FC = () => {
         },
     ];
 
-    const fetchLeads = async (params: any) => {
+    const fetchLeads = async (params: any, sort: any) => {
+        const sortBy = sort?.sortKey;
+        const sortOrder = sort?.sortOrder === 'ascend' ? 'asc' : sort?.sortOrder === 'descend' ? 'desc' : undefined;
         try {
             const res = await parkService.getLeads({
                 page: params.current || 1,
                 pageSize: params.pageSize || 10,
                 ...searchParamsRef.current,
+                sortBy,
+                sortOrder,
             });
             if (res.success && res.data) {
                 const d = res.data as PagedResult<InvestmentLead>;
@@ -280,12 +372,16 @@ const InvestmentManagement: React.FC = () => {
         }
     };
 
-    const fetchProjects = async (params: any) => {
+    const fetchProjects = async (params: any, sort: any) => {
+        const sortBy = sort?.sortKey;
+        const sortOrder = sort?.sortOrder === 'ascend' ? 'asc' : sort?.sortOrder === 'descend' ? 'desc' : undefined;
         try {
             const res = await parkService.getProjects({
                 page: params.current || 1,
                 pageSize: params.pageSize || 10,
                 ...searchParamsRef.current,
+                sortBy,
+                sortOrder,
             });
             if (res.success && res.data) {
                 return { data: res.data.queryable ?? [], total: res.data.rowCount ?? 0, success: true };
@@ -322,7 +418,7 @@ const InvestmentManagement: React.FC = () => {
             const res = await parkService.deleteLead(id);
             if (res.success) {
                 message.success(intl.formatMessage({ id: 'common.deleteSuccess', defaultMessage: '删除成功' }));
-                leadTableRef.current?.reload();
+                fetchLeads();
                 loadStatistics();
             }
         } catch (error) {
@@ -338,8 +434,8 @@ const InvestmentManagement: React.FC = () => {
             const res = await parkService.convertLeadToProject(leadId);
             if (res.success) {
                 message.success(intl.formatMessage({ id: 'pages.park.investment.convertSuccess', defaultMessage: '转换成功' }));
-                leadTableRef.current?.reload();
-                projectTableRef.current?.reload();
+                fetchLeads();
+                fetchProjects();
                 loadStatistics();
                 setActiveTab('projects');
             }
@@ -377,7 +473,7 @@ const InvestmentManagement: React.FC = () => {
                     defaultMessage: isEdit ? '更新成功' : '创建成功'
                 }));
                 setLeadModalVisible(false);
-                leadTableRef.current?.reload();
+                fetchLeads();
                 loadStatistics();
             }
         } catch (error) {
@@ -403,7 +499,7 @@ const InvestmentManagement: React.FC = () => {
             const res = await parkService.deleteProject(id);
             if (res.success) {
                 message.success(intl.formatMessage({ id: 'common.deleteSuccess', defaultMessage: '删除成功' }));
-                projectTableRef.current?.reload();
+                fetchProjects();
                 loadStatistics();
             }
         } catch (error) {
@@ -440,7 +536,7 @@ const InvestmentManagement: React.FC = () => {
                     defaultMessage: isEdit ? '更新成功' : '创建成功'
                 }));
                 setProjectModalVisible(false);
-                projectTableRef.current?.reload();
+                fetchProjects();
                 loadStatistics();
             }
         } catch (error) {
@@ -453,9 +549,9 @@ const InvestmentManagement: React.FC = () => {
 
     const handleRefresh = () => {
         if (activeTab === 'leads') {
-            leadTableRef.current?.reload();
+            fetchLeads();
         } else {
-            projectTableRef.current?.reload();
+            fetchProjects();
         }
         loadStatistics();
     };
@@ -527,9 +623,11 @@ const InvestmentManagement: React.FC = () => {
                 onSearch={(params) => {
                     searchParamsRef.current = { ...searchParamsRef.current, ...params };
                     if (activeTab === 'leads') {
-                        leadTableRef.current?.reload();
+                        setLeadsPagination(prev => ({ ...prev, page: 1 }));
+                        fetchLeads();
                     } else {
-                        projectTableRef.current?.reload();
+                        setProjectsPagination(prev => ({ ...prev, page: 1 }));
+                        fetchProjects();
                     }
                 }}
                 style={{ marginBottom: 16 }}
@@ -549,13 +647,22 @@ const InvestmentManagement: React.FC = () => {
                                 </Space>
                             ),
                             children: (
-                                <DataTable<InvestmentLead>
-                                    actionRef={leadTableRef}
+                                <Table<InvestmentLead>
+                                    dataSource={leadsData}
                                     columns={leadColumns as any}
-                                    request={fetchLeads}
                                     rowKey="id"
+                                    loading={leadsLoading}
+                                    onChange={handleLeadsTableChange}
+                                    pagination={{
+                                        current: leadsPagination.page,
+                                        pageSize: leadsPagination.pageSize,
+                                        total: leadsPagination.total,
+                                        pageSizeOptions: [10, 20, 50, 100],
+                                        showSizeChanger: true,
+                                        showQuickJumper: true,
+                                        showTotal: (total) => `共 ${total} 条`,
+                                    }}
                                     scroll={{ x: 1400 }}
-                                    search={false}
                                 />
                             ),
                         },
@@ -568,13 +675,22 @@ const InvestmentManagement: React.FC = () => {
                                 </Space>
                             ),
                             children: (
-                                <DataTable<InvestmentProject>
-                                    actionRef={projectTableRef}
+                                <Table<InvestmentProject>
+                                    dataSource={projectsData}
                                     columns={projectColumns as any}
-                                    request={fetchProjects}
                                     rowKey="id"
+                                    loading={projectsLoading}
+                                    onChange={handleProjectsTableChange}
+                                    pagination={{
+                                        current: projectsPagination.page,
+                                        pageSize: projectsPagination.pageSize,
+                                        total: projectsPagination.total,
+                                        pageSizeOptions: [10, 20, 50, 100],
+                                        showSizeChanger: true,
+                                        showQuickJumper: true,
+                                        showTotal: (total) => `共 ${total} 条`,
+                                    }}
                                     scroll={{ x: 1300 }}
-                                    search={false}
                                 />
                             ),
                         },

@@ -1,9 +1,7 @@
 import React, { useRef, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
-import DataTable from '@/components/DataTable';
-import type { ActionType, ProColumns } from '@/types/pro-components';
-import { useIntl } from '@umijs/max';
-import { Button, Tag, Space, Modal, Card, Form, Input, Select, Grid } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import { useIntl } from '@umijs/max';
+import { Button, Tag, Space, Modal, Card, Form, Input, Select, Grid, Table } from 'antd';
 import {
   EditOutlined,
   DeleteOutlined,
@@ -19,6 +17,7 @@ import {
 } from '@/services/xiaoke/api';
 import ConfigForm from './ConfigForm';
 import dayjs from 'dayjs';
+import type { PageParams } from '@/types/page-params';
 
 export interface ConfigManagementRef {
   reload: () => void;
@@ -29,87 +28,102 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
   const intl = useIntl();
   const message = useMessage();
   const { confirm } = useModal();
-  const actionRef = useRef<ActionType>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
   const { useBreakpoint } = Grid;
   const screens = useBreakpoint();
-  const isMobile = !screens.md; // md 以下为移动端
+  const isMobile = !screens.md;
   const [searchForm] = Form.useForm();
-  const [searchParams, setSearchParams] = useState<{ current: number; pageSize: number; name?: string; isEnabled?: boolean | undefined; }>(
-    { current: 1, pageSize: 10, name: undefined, isEnabled: undefined }
+  const [searchParams, setSearchParams] = useState<{ page: number; pageSize: number; name?: string; isEnabled?: boolean | undefined; }>(
+    { page: 1, pageSize: 10, name: undefined, isEnabled: undefined }
   );
   const [formVisible, setFormVisible] = useState(false);
   const [editingConfig, setEditingConfig] = useState<XiaokeConfig | null>(null);
+  const [data, setData] = useState<XiaokeConfig[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
 
-  // 获取配置列表
-  const fetchConfigs = useCallback(
-    async (params: any, _sort?: Record<string, any>) => {
-      try {
-        const response = await getXiaokeConfigs({
-          page: params.current || searchParams.current,
-          pageSize: params.pageSize || searchParams.pageSize,
-          name: searchParams.name,
-          isEnabled: searchParams.isEnabled,
-          sorter: params.sorter,
-        });
+  const searchParamsRef = useRef<PageParams>({
+    page: 1,
+    pageSize: 10,
+    name: undefined,
+    isEnabled: undefined,
+  });
 
-        if (response.success && response.data) {
-          return {
-            data: response.data.queryable || [],
-            success: true,
-            total: response.data.rowCount ?? 0,
-          };
-        }
+  const fetchData = useCallback(async () => {
+    const currentParams = searchParamsRef.current;
 
-        return {
-          data: [],
-          success: false,
-          total: 0,
-        };
-      } catch (error) {
-        console.error('获取配置列表失败:', error);
-        return {
-          data: [],
-          success: false,
-          total: 0,
-        };
+    setLoading(true);
+    try {
+      const response = await getXiaokeConfigs({
+        page: currentParams.page,
+        pageSize: currentParams.pageSize,
+        name: currentParams.name,
+        isEnabled: currentParams.isEnabled,
+      });
+
+      if (response.success && response.data) {
+        setData(response.data.queryable || []);
+        setPagination(prev => ({
+          ...prev,
+          page: currentParams.page ?? prev.page,
+          pageSize: currentParams.pageSize ?? prev.pageSize,
+          total: response.data.rowCount ?? 0,
+        }));
+      } else {
+        setData([]);
+        setPagination(prev => ({ ...prev, total: 0 }));
       }
-    },
-    [searchParams],
-  );
+    } catch (error) {
+      console.error('获取配置列表失败:', error);
+      setData([]);
+      setPagination(prev => ({ ...prev, total: 0 }));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  // 搜索
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
   const handleSearch = useCallback((values: any) => {
     const newParams = {
-      current: 1,
-      pageSize: searchParams.pageSize,
-      name: values.name || undefined,
-      isEnabled: values.isEnabled,
+      ...searchParamsRef.current,
+      ...values,
+      page: 1,
     };
-    setSearchParams(newParams);
-    actionRef.current?.reload?.();
-  }, [searchParams.pageSize]);
+    searchParamsRef.current = newParams;
+    fetchData();
+  }, [fetchData]);
 
-  // 重置
   const handleReset = useCallback(() => {
     searchForm.resetFields();
-    const resetParams = { current: 1, pageSize: searchParams.pageSize, name: undefined, isEnabled: undefined };
-    setSearchParams(resetParams);
-    actionRef.current?.reload?.();
-  }, [searchForm, searchParams.pageSize]);
+    searchParamsRef.current = { page: 1, pageSize: 10, name: undefined, isEnabled: undefined };
+    fetchData();
+  }, [searchForm, fetchData]);
 
-  // 处理创建
+  const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+    const newPage = pag.current;
+    const newPageSize = pag.pageSize;
+
+    searchParamsRef.current = {
+      ...searchParamsRef.current,
+      page: newPage,
+      pageSize: newPageSize,
+    };
+    fetchData();
+  }, [fetchData]);
+
   const handleCreate = useCallback(() => {
     setEditingConfig(null);
     setFormVisible(true);
   }, []);
 
-  // 处理编辑
   const handleEdit = useCallback((record: XiaokeConfig) => {
     setEditingConfig(record);
     setFormVisible(true);
   }, []);
 
-  // 处理删除
   const handleDelete = useCallback((record: XiaokeConfig) => {
     confirm({
       title: intl.formatMessage({ id: 'pages.xiaokeManagement.config.modal.confirmDelete' }),
@@ -122,9 +136,7 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
           const response = await deleteXiaokeConfig(record.id);
           if (response.success) {
             message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.deleteSuccess' }));
-            if (actionRef.current && actionRef.current.reload) {
-              actionRef.current.reload();
-            }
+            fetchData();
           } else {
             message.error(response.message || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.deleteFailed' }));
           }
@@ -133,50 +145,39 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
         }
       },
     });
-  }, [intl]);
+  }, [intl, fetchData]);
 
-  // 处理设置默认配置
   const handleSetDefault = useCallback(async (record: XiaokeConfig) => {
     try {
       const response = await setDefaultXiaokeConfig(record.id);
       if (response.success) {
         message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.setDefaultSuccess' }));
-        if (actionRef.current && actionRef.current.reload) {
-          actionRef.current.reload();
-        }
+        fetchData();
       } else {
         message.error(response.message || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.setDefaultFailed' }));
       }
     } catch (error: any) {
       message.error(error.message || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.setDefaultFailed' }));
     }
-  }, [intl]);
+  }, [intl, fetchData]);
 
-  // 处理表单成功
   const handleFormSuccess = useCallback(() => {
     setFormVisible(false);
     setEditingConfig(null);
-    // 创建成功后重置到第一页并重新加载，确保新创建的记录显示出来
-    if (actionRef.current && actionRef.current.reloadAndReset) {
-      actionRef.current.reloadAndReset();
-    }
-  }, []);
+    fetchData();
+  }, [fetchData]);
 
-  // 处理关闭表单
   const handleCloseForm = useCallback(() => {
     setFormVisible(false);
     setEditingConfig(null);
   }, []);
 
-  // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
     reload: () => {
-      if (actionRef.current && actionRef.current.reload) {
-        actionRef.current.reload();
-      }
+      fetchData();
     },
     handleCreate,
-  }), [handleCreate]);
+  }), [handleCreate, fetchData]);
 
   const columns: ColumnsType<XiaokeConfig> = [
     {
@@ -185,18 +186,21 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
       key: 'name',
       width: 200,
       ellipsis: true,
+      sorter: true,
     },
     {
       title: intl.formatMessage({ id: 'pages.xiaokeManagement.config.table.model' }),
       dataIndex: 'model',
       key: 'model',
       width: 150,
+      sorter: true,
     },
     {
       title: intl.formatMessage({ id: 'pages.xiaokeManagement.config.table.temperature' }),
       dataIndex: 'temperature',
       key: 'temperature',
       width: 100,
+      sorter: true,
       render: (value: number) => value.toFixed(1),
     },
     {
@@ -204,12 +208,14 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
       dataIndex: 'maxTokens',
       key: 'maxTokens',
       width: 120,
+      sorter: true,
     },
     {
       title: intl.formatMessage({ id: 'pages.xiaokeManagement.config.table.status' }),
       dataIndex: 'isEnabled',
       key: 'isEnabled',
       width: 100,
+      sorter: true,
       render: (value: boolean) => (
         <Tag color={value ? 'success' : 'default'}>
           {value
@@ -223,7 +229,8 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
       dataIndex: 'isDefault',
       key: 'isDefault',
       width: 100,
-      render: (value: boolean, record: XiaokeConfig) => (
+      sorter: true,
+      render: (value: boolean) => (
         <Tag color={value ? 'blue' : 'default'}>
           {value
             ? intl.formatMessage({ id: 'pages.xiaokeManagement.config.isDefault.yes' })
@@ -236,6 +243,7 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
       dataIndex: 'createdAt',
       key: 'createdAt',
       width: 180,
+      sorter: true,
       render: (value: string) => dayjs(value).format('YYYY-MM-DD HH:mm:ss'),
     },
     {
@@ -279,7 +287,6 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
 
   return (
     <>
-      {/* 搜索表单 */}
       <Card style={{ marginBottom: 16 }}>
         <Form
           form={searchForm}
@@ -313,22 +320,23 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
         </Form>
       </Card>
 
-      <DataTable<XiaokeConfig>
-        actionRef={actionRef}
-        rowKey="id"
-        scroll={{ x: 'max-content' }}
-        request={fetchConfigs}
+      <Table<XiaokeConfig>
+        dataSource={data}
         columns={columns}
-        search={false}
+        rowKey="id"
+        loading={loading}
+        scroll={{ x: 'max-content' }}
+        onChange={handleTableChange}
         pagination={{
-          pageSize: 10,
+          current: pagination.page,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
           pageSizeOptions: [10, 20, 50, 100],
           showSizeChanger: true,
           showQuickJumper: true,
         }}
       />
 
-      {/* 配置表单弹窗 */}
       {formVisible && (
         <Modal
           title={editingConfig

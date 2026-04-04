@@ -35,6 +35,7 @@ import {
   UnorderedListOutlined,
 } from '@ant-design/icons';
 import { formatDateTime } from '@/utils/format';
+import { getTaskStatusColor, getTaskPriorityColor } from '@/utils/task';
 import {
   queryTasks,
   deleteTask,
@@ -51,42 +52,6 @@ import TaskExecutionPanel from './components/TaskExecutionPanel';
 import UnifiedNotificationCenter from '@/components/UnifiedNotificationCenter';
 import { getProjectList, type ProjectDto } from '@/services/task/project';
 import type { PageParams } from '@/types/page-params';
-
-const getStatusColor = (status: number) => {
-  switch (status) {
-    case TaskStatus.Pending:
-      return 'default';
-    case TaskStatus.Assigned:
-      return 'processing';
-    case TaskStatus.InProgress:
-      return 'processing';
-    case TaskStatus.Completed:
-      return 'success';
-    case TaskStatus.Cancelled:
-      return 'error';
-    case TaskStatus.Failed:
-      return 'error';
-    case TaskStatus.Paused:
-      return 'warning';
-    default:
-      return 'default';
-  }
-};
-
-const getPriorityColor = (priority: number) => {
-  switch (priority) {
-    case TaskPriority.Low:
-      return 'blue';
-    case TaskPriority.Medium:
-      return 'cyan';
-    case TaskPriority.High:
-      return 'orange';
-    case TaskPriority.Urgent:
-      return 'red';
-    default:
-      return 'blue';
-  }
-};
 
 const TaskManagement: React.FC = () => {
   const intl = useIntl();
@@ -296,7 +261,7 @@ const TaskManagement: React.FC = () => {
       ],
       onFilter: (value, record) => record.status === (value as number),
       render: (_: any, record: TaskDto) => (
-        <Tag color={getStatusColor(record.status)}>
+        <Tag color={getTaskStatusColor(record.status)}>
           {record.statusName}
         </Tag>
       ),
@@ -314,7 +279,7 @@ const TaskManagement: React.FC = () => {
       ],
       onFilter: (value, record) => record.priority === (value as number),
       render: (_: any, record: TaskDto) => (
-        <Tag color={getPriorityColor(record.priority)}>
+        <Tag color={getTaskPriorityColor(record.priority)}>
           {record.priorityName}
         </Tag>
       ),

@@ -8,19 +8,8 @@ export interface StatCardProps {
   color?: string;
   suffix?: React.ReactNode;
   loading?: boolean;
-  /**
-   * 可选的主题 token（例如从外部获取的 token），不传则使用内部的 theme token
-   */
-  token?: any;
 }
 
-/**
- * 统一的统计卡片组件
- * - 图标在左，数值和标题在右侧垂直排列
- * - 卡片内边距：10px 12px
- * - 图标尺寸：20px，数值字号：20px，标题字号：12px
- * - 使用 React.memo 优化渲染性能
- */
 const StatCard: React.FC<StatCardProps> = React.memo(({
   title,
   value,
@@ -28,10 +17,8 @@ const StatCard: React.FC<StatCardProps> = React.memo(({
   color = '#1890ff',
   suffix = null,
   loading = false,
-  token: propToken,
 }) => {
-  const { token: themeToken } = theme.useToken();
-  const token = propToken || themeToken;
+  const { token } = theme.useToken();
 
   return (
     <Card
@@ -39,43 +26,21 @@ const StatCard: React.FC<StatCardProps> = React.memo(({
       styles={{ body: { padding: '10px 12px' } }}
       style={{
         borderRadius: '12px',
-        border: `1px solid ${token?.colorBorderSecondary || '#f0f0f0'}`,
-        backgroundColor: token?.colorBgContainer || '#ffffff',
+        border: `1px solid ${token.colorBorderSecondary}`,
+        backgroundColor: token.colorBgContainer,
       }}
       loading={loading}
     >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-        }}
-      >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <div style={{ color, fontSize: '20px', flexShrink: 0 }}>
           {icon}
         </div>
         <div style={{ textAlign: 'right', flex: 1, minWidth: 0 }}>
-          <div
-            style={{
-              fontSize: '20px',
-              fontWeight: 'bold',
-              color: token?.colorText || '#262626',
-              lineHeight: 1.2,
-            }}
-          >
+          <div style={{ fontSize: '20px', fontWeight: 'bold', color: token.colorText, lineHeight: 1.2 }}>
             {value}
             {suffix}
           </div>
-          <div
-            style={{
-              fontSize: '12px',
-              color: token?.colorTextSecondary || '#8c8c8c',
-              marginTop: 2,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-          >
+          <div style={{ fontSize: '12px', color: token.colorTextSecondary, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {title}
           </div>
         </div>
@@ -87,6 +52,3 @@ const StatCard: React.FC<StatCardProps> = React.memo(({
 StatCard.displayName = 'StatCard';
 
 export default StatCard;
-
-
-

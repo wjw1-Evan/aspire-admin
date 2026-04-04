@@ -318,9 +318,19 @@ public class UserService : IUserService
         return query.ToPagedList(request);
     }
 
-    public async Task<System.Linq.Dynamic.Core.PagedResult<User>> GetUsersWithRolesAsync(Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<UserWithRolesResponse>> GetUsersWithRolesAsync(Platform.ServiceDefaults.Models.PageParams request)
     {
-        return await GetUsersWithPaginationAsync(request);
+        var pagedResult = await GetUsersWithPaginationAsync(request);
+        var users = await pagedResult.Queryable.ToListAsync();
+        var enrichedUsers = await EnrichUsersWithRolesAsync(users);
+        return new System.Linq.Dynamic.Core.PagedResult<UserWithRolesResponse>
+        {
+            Queryable = enrichedUsers.AsQueryable(),
+            CurrentPage = pagedResult.CurrentPage,
+            PageSize = pagedResult.PageSize,
+            RowCount = pagedResult.RowCount,
+            PageCount = pagedResult.PageCount,
+        };
     }
 
     private static Expression<Func<T, bool>> CombineFilters<T>(Expression<Func<T, bool>> first, Expression<Func<T, bool>> second)

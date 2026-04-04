@@ -40,6 +40,9 @@ import {
     WarningOutlined,
 } from '@ant-design/icons';
 import { formatDateTime } from '@/utils/format';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+dayjs.extend(relativeTime);
 
 const { useBreakpoint } = Grid;
 

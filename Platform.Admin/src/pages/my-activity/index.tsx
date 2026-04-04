@@ -212,16 +212,7 @@ const MyActivity: React.FC = () => {
       key: 'createdAt',
       sorter: true,
       defaultSortOrder: 'descend',
-      render: (_, record: UserActivityLog) => {
-        if (!record.createdAt) return '-';
-        try {
-          const date = dayjs(record.createdAt);
-          if (!date.isValid()) return record.createdAt;
-          return date.format('YYYY-MM-DD HH:mm:ss');
-        } catch (error) {
-          return record.createdAt;
-        }
-      },
+      render: (_, record: UserActivityLog) => formatDateTime(record.createdAt),
     },
   ], [intl, handleViewDetail]);
 

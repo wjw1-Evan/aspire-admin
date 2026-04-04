@@ -88,7 +88,7 @@ public interface IUserService
     /// </summary>
     /// <param name="request">用户列表请求</param>
     /// <returns>带角色信息的用户列表响应</returns>
-    Task<System.Linq.Dynamic.Core.PagedResult<AppUser>> GetUsersWithRolesAsync(Platform.ServiceDefaults.Models.PageParams request);
+    Task<System.Linq.Dynamic.Core.PagedResult<UserWithRolesResponse>> GetUsersWithRolesAsync(Platform.ServiceDefaults.Models.PageParams request);
 
     /// <summary>
     /// 确保当前用户有权访问目标用户的数据

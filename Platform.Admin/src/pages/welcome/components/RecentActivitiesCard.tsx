@@ -8,6 +8,7 @@ import { getActivityColor, getActionText } from '../utils';
 import { useInfiniteScroll } from 'ahooks';
 import { getCurrentUserActivityLogs } from '@/services/user-log/api';
 import { Spin } from 'antd';
+import { getMethodColor } from '@/utils/activityLog';
 
 
 const { Text } = Typography;
@@ -20,18 +21,6 @@ const RecentActivitiesCard: React.FC<RecentActivitiesCardProps> = ({ currentUser
     const intl = useIntl();
     const { styles } = useCommonStyles();
     const scrollRef = React.useRef<HTMLDivElement>(null);
-
-    // 获取方法颜色
-    const getMethodColor = (method?: string): string => {
-        const colors: Record<string, string> = {
-            GET: 'blue',
-            POST: 'green',
-            PUT: 'orange',
-            DELETE: 'red',
-            PATCH: 'purple',
-        };
-        return colors[method?.toUpperCase() || ''] || 'default';
-    };
 
     // 获取状态码标识
     const renderStatusCode = (code?: number) => {

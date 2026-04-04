@@ -25,6 +25,7 @@ import 'dayjs/locale/zh-cn';
 import type { UserActivityLog } from '@/services/user-log/types';
 import { getCurrentUserActivityLogById } from '@/services/user-log/api';
 import type { ApiResponse } from '@/types/unified-api';
+import { getMethodColor } from '@/utils/activityLog';
 
 dayjs.extend(relativeTime);
 dayjs.locale('zh-cn');
@@ -121,18 +122,6 @@ export default function LogDetailDrawer({
       return <Badge status="error" text={intl.formatMessage({ id: 'pages.logDetail.statusServerError' }, { code: statusCode })} />;
     }
     return <Badge status="default" text={`${statusCode}`} />;
-  };
-
-  // 获取HTTP方法的颜色
-  const getMethodColor = (method?: string) => {
-    const colors: Record<string, string> = {
-      GET: 'blue',
-      POST: 'green',
-      PUT: 'orange',
-      DELETE: 'red',
-      PATCH: 'purple',
-    };
-    return colors[method || ''] || 'default';
   };
 
   // 格式化耗时

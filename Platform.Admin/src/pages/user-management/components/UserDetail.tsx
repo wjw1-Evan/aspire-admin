@@ -12,20 +12,17 @@ import {
   Timeline,
 } from 'antd';
 import {
-  UserOutlined,
-  MailOutlined,
-  MobileOutlined,
-  CalendarOutlined,
-  ClockCircleOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
+  ClockCircleOutlined,
   HistoryOutlined,
 } from '@ant-design/icons';
 import { request, useIntl } from '@umijs/max';
 import { getAllRoles } from '@/services/role/api';
 import type { Role } from '@/services/role/api';
 import type { AppUser, UserActivityLog } from '../types';
-import dayjs from 'dayjs';
+import { formatDateTime } from '@/utils/format';
+import { getActionTagColor, getActionText } from '@/utils/activityLog';
 
 const { Text } = Typography;
 
@@ -97,101 +94,28 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
     }
   };
 
-  const getActionColor = (action: string) => {
-    const actionColors: Record<string, string> = {
-      login: 'green',
-      logout: 'orange',
-      update_profile: 'blue',
-      change_password: 'purple',
-      view_profile: 'purple',
-      // 用户管理操作
-      create_user: 'cyan',
-      update_user: 'blue',
-      delete_user: 'red',
-      activate_user: 'green',
-      deactivate_user: 'orange',
-      update_user_role: 'purple',
-      bulk_action: 'geekblue',
-    };
-    return actionColors[action] || 'default';
-  };
-
-  const getActionText = (action: string) => {
-    const actionTexts: Record<string, string> = {
-      login: '登录',
-      logout: '登出',
-      update_profile: '更新资料',
-      change_password: '修改密码',
-      view_profile: '查看资料',
-      // 用户管理操作
-      create_user: '创建用户',
-      update_user: '更新用户',
-      delete_user: '删除用户',
-      activate_user: '启用用户',
-      deactivate_user: '禁用用户',
-      update_user_role: '更新角色',
-      bulk_action: '批量操作',
-    };
-    return actionTexts[action] || action;
-  };
-
   return (
     <div>
       {/* 基本信息 */}
       <Card title={intl.formatMessage({ id: 'pages.userDetail.basicInfo' })} style={{ marginBottom: 16 }}>
         <Descriptions column={1} size="small">
-          <Descriptions.Item
-            label={
-              <Space>
-                <UserOutlined />
-                {intl.formatMessage({ id: 'pages.userDetail.username' })}
-              </Space>
-            }
-          >
+          <Descriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.username' })}>
             {user.username}
           </Descriptions.Item>
 
-          <Descriptions.Item
-            label={
-              <Space>
-                <UserOutlined />
-                {intl.formatMessage({ id: 'pages.account.center.name', defaultMessage: 'Name' })}
-              </Space>
-            }
-          >
+          <Descriptions.Item label={intl.formatMessage({ id: 'pages.account.center.name', defaultMessage: 'Name' })}>
             {user.name || '-'}
           </Descriptions.Item>
 
-          <Descriptions.Item
-            label={
-              <Space>
-                <MailOutlined />
-                {intl.formatMessage({ id: 'pages.userDetail.email' })}
-              </Space>
-            }
-          >
+          <Descriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.email' })}>
             {user.email || '-'}
           </Descriptions.Item>
 
-          <Descriptions.Item
-            label={
-              <Space>
-                <MobileOutlined />
-                手机号
-              </Space>
-            }
-          >
+          <Descriptions.Item label="手机号">
             {user.phoneNumber || '-'}
           </Descriptions.Item>
 
-          <Descriptions.Item
-            label={
-              <Space>
-                <CalendarOutlined />
-                {intl.formatMessage({ id: 'pages.account.center.age', defaultMessage: 'Age' })}
-              </Space>
-            }
-          >
+          <Descriptions.Item label={intl.formatMessage({ id: 'pages.account.center.age', defaultMessage: 'Age' })}>
             {user.age || '-'}
           </Descriptions.Item>
 
@@ -246,26 +170,12 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
             />
           </Descriptions.Item>
 
-          <Descriptions.Item
-            label={
-              <Space>
-                <CalendarOutlined />
-                {intl.formatMessage({ id: 'pages.userDetail.createdAt' })}
-              </Space>
-            }
-          >
-            {dayjs(user.createdAt).format('YYYY-MM-DD HH:mm:ss')}
+          <Descriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.createdAt' })}>
+            {formatDateTime(user.createdAt)}
           </Descriptions.Item>
 
-          <Descriptions.Item
-            label={
-              <Space>
-                <ClockCircleOutlined />
-                {intl.formatMessage({ id: 'pages.userDetail.updatedAt' })}
-              </Space>
-            }
-          >
-            {dayjs(user.updatedAt).format('YYYY-MM-DD HH:mm:ss')}
+          <Descriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.updatedAt' })}>
+            {formatDateTime(user.updatedAt)}
           </Descriptions.Item>
 
           {user.lastLoginAt && (
@@ -277,7 +187,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
                 </Space>
               }
             >
-              {dayjs(user.lastLoginAt).format('YYYY-MM-DD HH:mm:ss')}
+              {formatDateTime(user.lastLoginAt)}
             </Descriptions.Item>
           )}
         </Descriptions>
@@ -311,7 +221,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
                   content: (
                     <Flex vertical gap={4}>
                       <Space wrap>
-                        <Tag color={getActionColor(log.action)}>
+                        <Tag color={getActionTagColor(log.action)}>
                           {getActionText(log.action)}
                         </Tag>
                         {log.httpMethod && (
@@ -331,7 +241,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
                           {log.description}
                         </Text>
                         <Text type="secondary" style={{ fontSize: '12px' }}>
-                          {dayjs(log.createdAt).format('YYYY-MM-DD HH:mm:ss')}
+                          {formatDateTime(log.createdAt)}
                         </Text>
                       </Space>
 

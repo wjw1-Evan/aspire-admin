@@ -17,6 +17,7 @@ import {
 } from 'antd';
 import dayjs from 'dayjs';
 import { getTaskById, getTaskExecutionLogs, TaskStatus, TaskPriority, type TaskDto, type TaskExecutionLogDto } from '@/services/task/api';
+import { getTaskStatusColor, getTaskPriorityColor } from '@/utils/task';
 
 interface TaskDetailProps {
   open: boolean;
@@ -68,42 +69,6 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ open, task, onClose }) => {
     }
   };
 
-  const getStatusColor = (status: number) => {
-    switch (status) {
-      case TaskStatus.Pending:
-        return 'default';
-      case TaskStatus.Assigned:
-        return 'processing';
-      case TaskStatus.InProgress:
-        return 'processing';
-      case TaskStatus.Completed:
-        return 'success';
-      case TaskStatus.Cancelled:
-        return 'error';
-      case TaskStatus.Failed:
-        return 'error';
-      case TaskStatus.Paused:
-        return 'warning';
-      default:
-        return 'default';
-    }
-  };
-
-  const getPriorityColor = (priority: number) => {
-    switch (priority) {
-      case TaskPriority.Low:
-        return 'blue';
-      case TaskPriority.Medium:
-        return 'cyan';
-      case TaskPriority.High:
-        return 'orange';
-      case TaskPriority.Urgent:
-        return 'red';
-      default:
-        return 'blue';
-    }
-  };
-
   const getExecutionResultColor = (result: number) => {
     switch (result) {
       case 1: // Success
@@ -142,12 +107,12 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ open, task, onClose }) => {
                   <Tag>{taskDetail.taskType}</Tag>
                 </Descriptions.Item>
                 <Descriptions.Item label="状态">
-                  <Tag color={getStatusColor(taskDetail.status)}>
+                  <Tag color={getTaskStatusColor(taskDetail.status)}>
                     {taskDetail.statusName}
                   </Tag>
                 </Descriptions.Item>
                 <Descriptions.Item label="优先级">
-                  <Tag color={getPriorityColor(taskDetail.priority)}>
+                  <Tag color={getTaskPriorityColor(taskDetail.priority)}>
                     {taskDetail.priorityName}
                   </Tag>
                 </Descriptions.Item>

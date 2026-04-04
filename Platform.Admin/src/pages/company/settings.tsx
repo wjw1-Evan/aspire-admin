@@ -13,20 +13,7 @@ import { useIntl, useModel } from '@umijs/max';
 import { getCurrentCompany, getCompanyStatistics } from '@/services/company';
 import EditCompanyModal from './components/EditCompanyModal';
 import { StatCard } from '@/components';
-import dayjs from 'dayjs';
-
-// 统一的日期时间格式化函数
-const formatDateTime = (dateTime: string | null | undefined): string => {
-  if (!dateTime) return '-';
-  try {
-    const date = dayjs(dateTime);
-    if (!date.isValid()) return dateTime;
-    return date.format('YYYY-MM-DD HH:mm:ss');
-  } catch (error) {
-    console.error('日期格式化错误:', error, dateTime);
-    return dateTime || '-';
-  }
-};
+import { formatDateTime } from '@/utils/format';
 
 export default function CompanySettings() {
   const intl = useIntl();
@@ -83,7 +70,6 @@ export default function CompanySettings() {
   if (loading) {
     return (
       <PageContainer
-        style={{ paddingBlock: 12 }}
       >
         <Spin
           size="large"
@@ -99,7 +85,6 @@ export default function CompanySettings() {
   if (!company) {
     return (
       <PageContainer
-        style={{ paddingBlock: 12 }}
       >
         <Card>
           <div style={{ textAlign: 'center', padding: 50 }}>
@@ -124,7 +109,6 @@ export default function CompanySettings() {
           {intl.formatMessage({ id: 'pages.companySettings.editCompany' })}
         </a>,
       ]}
-      style={{ paddingBlock: 12 }}
     >
       {/* 企业统计：使用 StatCard 统一风格 */}
       {statistics && (

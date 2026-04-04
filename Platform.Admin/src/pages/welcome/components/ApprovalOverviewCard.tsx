@@ -122,7 +122,7 @@ const ApprovalOverviewCard: React.FC<ApprovalOverviewCardProps> = ({
                     {doc.createdBy} · {doc.createdAt ? new Date(doc.createdAt).toLocaleString() : ''}
                   </Text>
                 </Space>
-                <Button type="link" size="small" icon={<EyeOutlined />}>
+                <Button type="link" icon={<EyeOutlined />}>
                   {intl.formatMessage({ id: 'pages.document.action.view', defaultMessage: '详情' })}
                 </Button>
               </li>

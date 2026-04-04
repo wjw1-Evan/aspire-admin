@@ -15,7 +15,6 @@ const DataCenterPage: React.FC = () => {
           数据中心
         </Space>
       }
-      style={{ paddingBlock: 12 }}
       extra={
         <Space>
           <Button

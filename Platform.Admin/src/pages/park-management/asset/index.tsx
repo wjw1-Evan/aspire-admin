@@ -276,18 +276,18 @@ const AssetManagement: React.FC = () => {
             width: 180,
             fixed: 'right',
             render: (_, record) => (
-                <Space size="small">
-                    <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handleViewBuilding(record)}>
+                <Space>
+                    <Button type="link" icon={<EyeOutlined />} onClick={() => handleViewBuilding(record)}>
                         {intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}
                     </Button>
-                    <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEditBuilding(record)}>
+                    <Button type="link" icon={<EditOutlined />} onClick={() => handleEditBuilding(record)}>
                         {intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}
                     </Button>
                     <Popconfirm
                         title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })}
                         onConfirm={() => handleDeleteBuilding(record.id)}
                     >
-                        <Button type="link" size="small" danger icon={<DeleteOutlined />}>
+                        <Button type="link" danger icon={<DeleteOutlined />}>
                             {intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}
                         </Button>
                     </Popconfirm>
@@ -372,11 +372,11 @@ const AssetManagement: React.FC = () => {
             width: 150,
             fixed: 'right',
             render: (_, record) => (
-                <Space size="small">
-                    <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handleViewUnit(record)}>
+                <Space>
+                    <Button type="link" icon={<EyeOutlined />} onClick={() => handleViewUnit(record)}>
                         {intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}
                     </Button>
-                    <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEditUnit(record)}>
+                    <Button type="link" icon={<EditOutlined />} onClick={() => handleEditUnit(record)}>
                         {intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}
                     </Button>
 
@@ -384,7 +384,7 @@ const AssetManagement: React.FC = () => {
                         title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })}
                         onConfirm={() => handleDeleteUnit(record.id)}
                     >
-                        <Button type="link" size="small" danger icon={<DeleteOutlined />}>
+                        <Button type="link" danger icon={<DeleteOutlined />}>
                             {intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}
                         </Button>
                     </Popconfirm>
@@ -657,7 +657,6 @@ const AssetManagement: React.FC = () => {
             <SearchBar
                 initialParams={searchParamsRef.current}
                 onSearch={handleSearch}
-                showResetButton={false}
                 style={{ marginBottom: 16 }}
             />
 

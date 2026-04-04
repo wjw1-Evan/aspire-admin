@@ -131,7 +131,7 @@ const PasswordBookForm: React.FC<PasswordBookFormProps> = ({ entry, onSuccess, o
             placeholder="请输入密码"
             onChange={handlePasswordChange}
             suffix={
-              <Space size="small">
+              <Space>
                 <Button type="text" size="small" icon={passwordVisible ? <EyeOutlined /> : <EyeInvisibleOutlined />} onClick={() => setPasswordVisible(!passwordVisible)} style={{ border: 'none', padding: 0 }} />
                 <Button type="text" size="small" icon={<KeyOutlined />} onClick={() => setGeneratorVisible(true)} style={{ border: 'none', padding: 0 }}>生成</Button>
               </Space>

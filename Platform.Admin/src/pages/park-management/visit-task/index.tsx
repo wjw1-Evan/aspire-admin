@@ -223,7 +223,7 @@ const VisitTask: React.FC = () => {
             width: 160,
             fixed: 'right',
             render: (_: any, record: VisitTaskType) => (
-                <Space size="small">
+                <Space>
                     <Button
                         type="link"
                         size="small"
@@ -390,7 +390,6 @@ const VisitTask: React.FC = () => {
                     setTasksPagination(prev => ({ ...prev, page: 1 }));
                     fetchTasks();
                 }}
-                showResetButton={false}
                 style={{ marginBottom: 16 }}
             />
 

@@ -325,7 +325,7 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
       width: 150,
       fixed: 'right',
       render: (_: any, record: IoTGateway) => (
-        <Space size="small">
+        <Space>
           <Button
             type="link"
             size="small"
@@ -413,7 +413,6 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
       <SearchBar
         initialParams={searchParamsRef.current}
         onSearch={handleSearch}
-        showResetButton={false}
         style={{ marginBottom: 16 }}
       />
 

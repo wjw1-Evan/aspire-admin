@@ -33,8 +33,8 @@ import {
 } from '@ant-design/icons';
 import type { DataNode } from 'antd/es/tree';
 import type { TreeSelectProps } from 'antd/es/tree-select';
-import dayjs from 'dayjs';
 import { useMessage } from '@/hooks/useMessage';
+import { formatDateTime } from '@/utils/format';
 import { useModal } from '@/hooks/useModal';
 import type {
     CreateOrganizationUnitRequest,
@@ -56,12 +56,6 @@ import AssignUserModal from './components/AssignUserModal';
 
 const { Title, Text } = Typography;
 const { Search } = Input;
-
-const formatDateTime = (value?: string) => {
-    if (!value) return '-';
-    const date = dayjs(value);
-    return date.isValid() ? date.format('YYYY-MM-DD HH:mm:ss') : value;
-};
 
 /**
  * 构建树形数据，并根据搜索词高亮显示
@@ -420,7 +414,6 @@ const OrganizationPage: React.FC = () => {
                     {intl.formatMessage({ id: 'pages.organization.title' })}
                 </Space>
             }
-            style={{ paddingBlock: 12 }}
             extra={
                 <Space wrap>
                     <Button icon={<ReloadOutlined />} onClick={refreshTree}>

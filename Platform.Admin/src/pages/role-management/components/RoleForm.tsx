@@ -348,7 +348,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
       onOk={handleSubmit}
       confirmLoading={loading}
       width={700}
-      destroyOnHidden={true}
+      destroyOnHidden
     >
       <Form form={form} layout="vertical">
         <Form.Item

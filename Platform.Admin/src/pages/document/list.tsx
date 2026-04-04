@@ -243,7 +243,6 @@ const DocumentManagement: React.FC = () => {
           {intl.formatMessage({ id: 'pages.document.title' })}
         </Space>
       }
-      style={{ paddingBlock: 12 }}
       extra={
         <Space wrap>
           <Button

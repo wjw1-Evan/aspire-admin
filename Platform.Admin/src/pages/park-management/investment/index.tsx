@@ -268,8 +268,8 @@ const InvestmentManagement: React.FC = () => {
             width: 180,
             fixed: 'right',
             render: (_, record) => (
-                <Space size="small">
-                    <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEditLead(record)}>
+                <Space>
+                    <Button type="link" icon={<EditOutlined />} onClick={() => handleEditLead(record)}>
                         {intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}
                     </Button>
                     <Button
@@ -285,7 +285,7 @@ const InvestmentManagement: React.FC = () => {
                         title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })}
                         onConfirm={() => handleDeleteLead(record.id)}
                     >
-                        <Button type="link" size="small" danger icon={<DeleteOutlined />}>
+                        <Button type="link" danger icon={<DeleteOutlined />}>
                             {intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}
                         </Button>
                     </Popconfirm>
@@ -365,15 +365,15 @@ const InvestmentManagement: React.FC = () => {
             width: 150,
             fixed: 'right',
             render: (_, record) => (
-                <Space size="small">
-                    <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEditProject(record)}>
+                <Space>
+                    <Button type="link" icon={<EditOutlined />} onClick={() => handleEditProject(record)}>
                         {intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}
                     </Button>
                     <Popconfirm
                         title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })}
                         onConfirm={() => handleDeleteProject(record.id)}
                     >
-                        <Button type="link" size="small" danger icon={<DeleteOutlined />}>
+                        <Button type="link" danger icon={<DeleteOutlined />}>
                             {intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}
                         </Button>
                     </Popconfirm>
@@ -611,7 +611,6 @@ const InvestmentManagement: React.FC = () => {
             <SearchBar
                 initialParams={searchParamsRef.current}
                 onSearch={handleSearch}
-                showResetButton={false}
                 style={{ marginBottom: 16 }}
             />
 

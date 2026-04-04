@@ -9,8 +9,8 @@ import {
   DeleteOutlined,
   ProjectOutlined,
 } from '@ant-design/icons';
+import { formatDateTime } from '@/utils/format';
 import {
-  getProjectList,
   deleteProject,
   getProjectStatistics,
   type ProjectDto,
@@ -39,7 +39,6 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   const { confirm } = useModal();
   const { message } = App.useApp();
   const screens = Grid.useBreakpoint();
-  const isMobile = !screens.md;
   const [formVisible, setFormVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
   const [editingProject, setEditingProject] = useState<ProjectDto | null>(null);
@@ -153,19 +152,6 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       },
     });
   }, [intl, fetchData, fetchStatistics]);
-
-  // 格式化日期时间（提取为纯函数）
-  const formatDateTime = useCallback((dateTime: string | null | undefined): string => {
-    if (!dateTime) return '-';
-    try {
-      const date = dayjs(dateTime);
-      if (!date.isValid()) return dateTime;
-      return date.format('YYYY-MM-DD HH:mm:ss');
-    } catch (error) {
-      console.error('日期格式化错误:', error, dateTime);
-      return dateTime || '-';
-    }
-  }, []);
 
   // 格式化日期（仅日期部分）
   const formatDate = useCallback((date: string | null | undefined): string => {
@@ -290,7 +276,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       fixed: 'right',
       width: 150,
       render: (_: any, record: ProjectDto) => (
-        <Space size="small">
+        <Space>
           <Button
             type="link"
             size="small"

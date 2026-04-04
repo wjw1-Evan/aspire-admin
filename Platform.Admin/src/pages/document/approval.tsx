@@ -636,21 +636,21 @@ const ApprovalPage: React.FC = () => {
       fixed: 'right' as const,
       render: (_, record) => (
         <Space>
-          <Button type="link" size="small" icon={<EyeOutlined />} onClick={(e) => { e.preventDefault(); e.stopPropagation(); loadDocumentDetail(record); }}>
+          <Button type="link" icon={<EyeOutlined />} onClick={(e) => { e.preventDefault(); e.stopPropagation(); loadDocumentDetail(record); }}>
             {intl.formatMessage({ id: 'pages.document.action.view' })}
           </Button>
           {activeTab === 'pending' && (
             <>
-              <Button type="link" size="small" icon={<CheckOutlined />} onClick={(e) => { e.preventDefault(); e.stopPropagation(); openApprovalModal(record); }}>
+              <Button type="link" icon={<CheckOutlined />} onClick={(e) => { e.preventDefault(); e.stopPropagation(); openApprovalModal(record); }}>
                 {intl.formatMessage({ id: 'pages.document.approval.action.approve' })}
               </Button>
-              <Button type="link" size="small" danger icon={<CloseOutlined />} onClick={(e) => { e.preventDefault(); e.stopPropagation(); openRejectModal(record); }}>
+              <Button type="link" danger icon={<CloseOutlined />} onClick={(e) => { e.preventDefault(); e.stopPropagation(); openRejectModal(record); }}>
                 {intl.formatMessage({ id: 'pages.document.approval.action.reject' })}
               </Button>
-              <Button type="link" size="small" icon={<RollbackOutlined />} onClick={(e) => { e.preventDefault(); e.stopPropagation(); openReturnModal(record); }}>
+              <Button type="link" icon={<RollbackOutlined />} onClick={(e) => { e.preventDefault(); e.stopPropagation(); openReturnModal(record); }}>
                 {intl.formatMessage({ id: 'pages.document.approval.action.return' })}
               </Button>
-              <Button type="link" size="small" icon={<SwapOutlined />} onClick={(e) => { e.preventDefault(); e.stopPropagation(); openDelegateModal(record); }}>
+              <Button type="link" icon={<SwapOutlined />} onClick={(e) => { e.preventDefault(); e.stopPropagation(); openDelegateModal(record); }}>
                 {intl.formatMessage({ id: 'pages.document.approval.action.delegate' })}
               </Button>
             </>
@@ -728,7 +728,6 @@ const ApprovalPage: React.FC = () => {
           {intl.formatMessage({ id: 'pages.document.approval' })}
         </Space>
       }
-      style={{ paddingBlock: 12 }}
       extra={
         <Button key="refresh" icon={<ReloadOutlined />} onClick={handleRefresh}>
           {intl.formatMessage({ id: 'pages.button.refresh' })}

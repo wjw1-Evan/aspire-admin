@@ -17,7 +17,6 @@ const ConfigPage: React.FC = () => {
           {intl.formatMessage({ id: 'pages.xiaokeManagement.config.title' })}
         </Space>
       }
-      style={{ paddingBlock: 12 }}
       extra={
         <Space wrap>
           <Button

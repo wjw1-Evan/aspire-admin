@@ -51,7 +51,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   resetText = '重置',
   placeholder = '请输入关键词...',
   showSearchButton = true,
-  showResetButton = true,
+  showResetButton = false,
   compact = false,
   style,
 }) => {

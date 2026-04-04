@@ -27,8 +27,8 @@ import {
 import useCommonStyles from '@/hooks/useCommonStyles';
 import { createStyles } from 'antd-style';
 import React, { useEffect, useState } from 'react';
-import dayjs from 'dayjs';
 import { getUserAvatar } from '@/utils/avatar';
+import { formatDateTime } from '@/utils/format';
 import {
   getCurrentUserProfile,
   updateUserProfile,
@@ -215,19 +215,6 @@ const UserCenter: React.FC = () => {
     setAvatarPreview(userProfile?.avatar);
     setLastUploadedAvatar(undefined);
     form.resetFields();
-  };
-
-  // 统一的日期时间格式化函数
-  const formatDateTime = (dateString: string | null | undefined): string => {
-    if (!dateString) return '-';
-    try {
-      const date = dayjs(dateString);
-      if (!date.isValid()) return dateString;
-      return date.format('YYYY-MM-DD HH:mm:ss');
-    } catch (error) {
-      console.error('日期格式化错误:', error, dateString);
-      return dateString || '-';
-    }
   };
 
   // 获取角色标签颜色

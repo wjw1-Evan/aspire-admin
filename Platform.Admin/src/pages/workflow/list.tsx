@@ -207,7 +207,6 @@ const WorkflowManagement: React.FC = () => {
           {intl.formatMessage({ id: 'pages.workflow.title' })}
         </Space>
       }
-      style={{ paddingBlock: 12 }}
       extra={
         <Space wrap>
           <Button
@@ -232,7 +231,6 @@ const WorkflowManagement: React.FC = () => {
       <SearchBar
         initialParams={searchParamsRef.current}
         onSearch={handleSearch}
-        showResetButton={false}
         style={{ marginBottom: 16 }}
       />
 

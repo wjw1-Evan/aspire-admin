@@ -58,7 +58,6 @@ const IoTPlatform: React.FC = () => {
           {intl.formatMessage({ id: 'pages.iotPlatform.title' })}
         </Space>
       }
-      style={{ paddingBlock: 12 }}
       extra={
         <Space>
           <Button

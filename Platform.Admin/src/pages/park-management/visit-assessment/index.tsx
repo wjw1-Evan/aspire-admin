@@ -188,7 +188,7 @@ const VisitAssessmentList: React.FC = () => {
             width: 120,
             fixed: 'right' as const,
             render: (_: any, record: visitService.VisitTask) => (
-                <Space size="small">
+                <Space>
                     {record.assessmentId ? (
                         <Button
                             type="link"

@@ -404,7 +404,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
       width: 150,
       fixed: 'right',
       render: (_: any, record: IoTDataPoint) => (
-        <Space size="small">
+        <Space>
           <Button
             type="link"
             size="small"
@@ -491,7 +491,6 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
       <SearchBar
         initialParams={searchParamsRef.current}
         onSearch={handleSearch}
-        showResetButton={false}
         style={{ marginBottom: 16 }}
       />
 

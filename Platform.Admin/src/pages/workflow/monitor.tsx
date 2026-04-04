@@ -249,7 +249,6 @@ const WorkflowMonitor: React.FC = () => {
           {intl.formatMessage({ id: 'pages.workflow.monitor.title' })}
         </Space>
       }
-      style={{ paddingBlock: 12 }}
       extra={
         <Button
           key="refresh"
@@ -263,7 +262,6 @@ const WorkflowMonitor: React.FC = () => {
       <SearchBar
         initialParams={searchParamsRef.current}
         onSearch={handleSearch}
-        showResetButton={false}
         style={{ marginBottom: 16 }}
       />
 

@@ -15,7 +15,6 @@ const GatewayManagementPage: React.FC = () => {
           网关管理
         </Space>
       }
-      style={{ paddingBlock: 12 }}
       extra={
         <Space>
           <Button

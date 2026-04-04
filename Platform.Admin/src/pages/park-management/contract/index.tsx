@@ -197,20 +197,20 @@ const ContractManagement: React.FC = () => {
             width: 200,
             fixed: 'right',
             render: (_, record) => (
-                <Space size="small">
-                    <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handleViewContract(record)}>
+                <Space>
+                    <Button type="link" icon={<EyeOutlined />} onClick={() => handleViewContract(record)}>
                         {intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}
                     </Button>
-                    <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEditContract(record)}>
+                    <Button type="link" icon={<EditOutlined />} onClick={() => handleEditContract(record)}>
                         {intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}
                     </Button>
                     {record.status === 'Active' && (
-                        <Button type="link" size="small" icon={<SyncOutlined />} onClick={() => handleRenewContract(record)}>
+                        <Button type="link" icon={<SyncOutlined />} onClick={() => handleRenewContract(record)}>
                             {intl.formatMessage({ id: 'pages.park.contract.renew', defaultMessage: '续签' })}
                         </Button>
                     )}
                     <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={() => handleDeleteContract(record.id)}>
-                        <Button type="link" size="small" danger icon={<DeleteOutlined />}>
+                        <Button type="link" danger icon={<DeleteOutlined />}>
                             {intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}
                         </Button>
                     </Popconfirm>

@@ -17,7 +17,6 @@ const ChatHistoryPage: React.FC = () => {
           {intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.title' })}
         </Space>
       }
-      style={{ paddingBlock: 12 }}
       extra={
         <Space wrap>
           <Button

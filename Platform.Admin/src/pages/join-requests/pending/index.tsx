@@ -13,28 +13,15 @@ import {
 import { useModel } from '@umijs/max';
 import type { ColumnsType } from 'antd/es/table';
 import { CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, ClockCircleOutlined } from '@ant-design/icons';
-import dayjs from 'dayjs';
 import { Table } from 'antd';
+import { formatDateTime } from '@/utils/format';
 import type { PageParams } from '@/types/page-params';
 
 const { TextArea } = Input;
 
-const formatDateTime = (dateTime: string | null | undefined): string => {
-  if (!dateTime) return '-';
-  try {
-    const date = dayjs(dateTime);
-    if (!date.isValid()) return dateTime;
-    return date.format('YYYY-MM-DD HH:mm:ss');
-  } catch (error) {
-    console.error('日期格式化错误:', error, dateTime);
-    return dateTime || '-';
-  }
-};
-
 const PendingJoinRequests: React.FC = () => {
   const intl = useIntl();
   const screens = useBreakpoint();
-  const isMobile = !screens.md;
   const { message, modal } = App.useApp();
   const { initialState } = useModel('@@initialState');
   const tableRef = useRef<HTMLDivElement>(null);
@@ -404,7 +391,6 @@ const PendingJoinRequests: React.FC = () => {
           {intl.formatMessage({ id: 'pages.joinRequests.pending.title' })}
         </Space>
       }
-      style={{ paddingBlock: 12 }}
       extra={
         <Space wrap>
           <Button
@@ -420,7 +406,6 @@ const PendingJoinRequests: React.FC = () => {
       <SearchBar
         initialParams={searchParamsRef.current}
         onSearch={handleSearch}
-        showResetButton={false}
         style={{ marginBottom: 16 }}
       />
 

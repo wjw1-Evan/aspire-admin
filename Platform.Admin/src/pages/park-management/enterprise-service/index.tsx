@@ -227,22 +227,22 @@ const EnterpriseService: React.FC = () => {
             width: 200,
             fixed: 'right',
             render: (_, record) => (
-                <Space size="small">
-                    <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handleViewRequest(record)}>
+                <Space>
+                    <Button type="link" icon={<EyeOutlined />} onClick={() => handleViewRequest(record)}>
                         {intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}
                     </Button>
                     {record.status !== 'Completed' && record.status !== 'Cancelled' && (
-                        <Button type="link" size="small" icon={<SettingOutlined />} onClick={() => handleUpdateStatus(record)}>
+                        <Button type="link" icon={<SettingOutlined />} onClick={() => handleUpdateStatus(record)}>
                             {intl.formatMessage({ id: 'pages.park.service.request.updateStatus', defaultMessage: '更新状态' })}
                         </Button>
                     )}
                     {record.status === 'Completed' && !record.rating && (
-                        <Button type="link" size="small" icon={<StarOutlined />} onClick={() => handleRateRequest(record)}>
+                        <Button type="link" icon={<StarOutlined />} onClick={() => handleRateRequest(record)}>
                             {intl.formatMessage({ id: 'pages.park.service.request.rate', defaultMessage: '评价' })}
                         </Button>
                     )}
                     <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={() => handleDeleteRequest(record.id)}>
-                        <Button type="link" size="small" danger icon={<DeleteOutlined />}>
+                        <Button type="link" danger icon={<DeleteOutlined />}>
                             {intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}
                         </Button>
                     </Popconfirm>
@@ -358,7 +358,6 @@ const EnterpriseService: React.FC = () => {
                                     <SearchBar
                                         initialParams={searchParamsRef.current}
                                         onSearch={handleSearch}
-                                        showResetButton={false}
                                         style={{ marginBottom: 16 }}
                                     />
                                     <Table<ServiceRequest>

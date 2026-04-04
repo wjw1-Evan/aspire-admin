@@ -34,7 +34,7 @@ import {
   TeamOutlined,
   UnorderedListOutlined,
 } from '@ant-design/icons';
-import dayjs from 'dayjs';
+import { formatDateTime } from '@/utils/format';
 import {
   queryTasks,
   deleteTask,
@@ -88,24 +88,11 @@ const getPriorityColor = (priority: number) => {
   }
 };
 
-const formatDateTime = (dateTime: string | null | undefined): string => {
-  if (!dateTime) return '-';
-  try {
-    const date = dayjs(dateTime);
-    if (!date.isValid()) return dateTime;
-    return date.format('YYYY-MM-DD HH:mm:ss');
-  } catch (error) {
-    console.error('日期格式化错误:', error, dateTime);
-    return dateTime || '-';
-  }
-};
-
 const TaskManagement: React.FC = () => {
   const intl = useIntl();
   const { message, modal } = App.useApp();
   const customModal = useModal();
   const screens = useBreakpoint();
-  const isMobile = !screens.md;
   const { styles } = useCommonStyles();
 
   const [formVisible, setFormVisible] = useState(false);
@@ -386,7 +373,7 @@ const TaskManagement: React.FC = () => {
       width: 200,
       fixed: 'right',
       render: (_: any, record: TaskDto) => (
-        <Space size="small">
+        <Space>
           <Button
             type="link"
             size="small"
@@ -396,7 +383,7 @@ const TaskManagement: React.FC = () => {
             {intl.formatMessage({ id: 'pages.taskManagement.action.edit' })}
           </Button>
           {record.status !== TaskStatus.Completed && record.status !== TaskStatus.Cancelled && (
-            <Space size="small">
+            <Space>
               <Button
                 type="link"
                 size="small"
@@ -484,7 +471,6 @@ const TaskManagement: React.FC = () => {
           {intl.formatMessage({ id: 'pages.taskManagement.title' })}
         </Space>
       }
-      style={{ paddingBlock: 12 }}
       extra={
         <Space wrap>
           <Button
@@ -520,7 +506,6 @@ const TaskManagement: React.FC = () => {
       <SearchBar
         initialParams={searchParamsRef.current}
         onSearch={handleSearch}
-        showResetButton={false}
         style={{ marginBottom: 16 }}
       />
 

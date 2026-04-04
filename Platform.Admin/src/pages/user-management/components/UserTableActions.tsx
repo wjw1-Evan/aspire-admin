@@ -35,7 +35,7 @@ const UserTableActions: React.FC<UserTableActionsProps> = ({
   onViewDetail,
 }) => {
   return (
-    <Space size="small">
+    <Space>
       <PermissionControl resource="user" action="read">
         <Button
           type="link"

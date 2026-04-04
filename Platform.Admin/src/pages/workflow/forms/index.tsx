@@ -465,7 +465,7 @@ const FormsPage: React.FC = () => {
             fixed: 'right',
             width: 150,
             render: (_, record) => (
-                <Space size="small">
+                <Space>
                     <Button
                         type="link"
                         size="small"
@@ -512,7 +512,6 @@ const FormsPage: React.FC = () => {
                     表单定义
                 </Space>
             }
-            style={{ paddingBlock: 12 }}
             extra={
                 <Space wrap>
                     <Button key="refresh" icon={<ReloadOutlined />} onClick={handleRefresh}>

@@ -25,7 +25,7 @@ const PasswordBook: React.FC = () => {
 
   const [data, setData] = useState<PasswordBookEntry[]>([]);
   const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ });
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
   const [statistics, setStatistics] = useState<PasswordBookStatistics | null>(null);
   const [formVisible, setFormVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
@@ -45,7 +45,7 @@ const PasswordBook: React.FC = () => {
           ...prev,
           page: searchParamsRef.current.page ?? prev.page,
           pageSize: searchParamsRef.current.pageSize ?? prev.pageSize,
-          total: response.data.rowCount ?? 0,
+          total: response.data!.rowCount ?? 0,
         }));
       } else {
         setData([]);
@@ -163,9 +163,9 @@ const PasswordBook: React.FC = () => {
       fixed: 'right',
       width: 120,
       render: (_, record: PasswordBookEntry) => (
-        <Space size="small">
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>编辑</Button>
-          <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)}>删除</Button>
+        <Space>
+          <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>编辑</Button>
+          <Button type="link" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)}>删除</Button>
         </Space>
       ),
     },
@@ -185,7 +185,6 @@ const PasswordBook: React.FC = () => {
   return (
     <PageContainer
       title={<Space><LockOutlined />{intl.formatMessage({ id: 'menu.password-book' })}</Space>}
-      style={{ paddingBlock: 12 }}
       extra={
         <Space wrap>
           <Button icon={<ReloadOutlined />} onClick={refreshAll}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button>
@@ -208,7 +207,6 @@ const PasswordBook: React.FC = () => {
 
       <SearchBar
         initialParams={searchParamsRef.current}
-        showResetButton={false}
         style={{ marginBottom: 16 }}
         onSearch={(params: PageParams) => {
           searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };

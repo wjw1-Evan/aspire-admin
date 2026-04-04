@@ -251,7 +251,7 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
       width: 150,
       fixed: 'right',
       render: (_: any, record: IoTDeviceEvent) => (
-        <Space size="small">
+        <Space>
           {!record.isHandled && (
             <Button
               type="link"

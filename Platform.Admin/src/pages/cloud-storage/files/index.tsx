@@ -679,7 +679,7 @@ const CloudStorageFilesPage: React.FC = () => {
             key: 'action',
             fixed: 'right' as const,
             render: (_: unknown, record: FileItem) => (
-                <Space size="small">
+                <Space>
                     <Button
                         type="link"
                         size="small"
@@ -741,7 +741,6 @@ const CloudStorageFilesPage: React.FC = () => {
                     {intl.formatMessage({ id: 'pages.cloud-storage.files.title' })}
                 </Space>
             }
-            style={{ paddingBlock: 12 }}
             extra={
                 <Space wrap>
                     {selectedRowKeys.length > 0 && (
@@ -836,7 +835,6 @@ const CloudStorageFilesPage: React.FC = () => {
             <SearchBar
                 initialParams={searchParamsRef.current}
                 onSearch={handleSearch}
-                showResetButton={false}
                 style={{ marginBottom: 16 }}
             />
 

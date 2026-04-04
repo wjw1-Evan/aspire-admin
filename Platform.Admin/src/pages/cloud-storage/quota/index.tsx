@@ -6,8 +6,8 @@ import { useIntl } from '@umijs/max';
 import { PieChartOutlined, EditOutlined, ReloadOutlined, UserOutlined, CloudOutlined, WarningOutlined, CheckCircleOutlined, BarChartOutlined, TeamOutlined, FileOutlined, CalendarOutlined, PlusOutlined, DeleteOutlined, ExclamationCircleOutlined, TableOutlined, DatabaseOutlined, CloudServerOutlined, LineChartOutlined } from '@ant-design/icons';
 import { getQuotaList, getUserQuota, updateUserQuota, getQuotaWarnings, getQuotaUsageStats, setUserQuota, deleteUserQuota, type StorageQuota, type UpdateQuotaRequest, type QuotaListRequest, type QuotaUsageStats, type QuotaWarning } from '@/services/cloud-storage/quotaApi';
 import { Grid, Button, Tag, Space, Modal, Drawer, Row, Col, Card, Form, Input, Select, Descriptions, Spin, Progress, InputNumber, Switch, Alert, Statistic, Tabs, Popconfirm, Typography, Badge, List, Avatar, Empty, Table, App } from 'antd';
-import dayjs from 'dayjs';
 import { getUserList, type AppUser } from '@/services/user/api';
+import { formatDateTime } from '@/utils/format';
 import { getCurrentCompany } from '@/services/company';
 import type { PageParams } from '@/types/page-params';
 
@@ -319,19 +319,6 @@ const CloudStorageQuotaPage: React.FC = () => {
         return `${size.toFixed(2)} ${units[unitIndex]}`;
     }, []);
 
-    // 格式化日期时间
-    const formatDateTime = useCallback((dateTime: string | null | undefined): string => {
-        if (!dateTime) return '-';
-        try {
-            const date = dayjs(dateTime);
-            if (!date.isValid()) return dateTime;
-            return date.format('YYYY-MM-DD HH:mm:ss');
-        } catch (error) {
-            console.error('日期格式化错误:', error, dateTime);
-            return dateTime || '-';
-        }
-    }, []);
-
     // 平均使用率（基于总使用量/总配额）
     const getAverageUsagePercent = useCallback((stats?: QuotaUsageStats | null) => {
         if (!stats) return 0;
@@ -463,7 +450,7 @@ const CloudStorageQuotaPage: React.FC = () => {
             key: 'action',
             fixed: 'right' as const,
             render: (_: any, record: StorageQuota) => (
-                <Space size="small">
+                <Space>
                     <Button
                         type="link"
                         size="small"
@@ -546,7 +533,6 @@ const CloudStorageQuotaPage: React.FC = () => {
                                     <SearchBar
                                         initialParams={searchParamsRef.current}
                                         onSearch={handleSearch}
-                                        showResetButton={false}
                                         style={{ marginBottom: 16 }}
                                     />
 

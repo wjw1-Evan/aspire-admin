@@ -15,7 +15,6 @@ const DeviceManagementPage: React.FC = () => {
           设备管理
         </Space>
       }
-      style={{ paddingBlock: 12 }}
       extra={
         <Space>
           <Button

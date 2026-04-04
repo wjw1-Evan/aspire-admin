@@ -247,7 +247,6 @@ const KnowledgeBaseManagement: React.FC = () => {
       <SearchBar
         initialParams={searchParamsRef.current}
         onSearch={handleSearch}
-        showResetButton={false}
         style={{ marginBottom: 16 }}
       />
 

@@ -226,9 +226,9 @@ const VisitKnowledgeBase: React.FC = () => {
             width: 120,
             render: (_: any, record: VisitQuestion) => (
                 <Space>
-                    <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => { setSelectedQuestion(record); setQuestionDetailVisible(true); }}>查看</Button>
-                    <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { setEditingQuestion(record); questionForm.setFieldsValue(record); setIsQuestionModalVisible(true); }}>编辑</Button>
-                    <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDeleteQuestion(record.id)}>删除</Button>
+                    <Button type="link" icon={<EyeOutlined />} onClick={() => { setSelectedQuestion(record); setQuestionDetailVisible(true); }}>查看</Button>
+                    <Button type="link" icon={<EditOutlined />} onClick={() => { setEditingQuestion(record); questionForm.setFieldsValue(record); setIsQuestionModalVisible(true); }}>编辑</Button>
+                    <Button type="link" danger icon={<DeleteOutlined />} onClick={() => handleDeleteQuestion(record.id)}>删除</Button>
                 </Space>
             ),
         },
@@ -276,21 +276,21 @@ const VisitKnowledgeBase: React.FC = () => {
             width: 100,
             render: (_: any, record: VisitQuestionnaire) => (
                 <Space>
-                    <Button type="link" size="small" icon={<EyeOutlined />} onClick={async () => {
+                    <Button type="link" icon={<EyeOutlined />} onClick={async () => {
                         setSelectedQuestionnaire(record);
                         setQuestionnaireDetailVisible(true);
                         if (allQuestions.length === 0) {
                             await loadAllQuestions();
                         }
                     }}>查看</Button>
-                    <Button type="link" size="small" icon={<EditOutlined />} onClick={async () => {
+                    <Button type="link" icon={<EditOutlined />} onClick={async () => {
                         setEditingQuestionnaire(record);
                         questionnaireForm.setFieldsValue(record);
                         setTargetKeys(record.questionIds || []);
                         await loadAllQuestions();
                         setIsQuestionnaireModalVisible(true);
                     }}>编辑</Button>
-                    <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDeleteQuestionnaire(record.id)}>删除</Button>
+                    <Button type="link" danger icon={<DeleteOutlined />} onClick={() => handleDeleteQuestionnaire(record.id)}>删除</Button>
                 </Space>
             ),
         },

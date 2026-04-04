@@ -28,24 +28,12 @@ const UserDetail = React.lazy(() => import('./components/UserDetail'));
 const JoinRequestsTable = React.lazy(() => import('./components/JoinRequestsTable'));
 
 const { useBreakpoint } = Grid;
-
-const formatDateTime = (dateTime: string | null | undefined): string => {
-  if (!dateTime) return '-';
-  try {
-    const date = new Date(dateTime);
-    if (isNaN(date.getTime())) return dateTime;
-    return date.toISOString().replace('T', ' ').substring(0, 19);
-  } catch (error) {
-    console.error('日期格式化错误:', error, dateTime);
-    return dateTime || '-';
-  }
-};
+import { formatDateTime } from '@/utils/format';
 
 const UserManagement: React.FC = () => {
   const intl = useIntl();
   const { message, modal } = App.useApp();
   const screens = useBreakpoint();
-  const isMobile = !screens.md;
   const { styles } = useCommonStyles();
   const { initialState } = useModel('@@initialState');
 
@@ -428,7 +416,7 @@ const UserManagement: React.FC = () => {
       fixed: 'right',
       width: 150,
       render: (_: unknown, record: AppUser) => (
-        <Space size="small">
+        <Space>
           <Button
             type="link"
             size="small"
@@ -476,7 +464,6 @@ const UserManagement: React.FC = () => {
           {intl.formatMessage({ id: 'pages.userManagement.title' })}
         </Space>
       }
-      style={{ paddingBlock: 12 }}
       tabList={[
         {
           tab: intl.formatMessage({ id: 'pages.userManagement.members.title', defaultMessage: 'Member List' }),
@@ -531,7 +518,6 @@ const UserManagement: React.FC = () => {
           <SearchBar
             initialParams={searchParamsRef.current}
             onSearch={handleSearch}
-            showResetButton={false}
             style={{ marginBottom: 16 }}
           />
 

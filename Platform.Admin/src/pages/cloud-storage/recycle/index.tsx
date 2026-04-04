@@ -39,7 +39,7 @@ import {
     CloudOutlined,
     WarningOutlined,
 } from '@ant-design/icons';
-import dayjs from 'dayjs';
+import { formatDateTime } from '@/utils/format';
 
 const { useBreakpoint } = Grid;
 
@@ -370,19 +370,6 @@ const CloudStorageRecyclePage: React.FC = () => {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }, []);
 
-    // 格式化日期时间
-    const formatDateTime = useCallback((dateTime: string | null | undefined): string => {
-        if (!dateTime) return '-';
-        try {
-            const date = dayjs(dateTime);
-            if (!date.isValid()) return dateTime;
-            return date.format('YYYY-MM-DD HH:mm:ss');
-        } catch (error) {
-            console.error('日期格式化错误:', error, dateTime);
-            return dateTime || '-';
-        }
-    }, []);
-
     // 获取文件图标
     const getFileIcon = useCallback((item: RecycleItem) => {
         if (item.isFolder) {
@@ -476,7 +463,7 @@ const CloudStorageRecyclePage: React.FC = () => {
             key: 'action',
             fixed: 'right' as const,
             render: (_: any, record: RecycleItem) => (
-                <Space size="small">
+                <Space>
                     <Button
                         type="link"
                         size="small"
@@ -533,7 +520,6 @@ const CloudStorageRecyclePage: React.FC = () => {
                     {intl.formatMessage({ id: 'pages.cloud-storage.recycle.title' })}
                 </Space>
             }
-            style={{ paddingBlock: 12 }}
             extra={
                 <Space wrap>
                     {selectedRowKeys.length > 0 && (
@@ -641,7 +627,6 @@ const CloudStorageRecyclePage: React.FC = () => {
             <SearchBar
                 initialParams={searchParamsRef.current}
                 onSearch={handleSearch}
-                showResetButton={false}
                 style={{ marginBottom: 16 }}
             />
 

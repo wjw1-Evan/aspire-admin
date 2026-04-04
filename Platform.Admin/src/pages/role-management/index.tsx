@@ -20,20 +20,8 @@ import { type ChangeEvent, type FC, useEffect, useRef, useState, useCallback, us
 import { deleteRole, getAllRolesWithStats, getRoleStatistics } from '@/services/role/api';
 import type { Role, RoleWithStats, RoleStatistics } from '@/services/role/types';
 import RoleForm from './components/RoleForm';
-import dayjs from 'dayjs';
+import { formatDateTime } from '@/utils/format';
 import type { PageParams } from '@/types/page-params';
-
-const formatDateTime = (dateTime: string | null | undefined): string => {
-  if (!dateTime) return '-';
-  try {
-    const date = dayjs(dateTime);
-    if (!date.isValid()) return dateTime;
-    return date.format('YYYY-MM-DD HH:mm:ss');
-  } catch (error) {
-    console.error('日期格式化错误:', error, dateTime);
-    return dateTime || '-';
-  }
-};
 
 const RoleManagement: FC = () => {
   const intl = useIntl();
@@ -279,7 +267,7 @@ const RoleManagement: FC = () => {
       width: 150,
       render: (_, record: RoleWithStats) => {
         return (
-          <Space size="small">
+          <Space>
             <Button
               type="link"
               size="small"
@@ -317,7 +305,6 @@ const RoleManagement: FC = () => {
           {intl.formatMessage({ id: 'pages.roleManagement.title' })}
         </Space>
       }
-      style={{ paddingBlock: 12 }}
       extra={
         <Space wrap>
           <Button
@@ -380,7 +367,6 @@ const RoleManagement: FC = () => {
       <SearchBar
         initialParams={searchParamsRef.current}
         onSearch={handleSearch}
-        showResetButton={false}
         style={{ marginBottom: 16 }}
       />
 

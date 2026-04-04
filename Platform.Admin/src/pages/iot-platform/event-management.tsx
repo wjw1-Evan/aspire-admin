@@ -15,7 +15,6 @@ const EventManagementPage: React.FC = () => {
           事件管理
         </Space>
       }
-      style={{ paddingBlock: 12 }}
       extra={
         <Space>
           <Button

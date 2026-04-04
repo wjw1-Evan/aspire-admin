@@ -15,7 +15,6 @@ const DataPointManagementPage: React.FC = () => {
           数据点管理
         </Space>
       }
-      style={{ paddingBlock: 12 }}
       extra={
         <Space>
           <Button

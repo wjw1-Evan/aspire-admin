@@ -188,7 +188,7 @@ const JoinRequestsTable: React.FC<JoinRequestsTableProps> = ({ companyId }) => {
             render: (_: any, record: JoinRequestDetail) => {
                 if (record.status === 'cancelled') return null;
                 return (
-                    <Space size="small">
+                    <Space>
                         {record.status !== 'approved' && (
                             <Button
                                 type="link"

@@ -17,7 +17,6 @@ const ProjectManagement: React.FC = () => {
           {intl.formatMessage({ id: 'pages.projectManagement.title' })}
         </Space>
       }
-      style={{ paddingBlock: 12 }}
       extra={
         <Space>
           <Button

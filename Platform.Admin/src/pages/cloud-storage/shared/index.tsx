@@ -40,7 +40,7 @@ import {
     DownloadOutlined,
     ClockCircleOutlined,
 } from '@ant-design/icons';
-import dayjs from 'dayjs';
+import { formatDateTime } from '@/utils/format';
 
 const { useBreakpoint } = Grid;
 import { Grid } from 'antd';
@@ -393,19 +393,6 @@ const CloudStorageSharedPage: React.FC = () => {
         }
     }, [notifyingShare, success, error, notifyForm]);
 
-    // 格式化日期时间
-    const formatDateTime = useCallback((dateTime: string | null | undefined): string => {
-        if (!dateTime) return '-';
-        try {
-            const date = dayjs(dateTime);
-            if (!date.isValid()) return dateTime;
-            return date.format('YYYY-MM-DD HH:mm:ss');
-        } catch (error) {
-            console.error('日期格式化错误:', error, dateTime);
-            return dateTime || '-';
-        }
-    }, []);
-
     // 获取分享状态标签
     const getShareStatusTag = useCallback((share: FileShare) => {
         if (!share.isEnabled) {
@@ -500,7 +487,7 @@ const CloudStorageSharedPage: React.FC = () => {
             key: 'action',
             fixed: 'right' as const,
             render: (_: any, record: FileShare) => (
-                <Space size="small">
+                <Space>
                     <Button
                         type="link"
                         size="small"
@@ -558,7 +545,6 @@ const CloudStorageSharedPage: React.FC = () => {
                     {intl.formatMessage({ id: 'pages.cloud-storage.shared.title' })}
                 </Space>
             }
-            style={{ paddingBlock: 12 }}
             extra={
                 <Space wrap>
                     <Button
@@ -575,7 +561,6 @@ const CloudStorageSharedPage: React.FC = () => {
             <SearchBar
                 initialParams={searchParamsRef.current}
                 onSearch={handleSearch}
-                showResetButton={false}
                 style={{ marginBottom: 16 }}
             />
 

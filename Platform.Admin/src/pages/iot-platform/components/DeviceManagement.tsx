@@ -315,7 +315,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
       width: 160,
       sorter: true,
       render: (text, record) => (
-        <a onClick={() => handleView(record)} style={{ cursor: 'pointer' }}>{text}</a>
+        <a onClick={() => handleView(record)}>{text}</a>
       ),
     },
     {
@@ -389,7 +389,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
       fixed: 'right',
       render: (_: any, record: IoTDevice) => (
         <Space size={4}>
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>编辑</Button>
+          <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>编辑</Button>
           <Button
             type="link"
             size="small"
@@ -476,7 +476,6 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
       <SearchBar
         initialParams={searchParamsRef.current}
         onSearch={handleSearch}
-        showResetButton={false}
         style={{ marginBottom: 16 }}
       />
 

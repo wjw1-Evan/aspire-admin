@@ -222,7 +222,6 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
       <SearchBar
         initialParams={searchParamsRef.current}
         onSearch={handleSearch}
-        showResetButton={false}
         style={{ marginBottom: 16 }}
       />
 

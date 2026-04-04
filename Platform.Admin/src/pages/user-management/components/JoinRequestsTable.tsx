@@ -1,26 +1,82 @@
-import React, { useRef, useState, useCallback } from 'react';
-import { Button, Tag, Space, message, Modal, Input, Form, Select, Row, Col } from 'antd';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { Button, Tag, Space, message, Modal, Input, Form, Select, Row, Col, Table } from 'antd';
 import { JoinRequestDetail, ReviewJoinRequestRequest } from '../types';
 import { request, useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import { CheckOutlined, CloseOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons';
-import DataTable from '@/components/DataTable';
 import SearchBar from '@/components/SearchBar';
-import type { ActionType } from '@/types/pro-components';
 import type { ColumnsType } from 'antd/es/table';
+import type { PageParams } from '@/types/page-params';
 
 interface JoinRequestsTableProps {
     companyId: string;
 }
 
 const JoinRequestsTable: React.FC<JoinRequestsTableProps> = ({ companyId }) => {
-    const actionRef = useRef<ActionType>(null);
     const intl = useIntl();
-    const searchParamsRef = useRef<any>({ search: '' });
+    const searchParamsRef = useRef<PageParams>({ page: 1, pageSize: 10, search: '' });
     const [messageApi, contextHolder] = message.useMessage();
     const [rejectModalVisible, setRejectModalVisible] = useState(false);
     const [currentRequestId, setCurrentRequestId] = useState<string>('');
     const [rejectReason, setRejectReason] = useState('');
+    const [data, setData] = useState<JoinRequestDetail[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
+
+    const fetchData = useCallback(async () => {
+        const currentParams = searchParamsRef.current;
+
+        setLoading(true);
+        try {
+            const status = currentParams.status === 'all' ? undefined : currentParams.status;
+
+            const result = await request(`/api/company/${companyId}/join-requests`, {
+                params: { status },
+            });
+
+            let filteredData = result.data || [];
+
+            if (currentParams.search) {
+                const kw = currentParams.search.toLowerCase();
+                filteredData = filteredData.filter((item: JoinRequestDetail) =>
+                    item.username.toLowerCase().includes(kw) ||
+                    (item.userEmail && item.userEmail.toLowerCase().includes(kw))
+                );
+            }
+
+            setData(filteredData);
+            setPagination(prev => ({
+                ...prev,
+                page: currentParams.page ?? prev.page,
+                pageSize: currentParams.pageSize ?? prev.pageSize,
+                total: filteredData.length,
+            }));
+        } catch (error) {
+            console.error('加载数据失败:', error);
+            setData([]);
+            setPagination(prev => ({ ...prev, total: 0 }));
+        } finally {
+            setLoading(false);
+        }
+    }, [companyId]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+        setPagination(prev => ({
+            ...prev,
+            page: pag.current,
+            pageSize: pag.pageSize,
+        }));
+        fetchData();
+    }, [fetchData]);
+
+    const handleSearch = useCallback((params: PageParams) => {
+        searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
+        fetchData();
+    }, [fetchData]);
 
     const handleApprove = async (id: string) => {
         try {
@@ -29,7 +85,7 @@ const JoinRequestsTable: React.FC<JoinRequestsTableProps> = ({ companyId }) => {
                 data: {},
             });
             messageApi.success('已批准');
-            actionRef.current?.reload?.();
+            fetchData();
         } catch (error) {
             console.error('批准失败:', error);
         }
@@ -48,7 +104,7 @@ const JoinRequestsTable: React.FC<JoinRequestsTableProps> = ({ companyId }) => {
             messageApi.success('已拒绝');
             setRejectModalVisible(false);
             setRejectReason('');
-            actionRef.current?.reload?.();
+            fetchData();
         } catch (error) {
             console.error('拒绝失败:', error);
         }
@@ -168,59 +224,21 @@ const JoinRequestsTable: React.FC<JoinRequestsTableProps> = ({ companyId }) => {
             {contextHolder}
             <SearchBar
                 initialParams={searchParamsRef.current}
-                onSearch={(params) => {
-                    searchParamsRef.current = { ...searchParamsRef.current, ...params };
-                    actionRef.current?.reload?.();
-                }}
+                onSearch={handleSearch}
                 style={{ marginBottom: 16 }}
             />
 
-            <DataTable<JoinRequestDetail>
-                actionRef={actionRef}
-                rowKey="id"
-                request={async (params, sorter) => {
-                    const status = searchParamsRef.current.status === 'all' ? undefined : searchParamsRef.current.status;
-
-                    let sortBy: string | undefined;
-                    let sortOrder: 'asc' | 'desc' | undefined;
-
-                    if (sorter && Object.keys(sorter).length > 0) {
-                        const sortKey = Object.keys(sorter)[0];
-                        const sortValue = sorter[sortKey];
-                        if (sortValue) {
-                            sortBy = sortKey;
-                            sortOrder = sortValue === 'ascend' ? 'asc' : 'desc';
-                        }
-                    }
-
-                    const result = await request(`/api/company/${companyId}/join-requests`, {
-                        params: {
-                            status,
-                            sortBy,
-                            sortOrder,
-                        },
-                    });
-
-                    let data = result.data || [];
-
-                    // 前端关键字过滤
-                    if (searchParamsRef.current.search) {
-                        const kw = searchParamsRef.current.search.toLowerCase();
-                        data = data.filter((item: JoinRequestDetail) =>
-                            item.username.toLowerCase().includes(kw) ||
-                            (item.userEmail && item.userEmail.toLowerCase().includes(kw))
-                        );
-                    }
-
-                    return {
-                        data: data,
-                        success: true,
-                        total: data.length,
-                    };
-                }}
+            <Table<JoinRequestDetail>
+                dataSource={data}
                 columns={columns}
+                rowKey="id"
+                loading={loading}
+                scroll={{ x: 'max-content' }}
+                onChange={handleTableChange}
                 pagination={{
-                    pageSize: 10
+                    current: pagination.page,
+                    pageSize: pagination.pageSize,
+                    total: pagination.total,
                 }}
             />
 

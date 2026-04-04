@@ -42,11 +42,9 @@ const WorkflowMonitor: React.FC = () => {
   const [currentFormInstanceId, setCurrentFormInstanceId] = useState<string | null>(null);
   const [data, setData] = useState<WorkflowInstance[]>([]);
   const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
 
   const searchParamsRef = useRef<PageParams>({
-    page: 1,
-    pageSize: 20,
     search: '',
   });
 
@@ -58,9 +56,9 @@ const WorkflowMonitor: React.FC = () => {
       const response = await getWorkflowInstances({
         page: currentParams.page,
         pageSize: currentParams.pageSize,
+        workflowDefinitionId: currentParams.workflowDefinitionId,
+        status: currentParams.status,
         search: currentParams.search,
-        sortBy: currentParams.sortBy,
-        sortOrder: currentParams.sortOrder,
       });
       if (response.success && response.data) {
         setData(response.data.queryable || []);
@@ -68,7 +66,7 @@ const WorkflowMonitor: React.FC = () => {
           ...prev,
           page: currentParams.page ?? prev.page,
           pageSize: currentParams.pageSize ?? prev.pageSize,
-          total: response.data.rowCount ?? 0,
+          total: response.data!.rowCount ?? 0,
         }));
       } else {
         setData([]);
@@ -280,10 +278,6 @@ const WorkflowMonitor: React.FC = () => {
           current: pagination.page,
           pageSize: pagination.pageSize,
           total: pagination.total,
-          pageSizeOptions: [10, 20, 50, 100],
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total) => `共 ${total} 条`,
         }}
       />
 

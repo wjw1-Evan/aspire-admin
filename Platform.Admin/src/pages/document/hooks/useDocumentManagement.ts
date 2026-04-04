@@ -62,10 +62,7 @@ export const useDocumentManagement = () => {
     // List & Statistics States
     const [workflows, setWorkflows] = useState<any[]>([]);
     const [statistics, setStatistics] = useState<DocumentStatistics | null>(null);
-    const [searchParams, setSearchParams] = useState<DocumentQueryParams>({
-        page: 1,
-        pageSize: 10,
-    });
+    const [searchParams, setSearchParams] = useState<DocumentQueryParams>({});
 
     const fetchStatistics = async () => {
         try {

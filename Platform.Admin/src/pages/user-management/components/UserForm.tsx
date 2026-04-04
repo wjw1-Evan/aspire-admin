@@ -39,7 +39,8 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSuccess, onCancel }) => {
       try {
         const response = await getAllRoles();
         if (response.success && response.data) {
-          setRoles(response.data.filter((r: Role) => r.isActive));
+          const roles = response.data.queryable || [];
+          setRoles(roles.filter((r: Role) => r.isActive));
         }
         // 错误由全局错误处理统一处理
       } finally {

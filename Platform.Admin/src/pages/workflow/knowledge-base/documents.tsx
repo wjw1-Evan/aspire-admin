@@ -44,8 +44,6 @@ const KnowledgeBaseDocuments: React.FC = () => {
   const [kbInfo, setKbInfo] = useState<{ name: string } | null>(null);
 
   const searchParamsRef = useRef<PageParams>({
-    page: 1,
-    pageSize: 10,
     search: '',
   });
 
@@ -58,8 +56,6 @@ const KnowledgeBaseDocuments: React.FC = () => {
         page: currentParams.page,
         pageSize: currentParams.pageSize,
         search: currentParams.search,
-        sortBy: currentParams.sortBy,
-        sortOrder: currentParams.sortOrder,
       });
       if (res.success && res.data) {
         const d = res.data as any;
@@ -290,10 +286,6 @@ const KnowledgeBaseDocuments: React.FC = () => {
             current: pagination.page,
             pageSize: pagination.pageSize,
             total: pagination.total,
-            pageSizeOptions: [10, 20, 50, 100],
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total) => `共 ${total} 条`,
           }}
         />
       </Card>

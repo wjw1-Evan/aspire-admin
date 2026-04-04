@@ -12,6 +12,7 @@ import * as cloudService from '@/services/cloud-storage/api';
 import type { Building, PropertyUnit, AssetStatistics, LeaseContract } from '@/services/park';
 import dayjs from 'dayjs';
 import styles from './index.less';
+import type { PageParams } from '@/types/page-params';
 
 const { Text, Title } = Typography;
 
@@ -21,7 +22,7 @@ const AssetManagement: React.FC = () => {
     const { message } = App.useApp();
     const [buildingForm] = Form.useForm();
     const [unitForm] = Form.useForm();
-    const searchParamsRef = useRef<any>({ search: '' });
+    const searchParamsRef = useRef<PageParams>({ page: 1, pageSize: 10, search: '' });
 
     const [activeTab, setActiveTab] = useState<string>('buildings');
     const [statistics, setStatistics] = useState<AssetStatistics | null>(null);
@@ -45,7 +46,6 @@ const AssetManagement: React.FC = () => {
     const [uploadModalVisible, setUploadModalVisible] = useState(false);
     const [attachmentList, setAttachmentList] = useState<UploadFile[]>([]);
 
-    // 加载统计数据
     const loadStatistics = useCallback(async () => {
         try {
             const res = await parkService.getAssetStatistics();
@@ -57,7 +57,6 @@ const AssetManagement: React.FC = () => {
         }
     }, []);
 
-    // 加载楼宇列表（用于下拉选择）
     const loadBuildings = useCallback(async () => {
         try {
             const res = await parkService.getBuildings({ page: 1, pageSize: 100 });
@@ -75,16 +74,17 @@ const AssetManagement: React.FC = () => {
     }, [loadStatistics, loadBuildings]);
 
     const fetchBuildings = useCallback(async () => {
+        const currentParams = searchParamsRef.current;
         setBuildingsLoading(true);
         try {
             const res = await parkService.getBuildings({
-                page: buildingsPagination.page,
-                pageSize: buildingsPagination.pageSize,
-                ...searchParamsRef.current,
+                page: currentParams.page,
+                pageSize: currentParams.pageSize,
+                ...currentParams,
             });
             if (res.success && res.data) {
                 setBuildingsData(res.data.queryable || []);
-                setBuildingsPagination(prev => ({ ...prev, total: res.data.rowCount ?? 0 }));
+                setBuildingsPagination(prev => ({ ...prev, total: res.data!.rowCount ?? 0 }));
             } else {
                 setBuildingsData([]);
                 setBuildingsPagination(prev => ({ ...prev, total: 0 }));
@@ -95,19 +95,20 @@ const AssetManagement: React.FC = () => {
         } finally {
             setBuildingsLoading(false);
         }
-    }, [buildingsPagination.page, buildingsPagination.pageSize]);
+    }, []);
 
     const fetchUnits = useCallback(async () => {
+        const currentParams = searchParamsRef.current;
         setUnitsLoading(true);
         try {
             const res = await parkService.getPropertyUnits({
-                page: unitsPagination.page,
-                pageSize: unitsPagination.pageSize,
-                ...searchParamsRef.current,
+                page: currentParams.page,
+                pageSize: currentParams.pageSize,
+                ...currentParams,
             });
             if (res.success && res.data) {
                 setUnitsData(res.data.queryable || []);
-                setUnitsPagination(prev => ({ ...prev, total: res.data.rowCount ?? 0 }));
+                setUnitsPagination(prev => ({ ...prev, total: res.data!.rowCount ?? 0 }));
             } else {
                 setUnitsData([]);
                 setUnitsPagination(prev => ({ ...prev, total: 0 }));
@@ -118,19 +119,48 @@ const AssetManagement: React.FC = () => {
         } finally {
             setUnitsLoading(false);
         }
-    }, [unitsPagination.page, unitsPagination.pageSize]);
+    }, []);
+
+    const handleSearch = useCallback((params: PageParams) => {
+        searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
+        if (activeTab === 'buildings') {
+            setBuildingsPagination(prev => ({ ...prev, page: 1 }));
+            fetchBuildings();
+        } else {
+            setUnitsPagination(prev => ({ ...prev, page: 1 }));
+            fetchUnits();
+        }
+    }, [activeTab, fetchBuildings, fetchUnits]);
 
     const handleBuildingsTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
         const newPage = pag.current;
         const newPageSize = pag.pageSize;
-        setBuildingsPagination(prev => ({ ...prev, page: newPage, pageSize: newPageSize }));
+        const sortBy = sorter?.field;
+        const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
+        
+        searchParamsRef.current = {
+            ...searchParamsRef.current,
+            page: newPage,
+            pageSize: newPageSize,
+            sortBy,
+            sortOrder,
+        };
         fetchBuildings();
     }, [fetchBuildings]);
 
     const handleUnitsTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
         const newPage = pag.current;
         const newPageSize = pag.pageSize;
-        setUnitsPagination(prev => ({ ...prev, page: newPage, pageSize: newPageSize }));
+        const sortBy = sorter?.field;
+        const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
+        
+        searchParamsRef.current = {
+            ...searchParamsRef.current,
+            page: newPage,
+            pageSize: newPageSize,
+            sortBy,
+            sortOrder,
+        };
         fetchUnits();
     }, [fetchUnits]);
 
@@ -142,7 +172,6 @@ const AssetManagement: React.FC = () => {
         }
     }, [activeTab, fetchBuildings, fetchUnits]);
 
-    // 楼宇表格列
     const buildingColumns: ProColumns<Building>[] = [
         {
             title: intl.formatMessage({ id: 'pages.park.asset.building.name', defaultMessage: '楼宇名称' }),
@@ -267,7 +296,6 @@ const AssetManagement: React.FC = () => {
         },
     ];
 
-    // 房源表格列
     const unitColumns: ProColumns<PropertyUnit>[] = [
         {
             title: intl.formatMessage({ id: 'pages.park.asset.unit.number', defaultMessage: '房源编号' }),
@@ -365,49 +393,6 @@ const AssetManagement: React.FC = () => {
         },
     ];
 
-    // 楼宇请求
-    const fetchBuildings = async (params: any, sort: any) => {
-        const sortBy = sort?.sortKey;
-        const sortOrder = sort?.sortOrder === 'ascend' ? 'asc' : sort?.sortOrder === 'descend' ? 'desc' : undefined;
-        try {
-            const res = await parkService.getBuildings({
-                page: params.current || 1,
-                pageSize: params.pageSize || 10,
-                ...searchParamsRef.current,
-                sortBy,
-                sortOrder,
-            });
-            if (res.success && res.data) {
-                return { data: res.data.queryable, total: res.data.rowCount, success: true };
-            }
-            return { data: [], total: 0, success: false };
-        } catch (error) {
-            return { data: [], total: 0, success: false };
-        }
-    };
-
-    // 房源请求
-    const fetchUnits = async (params: any, sort: any) => {
-        const sortBy = sort?.sortKey;
-        const sortOrder = sort?.sortOrder === 'ascend' ? 'asc' : sort?.sortOrder === 'descend' ? 'desc' : undefined;
-        try {
-            const res = await parkService.getPropertyUnits({
-                page: params.current || 1,
-                pageSize: params.pageSize || 10,
-                ...searchParamsRef.current,
-                sortBy,
-                sortOrder,
-            });
-            if (res.success && res.data) {
-                return { data: res.data.queryable, total: res.data.rowCount, success: true };
-            }
-            return { data: [], total: 0, success: false };
-        } catch (error) {
-            return { data: [], total: 0, success: false };
-        }
-    };
-
-    // 事件处理
     const handleViewBuilding = (building: Building) => {
         setCurrentBuilding(building);
         setDetailDrawerVisible(true);
@@ -478,7 +463,6 @@ const AssetManagement: React.FC = () => {
             const values = await buildingForm.validateFields();
             setLoading(true);
 
-            // Process attachments
             const attachmentUrls = attachmentList.map(item => {
                 if (item.response && item.response.data && item.response.data.path) {
                     return item.response.data.path;
@@ -517,7 +501,6 @@ const AssetManagement: React.FC = () => {
         setCurrentUnit(unit);
         setIsEdit(true);
         unitForm.setFieldsValue(unit);
-        // Load attachments
         setAttachmentList((unit.attachments || []).map((url, index) => {
             const fileName = url.split('/').pop() || 'file';
             const decodedName = decodeURIComponent(fileName);
@@ -560,7 +543,6 @@ const AssetManagement: React.FC = () => {
             const values = await unitForm.validateFields();
             setLoading(true);
 
-            // Process attachments
             const attachmentUrls = attachmentList.map(item => {
                 if (item.response && item.response.data && item.response.data.path) {
                     return item.response.data.path;
@@ -624,7 +606,6 @@ const AssetManagement: React.FC = () => {
                 </Space>
             }
         >
-            {/* 统计卡片 */}
             {statistics && (
                 <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
                     <Col xs={24} sm={12} md={6}>
@@ -673,23 +654,13 @@ const AssetManagement: React.FC = () => {
                 </Row>
             )}
 
-            {/* 搜索表单 */}
             <SearchBar
                 initialParams={searchParamsRef.current}
-                onSearch={(params) => {
-                    searchParamsRef.current = { ...searchParamsRef.current, ...params };
-                    if (activeTab === 'buildings') {
-                        setBuildingsPagination(prev => ({ ...prev, page: 1 }));
-                        fetchBuildings();
-                    } else {
-                        setUnitsPagination(prev => ({ ...prev, page: 1 }));
-                        fetchUnits();
-                    }
-                }}
+                onSearch={handleSearch}
+                showResetButton={false}
                 style={{ marginBottom: 16 }}
             />
 
-            {/* 数据表格 */}
             <Card>
                 <Tabs
                     activeKey={activeTab}
@@ -714,10 +685,6 @@ const AssetManagement: React.FC = () => {
                                         current: buildingsPagination.page,
                                         pageSize: buildingsPagination.pageSize,
                                         total: buildingsPagination.total,
-                                        pageSizeOptions: [10, 20, 50, 100],
-                                        showSizeChanger: true,
-                                        showQuickJumper: true,
-                                        showTotal: (total) => `共 ${total} 条`,
                                     }}
                                     scroll={{ x: 1300 }}
                                 />
@@ -742,10 +709,6 @@ const AssetManagement: React.FC = () => {
                                         current: unitsPagination.page,
                                         pageSize: unitsPagination.pageSize,
                                         total: unitsPagination.total,
-                                        pageSizeOptions: [10, 20, 50, 100],
-                                        showSizeChanger: true,
-                                        showQuickJumper: true,
-                                        showTotal: (total) => `共 ${total} 条`,
                                     }}
                                     scroll={{ x: 1100 }}
                                 />
@@ -755,7 +718,6 @@ const AssetManagement: React.FC = () => {
                 />
             </Card>
 
-            {/* 楼宇编辑弹窗 */}
             <Modal
                 title={intl.formatMessage({
                     id: isEdit ? 'pages.park.asset.editBuilding' : 'pages.park.asset.addBuilding',
@@ -891,7 +853,6 @@ const AssetManagement: React.FC = () => {
                 </Form>
             </Modal>
 
-            {/* 房源编辑弹窗 */}
             <Modal
                 title={intl.formatMessage({
                     id: isEdit ? 'pages.park.asset.editUnit' : 'pages.park.asset.addUnit',
@@ -1018,7 +979,6 @@ const AssetManagement: React.FC = () => {
                 </Form>
             </Modal>
 
-            {/* 楼宇详情抽屉 */}
             <Drawer
                 title={currentBuilding?.name || intl.formatMessage({ id: 'pages.park.asset.buildingDetail', defaultMessage: '楼宇详情' })}
                 open={detailDrawerVisible}
@@ -1064,7 +1024,6 @@ const AssetManagement: React.FC = () => {
                 )}
             </Drawer>
 
-            {/* 房源详情抽屉 */}
             <Drawer
                 title={currentUnit?.unitNumber || intl.formatMessage({ id: 'pages.park.asset.unitDetail', defaultMessage: '房源详情' })}
                 open={unitDetailDrawerVisible}
@@ -1082,6 +1041,7 @@ const AssetManagement: React.FC = () => {
                                 <Descriptions.Item label="房源面积">{currentUnit.area} m²</Descriptions.Item>
                                 <Descriptions.Item label="房源类型">{currentUnit.unitType === 'Office' ? '办公' : currentUnit.unitType === 'Commercial' ? '商铺' : currentUnit.unitType || '其他'}</Descriptions.Item>
                                 <Descriptions.Item label="月租金">¥{currentUnit.monthlyRent?.toLocaleString()}</Descriptions.Item>
+                                <Descriptions.Item label="日租金">{currentUnit.dailyRent ? `¥${currentUnit.dailyRent?.toLocaleString()}/m²` : '-'}</Descriptions.Item>
                                 <Descriptions.Item label="状态">
                                     <Tag color={currentUnit.status === 'Available' ? 'green' : 'blue'}>
                                         {currentUnit.status === 'Available' ? '空置' : '已出租'}

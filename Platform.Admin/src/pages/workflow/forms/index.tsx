@@ -379,8 +379,6 @@ const FormsPage: React.FC = () => {
     const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
 
     const searchParamsRef = useRef<PageParams>({
-        page: 1,
-        pageSize: 10,
         search: '',
         isActive: undefined,
     });
@@ -394,9 +392,7 @@ const FormsPage: React.FC = () => {
                 current: currentParams.page,
                 pageSize: currentParams.pageSize,
                 keyword: currentParams.search,
-                isActive: currentParams.isActive as any,
-                sortBy: currentParams.sortBy,
-                sortOrder: currentParams.sortOrder,
+                isActive: currentParams.isActive as boolean | undefined,
             });
             if (response.success && response.data) {
                 setData(response.data.queryable || []);
@@ -404,7 +400,7 @@ const FormsPage: React.FC = () => {
                     ...prev,
                     page: currentParams.page ?? prev.page,
                     pageSize: currentParams.pageSize ?? prev.pageSize,
-                    total: response.data.rowCount ?? 0,
+                    total: response.data!.rowCount ?? 0,
                 }));
             } else {
                 setData([]);
@@ -432,7 +428,6 @@ const FormsPage: React.FC = () => {
         searchForm.resetFields();
         searchParamsRef.current = {
             page: 1,
-            pageSize: 10,
             search: '',
             isActive: undefined,
         };
@@ -576,10 +571,6 @@ const FormsPage: React.FC = () => {
                     current: pagination.page,
                     pageSize: pagination.pageSize,
                     total: pagination.total,
-                    pageSizeOptions: [10, 20, 50, 100],
-                    showSizeChanger: true,
-                    showQuickJumper: true,
-                    showTotal: (total) => `共 ${total} 条`,
                 }}
             />
 

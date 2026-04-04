@@ -3,20 +3,20 @@
  */
 
 export interface TaskListRequest {
-  Page: number;
-  PageSize: number;
-  Search?: string;
-  Status?: number;
-  Priority?: number;
-  AssignedTo?: string;
-  CreatedBy?: string;
-  TaskType?: string;
-  SortBy: string;
-  SortOrder: string;
-  StartDate?: string;
-  EndDate?: string;
-  Tags?: string[];
-  ProjectId?: string;
+  page: number;
+  pageSize: number;
+  search?: string;
+  status?: number;
+  priority?: number;
+  assignedTo?: string;
+  createdBy?: string;
+  taskType?: string;
+  sortBy?: string;
+  sortOrder?: string;
+  startDate?: string;
+  endDate?: string;
+  tags?: string[];
+  projectId?: string;
 }
 
 export interface TaskStatisticsResponse {
@@ -44,9 +44,21 @@ export interface SearchFormValues {
   tags?: string[];
 }
 
-export interface TaskQueryParams extends TaskListRequest {
-  current?: number;
+export interface TaskQueryParams {
+  page?: number;
   pageSize?: number;
+  search?: string;
+  status?: number;
+  priority?: number;
+  assignedTo?: string;
+  createdBy?: string;
+  taskType?: string;
+  sortBy?: string;
+  sortOrder?: string;
+  startDate?: string;
+  endDate?: string;
+  tags?: string[];
+  projectId?: string;
 }
 
 export interface TableSort {

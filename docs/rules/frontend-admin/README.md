@@ -8,7 +8,7 @@
 |------|------|
 | [`01-路由与菜单.md`](./01-路由与菜单.md) | 路由配置、菜单多语言 |
 | [`02-服务层封装.md`](./02-服务层封装.md) | request 封装、ApiResponse 处理 |
-| [`03-页面与组件结构.md`](./03-页面与组件结构.md) | 页面骨架、组件拆分 |
+| [`03-页面与组件结构.md`](./03-页面与组件结构.md) | 页面骨架、组件拆分、密码本模板 |
 | [`04-TypeScript类型安全.md`](./04-TypeScript类型安全.md) | 禁止 any、类型定义规范 |
 | [`05-页面风格统一规范.md`](./05-页面风格统一规范.md) | 页面容器、统计卡片、表格、操作列 |
 
@@ -47,8 +47,8 @@ import type { ApiResponse, PagedResult } from '@/types/unified-api';
 
 export async function getUsers(params: UserQueryParams) {
   return request<ApiResponse<PagedResult<User>>>('/api/users/list', {
-    method: 'POST',
-    data: params,
+    method: 'GET',
+    params,
   });
 }
 
@@ -70,10 +70,28 @@ if (response.success && response.data) {
 // ✅ 正确：统一页面结构
 <PageContainer style={{ paddingBlock: 12 }}>
   <Card> {/* 统计卡片 */} </Card>
-  <Card> {/* 搜索表单 */} </Card>
-  <DataTable /> {/* 数据表格 */}
+  <SearchBar /> {/* 搜索表单 */ }
+  <Table /> {/* 数据表格 - 使用原生组件 */}
 </PageContainer>
 ```
+
+## 基准模板
+
+`src/pages/password-book` 是所有列表页面的**基准模板**，新建模块时请参考其结构：
+
+```
+src/pages/xxx/
+├── index.tsx              # 主页面（≤400行）
+├── types.ts               # 类型定义
+└── components/            # 仅复用组件才建立
+    └── XxxForm.tsx
+```
+
+核心要点：
+- 使用原生 `Table` 组件，不使用封装的 CrudTable
+- 操作列在 `columns` 中直接定义，删除用 `modal.confirm`
+- 统计卡片用数组 + `map` 渲染
+- 类型定义就近放在页面目录的 `types.ts`
 
 ## 统一类型来源
 

@@ -1,13 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Modal,
-  Radio,
-  Select,
-  Form,
-  Button,
-  Space,
-  Alert,
-} from 'antd';
+import { Modal, Radio, Select, Form, Button, Space, Alert } from 'antd';
 import { useMessage } from '@/hooks/useMessage';
 import { DownloadOutlined } from '@ant-design/icons';
 import { exportPasswordBook, getCategories } from '@/services/password-book/api';
@@ -24,20 +16,9 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ open, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
 
-  // 加载分类列表
   useEffect(() => {
     if (open) {
-      const fetchCategories = async () => {
-        try {
-          const response = await getCategories();
-          if (response.success && response.data) {
-            setCategories(response.data);
-          }
-        } catch (error) {
-          // 错误由全局错误处理统一处理
-        }
-      };
-      fetchCategories();
+      getCategories().then(res => { if (res.success && res.data) setCategories(res.data); });
       form.resetFields();
     }
   }, [open, form]);
@@ -45,13 +26,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ open, onClose }) => {
   const handleSubmit = async (values: any) => {
     setLoading(true);
     try {
-      const request: ExportPasswordBookRequest = {
-        format: values.format || 'json',
-        category: values.category || undefined,
-        tags: values.tags || undefined,
-      };
-
-      await exportPasswordBook(request);
+      await exportPasswordBook({ format: values.format || 'json', category: values.category || undefined, tags: values.tags || undefined });
       message.success('导出成功');
       onClose();
     } catch (error: any) {
@@ -62,60 +37,24 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ open, onClose }) => {
   };
 
   return (
-    <Modal
-      title="导出密码本"
-      open={open}
-      onCancel={onClose}
-      footer={null}
-      width={500}
-    >
-      <Alert
-        message="安全提示"
-        description="导出的文件包含您的明文密码，请妥善保管，不要在不安全的环境中打开。"
-        type="warning"
-        showIcon
-        style={{ marginBottom: 24 }}
-      />
-
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={handleSubmit}
-        initialValues={{ format: 'json' }}
-      >
+    <Modal title="导出密码本" open={open} onCancel={onClose} footer={null} width={500}>
+      <Alert message="安全提示" description="导出的文件包含您的明文密码，请妥善保管，不要在不安全的环境中打开。" type="warning" showIcon style={{ marginBottom: 24 }} />
+      <Form form={form} layout="vertical" onFinish={handleSubmit} initialValues={{ format: 'json' }}>
         <Form.Item name="format" label="导出格式">
           <Radio.Group>
             <Radio value="json">JSON</Radio>
             <Radio value="csv">CSV</Radio>
           </Radio.Group>
         </Form.Item>
-
         <Form.Item name="category" label="分类筛选（可选）">
-          <Select
-            placeholder="选择分类"
-            allowClear
-            options={categories.map((cat) => ({ label: cat, value: cat }))}
-          />
+          <Select placeholder="选择分类" allowClear options={categories.map(cat => ({ label: cat, value: cat }))} />
         </Form.Item>
-
         <Form.Item name="tags" label="标签筛选（可选）">
-          <Select
-            mode="tags"
-            placeholder="输入标签"
-            allowClear
-          />
+          <Select mode="tags" placeholder="输入标签" allowClear />
         </Form.Item>
-
         <Form.Item>
           <Space>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={loading}
-              icon={<DownloadOutlined />}
-            >
-              导出
-            </Button>
+            <Button type="primary" htmlType="submit" loading={loading} icon={<DownloadOutlined />}>导出</Button>
             <Button onClick={onClose}>取消</Button>
           </Space>
         </Form.Item>

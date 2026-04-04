@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState, useEffect } from 'react';
-import { Card, Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typography, Descriptions, InputNumber, Tabs, Progress, Popconfirm, DatePicker, Flex, Drawer, Table } from 'antd';
+import { Card, Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typography, Descriptions, InputNumber, Tabs, Popconfirm, DatePicker, Flex, Drawer, Table, Progress } from 'antd';
 import { useIntl } from '@umijs/max';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, UserAddOutlined, ProjectOutlined, PhoneOutlined, MailOutlined, ReloadOutlined, SwapOutlined, TeamOutlined } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
@@ -8,9 +8,9 @@ import SearchBar from '@/components/SearchBar';
 import StatCard from '@/components/StatCard';
 import * as parkService from '@/services/park';
 import type { InvestmentLead, InvestmentProject, InvestmentStatistics } from '@/services/park';
-import type { PagedResult } from '@/types/unified-api';
 import dayjs from 'dayjs';
 import styles from './index.less';
+import type { PageParams } from '@/types/page-params';
 
 const { Text } = Typography;
 
@@ -20,7 +20,7 @@ const InvestmentManagement: React.FC = () => {
     const { message } = App.useApp();
     const [leadForm] = Form.useForm();
     const [projectForm] = Form.useForm();
-    const searchParamsRef = useRef<any>({ search: '' });
+    const searchParamsRef = useRef<PageParams>({ page: 1, pageSize: 10, search: '' });
 
     const [activeTab, setActiveTab] = useState<string>('leads');
     const [statistics, setStatistics] = useState<InvestmentStatistics | null>(null);
@@ -56,16 +56,17 @@ const InvestmentManagement: React.FC = () => {
     }, [loadStatistics]);
 
     const fetchLeads = useCallback(async () => {
+        const currentParams = searchParamsRef.current;
         setLeadsLoading(true);
         try {
             const res = await parkService.getLeads({
-                page: leadsPagination.page,
-                pageSize: leadsPagination.pageSize,
-                ...searchParamsRef.current,
+                page: currentParams.page ?? 1,
+                pageSize: currentParams.pageSize ?? 10,
+                ...currentParams,
             });
             if (res.success && res.data) {
                 setLeadsData(res.data.queryable || []);
-                setLeadsPagination(prev => ({ ...prev, total: res.data.rowCount ?? 0 }));
+                setLeadsPagination(prev => ({ ...prev, total: res.data!.rowCount ?? 0 }));
             } else {
                 setLeadsData([]);
                 setLeadsPagination(prev => ({ ...prev, total: 0 }));
@@ -76,19 +77,20 @@ const InvestmentManagement: React.FC = () => {
         } finally {
             setLeadsLoading(false);
         }
-    }, [leadsPagination.page, leadsPagination.pageSize]);
+    }, []);
 
     const fetchProjects = useCallback(async () => {
+        const currentParams = searchParamsRef.current;
         setProjectsLoading(true);
         try {
             const res = await parkService.getProjects({
-                page: projectsPagination.page,
-                pageSize: projectsPagination.pageSize,
-                ...searchParamsRef.current,
+                page: currentParams.page ?? 1,
+                pageSize: currentParams.pageSize ?? 10,
+                ...currentParams,
             });
             if (res.success && res.data) {
                 setProjectsData(res.data.queryable || []);
-                setProjectsPagination(prev => ({ ...prev, total: res.data.rowCount ?? 0 }));
+                setProjectsPagination(prev => ({ ...prev, total: res.data!.rowCount ?? 0 }));
             } else {
                 setProjectsData([]);
                 setProjectsPagination(prev => ({ ...prev, total: 0 }));
@@ -99,19 +101,48 @@ const InvestmentManagement: React.FC = () => {
         } finally {
             setProjectsLoading(false);
         }
-    }, [projectsPagination.page, projectsPagination.pageSize]);
+    }, []);
+
+    const handleSearch = useCallback((params: PageParams) => {
+        searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
+        if (activeTab === 'leads') {
+            setLeadsPagination(prev => ({ ...prev, page: 1 }));
+            fetchLeads();
+        } else {
+            setProjectsPagination(prev => ({ ...prev, page: 1 }));
+            fetchProjects();
+        }
+    }, [activeTab, fetchLeads, fetchProjects]);
 
     const handleLeadsTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
         const newPage = pag.current;
         const newPageSize = pag.pageSize;
-        setLeadsPagination(prev => ({ ...prev, page: newPage, pageSize: newPageSize }));
+        const sortBy = sorter?.field;
+        const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
+        
+        searchParamsRef.current = {
+            ...searchParamsRef.current,
+            page: newPage,
+            pageSize: newPageSize,
+            sortBy,
+            sortOrder,
+        };
         fetchLeads();
     }, [fetchLeads]);
 
     const handleProjectsTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
         const newPage = pag.current;
         const newPageSize = pag.pageSize;
-        setProjectsPagination(prev => ({ ...prev, page: newPage, pageSize: newPageSize }));
+        const sortBy = sorter?.field;
+        const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
+        
+        searchParamsRef.current = {
+            ...searchParamsRef.current,
+            page: newPage,
+            pageSize: newPageSize,
+            sortBy,
+            sortOrder,
+        };
         fetchProjects();
     }, [fetchProjects]);
 
@@ -351,47 +382,6 @@ const InvestmentManagement: React.FC = () => {
         },
     ];
 
-    const fetchLeads = async (params: any, sort: any) => {
-        const sortBy = sort?.sortKey;
-        const sortOrder = sort?.sortOrder === 'ascend' ? 'asc' : sort?.sortOrder === 'descend' ? 'desc' : undefined;
-        try {
-            const res = await parkService.getLeads({
-                page: params.current || 1,
-                pageSize: params.pageSize || 10,
-                ...searchParamsRef.current,
-                sortBy,
-                sortOrder,
-            });
-            if (res.success && res.data) {
-                const d = res.data as PagedResult<InvestmentLead>;
-                return { data: d.queryable ?? [], total: d.rowCount ?? 0, success: true };
-            }
-            return { data: [], total: 0, success: false };
-        } catch (error) {
-            return { data: [], total: 0, success: false };
-        }
-    };
-
-    const fetchProjects = async (params: any, sort: any) => {
-        const sortBy = sort?.sortKey;
-        const sortOrder = sort?.sortOrder === 'ascend' ? 'asc' : sort?.sortOrder === 'descend' ? 'desc' : undefined;
-        try {
-            const res = await parkService.getProjects({
-                page: params.current || 1,
-                pageSize: params.pageSize || 10,
-                ...searchParamsRef.current,
-                sortBy,
-                sortOrder,
-            });
-            if (res.success && res.data) {
-                return { data: res.data.queryable ?? [], total: res.data.rowCount ?? 0, success: true };
-            }
-            return { data: [], total: 0, success: false };
-        } catch (error) {
-            return { data: [], total: 0, success: false };
-        }
-    };
-
     const handleViewLead = (lead: InvestmentLead) => {
         setCurrentLead(lead);
         setLeadDetailVisible(true);
@@ -620,16 +610,8 @@ const InvestmentManagement: React.FC = () => {
 
             <SearchBar
                 initialParams={searchParamsRef.current}
-                onSearch={(params) => {
-                    searchParamsRef.current = { ...searchParamsRef.current, ...params };
-                    if (activeTab === 'leads') {
-                        setLeadsPagination(prev => ({ ...prev, page: 1 }));
-                        fetchLeads();
-                    } else {
-                        setProjectsPagination(prev => ({ ...prev, page: 1 }));
-                        fetchProjects();
-                    }
-                }}
+                onSearch={handleSearch}
+                showResetButton={false}
                 style={{ marginBottom: 16 }}
             />
 
@@ -657,10 +639,6 @@ const InvestmentManagement: React.FC = () => {
                                         current: leadsPagination.page,
                                         pageSize: leadsPagination.pageSize,
                                         total: leadsPagination.total,
-                                        pageSizeOptions: [10, 20, 50, 100],
-                                        showSizeChanger: true,
-                                        showQuickJumper: true,
-                                        showTotal: (total) => `共 ${total} 条`,
                                     }}
                                     scroll={{ x: 1400 }}
                                 />
@@ -685,10 +663,6 @@ const InvestmentManagement: React.FC = () => {
                                         current: projectsPagination.page,
                                         pageSize: projectsPagination.pageSize,
                                         total: projectsPagination.total,
-                                        pageSizeOptions: [10, 20, 50, 100],
-                                        showSizeChanger: true,
-                                        showQuickJumper: true,
-                                        showTotal: (total) => `共 ${total} 条`,
                                     }}
                                     scroll={{ x: 1300 }}
                                 />

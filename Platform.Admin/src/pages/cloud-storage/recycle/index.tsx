@@ -22,7 +22,6 @@ import {
     DatePicker,
     Progress,
     Alert,
-    DatePicker,
 } from 'antd';
 import { useMessage } from '@/hooks/useMessage';
 import { useModal } from '@/hooks/useModal';
@@ -75,15 +74,13 @@ const CloudStorageRecyclePage: React.FC = () => {
     // 状态管理
     const [data, setData] = useState<RecycleItem[]>([]);
     const [loading, setLoading] = useState(false);
-    const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
+    const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
     const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
     const [selectedRows, setSelectedRows] = useState<RecycleItem[]>([]);
     const [statistics, setStatistics] = useState<RecycleStatistics | null>(null);
 
     // 搜索相关状态
     const searchParamsRef = useRef<PageParams>({
-        page: 1,
-        pageSize: 20,
         search: '',
     });
     const [searchForm] = Form.useForm();
@@ -110,7 +107,7 @@ const CloudStorageRecyclePage: React.FC = () => {
                 page: currentParams.page,
                 pageSize: currentParams.pageSize,
                 sortBy: currentParams.sortBy,
-                sortOrder: currentParams.sortOrder,
+                sortOrder: currentParams.sortOrder as 'asc' | 'desc' | undefined,
             };
 
             const response = await getRecycleList(listRequest);
@@ -126,7 +123,7 @@ const CloudStorageRecyclePage: React.FC = () => {
                     ...prev,
                     page: currentParams.page ?? prev.page,
                     pageSize: currentParams.pageSize ?? prev.pageSize,
-                    total: response.data.rowCount ?? 0,
+                    total: response.data!.rowCount ?? 0,
                 }));
             } else {
                 setData([]);
@@ -678,10 +675,6 @@ const CloudStorageRecyclePage: React.FC = () => {
                     current: pagination.page,
                     pageSize: pagination.pageSize,
                     total: pagination.total,
-                    pageSizeOptions: [10, 20, 50, 100],
-                    showSizeChanger: true,
-                    showQuickJumper: true,
-                    showTotal: (total) => `共 ${total} 条`,
                 }}
                 rowSelection={{
                     selectedRowKeys,

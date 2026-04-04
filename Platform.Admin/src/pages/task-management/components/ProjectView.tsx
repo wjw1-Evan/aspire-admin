@@ -1,33 +1,12 @@
-import React, { useRef, useState, useEffect, useImperativeHandle, forwardRef, useCallback, useMemo } from 'react';
-import type { ActionType } from '@/types/pro-components';
+import React, { useRef, useState, useEffect, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { type ColumnsType } from 'antd/es/table';
-import DataTable from '@/components/DataTable';
+import { Table, Card, Row, Col, Badge, Tag, Space, App, Grid, Button, Modal, Progress } from 'antd';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
-import {
-  Button,
-  Tag,
-  Space,
-  message,
-  Modal,
-  Form,
-  Input,
-  Card,
-  Row,
-  Col,
-  Badge,
-  Select,
-  DatePicker,
-  Progress,
-  Grid,
-} from 'antd';
-
-const { useBreakpoint } = Grid;
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  ReloadOutlined,
   ProjectOutlined,
 } from '@ant-design/icons';
 import {
@@ -58,26 +37,20 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   const intl = useIntl();
   const { styles } = useCommonStyles();
   const { confirm } = useModal();
-  const screens = useBreakpoint();
-  const isMobile = !screens.md; // md 以下为移动端
-  const actionRef = useRef<ActionType>(null);
+  const { message } = App.useApp();
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.md;
   const [formVisible, setFormVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
   const [editingProject, setEditingProject] = useState<ProjectDto | null>(null);
   const [viewingProject, setViewingProject] = useState<ProjectDto | null>(null);
   const [statistics, setStatistics] = useState<ProjectStatistics | null>(null);
   const [selectedRows, setSelectedRows] = useState<ProjectDto[]>([]);
-  const [searchParams, setSearchParams] = useState<ProjectQueryRequest>({
-    page: 1,
-    pageSize: 10,
-    sortBy: 'CreatedAt',
-    sortOrder: 'desc',
-  });
+  const [data, setData] = useState<ProjectDto[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
 
-  // 🔧 修复：使用 ref 存储搜索参数，避免 fetchProjects 函数重新创建导致重复请求
   const searchParamsRef = useRef<ProjectQueryRequest>({
-    page: 1,
-    pageSize: 10,
     search: '',
     sortBy: 'CreatedAt',
     sortOrder: 'desc',
@@ -99,48 +72,56 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
     fetchStatistics();
   }, [fetchStatistics]);
 
-  // 获取项目列表（使用 useCallback 避免死循环）
-  const fetchProjects = useCallback(async (params: any, sort?: Record<string, any>) => {
-    let sortBy = searchParamsRef.current.sortBy;
-    let sortOrder = searchParamsRef.current.sortOrder;
+  const fetchData = useCallback(async () => {
+    const currentParams = searchParamsRef.current;
 
-    if (sort && Object.keys(sort).length > 0) {
-      const sortKey = Object.keys(sort)[0];
-      const sortValue = sort[sortKey];
-      sortBy = sortKey;
-      sortOrder = sortValue === 'ascend' ? 'asc' : 'desc';
-    }
-
-    const requestData: ProjectQueryRequest = {
-      page: params.current || searchParamsRef.current.page,
-      pageSize: params.pageSize || searchParamsRef.current.pageSize,
-      sortBy,
-      sortOrder,
-      ...searchParamsRef.current,
-    };
-
+    setLoading(true);
     try {
-      const response = await getProjectList(requestData);
+      const response = await getProjectList(currentParams);
       if (response.success && response.data) {
-        return {
-          data: response.data.queryable || [],
-          success: true,
-          total: response.data.rowCount ?? 0,
-        };
+        setData(response.data.queryable || []);
+        setPagination(prev => ({
+          ...prev,
+          page: currentParams.page ?? prev.page,
+          pageSize: currentParams.pageSize ?? prev.pageSize,
+          total: response.data!.rowCount ?? 0,
+        }));
+      } else {
+        setData([]);
+        setPagination(prev => ({ ...prev, total: 0 }));
       }
-      return { data: [], success: false, total: 0 };
     } catch (error) {
       console.error('获取项目列表失败:', error);
-      return { data: [], success: false, total: 0 };
+      setData([]);
+      setPagination(prev => ({ ...prev, total: 0 }));
+    } finally {
+      setLoading(false);
     }
-  }, []); // 🔧 修复：移除 searchParams 依赖，使用 ref 避免函数重新创建
+  }, []);
 
-  // 暴露方法给父组件
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+    const newPage = pag.current;
+    const newPageSize = pag.pageSize;
+    const sortBy = sorter?.field;
+    const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
+
+    searchParamsRef.current = {
+      ...searchParamsRef.current,
+      page: newPage,
+      pageSize: newPageSize,
+      sortBy,
+      sortOrder,
+    };
+    fetchData();
+  }, [fetchData]);
+
   useImperativeHandle(ref, () => ({
     reload: () => {
-      if (actionRef.current && actionRef.current.reload) {
-        actionRef.current.reload();
-      }
+      fetchData();
     },
     refreshStatistics: () => {
       fetchStatistics();
@@ -149,7 +130,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       setEditingProject(null);
       setFormVisible(true);
     },
-  }), [fetchStatistics]);
+  }), [fetchData, fetchStatistics]);
 
 
   // 删除项目
@@ -164,16 +145,14 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
         try {
           await deleteProject(projectId);
           message.success(intl.formatMessage({ id: 'pages.projectManagement.message.deleteSuccess' }));
-          if (actionRef.current && actionRef.current.reload) {
-            actionRef.current.reload();
-          }
+          fetchData();
           fetchStatistics();
         } catch (error) {
           message.error(intl.formatMessage({ id: 'pages.projectManagement.message.deleteFailed' }));
         }
       },
     });
-  }, [intl, fetchStatistics]);
+  }, [intl, fetchData, fetchStatistics]);
 
   // 格式化日期时间（提取为纯函数）
   const formatDateTime = useCallback((dateTime: string | null | undefined): string => {
@@ -342,17 +321,21 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   // 表单成功处理
   const handleFormSuccess = useCallback(() => {
     setFormVisible(false);
-    if (actionRef.current && actionRef.current.reload) {
-      actionRef.current.reload();
-    }
+    fetchData();
     fetchStatistics();
-  }, [fetchStatistics]);
+  }, [fetchData, fetchStatistics]);
 
   // 关闭详情处理
   const handleCloseDetail = useCallback(() => {
     setDetailVisible(false);
     setViewingProject(null);
   }, []);
+
+  // 搜索处理
+  const handleSearch = useCallback((params: any) => {
+    searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
+    fetchData();
+  }, [fetchData]);
 
   return (
     <div>
@@ -399,29 +382,25 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       {/* 搜索表单 */}
       <SearchBar
         initialParams={searchParamsRef.current}
-        onSearch={(params) => {
-          searchParamsRef.current = { ...searchParamsRef.current, ...params };
-          actionRef.current?.reload?.();
-        }}
+        onSearch={handleSearch}
         style={{ marginBottom: 16 }}
       />
 
       {/* 项目列表表格 */}
-      <DataTable<ProjectDto>
-        actionRef={actionRef}
-        rowKey="id"
-        scroll={{ x: 'max-content' }}
-        search={false}
-        request={fetchProjects}
+      <Table<ProjectDto>
+        dataSource={data}
         columns={columns}
+        rowKey="id"
+        loading={loading}
+        scroll={{ x: 'max-content' }}
+        onChange={handleTableChange}
         rowSelection={{
           onChange: handleRowSelectionChange,
         }}
         pagination={{
-          pageSize: 10,
-          pageSizeOptions: [10, 20, 50, 100],
-          showSizeChanger: true,
-          showQuickJumper: true,
+          current: pagination.page,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
         }}
       />
 

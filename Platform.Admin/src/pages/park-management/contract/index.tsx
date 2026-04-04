@@ -12,6 +12,7 @@ import * as cloudService from '@/services/cloud-storage/api';
 import dayjs from 'dayjs';
 import type { UploadFile, UploadProps } from 'antd';
 import styles from './index.less';
+import type { PageParams } from '@/types/page-params';
 
 const { Text } = Typography;
 
@@ -19,7 +20,7 @@ const ContractManagement: React.FC = () => {
     const intl = useIntl();
     const { message } = App.useApp();
     const [contractForm] = Form.useForm();
-    const searchParamsRef = useRef<any>({ search: '' });
+    const searchParamsRef = useRef<PageParams>({ page: 1, pageSize: 10, search: '' });
     const [paymentForm] = Form.useForm();
 
     const [statistics, setStatistics] = useState<TenantStatistics | null>(null);
@@ -77,16 +78,17 @@ const ContractManagement: React.FC = () => {
     }, [loadStatistics, loadTenants, loadUnits]);
 
     const fetchContracts = useCallback(async () => {
+        const currentParams = searchParamsRef.current;
         setContractsLoading(true);
         try {
             const res = await parkService.getContracts({
-                page: contractsPagination.page,
-                pageSize: contractsPagination.pageSize,
-                search: searchParamsRef.current.search,
+                page: currentParams.page ?? 1,
+                pageSize: currentParams.pageSize ?? 10,
+                search: currentParams.search,
             });
             if (res.success && res.data) {
                 setContractsData(res.data.queryable || []);
-                setContractsPagination(prev => ({ ...prev, total: res.data.rowCount ?? 0 }));
+                setContractsPagination(prev => ({ ...prev, total: res.data!.rowCount ?? 0 }));
             } else {
                 setContractsData([]);
                 setContractsPagination(prev => ({ ...prev, total: 0 }));
@@ -97,12 +99,16 @@ const ContractManagement: React.FC = () => {
         } finally {
             setContractsLoading(false);
         }
-    }, [contractsPagination.page, contractsPagination.pageSize]);
+    }, []);
 
     const handleContractsTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
-        const newPage = pag.current;
-        const newPageSize = pag.pageSize;
-        setContractsPagination(prev => ({ ...prev, page: newPage, pageSize: newPageSize }));
+        searchParamsRef.current = {
+            ...searchParamsRef.current,
+            page: pag.current,
+            pageSize: pag.pageSize,
+            sortBy: sorter?.field,
+            sortOrder: sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined,
+        };
         fetchContracts();
     }, [fetchContracts]);
 
@@ -212,24 +218,6 @@ const ContractManagement: React.FC = () => {
             ),
         },
     ];
-
-    const fetchContracts = async (params: any, sort: any) => {
-        const sortBy = sort?.sortKey;
-        const sortOrder = sort?.sortOrder === 'ascend' ? 'asc' : sort?.sortOrder === 'descend' ? 'desc' : undefined;
-        try {
-            const res = await parkService.getContracts({
-                page: params.current || 1,
-                pageSize: params.pageSize || 10,
-                search: params.search,
-                status: params.status,
-                expiringWithin30Days: params.expiringWithin30Days,
-                sortBy,
-                sortOrder,
-            });
-            if (res.success && res.data) return { data: res.data.queryable, total: res.data.rowCount, success: true };
-            return { data: [], total: 0, success: false };
-        } catch (error) { return { data: [], total: 0, success: false }; }
-    };
 
     const handleViewContract = (contract: LeaseContract) => {
         setCurrentContract(contract);
@@ -434,10 +422,6 @@ const ContractManagement: React.FC = () => {
                         current: contractsPagination.page,
                         pageSize: contractsPagination.pageSize,
                         total: contractsPagination.total,
-                        pageSizeOptions: [10, 20, 50, 100],
-                        showSizeChanger: true,
-                        showQuickJumper: true,
-                        showTotal: (total) => `共 ${total} 条`,
                     }}
                     scroll={{ x: 1200 }}
                 />

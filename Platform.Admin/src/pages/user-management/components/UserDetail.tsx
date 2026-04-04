@@ -53,7 +53,8 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
       const response = await getAllRoles();
       if (response.success && response.data) {
         const map: Record<string, string> = {};
-        response.data.forEach((role: Role) => {
+        const roles = response.data.queryable || [];
+        roles.forEach((role: Role) => {
           if (role.id) {
             map[role.id] = role.name;
           }

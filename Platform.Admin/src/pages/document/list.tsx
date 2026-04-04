@@ -94,7 +94,7 @@ const DocumentManagement: React.FC = () => {
           ...prev,
           page: currentParams.page ?? prev.page,
           pageSize: currentParams.pageSize ?? prev.pageSize,
-          total: response.data.rowCount ?? 0,
+          total: response.data!.rowCount ?? 0,
         }));
       } else {
         setDataSource([]);
@@ -294,10 +294,6 @@ const DocumentManagement: React.FC = () => {
           current: pagination.page,
           pageSize: pagination.pageSize,
           total: pagination.total,
-          pageSizeOptions: [10, 20, 50, 100],
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total) => `共 ${total} 条`,
         }}
       />
 

@@ -1,5 +1,6 @@
 import { request } from '@umijs/max';
 import type { ApiResponse, PagedResult } from '@/types/unified-api';
+import type { PageParams } from '@/types/page-params';
 
 const API_PREFIX = '/api/iot';
 
@@ -203,15 +204,15 @@ export const iotService = {
       data,
     }),
 
-  getGateways: (page = 1, pageSize = 20, keyword?: string, sortBy?: string, sortOrder?: string) => {
+  getGateways: (params?: PageParams & { status?: string }) => {
+    const page = params?.page || 1;
+    const pageSize = params?.pageSize || 20;
     let url = `${API_PREFIX}/gateways?page=${page}&pageSize=${pageSize}`;
-    if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
-    if (sortBy) url += `&sortBy=${encodeURIComponent(sortBy)}`;
-    if (sortOrder) url += `&sortOrder=${encodeURIComponent(sortOrder)}`;
-    return request<ApiResponse<PagedResult<IoTGateway>>>(
-      url,
-      { method: 'GET' }
-    );
+    if (params?.search) url += `&search=${encodeURIComponent(params.search)}`;
+    if (params?.status) url += `&status=${encodeURIComponent(params.status)}`;
+    if (params?.sortBy) url += `&sortBy=${encodeURIComponent(params.sortBy)}`;
+    if (params?.sortOrder) url += `&sortOrder=${encodeURIComponent(params.sortOrder)}`;
+    return request<ApiResponse<PagedResult<IoTGateway>>>(url, { method: 'GET' });
   },
 
   getGateway: (id: string) =>
@@ -230,12 +231,14 @@ export const iotService = {
   createDevice: (data: any) =>
     request<{ success: boolean; data: IoTDevice }>(`${API_PREFIX}/devices`, { method: 'POST', data }),
 
-  getDevices: (gatewayId?: string, page = 1, pageSize = 20, keyword?: string, sortBy?: string, sortOrder?: string) => {
+  getDevices: (params?: PageParams & { gatewayId?: string }) => {
+    const page = params?.page || 1;
+    const pageSize = params?.pageSize || 20;
     let url = `${API_PREFIX}/devices?page=${page}&pageSize=${pageSize}`;
-    if (gatewayId) url += `&gatewayId=${gatewayId}`;
-    if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
-    if (sortBy) url += `&sortBy=${encodeURIComponent(sortBy)}`;
-    if (sortOrder) url += `&sortOrder=${encodeURIComponent(sortOrder)}`;
+    if (params?.gatewayId) url += `&gatewayId=${encodeURIComponent(params.gatewayId)}`;
+    if (params?.search) url += `&search=${encodeURIComponent(params.search)}`;
+    if (params?.sortBy) url += `&sortBy=${encodeURIComponent(params.sortBy)}`;
+    if (params?.sortOrder) url += `&sortOrder=${encodeURIComponent(params.sortOrder)}`;
     return request<ApiResponse<PagedResult<IoTDevice>>>(url, { method: 'GET' });
   },
 
@@ -279,12 +282,12 @@ export const iotService = {
     }),
 
   /** 查询设备命令历史（通过事件列表模拟） */
-  getCommandHistory: (deviceId: string, page = 1, pageSize = 10) => {
-    const url = `${API_PREFIX}/events/query`;
-    return request<ApiResponse<PagedResult<IoTDeviceEvent>>>(url, {
-      method: 'POST',
-      data: { deviceId, eventType: 'Command', page, pageSize },
-    });
+  getCommandHistory: (params?: PageParams & { deviceId?: string }) => {
+    const page = params?.page || 1;
+    const pageSize = params?.pageSize || 20;
+    let url = `${API_PREFIX}/events/query?page=${page}&pageSize=${pageSize}&eventType=Command`;
+    if (params?.deviceId) url += `&deviceId=${encodeURIComponent(params.deviceId)}`;
+    return request<ApiResponse<PagedResult<IoTDeviceEvent>>>(url, { method: 'GET' });
   },
 
   // ── ApiKey Management ─────────────────────────────────────────
@@ -298,12 +301,14 @@ export const iotService = {
   createDataPoint: (data: any) =>
     request<{ success: boolean; data: IoTDataPoint }>(`${API_PREFIX}/datapoints`, { method: 'POST', data }),
 
-  getDataPoints: (deviceId?: string, page = 1, pageSize = 20, keyword?: string, sortBy?: string, sortOrder?: string) => {
+  getDataPoints: (params?: PageParams & { deviceId?: string }) => {
+    const page = params?.page || 1;
+    const pageSize = params?.pageSize || 20;
     let url = `${API_PREFIX}/datapoints?page=${page}&pageSize=${pageSize}`;
-    if (deviceId) url += `&deviceId=${deviceId}`;
-    if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
-    if (sortBy) url += `&sortBy=${encodeURIComponent(sortBy)}`;
-    if (sortOrder) url += `&sortOrder=${encodeURIComponent(sortOrder)}`;
+    if (params?.deviceId) url += `&deviceId=${encodeURIComponent(params.deviceId)}`;
+    if (params?.search) url += `&search=${encodeURIComponent(params.search)}`;
+    if (params?.sortBy) url += `&sortBy=${encodeURIComponent(params.sortBy)}`;
+    if (params?.sortOrder) url += `&sortOrder=${encodeURIComponent(params.sortOrder)}`;
     return request<ApiResponse<PagedResult<IoTDataPoint>>>(url, { method: 'GET' });
   },
 
@@ -323,11 +328,16 @@ export const iotService = {
   batchReportData: (data: any) =>
     request<{ success: boolean; data: IoTDataRecord[] }>(`${API_PREFIX}/data/batch-report`, { method: 'POST', data }),
 
-  queryDataRecords: (data: any) =>
-    request<ApiResponse<PagedResult<IoTDataRecord>>>(`${API_PREFIX}/data/query`, {
-      method: 'POST',
-      data,
-    }),
+  queryDataRecords: (params?: PageParams & { deviceId?: string; dataPointId?: string; startTime?: string; endTime?: string }) => {
+    const page = params?.page || 1;
+    const pageSize = params?.pageSize || 20;
+    let url = `${API_PREFIX}/data/query?page=${page}&pageSize=${pageSize}`;
+    if (params?.deviceId) url += `&deviceId=${encodeURIComponent(params.deviceId)}`;
+    if (params?.dataPointId) url += `&dataPointId=${encodeURIComponent(params.dataPointId)}`;
+    if (params?.startTime) url += `&startTime=${encodeURIComponent(params.startTime)}`;
+    if (params?.endTime) url += `&endTime=${encodeURIComponent(params.endTime)}`;
+    return request<ApiResponse<PagedResult<IoTDataRecord>>>(url, { method: 'GET' });
+  },
 
   getLatestData: (dataPointId: string) =>
     request<{ success: boolean; data: IoTDataRecord }>(`${API_PREFIX}/data/latest/${dataPointId}`, { method: 'GET' }),
@@ -339,11 +349,20 @@ export const iotService = {
     ),
 
   // ── Events ────────────────────────────────────────────────────
-  queryEvents: (data: any) =>
-    request<ApiResponse<PagedResult<IoTDeviceEvent>>>(`${API_PREFIX}/events/query`, {
-      method: 'POST',
-      data,
-    }),
+  queryEvents: (params?: PageParams & { deviceId?: string; eventType?: string; level?: string; isHandled?: boolean; startTime?: string; endTime?: string }) => {
+    const page = params?.page || 1;
+    const pageSize = params?.pageSize || 20;
+    let url = `${API_PREFIX}/events/query?page=${page}&pageSize=${pageSize}`;
+    if (params?.deviceId) url += `&deviceId=${encodeURIComponent(params.deviceId)}`;
+    if (params?.eventType) url += `&eventType=${encodeURIComponent(params.eventType)}`;
+    if (params?.level) url += `&level=${encodeURIComponent(params.level)}`;
+    if (params?.isHandled !== undefined) url += `&isHandled=${params.isHandled}`;
+    if (params?.startTime) url += `&startTime=${encodeURIComponent(params.startTime)}`;
+    if (params?.endTime) url += `&endTime=${encodeURIComponent(params.endTime)}`;
+    if (params?.sortBy) url += `&sortBy=${encodeURIComponent(params.sortBy)}`;
+    if (params?.sortOrder) url += `&sortOrder=${encodeURIComponent(params.sortOrder)}`;
+    return request<ApiResponse<PagedResult<IoTDeviceEvent>>>(url, { method: 'GET' });
+  },
 
   handleEvent: (eventId: string, remarks: string) =>
     request<{ success: boolean }>(`${API_PREFIX}/events/${eventId}/handle`, {

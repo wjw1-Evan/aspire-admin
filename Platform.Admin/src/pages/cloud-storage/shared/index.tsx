@@ -76,14 +76,12 @@ const CloudStorageSharedPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'my-shares' | 'shared-with-me'>('my-shares');
     const [data, setData] = useState<FileShare[]>([]);
     const [loading, setLoading] = useState(false);
-    const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
+    const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
     const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
     const [selectedRows, setSelectedRows] = useState<FileShare[]>([]);
 
     // 搜索相关状态
     const searchParamsRef = useRef<PageParams>({
-        page: 1,
-        pageSize: 20,
         search: '',
     });
 
@@ -172,7 +170,7 @@ const CloudStorageSharedPage: React.FC = () => {
                     pageSize,
                     search: currentParams.search,
                     sortBy,
-                    sortOrder,
+                    sortOrder: sortOrder as 'asc' | 'desc' | undefined,
                 });
             } else {
                 response = await getSharedWithMe({
@@ -180,7 +178,7 @@ const CloudStorageSharedPage: React.FC = () => {
                     pageSize,
                     search: currentParams.search,
                     sortBy,
-                    sortOrder,
+                    sortOrder: sortOrder as 'asc' | 'desc' | undefined,
                 });
             }
 
@@ -229,7 +227,7 @@ const CloudStorageSharedPage: React.FC = () => {
                     ...prev,
                     page: currentParams.page ?? prev.page,
                     pageSize: currentParams.pageSize ?? prev.pageSize,
-                    total: response.data.rowCount ?? 0,
+                    total: response.data!.rowCount ?? 0,
                 }));
             } else {
                 setData([]);
@@ -602,10 +600,6 @@ const CloudStorageSharedPage: React.FC = () => {
                                         current: pagination.page,
                                         pageSize: pagination.pageSize,
                                         total: pagination.total,
-                                        pageSizeOptions: [10, 20, 50, 100],
-                                        showSizeChanger: true,
-                                        showQuickJumper: true,
-                                        showTotal: (total) => `共 ${total} 条`,
                                     }}
                                 />
                             )
@@ -625,10 +619,6 @@ const CloudStorageSharedPage: React.FC = () => {
                                         current: pagination.page,
                                         pageSize: pagination.pageSize,
                                         total: pagination.total,
-                                        pageSizeOptions: [10, 20, 50, 100],
-                                        showSizeChanger: true,
-                                        showQuickJumper: true,
-                                        showTotal: (total) => `共 ${total} 条`,
                                     }}
                                 />
                             )

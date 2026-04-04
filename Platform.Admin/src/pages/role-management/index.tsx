@@ -8,13 +8,11 @@ import {
   ReloadOutlined,
   SafetyOutlined,
 } from '@ant-design/icons';
-import { PageContainer } from '@/components';
+import { PageContainer, StatCard } from '@/components';
 import type { PagedResult } from '@/types/unified-api';
 import { useIntl } from '@umijs/max';
-import { Badge, Button, Modal, Space, Tag, Row, Col, Card, Grid, type TableColumnsType, Descriptions, Drawer, theme, Form, Input, Table } from 'antd';
-import { useMessage } from '@/hooks/useMessage';
+import { Badge, Button, Space, Tag, Row, Col, Card, Grid, type TableColumnsType, Descriptions, Drawer, Form, Input, Table, App } from 'antd';
 import useCommonStyles from '@/hooks/useCommonStyles';
-import { useModal } from '@/hooks/useModal';
 import SearchBar from '@/components/SearchBar';
 
 const { useBreakpoint } = Grid;
@@ -22,7 +20,6 @@ import { type ChangeEvent, type FC, useEffect, useRef, useState, useCallback, us
 import { deleteRole, getAllRolesWithStats, getRoleStatistics } from '@/services/role/api';
 import type { Role, RoleWithStats, RoleStatistics } from '@/services/role/types';
 import RoleForm from './components/RoleForm';
-import { StatCard } from '@/components';
 import dayjs from 'dayjs';
 import type { PageParams } from '@/types/page-params';
 
@@ -40,13 +37,10 @@ const formatDateTime = (dateTime: string | null | undefined): string => {
 
 const RoleManagement: FC = () => {
   const intl = useIntl();
-  const message = useMessage();
-  const modal = useModal();
+  const { message, modal } = App.useApp();
   const { styles } = useCommonStyles();
-  const { token } = theme.useToken();
   const screens = useBreakpoint();
   const isMobile = !screens.md;
-  const tableRef = useRef<HTMLDivElement>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [currentRole, setCurrentRole] = useState<RoleWithStats | undefined>();
   const [detailVisible, setDetailVisible] = useState(false);
@@ -54,24 +48,11 @@ const RoleManagement: FC = () => {
   const [statistics, setStatistics] = useState<RoleStatistics | null>(null);
   const [data, setData] = useState<RoleWithStats[]>([]);
   const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
 
   const searchParamsRef = useRef<PageParams>({
-    page: 1,
-    pageSize: 20,
     search: '',
   });
-
-  const loadStatistics = useCallback(async () => {
-    try {
-      const response = await getRoleStatistics();
-      if (response.success && response.data) {
-        setStatistics(response.data);
-      }
-    } catch (error) {
-      console.error('加载角色统计失败:', error);
-    }
-  }, []);
 
   const fetchData = useCallback(async () => {
     const currentParams = searchParamsRef.current;
@@ -92,27 +73,31 @@ const RoleManagement: FC = () => {
           ...prev,
           page: currentParams.page ?? prev.page,
           pageSize: currentParams.pageSize ?? prev.pageSize,
-          total: response.data.rowCount ?? 0,
+          total: response.data!.rowCount ?? 0,
         }));
       } else {
         setData([]);
         setPagination(prev => ({ ...prev, total: 0 }));
       }
-    } catch (error) {
-      setData([]);
-      setPagination(prev => ({ ...prev, total: 0 }));
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    loadStatistics();
-  }, [loadStatistics]);
+  const fetchStatistics = useCallback(() => {
+    getRoleStatistics().then((res) => {
+      if (res.success && res.data) setStatistics(res.data);
+    });
+  }, []);
+
+  const refreshAll = useCallback(() => {
+    fetchData();
+    fetchStatistics();
+  }, [fetchData, fetchStatistics]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    refreshAll();
+  }, [refreshAll]);
 
   const handleSearch = useCallback((params: PageParams) => {
     searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
@@ -168,8 +153,7 @@ const RoleManagement: FC = () => {
             message.success(
               intl.formatMessage({ id: 'pages.message.deleteSuccess' }),
             );
-            loadStatistics();
-            fetchData();
+            refreshAll();
           } else {
             throw new Error(
               response.message ||
@@ -181,12 +165,11 @@ const RoleManagement: FC = () => {
         }
       },
     });
-  }, [intl, loadStatistics, fetchData]);
+  }, [intl, modal, message, refreshAll]);
 
   const handleRefresh = useCallback(() => {
-    loadStatistics();
-    fetchData();
-  }, [loadStatistics, fetchData]);
+    refreshAll();
+  }, [refreshAll]);
 
   const handleCreateRole = useCallback(() => {
     setCurrentRole(undefined);
@@ -206,9 +189,8 @@ const RoleManagement: FC = () => {
   const handleFormSuccess = useCallback(() => {
     setModalVisible(false);
     setCurrentRole(undefined);
-    loadStatistics();
-    fetchData();
-  }, [loadStatistics, fetchData]);
+    refreshAll();
+  }, [refreshAll]);
 
   const handleViewDetail = useCallback((record: Role) => {
     setViewingRole(record);
@@ -218,145 +200,6 @@ const RoleManagement: FC = () => {
   const handleCloseDetail = useCallback(() => {
     setDetailVisible(false);
     setViewingRole(null);
-  }, []);
-
-  useEffect(() => {
-    if (!tableRef.current) return;
-
-    let isResizing = false;
-    let currentHeader: HTMLElement | null = null;
-    let startX = 0;
-    let startWidth = 0;
-
-    const createHeaderMouseMoveHandler = (headerEl: HTMLElement) => {
-      return (e: MouseEvent) => {
-        const rect = headerEl.getBoundingClientRect();
-        const edgeThreshold = 5;
-        const isNearRightEdge = e.clientX >= rect.right - edgeThreshold;
-
-        if (isNearRightEdge && !isResizing) {
-          headerEl.style.cursor = 'col-resize';
-        } else if (!isResizing) {
-          headerEl.style.cursor = 'default';
-        }
-      };
-    };
-
-    const createHeaderMouseDownHandler = (headerEl: HTMLElement) => {
-      return (e: MouseEvent) => {
-        const rect = headerEl.getBoundingClientRect();
-        const edgeThreshold = 5;
-        const isNearRightEdge = e.clientX >= rect.right - edgeThreshold;
-
-        if (!isNearRightEdge) return;
-
-        e.preventDefault();
-        e.stopPropagation();
-
-        isResizing = true;
-        currentHeader = headerEl;
-        startX = e.clientX;
-        startWidth = headerEl.offsetWidth;
-
-        document.addEventListener('mousemove', handleGlobalMouseMove);
-        document.addEventListener('mouseup', handleGlobalMouseUp);
-        document.body.style.cursor = 'col-resize';
-        document.body.style.userSelect = 'none';
-      };
-    };
-
-    const handleGlobalMouseMove = (e: MouseEvent) => {
-      if (!isResizing || !currentHeader) return;
-
-      const diff = e.clientX - startX;
-      const newWidth = Math.max(50, startWidth + diff);
-      currentHeader.style.width = `${newWidth}px`;
-      currentHeader.style.minWidth = `${newWidth}px`;
-      currentHeader.style.maxWidth = `${newWidth}px`;
-    };
-
-    const handleGlobalMouseUp = () => {
-      isResizing = false;
-      currentHeader = null;
-      document.removeEventListener('mousemove', handleGlobalMouseMove);
-      document.removeEventListener('mouseup', handleGlobalMouseUp);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    };
-
-    const initResizeHandlers = () => {
-      const table = tableRef.current;
-      if (!table) return;
-
-      const thead = table.querySelector('thead');
-      if (!thead) return;
-
-      const headers = thead.querySelectorAll('th');
-
-      for (const header of headers) {
-        const headerEl = header as HTMLElement;
-        headerEl.style.position = 'relative';
-        headerEl.style.cursor = 'default';
-
-        const mouseMoveHandler = createHeaderMouseMoveHandler(headerEl);
-        const mouseDownHandler = createHeaderMouseDownHandler(headerEl);
-
-        headerEl.addEventListener('mousemove', mouseMoveHandler);
-        (headerEl as any)._mouseMoveHandler = mouseMoveHandler;
-
-        headerEl.addEventListener('mousedown', mouseDownHandler);
-        (headerEl as any)._mouseDownHandler = mouseDownHandler;
-      }
-    };
-
-    let timer: ReturnType<typeof setTimeout> | null = setTimeout(() => {
-      initResizeHandlers();
-    }, 300);
-
-    const observer = new MutationObserver(() => {
-      if (timer) {
-        clearTimeout(timer);
-      }
-      timer = setTimeout(() => {
-        initResizeHandlers();
-      }, 300);
-    });
-
-    if (tableRef.current) {
-      observer.observe(tableRef.current, {
-        childList: true,
-        subtree: true,
-      });
-    }
-
-    return () => {
-      if (timer) {
-        clearTimeout(timer);
-      }
-      observer.disconnect();
-
-      if (tableRef.current) {
-        const thead = tableRef.current.querySelector('thead');
-        if (thead) {
-          const headers = thead.querySelectorAll('th');
-          for (const header of headers) {
-            const headerEl = header as HTMLElement;
-            if ((headerEl as any)._mouseMoveHandler) {
-              headerEl.removeEventListener(
-                'mousemove',
-                (headerEl as any)._mouseMoveHandler,
-              );
-            }
-            if ((headerEl as any)._mouseDownHandler) {
-              headerEl.removeEventListener(
-                'mousedown',
-                (headerEl as any)._mouseDownHandler,
-              );
-            }
-          }
-        }
-      }
-    };
   }, []);
 
   const columns: TableColumnsType<RoleWithStats> = useMemo(() => [
@@ -538,10 +381,10 @@ const RoleManagement: FC = () => {
         initialParams={searchParamsRef.current}
         onSearch={handleSearch}
         showResetButton={false}
+        style={{ marginBottom: 16 }}
       />
 
-      <div ref={tableRef}>
-        <Table<RoleWithStats>
+      <Table<RoleWithStats>
           dataSource={data}
           columns={columns}
           rowKey="id"
@@ -552,12 +395,8 @@ const RoleManagement: FC = () => {
             current: pagination.page,
             pageSize: pagination.pageSize,
             total: pagination.total,
-            pageSizeOptions: [10, 20, 50, 100],
-            showSizeChanger: true,
-            showQuickJumper: true,
           }}
         />
-      </div>
 
       {modalVisible && (
         <RoleForm

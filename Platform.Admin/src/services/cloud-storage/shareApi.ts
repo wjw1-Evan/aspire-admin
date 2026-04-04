@@ -46,6 +46,8 @@ export interface ShareListRequest {
     search?: string;
     page?: number;
     pageSize?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
 }
 
 export type ShareListResponse = PagedResult<FileShare>;
@@ -249,7 +251,7 @@ export async function sendShareNotification(data: ShareNotificationRequest) {
 /**
  * 获取我的分享列表
  */
-export async function getMyShares(params?: { page?: number; pageSize?: number; search?: string }) {
+export async function getMyShares(params?: ShareListRequest) {
     return request<ApiResponse<ShareListResponse>>('/api/file-share/my-shares', {
         method: 'GET',
         params,
@@ -259,7 +261,7 @@ export async function getMyShares(params?: { page?: number; pageSize?: number; s
 /**
  * 获取分享给我的文件列表
  */
-export async function getSharedWithMe(params?: { page?: number; pageSize?: number; search?: string }) {
+export async function getSharedWithMe(params?: ShareListRequest) {
     return request<ApiResponse<ShareListResponse>>('/api/file-share/shared-with-me', {
         method: 'GET',
         params,

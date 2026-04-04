@@ -95,7 +95,7 @@ const ApprovalPage: React.FC = () => {
   const [returnableNodes, setReturnableNodes] = useState<ReturnableNode[]>([]);
 
   // 搜索相关
-  const searchParamsRef = useRef<any>({ search: '' });
+  const searchParamsRef = useRef<any>({ page: 1, pageSize: 10, search: '' });
   const [statistics, setStatistics] = useState<DocumentStatistics | null>(null);
 
   const fetchData = useCallback(async () => {
@@ -149,8 +149,8 @@ const ApprovalPage: React.FC = () => {
 
   const handleTableChange = useCallback(
     (pag: TablePaginationConfig, _filters: any, sorter: SorterResult<any> | SorterResult<any>[]) => {
-      const newPage = pag.current;
-      const newPageSize = pag.pageSize;
+      const newPage = pag.current ?? 1;
+      const newPageSize = pag.pageSize ?? 10;
       const sortBy = (sorter as any)?.field;
       const sortOrder = (sorter as any)?.order === 'ascend' ? 'asc' : (sorter as any)?.order === 'descend' ? 'desc' : undefined;
 
@@ -676,10 +676,6 @@ const ApprovalPage: React.FC = () => {
             current: pagination.page,
             pageSize: pagination.pageSize,
             total: pagination.total,
-            pageSizeOptions: [10, 20, 50, 100],
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total) => `共 ${total} 条`,
           }}
         />
       ),
@@ -699,10 +695,6 @@ const ApprovalPage: React.FC = () => {
             current: pagination.page,
             pageSize: pagination.pageSize,
             total: pagination.total,
-            pageSizeOptions: [10, 20, 50, 100],
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total) => `共 ${total} 条`,
           }}
         />
       ),
@@ -722,10 +714,6 @@ const ApprovalPage: React.FC = () => {
             current: pagination.page,
             pageSize: pagination.pageSize,
             total: pagination.total,
-            pageSizeOptions: [10, 20, 50, 100],
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total) => `共 ${total} 条`,
           }}
         />
       ),

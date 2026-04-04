@@ -83,7 +83,7 @@ export async function getUser(id: string) {
 | `rowCount` | `number` | 总行数 |
 | `pageCount` | `number` | 总页数 |
 
-### DataTable 请求函数
+### 分页请求函数
 
 ```tsx
 import type { PagedResult } from '@/types/unified-api';

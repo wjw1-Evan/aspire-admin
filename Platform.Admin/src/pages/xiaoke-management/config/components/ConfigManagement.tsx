@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
 import type { ColumnsType } from 'antd/es/table';
 import { useIntl } from '@umijs/max';
 import { Button, Tag, Space, Modal, Card, Form, Input, Select, Grid, Table } from 'antd';
@@ -33,8 +33,8 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
   const screens = useBreakpoint();
   const isMobile = !screens.md;
   const [searchForm] = Form.useForm();
-  const [searchParams, setSearchParams] = useState<{ page: number; pageSize: number; name?: string; isEnabled?: boolean | undefined; }>(
-    { page: 1, pageSize: 10, name: undefined, isEnabled: undefined }
+  const [searchParams, setSearchParams] = useState<{ page: number; name?: string; isEnabled?: boolean | undefined; }>(
+    { page: 1, name: undefined, isEnabled: undefined }
   );
   const [formVisible, setFormVisible] = useState(false);
   const [editingConfig, setEditingConfig] = useState<XiaokeConfig | null>(null);
@@ -43,8 +43,6 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
   const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
 
   const searchParamsRef = useRef<PageParams>({
-    page: 1,
-    pageSize: 10,
     name: undefined,
     isEnabled: undefined,
   });
@@ -67,7 +65,7 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
           ...prev,
           page: currentParams.page ?? prev.page,
           pageSize: currentParams.pageSize ?? prev.pageSize,
-          total: response.data.rowCount ?? 0,
+          total: response.data!.rowCount ?? 0,
         }));
       } else {
         setData([]);
@@ -98,7 +96,7 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
 
   const handleReset = useCallback(() => {
     searchForm.resetFields();
-    searchParamsRef.current = { page: 1, pageSize: 10, name: undefined, isEnabled: undefined };
+    searchParamsRef.current = { page: 1, name: undefined, isEnabled: undefined };
     fetchData();
   }, [searchForm, fetchData]);
 
@@ -331,9 +329,6 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
           current: pagination.page,
           pageSize: pagination.pageSize,
           total: pagination.total,
-          pageSizeOptions: [10, 20, 50, 100],
-          showSizeChanger: true,
-          showQuickJumper: true,
         }}
       />
 

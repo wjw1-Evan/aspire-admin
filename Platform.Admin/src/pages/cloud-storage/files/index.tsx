@@ -8,9 +8,8 @@ import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react'
 import { PageContainer, StatCard } from '@/components';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import SearchBar from '@/components/SearchBar';
-import type { ActionType } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
-import { Grid, Table } from 'antd';
+import { Grid, Table, App } from 'antd';
 import {
     Button,
     Tag,
@@ -18,14 +17,10 @@ import {
     Row,
     Col,
     Card,
-    Form,
-    Input,
-    Select,
     Breadcrumb,
     Dropdown,
     Image,
 } from 'antd';
-import { useMessage } from '@/hooks/useMessage';
 import { useModal } from '@/hooks/useModal';
 import { tokenUtils } from '@/utils/token';
 import {
@@ -50,8 +45,6 @@ import {
     UndoOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
-
-const { useBreakpoint } = Grid;
 
 import {
     getFileList,
@@ -97,15 +90,15 @@ import type { PageParams } from '@/types/page-params';
 
 const CloudStorageFilesPage: React.FC = () => {
     const intl = useIntl();
-    const { success, error } = useMessage();
-    const { confirm } = useModal();
-    const screens = useBreakpoint();
+    const { message, modal } = App.useApp();
+    const { styles } = useCommonStyles();
+    const screens = Grid.useBreakpoint();
     const isMobile = !screens.md;
 
-    // 表格引用
-    const actionRef = useRef<ActionType | null>(null);
+    // 搜索参数
+    const searchParamsRef = useRef<PageParams>({ page: 1, pageSize: 20, search: '' });
 
-    // 状态管理
+    // 导航相关
     const [currentPath, setCurrentPath] = useState<string>('');
     const [currentParentId, setCurrentParentId] = useState<string | undefined>(undefined);
     const currentParentIdRef = useRef<string | undefined>(undefined);
@@ -115,21 +108,12 @@ const CloudStorageFilesPage: React.FC = () => {
     const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
     const [selectedRows, setSelectedRows] = useState<FileItem[]>([]);
     const [statistics, setStatistics] = useState<StorageStatistics | null>(null);
-
-    // 搜索相关状态
-    const [searchForm] = Form.useForm();
-    const searchParamsRef = useRef<any>({
-        current: 1,
-        pageSize: 20,
-        search: '',
-    });
-    const { styles } = useCommonStyles();
-    const [isSearchMode, setIsSearchMode] = useState(false);
-
     // 数据状态
     const [data, setData] = useState<FileItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
+
+    const [isSearchMode, setIsSearchMode] = useState(false);
 
     // 弹窗状态
     const [detailVisible, setDetailVisible] = useState(false);
@@ -180,32 +164,12 @@ const CloudStorageFilesPage: React.FC = () => {
         }
     }, []);
 
-    useEffect(() => {
-        loadStatistics();
-        fetchData();
-    }, [loadStatistics, fetchData]);
-
-    // 组件卸载时清理 Blob URL
-    useEffect(() => {
-        return () => {
-            if (previewUrl && previewUrl.startsWith('blob:')) {
-                URL.revokeObjectURL(previewUrl);
-            }
-        };
-    }, [previewUrl]);
-
-    // 刷新处理
-    const handleRefresh = useCallback(() => {
-        fetchData();
-        loadStatistics();
-    }, [loadStatistics, fetchData]);
-
     // 数据获取函数
     const fetchData = useCallback(async () => {
         const currentParams = searchParamsRef.current;
         const { page = 1, pageSize = 20, search } = currentParams;
         const sortBy = currentParams.sortBy || 'updatedAt';
-        const sortOrder = currentParams.sortOrder || 'desc';
+        const sortOrder: 'asc' | 'desc' | undefined = (currentParams.sortOrder as 'asc' | 'desc' | undefined) || 'desc';
 
         setLoading(true);
         try {
@@ -239,7 +203,7 @@ const CloudStorageFilesPage: React.FC = () => {
                     ...prev,
                     page: page ?? prev.page,
                     pageSize: pageSize ?? prev.pageSize,
-                    total: response.data.rowCount ?? 0,
+                    total: response.data!.rowCount ?? 0,
                 }));
             } else {
                 setData([]);
@@ -253,6 +217,16 @@ const CloudStorageFilesPage: React.FC = () => {
             setLoading(false);
         }
     }, [isSearchMode]);
+
+    useEffect(() => {
+        loadStatistics();
+        fetchData();
+    }, [loadStatistics, fetchData]);
+
+    const refreshAll = useCallback(() => {
+        fetchData();
+        loadStatistics();
+    }, [fetchData, loadStatistics]);
 
     // 搜索处理
 
@@ -401,9 +375,9 @@ const CloudStorageFilesPage: React.FC = () => {
                 }
             }
         } catch (err) {
-            error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.detailFailed' }));
+            message.error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.detailFailed' }));
         }
-    }, [error, intl, previewUrl]);
+    }, [message, intl, previewUrl]);
 
     const handleDownload = useCallback(async (file: FileItem) => {
         try {
@@ -412,22 +386,21 @@ const CloudStorageFilesPage: React.FC = () => {
             } else {
                 await downloadFile(file.id, file.name);
             }
-            success(intl.formatMessage({ id: 'pages.cloud-storage.files.message.downloadStarted' }));
+            message.success(intl.formatMessage({ id: 'pages.cloud-storage.files.message.downloadStarted' }));
         } catch (err) {
-            error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.downloadFailed' }));
+            message.error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.downloadFailed' }));
         }
-    }, [success, error, intl]);
+    }, [message, intl]);
 
     const handleDelete = useCallback(async (file: FileItem) => {
         try {
             await deleteItem(file.id);
-            success(intl.formatMessage({ id: 'pages.cloud-storage.files.message.deleteSuccess' }));
-            actionRef.current?.reload?.();
-            loadStatistics();
+            message.success(intl.formatMessage({ id: 'pages.cloud-storage.files.message.deleteSuccess' }));
+            refreshAll();
         } catch (err) {
-            error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.deleteFailed' }));
+            message.error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.deleteFailed' }));
         }
-    }, [success, error, intl, loadStatistics]);
+    }, [message, intl]);
 
     const handleRename = useCallback((file: FileItem) => {
         setRenamingItem(file);
@@ -450,11 +423,11 @@ const CloudStorageFilesPage: React.FC = () => {
             }
         } catch (e) {
             console.error('加载用户列表失败', e);
-            error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.loadUsersFailed' }));
+            message.error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.loadUsersFailed' }));
         } finally {
             setUserLoading(false);
         }
-    }, [error, intl]);
+    }, [message, intl]);
 
     useEffect(() => {
         if (shareVisible) {
@@ -474,50 +447,49 @@ const CloudStorageFilesPage: React.FC = () => {
                 allowedUserIds: values.shareType === 'internal' ? values.allowedUserIds || [] : undefined,
             };
             await createShare(payload);
-            success(intl.formatMessage({ id: 'pages.cloud-storage.files.message.shareSuccess' }));
+            message.success(intl.formatMessage({ id: 'pages.cloud-storage.files.message.shareSuccess' }));
             setShareVisible(false);
             setSharingItem(null);
         } catch (err) {
-            error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.shareFailed' }));
+            message.error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.shareFailed' }));
         }
-    }, [sharingItem, success, error, intl]);
+    }, [sharingItem, message, intl]);
 
     // 批量操作
     const handleBatchDelete = useCallback(async () => {
         if (selectedRowKeys.length === 0) {
-            error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.selectFilesToDelete' }));
+            message.error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.selectFilesToDelete' }));
             return;
         }
 
-        confirm({
+        modal.confirm({
             title: '确认删除',
             content: `确定要删除选中的 ${selectedRowKeys.length} 个文件吗？`,
             onOk: async () => {
                 try {
                     await batchDeleteItems({ ids: selectedRowKeys });
-                    success(intl.formatMessage({ id: 'pages.cloud-storage.files.message.batchDeleteSuccess' }));
+                    message.success(intl.formatMessage({ id: 'pages.cloud-storage.files.message.batchDeleteSuccess' }));
                     setSelectedRowKeys([]);
                     setSelectedRows([]);
-                    actionRef.current?.reload?.();
-                    loadStatistics();
+                    refreshAll();
                 } catch (err) {
-                    error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.batchDeleteFailed' }));
+                    message.error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.batchDeleteFailed' }));
                 }
             },
         });
-    }, [selectedRowKeys, confirm, success, error, intl, loadStatistics]);
+    }, [selectedRowKeys, modal, message, intl]);
 
     // 创建文件夹
     const handleCreateFolder = useCallback(async (values: CreateFolderRequest) => {
         try {
             await createFolder({ ...values, parentId: currentParentId });
-            success(intl.formatMessage({ id: 'pages.cloud-storage.files.message.createFolderSuccess' }));
+            message.success(intl.formatMessage({ id: 'pages.cloud-storage.files.message.createFolderSuccess' }));
             setCreateFolderVisible(false);
-            actionRef.current?.reload?.();
+            refreshAll();
         } catch (err) {
-            error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.createFolderFailed' }));
+            message.error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.createFolderFailed' }));
         }
-    }, [currentParentId, success, error, intl]);
+    }, [currentParentId, message, intl]);
 
     // 重命名
     const handleRenameSubmit = useCallback(async (values: RenameItemRequest) => {
@@ -525,14 +497,14 @@ const CloudStorageFilesPage: React.FC = () => {
 
         try {
             await renameItem(renamingItem.id, values);
-            success(intl.formatMessage({ id: 'pages.cloud-storage.files.message.renameSuccess' }));
+            message.success(intl.formatMessage({ id: 'pages.cloud-storage.files.message.renameSuccess' }));
             setRenameVisible(false);
             setRenamingItem(null);
-            actionRef.current?.reload?.();
+            refreshAll();
         } catch (err) {
-            error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.renameFailed' }));
+            message.error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.renameFailed' }));
         }
-    }, [renamingItem, success, error, intl]);
+    }, [renamingItem, message, intl]);
 
     // 文件上传
     const handleUpload = useCallback(async (file: File) => {
@@ -549,23 +521,22 @@ const CloudStorageFilesPage: React.FC = () => {
                 }
             );
 
-            success(intl.formatMessage({ id: 'pages.cloud-storage.files.message.uploadSuccess' }));
+            message.success(intl.formatMessage({ id: 'pages.cloud-storage.files.message.uploadSuccess' }));
             setUploadProgress(prev => {
                 const newProgress = { ...prev };
                 delete newProgress[uploadId];
                 return newProgress;
             });
-            actionRef.current?.reload?.();
-            loadStatistics();
+            refreshAll();
         } catch (err) {
-            error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.uploadFailed' }));
+            message.error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.uploadFailed' }));
             setUploadProgress(prev => {
                 const newProgress = { ...prev };
                 delete newProgress[uploadId];
                 return newProgress;
             });
         }
-    }, [currentParentId, success, error, intl, loadStatistics]);
+    }, [currentParentId, message, intl]);
 
     const uploadSingleWithProgress = useCallback(async (file: File) => {
         const uploadId = `${Date.now()}_${Math.random().toString(36).slice(2)}_${file.name}`;
@@ -594,10 +565,10 @@ const CloudStorageFilesPage: React.FC = () => {
                 delete newProgress[uploadId];
                 return newProgress;
             });
-            error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.uploadFailedMsg' }, { label }));
+            message.error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.uploadFailedMsg' }, { label }));
             return false;
         }
-    }, [currentParentId, error, intl]);
+    }, [currentParentId, message, intl]);
 
     const handleBatchUpload = useCallback(async (files: File[]) => {
         if (!files || files.length === 0) return;
@@ -609,11 +580,10 @@ const CloudStorageFilesPage: React.FC = () => {
         }
 
         if (successCount > 0) {
-            success(intl.formatMessage({ id: 'pages.cloud-storage.files.message.uploadComplete' }, { count: successCount, total: files.length }));
-            actionRef.current?.reload?.();
-            loadStatistics();
+            message.success(intl.formatMessage({ id: 'pages.cloud-storage.files.message.uploadComplete' }, { count: successCount, total: files.length }));
+            refreshAll();
         }
-    }, [loadStatistics, success, intl, uploadSingleWithProgress]);
+    }, [refreshAll, message, intl, uploadSingleWithProgress]);
 
     // 上传大小提示
     const maxUploadSizeLabel = useMemo(() => formatFileSize(MAX_UPLOAD_BYTES), []);
@@ -624,22 +594,22 @@ const CloudStorageFilesPage: React.FC = () => {
     }, []);
 
     const handleRestoreVersion = useCallback((versionId: string) => {
-        confirm({
+        modal.confirm({
             title: intl.formatMessage({ id: 'pages.cloud-storage.files.confirmRestore.title' }),
             onOk: async () => {
                 try {
                     await restoreVersion({ versionId });
-                    success(intl.formatMessage({ id: 'pages.cloud-storage.files.message.restoreSuccess' }));
-                    actionRef.current?.reload?.();
+                    message.success(intl.formatMessage({ id: 'pages.cloud-storage.files.message.restoreSuccess' }));
+                    refreshAll();
                     if (viewingFile) {
                         handleView(viewingFile);
                     }
                 } catch (e) {
-                    error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.restoreFailed' }));
+                    message.error(intl.formatMessage({ id: 'pages.cloud-storage.files.message.restoreFailed' }));
                 }
             }
         });
-    }, [confirm, success, error, intl, viewingFile, handleView]);
+    }, [modal, message, intl, viewingFile, handleView, refreshAll]);
 
     // 预览处理
     const handlePreview = useCallback(() => {
@@ -650,6 +620,14 @@ const CloudStorageFilesPage: React.FC = () => {
             setPreviewVisible(true);
         }
     }, [viewingFile]);
+
+    // 统计块配置
+    const statsConfig = [
+        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.statistics.fileCount' }), value: statistics?.totalFiles ?? 0, icon: <FileOutlined />, color: '#1890ff' },
+        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.statistics.folderCount' }), value: statistics?.totalFolders ?? 0, icon: <FolderOutlined />, color: '#52c41a' },
+        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.statistics.totalQuota' }), value: formatFileSize(statistics?.totalQuota ?? 0), icon: <CloudOutlined />, color: '#722ed1' },
+        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.statistics.usedSpace' }), value: statistics && statistics.totalQuota > 0 ? `${Math.round((statistics.usedQuota / statistics.totalQuota) * 100)}%` : '0%', icon: null, color: '#fa8c16', suffix: <span style={{ fontSize: 12, color: '#999', marginLeft: 4 }}>/ {formatFileSize(statistics?.totalQuota ?? 0)}</span> },
+    ];
 
     // 表格列定义
     const columns = useMemo(() => [
@@ -732,7 +710,7 @@ const CloudStorageFilesPage: React.FC = () => {
                         danger
                         icon={<DeleteOutlined />}
                         onClick={() => {
-                            confirm({
+                            modal.confirm({
                                 title: intl.formatMessage({ id: 'pages.cloud-storage.files.confirmDelete.title' }),
                                 content: intl.formatMessage(
                                     { id: 'pages.cloud-storage.files.confirmDelete.desc' },
@@ -753,7 +731,7 @@ const CloudStorageFilesPage: React.FC = () => {
                 </Space>
             ),
         },
-    ], [intl, handleFolderClick, handleView, handleOpenShare, handleDownload, handleRename, handleDelete, confirm]);
+    ], [intl, handleFolderClick, handleView, handleOpenShare, handleDownload, handleRename, handleDelete, modal]);
 
     return (
         <PageContainer
@@ -779,7 +757,7 @@ const CloudStorageFilesPage: React.FC = () => {
                     <Button
                         key="refresh"
                         icon={<ReloadOutlined />}
-                        onClick={handleRefresh}
+                        onClick={refreshAll}
                     >
                         {intl.formatMessage({ id: 'pages.button.refresh' })}
                     </Button>
@@ -825,49 +803,15 @@ const CloudStorageFilesPage: React.FC = () => {
                 </Space>
             }
         >
-            {/* 统计卡片区域 */}
+            {/* 统计区域：循环渲染精简代码 */}
             {statistics && (
                 <Card className={styles.card} style={{ marginBottom: 16 }}>
                     <Row gutter={[12, 12]}>
-                        <Col xs={24} sm={12} md={6}>
-                            <StatCard
-                                title={intl.formatMessage({ id: 'pages.cloud-storage.files.statistics.fileCount' })}
-                                value={statistics.totalFiles}
-                                icon={<FileOutlined />}
-                                color="#1890ff"
-                            />
-                        </Col>
-                        <Col xs={24} sm={12} md={6}>
-                            <StatCard
-                                title={intl.formatMessage({ id: 'pages.cloud-storage.files.statistics.folderCount' })}
-                                value={statistics.totalFolders}
-                                icon={<FolderOutlined />}
-                                color="#52c41a"
-                            />
-                        </Col>
-                        <Col xs={24} sm={12} md={6}>
-                            <StatCard
-                                title={intl.formatMessage({ id: 'pages.cloud-storage.files.statistics.totalQuota' })}
-                                value={formatFileSize(statistics.totalQuota)}
-                                icon={<CloudOutlined />}
-                                color="#722ed1"
-                            />
-                        </Col>
-                        <Col xs={24} sm={12} md={6}>
-                            <StatCard
-                                title={intl.formatMessage({ id: 'pages.cloud-storage.files.statistics.usedSpace' })}
-                                value={formatFileSize(statistics.usedQuota)}
-                                icon={<div style={{ fontSize: 20, color: '#fa8c16', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
-                                    {statistics.totalQuota > 0 ? Math.round((statistics.usedQuota / statistics.totalQuota) * 100) : 0}%
-                                </div>}
-                                color="#fa8c16"
-                                suffix={
-                                    <span style={{ fontSize: 12, color: '#999', marginLeft: 4 }}>
-                                        / {formatFileSize(statistics.totalQuota)}
-                                    </span>
-                                }
-                            />
-                        </Col>
+                        {statsConfig.map((stat, idx) => (
+                            <Col xs={24} sm={12} md={6} key={idx}>
+                                <StatCard title={stat.title} value={stat.value ?? 0} icon={stat.icon} color={stat.color} suffix={stat.suffix} />
+                            </Col>
+                        ))}
                     </Row>
                 </Card>
             )}
@@ -908,10 +852,6 @@ const CloudStorageFilesPage: React.FC = () => {
                     current: pagination.page,
                     pageSize: pagination.pageSize,
                     total: pagination.total,
-                    pageSizeOptions: [10, 20, 50, 100],
-                    showSizeChanger: true,
-                    showQuickJumper: true,
-                    showTotal: (total) => `共 ${total} 条`,
                 }}
                 rowSelection={{
                     selectedRowKeys,

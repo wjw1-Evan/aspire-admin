@@ -60,7 +60,7 @@ const VisitKnowledgeBase: React.FC = () => {
     const [editingQuestionnaire, setEditingQuestionnaire] = useState<VisitQuestionnaire | null>(null);
     const [questionForm] = Form.useForm();
     const [questionnaireForm] = Form.useForm();
-    const searchParamsRef = useRef<any>({ search: '' });
+    const searchParamsRef = useRef<any>({ page: 1, pageSize: 10, search: '' });
     const [allQuestions, setAllQuestions] = useState<VisitQuestion[]>([]);
     const [targetKeys, setTargetKeys] = useState<string[]>([]);
     const [statistics, setStatistics] = useState<VisitStatistics | null>(null);
@@ -89,7 +89,7 @@ const VisitKnowledgeBase: React.FC = () => {
             });
             if (res.success && res.data) {
                 setQuestionsData(res.data.queryable || []);
-                setQuestionsPagination(prev => ({ ...prev, total: res.data.rowCount ?? 0 }));
+                setQuestionsPagination(prev => ({ ...prev, total: res.data!.rowCount ?? 0 }));
             } else {
                 setQuestionsData([]);
                 setQuestionsPagination(prev => ({ ...prev, total: 0 }));
@@ -105,13 +105,10 @@ const VisitKnowledgeBase: React.FC = () => {
     const fetchQuestionnaires = useCallback(async () => {
         setQuestionnairesLoading(true);
         try {
-            const res = await visitService.getQuestionnaires({
-                page: questionnairesPagination.page,
-                pageSize: questionnairesPagination.pageSize,
-            });
+            const res = await visitService.getQuestionnaires({});
             if (res.success && res.data) {
                 setQuestionnairesData(res.data.queryable || []);
-                setQuestionnairesPagination(prev => ({ ...prev, total: res.data.rowCount ?? 0 }));
+                setQuestionnairesPagination(prev => ({ ...prev, total: res.data!.rowCount ?? 0 }));
             } else {
                 setQuestionnairesData([]);
                 setQuestionnairesPagination(prev => ({ ...prev, total: 0 }));
@@ -144,7 +141,7 @@ const VisitKnowledgeBase: React.FC = () => {
                 });
                 if (res.success && res.data) {
                     setQuestionsData(res.data.queryable || []);
-                    setQuestionsPagination(prev => ({ ...prev, total: res.data.rowCount ?? 0 }));
+                    setQuestionsPagination(prev => ({ ...prev, total: res.data!.rowCount ?? 0 }));
                 } else {
                     setQuestionsData([]);
                 }
@@ -409,10 +406,6 @@ const VisitKnowledgeBase: React.FC = () => {
                                             current: questionsPagination.page,
                                             pageSize: questionsPagination.pageSize,
                                             total: questionsPagination.total,
-                                            pageSizeOptions: [10, 20, 50, 100],
-                                            showSizeChanger: true,
-                                            showQuickJumper: true,
-                                            showTotal: (total) => `共 ${total} 条`,
                                         }}
                                         scroll={{ x: 800 }}
                                     />
@@ -435,10 +428,6 @@ const VisitKnowledgeBase: React.FC = () => {
                                         current: questionnairesPagination.page,
                                         pageSize: questionnairesPagination.pageSize,
                                         total: questionnairesPagination.total,
-                                        pageSizeOptions: [10, 20, 50, 100],
-                                        showSizeChanger: true,
-                                        showQuickJumper: true,
-                                        showTotal: (total) => `共 ${total} 条`,
                                     }}
                                     scroll={{ x: 800 }}
                                 />

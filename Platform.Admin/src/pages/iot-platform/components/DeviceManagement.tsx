@@ -101,7 +101,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
   const { styles } = useCommonStyles();
   const [data, setData] = useState<IoTDevice[]>([]);
   const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
   const [gateways, setGateways] = useState<IoTGateway[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isDetailDrawerVisible, setIsDetailDrawerVisible] = useState(false);
@@ -110,8 +110,6 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
   const [form] = Form.useForm();
   const [overviewStats, setOverviewStats] = useState({ total: 0, online: 0, offline: 0, fault: 0 });
   const searchParamsRef = useRef<PageParams>({
-    page: 1,
-    pageSize: 20,
     search: '',
   });
 
@@ -151,21 +149,14 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
 
     setLoading(true);
     try {
-      const response = await iotService.getDevices(
-        undefined,
-        currentParams.page,
-        currentParams.pageSize,
-        currentParams.search,
-        currentParams.sortBy,
-        currentParams.sortOrder
-      );
+      const response = await iotService.getDevices(currentParams);
       if (response.success && response.data) {
         setData(response.data.queryable || []);
         setPagination(prev => ({
           ...prev,
           page: currentParams.page ?? prev.page,
           pageSize: currentParams.pageSize ?? prev.pageSize,
-          total: response.data.rowCount ?? 0,
+          total: response.data!.rowCount ?? 0,
         }));
       } else {
         setData([]);
@@ -182,7 +173,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
 
   const loadGateways = useCallback(async () => {
     try {
-      const response = await iotService.getGateways(1, 1000);
+      const response = await iotService.getGateways({ page: 1, pageSize: 1000 });
       if (response.success && response.data) {
         setGateways(response.data.queryable || []);
       } else {
@@ -529,10 +520,6 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
           current: pagination.page,
           pageSize: pagination.pageSize,
           total: pagination.total,
-          pageSizeOptions: [10, 20, 50, 100],
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total) => `共 ${total} 条`,
         }}
         rowSelection={{
           selectedRowKeys,

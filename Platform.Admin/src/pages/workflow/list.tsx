@@ -1,8 +1,6 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PageContainer } from '@/components';
-import { Button, Space, Modal, Tag, Switch, Card, Row, Col, Form, Input, Select, Grid, Table } from 'antd';
-import { useMessage } from '@/hooks/useMessage';
-import { useModal } from '@/hooks/useModal';
+import { Button, Space, Modal, Tag, Card, Table, App, Form } from 'antd';
 import {
   PlusOutlined,
   EditOutlined,
@@ -26,18 +24,12 @@ import dayjs from 'dayjs';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import SearchBar from '@/components/SearchBar';
 import type { PageParams } from '@/types/page-params';
-const { useBreakpoint } = Grid;
-import type { SelectProps } from 'antd';
-
 
 
 const WorkflowManagement: React.FC = () => {
   const intl = useIntl();
-  const message = useMessage();
-  const modal = useModal();
+  const { message, modal } = App.useApp();
   const { styles } = useCommonStyles();
-  const screens = useBreakpoint();
-  const isMobile = !screens.md;
   const [designerVisible, setDesignerVisible] = useState(false);
   const [editingWorkflow, setEditingWorkflow] = useState<WorkflowDefinition | null>(null);
   const [previewVisible, setPreviewVisible] = useState(false);
@@ -45,11 +37,9 @@ const WorkflowManagement: React.FC = () => {
   const [searchForm] = Form.useForm();
   const [data, setData] = useState<WorkflowDefinition[]>([]);
   const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
 
   const searchParamsRef = useRef<PageParams>({
-    page: 1,
-    pageSize: 20,
     search: '',
   });
 
@@ -258,10 +248,6 @@ const WorkflowManagement: React.FC = () => {
           current: pagination.page,
           pageSize: pagination.pageSize,
           total: pagination.total,
-          pageSizeOptions: [10, 20, 50, 100],
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total) => `共 ${total} 条`,
         }}
       />
 

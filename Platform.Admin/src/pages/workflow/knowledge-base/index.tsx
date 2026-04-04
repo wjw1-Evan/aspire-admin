@@ -41,8 +41,6 @@ const KnowledgeBaseManagement: React.FC = () => {
   const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
 
   const searchParamsRef = useRef<PageParams>({
-    page: 1,
-    pageSize: 10,
     search: '',
   });
 
@@ -265,10 +263,6 @@ const KnowledgeBaseManagement: React.FC = () => {
             current: pagination.page,
             pageSize: pagination.pageSize,
             total: pagination.total,
-            pageSizeOptions: [10, 20, 50, 100],
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total) => `共 ${total} 条`,
           }}
         />
       </Card>

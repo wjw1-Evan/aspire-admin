@@ -1,16 +1,13 @@
-import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback, useMemo, useRef as useRefHook } from 'react';
-import type { ActionType, ProColumns } from '@/types/pro-components';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback, useMemo } from 'react';
 import { Table, type TableColumnsType } from 'antd';
 import {
   Button,
   Modal,
   Form,
   Input,
-  Select,
   Space,
   message,
   Tag,
-  DatePicker,
   Card,
   Row,
   Col,
@@ -31,6 +28,7 @@ import dayjs from 'dayjs';
 import { StatCard } from '@/components';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import SearchBar from '@/components/SearchBar';
+import type { PageParams } from '@/types/page-params';
 
 export interface EventManagementRef {
   reload: () => void;
@@ -39,12 +37,11 @@ export interface EventManagementRef {
 
 const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
   const screens = useBreakpoint();
-  const isMobile = !screens.md; // md 以下为移动端
+  const isMobile = !screens.md;
   const { styles } = useCommonStyles();
-  const actionRef = useRef<ActionType>(null);
   const [dataSource, setDataSource] = useState<IoTDeviceEvent[]>([]);
   const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
   const [devices, setDevices] = useState<IoTDevice[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<IoTDeviceEvent | null>(null);
@@ -56,72 +53,54 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
     handled: 0,
     critical: 0,
   });
-  // 使用 useRef 存储最新的搜索参数，确保 request 函数能立即访问到最新值
-  const searchParamsRef = useRef<any>({});
 
-  // 确保 devices 始终是数组
+  const searchParamsRef = useRef<PageParams>({ page: 1, pageSize: 10, search: '' });
+
   const safeDevices = Array.isArray(devices) ? devices : [];
 
-  // 获取概览统计
   const fetchOverviewStats = useCallback(async () => {
     try {
       const response = await iotService.getUnhandledEventCount();
       if (response.success && response.data) {
-        setOverviewStats({
-          total: response.data.Count || 0,
+        setOverviewStats(prev => ({
+          ...prev,
           unhandled: response.data.Count || 0,
-          handled: 0,
-          critical: 0,
-        });
+        }));
       }
     } catch (error) {
       console.error('获取统计信息失败:', error);
     }
   }, []);
 
-  // 获取事件列表
-  const fetchData = useCallback(async (page?: number, pageSize?: number, sort?: Record<string, any>) => {
-    const targetPage = page || pagination.page;
-    const targetPageSize = pageSize || pagination.pageSize;
-    const formValues = searchParamsRef.current;
-
-    const filters: any = {
-      page: targetPage,
-      pageSize: targetPageSize,
-    };
-
-    if (formValues.search) {
-      filters.search = formValues.search;
-    }
-
-    if (sort && Object.keys(sort).length > 0) {
-      const sortBy = Object.keys(sort)[0];
-      filters.sortBy = sortBy;
-      filters.sortOrder = sort[sortBy] === 'ascend' ? 'asc' : 'desc';
-    }
-
+  const fetchData = useCallback(async () => {
+    const currentParams = searchParamsRef.current;
     setLoading(true);
     try {
-      const response = await iotService.queryEvents(filters);
+      const response = await iotService.queryEvents(currentParams);
       if (response.success && response.data) {
         setDataSource(response.data.queryable || []);
         setPagination(prev => ({
           ...prev,
-          page: targetPage,
-          pageSize: targetPageSize,
-          total: response.data.rowCount || 0,
+          page: currentParams.page ?? prev.page,
+          pageSize: currentParams.pageSize ?? prev.pageSize,
+          total: response.data!.rowCount ?? 0,
         }));
+      } else {
+        setDataSource([]);
+        setPagination(prev => ({ ...prev, total: 0 }));
       }
     } catch (error) {
       console.error('加载事件列表失败:', error);
+      setDataSource([]);
+      setPagination(prev => ({ ...prev, total: 0 }));
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, pagination.pageSize]);
+  }, []);
 
   const loadDevices = useCallback(async () => {
     try {
-      const response = await iotService.getDevices(undefined, 1, 1000);
+      const response = await iotService.getDevices({ page: 1, pageSize: 1000 });
       if (response.success && response.data) {
         setDevices(response.data.queryable || []);
       } else {
@@ -133,27 +112,41 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
     }
   }, []);
 
-  // 初始化
+  const refreshAll = useCallback(() => {
+    fetchData();
+    fetchOverviewStats();
+  }, [fetchData, fetchOverviewStats]);
+
   useEffect(() => {
     loadDevices();
-    fetchOverviewStats();
-    fetchData();
-  }, [loadDevices, fetchOverviewStats, fetchData]);
+    refreshAll();
+  }, [loadDevices, refreshAll]);
 
-  // 表格分页和排序处理
   const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
-    const newPage = pag.current;
-    const newPageSize = pag.pageSize;
     const sortBy = sorter?.field;
     const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
-    
-    const sortParams = sortBy ? { [sortBy]: sortOrder } : {};
-    fetchData(newPage, newPageSize, sortParams);
+
+    searchParamsRef.current = {
+      ...searchParamsRef.current,
+      page: pag.current,
+      pageSize: pag.pageSize,
+      sortBy,
+      sortOrder,
+    };
+    fetchData();
   }, [fetchData]);
 
-  // 暴露方法给父组件
+  const handleSearch = useCallback((params: PageParams) => {
+    searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
+    fetchData();
+    fetchOverviewStats();
+  }, [fetchData, fetchOverviewStats]);
+
   useImperativeHandle(ref, () => ({
-    reload: () => fetchData(),
+    reload: () => {
+      fetchData();
+      fetchOverviewStats();
+    },
     refreshStats: () => fetchOverviewStats(),
   }), [fetchData, fetchOverviewStats]);
 
@@ -169,14 +162,15 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
       const response = await iotService.handleEvent(selectedEvent.id, values.remarks || '');
       if (response.success) {
         message.success('事件已处理');
-        handleCloseModal();
-        fetchData();
-        fetchOverviewStats();
+        setIsModalVisible(false);
+        setSelectedEvent(null);
+        form.resetFields();
+        refreshAll();
       }
     } catch (error) {
       message.error('处理失败');
     }
-  }, [selectedEvent, fetchData, fetchOverviewStats]);
+  }, [selectedEvent, form, refreshAll]);
 
   const getLevelTag = useCallback((level: string) => {
     const levelMap: Record<string, { color: string; label: string }> = {
@@ -236,8 +230,7 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
           const date = dayjs(time);
           if (!date.isValid()) return time;
           return date.format('YYYY-MM-DD HH:mm:ss');
-        } catch (error) {
-          console.error('日期格式化错误:', error, time);
+        } catch {
           return time;
         }
       },
@@ -274,65 +267,31 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
     },
   ], [handleHandle, getLevelTag, safeDevices]);
 
-  // 关闭表单弹窗
-  const handleCloseModal = useCallback(() => {
-    setIsModalVisible(false);
-    setSelectedEvent(null);
-    form.resetFields();
-  }, [form]);
-
   return (
     <>
-      {/* 统计卡片：与其他页面保持一致的紧凑横向布局 */}
       <Card className={styles.card} style={{ marginBottom: 16 }}>
         <Row gutter={[12, 12]}>
           <Col xs={24} sm={12} md={6}>
-            <StatCard
-              title="事件总数"
-              value={overviewStats.total}
-              icon={<AlertOutlined />}
-              color="#1890ff"
-            />
+            <StatCard title="事件总数" value={overviewStats.total} icon={<AlertOutlined />} color="#1890ff" />
           </Col>
           <Col xs={24} sm={12} md={6}>
-            <StatCard
-              title="未处理"
-              value={overviewStats.unhandled}
-              icon={<CloseCircleOutlined />}
-              color="#ff4d4f"
-            />
+            <StatCard title="未处理" value={overviewStats.unhandled} icon={<CloseCircleOutlined />} color="#ff4d4f" />
           </Col>
           <Col xs={24} sm={12} md={6}>
-            <StatCard
-              title="已处理"
-              value={overviewStats.handled}
-              icon={<CheckCircleOutlined />}
-              color="#52c41a"
-            />
+            <StatCard title="已处理" value={overviewStats.handled} icon={<CheckCircleOutlined />} color="#52c41a" />
           </Col>
           <Col xs={24} sm={12} md={6}>
-            <StatCard
-              title="严重事件"
-              value={overviewStats.critical}
-              icon={<ExclamationCircleOutlined />}
-              color="#ff4d4f"
-            />
+            <StatCard title="严重事件" value={overviewStats.critical} icon={<ExclamationCircleOutlined />} color="#ff4d4f" />
           </Col>
         </Row>
       </Card>
 
-      {/* 搜索 */}
       <SearchBar
         initialParams={searchParamsRef.current}
-        onSearch={(params) => {
-          searchParamsRef.current = params;
-          fetchData(1);
-          fetchOverviewStats();
-        }}
+        onSearch={handleSearch}
         style={{ marginBottom: 16 }}
       />
 
-      {/* 事件列表表格 */}
       <Table<IoTDeviceEvent>
         columns={columns}
         dataSource={dataSource}
@@ -344,10 +303,6 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
           current: pagination.page,
           pageSize: pagination.pageSize,
           total: pagination.total,
-          pageSizeOptions: [10, 20, 50, 100],
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total) => `共 ${total} 条`,
         }}
       />
 
@@ -355,26 +310,20 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
         title="处理事件"
         open={isModalVisible}
         onOk={() => form.submit()}
-        onCancel={() => setIsModalVisible(false)}
+        onCancel={() => { setIsModalVisible(false); setSelectedEvent(null); form.resetFields(); }}
         width={isMobile ? '100%' : 600}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSubmit}
-        >
+        <Form form={form} layout="vertical" onFinish={handleSubmit}>
           {selectedEvent && (
             <>
               <div style={{ marginBottom: 16 }}>
                 <div style={{ color: '#666', marginBottom: 4 }}>事件类型</div>
                 <div style={{ fontSize: 14 }}>{selectedEvent.eventType}</div>
               </div>
-
               <div style={{ marginBottom: 16 }}>
                 <div style={{ color: '#666', marginBottom: 4 }}>事件描述</div>
                 <div style={{ fontSize: 14 }}>{selectedEvent.description}</div>
               </div>
-
               <div style={{ marginBottom: 16 }}>
                 <div style={{ color: '#666', marginBottom: 4 }}>发生时间</div>
                 <div style={{ fontSize: 14 }}>
@@ -383,7 +332,6 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
               </div>
             </>
           )}
-
           <Form.Item
             label="处理备注"
             name="remarks"
@@ -400,4 +348,3 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
 EventManagement.displayName = 'EventManagement';
 
 export default EventManagement;
-

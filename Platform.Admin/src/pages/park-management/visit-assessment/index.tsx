@@ -38,7 +38,7 @@ const VisitAssessmentList: React.FC = () => {
     const [total, setTotal] = useState(0);
     const [current, setCurrent] = useState(1);
     const [pageSize, setPageSize] = useState(10);
-    const searchParamsRef = useRef<any>({ search: '' });
+    const searchParamsRef = useRef<any>({ page: 1, pageSize: 10, search: '' });
 
     const [detailVisible, setDetailVisible] = useState(false);
     const [selectedAssessment, setSelectedAssessment] = useState<visitService.VisitAssessment | null>(null);
@@ -247,8 +247,6 @@ const VisitAssessmentList: React.FC = () => {
                             setCurrent(page);
                             setPageSize(size);
                         },
-                        showSizeChanger: true,
-                        showTotal: (t) => `${intl.formatMessage({ id: 'pages.park.common.total', defaultMessage: '共' })} ${t} ${intl.formatMessage({ id: 'pages.park.common.items', defaultMessage: '条' })}`,
                     }}
                     scroll={{ x: 1000 }}
                 />

@@ -1,16 +1,10 @@
-import React, { useRef } from 'react';
-import { Tag, Space, App, Popconfirm, theme, Button } from 'antd';
+import React, { useState, useCallback, useEffect } from 'react';
+import { Tag, Space, App, Popconfirm, theme, Button, Table } from 'antd';
 import { request, useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import { cancelJoinRequest } from '@/services/company';
 import { UndoOutlined } from '@ant-design/icons';
-import DataTable from '@/components/DataTable';
-import type { ActionType } from '@/types/pro-components';
 import type { ColumnsType } from 'antd/es/table';
-
-interface MyJoinRequestsTableProps {
-    // 可以添加 props
-}
 
 interface JoinRequestDetail {
     id: string;
@@ -22,18 +16,55 @@ interface JoinRequestDetail {
     rejectReason?: string;
 }
 
-const MyJoinRequestsTable: React.FC<MyJoinRequestsTableProps> = () => {
-    const actionRef = useRef<ActionType>(null);
+const MyJoinRequestsTable: React.FC = () => {
     const intl = useIntl();
     const { message } = App.useApp();
     const { token } = theme.useToken();
+    const [data, setData] = useState<JoinRequestDetail[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [pagination, setPagination] = useState({});
+
+    const fetchData = useCallback(async () => {
+        setLoading(true);
+        try {
+            const result = await request('/api/company/my-join-requests', {
+                params: {},
+            });
+            if (result.data) {
+                setData(result.data || []);
+                setPagination(prev => ({ ...prev, total: result.data?.length || 0 }));
+            } else {
+                setData([]);
+                setPagination(prev => ({ ...prev, total: 0 }));
+            }
+        } catch (error) {
+            console.error('加载数据失败:', error);
+            setData([]);
+            setPagination(prev => ({ ...prev, total: 0 }));
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+        setPagination(prev => ({
+            ...prev,
+            page: pag.current,
+            pageSize: pag.pageSize,
+        }));
+        fetchData();
+    }, [fetchData]);
 
     const handleCancel = async (id: string) => {
         try {
             const response = await cancelJoinRequest(id);
             if (response.success) {
                 message.success('申请已撤销');
-                actionRef.current?.reload?.();
+                fetchData();
             } else {
                 message.error(response.message || '撤销失败');
             }
@@ -131,34 +162,17 @@ const MyJoinRequestsTable: React.FC<MyJoinRequestsTableProps> = () => {
     ];
 
     return (
-        <DataTable<JoinRequestDetail>
-            actionRef={actionRef}
-            rowKey="id"
-            request={async (_params, sorter) => {
-                let sortBy: string | undefined;
-                let sortOrder: 'asc' | 'desc' | undefined;
-
-                if (sorter && Object.keys(sorter).length > 0) {
-                    const sortKey = Object.keys(sorter)[0];
-                    const sortValue = sorter[sortKey];
-                    if (sortValue) {
-                        sortBy = sortKey;
-                        sortOrder = sortValue === 'ascend' ? 'asc' : 'desc';
-                    }
-                }
-
-                const result = await request('/api/company/my-join-requests', {
-                    params: { sortBy, sortOrder },
-                });
-                return {
-                    data: result.data || [],
-                    success: true,
-                    total: result.data?.length || 0,
-                };
-            }}
+        <Table<JoinRequestDetail>
+            dataSource={data}
             columns={columns}
+            rowKey="id"
+            loading={loading}
+            scroll={{ x: 'max-content' }}
+            onChange={handleTableChange}
             pagination={{
-                pageSize: 10
+                current: pagination.page,
+                pageSize: pagination.pageSize,
+                total: pagination.total,
             }}
         />
     );

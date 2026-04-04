@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import {
     Button,
     Space,
@@ -44,7 +44,7 @@ import * as visitService from '@/services/visit';
 import { getTenants } from '@/services/park';
 import type { ParkTenant } from '@/services/park';
 import type { VisitTask as VisitTaskType, VisitStatistics } from '@/services/visit';
-import type { PagedResult } from '@/types/unified-api';
+import type { PageParams } from '@/types/page-params';
 import dayjs from 'dayjs';
 import styles from './index.less';
 
@@ -55,7 +55,7 @@ const VisitTask: React.FC = () => {
     const intl = useIntl();
     const { message, modal } = App.useApp();
     const [form] = Form.useForm();
-    const searchParamsRef = useRef<any>({ search: '' });
+    const searchParamsRef = useRef<PageParams>({ page: 1, pageSize: 10, search: '' });
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editingTask, setEditingTask] = useState<VisitTaskType | null>(null);
     const [detailVisible, setDetailVisible] = useState(false);
@@ -99,15 +99,16 @@ const VisitTask: React.FC = () => {
     }, [loadStatistics]);
 
     const fetchTasks = useCallback(async () => {
+        const currentParams = searchParamsRef.current;
         setTasksLoading(true);
         try {
             const res = await visitService.getTasks({
-                page: tasksPagination.page,
-                pageSize: tasksPagination.pageSize,
-                ...searchParamsRef.current,
+                page: currentParams.page ?? 1,
+                pageSize: currentParams.pageSize ?? 10,
+                ...currentParams,
             });
             if (res.success && res.data) {
-                const paged = res.data as PagedResult<VisitTaskType>;
+                const paged = res.data;
                 setTasksData(paged.queryable ?? []);
                 setTasksPagination(prev => ({ ...prev, total: paged.rowCount ?? 0 }));
             } else {
@@ -120,16 +121,20 @@ const VisitTask: React.FC = () => {
         } finally {
             setTasksLoading(false);
         }
-    }, [tasksPagination.page, tasksPagination.pageSize]);
+    }, []);
 
-    const handleTasksTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
-        const newPage = pag.current;
-        const newPageSize = pag.pageSize;
-        setTasksPagination(prev => ({ ...prev, page: newPage, pageSize: newPageSize }));
+    useEffect(() => {
         fetchTasks();
     }, [fetchTasks]);
 
-    useEffect(() => {
+    const handleTasksTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+        searchParamsRef.current = {
+            ...searchParamsRef.current,
+            page: pag.current,
+            pageSize: pag.pageSize,
+            sortBy: sorter?.field,
+            sortOrder: sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined,
+        };
         fetchTasks();
     }, [fetchTasks]);
 
@@ -400,10 +405,6 @@ const VisitTask: React.FC = () => {
                         current: tasksPagination.page,
                         pageSize: tasksPagination.pageSize,
                         total: tasksPagination.total,
-                        pageSizeOptions: [10, 20, 50, 100],
-                        showSizeChanger: true,
-                        showQuickJumper: true,
-                        showTotal: (total) => `共 ${total} 条`,
                     }}
                     scroll={{ x: 1000 }}
                 />

@@ -54,7 +54,7 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
   const { styles } = useCommonStyles();
   const [data, setData] = useState<IoTGateway[]>([]);
   const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isDetailDrawerVisible, setIsDetailDrawerVisible] = useState(false);
   const [selectedGateway, setSelectedGateway] = useState<IoTGateway | null>(null);
@@ -67,8 +67,6 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
     fault: 0,
   });
   const searchParamsRef = useRef<PageParams>({
-    page: 1,
-    pageSize: 20,
     search: '',
   });
 
@@ -96,6 +94,34 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
       }
     } catch (error) {
       console.error('获取统计信息失败:', error);
+    }
+  }, []);
+
+  // 获取网关列表
+  const fetchData = useCallback(async () => {
+    const currentParams = searchParamsRef.current;
+
+    setLoading(true);
+    try {
+      const response = await iotService.getGateways(currentParams);
+      if (response.success && response.data) {
+        setData(response.data.queryable || []);
+        setPagination(prev => ({
+          ...prev,
+          page: currentParams.page ?? prev.page,
+          pageSize: currentParams.pageSize ?? prev.pageSize,
+          total: response.data!.rowCount ?? 0,
+        }));
+      } else {
+        setData([]);
+        setPagination(prev => ({ ...prev, total: 0 }));
+      }
+    } catch (error) {
+      console.error('加载网关列表失败:', error);
+      setData([]);
+      setPagination(prev => ({ ...prev, total: 0 }));
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -131,34 +157,6 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
     setSelectedGateway(null);
     setIsModalVisible(true);
   }, [form]);
-
-  // 获取网关列表
-  const fetchData = useCallback(async () => {
-    const currentParams = searchParamsRef.current;
-
-    setLoading(true);
-    try {
-      const response = await iotService.getGateways(currentParams.page, currentParams.pageSize, currentParams.search);
-      if (response.success && response.data) {
-        setData(response.data.queryable || []);
-        setPagination(prev => ({
-          ...prev,
-          page: currentParams.page ?? prev.page,
-          pageSize: currentParams.pageSize ?? prev.pageSize,
-          total: response.data.rowCount ?? 0,
-        }));
-      } else {
-        setData([]);
-        setPagination(prev => ({ ...prev, total: 0 }));
-      }
-    } catch (error) {
-      console.error('加载网关列表失败:', error);
-      setData([]);
-      setPagination(prev => ({ ...prev, total: 0 }));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
   // 暴露方法给父组件
   useImperativeHandle(ref, () => ({
@@ -431,10 +429,6 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
           current: pagination.page,
           pageSize: pagination.pageSize,
           total: pagination.total,
-          pageSizeOptions: [10, 20, 50, 100],
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total) => `共 ${total} 条`,
         }}
       />
 

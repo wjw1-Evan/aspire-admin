@@ -55,7 +55,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
   const { styles } = useCommonStyles();
   const [data, setData] = useState<IoTDataPoint[]>([]);
   const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
   const [devices, setDevices] = useState<IoTDevice[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isDetailDrawerVisible, setIsDetailDrawerVisible] = useState(false);
@@ -68,8 +68,6 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
     withAlarm: 0,
   });
   const searchParamsRef = useRef<PageParams>({
-    page: 1,
-    pageSize: 20,
     search: '',
   });
 
@@ -82,7 +80,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
   const fetchOverviewStats = useCallback(async () => {
     try {
       // 使用分页接口获取总数
-      const response = await iotService.getDataPoints(undefined, 1, 1);
+      const response = await iotService.getDataPoints({ page: 1, pageSize: 1 });
       if (response.success && response.data) {
         const total = response.data.rowCount || 0;
         // 注意：完整统计需要后端新增统计接口
@@ -104,21 +102,14 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
 
     setLoading(true);
     try {
-      const response = await iotService.getDataPoints(
-        undefined,
-        currentParams.page,
-        currentParams.pageSize,
-        currentParams.search,
-        currentParams.sortBy,
-        currentParams.sortOrder
-      );
+      const response = await iotService.getDataPoints(currentParams);
       if (response.success && response.data) {
         setData(response.data.queryable || []);
         setPagination(prev => ({
           ...prev,
           page: currentParams.page ?? prev.page,
           pageSize: currentParams.pageSize ?? prev.pageSize,
-          total: response.data.rowCount ?? 0,
+          total: response.data!.rowCount ?? 0,
         }));
       } else {
         setData([]);
@@ -135,7 +126,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
 
   const loadDevices = useCallback(async () => {
     try {
-      const response = await iotService.getDevices(undefined, 1, 1000);
+      const response = await iotService.getDevices({ page: 1, pageSize: 1000 });
       if (response.success && response.data) {
         setDevices(response.data.queryable || []);
       } else {
@@ -516,10 +507,6 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
           current: pagination.page,
           pageSize: pagination.pageSize,
           total: pagination.total,
-          pageSizeOptions: [10, 20, 50, 100],
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total) => `共 ${total} 条`,
         }}
       />
 

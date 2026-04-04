@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
+import React, { useRef, useState, useCallback, useImperativeHandle, forwardRef, useEffect } from 'react';
 import type { ColumnsType } from 'antd/es/table';
 import { useIntl } from '@umijs/max';
 import { Button, Tag, Space, Modal, Form, Input, Card, DatePicker, Table } from 'antd';
@@ -36,10 +36,7 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
 
-  const searchParamsRef = useRef<PageParams>({
-    page: 1,
-    pageSize: 10,
-  });
+  const searchParamsRef = useRef<PageParams>({ page: 1, pageSize: 10, search: '' });
 
   const [detailVisible, setDetailVisible] = useState(false);
   const [detailData, setDetailData] = useState<ChatHistoryDetailResponse | null>(null);
@@ -67,7 +64,7 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
           ...prev,
           page: currentParams.page ?? prev.page,
           pageSize: currentParams.pageSize ?? prev.pageSize,
-          total: response.data.rowCount ?? 0,
+          total: response.data!.rowCount ?? 0,
         }));
       } else {
         setData([]);
@@ -103,7 +100,7 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
 
   const handleReset = useCallback(() => {
     searchForm.resetFields();
-    searchParamsRef.current = { page: 1, pageSize: 10 };
+    searchParamsRef.current = { page: 1 };
     fetchData();
   }, [searchForm, fetchData]);
 
@@ -297,9 +294,6 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
           current: pagination.page,
           pageSize: pagination.pageSize,
           total: pagination.total,
-          pageSizeOptions: [10, 20, 50, 100],
-          showSizeChanger: true,
-          showQuickJumper: true,
         }}
       />
 

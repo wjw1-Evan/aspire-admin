@@ -2,7 +2,7 @@ import { PageContainer } from '@/components';
 import SearchBar from '@/components/SearchBar';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import type { ColumnsType } from 'antd/es/table';
-import { Button, Tag, Badge, Row, Col, Card, Space, Table } from 'antd';
+import { Button, Tag, Badge, Row, Col, Card, Space, Table, DatePicker, Grid } from 'antd';
 
 const { useBreakpoint } = Grid;
 import {
@@ -21,7 +21,6 @@ import LogDetailDrawer from '../user-log/components/LogDetailDrawer';
 import { StatCard } from '@/components';
 import dayjs from 'dayjs';
 import type { PageParams } from '@/types/page-params';
-import { Grid } from 'antd';
 
 const { RangePicker } = DatePicker;
 const { useBreakpoint: useBreakpointGrid } = Grid;
@@ -174,10 +173,8 @@ const MyActivity: React.FC = () => {
   } | null>(null);
   const [data, setData] = useState<UserActivityLog[]>([]);
   const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
+  const [pagination, setPagination] = useState({});
   const searchParamsRef = useRef<PageParams>({
-    page: 1,
-    pageSize: 20,
     search: '',
   });
   const { styles } = useCommonStyles();
@@ -573,9 +570,6 @@ const MyActivity: React.FC = () => {
             current: pagination.page,
             pageSize: pagination.pageSize,
             total: pagination.total,
-            pageSizeOptions: [10, 20, 50, 100],
-            showSizeChanger: true,
-            showQuickJumper: true,
           }}
         />
       </div>

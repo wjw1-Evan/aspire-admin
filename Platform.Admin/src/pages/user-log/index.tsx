@@ -36,7 +36,7 @@ const UserLog: React.FC = () => {
   const [selectedLog, setSelectedLog] = useState<UserActivityLog | null>(null);
   const [data, setData] = useState<UserActivityLog[]>([]);
   const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
+  const [pagination, setPagination] = useState({});
   const [stats, setStats] = useState({
     total: 0,
     success: 0,
@@ -46,8 +46,6 @@ const UserLog: React.FC = () => {
   });
 
   const searchParamsRef = useRef<PageParams>({
-    page: 1,
-    pageSize: 20,
     search: '',
   });
 
@@ -561,9 +559,6 @@ const UserLog: React.FC = () => {
             current: pagination.page,
             pageSize: pagination.pageSize,
             total: pagination.total,
-            pageSizeOptions: [10, 20, 50, 100],
-            showSizeChanger: true,
-            showQuickJumper: true,
           }}
         />
       </div>

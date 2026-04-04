@@ -8,7 +8,7 @@ import SearchBar from '@/components/SearchBar';
 import StatCard from '@/components/StatCard';
 import * as parkService from '@/services/park';
 import type { ParkTenant, LeaseContract, TenantStatistics, ServiceRequest, LeasePaymentRecord } from '@/services/park';
-import type { PagedResult } from '@/types/unified-api';
+import type { PageParams } from '@/types/page-params';
 import dayjs from 'dayjs';
 
 const { Text } = Typography;
@@ -17,7 +17,7 @@ const TenantManagement: React.FC = () => {
     const intl = useIntl();
     const { message } = App.useApp();
     const [tenantForm] = Form.useForm();
-    const searchParamsRef = useRef<any>({ search: '' });
+    const searchParamsRef = useRef<PageParams>({ page: 1, pageSize: 10, search: '' });
 
     const [statistics, setStatistics] = useState<TenantStatistics | null>(null);
     const [loading, setLoading] = useState(false);
@@ -50,15 +50,16 @@ const TenantManagement: React.FC = () => {
     }, [loadStatistics]);
 
     const fetchTenants = useCallback(async () => {
+        const currentParams = searchParamsRef.current;
         setTenantsLoading(true);
         try {
             const res = await parkService.getTenants({
-                page: tenantsPagination.page,
-                pageSize: tenantsPagination.pageSize,
-                search: searchParamsRef.current.search,
+                page: currentParams.page ?? 1,
+                pageSize: currentParams.pageSize ?? 10,
+                search: currentParams.search,
             });
             if (res.success && res.data) {
-                const paged = res.data as PagedResult<ParkTenant>;
+                const paged = res.data;
                 setTenantsData(paged.queryable ?? []);
                 setTenantsPagination(prev => ({ ...prev, total: paged.rowCount ?? 0 }));
             } else {
@@ -71,12 +72,16 @@ const TenantManagement: React.FC = () => {
         } finally {
             setTenantsLoading(false);
         }
-    }, [tenantsPagination.page, tenantsPagination.pageSize]);
+    }, []);
 
     const handleTenantsTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
-        const newPage = pag.current;
-        const newPageSize = pag.pageSize;
-        setTenantsPagination(prev => ({ ...prev, page: newPage, pageSize: newPageSize }));
+        searchParamsRef.current = {
+            ...searchParamsRef.current,
+            page: pag.current,
+            pageSize: pag.pageSize,
+            sortBy: sorter?.field,
+            sortOrder: sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined,
+        };
         fetchTenants();
     }, [fetchTenants]);
 
@@ -190,27 +195,6 @@ const TenantManagement: React.FC = () => {
             ),
         },
     ];
-
-    const fetchTenants = async (params: any, sort: any) => {
-        const sortBy = sort?.sortKey;
-        const sortOrder = sort?.sortOrder === 'ascend' ? 'asc' : sort?.sortOrder === 'descend' ? 'desc' : undefined;
-        try {
-            const res = await parkService.getTenants({
-                page: params.current || 1,
-                pageSize: params.pageSize || 10,
-                search: params.search,
-                status: params.status,
-                industry: params.industry,
-                sortBy,
-                sortOrder,
-            });
-            if (res.success && res.data) {
-              const paged = res.data as PagedResult<ParkTenant>;
-              return { data: paged.queryable ?? [], total: paged.rowCount ?? 0, success: true };
-            }
-            return { data: [], total: 0, success: false };
-        } catch (error) { return { data: [], total: 0, success: false }; }
-    };
 
     const handleViewTenant = async (tenant: ParkTenant) => {
         setCurrentTenant(tenant);
@@ -334,10 +318,6 @@ const TenantManagement: React.FC = () => {
                         current: tenantsPagination.page,
                         pageSize: tenantsPagination.pageSize,
                         total: tenantsPagination.total,
-                        pageSizeOptions: [10, 20, 50, 100],
-                        showSizeChanger: true,
-                        showQuickJumper: true,
-                        showTotal: (total) => `共 ${total} 条`,
                     }}
                     scroll={{ x: 1100 }}
                 />

@@ -45,12 +45,10 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
   const { styles } = useCommonStyles();
   const [data, setData] = useState<IoTDataRecord[]>([]);
   const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
   const [isDetailDrawerVisible, setIsDetailDrawerVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<IoTDataRecord | null>(null);
   const searchParamsRef = useRef<PageParams>({
-    page: 1,
-    pageSize: 20,
     search: '',
   });
 
@@ -59,20 +57,14 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
 
     setLoading(true);
     try {
-      const response = await iotService.queryDataRecords({
-        page: currentParams.page,
-        pageSize: currentParams.pageSize,
-        search: currentParams.search,
-        sortBy: currentParams.sortBy,
-        sortOrder: currentParams.sortOrder,
-      });
+      const response = await iotService.queryDataRecords(currentParams);
       if (response && response.success && response.data) {
         setData(response.data.queryable || []);
         setPagination(prev => ({
           ...prev,
           page: currentParams.page ?? prev.page,
           pageSize: currentParams.pageSize ?? prev.pageSize,
-          total: response.data.rowCount ?? 0,
+          total: response.data!.rowCount ?? 0,
         }));
       } else {
         setData([]);
@@ -245,10 +237,6 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
           current: pagination.page,
           pageSize: pagination.pageSize,
           total: pagination.total,
-          pageSizeOptions: [10, 20, 50, 100],
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total) => `共 ${total} 条`,
         }}
       />
       <Drawer

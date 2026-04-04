@@ -2,44 +2,28 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PageContainer, StatCard } from '@/components';
 import SearchBar from '@/components/SearchBar';
 import useCommonStyles from '@/hooks/useCommonStyles';
-import type { ActionType } from '@/types/pro-components';
 import { useIntl } from '@umijs/max';
 import { PieChartOutlined, EditOutlined, ReloadOutlined, UserOutlined, CloudOutlined, WarningOutlined, CheckCircleOutlined, BarChartOutlined, TeamOutlined, FileOutlined, CalendarOutlined, PlusOutlined, DeleteOutlined, ExclamationCircleOutlined, TableOutlined, DatabaseOutlined, CloudServerOutlined, LineChartOutlined } from '@ant-design/icons';
 import { getQuotaList, getUserQuota, updateUserQuota, getQuotaWarnings, getQuotaUsageStats, setUserQuota, deleteUserQuota, type StorageQuota, type UpdateQuotaRequest, type QuotaListRequest, type QuotaUsageStats, type QuotaWarning } from '@/services/cloud-storage/quotaApi';
-import { Grid, Button, Tag, Space, Modal, Drawer, Row, Col, Card, Form, Input, Select, Descriptions, Spin, Progress, InputNumber, Switch, Alert, Statistic, Tabs, Popconfirm, Typography, Badge, List, Avatar, Empty, Table } from 'antd';
-import { useMessage } from '@/hooks/useMessage';
-import { useModal } from '@/hooks/useModal';
+import { Grid, Button, Tag, Space, Modal, Drawer, Row, Col, Card, Form, Input, Select, Descriptions, Spin, Progress, InputNumber, Switch, Alert, Statistic, Tabs, Popconfirm, Typography, Badge, List, Avatar, Empty, Table, App } from 'antd';
 import dayjs from 'dayjs';
 import { getUserList, type AppUser } from '@/services/user/api';
 import { getCurrentCompany } from '@/services/company';
 import type { PageParams } from '@/types/page-params';
 
-const { useBreakpoint } = Grid;
-
-interface SearchParams {
-    username?: string;
-    isEnabled?: boolean;
-}
-
 const CloudStorageQuotaPage: React.FC = () => {
     const intl = useIntl();
-    const { success, error } = useMessage();
-    const { confirm } = useModal();
-    const screens = useBreakpoint();
+    const { message, modal } = App.useApp();
+    const screens = Grid.useBreakpoint();
     const isMobile = !screens.md;
-
-    const actionRef = useRef<ActionType | null>(null);
 
     const [activeTab, setActiveTab] = useState<'quota-list' | 'usage-stats' | 'warnings'>('quota-list');
     const [usageStats, setUsageStats] = useState<QuotaUsageStats | null>(null);
-    const [quotaTotalCount, setQuotaTotalCount] = useState<number>(0);
-
     const [warnings, setWarnings] = useState<QuotaWarning[]>([]);
 
-    const searchParamsRef = useRef<any>({ search: '' });
+    const searchParamsRef = useRef<PageParams>({ page: 1, pageSize: 10, search: '' });
     const { styles } = useCommonStyles();
 
-    // 数据状态
     const [data, setData] = useState<StorageQuota[]>([]);
     const [loading, setLoading] = useState(false);
     const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
@@ -74,13 +58,49 @@ const CloudStorageQuotaPage: React.FC = () => {
         }
     }, []);
 
-    // 加载数据（按当前企业）
-    const loadUsageStats = useCallback(async () => {
+    const fetchData = useCallback(async () => {
+        const currentParams = searchParamsRef.current;
+        const { page = 1, pageSize = 10, search } = currentParams;
+        const sortBy = currentParams.sortBy;
+        const sortOrder = currentParams.sortOrder as 'asc' | 'desc' | undefined;
+
+        setLoading(true);
         try {
-            const usageRes = await getQuotaUsageStats();
-            if (usageRes.success && usageRes.data) {
-                setUsageStats(usageRes.data);
-                setQuotaTotalCount(usageRes.data.totalUsers ?? 0);
+            const listRequest: QuotaListRequest = {
+                page: page,
+                pageSize: pageSize,
+                sortBy,
+                sortOrder,
+                companyId: currentCompanyId,
+                search,
+            };
+
+            const response = await getQuotaList(listRequest);
+
+            if (response.success && response.data) {
+                const rawData = response.data.queryable || [];
+                const totalCount = response.data.rowCount ?? 0;
+
+                setData(rawData);
+                setPagination(prev => ({
+                    ...prev,
+                    page: page ?? prev.page,
+                    pageSize: pageSize ?? prev.pageSize,
+                    total: totalCount,
+                }));
+            } else {
+                setData([]);
+                setPagination(prev => ({ ...prev, total: 0 }));
+            }
+        } finally {
+            setLoading(false);
+        }
+    }, [currentCompanyId]);
+
+    const loadUsageStats = useCallback(() => {
+        getQuotaUsageStats().then((res) => {
+            if (res.success && res.data) {
+                setUsageStats(res.data);
             } else {
                 setUsageStats({
                     totalUsers: 0,
@@ -91,42 +111,32 @@ const CloudStorageQuotaPage: React.FC = () => {
                     topUsers: [],
                 });
             }
-        } catch (err) {
-            console.error('Failed to load usage stats:', err);
-        }
+        });
     }, []);
 
-    const loadWarnings = useCallback(async () => {
-        try {
-            const response = await getQuotaWarnings(currentCompanyId);
-            if (response.success && response.data) {
-                setWarnings(response.data.queryable || []);
+    const loadWarnings = useCallback(() => {
+        getQuotaWarnings(currentCompanyId).then((res) => {
+            if (res.success && res.data) {
+                setWarnings(res.data.queryable || []);
             }
-        } catch (err) {
-            console.error('Failed to load warnings:', err);
-        }
+        });
     }, [currentCompanyId]);
+
+    const refreshAll = useCallback(() => {
+        if (activeTab === 'quota-list') {
+            fetchData();
+        }
+        loadUsageStats();
+        loadWarnings();
+    }, [activeTab, fetchData, loadUsageStats, loadWarnings]);
 
     useEffect(() => {
         loadCurrentCompany();
     }, [loadCurrentCompany]);
 
     useEffect(() => {
-        loadUsageStats();
-        loadWarnings();
-        if (activeTab === 'quota-list') {
-            fetchData();
-        }
-    }, [loadUsageStats, loadWarnings, activeTab, fetchData]);
-
-    const handleRefresh = useCallback(() => {
-        fetchData();
-        if (activeTab === 'usage-stats') {
-            loadUsageStats();
-        } else if (activeTab === 'warnings') {
-            loadWarnings();
-        }
-    }, [activeTab, loadUsageStats, loadWarnings, fetchData]);
+        refreshAll();
+    }, [refreshAll]);
 
     // 搜索处理
     const handleSearch = useCallback((params: PageParams) => {
@@ -150,50 +160,6 @@ const CloudStorageQuotaPage: React.FC = () => {
         };
         fetchData();
     }, [fetchData]);
-
-    const fetchData = useCallback(async () => {
-        const currentParams = searchParamsRef.current;
-        const { page = 1, pageSize = 10, search } = currentParams;
-        const sortBy = currentParams.sortBy;
-        const sortOrder = currentParams.sortOrder;
-
-        setLoading(true);
-        try {
-            const listRequest: QuotaListRequest = {
-                page: page,
-                pageSize: pageSize,
-                sortBy,
-                sortOrder,
-                companyId: currentCompanyId,
-                search,
-            };
-
-            const response = await getQuotaList(listRequest);
-
-            if (response.success && response.data) {
-                const rawData = response.data.queryable || [];
-                const totalCount = response.data.rowCount ?? 0;
-
-                setQuotaTotalCount(totalCount);
-                setData(rawData);
-                setPagination(prev => ({
-                    ...prev,
-                    page: page ?? prev.page,
-                    pageSize: pageSize ?? prev.pageSize,
-                    total: totalCount,
-                }));
-            } else {
-                setData([]);
-                setPagination(prev => ({ ...prev, total: 0 }));
-            }
-        } catch (err) {
-            console.error('Failed to load quota list:', err);
-            setData([]);
-            setPagination(prev => ({ ...prev, total: 0 }));
-        } finally {
-            setLoading(false);
-        }
-    }, [currentCompanyId]);
 
 
     // Tab 切换
@@ -228,9 +194,9 @@ const CloudStorageQuotaPage: React.FC = () => {
                 setDetailVisible(true);
             }
         } catch (err) {
-            error(intl.formatMessage({ id: 'pages.cloud-storage.quota.message.fetchFailed', defaultMessage: '获取配额详情失败' }));
+            message.error(intl.formatMessage({ id: 'pages.cloud-storage.quota.message.fetchFailed', defaultMessage: '获取配额详情失败' }));
         }
-    }, [error, intl]);
+    }, [message, intl]);
 
     const bytesToGB = useCallback((bytes?: number) => {
         if (bytes === undefined || bytes === null) return 0;
@@ -278,7 +244,7 @@ const CloudStorageQuotaPage: React.FC = () => {
 
     const handleAddSubmit = useCallback(async (values: any) => {
         if (!values.userId) {
-            error(intl.formatMessage({ id: 'pages.cloud-storage.quota.message.selectUser' }));
+            message.error(intl.formatMessage({ id: 'pages.cloud-storage.quota.message.selectUser' }));
             return;
         }
 
@@ -290,31 +256,29 @@ const CloudStorageQuotaPage: React.FC = () => {
                 warningThreshold: values.warningThreshold,
                 isEnabled: values.isEnabled,
             });
-            success('新增配额成功');
+            message.success('新增配额成功');
             setAddQuotaVisible(false);
             addQuotaForm.resetFields();
-            actionRef.current?.reload?.();
-            loadUsageStats();
+            refreshAll();
         } catch (err) {
-            error('新增配额失败');
+            message.error('新增配额失败');
         } finally {
             setSubmitLoading(false);
         }
-    }, [addQuotaForm, error, gbToBytes, loadUsageStats, success]);
+    }, [addQuotaForm, message, gbToBytes, refreshAll, intl]);
 
     const handleDelete = useCallback(async (quota: StorageQuota) => {
         setDeletingId(quota.userId);
         try {
             await deleteUserQuota(quota.userId);
-            success(intl.formatMessage({ id: 'pages.cloud-storage.quota.message.deleteSuccess' }));
-            actionRef.current?.reload?.();
-            loadUsageStats();
+            message.success(intl.formatMessage({ id: 'pages.cloud-storage.quota.message.deleteSuccess' }));
+            refreshAll();
         } catch (err) {
-            error('删除配额失败');
+            message.error('删除配额失败');
         } finally {
             setDeletingId(null);
         }
-    }, [error, loadUsageStats, success]);
+    }, [message, refreshAll, intl]);
 
     // 更新配额
     const handleEditSubmit = useCallback(async (values: UpdateQuotaRequest) => {
@@ -327,16 +291,15 @@ const CloudStorageQuotaPage: React.FC = () => {
             };
 
             await updateUserQuota(editingQuota.userId, payload);
-            success('更新配额成功');
+            message.success('更新配额成功');
             setEditQuotaVisible(false);
             setEditingQuota(null);
             editQuotaForm.resetFields();
-            actionRef.current?.reload?.();
-            loadUsageStats();
+            refreshAll();
         } catch (err) {
-            error('更新配额失败');
+            message.error('更新配额失败');
         }
-    }, [editingQuota, success, error, editQuotaForm, loadUsageStats, gbToBytes]);
+    }, [editingQuota, message, editQuotaForm, gbToBytes, refreshAll]);
 
     // 批量设置配额
 
@@ -516,7 +479,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                         icon={<DeleteOutlined />}
                         loading={deletingId === record.userId}
                         onClick={() => {
-                            confirm({
+                            modal.confirm({
                                 title: intl.formatMessage({ id: 'pages.cloud-storage.quota.confirmDelete.title' }),
                                 content: intl.formatMessage({ id: 'pages.cloud-storage.quota.confirmDelete.desc' }),
                                 onOk: () => handleDelete(record),
@@ -555,11 +518,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                     <Button
                         key="refresh"
                         icon={<ReloadOutlined />}
-                        onClick={() => {
-                            actionRef.current?.reload?.();
-                            loadUsageStats();
-                            loadWarnings();
-                        }}
+                        onClick={refreshAll}
                     >
                         {intl.formatMessage({ id: 'pages.common.refresh', defaultMessage: '刷新' })}
                     </Button>
@@ -601,10 +560,6 @@ const CloudStorageQuotaPage: React.FC = () => {
                                             current: pagination.page,
                                             pageSize: pagination.pageSize,
                                             total: pagination.total,
-                                            pageSizeOptions: [10, 20, 50, 100],
-                                            showSizeChanger: true,
-                                            showQuickJumper: true,
-                                            showTotal: (total) => `共 ${total} 条`,
                                         }}
                                     />
                                 </div>

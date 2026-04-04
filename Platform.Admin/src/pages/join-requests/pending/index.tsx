@@ -39,7 +39,7 @@ const PendingJoinRequests: React.FC = () => {
   const { initialState } = useModel('@@initialState');
   const tableRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
-  const searchParamsRef = useRef<PageParams>({ search: '' });
+  const searchParamsRef = useRef<PageParams>({ page: 1, pageSize: 10, search: '' });
   const [data, setData] = useState<API.JoinRequestDetail[]>([]);
   const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
 
@@ -436,9 +436,6 @@ const PendingJoinRequests: React.FC = () => {
             current: pagination.page,
             pageSize: pagination.pageSize,
             total: pagination.total,
-            pageSizeOptions: [10, 20, 50, 100],
-            showSizeChanger: true,
-            showQuickJumper: true,
           }}
         />
       </div>

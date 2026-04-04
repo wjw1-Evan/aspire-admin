@@ -8,12 +8,11 @@ import SearchBar from '@/components/SearchBar';
 import StatCard from '@/components/StatCard';
 import * as parkService from '@/services/park';
 import type { ServiceCategory, ServiceRequest, ServiceStatistics, ParkTenant } from '@/services/park';
-import type { PagedResult } from '@/types/unified-api';
 import dayjs from 'dayjs';
 import styles from './index.less';
+import type { PageParams } from '@/types/page-params';
 
 const { Text, Title } = Typography;
-// Tabs items prop is used instead of TabPane
 
 
 const EnterpriseService: React.FC = () => {
@@ -23,7 +22,7 @@ const EnterpriseService: React.FC = () => {
     const [requestForm] = Form.useForm();
     const [statusForm] = Form.useForm();
     const [ratingForm] = Form.useForm();
-    const searchParamsRef = useRef<any>({ search: '' });
+    const searchParamsRef = useRef<PageParams>({ page: 1, pageSize: 10, search: '' });
 
     const [activeTab, setActiveTab] = useState<string>('requests');
     const [statistics, setStatistics] = useState<ServiceStatistics | null>(null);
@@ -64,18 +63,17 @@ const EnterpriseService: React.FC = () => {
         } catch (error) { console.error(error); }
     }, []);
 
-    useEffect(() => { loadStatistics(); loadCategories(); loadTenants(); }, [loadStatistics, loadCategories, loadTenants]);
-
     const fetchRequests = useCallback(async () => {
+        const currentParams = searchParamsRef.current;
         setRequestsLoading(true);
         try {
             const res = await parkService.getServiceRequests({
-                page: requestsPagination.page,
-                pageSize: requestsPagination.pageSize,
-                search: searchParamsRef.current.search,
+                page: currentParams.page ?? 1,
+                pageSize: currentParams.pageSize ?? 10,
+                search: currentParams.search,
             });
             if (res.success && res.data) {
-                const paged = res.data as PagedResult<ServiceRequest>;
+                const paged = res.data;
                 setRequestsData(paged.queryable ?? []);
                 setRequestsPagination(prev => ({ ...prev, total: paged.rowCount ?? 0 }));
             } else {
@@ -88,14 +86,35 @@ const EnterpriseService: React.FC = () => {
         } finally {
             setRequestsLoading(false);
         }
-    }, [requestsPagination.page, requestsPagination.pageSize]);
+    }, []);
 
-    const handleRequestsTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
-        const newPage = pag.current;
-        const newPageSize = pag.pageSize;
-        setRequestsPagination(prev => ({ ...prev, page: newPage, pageSize: newPageSize }));
+    const handleSearch = useCallback((params: PageParams) => {
+        searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
+        setRequestsPagination(prev => ({ ...prev, page: 1 }));
         fetchRequests();
     }, [fetchRequests]);
+
+    const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
+        const newPage = pag.current;
+        const newPageSize = pag.pageSize;
+        const sortBy = sorter?.field;
+        const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
+        
+        searchParamsRef.current = {
+            ...searchParamsRef.current,
+            page: newPage,
+            pageSize: newPageSize,
+            sortBy,
+            sortOrder,
+        };
+        fetchRequests();
+    }, [fetchRequests]);
+
+    useEffect(() => {
+        loadStatistics();
+        loadCategories();
+        loadTenants();
+    }, [loadStatistics, loadCategories, loadTenants]);
 
     useEffect(() => {
         if (activeTab === 'requests') {
@@ -109,10 +128,8 @@ const EnterpriseService: React.FC = () => {
         const tenantId = searchParams.get('tenantId');
         const tenantName = searchParams.get('tenantName');
         if (tenantId) {
-            // Auto-open the request form with tenant pre-selected
             requestForm.setFieldsValue({ tenantId });
             setRequestModalVisible(true);
-            // Clear URL params after handling (optional, to prevent re-opening on refresh)
             history.replace('/park-management/enterprise-service');
         }
     }, [searchParams, requestForm]);
@@ -234,19 +251,6 @@ const EnterpriseService: React.FC = () => {
         },
     ];
 
-    const fetchRequests = async (params: any, sort: any) => {
-        const sortBy = sort?.sortKey;
-        const sortOrder = sort?.sortOrder === 'ascend' ? 'asc' : sort?.sortOrder === 'descend' ? 'desc' : undefined;
-        try {
-            const res = await parkService.getServiceRequests({ page: params.current || 1, pageSize: params.pageSize || 10, search: params.search, status: params.status, categoryId: params.categoryId, priority: params.priority, sortBy, sortOrder });
-            if (res.success && res.data) {
-              const paged = res.data as PagedResult<ServiceRequest>;
-              return { data: paged.queryable ?? [], total: paged.rowCount ?? 0, success: true };
-            }
-            return { data: [], total: 0, success: false };
-        } catch (error) { return { data: [], total: 0, success: false }; }
-    };
-
     const handleViewRequest = (request: ServiceRequest) => { setCurrentRequest(request); setDetailDrawerVisible(true); };
     const handleUpdateStatus = (request: ServiceRequest) => { setCurrentRequest(request); statusForm.setFieldsValue({ status: request.status }); setStatusModalVisible(true); };
     const handleRateRequest = (request: ServiceRequest) => { setCurrentRequest(request); ratingForm.resetFields(); setRatingModalVisible(true); };
@@ -353,11 +357,8 @@ const EnterpriseService: React.FC = () => {
                                 <>
                                     <SearchBar
                                         initialParams={searchParamsRef.current}
-                                        onSearch={(params) => {
-                                            searchParamsRef.current = { ...searchParamsRef.current, ...params };
-                                            setRequestsPagination(prev => ({ ...prev, page: 1 }));
-                                            fetchRequests();
-                                        }}
+                                        onSearch={handleSearch}
+                                        showResetButton={false}
                                         style={{ marginBottom: 16 }}
                                     />
                                     <Table<ServiceRequest>
@@ -365,15 +366,11 @@ const EnterpriseService: React.FC = () => {
                                         columns={requestColumns as any}
                                         rowKey="id"
                                         loading={requestsLoading}
-                                        onChange={handleRequestsTableChange}
+                                        onChange={handleTableChange}
                                         pagination={{
                                             current: requestsPagination.page,
                                             pageSize: requestsPagination.pageSize,
                                             total: requestsPagination.total,
-                                            pageSizeOptions: [10, 20, 50, 100],
-                                            showSizeChanger: true,
-                                            showQuickJumper: true,
-                                            showTotal: (total) => `共 ${total} 条`,
                                         }}
                                         scroll={{ x: 1200 }}
                                     />

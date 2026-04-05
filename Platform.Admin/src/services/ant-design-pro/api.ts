@@ -81,9 +81,9 @@ export interface CaptchaResult {
 }
 
 export async function getImageCaptcha(): Promise<ApiResponse<CaptchaResult>> {
-  return request('/api/auth/captcha', { method: 'GET' });
+  return request('/api/auth/captcha/image', { method: 'GET' });
 }
 
 export async function verifyImageCaptcha(captchaId: string, captchaCode: string): Promise<ApiResponse<{ valid: boolean }>> {
-  return request('/api/auth/verify-captcha', { method: 'POST', data: { captchaId, captchaCode } });
+  return request('/api/auth/captcha/verify-image', { method: 'POST', data: { captchaId, captchaCode } });
 }

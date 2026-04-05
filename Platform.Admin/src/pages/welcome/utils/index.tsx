@@ -1,17 +1,7 @@
 import React from 'react';
-import {
-  UserOutlined, TeamOutlined, FolderOutlined, BarChartOutlined, CalendarOutlined,
-  BellOutlined, SettingOutlined, DashboardOutlined, AppstoreOutlined, MailOutlined,
-  FileTextOutlined, ProjectOutlined, CloudServerOutlined, LockOutlined, CloudOutlined,
-  ScheduleOutlined, BankOutlined, ApartmentOutlined, RocketOutlined, HeartOutlined,
-  ClusterOutlined, SafetyOutlined, DatabaseOutlined, ThunderboltOutlined, DesktopOutlined,
-  FolderOpenOutlined, ShareAltOutlined, FormOutlined, BookOutlined, StarOutlined,
-  CheckCircleOutlined, ClockCircleOutlined, WarningOutlined, InfoCircleOutlined,
-  SolutionOutlined, GoldOutlined, GlobalOutlined, HomeOutlined, EnvironmentOutlined,
-  ToolOutlined, KeyOutlined, NodeIndexOutlined, EditOutlined, DeleteOutlined,
-  PlusOutlined, SearchOutlined, DownloadOutlined, UploadOutlined, PrinterOutlined,
-} from '@ant-design/icons';
+import { AppstoreOutlined } from '@ant-design/icons';
 import type { MenuDataItem } from '@umijs/max';
+import { CORE_ICON_MAP } from '@/utils/iconMap';
 
 export function getGreeting(): string {
   const hour = new Date().getHours();
@@ -25,58 +15,22 @@ export function getGreeting(): string {
 }
 
 export function getIconComponent(iconName?: string): React.ReactNode {
-  const iconMap: Record<string, React.ReactNode> = {
-    UserOutlined: <UserOutlined />,
-    TeamOutlined: <TeamOutlined />,
-    FolderOutlined: <FolderOutlined />,
-    BarChartOutlined: <BarChartOutlined />,
-    CalendarOutlined: <CalendarOutlined />,
-    BellOutlined: <BellOutlined />,
-    SettingOutlined: <SettingOutlined />,
-    DashboardOutlined: <DashboardOutlined />,
-    AppstoreOutlined: <AppstoreOutlined />,
-    MailOutlined: <MailOutlined />,
-    FileTextOutlined: <FileTextOutlined />,
-    ProjectOutlined: <ProjectOutlined />,
-    CloudServerOutlined: <CloudServerOutlined />,
-    LockOutlined: <LockOutlined />,
-    CloudOutlined: <CloudOutlined />,
-    ScheduleOutlined: <ScheduleOutlined />,
-    BankOutlined: <BankOutlined />,
-    ApartmentOutlined: <ApartmentOutlined />,
-    RocketOutlined: <RocketOutlined />,
-    HeartOutlined: <HeartOutlined />,
-    ClusterOutlined: <ClusterOutlined />,
-    SafetyOutlined: <SafetyOutlined />,
-    DatabaseOutlined: <DatabaseOutlined />,
-    ThunderboltOutlined: <ThunderboltOutlined />,
-    DesktopOutlined: <DesktopOutlined />,
-    FolderOpenOutlined: <FolderOpenOutlined />,
-    ShareAltOutlined: <ShareAltOutlined />,
-    FormOutlined: <FormOutlined />,
-    BookOutlined: <BookOutlined />,
-    StarOutlined: <StarOutlined />,
-    CheckCircleOutlined: <CheckCircleOutlined />,
-    ClockCircleOutlined: <ClockCircleOutlined />,
-    WarningOutlined: <WarningOutlined />,
-    InfoCircleOutlined: <InfoCircleOutlined />,
-    SolutionOutlined: <SolutionOutlined />,
-    GoldOutlined: <GoldOutlined />,
-    GlobalOutlined: <GlobalOutlined />,
-    HomeOutlined: <HomeOutlined />,
-    EnvironmentOutlined: <EnvironmentOutlined />,
-    ToolOutlined: <ToolOutlined />,
-    KeyOutlined: <KeyOutlined />,
-    NodeIndexOutlined: <NodeIndexOutlined />,
-    EditOutlined: <EditOutlined />,
-    DeleteOutlined: <DeleteOutlined />,
-    PlusOutlined: <PlusOutlined />,
-    SearchOutlined: <SearchOutlined />,
-    DownloadOutlined: <DownloadOutlined />,
-    UploadOutlined: <UploadOutlined />,
-    PrinterOutlined: <PrinterOutlined />,
-  };
-  return iconName && iconMap[iconName] ? iconMap[iconName] : <AppstoreOutlined />;
+  if (iconName) {
+    const icon = CORE_ICON_MAP[iconName];
+    if (icon) return icon;
+    
+    const toPascalCase = (name: string) =>
+      name.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('');
+    
+    const baseName = toPascalCase(iconName);
+    const suffixes = ['Outlined', 'Filled', 'TwoTone', ''];
+    for (const suffix of suffixes) {
+      const fullName = baseName.endsWith(suffix) && suffix !== '' ? baseName : baseName + suffix;
+      const found = CORE_ICON_MAP[fullName];
+      if (found) return found;
+    }
+  }
+  return <AppstoreOutlined />;
 }
 
 export function getMenuColor(path?: string): string {

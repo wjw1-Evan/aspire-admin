@@ -12,6 +12,7 @@ export default {
   'menu.system.menu-management': '菜单管理',
   'menu.system.user-log': '用户日志',
   'menu.user-log': '操作日志',
+  'menu.user-log.desc': '查看用户操作日志',
   'menu.system.company-settings': '企业设置',
   'menu.system.company-management': '企业管理',
   'menu.system.organization': '组织架构',
@@ -33,6 +34,7 @@ export default {
   // 项目管理菜单描述
   'menu.project-management.task.desc': '查看和管理项目任务',
   'menu.project-management.project.desc': '查看和管理项目列表',
+  'menu.project-management.statistics.desc': '查看项目数据统计与分析',
   'menu.task-management': '任务管理',
   'menu.task-management.desc': '查看和管理任务',
   // 项目管理的任务菜单（路径为 /task-management，但菜单名为 project-management-task）
@@ -71,6 +73,7 @@ export default {
   'menu.account.language': '切换语言',
   // 工作流管理
   'menu.workflow': '工作流管理',
+  'menu.workflow.desc': '管理和监控工作流',
   'menu.workflow.list': '流程定义',
   'menu.workflow.list.desc': '管理和配置工作流定义',
   'menu.workflow.create': '创建流程',
@@ -83,6 +86,7 @@ export default {
   'menu.workflow.knowledge-base.desc': '管理工作流知识库',
   // 公文管理
   'menu.document': '公文管理',
+  'menu.document.desc': '管理和审批公文',
   'menu.document.list': '公文列表',
   'menu.document.list.desc': '查看和管理公文',
   'menu.document.create': '创建公文',

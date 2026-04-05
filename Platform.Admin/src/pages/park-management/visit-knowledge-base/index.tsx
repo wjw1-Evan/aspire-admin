@@ -1,689 +1,225 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import {
-    Tabs,
-    Button,
-    Space,
-    Modal,
-    Form,
-    Input,
-    InputNumber,
-    Select,
-    Switch,
-    App,
-    Card,
-    List,
-    Typography,
-    Tag,
-    Row,
-    Col,
-    Grid,
-    Empty,
-    Drawer,
-    Descriptions,
-    Divider,
-    Transfer,
-    Table,
-} from 'antd';
-import {
-    PlusOutlined,
-    ReloadOutlined,
-    QuestionCircleOutlined,
-    FileTextOutlined,
-    StarOutlined,
-    StarFilled,
-    EditOutlined,
-    DeleteOutlined,
-    InfoCircleOutlined,
-    EyeOutlined,
-    ArrowUpOutlined,
-    ArrowDownOutlined,
-} from '@ant-design/icons';
-import { useIntl } from '@umijs/max';
-import PageContainer from '@/components/PageContainer';
-import StatCard from '@/components/StatCard';
-import SearchBar from '@/components/SearchBar';
-import * as visitService from '@/services/visit';
-import type { VisitQuestion, VisitQuestionnaire, VisitStatistics } from '@/services/visit';
+import React, { useRef, useState, useEffect } from 'react';
+import { PageContainer, StatCard } from '@/components';
+import { request } from '@umijs/max';
+import { Tag, Space, Card, Row, Col, Button, Input, InputNumber, Select, Switch, App, List, Typography, Drawer, Descriptions, Transfer, Empty, Tabs } from 'antd';
+import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
+import { ModalForm, ProFormText, ProFormSelect } from '@ant-design/pro-form';
+import { PlusOutlined, ReloadOutlined, QuestionCircleOutlined, FileTextOutlined, StarOutlined, StarFilled, EditOutlined, DeleteOutlined, EyeOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
+import { ApiResponse, PagedResult, PageParams } from '@/types/api-response';
 import styles from './index.less';
 
-const { Text, Paragraph } = Typography;
-const { useBreakpoint } = Grid;
+const { Text } = Typography;
+
+interface VisitQuestion { id: string; content: string; category?: string; answer?: string; isFrequentlyUsed: boolean; sortOrder: number; createdAt?: string; updatedAt?: string; }
+interface VisitQuestionnaire { id: string; title: string; purpose?: string; questionIds: string[]; questionCount: number; createdAt: string; sortOrder: number; }
+interface VisitStatistics { pendingTasks: number; completedTasksThisMonth: number; activeManagers: number; completionRate: number; totalAssessments: number; averageScore: number; tasksByType: Record<string, number>; tasksByStatus: Record<string, number>; }
+interface QuestionFormData { content: string; category?: string; answer?: string; isFrequentlyUsed?: boolean; sortOrder?: number; }
+interface QuestionnaireFormData { title: string; purpose?: string; sortOrder?: number; questionIds?: string[]; }
+
+const api = {
+    questions: (params: PageParams & { sortBy?: string; sortOrder?: string }) => request<ApiResponse<PagedResult<VisitQuestion>>>('/api/park-management/visit/questions', { params }),
+    createQuestion: (data: QuestionFormData) => request<ApiResponse<VisitQuestion>>('/api/park-management/visit/question', { method: 'POST', data }),
+    updateQuestion: (id: string, data: QuestionFormData) => request<ApiResponse<VisitQuestion>>(`/api/park-management/visit/question/${id}`, { method: 'PUT', data }),
+    deleteQuestion: (id: string) => request<ApiResponse<boolean>>(`/api/park-management/visit/question/${id}`, { method: 'DELETE' }),
+    questionnaires: (params?: PageParams) => request<ApiResponse<PagedResult<VisitQuestionnaire>>>('/api/park-management/visit/questionnaires', { params }),
+    createQuestionnaire: (data: QuestionnaireFormData) => request<ApiResponse<VisitQuestionnaire>>('/api/park-management/visit/questionnaire', { method: 'POST', data }),
+    updateQuestionnaire: (id: string, data: QuestionnaireFormData) => request<ApiResponse<VisitQuestionnaire>>(`/api/park-management/visit/questionnaire/${id}`, { method: 'PUT', data }),
+    deleteQuestionnaire: (id: string) => request<ApiResponse<boolean>>(`/api/park-management/visit/questionnaire/${id}`, { method: 'DELETE' }),
+    statistics: () => request<ApiResponse<VisitStatistics>>('/api/park-management/visit/statistics'),
+};
 
 const VisitKnowledgeBase: React.FC = () => {
-    const intl = useIntl();
     const { message, modal } = App.useApp();
-    const [activeTab, setActiveTab] = useState('questions');
-    const [isQuestionModalVisible, setIsQuestionModalVisible] = useState(false);
-    const [isQuestionnaireModalVisible, setIsQuestionnaireModalVisible] = useState(false);
-    const [editingQuestion, setEditingQuestion] = useState<VisitQuestion | null>(null);
-    const [editingQuestionnaire, setEditingQuestionnaire] = useState<VisitQuestionnaire | null>(null);
-    const [questionForm] = Form.useForm();
-    const [questionnaireForm] = Form.useForm();
-    const searchParamsRef = useRef<any>({ page: 1, pageSize: 10, search: '' });
-    const [allQuestions, setAllQuestions] = useState<VisitQuestion[]>([]);
-    const [targetKeys, setTargetKeys] = useState<string[]>([]);
-    const [statistics, setStatistics] = useState<VisitStatistics | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [questionDetailVisible, setQuestionDetailVisible] = useState(false);
-    const [selectedQuestion, setSelectedQuestion] = useState<VisitQuestion | null>(null);
-    const [questionnaireDetailVisible, setQuestionnaireDetailVisible] = useState(false);
-    const [selectedQuestionnaire, setSelectedQuestionnaire] = useState<VisitQuestionnaire | null>(null);
-    const actionRef = useRef<any>(null);
-    const screens = useBreakpoint();
+    const actionRef = useRef<ActionType | undefined>(undefined);
+    const [state, setState] = useState({
+        activeTab: 'questions',
+        questionModalVisible: false,
+        questionnaireModalVisible: false,
+        editingQuestion: null as VisitQuestion | null,
+        editingQuestionnaire: null as VisitQuestionnaire | null,
+        questionDetailVisible: false,
+        selectedQuestion: null as VisitQuestion | null,
+        questionnaireDetailVisible: false,
+        selectedQuestionnaire: null as VisitQuestionnaire | null,
+        allQuestions: [] as VisitQuestion[],
+        targetKeys: [] as string[],
+        statistics: null as VisitStatistics | null,
+        searchText: '',
+        sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
+    });
+    const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
 
-    const [questionsData, setQuestionsData] = useState<VisitQuestion[]>([]);
-    const [questionnairesData, setQuestionnairesData] = useState<VisitQuestionnaire[]>([]);
-    const [questionsLoading, setQuestionsLoading] = useState(false);
-    const [questionnairesLoading, setQuestionnairesLoading] = useState(false);
-    const [questionsPagination, setQuestionsPagination] = useState({ page: 1, pageSize: 10, total: 0 });
-    const [questionnairesPagination, setQuestionnairesPagination] = useState({ page: 1, pageSize: 10, total: 0 });
+    const questionColumns: ProColumns<VisitQuestion>[] = [
+        { title: '问题内容', dataIndex: 'content', key: 'content', sorter: true, ellipsis: true, render: (dom, r) => <Space><QuestionCircleOutlined style={{ color: '#1890ff' }} /><Text strong>{dom}</Text></Space> },
+        { title: '分类', dataIndex: 'category', key: 'category', sorter: true, width: 120, render: (dom) => <Tag color="blue">{dom || '通用'}</Tag> },
+        { title: '常用', dataIndex: 'isFrequentlyUsed', key: 'isFrequentlyUsed', sorter: true, width: 100, render: (dom) => dom ? <StarFilled style={{ color: '#fadb14' }} /> : <StarOutlined style={{ color: '#d9d9d9' }} /> },
+        { title: '操作', key: 'action', width: 150, render: (_, r) => [
+            <Button key="view" type="link" icon={<EyeOutlined />} onClick={() => set({ selectedQuestion: r, questionDetailVisible: true })}>查看</Button>,
+            <Button key="edit" type="link" icon={<EditOutlined />} onClick={() => set({ editingQuestion: r, questionModalVisible: true })}>编辑</Button>,
+            <Button key="delete" type="link" danger icon={<DeleteOutlined />} onClick={() => handleDeleteQuestion(r.id)}>删除</Button>,
+        ]},
+    ];
 
-    const fetchQuestions = useCallback(async () => {
-        setQuestionsLoading(true);
-        try {
-            const res = await visitService.getQuestions({
-                page: questionsPagination.page,
-                pageSize: questionsPagination.pageSize,
-                ...searchParamsRef.current,
-            });
-            if (res.success && res.data) {
-                setQuestionsData(res.data.queryable || []);
-                setQuestionsPagination(prev => ({ ...prev, total: res.data!.rowCount ?? 0 }));
-            } else {
-                setQuestionsData([]);
-                setQuestionsPagination(prev => ({ ...prev, total: 0 }));
-            }
-        } catch {
-            setQuestionsData([]);
-            setQuestionsPagination(prev => ({ ...prev, total: 0 }));
-        } finally {
-            setQuestionsLoading(false);
-        }
-    }, [questionsPagination.page, questionsPagination.pageSize]);
-
-    const fetchQuestionnaires = useCallback(async () => {
-        setQuestionnairesLoading(true);
-        try {
-            const res = await visitService.getQuestionnaires({});
-            if (res.success && res.data) {
-                setQuestionnairesData(res.data.queryable || []);
-                setQuestionnairesPagination(prev => ({ ...prev, total: res.data!.rowCount ?? 0 }));
-            } else {
-                setQuestionnairesData([]);
-                setQuestionnairesPagination(prev => ({ ...prev, total: 0 }));
-            }
-        } catch {
-            setQuestionnairesData([]);
-            setQuestionnairesPagination(prev => ({ ...prev, total: 0 }));
-        } finally {
-            setQuestionnairesLoading(false);
-        }
-    }, [questionnairesPagination.page, questionnairesPagination.pageSize]);
-
-    const handleQuestionsTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
-        const newPage = pag.current;
-        const newPageSize = pag.pageSize;
-        const sortBy = sorter?.field;
-        const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
-        
-        setQuestionsPagination(prev => ({ ...prev, page: newPage, pageSize: newPageSize }));
-        
-        (async () => {
-            setQuestionsLoading(true);
-            try {
-                const res = await visitService.getQuestions({
-                    page: newPage,
-                    pageSize: newPageSize,
-                    ...searchParamsRef.current,
-                    sortBy,
-                    sortOrder,
-                });
-                if (res.success && res.data) {
-                    setQuestionsData(res.data.queryable || []);
-                    setQuestionsPagination(prev => ({ ...prev, total: res.data!.rowCount ?? 0 }));
-                } else {
-                    setQuestionsData([]);
-                }
-            } finally {
-                setQuestionsLoading(false);
-            }
-        })();
-    }, []);
-
-    const handleQuestionnairesTableChange = useCallback((pag: any) => {
-        const newPage = pag.current;
-        const newPageSize = pag.pageSize;
-        setQuestionnairesPagination(prev => ({ ...prev, page: newPage, pageSize: newPageSize }));
-        fetchQuestionnaires();
-    }, [fetchQuestionnaires]);
-
-    const loadStatistics = useCallback(async () => {
-        try {
-            const res = await visitService.getVisitStatistics();
-            if (res.success && res.data) {
-                setStatistics(res.data);
-            }
-        } catch (error) {
-            console.error('Failed to load statistics:', error);
-        }
-    }, []);
+    const questionnaireColumns: ProColumns<VisitQuestionnaire>[] = [
+        { title: '问卷名称', dataIndex: 'title', key: 'title', sorter: true, render: (dom) => <Space><FileTextOutlined style={{ color: '#52c41a' }} /><Text strong>{dom}</Text></Space> },
+        { title: '走访目的', dataIndex: 'purpose', key: 'purpose', sorter: true, ellipsis: true },
+        { title: '题目数量', dataIndex: 'questionCount', key: 'questionCount', sorter: true, width: 100, render: (dom) => <Tag color="cyan">{dom} 题</Tag> },
+        { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', sorter: true, width: 120, render: (dom) => dayjs(dom).format('YYYY-MM-DD') },
+        { title: '操作', key: 'action', width: 150, render: (_, r) => [
+            <Button key="view" type="link" icon={<EyeOutlined />} onClick={() => { set({ selectedQuestionnaire: r, questionnaireDetailVisible: true }); if (state.allQuestions.length === 0) loadAllQuestions(); }}>查看</Button>,
+            <Button key="edit" type="link" icon={<EditOutlined />} onClick={async () => { set({ editingQuestionnaire: r, targetKeys: r.questionIds || [] }); await loadAllQuestions(); set({ questionnaireModalVisible: true }); }}>编辑</Button>,
+            <Button key="delete" type="link" danger icon={<DeleteOutlined />} onClick={() => handleDeleteQuestionnaire(r.id)}>删除</Button>,
+        ]},
+    ];
 
     const loadAllQuestions = async () => {
-        try {
-            const res = await visitService.getQuestions({ page: 1, pageSize: 1000 });
-            if (res.success && res.data) {
-                setAllQuestions(res.data.queryable);
-            }
-        } catch (error) {
-            console.error('Failed to load questions:', error);
-        }
+        const res = await api.questions({ page: 1, pageSize: 1000 });
+        if (res.success && res.data) set({ allQuestions: res.data.queryable });
     };
 
-    useEffect(() => {
-        loadStatistics();
-    }, [loadStatistics]);
-
-    useEffect(() => {
-        fetchQuestions();
-        fetchQuestionnaires();
-    }, [fetchQuestions, fetchQuestionnaires]);
-
-
-    const questionColumns = [
-        {
-            title: '问题内容',
-            dataIndex: 'content',
-            key: 'content',
-            sorter: true,
-            ellipsis: true,
-            render: (text: string) => (
-                <Space>
-                    <QuestionCircleOutlined style={{ color: '#1890ff' }} />
-                    <Text strong>{text}</Text>
-                </Space>
-            )
-        },
-        {
-            title: '分类',
-            dataIndex: 'category',
-            key: 'category',
-            sorter: true,
-            width: 120,
-            render: (text: string) => <Tag color="blue">{text || '通用'}</Tag>,
-        },
-        {
-            title: '常用',
-            dataIndex: 'isFrequentlyUsed',
-            key: 'isFrequentlyUsed',
-            sorter: true,
-            width: 100,
-            render: (checked: boolean) => checked ? <StarFilled style={{ color: '#fadb14' }} /> : <StarOutlined style={{ color: '#d9d9d9' }} />,
-        },
-        {
-            title: '操作',
-            key: 'action',
-            width: 120,
-            render: (_: any, record: VisitQuestion) => (
-                <Space>
-                    <Button type="link" icon={<EyeOutlined />} onClick={() => { setSelectedQuestion(record); setQuestionDetailVisible(true); }}>查看</Button>
-                    <Button type="link" icon={<EditOutlined />} onClick={() => { setEditingQuestion(record); questionForm.setFieldsValue(record); setIsQuestionModalVisible(true); }}>编辑</Button>
-                    <Button type="link" danger icon={<DeleteOutlined />} onClick={() => handleDeleteQuestion(record.id)}>删除</Button>
-                </Space>
-            ),
-        },
-    ];
-
-    const questionnaireColumns = [
-        {
-            title: '问卷名称',
-            dataIndex: 'title',
-            key: 'title',
-            sorter: true,
-            render: (text: string) => (
-                <Space>
-                    <FileTextOutlined style={{ color: '#52c41a' }} />
-                    <Text strong>{text}</Text>
-                </Space>
-            )
-        },
-        {
-            title: '走访目的',
-            dataIndex: 'purpose',
-            key: 'purpose',
-            sorter: true,
-            ellipsis: true,
-        },
-        {
-            title: '题目数量',
-            dataIndex: 'questionCount',
-            key: 'questionCount',
-            sorter: true,
-            width: 100,
-            render: (count: number) => <Tag color="cyan">{count} 题</Tag>,
-        },
-        {
-            title: '创建时间',
-            dataIndex: 'createdAt',
-            key: 'createdAt',
-            sorter: true,
-            width: 120,
-            render: (text: string) => dayjs(text).format('YYYY-MM-DD'),
-        },
-        {
-            title: '操作',
-            key: 'action',
-            width: 100,
-            render: (_: any, record: VisitQuestionnaire) => (
-                <Space>
-                    <Button type="link" icon={<EyeOutlined />} onClick={async () => {
-                        setSelectedQuestionnaire(record);
-                        setQuestionnaireDetailVisible(true);
-                        if (allQuestions.length === 0) {
-                            await loadAllQuestions();
-                        }
-                    }}>查看</Button>
-                    <Button type="link" icon={<EditOutlined />} onClick={async () => {
-                        setEditingQuestionnaire(record);
-                        questionnaireForm.setFieldsValue(record);
-                        setTargetKeys(record.questionIds || []);
-                        await loadAllQuestions();
-                        setIsQuestionnaireModalVisible(true);
-                    }}>编辑</Button>
-                    <Button type="link" danger icon={<DeleteOutlined />} onClick={() => handleDeleteQuestionnaire(record.id)}>删除</Button>
-                </Space>
-            ),
-        },
-    ];
-
     const handleDeleteQuestion = (id: string) => {
-        modal.confirm({
-            title: '确定要删除这个走访问题吗？',
-            icon: <InfoCircleOutlined />,
-            content: '删除后将无法在问卷组题中使用',
-            okText: '确定',
-            okType: 'danger',
-            cancelText: '取消',
-            onOk: async () => {
-                try {
-                    const res = await visitService.deleteQuestion(id);
-                    if (res.success) {
-                        message.success('删除成功');
-                        fetchQuestions();
-                    }
-                } catch (error) {
-                    message.error('删除失败');
-                }
-            },
-        });
+        modal.confirm({ title: '确定要删除这个走访问题吗？', icon: <QuestionCircleOutlined />, content: '删除后将无法在问卷组题中使用', okText: '确定', okType: 'danger', cancelText: '取消', onOk: async () => { const res = await api.deleteQuestion(id); if (res.success) { message.success('删除成功'); actionRef.current?.reload(); loadStatistics(); } } });
     };
 
     const handleDeleteQuestionnaire = (id: string) => {
-        modal.confirm({
-            title: '确定要删除这个问卷模板吗？',
-            icon: <InfoCircleOutlined />,
-            content: '删除后将无法使用该模版创建走访任务',
-            okText: '确定',
-            okType: 'danger',
-            cancelText: '取消',
-            onOk: async () => {
-                try {
-                    const res = await visitService.deleteQuestionnaire(id);
-                    if (res.success) {
-                        message.success('删除成功');
-                        fetchQuestionnaires();
-                    }
-                } catch (error) {
-                    message.error('删除失败');
-                }
-            },
-        });
+        modal.confirm({ title: '确定要删除这个问卷模板吗？', icon: <QuestionCircleOutlined />, content: '删除后将无法使用该模版创建走访任务', okText: '确定', okType: 'danger', cancelText: '取消', onOk: async () => { const res = await api.deleteQuestionnaire(id); if (res.success) { message.success('删除成功'); actionRef.current?.reload(); loadStatistics(); } } });
     };
 
     const handleMoveQuestion = (index: number, direction: 'up' | 'down') => {
-        const newTargetKeys = [...targetKeys];
+        const newTargetKeys = [...state.targetKeys];
         const swapIndex = direction === 'up' ? index - 1 : index + 1;
-
         if (swapIndex >= 0 && swapIndex < newTargetKeys.length) {
             [newTargetKeys[index], newTargetKeys[swapIndex]] = [newTargetKeys[swapIndex], newTargetKeys[index]];
-            setTargetKeys(newTargetKeys as string[]);
-            questionnaireForm.setFieldsValue({ questionIds: newTargetKeys });
+            set({ targetKeys: newTargetKeys as string[] });
         }
     };
 
+    const loadStatistics = () => { api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); };
+
+    useEffect(() => { loadStatistics(); loadAllQuestions(); }, []);
+
     return (
-        <PageContainer
-            title="走访知识库"
-            extra={
-                <Space>
-                    <Button icon={<ReloadOutlined />} onClick={() => { fetchQuestions(); fetchQuestionnaires(); loadStatistics(); }}>
-                        刷新
-                    </Button>
-                    {activeTab === 'questions' ? (
-                        <Button key="add-q" type="primary" icon={<PlusOutlined />} onClick={() => { setEditingQuestion(null); questionForm.resetFields(); setIsQuestionModalVisible(true); }}>
-                            新增问题
-                        </Button>
-                    ) : (
-                        <Button key="add-template" type="primary" icon={<PlusOutlined />} onClick={async () => {
-                            setEditingQuestionnaire(null);
-                            questionnaireForm.resetFields();
-                            setTargetKeys([]);
-                            await loadAllQuestions();
-                            setIsQuestionnaireModalVisible(true);
-                        }}>
-                            新增问卷
-                        </Button>
-                    )}
-                </Space>
-            }
-        >
-            <Tabs
-                activeKey={activeTab}
-                onChange={setActiveTab}
-                items={[
-                    {
-                        key: 'questions',
-                        label: '高频问题库',
-                        children: (
-                            <>
-                                <SearchBar
-                                    initialParams={searchParamsRef.current}
-                                    onSearch={(params) => {
-                                        searchParamsRef.current = { ...searchParamsRef.current, ...params };
-                                        setQuestionsPagination(prev => ({ ...prev, page: 1 }));
-                                        fetchQuestions();
-                                    }}
-                                    style={{ marginBottom: 16 }}
-                                />
-                                <Card>
-                                    <Table<VisitQuestion>
-                                        dataSource={questionsData}
-                                        columns={questionColumns as any}
-                                        rowKey="id"
-                                        loading={questionsLoading}
-                                        onChange={handleQuestionsTableChange}
-                                        pagination={{
-                                            current: questionsPagination.page,
-                                            pageSize: questionsPagination.pageSize,
-                                            total: questionsPagination.total,
-                                        }}
-                                        scroll={{ x: 800 }}
-                                    />
-                                </Card>
-                            </>
-                        )
-                    },
-                    {
-                        key: 'templates',
-                        label: '问卷模板',
-                        children: (
-                            <Card>
-                                <Table<VisitQuestionnaire>
-                                    dataSource={questionnairesData}
-                                    columns={questionnaireColumns as any}
-                                    rowKey="id"
-                                    loading={questionnairesLoading}
-                                    onChange={handleQuestionnairesTableChange}
-                                    pagination={{
-                                        current: questionnairesPagination.page,
-                                        pageSize: questionnairesPagination.pageSize,
-                                        total: questionnairesPagination.total,
-                                    }}
-                                    scroll={{ x: 800 }}
-                                />
-                            </Card>
-                        )
-                    }
-                ]}
-            />
-
-            <Modal
-                title={editingQuestion ? '编辑问题' : '新增问题'}
-                open={isQuestionModalVisible}
-                onCancel={() => setIsQuestionModalVisible(false)}
-                onOk={async () => {
-                    const values = await questionForm.validateFields();
-                    setLoading(true);
-                    try {
-                        const res = editingQuestion
-                            ? await visitService.updateQuestion(editingQuestion.id, values)
-                            : await visitService.createQuestion(values);
-                        if (res.success) {
-                            message.success('保存成功');
-                            setIsQuestionModalVisible(false);
-                            fetchQuestions();
-                        }
-                    } finally {
-                        setLoading(false);
-                    }
-                }}
-                width={600}
-                confirmLoading={loading}
-            >
-                <Form form={questionForm} layout="vertical">
-                    <Form.Item name="content" label="问题内容" rules={[{ required: true, message: '请输入问题内容' }]}>
-                        <Input.TextArea rows={2} placeholder="请输入走访过程中可能遇到的问题" />
-                    </Form.Item>
-                    <Form.Item name="category" label="分类">
-                        <Select placeholder="请选择分类">
-                            <Select.Option value="政策咨询">政策咨询</Select.Option>
-                            <Select.Option value="物业服务">物业服务</Select.Option>
-                            <Select.Option value="政务代办">政务代办</Select.Option>
-                        </Select>
-                    </Form.Item>
-                    <Form.Item name="answer" label="标准回答/解析">
-                        <Input.TextArea rows={4} placeholder="请输入针对该问题的标准回答或处理建议" />
-                    </Form.Item>
-                    <Form.Item name="isFrequentlyUsed" label="标记为常用" valuePropName="checked">
-                        <Switch />
-                    </Form.Item>
-                    <Form.Item name="sortOrder" label="排序值" extra="数值越小越靠前" initialValue={0}>
-                        <InputNumber style={{ width: '100%' }} precision={0} />
-                    </Form.Item>
-                    <Form.Item name="questionIds" hidden>
-                        <Select mode="multiple" />
-                    </Form.Item>
-                </Form>
-            </Modal>
-
-            <Modal
-                title={editingQuestionnaire ? '编辑问卷' : '新增问卷'}
-                open={isQuestionnaireModalVisible}
-                onCancel={() => setIsQuestionnaireModalVisible(false)}
-                onOk={async () => {
-                    const values = await questionnaireForm.validateFields();
-                    setLoading(true);
-                    try {
-                        const res = editingQuestionnaire
-                            ? await visitService.updateQuestionnaire(editingQuestionnaire.id, values)
-                            : await visitService.createQuestionnaire(values);
-                        if (res.success) {
-                            message.success('保存成功');
-                            setIsQuestionnaireModalVisible(false);
-                            fetchQuestionnaires();
-                        }
-                    } finally {
-                        setLoading(false);
-                    }
-                }}
-                width={800}
-                confirmLoading={loading}
-            >
-                <Form form={questionnaireForm} layout="vertical">
-                    <Form.Item name="title" label="问卷名称" rules={[{ required: true, message: '请输入问卷名称' }]}>
-                        <Input placeholder="例如：新入驻企业满意度调研" />
-                    </Form.Item>
-                    <Form.Item name="purpose" label="走访目的">
-                        <Input placeholder="例如：收集企业诉求，改进物业服务" />
-                    </Form.Item>
-                    <Form.Item name="sortOrder" label="排序值" extra="数值越小越靠前" initialValue={0}>
-                        <InputNumber style={{ width: '100%' }} precision={0} />
-                    </Form.Item>
-                    <Form.Item label="选择题目" required>
-                        <Transfer
-                            dataSource={allQuestions}
-                            showSearch
-                            listStyle={{
-                                width: 350,
-                                height: 400,
+        <PageContainer title="走访知识库" extra={
+            <Space>
+                <Button icon={<ReloadOutlined />} onClick={() => { actionRef.current?.reload(); loadStatistics(); }}>刷新</Button>
+                {state.activeTab === 'questions' ? (
+                    <Button type="primary" icon={<PlusOutlined />} onClick={() => set({ editingQuestion: null, questionModalVisible: true })}>新增问题</Button>
+                ) : (
+                    <Button type="primary" icon={<PlusOutlined />} onClick={async () => { set({ editingQuestionnaire: null, targetKeys: [] }); await loadAllQuestions(); set({ questionnaireModalVisible: true }); }}>新增问卷</Button>
+                )}
+            </Space>
+        }>
+            <Tabs activeKey={state.activeTab} onChange={(k) => set({ activeTab: k })} items={[
+                { key: 'questions', label: '高频问题库', children: (
+                    <Card>
+                        <ProTable actionRef={actionRef} rowKey="id"
+                            request={async (params: any) => {
+                                const { pageSize, current } = params;
+                                const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
+                                const res = await api.questions({ page: current, pageSize, search: state.searchText, ...sortParams });
+                                loadStatistics();
+                                return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
                             }}
-                            titles={['待选题目', '已选题目']}
-                            targetKeys={targetKeys}
-                            onChange={(nextTargetKeys) => {
-                                setTargetKeys(nextTargetKeys as string[]);
-                                questionnaireForm.setFieldsValue({ questionIds: nextTargetKeys });
+                            columns={questionColumns} search={false}
+                            toolBarRender={() => [
+                                <Input.Search key="search" placeholder="搜索..." style={{ width: 200 }} allowClear value={state.searchText} onChange={(e) => set({ searchText: e.target.value })} onSearch={(v) => { set({ searchText: v }); actionRef.current?.reload(); }} />,
+                            ]}
+                            onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
+                            pagination={{ pageSizeOptions: ['10', '20', '50', '100'], defaultPageSize: 20 }}
+                        />
+                    </Card>
+                )},
+                { key: 'templates', label: '问卷模板', children: (
+                    <Card>
+                        <ProTable actionRef={actionRef} rowKey="id"
+                            request={async (params: any) => {
+                                const { pageSize, current } = params;
+                                const res = await api.questionnaires({ page: current, pageSize });
+                                return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
                             }}
-                            render={item => item.content}
-                            rowKey={item => item.id}
-                        >
-                            {({ direction, filteredItems, onItemSelect }) => {
-                                if (direction === 'left') {
-                                    return (
-                                        <List
-                                            size="small"
-                                            dataSource={filteredItems}
-                                            style={{ height: '100%', overflow: 'auto' }}
-                                            renderItem={(item) => (
-                                                <List.Item
-                                                    onClick={() => onItemSelect(item.id as string, !targetKeys.includes(item.id))}
-                                                    style={{ cursor: 'pointer', padding: '8px 12px' }}
-                                                >
-                                                    <Space>
-                                                        {targetKeys.includes(item.id) ?
-                                                            <Tag color="blue">已选</Tag> :
-                                                            <div style={{ width: 34 }} />
-                                                        }
-                                                        <Text ellipsis style={{ width: 240 }}>{item.content}</Text>
-                                                    </Space>
-                                                </List.Item>
-                                            )}
-                                        />
-                                    );
-                                } else {
-                                    // Use targetKeys to maintain order
-                                    const sortedItems = targetKeys
-                                        .map(key => allQuestions.find(q => q.id === key))
-                                        .filter((item): item is VisitQuestion => !!item);
+                            columns={questionnaireColumns} search={false}
+                            toolBarRender={() => [
+                                <Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>刷新</Button>,
+                            ]}
+                            pagination={{ pageSizeOptions: ['10', '20', '50', '100'], defaultPageSize: 20 }}
+                        />
+                    </Card>
+                )}
+            ]} />
 
-                                    return (
-                                        <List
-                                            size="small"
-                                            dataSource={sortedItems}
-                                            style={{ height: '100%', overflow: 'auto' }}
-                                            renderItem={(item, index) => (
-                                                <List.Item
-                                                    actions={[
-                                                        <Button
-                                                            key="up"
-                                                            type="text"
-                                                            size="small"
-                                                            icon={<ArrowUpOutlined />}
-                                                            disabled={index === 0}
-                                                            onClick={(e) => { e.stopPropagation(); handleMoveQuestion(index, 'up'); }}
-                                                        />,
-                                                        <Button
-                                                            key="down"
-                                                            type="text"
-                                                            size="small"
-                                                            icon={<ArrowDownOutlined />}
-                                                            disabled={index === sortedItems.length - 1}
-                                                            onClick={(e) => { e.stopPropagation(); handleMoveQuestion(index, 'down'); }}
-                                                        />,
-                                                        <Button
-                                                            key="del"
-                                                            type="text"
-                                                            size="small"
-                                                            danger
-                                                            icon={<DeleteOutlined />}
-                                                            onClick={(e) => { e.stopPropagation(); onItemSelect(item.id, false); }}
-                                                        />
-                                                    ]}
-                                                    style={{ padding: '8px 12px' }}
-                                                >
-                                                    <Space>
-                                                        <Tag color="#108ee9">{index + 1}</Tag>
-                                                        <Text ellipsis={{ tooltip: item.content }} style={{ width: 180 }}>{item.content}</Text>
-                                                    </Space>
-                                                </List.Item>
-                                            )}
-                                        />
-                                    );
-                                }
-                            }}
-                        </Transfer>
-                    </Form.Item>
-                    <Form.Item name="questionIds" hidden>
-                        <Select mode="multiple" />
-                    </Form.Item>
-                </Form>
-            </Modal>
+            <ModalForm key={state.editingQuestion?.id || 'create-question'}
+                title={state.editingQuestion ? '编辑问题' : '新增问题'}
+                open={state.questionModalVisible}
+                onOpenChange={(open) => { if (!open) set({ questionModalVisible: false, editingQuestion: null }); }}
+                initialValues={state.editingQuestion ? { content: state.editingQuestion.content, category: state.editingQuestion.category ? [state.editingQuestion.category] : [], answer: state.editingQuestion.answer, isFrequentlyUsed: state.editingQuestion.isFrequentlyUsed, sortOrder: state.editingQuestion.sortOrder } : undefined}
+                onFinish={async (values) => {
+                    const data = { content: values.content, category: Array.isArray(values.category) ? values.category[0] : values.category, answer: values.answer, isFrequentlyUsed: values.isFrequentlyUsed, sortOrder: values.sortOrder };
+                    const res = state.editingQuestion ? await api.updateQuestion(state.editingQuestion.id, data) : await api.createQuestion(data);
+                    if (res.success) { message.success('保存成功'); set({ questionModalVisible: false, editingQuestion: null }); actionRef.current?.reload(); loadStatistics(); }
+                    return res.success;
+                }} autoFocusFirstInput width={600}>
+                <ProFormText name="content" label="问题内容" placeholder="请输入走访过程中可能遇到的问题" rules={[{ required: true, message: '请输入问题内容' }]} />
+                <ProFormSelect name="category" label="分类" placeholder="请选择分类" options={[{ label: '政策咨询', value: '政策咨询' }, { label: '物业服务', value: '物业服务' }, { label: '政务代办', value: '政务代办' }]} />
+                <ProFormText name="answer" label="标准回答/解析" placeholder="请输入针对该问题的标准回答或处理建议" />
+                <ProFormSelect name="isFrequentlyUsed" label="标记为常用" valueEnum={{ true: '是', false: '否' }} />
+                <ProFormText name="sortOrder" label="排序值" placeholder="数值越小越靠前" fieldProps={{ type: 'number' }} />
+            </ModalForm>
 
-            <Drawer
-                title="问题详情"
-                open={questionDetailVisible}
-                onClose={() => setQuestionDetailVisible(false)}
-                size={640}
-                extra={<Button onClick={() => setQuestionDetailVisible(false)}>关闭</Button>}
-            >
-                {selectedQuestion ? (
+            <ModalForm key={state.editingQuestionnaire?.id || 'create-questionnaire'}
+                title={state.editingQuestionnaire ? '编辑问卷' : '新增问卷'}
+                open={state.questionnaireModalVisible}
+                onOpenChange={(open) => { if (!open) set({ questionnaireModalVisible: false, editingQuestionnaire: null, targetKeys: [] }); }}
+                initialValues={state.editingQuestionnaire ? { title: state.editingQuestionnaire.title, purpose: state.editingQuestionnaire.purpose, sortOrder: state.editingQuestionnaire.sortOrder } : undefined}
+                onFinish={async (values) => {
+                    const data = { title: values.title, purpose: values.purpose, sortOrder: values.sortOrder, questionIds: state.targetKeys };
+                    const res = state.editingQuestionnaire ? await api.updateQuestionnaire(state.editingQuestionnaire.id, data) : await api.createQuestionnaire(data);
+                    if (res.success) { message.success('保存成功'); set({ questionnaireModalVisible: false, editingQuestionnaire: null, targetKeys: [] }); actionRef.current?.reload(); loadStatistics(); }
+                    return res.success;
+                }} autoFocusFirstInput width={800}>
+                <ProFormText name="title" label="问卷名称" placeholder="例如：新入驻企业满意度调研" rules={[{ required: true, message: '请输入问卷名称' }]} />
+                <ProFormText name="purpose" label="走访目的" placeholder="例如：收集企业诉求，改进物业服务" />
+                <ProFormText name="sortOrder" label="排序值" placeholder="数值越小越靠前" fieldProps={{ type: 'number' }} />
+                <div style={{ marginBottom: 24 }}><Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>选择题目</Typography.Text>
+                    <Transfer dataSource={state.allQuestions} showSearch listStyle={{ width: 350, height: 400 }} titles={['待选题目', '已选题目']} targetKeys={state.targetKeys} onChange={(keys) => set({ targetKeys: keys as string[] })} renderItem={item => item.content} rowKey={item => item.id}
+                        render={({ direction, filteredItems, onItemSelect }) => {
+                            if (direction === 'left') {
+                                return <List size="small" dataSource={filteredItems} style={{ height: '100%', overflow: 'auto' }} renderItem={(item) => <List.Item onClick={() => onItemSelect(item.id as string, !state.targetKeys.includes(item.id))} style={{ cursor: 'pointer', padding: '8px 12px' }}><Space>{state.targetKeys.includes(item.id) ? <Tag color="blue">已选</Tag> : <div style={{ width: 34 }} />}<Text ellipsis style={{ width: 240 }}>{item.content}</Text></Space></List.Item>} />;
+                            } else {
+                                const sortedItems = state.targetKeys.map(key => state.allQuestions.find(q => q.id === key)).filter((item): item is VisitQuestion => !!item);
+                                return <List size="small" dataSource={sortedItems} style={{ height: '100%', overflow: 'auto' }} renderItem={(item, index) => <List.Item actions={[<Button key="up" type="text" size="small" icon={<ArrowUpOutlined />} disabled={index === 0} onClick={(e) => { e.stopPropagation(); handleMoveQuestion(index, 'up'); }} />, <Button key="down" type="text" size="small" icon={<ArrowDownOutlined />} disabled={index === sortedItems.length - 1} onClick={(e) => { e.stopPropagation(); handleMoveQuestion(index, 'down'); }} />, <Button key="del" type="text" size="small" danger icon={<DeleteOutlined />} onClick={(e) => { e.stopPropagation(); onItemSelect(item.id, false); }} />]} style={{ padding: '8px 12px' }}><Space><Tag color="#108ee9">{index + 1}</Tag><Text ellipsis={{ tooltip: item.content }} style={{ width: 180 }}>{item.content}</Text></Space></List.Item>} />;
+                            }
+                        }}
+                    />
+                </div>
+            </ModalForm>
+
+            <Drawer title="问题详情" open={state.questionDetailVisible} onClose={() => set({ questionDetailVisible: false, selectedQuestion: null })} size={640} extra={<Button onClick={() => set({ questionDetailVisible: false })}>关闭</Button>}>
+                {state.selectedQuestion ? (
                     <Space direction="vertical" size="large" style={{ width: '100%' }}>
                         <Descriptions title="基本信息" bordered column={1}>
-                            <Descriptions.Item label="分类">
-                                <Tag color="blue">{selectedQuestion.category || '通用'}</Tag>
-                            </Descriptions.Item>
-                            <Descriptions.Item label="常用标记">
-                                {selectedQuestion.isFrequentlyUsed ? <StarFilled style={{ color: '#fadb14' }} /> : <StarOutlined style={{ color: '#d9d9d9' }} />}
-                            </Descriptions.Item>
+                            <Descriptions.Item label="分类"><Tag color="blue">{state.selectedQuestion.category || '通用'}</Tag></Descriptions.Item>
+                            <Descriptions.Item label="常用标记">{state.selectedQuestion.isFrequentlyUsed ? <StarFilled style={{ color: '#fadb14' }} /> : <StarOutlined style={{ color: '#d9d9d9' }} />}</Descriptions.Item>
                         </Descriptions>
-                        <Divider />
                         <Descriptions title="问题与回答" bordered column={1}>
-                            <Descriptions.Item label="问题内容">{selectedQuestion.content}</Descriptions.Item>
-                            <Descriptions.Item label="标准回答/解析">
-                                <Text style={{ whiteSpace: 'pre-wrap' }}>{selectedQuestion.answer || '暂无解析'}</Text>
-                            </Descriptions.Item>
+                            <Descriptions.Item label="问题内容">{state.selectedQuestion.content}</Descriptions.Item>
+                            <Descriptions.Item label="标准回答/解析"><Text style={{ whiteSpace: 'pre-wrap' }}>{state.selectedQuestion.answer || '暂无解析'}</Text></Descriptions.Item>
                         </Descriptions>
                     </Space>
                 ) : <Empty />}
             </Drawer>
 
-            <Drawer
-                title="问卷详情"
-                open={questionnaireDetailVisible}
-                onClose={() => setQuestionnaireDetailVisible(false)}
-                size={640}
-                extra={<Button onClick={() => setQuestionnaireDetailVisible(false)}>关闭</Button>}
-            >
-                {selectedQuestionnaire ? (
+            <Drawer title="问卷详情" open={state.questionnaireDetailVisible} onClose={() => set({ questionnaireDetailVisible: false, selectedQuestionnaire: null })} size={640} extra={<Button onClick={() => set({ questionnaireDetailVisible: false })}>关闭</Button>}>
+                {state.selectedQuestionnaire ? (
                     <Space direction="vertical" size="large" style={{ width: '100%' }}>
                         <Descriptions title="基本信息" bordered column={1}>
-                            <Descriptions.Item label="问卷名称">{selectedQuestionnaire.title}</Descriptions.Item>
-                            <Descriptions.Item label="走访目的">{selectedQuestionnaire.purpose || '-'}</Descriptions.Item>
-                            <Descriptions.Item label="题目数量">{selectedQuestionnaire.questionCount} 题</Descriptions.Item>
-                            <Descriptions.Item label="创建时间">{dayjs(selectedQuestionnaire.createdAt).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>
+                            <Descriptions.Item label="问卷名称">{state.selectedQuestionnaire.title}</Descriptions.Item>
+                            <Descriptions.Item label="走访目的">{state.selectedQuestionnaire.purpose || '-'}</Descriptions.Item>
+                            <Descriptions.Item label="题目数量">{state.selectedQuestionnaire.questionCount} 题</Descriptions.Item>
+                            <Descriptions.Item label="创建时间">{dayjs(state.selectedQuestionnaire.createdAt).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>
                         </Descriptions>
-                        <Divider />
                         <Card title="包含题目" size="small">
-                            <List
-                                size="small"
-                                dataSource={allQuestions.filter(q => selectedQuestionnaire.questionIds?.includes(q.id))}
-                                renderItem={(item, index) => (
-                                    <List.Item>
-                                        <Space direction="vertical" style={{ width: '100%' }}>
-                                            <Space>
-                                                <Tag color="#108ee9">{index + 1}</Tag>
-                                                <Text strong>{item.content}</Text>
-                                            </Space>
-                                            {item.answer && (
-                                                <div style={{ paddingLeft: 30, color: '#666', fontSize: 13 }}>
-                                                    <Text type="secondary">解析：</Text>
-                                                    <Text style={{ whiteSpace: 'pre-wrap' }}>{item.answer}</Text>
-                                                </div>
-                                            )}
-                                        </Space>
-                                    </List.Item>
-                                )}
-                                locale={{ emptyText: '该问卷暂无题目' }}
-                            />
+                            <List size="small" dataSource={state.allQuestions.filter(q => state.selectedQuestionnaire?.questionIds?.includes(q.id))} renderItem={(item, index) => <List.Item><Space direction="vertical" style={{ width: '100%' }}><Space><Tag color="#108ee9">{index + 1}</Tag><Text strong>{item.content}</Text></Space>{item.answer && <div style={{ paddingLeft: 30, color: '#666', fontSize: 13 }}><Text type="secondary">解析：</Text><Text style={{ whiteSpace: 'pre-wrap' }}>{item.answer}</Text></div>}</Space></List.Item>} locale={{ emptyText: '该问卷暂无题目' }} />
                         </Card>
                     </Space>
                 ) : <Empty />}

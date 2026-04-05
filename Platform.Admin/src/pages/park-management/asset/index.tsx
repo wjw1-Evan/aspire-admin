@@ -1,176 +1,176 @@
-import React, { useCallback, useRef, useState, useEffect } from 'react';
-import { Card, Form, Input, Select, Button, Modal, Drawer, App, Space, Row, Col, Tag, Typography, Descriptions, InputNumber, Tabs, Table, Badge, Statistic, Progress, Popconfirm, Flex, Upload, DatePicker } from 'antd';
+import React, { useRef, useState, useEffect } from 'react';
+import { PageContainer, StatCard } from '@/components';
+import { useIntl, request } from '@umijs/max';
+import { Tag, Space, Row, Col, Button, Input, Popconfirm, Drawer, Descriptions, Typography, Upload, DatePicker } from 'antd';
 import type { UploadFile } from 'antd';
-import { useIntl, useModel } from '@umijs/max';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, HomeOutlined, BankOutlined, EnvironmentOutlined, AreaChartOutlined, SyncOutlined, ReloadOutlined, UploadOutlined, PaperClipOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
-import type { ProColumns } from '@ant-design/pro-components';
-import PageContainer from '@/components/PageContainer';
-import SearchBar from '@/components/SearchBar';
-import StatCard from '@/components/StatCard';
-import * as parkService from '@/services/park';
-import * as cloudService from '@/services/cloud-storage/api';
-import type { Building, PropertyUnit, AssetStatistics, LeaseContract } from '@/services/park';
+import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
+import { ModalForm, ProFormText, ProFormSelect, ProFormDatePicker } from '@ant-design/pro-form';
+import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, HomeOutlined, BankOutlined, AreaChartOutlined, SyncOutlined, ReloadOutlined, UploadOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
+import { ApiResponse, PagedResult, PageParams } from '@/types/api-response';
 import dayjs from 'dayjs';
-import styles from './index.less';
-import type { PageParams } from '@/types/api-response';
 
 const { Text, Title } = Typography;
 
+// ==================== Types ====================
+interface Building {
+    id: string;
+    name: string;
+    address?: string;
+    totalFloors: number;
+    totalArea: number;
+    rentedArea: number;
+    occupancyRate: number;
+    buildingType?: string;
+    yearBuilt?: number;
+    deliveryDate?: string;
+    status: string;
+    description?: string;
+    coverImage?: string;
+    totalUnits: number;
+    availableUnits: number;
+    createdAt: string;
+    attachments?: string[];
+}
 
+interface PropertyUnit {
+    id: string;
+    buildingId: string;
+    buildingName?: string;
+    unitNumber: string;
+    floor: number;
+    area: number;
+    monthlyRent: number;
+    dailyRent?: number;
+    unitType: string;
+    description?: string;
+    status: string;
+    currentTenantId?: string;
+    currentTenantName?: string;
+    leaseEndDate?: string;
+    facilities?: string[];
+    images?: string[];
+    attachments?: string[];
+    leaseHistory?: LeaseContract[];
+}
+
+interface LeaseContract {
+    id: string;
+    tenantName: string;
+    contractNumber: string;
+    startDate: string;
+    endDate: string;
+    monthlyRent: number;
+    status: string;
+}
+
+interface AssetStatistics {
+    totalBuildings: number;
+    totalArea: number;
+    totalUnits: number;
+    availableUnits: number;
+    rentedUnits: number;
+    occupancyRate: number;
+    totalRentableArea: number;
+    rentedArea: number;
+    occupancyRateYoY?: number;
+    occupancyRateMoM?: number;
+    totalBuildingsYoY?: number;
+    totalBuildingsMoM?: number;
+}
+
+interface BuildingFormData {
+    name: string;
+    buildingType?: string;
+    address?: string;
+    totalFloors: number;
+    totalArea: number;
+    yearBuilt?: number;
+    deliveryDate?: string;
+    status?: string;
+    description?: string;
+    attachments?: string[];
+}
+
+interface PropertyUnitFormData {
+    buildingId: string;
+    unitNumber: string;
+    floor: number;
+    area: number;
+    unitType?: string;
+    monthlyRent?: number;
+    dailyRent?: number;
+    description?: string;
+    attachments?: string[];
+}
+
+// ==================== API ====================
+const api = {
+    statistics: (startDate?: string, endDate?: string) =>
+        request<ApiResponse<AssetStatistics>>('/api/park/asset/statistics', { method: 'GET', params: { startDate, endDate } }),
+    buildings: (params: PageParams) =>
+        request<ApiResponse<PagedResult<Building>>>('/api/park/buildings/list', { method: 'POST', data: params }),
+    building: (id: string) =>
+        request<ApiResponse<Building>>(`/api/park/buildings/${id}`, { method: 'GET' }),
+    createBuilding: (data: Partial<Building>) =>
+        request<ApiResponse<Building>>('/api/park/buildings', { method: 'POST', data }),
+    updateBuilding: (id: string, data: Partial<Building>) =>
+        request<ApiResponse<Building>>(`/api/park/buildings/${id}`, { method: 'PUT', data }),
+    deleteBuilding: (id: string) =>
+        request<ApiResponse<boolean>>(`/api/park/buildings/${id}`, { method: 'DELETE' }),
+    allBuildings: () =>
+        request<ApiResponse<PagedResult<Building>>>('/api/park/buildings/list', { method: 'POST', data: { page: 1, pageSize: 100 } }),
+    units: (params: PageParams & { buildingId?: string }) =>
+        request<ApiResponse<PagedResult<PropertyUnit>>>('/api/park/properties/list', { method: 'POST', data: params }),
+    unit: (id: string) =>
+        request<ApiResponse<PropertyUnit>>(`/api/park/properties/${id}`, { method: 'GET' }),
+    createUnit: (data: Partial<PropertyUnit>) =>
+        request<ApiResponse<PropertyUnit>>('/api/park/properties', { method: 'POST', data }),
+    updateUnit: (id: string, data: Partial<PropertyUnit>) =>
+        request<ApiResponse<PropertyUnit>>(`/api/park/properties/${id}`, { method: 'PUT', data }),
+    deleteUnit: (id: string) =>
+        request<ApiResponse<boolean>>(`/api/park/properties/${id}`, { method: 'DELETE' }),
+};
+
+// ==================== Main ====================
 const AssetManagement: React.FC = () => {
     const intl = useIntl();
-    const { message } = App.useApp();
-    const [buildingForm] = Form.useForm();
-    const [unitForm] = Form.useForm();
-    const searchParamsRef = useRef<PageParams>({ page: 1, pageSize: 10, search: '' });
+    const actionRef = useRef<ActionType | undefined>(undefined);
+    const buildingActionRef = useRef<ActionType | undefined>(undefined);
+    const unitActionRef = useRef<ActionType | undefined>(undefined);
+    const [state, setState] = useState({
+        statistics: null as AssetStatistics | null,
+        activeTab: 'buildings',
+        sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
+        searchText: '',
+    });
+    const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
 
-    const [activeTab, setActiveTab] = useState<string>('buildings');
-    const [statistics, setStatistics] = useState<AssetStatistics | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [buildingModalVisible, setBuildingModalVisible] = useState(false);
-    const [unitModalVisible, setUnitModalVisible] = useState(false);
-    const [detailDrawerVisible, setDetailDrawerVisible] = useState(false);
-    const [unitDetailDrawerVisible, setUnitDetailDrawerVisible] = useState(false);
-    const [currentBuilding, setCurrentBuilding] = useState<Building | null>(null);
-    const [currentUnit, setCurrentUnit] = useState<PropertyUnit | null>(null);
-    const [buildings, setBuildings] = useState<Building[]>([]);
-    const [isEdit, setIsEdit] = useState(false);
+    const [buildingState, setBuildingState] = useState({
+        modalVisible: false,
+        detailVisible: false,
+        editingBuilding: null as Building | null,
+        currentBuilding: null as Building | null,
+    });
+    const setBuilding = (partial: Partial<typeof buildingState>) => setBuildingState(prev => ({ ...prev, ...partial }));
 
-    const [buildingsData, setBuildingsData] = useState<Building[]>([]);
-    const [unitsData, setUnitsData] = useState<PropertyUnit[]>([]);
-    const [buildingsLoading, setBuildingsLoading] = useState(false);
-    const [unitsLoading, setUnitsLoading] = useState(false);
-    const [buildingsPagination, setBuildingsPagination] = useState({ page: 1, pageSize: 10, total: 0 });
-    const [unitsPagination, setUnitsPagination] = useState({ page: 1, pageSize: 10, total: 0 });
+    const [unitState, setUnitState] = useState({
+        modalVisible: false,
+        detailVisible: false,
+        editingUnit: null as PropertyUnit | null,
+        currentUnit: null as PropertyUnit | null,
+    });
+    const setUnit = (partial: Partial<typeof unitState>) => setUnitState(prev => ({ ...prev, ...partial }));
 
-    const [uploadModalVisible, setUploadModalVisible] = useState(false);
-    const [attachmentList, setAttachmentList] = useState<UploadFile[]>([]);
-
-    const loadStatistics = useCallback(async () => {
-        try {
-            const res = await parkService.getAssetStatistics();
-            if (res.success && res.data) {
-                setStatistics(res.data);
-            }
-        } catch (error) {
-            console.error('Failed to load statistics:', error);
-        }
-    }, []);
-
-    const loadBuildings = useCallback(async () => {
-        try {
-            const res = await parkService.getBuildings({ page: 1, pageSize: 100 });
-            if (res.success && res.data) {
-                setBuildings(res.data.queryable);
-            }
-        } catch (error) {
-            console.error('Failed to load buildings:', error);
-        }
-    }, []);
+    const [formState, setFormState] = useState({
+        buildings: [] as Building[],
+        attachments: [] as UploadFile[],
+    });
+    const setForm = (partial: Partial<typeof formState>) => setFormState(prev => ({ ...prev, ...partial }));
 
     useEffect(() => {
-        loadStatistics();
-        loadBuildings();
-    }, [loadStatistics, loadBuildings]);
-
-    const fetchBuildings = useCallback(async () => {
-        const currentParams = searchParamsRef.current;
-        setBuildingsLoading(true);
-        try {
-            const res = await parkService.getBuildings({
-                page: currentParams.page,
-                pageSize: currentParams.pageSize,
-                ...currentParams,
-            });
-            if (res.success && res.data) {
-                setBuildingsData(res.data.queryable || []);
-                setBuildingsPagination(prev => ({ ...prev, total: res.data!.rowCount ?? 0 }));
-            } else {
-                setBuildingsData([]);
-                setBuildingsPagination(prev => ({ ...prev, total: 0 }));
-            }
-        } catch {
-            setBuildingsData([]);
-            setBuildingsPagination(prev => ({ ...prev, total: 0 }));
-        } finally {
-            setBuildingsLoading(false);
-        }
+        api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
+        api.allBuildings().then(r => { if (r.success && r.data) setForm({ buildings: r.data.queryable || [] }); });
     }, []);
-
-    const fetchUnits = useCallback(async () => {
-        const currentParams = searchParamsRef.current;
-        setUnitsLoading(true);
-        try {
-            const res = await parkService.getPropertyUnits({
-                page: currentParams.page,
-                pageSize: currentParams.pageSize,
-                ...currentParams,
-            });
-            if (res.success && res.data) {
-                setUnitsData(res.data.queryable || []);
-                setUnitsPagination(prev => ({ ...prev, total: res.data!.rowCount ?? 0 }));
-            } else {
-                setUnitsData([]);
-                setUnitsPagination(prev => ({ ...prev, total: 0 }));
-            }
-        } catch {
-            setUnitsData([]);
-            setUnitsPagination(prev => ({ ...prev, total: 0 }));
-        } finally {
-            setUnitsLoading(false);
-        }
-    }, []);
-
-    const handleSearch = useCallback((params: PageParams) => {
-        searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
-        if (activeTab === 'buildings') {
-            setBuildingsPagination(prev => ({ ...prev, page: 1 }));
-            fetchBuildings();
-        } else {
-            setUnitsPagination(prev => ({ ...prev, page: 1 }));
-            fetchUnits();
-        }
-    }, [activeTab, fetchBuildings, fetchUnits]);
-
-    const handleBuildingsTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
-        const newPage = pag.current;
-        const newPageSize = pag.pageSize;
-        const sortBy = sorter?.field;
-        const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
-        
-        searchParamsRef.current = {
-            ...searchParamsRef.current,
-            page: newPage,
-            pageSize: newPageSize,
-            sortBy,
-            sortOrder,
-        };
-        fetchBuildings();
-    }, [fetchBuildings]);
-
-    const handleUnitsTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
-        const newPage = pag.current;
-        const newPageSize = pag.pageSize;
-        const sortBy = sorter?.field;
-        const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
-        
-        searchParamsRef.current = {
-            ...searchParamsRef.current,
-            page: newPage,
-            pageSize: newPageSize,
-            sortBy,
-            sortOrder,
-        };
-        fetchUnits();
-    }, [fetchUnits]);
-
-    useEffect(() => {
-        if (activeTab === 'buildings') {
-            fetchBuildings();
-        } else {
-            fetchUnits();
-        }
-    }, [activeTab, fetchBuildings, fetchUnits]);
 
     const buildingColumns: ProColumns<Building>[] = [
         {
@@ -181,7 +181,7 @@ const AssetManagement: React.FC = () => {
             render: (_, record) => (
                 <Space>
                     <BankOutlined style={{ color: '#1890ff' }} />
-                    <a onClick={() => handleViewBuilding(record)}>{record.name}</a>
+                    <a onClick={() => { setBuilding({ currentBuilding: record, detailVisible: true }); }}>{record.name}</a>
                 </Space>
             ),
         },
@@ -226,12 +226,9 @@ const AssetManagement: React.FC = () => {
             sorter: true,
             width: 120,
             render: (_, record) => (
-                <Progress
-                    percent={record.occupancyRate || 0}
-                    size="small"
-                    status={(record.occupancyRate || 0) >= 80 ? 'success' : (record.occupancyRate || 0) >= 50 ? 'normal' : 'exception'}
-                    strokeColor={(record.occupancyRate || 0) >= 80 ? '#52c41a' : (record.occupancyRate || 0) >= 50 ? '#1890ff' : '#faad14'}
-                />
+                <Tag color={(record.occupancyRate || 0) >= 80 ? 'success' : (record.occupancyRate || 0) >= 50 ? 'processing' : 'exception'}>
+                    {record.occupancyRate || 0}%
+                </Tag>
             ),
         },
         {
@@ -241,22 +238,13 @@ const AssetManagement: React.FC = () => {
             width: 140,
             align: 'center',
             render: (totalUnits, record) => (
-                <Flex vertical align="center" gap={0}>
-                    <Button
-                        type="link"
-                        size="small"
-                        style={{ fontWeight: 'bold', fontSize: 16 }}
-                        onClick={() => {
-                            setActiveTab('units');
-                            searchParamsRef.current = { ...searchParamsRef.current, buildingId: record.id };
-                            setUnitsPagination(prev => ({ ...prev, page: 1 }));
-                            fetchUnits();
-                        }}
-                    >
+                <Space vertical align="center">
+                    <Button type="link" size="small" style={{ fontWeight: 'bold', fontSize: 16, padding: 0 }}
+                        onClick={() => { set({ activeTab: 'units' }); unitActionRef.current?.reload(); }}>
                         {totalUnits}
                     </Button>
                     <Text type="secondary" style={{ fontSize: 12 }}>可用: {record.availableUnits}</Text>
-                </Flex>
+                </Space>
             ),
         },
         {
@@ -277,16 +265,26 @@ const AssetManagement: React.FC = () => {
             fixed: 'right',
             render: (_, record) => (
                 <Space>
-                    <Button type="link" icon={<EyeOutlined />} onClick={() => handleViewBuilding(record)}>
+                    <Button type="link" icon={<EyeOutlined />} onClick={() => setBuilding({ currentBuilding: record, detailVisible: true })}>
                         {intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}
                     </Button>
-                    <Button type="link" icon={<EditOutlined />} onClick={() => handleEditBuilding(record)}>
+                    <Button type="link" icon={<EditOutlined />} onClick={() => {
+                        setBuilding({ editingBuilding: record, modalVisible: true });
+                        setForm({
+                            attachments: (record.attachments || []).map((url, index) => {
+                                const fileName = url.split('/').pop() || 'file';
+                                const decodedName = decodeURIComponent(fileName);
+                                return { uid: `-${index}`, name: decodedName, status: 'done', url };
+                            })
+                        });
+                    }}>
                         {intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}
                     </Button>
-                    <Popconfirm
-                        title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })}
-                        onConfirm={() => handleDeleteBuilding(record.id)}
-                    >
+                    <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={async () => {
+                        await api.deleteBuilding(record.id);
+                        buildingActionRef.current?.reload();
+                        api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
+                    }}>
                         <Button type="link" danger icon={<DeleteOutlined />}>
                             {intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}
                         </Button>
@@ -305,7 +303,7 @@ const AssetManagement: React.FC = () => {
             render: (_, record) => (
                 <Space>
                     <HomeOutlined style={{ color: '#52c41a' }} />
-                    <a onClick={() => handleViewUnit(record)}>{record.unitNumber}</a>
+                    <a onClick={() => api.unit(record.id).then(r => { if (r.success && r.data) setUnit({ currentUnit: r.data, detailVisible: true }); })}>{record.unitNumber}</a>
                 </Space>
             ),
         },
@@ -373,17 +371,26 @@ const AssetManagement: React.FC = () => {
             fixed: 'right',
             render: (_, record) => (
                 <Space>
-                    <Button type="link" icon={<EyeOutlined />} onClick={() => handleViewUnit(record)}>
+                    <Button type="link" icon={<EyeOutlined />} onClick={() => api.unit(record.id).then(r => { if (r.success && r.data) setUnit({ currentUnit: r.data, detailVisible: true }); })}>
                         {intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}
                     </Button>
-                    <Button type="link" icon={<EditOutlined />} onClick={() => handleEditUnit(record)}>
+                    <Button type="link" icon={<EditOutlined />} onClick={() => {
+                        setUnit({ editingUnit: record, modalVisible: true });
+                        setForm({
+                            attachments: (record.attachments || []).map((url, index) => {
+                                const fileName = url.split('/').pop() || 'file';
+                                const decodedName = decodeURIComponent(fileName);
+                                return { uid: `-${index}`, name: decodedName, status: 'done', url };
+                            })
+                        });
+                    }}>
                         {intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}
                     </Button>
-
-                    <Popconfirm
-                        title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })}
-                        onConfirm={() => handleDeleteUnit(record.id)}
-                    >
+                    <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={async () => {
+                        await api.deleteUnit(record.id);
+                        unitActionRef.current?.reload();
+                        api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
+                    }}>
                         <Button type="link" danger icon={<DeleteOutlined />}>
                             {intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}
                         </Button>
@@ -393,231 +400,46 @@ const AssetManagement: React.FC = () => {
         },
     ];
 
-    const handleViewBuilding = (building: Building) => {
-        setCurrentBuilding(building);
-        setDetailDrawerVisible(true);
-    };
-
-    const handleViewUnit = async (unit: PropertyUnit) => {
-        setLoading(true);
-        try {
-            const res = await parkService.getPropertyUnit(unit.id);
-            if (res.success && res.data) {
-                setCurrentUnit(res.data);
-                setUnitDetailDrawerVisible(true);
-            }
-        } catch (error) {
-            message.error('获取房源详情失败');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleEditBuilding = (building: Building) => {
-        setCurrentBuilding(building);
-        setIsEdit(true);
-        buildingForm.setFieldsValue({
-            ...building,
-            deliveryDate: building.deliveryDate ? dayjs(building.deliveryDate) : undefined,
-        });
-        setAttachmentList((building.attachments || []).map((url, index) => {
-            const fileName = url.split('/').pop() || 'file';
-            const decodedName = decodeURIComponent(fileName);
-            return {
-                uid: `-${index}`,
-                name: decodedName,
-                status: 'done',
-                url: url,
-            };
-        }));
-        setBuildingModalVisible(true);
-    };
-
-    const handleDeleteBuilding = async (id: string) => {
-        try {
-            setLoading(true);
-            const res = await parkService.deleteBuilding(id);
-            if (res.success) {
-                message.success(intl.formatMessage({ id: 'common.deleteSuccess', defaultMessage: '删除成功' }));
-                fetchBuildings();
-                loadStatistics();
-                loadBuildings();
-            }
-        } catch (error) {
-            message.error(intl.formatMessage({ id: 'common.deleteFailed', defaultMessage: '删除失败' }));
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleAddBuilding = () => {
-        setCurrentBuilding(null);
-        setIsEdit(false);
-        buildingForm.resetFields();
-        setAttachmentList([]);
-        setBuildingModalVisible(true);
-    };
-
-    const handleBuildingSubmit = async () => {
-        try {
-            const values = await buildingForm.validateFields();
-            setLoading(true);
-
-            const attachmentUrls = attachmentList.map(item => {
-                if (item.response && item.response.data && item.response.data.path) {
-                    return item.response.data.path;
-                }
-                return item.url;
-            }).filter(url => url) as string[];
-
-            const submitValues = {
-                ...values,
-                deliveryDate: values.deliveryDate ? values.deliveryDate.toISOString() : undefined,
-                attachments: attachmentUrls
-            };
-
-            const res = isEdit && currentBuilding
-                ? await parkService.updateBuilding(currentBuilding.id, submitValues)
-                : await parkService.createBuilding(submitValues);
-
-            if (res.success) {
-                message.success(intl.formatMessage({
-                    id: isEdit ? 'common.updateSuccess' : 'common.createSuccess',
-                    defaultMessage: isEdit ? '更新成功' : '创建成功'
-                }));
-                setBuildingModalVisible(false);
-                fetchBuildings();
-                loadStatistics();
-                loadBuildings();
-            }
-        } catch (error) {
-            console.error('Submit failed:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleEditUnit = (unit: PropertyUnit) => {
-        setCurrentUnit(unit);
-        setIsEdit(true);
-        unitForm.setFieldsValue(unit);
-        setAttachmentList((unit.attachments || []).map((url, index) => {
-            const fileName = url.split('/').pop() || 'file';
-            const decodedName = decodeURIComponent(fileName);
-            return {
-                uid: `-${index}`,
-                name: decodedName,
-                status: 'done',
-                url: url,
-            };
-        }));
-        setUnitModalVisible(true);
-    };
-
-    const handleDeleteUnit = async (id: string) => {
-        try {
-            setLoading(true);
-            const res = await parkService.deletePropertyUnit(id);
-            if (res.success) {
-                message.success(intl.formatMessage({ id: 'common.deleteSuccess', defaultMessage: '删除成功' }));
-                fetchUnits();
-                loadStatistics();
-            }
-        } catch (error) {
-            message.error(intl.formatMessage({ id: 'common.deleteFailed', defaultMessage: '删除失败' }));
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleAddUnit = () => {
-        setCurrentUnit(null);
-        setIsEdit(false);
-        unitForm.resetFields();
-        setAttachmentList([]);
-        setUnitModalVisible(true);
-    };
-
-    const handleUnitSubmit = async () => {
-        try {
-            const values = await unitForm.validateFields();
-            setLoading(true);
-
-            const attachmentUrls = attachmentList.map(item => {
-                if (item.response && item.response.data && item.response.data.path) {
-                    return item.response.data.path;
-                }
-                return item.url;
-            }).filter(url => url) as string[];
-
-            const submitValues = { ...values, attachments: attachmentUrls };
-
-            const res = isEdit && currentUnit
-                ? await parkService.updatePropertyUnit(currentUnit.id, submitValues)
-                : await parkService.createPropertyUnit(submitValues);
-
-            if (res.success) {
-                message.success(intl.formatMessage({
-                    id: isEdit ? 'common.updateSuccess' : 'common.createSuccess',
-                    defaultMessage: isEdit ? '更新成功' : '创建成功'
-                }));
-                setUnitModalVisible(false);
-                fetchUnits();
-                loadStatistics();
-            }
-        } catch (error) {
-            console.error('Submit failed:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-
-    const handleRefresh = () => {
-        if (activeTab === 'buildings') {
-            fetchBuildings();
-        } else {
-            fetchUnits();
-        }
-        loadStatistics();
-    };
-
-    const handleAdd = () => {
-        if (activeTab === 'buildings') {
-            handleAddBuilding();
-        } else {
-            handleAddUnit();
-        }
-    };
-
     return (
         <PageContainer
             title={intl.formatMessage({ id: 'pages.park.asset.title', defaultMessage: '资产管理' })}
             extra={
                 <Space>
-                    <Button icon={<ReloadOutlined />} onClick={handleRefresh}>
+                    <Button icon={<ReloadOutlined />} onClick={() => {
+                        if (state.activeTab === 'buildings') buildingActionRef.current?.reload();
+                        else unitActionRef.current?.reload();
+                        api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
+                    }}>
                         {intl.formatMessage({ id: 'common.refresh', defaultMessage: '刷新' })}
                     </Button>
-                    <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-                        {activeTab === 'buildings'
+                    <Button type="primary" icon={<PlusOutlined />} onClick={() => {
+                        if (state.activeTab === 'buildings') {
+                            setBuilding({ editingBuilding: null, modalVisible: true });
+                            setForm({ attachments: [] });
+                        } else {
+                            setUnit({ editingUnit: null, modalVisible: true });
+                            setForm({ attachments: [] });
+                        }
+                    }}>
+                        {state.activeTab === 'buildings'
                             ? intl.formatMessage({ id: 'pages.park.asset.addBuilding', defaultMessage: '新增楼宇' })
                             : intl.formatMessage({ id: 'pages.park.asset.addUnit', defaultMessage: '新增房源' })}
                     </Button>
                 </Space>
             }
         >
-            {statistics && (
+            {state.statistics && (
                 <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
                     <Col xs={24} sm={12} md={6}>
                         <StatCard
                             title={intl.formatMessage({ id: 'pages.park.asset.stats.properties', defaultMessage: '物业总数' })}
-                            value={statistics.totalBuildings}
+                            value={state.statistics.totalBuildings}
                             icon={<BankOutlined />}
                             color="#1890ff"
-                            suffix={statistics.totalBuildingsMoM !== undefined && (
-                                <div style={{ fontSize: 12, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4, color: statistics.totalBuildingsMoM >= 0 ? '#52c41a' : '#ff4d4f' }}>
-                                    {statistics.totalBuildingsMoM >= 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
-                                    <span>{Math.abs(statistics.totalBuildingsMoM).toFixed(1)}%</span>
+                            suffix={state.statistics.totalBuildingsMoM !== undefined && (
+                                <div style={{ fontSize: 12, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4, color: state.statistics.totalBuildingsMoM >= 0 ? '#52c41a' : '#ff4d4f' }}>
+                                    {state.statistics.totalBuildingsMoM >= 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
+                                    <span>{Math.abs(state.statistics.totalBuildingsMoM).toFixed(1)}%</span>
                                 </div>
                             )}
                         />
@@ -625,20 +447,16 @@ const AssetManagement: React.FC = () => {
                     <Col xs={24} sm={12} md={6}>
                         <StatCard
                             title={intl.formatMessage({ id: 'pages.park.asset.stats.units', defaultMessage: '房源总数' })}
-                            value={statistics.totalUnits}
+                            value={state.statistics.totalUnits}
                             icon={<HomeOutlined />}
                             color="#52c41a"
-                            suffix={
-                                <Text type="secondary" style={{ fontSize: 12 }}>
-                                    可用: {statistics.availableUnits}
-                                </Text>
-                            }
+                            suffix={<Text type="secondary" style={{ fontSize: 12 }}>可用: {state.statistics.availableUnits}</Text>}
                         />
                     </Col>
                     <Col xs={24} sm={12} md={6}>
                         <StatCard
                             title={intl.formatMessage({ id: 'pages.park.asset.stats.area', defaultMessage: '总面积 (m²)' })}
-                            value={statistics.totalArea?.toLocaleString()}
+                            value={state.statistics.totalArea?.toLocaleString()}
                             icon={<AreaChartOutlined />}
                             color="#722ed1"
                         />
@@ -646,377 +464,224 @@ const AssetManagement: React.FC = () => {
                     <Col xs={24} sm={12} md={6}>
                         <StatCard
                             title={intl.formatMessage({ id: 'pages.park.asset.stats.occupancy', defaultMessage: '出租率' })}
-                            value={`${statistics.occupancyRate}%`}
+                            value={`${state.statistics.occupancyRate}%`}
                             icon={<SyncOutlined />}
-                            color={statistics.occupancyRate >= 80 ? '#52c41a' : statistics.occupancyRate >= 50 ? '#faad14' : '#f5222d'}
+                            color={state.statistics.occupancyRate >= 80 ? '#52c41a' : state.statistics.occupancyRate >= 50 ? '#faad14' : '#f5222d'}
                         />
                     </Col>
                 </Row>
             )}
 
-            <SearchBar
-                initialParams={searchParamsRef.current}
-                onSearch={handleSearch}
-                style={{ marginBottom: 16 }}
+            <ProTable
+                actionRef={actionRef}
+                params={{ activeTab: state.activeTab }}
+                request={async (params: any) => {
+                    const { pageSize, current, activeTab: tab } = params;
+                    const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
+                    
+                    if (tab === 'buildings' || !tab) {
+                        const res = await api.buildings({ page: current, pageSize, search: state.searchText, ...sortParams });
+                        return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+                    } else {
+                        const res = await api.units({ page: current, pageSize, search: state.searchText, ...sortParams });
+                        return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+                    }
+                }}
+                columns={state.activeTab === 'buildings' ? buildingColumns : unitColumns}
+                rowKey="id"
+                search={false}
+                pagination={{ pageSizeOptions: ['10', '20', '50', '100'], defaultPageSize: 10 }}
+                onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
+                toolBarRender={() => [
+                    <Input.Search key="search" placeholder="搜索..." style={{ width: 200 }} allowClear
+                        value={state.searchText} onChange={(e) => set({ searchText: e.target.value })}
+                        onSearch={(v) => { set({ searchText: v }); actionRef.current?.reload(); }} />,
+                ]}
+                tabs={{
+                    activeKey: state.activeTab,
+                    onChange: (key) => set({ activeTab: key }),
+                    items: [
+                        { key: 'buildings', label: <Space><BankOutlined />{intl.formatMessage({ id: 'pages.park.asset.buildings', defaultMessage: '楼宇管理' })}</Space> },
+                        { key: 'units', label: <Space><HomeOutlined />{intl.formatMessage({ id: 'pages.park.asset.units', defaultMessage: '房源管理' })}</Space> },
+                    ],
+                }}
             />
 
-            <Card>
-                <Tabs
-                    activeKey={activeTab}
-                    onChange={setActiveTab}
-                    items={[
-                        {
-                            key: 'buildings',
-                            label: (
-                                <Space>
-                                    <BankOutlined />
-                                    {intl.formatMessage({ id: 'pages.park.asset.buildings', defaultMessage: '楼宇管理' })}
-                                </Space>
-                            ),
-                            children: (
-                                <Table<Building>
-                                    dataSource={buildingsData}
-                                    columns={buildingColumns as any}
-                                    rowKey="id"
-                                    loading={buildingsLoading}
-                                    onChange={handleBuildingsTableChange}
-                                    pagination={{
-                                        current: buildingsPagination.page,
-                                        pageSize: buildingsPagination.pageSize,
-                                        total: buildingsPagination.total,
-                                    }}
-                                    scroll={{ x: 1300 }}
-                                />
-                            ),
-                        },
-                        {
-                            key: 'units',
-                            label: (
-                                <Space>
-                                    <HomeOutlined />
-                                    {intl.formatMessage({ id: 'pages.park.asset.units', defaultMessage: '房源管理' })}
-                                </Space>
-                            ),
-                            children: (
-                                <Table<PropertyUnit>
-                                    dataSource={unitsData}
-                                    columns={unitColumns as any}
-                                    rowKey="id"
-                                    loading={unitsLoading}
-                                    onChange={handleUnitsTableChange}
-                                    pagination={{
-                                        current: unitsPagination.page,
-                                        pageSize: unitsPagination.pageSize,
-                                        total: unitsPagination.total,
-                                    }}
-                                    scroll={{ x: 1100 }}
-                                />
-                            ),
-                        },
-                    ]}
-                />
-            </Card>
+            <ModalForm key={buildingState.editingBuilding?.id || 'create-building'}
+                title={buildingState.editingBuilding ? intl.formatMessage({ id: 'pages.park.asset.editBuilding', defaultMessage: '编辑楼宇' }) : intl.formatMessage({ id: 'pages.park.asset.addBuilding', defaultMessage: '新增楼宇' })}
+                open={buildingState.modalVisible}
+                onOpenChange={(open) => { if (!open) setBuilding({ modalVisible: false, editingBuilding: null }); }}
+                initialValues={buildingState.editingBuilding ? {
+                    name: buildingState.editingBuilding.name,
+                    buildingType: buildingState.editingBuilding.buildingType,
+                    address: buildingState.editingBuilding.address,
+                    totalFloors: buildingState.editingBuilding.totalFloors,
+                    totalArea: buildingState.editingBuilding.totalArea,
+                    yearBuilt: buildingState.editingBuilding.yearBuilt,
+                    deliveryDate: buildingState.editingBuilding.deliveryDate ? dayjs(buildingState.editingBuilding.deliveryDate) : undefined,
+                    status: buildingState.editingBuilding.status,
+                    description: buildingState.editingBuilding.description,
+                } : undefined}
+                onFinish={async (values) => {
+                    const attachmentUrls = formState.attachments.map(item => {
+                        if (item.response && item.response.data && item.response.data.path) return item.response.data.path;
+                        return item.url;
+                    }).filter(url => url) as string[];
 
-            <Modal
-                title={intl.formatMessage({
-                    id: isEdit ? 'pages.park.asset.editBuilding' : 'pages.park.asset.addBuilding',
-                    defaultMessage: isEdit ? '编辑楼宇' : '新增楼宇'
-                })}
-                open={buildingModalVisible}
-                onOk={handleBuildingSubmit}
-                onCancel={() => setBuildingModalVisible(false)}
-                confirmLoading={loading}
-                width={640}
+                    const data = {
+                        ...values,
+                        deliveryDate: values.deliveryDate ? values.deliveryDate.toISOString() : undefined,
+                        attachments: attachmentUrls,
+                    };
+                    const res = buildingState.editingBuilding ? await api.updateBuilding(buildingState.editingBuilding.id, data) : await api.createBuilding(data);
+                    if (res.success) {
+                        setBuilding({ modalVisible: false, editingBuilding: null });
+                        buildingActionRef.current?.reload();
+                        api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
+                        api.allBuildings().then(r => { if (r.success && r.data) setForm({ buildings: r.data.queryable || [] }); });
+                    }
+                    return res.success;
+                }}
+                autoFocusFirstInput width={640}
             >
-                <Form form={buildingForm} layout="vertical">
-                    <Row gutter={16}>
-                        <Col span={12}>
-                            <Form.Item
-                                name="name"
-                                label={intl.formatMessage({ id: 'pages.park.asset.building.name', defaultMessage: '楼宇名称' })}
-                                rules={[{ required: true, message: '请输入楼宇名称' }]}
-                            >
-                                <Input placeholder="请输入楼宇名称" />
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item
-                                name="buildingType"
-                                label={intl.formatMessage({ id: 'pages.park.asset.building.type', defaultMessage: '楼宇类型' })}
-                            >
-                                <Select
-                                    placeholder="请选择类型"
-                                    options={[
-                                        { label: '办公楼', value: 'Office' },
-                                        { label: '商业楼', value: 'Commercial' },
-                                        { label: '综合楼', value: 'Mixed' },
-                                    ]}
-                                />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Form.Item
-                        name="address"
-                        label={intl.formatMessage({ id: 'pages.park.asset.building.address', defaultMessage: '地址' })}
-                    >
-                        <Input placeholder="请输入楼宇地址" />
-                    </Form.Item>
-                    <Row gutter={16}>
-                        <Col span={12}>
-                            <Form.Item
-                                name="totalFloors"
-                                label={intl.formatMessage({ id: 'pages.park.asset.building.floors', defaultMessage: '总楼层' })}
-                                rules={[{ required: true, message: '请输入楼层数' }]}
-                            >
-                                <InputNumber min={1} max={200} style={{ width: '100%' }} placeholder="楼层数" />
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item
-                                name="totalArea"
-                                label={intl.formatMessage({ id: 'pages.park.asset.building.totalArea', defaultMessage: '总面积 (m²)' })}
-                                rules={[{ required: true, message: '请输入面积' }]}
-                            >
-                                <InputNumber min={0} style={{ width: '100%' }} placeholder="总面积" />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Row gutter={16}>
-                        <Col span={8}>
-                            <Form.Item
-                                name="yearBuilt"
-                                label={intl.formatMessage({ id: 'pages.park.asset.building.year', defaultMessage: '建成年份' })}
-                            >
-                                <InputNumber min={1900} max={2100} style={{ width: '100%' }} placeholder="建成年份" />
-                            </Form.Item>
-                        </Col>
-                        <Col span={8}>
-                            <Form.Item
-                                name="deliveryDate"
-                                label={intl.formatMessage({ id: 'pages.park.asset.building.deliveryDate', defaultMessage: '交付/取得日期' })}
-                                rules={[{ required: true, message: '请选择日期' }]}
-                            >
-                                <DatePicker style={{ width: '100%' }} placeholder="选择日期" />
-                            </Form.Item>
-                        </Col>
-                        <Col span={8}>
-                            <Form.Item
-                                name="status"
-                                label={intl.formatMessage({ id: 'common.status', defaultMessage: '状态' })}
-                            >
-                                <Select
-                                    placeholder="请选择状态"
-                                    options={[
-                                        { label: '正常', value: 'Active' },
-                                        { label: '维护中', value: 'Maintenance' },
-                                        { label: '停用', value: 'Inactive' },
-                                    ]}
-                                />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Form.Item
-                        name="description"
-                        label={intl.formatMessage({ id: 'common.description', defaultMessage: '描述' })}
-                    >
-                        <Input.TextArea rows={3} placeholder="请输入描述信息" />
-                    </Form.Item>
+                <ProFormText name="name" label="楼宇名称" placeholder="请输入楼宇名称" rules={[{ required: true, message: '请输入楼宇名称' }]} />
+                <ProFormSelect name="buildingType" label="楼宇类型" placeholder="请选择类型"
+                    options={[{ label: '办公楼', value: 'Office' }, { label: '商业楼', value: 'Commercial' }, { label: '综合楼', value: 'Mixed' }]} />
+                <ProFormText name="address" label="地址" placeholder="请输入楼宇地址" />
+                <Row gutter={16}>
+                    <Col span={12}>
+                        <ProFormText name="totalFloors" label="总楼层" placeholder="楼层数" rules={[{ required: true, message: '请输入楼层数' }]} fieldProps={{ type: 'number' }} />
+                    </Col>
+                    <Col span={12}>
+                        <ProFormText name="totalArea" label="总面积 (m²)" placeholder="总面积" rules={[{ required: true, message: '请输入面积' }]} fieldProps={{ type: 'number' }} />
+                    </Col>
+                </Row>
+                <Row gutter={16}>
+                    <Col span={8}>
+                        <ProFormText name="yearBuilt" label="建成年份" placeholder="建成年份" fieldProps={{ type: 'number' }} />
+                    </Col>
+                    <Col span={8}>
+                        <ProFormDatePicker name="deliveryDate" label="交付日期" placeholder="选择日期" />
+                    </Col>
+                    <Col span={8}>
+                        <ProFormSelect name="status" label="状态" placeholder="请选择状态"
+                            options={[{ label: '正常', value: 'Active' }, { label: '维护中', value: 'Maintenance' }, { label: '停用', value: 'Inactive' }]} />
+                    </Col>
+                </Row>
+                <ProFormText name="description" label="描述" placeholder="请输入描述信息" />
+                <div style={{ marginBottom: 24 }}>
+                    <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>楼宇附件</Typography.Text>
+                    <Upload action="/api/cloud-storage/upload" listType="picture" fileList={formState.attachments}
+                        onChange={({ fileList }) => setForm({ attachments: fileList })}
+                        headers={{ Authorization: `Bearer ${localStorage.getItem('token')}` }}
+                        data={(file) => ({ file, isPublic: false, description: 'Building Attachment' })}>
+                        <Button icon={<UploadOutlined />}>上传附件</Button>
+                    </Upload>
+                </div>
+            </ModalForm>
 
-                    <Form.Item
-                        label={intl.formatMessage({ id: 'pages.park.asset.building.uploadTitle', defaultMessage: '楼宇附件' })}
-                    >
-                        <Upload
-                            action="/api/cloud-storage/upload"
-                            listType="picture"
-                            fileList={attachmentList}
-                            onChange={({ fileList }) => setAttachmentList(fileList)}
-                            headers={{
-                                Authorization: `Bearer ${localStorage.getItem('token')}`,
-                            }}
-                            data={(file) => ({
-                                file: file,
-                                isPublic: false,
-                                description: 'Building Attachment'
-                            })}
-                        >
-                            <Button icon={<UploadOutlined />}>
-                                {intl.formatMessage({ id: 'common.upload', defaultMessage: '上传附件' })}
-                            </Button>
-                        </Upload>
-                        <div style={{ marginTop: 8 }}>
-                            <Text type="secondary" style={{ fontSize: 12 }}>
-                                {intl.formatMessage({ id: 'pages.park.asset.building.uploadDesc', defaultMessage: '楼宇附件（如外观图、平面图等），支持图片和文档格式' })}
-                            </Text>
-                        </div>
-                    </Form.Item>
-                </Form>
-            </Modal>
+            <ModalForm key={unitState.editingUnit?.id || 'create-unit'}
+                title={unitState.editingUnit ? intl.formatMessage({ id: 'pages.park.asset.editUnit', defaultMessage: '编辑房源' }) : intl.formatMessage({ id: 'pages.park.asset.addUnit', defaultMessage: '新增房源' })}
+                open={unitState.modalVisible}
+                onOpenChange={(open) => { if (!open) setUnit({ modalVisible: false, editingUnit: null }); }}
+                initialValues={unitState.editingUnit ? {
+                    buildingId: unitState.editingUnit.buildingId,
+                    unitNumber: unitState.editingUnit.unitNumber,
+                    floor: unitState.editingUnit.floor,
+                    area: unitState.editingUnit.area,
+                    unitType: unitState.editingUnit.unitType,
+                    monthlyRent: unitState.editingUnit.monthlyRent,
+                    dailyRent: unitState.editingUnit.dailyRent,
+                    description: unitState.editingUnit.description,
+                } : undefined}
+                onFinish={async (values) => {
+                    const attachmentUrls = formState.attachments.map(item => {
+                        if (item.response && item.response.data && item.response.data.path) return item.response.data.path;
+                        return item.url;
+                    }).filter(url => url) as string[];
 
-            <Modal
-                title={intl.formatMessage({
-                    id: isEdit ? 'pages.park.asset.editUnit' : 'pages.park.asset.addUnit',
-                    defaultMessage: isEdit ? '编辑房源' : '新增房源'
-                })}
-                open={unitModalVisible}
-                onOk={handleUnitSubmit}
-                onCancel={() => setUnitModalVisible(false)}
-                confirmLoading={loading}
-                width={640}
+                    const data = { ...values, attachments: attachmentUrls };
+                    const res = unitState.editingUnit ? await api.updateUnit(unitState.editingUnit.id, data) : await api.createUnit(data);
+                    if (res.success) {
+                        setUnit({ modalVisible: false, editingUnit: null });
+                        unitActionRef.current?.reload();
+                        api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
+                    }
+                    return res.success;
+                }}
+                autoFocusFirstInput width={640}
             >
-                <Form form={unitForm} layout="vertical">
-                    <Row gutter={16}>
-                        <Col span={12}>
-                            <Form.Item
-                                name="buildingId"
-                                label={intl.formatMessage({ id: 'pages.park.asset.unit.building', defaultMessage: '所属楼宇' })}
-                                rules={[{ required: true, message: '请选择楼宇' }]}
-                            >
-                                <Select
-                                    placeholder="请选择楼宇"
-                                    options={buildings.map(b => ({ label: b.name, value: b.id }))}
-                                />
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item
-                                name="unitNumber"
-                                label={intl.formatMessage({ id: 'pages.park.asset.unit.number', defaultMessage: '房源编号' })}
-                                rules={[{ required: true, message: '请输入房源编号' }]}
-                            >
-                                <Input placeholder="例如：A-101" />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Row gutter={16}>
-                        <Col span={8}>
-                            <Form.Item
-                                name="floor"
-                                label={intl.formatMessage({ id: 'pages.park.asset.unit.floor', defaultMessage: '楼层' })}
-                                rules={[{ required: true, message: '请输入楼层' }]}
-                            >
-                                <InputNumber min={-10} max={200} style={{ width: '100%' }} placeholder="楼层" />
-                            </Form.Item>
-                        </Col>
-                        <Col span={8}>
-                            <Form.Item
-                                name="area"
-                                label={intl.formatMessage({ id: 'pages.park.asset.unit.area', defaultMessage: '面积 (m²)' })}
-                                rules={[{ required: true, message: '请输入面积' }]}
-                            >
-                                <InputNumber min={0} style={{ width: '100%' }} placeholder="面积" />
-                            </Form.Item>
-                        </Col>
-                        <Col span={8}>
-                            <Form.Item
-                                name="unitType"
-                                label={intl.formatMessage({ id: 'pages.park.asset.unit.type', defaultMessage: '类型' })}
-                            >
-                                <Select
-                                    placeholder="请选择类型"
-                                    options={[
-                                        { label: '办公', value: 'Office' },
-                                        { label: '商铺', value: 'Commercial' },
-                                        { label: '仓储', value: 'Warehouse' },
-                                    ]}
-                                />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Row gutter={16}>
-                        <Col span={12}>
-                            <Form.Item
-                                name="monthlyRent"
-                                label={intl.formatMessage({ id: 'pages.park.asset.unit.rent', defaultMessage: '月租金 (元)' })}
-                                rules={[{ required: true, message: '请输入月租金' }]}
-                            >
-                                <InputNumber min={0} style={{ width: '100%' }} placeholder="月租金" />
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item
-                                name="dailyRent"
-                                label={intl.formatMessage({ id: 'pages.park.asset.unit.dailyRent', defaultMessage: '日租金 (元/m²)' })}
-                            >
-                                <InputNumber min={0} step={0.1} style={{ width: '100%' }} placeholder="日租金" />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Form.Item
-                        name="description"
-                        label={intl.formatMessage({ id: 'common.description', defaultMessage: '描述' })}
-                    >
-                        <Input.TextArea rows={3} placeholder="请输入描述信息" />
-                    </Form.Item>
-
-                    <Form.Item
-                        label={intl.formatMessage({ id: 'pages.park.asset.uploadTitle', defaultMessage: '房源附件' })}
-                    >
-                        <Upload
-                            action="/api/cloud-storage/upload"
-                            listType="picture"
-                            fileList={attachmentList}
-                            onChange={({ fileList }) => setAttachmentList(fileList)}
-                            headers={{
-                                Authorization: `Bearer ${localStorage.getItem('token')}`,
-                            }}
-                            data={(file) => ({
-                                file: file,
-                                isPublic: false,
-                                description: 'Property Unit Attachment'
-                            })}
-                        >
-                            <Button icon={<UploadOutlined />}>
-                                {intl.formatMessage({ id: 'common.upload', defaultMessage: '上传附件' })}
-                            </Button>
-                        </Upload>
-                        <div style={{ marginTop: 8 }}>
-                            <Text type="secondary" style={{ fontSize: 12 }}>
-                                {intl.formatMessage({ id: 'pages.park.asset.uploadDesc', defaultMessage: '房源附件（如平面图、实景图等），支持图片和文档格式' })}
-                            </Text>
-                        </div>
-                    </Form.Item>
-                </Form>
-            </Modal>
+                <ProFormSelect name="buildingId" label="所属楼宇" placeholder="请选择楼宇" rules={[{ required: true, message: '请选择楼宇' }]}
+                    options={formState.buildings.map(b => ({ label: b.name, value: b.id }))} />
+                <ProFormText name="unitNumber" label="房源编号" placeholder="例如：A-101" rules={[{ required: true, message: '请输入房源编号' }]} />
+                <Row gutter={16}>
+                    <Col span={8}>
+                        <ProFormText name="floor" label="楼层" placeholder="楼层" rules={[{ required: true, message: '请输入楼层' }]} fieldProps={{ type: 'number' }} />
+                    </Col>
+                    <Col span={8}>
+                        <ProFormText name="area" label="面积 (m²)" placeholder="面积" rules={[{ required: true, message: '请输入面积' }]} fieldProps={{ type: 'number' }} />
+                    </Col>
+                    <Col span={8}>
+                        <ProFormSelect name="unitType" label="类型" placeholder="请选择类型"
+                            options={[{ label: '办公', value: 'Office' }, { label: '商铺', value: 'Commercial' }, { label: '仓储', value: 'Warehouse' }]} />
+                    </Col>
+                </Row>
+                <Row gutter={16}>
+                    <Col span={12}>
+                        <ProFormText name="monthlyRent" label="月租金 (元)" placeholder="月租金" rules={[{ required: true, message: '请输入月租金' }]} fieldProps={{ type: 'number' }} />
+                    </Col>
+                    <Col span={12}>
+                        <ProFormText name="dailyRent" label="日租金 (元/m²)" placeholder="日租金" fieldProps={{ type: 'number' }} />
+                    </Col>
+                </Row>
+                <ProFormText name="description" label="描述" placeholder="请输入描述信息" />
+                <div style={{ marginBottom: 24 }}>
+                    <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>房源附件</Typography.Text>
+                    <Upload action="/api/cloud-storage/upload" listType="picture" fileList={formState.attachments}
+                        onChange={({ fileList }) => setForm({ attachments: fileList })}
+                        headers={{ Authorization: `Bearer ${localStorage.getItem('token')}` }}
+                        data={(file) => ({ file, isPublic: false, description: 'Property Unit Attachment' })}>
+                        <Button icon={<UploadOutlined />}>上传附件</Button>
+                    </Upload>
+                </div>
+            </ModalForm>
 
             <Drawer
-                title={currentBuilding?.name || intl.formatMessage({ id: 'pages.park.asset.buildingDetail', defaultMessage: '楼宇详情' })}
-                open={detailDrawerVisible}
-                onClose={() => setDetailDrawerVisible(false)}
+                title={buildingState.currentBuilding?.name || intl.formatMessage({ id: 'pages.park.asset.buildingDetail', defaultMessage: '楼宇详情' })}
+                open={buildingState.detailVisible}
+                onClose={() => setBuilding({ detailVisible: false, currentBuilding: null })}
                 size={640}
             >
-                {currentBuilding && (
+                {buildingState.currentBuilding && (
                     <div>
-                        <Descriptions
-                            bordered
-                            column={2}
-                            size="small"
-                            style={{ marginBottom: 24 }}
-                        >
-                            <Descriptions.Item label="楼宇名称">{currentBuilding.name}</Descriptions.Item>
+                        <Descriptions bordered column={2} size="small" style={{ marginBottom: 24 }}>
+                            <Descriptions.Item label="楼宇名称">{buildingState.currentBuilding.name}</Descriptions.Item>
                             <Descriptions.Item label="楼宇类型">
-                                <Tag color="blue">{currentBuilding.buildingType || '综合'}</Tag>
+                                <Tag color="blue">{buildingState.currentBuilding.buildingType || '综合'}</Tag>
                             </Descriptions.Item>
-                            <Descriptions.Item label="地址" span={2}>{currentBuilding.address || '-'}</Descriptions.Item>
-                            <Descriptions.Item label="总楼层">{currentBuilding.totalFloors}层</Descriptions.Item>
-                            <Descriptions.Item label="建成年份">{currentBuilding.yearBuilt || '-'}</Descriptions.Item>
-                            <Descriptions.Item label="交付/取得日期">{currentBuilding.deliveryDate ? dayjs(currentBuilding.deliveryDate).format('YYYY-MM-DD') : '-'}</Descriptions.Item>
-                            <Descriptions.Item label="总面积">{currentBuilding.totalArea?.toLocaleString()} m²</Descriptions.Item>
-                            <Descriptions.Item label="已租面积">{currentBuilding.rentedArea?.toLocaleString()} m²</Descriptions.Item>
+                            <Descriptions.Item label="地址" span={2}>{buildingState.currentBuilding.address || '-'}</Descriptions.Item>
+                            <Descriptions.Item label="总楼层">{buildingState.currentBuilding.totalFloors}层</Descriptions.Item>
+                            <Descriptions.Item label="建成年份">{buildingState.currentBuilding.yearBuilt || '-'}</Descriptions.Item>
+                            <Descriptions.Item label="交付/取得日期">{buildingState.currentBuilding.deliveryDate ? dayjs(buildingState.currentBuilding.deliveryDate).format('YYYY-MM-DD') : '-'}</Descriptions.Item>
+                            <Descriptions.Item label="总面积">{buildingState.currentBuilding.totalArea?.toLocaleString()} m²</Descriptions.Item>
+                            <Descriptions.Item label="已租面积">{buildingState.currentBuilding.rentedArea?.toLocaleString()} m²</Descriptions.Item>
                             <Descriptions.Item label="出租率">
-                                <Progress percent={currentBuilding.occupancyRate} size="small" style={{ width: 100 }} />
+                                <Tag color={(buildingState.currentBuilding.occupancyRate || 0) >= 80 ? 'green' : (buildingState.currentBuilding.occupancyRate || 0) >= 50 ? 'orange' : 'red'}>
+                                    {buildingState.currentBuilding.occupancyRate || 0}%
+                                </Tag>
                             </Descriptions.Item>
-                            <Descriptions.Item label="房源总数">{currentBuilding.totalUnits}</Descriptions.Item>
-                            <Descriptions.Item label="可用房源">{currentBuilding.availableUnits}</Descriptions.Item>
+                            <Descriptions.Item label="房源总数">{buildingState.currentBuilding.totalUnits}</Descriptions.Item>
+                            <Descriptions.Item label="可用房源">{buildingState.currentBuilding.availableUnits}</Descriptions.Item>
                             <Descriptions.Item label="状态">
-                                <Tag color={currentBuilding.status === 'Active' ? 'green' : 'orange'}>
-                                    {currentBuilding.status === 'Active' ? '正常' : '维护中'}
+                                <Tag color={buildingState.currentBuilding.status === 'Active' ? 'green' : 'orange'}>
+                                    {buildingState.currentBuilding.status === 'Active' ? '正常' : '维护中'}
                                 </Tag>
                             </Descriptions.Item>
                         </Descriptions>
-                        {currentBuilding.description && (
+                        {buildingState.currentBuilding.description && (
                             <div>
                                 <Title level={5}>描述</Title>
-                                <Text>{currentBuilding.description}</Text>
+                                <Text>{buildingState.currentBuilding.description}</Text>
                             </div>
                         )}
                     </div>
@@ -1024,101 +689,74 @@ const AssetManagement: React.FC = () => {
             </Drawer>
 
             <Drawer
-                title={currentUnit?.unitNumber || intl.formatMessage({ id: 'pages.park.asset.unitDetail', defaultMessage: '房源详情' })}
-                open={unitDetailDrawerVisible}
-                onClose={() => setUnitDetailDrawerVisible(false)}
+                title={unitState.currentUnit?.unitNumber || intl.formatMessage({ id: 'pages.park.asset.unitDetail', defaultMessage: '房源详情' })}
+                open={unitState.detailVisible}
+                onClose={() => setUnit({ detailVisible: false, currentUnit: null })}
                 size={720}
             >
-                {currentUnit && (
-                    <Flex vertical gap={24}>
+                {unitState.currentUnit && (
+                    <Space direction="vertical" style={{ width: '100%' }} size={24}>
                         <div>
                             <Title level={5} style={{ marginBottom: 16 }}>基本信息</Title>
                             <Descriptions bordered column={2} size="small">
-                                <Descriptions.Item label="房源编号">{currentUnit.unitNumber}</Descriptions.Item>
-                                <Descriptions.Item label="所属楼宇">{currentUnit.buildingName}</Descriptions.Item>
-                                <Descriptions.Item label="所在楼层">{currentUnit.floor}F</Descriptions.Item>
-                                <Descriptions.Item label="房源面积">{currentUnit.area} m²</Descriptions.Item>
-                                <Descriptions.Item label="房源类型">{currentUnit.unitType === 'Office' ? '办公' : currentUnit.unitType === 'Commercial' ? '商铺' : currentUnit.unitType || '其他'}</Descriptions.Item>
-                                <Descriptions.Item label="月租金">¥{currentUnit.monthlyRent?.toLocaleString()}</Descriptions.Item>
-                                <Descriptions.Item label="日租金">{currentUnit.dailyRent ? `¥${currentUnit.dailyRent?.toLocaleString()}/m²` : '-'}</Descriptions.Item>
-                                <Descriptions.Item label="状态">
-                                    <Tag color={currentUnit.status === 'Available' ? 'green' : 'blue'}>
-                                        {currentUnit.status === 'Available' ? '空置' : '已出租'}
+                                <Descriptions.Item label="房源编号">{unitState.currentUnit.unitNumber}</Descriptions.Item>
+                                <Descriptions.Item label="所属楼宇">{unitState.currentUnit.buildingName}</Descriptions.Item>
+                                <Descriptions.Item label="所在楼层">{unitState.currentUnit.floor}F</Descriptions.Item>
+                                <Descriptions.Item label="房源面积">{unitState.currentUnit.area} m²</Descriptions.Item>
+                                <Descriptions.Item label="房源类型">
+                                    <Tag color={unitState.currentUnit.unitType === 'Office' ? 'blue' : unitState.currentUnit.unitType === 'Commercial' ? 'green' : 'purple'}>
+                                        {unitState.currentUnit.unitType === 'Office' ? '办公' : unitState.currentUnit.unitType === 'Commercial' ? '商铺' : unitState.currentUnit.unitType || '其他'}
                                     </Tag>
                                 </Descriptions.Item>
-                                <Descriptions.Item label="当前租客">{currentUnit.currentTenantName || '-'}</Descriptions.Item>
-                                <Descriptions.Item label="租期到期" span={2}>{currentUnit.leaseEndDate ? dayjs(currentUnit.leaseEndDate).format('YYYY-MM-DD') : '-'}</Descriptions.Item>
+                                <Descriptions.Item label="月租金">¥{unitState.currentUnit.monthlyRent?.toLocaleString()}</Descriptions.Item>
+                                <Descriptions.Item label="日租金">{unitState.currentUnit.dailyRent ? `¥${unitState.currentUnit.dailyRent?.toLocaleString()}/m²` : '-'}</Descriptions.Item>
+                                <Descriptions.Item label="状态">
+                                    <Tag color={unitState.currentUnit.status === 'Available' ? 'green' : 'blue'}>
+                                        {unitState.currentUnit.status === 'Available' ? '空置' : '已出租'}
+                                    </Tag>
+                                </Descriptions.Item>
+                                <Descriptions.Item label="当前租客">{unitState.currentUnit.currentTenantName || '-'}</Descriptions.Item>
+                                <Descriptions.Item label="租期到期" span={2}>{unitState.currentUnit.leaseEndDate ? dayjs(unitState.currentUnit.leaseEndDate).format('YYYY-MM-DD') : '-'}</Descriptions.Item>
                             </Descriptions>
-                            {currentUnit.description && (
+                            {unitState.currentUnit.description && (
                                 <div style={{ marginTop: 16 }}>
                                     <Text type="secondary">描述信息：</Text>
-                                    <Text>{currentUnit.description}</Text>
+                                    <Text>{unitState.currentUnit.description}</Text>
                                 </div>
                             )}
                         </div>
-
                         <div>
-                            <Title level={5} style={{ marginBottom: 16 }}>出租历史 ({currentUnit.leaseHistory?.length || 0})</Title>
-                            <Table<LeaseContract>
-                                dataSource={currentUnit.leaseHistory || []}
-                                rowKey="id"
-                                size="small"
-                                pagination={false}
+                            <Title level={5} style={{ marginBottom: 16 }}>出租历史 ({unitState.currentUnit.leaseHistory?.length || 0})</Title>
+                            <ProTable
+                                actionRef={unitActionRef}
+                                request={async () => ({ data: unitState.currentUnit?.leaseHistory || [], total: unitState.currentUnit?.leaseHistory?.length || 0, success: true })}
                                 columns={[
+                                    { title: '租户名称', dataIndex: 'tenantName', key: 'tenantName' },
+                                    { title: '合同编号', dataIndex: 'contractNumber', key: 'contractNumber' },
                                     {
-                                        title: '租户名称',
-                                        dataIndex: 'tenantName',
-                                        key: 'tenantName',
-                                    },
-                                    {
-                                        title: '合同编号',
-                                        dataIndex: 'contractNumber',
-                                        key: 'contractNumber',
-                                    },
-                                    {
-                                        title: '租期',
-                                        key: 'period',
-                                        render: (_, record) => (
+                                        title: '租期', key: 'period', render: (_, record) => (
                                             <span style={{ fontSize: 12 }}>
                                                 {dayjs(record.startDate).format('YYYY-MM-DD')} ~ {dayjs(record.endDate).format('YYYY-MM-DD')}
                                             </span>
                                         ),
                                     },
+                                    { title: '月租金', dataIndex: 'monthlyRent', key: 'monthlyRent', render: (val) => `¥${val?.toLocaleString()}` },
                                     {
-                                        title: '月租金',
-                                        dataIndex: 'monthlyRent',
-                                        key: 'monthlyRent',
-                                        render: (val) => `¥${val?.toLocaleString()}`,
-                                    },
-                                    {
-                                        title: intl.formatMessage({ id: 'pages.park.contract.status', defaultMessage: '状态' }),
-                                        dataIndex: 'status',
-                                        key: 'status',
-                                        render: (status) => {
-                                            const statusColors: Record<string, string> = {
-                                                'Active': 'green',
-                                                'Expired': 'default',
-                                                'Renewed': 'cyan',
-                                                'Terminated': 'red'
-                                            };
-                                            return (
-                                                <Tag color={statusColors[status] || 'blue'}>
-                                                    {intl.formatMessage({
-                                                        id: `pages.park.contract.status.${status.toLowerCase()}`,
-                                                        defaultMessage: status
-                                                    })}
-                                                </Tag>
-                                            );
+                                        title: '状态', dataIndex: 'status', key: 'status', render: (status) => {
+                                            const statusColors: Record<string, string> = { 'Active': 'green', 'Expired': 'default', 'Renewed': 'cyan', 'Terminated': 'red' };
+                                            return <Tag color={statusColors[status] || 'blue'}>{status}</Tag>;
                                         }
-                                    }
+                                    },
                                 ]}
+                                rowKey="id"
+                                pagination={false}
+                                search={false}
+                                toolBarRender={false}
                             />
                         </div>
-                    </Flex>
+                    </Space>
                 )}
             </Drawer>
-
-
         </PageContainer>
     );
 };

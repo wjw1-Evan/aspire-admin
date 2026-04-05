@@ -1,158 +1,128 @@
-import React, { useCallback, useRef, useState, useEffect } from 'react';
-import { Card, Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typography, Descriptions, InputNumber, Tabs, Popconfirm, DatePicker, Flex, Drawer, Table, Progress } from 'antd';
+import React, { useRef, useState, useEffect } from 'react';
+import { PageContainer, StatCard } from '@/components';
 import { useIntl } from '@umijs/max';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, UserAddOutlined, ProjectOutlined, PhoneOutlined, MailOutlined, ReloadOutlined, SwapOutlined, TeamOutlined } from '@ant-design/icons';
-import type { ProColumns } from '@ant-design/pro-components';
-import PageContainer from '@/components/PageContainer';
-import SearchBar from '@/components/SearchBar';
-import StatCard from '@/components/StatCard';
-import * as parkService from '@/services/park';
-import type { InvestmentLead, InvestmentProject, InvestmentStatistics } from '@/services/park';
+import { request } from '@umijs/max';
+import { Card, Form, Input, Select, Button, App, Space, Row, Col, Tag, Typography, Descriptions, InputNumber, Tabs, Popconfirm, DatePicker, Flex, Drawer, Progress } from 'antd';
+import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
+import { ModalForm, ProFormText, ProFormSelect, ProFormDatePicker, ProFormDigit, ProFormTextArea } from '@ant-design/pro-form';
+import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, SwapOutlined, TeamOutlined, ProjectOutlined, PhoneOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
+import { ApiResponse, PagedResult, PageParams } from '@/types/api-response';
 import styles from './index.less';
-import type { PageParams } from '@/types/api-response';
 
 const { Text } = Typography;
 
+// ==================== Types ====================
+interface InvestmentLead {
+    id: string;
+    companyName: string;
+    contactPerson?: string;
+    phone?: string;
+    email?: string;
+    industry?: string;
+    source: string;
+    intendedArea?: number;
+    status: string;
+    priority: string;
+    assignedTo?: string;
+    assignedToName?: string;
+    nextFollowUpDate?: string;
+    budget?: number;
+    requirements?: string;
+    createdAt: string;
+}
 
+interface InvestmentProject {
+    id: string;
+    leadId?: string;
+    projectName: string;
+    companyName: string;
+    contactPerson?: string;
+    phone?: string;
+    intendedArea?: number;
+    proposedRent?: number;
+    stage: string;
+    expectedSignDate?: string;
+    probability?: number;
+    notes?: string;
+    assignedTo?: string;
+    assignedToName?: string;
+    createdAt: string;
+}
+
+interface InvestmentStatistics {
+    totalLeads: number;
+    newLeadsThisMonth: number;
+    totalProjects: number;
+    projectsInNegotiation: number;
+    signedProjects: number;
+    conversionRate: number;
+    leadsByStatus: Record<string, number>;
+    projectsByStage: Record<string, number>;
+}
+
+interface LeadFormData {
+    companyName: string;
+    industry?: string;
+    contactPerson?: string;
+    phone?: string;
+    email?: string;
+    source?: string;
+    priority?: string;
+    intendedArea?: number;
+    budget?: number;
+    nextFollowUpDate?: string;
+    requirements?: string;
+}
+
+interface ProjectFormData {
+    projectName: string;
+    companyName: string;
+    contactPerson?: string;
+    phone?: string;
+    intendedArea?: number;
+    proposedRent?: number;
+    probability?: number;
+    stage?: string;
+    expectedSignDate?: string;
+    notes?: string;
+}
+
+// ==================== API ====================
+const api = {
+    getStatistics: () => request<ApiResponse<InvestmentStatistics>>('/api/park/investment/statistics'),
+    getLeads: (params: PageParams) => request<ApiResponse<PagedResult<InvestmentLead>>>('/api/park/investment/leads/list', { method: 'POST', data: params }),
+    createLead: (data: Partial<InvestmentLead>) => request<ApiResponse<InvestmentLead>>('/api/park/investment/leads', { method: 'POST', data }),
+    updateLead: (id: string, data: Partial<InvestmentLead>) => request<ApiResponse<InvestmentLead>>(`/api/park/investment/leads/${id}`, { method: 'PUT', data }),
+    deleteLead: (id: string) => request<ApiResponse<boolean>>(`/api/park/investment/leads/${id}`, { method: 'DELETE' }),
+    convertLeadToProject: (id: string) => request<ApiResponse<InvestmentProject>>(`/api/park/investment/leads/${id}/convert`, { method: 'POST' }),
+    getProjects: (params: PageParams) => request<ApiResponse<PagedResult<InvestmentProject>>>('/api/park/investment/projects/list', { method: 'POST', data: params }),
+    createProject: (data: Partial<InvestmentProject>) => request<ApiResponse<InvestmentProject>>('/api/park/investment/projects', { method: 'POST', data }),
+    updateProject: (id: string, data: Partial<InvestmentProject>) => request<ApiResponse<InvestmentProject>>(`/api/park/investment/projects/${id}`, { method: 'PUT', data }),
+    deleteProject: (id: string) => request<ApiResponse<boolean>>(`/api/park/investment/projects/${id}`, { method: 'DELETE' }),
+};
+
+// ==================== Main ====================
 const InvestmentManagement: React.FC = () => {
     const intl = useIntl();
     const { message } = App.useApp();
-    const [leadForm] = Form.useForm();
-    const [projectForm] = Form.useForm();
-    const searchParamsRef = useRef<PageParams>({ page: 1, pageSize: 10, search: '' });
+    const leadsActionRef = useRef<ActionType | undefined>(undefined);
+    const projectsActionRef = useRef<ActionType | undefined>(undefined);
 
-    const [activeTab, setActiveTab] = useState<string>('leads');
-    const [statistics, setStatistics] = useState<InvestmentStatistics | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [leadModalVisible, setLeadModalVisible] = useState(false);
-    const [projectModalVisible, setProjectModalVisible] = useState(false);
-    const [leadDetailVisible, setLeadDetailVisible] = useState(false);
-    const [projectDetailVisible, setProjectDetailVisible] = useState(false);
-    const [currentLead, setCurrentLead] = useState<InvestmentLead | null>(null);
-    const [currentProject, setCurrentProject] = useState<InvestmentProject | null>(null);
-    const [isEdit, setIsEdit] = useState(false);
+    const [state, setState] = useState({
+        statistics: null as InvestmentStatistics | null,
+        activeTab: 'leads',
+        leadModalVisible: false,
+        projectModalVisible: false,
+        leadDetailVisible: false,
+        projectDetailVisible: false,
+        currentLead: null as InvestmentLead | null,
+        currentProject: null as InvestmentProject | null,
+        editingLead: null as InvestmentLead | null,
+        editingProject: null as InvestmentProject | null,
+    });
 
-    const [leadsData, setLeadsData] = useState<InvestmentLead[]>([]);
-    const [projectsData, setProjectsData] = useState<InvestmentProject[]>([]);
-    const [leadsLoading, setLeadsLoading] = useState(false);
-    const [projectsLoading, setProjectsLoading] = useState(false);
-    const [leadsPagination, setLeadsPagination] = useState({ page: 1, pageSize: 10, total: 0 });
-    const [projectsPagination, setProjectsPagination] = useState({ page: 1, pageSize: 10, total: 0 });
-
-    const loadStatistics = useCallback(async () => {
-        try {
-            const res = await parkService.getInvestmentStatistics();
-            if (res.success && res.data) {
-                setStatistics(res.data);
-            }
-        } catch (error) {
-            console.error('Failed to load statistics:', error);
-        }
-    }, []);
-
-    useEffect(() => {
-        loadStatistics();
-    }, [loadStatistics]);
-
-    const fetchLeads = useCallback(async () => {
-        const currentParams = searchParamsRef.current;
-        setLeadsLoading(true);
-        try {
-            const res = await parkService.getLeads({
-                page: currentParams.page ?? 1,
-                pageSize: currentParams.pageSize ?? 10,
-                ...currentParams,
-            });
-            if (res.success && res.data) {
-                setLeadsData(res.data.queryable || []);
-                setLeadsPagination(prev => ({ ...prev, total: res.data!.rowCount ?? 0 }));
-            } else {
-                setLeadsData([]);
-                setLeadsPagination(prev => ({ ...prev, total: 0 }));
-            }
-        } catch {
-            setLeadsData([]);
-            setLeadsPagination(prev => ({ ...prev, total: 0 }));
-        } finally {
-            setLeadsLoading(false);
-        }
-    }, []);
-
-    const fetchProjects = useCallback(async () => {
-        const currentParams = searchParamsRef.current;
-        setProjectsLoading(true);
-        try {
-            const res = await parkService.getProjects({
-                page: currentParams.page ?? 1,
-                pageSize: currentParams.pageSize ?? 10,
-                ...currentParams,
-            });
-            if (res.success && res.data) {
-                setProjectsData(res.data.queryable || []);
-                setProjectsPagination(prev => ({ ...prev, total: res.data!.rowCount ?? 0 }));
-            } else {
-                setProjectsData([]);
-                setProjectsPagination(prev => ({ ...prev, total: 0 }));
-            }
-        } catch {
-            setProjectsData([]);
-            setProjectsPagination(prev => ({ ...prev, total: 0 }));
-        } finally {
-            setProjectsLoading(false);
-        }
-    }, []);
-
-    const handleSearch = useCallback((params: PageParams) => {
-        searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
-        if (activeTab === 'leads') {
-            setLeadsPagination(prev => ({ ...prev, page: 1 }));
-            fetchLeads();
-        } else {
-            setProjectsPagination(prev => ({ ...prev, page: 1 }));
-            fetchProjects();
-        }
-    }, [activeTab, fetchLeads, fetchProjects]);
-
-    const handleLeadsTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
-        const newPage = pag.current;
-        const newPageSize = pag.pageSize;
-        const sortBy = sorter?.field;
-        const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
-        
-        searchParamsRef.current = {
-            ...searchParamsRef.current,
-            page: newPage,
-            pageSize: newPageSize,
-            sortBy,
-            sortOrder,
-        };
-        fetchLeads();
-    }, [fetchLeads]);
-
-    const handleProjectsTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
-        const newPage = pag.current;
-        const newPageSize = pag.pageSize;
-        const sortBy = sorter?.field;
-        const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
-        
-        searchParamsRef.current = {
-            ...searchParamsRef.current,
-            page: newPage,
-            pageSize: newPageSize,
-            sortBy,
-            sortOrder,
-        };
-        fetchProjects();
-    }, [fetchProjects]);
-
-    useEffect(() => {
-        if (activeTab === 'leads') {
-            fetchLeads();
-        } else {
-            fetchProjects();
-        }
-    }, [activeTab, fetchLeads, fetchProjects]);
+    const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
 
     const priorityOptions = [
         { label: '高', value: 'High', color: 'red' },
@@ -178,6 +148,62 @@ const InvestmentManagement: React.FC = () => {
         { label: '已终止', value: 'Cancelled', color: 'default' },
     ];
 
+    useEffect(() => {
+        api.getStatistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
+    }, []);
+
+    useEffect(() => {
+        if (state.activeTab === 'leads') {
+            leadsActionRef.current?.reload();
+        } else {
+            projectsActionRef.current?.reload();
+        }
+    }, [state.activeTab]);
+
+    const handleRefresh = () => {
+        api.getStatistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
+        if (state.activeTab === 'leads') {
+            leadsActionRef.current?.reload();
+        } else {
+            projectsActionRef.current?.reload();
+        }
+    };
+
+    const handleDeleteLead = async (id: string) => {
+        const res = await api.deleteLead(id);
+        if (res.success) {
+            message.success(intl.formatMessage({ id: 'common.deleteSuccess', defaultMessage: '删除成功' }));
+            leadsActionRef.current?.reload();
+            handleRefresh();
+        } else {
+            message.error(intl.formatMessage({ id: 'common.deleteFailed', defaultMessage: '删除失败' }));
+        }
+    };
+
+    const handleDeleteProject = async (id: string) => {
+        const res = await api.deleteProject(id);
+        if (res.success) {
+            message.success(intl.formatMessage({ id: 'common.deleteSuccess', defaultMessage: '删除成功' }));
+            projectsActionRef.current?.reload();
+            handleRefresh();
+        } else {
+            message.error(intl.formatMessage({ id: 'common.deleteFailed', defaultMessage: '删除失败' }));
+        }
+    };
+
+    const handleConvertToProject = async (leadId: string) => {
+        const res = await api.convertLeadToProject(leadId);
+        if (res.success) {
+            message.success(intl.formatMessage({ id: 'pages.park.investment.convertSuccess', defaultMessage: '转换成功' }));
+            set({ activeTab: 'projects' });
+            leadsActionRef.current?.reload();
+            projectsActionRef.current?.reload();
+            handleRefresh();
+        } else {
+            message.error(intl.formatMessage({ id: 'pages.park.investment.convertFailed', defaultMessage: '转换失败' }));
+        }
+    };
+
     const leadColumns: ProColumns<InvestmentLead>[] = [
         {
             title: intl.formatMessage({ id: 'pages.park.investment.lead.company', defaultMessage: '意向企业' }),
@@ -185,7 +211,7 @@ const InvestmentManagement: React.FC = () => {
             sorter: true,
             width: 180,
             render: (_, record) => (
-                <Space onClick={() => handleViewLead(record)} style={{ cursor: 'pointer', color: '#1890ff' }}>
+                <Space onClick={() => set({ currentLead: record, leadDetailVisible: true })} style={{ cursor: 'pointer', color: '#1890ff' }}>
                     <TeamOutlined />
                     <Text strong style={{ color: 'inherit' }}>{record.companyName}</Text>
                 </Space>
@@ -269,7 +295,7 @@ const InvestmentManagement: React.FC = () => {
             fixed: 'right',
             render: (_, record) => (
                 <Space>
-                    <Button type="link" icon={<EditOutlined />} onClick={() => handleEditLead(record)}>
+                    <Button type="link" icon={<EditOutlined />} onClick={() => set({ editingLead: record, leadModalVisible: true })}>
                         {intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}
                     </Button>
                     <Button
@@ -301,7 +327,7 @@ const InvestmentManagement: React.FC = () => {
             sorter: true,
             width: 200,
             render: (_, record) => (
-                <Space onClick={() => handleViewProject(record)} style={{ cursor: 'pointer', color: '#52c41a' }}>
+                <Space onClick={() => set({ currentProject: record, projectDetailVisible: true })} style={{ cursor: 'pointer', color: '#52c41a' }}>
                     <ProjectOutlined />
                     <Text strong style={{ color: 'inherit' }}>{record.projectName}</Text>
                 </Space>
@@ -366,7 +392,7 @@ const InvestmentManagement: React.FC = () => {
             fixed: 'right',
             render: (_, record) => (
                 <Space>
-                    <Button type="link" icon={<EditOutlined />} onClick={() => handleEditProject(record)}>
+                    <Button type="link" icon={<EditOutlined />} onClick={() => set({ editingProject: record, projectModalVisible: true })}>
                         {intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}
                     </Button>
                     <Popconfirm
@@ -382,178 +408,6 @@ const InvestmentManagement: React.FC = () => {
         },
     ];
 
-    const handleViewLead = (lead: InvestmentLead) => {
-        setCurrentLead(lead);
-        setLeadDetailVisible(true);
-    };
-
-    const handleViewProject = (project: InvestmentProject) => {
-        setCurrentProject(project);
-        setProjectDetailVisible(true);
-    };
-
-    const handleEditLead = (lead: InvestmentLead) => {
-        setCurrentLead(lead);
-        setIsEdit(true);
-        leadForm.setFieldsValue({
-            ...lead,
-            nextFollowUpDate: lead.nextFollowUpDate ? dayjs(lead.nextFollowUpDate) : undefined,
-        });
-        setLeadModalVisible(true);
-    };
-
-    const handleDeleteLead = async (id: string) => {
-        try {
-            setLoading(true);
-            const res = await parkService.deleteLead(id);
-            if (res.success) {
-                message.success(intl.formatMessage({ id: 'common.deleteSuccess', defaultMessage: '删除成功' }));
-                fetchLeads();
-                loadStatistics();
-            }
-        } catch (error) {
-            message.error(intl.formatMessage({ id: 'common.deleteFailed', defaultMessage: '删除失败' }));
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleConvertToProject = async (leadId: string) => {
-        try {
-            setLoading(true);
-            const res = await parkService.convertLeadToProject(leadId);
-            if (res.success) {
-                message.success(intl.formatMessage({ id: 'pages.park.investment.convertSuccess', defaultMessage: '转换成功' }));
-                fetchLeads();
-                fetchProjects();
-                loadStatistics();
-                setActiveTab('projects');
-            }
-        } catch (error) {
-            message.error(intl.formatMessage({ id: 'pages.park.investment.convertFailed', defaultMessage: '转换失败' }));
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleAddLead = () => {
-        setCurrentLead(null);
-        setIsEdit(false);
-        leadForm.resetFields();
-        setLeadModalVisible(true);
-    };
-
-    const handleLeadSubmit = async () => {
-        try {
-            const values = await leadForm.validateFields();
-            setLoading(true);
-
-            const submitData = {
-                ...values,
-                nextFollowUpDate: values.nextFollowUpDate?.toISOString(),
-            };
-
-            const res = isEdit && currentLead
-                ? await parkService.updateLead(currentLead.id, submitData)
-                : await parkService.createLead(submitData);
-
-            if (res.success) {
-                message.success(intl.formatMessage({
-                    id: isEdit ? 'common.updateSuccess' : 'common.createSuccess',
-                    defaultMessage: isEdit ? '更新成功' : '创建成功'
-                }));
-                setLeadModalVisible(false);
-                fetchLeads();
-                loadStatistics();
-            }
-        } catch (error) {
-            console.error('Submit failed:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleEditProject = (project: InvestmentProject) => {
-        setCurrentProject(project);
-        setIsEdit(true);
-        projectForm.setFieldsValue({
-            ...project,
-            expectedSignDate: project.expectedSignDate ? dayjs(project.expectedSignDate) : undefined,
-        });
-        setProjectModalVisible(true);
-    };
-
-    const handleDeleteProject = async (id: string) => {
-        try {
-            setLoading(true);
-            const res = await parkService.deleteProject(id);
-            if (res.success) {
-                message.success(intl.formatMessage({ id: 'common.deleteSuccess', defaultMessage: '删除成功' }));
-                fetchProjects();
-                loadStatistics();
-            }
-        } catch (error) {
-            message.error(intl.formatMessage({ id: 'common.deleteFailed', defaultMessage: '删除失败' }));
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleAddProject = () => {
-        setCurrentProject(null);
-        setIsEdit(false);
-        projectForm.resetFields();
-        setProjectModalVisible(true);
-    };
-
-    const handleProjectSubmit = async () => {
-        try {
-            const values = await projectForm.validateFields();
-            setLoading(true);
-
-            const submitData = {
-                ...values,
-                expectedSignDate: values.expectedSignDate?.toISOString(),
-            };
-
-            const res = isEdit && currentProject
-                ? await parkService.updateProject(currentProject.id, submitData)
-                : await parkService.createProject(submitData);
-
-            if (res.success) {
-                message.success(intl.formatMessage({
-                    id: isEdit ? 'common.updateSuccess' : 'common.createSuccess',
-                    defaultMessage: isEdit ? '更新成功' : '创建成功'
-                }));
-                setProjectModalVisible(false);
-                fetchProjects();
-                loadStatistics();
-            }
-        } catch (error) {
-            console.error('Submit failed:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-
-    const handleRefresh = () => {
-        if (activeTab === 'leads') {
-            fetchLeads();
-        } else {
-            fetchProjects();
-        }
-        loadStatistics();
-    };
-
-    const handleAdd = () => {
-        if (activeTab === 'leads') {
-            handleAddLead();
-        } else {
-            handleAddProject();
-        }
-    };
-
     return (
         <PageContainer
             title={intl.formatMessage({ id: 'pages.park.investment.title', defaultMessage: '招商管理' })}
@@ -562,29 +416,35 @@ const InvestmentManagement: React.FC = () => {
                     <Button icon={<ReloadOutlined />} onClick={handleRefresh}>
                         {intl.formatMessage({ id: 'common.refresh', defaultMessage: '刷新' })}
                     </Button>
-                    <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-                        {activeTab === 'leads'
+                    <Button type="primary" icon={<PlusOutlined />} onClick={() => {
+                        if (state.activeTab === 'leads') {
+                            set({ editingLead: null, leadModalVisible: true });
+                        } else {
+                            set({ editingProject: null, projectModalVisible: true });
+                        }
+                    }}>
+                        {state.activeTab === 'leads'
                             ? intl.formatMessage({ id: 'pages.park.investment.addLead', defaultMessage: '新增线索' })
                             : intl.formatMessage({ id: 'pages.park.investment.addProject', defaultMessage: '新增项目' })}
                     </Button>
                 </Space>
             }
         >
-            {statistics && (
+            {state.statistics && (
                 <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
                     <Col xs={24} sm={12} md={6}>
                         <StatCard
                             title={intl.formatMessage({ id: 'pages.park.investment.stats.leads', defaultMessage: '总线索数' })}
-                            value={statistics.totalLeads}
-                            icon={<UserAddOutlined />}
+                            value={state.statistics.totalLeads}
+                            icon={<TeamOutlined />}
                             color="#1890ff"
-                            suffix={<Text type="secondary" style={{ fontSize: 12 }}>本月新增: {statistics.newLeadsThisMonth}</Text>}
+                            suffix={<Text type="secondary" style={{ fontSize: 12 }}>本月新增: {state.statistics.newLeadsThisMonth}</Text>}
                         />
                     </Col>
                     <Col xs={24} sm={12} md={6}>
                         <StatCard
                             title={intl.formatMessage({ id: 'pages.park.investment.stats.projects', defaultMessage: '项目总数' })}
-                            value={statistics.totalProjects}
+                            value={state.statistics.totalProjects}
                             icon={<ProjectOutlined />}
                             color="#52c41a"
                         />
@@ -592,7 +452,7 @@ const InvestmentManagement: React.FC = () => {
                     <Col xs={24} sm={12} md={6}>
                         <StatCard
                             title={intl.formatMessage({ id: 'pages.park.investment.stats.negotiation', defaultMessage: '谈判中' })}
-                            value={statistics.projectsInNegotiation}
+                            value={state.statistics.projectsInNegotiation}
                             icon={<SwapOutlined />}
                             color="#faad14"
                         />
@@ -600,45 +460,38 @@ const InvestmentManagement: React.FC = () => {
                     <Col xs={24} sm={12} md={6}>
                         <StatCard
                             title={intl.formatMessage({ id: 'pages.park.investment.stats.conversion', defaultMessage: '转化率' })}
-                            value={`${statistics.conversionRate}%`}
+                            value={`${state.statistics.conversionRate}%`}
                             icon={<TeamOutlined />}
-                            color={statistics.conversionRate >= 30 ? '#52c41a' : statistics.conversionRate >= 15 ? '#faad14' : '#f5222d'}
+                            color={state.statistics.conversionRate >= 30 ? '#52c41a' : state.statistics.conversionRate >= 15 ? '#faad14' : '#f5222d'}
                         />
                     </Col>
                 </Row>
             )}
 
-            <SearchBar
-                initialParams={searchParamsRef.current}
-                onSearch={handleSearch}
-                style={{ marginBottom: 16 }}
-            />
-
             <Card>
                 <Tabs
-                    activeKey={activeTab}
-                    onChange={setActiveTab}
+                    activeKey={state.activeTab}
+                    onChange={(key) => set({ activeTab: key })}
                     items={[
                         {
                             key: 'leads',
                             label: (
                                 <Space>
-                                    <UserAddOutlined />
+                                    <TeamOutlined />
                                     {intl.formatMessage({ id: 'pages.park.investment.leads', defaultMessage: '招商线索' })}
                                 </Space>
                             ),
                             children: (
-                                <Table<InvestmentLead>
-                                    dataSource={leadsData}
-                                    columns={leadColumns as any}
-                                    rowKey="id"
-                                    loading={leadsLoading}
-                                    onChange={handleLeadsTableChange}
-                                    pagination={{
-                                        current: leadsPagination.page,
-                                        pageSize: leadsPagination.pageSize,
-                                        total: leadsPagination.total,
+                                <ProTable<InvestmentLead>
+                                    actionRef={leadsActionRef}
+                                    request={async (params: any) => {
+                                        const res = await api.getLeads({ page: params.current, pageSize: params.pageSize, ...params });
+                                        return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
                                     }}
+                                    columns={leadColumns}
+                                    rowKey="id"
+                                    search={false}
+                                    pagination={{ pageSizeOptions: ['10', '20', '50', '100'], defaultPageSize: 10 }}
                                     scroll={{ x: 1400 }}
                                 />
                             ),
@@ -652,17 +505,16 @@ const InvestmentManagement: React.FC = () => {
                                 </Space>
                             ),
                             children: (
-                                <Table<InvestmentProject>
-                                    dataSource={projectsData}
-                                    columns={projectColumns as any}
-                                    rowKey="id"
-                                    loading={projectsLoading}
-                                    onChange={handleProjectsTableChange}
-                                    pagination={{
-                                        current: projectsPagination.page,
-                                        pageSize: projectsPagination.pageSize,
-                                        total: projectsPagination.total,
+                                <ProTable<InvestmentProject>
+                                    actionRef={projectsActionRef}
+                                    request={async (params: any) => {
+                                        const res = await api.getProjects({ page: params.current, pageSize: params.pageSize, ...params });
+                                        return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
                                     }}
+                                    columns={projectColumns}
+                                    rowKey="id"
+                                    search={false}
+                                    pagination={{ pageSizeOptions: ['10', '20', '50', '100'], defaultPageSize: 10 }}
                                     scroll={{ x: 1300 }}
                                 />
                             ),
@@ -672,167 +524,187 @@ const InvestmentManagement: React.FC = () => {
             </Card>
 
             {/* 线索编辑弹窗 */}
-            <Modal
-                title={intl.formatMessage({ id: isEdit ? 'pages.park.investment.editLead' : 'pages.park.investment.addLead', defaultMessage: isEdit ? '编辑线索' : '新增线索' })}
-                open={leadModalVisible}
-                onOk={handleLeadSubmit}
-                onCancel={() => setLeadModalVisible(false)}
-                confirmLoading={loading}
+            <ModalForm
+                key={state.editingLead?.id || 'create-lead'}
+                title={state.editingLead ? intl.formatMessage({ id: 'pages.park.investment.editLead', defaultMessage: '编辑线索' }) : intl.formatMessage({ id: 'pages.park.investment.addLead', defaultMessage: '新增线索' })}
+                open={state.leadModalVisible}
+                onOpenChange={(open) => {
+                    if (!open) set({ leadModalVisible: false, editingLead: null });
+                }}
+                initialValues={state.editingLead ? {
+                    companyName: state.editingLead.companyName,
+                    industry: state.editingLead.industry,
+                    contactPerson: state.editingLead.contactPerson,
+                    phone: state.editingLead.phone,
+                    email: state.editingLead.email,
+                    source: state.editingLead.source ? [state.editingLead.source] : [],
+                    priority: state.editingLead.priority,
+                    intendedArea: state.editingLead.intendedArea,
+                    budget: state.editingLead.budget,
+                    nextFollowUpDate: state.editingLead.nextFollowUpDate ? dayjs(state.editingLead.nextFollowUpDate) : undefined,
+                    requirements: state.editingLead.requirements,
+                } : undefined}
+                onFinish={async (values) => {
+                    const data: Partial<InvestmentLead> = {
+                        ...values,
+                        source: Array.isArray(values.source) ? values.source[0] : values.source,
+                        nextFollowUpDate: values.nextFollowUpDate?.toISOString(),
+                    };
+                    const res = state.editingLead ? await api.updateLead(state.editingLead.id, data) : await api.createLead(data);
+                    if (res.success) {
+                        message.success(intl.formatMessage({ id: state.editingLead ? 'common.updateSuccess' : 'common.createSuccess', defaultMessage: state.editingLead ? '更新成功' : '创建成功' }));
+                        set({ leadModalVisible: false, editingLead: null });
+                        leadsActionRef.current?.reload();
+                        handleRefresh();
+                    }
+                    return res.success;
+                }}
+                autoFocusFirstInput
                 width={640}
             >
-                <Form form={leadForm} layout="vertical">
-                    <Row gutter={16}>
-                        <Col span={12}>
-                            <Form.Item name="companyName" label="企业名称" rules={[{ required: true, message: '请输入企业名称' }]}>
-                                <Input placeholder="请输入企业名称" />
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item name="industry" label="行业">
-                                <Input placeholder="请输入行业" />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Row gutter={16}>
-                        <Col span={8}>
-                            <Form.Item name="contactPerson" label="联系人">
-                                <Input placeholder="联系人姓名" />
-                            </Form.Item>
-                        </Col>
-                        <Col span={8}>
-                            <Form.Item name="phone" label="电话">
-                                <Input placeholder="联系电话" />
-                            </Form.Item>
-                        </Col>
-                        <Col span={8}>
-                            <Form.Item name="email" label="邮箱">
-                                <Input placeholder="邮箱地址" />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Row gutter={16}>
-                        <Col span={8}>
-                            <Form.Item name="source" label="来源">
-                                <Select placeholder="请选择" options={[
-                                    { label: '直接咨询', value: 'Direct' },
-                                    { label: '客户推荐', value: 'Referral' },
-                                    { label: '展会', value: 'Exhibition' },
-                                    { label: '官网', value: 'Website' },
-                                    { label: '其他', value: 'Other' },
-                                ]} />
-                            </Form.Item>
-                        </Col>
-                        <Col span={8}>
-                            <Form.Item name="priority" label="优先级">
-                                <Select placeholder="请选择" options={priorityOptions.map(o => ({ label: o.label, value: o.value }))} />
-                            </Form.Item>
-                        </Col>
-                        <Col span={8}>
-                            <Form.Item name="intendedArea" label="意向面积 (m²)">
-                                <InputNumber min={0} style={{ width: '100%' }} placeholder="意向面积" />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Row gutter={16}>
-                        <Col span={12}>
-                            <Form.Item name="budget" label="预算 (元/月)">
-                                <InputNumber min={0} style={{ width: '100%' }} placeholder="预算" />
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item name="nextFollowUpDate" label="下次跟进日期">
-                                <DatePicker style={{ width: '100%' }} />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Form.Item name="requirements" label="需求描述">
-                        <Input.TextArea rows={3} placeholder="请输入需求描述" />
-                    </Form.Item>
-                </Form>
-            </Modal>
+                <Row gutter={16}>
+                    <Col span={12}>
+                        <ProFormText name="companyName" label="企业名称" placeholder="请输入企业名称" rules={[{ required: true, message: '请输入企业名称' }]} />
+                    </Col>
+                    <Col span={12}>
+                        <ProFormText name="industry" label="行业" placeholder="请输入行业" />
+                    </Col>
+                </Row>
+                <Row gutter={16}>
+                    <Col span={8}>
+                        <ProFormText name="contactPerson" label="联系人" placeholder="联系人姓名" />
+                    </Col>
+                    <Col span={8}>
+                        <ProFormText name="phone" label="电话" placeholder="联系电话" />
+                    </Col>
+                    <Col span={8}>
+                        <ProFormText name="email" label="邮箱" placeholder="邮箱地址" />
+                    </Col>
+                </Row>
+                <Row gutter={16}>
+                    <Col span={8}>
+                        <ProFormSelect name="source" label="来源" placeholder="请选择"
+                            options={[
+                                { label: '直接咨询', value: 'Direct' },
+                                { label: '客户推荐', value: 'Referral' },
+                                { label: '展会', value: 'Exhibition' },
+                                { label: '官网', value: 'Website' },
+                                { label: '其他', value: 'Other' },
+                            ]}
+                        />
+                    </Col>
+                    <Col span={8}>
+                        <ProFormSelect name="priority" label="优先级" placeholder="请选择"
+                            options={priorityOptions.map(o => ({ label: o.label, value: o.value }))}
+                        />
+                    </Col>
+                    <Col span={8}>
+                        <ProFormDigit name="intendedArea" label="意向面积 (m²)" min={0} placeholder="意向面积" />
+                    </Col>
+                </Row>
+                <Row gutter={16}>
+                    <Col span={12}>
+                        <ProFormDigit name="budget" label="预算 (元/月)" min={0} placeholder="预算" />
+                    </Col>
+                    <Col span={12}>
+                        <ProFormDatePicker name="nextFollowUpDate" label="下次跟进日期" />
+                    </Col>
+                </Row>
+                <ProFormTextArea name="requirements" label="需求描述" placeholder="请输入需求描述" />
+            </ModalForm>
 
             {/* 项目编辑弹窗 */}
-            <Modal
-                title={intl.formatMessage({ id: isEdit ? 'pages.park.investment.editProject' : 'pages.park.investment.addProject', defaultMessage: isEdit ? '编辑项目' : '新增项目' })}
-                open={projectModalVisible}
-                onOk={handleProjectSubmit}
-                onCancel={() => setProjectModalVisible(false)}
-                confirmLoading={loading}
+            <ModalForm
+                key={state.editingProject?.id || 'create-project'}
+                title={state.editingProject ? intl.formatMessage({ id: 'pages.park.investment.editProject', defaultMessage: '编辑项目' }) : intl.formatMessage({ id: 'pages.park.investment.addProject', defaultMessage: '新增项目' })}
+                open={state.projectModalVisible}
+                onOpenChange={(open) => {
+                    if (!open) set({ projectModalVisible: false, editingProject: null });
+                }}
+                initialValues={state.editingProject ? {
+                    projectName: state.editingProject.projectName,
+                    companyName: state.editingProject.companyName,
+                    contactPerson: state.editingProject.contactPerson,
+                    phone: state.editingProject.phone,
+                    intendedArea: state.editingProject.intendedArea,
+                    proposedRent: state.editingProject.proposedRent,
+                    probability: state.editingProject.probability,
+                    stage: state.editingProject.stage ? [state.editingProject.stage] : [],
+                    expectedSignDate: state.editingProject.expectedSignDate ? dayjs(state.editingProject.expectedSignDate) : undefined,
+                    notes: state.editingProject.notes,
+                } : undefined}
+                onFinish={async (values) => {
+                    const data: Partial<InvestmentProject> = {
+                        ...values,
+                        stage: Array.isArray(values.stage) ? values.stage[0] : values.stage,
+                        expectedSignDate: values.expectedSignDate?.toISOString(),
+                    };
+                    const res = state.editingProject ? await api.updateProject(state.editingProject.id, data) : await api.createProject(data);
+                    if (res.success) {
+                        message.success(intl.formatMessage({ id: state.editingProject ? 'common.updateSuccess' : 'common.createSuccess', defaultMessage: state.editingProject ? '更新成功' : '创建成功' }));
+                        set({ projectModalVisible: false, editingProject: null });
+                        projectsActionRef.current?.reload();
+                        handleRefresh();
+                    }
+                    return res.success;
+                }}
+                autoFocusFirstInput
                 width={640}
             >
-                <Form form={projectForm} layout="vertical">
-                    <Row gutter={16}>
-                        <Col span={12}>
-                            <Form.Item name="projectName" label="项目名称" rules={[{ required: true, message: '请输入项目名称' }]}>
-                                <Input placeholder="请输入项目名称" />
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item name="companyName" label="企业名称" rules={[{ required: true, message: '请输入企业名称' }]}>
-                                <Input placeholder="请输入企业名称" />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Row gutter={16}>
-                        <Col span={12}>
-                            <Form.Item name="contactPerson" label="联系人">
-                                <Input placeholder="联系人姓名" />
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item name="phone" label="电话">
-                                <Input placeholder="联系电话" />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Row gutter={16}>
-                        <Col span={8}>
-                            <Form.Item name="intendedArea" label="意向面积 (m²)">
-                                <InputNumber min={0} style={{ width: '100%' }} placeholder="意向面积" />
-                            </Form.Item>
-                        </Col>
-                        <Col span={8}>
-                            <Form.Item name="proposedRent" label="报价租金 (元/月)">
-                                <InputNumber min={0} style={{ width: '100%' }} placeholder="报价租金" />
-                            </Form.Item>
-                        </Col>
-                        <Col span={8}>
-                            <Form.Item name="probability" label="成功率 (%)">
-                                <InputNumber min={0} max={100} style={{ width: '100%' }} placeholder="成功率" />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Row gutter={16}>
-                        <Col span={12}>
-                            <Form.Item name="stage" label="项目阶段">
-                                <Select placeholder="请选择" options={projectStageOptions.map(o => ({ label: o.label, value: o.value }))} />
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item name="expectedSignDate" label="预计签约日期">
-                                <DatePicker style={{ width: '100%' }} />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Form.Item name="notes" label="备注">
-                        <Input.TextArea rows={3} placeholder="请输入备注" />
-                    </Form.Item>
-                </Form>
-            </Modal>
+                <Row gutter={16}>
+                    <Col span={12}>
+                        <ProFormText name="projectName" label="项目名称" placeholder="请输入项目名称" rules={[{ required: true, message: '请输入项目名称' }]} />
+                    </Col>
+                    <Col span={12}>
+                        <ProFormText name="companyName" label="企业名称" placeholder="请输入企业名称" rules={[{ required: true, message: '请输入企业名称' }]} />
+                    </Col>
+                </Row>
+                <Row gutter={16}>
+                    <Col span={12}>
+                        <ProFormText name="contactPerson" label="联系人" placeholder="联系人姓名" />
+                    </Col>
+                    <Col span={12}>
+                        <ProFormText name="phone" label="电话" placeholder="联系电话" />
+                    </Col>
+                </Row>
+                <Row gutter={16}>
+                    <Col span={8}>
+                        <ProFormDigit name="intendedArea" label="意向面积 (m²)" min={0} placeholder="意向面积" />
+                    </Col>
+                    <Col span={8}>
+                        <ProFormDigit name="proposedRent" label="报价租金 (元/月)" min={0} placeholder="报价租金" />
+                    </Col>
+                    <Col span={8}>
+                        <ProFormDigit name="probability" label="成功率 (%)" min={0} max={100} placeholder="成功率" />
+                    </Col>
+                </Row>
+                <Row gutter={16}>
+                    <Col span={12}>
+                        <ProFormSelect name="stage" label="项目阶段" placeholder="请选择"
+                            options={projectStageOptions.map(o => ({ label: o.label, value: o.value }))}
+                        />
+                    </Col>
+                    <Col span={12}>
+                        <ProFormDatePicker name="expectedSignDate" label="预计签约日期" />
+                    </Col>
+                </Row>
+                <ProFormTextArea name="notes" label="备注" placeholder="请输入备注" />
+            </ModalForm>
+
             {/* 线索详情抽屉 */}
             <Drawer
                 title="线索详情"
                 size={600}
-                open={leadDetailVisible}
-                onClose={() => setLeadDetailVisible(false)}
+                open={state.leadDetailVisible}
+                onClose={() => set({ leadDetailVisible: false, currentLead: null })}
             >
-                {currentLead && (
+                {state.currentLead && (
                     <Descriptions column={1} bordered size="small">
-                        <Descriptions.Item label="企业名称">{currentLead.companyName}</Descriptions.Item>
-                        <Descriptions.Item label="行业">{currentLead.industry || '-'}</Descriptions.Item>
-                        <Descriptions.Item label="联系人">{currentLead.contactPerson || '-'}</Descriptions.Item>
-                        <Descriptions.Item label="电话">{currentLead.phone || '-'}</Descriptions.Item>
-                        <Descriptions.Item label="邮箱">{currentLead.email || '-'}</Descriptions.Item>
+                        <Descriptions.Item label="企业名称">{state.currentLead.companyName}</Descriptions.Item>
+                        <Descriptions.Item label="行业">{state.currentLead.industry || '-'}</Descriptions.Item>
+                        <Descriptions.Item label="联系人">{state.currentLead.contactPerson || '-'}</Descriptions.Item>
+                        <Descriptions.Item label="电话">{state.currentLead.phone || '-'}</Descriptions.Item>
+                        <Descriptions.Item label="邮箱">{state.currentLead.email || '-'}</Descriptions.Item>
                         <Descriptions.Item label="来源">
                             {(() => {
                                 const sourceMap: Record<string, string> = {
@@ -842,29 +714,29 @@ const InvestmentManagement: React.FC = () => {
                                     Website: '官网',
                                     Other: '其他',
                                 };
-                                return sourceMap[currentLead.source] || currentLead.source;
+                                return sourceMap[state.currentLead.source] || state.currentLead.source;
                             })()}
                         </Descriptions.Item>
                         <Descriptions.Item label="意向面积">
-                            {currentLead.intendedArea ? `${currentLead.intendedArea} m²` : '-'}
+                            {state.currentLead.intendedArea ? `${state.currentLead.intendedArea} m²` : '-'}
                         </Descriptions.Item>
                         <Descriptions.Item label="优先级">
                             {(() => {
-                                const opt = priorityOptions.find(o => o.value === currentLead.priority);
-                                return <Tag color={opt?.color}>{opt?.label || currentLead.priority}</Tag>;
+                                const opt = priorityOptions.find(o => o.value === state.currentLead.priority);
+                                return <Tag color={opt?.color}>{opt?.label || state.currentLead.priority}</Tag>;
                             })()}
                         </Descriptions.Item>
                         <Descriptions.Item label="当前状态">
                             {(() => {
-                                const opt = leadStatusOptions.find(o => o.value === currentLead.status);
-                                return <Tag color={opt?.color}>{opt?.label || currentLead.status}</Tag>;
+                                const opt = leadStatusOptions.find(o => o.value === state.currentLead.status);
+                                return <Tag color={opt?.color}>{opt?.label || state.currentLead.status}</Tag>;
                             })()}
                         </Descriptions.Item>
                         <Descriptions.Item label="下次跟进日期">
-                            {currentLead.nextFollowUpDate ? dayjs(currentLead.nextFollowUpDate).format('YYYY-MM-DD') : '-'}
+                            {state.currentLead.nextFollowUpDate ? dayjs(state.currentLead.nextFollowUpDate).format('YYYY-MM-DD') : '-'}
                         </Descriptions.Item>
                         <Descriptions.Item label="创建时间">
-                            {dayjs(currentLead.createdAt).format('YYYY-MM-DD HH:mm')}
+                            {dayjs(state.currentLead.createdAt).format('YYYY-MM-DD HH:mm')}
                         </Descriptions.Item>
                     </Descriptions>
                 )}
@@ -874,35 +746,35 @@ const InvestmentManagement: React.FC = () => {
             <Drawer
                 title="项目详情"
                 size={600}
-                open={projectDetailVisible}
-                onClose={() => setProjectDetailVisible(false)}
+                open={state.projectDetailVisible}
+                onClose={() => set({ projectDetailVisible: false, currentProject: null })}
             >
-                {currentProject && (
+                {state.currentProject && (
                     <Descriptions column={1} bordered size="small">
-                        <Descriptions.Item label="项目名称">{currentProject.projectName}</Descriptions.Item>
-                        <Descriptions.Item label="企业名称">{currentProject.companyName}</Descriptions.Item>
-                        <Descriptions.Item label="联系人">{currentProject.contactPerson || '-'}</Descriptions.Item>
-                        <Descriptions.Item label="电话">{currentProject.phone || '-'}</Descriptions.Item>
+                        <Descriptions.Item label="项目名称">{state.currentProject.projectName}</Descriptions.Item>
+                        <Descriptions.Item label="企业名称">{state.currentProject.companyName}</Descriptions.Item>
+                        <Descriptions.Item label="联系人">{state.currentProject.contactPerson || '-'}</Descriptions.Item>
+                        <Descriptions.Item label="电话">{state.currentProject.phone || '-'}</Descriptions.Item>
                         <Descriptions.Item label="意向面积">
-                            {currentProject.intendedArea ? `${currentProject.intendedArea} m²` : '-'}
+                            {state.currentProject.intendedArea ? `${state.currentProject.intendedArea} m²` : '-'}
                         </Descriptions.Item>
                         <Descriptions.Item label="报价租金">
-                            {currentProject.proposedRent ? `¥${currentProject.proposedRent?.toLocaleString()}/月` : '-'}
+                            {state.currentProject.proposedRent ? `¥${state.currentProject.proposedRent?.toLocaleString()}/月` : '-'}
                         </Descriptions.Item>
                         <Descriptions.Item label="当前阶段">
                             {(() => {
-                                const opt = projectStageOptions.find(o => o.value === currentProject.stage);
-                                return <Tag color={opt?.color}>{opt?.label || currentProject.stage}</Tag>;
+                                const opt = projectStageOptions.find(o => o.value === state.currentProject.stage);
+                                return <Tag color={opt?.color}>{opt?.label || state.currentProject.stage}</Tag>;
                             })()}
                         </Descriptions.Item>
                         <Descriptions.Item label="成功率">
-                            <Progress percent={currentProject.probability as number} size="small" />
+                            <Progress percent={state.currentProject.probability as number} size="small" />
                         </Descriptions.Item>
                         <Descriptions.Item label="预计签约日期">
-                            {currentProject.expectedSignDate ? dayjs(currentProject.expectedSignDate).format('YYYY-MM-DD') : '-'}
+                            {state.currentProject.expectedSignDate ? dayjs(state.currentProject.expectedSignDate).format('YYYY-MM-DD') : '-'}
                         </Descriptions.Item>
                         <Descriptions.Item label="创建时间">
-                            {dayjs(currentProject.createdAt).format('YYYY-MM-DD HH:mm')}
+                            {dayjs(state.currentProject.createdAt).format('YYYY-MM-DD HH:mm')}
                         </Descriptions.Item>
                     </Descriptions>
                 )}

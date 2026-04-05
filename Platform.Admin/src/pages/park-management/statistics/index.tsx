@@ -1,6 +1,7 @@
-import React, { useCallback, useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Spin, Tabs, Typography, Progress, Tag, Empty, Button, Space, Table, DatePicker, Modal } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Card, Row, Col, Statistic, Spin, Tabs, Typography, Progress, Tag, Empty, Button, Space, Table, Modal } from 'antd';
 import { useIntl } from '@umijs/max';
+import { request } from '@umijs/max';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import { marked } from 'marked';
@@ -12,7 +13,6 @@ import {
     ArrowUpOutlined,
     ArrowDownOutlined,
     ReloadOutlined,
-    HomeOutlined,
     FundProjectionScreenOutlined,
     UserSwitchOutlined,
     StarOutlined,
@@ -23,15 +23,80 @@ import {
     RobotOutlined,
 } from '@ant-design/icons';
 import PageContainer from '@/components/PageContainer';
-import * as parkService from '@/services/park';
-import { StatisticsPeriod } from '@/services/park';
-import type { AssetStatistics, InvestmentStatistics, TenantStatistics, ServiceStatistics } from '@/services/park';
 import StatisticsPeriodSelector from '@/components/StatisticsPeriodSelector';
 import { OverviewCards } from './components';
+import { ApiResponse } from '@/types/api-response';
 import styles from './index.less';
 
-const { Text, Title } = Typography;
-const { RangePicker } = DatePicker;
+const { Text } = Typography;
+
+interface AssetStatistics {
+    totalBuildings: number;
+    totalArea: number;
+    totalUnits: number;
+    availableUnits: number;
+    rentedUnits: number;
+    occupancyRate: number;
+    totalRentableArea: number;
+    rentedArea: number;
+    occupancyRateYoY?: number;
+    occupancyRateMoM?: number;
+    totalBuildingsYoY?: number;
+    totalBuildingsMoM?: number;
+}
+
+interface InvestmentStatistics {
+    totalLeads: number;
+    newLeadsThisMonth: number;
+    totalProjects: number;
+    projectsInNegotiation: number;
+    signedProjects: number;
+    conversionRate: number;
+    leadsByStatus: Record<string, number>;
+    projectsByStage: Record<string, number>;
+    totalLeadsYoY?: number;
+    newLeadsMoM?: number;
+    conversionRateYoY?: number;
+}
+
+interface TenantStatistics {
+    totalTenants: number;
+    activeTenants: number;
+    totalContracts: number;
+    activeContracts: number;
+    expiringContracts: number;
+    totalMonthlyRent: number;
+    tenantsByIndustry: Record<string, number>;
+    totalReceived: number;
+    totalExpected: number;
+    collectionRate: number;
+    receivedByPaymentType: Record<string, number>;
+    totalContractAmount: number;
+    totalTenantsYoY?: number;
+    activeTenantsMoM?: number;
+    rentIncomeYoY?: number;
+    rentIncomeMoM?: number;
+    monthlyRentYoY?: number;
+    monthlyRentMoM?: number;
+    activeTenantsYoY?: number;
+    yearlyEstimate?: number;
+    rentIncome?: number;
+}
+
+interface ServiceStatistics {
+    totalCategories: number;
+    activeCategories: number;
+    totalRequests: number;
+    pendingRequests: number;
+    processingRequests: number;
+    completedRequests: number;
+    averageRating: number;
+    requestsByCategory: Record<string, number>;
+    requestsByStatus: Record<string, number>;
+    totalRequestsYoY?: number;
+    totalRequestsMoM?: number;
+    averageRatingYoY?: number;
+}
 
 interface AllStatistics {
     asset: AssetStatistics | null;
@@ -40,102 +105,109 @@ interface AllStatistics {
     service: ServiceStatistics | null;
 }
 
+interface StatisticsPageState {
+    loading: boolean;
+    activeTab: string;
+    period: string;
+    dateRange: [Dayjs, Dayjs] | null;
+    statistics: AllStatistics;
+    aiReportVisible: boolean;
+    aiReportLoading: boolean;
+    aiReportContent: string;
+}
+
+const api = {
+    assetStatistics: (startDate?: string, endDate?: string) =>
+        request<ApiResponse<AssetStatistics>>('/api/park/asset/statistics', { method: 'GET', params: { startDate, endDate } }),
+    investmentStatistics: (startDate?: string, endDate?: string) =>
+        request<ApiResponse<InvestmentStatistics>>('/api/park/investment/statistics', { method: 'GET', params: { startDate, endDate } }),
+    tenantStatistics: (startDate?: string, endDate?: string) =>
+        request<ApiResponse<TenantStatistics>>('/api/park/tenant/statistics', { method: 'GET', params: { startDate, endDate } }),
+    serviceStatistics: (startDate?: string, endDate?: string) =>
+        request<ApiResponse<ServiceStatistics>>('/api/park/services/statistics', { method: 'GET', params: { startDate, endDate } }),
+    generateAiReport: (startDate?: string, endDate?: string, data?: any) =>
+        request<ApiResponse<string>>('/api/park/statistics/ai-report', { method: 'POST', params: { startDate, endDate }, data }),
+};
+
 const StatisticsPage: React.FC = () => {
     const intl = useIntl();
-    const [loading, setLoading] = useState(false);
-    const [activeTab, setActiveTab] = useState<string>('overview');
-    // Default to Month period
-    const [period, setPeriod] = useState<string>('month');
-    const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>([
-        dayjs().startOf('month'),
-        dayjs().endOf('month').startOf('day')
-    ]);
-    const [statistics, setStatistics] = useState<AllStatistics>({
-        asset: null,
-        investment: null,
-        tenant: null,
-        service: null,
+    const [state, setState] = useState<StatisticsPageState>({
+        loading: false,
+        activeTab: 'overview',
+        period: 'month',
+        dateRange: [dayjs().startOf('month'), dayjs().endOf('month').startOf('day')],
+        statistics: { asset: null, investment: null, tenant: null, service: null },
+        aiReportVisible: false,
+        aiReportLoading: false,
+        aiReportContent: '',
     });
+    const set = (partial: Partial<StatisticsPageState>) => setState(prev => ({ ...prev, ...partial }));
 
-    const [aiReportVisible, setAiReportVisible] = useState(false);
-    const [aiReportLoading, setAiReportLoading] = useState(false);
-    const [aiReportContent, setAiReportContent] = useState('');
-
-    const handleGenerateAiReport = async () => {
-        setAiReportLoading(true);
-        setAiReportVisible(true);
-        setAiReportContent(''); // Clear previous content
-
+    const loadAllStatistics = async () => {
+        set({ loading: true });
         try {
             let startDate: string | undefined;
             let endDate: string | undefined;
-
-            if (dateRange) {
-                startDate = dateRange[0].startOf('day').format('YYYY-MM-DDTHH:mm:ss');
-                // 使用左闭右开区间：结束日期 + 1天，确保包含最后一天
-                endDate = dateRange[1].add(1, 'day').startOf('day').format('YYYY-MM-DDTHH:mm:ss');
+            if (state.dateRange) {
+                startDate = state.dateRange[0].startOf('day').format('YYYY-MM-DDTHH:mm:ss');
+                endDate = state.dateRange[1].add(1, 'day').startOf('day').format('YYYY-MM-DDTHH:mm:ss');
             }
-
-            const res = await parkService.generateAiReport(startDate, endDate, statistics);
-            if (res.success && res.data) {
-                try {
-                    const html = await marked.parse(res.data);
-                    setAiReportContent(html);
-                } catch (parseError) {
-                    console.error('Markdown parse error:', parseError);
-                    setAiReportContent(res.data);
-                }
-            } else {
-                setAiReportContent('生成报告失败，请稍后重试。');
-            }
-        } catch (error) {
-            console.error('Failed to generate AI report:', error);
-            setAiReportContent('生成报告失败，请稍后重试。');
-        } finally {
-            setAiReportLoading(false);
-        }
-    };
-
-    // 加载所有统计数据
-    const loadAllStatistics = useCallback(async () => {
-        setLoading(true);
-        try {
-            let startDate: string | undefined;
-            let endDate: string | undefined;
-
-            if (dateRange) {
-                startDate = dateRange[0].startOf('day').format('YYYY-MM-DDTHH:mm:ss');
-                // 使用左闭右开区间：结束日期 + 1天，确保包含最后一天
-                endDate = dateRange[1].add(1, 'day').startOf('day').format('YYYY-MM-DDTHH:mm:ss');
-            }
-
             const [assetRes, investmentRes, tenantRes, serviceRes] = await Promise.all([
-                parkService.getAssetStatistics(startDate, endDate),
-                parkService.getInvestmentStatistics(startDate, endDate),
-                parkService.getTenantStatistics(startDate, endDate),
-                parkService.getServiceStatistics(startDate, endDate),
+                api.assetStatistics(startDate, endDate),
+                api.investmentStatistics(startDate, endDate),
+                api.tenantStatistics(startDate, endDate),
+                api.serviceStatistics(startDate, endDate),
             ]);
-
-            setStatistics({
-                asset: assetRes.success ? assetRes.data ?? null : null,
-                investment: investmentRes.success ? investmentRes.data ?? null : null,
-                tenant: tenantRes.success ? tenantRes.data ?? null : null,
-                service: serviceRes.success ? serviceRes.data ?? null : null,
+            set({
+                statistics: {
+                    asset: assetRes.success ? assetRes.data ?? null : null,
+                    investment: investmentRes.success ? investmentRes.data ?? null : null,
+                    tenant: tenantRes.success ? tenantRes.data ?? null : null,
+                    service: serviceRes.success ? serviceRes.data ?? null : null,
+                }
             });
         } catch (error) {
             console.error('Failed to load statistics:', error);
         } finally {
-            setLoading(false);
+            set({ loading: false });
         }
-    }, [period, dateRange]);
+    };
 
     useEffect(() => {
-        if (period !== 'custom' || (period === 'custom' && dateRange)) {
+        if (state.period !== 'custom' || (state.period === 'custom' && state.dateRange)) {
             loadAllStatistics();
         }
-    }, [loadAllStatistics]);
+    }, [state.period, state.dateRange]);
 
-    // 渲染 YoY/MoM 趋势
+    const handleGenerateAiReport = async () => {
+        set({ aiReportLoading: true, aiReportVisible: true, aiReportContent: '' });
+        try {
+            let startDate: string | undefined;
+            let endDate: string | undefined;
+            if (state.dateRange) {
+                startDate = state.dateRange[0].startOf('day').format('YYYY-MM-DDTHH:mm:ss');
+                endDate = state.dateRange[1].add(1, 'day').startOf('day').format('YYYY-MM-DDTHH:mm:ss');
+            }
+            const res = await api.generateAiReport(startDate, endDate, state.statistics);
+            if (res.success && res.data) {
+                try {
+                    const html = await marked.parse(res.data);
+                    set({ aiReportContent: html });
+                } catch (parseError) {
+                    console.error('Markdown parse error:', parseError);
+                    set({ aiReportContent: res.data });
+                }
+            } else {
+                set({ aiReportContent: '生成报告失败，请稍后重试。' });
+            }
+        } catch (error) {
+            console.error('Failed to generate AI report:', error);
+            set({ aiReportContent: '生成报告失败，请稍后重试。' });
+        } finally {
+            set({ aiReportLoading: false });
+        }
+    };
+
     const renderTrend = (value?: number, isYoY: boolean = true) => {
         if (value === undefined || value === null) return null;
         const isUp = value >= 0;
@@ -143,7 +215,6 @@ const StatisticsPage: React.FC = () => {
         const label = isYoY
             ? intl.formatMessage({ id: 'pages.park.statistics.yoy', defaultMessage: '同比' })
             : intl.formatMessage({ id: 'pages.park.statistics.mom', defaultMessage: '环比' });
-
         return (
             <Space size={4} style={{ fontSize: 12, color }}>
                 <span>{label}</span>
@@ -153,41 +224,27 @@ const StatisticsPage: React.FC = () => {
         );
     };
 
-    // 综合概览
     const renderOverview = () => {
-        const { investment, service } = statistics;
-
+        const { investment, service } = state.statistics;
         return (
             <div>
-                <OverviewCards statistics={statistics} period={period} />
-
+                <OverviewCards statistics={state.statistics} period={state.period} />
                 <Row gutter={[24, 24]}>
-                    {/* 招商数据 */}
                     <Col xs={24} lg={12}>
-                        <Card
-                            title={
-                                <Space>
-                                    <FundProjectionScreenOutlined style={{ color: '#722ed1' }} />
-                                    {intl.formatMessage({ id: 'pages.park.statistics.investmentOverview', defaultMessage: '招商概览' })}
-                                </Space>
-                            }
-                            className={styles['chart-card']}
-                        >
+                        <Card title={
+                            <Space>
+                                <FundProjectionScreenOutlined style={{ color: '#722ed1' }} />
+                                {intl.formatMessage({ id: 'pages.park.statistics.investmentOverview', defaultMessage: '招商概览' })}
+                            </Space>
+                        } className={styles['chart-card']}>
                             <Row gutter={[16, 16]}>
                                 <Col span={12}>
-                                    <Statistic
-                                        title={intl.formatMessage({ id: 'pages.park.statistics.totalLeads', defaultMessage: '线索总数' })}
-                                        value={investment?.totalLeads || 0}
-                                        styles={{ content: { color: '#1890ff' } }}
-                                    />
+                                    <Statistic title={intl.formatMessage({ id: 'pages.park.statistics.totalLeads', defaultMessage: '线索总数' })} value={investment?.totalLeads || 0} styles={{ content: { color: '#1890ff' } }} />
                                     {renderTrend(investment?.totalLeadsYoY, true)}
                                 </Col>
                                 <Col span={12}>
                                     <Statistic
-                                        title={period === 'year'
-                                            ? intl.formatMessage({ id: 'pages.park.statistics.newLeadsThisYear', defaultMessage: '本年新增' })
-                                            : intl.formatMessage({ id: 'pages.park.statistics.newLeadsThisMonth', defaultMessage: '本月新增' })
-                                        }
+                                        title={state.period === 'year' ? intl.formatMessage({ id: 'pages.park.statistics.newLeadsThisYear', defaultMessage: '本年新增' }) : intl.formatMessage({ id: 'pages.park.statistics.newLeadsThisMonth', defaultMessage: '本月新增' })}
                                         value={investment?.newLeadsThisMonth || 0}
                                         prefix={<ArrowUpOutlined />}
                                         styles={{ content: { color: '#52c41a' } }}
@@ -195,11 +252,7 @@ const StatisticsPage: React.FC = () => {
                                     {renderTrend(investment?.newLeadsMoM, false)}
                                 </Col>
                                 <Col span={12}>
-                                    <Statistic
-                                        title={intl.formatMessage({ id: 'pages.park.statistics.projectsInNegotiation', defaultMessage: '洽谈中项目' })}
-                                        value={investment?.projectsInNegotiation || 0}
-                                        styles={{ content: { color: '#faad14' } }}
-                                    />
+                                    <Statistic title={intl.formatMessage({ id: 'pages.park.statistics.projectsInNegotiation', defaultMessage: '洽谈中项目' })} value={investment?.projectsInNegotiation || 0} styles={{ content: { color: '#faad14' } }} />
                                 </Col>
                                 <Col span={12}>
                                     <Statistic
@@ -213,42 +266,23 @@ const StatisticsPage: React.FC = () => {
                             </Row>
                         </Card>
                     </Col>
-
-                    {/* 服务统计 */}
                     <Col xs={24} lg={12}>
-                        <Card
-                            title={
-                                <Space>
-                                    <CustomerServiceOutlined style={{ color: '#13c2c2' }} />
-                                    {intl.formatMessage({ id: 'pages.park.statistics.serviceOverview', defaultMessage: '服务概览' })}
-                                </Space>
-                            }
-                            className={styles['chart-card']}
-                        >
+                        <Card title={
+                            <Space>
+                                <CustomerServiceOutlined style={{ color: '#13c2c2' }} />
+                                {intl.formatMessage({ id: 'pages.park.statistics.serviceOverview', defaultMessage: '服务概览' })}
+                            </Space>
+                        } className={styles['chart-card']}>
                             <Row gutter={[16, 16]}>
                                 <Col span={12}>
-                                    <Statistic
-                                        title={intl.formatMessage({ id: 'pages.park.statistics.totalRequests', defaultMessage: '服务请求总数' })}
-                                        value={service?.totalRequests || 0}
-                                        styles={{ content: { color: '#1890ff' } }}
-                                    />
+                                    <Statistic title={intl.formatMessage({ id: 'pages.park.statistics.totalRequests', defaultMessage: '服务请求总数' })} value={service?.totalRequests || 0} styles={{ content: { color: '#1890ff' } }} />
                                     {renderTrend(service?.totalRequestsMoM, false)}
                                 </Col>
                                 <Col span={12}>
-                                    <Statistic
-                                        title={intl.formatMessage({ id: 'pages.park.statistics.pendingRequests', defaultMessage: '待处理' })}
-                                        value={service?.pendingRequests || 0}
-                                        prefix={<ClockCircleOutlined />}
-                                        styles={{ content: { color: '#faad14' } }}
-                                    />
+                                    <Statistic title={intl.formatMessage({ id: 'pages.park.statistics.pendingRequests', defaultMessage: '待处理' })} value={service?.pendingRequests || 0} prefix={<ClockCircleOutlined />} styles={{ content: { color: '#faad14' } }} />
                                 </Col>
                                 <Col span={12}>
-                                    <Statistic
-                                        title={intl.formatMessage({ id: 'pages.park.statistics.completedRequests', defaultMessage: '已完成' })}
-                                        value={service?.completedRequests || 0}
-                                        prefix={<CheckCircleOutlined />}
-                                        styles={{ content: { color: '#52c41a' } }}
-                                    />
+                                    <Statistic title={intl.formatMessage({ id: 'pages.park.statistics.completedRequests', defaultMessage: '已完成' })} value={service?.completedRequests || 0} prefix={<CheckCircleOutlined />} styles={{ content: { color: '#52c41a' } }} />
                                 </Col>
                                 <Col span={12}>
                                     <Statistic
@@ -268,48 +302,24 @@ const StatisticsPage: React.FC = () => {
         );
     };
 
-    // 资产分析
     const renderAssetAnalysis = () => {
-        const { asset } = statistics;
+        const { asset } = state.statistics;
         if (!asset) return <Empty description={intl.formatMessage({ id: 'common.noData', defaultMessage: '暂无数据' })} />;
-
-        const areaPercent = asset.totalRentableArea > 0
-            ? ((asset.rentedArea / asset.totalRentableArea) * 100).toFixed(1)
-            : 0;
-
+        const areaPercent = asset.totalRentableArea > 0 ? ((asset.rentedArea / asset.totalRentableArea) * 100).toFixed(1) : 0;
         return (
             <div>
                 <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
                     <Col xs={24} sm={12} lg={6}>
                         <Card>
-                            <Statistic
-                                title={intl.formatMessage({ id: 'pages.park.statistics.assetScale', defaultMessage: '资产规模' })}
-                                value={asset.totalBuildings}
-                                suffix={intl.formatMessage({ id: 'pages.park.statistics.unit.property', defaultMessage: '个' })}
-                                prefix={<BankOutlined style={{ color: '#1890ff' }} />}
-                            />
+                            <Statistic title={intl.formatMessage({ id: 'pages.park.statistics.assetScale', defaultMessage: '资产规模' })} value={asset.totalBuildings} suffix={intl.formatMessage({ id: 'pages.park.statistics.unit.property', defaultMessage: '个' })} prefix={<BankOutlined style={{ color: '#1890ff' }} />} />
                             {renderTrend(asset.totalBuildingsMoM, false)}
                         </Card>
                     </Col>
                     <Col xs={24} sm={12} lg={6}>
-                        <Card>
-                            <Statistic
-                                title={intl.formatMessage({ id: 'pages.park.statistics.totalArea', defaultMessage: '总建筑面积' })}
-                                value={asset.totalArea}
-                                suffix="㎡"
-                                precision={0}
-                            />
-                        </Card>
+                        <Card><Statistic title={intl.formatMessage({ id: 'pages.park.statistics.totalArea', defaultMessage: '总建筑面积' })} value={asset.totalArea} suffix="㎡" precision={0} /></Card>
                     </Col>
                     <Col xs={24} sm={12} lg={6}>
-                        <Card>
-                            <Statistic
-                                title={intl.formatMessage({ id: 'pages.park.statistics.rentableArea', defaultMessage: '可租面积' })}
-                                value={asset.totalRentableArea}
-                                suffix="㎡"
-                                precision={0}
-                            />
-                        </Card>
+                        <Card><Statistic title={intl.formatMessage({ id: 'pages.park.statistics.rentableArea', defaultMessage: '可租面积' })} value={asset.totalRentableArea} suffix="㎡" precision={0} /></Card>
                     </Col>
                     <Col xs={24} sm={12} lg={6}>
                         <Card>
@@ -320,48 +330,23 @@ const StatisticsPage: React.FC = () => {
                                 precision={1}
                                 styles={{ content: { color: Number(areaPercent) >= 80 ? '#52c41a' : Number(areaPercent) >= 50 ? '#faad14' : '#f5222d' } }}
                             />
-                            <div style={{ marginTop: 4 }}>
-                                {renderTrend(asset.occupancyRateYoY)}
-                            </div>
+                            <div style={{ marginTop: 4 }}>{renderTrend(asset.occupancyRateYoY)}</div>
                         </Card>
                     </Col>
                 </Row>
-
                 <Row gutter={[24, 24]}>
                     <Col xs={24} lg={12}>
                         <Card title={intl.formatMessage({ id: 'pages.park.statistics.areaDistribution', defaultMessage: '面积分布' })} className={styles['chart-card']}>
                             <div style={{ textAlign: 'center', padding: 24 }}>
-                                <Progress
-                                    type="dashboard"
-                                    percent={Number(areaPercent)}
-                                    format={(percent) => (
-                                        <div>
-                                            <div style={{ fontSize: 24, fontWeight: 'bold' }}>{percent}%</div>
-                                            <div style={{ fontSize: 12, color: '#999' }}>
-                                                {intl.formatMessage({ id: 'pages.park.statistics.rentedArea', defaultMessage: '已出租' })}
-                                            </div>
-                                        </div>
-                                    )}
-                                    size={200}
-                                    strokeColor={{ '0%': '#108ee9', '100%': '#87d068' }}
-                                />
+                                <Progress type="dashboard" percent={Number(areaPercent)} format={(percent) => (
+                                    <div>
+                                        <div style={{ fontSize: 24, fontWeight: 'bold' }}>{percent}%</div>
+                                        <div style={{ fontSize: 12, color: '#999' }}>{intl.formatMessage({ id: 'pages.park.statistics.rentedArea', defaultMessage: '已出租' })}</div>
+                                    </div>
+                                )} size={200} strokeColor={{ '0%': '#108ee9', '100%': '#87d068' }} />
                                 <Row gutter={16} style={{ marginTop: 24 }}>
-                                    <Col span={12}>
-                                        <Statistic
-                                            title={intl.formatMessage({ id: 'pages.park.statistics.rentedArea', defaultMessage: '已出租面积' })}
-                                            value={asset.rentedArea}
-                                            suffix="㎡"
-                                            styles={{ content: { color: '#52c41a' } }}
-                                        />
-                                    </Col>
-                                    <Col span={12}>
-                                        <Statistic
-                                            title={intl.formatMessage({ id: 'pages.park.statistics.availableArea', defaultMessage: '可租面积' })}
-                                            value={asset.totalRentableArea - asset.rentedArea}
-                                            suffix="㎡"
-                                            styles={{ content: { color: '#faad14' } }}
-                                        />
-                                    </Col>
+                                    <Col span={12}><Statistic title={intl.formatMessage({ id: 'pages.park.statistics.rentedArea', defaultMessage: '已出租面积' })} value={asset.rentedArea} suffix="㎡" styles={{ content: { color: '#52c41a' } }} /></Col>
+                                    <Col span={12}><Statistic title={intl.formatMessage({ id: 'pages.park.statistics.availableArea', defaultMessage: '可租面积' })} value={asset.totalRentableArea - asset.rentedArea} suffix="㎡" styles={{ content: { color: '#faad14' } }} /></Col>
                                 </Row>
                             </div>
                         </Card>
@@ -369,37 +354,15 @@ const StatisticsPage: React.FC = () => {
                     <Col xs={24} lg={12}>
                         <Card title={intl.formatMessage({ id: 'pages.park.statistics.unitDistribution', defaultMessage: '房源分布' })} className={styles['chart-card']}>
                             <div style={{ textAlign: 'center', padding: 24 }}>
-                                <Progress
-                                    type="dashboard"
-                                    percent={asset.totalUnits > 0 ? Number(((asset.rentedUnits / asset.totalUnits) * 100).toFixed(1)) : 0}
-                                    format={(percent) => (
-                                        <div>
-                                            <div style={{ fontSize: 24, fontWeight: 'bold' }}>{percent}%</div>
-                                            <div style={{ fontSize: 12, color: '#999' }}>
-                                                {intl.formatMessage({ id: 'pages.park.statistics.rentedUnits', defaultMessage: '已出租' })}
-                                            </div>
-                                        </div>
-                                    )}
-                                    size={200}
-                                    strokeColor={{ '0%': '#722ed1', '100%': '#eb2f96' }}
-                                />
+                                <Progress type="dashboard" percent={asset.totalUnits > 0 ? Number(((asset.rentedUnits / asset.totalUnits) * 100).toFixed(1)) : 0} format={(percent) => (
+                                    <div>
+                                        <div style={{ fontSize: 24, fontWeight: 'bold' }}>{percent}%</div>
+                                        <div style={{ fontSize: 12, color: '#999' }}>{intl.formatMessage({ id: 'pages.park.statistics.rentedUnits', defaultMessage: '已出租' })}</div>
+                                    </div>
+                                )} size={200} strokeColor={{ '0%': '#722ed1', '100%': '#eb2f96' }} />
                                 <Row gutter={16} style={{ marginTop: 24 }}>
-                                    <Col span={12}>
-                                        <Statistic
-                                            title={intl.formatMessage({ id: 'pages.park.statistics.rentedUnits', defaultMessage: '已出租房源' })}
-                                            value={asset.rentedUnits}
-                                            suffix={intl.formatMessage({ id: 'pages.park.statistics.unit.unit', defaultMessage: '套' })}
-                                            styles={{ content: { color: '#52c41a' } }}
-                                        />
-                                    </Col>
-                                    <Col span={12}>
-                                        <Statistic
-                                            title={intl.formatMessage({ id: 'pages.park.statistics.availableUnits', defaultMessage: '空置房源' })}
-                                            value={asset.availableUnits}
-                                            suffix={intl.formatMessage({ id: 'pages.park.statistics.unit.unit', defaultMessage: '套' })}
-                                            styles={{ content: { color: '#faad14' } }}
-                                        />
-                                    </Col>
+                                    <Col span={12}><Statistic title={intl.formatMessage({ id: 'pages.park.statistics.rentedUnits', defaultMessage: '已出租房源' })} value={asset.rentedUnits} suffix={intl.formatMessage({ id: 'pages.park.statistics.unit.unit', defaultMessage: '套' })} styles={{ content: { color: '#52c41a' } }} /></Col>
+                                    <Col span={12}><Statistic title={intl.formatMessage({ id: 'pages.park.statistics.availableUnits', defaultMessage: '空置房源' })} value={asset.availableUnits} suffix={intl.formatMessage({ id: 'pages.park.statistics.unit.unit', defaultMessage: '套' })} styles={{ content: { color: '#faad14' } }} /></Col>
                                 </Row>
                             </div>
                         </Card>
@@ -409,145 +372,62 @@ const StatisticsPage: React.FC = () => {
         );
     };
 
-    // 招商分析
     const renderInvestmentAnalysis = () => {
-        const { investment } = statistics;
+        const { investment } = state.statistics;
         if (!investment) return <Empty description={intl.formatMessage({ id: 'common.noData', defaultMessage: '暂无数据' })} />;
-
-        const leadsByStatusData = Object.entries(investment.leadsByStatus || {}).map(([status, count]) => ({
-            key: status,
-            status,
-            count,
-        }));
-
-        const projectsByStageData = Object.entries(investment.projectsByStage || {}).map(([stage, count]) => ({
-            key: stage,
-            stage,
-            count,
-        }));
-
+        const leadsByStatusData = Object.entries(investment.leadsByStatus || {}).map(([status, count]) => ({ key: status, status, count }));
+        const projectsByStageData = Object.entries(investment.projectsByStage || {}).map(([stage, count]) => ({ key: stage, stage, count }));
         return (
             <div>
                 <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
                     <Col xs={24} sm={12} lg={6}>
                         <Card>
-                            <Statistic
-                                title={intl.formatMessage({ id: 'pages.park.statistics.totalLeads', defaultMessage: '线索总数' })}
-                                value={investment.totalLeads}
-                                prefix={<UserSwitchOutlined style={{ color: '#1890ff' }} />}
-                            />
-                            <div style={{ marginTop: 4 }}>
-                                {renderTrend(investment.totalLeadsYoY)}
-                            </div>
+                            <Statistic title={intl.formatMessage({ id: 'pages.park.statistics.totalLeads', defaultMessage: '线索总数' })} value={investment.totalLeads} prefix={<UserSwitchOutlined style={{ color: '#1890ff' }} />} />
+                            <div style={{ marginTop: 4 }}>{renderTrend(investment.totalLeadsYoY)}</div>
                         </Card>
                     </Col>
                     <Col xs={24} sm={12} lg={6}>
                         <Card>
                             <Statistic
-                                title={period === 'year'
-                                    ? intl.formatMessage({ id: 'pages.park.statistics.newLeadsThisYear', defaultMessage: '本年新增' })
-                                    : intl.formatMessage({ id: 'pages.park.statistics.newLeadsThisMonth', defaultMessage: '本月新增' })
-                                }
+                                title={state.period === 'year' ? intl.formatMessage({ id: 'pages.park.statistics.newLeadsThisYear', defaultMessage: '本年新增' }) : intl.formatMessage({ id: 'pages.park.statistics.newLeadsThisMonth', defaultMessage: '本月新增' })}
                                 value={investment.newLeadsThisMonth}
                                 styles={{ content: { color: '#52c41a' } }}
                                 prefix={<ArrowUpOutlined />}
                             />
-                            <div style={{ marginTop: 4 }}>
-                                {renderTrend(investment.newLeadsMoM, false)}
-                            </div>
+                            <div style={{ marginTop: 4 }}>{renderTrend(investment.newLeadsMoM, false)}</div>
                         </Card>
                     </Col>
                     <Col xs={24} sm={12} lg={6}>
-                        <Card>
-                            <Statistic
-                                title={intl.formatMessage({ id: 'pages.park.statistics.totalProjects', defaultMessage: '项目总数' })}
-                                value={investment.totalProjects}
-                                prefix={<FundProjectionScreenOutlined style={{ color: '#722ed1' }} />}
-                            />
-                        </Card>
+                        <Card><Statistic title={intl.formatMessage({ id: 'pages.park.statistics.totalProjects', defaultMessage: '项目总数' })} value={investment.totalProjects} prefix={<FundProjectionScreenOutlined style={{ color: '#722ed1' }} />} /></Card>
                     </Col>
                     <Col xs={24} sm={12} lg={6}>
                         <Card>
-                            <Statistic
-                                title={intl.formatMessage({ id: 'pages.park.statistics.conversionRate', defaultMessage: '转化率' })}
-                                value={Number(investment.conversionRate).toFixed(1)}
-                                suffix="%"
-                                styles={{ content: { color: investment.conversionRate >= 30 ? '#52c41a' : '#faad14' } }}
-                            />
-                            <div style={{ marginTop: 4 }}>
-                                {renderTrend(investment.conversionRateYoY)}
-                            </div>
+                            <Statistic title={intl.formatMessage({ id: 'pages.park.statistics.conversionRate', defaultMessage: '转化率' })} value={Number(investment.conversionRate).toFixed(1)} suffix="%" styles={{ content: { color: investment.conversionRate >= 30 ? '#52c41a' : '#faad14' } }} />
+                            <div style={{ marginTop: 4 }}>{renderTrend(investment.conversionRateYoY)}</div>
                         </Card>
                     </Col>
                 </Row>
-
                 <Row gutter={[24, 24]}>
                     <Col xs={24} lg={12}>
                         <Card title={intl.formatMessage({ id: 'pages.park.statistics.leadsByStatus', defaultMessage: '线索状态分布' })} className={styles['chart-card']}>
                             {leadsByStatusData.length > 0 ? (
-                                <Table
-                                    dataSource={leadsByStatusData}
-                                    pagination={false}
-                                    size="small"
-                                    columns={[
-                                        {
-                                            title: intl.formatMessage({ id: 'pages.park.statistics.status', defaultMessage: '状态' }),
-                                            dataIndex: 'status',
-                                            render: (status) => <Tag>{status}</Tag>
-                                        },
-                                        {
-                                            title: intl.formatMessage({ id: 'pages.park.statistics.count', defaultMessage: '数量' }),
-                                            dataIndex: 'count',
-                                            render: (count) => <Text strong>{count}</Text>
-                                        },
-                                        {
-                                            title: intl.formatMessage({ id: 'pages.park.statistics.percentage', defaultMessage: '占比' }),
-                                            render: (_, record) => {
-                                                const percent = investment.totalLeads > 0
-                                                    ? ((record.count / investment.totalLeads) * 100).toFixed(1)
-                                                    : 0;
-                                                return <Progress percent={Number(percent)} size="small" />;
-                                            }
-                                        }
-                                    ]}
-                                />
-                            ) : (
-                                <Empty />
-                            )}
+                                <Table dataSource={leadsByStatusData} pagination={false} size="small" columns={[
+                                    { title: intl.formatMessage({ id: 'pages.park.statistics.status', defaultMessage: '状态' }), dataIndex: 'status', render: (status) => <Tag>{status}</Tag> },
+                                    { title: intl.formatMessage({ id: 'pages.park.statistics.count', defaultMessage: '数量' }), dataIndex: 'count', render: (count) => <Text strong>{count}</Text> },
+                                    { title: intl.formatMessage({ id: 'pages.park.statistics.percentage', defaultMessage: '占比' }), render: (_, record) => { const percent = investment.totalLeads > 0 ? ((record.count / investment.totalLeads) * 100).toFixed(1) : 0; return <Progress percent={Number(percent)} size="small" />; } }
+                                ]} />
+                            ) : <Empty />}
                         </Card>
                     </Col>
                     <Col xs={24} lg={12}>
                         <Card title={intl.formatMessage({ id: 'pages.park.statistics.projectsByStage', defaultMessage: '项目阶段分布' })} className={styles['chart-card']}>
                             {projectsByStageData.length > 0 ? (
-                                <Table
-                                    dataSource={projectsByStageData}
-                                    pagination={false}
-                                    size="small"
-                                    columns={[
-                                        {
-                                            title: intl.formatMessage({ id: 'pages.park.statistics.stage', defaultMessage: '阶段' }),
-                                            dataIndex: 'stage',
-                                            render: (stage) => <Tag color="purple">{stage}</Tag>
-                                        },
-                                        {
-                                            title: intl.formatMessage({ id: 'pages.park.statistics.count', defaultMessage: '数量' }),
-                                            dataIndex: 'count',
-                                            render: (count) => <Text strong>{count}</Text>
-                                        },
-                                        {
-                                            title: intl.formatMessage({ id: 'pages.park.statistics.percentage', defaultMessage: '占比' }),
-                                            render: (_, record) => {
-                                                const percent = investment.totalProjects > 0
-                                                    ? ((record.count / investment.totalProjects) * 100).toFixed(1)
-                                                    : 0;
-                                                return <Progress percent={Number(percent)} size="small" strokeColor="#722ed1" />;
-                                            }
-                                        }
-                                    ]}
-                                />
-                            ) : (
-                                <Empty />
-                            )}
+                                <Table dataSource={projectsByStageData} pagination={false} size="small" columns={[
+                                    { title: intl.formatMessage({ id: 'pages.park.statistics.stage', defaultMessage: '阶段' }), dataIndex: 'stage', render: (stage) => <Tag color="purple">{stage}</Tag> },
+                                    { title: intl.formatMessage({ id: 'pages.park.statistics.count', defaultMessage: '数量' }), dataIndex: 'count', render: (count) => <Text strong>{count}</Text> },
+                                    { title: intl.formatMessage({ id: 'pages.park.statistics.percentage', defaultMessage: '占比' }), render: (_, record) => { const percent = investment.totalProjects > 0 ? ((record.count / investment.totalProjects) * 100).toFixed(1) : 0; return <Progress percent={Number(percent)} size="small" strokeColor="#722ed1" />; } }
+                                ]} />
+                            ) : <Empty />}
                         </Card>
                     </Col>
                 </Row>
@@ -555,166 +435,69 @@ const StatisticsPage: React.FC = () => {
         );
     };
 
-    // 租户分析
     const renderTenantAnalysis = () => {
-        const { tenant } = statistics;
+        const { tenant } = state.statistics;
         if (!tenant) return <Empty description={intl.formatMessage({ id: 'common.noData', defaultMessage: '暂无数据' })} />;
-
-        const industryData = Object.entries(tenant.tenantsByIndustry || {}).map(([industry, count]) => ({
-            key: industry,
-            industry,
-            count,
-        }));
-
-        const paymentTypeData = Object.entries(tenant.receivedByPaymentType || {}).map(([type, amount]) => ({
-            key: type,
-            type: type === 'Rent' ? '房租' : type === 'PropertyFee' ? '物业费' : type === 'Deposit' ? '押金' : '其他',
-            amount,
-        }));
-
+        const industryData = Object.entries(tenant.tenantsByIndustry || {}).map(([industry, count]) => ({ key: industry, industry, count }));
+        const paymentTypeData = Object.entries(tenant.receivedByPaymentType || {}).map(([type, amount]) => ({ key: type, type: type === 'Rent' ? '房租' : type === 'PropertyFee' ? '物业费' : type === 'Deposit' ? '押金' : '其他', amount }));
         return (
             <div>
                 <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
                     <Col xs={24} sm={12} lg={8}>
                         <Card>
-                            <Statistic
-                                title={intl.formatMessage({ id: 'pages.park.statistics.totalTenants', defaultMessage: '租户总数' })}
-                                value={tenant.totalTenants}
-                                prefix={<TeamOutlined style={{ color: '#1890ff' }} />}
-                            />
-                            <div style={{ marginTop: 4 }}>
-                                {renderTrend(tenant.totalTenantsYoY)}
-                            </div>
+                            <Statistic title={intl.formatMessage({ id: 'pages.park.statistics.totalTenants', defaultMessage: '租户总数' })} value={tenant.totalTenants} prefix={<TeamOutlined style={{ color: '#1890ff' }} />} />
+                            <div style={{ marginTop: 4 }}>{renderTrend(tenant.totalTenantsYoY)}</div>
                         </Card>
                     </Col>
                     <Col xs={24} sm={12} lg={8}>
                         <Card>
-                            <Statistic
-                                title={intl.formatMessage({ id: 'pages.park.statistics.activeTenants', defaultMessage: '在租租户' })}
-                                value={tenant.activeTenants}
-                                styles={{ content: { color: '#52c41a' } }}
-                            />
-                            <div style={{ marginTop: 4 }}>
-                                {renderTrend(tenant.activeTenantsMoM, false)}
-                            </div>
+                            <Statistic title={intl.formatMessage({ id: 'pages.park.statistics.activeTenants', defaultMessage: '在租租户' })} value={tenant.activeTenants} styles={{ content: { color: '#52c41a' } }} />
+                            <div style={{ marginTop: 4 }}>{renderTrend(tenant.activeTenantsMoM, false)}</div>
                         </Card>
                     </Col>
                     <Col xs={24} sm={12} lg={8}>
-                        <Card>
-                            <Statistic
-                                title={intl.formatMessage({ id: 'pages.park.statistics.activeContracts', defaultMessage: '有效合同' })}
-                                value={tenant.activeContracts}
-                                prefix={<FileTextOutlined style={{ color: '#722ed1' }} />}
-                            />
-                        </Card>
+                        <Card><Statistic title={intl.formatMessage({ id: 'pages.park.statistics.activeContracts', defaultMessage: '有效合同' })} value={tenant.activeContracts} prefix={<FileTextOutlined style={{ color: '#722ed1' }} />} /></Card>
                     </Col>
                 </Row>
-
                 <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
                     <Col xs={24} sm={12} lg={8}>
                         <Card>
-                            <Statistic
-                                title={intl.formatMessage({ id: 'pages.park.statistics.totalReceived', defaultMessage: '实收租金' })}
-                                value={tenant.totalReceived || 0}
-                                prefix="¥"
-                                precision={2}
-                                styles={{ content: { color: '#cf1322' } }}
-                            />
+                            <Statistic title={intl.formatMessage({ id: 'pages.park.statistics.totalReceived', defaultMessage: '实收租金' })} value={tenant.totalReceived || 0} prefix="¥" precision={2} styles={{ content: { color: '#cf1322' } }} />
                             <div style={{ marginTop: 8 }}>
-                                <Text type="secondary" style={{ fontSize: 12 }}>
-                                    {intl.formatMessage({ id: 'pages.park.statistics.totalExpected', defaultMessage: '应收租金' })}: ¥{(tenant.totalExpected || 0).toLocaleString()}
-                                </Text>
-                                <div style={{ marginTop: 4 }}>
-                                    {renderTrend(tenant.rentIncomeMoM, false)}
-                                </div>
+                                <Text type="secondary" style={{ fontSize: 12 }}>{intl.formatMessage({ id: 'pages.park.statistics.totalExpected', defaultMessage: '应收租金' })}: ¥{(tenant.totalExpected || 0).toLocaleString()}</Text>
+                                <div style={{ marginTop: 4 }}>{renderTrend(tenant.rentIncomeMoM, false)}</div>
                             </div>
                         </Card>
                     </Col>
                     <Col xs={24} sm={12} lg={8}>
-                        <Card>
-                            <Statistic
-                                title={intl.formatMessage({ id: 'pages.park.statistics.yearlyEstimate', defaultMessage: '预计年收入' })}
-                                value={tenant.yearlyEstimate || 0}
-                                prefix="¥"
-                                precision={2}
-                                styles={{ content: { color: '#faad14' } }}
-                            />
-                        </Card>
+                        <Card><Statistic title={intl.formatMessage({ id: 'pages.park.statistics.yearlyEstimate', defaultMessage: '预计年收入' })} value={tenant.yearlyEstimate || 0} prefix="¥" precision={2} styles={{ content: { color: '#faad14' } }} /></Card>
                     </Col>
                     <Col xs={24} sm={12} lg={8}>
-                        <Card>
-                            <Statistic
-                                title={intl.formatMessage({ id: 'pages.park.contract.totalAmount', defaultMessage: '合同总额' })}
-                                value={tenant.totalContractAmount || 0}
-                                prefix="¥"
-                                precision={2}
-                                styles={{ content: { color: '#13c2c2' } }}
-                            />
-                        </Card>
+                        <Card><Statistic title={intl.formatMessage({ id: 'pages.park.contract.totalAmount', defaultMessage: '合同总额' })} value={tenant.totalContractAmount || 0} prefix="¥" precision={2} styles={{ content: { color: '#13c2c2' } }} /></Card>
                     </Col>
                 </Row>
-
                 <Row gutter={[24, 24]}>
                     <Col xs={24} lg={12}>
                         <Card title={intl.formatMessage({ id: 'pages.park.statistics.industryDistribution', defaultMessage: '行业分布' })} className={styles['chart-card']}>
                             {industryData.length > 0 ? (
-                                <Table
-                                    dataSource={industryData}
-                                    pagination={false}
-                                    size="small"
-                                    columns={[
-                                        {
-                                            title: intl.formatMessage({ id: 'pages.park.statistics.industry', defaultMessage: '行业' }),
-                                            dataIndex: 'industry',
-                                            render: (industry) => <Tag color="blue">{industry}</Tag>
-                                        },
-                                        {
-                                            title: intl.formatMessage({ id: 'pages.park.statistics.tenantCount', defaultMessage: '租户数' }),
-                                            dataIndex: 'count',
-                                            render: (count) => <Text strong>{count}</Text>
-                                        },
-                                        {
-                                            title: intl.formatMessage({ id: 'pages.park.statistics.percentage', defaultMessage: '占比' }),
-                                            render: (_, record) => {
-                                                const percent = tenant.totalTenants > 0
-                                                    ? ((record.count / tenant.totalTenants) * 100).toFixed(1)
-                                                    : 0;
-                                                return <Progress percent={Number(percent)} size="small" />;
-                                            }
-                                        }
-                                    ]}
-                                />
-                            ) : (
-                                <Empty />
-                            )}
+                                <Table dataSource={industryData} pagination={false} size="small" columns={[
+                                    { title: intl.formatMessage({ id: 'pages.park.statistics.industry', defaultMessage: '行业' }), dataIndex: 'industry', render: (industry) => <Tag color="blue">{industry}</Tag> },
+                                    { title: intl.formatMessage({ id: 'pages.park.statistics.tenantCount', defaultMessage: '租户数' }), dataIndex: 'count', render: (count) => <Text strong>{count}</Text> },
+                                    { title: intl.formatMessage({ id: 'pages.park.statistics.percentage', defaultMessage: '占比' }), render: (_, record) => { const percent = tenant.totalTenants > 0 ? ((record.count / tenant.totalTenants) * 100).toFixed(1) : 0; return <Progress percent={Number(percent)} size="small" />; } }
+                                ]} />
+                            ) : <Empty />}
                         </Card>
                     </Col>
                     <Col xs={24} lg={12}>
                         <Card title="实收金额构成" className={styles['chart-card']}>
                             {paymentTypeData.length > 0 ? (
-                                <Table
-                                    dataSource={paymentTypeData}
-                                    pagination={false}
-                                    size="small"
-                                    columns={[
-                                        { title: '费用类型', dataIndex: 'type', render: (t) => <Tag color="cyan">{t}</Tag> },
-                                        { title: '实收金额', dataIndex: 'amount', render: (a) => <Text strong>¥{a.toLocaleString()}</Text> },
-                                        {
-                                            title: '占比',
-                                            render: (_, record) => {
-                                                const percent = tenant.totalReceived > 0
-                                                    ? ((record.amount / tenant.totalReceived) * 100).toFixed(1)
-                                                    : 0;
-                                                return <Progress percent={Number(percent)} size="small" strokeColor="#13c2c2" />;
-                                            }
-                                        }
-                                    ]}
-                                />
+                                <Table dataSource={paymentTypeData} pagination={false} size="small" columns={[
+                                    { title: '费用类型', dataIndex: 'type', render: (t) => <Tag color="cyan">{t}</Tag> },
+                                    { title: '实收金额', dataIndex: 'amount', render: (a) => <Text strong>¥{a.toLocaleString()}</Text> },
+                                    { title: '占比', render: (_, record) => { const percent = tenant.totalReceived > 0 ? ((record.amount / tenant.totalReceived) * 100).toFixed(1) : 0; return <Progress percent={Number(percent)} size="small" strokeColor="#13c2c2" />; } }
+                                ]} />
                             ) : (
-                                <div style={{ textAlign: 'center', padding: '40px 0' }}>
-                                    <Statistic title="实收总额" value={tenant.totalReceived} prefix="¥" precision={2} />
-                                    <Empty description="暂无详细构成数据" />
-                                </div>
+                                <div style={{ textAlign: 'center', padding: '40px 0' }}><Statistic title="实收总额" value={tenant.totalReceived} prefix="¥" precision={2} /><Empty description="暂无详细构成数据" /></div>
                             )}
                         </Card>
                     </Col>
@@ -723,45 +506,12 @@ const StatisticsPage: React.FC = () => {
                     <Col span={24}>
                         <Card title={intl.formatMessage({ id: 'pages.park.statistics.collectionStatus', defaultMessage: '收缴情况' })}>
                             <Row gutter={16}>
+                                <Col span={6}><Statistic title={intl.formatMessage({ id: 'pages.park.statistics.totalExpected', defaultMessage: '应收总额' })} value={tenant.totalExpected} prefix="¥" precision={2} /></Col>
+                                <Col span={6}><Statistic title={intl.formatMessage({ id: 'pages.park.statistics.totalReceived', defaultMessage: '实收总额' })} value={tenant.totalReceived} prefix="¥" precision={2} styles={{ content: { color: '#52c41a' } }} /></Col>
+                                <Col span={6}><Statistic title="即将到期合同" value={tenant.expiringContracts} styles={{ content: { color: tenant.expiringContracts > 0 ? '#faad14' : '#52c41a' } }} prefix={tenant.expiringContracts > 0 ? <WarningOutlined /> : <CheckCircleOutlined />} /></Col>
                                 <Col span={6}>
-                                    <Statistic
-                                        title={intl.formatMessage({ id: 'pages.park.statistics.totalExpected', defaultMessage: '应收总额' })}
-                                        value={tenant.totalExpected}
-                                        prefix="¥"
-                                        precision={2}
-                                    />
-                                </Col>
-                                <Col span={6}>
-                                    <Statistic
-                                        title={intl.formatMessage({ id: 'pages.park.statistics.totalReceived', defaultMessage: '实收总额' })}
-                                        value={tenant.totalReceived}
-                                        prefix="¥"
-                                        precision={2}
-                                        styles={{ content: { color: '#52c41a' } }}
-                                    />
-                                </Col>
-                                <Col span={6}>
-                                    <Statistic
-                                        title="即将到期合同"
-                                        value={tenant.expiringContracts}
-                                        styles={{ content: { color: tenant.expiringContracts > 0 ? '#faad14' : '#52c41a' } }}
-                                        prefix={tenant.expiringContracts > 0 ? <WarningOutlined /> : <CheckCircleOutlined />}
-                                    />
-                                </Col>
-                                <Col span={6}>
-                                    <Statistic
-                                        title={intl.formatMessage({ id: 'pages.park.statistics.collectionRate', defaultMessage: '收缴率' })}
-                                        value={tenant.collectionRate}
-                                        suffix="%"
-                                        precision={1}
-                                        styles={{ content: { color: tenant.collectionRate >= 90 ? '#52c41a' : '#faad14' } }}
-                                    />
-                                    <Progress
-                                        percent={tenant.collectionRate}
-                                        showInfo={false}
-                                        status={tenant.collectionRate >= 90 ? 'success' : 'active'}
-                                        strokeColor={tenant.collectionRate >= 90 ? '#52c41a' : '#faad14'}
-                                    />
+                                    <Statistic title={intl.formatMessage({ id: 'pages.park.statistics.collectionRate', defaultMessage: '收缴率' })} value={tenant.collectionRate} suffix="%" precision={1} styles={{ content: { color: tenant.collectionRate >= 90 ? '#52c41a' : '#faad14' } }} />
+                                    <Progress percent={tenant.collectionRate} showInfo={false} status={tenant.collectionRate >= 90 ? 'success' : 'active'} strokeColor={tenant.collectionRate >= 90 ? '#52c41a' : '#faad14'} />
                                 </Col>
                             </Row>
                         </Card>
@@ -771,162 +521,59 @@ const StatisticsPage: React.FC = () => {
         );
     };
 
-    // 服务分析
     const renderServiceAnalysis = () => {
-        const { service } = statistics;
+        const { service } = state.statistics;
         if (!service) return <Empty description={intl.formatMessage({ id: 'common.noData', defaultMessage: '暂无数据' })} />;
-
-        const statusData = Object.entries(service.requestsByStatus || {}).map(([status, count]) => ({
-            key: status,
-            status,
-            count,
-        }));
-
-        const categoryData = Object.entries(service.requestsByCategory || {}).map(([category, count]) => ({
-            key: category,
-            category,
-            count,
-        }));
-
+        const statusData = Object.entries(service.requestsByStatus || {}).map(([status, count]) => ({ key: status, status, count }));
+        const categoryData = Object.entries(service.requestsByCategory || {}).map(([category, count]) => ({ key: category, category, count }));
         return (
             <div>
                 <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
                     <Col xs={24} sm={12} lg={12}>
                         <Card>
-                            <Statistic
-                                title={intl.formatMessage({ id: 'pages.park.statistics.totalRequests', defaultMessage: '服务请求总数' })}
-                                value={service.totalRequests}
-                                prefix={<CustomerServiceOutlined style={{ color: '#1890ff' }} />}
-                            />
-                            <div style={{ marginTop: 4 }}>
-                                {renderTrend(service.totalRequestsMoM, false)}
-                            </div>
+                            <Statistic title={intl.formatMessage({ id: 'pages.park.statistics.totalRequests', defaultMessage: '服务请求总数' })} value={service.totalRequests} prefix={<CustomerServiceOutlined style={{ color: '#1890ff' }} />} />
+                            <div style={{ marginTop: 4 }}>{renderTrend(service.totalRequestsMoM, false)}</div>
                         </Card>
                     </Col>
                     <Col xs={24} sm={12} lg={12}>
                         <Card>
-                            <Statistic
-                                title={intl.formatMessage({ id: 'pages.park.statistics.averageRating', defaultMessage: '平均评分' })}
-                                value={service.averageRating}
-                                precision={1}
-                                prefix={<StarOutlined style={{ color: '#faad14' }} />}
-                                suffix="/ 5"
-                            />
-                            <div style={{ marginTop: 4 }}>
-                                {renderTrend(service.averageRatingYoY)}
-                            </div>
+                            <Statistic title={intl.formatMessage({ id: 'pages.park.statistics.averageRating', defaultMessage: '平均评分' })} value={service.averageRating} precision={1} prefix={<StarOutlined style={{ color: '#faad14' }} />} suffix="/ 5" />
+                            <div style={{ marginTop: 4 }}>{renderTrend(service.averageRatingYoY)}</div>
                         </Card>
                     </Col>
                 </Row>
-
                 <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
                     <Col xs={24} sm={12} lg={8}>
-                        <Card>
-                            <Statistic
-                                title={intl.formatMessage({ id: 'pages.park.statistics.pendingRequests', defaultMessage: '待处理' })}
-                                value={service.pendingRequests}
-                                styles={{ content: { color: service.pendingRequests > 10 ? '#f5222d' : '#faad14' } }}
-                                prefix={<ClockCircleOutlined />}
-                            />
-                        </Card>
+                        <Card><Statistic title={intl.formatMessage({ id: 'pages.park.statistics.pendingRequests', defaultMessage: '待处理' })} value={service.pendingRequests} styles={{ content: { color: service.pendingRequests > 10 ? '#f5222d' : '#faad14' } }} prefix={<ClockCircleOutlined />} /></Card>
                     </Col>
                     <Col xs={24} sm={12} lg={8}>
-                        <Card>
-                            <Statistic
-                                title={intl.formatMessage({ id: 'pages.park.statistics.processingRequests', defaultMessage: '处理中' })}
-                                value={service.processingRequests}
-                                styles={{ content: { color: '#1890ff' } }}
-                                prefix={<SyncOutlined spin />}
-                            />
-                        </Card>
+                        <Card><Statistic title={intl.formatMessage({ id: 'pages.park.statistics.processingRequests', defaultMessage: '处理中' })} value={service.processingRequests} styles={{ content: { color: '#1890ff' } }} prefix={<SyncOutlined spin />} /></Card>
                     </Col>
                     <Col xs={24} sm={12} lg={8}>
-                        <Card>
-                            <Statistic
-                                title={intl.formatMessage({ id: 'pages.park.statistics.completedRequests', defaultMessage: '已完成' })}
-                                value={service.completedRequests}
-                                styles={{ content: { color: '#52c41a' } }}
-                                prefix={<CheckCircleOutlined />}
-                            />
-                        </Card>
+                        <Card><Statistic title={intl.formatMessage({ id: 'pages.park.statistics.completedRequests', defaultMessage: '已完成' })} value={service.completedRequests} styles={{ content: { color: '#52c41a' } }} prefix={<CheckCircleOutlined />} /></Card>
                     </Col>
                 </Row>
-
                 <Row gutter={[24, 24]}>
                     <Col xs={24} lg={12}>
                         <Card title={intl.formatMessage({ id: 'pages.park.statistics.requestsByStatus', defaultMessage: '请求状态分布' })} className={styles['chart-card']}>
                             {statusData.length > 0 ? (
-                                <Table
-                                    dataSource={statusData}
-                                    pagination={false}
-                                    size="small"
-                                    columns={[
-                                        {
-                                            title: intl.formatMessage({ id: 'pages.park.statistics.status', defaultMessage: '状态' }),
-                                            dataIndex: 'status',
-                                            render: (status) => {
-                                                const colorMap: Record<string, string> = {
-                                                    'Pending': 'orange',
-                                                    'Processing': 'blue',
-                                                    'Completed': 'green',
-                                                    'Cancelled': 'default',
-                                                };
-                                                return <Tag color={colorMap[status] || 'default'}>{status}</Tag>;
-                                            }
-                                        },
-                                        {
-                                            title: intl.formatMessage({ id: 'pages.park.statistics.count', defaultMessage: '数量' }),
-                                            dataIndex: 'count',
-                                            render: (count) => <Text strong>{count}</Text>
-                                        },
-                                        {
-                                            title: intl.formatMessage({ id: 'pages.park.statistics.percentage', defaultMessage: '占比' }),
-                                            render: (_, record) => {
-                                                const percent = service.totalRequests > 0
-                                                    ? ((record.count / service.totalRequests) * 100).toFixed(1)
-                                                    : 0;
-                                                return <Progress percent={Number(percent)} size="small" />;
-                                            }
-                                        }
-                                    ]}
-                                />
-                            ) : (
-                                <Empty />
-                            )}
+                                <Table dataSource={statusData} pagination={false} size="small" columns={[
+                                    { title: intl.formatMessage({ id: 'pages.park.statistics.status', defaultMessage: '状态' }), dataIndex: 'status', render: (status) => { const colorMap: Record<string, string> = { 'Pending': 'orange', 'Processing': 'blue', 'Completed': 'green', 'Cancelled': 'default' }; return <Tag color={colorMap[status] || 'default'}>{status}</Tag>; } },
+                                    { title: intl.formatMessage({ id: 'pages.park.statistics.count', defaultMessage: '数量' }), dataIndex: 'count', render: (count) => <Text strong>{count}</Text> },
+                                    { title: intl.formatMessage({ id: 'pages.park.statistics.percentage', defaultMessage: '占比' }), render: (_, record) => { const percent = service.totalRequests > 0 ? ((record.count / service.totalRequests) * 100).toFixed(1) : 0; return <Progress percent={Number(percent)} size="small" />; } }
+                                ]} />
+                            ) : <Empty />}
                         </Card>
                     </Col>
                     <Col xs={24} lg={12}>
                         <Card title={intl.formatMessage({ id: 'pages.park.statistics.requestsByCategory', defaultMessage: '请求分类统计' })} className={styles['chart-card']}>
                             {categoryData.length > 0 ? (
-                                <Table
-                                    dataSource={categoryData}
-                                    pagination={false}
-                                    size="small"
-                                    columns={[
-                                        {
-                                            title: intl.formatMessage({ id: 'pages.park.statistics.category', defaultMessage: '分类' }),
-                                            dataIndex: 'category',
-                                            render: (category) => <Tag color="cyan">{category}</Tag>
-                                        },
-                                        {
-                                            title: intl.formatMessage({ id: 'pages.park.statistics.count', defaultMessage: '数量' }),
-                                            dataIndex: 'count',
-                                            render: (count) => <Text strong>{count}</Text>
-                                        },
-                                        {
-                                            title: intl.formatMessage({ id: 'pages.park.statistics.percentage', defaultMessage: '占比' }),
-                                            render: (_, record) => {
-                                                const percent = service.totalRequests > 0
-                                                    ? ((record.count / service.totalRequests) * 100).toFixed(1)
-                                                    : 0;
-                                                return <Progress percent={Number(percent)} size="small" strokeColor="#13c2c2" />;
-                                            }
-                                        }
-                                    ]}
-                                />
-                            ) : (
-                                <Empty />
-                            )}
+                                <Table dataSource={categoryData} pagination={false} size="small" columns={[
+                                    { title: intl.formatMessage({ id: 'pages.park.statistics.category', defaultMessage: '分类' }), dataIndex: 'category', render: (category) => <Tag color="cyan">{category}</Tag> },
+                                    { title: intl.formatMessage({ id: 'pages.park.statistics.count', defaultMessage: '数量' }), dataIndex: 'count', render: (count) => <Text strong>{count}</Text> },
+                                    { title: intl.formatMessage({ id: 'pages.park.statistics.percentage', defaultMessage: '占比' }), render: (_, record) => { const percent = service.totalRequests > 0 ? ((record.count / service.totalRequests) * 100).toFixed(1) : 0; return <Progress percent={Number(percent)} size="small" strokeColor="#13c2c2" />; } }
+                                ]} />
+                            ) : <Empty />}
                         </Card>
                     </Col>
                 </Row>
@@ -935,31 +582,11 @@ const StatisticsPage: React.FC = () => {
     };
 
     const tabItems = [
-        {
-            key: 'overview',
-            label: intl.formatMessage({ id: 'pages.park.statistics.overview', defaultMessage: '综合概览' }),
-            children: renderOverview(),
-        },
-        {
-            key: 'asset',
-            label: intl.formatMessage({ id: 'pages.park.statistics.assetAnalysis', defaultMessage: '资产分析' }),
-            children: renderAssetAnalysis(),
-        },
-        {
-            key: 'investment',
-            label: intl.formatMessage({ id: 'pages.park.statistics.investmentAnalysis', defaultMessage: '招商分析' }),
-            children: renderInvestmentAnalysis(),
-        },
-        {
-            key: 'tenant',
-            label: intl.formatMessage({ id: 'pages.park.statistics.tenantAnalysis', defaultMessage: '租户分析' }),
-            children: renderTenantAnalysis(),
-        },
-        {
-            key: 'service',
-            label: intl.formatMessage({ id: 'pages.park.statistics.serviceAnalysis', defaultMessage: '服务分析' }),
-            children: renderServiceAnalysis(),
-        },
+        { key: 'overview', label: intl.formatMessage({ id: 'pages.park.statistics.overview', defaultMessage: '综合概览' }), children: renderOverview() },
+        { key: 'asset', label: intl.formatMessage({ id: 'pages.park.statistics.assetAnalysis', defaultMessage: '资产分析' }), children: renderAssetAnalysis() },
+        { key: 'investment', label: intl.formatMessage({ id: 'pages.park.statistics.investmentAnalysis', defaultMessage: '招商分析' }), children: renderInvestmentAnalysis() },
+        { key: 'tenant', label: intl.formatMessage({ id: 'pages.park.statistics.tenantAnalysis', defaultMessage: '租户分析' }), children: renderTenantAnalysis() },
+        { key: 'service', label: intl.formatMessage({ id: 'pages.park.statistics.serviceAnalysis', defaultMessage: '服务分析' }), children: renderServiceAnalysis() },
     ];
 
     return (
@@ -968,13 +595,10 @@ const StatisticsPage: React.FC = () => {
             extra={[
                 <Space key="period-selection" wrap>
                     <StatisticsPeriodSelector
-                        value={period as string}
-                        dateRange={dateRange}
+                        value={state.period}
+                        dateRange={state.dateRange}
                         onChange={(newDateRange, newPeriod) => {
-                            setDateRange(newDateRange);
-                            if (newPeriod) {
-                                setPeriod(newPeriod);
-                            }
+                            set({ dateRange: newDateRange, period: newPeriod || state.period });
                         }}
                     />
                     <Button icon={<RobotOutlined />} onClick={handleGenerateAiReport} type="primary" style={{ background: 'linear-gradient(45deg, #1890ff, #722ed1)', borderColor: 'transparent' }}>
@@ -987,17 +611,10 @@ const StatisticsPage: React.FC = () => {
             ]}
         >
             <div className={styles['statistics-page']}>
-                <Spin spinning={loading}>
-                    <Tabs
-                        activeKey={activeTab}
-                        onChange={setActiveTab}
-                        items={tabItems}
-                        className={styles['stat-tabs']}
-                        type="card"
-                    />
+                <Spin spinning={state.loading}>
+                    <Tabs activeKey={state.activeTab} onChange={(key) => set({ activeTab: key })} items={tabItems} className={styles['stat-tabs']} type="card" />
                 </Spin>
             </div>
-
             <Modal
                 title={
                     <Space direction="vertical" size={4} style={{ width: '100%' }}>
@@ -1007,25 +624,19 @@ const StatisticsPage: React.FC = () => {
                         </Space>
                         <div style={{ fontSize: 12, fontWeight: 'normal', color: 'rgba(0, 0, 0, 0.45)', marginLeft: 24 }}>
                             {intl.formatMessage({ id: 'pages.park.statistics.reportPeriod', defaultMessage: '报告周期' })}: {' '}
-                            <Tag color="blue" style={{ marginRight: 8 }}>
-                                {period === 'month' ? '本月' : period === 'year' ? '本年' : period === 'custom' ? '自定义' : period}
-                            </Tag>
-                            {dateRange ? `${dateRange[0].format('YYYY-MM-DD')} ~ ${dateRange[1].format('YYYY-MM-DD')}` : '-'}
+                            <Tag color="blue" style={{ marginRight: 8 }}>{state.period === 'month' ? '本月' : state.period === 'year' ? '本年' : state.period === 'custom' ? '自定义' : state.period}</Tag>
+                            {state.dateRange ? `${state.dateRange[0].format('YYYY-MM-DD')} ~ ${state.dateRange[1].format('YYYY-MM-DD')}` : '-'}
                         </div>
                     </Space>
                 }
-                open={aiReportVisible}
-                onCancel={() => setAiReportVisible(false)}
+                open={state.aiReportVisible}
+                onCancel={() => set({ aiReportVisible: false })}
                 footer={null}
                 width={900}
                 styles={{ body: { maxHeight: '75vh', overflowY: 'auto', padding: '24px' } }}
             >
-                <Spin spinning={aiReportLoading} tip={intl.formatMessage({ id: 'pages.park.statistics.generatingReport', defaultMessage: '正在生成报告，可能需要几十秒...' })}>
-                    <div
-                        className={styles['markdown-body']}
-                        dangerouslySetInnerHTML={{ __html: aiReportContent }}
-                        style={{ fontSize: 15, lineHeight: 1.8 }}
-                    />
+                <Spin spinning={state.aiReportLoading} tip={intl.formatMessage({ id: 'pages.park.statistics.generatingReport', defaultMessage: '正在生成报告，可能需要几十秒...' })}>
+                    <div className={styles['markdown-body']} dangerouslySetInnerHTML={{ __html: state.aiReportContent }} style={{ fontSize: 15, lineHeight: 1.8 }} />
                 </Spin>
             </Modal>
         </PageContainer>

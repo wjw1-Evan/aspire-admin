@@ -463,7 +463,6 @@ const Welcome: React.FC = () => {
 
         <QuickActionsPanel
           currentUser={currentUser}
-          allMenus={(initialState?.currentUser as any)?.menus}
         />
 
         <div style={{ marginTop: '16px' }}>

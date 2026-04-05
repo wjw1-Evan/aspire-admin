@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, Row, Col, Space, Alert, theme, Button } from 'antd';
 import { RocketOutlined, DownOutlined, UpOutlined } from '@ant-design/icons';
-import { useIntl, history } from '@umijs/max';
+import { useIntl, history, request } from '@umijs/max';
 
 import useCommonStyles from '@/hooks/useCommonStyles';
 import QuickAction from './QuickAction';
@@ -9,19 +9,39 @@ import { getIconComponent, getMenuColor, flattenMenus } from '../utils';
 
 interface QuickActionsPanelProps {
     readonly currentUser?: any;
-    readonly allMenus?: any[];
 }
 
-const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({ currentUser, allMenus }) => {
+const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({ currentUser }) => {
     const intl = useIntl();
     const { token } = theme.useToken();
     const { styles } = useCommonStyles();
     const [collapsed, setCollapsed] = useState(true);
     const contentRef = useRef<HTMLDivElement>(null);
     const [hasMore, setHasMore] = useState(false);
+    const [menuIcons, setMenuIcons] = useState<Record<string, string>>({});
+
+    useEffect(() => {
+        const fetchMenuIcons = async () => {
+            try {
+                const response = await request<any>('/api/menu', { method: 'GET' });
+                if (response.success && response.data) {
+                    const iconMap: Record<string, string> = {};
+                    response.data.forEach((menu: any) => {
+                        if (menu.path && menu.icon) {
+                            iconMap[menu.path] = menu.icon;
+                        }
+                    });
+                    setMenuIcons(iconMap);
+                }
+            } catch (e) {
+                console.error('Failed to fetch menus:', e);
+            }
+        };
+        fetchMenuIcons();
+    }, []);
 
     const getQuickActionMenus = (): any[] => {
-        const menusSource = allMenus || currentUser?.menus;
+        const menusSource = currentUser?.menus;
         if (!menusSource) {
             return [];
         }
@@ -29,7 +49,10 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({ currentUser, allM
         const flatMenus = flattenMenus(menusSource);
         const filteredMenus = flatMenus.filter((menu: any) => menu.path !== '/welcome');
 
-        return filteredMenus.sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0));
+        return filteredMenus.map((menu: any) => ({
+            ...menu,
+            iconName: menuIcons[menu.path] || menu.iconName || menu.icon || menu.rawIcon
+        })).sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0));
     };
 
     const quickActionMenus = getQuickActionMenus();
@@ -132,7 +155,7 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({ currentUser, allM
                                 <QuickAction
                                     title={menuTitle}
                                     description={menuDescription}
-                                    icon={getIconComponent(menu.icon || (menu as any).iconName || (menu as any).Icon || menu.rawIcon)}
+                                    icon={getIconComponent(menu.iconName)}
                                     onClick={() => handleQuickAction(menu.path)}
                                     color={getMenuColor(menu.path)}
                                     token={token}

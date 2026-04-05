@@ -8,7 +8,7 @@ import QuickAction from './QuickAction';
 import { getIconComponent, getMenuColor, flattenMenus } from '../utils';
 
 interface QuickActionsPanelProps {
-    readonly currentUser?: API.CurrentUser;
+    readonly currentUser?: any;
 }
 
 const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({ currentUser }) => {
@@ -130,7 +130,7 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({ currentUser }) =>
                                 <QuickAction
                                     title={menuTitle}
                                     description={menuDescription}
-                                    icon={getIconComponent(menu.icon)}
+                                    icon={getIconComponent(menu.icon || menu.rawIcon)}
                                     onClick={() => handleQuickAction(menu.path)}
                                     color={getMenuColor(menu.path)}
                                     token={token}

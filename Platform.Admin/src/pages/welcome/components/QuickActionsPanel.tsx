@@ -23,14 +23,20 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({ currentUser }) =>
     useEffect(() => {
         const fetchMenuIcons = async () => {
             try {
-                const response = await request<any>('/api/menu', { method: 'GET' });
+                const response = await request<any>('/api/menu/user', { method: 'GET' });
                 if (response.success && response.data) {
                     const iconMap: Record<string, string> = {};
-                    response.data.forEach((menu: any) => {
-                        if (menu.path && menu.icon) {
-                            iconMap[menu.path] = menu.icon;
-                        }
-                    });
+                    const flattenForIcons = (menus: any[]) => {
+                        menus.forEach((menu: any) => {
+                            if (menu.path && menu.icon) {
+                                iconMap[menu.path] = menu.icon;
+                            }
+                            if (menu.children) {
+                                flattenForIcons(menu.children);
+                            }
+                        });
+                    };
+                    flattenForIcons(response.data);
                     setMenuIcons(iconMap);
                 }
             } catch (e) {

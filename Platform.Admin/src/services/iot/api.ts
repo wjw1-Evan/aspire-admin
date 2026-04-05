@@ -33,8 +33,8 @@ export type IoTEventQueryResponse = PagedResult<IoTDeviceEvent>;
 
 export const queryIoTEvents = (params: IoTEventQueryRequest) =>
     request<ApiResponse<IoTEventQueryResponse>>(`${API_PREFIX}/events/query`, {
-        method: 'POST',
-        data: params,
+        method: 'GET',
+        params: params,
     });
 
 /**
@@ -43,7 +43,7 @@ export const queryIoTEvents = (params: IoTEventQueryRequest) =>
 export const getUnhandledEventCount = (deviceId?: string) => {
     let url = `${API_PREFIX}/events/unhandled-count`;
     if (deviceId) url += `?deviceId=${deviceId}`;
-    return request<{ success: boolean; data: number }>(url, { method: 'GET' });
+    return request<ApiResponse<{ count: number }>>(url, { method: 'GET' });
 };
 
 /**

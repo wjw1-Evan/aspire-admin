@@ -27,8 +27,8 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
     const fetchUnhandledCount = async () => {
         try {
             const res = await getUnhandledEventCount();
-            if (res?.data) {
-                setUnhandledCount(res.data);
+            if (res?.data?.count !== undefined) {
+                setUnhandledCount(res.data.count);
             }
         } catch (error) {
             console.warn(intl.formatMessage({ id: 'pages.welcome.iotEvents.fetchCountFailed' }), error);

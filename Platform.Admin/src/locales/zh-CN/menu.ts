@@ -1,5 +1,6 @@
 export default {
   'menu.welcome': '欢迎',
+  'menu.welcome.desc': '系统欢迎页面与概览',
   'menu.login': '登录',
   'menu.register': '注册',
   'menu.register-result': '注册结果',

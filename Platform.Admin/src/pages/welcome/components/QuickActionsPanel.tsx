@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Card, Row, Col, Space, Alert, theme, Button } from 'antd';
 import { RocketOutlined, DownOutlined, UpOutlined } from '@ant-design/icons';
-import { useIntl, history, request } from '@umijs/max';
+import { useIntl, history } from '@umijs/max';
 
 import useCommonStyles from '@/hooks/useCommonStyles';
 import QuickAction from './QuickAction';
@@ -18,35 +18,8 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({ currentUser }) =>
     const [collapsed, setCollapsed] = useState(true);
     const contentRef = useRef<HTMLDivElement>(null);
     const [hasMore, setHasMore] = useState(false);
-    const [menuIcons, setMenuIcons] = useState<Record<string, string>>({});
 
-    useEffect(() => {
-        const fetchMenuIcons = async () => {
-            try {
-                const response = await request<any>('/api/menu/user', { method: 'GET' });
-                if (response.success && response.data) {
-                    const iconMap: Record<string, string> = {};
-                    const flattenForIcons = (menus: any[]) => {
-                        menus.forEach((menu: any) => {
-                            if (menu.path && menu.icon) {
-                                iconMap[menu.path] = menu.icon;
-                            }
-                            if (menu.children) {
-                                flattenForIcons(menu.children);
-                            }
-                        });
-                    };
-                    flattenForIcons(response.data);
-                    setMenuIcons(iconMap);
-                }
-            } catch (e) {
-                console.error('Failed to fetch menus:', e);
-            }
-        };
-        fetchMenuIcons();
-    }, []);
-
-    const getQuickActionMenus = (): any[] => {
+    const quickActionMenus = useMemo(() => {
         const menusSource = currentUser?.menus;
         if (!menusSource) {
             return [];
@@ -57,11 +30,9 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({ currentUser }) =>
 
         return filteredMenus.map((menu: any) => ({
             ...menu,
-            iconName: menuIcons[menu.path] || menu.iconName || menu.icon || menu.rawIcon
+            iconName: menu.iconName || menu.icon || menu.rawIcon
         })).sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0));
-    };
-
-    const quickActionMenus = getQuickActionMenus();
+    }, [currentUser?.menus]);
 
     const hasOverflow = quickActionMenus.length > 8;
 

@@ -23,6 +23,45 @@ export interface UserStatisticsResponse {
   newUsersThisMonth: number;
 }
 
+export interface UserListRequest {
+  page: number;
+  pageSize: number;
+  search?: string;
+  role?: string;
+  isActive?: boolean;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface UserActivityLog {
+  id?: string;
+  userId: string;
+  action: string;
+  description: string;
+  ipAddress?: string;
+  userAgent?: string;
+  createdAt: string;
+}
+
+export interface BulkUserActionRequest {
+  userIds: string[];
+  action: 'activate' | 'deactivate' | 'delete';
+}
+
+export interface CreateUserManagementRequest {
+  username: string;
+  password: string;
+  email?: string;
+  role: string;
+  isActive: boolean;
+}
+
+export interface UpdateProfileRequest {
+  name?: string;
+  email?: string;
+  age?: number;
+}
+
 export async function getAllUsers(options?: Record<string, any>) {
   return request<ApiResponse<AppUser[]>>('/api/users/all', {
     method: 'GET',
@@ -97,4 +136,3 @@ export async function updateUser(userId: string, data: Partial<AppUser>) {
     data,
   });
 }
-

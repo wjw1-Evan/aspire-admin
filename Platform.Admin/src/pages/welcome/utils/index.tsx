@@ -2,6 +2,14 @@ import React from 'react';
 import {
   UserOutlined, TeamOutlined, FolderOutlined, BarChartOutlined, CalendarOutlined,
   BellOutlined, SettingOutlined, DashboardOutlined, AppstoreOutlined, MailOutlined,
+  FileTextOutlined, ProjectOutlined, CloudServerOutlined, LockOutlined, CloudOutlined,
+  ScheduleOutlined, BankOutlined, ApartmentOutlined, RocketOutlined, HeartOutlined,
+  ClusterOutlined, SafetyOutlined, DatabaseOutlined, ThunderboltOutlined, DesktopOutlined,
+  FolderOpenOutlined, ShareAltOutlined, FormOutlined, BookOutlined, StarOutlined,
+  CheckCircleOutlined, ClockCircleOutlined, WarningOutlined, InfoCircleOutlined,
+  SolutionOutlined, GoldOutlined, GlobalOutlined, HomeOutlined, EnvironmentOutlined,
+  ToolOutlined, KeyOutlined, NodeIndexOutlined, EditOutlined, DeleteOutlined,
+  PlusOutlined, SearchOutlined, DownloadOutlined, UploadOutlined, PrinterOutlined,
 } from '@ant-design/icons';
 import type { MenuDataItem } from '@umijs/max';
 
@@ -28,13 +36,70 @@ export function getIconComponent(iconName?: string): React.ReactNode {
     DashboardOutlined: <DashboardOutlined />,
     AppstoreOutlined: <AppstoreOutlined />,
     MailOutlined: <MailOutlined />,
+    FileTextOutlined: <FileTextOutlined />,
+    ProjectOutlined: <ProjectOutlined />,
+    CloudServerOutlined: <CloudServerOutlined />,
+    LockOutlined: <LockOutlined />,
+    CloudOutlined: <CloudOutlined />,
+    ScheduleOutlined: <ScheduleOutlined />,
+    BankOutlined: <BankOutlined />,
+    ApartmentOutlined: <ApartmentOutlined />,
+    RocketOutlined: <RocketOutlined />,
+    HeartOutlined: <HeartOutlined />,
+    ClusterOutlined: <ClusterOutlined />,
+    SafetyOutlined: <SafetyOutlined />,
+    DatabaseOutlined: <DatabaseOutlined />,
+    ThunderboltOutlined: <ThunderboltOutlined />,
+    DesktopOutlined: <DesktopOutlined />,
+    FolderOpenOutlined: <FolderOpenOutlined />,
+    ShareAltOutlined: <ShareAltOutlined />,
+    FormOutlined: <FormOutlined />,
+    BookOutlined: <BookOutlined />,
+    StarOutlined: <StarOutlined />,
+    CheckCircleOutlined: <CheckCircleOutlined />,
+    ClockCircleOutlined: <ClockCircleOutlined />,
+    WarningOutlined: <WarningOutlined />,
+    InfoCircleOutlined: <InfoCircleOutlined />,
+    SolutionOutlined: <SolutionOutlined />,
+    GoldOutlined: <GoldOutlined />,
+    GlobalOutlined: <GlobalOutlined />,
+    HomeOutlined: <HomeOutlined />,
+    EnvironmentOutlined: <EnvironmentOutlined />,
+    ToolOutlined: <ToolOutlined />,
+    KeyOutlined: <KeyOutlined />,
+    NodeIndexOutlined: <NodeIndexOutlined />,
+    EditOutlined: <EditOutlined />,
+    DeleteOutlined: <DeleteOutlined />,
+    PlusOutlined: <PlusOutlined />,
+    SearchOutlined: <SearchOutlined />,
+    DownloadOutlined: <DownloadOutlined />,
+    UploadOutlined: <UploadOutlined />,
+    PrinterOutlined: <PrinterOutlined />,
   };
   return iconName && iconMap[iconName] ? iconMap[iconName] : <AppstoreOutlined />;
 }
 
-export function getMenuColor(index: number): string {
-  const colors = ['#1890ff', '#52c41a', '#faad14', '#f5222d', '#722ed1', '#13c2c2', '#eb2f96', '#fa8c16'];
-  return colors[index % colors.length];
+export function getMenuColor(path?: string): string {
+  if (!path) return '#1890ff';
+  const colorMap: Record<string, string> = {
+    '/document': '#1890ff',
+    '/project-management': '#52c41a',
+    '/iot-platform': '#722ed1',
+    '/xiaoke-management': '#13c2c2',
+    '/workflow': '#faad14',
+    '/password-book': '#f5222d',
+    '/cloud-disk': '#eb2f96',
+    '/visit': '#fa8c16',
+    '/park': '#52c41a',
+    '/account': '#1890ff',
+    '/system': '#722ed1',
+  };
+  for (const key of Object.keys(colorMap)) {
+    if (path.startsWith(key)) {
+      return colorMap[key];
+    }
+  }
+  return '#1890ff';
 }
 
 export function flattenMenus(menus: MenuDataItem[]): MenuDataItem[] {

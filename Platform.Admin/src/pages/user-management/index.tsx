@@ -30,16 +30,16 @@ const api = {
   list: (p: PageParams) => request<ApiResponse<PagedResult<AppUser>>>('/api/users/list', { method: 'POST', data: p }),
   stats: () => request<ApiResponse<UserStats>>('/api/users/statistics', { method: 'GET' }),
   del: (id: string, reason?: string) => request<ApiResponse<unknown>>(`/api/users/${id}`, { method: 'DELETE', params: reason ? { reason } : undefined }),
-  bulk: (ids: string[], action: string, reason?: string) => request<ApiResponse<unknown>>('/api/users/bulk-action', { method: 'POST', data: { userIds: ids, action, reason } }),
+  bulk: (ids: string[], action: string, reason?: string) => request<ApiResponse<unknown>>('/api/users/bulk', { method: 'POST', data: { userIds: ids, action, reason } }),
   activate: (id: string) => request<ApiResponse<unknown>>(`/api/users/${id}/activate`, { method: 'PUT' }),
   deactivate: (id: string) => request<ApiResponse<unknown>>(`/api/users/${id}/deactivate`, { method: 'PUT' }),
-  create: (d: unknown) => request<ApiResponse<AppUser>>('/api/users/management', { method: 'POST', data: d }),
+  create: (d: unknown) => request<ApiResponse<AppUser>>('/api/users', { method: 'POST', data: d }),
   update: (id: string, d: unknown) => request<ApiResponse<AppUser>>(`/api/users/${id}`, { method: 'PUT', data: d }),
   searchUsers: (s: string) => request<ApiResponse<{ users: AppUser[]; total: number }>>('/api/users/all', { method: 'GET', params: { search: s } }),
   joinReqs: (cid: string, status?: string) => request<ApiResponse<JoinReq[]>>(`/api/company/${cid}/join-requests`, { params: { status } }),
   approveJoin: (id: string) => request<ApiResponse<unknown>>(`/api/company/join-requests/${id}/approve`, { method: 'POST', data: {} }),
   rejectJoin: (id: string, d: { rejectReason: string }) => request<ApiResponse<unknown>>(`/api/company/join-requests/${id}/reject`, { method: 'POST', data: d }),
-  roles: () => request<ApiResponse<PagedResult<Role>>>('/api/roles/all', { method: 'GET' }),
+  roles: () => request<ApiResponse<PagedResult<Role>>>('/api/role', { method: 'GET' }),
 };
 
 // ==================== Main ====================

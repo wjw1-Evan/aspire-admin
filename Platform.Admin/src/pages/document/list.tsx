@@ -1,9 +1,8 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { PageContainer, StatCard } from '@/components';
-import { Space, Tag, Button, Card, Row, Col, Drawer, Modal, Select, message } from 'antd';
+import { Space, Tag, Button, Card, Row, Col, Drawer, message } from 'antd';
 import { FileTextOutlined, PlusOutlined, EyeOutlined, EditOutlined, SendOutlined, DeleteOutlined, ReloadOutlined, FileProtectOutlined, ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormSelect } from '@ant-design/pro-form';
 import dayjs from 'dayjs';
 import { request } from '@umijs/max';
 import { ApiResponse, PagedResult, PageParams } from '@/types/api-response';
@@ -11,11 +10,6 @@ import {
   type Document,
   type DocumentStatistics,
   DocumentStatus,
-  getDocumentList,
-  getDocumentDetail,
-  deleteDocument,
-  createDocument,
-  getDocumentStatistics,
 } from '@/services/document/api';
 
 const documentStatusMap = {
@@ -31,28 +25,16 @@ const api = {
   delete: (id: string) => request<ApiResponse<void>>(`/api/documents/${id}`, { method: 'DELETE' }),
   create: (data: Partial<Document>) => request<ApiResponse<Document>>('/api/documents', { method: 'POST', data }),
   statistics: () => request<ApiResponse<DocumentStatistics>>('/api/documents/statistics'),
-  documentTypes: () => request<ApiResponse<string[]>>('/api/documents/types'),
-  categories: () => request<ApiResponse<string[]>>('/api/documents/categories'),
 };
 
 const DocumentManagement: React.FC = () => {
   const actionRef = useRef<ActionType | undefined>(undefined);
   const [state, setState] = useState({
     statistics: null as DocumentStatistics | null,
-    createVisible: false,
     detailVisible: false,
     viewingId: '',
   });
-  const [formState, setFormState] = useState({
-    documentTypes: [] as string[],
-    categories: [] as string[],
-  });
   const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
-
-  useEffect(() => {
-    api.documentTypes().then(r => { if (r.success && r.data) setFormState(p => ({ ...p, documentTypes: r.data as string[] })); });
-    api.categories().then(r => { if (r.success && r.data) setFormState(p => ({ ...p, categories: r.data as string[] })); });
-  }, []);
 
   const columns: ProColumns<Document>[] = [
     { title: '标题', dataIndex: 'title', ellipsis: true, sorter: true, render: (dom: any, r) => <a onClick={() => set({ viewingId: r.id, detailVisible: true })}><FileTextOutlined /> {dom}</a> },

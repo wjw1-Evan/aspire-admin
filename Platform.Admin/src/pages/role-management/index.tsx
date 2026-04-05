@@ -103,7 +103,7 @@ const RoleManagement: React.FC = () => {
           return res.success;
         }} autoFocusFirstInput width={700}
       >
-        <ProFormText name="name" label={intl.formatMessage({ id: 'pages.roleForm.nameLabel' })} placeholder={intl.formatMessage({ id: 'pages.roleForm.namePlaceholder' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.roleForm.nameRequired' })]} />
+        <ProFormText name="name" label={intl.formatMessage({ id: 'pages.roleForm.nameLabel' })} placeholder={intl.formatMessage({ id: 'pages.roleForm.namePlaceholder' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.roleForm.nameRequired' }) }]} />
         <ProFormTextArea name="description" label={intl.formatMessage({ id: 'pages.roleForm.descriptionLabel' })} placeholder={intl.formatMessage({ id: 'pages.roleForm.descriptionPlaceholder' })} />
         <Divider>{intl.formatMessage({ id: 'pages.roleForm.menuPermission' })}</Divider>
         <div style={{ marginBottom: 16 }}>

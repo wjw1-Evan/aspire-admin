@@ -13,16 +13,22 @@ import {
   ReloadOutlined,
   CrownOutlined,
 } from '@ant-design/icons';
-import { request } from '@umijs/max';
 import { useTableResize } from '@/hooks/useTableResize';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import { getAllRoles } from '@/services/role/api';
 import type { Role } from '@/services/role/types';
 import { getCurrentCompany } from '@/services/company';
-import { getUserStatistics } from '@/services/ant-design-pro/api';
-import type { ApiResponse, PagedResult } from '@/types/unified-api';
-import { type PageParams, toBackendPageParams } from '@/types/page-params';
-import type { AppUser, UserStatisticsResponse } from './types';
+import {
+  getUserList,
+  getUserStatistics,
+  deleteUser,
+  bulkAction,
+  activateUser,
+  deactivateUser,
+  type AppUser,
+  type UserStatisticsResponse,
+} from '@/services/user/api';
+import type { PageParams } from '@/types/page-params';
 const UserForm = React.lazy(() => import('./components/UserForm'));
 const UserDetail = React.lazy(() => import('./components/UserDetail'));
 const JoinRequestsTable = React.lazy(() => import('./components/JoinRequestsTable'));
@@ -90,13 +96,9 @@ const UserManagement: React.FC = () => {
 
   const fetchData = useCallback(async () => {
     const currentParams = searchParamsRef.current;
-    const requestData = toBackendPageParams(currentParams);
     setLoading(true);
     try {
-      const response = await request<ApiResponse<PagedResult<AppUser>>>('/api/users/list', {
-        method: 'POST',
-        data: requestData,
-      });
+      const response = await getUserList(currentParams);
 
       if (response.success && response.data) {
         setData(response.data?.queryable || []);
@@ -167,16 +169,10 @@ const UserManagement: React.FC = () => {
       cancelText: intl.formatMessage({ id: 'pages.modal.cancel' }),
       okType: 'danger',
       onOk: async () => {
-        try {
-          await request(`/api/users/${userId}`, {
-            method: 'DELETE',
-            params: { reason: deleteReason },
-          });
+        const res = await deleteUser(userId, deleteReason);
+        if (res.success) {
           message.success(intl.formatMessage({ id: 'pages.message.deleteSuccess' }));
           refreshAll();
-        } catch (error) {
-          console.error('删除用户失败:', error);
-          throw error;
         }
       },
     });
@@ -187,6 +183,8 @@ const UserManagement: React.FC = () => {
       message.warning(intl.formatMessage({ id: 'pages.message.pleaseSelect' }));
       return;
     }
+
+    const userIds = selectedRows.map((user) => user.id);
 
     if (action === 'delete') {
       let deleteReason = '';
@@ -207,36 +205,19 @@ const UserManagement: React.FC = () => {
         cancelText: intl.formatMessage({ id: 'pages.modal.cancel' }),
         okType: 'danger',
         onOk: async () => {
-          try {
-            await request('/api/users/bulk-action', {
-              method: 'POST',
-              data: {
-                UserIds: selectedRows.map((user) => user.id),
-                Action: action,
-                Reason: deleteReason,
-              },
-            });
+          const res = await bulkAction(userIds, action, deleteReason);
+          if (res.success) {
             message.success(`批量删除成功`);
             setSelectedRows([]);
             refreshAll();
-          } catch (error) {
-            console.error('批量删除失败:', error);
-            throw error;
           }
         },
       });
       return;
     }
 
-    try {
-      await request('/api/users/bulk-action', {
-        method: 'POST',
-        data: {
-          UserIds: selectedRows.map((user) => user.id),
-          Action: action,
-        },
-      });
-
+    const res = await bulkAction(userIds, action);
+    if (res.success) {
       const actionText =
         {
           activate: intl.formatMessage({ id: 'pages.userManagement.action.activate' }),
@@ -246,22 +227,20 @@ const UserManagement: React.FC = () => {
       message.success(intl.formatMessage({ id: 'pages.message.success' }));
       setSelectedRows([]);
       refreshAll();
-    } catch (error) {
-      console.error('批量操作失败:', error);
     }
   }, [selectedRows, intl, modal, message, refreshAll]);
 
   const handleToggleStatus = useCallback(async (user: AppUser) => {
-    try {
-      const endpoint = user.isActive ? 'deactivate' : 'activate';
-      await request(`/api/users/${user.id}/${endpoint}`, {
-        method: 'PUT',
-      });
-
-      message.success(user.isActive ? intl.formatMessage({ id: 'pages.userManagement.userActivated' }) : intl.formatMessage({ id: 'pages.userManagement.userDeactivated' }));
+    const res = user.isActive 
+      ? await deactivateUser(user.id)
+      : await activateUser(user.id);
+    
+    if (res.success) {
+      message.success(user.isActive 
+        ? intl.formatMessage({ id: 'pages.userManagement.userDeactivated' })
+        : intl.formatMessage({ id: 'pages.userManagement.userActivated' })
+      );
       refreshAll();
-    } catch (error) {
-      console.error('切换用户状态失败:', error);
     }
   }, [intl, message, refreshAll]);
 

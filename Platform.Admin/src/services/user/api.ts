@@ -2,9 +2,6 @@ import { request } from '@umijs/max';
 import type { ApiResponse, PagedResult } from '@/types/unified-api';
 import type { PageParams } from '@/types/page-params';
 
-/**
- * 用户信息接口
- */
 export interface AppUser {
   id: string;
   username: string;
@@ -19,9 +16,13 @@ export interface AppUser {
   updatedAt: string;
 }
 
-/**
- * 获取所有用户
- */
+export interface UserStatisticsResponse {
+  totalUsers: number;
+  activeUsers: number;
+  adminUsers: number;
+  newUsersThisMonth: number;
+}
+
 export async function getAllUsers(options?: Record<string, any>) {
   return request<ApiResponse<AppUser[]>>('/api/users/all', {
     method: 'GET',
@@ -29,9 +30,6 @@ export async function getAllUsers(options?: Record<string, any>) {
   });
 }
 
-/**
- * 根据ID获取用户
- */
 export async function getUserById(id: string, options?: Record<string, any>) {
   return request<ApiResponse<AppUser>>(`/api/users/${id}`, {
     method: 'GET',
@@ -39,19 +37,64 @@ export async function getUserById(id: string, options?: Record<string, any>) {
   });
 }
 
-/**
- * 获取用户列表（分页）
- */
 export async function getUserList(
-  params: PageParams & {
-    isActive?: boolean;
-  },
+  params: PageParams,
   options?: Record<string, any>,
 ) {
   return request<ApiResponse<PagedResult<AppUser>>>('/api/users/list', {
     method: 'POST',
     data: params,
     ...(options || {}),
+  });
+}
+
+export async function getUserStatistics() {
+  return request<ApiResponse<UserStatisticsResponse>>('/api/users/statistics', {
+    method: 'GET',
+  });
+}
+
+export async function deleteUser(userId: string, reason?: string) {
+  return request<ApiResponse<{ message: string }>>(`/api/users/${userId}`, {
+    method: 'DELETE',
+    params: reason ? { reason } : undefined,
+  });
+}
+
+export async function bulkAction(userIds: string[], action: string, reason?: string) {
+  return request<ApiResponse<{ message: string }>>('/api/users/bulk-action', {
+    method: 'POST',
+    data: {
+      userIds,
+      action,
+      reason,
+    },
+  });
+}
+
+export async function activateUser(userId: string) {
+  return request<ApiResponse<AppUser>>(`/api/users/${userId}/activate`, {
+    method: 'PUT',
+  });
+}
+
+export async function deactivateUser(userId: string) {
+  return request<ApiResponse<AppUser>>(`/api/users/${userId}/deactivate`, {
+    method: 'PUT',
+  });
+}
+
+export async function createUser(data: Partial<AppUser>) {
+  return request<ApiResponse<AppUser>>('/api/users', {
+    method: 'POST',
+    data,
+  });
+}
+
+export async function updateUser(userId: string, data: Partial<AppUser>) {
+  return request<ApiResponse<AppUser>>(`/api/users/${userId}`, {
+    method: 'PUT',
+    data,
   });
 }
 

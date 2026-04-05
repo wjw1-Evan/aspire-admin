@@ -1,6 +1,6 @@
-import React from 'react';
-import { Card, Row, Col, Space, Alert, theme } from 'antd';
-import { RocketOutlined } from '@ant-design/icons';
+import React, { useState, useRef, useEffect } from 'react';
+import { Card, Row, Col, Space, Alert, theme, Button } from 'antd';
+import { RocketOutlined, DownOutlined, UpOutlined } from '@ant-design/icons';
 import { useIntl, history } from '@umijs/max';
 
 import useCommonStyles from '@/hooks/useCommonStyles';
@@ -15,25 +15,43 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({ currentUser }) =>
     const intl = useIntl();
     const { token } = theme.useToken();
     const { styles } = useCommonStyles();
+    const [collapsed, setCollapsed] = useState(true);
+    const contentRef = useRef<HTMLDivElement>(null);
+    const [hasMore, setHasMore] = useState(false);
 
-    // 从用户菜单中提取快速操作项
     const getQuickActionMenus = (): API.MenuTreeNode[] => {
         if (!currentUser?.menus) {
             return [];
         }
 
-        // 扁平化菜单树
         const flatMenus = flattenMenus(currentUser.menus);
+        const filteredMenus = flatMenus.filter(menu => menu.path !== '/welcome');
 
-        // 按 sortOrder 排序，限制最多显示 12 个
-        return flatMenus
-            .sort((a, b) => a.sortOrder - b.sortOrder)
-            .slice(0, 12);
+        return filteredMenus.sort((a, b) => a.sortOrder - b.sortOrder);
     };
 
     const quickActionMenus = getQuickActionMenus();
 
-    // 快速操作处理
+    const hasOverflow = quickActionMenus.length > 8;
+
+    useEffect(() => {
+        const checkOverflow = () => {
+            if (contentRef.current && collapsed && hasOverflow) {
+                const el = contentRef.current;
+                const row = el.querySelector('.ant-row');
+                if (row) {
+                    const rowEl = row as HTMLElement;
+                    setHasMore(rowEl.offsetHeight > el.clientHeight + 10);
+                }
+            } else if (!collapsed) {
+                setHasMore(false);
+            }
+        };
+        setTimeout(checkOverflow, 100);
+        window.addEventListener('resize', checkOverflow);
+        return () => window.removeEventListener('resize', checkOverflow);
+    }, [collapsed, hasOverflow]);
+
     const handleQuickAction = (path: string) => {
         history.push(path);
     };
@@ -46,12 +64,28 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({ currentUser }) =>
                     <span style={{ fontWeight: 600 }}>{intl.formatMessage({ id: 'pages.welcome.quickActions' })}</span>
                 </Space>
             }
+            extra={
+                hasOverflow ? (
+                    <Button
+                        type="link"
+                        icon={collapsed ? <DownOutlined /> : <UpOutlined />}
+                        onClick={() => setCollapsed(!collapsed)}
+                    >
+                        {collapsed ? '展开' : '折叠'}
+                    </Button>
+                ) : null
+            }
             className={styles.card}
             style={{ borderRadius: '16px' }}
         >
             {quickActionMenus.length > 0 ? (
-                <Row gutter={[16, 16]}>
-                    {quickActionMenus.map((menu) => {
+                <div ref={contentRef} style={{ 
+                    maxHeight: collapsed ? '220px' : 'none', 
+                    overflowY: collapsed ? 'auto' : 'visible',
+                    transition: 'max-height 0.3s ease' 
+                }}>
+                    <Row gutter={[16, 16]}>
+                        {quickActionMenus.map((menu) => {
                         // 生成 locale 键用于多语言
                         let localeKey = '';
                         if (menu.path.startsWith('/system/')) {
@@ -105,6 +139,7 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({ currentUser }) =>
                         );
                     })}
                 </Row>
+                </div>
             ) : (
                 <Alert
                     title={intl.formatMessage({ id: 'pages.welcome.quickActions.empty' }, { defaultMessage: '暂无快速操作' })}

@@ -1,1 +1,1 @@
-export { default as OverviewCards } from './OverviewCards';
+// OverviewCards has been merged into the main statistics page

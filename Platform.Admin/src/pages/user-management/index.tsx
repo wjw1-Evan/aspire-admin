@@ -1,14 +1,12 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { PageContainer, StatCard } from '@/components';
-import SearchBar from '@/components/SearchBar';
 import { useIntl, request } from '@umijs/max';
-import { App, Button, Tag, Space, Modal, Drawer, Row, Col, Badge, Card, Spin, Input, Typography, Table } from 'antd';
+import { App, Button, Tag, Space, Modal, Drawer, Row, Col, Badge, Card, Spin, Input, Typography } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormSwitch } from '@ant-design/pro-form';
 import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, TeamOutlined, CheckCircleOutlined, ReloadOutlined, CrownOutlined, SearchOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
-import dayjs from 'dayjs';
-import { formatDateTime } from '@/utils/format';
 import { ApiResponse, PagedResult, PageParams } from '@/types/api-response';
+import { formatDateTime } from '@/utils/format';
 import type { Role } from '@/services/role/types';
 import { getCurrentCompany } from '@/services/company';
 
@@ -49,6 +47,7 @@ const UserManagement: React.FC = () => {
   const intl = useIntl();
   const { message, modal } = App.useApp();
   const actionRef = useRef<ActionType>(null);
+  const joinActionRef = useRef<ActionType>(null);
   const joinRef = useRef<PageParams>({ page: 1, pageSize: 10, search: '' });
   const [activeTab, setActiveTab] = useState('members');
   const [state, setState] = useState({
@@ -167,10 +166,10 @@ const UserManagement: React.FC = () => {
     { title: '申请人', dataIndex: 'username', render: (_: string, r: JoinReq) => <Space direction="vertical" size={0}><b>{r.username}</b><span style={{ color: '#999', fontSize: 12 }}>{r.userEmail}</span></Space> },
     { title: '申请理由', dataIndex: 'reason', ellipsis: true, render: (t: string) => t || '-' },
     { title: '状态', dataIndex: 'status', render: (s: string) => { const m: Record<string, { text: string; color: string }> = { pending: { text: '待审核', color: 'processing' }, approved: { text: '已通过', color: 'success' }, rejected: { text: '已拒绝', color: 'error' }, cancelled: { text: '已取消', color: 'default' } }; const c = m[s] || { text: s, color: 'default' }; return <Tag color={c.color}>{c.text}</Tag>; } },
-    { title: '申请时间', dataIndex: 'createdAt', render: (t: string) => t ? dayjs(t).format('YYYY-MM-DD HH:mm:ss') : '-' },
+    { title: '申请时间', dataIndex: 'createdAt', render: (t: string) => formatDateTime(t) },
     { title: '审核人', dataIndex: 'reviewedByName', render: (t: string) => t || '-' },
     { title: '备注', dataIndex: 'rejectReason', ellipsis: true, render: (_: string, r: JoinReq) => r.status === 'approved' ? <span style={{ color: '#52c41a' }}>已通过</span> : _ || '-' },
-    { title: '审核时间', dataIndex: 'reviewedAt', render: (t: string) => t ? dayjs(t).format('YYYY-MM-DD HH:mm:ss') : '-' },
+    { title: '审核时间', dataIndex: 'reviewedAt', render: (t: string) => formatDateTime(t) },
     { title: '操作', key: 'action', fixed: 'right', width: 150, render: (_: unknown, r: JoinReq) => r.status === 'cancelled' ? null : (<Space>{r.status !== 'approved' && <Button type="link" size="small" icon={<CheckOutlined />} onClick={() => handleApprove(r.id)}>批准</Button>}{r.status !== 'rejected' && <Button type="link" size="small" danger icon={<CloseOutlined />} onClick={() => setJ({ rejectModal: true, rejectId: r.id })}>拒绝</Button>}</Space>) },
   ], []);
 
@@ -190,7 +189,6 @@ const UserManagement: React.FC = () => {
     >
       {activeTab === 'members' && <>
         {state.statistics && <Card style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>{stats.map((s, i) => <Col xs={24} sm={12} md={6} key={i}><StatCard title={s.title} value={s.value} icon={s.icon} color={s.color} /></Col>)}</Row></Card>}
-        <SearchBar initialParams={state.searchParams} onSearch={handleSearch} style={{ marginBottom: 16 }} />
         <ProTable actionRef={actionRef} request={async (params) => {
           const { pageSize, current } = params;
           const sp = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
@@ -200,9 +198,9 @@ const UserManagement: React.FC = () => {
         }} columns={columns} rowKey="id" search={false}
           rowSelection={{ selectedRowKeys: state.selectedRows.map(r => r.id), onChange: (_: React.Key[], selectedRows: AppUser[]) => set({ selectedRows }) }}
           onChange={(_p, _f, s) => set({ sorter: (s as Record<string, unknown>)?.order ? { sortBy: (s as Record<string, string>).field, sortOrder: (s as Record<string, string>).order === 'ascend' ? 'asc' : 'desc' } : undefined })}
-          toolBarRender={() => [<Button key="activate" disabled={!state.selectedRows.length} onClick={() => handleBulk('activate')}>批量激活</Button>, <Button key="deactivate" disabled={!state.selectedRows.length} onClick={() => handleBulk('deactivate')}>批量禁用</Button>, <Button key="delete" danger disabled={!state.selectedRows.length} onClick={() => handleBulk('delete')}>批量删除</Button>]}
+          toolBarRender={() => [<Input.Search key="search" placeholder="搜索用户名/姓名/邮箱..." style={{ width: 260 }} allowClear value={state.searchParams.search} onChange={(e) => { set(p => ({ searchParams: { ...p.searchParams, search: e.target.value } })); }} onSearch={(v) => { set(p => ({ searchParams: { ...p.searchParams, search: v, page: 1 } })); actionRef.current?.reload(); }} />, <Button key="activate" disabled={!state.selectedRows.length} onClick={() => handleBulk('activate')}>批量激活</Button>, <Button key="deactivate" disabled={!state.selectedRows.length} onClick={() => handleBulk('deactivate')}>批量禁用</Button>, <Button key="delete" danger disabled={!state.selectedRows.length} onClick={() => handleBulk('delete')}>批量删除</Button>]}
         />
-        <ModalForm key={state.editingUser?.id || 'create'} title={state.editingUser ? intl.formatMessage({ id: 'pages.userManagement.editUser' }) : '添加成员'}
+        <ModalForm title={state.editingUser ? intl.formatMessage({ id: 'pages.userManagement.editUser' }) : '添加成员'}
           open={state.formVisible} onOpenChange={(open) => { if (!open) set({ formVisible: false, editingUser: null }); setF({ selectedUser: null }); }}
           initialValues={state.editingUser ? { username: state.editingUser.username, email: state.editingUser.email, phoneNumber: state.editingUser.phoneNumber, roleIds: state.editingUser.roleIds || [], isActive: state.editingUser.isActive, remark: state.editingUser.remark } : undefined}
           onFinish={async (values) => {
@@ -231,8 +229,9 @@ const UserManagement: React.FC = () => {
         </Drawer>
       </>}
       {activeTab === 'requests' && <>
-        <SearchBar initialParams={joinRef.current} onSearch={handleJoinSearch} style={{ marginBottom: 16 }} />
-        <Table<JoinReq> dataSource={join.data} columns={joinCols} rowKey="id" loading={join.loading} scroll={{ x: 'max-content' }} pagination={{ current: join.page, pageSize: join.pageSize, total: join.total }} />
+        <ProTable<JoinReq> actionRef={joinActionRef} request={async () => { await fetchJoin(); return { data: join.data, total: join.total, success: true }; }} columns={joinCols} rowKey="id" search={false} scroll={{ x: 'max-content' }} pagination={{ current: join.page, pageSize: join.pageSize, total: join.total, pageSizeOptions: ['10', '20', '50', '100'] }}
+          toolBarRender={() => [<Input.Search key="search" placeholder="搜索用户名/邮箱..." style={{ width: 240 }} allowClear value={(joinRef.current as Record<string, string>).search} onChange={(e) => { joinRef.current = { ...joinRef.current, search: e.target.value } as PageParams; }} onSearch={(v) => { joinRef.current = { ...joinRef.current, search: v, page: 1 } as PageParams; fetchJoin(); }} />]}
+        />
         <Modal title="拒绝申请" open={join.rejectModal} onOk={handleReject} onCancel={() => setJ({ rejectModal: false })} okText="确定" cancelText="取消" okType="danger">
           <Input.TextArea rows={4} placeholder="请输入拒绝原因" value={join.rejectReason} onChange={(e) => setJ({ rejectReason: e.target.value })} />
         </Modal>

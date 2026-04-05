@@ -1,297 +1,141 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PageContainer, StatCard } from '@/components';
-import SearchBar from '@/components/SearchBar';
 import { useIntl } from '@umijs/max';
-import { Grid, Tag, Space, Modal, Drawer, Row, Col, Card, Input, Descriptions, Spin, App, Button, Table } from 'antd';
-import {
-  PlusOutlined, ExportOutlined, ReloadOutlined, LockOutlined, FolderOutlined,
-  ClockCircleOutlined, GlobalOutlined, UserOutlined, KeyOutlined, TagOutlined,
-  CalendarOutlined, CopyOutlined, EditOutlined, DeleteOutlined,
-} from '@ant-design/icons';
+import { request } from '@umijs/max';
+import { Tag, Space, Card, Row, Col, Button, Input, Popconfirm, Drawer, Descriptions, Modal, Typography, Select } from 'antd';
+import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
+import { ModalForm, ProFormText, ProFormSelect } from '@ant-design/pro-form';
+import { PlusOutlined, ExportOutlined, LockOutlined, FolderOutlined, ClockCircleOutlined, TagOutlined, EditOutlined, DeleteOutlined, SearchOutlined, CopyOutlined, DownloadOutlined, KeyOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { getPasswordBookList, deletePasswordBookEntry, getPasswordBookStatistics, getPasswordBookEntry } from '@/services/password-book/api';
-import type { PageParams } from '@/types/page-params';
-import type { PasswordBookEntry, PasswordBookEntryDetail, PasswordBookStatistics } from './types';
-import PasswordBookForm from './components/PasswordBookForm';
-import ExportDialog from './components/ExportDialog';
-import useCommonStyles from '@/hooks/useCommonStyles';
-import type { ColumnsType } from 'antd/es/table';
+import { ApiResponse, PagedResult,PageParams } from '@/types/unified-api';
 
+
+// ==================== Types ====================
+interface Entry { id: string; platform: string; account: string; url?: string; category?: string; tags: string[]; notes?: string; lastUsedAt?: string; createdAt: string; updatedAt: string; password?: string; }
+interface Stats { totalEntries: number; categoryCount: number; tagCount: number; recentUsedCount: number; }
+interface EntryFormData { platform: string; account: string; password?: string; url?: string; category?: string; tags: string[]; notes?: string; }
+interface GenerateParams { length?: number; includeUppercase?: boolean; includeLowercase?: boolean; includeNumbers?: boolean; includeSymbols?: boolean; }
+
+// ==================== API ====================
+const api = {
+  list: (params: PageParams) => request<ApiResponse<PagedResult<Entry>>>('/api/password-book/list', { params }),
+  get: (id: string) => request<ApiResponse<Entry>>(`/api/password-book/${id}`),
+  delete: (id: string) => request<ApiResponse<void>>(`/api/password-book/${id}`, { method: 'DELETE' }),
+  create: (data: EntryFormData) => request<ApiResponse<Entry>>('/api/password-book', { method: 'POST', data }),
+  update: (id: string, data: EntryFormData) => request<ApiResponse<Entry>>(`/api/password-book/${id}`, { method: 'PUT', data }),
+  statistics: () => request<ApiResponse<Stats>>('/api/password-book/statistics'),
+  categories: () => request<ApiResponse<string[]>>('/api/password-book/categories'),
+  generate: (data: GenerateParams) => request<ApiResponse<{ password: string }>>('/api/password-book/generate', { method: 'POST', data }),
+  export: (data: { format: string }) => request<any>('/api/password-book/export', { method: 'POST', data, responseType: 'blob', getResponse: true }),
+};
+
+// ==================== Main ====================
 const PasswordBook: React.FC = () => {
-  const intl = useIntl();
-  const { message, modal } = App.useApp();
-  const { styles } = useCommonStyles();
-  const isMobile = !Grid.useBreakpoint().md;
+  const actionRef = useRef<ActionType | undefined>(undefined);
+  const [state, setState] = useState({ statistics: null as Stats | null, exportVisible: false, editingEntry: null as Entry | null, formVisible: false, detailVisible: false, viewingId: '', sorter: undefined as { sortBy: string; sortOrder: string } | undefined, searchText: '' });
+  const [formState, setFormState] = useState({ categories: [] as string[], tags: [] as string[], passwordValue: '', generatorVisible: false });
+  const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
 
-  const [data, setData] = useState<PasswordBookEntry[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
-  const [statistics, setStatistics] = useState<PasswordBookStatistics | null>(null);
-  const [formVisible, setFormVisible] = useState(false);
-  const [detailVisible, setDetailVisible] = useState(false);
-  const [exportVisible, setExportVisible] = useState(false);
-  const [editingEntry, setEditingEntry] = useState<PasswordBookEntryDetail | null>(null);
-  const [viewingEntry, setViewingEntry] = useState<PasswordBookEntryDetail | null>(null);
-
-  const searchParamsRef = useRef<PageParams>({ page: 1, pageSize: 10, search: '' });
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await getPasswordBookList(searchParamsRef.current);
-      if (response.success && response.data) {
-        setData(response.data.queryable || []);
-        setPagination(prev => ({
-          ...prev,
-          page: searchParamsRef.current.page ?? prev.page,
-          pageSize: searchParamsRef.current.pageSize ?? prev.pageSize,
-          total: response.data!.rowCount ?? 0,
-        }));
-      } else {
-        setData([]);
-        setPagination(prev => ({ ...prev, total: 0 }));
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const fetchStatistics = useCallback(async () => {
-    const res = await getPasswordBookStatistics();
-    if (res.success && res.data) setStatistics(res.data);
-  }, []);
-
-  const refreshAll = useCallback(() => {
-    fetchData();
-    fetchStatistics();
-  }, [fetchData, fetchStatistics]);
-
-  useEffect(() => { refreshAll(); }, [refreshAll]);
-
-  const handleView = async (entry: PasswordBookEntry) => {
-    const res = await getPasswordBookEntry(entry.id);
-    if (res.success && res.data) {
-      setViewingEntry(res.data);
-      setDetailVisible(true);
-    } else {
-      message.error('获取详情失败');
-    }
-  };
-
-  const handleEdit = async (entry: PasswordBookEntry) => {
-    const res = await getPasswordBookEntry(entry.id);
-    if (res.success && res.data) {
-      setEditingEntry(res.data);
-      setFormVisible(true);
-    } else {
-      message.error('获取详情失败');
-    }
-  };
-
-  const handleDelete = (entry: PasswordBookEntry) => {
-    modal.confirm({
-      title: '确认删除',
-      content: '不可逆操作，确定要删除此条目吗？',
-      okText: '确定',
-      cancelText: '取消',
-      okButtonProps: { danger: true },
-      onOk: async () => {
-        const res = await deletePasswordBookEntry(entry.id);
-        if (res.success) {
-          message.success('删除成功');
-          refreshAll();
-        }
-      },
-    });
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    message.success('已复制到剪贴板');
-  };
-
-  const statsConfig = [
-    { title: '总条目数', value: statistics?.totalEntries, icon: <LockOutlined />, color: '#1890ff' },
-    { title: '分类数量', value: statistics?.categoryCount, icon: <FolderOutlined />, color: '#52c41a' },
-    { title: '标签数量', value: statistics?.tagCount, icon: <TagOutlined />, color: '#722ed1' },
-    { title: '最近使用（7天）', value: statistics?.recentUsedCount, icon: <ClockCircleOutlined />, color: '#faad14' },
+  const columns: ProColumns<Entry>[] = [
+    { title: '平台', dataIndex: 'platform', sorter: true, render: (dom: any, r) => <a onClick={() => set({ viewingId: r.id, detailVisible: true })}><LockOutlined /> {dom}</a> },
+    { title: '账号', dataIndex: 'account', sorter: true },
+    { title: '网址', dataIndex: 'url', sorter: true, render: (dom: any) => dom ? <a href={dom} target="_blank">{dom}</a> : '-' },
+    { title: '分类', dataIndex: 'category', sorter: true, render: (dom: any) => dom ? <Tag color="blue">{dom}</Tag> : '-' },
+    { title: '标签', dataIndex: 'tags', render: (dom: any) => dom?.length ? <Space size={[0, 4]} wrap>{dom.map((t: string) => <Tag key={t}>{t}</Tag>)}</Space> : '-' },
+    { title: '最后使用', dataIndex: 'lastUsedAt', sorter: true, render: (dom: any) => dom ? new Date(dom).toLocaleString() : '-' },
+    { title: '操作', valueType: 'option', fixed: 'right', width: 120, render: (_: any, r: Entry) => [
+      <Button key="edit" type="link" icon={<EditOutlined />} onClick={async () => { const res = await api.get(r.id); if (res.success && res.data) set({ editingEntry: res.data, formVisible: true }); }}>编辑</Button>,
+      <Popconfirm key="delete" title={`确定删除「${r.platform}」？`} onConfirm={async () => { await api.delete(r.id); actionRef.current?.reload(); }}><Button type="link" danger icon={<DeleteOutlined />}>删除</Button></Popconfirm>,
+    ]},
   ];
-
-  const columns: ColumnsType<PasswordBookEntry> = [
-    {
-      title: '平台',
-      dataIndex: 'platform',
-      key: 'platform',
-      sorter: true,
-      render: (text: string, record: PasswordBookEntry) => (
-        <a onClick={() => handleView(record)} style={{ cursor: 'pointer', fontWeight: 'bold' }}>{text}</a>
-      ),
-    },
-    { title: '账号', dataIndex: 'account', key: 'account', sorter: true },
-    {
-      title: '网址',
-      dataIndex: 'url',
-      key: 'url',
-      sorter: true,
-      render: (url: string) => url ? <a href={url} target="_blank" rel="noopener noreferrer">{url}</a> : '-',
-    },
-    {
-      title: '分类',
-      dataIndex: 'category',
-      key: 'category',
-      sorter: true,
-      render: (category: string) => category ? <Tag color="blue">{category}</Tag> : '-',
-    },
-    {
-      title: '标签',
-      dataIndex: 'tags',
-      key: 'tags',
-      render: (tags: string[]) => tags?.length ? (
-        <Space size={[0, 8]} wrap>{tags.map(tag => <Tag key={tag}>{tag}</Tag>)}</Space>
-      ) : '-',
-    },
-    {
-      title: '最后使用',
-      dataIndex: 'lastUsedAt',
-      key: 'lastUsedAt',
-      sorter: true,
-      render: (date: string) => date ? new Date(date).toLocaleString('zh-CN') : '-',
-    },
-    {
-      title: '操作',
-      key: 'actions',
-      fixed: 'right',
-      width: 120,
-      render: (_, record: PasswordBookEntry) => (
-        <Space>
-          <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>编辑</Button>
-          <Button type="link" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)}>删除</Button>
-        </Space>
-      ),
-    },
-  ];
-
-  const DetailItem = ({ label, value, copyableText }: { label: React.ReactNode, value: React.ReactNode, copyableText?: string }) => (
-    <Descriptions.Item label={label} span={2}>
-      <Space>
-        {value}
-        {copyableText && (
-          <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => copyToClipboard(copyableText)} />
-        )}
-      </Space>
-    </Descriptions.Item>
-  );
 
   return (
-    <PageContainer
-      title={<Space><LockOutlined />{intl.formatMessage({ id: 'menu.password-book' })}</Space>}
-      extra={
-        <Space wrap>
-          <Button icon={<ReloadOutlined />} onClick={refreshAll}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button>
-          <Button icon={<ExportOutlined />} onClick={() => setExportVisible(true)}>导出</Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingEntry(null); setFormVisible(true); }}>新建</Button>
-        </Space>
-      }
-    >
-      {statistics && (
-        <Card className={styles.card} style={{ marginBottom: 16 }}>
-          <Row gutter={[12, 12]}>
-            {statsConfig.map((stat, idx) => (
-              <Col xs={24} sm={12} md={6} key={idx}>
-                <StatCard title={stat.title} value={stat.value ?? 0} icon={stat.icon} color={stat.color} />
-              </Col>
-            ))}
-          </Row>
-        </Card>
-      )}
+    <PageContainer title={<Space><LockOutlined />密码本</Space>}>
+      {state.statistics && <Card style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>
+        {[{ key: 'totalEntries', title: '总条目数', icon: <LockOutlined />, color: '#1890ff' }, { key: 'categoryCount', title: '分类数量', icon: <FolderOutlined />, color: '#52c41a' }, { key: 'tagCount', title: '标签数量', icon: <TagOutlined />, color: '#722ed1' }, { key: 'recentUsedCount', title: '最近使用', icon: <ClockCircleOutlined />, color: '#faad14' }].map(i => (
+          <Col xs={24} sm={12} md={6} key={i.key}><StatCard title={i.title} value={state.statistics![i.key as keyof Stats]} icon={i.icon} color={i.color} /></Col>
+        ))}
+      </Row></Card>}
 
-      <SearchBar
-        initialParams={searchParamsRef.current}
-        style={{ marginBottom: 16 }}
-        onSearch={(params: PageParams) => {
-          searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
-          fetchData();
-        }}
+      <ProTable actionRef={actionRef} request={async (params: any) => {
+        const { pageSize, current } = params;
+        const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
+        const res = await api.list({ page: current, pageSize, search: state.searchText, ...sortParams });
+        api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
+        return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+      }} columns={columns} rowKey="id" search={false}
+        onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
+        toolBarRender={() => [
+          <Input.Search key="search" placeholder="搜索..." style={{ width: 200 }} allowClear value={state.searchText} onChange={(e) => set({ searchText: e.target.value })} onSearch={(v) => { set({ searchText: v }); actionRef.current?.reload(); }} prefix={<SearchOutlined />} />,
+          <Button key="export" icon={<ExportOutlined />} onClick={() => set({ exportVisible: true })}>导出</Button>,
+          <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingEntry: null, formVisible: true })}>新建</Button>,
+        ]}
       />
 
-      <Table<PasswordBookEntry>
-        dataSource={data}
-        columns={columns}
-        rowKey="id"
-        loading={loading}
-        scroll={{ x: 'max-content' }}
-        onChange={(pag: any, _filters: any, sorter: any) => {
-          searchParamsRef.current = {
-            ...searchParamsRef.current,
-            page: pag.current,
-            pageSize: pag.pageSize,
-            sortBy: sorter?.field,
-            sortOrder: sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined,
-          };
-          fetchData();
-        }}
-        pagination={{
-          current: pagination.page,
-          pageSize: pagination.pageSize,
-          total: pagination.total,
-        }}
-      />
+      <ModalForm title={state.editingEntry ? '编辑密码本' : '新建密码本'} open={state.formVisible} onOpenChange={(open) => set({ formVisible: open, editingEntry: open ? state.editingEntry : null })}
+        initialValues={state.editingEntry ? { platform: state.editingEntry.platform, account: state.editingEntry.account, url: state.editingEntry.url, category: state.editingEntry.category ? [state.editingEntry.category] : [], notes: state.editingEntry.notes } : undefined}
+        onFinish={async (values) => {
+          const data = { platform: values.platform, account: values.account, password: values.password || formState.passwordValue, url: values.url, category: Array.isArray(values.category) ? values.category[0] : values.category, tags: formState.tags, notes: values.notes };
+          const res = state.editingEntry ? await api.update(state.editingEntry.id, data) : await api.create(data);
+          if (res.success) { set({ formVisible: false, editingEntry: null }); actionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }
+          return res.success;
+        }} autoFocusFirstInput width={600}>
+        <ProFormText name="platform" label="平台名称" placeholder="例如：GitHub" rules={[{ required: true, message: '请输入平台名称' }]} />
+        <ProFormText name="account" label="账号" placeholder="请输入账号" rules={[{ required: true, message: '请输入账号' }]} />
+        <div style={{ marginBottom: 24 }}>
+          <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>密码</Typography.Text>
+          <Space.Compact style={{ width: '100%' }}>
+            <Input.Password placeholder="请输入密码" value={formState.passwordValue} onChange={(e) => setFormState(p => ({ ...p, passwordValue: e.target.value }))} />
+            <Button icon={<KeyOutlined />} onClick={() => setFormState(p => ({ ...p, generatorVisible: true }))} />
+          </Space.Compact>
+        </div>
+        <ProFormText name="url" label="网址" placeholder="https://example.com" />
+        <ProFormSelect name="category" label="分类" mode="tags" placeholder="选择或输入分类" showSearch allowClear options={formState.categories.map(c => ({ label: c, value: c }))} />
+        <div style={{ marginBottom: 24 }}><Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>标签</Typography.Text><Select mode="tags" placeholder="输入标签后按回车" value={formState.tags} onChange={(v: string[]) => setFormState(p => ({ ...p, tags: v }))} style={{ width: '100%' }} /></div>
+        <ProFormText name="notes" label="备注" placeholder="备注信息" />
+        <Modal title="密码生成器" open={formState.generatorVisible} onCancel={() => setFormState(p => ({ ...p, generatorVisible: false }))} footer={[<Button onClick={() => setFormState(p => ({ ...p, generatorVisible: false }))}>取消</Button>, <Button type="primary" onClick={() => setFormState(p => ({ ...p, generatorVisible: false }))}>使用</Button>]} width={400}>
+          <Button type="primary" icon={<KeyOutlined />} block>生成随机密码</Button>
+        </Modal>
+      </ModalForm>
 
-      <Modal
-        title={editingEntry ? '编辑密码本条目' : '新建密码本条目'}
-        open={formVisible}
-        onCancel={() => { setFormVisible(false); setEditingEntry(null); }}
-        footer={null}
-        width={isMobile ? '100%' : 600}
-        destroyOnHidden
-      >
-        <PasswordBookForm
-          entry={editingEntry}
-          onCancel={() => { setFormVisible(false); setEditingEntry(null); }}
-          onSuccess={() => { setFormVisible(false); setEditingEntry(null); refreshAll(); }}
-        />
-      </Modal>
-
-      <Drawer
-        title="密码本条目"
-        placement="right"
-        open={detailVisible}
-        onClose={() => { setDetailVisible(false); setViewingEntry(null); }}
-        size={isMobile ? '100%' : 600}
-      >
-        <Spin spinning={loading}>
-          {viewingEntry && (
-            <>
-              <Card title="基本信息" style={{ marginBottom: 16 }}>
-                <Descriptions column={isMobile ? 1 : 2} size="small">
-                  <DetailItem label={<><LockOutlined /> 平台</>} value={<strong>{viewingEntry.platform}</strong>} />
-                  <DetailItem label={<><UserOutlined /> 账号</>} value={viewingEntry.account} copyableText={viewingEntry.account} />
-                  <DetailItem label={<><KeyOutlined /> 密码</>} value={<Input.Password value={viewingEntry.password} variant="borderless" readOnly />} copyableText={viewingEntry.password} />
-                  {viewingEntry.url && <DetailItem label={<><GlobalOutlined /> 网址</>} value={<a href={viewingEntry.url} target="_blank" rel="noopener noreferrer">{viewingEntry.url}</a>} />}
-                  {viewingEntry.category && <DetailItem label={<><FolderOutlined /> 分类</>} value={<Tag color="blue">{viewingEntry.category}</Tag>} />}
-                </Descriptions>
-              </Card>
-
-              {viewingEntry.notes && (
-                <Card title="备注信息" style={{ marginBottom: 16 }}>
-                  <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{viewingEntry.notes}</div>
-                </Card>
-              )}
-
-              <Card title="时间信息">
-                <Descriptions column={isMobile ? 1 : 2} size="small">
-                  {viewingEntry.lastUsedAt && <Descriptions.Item label={<><ClockCircleOutlined /> 最后使用</>}>{dayjs(viewingEntry.lastUsedAt).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>}
-                  <Descriptions.Item label={<><CalendarOutlined /> 创建时间</>}>{dayjs(viewingEntry.createdAt).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>
-                  <Descriptions.Item label={<><CalendarOutlined /> 更新时间</>}>{dayjs(viewingEntry.updatedAt).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>
-                </Descriptions>
-              </Card>
-            </>
-          )}
-        </Spin>
+      <Drawer title="密码本详情" placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingId: '' })} size="large">
+        <DetailContent id={state.viewingId} />
       </Drawer>
 
-      <ExportDialog open={exportVisible} onClose={() => setExportVisible(false)} />
+      <Modal title="导出密码本" open={state.exportVisible} onCancel={() => set({ exportVisible: false })} footer={null} width={400}>
+        <Button type="primary" icon={<DownloadOutlined />} block onClick={async () => {
+          const res = await api.export({ format: 'json' });
+          const blob = res.data;
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a'); a.href = url; a.download = `password-book-${new Date().toISOString().slice(0, 10)}.json`;
+          document.body.appendChild(a); a.click(); document.body.removeChild(a); window.URL.revokeObjectURL(url);
+          set({ exportVisible: false });
+        }}>导出 JSON</Button>
+      </Modal>
     </PageContainer>
+  );
+};
+
+const DetailContent: React.FC<{ id: string }> = ({ id }) => {
+  const [entry, setEntry] = useState<Entry | null>(null);
+  useEffect(() => { if (id) api.get(id).then(r => { if (r.success && r.data) setEntry(r.data); }); }, [id]);
+  if (!entry) return null;
+  const copy = (text: string) => navigator.clipboard.writeText(text);
+  return (
+    <>
+      <Descriptions column={1} size="small" bordered>
+        <Descriptions.Item label="平台"><strong>{entry.platform}</strong></Descriptions.Item>
+        <Descriptions.Item label="账号"><Space>{entry.account}<Button type="text" size="small" icon={<CopyOutlined />} onClick={() => copy(entry.account)} /></Space></Descriptions.Item>
+        <Descriptions.Item label="密码"><Space><Input.Password value={entry.password} variant="borderless" readOnly style={{ width: 150 }} /><Button type="text" size="small" icon={<CopyOutlined />} onClick={() => copy(entry.password || '')} /></Space></Descriptions.Item>
+        {entry.url && <Descriptions.Item label="网址"><a href={entry.url} target="_blank">{entry.url}</a></Descriptions.Item>}
+        {entry.category && <Descriptions.Item label="分类"><Tag color="blue">{entry.category}</Tag></Descriptions.Item>}
+        {entry.tags?.length > 0 && <Descriptions.Item label="标签"><Space wrap>{entry.tags.map(t => <Tag key={t}>{t}</Tag>)}</Space></Descriptions.Item>}
+        {entry.lastUsedAt && <Descriptions.Item label="最后使用">{dayjs(entry.lastUsedAt).format('YYYY-MM-DD HH:mm')}</Descriptions.Item>}
+        <Descriptions.Item label="创建时间">{dayjs(entry.createdAt).format('YYYY-MM-DD HH:mm')}</Descriptions.Item>
+        <Descriptions.Item label="更新时间">{dayjs(entry.updatedAt).format('YYYY-MM-DD HH:mm')}</Descriptions.Item>
+      </Descriptions>
+      {entry.notes && <Card title="备注" style={{ marginTop: 16 }}><div style={{ whiteSpace: 'pre-wrap' }}>{entry.notes}</div></Card>}
+    </>
   );
 };
 

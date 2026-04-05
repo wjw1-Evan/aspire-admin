@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, theme } from 'antd';
 
 export interface StatCardProps {
-  title: string;
+  title: React.ReactNode;
   value: number | string;
   icon: React.ReactNode;
   color?: string;

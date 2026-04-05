@@ -32,6 +32,28 @@ export interface PagedResult<T> {
 }
 
 /**
+ * 统一分页查询参数类型
+ * 与后端 Platform.ServiceDefaults.Models.PageParams 完全一致
+ */
+
+export interface PageParams {
+  /** 当前页码 */
+  page?: number;
+  /** 每页大小 */
+  pageSize?: number;
+  /** 排序字段 */
+  sortBy?: string;
+  /** 排序方向 */
+  sortOrder?: string;
+  /** 搜索关键词 */
+  search?: string;
+  /** 其他字段（如级联过滤等） */
+  [key: string]: any;
+}
+
+
+
+/**
  * 检查 API 响应是否成功
  * @param response API 响应对象
  * @returns 是否成功

@@ -28,7 +28,7 @@ import dayjs from 'dayjs';
 import { StatCard } from '@/components';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import SearchBar from '@/components/SearchBar';
-import type { PageParams } from '@/types/page-params';
+import type { PageParams } from '@/types/api-response';
 
 export interface EventManagementRef {
   reload: () => void;

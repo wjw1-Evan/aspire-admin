@@ -1,630 +1,258 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
-import {
-    Button,
-    Space,
-    Tag,
-    Modal,
-    Form,
-    Input,
-    DatePicker,
-    Select,
-    App,
-    Typography,
-    Card,
-    Row,
-    Col,
-    Grid,
-    Empty,
-    Drawer,
-    Descriptions,
-    Popconfirm,
-    Divider,
-    AutoComplete,
-    Table,
-} from 'antd';
-import {
-    PlusOutlined,
-    ReloadOutlined,
-    UserOutlined,
-    EnvironmentOutlined,
-    CalendarOutlined,
-    ExclamationCircleOutlined,
-    CheckCircleOutlined,
-    SyncOutlined,
-    CloseCircleOutlined,
-    EditOutlined,
-    DeleteOutlined,
-    EyeOutlined,
-} from '@ant-design/icons';
-import { useIntl } from '@umijs/max';
-import PageContainer from '@/components/PageContainer';
-import StatCard from '@/components/StatCard';
-import SearchBar from '@/components/SearchBar';
-import * as visitService from '@/services/visit';
-import { getTenants } from '@/services/park';
-import type { ParkTenant } from '@/services/park';
-import type { VisitTask as VisitTaskType, VisitStatistics } from '@/services/visit';
-import type { PageParams } from '@/types/page-params';
+import React, { useRef, useState, useEffect } from 'react';
+import { PageContainer, StatCard } from '@/components';
+import { useIntl, request } from '@umijs/max';
+import { Tag, Space, Card, Row, Col, Button, Popconfirm, Drawer, Descriptions, Typography, AutoComplete, Input, Divider, Form, App } from 'antd';
+import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
+import { ModalForm, ProFormText, ProFormSelect, ProFormDateTimePicker } from '@ant-design/pro-form';
+import { PlusOutlined, ReloadOutlined, UserOutlined, CheckCircleOutlined, SyncOutlined, CloseCircleOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import styles from './index.less';
+import { ApiResponse, PagedResult, PageParams } from '@/types/api-response';
 
-const { Text } = Typography;
-const { useBreakpoint } = Grid;
 
-const VisitTask: React.FC = () => {
-    const intl = useIntl();
-    const { message, modal } = App.useApp();
-    const [form] = Form.useForm();
-    const searchParamsRef = useRef<PageParams>({ page: 1, pageSize: 10, search: '' });
-    const [isModalVisible, setIsModalVisible] = useState(false);
-    const [editingTask, setEditingTask] = useState<VisitTaskType | null>(null);
-    const [detailVisible, setDetailVisible] = useState(false);
-    const [selectedTask, setSelectedTask] = useState<VisitTaskType | null>(null);
-    const [statistics, setStatistics] = useState<VisitStatistics | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [tasksData, setTasksData] = useState<VisitTaskType[]>([]);
-    const [tasksLoading, setTasksLoading] = useState(false);
-    const [tasksPagination, setTasksPagination] = useState({ page: 1, pageSize: 10, total: 0 });
-    const [tenants, setTenants] = useState<ParkTenant[]>([]);
-    const screens = useBreakpoint();
+// ==================== Types ====================
+interface VisitTask { id: string; title: string; visitType: string; visitMethod?: string; tenantId?: string; tenantName?: string; managerName?: string; phone?: string; visitDate?: string; visitLocation?: string; intervieweeName?: string; intervieweePosition?: string; intervieweePhone?: string; visitor?: string; details?: string; status: string; content?: string; feedback?: string; createdAt: string; updatedAt?: string; }
+interface VisitStatistics { pendingTasks: number; completedTasksThisMonth: number; activeManagers: number; completionRate: number; }
+interface ParkTenant { id: string; tenantName: string; }
+interface VisitTaskFormData { title: string; managerName: string; phone?: string; visitType: string; visitMethod: string; details?: string; tenantName: string; visitLocation?: string; intervieweeName?: string; intervieweePosition?: string; intervieweePhone?: string; visitDate: string; visitor?: string; status?: string; content?: string; feedback?: string; }
 
-    const loadTenants = useCallback(async () => {
-        try {
-            const res = await getTenants({ page: 1, pageSize: 100 });
-            if (res.success && res.data) {
-                setTenants(res.data.queryable);
-            }
-        } catch (error) {
-            console.error('Failed to load tenants:', error);
-        }
-    }, []);
 
-    useEffect(() => {
-        loadTenants();
-    }, [loadTenants]);
+// ==================== API ====================
+const api = {
+  list: (params: PageParams) => request<ApiResponse<PagedResult<VisitTask>>>('/api/visit/tasks', { params }),
+  get: (id: string) => request<ApiResponse<VisitTask>>(`/api/visit/tasks/${id}`),
+  delete: (id: string) => request<ApiResponse<void>>(`/api/visit/tasks/${id}`, { method: 'DELETE' }),
+  create: (data: VisitTaskFormData) => request<ApiResponse<VisitTask>>('/api/visit/tasks', { method: 'POST', data }),
+  update: (id: string, data: VisitTaskFormData) => request<ApiResponse<VisitTask>>(`/api/visit/tasks/${id}`, { method: 'PUT', data }),
+  statistics: () => request<ApiResponse<VisitStatistics>>('/api/visit/statistics'),
+  tenants: (params: PageParams) => request<ApiResponse<PagedResult<ParkTenant>>>('/api/park/tenants', { params }),
+};
 
-    const loadStatistics = useCallback(async () => {
-        try {
-            const res = await visitService.getVisitStatistics();
-            if (res.success && res.data) {
-                setStatistics(res.data);
-            }
-        } catch (error) {
-            console.error('Failed to load statistics:', error);
-        }
-    }, []);
 
-    useEffect(() => {
-        loadStatistics();
-    }, [loadStatistics]);
+// ==================== Main ====================
+const VisitTaskPage: React.FC = () => {
+  const intl = useIntl();
+  const { message } = App.useApp();
+  const actionRef = useRef<ActionType | undefined>(undefined);
+  const [state, setState] = useState({
+    statistics: null as VisitStatistics | null,
+    formVisible: false,
+    editingTask: null as VisitTask | null,
+    detailVisible: false,
+    selectedTask: null as VisitTask | null,
+    tenants: [] as ParkTenant[],
+    sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
+    searchText: '',
+  });
+  const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
 
-    const fetchTasks = useCallback(async () => {
-        const currentParams = searchParamsRef.current;
-        setTasksLoading(true);
-        try {
-            const res = await visitService.getTasks({
-                page: currentParams.page ?? 1,
-                pageSize: currentParams.pageSize ?? 10,
-                ...currentParams,
-            });
-            if (res.success && res.data) {
-                const paged = res.data;
-                setTasksData(paged.queryable ?? []);
-                setTasksPagination(prev => ({ ...prev, total: paged.rowCount ?? 0 }));
-            } else {
-                setTasksData([]);
-                setTasksPagination(prev => ({ ...prev, total: 0 }));
-            }
-        } catch {
-            setTasksData([]);
-            setTasksPagination(prev => ({ ...prev, total: 0 }));
-        } finally {
-            setTasksLoading(false);
-        }
-    }, []);
+  useEffect(() => {
+    api.tenants({ page: 1, pageSize: 100 }).then(r => { if (r.success && r.data) set({ tenants: r.data.queryable }); });
+  }, []);
 
-    useEffect(() => {
-        fetchTasks();
-    }, [fetchTasks]);
+  const statusMap: Record<string, { text: string; color: string; icon: React.ReactNode }> = {
+    'Pending': { text: '待派发', color: 'orange', icon: <SyncOutlined spin /> },
+    'InProgress': { text: '进行中', color: 'blue', icon: <SyncOutlined spin /> },
+    'Completed': { text: '已完成', color: 'success', icon: <CheckCircleOutlined /> },
+    'Cancelled': { text: '已取消', color: 'error', icon: <CloseCircleOutlined /> },
+  };
 
-    const handleTasksTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
-        searchParamsRef.current = {
-            ...searchParamsRef.current,
-            page: pag.current,
-            pageSize: pag.pageSize,
-            sortBy: sorter?.field,
-            sortOrder: sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined,
-        };
-        fetchTasks();
-    }, [fetchTasks]);
+  const columns: ProColumns<VisitTask>[] = [
+    { title: '任务标题', dataIndex: 'title', key: 'title', sorter: true, width: 200, ellipsis: (dom: any, r: VisitTask) => <a onClick={() => set({ selectedTask: r, detailVisible: true })}>{dom}</a> },
+    { title: '走访类型', dataIndex: 'visitType', key: 'visitType', sorter: true, width: 120 },
+    { title: '受访企业', dataIndex: 'tenantName', key: 'tenantName', sorter: true, width: 150, ellipsis: true, render: (dom: any) => dom || '-' },
+    { title: '企管员', dataIndex: 'managerName', key: 'managerName', sorter: true, width: 120 },
+    { title: '走访日期', dataIndex: 'visitDate', key: 'visitDate', sorter: true, width: 120, render: (dom: any) => dom ? dayjs(dom).format('YYYY-MM-DD') : '-' },
+    { title: '状态', dataIndex: 'status', key: 'status', sorter: true, width: 100, render: (_: any, r: VisitTask) => {
+      const config = statusMap[r.status] || { text: r.status, color: 'default', icon: null };
+      return <Tag color={config.color} icon={config.icon}>{config.text}</Tag>;
+    }},
+    { title: '操作', valueType: 'option', fixed: 'right', width: 160, render: (_: any, r: VisitTask) => [
+      <Button key="view" type="link" size="small" icon={<EyeOutlined />} onClick={() => set({ selectedTask: r, detailVisible: true })}>查看</Button>,
+      r.status !== 'Completed' && <Button key="edit" type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingTask: r, formVisible: true })}>编辑</Button>,
+      r.status !== 'Completed' && <Popconfirm key="delete" title="确定要删除这条走访任务吗？" onConfirm={() => handleDelete(r.id)} okText="确定" cancelText="取消">
+        <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
+      </Popconfirm>,
+    ]},
+  ];
 
-    useEffect(() => {
-        if (isModalVisible) {
-            if (editingTask) {
-                form.setFieldsValue({
-                    ...editingTask,
-                    visitDate: editingTask.visitDate ? dayjs(editingTask.visitDate) : undefined
-                });
-            } else {
-                // 新建任务时设置默认走访时间为当前时间
-                form.setFieldsValue({
-                    visitDate: dayjs()
-                });
-            }
-        }
-    }, [isModalVisible, editingTask, form]);
+  const handleDelete = async (id: string) => {
+    const res = await api.delete(id);
+    if (res.success) {
+      message.success('删除成功');
+      actionRef.current?.reload();
+      api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
+    }
+  };
 
-    const statusMap: Record<string, { text: string; color: string; icon: React.ReactNode }> = {
-        'Pending': { text: '待派发', color: 'orange', icon: <SyncOutlined spin /> },
-        'InProgress': { text: '进行中', color: 'blue', icon: <SyncOutlined spin /> },
-        'Completed': { text: '已完成', color: 'success', icon: <CheckCircleOutlined /> },
-        'Cancelled': { text: '已取消', color: 'error', icon: <CloseCircleOutlined /> },
+  const renderForm = (isEdit: boolean, editingRecord?: VisitTask | null) => {
+    const initialValues = isEdit && editingRecord ? {
+      title: editingRecord.title,
+      managerName: editingRecord.managerName,
+      phone: editingRecord.phone,
+      visitType: editingRecord.visitType,
+      visitMethod: editingRecord.visitMethod || '实地走访',
+      details: editingRecord.details,
+      tenantName: editingRecord.tenantName || '',
+      visitLocation: editingRecord.visitLocation,
+      intervieweeName: editingRecord.intervieweeName,
+      intervieweePosition: editingRecord.intervieweePosition,
+      intervieweePhone: editingRecord.intervieweePhone,
+      visitDate: editingRecord.visitDate ? dayjs(editingRecord.visitDate) : undefined,
+      visitor: editingRecord.visitor,
+      status: editingRecord.status,
+      content: editingRecord.content,
+      feedback: editingRecord.feedback,
+    } : {
+      visitType: '日常走访',
+      visitMethod: '实地走访',
+      visitDate: dayjs(),
     };
-
-    const columns = [
-        {
-            title: '任务标题',
-            dataIndex: 'title',
-            key: 'title',
-            sorter: true,
-            width: 200,
-            ellipsis: true,
-            render: (text: string, record: VisitTaskType) => (
-                <a onClick={() => { setSelectedTask(record); setDetailVisible(true); }}>
-                    {text}
-                </a>
-            ),
-        },
-        {
-            title: '走访类型',
-            dataIndex: 'visitType',
-            key: 'visitType',
-            sorter: true,
-            width: 120,
-        },
-        {
-            title: '受访企业',
-            dataIndex: 'tenantName',
-            key: 'tenantName',
-            sorter: true,
-            width: 150,
-            ellipsis: true,
-            render: (text: string) => text || '-',
-        },
-        {
-            title: '企管员',
-            dataIndex: 'managerName',
-            key: 'managerName',
-            sorter: true,
-            width: 120,
-        },
-        {
-            title: '走访日期',
-            dataIndex: 'visitDate',
-            key: 'visitDate',
-            sorter: true,
-            width: 120,
-            render: (text: string) => text ? dayjs(text).format('YYYY-MM-DD') : '-',
-        },
-        {
-            title: '状态',
-            dataIndex: 'status',
-            key: 'status',
-            sorter: true,
-            width: 100,
-            render: (status: string) => {
-                const config = statusMap[status] || { text: status, color: 'default', icon: null };
-                return <Tag color={config.color} icon={config.icon}>{config.text}</Tag>;
-            },
-        },
-        {
-            title: '操作',
-            key: 'action',
-            width: 160,
-            fixed: 'right',
-            render: (_: any, record: VisitTaskType) => (
-                <Space>
-                    <Button
-                        type="link"
-                        size="small"
-                        icon={<EyeOutlined />}
-                        onClick={() => { setSelectedTask(record); setDetailVisible(true); }}
-                    >
-                        查看
-                    </Button>
-
-
-                    {record.status !== 'Completed' && (
-                        <Button
-                            type="link"
-                            size="small"
-                            icon={<EditOutlined />}
-                            onClick={() => {
-                                setEditingTask(record);
-                                form.setFieldsValue({
-                                    ...record,
-                                    visitDate: record.visitDate ? dayjs(record.visitDate) : dayjs()
-                                });
-                                setIsModalVisible(true);
-                            }}
-                        >
-                            编辑
-                        </Button>
-                    )}
-
-                    {record.status !== 'Completed' && (
-                        <Popconfirm
-                            title="确定要删除这条走访任务吗？"
-                            onConfirm={() => handleDelete(record.id)}
-                            okText="确定"
-                            cancelText="取消"
-                        >
-                            <Button
-                                type="link"
-                                size="small"
-                                danger
-                                icon={<DeleteOutlined />}
-                            >
-                                删除
-                            </Button>
-                        </Popconfirm>
-                    )}
-                </Space>
-            ),
-        },
-    ];
-
-    const handleDelete = async (id: string) => {
-        try {
-            const res = await visitService.deleteTask(id);
-            if (res.success) {
-                message.success('删除成功');
-                fetchTasks();
-                loadStatistics();
-            }
-        } catch (error) {
-            message.error('删除失败');
-        }
-    };
-
-
-
-    const handleModalOk = async () => {
-        try {
-            const values = await form.validateFields();
-            setLoading(true);
-
-            // Resolve Tenant ID from TenantName
-            const targetTenant = tenants.find(t => t.tenantName === values.tenantName);
-            let finalTenantId = targetTenant?.id;
-
-            // Protection: If editing and name hasn't changed, preserve original ID 
-            // (addresses case where tenant is not in the loaded 'tenants' list)
-            if (editingTask && values.tenantName === editingTask.tenantName) {
-                finalTenantId = editingTask.tenantId;
-            }
-
-            const submitData = {
-                ...values,
-                visitDate: values.visitDate.toISOString(), // 现在是必填字段，确保有值
-                tenantId: finalTenantId,
-                tenantName: values.tenantName,
-            };
-
-            const res = editingTask
-                ? await visitService.updateTask(editingTask.id, submitData)
-                : await visitService.createTask(submitData);
-
-            if (res.success) {
-                message.success(editingTask ? '修改成功' : '添加成功');
-                setIsModalVisible(false);
-                setEditingTask(null);
-                form.resetFields();
-                fetchTasks();
-                loadStatistics();
-            }
-        } catch (error) {
-            console.error('Validate Failed:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-
 
     return (
-        <PageContainer
-            title="走访任务管理"
-            extra={
-                <Space>
-                    <Button icon={<ReloadOutlined />} onClick={() => { fetchTasks(); loadStatistics(); }}>
-                        刷新
-                    </Button>
-                    <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingTask(null); setIsModalVisible(true); }}>
-                        新增任务
-                    </Button>
-                </Space>
-            }
-        >
-            {statistics && (
-                <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-                    <Col xs={24} sm={12} md={6}>
-                        <StatCard
-                            title="待处理任务"
-                            value={statistics.pendingTasks}
-                            icon={<SyncOutlined />}
-                            color="#faad14"
-                        />
-                    </Col>
-                    <Col xs={24} sm={12} md={6}>
-                        <StatCard
-                            title="本月走访数"
-                            value={statistics.completedTasksThisMonth}
-                            icon={<CheckCircleOutlined />}
-                            color="#52c41a"
-                        />
-                    </Col>
-                    <Col xs={24} sm={12} md={6}>
-                        <StatCard
-                            title="活跃企管员"
-                            value={statistics.activeManagers}
-                            icon={<UserOutlined />}
-                            color="#1890ff"
-                        />
-                    </Col>
-                    <Col xs={24} sm={12} md={6}>
-                        <StatCard
-                            title="完成率"
-                            value={`${statistics.completionRate}%`}
-                            icon={<SyncOutlined />}
-                            color={statistics.completionRate >= 90 ? '#52c41a' : '#faad14'}
-                        />
-                    </Col>
-                </Row>
-            )}
-
-            <SearchBar
-                initialParams={searchParamsRef.current}
-                onSearch={(params) => {
-                    searchParamsRef.current = { ...searchParamsRef.current, ...params };
-                    setTasksPagination(prev => ({ ...prev, page: 1 }));
-                    fetchTasks();
-                }}
-                style={{ marginBottom: 16 }}
-            />
-
-            <Card>
-                <Table<VisitTaskType>
-                    dataSource={tasksData}
-                    columns={columns as any}
-                    rowKey="id"
-                    loading={tasksLoading}
-                    onChange={handleTasksTableChange}
-                    pagination={{
-                        current: tasksPagination.page,
-                        pageSize: tasksPagination.pageSize,
-                        total: tasksPagination.total,
-                    }}
-                    scroll={{ x: 1000 }}
-                />
-            </Card>
-
-            <Modal
-                title={editingTask ? '编辑走访任务' : '新增走访任务'}
-                open={isModalVisible}
-                onOk={handleModalOk}
-                onCancel={() => { setIsModalVisible(false); setEditingTask(null); form.resetFields(); }}
-                width={640}
-                confirmLoading={loading}
-                destroyOnHidden
-            >
-                <Form form={form} layout="vertical">
-                    <Divider>基本信息</Divider>
-                    <Row gutter={16}>
-                        <Col span={24}>
-                            <Form.Item name="title" label="任务标题" rules={[{ required: true, message: '请输入任务标题' }]}>
-                                <Input placeholder="如：XX企业日常走访" />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Row gutter={16}>
-                        <Col span={12}>
-                            <Form.Item name="managerName" label="企管员" rules={[{ required: true, message: '请输入企管员姓名' }]}>
-                                <Input placeholder="请输入姓名" />
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item name="phone" label="手机号">
-                                <Input placeholder="请输入手机号" />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Row gutter={16}>
-                        <Col span={12}>
-                            <Form.Item name="visitType" label="走访类型" initialValue="日常走访">
-                                <Select>
-                                    <Select.Option value="日常走访">日常走访</Select.Option>
-                                    <Select.Option value="安全检查">安全检查</Select.Option>
-                                    <Select.Option value="政策宣讲">政策宣讲</Select.Option>
-                                    <Select.Option value="需求调研">需求调研</Select.Option>
-                                    <Select.Option value="其他">其他</Select.Option>
-                                </Select>
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item name="visitMethod" label="走访方式" initialValue="实地走访">
-                                <Select>
-                                    <Select.Option value="实地走访">实地走访</Select.Option>
-                                    <Select.Option value="电话沟通">电话沟通</Select.Option>
-                                    <Select.Option value="微信联系">微信联系</Select.Option>
-                                </Select>
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Form.Item name="details" label="计划说明">
-                        <Input.TextArea rows={2} placeholder="请输入计划说明或初始备注" />
-                    </Form.Item>
-
-                    <Divider>企业与受访人</Divider>
-                    <Row gutter={16}>
-                        <Col span={12}>
-                            <Form.Item name="tenantName" label="受访企业" rules={[{ required: true, message: '请输入或选择受访企业' }]}>
-                                <AutoComplete
-                                    placeholder="请输入或选择企业"
-                                    options={tenants.map(t => ({ value: t.tenantName }))}
-                                    filterOption={(inputValue, option) =>
-                                        option!.value.toUpperCase().indexOf(inputValue.toUpperCase()) !== -1
-                                    }
-                                />
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item name="visitLocation" label="走访地点">
-                                <Input placeholder="地址/会议室" />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Row gutter={16}>
-                        <Col span={8}>
-                            <Form.Item name="intervieweeName" label="受访人姓名">
-                                <Input placeholder="姓名" />
-                            </Form.Item>
-                        </Col>
-                        <Col span={8}>
-                            <Form.Item name="intervieweePosition" label="职务">
-                                <Input placeholder="职位" />
-                            </Form.Item>
-                        </Col>
-                        <Col span={8}>
-                            <Form.Item name="intervieweePhone" label="联系方式">
-                                <Input placeholder="电话/微信" />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Row gutter={16}>
-                        <Col span={12}>
-                            <Form.Item
-                                name="visitDate"
-                                label="走访时间"
-                                rules={[{ required: true, message: '请选择走访时间' }]}
-                            >
-                                <DatePicker
-                                    style={{ width: '100%' }}
-                                    showTime
-                                    format="YYYY-MM-DD HH:mm"
-                                    placeholder="请选择走访时间"
-                                />
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item name="visitor" label="执行走访人">
-                                <Input placeholder="实际走访人" />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-
-                    {editingTask && (
-                        <>
-                            <Divider>走访结果与反馈</Divider>
-                            <Row gutter={16}>
-                                <Col span={12}>
-                                    <Form.Item name="status" label="任务状态">
-                                        <Select>
-                                            <Select.Option value="Pending">待派发</Select.Option>
-                                            <Select.Option value="InProgress">进行中</Select.Option>
-                                            <Select.Option value="Completed">已完成</Select.Option>
-                                            <Select.Option value="Cancelled">已取消</Select.Option>
-                                        </Select>
-                                    </Form.Item>
-                                </Col>
-                            </Row>
-                            <Form.Item name="content" label="走访纪要">
-                                <Input.TextArea rows={4} placeholder="详细记录走访沟通内容" />
-                            </Form.Item>
-                            <Form.Item name="feedback" label="企业诉求/反馈">
-                                <Input.TextArea rows={2} placeholder="企业提出的问题或建议" />
-                            </Form.Item>
-                        </>
-                    )}
-                </Form>
-            </Modal>
-
-            <Drawer
-                title="走访任务详情"
-                open={detailVisible}
-                onClose={() => setDetailVisible(false)}
-                size={640}
-                extra={
-                    <Space>
-                        <Button onClick={() => setDetailVisible(false)}>关闭</Button>
-                        <Button type="primary" icon={<EditOutlined />} onClick={() => {
-                            setDetailVisible(false);
-                            setEditingTask(selectedTask);
-                            if (selectedTask) {
-                                form.setFieldsValue({
-                                    ...selectedTask,
-                                    visitDate: selectedTask.visitDate ? dayjs(selectedTask.visitDate) : dayjs()
-                                });
-                            }
-                            setIsModalVisible(true);
-                        }}>编辑</Button>
-                    </Space>
-                }
-            >
-                {selectedTask ? (
-                    <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                        <Descriptions title="基本信息" bordered column={2}>
-                            <Descriptions.Item label="任务标题" span={2}>{selectedTask.title}</Descriptions.Item>
-                            <Descriptions.Item label="走访类型">{selectedTask.visitType}</Descriptions.Item>
-                            <Descriptions.Item label="走访方式">{selectedTask.visitMethod}</Descriptions.Item>
-                            <Descriptions.Item label="企管员">{selectedTask.managerName}</Descriptions.Item>
-                            <Descriptions.Item label="联系电话">{selectedTask.phone}</Descriptions.Item>
-                            <Descriptions.Item label="任务状态">
-                                <Tag color={statusMap[selectedTask.status]?.color} icon={statusMap[selectedTask.status]?.icon}>
-                                    {statusMap[selectedTask.status]?.text}
-                                </Tag>
-                            </Descriptions.Item>
-                            <Descriptions.Item label="创建时间">{dayjs(selectedTask.createdAt).format('YYYY-MM-DD')}</Descriptions.Item>
-                            <Descriptions.Item label="计划说明" span={2}>{selectedTask.details || '-'}</Descriptions.Item>
-                        </Descriptions>
-
-                        <Divider />
-
-                        <Descriptions title="受访信息" bordered column={2}>
-                            <Descriptions.Item label="受访企业" span={2}>{selectedTask.tenantName || '-'}</Descriptions.Item>
-                            <Descriptions.Item label="受访人">{selectedTask.intervieweeName || '-'}</Descriptions.Item>
-                            <Descriptions.Item label="职务">{selectedTask.intervieweePosition || '-'}</Descriptions.Item>
-                            <Descriptions.Item label="走访地点" span={2}>{selectedTask.visitLocation || '-'}</Descriptions.Item>
-                            <Descriptions.Item label="走访时间">{selectedTask.visitDate ? dayjs(selectedTask.visitDate).format('YYYY-MM-DD HH:mm') : '-'}</Descriptions.Item>
-                            <Descriptions.Item label="执行人">{selectedTask.visitor || '-'}</Descriptions.Item>
-                        </Descriptions>
-
-                        <Divider />
-
-                        <Descriptions title="走访结果" bordered column={1}>
-                            <Descriptions.Item label="走访纪要">
-                                <Text style={{ whiteSpace: 'pre-wrap' }}>{selectedTask.content || '暂无记录'}</Text>
-                            </Descriptions.Item>
-                            <Descriptions.Item label="企业诉求/反馈">
-                                <Text style={{ whiteSpace: 'pre-wrap' }}>{selectedTask.feedback || '暂无反馈'}</Text>
-                            </Descriptions.Item>
-                        </Descriptions>
-                    </Space>
-                ) : <Empty />}
-            </Drawer>
-
-        </PageContainer>
+      <>
+        <ProFormText name="title" label="任务标题" placeholder="如：XX企业日常走访" rules={[{ required: true, message: '请输入任务标题' }]} />
+        <Row gutter={16}>
+          <Col span={12}><ProFormText name="managerName" label="企管员" placeholder="请输入姓名" rules={[{ required: true, message: '请输入企管员姓名' }]} /></Col>
+          <Col span={12}><ProFormText name="phone" label="手机号" placeholder="请输入手机号" /></Col>
+        </Row>
+        <Row gutter={16}>
+          <Col span={12}><ProFormSelect name="visitType" label="走访类型" initialValue="日常走访" options={[{ value: '日常走访', label: '日常走访' }, { value: '安全检查', label: '安全检查' }, { value: '政策宣讲', label: '政策宣讲' }, { value: '需求调研', label: '需求调研' }, { value: '其他', label: '其他' }]} /></Col>
+          <Col span={12}><ProFormSelect name="visitMethod" label="走访方式" initialValue="实地走访" options={[{ value: '实地走访', label: '实地走访' }, { value: '电话沟通', label: '电话沟通' }, { value: '微信联系', label: '微信联系' }]} /></Col>
+        </Row>
+        <ProFormText name="details" label="计划说明" placeholder="请输入计划说明或初始备注" />
+        <Row gutter={16}>
+          <Col span={12}>
+            <div style={{ marginBottom: 8 }}><Typography.Text type="secondary" style={{ fontSize: 12 }}>受访企业 <span style={{ color: '#ff4d4f' }}>*</span></Typography.Text></div>
+            <Form.Item name="tenantName" rules={[{ required: true, message: '请输入或选择受访企业' }]}>
+              <AutoComplete
+                placeholder="请输入或选择企业"
+                options={state.tenants.map(t => ({ value: t.tenantName }))}
+              />
+            </Form.Item>
+          </Col>
+          <Col span={12}><ProFormText name="visitLocation" label="走访地点" placeholder="地址/会议室" /></Col>
+        </Row>
+        <Row gutter={16}>
+          <Col span={8}><ProFormText name="intervieweeName" label="受访人姓名" placeholder="姓名" /></Col>
+          <Col span={8}><ProFormText name="intervieweePosition" label="职务" placeholder="职位" /></Col>
+          <Col span={8}><ProFormText name="intervieweePhone" label="联系方式" placeholder="电话/微信" /></Col>
+        </Row>
+        <Row gutter={16}>
+          <Col span={12}><ProFormDateTimePicker name="visitDate" label="走访时间" rules={[{ required: true, message: '请选择走访时间' }]} fieldProps={{ style: { width: '100%' }, format: 'YYYY-MM-DD HH:mm' }} placeholder="请选择走访时间" /></Col>
+          <Col span={12}><ProFormText name="visitor" label="执行走访人" placeholder="实际走访人" /></Col>
+        </Row>
+        {isEdit && (
+          <>
+            <Row gutter={16}>
+              <Col span={12}><ProFormSelect name="status" label="任务状态" options={[{ value: 'Pending', label: '待派发' }, { value: 'InProgress', label: '进行中' }, { value: 'Completed', label: '已完成' }, { value: 'Cancelled', label: '已取消' }]} /></Col>
+            </Row>
+            <ProFormText name="content" label="走访纪要" placeholder="详细记录走访沟通内容" />
+            <ProFormText name="feedback" label="企业诉求/反馈" placeholder="企业提出的问题或建议" />
+          </>
+        )}
+      </>
     );
+  };
+
+  return (
+    <PageContainer title="走访任务管理" extra={
+      <Space>
+        <Button icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>刷新</Button>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => set({ editingTask: null, formVisible: true })}>新增任务</Button>
+      </Space>
+    }>
+      {state.statistics && <Card style={{ marginBottom: 16 }}><Row gutter={[16, 16]}>
+        <Col xs={24} sm={12} md={6}><StatCard title="待处理任务" value={state.statistics.pendingTasks} icon={<SyncOutlined />} color="#faad14" /></Col>
+        <Col xs={24} sm={12} md={6}><StatCard title="本月走访数" value={state.statistics.completedTasksThisMonth} icon={<CheckCircleOutlined />} color="#52c41a" /></Col>
+        <Col xs={24} sm={12} md={6}><StatCard title="活跃企管员" value={state.statistics.activeManagers} icon={<UserOutlined />} color="#1890ff" /></Col>
+        <Col xs={24} sm={12} md={6}><StatCard title="完成率" value={`${state.statistics.completionRate}%`} icon={<SyncOutlined />} color={state.statistics.completionRate >= 90 ? '#52c41a' : '#faad14'} /></Col>
+      </Row></Card>}
+
+      <ProTable actionRef={actionRef} request={async (params: any) => {
+        const { pageSize, current } = params;
+        const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
+        const res = await api.list({ page: current, pageSize, search: state.searchText, ...sortParams });
+        api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
+        return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+      }} columns={columns} rowKey="id" search={false} pagination={{ pageSizeOptions: ['10', '20', '50', '100'], defaultPageSize: 20 }}
+        onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
+      />
+
+      <ModalForm key={state.editingTask?.id || 'create'}
+        title={state.editingTask ? '编辑走访任务' : '新增走访任务'}
+        open={state.formVisible}
+        onOpenChange={(open) => { if (!open) set({ formVisible: false, editingTask: null }); }}
+        initialValues={state.editingTask ? {
+          title: state.editingTask.title,
+          managerName: state.editingTask.managerName,
+          phone: state.editingTask.phone,
+          visitType: state.editingTask.visitType,
+          visitMethod: state.editingTask.visitMethod || '实地走访',
+          details: state.editingTask.details,
+          tenantName: state.editingTask.tenantName || '',
+          visitLocation: state.editingTask.visitLocation,
+          intervieweeName: state.editingTask.intervieweeName,
+          intervieweePosition: state.editingTask.intervieweePosition,
+          intervieweePhone: state.editingTask.intervieweePhone,
+          visitDate: state.editingTask.visitDate ? dayjs(state.editingTask.visitDate) : undefined,
+          visitor: state.editingTask.visitor,
+          status: state.editingTask.status,
+          content: state.editingTask.content,
+          feedback: state.editingTask.feedback,
+        } : { visitType: '日常走访', visitMethod: '实地走访', visitDate: dayjs() }}
+        onFinish={async (values) => {
+          const targetTenant = state.tenants.find(t => t.tenantName === values.tenantName);
+          let finalTenantId = targetTenant?.id;
+          if (state.editingTask && values.tenantName === state.editingTask.tenantName) {
+            finalTenantId = state.editingTask.tenantId;
+          }
+          const submitData = { ...values, visitDate: values.visitDate.toISOString(), tenantId: finalTenantId };
+          const res = state.editingTask ? await api.update(state.editingTask.id, submitData) : await api.create(submitData);
+          if (res.success) {
+            set({ formVisible: false, editingTask: null });
+            actionRef.current?.reload();
+            api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
+          }
+          return res.success;
+        }} autoFocusFirstInput width={640}
+      >
+        <div style={{ marginBottom: 16 }}><Typography.Text type="secondary">基本信息</Typography.Text></div>
+        {renderForm(!!state.editingTask, state.editingTask)}
+      </ModalForm>
+
+      <Drawer title="走访任务详情" placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, selectedTask: null })} size={640}
+        extra={<Space><Button onClick={() => set({ detailVisible: false })}>关闭</Button><Button type="primary" icon={<EditOutlined />} onClick={() => {
+          set({ detailVisible: false, editingTask: state.selectedTask, formVisible: true });
+        }}>编辑</Button></Space>}>
+        {state.selectedTask ? (
+          <Space direction="vertical" size="large" style={{ width: '100%' }}>
+            <Descriptions title="基本信息" bordered column={2}>
+              <Descriptions.Item label="任务标题" span={2}>{state.selectedTask.title}</Descriptions.Item>
+              <Descriptions.Item label="走访类型">{state.selectedTask.visitType}</Descriptions.Item>
+              <Descriptions.Item label="走访方式">{state.selectedTask.visitMethod}</Descriptions.Item>
+              <Descriptions.Item label="企管员">{state.selectedTask.managerName}</Descriptions.Item>
+              <Descriptions.Item label="联系电话">{state.selectedTask.phone}</Descriptions.Item>
+              <Descriptions.Item label="任务状态"><Tag color={statusMap[state.selectedTask.status]?.color} icon={statusMap[state.selectedTask.status]?.icon}>{statusMap[state.selectedTask.status]?.text}</Tag></Descriptions.Item>
+              <Descriptions.Item label="创建时间">{dayjs(state.selectedTask.createdAt).format('YYYY-MM-DD')}</Descriptions.Item>
+              <Descriptions.Item label="计划说明" span={2}>{state.selectedTask.details || '-'}</Descriptions.Item>
+            </Descriptions>
+            <Descriptions title="受访信息" bordered column={2}>
+              <Descriptions.Item label="受访企业" span={2}>{state.selectedTask.tenantName || '-'}</Descriptions.Item>
+              <Descriptions.Item label="受访人">{state.selectedTask.intervieweeName || '-'}</Descriptions.Item>
+              <Descriptions.Item label="职务">{state.selectedTask.intervieweePosition || '-'}</Descriptions.Item>
+              <Descriptions.Item label="走访地点" span={2}>{state.selectedTask.visitLocation || '-'}</Descriptions.Item>
+              <Descriptions.Item label="走访时间">{state.selectedTask.visitDate ? dayjs(state.selectedTask.visitDate).format('YYYY-MM-DD HH:mm') : '-'}</Descriptions.Item>
+              <Descriptions.Item label="执行人">{state.selectedTask.visitor || '-'}</Descriptions.Item>
+            </Descriptions>
+            <Descriptions title="走访结果" bordered column={1}>
+              <Descriptions.Item label="走访纪要"><Text style={{ whiteSpace: 'pre-wrap' }}>{state.selectedTask.content || '暂无记录'}</Text></Descriptions.Item>
+              <Descriptions.Item label="企业诉求/反馈"><Text style={{ whiteSpace: 'pre-wrap' }}>{state.selectedTask.feedback || '暂无反馈'}</Text></Descriptions.Item>
+            </Descriptions>
+          </Space>
+        ) : null}
+      </Drawer>
+    </PageContainer>
+  );
 };
 
-// Simplified intlInstance to avoid useIntl directly in the component if preferred, but useIntl is standard Umi
-const intlInstance = () => {
-    try {
-        const { useIntl: useUmiIntl } = require('@umijs/max');
-        return useUmiIntl();
-    } catch {
-        return { formatMessage: ({ defaultMessage }: any) => defaultMessage };
-    }
-};
-
-export default VisitTask;
+export default VisitTaskPage;

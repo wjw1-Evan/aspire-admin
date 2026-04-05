@@ -16,14 +16,14 @@ import {
   updateWorkflow,
   type WorkflowDefinition,
 } from '@/services/workflow/api';
-import type { PagedResult } from '@/types/unified-api';
+import type { PagedResult } from '@/types/api-response';
 import WorkflowCreateForm from './components/WorkflowCreateForm';
 import WorkflowEditForm from './components/WorkflowEditForm';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import SearchBar from '@/components/SearchBar';
-import type { PageParams } from '@/types/page-params';
+import type { PageParams } from '@/types/api-response';
 
 
 const WorkflowManagement: React.FC = () => {

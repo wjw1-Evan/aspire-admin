@@ -19,7 +19,7 @@ import {
   ProjectStatus,
   ProjectPriority,
 } from '@/services/task/project';
-import type { ApiResponse } from '@/types/unified-api';
+import type { ApiResponse } from '@/types/api-response';
 import { StatCard } from '@/components';
 import ProjectForm from './ProjectForm';
 import ProjectDetail from './ProjectDetail';

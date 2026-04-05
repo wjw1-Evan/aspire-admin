@@ -10,7 +10,7 @@ import * as parkService from '@/services/park';
 import type { InvestmentLead, InvestmentProject, InvestmentStatistics } from '@/services/park';
 import dayjs from 'dayjs';
 import styles from './index.less';
-import type { PageParams } from '@/types/page-params';
+import type { PageParams } from '@/types/api-response';
 
 const { Text } = Typography;
 

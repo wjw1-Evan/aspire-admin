@@ -9,7 +9,7 @@ import { Grid, Button, Tag, Space, Modal, Drawer, Row, Col, Card, Form, Input, S
 import { getUserList, type AppUser } from '@/services/user/api';
 import { formatDateTime } from '@/utils/format';
 import { getCurrentCompany } from '@/services/company';
-import type { PageParams } from '@/types/page-params';
+import type { PageParams } from '@/types/api-response';
 
 const CloudStorageQuotaPage: React.FC = () => {
     const intl = useIntl();

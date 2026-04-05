@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse, PagedResult } from '@/types/unified-api';
+import type { ApiResponse, PagedResult } from '@/types/api-response';
 import type { FileItem } from './api';
 
 // 回收站相关类型

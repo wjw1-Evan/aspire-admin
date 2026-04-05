@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { Form, Input, Button, Space, Card } from 'antd';
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import { createStyles } from 'antd-style';
-import type { PageParams } from '@/types/page-params';
+import type { PageParams } from '@/types/api-response';
 
 const useStyles = createStyles(({ token, css }) => ({
   searchCard: {

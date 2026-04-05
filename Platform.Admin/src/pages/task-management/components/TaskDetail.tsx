@@ -20,12 +20,10 @@ import { getTaskById, getTaskExecutionLogs, TaskStatus, TaskPriority, type TaskD
 import { getTaskStatusColor, getTaskPriorityColor } from '@/utils/task';
 
 interface TaskDetailProps {
-  open: boolean;
-  task?: TaskDto | null;
-  onClose: () => void;
+  id: string;
 }
 
-const TaskDetail: React.FC<TaskDetailProps> = ({ open, task, onClose }) => {
+const TaskDetail: React.FC<TaskDetailProps> = ({ id }) => {
   const [loading, setLoading] = useState(false);
   const [taskDetail, setTaskDetail] = useState<TaskDto | null>(null);
   const [executionLogs, setExecutionLogs] = useState<TaskExecutionLogDto[]>([]);
@@ -33,17 +31,17 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ open, task, onClose }) => {
 
   // 加载任务详情
   useEffect(() => {
-    if (open && task?.id) {
+    if (id) {
       loadTaskDetail();
       loadExecutionLogs();
     }
-  }, [open, task?.id]);
+  }, [id]);
 
   const loadTaskDetail = async () => {
-    if (!task?.id) return;
+    if (!id) return;
     setLoading(true);
     try {
-      const response = await getTaskById(task.id);
+      const response = await getTaskById(id);
       if (response.success && response.data) {
         setTaskDetail(response.data);
       }
@@ -55,10 +53,10 @@ const TaskDetail: React.FC<TaskDetailProps> = ({ open, task, onClose }) => {
   };
 
   const loadExecutionLogs = async () => {
-    if (!task?.id) return;
+    if (!id) return;
     setLogsLoading(true);
     try {
-      const response = await getTaskExecutionLogs(task.id, 1, 100);
+      const response = await getTaskExecutionLogs(id, 1, 100);
       if (response.success && response.data?.queryable) {
         setExecutionLogs(response.data.queryable);
       }

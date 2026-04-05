@@ -1,7 +1,7 @@
 
 /* eslint-disable */
 import { request } from '@umijs/max';
-import type { ApiResponse } from '@/types/unified-api';
+import type { ApiResponse } from '@/types/api-response';
 
 /** 获取当前的用户 GET /api/auth/current-user */
 export async function currentUser(options?: { [key: string]: any }) {

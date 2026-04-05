@@ -12,7 +12,7 @@ import * as cloudService from '@/services/cloud-storage/api';
 import type { Building, PropertyUnit, AssetStatistics, LeaseContract } from '@/services/park';
 import dayjs from 'dayjs';
 import styles from './index.less';
-import type { PageParams } from '@/types/page-params';
+import type { PageParams } from '@/types/api-response';
 
 const { Text, Title } = Typography;
 

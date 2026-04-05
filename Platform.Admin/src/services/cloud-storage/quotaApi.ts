@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse, PagedResult } from '@/types/unified-api';
+import type { ApiResponse, PagedResult } from '@/types/api-response';
 
 // 存储配额相关类型
 export interface StorageQuota {

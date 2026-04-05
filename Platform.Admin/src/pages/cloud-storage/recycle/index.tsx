@@ -65,7 +65,7 @@ import {
     type BatchPermanentDeleteRequest,
     type RecycleStatistics,
 } from '@/services/cloud-storage/recycleApi';
-import type { PageParams } from '@/types/page-params';
+import type { PageParams } from '@/types/api-response';
 
 const CloudStorageRecyclePage: React.FC = () => {
     const intl = useIntl();

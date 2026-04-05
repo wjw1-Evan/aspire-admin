@@ -1,6 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse, PagedResult } from '@/types/unified-api';
-import type { PageParams } from '@/types/page-params';
+import type { ApiResponse, PagedResult, PageParams } from '@/types/api-response';
 
 const API_PREFIX = '/api/iot';
 
@@ -194,12 +193,12 @@ export interface DataStatistics {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// API 服务
+// API 服务（统一使用 ApiResponse<T> 包装）
 // ─────────────────────────────────────────────────────────────────
 export const iotService = {
   // ── Gateway ──────────────────────────────────────────────────
   createGateway: (data: any) =>
-    request<{ success: boolean; data: IoTGateway }>(`${API_PREFIX}/gateways`, {
+    request<ApiResponse<IoTGateway>>(`${API_PREFIX}/gateways`, {
       method: 'POST',
       data,
     }),
@@ -216,20 +215,20 @@ export const iotService = {
   },
 
   getGateway: (id: string) =>
-    request<{ success: boolean; data: IoTGateway }>(`${API_PREFIX}/gateways/${id}`, { method: 'GET' }),
+    request<ApiResponse<IoTGateway>>(`${API_PREFIX}/gateways/${id}`, { method: 'GET' }),
 
   updateGateway: (id: string, data: any) =>
-    request<{ success: boolean; data: IoTGateway }>(`${API_PREFIX}/gateways/${id}`, { method: 'PUT', data }),
+    request<ApiResponse<IoTGateway>>(`${API_PREFIX}/gateways/${id}`, { method: 'PUT', data }),
 
   deleteGateway: (id: string) =>
-    request<{ success: boolean }>(`${API_PREFIX}/gateways/${id}`, { method: 'DELETE' }),
+    request<ApiResponse<void>>(`${API_PREFIX}/gateways/${id}`, { method: 'DELETE' }),
 
   getGatewayStatistics: (gatewayId: string) =>
-    request<{ success: boolean; data: GatewayStatistics }>(`${API_PREFIX}/gateways/${gatewayId}/statistics`, { method: 'GET' }),
+    request<ApiResponse<GatewayStatistics>>(`${API_PREFIX}/gateways/${gatewayId}/statistics`, { method: 'GET' }),
 
   // ── Device ───────────────────────────────────────────────────
   createDevice: (data: any) =>
-    request<{ success: boolean; data: IoTDevice }>(`${API_PREFIX}/devices`, { method: 'POST', data }),
+    request<ApiResponse<IoTDevice>>(`${API_PREFIX}/devices`, { method: 'POST', data }),
 
   getDevices: (params?: PageParams & { gatewayId?: string }) => {
     const page = params?.page || 1;
@@ -243,32 +242,32 @@ export const iotService = {
   },
 
   getDevice: (id: string) =>
-    request<{ success: boolean; data: IoTDevice }>(`${API_PREFIX}/devices/${id}`, { method: 'GET' }),
+    request<ApiResponse<IoTDevice>>(`${API_PREFIX}/devices/${id}`, { method: 'GET' }),
 
   updateDevice: (id: string, data: any) =>
-    request<{ success: boolean; data: IoTDevice }>(`${API_PREFIX}/devices/${id}`, { method: 'PUT', data }),
+    request<ApiResponse<IoTDevice>>(`${API_PREFIX}/devices/${id}`, { method: 'PUT', data }),
 
   deleteDevice: (id: string) =>
-    request<{ success: boolean }>(`${API_PREFIX}/devices/${id}`, { method: 'DELETE' }),
+    request<ApiResponse<void>>(`${API_PREFIX}/devices/${id}`, { method: 'DELETE' }),
 
   /** 批量删除设备（传入 id 数组） */
   batchDeleteDevices: (ids: string[]) =>
-    request<{ success: boolean; data: { deletedCount: number; total: number } }>(`${API_PREFIX}/devices`, {
+    request<ApiResponse<{ deletedCount: number; total: number }>>(`${API_PREFIX}/devices`, {
       method: 'DELETE',
       data: ids,
     }),
 
   getDeviceStatistics: (deviceId: string) =>
-    request<{ success: boolean; data: DeviceStatistics }>(`${API_PREFIX}/devices/${deviceId}/statistics`, { method: 'GET' }),
+    request<ApiResponse<DeviceStatistics>>(`${API_PREFIX}/devices/${deviceId}/statistics`, { method: 'GET' }),
 
   // ── Device Twin ───────────────────────────────────────────────
   /** 获取设备孪生（不存在时后端自动初始化） */
   getDeviceTwin: (deviceId: string) =>
-    request<{ success: boolean; data: IoTDeviceTwin }>(`${API_PREFIX}/devices/${deviceId}/twin`, { method: 'GET' }),
+    request<ApiResponse<IoTDeviceTwin>>(`${API_PREFIX}/devices/${deviceId}/twin`, { method: 'GET' }),
 
   /** 更新期望属性（增量 patch，null 值删除键） */
   updateDesiredProperties: (deviceId: string, properties: Record<string, any>) =>
-    request<{ success: boolean; data: IoTDeviceTwin }>(`${API_PREFIX}/devices/${deviceId}/twin/desired`, {
+    request<ApiResponse<IoTDeviceTwin>>(`${API_PREFIX}/devices/${deviceId}/twin/desired`, {
       method: 'PATCH',
       data: { properties },
     }),
@@ -276,7 +275,7 @@ export const iotService = {
   // ── C2D Commands ──────────────────────────────────────────────
   /** 发送云到设备命令 */
   sendCommand: (deviceId: string, commandName: string, payload?: Record<string, any>, ttlHours = 24) =>
-    request<{ success: boolean; data: IoTDeviceCommand }>(`${API_PREFIX}/devices/${deviceId}/commands`, {
+    request<ApiResponse<IoTDeviceCommand>>(`${API_PREFIX}/devices/${deviceId}/commands`, {
       method: 'POST',
       data: { commandName, payload, ttlHours },
     }),
@@ -293,13 +292,13 @@ export const iotService = {
   // ── ApiKey Management ─────────────────────────────────────────
   /** 生成/重置设备 ApiKey（明文仅此次返回） */
   generateApiKey: (deviceId: string) =>
-    request<{ success: boolean; data: GenerateApiKeyResult }>(`${API_PREFIX}/devices/${deviceId}/apikey`, {
+    request<ApiResponse<GenerateApiKeyResult>>(`${API_PREFIX}/devices/${deviceId}/apikey`, {
       method: 'POST',
     }),
 
   // ── DataPoint ─────────────────────────────────────────────────
   createDataPoint: (data: any) =>
-    request<{ success: boolean; data: IoTDataPoint }>(`${API_PREFIX}/datapoints`, { method: 'POST', data }),
+    request<ApiResponse<IoTDataPoint>>(`${API_PREFIX}/datapoints`, { method: 'POST', data }),
 
   getDataPoints: (params?: PageParams & { deviceId?: string }) => {
     const page = params?.page || 1;
@@ -313,20 +312,20 @@ export const iotService = {
   },
 
   getDataPoint: (id: string) =>
-    request<{ success: boolean; data: IoTDataPoint }>(`${API_PREFIX}/datapoints/${id}`, { method: 'GET' }),
+    request<ApiResponse<IoTDataPoint>>(`${API_PREFIX}/datapoints/${id}`, { method: 'GET' }),
 
   updateDataPoint: (id: string, data: any) =>
-    request<{ success: boolean; data: IoTDataPoint }>(`${API_PREFIX}/datapoints/${id}`, { method: 'PUT', data }),
+    request<ApiResponse<IoTDataPoint>>(`${API_PREFIX}/datapoints/${id}`, { method: 'PUT', data }),
 
   deleteDataPoint: (id: string) =>
-    request<{ success: boolean }>(`${API_PREFIX}/datapoints/${id}`, { method: 'DELETE' }),
+    request<ApiResponse<void>>(`${API_PREFIX}/datapoints/${id}`, { method: 'DELETE' }),
 
   // ── Data Records ──────────────────────────────────────────────
   reportData: (data: any) =>
-    request<{ success: boolean; data: IoTDataRecord }>(`${API_PREFIX}/data/report`, { method: 'POST', data }),
+    request<ApiResponse<IoTDataRecord>>(`${API_PREFIX}/data/report`, { method: 'POST', data }),
 
   batchReportData: (data: any) =>
-    request<{ success: boolean; data: IoTDataRecord[] }>(`${API_PREFIX}/data/batch-report`, { method: 'POST', data }),
+    request<ApiResponse<IoTDataRecord[]>>(`${API_PREFIX}/data/batch-report`, { method: 'POST', data }),
 
   queryDataRecords: (params?: PageParams & { deviceId?: string; dataPointId?: string; startTime?: string; endTime?: string }) => {
     const page = params?.page || 1;
@@ -340,10 +339,10 @@ export const iotService = {
   },
 
   getLatestData: (dataPointId: string) =>
-    request<{ success: boolean; data: IoTDataRecord }>(`${API_PREFIX}/data/latest/${dataPointId}`, { method: 'GET' }),
+    request<ApiResponse<IoTDataRecord>>(`${API_PREFIX}/data/latest/${dataPointId}`, { method: 'GET' }),
 
   getDataStatistics: (dataPointId: string, startTime: string, endTime: string) =>
-    request<{ success: boolean; data: DataStatistics }>(
+    request<ApiResponse<DataStatistics>>(
       `${API_PREFIX}/data/statistics/${dataPointId}?startTime=${startTime}&endTime=${endTime}`,
       { method: 'GET' }
     ),
@@ -365,7 +364,7 @@ export const iotService = {
   },
 
   handleEvent: (eventId: string, remarks: string) =>
-    request<{ success: boolean }>(`${API_PREFIX}/events/${eventId}/handle`, {
+    request<ApiResponse<void>>(`${API_PREFIX}/events/${eventId}/handle`, {
       method: 'POST',
       data: { remarks },
     }),
@@ -373,13 +372,13 @@ export const iotService = {
   getUnhandledEventCount: (deviceId?: string) => {
     let url = `${API_PREFIX}/events/unhandled-count`;
     if (deviceId) url += `?deviceId=${deviceId}`;
-    return request<{ success: boolean; data: { Count: number } }>(url, { method: 'GET' });
+    return request<ApiResponse<{ count: number }>>(url, { method: 'GET' });
   },
 
   // ── Statistics ────────────────────────────────────────────────
   getPlatformStatistics: () =>
-    request<{ success: boolean; data: PlatformStatistics }>(`${API_PREFIX}/statistics/platform`, { method: 'GET' }),
+    request<ApiResponse<PlatformStatistics>>(`${API_PREFIX}/statistics/platform`, { method: 'GET' }),
 
   getDeviceStatusStatistics: () =>
-    request<{ success: boolean; data: any }>(`${API_PREFIX}/statistics/device-status`, { method: 'GET' }),
+    request<ApiResponse<any>>(`${API_PREFIX}/statistics/device-status`, { method: 'GET' }),
 };

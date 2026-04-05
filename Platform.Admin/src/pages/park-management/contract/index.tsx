@@ -12,7 +12,7 @@ import * as cloudService from '@/services/cloud-storage/api';
 import dayjs from 'dayjs';
 import type { UploadFile, UploadProps } from 'antd';
 import styles from './index.less';
-import type { PageParams } from '@/types/page-params';
+import type { PageParams } from '@/types/api-response';
 
 const { Text } = Typography;
 

@@ -6,7 +6,7 @@ import dayjs from 'dayjs';
 import { CheckOutlined, CloseOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import SearchBar from '@/components/SearchBar';
 import type { ColumnsType } from 'antd/es/table';
-import type { PageParams } from '@/types/page-params';
+import type { PageParams } from '@/types/api-response';
 
 interface JoinRequestsTableProps {
     companyId: string;

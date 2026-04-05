@@ -1,16 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PageContainer } from '@/components';
 import { useIntl } from '@umijs/max';
+import { request } from '@umijs/max';
 import {
     Button,
     Card,
     Col,
     Descriptions,
     Empty,
-    Form,
     Input,
     InputNumber,
-    Modal,
     Popconfirm,
     Row,
     Space,
@@ -21,6 +20,7 @@ import {
     Typography,
     theme,
 } from 'antd';
+import { Form, ProFormText, ModalForm } from '@ant-design/pro-form';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import {
     ApartmentOutlined,
@@ -36,30 +36,72 @@ import type { TreeSelectProps } from 'antd/es/tree-select';
 import { useMessage } from '@/hooks/useMessage';
 import { formatDateTime } from '@/utils/format';
 import { useModal } from '@/hooks/useModal';
-import type {
-    CreateOrganizationUnitRequest,
-    OrganizationTreeNode,
-    OrganizationReorderItem,
-    OrganizationMemberItem,
-} from '@/services/organization/api';
-import {
-    createOrganizationNode,
-    deleteOrganizationNode,
-    getOrganizationTree,
-    updateOrganizationNode,
-    reorderOrganization,
-    getOrganizationMembers,
-    assignUserToOrganization,
-    removeUserFromOrganization,
-} from '@/services/organization/api';
+import { ApiResponse } from '@/types/api-response';
 import AssignUserModal from './components/AssignUserModal';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { Search } = Input;
 
-/**
- * 构建树形数据，并根据搜索词高亮显示
- */
+interface OrganizationTreeNode {
+    id?: string;
+    name: string;
+    code?: string;
+    parentId?: string;
+    description?: string;
+    sortOrder?: number;
+    managerUserId?: string;
+    createdAt?: string;
+    updatedAt?: string;
+    children?: OrganizationTreeNode[];
+}
+
+interface CreateOrganizationUnitRequest {
+    name: string;
+    code?: string;
+    parentId?: string;
+    description?: string;
+    sortOrder?: number;
+    managerUserId?: string;
+}
+
+interface OrganizationReorderItem {
+    id: string;
+    parentId?: string;
+    sortOrder: number;
+}
+
+interface OrganizationMemberItem {
+    userId: string;
+    username: string;
+    email?: string;
+    organizationUnitId: string;
+    organizationUnitName?: string;
+}
+
+interface AssignUserOrganizationRequest {
+    userId: string;
+    organizationUnitId: string;
+    isPrimary?: boolean;
+}
+
+const api = {
+    tree: () => request<ApiResponse<OrganizationTreeNode[]>>('/api/organization/tree'),
+    create: (data: CreateOrganizationUnitRequest) =>
+        request<ApiResponse<OrganizationTreeNode>>('/api/organization', { method: 'POST', data }),
+    update: (id: string, data: CreateOrganizationUnitRequest) =>
+        request<ApiResponse<boolean>>(`/api/organization/${id}`, { method: 'PUT', data }),
+    delete: (id: string) =>
+        request<ApiResponse<boolean>>(`/api/organization/${id}`, { method: 'DELETE' }),
+    reorder: (items: OrganizationReorderItem[]) =>
+        request<ApiResponse<boolean>>('/api/organization/reorder', { method: 'POST', data: items }),
+    members: (orgId: string) =>
+        request<ApiResponse<OrganizationMemberItem[]>>(`/api/organization/${orgId}/members`),
+    assignUser: (data: AssignUserOrganizationRequest) =>
+        request<ApiResponse<boolean>>('/api/organization/assign-user', { method: 'POST', data }),
+    removeUser: (data: { userId: string; organizationUnitId: string }) =>
+        request<ApiResponse<boolean>>('/api/organization/remove-user', { method: 'POST', data }),
+};
+
 const buildTreeData = (nodes: OrganizationTreeNode[], searchValue: string): DataNode[] =>
     nodes.map((node) => {
         const name = node.name || '';
@@ -84,9 +126,6 @@ const buildTreeData = (nodes: OrganizationTreeNode[], searchValue: string): Data
         };
     });
 
-/**
- * 递归过滤树节点，保留匹配搜索词的节点及其父节点
- */
 const filterTree = (nodes: OrganizationTreeNode[], searchValue: string): OrganizationTreeNode[] => {
     if (!searchValue) return nodes;
     return nodes
@@ -143,79 +182,64 @@ const OrganizationPage: React.FC = () => {
     const modal = useModal();
     const { styles } = useCommonStyles();
     const { token } = theme.useToken();
-    const [tree, setTree] = useState<OrganizationTreeNode[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [searchValue, setSearchValue] = useState('');
-    const [selectedId, setSelectedId] = useState<string>();
-    const selectedIdRef = useRef<string | undefined>(undefined);
-    const [formOpen, setFormOpen] = useState(false);
-    const [submitLoading, setSubmitLoading] = useState(false);
-    const [editingNode, setEditingNode] = useState<OrganizationTreeNode | null>(null);
-    const [members, setMembers] = useState<OrganizationMemberItem[]>([]);
-    const [assignOpen, setAssignOpen] = useState(false);
-    const [form] = Form.useForm<CreateOrganizationUnitRequest>();
-    const [createParentId, setCreateParentId] = useState<string | undefined>();
 
-    const nodeMap = useMemo(() => flattenTree(tree), [tree]);
+    const [state, setState] = useState({
+        tree: [] as OrganizationTreeNode[],
+        loading: false,
+        searchValue: '',
+        selectedId: undefined as string | undefined,
+        formOpen: false,
+        submitLoading: false,
+        editingNode: null as OrganizationTreeNode | null,
+        members: [] as OrganizationMemberItem[],
+        assignOpen: false,
+        createParentId: undefined as string | undefined,
+    });
+    const set = (partial: Partial<typeof state>) => setState((prev) => ({ ...prev, ...partial }));
+
+    const selectedIdRef = useRef<string | undefined>(undefined);
+    const selectedId = state.selectedId;
+    const formOpen = state.formOpen;
+    const editingNode = state.editingNode;
+    const createParentId = state.createParentId;
+
+    const nodeMap = useMemo(() => flattenTree(state.tree), [state.tree]);
     const selectedNode = useMemo(
         () => (selectedId ? nodeMap[selectedId] || null : null),
         [nodeMap, selectedId],
     );
 
-    // 根据搜索词过滤后的树数据
-    const filteredTree = useMemo(() => filterTree(tree, searchValue), [tree, searchValue]);
-    const treeData = useMemo(() => buildTreeData(filteredTree, searchValue), [filteredTree, searchValue]);
+    const filteredTree = useMemo(() => filterTree(state.tree, state.searchValue), [state.tree, state.searchValue]);
+    const treeData = useMemo(() => buildTreeData(filteredTree, state.searchValue), [filteredTree, state.searchValue]);
 
     useEffect(() => {
         selectedIdRef.current = selectedId;
     }, [selectedId]);
 
-    // Handle form reset and initialization when modal opens
-    useEffect(() => {
-        if (formOpen) {
-            form.resetFields();
-            if (editingNode) {
-                form.setFieldsValue({
-                    name: editingNode.name,
-                    code: editingNode.code,
-                    parentId: editingNode.parentId,
-                    description: editingNode.description,
-                    sortOrder: editingNode.sortOrder ?? 1,
-                    managerUserId: editingNode.managerUserId,
-                });
-            } else {
-                form.setFieldsValue({
-                    parentId: createParentId,
-                    sortOrder: 1,
-                });
-            }
-        }
-    }, [formOpen, editingNode, createParentId, form]);
-
     const refreshTree = useCallback(async () => {
-        setLoading(true);
+        set({ loading: true });
         try {
-            const res = await getOrganizationTree();
+            const res = await api.tree();
             if (res.success && res.data) {
                 const newMap = flattenTree(res.data);
-                setTree(res.data);
+                set({ tree: res.data });
 
                 if (res.data.length === 0) {
-                    setSelectedId(undefined);
+                    set({ selectedId: undefined });
                     return;
                 }
 
                 const currentSelectedId = selectedIdRef.current;
                 if (currentSelectedId && newMap[currentSelectedId]) {
-                    setSelectedId(currentSelectedId);
+                    set({ selectedId: currentSelectedId });
                     return;
                 }
 
                 const firstId = res.data[0].id;
-                setSelectedId(firstId);
+                set({ selectedId: firstId });
             }
         } finally {
-            setLoading(false);
+            set({ loading: false });
         }
     }, []);
 
@@ -225,18 +249,18 @@ const OrganizationPage: React.FC = () => {
 
     const fetchMembers = useCallback(async (orgId?: string) => {
         if (!orgId) {
-            setMembers([]);
+            set({ members: [] });
             return;
         }
         try {
-            const res = await getOrganizationMembers(orgId);
+            const res = await api.members(orgId);
             if (res.success && res.data) {
-                setMembers(res.data);
+                set({ members: res.data });
             } else {
-                setMembers([]);
+                set({ members: [] });
             }
         } catch {
-            setMembers([]);
+            set({ members: [] });
         }
     }, []);
 
@@ -246,7 +270,7 @@ const OrganizationPage: React.FC = () => {
 
     const handleRemoveMember = async (userId: string) => {
         if (!selectedId) return;
-        await removeUserFromOrganization({ userId, organizationUnitId: selectedId });
+        await api.removeUser({ userId, organizationUnitId: selectedId });
         message.success(intl.formatMessage({ id: 'pages.message.deleteSuccess' }));
         await fetchMembers(selectedId);
     };
@@ -254,46 +278,17 @@ const OrganizationPage: React.FC = () => {
     const handleSelect: (keys: React.Key[]) => void = (keys) => {
         const key = keys[0];
         if (typeof key === 'string') {
-            setSelectedId(key);
+            set({ selectedId: key });
         }
     };
 
     const openCreateModal = (parentId?: string) => {
-        setEditingNode(null);
-        setCreateParentId(parentId);
-        setFormOpen(true);
+        set({ editingNode: null, createParentId: parentId, formOpen: true });
     };
 
     const openEditModal = () => {
         if (!selectedNode) return;
-        setEditingNode(selectedNode);
-        setFormOpen(true);
-    };
-
-    const handleSubmit = async () => {
-        try {
-            const values = await form.validateFields();
-            setSubmitLoading(true);
-            if (editingNode?.id) {
-                await updateOrganizationNode(editingNode.id, values);
-                message.success(
-                    intl.formatMessage({ id: 'pages.organization.message.updateSuccess' }),
-                );
-            } else {
-                const res = await createOrganizationNode(values);
-                message.success(
-                    intl.formatMessage({ id: 'pages.organization.message.createSuccess' }),
-                );
-                if (res.success && res.data?.id) {
-                    setSelectedId(res.data.id);
-                }
-            }
-            setFormOpen(false);
-            setEditingNode(null);
-            await refreshTree();
-        } finally {
-            setSubmitLoading(false);
-        }
+        set({ editingNode: selectedNode, formOpen: true });
     };
 
     const handleDelete = () => {
@@ -305,11 +300,11 @@ const OrganizationPage: React.FC = () => {
             okType: 'danger',
             cancelText: intl.formatMessage({ id: 'pages.modal.cancel' }),
             onOk: async () => {
-                await deleteOrganizationNode(selectedNode.id!);
+                await api.delete(selectedNode.id!);
                 message.success(
                     intl.formatMessage({ id: 'pages.organization.message.deleteSuccess' }),
                 );
-                setSelectedId(undefined);
+                set({ selectedId: undefined });
                 await refreshTree();
             },
         });
@@ -328,8 +323,8 @@ const OrganizationPage: React.FC = () => {
                     (disabledIds.has(node.id) || node.id === editingNode.id),
                 children: node.children ? build(node.children) : undefined,
             }));
-        return build(tree);
-    }, [tree, editingNode, disabledIds]);
+        return build(state.tree);
+    }, [state.tree, editingNode, disabledIds]);
 
     const buildParentChildrenMap = useCallback(() => {
         const map = new Map<string | undefined, string[]>();
@@ -342,9 +337,9 @@ const OrganizationPage: React.FC = () => {
                 if (n.children?.length) dfs(n.children, id);
             });
         };
-        dfs(tree);
+        dfs(state.tree);
         return map;
-    }, [tree]);
+    }, [state.tree]);
 
     const handleDrop: (info: any) => Promise<void> = async (info) => {
         const dragId = String(info.dragNode?.key);
@@ -355,10 +350,8 @@ const OrganizationPage: React.FC = () => {
         const targetNode = nodeMap[targetId];
         if (!dragNode || !targetNode) return;
 
-        // Compute new parentId based on drop type
         const newParentId = dropToGap ? targetNode.parentId : targetId;
 
-        // Prevent cycles: cannot set parent to self or descendant
         const dragDescendants = collectDescendantIds(dragNode);
         if (newParentId === dragId || (newParentId && dragDescendants.has(newParentId))) {
             message.error(intl.formatMessage({ id: 'pages.message.operationFailed' }));
@@ -370,22 +363,18 @@ const OrganizationPage: React.FC = () => {
         const sourceSiblings = parentChildren.get(sourceParentId) || [];
         const targetSiblings = parentChildren.get(newParentId) || [];
 
-        // Remove drag from source siblings
         const filteredSource = sourceSiblings.filter((id) => id !== dragId);
 
-        // Insert into target siblings at correct position
-        let insertIndex = targetSiblings.length; // default append
+        let insertIndex = targetSiblings.length;
         if (dropToGap) {
             const idx = targetSiblings.indexOf(targetId);
             insertIndex = idx >= 0 ? idx + 1 : targetSiblings.length;
         }
         const newTarget = [...targetSiblings];
-        // If moving within same parent, ensure we consider the updated array without the dragId
         const movingWithinSameParent = sourceParentId === newParentId;
         const baseTarget = movingWithinSameParent ? newTarget.filter((id) => id !== dragId) : newTarget;
         baseTarget.splice(insertIndex, 0, dragId);
 
-        // Build reorder payloads
         const items: OrganizationReorderItem[] = [];
         baseTarget.forEach((id, idx) => {
             items.push({ id, parentId: newParentId, sortOrder: idx + 1 });
@@ -397,14 +386,28 @@ const OrganizationPage: React.FC = () => {
         }
 
         try {
-            await reorderOrganization(items);
+            await api.reorder(items);
             message.success(intl.formatMessage({ id: 'pages.organization.message.updateSuccess' }));
             await refreshTree();
-            setSelectedId(dragId);
+            set({ selectedId: dragId });
         } catch (e) {
             message.error(intl.formatMessage({ id: 'pages.message.operationFailed' }));
         }
     };
+
+    const initialValues = editingNode
+        ? {
+              name: editingNode.name,
+              code: editingNode.code,
+              parentId: editingNode.parentId,
+              description: editingNode.description,
+              sortOrder: editingNode.sortOrder ?? 1,
+              managerUserId: editingNode.managerUserId,
+          }
+        : {
+              parentId: createParentId,
+              sortOrder: 1,
+          };
 
     return (
         <PageContainer
@@ -441,12 +444,12 @@ const OrganizationPage: React.FC = () => {
                             <Search
                                 placeholder={intl.formatMessage({ id: 'pages.organization.search.placeholder' })}
                                 allowClear
-                                onChange={(e) => setSearchValue(e.target.value)}
-                                onSearch={(value) => setSearchValue(value)}
+                                onChange={(e) => set({ searchValue: e.target.value })}
+                                onSearch={(value) => set({ searchValue: value })}
                                 style={{ width: '100%' }}
                             />
                         </div>
-                        <Spin spinning={loading}>
+                        <Spin spinning={state.loading}>
                             {treeData.length > 0 ? (
                                 <Tree
                                     blockNode
@@ -552,14 +555,14 @@ const OrganizationPage: React.FC = () => {
                                     style={{ marginTop: 16 }}
                                     title={intl.formatMessage({ id: 'pages.organization.members.title' })}
                                     extra={
-                                        <Button type="primary" onClick={() => setAssignOpen(true)}>
+                                        <Button type="primary" onClick={() => set({ assignOpen: true })}>
                                             {intl.formatMessage({ id: 'pages.organization.members.add' })}
                                         </Button>
                                     }
                                 >
-                                    {members.length ? (
+                                    {state.members.length ? (
                                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                            {members.map((m, index) => (
+                                            {state.members.map((m, index) => (
                                                 <div
                                                     key={`${m.userId}-${index}`}
                                                     style={{
@@ -616,77 +619,96 @@ const OrganizationPage: React.FC = () => {
                 </Col>
             </Row>
 
-            <Modal
-                open={formOpen}
+            <ModalForm
+                key={editingNode?.id || 'create'}
                 title={intl.formatMessage({
                     id: editingNode
                         ? 'pages.organization.modal.updateTitle'
                         : 'pages.organization.modal.createTitle',
                 })}
-                destroyOnHidden
-                onCancel={() => {
-                    setFormOpen(false);
-                    setEditingNode(null);
+                open={formOpen}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        set({ formOpen: false, editingNode: null });
+                    }
                 }}
-                onOk={handleSubmit}
-                confirmLoading={submitLoading}
+                initialValues={initialValues}
+                onFinish={async (values) => {
+                    set({ submitLoading: true });
+                    try {
+                        if (editingNode?.id) {
+                            await api.update(editingNode.id, values);
+                            message.success(
+                                intl.formatMessage({ id: 'pages.organization.message.updateSuccess' }),
+                            );
+                        } else {
+                            const res = await api.create(values);
+                            message.success(
+                                intl.formatMessage({ id: 'pages.organization.message.createSuccess' }),
+                            );
+                            if (res.success && res.data?.id) {
+                                set({ selectedId: res.data.id });
+                            }
+                        }
+                        set({ formOpen: false, editingNode: null });
+                        await refreshTree();
+                        return true;
+                    } finally {
+                        set({ submitLoading: false });
+                    }
+                }}
+                autoFocusFirstInput
+                submitLoading={state.submitLoading}
             >
-                <Form<CreateOrganizationUnitRequest> form={form} layout="vertical">
-                    <Form.Item
-                        name="name"
-                        label={intl.formatMessage({ id: 'pages.organization.field.name' })}
-                        rules={[{ required: true }]}
-                    >
-                        <Input placeholder={intl.formatMessage({ id: 'pages.organization.placeholder.name' })} />
-                    </Form.Item>
-                    <Form.Item
-                        name="code"
-                        label={intl.formatMessage({ id: 'pages.organization.field.code' })}
-                    >
-                        <Input placeholder={intl.formatMessage({ id: 'pages.organization.placeholder.code' })} />
-                    </Form.Item>
-                    <Form.Item
-                        name="parentId"
-                        label={intl.formatMessage({ id: 'pages.organization.field.parent' })}
-                    >
-                        <TreeSelect
-                            allowClear
-                            treeData={treeSelectData}
-                            placeholder={intl.formatMessage({ id: 'pages.organization.placeholder.parent' })}
-                            treeDefaultExpandAll
-                            showSearch
-                            disabled={!tree.length && !editingNode}
-                        />
-                    </Form.Item>
-                    <Form.Item
-                        name="managerUserId"
-                        label={intl.formatMessage({ id: 'pages.organization.field.manager' })}
-                    >
-                        <Input placeholder={intl.formatMessage({ id: 'pages.organization.placeholder.manager' })} />
-                    </Form.Item>
-                    <Form.Item
-                        name="sortOrder"
-                        label={intl.formatMessage({ id: 'pages.organization.field.sortOrder' })}
-                        initialValue={1}
-                    >
-                        <InputNumber min={1} style={{ width: '100%' }} />
-                    </Form.Item>
-                    <Form.Item
-                        name="description"
-                        label={intl.formatMessage({ id: 'pages.organization.field.description' })}
-                    >
-                        <Input.TextArea rows={3} />
-                    </Form.Item>
-                </Form>
-            </Modal>
+                <ProFormText
+                    name="name"
+                    label={intl.formatMessage({ id: 'pages.organization.field.name' })}
+                    placeholder={intl.formatMessage({ id: 'pages.organization.placeholder.name' })}
+                    rules={[{ required: true }]}
+                />
+                <ProFormText
+                    name="code"
+                    label={intl.formatMessage({ id: 'pages.organization.field.code' })}
+                    placeholder={intl.formatMessage({ id: 'pages.organization.placeholder.code' })}
+                />
+                <Form.Item
+                    name="parentId"
+                    label={intl.formatMessage({ id: 'pages.organization.field.parent' })}
+                >
+                    <TreeSelect
+                        allowClear
+                        treeData={treeSelectData}
+                        placeholder={intl.formatMessage({ id: 'pages.organization.placeholder.parent' })}
+                        treeDefaultExpandAll
+                        showSearch
+                        disabled={!state.tree.length && !editingNode}
+                    />
+                </Form.Item>
+                <ProFormText
+                    name="managerUserId"
+                    label={intl.formatMessage({ id: 'pages.organization.field.manager' })}
+                    placeholder={intl.formatMessage({ id: 'pages.organization.placeholder.manager' })}
+                />
+                <Form.Item
+                    name="sortOrder"
+                    label={intl.formatMessage({ id: 'pages.organization.field.sortOrder' })}
+                >
+                    <InputNumber min={1} style={{ width: '100%' }} />
+                </Form.Item>
+                <ProFormText
+                    name="description"
+                    label={intl.formatMessage({ id: 'pages.organization.field.description' })}
+                    placeholder={intl.formatMessage({ id: 'pages.organization.placeholder.description' })}
+                />
+            </ModalForm>
 
             <AssignUserModal
-                open={assignOpen}
+                open={state.assignOpen}
                 organizationUnitId={selectedId}
-                onCancel={() => setAssignOpen(false)}
+                onCancel={() => set({ assignOpen: false })}
                 onSubmit={async (values) => {
-                    await assignUserToOrganization(values);
-                    setAssignOpen(false);
+                    await api.assignUser(values);
+                    set({ assignOpen: false });
                     await fetchMembers(selectedId);
                     message.success(intl.formatMessage({ id: 'pages.message.updateSuccess' }));
                 }}

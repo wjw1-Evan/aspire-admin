@@ -1,317 +1,145 @@
-import { PageContainer } from '@/components';
-import SearchBar from '@/components/SearchBar';
-import useCommonStyles from '@/hooks/useCommonStyles';
-import { useTableResize } from '@/hooks/useTableResize';
-import type { ColumnsType } from 'antd/es/table';
-import { Button, Tag, Row, Col, Card, Space, Table, DatePicker, Grid } from 'antd';
-
-const { useBreakpoint } = Grid;
-import {
-  HistoryOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  ThunderboltOutlined,
-  ReloadOutlined,
-  DashboardOutlined,
-} from '@ant-design/icons';
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import { PageContainer, StatCard } from '@/components';
 import { useIntl } from '@umijs/max';
-import { getCurrentUserActivityLogs, getCurrentUserActivityLogStatistics } from '@/services/user-log/api';
-import type { UserActivityLog } from '@/services/user-log/types';
-import LogDetailDrawer from '../user-log/components/LogDetailDrawer';
-import { StatCard } from '@/components';
-import type { PageParams } from '@/types/page-params';
+import { request } from '@umijs/max';
+import { Tag, Row, Col, Card, Space, Button, Drawer, Descriptions } from 'antd';
+import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
+import { HistoryOutlined, CheckCircleOutlined, CloseCircleOutlined, ThunderboltOutlined, ReloadOutlined, DashboardOutlined } from '@ant-design/icons';
+import { ApiResponse, PagedResult, PageParams } from '@/types/api-response';
 import { formatDateTime } from '@/utils/format';
 import { getActionTagColor, getActionText, getMethodColor, getStatusBadge } from '@/utils/activityLog';
 
-const { RangePicker } = DatePicker;
-const { useBreakpoint: useBreakpointGrid } = Grid;
 
+// ==================== Types ====================
+interface UserActivityLog {
+  id: string;
+  userId?: string;
+  action: string;
+  httpMethod?: string;
+  statusCode?: number;
+  fullUrl?: string;
+  duration?: number;
+  ipAddress?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+interface ActivityStats {
+  total: number;
+  successCount: number;
+  errorCount: number;
+  actionTypes: string[];
+  avgDuration: number;
+}
+
+
+// ==================== API ====================
+const api = {
+  list: (params: PageParams) =>
+    request<ApiResponse<PagedResult<UserActivityLog>>>('/api/user-activity-log/my', { params }),
+  statistics: (search?: string) =>
+    request<ApiResponse<ActivityStats>>('/api/user-activity-log/my/statistics', { params: { search } }),
+};
+
+
+// ==================== Main ====================
 const MyActivity: React.FC = () => {
   const intl = useIntl();
-  const screens = useBreakpoint();
-  const tableRef = useRef<HTMLDivElement>(null);
-  useTableResize(tableRef);
-  const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
-  const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
-  const [statistics, setStatistics] = useState<{
-    total: number;
-    successCount: number;
-    errorCount: number;
-    actionTypes: number;
-    avgDuration: number;
-  } | null>(null);
-  const [data, setData] = useState<UserActivityLog[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
-  const searchParamsRef = useRef<PageParams>({
-    search: '',
+  const actionRef = useRef<ActionType | undefined>(undefined);
+  const [state, setState] = useState({
+    statistics: null as ActivityStats | null,
+    detailDrawerOpen: false,
+    selectedLogId: null as string | null,
+    sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
+    searchText: '',
   });
-  const { styles } = useCommonStyles();
+  const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
 
   const handleViewDetail = useCallback((record: UserActivityLog) => {
-    setSelectedLogId(record.id);
-    setDetailDrawerOpen(true);
+    set({ selectedLogId: record.id, detailDrawerOpen: true });
   }, []);
 
   const handleCloseDetail = useCallback(() => {
-    setDetailDrawerOpen(false);
-    setSelectedLogId(null);
+    set({ detailDrawerOpen: false, selectedLogId: null });
   }, []);
-
-  const fetchData = useCallback(async () => {
-    const currentParams = searchParamsRef.current;
-
-    setLoading(true);
-    try {
-      const [logsResponse, statsResponse] = await Promise.all([
-        getCurrentUserActivityLogs({
-          page: currentParams.page,
-          pageSize: currentParams.pageSize,
-          search: currentParams.search as string | undefined,
-        }),
-        getCurrentUserActivityLogStatistics({
-          search: currentParams.search as string | undefined,
-        }),
-      ]);
-
-      if (logsResponse.success && logsResponse.data) {
-        const result = logsResponse.data as any;
-        const list: UserActivityLog[] = result.queryable || [];
-        const total: number = result.rowCount || 0;
-
-        if (statsResponse.success && statsResponse.data) {
-          const statsData = statsResponse.data;
-          setStatistics({
-            total: statsData.total || 0,
-            successCount: statsData.successCount || 0,
-            errorCount: statsData.errorCount || 0,
-            actionTypes: statsData.actionTypes?.length || 0,
-            avgDuration: Math.round(statsData.avgDuration || 0),
-          });
-        }
-
-        setData(list);
-        setPagination(prev => ({
-          ...prev,
-          page: currentParams.page ?? prev.page,
-          pageSize: currentParams.pageSize ?? prev.pageSize,
-          total,
-        }));
-      } else {
-        setData([]);
-        setPagination(prev => ({ ...prev, total: 0 }));
-      }
-    } catch (error) {
-      console.error('Failed to load activity logs:', error);
-      setData([]);
-      setPagination(prev => ({ ...prev, total: 0 }));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  const handleSearch = useCallback((params: PageParams) => {
-    searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
-    fetchData();
-  }, [fetchData]);
-
-  const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
-    const newPage = pag.current;
-    const newPageSize = pag.pageSize;
-    const sortBy = sorter?.field;
-    const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
-
-    searchParamsRef.current = {
-      ...searchParamsRef.current,
-      page: newPage,
-      pageSize: newPageSize,
-      sortBy,
-      sortOrder,
-    };
-    fetchData();
-  }, [fetchData]);
 
   const handleRefresh = useCallback(() => {
-    fetchData();
-  }, [fetchData]);
+    actionRef.current?.reload();
+  }, []);
 
-  const columns: ColumnsType<UserActivityLog> = useMemo(() => [
-    {
-      title: intl.formatMessage({ id: 'pages.table.action' }),
-      dataIndex: 'action',
-      key: 'action',
-      render: (_, record: UserActivityLog) => (
-        <a onClick={() => handleViewDetail(record)}>
-          <Tag color={getActionTagColor(record.action)}>
-            {getActionText(record.action)}
-          </Tag>
-        </a>
-      ),
-      sorter: true,
-    },
-    {
-      title: intl.formatMessage({ id: 'pages.table.httpMethod' }),
-      dataIndex: 'httpMethod',
-      key: 'httpMethod',
-      render: (_, record: UserActivityLog) => {
-        if (!record.httpMethod) return '-';
-        return (
-          <Tag color={getMethodColor(record.httpMethod)}>
-            {record.httpMethod}
-          </Tag>
-        );
-      },
-      sorter: true,
-    },
-    {
-      title: intl.formatMessage({ id: 'pages.table.statusCode' }),
-      dataIndex: 'statusCode',
-      key: 'statusCode',
-      render: (_, record: UserActivityLog) => getStatusBadge(record.statusCode),
-      sorter: true,
-    },
-    {
-      title: intl.formatMessage({ id: 'pages.table.fullUrl' }),
-      dataIndex: 'fullUrl',
-      key: 'fullUrl',
-      ellipsis: true,
-      render: (_, record: UserActivityLog) => {
-        if (!record.fullUrl) return '-';
-        return <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{record.fullUrl}</span>;
-      },
-      sorter: true,
-    },
-    {
-      title: intl.formatMessage({ id: 'pages.table.duration' }),
-      dataIndex: 'duration',
-      key: 'duration',
-      sorter: true,
-      render: (_, record: UserActivityLog) => {
-        if (record.duration === undefined || record.duration === null) return '-';
-        let color = 'green';
-        if (record.duration > 1000) color = 'orange';
-        if (record.duration > 3000) color = 'red';
-        return <span style={{ color }}>{record.duration}ms</span>;
-      },
-    },
-    {
-      title: intl.formatMessage({ id: 'pages.table.ipAddress' }),
-      dataIndex: 'ipAddress',
-      key: 'ipAddress',
-      ellipsis: true,
-      sorter: true,
-    },
-    {
-      title: intl.formatMessage({ id: 'pages.table.actionTime' }),
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      sorter: true,
-      defaultSortOrder: 'descend',
-      render: (_, record: UserActivityLog) => formatDateTime(record.createdAt),
-    },
+  const columns: ProColumns<UserActivityLog>[] = useMemo(() => [
+    { title: intl.formatMessage({ id: 'pages.table.action' }), dataIndex: 'action', key: 'action', sorter: true, render: (dom: any, r) => <a onClick={() => handleViewDetail(r)}><Tag color={getActionTagColor(r.action)}>{getActionText(r.action)}</Tag></a> },
+    { title: intl.formatMessage({ id: 'pages.table.httpMethod' }), dataIndex: 'httpMethod', key: 'httpMethod', sorter: true, render: (dom: any, r) => r.httpMethod ? <Tag color={getMethodColor(r.httpMethod)}>{r.httpMethod}</Tag> : '-' },
+    { title: intl.formatMessage({ id: 'pages.table.statusCode' }), dataIndex: 'statusCode', key: 'statusCode', sorter: true, render: (dom: any, r) => getStatusBadge(r.statusCode) },
+    { title: intl.formatMessage({ id: 'pages.table.fullUrl' }), dataIndex: 'fullUrl', key: 'fullUrl', ellipsis: true, sorter: true, render: (dom: any, r) => r.fullUrl ? <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{r.fullUrl}</span> : '-' },
+    { title: intl.formatMessage({ id: 'pages.table.duration' }), dataIndex: 'duration', key: 'duration', sorter: true, render: (dom: any, r) => { if (r.duration === undefined || r.duration === null) return '-'; let color = 'green'; if (r.duration > 1000) color = 'orange'; if (r.duration > 3000) color = 'red'; return <span style={{ color }}>{r.duration}ms</span>; } },
+    { title: intl.formatMessage({ id: 'pages.table.ipAddress' }), dataIndex: 'ipAddress', key: 'ipAddress', ellipsis: true, sorter: true },
+    { title: intl.formatMessage({ id: 'pages.table.actionTime' }), dataIndex: 'createdAt', key: 'createdAt', sorter: true, defaultSortOrder: 'descend', render: (dom: any, r) => formatDateTime(r.createdAt) },
   ], [intl, handleViewDetail]);
 
   return (
-    <PageContainer
-      title={
-        <Space>
-          <HistoryOutlined />
-          {intl.formatMessage({ id: 'pages.myActivity.title' })}
-        </Space>
-      }
-      extra={
-        <Space wrap>
-          <Button
-            key="refresh"
-            icon={<ReloadOutlined />}
-            onClick={handleRefresh}
-          >
-            {intl.formatMessage({ id: 'pages.button.refresh' })}
-          </Button>
-        </Space>
-      }
-    >
-      <SearchBar
-        initialParams={searchParamsRef.current}
-        onSearch={handleSearch}
+    <PageContainer title={<Space><HistoryOutlined />{intl.formatMessage({ id: 'pages.myActivity.title' })}</Space>} extra={<Space wrap><Button key="refresh" icon={<ReloadOutlined />} onClick={handleRefresh}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button></Space>}>
+      {state.statistics && <Card style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>
+        {[{ key: 'total', title: intl.formatMessage({ id: 'pages.myActivity.statistics.totalLogs' }), icon: <HistoryOutlined />, color: '#1890ff' },
+          { key: 'successCount', title: intl.formatMessage({ id: 'pages.myActivity.statistics.successCount' }), icon: <CheckCircleOutlined />, color: '#52c41a' },
+          { key: 'errorCount', title: intl.formatMessage({ id: 'pages.myActivity.statistics.errorCount' }), icon: <CloseCircleOutlined />, color: '#ff4d4f' },
+          { key: 'actionTypes', title: intl.formatMessage({ id: 'pages.myActivity.statistics.actionTypes' }), icon: <ThunderboltOutlined />, color: '#faad14' },
+          { key: 'avgDuration', title: intl.formatMessage({ id: 'pages.myActivity.statistics.avgDuration' }), suffix: 'ms', icon: <DashboardOutlined />, color: '#722ed1' }
+        ].map(i => (
+          <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4} key={i.key}><StatCard title={i.title} value={i.key === 'avgDuration' ? Math.round(state.statistics![i.key as keyof ActivityStats] || 0) : state.statistics![i.key as keyof ActivityStats]} suffix={i.suffix} icon={i.icon} color={i.color} /></Col>
+        ))}
+      </Row></Card>}
+
+      <ProTable actionRef={actionRef} request={async (params: any) => {
+        const { pageSize, current } = params;
+        const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
+        const res = await api.list({ page: current, pageSize, search: state.searchText, ...sortParams });
+        api.statistics(state.searchText).then(r => { if (r.success && r.data) set({ statistics: r.data }); });
+        return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+      }} columns={columns} rowKey="id" search={false}
+        onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
+        pagination={{ pageSizeOptions: ['10', '20', '50', '100'], defaultPageSize: 20 }}
+        toolBarRender={() => [
+          <Button key="refresh" icon={<ReloadOutlined />} onClick={handleRefresh}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button>,
+        ]}
       />
 
-      {statistics && (
-        <Card className={styles.card} style={{ marginBottom: 16 }}>
-          <Row gutter={[12, 12]}>
-            <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}>
-              <StatCard
-                title={intl.formatMessage({ id: 'pages.myActivity.statistics.totalLogs' })}
-                value={statistics.total}
-                icon={<HistoryOutlined />}
-                color="#1890ff"
-              />
-            </Col>
-            <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}>
-              <StatCard
-                title={intl.formatMessage({ id: 'pages.myActivity.statistics.successCount' })}
-                value={statistics.successCount}
-                icon={<CheckCircleOutlined />}
-                color="#52c41a"
-              />
-            </Col>
-            <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}>
-              <StatCard
-                title={intl.formatMessage({ id: 'pages.myActivity.statistics.errorCount' })}
-                value={statistics.errorCount}
-                icon={<CloseCircleOutlined />}
-                color="#ff4d4f"
-              />
-            </Col>
-            <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}>
-              <StatCard
-                title={intl.formatMessage({ id: 'pages.myActivity.statistics.actionTypes' })}
-                value={statistics.actionTypes}
-                icon={<ThunderboltOutlined />}
-                color="#faad14"
-              />
-            </Col>
-            <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}>
-              <StatCard
-                title={intl.formatMessage({ id: 'pages.myActivity.statistics.avgDuration' })}
-                value={statistics.avgDuration}
-                suffix="ms"
-                icon={<DashboardOutlined />}
-                color="#722ed1"
-              />
-            </Col>
-          </Row>
-        </Card>
-      )}
-
-      <div ref={tableRef}>
-        <Table<UserActivityLog>
-          dataSource={data}
-          columns={columns}
-          rowKey="id"
-          loading={loading}
-          scroll={{ x: 'max-content' }}
-          onChange={handleTableChange}
-          pagination={{
-            current: pagination.page,
-            pageSize: pagination.pageSize,
-            total: pagination.total,
-          }}
-        />
-      </div>
-
-      <LogDetailDrawer
-        open={detailDrawerOpen}
-        logId={selectedLogId || undefined}
-        fetchFromApi={true}
-        onClose={handleCloseDetail}
-      />
+      <LogDetailDrawer open={state.detailDrawerOpen} logId={state.selectedLogId || undefined} fetchFromApi={true} onClose={handleCloseDetail} />
     </PageContainer>
+  );
+};
+
+
+// ==================== LogDetailDrawer ====================
+const LogDetailDrawer: React.FC<{ open: boolean; logId?: string; fetchFromApi?: boolean; onClose: () => void }> = ({ open, logId, fetchFromApi, onClose }) => {
+  const [log, setLog] = useState<UserActivityLog | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (open && logId && fetchFromApi) {
+      setLoading(true);
+      request<ApiResponse<UserActivityLog>>(`/api/user-activity-log/${logId}`).then(r => {
+        if (r.success && r.data) setLog(r.data);
+      }).finally(() => setLoading(false));
+    }
+  }, [open, logId, fetchFromApi]);
+
+  if (!open) return null;
+
+  return (
+    <Drawer title="日志详情" placement="right" open={open} onClose={onClose} width={600}>
+      {loading ? <div>加载中...</div> : log ? (
+        <Descriptions column={1} size="small" bordered>
+          <Descriptions.Item label="操作">{getActionText(log.action)}</Descriptions.Item>
+          <Descriptions.Item label="HTTP 方法">{log.httpMethod ? <Tag color={getMethodColor(log.httpMethod)}>{log.httpMethod}</Tag> : '-'}</Descriptions.Item>
+          <Descriptions.Item label="状态码">{getStatusBadge(log.statusCode)}</Descriptions.Item>
+          <Descriptions.Item label="请求URL">{log.fullUrl || '-'}</Descriptions.Item>
+          <Descriptions.Item label="耗时">{log.duration !== undefined ? `${log.duration}ms` : '-'}</Descriptions.Item>
+          <Descriptions.Item label="IP地址">{log.ipAddress || '-'}</Descriptions.Item>
+          <Descriptions.Item label="操作时间">{formatDateTime(log.createdAt)}</Descriptions.Item>
+        </Descriptions>
+      ) : <div>未找到日志</div>}
+    </Drawer>
   );
 };
 

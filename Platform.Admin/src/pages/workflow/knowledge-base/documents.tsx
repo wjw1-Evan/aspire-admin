@@ -25,7 +25,7 @@ import PageContainer from '@/components/PageContainer';
 import SearchBar from '@/components/SearchBar';
 import * as kbService from '@/services/workflow/knowledge-base';
 import type { KnowledgeDocument } from '@/services/workflow/knowledge-base';
-import type { PageParams } from '@/types/page-params';
+import type { PageParams } from '@/types/api-response';
 import dayjs from 'dayjs';
 
 const { Text } = Typography;

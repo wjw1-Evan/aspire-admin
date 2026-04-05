@@ -1,5 +1,5 @@
 import { useCallback, useRef } from 'react';
-import type { PageParams } from '@/types/page-params';
+import type { PageParams } from '@/types/api-response';
 
 interface UseTablePaginationOptions {
   fetchData: () => Promise<void>;

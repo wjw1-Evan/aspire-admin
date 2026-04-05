@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback, useMemo } from 'react';
 import { useIntl } from '@umijs/max';
 import { type TableColumnsType, Table } from 'antd';
-import type { PageParams } from '@/types/page-params';
+import type { PageParams } from '@/types/api-response';
 import {
   Button,
   Modal,

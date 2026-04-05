@@ -12,10 +12,10 @@
 
 ### 类型定义位置
 
-所有 API 相关类型统一定义在 `@/types/unified-api.ts`：
+所有 API 相关类型统一定义在 `@/types/api-response.ts`：
 
 ```typescript
-// src/types/unified-api.ts
+// src/types/api-response.ts
 
 /**
  * 统一 API 响应格式（与后端 Platform.ServiceDefaults.Models.ApiResponse 完全一致）
@@ -50,7 +50,7 @@ export interface PagedResult<T> {
 
 ```typescript
 import { request } from '@umijs/max';
-import type { ApiResponse, PagedResult } from '@/types/unified-api';
+import type { ApiResponse, PagedResult } from '@/types/api-response';
 import type { User, FileItem, TaskDto } from './types';
 
 // ✅ 正确：分页接口
@@ -86,7 +86,7 @@ export async function getUser(id: string) {
 ### 分页请求函数
 
 ```tsx
-import type { PagedResult } from '@/types/unified-api';
+import type { PagedResult } from '@/types/api-response';
 import type { WorkflowDefinition } from '@/services/workflow/api';
 
 const fetchWorkflows = async (params: { page: number; pageSize: number; keyword?: string }) => {
@@ -133,7 +133,7 @@ interface TaskDto {
 
 ```tsx
 // src/pages/task-management/types.ts
-import type { PagedResult } from '@/types/unified-api';
+import type { PagedResult } from '@/types/api-response';
 import type { TaskDto as TaskDtoBase } from '@/services/task/api';
 
 // 扩展或定义页面级别类型
@@ -167,7 +167,7 @@ export type TaskListResponse = PagedResult<TaskDtoBase>;
 
 ```typescript
 // src/services/task/api.ts
-import type { PagedResult } from '@/types/unified-api';
+import type { PagedResult } from '@/types/api-response';
 
 // 枚举
 export enum TaskStatus {
@@ -281,7 +281,7 @@ const users = (response.data as any).queryable || [];
 const total = (response.data as any).rowCount || 0;
 
 // ✅ 正确：使用强类型
-import type { PagedResult } from '@/types/unified-api';
+import type { PagedResult } from '@/types/api-response';
 
 const response = await getUsers(params);
 if (response.success && response.data) {
@@ -362,7 +362,7 @@ const response = await getUsers({ page: 1, pageSize: 20 });
 
 - 类型如需扩展，优先同步后端 DTO，禁止自定义 any。
 - 发现类型实现与本规范或后端标准不符时，优先以本规范为准，及时修订文档与代码。
-- 所有新 API 必须使用 `@/types/unified-api.ts` 中定义的基础类型。
+- 所有新 API 必须使用 `@/types/api-response.ts` 中定义的基础类型。
 
 ---
 
@@ -370,7 +370,7 @@ const response = await getUsers({ page: 1, pageSize: 20 });
 
 | 组件 | 位置 |
 |------|------|
-| 统一类型定义 | `Platform.Admin/src/types/unified-api.ts` |
+| 统一类型定义 | `Platform.Admin/src/types/api-response.ts` |
 | 服务层参考 | `Platform.Admin/src/services/cloud-storage/api.ts` |
 | 统一分页规范 | [`00-分页规范.md`](../00-分页规范.md) |
 

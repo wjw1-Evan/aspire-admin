@@ -86,7 +86,7 @@ import {
 // 导入工具函数和类型
 import type { SearchParams, PathHistoryItem, UploadProgressItem, OfficeContent } from './types';
 import { MAX_UPLOAD_BYTES, formatFileSize, formatDateTime, getFileIcon, transformFileItem, isImageFile } from './utils';
-import type { PageParams } from '@/types/page-params';
+import type { PageParams } from '@/types/api-response';
 
 const CloudStorageFilesPage: React.FC = () => {
     const intl = useIntl();

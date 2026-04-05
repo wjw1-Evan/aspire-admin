@@ -17,12 +17,12 @@ import dayjs from 'dayjs';
 import { createTask, updateTask, TaskPriority, type TaskDto, type CreateTaskRequest, type UpdateTaskRequest } from '@/services/task/api';
 import { getUserList } from '@/services/user/api';
 import type { AppUser } from '@/services/user/api';
-import { getProjectList, type ProjectDto } from '@/services/task/project';
 import { getTaskTree } from '@/services/task/api';
 
 interface TaskFormProps {
   open?: boolean;
   task?: TaskDto | null;
+  projects?: { id: string; name: string }[];
   onClose?: () => void;
   onSuccess?: () => void;
   onCancel?: () => void;
@@ -51,6 +51,7 @@ interface TaskFormValues {
 const TaskForm: React.FC<TaskFormProps> = ({
   open = false,
   task,
+  projects = [],
   onClose,
   onSuccess,
   onCancel,
@@ -61,7 +62,6 @@ const TaskForm: React.FC<TaskFormProps> = ({
   const [loading, setLoading] = React.useState(false);
   const [users, setUsers] = React.useState<AppUser[]>([]);
   const [usersLoading, setUsersLoading] = React.useState(false);
-  const [projects, setProjects] = React.useState<ProjectDto[]>([]);
   const [tasks, setTasks] = React.useState<TaskDto[]>([]);
 
   // 加载用户列表和项目/任务列表
@@ -88,17 +88,6 @@ const TaskForm: React.FC<TaskFormProps> = ({
     }
   };
 
-  const loadProjects = async () => {
-    try {
-      const response = await getProjectList({ page: 1, pageSize: 100 });
-      if (response.success && response.data) {
-        setProjects(response.data.queryable);
-      }
-    } catch (error) {
-      console.error('加载项目列表失败:', error);
-    }
-  };
-
   const loadTasks = async (projId?: string) => {
     try {
       const response = await getTaskTree(projId);
@@ -112,7 +101,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
 
   useEffect(() => {
     if (open) {
-      loadProjects();
+      loadUsers();
       const currentProjectId = form.getFieldValue('projectId') || projectId;
       if (currentProjectId) {
         loadTasks(currentProjectId);

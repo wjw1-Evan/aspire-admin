@@ -62,7 +62,7 @@ import {
     type ShareNotificationRequest,
 } from '@/services/cloud-storage/shareApi';
 import { getFileDetail } from '@/services/cloud-storage';
-import type { PageParams } from '@/types/page-params';
+import type { PageParams } from '@/types/api-response';
 
 
 const CloudStorageSharedPage: React.FC = () => {

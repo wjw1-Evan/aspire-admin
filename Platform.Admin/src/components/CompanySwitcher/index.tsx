@@ -3,7 +3,7 @@ import { Dropdown, Spin, App as AntApp } from 'antd';
 import type { MenuProps } from 'antd';
 import React, { useState, useEffect } from 'react';
 import { request, useModel, useIntl } from '@umijs/max';
-import type { ApiResponse } from '@/types/unified-api';
+import type { ApiResponse } from '@/types/api-response';
 import { CreateCompanyModal } from '../CreateCompanyModal';
 import styles from './index.less';
 

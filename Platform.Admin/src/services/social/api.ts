@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse } from '@/types/unified-api';
+import type { ApiResponse } from '@/types/api-response';
 
 /**
  * 上报位置信标请求参数

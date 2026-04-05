@@ -1,154 +1,157 @@
-import React, { useCallback, useRef, useState, useEffect } from 'react';
-import { Card, Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typography, Descriptions, InputNumber, Tabs, Popconfirm, Rate, Switch, Drawer, List, Avatar, Empty, Flex, Table } from 'antd';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
+import { PageContainer, StatCard } from '@/components';
 import { useIntl, useSearchParams, history } from '@umijs/max';
+import { request } from '@umijs/max';
+import { Card, Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typography, Descriptions, Tabs, Popconfirm, Rate, Switch, Drawer, List, Avatar, Empty, Flex } from 'antd';
+import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
+import { ModalForm, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-form';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, AppstoreOutlined, FormOutlined, CheckCircleOutlined, ClockCircleOutlined, StarOutlined, ReloadOutlined, SettingOutlined } from '@ant-design/icons';
-import type { ProColumns } from '@ant-design/pro-components';
-import PageContainer from '@/components/PageContainer';
-import SearchBar from '@/components/SearchBar';
-import StatCard from '@/components/StatCard';
-import * as parkService from '@/services/park';
-import type { ServiceCategory, ServiceRequest, ServiceStatistics, ParkTenant } from '@/services/park';
 import dayjs from 'dayjs';
+import { ApiResponse, PagedResult, PageParams } from '@/types/api-response';
 import styles from './index.less';
-import type { PageParams } from '@/types/page-params';
 
-const { Text, Title } = Typography;
+const { Text } = Typography;
 
+interface ServiceCategory {
+    id: string;
+    name: string;
+    description?: string;
+    icon?: string;
+    sortOrder: number;
+    isActive: boolean;
+    requestCount: number;
+}
+
+interface ServiceRequest {
+    id: string;
+    categoryId: string;
+    categoryName?: string;
+    tenantId?: string;
+    tenantName?: string;
+    title: string;
+    description?: string;
+    contactPerson?: string;
+    contactPhone?: string;
+    priority: string;
+    status: string;
+    assignedTo?: string;
+    assignedToName?: string;
+    completedAt?: string;
+    rating?: number;
+    createdAt: string;
+}
+
+interface ServiceStatistics {
+    totalCategories: number;
+    activeCategories: number;
+    totalRequests: number;
+    pendingRequests: number;
+    processingRequests: number;
+    completedRequests: number;
+    averageRating: number;
+}
+
+interface ParkTenant {
+    id: string;
+    tenantName: string;
+    contactPerson?: string;
+    phone?: string;
+}
+
+const api = {
+    statistics: () => request<ApiResponse<ServiceStatistics>>('/api/park/services/statistics', { method: 'GET' }),
+    categories: () => request<ApiResponse<{ categories: ServiceCategory[] }>>('/api/park/services/categories', { method: 'GET' }),
+    createCategory: (data: Partial<ServiceCategory>) => request<ApiResponse<ServiceCategory>>('/api/park/services/categories', { method: 'POST', data }),
+    updateCategory: (id: string, data: Partial<ServiceCategory>) => request<ApiResponse<ServiceCategory>>(`/api/park/services/categories/${id}`, { method: 'PUT', data }),
+    deleteCategory: (id: string) => request<ApiResponse<boolean>>(`/api/park/services/categories/${id}`, { method: 'DELETE' }),
+    toggleCategory: (id: string) => request<ApiResponse<boolean>>(`/api/park/services/categories/${id}/toggle`, { method: 'PUT' }),
+    requests: (params: PageParams) => request<ApiResponse<PagedResult<ServiceRequest>>>('/api/park/services/requests/list', { method: 'POST', data: params }),
+    createRequest: (data: Partial<ServiceRequest>) => request<ApiResponse<ServiceRequest>>('/api/park/services/requests', { method: 'POST', data }),
+    updateStatus: (id: string, data: { status: string; assignedTo?: string; resolution?: string }) => request<ApiResponse<ServiceRequest>>(`/api/park/services/requests/${id}/status`, { method: 'PUT', data }),
+    deleteRequest: (id: string) => request<ApiResponse<boolean>>(`/api/park/services/requests/${id}`, { method: 'DELETE' }),
+    rateRequest: (id: string, data: { rating: number; feedback?: string }) => request<ApiResponse<boolean>>(`/api/park/services/requests/${id}/rate`, { method: 'POST', data }),
+    tenants: (params: PageParams) => request<ApiResponse<PagedResult<ParkTenant>>>('/api/park/tenants/list', { method: 'POST', data: params }),
+};
+
+const priorityOptions = [
+    { label: '紧急', value: 'Urgent', color: 'red' },
+    { label: '高', value: 'High', color: 'orange' },
+    { label: '普通', value: 'Normal', color: 'blue' },
+    { label: '低', value: 'Low', color: 'default' },
+];
+
+const statusOptions = [
+    { label: '待处理', value: 'Pending', color: 'orange' },
+    { label: '处理中', value: 'Processing', color: 'processing' },
+    { label: '已完成', value: 'Completed', color: 'green' },
+    { label: '已取消', value: 'Cancelled', color: 'default' },
+];
 
 const EnterpriseService: React.FC = () => {
     const intl = useIntl();
     const { message } = App.useApp();
-    const [categoryForm] = Form.useForm();
-    const [requestForm] = Form.useForm();
-    const [statusForm] = Form.useForm();
-    const [ratingForm] = Form.useForm();
-    const searchParamsRef = useRef<PageParams>({ page: 1, pageSize: 10, search: '' });
+    const actionRef = useRef<ActionType | undefined>(undefined);
+    const [searchParams] = useSearchParams();
 
-    const [activeTab, setActiveTab] = useState<string>('requests');
-    const [statistics, setStatistics] = useState<ServiceStatistics | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [categories, setCategories] = useState<ServiceCategory[]>([]);
-    const [categoryModalVisible, setCategoryModalVisible] = useState(false);
-    const [requestModalVisible, setRequestModalVisible] = useState(false);
-    const [statusModalVisible, setStatusModalVisible] = useState(false);
-    const [ratingModalVisible, setRatingModalVisible] = useState(false);
-    const [detailDrawerVisible, setDetailDrawerVisible] = useState(false);
-    const [currentCategory, setCurrentCategory] = useState<ServiceCategory | null>(null);
-    const [currentRequest, setCurrentRequest] = useState<ServiceRequest | null>(null);
-    const [isEdit, setIsEdit] = useState(false);
-    const [tenants, setTenants] = useState<ParkTenant[]>([]);
+    const [state, setState] = useState({
+        activeTab: 'requests',
+        statistics: null as ServiceStatistics | null,
+        categories: [] as ServiceCategory[],
+        tenants: [] as ParkTenant[],
+        sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
+        searchText: '',
+    });
+    const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
 
-    const [requestsData, setRequestsData] = useState<ServiceRequest[]>([]);
-    const [requestsLoading, setRequestsLoading] = useState(false);
-    const [requestsPagination, setRequestsPagination] = useState({ page: 1, pageSize: 10, total: 0 });
+    const [modalState, setModalState] = useState({
+        categoryVisible: false,
+        requestVisible: false,
+        statusVisible: false,
+        ratingVisible: false,
+        detailVisible: false,
+    });
+    const setModal = (partial: Partial<typeof modalState>) => setModalState(prev => ({ ...prev, ...partial }));
 
-    const loadStatistics = useCallback(async () => {
-        try {
-            const res = await parkService.getServiceStatistics();
-            if (res.success && res.data) setStatistics(res.data);
-        } catch (error) { console.error(error); }
+    const [editingState, setEditingState] = useState({
+        currentCategory: null as ServiceCategory | null,
+        currentRequest: null as ServiceRequest | null,
+    });
+    const setEditing = (partial: Partial<typeof editingState>) => setEditingState(prev => ({ ...prev, ...partial }));
+
+    const loadData = useCallback(async () => {
+        api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
     }, []);
 
     const loadCategories = useCallback(async () => {
-        try {
-            const res = await parkService.getServiceCategories();
-            if (res.success && res.data?.categories) setCategories(res.data.categories);
-        } catch (error) { console.error(error); }
+        api.categories().then(r => { if (r.success && r.data?.categories) set({ categories: r.data.categories }); });
     }, []);
 
     const loadTenants = useCallback(async () => {
-        try {
-            const res = await parkService.getTenants({ page: 1, pageSize: 500 });
-            if (res.success && res.data) setTenants(res.data.queryable);
-        } catch (error) { console.error(error); }
+        api.tenants({ page: 1, pageSize: 500 }).then(r => { if (r.success && r.data) set({ tenants: r.data.queryable }); });
     }, []);
-
-    const fetchRequests = useCallback(async () => {
-        const currentParams = searchParamsRef.current;
-        setRequestsLoading(true);
-        try {
-            const res = await parkService.getServiceRequests({
-                page: currentParams.page ?? 1,
-                pageSize: currentParams.pageSize ?? 10,
-                search: currentParams.search,
-            });
-            if (res.success && res.data) {
-                const paged = res.data;
-                setRequestsData(paged.queryable ?? []);
-                setRequestsPagination(prev => ({ ...prev, total: paged.rowCount ?? 0 }));
-            } else {
-                setRequestsData([]);
-                setRequestsPagination(prev => ({ ...prev, total: 0 }));
-            }
-        } catch {
-            setRequestsData([]);
-            setRequestsPagination(prev => ({ ...prev, total: 0 }));
-        } finally {
-            setRequestsLoading(false);
-        }
-    }, []);
-
-    const handleSearch = useCallback((params: PageParams) => {
-        searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
-        setRequestsPagination(prev => ({ ...prev, page: 1 }));
-        fetchRequests();
-    }, [fetchRequests]);
-
-    const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
-        const newPage = pag.current;
-        const newPageSize = pag.pageSize;
-        const sortBy = sorter?.field;
-        const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
-        
-        searchParamsRef.current = {
-            ...searchParamsRef.current,
-            page: newPage,
-            pageSize: newPageSize,
-            sortBy,
-            sortOrder,
-        };
-        fetchRequests();
-    }, [fetchRequests]);
 
     useEffect(() => {
-        loadStatistics();
         loadCategories();
         loadTenants();
-    }, [loadStatistics, loadCategories, loadTenants]);
+        loadData();
+    }, [loadCategories, loadTenants, loadData]);
 
     useEffect(() => {
-        if (activeTab === 'requests') {
-            fetchRequests();
+        if (state.activeTab === 'requests') {
+            actionRef.current?.reload();
         }
-    }, [activeTab, fetchRequests]);
+    }, [state.activeTab]);
 
-    // Handle URL parameters from tenant list quick action
-    const [searchParams] = useSearchParams();
     useEffect(() => {
         const tenantId = searchParams.get('tenantId');
-        const tenantName = searchParams.get('tenantName');
         if (tenantId) {
-            requestForm.setFieldsValue({ tenantId });
-            setRequestModalVisible(true);
+            setEditing({ currentRequest: null });
+            setModal({ requestVisible: true });
             history.replace('/park-management/enterprise-service');
         }
-    }, [searchParams, requestForm]);
+    }, [searchParams]);
 
-    const priorityOptions = [
-        { label: '紧急', value: 'Urgent', color: 'red' },
-        { label: '高', value: 'High', color: 'orange' },
-        { label: '普通', value: 'Normal', color: 'blue' },
-        { label: '低', value: 'Low', color: 'default' },
-    ];
-
-    const statusOptions = [
-        { label: '待处理', value: 'Pending', color: 'orange' },
-        { label: '处理中', value: 'Processing', color: 'processing' },
-        { label: '已完成', value: 'Completed', color: 'green' },
-        { label: '已取消', value: 'Cancelled', color: 'default' },
-    ];
-
-    const requestColumns: ProColumns<ServiceRequest>[] = [
+    const columns: ProColumns<ServiceRequest>[] = [
         {
             title: intl.formatMessage({ id: 'pages.park.service.request.title', defaultMessage: '服务标题' }),
             dataIndex: 'title',
@@ -157,7 +160,7 @@ const EnterpriseService: React.FC = () => {
             render: (_, record) => (
                 <Space>
                     <FormOutlined style={{ color: '#1890ff' }} />
-                    <a onClick={() => handleViewRequest(record)}>{record.title}</a>
+                    <a onClick={() => { setEditing({ currentRequest: record }); setModal({ detailVisible: true }); }}>{record.title}</a>
                 </Space>
             ),
         },
@@ -228,20 +231,23 @@ const EnterpriseService: React.FC = () => {
             fixed: 'right',
             render: (_, record) => (
                 <Space>
-                    <Button type="link" icon={<EyeOutlined />} onClick={() => handleViewRequest(record)}>
+                    <Button type="link" icon={<EyeOutlined />} onClick={() => { setEditing({ currentRequest: record }); setModal({ detailVisible: true }); }}>
                         {intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}
                     </Button>
                     {record.status !== 'Completed' && record.status !== 'Cancelled' && (
-                        <Button type="link" icon={<SettingOutlined />} onClick={() => handleUpdateStatus(record)}>
+                        <Button type="link" icon={<SettingOutlined />} onClick={() => { setEditing({ currentRequest: record }); setModal({ statusVisible: true }); }}>
                             {intl.formatMessage({ id: 'pages.park.service.request.updateStatus', defaultMessage: '更新状态' })}
                         </Button>
                     )}
                     {record.status === 'Completed' && !record.rating && (
-                        <Button type="link" icon={<StarOutlined />} onClick={() => handleRateRequest(record)}>
+                        <Button type="link" icon={<StarOutlined />} onClick={() => { setEditing({ currentRequest: record }); setModal({ ratingVisible: true }); }}>
                             {intl.formatMessage({ id: 'pages.park.service.request.rate', defaultMessage: '评价' })}
                         </Button>
                     )}
-                    <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={() => handleDeleteRequest(record.id)}>
+                    <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={async () => {
+                        const res = await api.deleteRequest(record.id);
+                        if (res.success) { message.success('删除成功'); actionRef.current?.reload(); loadData(); }
+                    }}>
                         <Button type="link" danger icon={<DeleteOutlined />}>
                             {intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}
                         </Button>
@@ -251,67 +257,22 @@ const EnterpriseService: React.FC = () => {
         },
     ];
 
-    const handleViewRequest = (request: ServiceRequest) => { setCurrentRequest(request); setDetailDrawerVisible(true); };
-    const handleUpdateStatus = (request: ServiceRequest) => { setCurrentRequest(request); statusForm.setFieldsValue({ status: request.status }); setStatusModalVisible(true); };
-    const handleRateRequest = (request: ServiceRequest) => { setCurrentRequest(request); ratingForm.resetFields(); setRatingModalVisible(true); };
-    const handleDeleteRequest = async (id: string) => { setLoading(true); try { const res = await parkService.deleteServiceRequest(id); if (res.success) { message.success('删除成功'); fetchRequests(); loadStatistics(); } } catch (e) { message.error('删除失败'); } finally { setLoading(false); } };
-    const handleAddRequest = () => { setCurrentRequest(null); setIsEdit(false); requestForm.resetFields(); setRequestModalVisible(true); };
-
-    const handleRequestSubmit = async () => {
-        try {
-            const values = await requestForm.validateFields(); setLoading(true);
-            const res = await parkService.createServiceRequest(values);
-            if (res.success) { message.success('创建成功'); setRequestModalVisible(false); fetchRequests(); loadStatistics(); }
-        } catch (e) { console.error(e); } finally { setLoading(false); }
-    };
-
-    const handleStatusSubmit = async () => {
-        try {
-            const values = await statusForm.validateFields(); setLoading(true);
-            if (currentRequest) {
-                const res = await parkService.updateServiceRequestStatus(currentRequest.id, values);
-                if (res.success) { message.success('状态更新成功'); setStatusModalVisible(false); fetchRequests(); loadStatistics(); }
-            }
-        } catch (e) { console.error(e); } finally { setLoading(false); }
-    };
-
-    const handleRatingSubmit = async () => {
-        try {
-            const values = await ratingForm.validateFields(); setLoading(true);
-            if (currentRequest) {
-                const res = await parkService.rateServiceRequest(currentRequest.id, values);
-                if (res.success) { message.success('评价成功'); setRatingModalVisible(false); fetchRequests(); loadStatistics(); }
-            }
-        } catch (e) { console.error(e); } finally { setLoading(false); }
-    };
-
-    const handleAddCategory = () => { setCurrentCategory(null); setIsEdit(false); categoryForm.resetFields(); setCategoryModalVisible(true); };
-    const handleEditCategory = (category: ServiceCategory) => { setCurrentCategory(category); setIsEdit(true); categoryForm.setFieldsValue(category); setCategoryModalVisible(true); };
-    const handleDeleteCategory = async (id: string) => { setLoading(true); try { const res = await parkService.deleteServiceCategory(id); if (res.success) { message.success('删除成功'); loadCategories(); loadStatistics(); } } catch (e) { message.error('删除失败'); } finally { setLoading(false); } };
-    const handleToggleCategory = async (id: string) => { setLoading(true); try { const res = await parkService.toggleServiceCategoryStatus(id); if (res.success) { message.success('状态切换成功'); loadCategories(); } } catch (e) { message.error('操作失败'); } finally { setLoading(false); } };
-    const handleCategorySubmit = async () => {
-        try {
-            const values = await categoryForm.validateFields(); setLoading(true);
-            const res = isEdit && currentCategory ? await parkService.updateServiceCategory(currentCategory.id, values) : await parkService.createServiceCategory(values);
-            if (res.success) { message.success(isEdit ? '更新成功' : '创建成功'); setCategoryModalVisible(false); loadCategories(); loadStatistics(); }
-        } catch (e) { console.error(e); } finally { setLoading(false); }
-    };
-
-
     const handleRefresh = () => {
-        if (activeTab === 'requests') {
-            fetchRequests();
+        if (state.activeTab === 'requests') {
+            actionRef.current?.reload();
         } else {
             loadCategories();
         }
-        loadStatistics();
+        loadData();
     };
 
     const handleAdd = () => {
-        if (activeTab === 'requests') {
-            handleAddRequest();
+        if (state.activeTab === 'requests') {
+            setEditing({ currentRequest: null });
+            setModal({ requestVisible: true });
         } else {
-            handleAddCategory();
+            setEditing({ currentCategory: null });
+            setModal({ categoryVisible: true });
         }
     };
 
@@ -324,26 +285,26 @@ const EnterpriseService: React.FC = () => {
                         {intl.formatMessage({ id: 'common.refresh', defaultMessage: '刷新' })}
                     </Button>
                     <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-                        {activeTab === 'requests'
+                        {state.activeTab === 'requests'
                             ? intl.formatMessage({ id: 'pages.park.service.addRequest', defaultMessage: '新增申请' })
                             : intl.formatMessage({ id: 'pages.park.service.addCategory', defaultMessage: '新增类别' })}
                     </Button>
                 </Space>
             }
         >
-            {statistics && (
+            {state.statistics && (
                 <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-                    <Col xs={24} sm={12} md={6}><StatCard title="服务类别" value={statistics.totalCategories} icon={<AppstoreOutlined />} color="#1890ff" suffix={<Text type="secondary" style={{ fontSize: 12 }}>启用: {statistics.activeCategories}</Text>} /></Col>
-                    <Col xs={24} sm={12} md={6}><StatCard title="服务申请" value={statistics.totalRequests} icon={<FormOutlined />} color="#52c41a" suffix={<Text type="secondary" style={{ fontSize: 12 }}>待处理: {statistics.pendingRequests}</Text>} /></Col>
-                    <Col xs={24} sm={12} md={6}><StatCard title="处理中" value={statistics.processingRequests} icon={<ClockCircleOutlined />} color="#faad14" /></Col>
-                    <Col xs={24} sm={12} md={6}><StatCard title="满意度" value={statistics.averageRating ? `${statistics.averageRating} ⭐` : '-'} icon={<StarOutlined />} color="#722ed1" /></Col>
+                    <Col xs={24} sm={12} md={6}><StatCard title="服务类别" value={state.statistics.totalCategories} icon={<AppstoreOutlined />} color="#1890ff" suffix={<Text type="secondary" style={{ fontSize: 12 }}>启用: {state.statistics.activeCategories}</Text>} /></Col>
+                    <Col xs={24} sm={12} md={6}><StatCard title="服务申请" value={state.statistics.totalRequests} icon={<FormOutlined />} color="#52c41a" suffix={<Text type="secondary" style={{ fontSize: 12 }}>待处理: {state.statistics.pendingRequests}</Text>} /></Col>
+                    <Col xs={24} sm={12} md={6}><StatCard title="处理中" value={state.statistics.processingRequests} icon={<ClockCircleOutlined />} color="#faad14" /></Col>
+                    <Col xs={24} sm={12} md={6}><StatCard title="满意度" value={state.statistics.averageRating ? `${state.statistics.averageRating} ⭐` : '-'} icon={<StarOutlined />} color="#722ed1" /></Col>
                 </Row>
             )}
 
             <Card>
                 <Tabs
-                    activeKey={activeTab}
-                    onChange={setActiveTab}
+                    activeKey={state.activeTab}
+                    onChange={(key) => set({ activeTab: key })}
                     items={[
                         {
                             key: 'requests',
@@ -355,22 +316,25 @@ const EnterpriseService: React.FC = () => {
                             ),
                             children: (
                                 <>
-                                    <SearchBar
-                                        initialParams={searchParamsRef.current}
-                                        onSearch={handleSearch}
-                                        style={{ marginBottom: 16 }}
-                                    />
-                                    <Table<ServiceRequest>
-                                        dataSource={requestsData}
-                                        columns={requestColumns as any}
-                                        rowKey="id"
-                                        loading={requestsLoading}
-                                        onChange={handleTableChange}
-                                        pagination={{
-                                            current: requestsPagination.page,
-                                            pageSize: requestsPagination.pageSize,
-                                            total: requestsPagination.total,
+                                    <ProTable
+                                        actionRef={actionRef}
+                                        request={async (params: any) => {
+                                            const { pageSize, current } = params;
+                                            const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
+                                            const res = await api.requests({ page: current, pageSize, search: state.searchText, ...sortParams });
+                                            loadData();
+                                            return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
                                         }}
+                                        columns={columns}
+                                        rowKey="id"
+                                        search={false}
+                                        pagination={{ pageSizeOptions: ['10', '20', '50', '100'], defaultPageSize: 20 }}
+                                        onChange={(_p, _f, s: any) => set({
+                                            sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined
+                                        })}
+                                        toolBarRender={() => [
+                                            <Input key="search" placeholder="搜索..." style={{ width: 200 }} allowClear />,
+                                        ]}
                                         scroll={{ x: 1200 }}
                                     />
                                 </>
@@ -384,18 +348,24 @@ const EnterpriseService: React.FC = () => {
                                     服务类别
                                 </Space>
                             ),
-                            children: categories.length > 0 ? (
+                            children: state.categories.length > 0 ? (
                                 <List
                                     grid={{ gutter: 16, xs: 1, sm: 2, md: 3, lg: 4 }}
-                                    dataSource={categories}
+                                    dataSource={state.categories}
                                     renderItem={(item) => (
                                         <List.Item>
                                             <Card
                                                 hoverable
                                                 actions={[
-                                                    <EditOutlined key="edit" onClick={() => handleEditCategory(item)} />,
-                                                    <Switch key="toggle" checked={item.isActive} size="small" onChange={() => handleToggleCategory(item.id)} />,
-                                                    <Popconfirm key="delete" title="确认删除？" onConfirm={() => handleDeleteCategory(item.id)}><DeleteOutlined style={{ color: '#ff4d4f' }} /></Popconfirm>,
+                                                    <EditOutlined key="edit" onClick={() => { setEditing({ currentCategory: item }); setModal({ categoryVisible: true }); }} />,
+                                                    <Switch key="toggle" checked={item.isActive} size="small" onChange={async () => {
+                                                        const res = await api.toggleCategory(item.id);
+                                                        if (res.success) { message.success('状态切换成功'); loadCategories(); }
+                                                    }} />,
+                                                    <Popconfirm key="delete" title="确认删除？" onConfirm={async () => {
+                                                        const res = await api.deleteCategory(item.id);
+                                                        if (res.success) { message.success('删除成功'); loadCategories(); loadData(); }
+                                                    }}><DeleteOutlined style={{ color: '#ff4d4f' }} /></Popconfirm>,
                                                 ]}
                                             >
                                                 <Card.Meta
@@ -413,77 +383,186 @@ const EnterpriseService: React.FC = () => {
                 />
             </Card>
 
-            <Modal title={isEdit ? '编辑类别' : '新增类别'} open={categoryModalVisible} onOk={handleCategorySubmit} onCancel={() => setCategoryModalVisible(false)} confirmLoading={loading}>
-                <Form form={categoryForm} layout="vertical">
-                    <Form.Item name="name" label="类别名称" rules={[{ required: true }]}><Input placeholder="请输入类别名称" /></Form.Item>
-                    <Form.Item name="description" label="描述"><Input.TextArea rows={2} placeholder="请输入描述" /></Form.Item>
-                    <Row gutter={16}><Col span={12}><Form.Item name="icon" label="图标"><Input placeholder="图标名称" /></Form.Item></Col><Col span={12}><Form.Item name="sortOrder" label="排序"><InputNumber min={0} style={{ width: '100%' }} placeholder="排序序号" /></Form.Item></Col></Row>
-                </Form>
-            </Modal>
+            <ModalForm
+                key={editingState.currentCategory?.id || 'create-category'}
+                title={editingState.currentCategory ? '编辑类别' : '新增类别'}
+                open={modalState.categoryVisible}
+                onOpenChange={(open) => {
+                    if (!open) setModal({ categoryVisible: false });
+                }}
+                initialValues={editingState.currentCategory ? {
+                    name: editingState.currentCategory.name,
+                    description: editingState.currentCategory.description,
+                    icon: editingState.currentCategory.icon,
+                    sortOrder: editingState.currentCategory.sortOrder,
+                } : undefined}
+                onFinish={async (values) => {
+                    let res;
+                    if (editingState.currentCategory) {
+                        res = await api.updateCategory(editingState.currentCategory.id, values);
+                    } else {
+                        res = await api.createCategory(values);
+                    }
+                    if (res.success) {
+                        message.success(editingState.currentCategory ? '更新成功' : '创建成功');
+                        setModal({ categoryVisible: false });
+                        loadCategories();
+                        loadData();
+                    }
+                    return res.success;
+                }}
+                autoFocusFirstInput
+                width={480}
+            >
+                <ProFormText name="name" label="类别名称" placeholder="请输入类别名称" rules={[{ required: true, message: '请输入类别名称' }]} />
+                <ProFormTextArea name="description" label="描述" placeholder="请输入描述" />
+                <Row gutter={16}>
+                    <Col span={12}>
+                        <ProFormText name="icon" label="图标" placeholder="图标名称" />
+                    </Col>
+                    <Col span={12}>
+                        <ProFormText name="sortOrder" label="排序" placeholder="排序序号" fieldProps={{ type: 'number' }} />
+                    </Col>
+                </Row>
+            </ModalForm>
 
-            <Modal title="新增服务申请" open={requestModalVisible} onOk={handleRequestSubmit} onCancel={() => setRequestModalVisible(false)} confirmLoading={loading} width={640}>
-                <Form form={requestForm} layout="vertical">
-                    <Row gutter={16}>
-                        <Col span={12}>
-                            <Form.Item name="tenantId" label="所属租户">
-                                <Select
-                                    placeholder="请选择租户"
-                                    allowClear
-                                    showSearch
-                                    optionFilterProp="label"
-                                    options={tenants.map(t => ({ label: t.tenantName, value: t.id }))}
-                                />
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item name="categoryId" label="服务类别" rules={[{ required: true }]}>
-                                <Select placeholder="请选择类别" options={categories.filter(c => c.isActive).map(c => ({ label: c.name, value: c.id }))} />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                    <Row gutter={16}>
-                        <Col span={12}>
-                            <Form.Item name="priority" label="优先级">
-                                <Select placeholder="请选择" options={priorityOptions} />
-                            </Form.Item>
-                        </Col>
-                        <Col span={12} />
-                    </Row>
-                    <Form.Item name="title" label="标题" rules={[{ required: true }]}><Input placeholder="请输入服务申请标题" /></Form.Item>
-                    <Form.Item name="description" label="详细描述"><Input.TextArea rows={3} placeholder="请详细描述您的需求" /></Form.Item>
-                    <Row gutter={16}><Col span={12}><Form.Item name="contactPerson" label="联系人"><Input placeholder="联系人" /></Form.Item></Col><Col span={12}><Form.Item name="contactPhone" label="联系电话"><Input placeholder="联系电话" /></Form.Item></Col></Row>
-                </Form>
-            </Modal>
+            <ModalForm
+                key={editingState.currentRequest?.id || 'create-request'}
+                title="新增服务申请"
+                open={modalState.requestVisible}
+                onOpenChange={(open) => {
+                    if (!open) setModal({ requestVisible: false });
+                }}
+                initialValues={editingState.currentRequest ? {
+                    tenantId: editingState.currentRequest.tenantId,
+                    categoryId: editingState.currentRequest.categoryId,
+                    priority: editingState.currentRequest.priority,
+                    title: editingState.currentRequest.title,
+                    description: editingState.currentRequest.description,
+                    contactPerson: editingState.currentRequest.contactPerson,
+                    contactPhone: editingState.currentRequest.contactPhone,
+                } : undefined}
+                onFinish={async (values) => {
+                    const res = await api.createRequest(values);
+                    if (res.success) {
+                        message.success('创建成功');
+                        setModal({ requestVisible: false });
+                        actionRef.current?.reload();
+                        loadData();
+                    }
+                    return res.success;
+                }}
+                autoFocusFirstInput
+                width={640}
+            >
+                <Row gutter={16}>
+                    <Col span={12}>
+                        <ProFormSelect
+                            name="tenantId"
+                            label="所属租户"
+                            placeholder="请选择租户"
+                            allowClear
+                            showSearch
+                            options={state.tenants.map(t => ({ label: t.tenantName, value: t.id }))}
+                        />
+                    </Col>
+                    <Col span={12}>
+                        <ProFormSelect
+                            name="categoryId"
+                            label="服务类别"
+                            placeholder="请选择类别"
+                            rules={[{ required: true, message: '请选择类别' }]}
+                            options={state.categories.filter(c => c.isActive).map(c => ({ label: c.name, value: c.id }))}
+                        />
+                    </Col>
+                </Row>
+                <Row gutter={16}>
+                    <Col span={12}>
+                        <ProFormSelect name="priority" label="优先级" placeholder="请选择" options={priorityOptions} />
+                    </Col>
+                    <Col span={12} />
+                </Row>
+                <ProFormText name="title" label="标题" placeholder="请输入服务申请标题" rules={[{ required: true, message: '请输入标题' }]} />
+                <ProFormTextArea name="description" label="详细描述" placeholder="请详细描述您的需求" />
+                <Row gutter={16}>
+                    <Col span={12}>
+                        <ProFormText name="contactPerson" label="联系人" placeholder="联系人" />
+                    </Col>
+                    <Col span={12}>
+                        <ProFormText name="contactPhone" label="联系电话" placeholder="联系电话" />
+                    </Col>
+                </Row>
+            </ModalForm>
 
-            <Modal title="更新状态" open={statusModalVisible} onOk={handleStatusSubmit} onCancel={() => setStatusModalVisible(false)} confirmLoading={loading}>
-                <Form form={statusForm} layout="vertical">
-                    <Form.Item name="status" label="状态" rules={[{ required: true }]}><Select options={statusOptions} /></Form.Item>
-                    <Form.Item name="assignedTo" label="处理人"><Input placeholder="处理人ID" /></Form.Item>
-                    <Form.Item name="resolution" label="处理说明"><Input.TextArea rows={2} placeholder="请输入处理说明" /></Form.Item>
-                </Form>
-            </Modal>
+            <ModalForm
+                key={editingState.currentRequest?.id || 'update-status'}
+                title="更新状态"
+                open={modalState.statusVisible}
+                onOpenChange={(open) => {
+                    if (!open) setModal({ statusVisible: false });
+                }}
+                onFinish={async (values) => {
+                    if (editingState.currentRequest) {
+                        const res = await api.updateStatus(editingState.currentRequest.id, values);
+                        if (res.success) {
+                            message.success('状态更新成功');
+                            setModal({ statusVisible: false });
+                            actionRef.current?.reload();
+                            loadData();
+                        }
+                        return res.success;
+                    }
+                    return false;
+                }}
+                autoFocusFirstInput
+                width={480}
+            >
+                <ProFormSelect name="status" label="状态" rules={[{ required: true }]} options={statusOptions} />
+                <ProFormText name="assignedTo" label="处理人" placeholder="处理人ID" />
+                <ProFormTextArea name="resolution" label="处理说明" placeholder="请输入处理说明" />
+            </ModalForm>
 
-            <Modal title="评价服务" open={ratingModalVisible} onOk={handleRatingSubmit} onCancel={() => setRatingModalVisible(false)} confirmLoading={loading}>
-                <Form form={ratingForm} layout="vertical">
-                    <Form.Item name="rating" label="满意度评分" rules={[{ required: true }]}><Rate /></Form.Item>
-                    <Form.Item name="feedback" label="反馈意见"><Input.TextArea rows={3} placeholder="请输入您的反馈意见" /></Form.Item>
-                </Form>
-            </Modal>
+            <ModalForm
+                key={`rate-${editingState.currentRequest?.id}`}
+                title="评价服务"
+                open={modalState.ratingVisible}
+                onOpenChange={(open) => {
+                    if (!open) setModal({ ratingVisible: false });
+                }}
+                onFinish={async (values) => {
+                    if (editingState.currentRequest) {
+                        const res = await api.rateRequest(editingState.currentRequest.id, values);
+                        if (res.success) {
+                            message.success('评价成功');
+                            setModal({ ratingVisible: false });
+                            actionRef.current?.reload();
+                            loadData();
+                        }
+                        return res.success;
+                    }
+                    return false;
+                }}
+                autoFocusFirstInput
+                width={480}
+            >
+                <Form.Item name="rating" label="满意度评分" rules={[{ required: true, message: '请选择评分' }]}><Rate /></Form.Item>
+                <ProFormTextArea name="feedback" label="反馈意见" placeholder="请输入您的反馈意见" />
+            </ModalForm>
 
-            <Drawer title={currentRequest?.title || '申请详情'} open={detailDrawerVisible} onClose={() => setDetailDrawerVisible(false)} size={640}>
-                {currentRequest && (
+            <Drawer title={editingState.currentRequest?.title || '申请详情'} open={modalState.detailVisible} onClose={() => setModal({ detailVisible: false })} size={640}>
+                {editingState.currentRequest && (
                     <Descriptions bordered column={2} size="small">
-                        <Descriptions.Item label="服务标题" span={2}>{currentRequest.title}</Descriptions.Item>
-                        <Descriptions.Item label="所属租户">{currentRequest.tenantName || '-'}</Descriptions.Item>
-                        <Descriptions.Item label="类别">{currentRequest.categoryName || '-'}</Descriptions.Item>
-                        <Descriptions.Item label="优先级"><Tag color={priorityOptions.find(o => o.value === currentRequest.priority)?.color}>{priorityOptions.find(o => o.value === currentRequest.priority)?.label || currentRequest.priority}</Tag></Descriptions.Item>
-                        <Descriptions.Item label="状态"><Tag color={statusOptions.find(o => o.value === currentRequest.status)?.color}>{statusOptions.find(o => o.value === currentRequest.status)?.label || currentRequest.status}</Tag></Descriptions.Item>
-                        <Descriptions.Item label="评分">{currentRequest.rating ? <Rate disabled value={currentRequest.rating} /> : '-'}</Descriptions.Item>
-                        <Descriptions.Item label="联系人">{currentRequest.contactPerson || '-'}</Descriptions.Item>
-                        <Descriptions.Item label="联系电话">{currentRequest.contactPhone || '-'}</Descriptions.Item>
-                        <Descriptions.Item label="创建时间">{dayjs(currentRequest.createdAt).format('YYYY-MM-DD HH:mm')}</Descriptions.Item>
-                        <Descriptions.Item label="完成时间">{currentRequest.completedAt ? dayjs(currentRequest.completedAt).format('YYYY-MM-DD HH:mm') : '-'}</Descriptions.Item>
-                        <Descriptions.Item label="描述" span={2}>{currentRequest.description || '-'}</Descriptions.Item>
+                        <Descriptions.Item label="服务标题" span={2}>{editingState.currentRequest.title}</Descriptions.Item>
+                        <Descriptions.Item label="所属租户">{editingState.currentRequest.tenantName || '-'}</Descriptions.Item>
+                        <Descriptions.Item label="类别">{editingState.currentRequest.categoryName || '-'}</Descriptions.Item>
+                        <Descriptions.Item label="优先级"><Tag color={priorityOptions.find(o => o.value === editingState.currentRequest?.priority)?.color}>{priorityOptions.find(o => o.value === editingState.currentRequest?.priority)?.label || editingState.currentRequest?.priority}</Tag></Descriptions.Item>
+                        <Descriptions.Item label="状态"><Tag color={statusOptions.find(o => o.value === editingState.currentRequest?.status)?.color}>{statusOptions.find(o => o.value === editingState.currentRequest?.status)?.label || editingState.currentRequest?.status}</Tag></Descriptions.Item>
+                        <Descriptions.Item label="评分">{editingState.currentRequest.rating ? <Rate disabled value={editingState.currentRequest.rating} /> : '-'}</Descriptions.Item>
+                        <Descriptions.Item label="联系人">{editingState.currentRequest.contactPerson || '-'}</Descriptions.Item>
+                        <Descriptions.Item label="联系电话">{editingState.currentRequest.contactPhone || '-'}</Descriptions.Item>
+                        <Descriptions.Item label="创建时间">{dayjs(editingState.currentRequest.createdAt).format('YYYY-MM-DD HH:mm')}</Descriptions.Item>
+                        <Descriptions.Item label="完成时间">{editingState.currentRequest.completedAt ? dayjs(editingState.currentRequest.completedAt).format('YYYY-MM-DD HH:mm') : '-'}</Descriptions.Item>
+                        <Descriptions.Item label="描述" span={2}>{editingState.currentRequest.description || '-'}</Descriptions.Item>
                     </Descriptions>
                 )}
             </Drawer>

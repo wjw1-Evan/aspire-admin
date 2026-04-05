@@ -22,7 +22,7 @@ import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import { getStatusMeta, workflowStatusMap, approvalActionMap } from '@/utils/statusMaps';
 import SearchBar from '@/components/SearchBar';
-import type { PageParams } from '@/types/page-params';
+import type { PageParams } from '@/types/api-response';
 
 const { useBreakpoint } = Grid;
 

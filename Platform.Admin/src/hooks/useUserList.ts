@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { request } from '@umijs/max';
 import type { UserListRequest } from '@/pages/user-management/types';
-import type { ApiResponse, PagedResult } from '@/types/unified-api';
+import type { ApiResponse, PagedResult } from '@/types/api-response';
 import type { AppUser } from '@/pages/user-management/types';
 
 /**

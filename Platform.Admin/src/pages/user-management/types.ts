@@ -1,4 +1,4 @@
-import type { PagedResult } from '@/types/unified-api';
+import type { PagedResult } from '@/types/api-response';
 
 // 用户相关类型定义
 

@@ -6,7 +6,7 @@
  */
 
 import { request } from '@umijs/max';
-import type { ApiResponse } from '@/types/unified-api';
+import type { ApiResponse } from '@/types/api-response';
 import { getCurrentPosition } from '@/utils/geolocation';
 
 export interface LocationReportRequest {

@@ -3,7 +3,7 @@ import { Form, Input, Select, Switch, Button, Space, Spin } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 import { request, useIntl } from '@umijs/max';
 import { getAllRoles } from '@/services/role/api';
-import type { ApiResponse } from '@/types/unified-api';
+import type { ApiResponse } from '@/types/api-response';
 import type { AppUser, CreateUserRequest, UpdateUserRequest } from '../types';
 import type { Role } from '@/services/role/types';
 

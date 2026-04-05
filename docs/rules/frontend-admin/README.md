@@ -11,6 +11,7 @@
 | [`03-页面与组件结构.md`](./03-页面与组件结构.md) | 页面骨架、组件拆分、密码本模板 |
 | [`04-TypeScript类型安全.md`](./04-TypeScript类型安全.md) | 禁止 any、类型定义规范 |
 | [`05-页面风格统一规范.md`](./05-页面风格统一规范.md) | 页面容器、统计卡片、表格、操作列 |
+| [`06-页面开发标准.md`](./06-页面开发标准.md) | 开发标准、代码模板（以密码本为示例） |
 
 ## 快速参考
 
@@ -43,7 +44,7 @@ const handleSubmit = async (values: any) => {};
 
 ```tsx
 // ✅ 正确：使用统一类型
-import type { ApiResponse, PagedResult } from '@/types/unified-api';
+import type { ApiResponse, PagedResult } from '@/types/api-response';
 
 export async function getUsers(params: UserQueryParams) {
   return request<ApiResponse<PagedResult<User>>>('/api/users/list', {
@@ -67,35 +68,34 @@ if (response.success && response.data) {
 ### 页面结构
 
 ```tsx
-// ✅ 正确：统一页面结构
-<PageContainer style={{ paddingBlock: 12 }}>
+// ✅ 正确：使用 ProTable
+<PageContainer>
   <Card> {/* 统计卡片 */} </Card>
-  <SearchBar /> {/* 搜索表单 */ }
-  <Table /> {/* 数据表格 - 使用原生组件 */}
+  <ProTable /> {/* 数据表格 - 使用 ProTable */}
 </PageContainer>
 ```
 
 ## 基准模板
 
-`src/pages/password-book` 是所有列表页面的**基准模板**，新建模块时请参考其结构：
+`src/pages/password-book` 是所有列表页面的**开发标准参考**，新建模块时请参考其结构：
+
+> 详细规范请参阅：[06-页面开发标准.md](./06-页面开发标准.md)
 
 ```
 src/pages/xxx/
-├── index.tsx              # 主页面（≤400行）
-├── types.ts               # 类型定义
-└── components/            # 仅复用组件才建立
-    └── XxxForm.tsx
+├── index.tsx              # 主页面（API 内联，≤200行）
+└── (无其他文件)            # 功能简单时不拆分
 ```
 
 核心要点：
-- 使用原生 `Table` 组件，不使用封装的 CrudTable
-- 操作列在 `columns` 中直接定义，删除用 `modal.confirm`
-- 统计卡片用数组 + `map` 渲染
-- 类型定义就近放在页面目录的 `types.ts`
+- 使用 `ProTable` + `ModalForm` 组件
+- API 直接内联在页面中，不单独创建服务文件
+- 状态管理使用 `set()` 辅助函数
+- 编辑表单使用 `key` 强制重新挂载
 
 ## 统一类型来源
 
-所有 API 相关类型统一定义在 `@/types/unified-api.ts`：
+所有 API 相关类型统一定义在 `@/types/api-response.ts`：
 
 ```typescript
 // 统一 API 响应格式

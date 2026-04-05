@@ -1,53 +1,56 @@
 import React, { useState, useEffect } from 'react';
-import { useIntl } from '@umijs/max';
 import { PageContainer } from '@/components';
+import { useIntl } from '@umijs/max';
+import { request } from '@umijs/max';
 import { Card, Row, Col, Button, Space, Spin } from 'antd';
-import {
-  CloudServerOutlined,
-  DatabaseOutlined,
-  AlertOutlined,
-  DesktopOutlined,
-  ReloadOutlined,
-  CloudOutlined,
-} from '@ant-design/icons';
-import { useMessage } from '@/hooks/useMessage';
-import { iotService } from '@/services/iotService';
+import { CloudServerOutlined, DatabaseOutlined, AlertOutlined, DesktopOutlined, ReloadOutlined, CloudOutlined } from '@ant-design/icons';
 import { StatCard } from '@/components';
-import useCommonStyles from '@/hooks/useCommonStyles';
-import { theme } from 'antd';
+import { ApiResponse } from '@/types/api-response';
+
+interface PlatformStatistics {
+  totalGateways: number;
+  onlineGateways: number;
+  totalDevices: number;
+  onlineDevices: number;
+  totalDataPoints: number;
+  totalAlarms: number;
+  unhandledAlarms: number;
+  lastUpdatedAt?: string;
+}
+
+const API_PREFIX = '/api/iot-platform';
+
+const api = {
+  statistics: () => request<ApiResponse<PlatformStatistics>>(`${API_PREFIX}/statistics/platform`, { method: 'GET' }),
+};
 
 const IoTPlatform: React.FC = () => {
   const intl = useIntl();
-  const message = useMessage();
-  const { styles } = useCommonStyles();
-  const { token } = theme.useToken();
-  const [loading, setLoading] = useState(false);
-  const [statistics, setStatistics] = useState<any>(null);
+  const [state, setState] = useState({ loading: false, statistics: null as PlatformStatistics | null });
+  const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
 
   useEffect(() => {
     loadStatistics();
-    // 每30秒刷新一次统计信息
     const interval = setInterval(loadStatistics, 30000);
     return () => clearInterval(interval);
   }, []);
 
   const loadStatistics = async () => {
     try {
-      setLoading(true);
-      const response = await iotService.getPlatformStatistics();
-      if (response.success) {
-        setStatistics(response.data);
+      set({ loading: true });
+      const res = await api.statistics();
+      if (res.success && res.data) {
+        set({ statistics: res.data });
       }
     } catch (error) {
       console.error('Failed to load statistics:', error);
     } finally {
-      setLoading(false);
+      set({ loading: false });
     }
   };
 
   const handleRefresh = () => {
     loadStatistics();
-    message.success(intl.formatMessage({ id: 'pages.iotPlatform.message.refreshSuccess' }));
   };
 
   return (
@@ -64,23 +67,21 @@ const IoTPlatform: React.FC = () => {
             key="refresh"
             icon={<ReloadOutlined />}
             onClick={handleRefresh}
-            loading={loading}
+            loading={state.loading}
           >
             {intl.formatMessage({ id: 'pages.common.refresh' })}
           </Button>
         </Space>
       }
     >
-      <Card
-        className={styles.card}
-      >
-        <Spin spinning={loading}>
+      <Card style={{ marginBottom: 16 }}>
+        <Spin spinning={state.loading}>
           <div style={{ padding: '20px 0' }}>
             <Row gutter={[12, 12]}>
               <Col xs={24} sm={12} md={6}>
                 <StatCard
                   title={intl.formatMessage({ id: 'pages.iotPlatform.status.totalGateways' })}
-                  value={statistics?.totalGateways || 0}
+                  value={state.statistics?.totalGateways || 0}
                   icon={<CloudServerOutlined />}
                   color="#1890ff"
                 />
@@ -88,7 +89,7 @@ const IoTPlatform: React.FC = () => {
               <Col xs={24} sm={12} md={6}>
                 <StatCard
                   title={intl.formatMessage({ id: 'pages.iotPlatform.status.onlineGateways' })}
-                  value={statistics?.onlineGateways || 0}
+                  value={state.statistics?.onlineGateways || 0}
                   icon={<CloudServerOutlined />}
                   color="#52c41a"
                 />
@@ -96,7 +97,7 @@ const IoTPlatform: React.FC = () => {
               <Col xs={24} sm={12} md={6}>
                 <StatCard
                   title={intl.formatMessage({ id: 'pages.iotPlatform.status.totalDevices' })}
-                  value={statistics?.totalDevices || 0}
+                  value={state.statistics?.totalDevices || 0}
                   icon={<DesktopOutlined />}
                   color="#1890ff"
                 />
@@ -104,7 +105,7 @@ const IoTPlatform: React.FC = () => {
               <Col xs={24} sm={12} md={6}>
                 <StatCard
                   title={intl.formatMessage({ id: 'pages.iotPlatform.status.onlineDevices' })}
-                  value={statistics?.onlineDevices || 0}
+                  value={state.statistics?.onlineDevices || 0}
                   icon={<DesktopOutlined />}
                   color="#52c41a"
                 />
@@ -115,7 +116,7 @@ const IoTPlatform: React.FC = () => {
               <Col xs={24} sm={12} md={6}>
                 <StatCard
                   title={intl.formatMessage({ id: 'pages.iotPlatform.status.totalDatapoints' })}
-                  value={statistics?.totalDataPoints || 0}
+                  value={state.statistics?.totalDataPoints || 0}
                   icon={<DatabaseOutlined />}
                   color="#722ed1"
                 />
@@ -123,7 +124,7 @@ const IoTPlatform: React.FC = () => {
               <Col xs={24} sm={12} md={6}>
                 <StatCard
                   title={intl.formatMessage({ id: 'pages.iotPlatform.status.totalAlarms' })}
-                  value={statistics?.totalAlarms || 0}
+                  value={state.statistics?.totalAlarms || 0}
                   icon={<AlertOutlined />}
                   color="#f5222d"
                 />
@@ -131,7 +132,7 @@ const IoTPlatform: React.FC = () => {
               <Col xs={24} sm={12} md={6}>
                 <StatCard
                   title="未处理告警"
-                  value={statistics?.unhandledAlarms || 0}
+                  value={state.statistics?.unhandledAlarms || 0}
                   icon={<AlertOutlined />}
                   color="#ff4d4f"
                 />
@@ -139,7 +140,7 @@ const IoTPlatform: React.FC = () => {
               <Col xs={24} sm={12} md={6}>
                 <StatCard
                   title="最后更新"
-                  value={statistics?.lastUpdatedAt ? new Date(statistics.lastUpdatedAt).toLocaleTimeString() : '-'}
+                  value={state.statistics?.lastUpdatedAt ? new Date(state.statistics.lastUpdatedAt).toLocaleTimeString() : '-'}
                   icon={<DatabaseOutlined />}
                   color="#666666"
                 />
@@ -153,4 +154,3 @@ const IoTPlatform: React.FC = () => {
 };
 
 export default IoTPlatform;
-

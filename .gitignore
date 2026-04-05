@@ -552,3 +552,5 @@ Thumbs.db
 .umi-production/
 Platform.Admin/src/.umi
 Platform.Admin/src/.umi-production
+
+.playwright-mcp

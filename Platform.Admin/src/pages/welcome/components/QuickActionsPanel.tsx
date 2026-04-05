@@ -9,9 +9,10 @@ import { getIconComponent, getMenuColor, flattenMenus } from '../utils';
 
 interface QuickActionsPanelProps {
     readonly currentUser?: any;
+    readonly allMenus?: any[];
 }
 
-const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({ currentUser }) => {
+const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({ currentUser, allMenus }) => {
     const intl = useIntl();
     const { token } = theme.useToken();
     const { styles } = useCommonStyles();
@@ -19,15 +20,16 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({ currentUser }) =>
     const contentRef = useRef<HTMLDivElement>(null);
     const [hasMore, setHasMore] = useState(false);
 
-    const getQuickActionMenus = (): API.MenuTreeNode[] => {
-        if (!currentUser?.menus) {
+    const getQuickActionMenus = (): any[] => {
+        const menusSource = allMenus || currentUser?.menus;
+        if (!menusSource) {
             return [];
         }
 
-        const flatMenus = flattenMenus(currentUser.menus);
-        const filteredMenus = flatMenus.filter(menu => menu.path !== '/welcome');
+        const flatMenus = flattenMenus(menusSource);
+        const filteredMenus = flatMenus.filter((menu: any) => menu.path !== '/welcome');
 
-        return filteredMenus.sort((a, b) => a.sortOrder - b.sortOrder);
+        return filteredMenus.sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0));
     };
 
     const quickActionMenus = getQuickActionMenus();
@@ -130,7 +132,7 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({ currentUser }) =>
                                 <QuickAction
                                     title={menuTitle}
                                     description={menuDescription}
-                                    icon={getIconComponent(menu.icon || menu.rawIcon)}
+                                    icon={getIconComponent(menu.icon || (menu as any).Icon || menu.rawIcon)}
                                     onClick={() => handleQuickAction(menu.path)}
                                     color={getMenuColor(menu.path)}
                                     token={token}

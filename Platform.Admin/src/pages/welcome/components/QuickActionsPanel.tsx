@@ -132,7 +132,7 @@ const QuickActionsPanel: React.FC<QuickActionsPanelProps> = ({ currentUser, allM
                                 <QuickAction
                                     title={menuTitle}
                                     description={menuDescription}
-                                    icon={getIconComponent(menu.icon || (menu as any).Icon || menu.rawIcon)}
+                                    icon={getIconComponent(menu.icon || (menu as any).iconName || (menu as any).Icon || menu.rawIcon)}
                                     onClick={() => handleQuickAction(menu.path)}
                                     color={getMenuColor(menu.path)}
                                     token={token}

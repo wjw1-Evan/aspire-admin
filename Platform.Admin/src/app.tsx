@@ -194,6 +194,8 @@ function convertMenuTreeToProLayout(menus: API.MenuTreeNode[], depth = 1): any[]
         icon: depth === 1 ? iconComponent : undefined,
         // 原始图标存入 rawIcon 供自主补全
         rawIcon: iconComponent,
+        // 保存原始图标名称字符串，供快速操作面板使用
+        iconName: menu.icon,
         locale: localeKey,
         sortOrder: menu.sortOrder,
       };

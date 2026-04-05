@@ -1,15 +1,12 @@
 import { request } from '@umijs/max';
 import type { ApiResponse, PagedResult } from '@/types/api-response';
-import type {
-  Role,
-  RoleWithStats,
-  RoleStatistics,
-  CreateRoleRequest,
-  UpdateRoleRequest,
-  AssignMenusToRoleRequest,
-} from './types';
 
-export type { Role, RoleWithStats, RoleStatistics, CreateRoleRequest, UpdateRoleRequest, AssignMenusToRoleRequest };
+export interface Role { id?: string; name: string; description?: string; menuIds: string[]; isActive: boolean; createdAt?: string; updatedAt?: string; }
+export interface RoleWithStats extends Role { userCount?: number; menuCount?: number; }
+export interface RoleStatistics { totalRoles: number; activeRoles: number; totalUsers: number; totalMenus: number; }
+export interface CreateRoleRequest { name: string; description?: string; menuIds: string[]; isActive: boolean; }
+export interface UpdateRoleRequest { name?: string; description?: string; menuIds?: string[]; isActive?: boolean; }
+export interface AssignMenusToRoleRequest { menuIds: string[]; }
 
 /**
  * 获取所有角色

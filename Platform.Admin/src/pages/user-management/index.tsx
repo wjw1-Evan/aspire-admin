@@ -7,7 +7,7 @@ import { ModalForm, ProFormText, ProFormSelect, ProFormSwitch } from '@ant-desig
 import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, TeamOutlined, CheckCircleOutlined, ReloadOutlined, CrownOutlined, SearchOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import { ApiResponse, PagedResult, PageParams } from '@/types/api-response';
 import { formatDateTime } from '@/utils/format';
-import type { Role } from '@/services/role/types';
+import type { Role } from '@/services/role/api';
 import { getCurrentCompany } from '@/services/company';
 
 const UserDetail = React.lazy(() => import('./components/UserDetail'));

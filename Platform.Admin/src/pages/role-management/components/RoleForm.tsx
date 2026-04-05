@@ -7,8 +7,8 @@ import type {
   Role,
   CreateRoleRequest,
   UpdateRoleRequest,
-} from '@/services/role/types';
-import type { MenuTreeNode } from '@/services/menu/types';
+} from '@/services/role/api';
+import type { MenuTreeNode } from '@/services/menu/api';
 import type { DataNode } from 'antd/es/tree';
 
 interface RoleFormProps {

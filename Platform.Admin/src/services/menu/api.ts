@@ -1,12 +1,11 @@
 import { request } from '@umijs/max';
 import type { ApiResponse } from '@/types/api-response';
-import type {
-  MenuItem,
-  MenuTreeNode,
-  CreateMenuRequest,
-  UpdateMenuRequest,
-  ReorderMenusRequest,
-} from './types';
+
+export interface MenuItem { id: string; name: string; title: string; path?: string; icon?: string; sortOrder?: number; parentId?: string; type?: string; children?: MenuItem[]; }
+export interface MenuTreeNode { id?: string; name?: string; title?: string; children?: MenuTreeNode[]; }
+export interface CreateMenuRequest { name: string; title: string; path?: string; icon?: string; sortOrder?: number; parentId?: string; type?: string; }
+export interface UpdateMenuRequest extends Partial<CreateMenuRequest> {}
+export interface ReorderMenusRequest { items: { id: string; parentId?: string; sortOrder: number }[]; }
 
 /**
  * 获取所有菜单

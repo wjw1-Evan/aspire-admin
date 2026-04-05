@@ -22,7 +22,7 @@ import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/zh-cn';
-import type { UserActivityLog } from '@/services/user-log/types';
+import type { UserActivityLog } from '@/services/user-log/api';
 import { getCurrentUserActivityLogById } from '@/services/user-log/api';
 import type { ApiResponse } from '@/types/api-response';
 import { getMethodColor } from '@/utils/activityLog';

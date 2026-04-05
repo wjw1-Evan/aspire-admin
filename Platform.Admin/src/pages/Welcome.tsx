@@ -128,7 +128,7 @@ const SortableCard: React.FC<SortableCardProps> = ({ id, children }) => {
 const Welcome: React.FC = () => {
   const { token } = theme.useToken();
   const { initialState } = useModel('@@initialState');
-  const currentUser = initialState?.currentUser as API.CurrentUser;
+  const currentUser = initialState?.currentUser as any;
   const [messageApi, contextHolder] = antMessage.useMessage();
 
   const [statistics, setStatistics] = useState<any>(null);

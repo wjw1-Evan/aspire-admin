@@ -36,6 +36,8 @@ const PasswordBook: React.FC = () => {
   const [formState, setFormState] = useState({ categories: [] as string[], tags: [] as string[], passwordValue: '', generatorVisible: false });
   const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
 
+
+
   const columns: ProColumns<Entry>[] = [
     { title: '平台', dataIndex: 'platform', sorter: true, render: (dom: any, r) => <a onClick={() => set({ viewingId: r.id, detailVisible: true })}><LockOutlined /> {dom}</a> },
     { title: '账号', dataIndex: 'account', sorter: true },
@@ -44,7 +46,7 @@ const PasswordBook: React.FC = () => {
     { title: '标签', dataIndex: 'tags', render: (dom: any) => dom?.length ? <Space size={[0, 4]} wrap>{dom.map((t: string) => <Tag key={t}>{t}</Tag>)}</Space> : '-' },
     { title: '最后使用', dataIndex: 'lastUsedAt', sorter: true, render: (dom: any) => dom ? new Date(dom).toLocaleString() : '-' },
     { title: '操作', valueType: 'option', fixed: 'right', width: 120, render: (_: any, r: Entry) => [
-      <Button key="edit" type="link" icon={<EditOutlined />} onClick={async () => { const res = await api.get(r.id); if (res.success && res.data) set({ editingEntry: res.data, formVisible: true }); }}>编辑</Button>,
+      <Button key="edit" type="link" icon={<EditOutlined />} onClick={() => { set({ editingEntry: r, formVisible: true }); setFormState(p => ({ ...p, passwordValue: r.password || '', tags: r.tags || [] })); }}>编辑</Button>,
       <Popconfirm key="delete" title={`确定删除「${r.platform}」？`} onConfirm={async () => { await api.delete(r.id); actionRef.current?.reload(); }}><Button type="link" danger icon={<DeleteOutlined />}>删除</Button></Popconfirm>,
     ]},
   ];
@@ -72,7 +74,9 @@ const PasswordBook: React.FC = () => {
         ]}
       />
 
-      <ModalForm title={state.editingEntry ? '编辑密码本' : '新建密码本'} open={state.formVisible} onOpenChange={(open) => set({ formVisible: open, editingEntry: open ? state.editingEntry : null })}
+      <ModalForm key={state.editingEntry?.id || 'create'} title={state.editingEntry ? '编辑密码本' : '新建密码本'} open={state.formVisible} onOpenChange={(open) => {
+        if (!open) set({ formVisible: false, editingEntry: null });
+      }}
         initialValues={state.editingEntry ? { platform: state.editingEntry.platform, account: state.editingEntry.account, url: state.editingEntry.url, category: state.editingEntry.category ? [state.editingEntry.category] : [], notes: state.editingEntry.notes } : undefined}
         onFinish={async (values) => {
           const data = { platform: values.platform, account: values.account, password: values.password || formState.passwordValue, url: values.url, category: Array.isArray(values.category) ? values.category[0] : values.category, tags: formState.tags, notes: values.notes };

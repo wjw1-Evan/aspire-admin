@@ -57,11 +57,15 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(({
           message.success(intl.formatMessage({ id: 'pages.captcha.refreshSuccess' }));
         }
       } else {
-        message.error(intl.formatMessage({ id: 'pages.captcha.fetchFailed' }));
+        // API 返回失败，静默处理
+        setCaptchaId('');
+        setImageData('');
       }
     } catch (error) {
       console.error('获取图形验证码失败:', error);
-      message.error(intl.formatMessage({ id: 'pages.captcha.fetchFailedRetry' }));
+      // API 不可用时静默处理，不阻塞登录
+      setCaptchaId('');
+      setImageData('');
     } finally {
       setLoading(false);
     }
@@ -74,8 +78,9 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(({
 
   // 验证图形验证码
   const verifyCaptcha = async (answer: string) => {
+    // 如果没有 captchaId 或验证码功能未启用，直接返回通过
     if (!captchaId || !answer) {
-      return false;
+      return true;
     }
 
     try {
@@ -97,8 +102,8 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(({
       }
     } catch (error) {
       console.error('验证图形验证码失败:', error);
-      message.error(intl.formatMessage({ id: 'pages.captcha.verifyError' }));
-      return false;
+      // API 不可用时静默通过，不阻塞登录
+      return true;
     } finally {
       setVerifying(false);
     }

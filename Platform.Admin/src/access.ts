@@ -1,8 +1,10 @@
+import type { CurrentUser, MenuTreeNode } from '@/types';
+
 /**
  * @see https://umijs.org/docs/max/access#access
  * */
 export default function access(
-  initialState: { currentUser?: API.CurrentUser } | undefined,
+  initialState: { currentUser?: CurrentUser } | undefined,
 ) {
   const { currentUser } = initialState ?? {};
   const accessValue = (currentUser as any)?.access as 'admin' | 'user' | 'guest' | undefined;
@@ -16,7 +18,7 @@ export default function access(
     }
 
     // 递归查找菜单
-    const findMenu = (menus: API.MenuTreeNode[]): boolean => {
+    const findMenu = (menus: MenuTreeNode[]): boolean => {
       for (const menu of menus) {
         if (menu.id === menuId) {
           return true;
@@ -42,7 +44,7 @@ export default function access(
     }
 
     // 递归查找路径
-    const findPath = (menus: API.MenuTreeNode[]): boolean => {
+    const findPath = (menus: MenuTreeNode[]): boolean => {
       for (const menu of menus) {
         if (menu.path === path) {
           return true;

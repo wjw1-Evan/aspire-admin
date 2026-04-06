@@ -1,7 +1,7 @@
 import { request } from '@umijs/max';
-import type { ApiResponse, PagedResult } from '@/types/api-response';
+import type { ApiResponse, PagedResult } from '@/types';
 
-export interface UserActivityLog { id?: string; userId: string; action: string; description: string; ipAddress?: string; userAgent?: string; httpMethod?: string; path?: string; statusCode?: number; duration?: number; requestBody?: string; responseBody?: string; createdAt: string; }
+export interface UserActivityLog { id: string; userId?: string; username?: string; createdBy?: string; queryString?: string; action: string; description: string; ipAddress?: string; userAgent?: string; httpMethod?: string; path?: string; statusCode?: number; duration?: number; requestBody?: string; responseBody?: string; createdAt: string; }
 export interface GetUserActivityLogsParams { search?: string; page?: number; pageSize?: number; action?: string; httpMethod?: string; statusCode?: number; ipAddress?: string; startDate?: string; endDate?: string; sortBy?: string; sortOrder?: 'asc' | 'desc'; }
 
 export async function getUserActivityLogs(

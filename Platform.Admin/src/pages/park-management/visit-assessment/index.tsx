@@ -5,7 +5,7 @@ import { Card, Space, Button, Tag, Rate, App, Drawer, Descriptions, Divider, For
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ReloadOutlined, StarFilled, FileSearchOutlined, StarOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { ApiResponse, PagedResult, PageParams } from '@/types/api-response';
+import { ApiResponse, PagedResult, PageParams } from '@/types';
 
 const { Text } = Typography;
 

@@ -8,7 +8,7 @@ import { TeamOutlined, ArrowUpOutlined, ArrowDownOutlined, ReloadOutlined, StarO
 import { ProTable, ProColumns } from '@ant-design/pro-table';
 import PageContainer from '@/components/PageContainer';
 import StatisticsPeriodSelector from '@/components/StatisticsPeriodSelector';
-import { ApiResponse } from '@/types/api-response';
+import { ApiResponse } from '@/types';
 
 const { Text } = Typography;
 

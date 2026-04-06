@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Drawer, Switch, Radio, Space, Divider, App as AntApp } from 'antd';
 import { BulbOutlined, MoonOutlined } from '@ant-design/icons';
 import { useModel, useIntl } from '@umijs/max';
-import type { LayoutSettings } from '@/types/layout';
+import type { LayoutSettings } from '@/types';
 
 interface ThemeSettingsDrawerProps {
   open: boolean;

@@ -6,7 +6,7 @@ import { ProTable, ProColumns } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormDatePicker } from '@ant-design/pro-form';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, UserOutlined, WarningOutlined, ReloadOutlined, CalendarOutlined, CustomerServiceOutlined, FileTextOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { ApiResponse, PagedResult, PageParams } from '@/types/api-response';
+import { ApiResponse, PagedResult, PageParams } from '@/types';
 
 interface ParkTenant { id: string; tenantName: string; contactPerson?: string; phone?: string; email?: string; industry?: string; businessLicense?: string; address?: string; notes?: string; entryDate?: string; status: string; unitCount: number; activeContracts: number; createdAt?: string; updatedAt?: string; }
 interface LeaseContract { id: string; contractNumber: string; tenantId: string; tenantName?: string; unitIds: string[]; startDate: string; endDate: string; monthlyRent: number; totalAmount?: number; status: string; createdAt?: string; }

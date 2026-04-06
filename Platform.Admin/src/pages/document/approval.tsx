@@ -5,7 +5,7 @@ import { CheckCircleOutlined, FileTextOutlined, CloseOutlined, ReloadOutlined, E
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import dayjs from 'dayjs';
 import { request } from '@umijs/max';
-import { ApiResponse, PagedResult, PageParams } from '@/types/api-response';
+import { ApiResponse, PagedResult, PageParams } from '@/types';
 import {
   type Document,
   type DocumentStatistics,

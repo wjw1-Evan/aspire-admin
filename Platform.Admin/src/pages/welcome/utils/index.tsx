@@ -1,6 +1,5 @@
 import React from 'react';
 import { AppstoreOutlined } from '@ant-design/icons';
-import type { MenuDataItem } from '@umijs/max';
 import { CORE_ICON_MAP } from '@/utils/iconMap';
 
 export function getGreeting(): string {
@@ -56,15 +55,15 @@ export function getMenuColor(path?: string): string {
   return '#1890ff';
 }
 
-export function flattenMenus(menus: MenuDataItem[]): MenuDataItem[] {
-  const result: MenuDataItem[] = [];
-  const flatten = (items: MenuDataItem[]) => {
+export function flattenMenus(menus: any[]): any[] {
+  const result: any[] = [];
+  const flatten = (items: any[]) => {
     items.forEach(item => {
       if (item.path) {
         result.push(item);
       }
       if (item.routes || item.children) {
-        flatten((item.routes || item.children) as MenuDataItem[]);
+        flatten((item.routes || item.children) as any[]);
       }
     });
   };

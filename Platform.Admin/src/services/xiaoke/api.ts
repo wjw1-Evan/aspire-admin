@@ -1,6 +1,6 @@
 import { request } from '@umijs/max';
-import type { ApiResponse, PagedResult } from '@/types/api-response';
-import type { PageParams } from '@/types/api-response';
+import type { ApiResponse, PagedResult } from '@/types';
+import type { PageParams } from '@/types';
 
 /**
  * 小科配置相关类型

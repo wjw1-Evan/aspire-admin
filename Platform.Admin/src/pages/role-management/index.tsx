@@ -6,7 +6,7 @@ import { Tag, Space, Card, Row, Col, Button, Input, Drawer, Descriptions, Popcon
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-form';
 import { DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined, SafetyOutlined, TeamOutlined, UserOutlined, MenuOutlined } from '@ant-design/icons';
-import { ApiResponse, PagedResult, PageParams } from '@/types/api-response';
+import { ApiResponse, PagedResult, PageParams } from '@/types';
 import { formatDateTime } from '@/utils/format';
 
 

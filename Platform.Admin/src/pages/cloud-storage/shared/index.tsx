@@ -8,7 +8,7 @@ import { ShareAltOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, EyeOutl
 import { formatDateTime } from '@/utils/format';
 import dayjs from 'dayjs';
 import { request } from '@umijs/max';
-import { ApiResponse, PagedResult, PageParams } from '@/types/api-response';
+import { ApiResponse, PagedResult, PageParams } from '@/types';
 
 const { RangePicker } = DatePicker;
 

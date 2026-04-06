@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse } from '@/types/api-response';
+import type { ApiResponse } from '@/types';
 
 /**
  * 用户权限信息

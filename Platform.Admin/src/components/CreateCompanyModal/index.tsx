@@ -3,6 +3,7 @@ import { Modal, Form, Input } from 'antd';
 import { useMessage } from '@/hooks/useMessage';
 import { useIntl } from '@umijs/max';
 import { createCompany } from '@/services/company';
+import type { CreateCompanyRequest } from '@/types';
 
 interface CreateCompanyModalProps {
   open: boolean;
@@ -24,12 +25,9 @@ export const CreateCompanyModal: React.FC<CreateCompanyModalProps> = ({
   /**
    * 提交创建企业
    */
-  const handleSubmit = async (values: API.CreateCompanyRequest) => {
+  const handleSubmit = async (values: CreateCompanyRequest) => {
     try {
-      // 企业代码由后端自动生成，不需要传递
-      const { code: _code, ...requestData } = values;
-
-      const response = await createCompany(requestData as any);
+      const response = await createCompany(values as any);
       if (response.success && response.data) {
         message.success(intl.formatMessage({ id: 'pages.company.createSuccess' }));
         onSuccess();

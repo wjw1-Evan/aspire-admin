@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse, PagedResult } from '@/types/api-response';
+import type { ApiResponse, PagedResult } from '@/types';
 
 export interface Role { id?: string; name: string; description?: string; menuIds: string[]; isActive: boolean; createdAt?: string; updatedAt?: string; }
 export interface RoleWithStats extends Role { userCount?: number; menuCount?: number; }

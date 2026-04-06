@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse, PagedResult } from '@/types/api-response';
+import type { ApiResponse, PagedResult } from '@/types';
 import { AI_ASSISTANT_ID } from '@/constants/ai';
 import { tokenUtils } from '@/utils/token';
 import { getApiBaseUrl } from '@/utils/request';

@@ -6,7 +6,7 @@ import dayjs from 'dayjs';
 import { StatCard } from '@/components';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import SearchBar from '@/components/SearchBar';
-import type { PageParams } from '@/types/api-response';
+import type { PageParams } from '@/types';
 import { useIotTable } from '../hooks/useIotTable';
 
 const { useBreakpoint } = Grid;

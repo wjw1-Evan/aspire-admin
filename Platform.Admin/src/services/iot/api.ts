@@ -1,6 +1,6 @@
 import { request } from '@umijs/max';
-import type { ApiResponse, PagedResult } from '@/types/api-response';
-import type { PageParams } from '@/types/api-response';
+import type { ApiResponse, PagedResult } from '@/types';
+import type { PageParams } from '@/types';
 
 const API_PREFIX = '/api/iot';
 
@@ -50,7 +50,7 @@ export const getUnhandledEventCount = (deviceId?: string) => {
  * 处理事件
  */
 export const handleIoTEvent = (eventId: string, remarks: string) =>
-    request<{ success: boolean }>(`${API_PREFIX}/events/${eventId}/handle`, {
+    request<ApiResponse<boolean>>(`${API_PREFIX}/events/${eventId}/handle`, {
         method: 'POST',
         data: { remarks },
     });

@@ -1,3 +1,4 @@
+import * as API from '@/types';
 import {
   CheckCircleOutlined,
   CloseCircleOutlined,

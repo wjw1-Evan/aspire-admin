@@ -22,9 +22,7 @@ export class PasswordEncryption {
         try {
             const response = await getPublicKey();
             if (response.success && response.data) {
-                // sm-crypto 期望的公钥一般是不带 prefix/suffix 的 hex 字符串（长度 130，包含 '04' 前缀）
-                // 后端将配合返回 130 字符 Hex
-                this.publicKey = response.data;
+                this.publicKey = response.data.key;
                 this.lastFetchTime = now;
                 return this.publicKey;
             }

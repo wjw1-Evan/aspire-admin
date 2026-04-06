@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import { useMessage } from '@/hooks/useMessage';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import SearchBar from '@/components/SearchBar';
-import type { PageParams } from '@/types/api-response';
+import type { PageParams } from '@/types';
 import { ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import { iotService, IoTDataRecord } from '@/services/iotService';
 import { useIotTable } from '../hooks/useIotTable';

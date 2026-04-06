@@ -1,3 +1,4 @@
+import * as API from '@/types';
 import { LockOutlined } from '@ant-design/icons';
 import { FormattedMessage, useIntl } from '@umijs/max';
 import { Alert, App, Card, Form, Input, Button } from 'antd';

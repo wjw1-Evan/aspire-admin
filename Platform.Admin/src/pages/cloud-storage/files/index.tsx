@@ -12,7 +12,7 @@ import { ModalForm, ProFormText, ProFormDatePicker, ProFormSelect, ProFormDigit 
 import { tokenUtils } from '@/utils/token';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, CloudOutlined, FolderOutlined, FileOutlined, DownloadOutlined, ShareAltOutlined, UploadOutlined, FolderAddOutlined, MoreOutlined, EyeOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { ApiResponse, PagedResult, PageParams } from '@/types/api-response';
+import { ApiResponse, PagedResult, PageParams } from '@/types';
 
 // ==================== Types ====================
 interface FileItem { id: string; name: string; parentId?: string; isFolder: boolean; size?: number; mimeType?: string; createdByName?: string; createdAt: string; updatedAt: string; }

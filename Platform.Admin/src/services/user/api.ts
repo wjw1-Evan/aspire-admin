@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse, PagedResult, PageParams } from '@/types/api-response';
+import type { ApiResponse, PagedResult, PageParams } from '@/types';
 
 export interface AppUser {
   id: string;

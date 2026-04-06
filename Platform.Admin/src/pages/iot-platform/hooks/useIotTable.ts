@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import type { PageParams } from '@/types/api-response';
+import type { PageParams } from '@/types';
 
 export function useIotTable<T>(fetchFn: (params: PageParams) => Promise<{ success: boolean; data?: { queryable?: T[]; rowCount?: number } }>) {
   const [data, setData] = useState<T[]>([]);

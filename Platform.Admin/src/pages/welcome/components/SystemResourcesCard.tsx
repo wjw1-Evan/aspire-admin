@@ -67,10 +67,10 @@ const SystemResourcesCard: React.FC<SystemResourcesCardProps> = ({
                             title={intl.formatMessage({ id: 'pages.welcome.systemResources.memoryUsage' })}
                             value={`${systemResources.memory?.usagePercent || 0}%`}
                             icon={<ThunderboltOutlined />}
-                            color={getResourceColor(systemResources.memory?.usagePercent || 0)}
+color={getResourceColor(String(systemResources.memory?.usagePercent || 0))}
                             loading={loading}
                             token={token}
-                            chart={<TinyAreaChart data={memoryHistory} color={getResourceColor(systemResources.memory?.usagePercent || 0)} />}
+                            chart={<TinyAreaChart data={memoryHistory} color={getResourceColor(String(systemResources.memory?.usagePercent || 0))} />}
                         >
                             <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center' }}>
                                 {intl.formatMessage(
@@ -100,10 +100,10 @@ const SystemResourcesCard: React.FC<SystemResourcesCardProps> = ({
                             title={intl.formatMessage({ id: 'pages.welcome.systemResources.cpuUsage' })}
                             value={`${systemResources.cpu?.usagePercent || 0}%`}
                             icon={<CiOutlined />}
-                            color={getResourceColor(systemResources.cpu?.usagePercent || 0)}
+color={getResourceColor(String(systemResources.cpu?.usagePercent || 0))}
                             loading={loading}
                             token={token}
-                            chart={<TinyAreaChart data={cpuHistory} color={getResourceColor(systemResources.cpu?.usagePercent || 0)} />}
+                            chart={<TinyAreaChart data={cpuHistory} color={getResourceColor(String(systemResources.cpu?.usagePercent || 0))} />}
                         >
                             <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center' }}>
                                 {intl.formatMessage({ id: 'pages.welcome.systemResources.uptime' })}
@@ -131,10 +131,10 @@ const SystemResourcesCard: React.FC<SystemResourcesCardProps> = ({
                             title={intl.formatMessage({ id: 'pages.welcome.systemResources.diskUsage' })}
                             value={`${systemResources.disk?.usagePercent || 0}%`}
                             icon={<HddOutlined />}
-                            color={getResourceColor(systemResources.disk?.usagePercent || 0)}
+color={getResourceColor(String(systemResources.disk?.usagePercent || 0))}
                             loading={loading}
                             token={token}
-                            chart={<TinyAreaChart data={diskHistory} color={getResourceColor(systemResources.disk?.usagePercent || 0)} />}
+                            chart={<TinyAreaChart data={diskHistory} color={getResourceColor(String(systemResources.disk?.usagePercent || 0))} />}
                         >
                             <div style={{ fontSize: '12px', color: '#8c8c8c', textAlign: 'center' }}>
                                 {intl.formatMessage(

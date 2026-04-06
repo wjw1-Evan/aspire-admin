@@ -1,3 +1,4 @@
+import * as API from '@/types';
 import React from 'react';
 import { Card, Space, Timeline, Typography, Button, Tag, Badge } from 'antd';
 import { ClockCircleOutlined, LinkOutlined, RightOutlined } from '@ant-design/icons';
@@ -169,7 +170,7 @@ const RecentActivitiesCard: React.FC<RecentActivitiesCardProps> = ({ currentUser
                                         <Text strong>{intl.formatMessage({ id: 'pages.welcome.recentActivities.userLogin.title' })}</Text>
                                         <br />
                                         <Text type="secondary">
-                                            {intl.formatMessage({ id: 'pages.welcome.recentActivities.userLogin.desc' }, { username: currentUser?.name || currentUser?.userid || intl.formatMessage({ id: 'pages.welcome.user' }) })}
+                                            {intl.formatMessage({ id: 'pages.welcome.recentActivities.userLogin.desc' }, { username: currentUser?.name || currentUser?.userId || intl.formatMessage({ id: 'pages.welcome.user' }) })}
                                         </Text>
                                         <div style={{ fontSize: '12px', color: '#8c8c8c' }}>
                                             {dayjs().format('YYYY-MM-DD HH:mm:ss')}

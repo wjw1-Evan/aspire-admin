@@ -1,5 +1,6 @@
 import { request } from '@umijs/max';
-import type { ApiResponse } from '@/types/api-response';
+import type { ApiResponse } from '@/types';
+import * as API from '@/types';
 
 /** 企业注册 POST /api/company/register */
 export async function registerCompany(body: API.RegisterCompanyRequest) {

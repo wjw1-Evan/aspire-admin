@@ -8,9 +8,9 @@ import { Grid, Button, Tag, Space, Modal, Drawer, Row, Col, Card, Form, Input, S
 import { getUserList, type AppUser } from '@/services/user/api';
 import { formatDateTime } from '@/utils/format';
 import { getCurrentCompany } from '@/services/company';
-import type { PageParams } from '@/types/api-response';
+import type { PageParams } from '@/types';
 import { request } from '@umijs/max';
-import { ApiResponse, PagedResult } from '@/types/api-response';
+import { ApiResponse, PagedResult } from '@/types';
 
 // ==================== Types ====================
 interface StorageQuota { userId: string; totalQuota: number; usedQuota: number; fileCount: number; warningThreshold?: number; isEnabled: boolean; userDisplayName?: string; username?: string; createdAt: string; updatedAt: string; }

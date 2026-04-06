@@ -18,7 +18,7 @@ import {
 } from '@/services/xiaoke/api';
 import ChatHistoryDetail from './ChatHistoryDetail';
 import dayjs from 'dayjs';
-import type { PageParams } from '@/types/api-response';
+import type { PageParams } from '@/types';
 
 const { RangePicker } = DatePicker;
 

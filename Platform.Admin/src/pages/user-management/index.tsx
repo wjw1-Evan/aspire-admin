@@ -5,7 +5,7 @@ import { App, Button, Tag, Space, Modal, Drawer, Row, Col, Badge, Card, Spin, In
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormSwitch } from '@ant-design/pro-form';
 import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, TeamOutlined, CheckCircleOutlined, ReloadOutlined, CrownOutlined, SearchOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
-import { ApiResponse, PagedResult, PageParams } from '@/types/api-response';
+import { ApiResponse, PagedResult, PageParams } from '@/types';
 import { formatDateTime } from '@/utils/format';
 import type { Role } from '@/services/role/api';
 import { getCurrentCompany } from '@/services/company';
@@ -83,9 +83,9 @@ const UserManagement: React.FC = () => {
   }, []);
 
   const handleSearch = useCallback((params: PageParams) => {
-    set(p => ({ searchParams: { ...p.searchParams, ...params, page: 1 } }));
+    set({ searchParams: { ...state.searchParams, ...params, page: 1 } });
     actionRef.current?.reload();
-  }, []);
+  }, [state.searchParams]);
 
   const handleToggle = useCallback(async (user: AppUser) => {
     const res = user.isActive ? await api.deactivate(user.id) : await api.activate(user.id);
@@ -119,11 +119,11 @@ const UserManagement: React.FC = () => {
 
   const columns: ProColumns<AppUser>[] = useMemo(() => [
     { title: intl.formatMessage({ id: 'pages.table.username' }), dataIndex: 'username', render: (dom, r) => (<Space><UserOutlined /><a onClick={() => set({ viewingUser: r, detailVisible: true })}>{dom}</a>{state.currentCompany?.createdBy === r.id && <Tag icon={<CrownOutlined />} color="gold">{intl.formatMessage({ id: 'pages.userManagement.role.creator' })}</Tag>}</Space>) },
-    { title: '姓名', dataIndex: 'name', ellipsis: true, render: (dom: string) => dom || '-' },
+    { title: '姓名', dataIndex: 'name', ellipsis: true, render: (dom: React.ReactNode) => dom || '-' },
     { title: intl.formatMessage({ id: 'pages.table.email' }), dataIndex: 'email', ellipsis: true, responsive: ['md'] },
-    { title: '手机号', dataIndex: 'phoneNumber', ellipsis: true, responsive: ['lg'], render: (dom: string) => dom || '-' },
-    { title: '年龄', dataIndex: 'age', width: 80, responsive: ['lg'], render: (dom: number) => dom || '-' },
-    { title: '备注', dataIndex: 'remark', ellipsis: true, responsive: ['xl'], render: (dom: string) => dom || '-' },
+    { title: '手机号', dataIndex: 'phoneNumber', ellipsis: true, responsive: ['lg'], render: (dom: React.ReactNode) => dom || '-' },
+    { title: '年龄', dataIndex: 'age', width: 80, responsive: ['lg'], render: (dom: React.ReactNode) => dom || '-' },
+    { title: '备注', dataIndex: 'remark', ellipsis: true, responsive: ['xl'], render: (dom: React.ReactNode) => dom || '-' },
     { title: intl.formatMessage({ id: 'pages.table.role' }), dataIndex: 'roleIds', responsive: ['md'], render: (_, r) => (!r.roleIds?.length ? <Tag color="default">{intl.formatMessage({ id: 'pages.table.unassigned' })}</Tag> : <Space wrap>{r.roleIds.map(id => <Tag key={id} color="blue">{state.roleMap[id] || id}</Tag>)}</Space>) },
     { title: intl.formatMessage({ id: 'pages.table.organization' }), dataIndex: 'organizations', responsive: ['lg'], render: (_, r) => {
       const orgs = r.organizations || [];
@@ -162,15 +162,15 @@ const UserManagement: React.FC = () => {
     if (res.success) { message.success('已拒绝'); setJ({ rejectModal: false, rejectReason: '' }); fetchJoin(); }
   };
 
-  const joinCols = useMemo(() => [
-    { title: '申请人', dataIndex: 'username', render: (_: string, r: JoinReq) => <Space direction="vertical" size={0}><b>{r.username}</b><span style={{ color: '#999', fontSize: 12 }}>{r.userEmail}</span></Space> },
-    { title: '申请理由', dataIndex: 'reason', ellipsis: true, render: (t: string) => t || '-' },
-    { title: '状态', dataIndex: 'status', render: (s: string) => { const m: Record<string, { text: string; color: string }> = { pending: { text: '待审核', color: 'processing' }, approved: { text: '已通过', color: 'success' }, rejected: { text: '已拒绝', color: 'error' }, cancelled: { text: '已取消', color: 'default' } }; const c = m[s] || { text: s, color: 'default' }; return <Tag color={c.color}>{c.text}</Tag>; } },
-    { title: '申请时间', dataIndex: 'createdAt', render: (t: string) => formatDateTime(t) },
-    { title: '审核人', dataIndex: 'reviewedByName', render: (t: string) => t || '-' },
-    { title: '备注', dataIndex: 'rejectReason', ellipsis: true, render: (_: string, r: JoinReq) => r.status === 'approved' ? <span style={{ color: '#52c41a' }}>已通过</span> : _ || '-' },
-    { title: '审核时间', dataIndex: 'reviewedAt', render: (t: string) => formatDateTime(t) },
-    { title: '操作', key: 'action', fixed: 'right', width: 150, render: (_: unknown, r: JoinReq) => r.status === 'cancelled' ? null : (<Space>{r.status !== 'approved' && <Button type="link" size="small" icon={<CheckOutlined />} onClick={() => handleApprove(r.id)}>批准</Button>}{r.status !== 'rejected' && <Button type="link" size="small" danger icon={<CloseOutlined />} onClick={() => setJ({ rejectModal: true, rejectId: r.id })}>拒绝</Button>}</Space>) },
+  const joinCols = useMemo((): ProColumns<JoinReq>[] => [
+    { title: '申请人', dataIndex: 'username', render: (_: React.ReactNode, r: JoinReq) => <Space direction="vertical" size={0}><b>{r.username}</b><span style={{ color: '#999', fontSize: 12 }}>{r.userEmail}</span></Space> },
+    { title: '申请理由', dataIndex: 'reason', ellipsis: true, render: (t: React.ReactNode) => t || '-' },
+    { title: '状态', dataIndex: 'status', render: (s: React.ReactNode) => { const m: Record<string, { text: string; color: string }> = { pending: { text: '待审核', color: 'processing' }, approved: { text: '已通过', color: 'success' }, rejected: { text: '已拒绝', color: 'error' }, cancelled: { text: '已取消', color: 'default' } }; const c = m[String(s)] || { text: String(s), color: 'default' }; return <Tag color={c.color}>{c.text}</Tag>; } },
+    { title: '申请时间', dataIndex: 'createdAt', render: (t: React.ReactNode) => formatDateTime(String(t)) },
+    { title: '审核人', dataIndex: 'reviewedByName', render: (t: React.ReactNode) => t || '-' },
+    { title: '备注', dataIndex: 'rejectReason', ellipsis: true, render: (_: React.ReactNode, r: JoinReq) => r.status === 'approved' ? <span style={{ color: '#52c41a' }}>已通过</span> : _ || '-' },
+    { title: '审核时间', dataIndex: 'reviewedAt', render: (t: React.ReactNode) => formatDateTime(String(t)) },
+    { title: '操作', key: 'action', fixed: 'right', width: 150, render: (_: React.ReactNode, r: JoinReq) => r.status === 'cancelled' ? null : (<Space>{r.status !== 'approved' && <Button type="link" size="small" icon={<CheckOutlined />} onClick={() => handleApprove(r.id)}>批准</Button>}{r.status !== 'rejected' && <Button type="link" size="small" danger icon={<CloseOutlined />} onClick={() => setJ({ rejectModal: true, rejectId: r.id })}>拒绝</Button>}</Space>) },
   ], []);
 
   const stats = [
@@ -198,7 +198,7 @@ const UserManagement: React.FC = () => {
         }} columns={columns} rowKey="id" search={false}
           rowSelection={{ selectedRowKeys: state.selectedRows.map(r => r.id), onChange: (_: React.Key[], selectedRows: AppUser[]) => set({ selectedRows }) }}
           onChange={(_p, _f, s) => set({ sorter: (s as Record<string, unknown>)?.order ? { sortBy: (s as Record<string, string>).field, sortOrder: (s as Record<string, string>).order === 'ascend' ? 'asc' : 'desc' } : undefined })}
-          toolBarRender={() => [<Input.Search key="search" placeholder="搜索用户名/姓名/邮箱..." style={{ width: 260 }} allowClear value={state.searchParams.search} onChange={(e) => { set(p => ({ searchParams: { ...p.searchParams, search: e.target.value } })); }} onSearch={(v) => { set(p => ({ searchParams: { ...p.searchParams, search: v, page: 1 } })); actionRef.current?.reload(); }} />, <Button key="activate" disabled={!state.selectedRows.length} onClick={() => handleBulk('activate')}>批量激活</Button>, <Button key="deactivate" disabled={!state.selectedRows.length} onClick={() => handleBulk('deactivate')}>批量禁用</Button>, <Button key="delete" danger disabled={!state.selectedRows.length} onClick={() => handleBulk('delete')}>批量删除</Button>]}
+          toolBarRender={() => [<Input.Search key="search" placeholder="搜索用户名/姓名/邮箱..." style={{ width: 260 }} allowClear value={state.searchParams.search} onChange={(e) => { set({ searchParams: { ...state.searchParams, search: e.target.value } }); }} onSearch={(v) => { set({ searchParams: { ...state.searchParams, search: v, page: 1 } }); actionRef.current?.reload(); }} />, <Button key="activate" disabled={!state.selectedRows.length} onClick={() => handleBulk('activate')}>批量激活</Button>, <Button key="deactivate" disabled={!state.selectedRows.length} onClick={() => handleBulk('deactivate')}>批量禁用</Button>, <Button key="delete" danger disabled={!state.selectedRows.length} onClick={() => handleBulk('delete')}>批量删除</Button>]}
         />
         <ModalForm key={state.editingUser?.id || 'create'} title={state.editingUser ? intl.formatMessage({ id: 'pages.userManagement.editUser' }) : '添加成员'}
           open={state.formVisible} onOpenChange={(open) => { if (!open) set({ formVisible: false, editingUser: null }); setF({ selectedUser: null }); }}
@@ -215,7 +215,26 @@ const UserManagement: React.FC = () => {
             return res.success;
           }} autoFocusFirstInput width={600}
         >
-          {!state.editingUser && <ProFormSelect name="username" label="选择用户" placeholder="搜索系统已有用户" showSearch onSearch={async (v: string) => { if (!v || v.length < 2) { setF({ userOptions: [] }); return; } setF({ searchingUsers: true }); try { const res = await api.searchUsers(v); if (res.success && res.data) setF({ userOptions: res.data.users || [] }); } finally { setF({ searchingUsers: false }); } }} onSelect={(_: string, option?: { user?: AppUser }) => { if (option?.user) setF({ selectedUser: option.user }); }} onChange={(v) => { if (!v) setF({ selectedUser: null }); }} filterOption={false} allowClear suffixIcon={<SearchOutlined />} notFoundContent={form.searchingUsers ? <Spin size="small" /> : '未找到相关用户'} options={form.userOptions.map(u => ({ label: `${u.username}${u.email ? `(${u.email})` : ''}`, value: u.username, user: u }))} rules={[{ required: true, message: '请搜索并选择用户' }]} />}
+          {!state.editingUser && <ProFormSelect 
+            name="username" 
+            label="选择用户" 
+            placeholder="搜索系统已有用户" 
+            showSearch 
+            fieldProps={{ 
+              onSearch: async (v: string) => { 
+                if (!v || v.length < 2) { setF({ userOptions: [] }); return; } 
+                setF({ searchingUsers: true }); 
+                try { const res = await api.searchUsers(v); if (res.success && res.data) setF({ userOptions: res.data.users || [] }); } 
+                finally { setF({ searchingUsers: false }); } 
+              }, 
+              filterOption: false,
+              onSelect: (_: string, option?: { user?: AppUser }) => { if (option?.user) setF({ selectedUser: option.user }); }, 
+              onChange: (v) => { if (!v) setF({ selectedUser: null }); } 
+            }} 
+            allowClear 
+            options={form.userOptions.map(u => ({ label: `${u.username}${u.email ? `(${u.email})` : ''}`, value: u.username, user: u }))} 
+            rules={[{ required: true, message: '请搜索并选择用户' }]} 
+          />}
           {state.editingUser && <ProFormText name="username" label="用户名" disabled />}
           <ProFormText name="email" label="邮箱" placeholder="请输入邮箱" />
           <ProFormText name="phoneNumber" label="手机号" placeholder="请输入手机号" />

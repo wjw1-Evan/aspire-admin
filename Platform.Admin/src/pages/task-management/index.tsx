@@ -7,7 +7,7 @@ import { Button, Tag, Space, Card, Row, Col, Grid, App, Modal, Progress, Drawer,
 import { ProTable, ActionType } from '@ant-design/pro-table';
 import { PlusOutlined, EditOutlined, DeleteOutlined, CheckCircleOutlined, ReloadOutlined, PlayCircleOutlined, StopOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { ApiResponse, PagedResult, PageParams } from '@/types/api-response';
+import { ApiResponse, PagedResult, PageParams } from '@/types';
 import { getTaskStatusColor, getTaskPriorityColor } from '@/utils/task';
 import { getTaskById, getTaskExecutionLogs, TaskStatus as TaskStatusEnum, type TaskDto, type TaskExecutionLogDto } from '@/services/task/api';
 import TaskForm from './components/TaskForm';

@@ -1,6 +1,7 @@
 import { UserOutlined } from '@ant-design/icons';
 import type { RequestConfig, RunTimeLayoutConfig } from '@umijs/max';
-import type { LayoutSettings } from '@/types/layout';
+import type { LayoutSettings } from '@/types';
+import type { CurrentUser, MenuTreeNode } from '@/types';
 import { history, request as requestClient, Link } from '@umijs/max';
 import React, { useEffect, useRef, useMemo } from 'react';
 import { App, Space } from 'antd';
@@ -37,9 +38,9 @@ const loginPath = '/user/login';
  * */
 export async function getInitialState(): Promise<{
   settings?: Partial<LayoutSettings>;
-  currentUser?: API.CurrentUser;
+  currentUser?: CurrentUser;
   loading?: boolean;
-  fetchUserInfo?: () => Promise<API.CurrentUser | undefined>;
+  fetchUserInfo?: () => Promise<CurrentUser | undefined>;
 }> {
   // 从 localStorage 读取主题设置
   const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
@@ -147,7 +148,7 @@ function getIconComponent(iconName?: string): React.ReactNode {
  * 将后端返回的菜单树转换为 ProLayout 要求的格式
  * ⚡ 优化：引入 depth 参数。只有第一层级设置 icon，防止一二级图标渲染冲突。
  */
-function convertMenuTreeToProLayout(menus: API.MenuTreeNode[], depth = 1): any[] {
+function convertMenuTreeToProLayout(menus: MenuTreeNode[], depth = 1): any[] {
   return menus
     .filter((menu) => !menu.hideInMenu)
     .map((menu) => {
@@ -327,7 +328,7 @@ export const layout: RunTimeLayoutConfig = ({
           '/system',
         ];
 
-        const getMenuOrder = (menu: API.MenuTreeNode) => {
+        const getMenuOrder = (menu: MenuTreeNode) => {
           const index = desiredOrder.findIndex((prefix) => {
             if (prefix === '/system') {
               return menu.path === '/system' || menu.path.startsWith('/system/');

@@ -5,7 +5,7 @@ import { request } from '@umijs/max';
 import { Card, Row, Col, Button, Space, Spin } from 'antd';
 import { CloudServerOutlined, DatabaseOutlined, AlertOutlined, DesktopOutlined, ReloadOutlined, CloudOutlined } from '@ant-design/icons';
 import { StatCard } from '@/components';
-import { ApiResponse } from '@/types/api-response';
+import { ApiResponse } from '@/types';
 
 interface PlatformStatistics {
   totalGateways: number;

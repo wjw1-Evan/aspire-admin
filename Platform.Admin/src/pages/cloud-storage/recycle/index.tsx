@@ -9,7 +9,7 @@ import { formatDateTime } from '@/utils/format';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { request } from '@umijs/max';
-import { ApiResponse, PagedResult, PageParams } from '@/types/api-response';
+import { ApiResponse, PagedResult, PageParams } from '@/types';
 
 dayjs.extend(relativeTime);
 

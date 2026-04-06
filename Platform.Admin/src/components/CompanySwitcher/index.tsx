@@ -3,7 +3,8 @@ import { Dropdown, Spin, App as AntApp } from 'antd';
 import type { MenuProps } from 'antd';
 import React, { useState, useEffect } from 'react';
 import { request, useModel, useIntl } from '@umijs/max';
-import type { ApiResponse } from '@/types/api-response';
+import type { ApiResponse } from '@/types';
+import type { UserCompanyItem, SwitchCompanyResult } from '@/types';
 import { CreateCompanyModal } from '../CreateCompanyModal';
 import styles from './index.less';
 
@@ -15,7 +16,7 @@ export const CompanySwitcher: React.FC = () => {
   const intl = useIntl();
   const { initialState, setInitialState } = useModel('@@initialState');
   const { message } = AntApp.useApp();
-  const [companies, setCompanies] = useState<API.UserCompanyItem[]>([]);
+  const [companies, setCompanies] = useState<UserCompanyItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [switching, setSwitching] = useState(false);
   const [createCompanyModalOpen, setCreateCompanyModalOpen] = useState(false);
@@ -28,7 +29,7 @@ export const CompanySwitcher: React.FC = () => {
   const loadCompanies = async () => {
     setLoading(true);
     try {
-      const response = await request<ApiResponse<API.UserCompanyItem[]>>(
+      const response = await request<ApiResponse<UserCompanyItem[]>>(
         '/api/company/my-companies',
         {
           method: 'GET',
@@ -60,7 +61,7 @@ export const CompanySwitcher: React.FC = () => {
 
     setSwitching(true);
     try {
-      const response = await request<ApiResponse<API.SwitchCompanyResult>>(
+      const response = await request<ApiResponse<SwitchCompanyResult>>(
         '/api/company/switch',
         {
           method: 'POST',

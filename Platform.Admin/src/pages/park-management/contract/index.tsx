@@ -7,7 +7,7 @@ import { ModalForm, ProFormText, ProFormSelect, ProFormDateRangePicker } from '@
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, FileTextOutlined, WarningOutlined, ReloadOutlined, CalendarOutlined, SyncOutlined, UploadOutlined, DownloadOutlined, PaperClipOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import type { UploadFile, UploadProps } from 'antd';
 import dayjs from 'dayjs';
-import { ApiResponse, PagedResult, PageParams } from '@/types/api-response';
+import { ApiResponse, PagedResult, PageParams } from '@/types';
 
 const { Text } = Typography;
 

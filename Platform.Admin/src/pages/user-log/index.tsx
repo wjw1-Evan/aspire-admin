@@ -5,7 +5,7 @@ import { request } from '@umijs/max';
 import { Tag, Space, Card, Row, Col, Button, Input } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ReloadOutlined, FileTextOutlined, CheckCircleOutlined, CloseCircleOutlined, ThunderboltOutlined, DashboardOutlined, SearchOutlined } from '@ant-design/icons';
-import { ApiResponse, PagedResult, PageParams } from '@/types/api-response';
+import { ApiResponse, PagedResult, PageParams } from '@/types';
 import { formatDateTime } from '@/utils/format';
 import { getActionTagColor, getActionText, getMethodColor, getStatusBadge } from '@/utils/activityLog';
 import LogDetailDrawer from './components/LogDetailDrawer';

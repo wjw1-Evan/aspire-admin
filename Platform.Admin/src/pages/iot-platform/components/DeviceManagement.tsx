@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback, useMemo } from 'react';
 import { useIntl } from '@umijs/max';
 import { type TableColumnsType, Table, Button, Modal, Form, Input, Select, Space, message, Drawer, Tag, Card, Row, Col, Descriptions, Grid, Tabs, Alert, InputNumber, Typography } from 'antd';
-import type { PageParams } from '@/types/api-response';
+import type { PageParams } from '@/types';
 import dayjs from 'dayjs';
 import { PlusOutlined, EditOutlined, DeleteOutlined, DesktopOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, KeyOutlined, BranchesOutlined, SendOutlined, TagOutlined } from '@ant-design/icons';
 import { iotService, IoTDevice, IoTGateway, DeviceStatistics, GenerateApiKeyResult } from '@/services/iotService';

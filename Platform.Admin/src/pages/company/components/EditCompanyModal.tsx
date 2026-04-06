@@ -2,11 +2,12 @@ import { Modal, Form, Input, Tooltip } from 'antd';
 import { useIntl } from '@umijs/max';
 import Settings from '../../../../config/defaultSettings';
 import { updateCurrentCompany } from '@/services/company';
+import type { Company } from '@/types';
 import React from 'react';
 
 interface EditCompanyModalProps {
   open: boolean;
-  company: API.Company | null;
+  company: Company | null;
   onCancel: () => void;
   onSuccess: () => void;
 }

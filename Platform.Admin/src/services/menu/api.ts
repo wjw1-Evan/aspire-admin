@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse } from '@/types/api-response';
+import type { ApiResponse } from '@/types';
 
 export interface MenuItem { id: string; name: string; title: string; path?: string; icon?: string; sortOrder?: number; parentId?: string; type?: string; children?: MenuItem[]; }
 export interface MenuTreeNode { id?: string; name?: string; title?: string; children?: MenuTreeNode[]; }

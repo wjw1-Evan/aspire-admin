@@ -6,7 +6,7 @@ import { Button, Space, App, Modal, Input } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { formatDateTime } from '@/utils/format';
-import { ApiResponse, PageParams } from '@/types/api-response';
+import { ApiResponse, PageParams } from '@/types';
 
 const { TextArea } = Input;
 

@@ -12,7 +12,7 @@ import WorkflowDesigner from './components/WorkflowDesigner';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import { getStatusMeta, workflowStatusMap, approvalActionMap } from '@/utils/statusMaps';
-import type { PageParams } from '@/types/api-response';
+import type { PageParams } from '@/types';
 
 const WorkflowMonitor: React.FC = () => {
   const intl = useIntl();
@@ -62,7 +62,7 @@ const WorkflowMonitor: React.FC = () => {
     setNodeFormDef(null); setNodeFormInitial(null); setNodeFormVisible(false);
     setCurrentFormInstanceId(instanceId); setNodeFormLoading(true);
     try {
-      const res = await getNodeForm(instanceId, currentNodeId);
+      const res = await getNodeForm(instanceId, currentNodeId || '');
       if (res.success) {
         setNodeFormDef(res.data?.form || null); setNodeFormInitial(res.data?.initialValues || null);
         setTimeout(() => setNodeFormVisible(true), 50);

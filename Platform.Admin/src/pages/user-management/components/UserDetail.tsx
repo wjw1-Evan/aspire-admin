@@ -20,7 +20,7 @@ import {
 import { request, useIntl } from '@umijs/max';
 import { getAllRoles } from '@/services/role/api';
 import type { Role } from '@/services/role/api';
-import type { AppUser, UserActivityLog } from '../types';
+import type { AppUser, UserActivityLog } from '@/types';
 import { formatDateTime } from '@/utils/format';
 import { getActionTagColor, getActionText } from '@/utils/activityLog';
 

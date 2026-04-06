@@ -2,6 +2,7 @@ import { PlusOutlined, SearchOutlined, CheckCircleOutlined } from '@ant-design/i
 import { Button, Input, Modal, Space, App as AntApp, Tag, Divider, Typography, Flex } from 'antd';
 import React, { useState, useMemo } from 'react';
 import { applyToJoinCompany, searchCompanies, leaveCompany, cancelJoinRequest } from '@/services/company';
+import type { CompanySearchResult } from '@/types';
 
 const { Text } = Typography;
 
@@ -24,9 +25,9 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
 }) => {
   const { message, modal } = AntApp.useApp();
   const [keyword, setKeyword] = useState('');
-  const [searchResults, setSearchResults] = useState<API.CompanySearchResult[]>([]);
+  const [searchResults, setSearchResults] = useState<CompanySearchResult[]>([]);
   const [selectedCompany, setSelectedCompany] =
-    useState<API.CompanySearchResult | null>(null);
+    useState<CompanySearchResult | null>(null);
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
@@ -71,7 +72,7 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
   };
 
   // 选择企业
-  const handleSelectCompany = (result: API.CompanySearchResult) => {
+  const handleSelectCompany = (result: CompanySearchResult) => {
     // 检查是否已是成员或已有待审核申请
     if (result.isMember) {
       message.warning('您已是该企业的成员');
@@ -179,8 +180,8 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
 
   // 将搜索结果分为已加入和未加入两组
   const { joinedCompanies, availableCompanies } = useMemo(() => {
-    const joined: API.CompanySearchResult[] = [];
-    const available: API.CompanySearchResult[] = [];
+    const joined: CompanySearchResult[] = [];
+    const available: CompanySearchResult[] = [];
 
     for (const item of searchResults) {
       if (item.isMember || item.hasPendingRequest) {

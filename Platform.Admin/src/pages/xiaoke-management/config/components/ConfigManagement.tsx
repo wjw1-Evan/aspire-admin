@@ -17,7 +17,7 @@ import {
 } from '@/services/xiaoke/api';
 import ConfigForm from './ConfigForm';
 import dayjs from 'dayjs';
-import type { PageParams } from '@/types/api-response';
+import type { PageParams } from '@/types';
 
 export interface ConfigManagementRef {
   reload: () => void;

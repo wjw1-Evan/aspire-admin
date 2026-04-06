@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse } from '@/types/api-response';
+import type { ApiResponse } from '@/types';
 
 export interface CurrentUser {
   id: string;
@@ -15,6 +15,10 @@ export interface LoginResult {
   status?: string;
   type?: string;
   currentAuthority?: string;
+  token?: string;
+  refreshToken?: string;
+  expiresAt?: string;
+  code?: string;
 }
 
 export interface UserStatistics {
@@ -35,11 +39,11 @@ export async function outLogin(): Promise<ApiResponse<unknown>> {
   return request('/api/auth/logout', { method: 'POST' });
 }
 
-export async function login(body: { username: string; password: string }): Promise<ApiResponse<LoginResult>> {
+export async function login(body: { username: string; password?: string; type?: string; captchaId?: string; captchaAnswer?: string }): Promise<ApiResponse<LoginResult>> {
   return request('/api/auth/login', { method: 'POST', data: body });
 }
 
-export async function register(body: { username: string; password: string; email?: string }): Promise<ApiResponse<unknown>> {
+export async function register(body: { username: string; password: string; email?: string; captchaId?: string; captchaAnswer?: string }): Promise<ApiResponse<unknown>> {
   return request('/api/auth/register', { method: 'POST', data: body });
 }
 
@@ -47,16 +51,16 @@ export async function checkUsernameExists(username: string): Promise<ApiResponse
   return request('/api/auth/check-username', { method: 'GET', params: { username } });
 }
 
-export async function sendResetCode(email: string): Promise<ApiResponse<unknown>> {
-  return request('/api/auth/send-reset-code', { method: 'POST', data: { email } });
+export async function sendResetCode(body: { email: string }): Promise<ApiResponse<unknown>> {
+  return request('/api/auth/send-reset-code', { method: 'POST', data: body });
 }
 
-export async function resetPassword(code: string, newPassword: string): Promise<ApiResponse<unknown>> {
-  return request('/api/auth/reset-password', { method: 'POST', data: { code, newPassword } });
+export async function resetPassword(body: { email: string; code: string; newPassword: string; confirmPassword?: string }): Promise<ApiResponse<unknown>> {
+  return request('/api/auth/reset-password', { method: 'POST', data: body });
 }
 
-export async function changePassword(oldPassword: string, newPassword: string): Promise<ApiResponse<unknown>> {
-  return request('/api/auth/change-password', { method: 'POST', data: { oldPassword, newPassword } });
+export async function changePassword(body: { currentPassword: string; newPassword: string }): Promise<ApiResponse<unknown>> {
+  return request('/api/auth/change-password', { method: 'POST', data: body });
 }
 
 export async function getPublicKey(): Promise<ApiResponse<{ key: string }>> {
@@ -87,4 +91,8 @@ export async function getImageCaptcha(type?: 'login' | 'register'): Promise<ApiR
 
 export async function verifyImageCaptcha(captchaId: string, captchaCode: string, type?: 'login' | 'register'): Promise<ApiResponse<{ valid: boolean }>> {
   return request('/api/auth/captcha/verify-image', { method: 'POST', data: { captchaId, captchaCode, type } });
+}
+
+export async function refreshToken(body: { refreshToken: string }): Promise<ApiResponse<LoginResult>> {
+  return request('/api/auth/refresh-token', { method: 'POST', data: body });
 }

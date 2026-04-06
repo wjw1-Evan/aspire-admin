@@ -6,7 +6,7 @@ import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormDatePicker, ProFormDigit, ProFormTextArea } from '@ant-design/pro-form';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, SwapOutlined, TeamOutlined, ProjectOutlined, PhoneOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { ApiResponse, PagedResult, PageParams } from '@/types/api-response';
+import { ApiResponse, PagedResult, PageParams } from '@/types';
 
 const { Text } = Typography;
 

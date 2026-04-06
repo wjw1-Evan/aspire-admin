@@ -4,12 +4,12 @@ import { Button, Space, Modal, Tag, Table, App, Form } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, PartitionOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { getWorkflowList, deleteWorkflow, type WorkflowDefinition } from '@/services/workflow/api';
-import type { PagedResult } from '@/types/api-response';
+import type { PagedResult } from '@/types';
 import WorkflowCreateForm from './components/WorkflowCreateForm';
 import WorkflowEditForm from './components/WorkflowEditForm';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
-import type { PageParams } from '@/types/api-response';
+import type { PageParams } from '@/types';
 
 const WorkflowManagement: React.FC = () => {
   const intl = useIntl();

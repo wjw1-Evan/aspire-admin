@@ -12,13 +12,14 @@ import {
 import { useIntl, useModel } from '@umijs/max';
 import { getCurrentCompany, getCompanyStatistics } from '@/services/company';
 import EditCompanyModal from './components/EditCompanyModal';
+import type { Company, CompanyStatistics } from '@/types';
 import { StatCard } from '@/components';
 import { formatDateTime } from '@/utils/format';
 
 export default function CompanySettings() {
   const intl = useIntl();
-  const [company, setCompany] = useState<API.Company | null>(null);
-  const [statistics, setStatistics] = useState<API.CompanyStatistics | null>(
+  const [company, setCompany] = useState<Company | null>(null);
+  const [statistics, setStatistics] = useState<CompanyStatistics | null>(
     null,
   );
   const [loading, setLoading] = useState(true);

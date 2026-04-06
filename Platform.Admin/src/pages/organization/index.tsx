@@ -9,7 +9,7 @@ import type { DataNode } from 'antd/es/tree';
 import type { TreeSelectProps } from 'antd/es/tree-select';
 import { useMessage } from '@/hooks/useMessage';
 import { formatDateTime } from '@/utils/format';
-import { ApiResponse } from '@/types/api-response';
+import { ApiResponse } from '@/types';
 
 const { Text } = Typography;
 const { Search } = Input;

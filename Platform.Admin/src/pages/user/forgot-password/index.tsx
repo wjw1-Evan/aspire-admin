@@ -1,3 +1,4 @@
+import * as API from '@/types';
 import { LockOutlined, MailOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import { FormattedMessage, Link, useIntl, history } from '@umijs/max';
 import { App, Button, Form, Input, Card, Space, Steps } from 'antd';
@@ -149,7 +150,7 @@ const ForgotPasswordContainer: React.FC = () => {
       // 🔒 安全增强：加密密码
       // 注意：加密必须是确定性的，或者在这里只加密一次并重用，
       // 因为后端会使用 [Compare] 特性校验 newPassword 和 confirmPassword 的原始值（此处为密文）。
-      const encryptedPassword = values.newPassword ? await PasswordEncryption.encrypt(values.newPassword) : undefined;
+      const encryptedPassword = values.newPassword ? await PasswordEncryption.encrypt(values.newPassword) : '';
 
       const res = await resetPassword({
         email,

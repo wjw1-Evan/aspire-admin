@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse, PagedResult } from '@/types/api-response';
+import type { ApiResponse, PagedResult } from '@/types';
 
 /**
  * 公文状态枚举

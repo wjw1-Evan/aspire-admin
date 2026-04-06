@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Drawer, Switch, Radio, Space, Divider, Button, App as AntApp } from 'antd';
 import { SettingOutlined, BulbOutlined, MoonOutlined } from '@ant-design/icons';
 import { useModel, useIntl } from '@umijs/max';
-import type { LayoutSettings } from '@/types/layout';
+import type { LayoutSettings } from '@/types';
 
 /**
  * 主题设置组件

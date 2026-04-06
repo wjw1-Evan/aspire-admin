@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from '@umijs/max';
 import { Card, Space, Typography, Spin, Result, Input, Button, Tag, message } from 'antd';
 import { request } from '@umijs/max';
-import { ApiResponse } from '@/types/api-response';
+import { ApiResponse } from '@/types';
 
 const { Title, Text } = Typography;
 

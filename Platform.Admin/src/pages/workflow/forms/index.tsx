@@ -4,7 +4,7 @@ import { PartitionOutlined, PlusOutlined, ReloadOutlined, EditOutlined, DeleteOu
 import { useMessage } from '@/hooks/useMessage';
 import { PageContainer } from '@/components';
 import type { ColumnsType } from 'antd/es/table';
-import type { PageParams } from '@/types/api-response';
+import type { PageParams } from '@/types';
 import {
     getFormList,
     createForm,

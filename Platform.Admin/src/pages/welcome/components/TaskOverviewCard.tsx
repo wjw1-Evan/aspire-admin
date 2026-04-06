@@ -1,3 +1,4 @@
+import * as API from '@/types';
 import React from 'react';
 import { Card, Row, Col, Space, Alert, Typography, Tag, theme } from 'antd';
 import { BarChartOutlined, ClockCircleOutlined, RocketOutlined, CheckCircleOutlined, CloseCircleOutlined, SafetyOutlined, MenuOutlined } from '@ant-design/icons';
@@ -139,7 +140,7 @@ const TaskOverviewCard: React.FC<TaskOverviewCardProps> = ({ taskStatistics, tod
                                         )}
                                     </Space>
                                     <Text type="secondary" style={{ fontSize: 12 }}>
-                                        {task.statusName} · {task.assignedToName || currentUser?.name || currentUser?.userid}
+                                        {task.statusName} · {task.assignedToName || currentUser?.name || currentUser?.userId}
                                     </Text>
                                 </Space>
                             </li>

@@ -50,7 +50,6 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
     try {
       const response = await getXiaokeConfigs({
         page: currentParams.page,
-        pageSize: currentParams.pageSize,
         search: currentParams.search,
       });
 

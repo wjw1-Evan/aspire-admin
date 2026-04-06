@@ -69,8 +69,8 @@ const ContractManagement: React.FC = () => {
 
     useEffect(() => {
         api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
-        api.tenants({ page: 1, pageSize: 500 }).then(r => { if (r.success && r.data) set({ tenants: r.data.queryable }); });
-        api.units({ page: 1, pageSize: 1000 }).then(r => { if (r.success && r.data) set({ allUnits: r.data.queryable }); });
+        api.tenants({ page: 1 }).then(r => { if (r.success && r.data) set({ tenants: r.data.queryable }); });
+        api.units({ page: 1 }).then(r => { if (r.success && r.data) set({ allUnits: r.data.queryable }); });
     }, []);
 
     const columns: ProColumns<LeaseContract>[] = [

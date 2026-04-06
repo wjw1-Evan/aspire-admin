@@ -65,7 +65,7 @@ const VisitKnowledgeBase: React.FC = () => {
         ]},
     ];
 
-    const loadAllQuestions = async () => { const res = await api.questions({ page: 1, pageSize: 1000 }); if (res.success && res.data) set({ allQuestions: res.data.queryable }); };
+    const loadAllQuestions = async () => { const res = await api.questions({ page: 1 }); if (res.success && res.data) set({ allQuestions: res.data.queryable }); };
     const handleDeleteQuestion = (id: string) => { modal.confirm({ title: '确定要删除这个走访问题吗？', icon: <QuestionCircleOutlined />, content: '删除后将无法在问卷组题中使用', okText: '确定', okType: 'danger', cancelText: '取消', onOk: async () => { const res = await api.deleteQuestion(id); if (res.success) { message.success('删除成功'); actionRef.current?.reload(); loadStatistics(); } } }); };
     const handleDeleteQuestionnaire = (id: string) => { modal.confirm({ title: '确定要删除这个问卷模板吗？', icon: <QuestionCircleOutlined />, content: '删除后将无法使用该模版创建走访任务', okText: '确定', okType: 'danger', cancelText: '取消', onOk: async () => { const res = await api.deleteQuestionnaire(id); if (res.success) { message.success('删除成功'); actionRef.current?.reload(); loadStatistics(); } } }); };
     const handleMoveQuestion = (index: number, direction: 'up' | 'down') => { const newTargetKeys = [...state.targetKeys]; const swapIndex = direction === 'up' ? index - 1 : index + 1; if (swapIndex >= 0 && swapIndex < newTargetKeys.length) { [newTargetKeys[index], newTargetKeys[swapIndex]] = [newTargetKeys[swapIndex], newTargetKeys[index]]; set({ targetKeys: newTargetKeys as string[] }); } };

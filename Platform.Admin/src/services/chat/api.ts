@@ -131,7 +131,7 @@ export async function getSessions(
 export async function getOrCreateAssistantSession(): Promise<ChatSession | null> {
   try {
     // 先尝试查找包含小科的会话
-    const sessionsPaged = await getSessions({ page: 1, pageSize: 100 });
+    const sessionsPaged = await getSessions({});
     
     const assistantSession = sessionsPaged.queryable.find(
       (session: ChatSession) =>

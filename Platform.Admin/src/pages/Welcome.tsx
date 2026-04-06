@@ -182,7 +182,7 @@ const Welcome: React.FC = () => {
       try {
         const [docStatsRes, pendingDocsRes] = await Promise.all([
           getDocumentStatistics(),
-          getPendingDocuments({ page: 1, pageSize: 5 })
+          getPendingDocuments({ page: 1 })
         ]);
 
         if (docStatsRes?.success && docStatsRes.data) setDocStatistics(docStatsRes.data);

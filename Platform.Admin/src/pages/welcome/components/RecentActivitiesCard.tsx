@@ -45,7 +45,6 @@ const RecentActivitiesCard: React.FC<RecentActivitiesCardProps> = ({ currentUser
             const nextPage = d ? (Math.floor((d.list?.length || 0) / 10) + 1) : 1;
             const res = await getCurrentUserActivityLogs({
                 page: nextPage,
-                pageSize: 10,
             });
 
             return {

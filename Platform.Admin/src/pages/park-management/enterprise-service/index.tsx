@@ -56,7 +56,7 @@ const EnterpriseService: React.FC = () => {
 
     const loadData = useCallback(async () => { api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }, []);
     const loadCategories = useCallback(async () => { api.categories().then(r => { if (r.success && r.data?.categories) set({ categories: r.data.categories }); }); }, []);
-    const loadTenants = useCallback(async () => { api.tenants({ page: 1, pageSize: 500 }).then(r => { if (r.success && r.data) set({ tenants: r.data.queryable }); }); }, []);
+    const loadTenants = useCallback(async () => { api.tenants({ page: 1 }).then(r => { if (r.success && r.data) set({ tenants: r.data.queryable }); }); }, []);
 
     useEffect(() => { loadCategories(); loadTenants(); loadData(); }, [loadCategories, loadTenants, loadData]);
     useEffect(() => { if (state.activeTab === 'requests') actionRef.current?.reload(); }, [state.activeTab]);

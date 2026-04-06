@@ -60,7 +60,7 @@ const TenantManagement: React.FC = () => {
     const handleViewTenant = async (tenant: ParkTenant) => {
         set({ viewingTenant: tenant, detailVisible: true }); setDetail({ loading: true, contracts: [], serviceRequests: [], payments: [] });
         try {
-            const [serviceRes, contractRes] = await Promise.all([api.getServiceRequests({ page: 1, pageSize: 100, tenantId: tenant.id }), api.getContracts({ page: 1, pageSize: 100, tenantId: tenant.id })]);
+            const [serviceRes, contractRes] = await Promise.all([api.getServiceRequests({ page: 1, tenantId: tenant.id }), api.getContracts({ page: 1, tenantId: tenant.id })]);
             if (serviceRes.success && serviceRes.data) setDetail({ serviceRequests: serviceRes.data.queryable });
             if (contractRes.success && contractRes.data) {
                 setDetail({ contracts: contractRes.data.queryable });

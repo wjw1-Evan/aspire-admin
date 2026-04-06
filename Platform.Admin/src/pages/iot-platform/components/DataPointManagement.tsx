@@ -47,7 +47,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
 
   const fetchOverviewStats = useCallback(async () => {
     try {
-      const response = await iotService.getDataPoints({ page: 1, pageSize: 1 });
+      const response = await iotService.getDataPoints({});
       if (response.success && response.data) {
         setOverviewStats(prev => ({ ...prev, total: response.data?.rowCount || 0 }));
       }
@@ -56,7 +56,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
 
   const loadDevices = useCallback(async () => {
     try {
-      const response = await iotService.getDevices({ page: 1, pageSize: 1000 });
+      const response = await iotService.getDevices({});
       setDevices(response.success && response.data ? response.data.queryable || [] : []);
     } catch { setDevices([]); }
   }, []);

@@ -48,7 +48,7 @@ const UserManagement: React.FC = () => {
   const { message, modal } = App.useApp();
   const actionRef = useRef<ActionType>(null);
   const joinActionRef = useRef<ActionType>(null);
-  const joinRef = useRef<PageParams>({ page: 1, pageSize: 10, search: '' });
+  const joinRef = useRef<PageParams>({});
   const [activeTab, setActiveTab] = useState('members');
   const [state, setState] = useState({
     selectedRows: [] as AppUser[], editingUser: null as AppUser | null, formVisible: false,

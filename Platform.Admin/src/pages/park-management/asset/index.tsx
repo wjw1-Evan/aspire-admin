@@ -48,7 +48,7 @@ const api = {
     deleteBuilding: (id: string) =>
         request<ApiResponse<boolean>>(`/api/park/buildings/${id}`, { method: 'DELETE' }),
     allBuildings: () =>
-        request<ApiResponse<PagedResult<Building>>>('/api/park/buildings/list', { method: 'POST', data: { page: 1, pageSize: 100 } }),
+        request<ApiResponse<PagedResult<Building>>>('/api/park/buildings/list', { method: 'POST', data: { page: 1 } }),
     units: (params: PageParams & { buildingId?: string }) =>
         request<ApiResponse<PagedResult<PropertyUnit>>>('/api/park/properties/list', { method: 'POST', data: params }),
     unit: (id: string) =>

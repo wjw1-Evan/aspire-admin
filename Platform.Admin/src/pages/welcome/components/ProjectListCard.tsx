@@ -27,8 +27,6 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
         try {
             setLoading(true);
             const res = await getProjectList({
-                page: 1,
-                pageSize: 5,
                 sortBy: 'createdAt',
                 sortOrder: 'desc'
             });

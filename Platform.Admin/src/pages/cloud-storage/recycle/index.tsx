@@ -56,7 +56,7 @@ const CloudStorageRecyclePage: React.FC = () => {
     });
 
     const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
-    const searchParamsRef = useRef<PageParams>({ search: '' });
+    const searchParamsRef = useRef<PageParams>({});
     const [restoreForm] = Form.useForm();
 
     const fetchData = useCallback(async () => {

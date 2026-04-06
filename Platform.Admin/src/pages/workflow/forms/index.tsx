@@ -378,9 +378,7 @@ const FormsPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
 
-    const searchParamsRef = useRef<PageParams>({
-        search: '',
-    });
+    const searchParamsRef = useRef<PageParams>({});
 
     const fetchData = useCallback(async () => {
         const currentParams = searchParamsRef.current;
@@ -389,7 +387,6 @@ const FormsPage: React.FC = () => {
         try {
             const response = await getFormList({
                 page: currentParams.page,
-                pageSize: currentParams.pageSize,
                 search: currentParams.search,
             });
             if (response.success && response.data) {

@@ -29,7 +29,7 @@ const WorkflowMonitor: React.FC = () => {
   const [data, setData] = useState<WorkflowInstance[]>([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
-  const searchParamsRef = useRef<PageParams>({ search: '' });
+  const searchParamsRef = useRef<PageParams>({});
 
   const fetchData = useCallback(async () => {
     const currentParams = searchParamsRef.current;
@@ -37,7 +37,6 @@ const WorkflowMonitor: React.FC = () => {
     try {
       const response = await getWorkflowInstances({ 
         page: currentParams.page, 
-        pageSize: currentParams.pageSize, 
         search: currentParams.search 
       });
       if (response.success && response.data) {

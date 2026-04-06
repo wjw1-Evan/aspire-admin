@@ -50,7 +50,7 @@ const CloudStorageQuotaPage: React.FC = () => {
 
     const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
 
-    const searchParamsRef = useRef<PageParams>({ page: 1, pageSize: 10, search: '' });
+    const searchParamsRef = useRef<PageParams>({});
     const [editQuotaForm] = Form.useForm();
     const [addQuotaForm] = Form.useForm();
 
@@ -111,7 +111,7 @@ const CloudStorageQuotaPage: React.FC = () => {
 
     const loadUserOptions = useCallback(async (keyword?: string) => {
         set({ userLoading: true });
-        try { const res = await getUserList({ page: 1, pageSize: 50, search: keyword }); if (res.success && res.data) set({ userOptions: res.data.queryable || [] }); }
+        try { const res = await getUserList({ page: 1, search: keyword }); if (res.success && res.data) set({ userOptions: res.data.queryable || [] }); }
         catch (err) { console.error('Failed to load users:', err); }
         finally { set({ userLoading: false }); }
     }, []);

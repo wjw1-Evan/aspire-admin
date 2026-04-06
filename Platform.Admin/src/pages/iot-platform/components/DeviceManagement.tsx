@@ -62,7 +62,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
 
   const loadGateways = useCallback(async () => {
     try {
-      const response = await iotService.getGateways({ page: 1, pageSize: 1000 });
+      const response = await iotService.getGateways({});
       setGateways(response.success && response.data ? response.data.queryable || [] : []);
     } catch { setGateways([]); }
   }, []);

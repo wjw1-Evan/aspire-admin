@@ -23,7 +23,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId: initialProjectId }) 
 
   const loadProjects = async () => {
     try {
-      const response = await getProjectList({ page: 1, pageSize: 100 });
+      const response = await getProjectList({});
       if (response.success && response.data) setProjects(response.data.queryable);
     } catch (error) { console.error('加载项目列表失败:', error); }
   };

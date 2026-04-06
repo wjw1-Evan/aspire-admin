@@ -159,7 +159,7 @@ const TaskManagement: React.FC = () => {
 
   useEffect(() => {
     refreshStats();
-    api.list({ page: 1, pageSize: 1000 }).then(r => { if (r.success && r.data) setProjects(r.data.queryable?.map(t => ({ id: t.id!, name: t.taskName || '' })) || []); });
+    api.list({}).then(r => { if (r.success && r.data) setProjects(r.data.queryable?.map(t => ({ id: t.id!, name: t.taskName || '' })) || []); });
   }, []);
 
   const columns: ProColumns<TaskDto>[] = useMemo(() => [

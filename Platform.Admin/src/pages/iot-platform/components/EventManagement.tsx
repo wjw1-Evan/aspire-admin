@@ -37,7 +37,7 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
 
   const loadDevices = useCallback(async () => {
     try {
-      const response = await iotService.getDevices({ page: 1, pageSize: 1000 });
+      const response = await iotService.getDevices({});
       setDevices(response.success && response.data ? response.data.queryable || [] : []);
     } catch { setDevices([]); }
   }, []);

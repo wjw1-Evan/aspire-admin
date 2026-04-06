@@ -49,7 +49,7 @@ const EnterpriseService: React.FC = () => {
         activeTab: 'requests', statistics: null as ServiceStatistics | null, categories: [] as ServiceCategory[],
         tenants: [] as ParkTenant[], sorter: undefined as { sortBy: string; sortOrder: string } | undefined, searchText: '',
     });
-    const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
+    const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
     const [modalState, setModalState] = useState({ categoryVisible: false, requestVisible: false, statusVisible: false, ratingVisible: false, detailVisible: false });
     const setModal = (partial: Partial<typeof modalState>) => setModalState(prev => ({ ...prev, ...partial }));
     const [editingState, setEditingState] = useState({ currentCategory: null as ServiceCategory | null, currentRequest: null as ServiceRequest | null });

@@ -24,7 +24,7 @@ const VisitAssessmentList: React.FC = () => {
     const actionRef = useRef<ActionType | undefined>(undefined);
     const [form] = Form.useForm();
     const [state, setState] = useState({ detailVisible: false, assessmentVisible: false, selectedAssessment: null as VisitAssessment | null, selectedTask: null as VisitTask | null, searchText: '' });
-    const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
+    const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
     const columns: ProColumns<VisitTask>[] = [
         { title: intl.formatMessage({ id: 'pages.park.visit.visitDate', defaultMessage: '走访时间' }), dataIndex: 'visitDate', width: 170, render: (dom: any) => dom ? dayjs(dom).format('YYYY-MM-DD HH:mm') : '-' },

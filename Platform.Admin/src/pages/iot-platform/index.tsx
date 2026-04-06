@@ -27,7 +27,7 @@ const api = {
 const IoTPlatform: React.FC = () => {
   const intl = useIntl();
   const [state, setState] = useState({ loading: false, statistics: null as PlatformStatistics | null });
-  const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
+  const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
   useEffect(() => {
     loadStatistics();

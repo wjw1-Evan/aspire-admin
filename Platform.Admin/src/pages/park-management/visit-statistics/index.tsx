@@ -34,7 +34,7 @@ const VisitStatisticsPage: React.FC = () => {
         statistics: null as VisitStatistics | null,
         aiReportVisible: false, aiReportLoading: false, aiReportContent: '',
     });
-    const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
+    const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
     const loadStatistics = useCallback(async () => {
         set({ loading: true });

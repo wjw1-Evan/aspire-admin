@@ -35,7 +35,7 @@ const DocumentManagement: React.FC = () => {
     detailVisible: false,
     viewingId: '',
   });
-  const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
+  const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
   const columns: ProColumns<Document>[] = [
     { title: '标题', dataIndex: 'title', ellipsis: true, sorter: true, render: (dom: any, r) => <a onClick={() => set({ viewingId: r.id, detailVisible: true })}><FileTextOutlined /> {dom}</a> },

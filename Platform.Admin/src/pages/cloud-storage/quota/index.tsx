@@ -45,7 +45,7 @@ const CloudStorageQuotaPage: React.FC = () => {
         currentCompanyId: undefined as string | undefined,
     });
 
-    const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
+    const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
     const [editQuotaForm] = Form.useForm();
     const [addQuotaForm] = Form.useForm();

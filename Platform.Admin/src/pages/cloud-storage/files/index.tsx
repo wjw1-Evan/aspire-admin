@@ -91,7 +91,7 @@ const CloudStorageFilesPage: React.FC = () => {
         userOptions: [] as AppUser[], userLoading: false,
     });
 
-    const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
+    const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
     useEffect(() => { api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }, []);
 

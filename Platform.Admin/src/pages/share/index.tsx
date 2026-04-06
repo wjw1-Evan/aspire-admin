@@ -57,7 +57,7 @@ const SharePage: React.FC = () => {
         password: undefined as string | undefined,
         error: null as string | null,
     });
-    const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
+    const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
     const loadShare = async (pwd?: string) => {
         if (!token) return;

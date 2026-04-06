@@ -30,7 +30,7 @@ const EventManagement = (props: any, ref: React.Ref<EventManagementRef>) => {
     sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
     searchText: '',
   });
-  const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
+  const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
   const fetchStatistics = useCallback(async () => {
     try {

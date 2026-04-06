@@ -1,12 +1,11 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import type { ProColumns } from '@ant-design/pro-table';
-import { PageContainer } from '@ant-design/pro-components';
-import { StatCard } from '@/components';
+import { PageContainer, ProCard } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import { request } from '@umijs/max';
-import { Button, Tag, Space, Card, Row, Col, Grid, App, Modal, Progress, Drawer, Descriptions, Spin, Timeline, Empty, Avatar } from 'antd';
+import { Button, Tag, Space, Grid, App, Modal, Drawer, Descriptions, Spin, Timeline, Empty, Avatar } from 'antd';
 import { ProTable, ActionType } from '@ant-design/pro-table';
-import { PlusOutlined, EditOutlined, DeleteOutlined, CheckCircleOutlined, ReloadOutlined, PlayCircleOutlined, StopOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CheckCircleOutlined, ReloadOutlined, PlayCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 import { getTaskStatusColor, getTaskPriorityColor } from '@/utils/task';
@@ -155,13 +154,14 @@ const TaskManagement: React.FC = () => {
     searchText: '',
   });
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
-  const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
-  const refreshStats = useCallback(() => api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }), []);
+  const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
+
+  const loadStatistics = useCallback(() => api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }), []);
 
   useEffect(() => {
-    refreshStats();
+    loadStatistics();
     api.list({}).then(r => { if (r.success && r.data) setProjects(r.data.queryable?.map(t => ({ id: t.id!, name: t.taskName || '' })) || []); });
-  }, []);
+  }, [loadStatistics]);
 
   const columns: ProColumns<TaskDto>[] = useMemo(() => [
     { title: intl.formatMessage({ id: 'pages.taskManagement.table.name' }), dataIndex: 'taskName', key: 'taskName', width: 200, render: (_: any, r: TaskDto) => <a onClick={() => set({ viewingTask: r, detailVisible: true })}>{r.taskName}</a> },
@@ -187,55 +187,60 @@ const TaskManagement: React.FC = () => {
         <Space key="exec" size={4}>
           <Button type="link" size="small" icon={<PlayCircleOutlined />} onClick={() => set({ viewingTask: r, executionVisible: true })}>{intl.formatMessage({ id: 'pages.taskManagement.action.execute' })}</Button>
           <Button type="link" size="small" icon={<StopOutlined />} onClick={() => {
-            Modal.confirm({ title: intl.formatMessage({ id: 'pages.taskManagement.action.cancel' }), content: intl.formatMessage({ id: 'pages.taskManagement.message.confirmCancel' }), onOk: () => api.cancel(r.id || '').then(res => { if (res.success) { message.success(intl.formatMessage({ id: 'pages.taskManagement.message.cancelSuccess' })); actionRef.current?.reload(); refreshStats(); } }) });
+            Modal.confirm({ title: intl.formatMessage({ id: 'pages.taskManagement.action.cancel' }), content: intl.formatMessage({ id: 'pages.taskManagement.message.confirmCancel' }), onOk: () => api.cancel(r.id || '').then(res => { if (res.success) { message.success(intl.formatMessage({ id: 'pages.taskManagement.message.cancelSuccess' })); actionRef.current?.reload(); loadStatistics(); } }) });
           }}>{intl.formatMessage({ id: 'pages.taskManagement.action.cancel' })}</Button>
         </Space>
       ),
       <Button key="delete" type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => {
-        Modal.confirm({ title: intl.formatMessage({ id: 'pages.taskManagement.action.delete' }), content: intl.formatMessage({ id: 'pages.taskManagement.message.confirmDelete' }), onOk: () => api.delete(r.id || '').then(res => { if (res.success) { message.success(intl.formatMessage({ id: 'pages.taskManagement.message.deleteSuccess' })); actionRef.current?.reload(); refreshStats(); } }) });
+        Modal.confirm({ title: intl.formatMessage({ id: 'pages.taskManagement.action.delete' }), content: intl.formatMessage({ id: 'pages.taskManagement.message.confirmDelete' }), onOk: () => api.delete(r.id || '').then(res => { if (res.success) { message.success(intl.formatMessage({ id: 'pages.taskManagement.message.deleteSuccess' })); actionRef.current?.reload(); loadStatistics(); } }) });
       }}>{intl.formatMessage({ id: 'pages.taskManagement.action.delete' })}</Button>,
     ]},
-  ], [intl, message, refreshStats]);
+  ], [intl, message, loadStatistics]);
 
-  const statsConfig = [
-    { title: intl.formatMessage({ id: 'pages.taskManagement.statistics.totalTasks' }), key: 'totalTasks', icon: <PlusOutlined />, color: '#1890ff' },
-    { title: intl.formatMessage({ id: 'pages.taskManagement.statistics.inProgressTasks' }), key: 'inProgressTasks', icon: <PlayCircleOutlined />, color: '#1890ff' },
-    { title: intl.formatMessage({ id: 'pages.taskManagement.statistics.completedTasks' }), key: 'completedTasks', icon: <CheckCircleOutlined />, color: '#52c41a' },
-    { title: intl.formatMessage({ id: 'pages.taskManagement.statistics.completionRate' }), key: 'completionRate', suffix: '%', icon: <ReloadOutlined />, color: '#faad14' },
+  const statItems = [
+    { value: state.statistics?.totalTasks, label: intl.formatMessage({ id: 'pages.taskManagement.statistics.totalTasks' }) },
+    { value: state.statistics?.inProgressTasks, label: intl.formatMessage({ id: 'pages.taskManagement.statistics.inProgressTasks' }) },
+    { value: state.statistics?.completedTasks, label: intl.formatMessage({ id: 'pages.taskManagement.statistics.completedTasks' }) },
+    { value: state.statistics?.completionRate ? `${state.statistics.completionRate.toFixed(1)}%` : '0%', label: intl.formatMessage({ id: 'pages.taskManagement.statistics.completionRate' }) },
   ];
 
   return (
     <PageContainer title={<Space><PlusOutlined />{intl.formatMessage({ id: 'pages.taskManagement.title' })}</Space>}
       extra={<Space wrap>
-        <Button key="refresh" icon={<ReloadOutlined />} onClick={() => { refreshStats(); actionRef.current?.reload(); }}>{intl.formatMessage({ id: 'pages.taskManagement.refresh' })}</Button>
+        <Button key="refresh" icon={<ReloadOutlined />} onClick={() => { loadStatistics(); actionRef.current?.reload(); }}>{intl.formatMessage({ id: 'pages.taskManagement.refresh' })}</Button>
         <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingTask: null, formVisible: true })}>{intl.formatMessage({ id: 'pages.taskManagement.createTask' })}</Button>
       </Space>}
     >
-      {state.statistics && <Card style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>
-        {statsConfig.map(i => <Col xs={24} sm={12} md={6} key={i.key}><StatCard title={i.title} value={i.key === 'completionRate' ? state.statistics![i.key as keyof TaskStatistics]?.toFixed(1) : state.statistics![i.key as keyof TaskStatistics] as number} suffix={i.suffix} icon={i.icon} color={i.color} /></Col>)}
-      </Row></Card>}
+      <ProCard gutter={16} style={{ marginBottom: 16 }}>
+        {statItems.map(item => (
+          <ProCard key={item.label} colSpan={{ xs: 24, sm: 12, md: 6 }}>
+            <div style={{ fontSize: 24, fontWeight: 'bold' }}>{item.value || 0}</div>
+            <div style={{ color: '#8c8c8c', fontSize: 12 }}>{item.label}</div>
+          </ProCard>
+        ))}
+      </ProCard>
 
       <ProTable actionRef={actionRef} request={async (params: any) => {
         const { current, pageSize } = params;
         const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
         const res = await api.list({ page: current, pageSize, search: state.searchText, ...sortParams });
-        refreshStats();
+        loadStatistics();
         return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
       }} columns={columns} rowKey="id" search={false}
         onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
-        toolBarRender={() => [<Button key="refresh" icon={<ReloadOutlined />} onClick={() => { refreshStats(); actionRef.current?.reload(); }}>{intl.formatMessage({ id: 'pages.taskManagement.refresh' })}</Button>]}
+        toolBarRender={() => [<Button key="refresh" icon={<ReloadOutlined />} onClick={() => { loadStatistics(); actionRef.current?.reload(); }}>{intl.formatMessage({ id: 'pages.taskManagement.refresh' })}</Button>]}
       />
 
       <TaskForm open={state.formVisible} task={state.editingTask} projects={projects}
         onClose={() => set({ formVisible: false, editingTask: null })}
-        onSuccess={() => { set({ formVisible: false, editingTask: null }); actionRef.current?.reload(); refreshStats(); }}
+        onSuccess={() => { set({ formVisible: false, editingTask: null }); actionRef.current?.reload(); loadStatistics(); }}
       />
 
       <TaskDetail id={state.viewingTask?.id || ''} open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingTask: null })} isMobile={isMobile} />
 
       <TaskExecutionPanel open={state.executionVisible} task={state.viewingTask}
         onClose={() => set({ executionVisible: false, viewingTask: null })}
-        onSuccess={() => { set({ executionVisible: false, viewingTask: null }); actionRef.current?.reload(); refreshStats(); }}
+        onSuccess={() => { set({ executionVisible: false, viewingTask: null }); actionRef.current?.reload(); loadStatistics(); }}
       />
     </PageContainer>
   );

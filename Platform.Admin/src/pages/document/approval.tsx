@@ -45,7 +45,7 @@ const ApprovalPage: React.FC = () => {
     detailVisible: false,
     viewingId: '',
   });
-  const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
+  const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
   useEffect(() => {
     api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });

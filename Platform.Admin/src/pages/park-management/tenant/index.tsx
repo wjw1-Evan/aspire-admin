@@ -36,7 +36,7 @@ const TenantManagement: React.FC = () => {
     const actionRef = useRef<any>(null);
     const [state, setState] = useState({ statistics: null as TenantStatistics | null, formVisible: false, editingTenant: null as ParkTenant | null, detailVisible: false, viewingTenant: null as ParkTenant | null, sorter: undefined as { sortBy: string; sortOrder: string } | undefined, searchText: '' });
     const [detailData, setDetailData] = useState({ contracts: [] as LeaseContract[], serviceRequests: [] as ServiceRequest[], payments: [] as (LeasePaymentRecord & { contractNumber?: string })[], loading: false });
-    const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
+    const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
     const setDetail = (partial: Partial<typeof detailData>) => setDetailData(prev => ({ ...prev, ...partial }));
 
     const loadStatistics = useCallback(() => { api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }, []);

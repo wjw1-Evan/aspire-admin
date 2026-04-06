@@ -111,7 +111,7 @@ const OrganizationPage: React.FC = () => {
     formOpen: false, submitLoading: false, editingNode: null as OrgNode | null, members: [] as OrgMember[],
     assignOpen: false, createParentId: undefined as string | undefined,
   });
-  const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
+  const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
   const selectedIdRef = useRef<string | undefined>(undefined);
   const nodeMap = useMemo(() => flattenTree(state.tree), [state.tree]);

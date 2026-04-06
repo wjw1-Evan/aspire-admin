@@ -26,7 +26,7 @@ const DataCenter = (props: any, ref: React.Ref<DataCenterRef>) => {
     sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
     searchText: '',
   });
-  const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
+  const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
   const columns: ProColumns<IoTDataRecord>[] = [
     { title: '设备ID', dataIndex: 'deviceId', sorter: true, ellipsis: true, render: (dom, record) => <a onClick={() => set({ viewingRecord: record, detailVisible: true })}>{dom}</a> },

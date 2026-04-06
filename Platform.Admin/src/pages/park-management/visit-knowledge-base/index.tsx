@@ -41,7 +41,7 @@ const VisitKnowledgeBase: React.FC = () => {
         statistics: null as VisitStatistics | null, searchText: '',
         sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
     });
-    const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
+    const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
     const questionColumns: ProColumns<VisitQuestion>[] = [
         { title: '问题内容', dataIndex: 'content', key: 'content', sorter: true, ellipsis: true, render: (dom, r) => <Space><QuestionCircleOutlined style={{ color: '#1890ff' }} /><Text strong>{dom}</Text></Space> },

@@ -32,7 +32,7 @@ const StatisticsPage: React.FC = () => {
         statistics: { asset: null as AssetStatistics | null, investment: null as InvestmentStatistics | null, tenant: null as TenantStatistics | null, service: null as ServiceStatistics | null },
         aiReportVisible: false, aiReportLoading: false, aiReportContent: '',
     });
-    const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
+    const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
     const loadAllStatistics = async () => {
         set({ loading: true });

@@ -60,25 +60,11 @@ const UserManagement: React.FC = () => {
   });
   const [form, setForm] = useState({ roles: [] as Role[], searchingUsers: false, userOptions: [] as AppUser[], selectedUser: null as AppUser | null });
   const [join, setJoin] = useState({ data: [] as JoinReq[], loading: false, page: 1, total: 0, rejectModal: false, rejectId: '', rejectReason: '' });
-  const set = (p: Partial<typeof state>) => setState(prev => ({ ...prev, ...p }));
-  const setF = (p: Partial<typeof form>) => setForm(prev => ({ ...prev, ...p }));
-  const setJ = (p: Partial<typeof join>) => setJoin(prev => ({ ...prev, ...p }));
+  const set = useCallback((p: Partial<typeof state>) => setState(prev => ({ ...prev, ...p })), []);
+  const setF = useCallback((p: Partial<typeof form>) => setForm(prev => ({ ...prev, ...p })), []);
+  const setJ = useCallback((p: Partial<typeof join>) => setJoin(prev => ({ ...prev, ...p })), []);
 
-  useEffect(() => {
-    getCurrentCompany().then(r => { if (r.success && r.data) set({ currentCompany: r.data }); });
-    api.roles().then(r => {
-      if (r.success && r.data) {
-        const roles = r.data.queryable || [];
-        setF({ roles });
-        const map: Record<string, string> = {};
-        roles.forEach((role: Role) => { if (role.id) map[role.id] = role.name; });
-        set({ roleMap: map });
-      }
-    });
-    api.stats().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
-  }, []);
-
-  const fetchStats = useCallback(async () => {
+  const loadStatistics = useCallback(async () => {
     const res = await api.stats();
     if (res.success && res.data) set({ statistics: res.data });
   }, []);
@@ -92,9 +78,9 @@ const UserManagement: React.FC = () => {
     const res = user.isActive ? await api.deactivate(user.id) : await api.activate(user.id);
     if (res.success) {
       message.success(user.isActive ? intl.formatMessage({ id: 'pages.userManagement.userDeactivated' }) : intl.formatMessage({ id: 'pages.userManagement.userActivated' }));
-      fetchStats(); actionRef.current?.reload();
+      loadStatistics(); actionRef.current?.reload();
     }
-  }, [intl, message, fetchStats]);
+  }, [intl, message]);
 
   const promptDelete = useCallback((userId: string, isBulk = false, count = 1) => {
     let reason = '';
@@ -104,17 +90,17 @@ const UserManagement: React.FC = () => {
       okText: intl.formatMessage({ id: 'pages.modal.okDelete' }), cancelText: intl.formatMessage({ id: 'pages.modal.cancel' }), okType: 'danger',
       onOk: async () => {
         const res = isBulk ? await api.bulk([userId], 'delete', reason) : await api.del(userId, reason);
-        if (res.success) { message.success(isBulk ? '批量删除成功' : intl.formatMessage({ id: 'pages.message.deleteSuccess' })); set({ selectedRows: [] }); fetchStats(); actionRef.current?.reload(); }
+        if (res.success) { message.success(isBulk ? '批量删除成功' : intl.formatMessage({ id: 'pages.message.deleteSuccess' })); set({ selectedRows: [] }); loadStatistics(); actionRef.current?.reload(); }
       },
     });
-  }, [intl, modal, message, fetchStats]);
+  }, [intl, modal, message, loadStatistics]);
 
   const handleBulk = useCallback(async (action: string) => {
     if (!state.selectedRows.length) { message.warning(intl.formatMessage({ id: 'pages.message.pleaseSelect' })); return; }
     if (action === 'delete') { promptDelete(state.selectedRows.map(u => u.id).join(','), true, state.selectedRows.length); return; }
     const res = await api.bulk(state.selectedRows.map(u => u.id), action);
-    if (res.success) { message.success(intl.formatMessage({ id: 'pages.message.success' })); set({ selectedRows: [] }); fetchStats(); actionRef.current?.reload(); }
-  }, [state.selectedRows, intl, message, fetchStats, promptDelete]);
+    if (res.success) { message.success(intl.formatMessage({ id: 'pages.message.success' })); set({ selectedRows: [] }); loadStatistics(); actionRef.current?.reload(); }
+  }, [state.selectedRows, intl, message, loadStatistics, promptDelete]);
 
   const roleOptions = useMemo(() => form.roles.filter((r): r is Role & { id: string } => Boolean(r.id)).map(r => ({ label: r.name, value: r.id })), [form.roles]);
 
@@ -186,7 +172,7 @@ const UserManagement: React.FC = () => {
       title={<Space><UserOutlined />{intl.formatMessage({ id: 'pages.userManagement.title' })}</Space>}
       tabList={[{ tab: intl.formatMessage({ id: 'pages.userManagement.members.title' }), key: 'members' }, { tab: intl.formatMessage({ id: 'pages.joinRequests.pending.title' }), key: 'requests' }]}
       tabActiveKey={activeTab} onTabChange={(key: string) => { setActiveTab(key); if (key === 'members') actionRef.current?.reload(); }}
-      extra={<Space wrap><Button icon={<ReloadOutlined />} onClick={() => { fetchStats(); actionRef.current?.reload(); }}>{intl.formatMessage({ id: 'pages.userManagement.refresh' })}</Button><Button type="primary" icon={<PlusOutlined />} onClick={() => set({ editingUser: null, formVisible: true })}>{intl.formatMessage({ id: 'pages.userManagement.addUser' })}</Button></Space>}
+      extra={<Space wrap><Button icon={<ReloadOutlined />} onClick={() => { loadStatistics(); actionRef.current?.reload(); }}>{intl.formatMessage({ id: 'pages.userManagement.refresh' })}</Button><Button type="primary" icon={<PlusOutlined />} onClick={() => set({ editingUser: null, formVisible: true })}>{intl.formatMessage({ id: 'pages.userManagement.addUser' })}</Button></Space>}
     >
       {activeTab === 'members' && <>
         {state.statistics && <Card style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>{stats.map((s, i) => <Col xs={24} sm={12} md={6} key={i}><StatCard title={s.title} value={s.value} icon={s.icon} color={s.color} /></Col>)}</Row></Card>}
@@ -208,11 +194,11 @@ const UserManagement: React.FC = () => {
             if (!state.editingUser && !form.selectedUser) { message.error('请选择用户'); return false; }
             if (state.editingUser) {
               const res = await api.update(state.editingUser.id, { username: values.username, email: values.email, phoneNumber: values.phoneNumber, roleIds: values.roleIds || [], isActive: values.isActive, remark: values.remark });
-              if (res.success) { message.success(intl.formatMessage({ id: 'pages.message.updateSuccess' })); set({ formVisible: false, editingUser: null }); fetchStats(); actionRef.current?.reload(); }
+              if (res.success) { message.success(intl.formatMessage({ id: 'pages.message.updateSuccess' })); set({ formVisible: false, editingUser: null }); loadStatistics(); actionRef.current?.reload(); }
               return res.success;
             }
             const res = await api.create({ username: form.selectedUser?.username, email: form.selectedUser?.email, phoneNumber: form.selectedUser?.phoneNumber, password: values.password, roleIds: values.roleIds || [], isActive: values.isActive, remark: values.remark });
-            if (res.success) { message.success(intl.formatMessage({ id: 'pages.message.createSuccess' })); set({ formVisible: false, editingUser: null }); fetchStats(); actionRef.current?.reload(); }
+            if (res.success) { message.success(intl.formatMessage({ id: 'pages.message.createSuccess' })); set({ formVisible: false, editingUser: null }); loadStatistics(); actionRef.current?.reload(); }
             return res.success;
           }} autoFocusFirstInput width={600}
         >

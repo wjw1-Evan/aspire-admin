@@ -40,7 +40,7 @@ const VisitTaskPage: React.FC = () => {
         detailVisible: false, selectedTask: null as VisitTask | null, tenants: [] as ParkTenant[],
         sorter: undefined as { sortBy: string; sortOrder: string } | undefined, searchText: '',
     });
-    const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
+    const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
     useEffect(() => { api.tenants({}).then(r => { if (r.success && r.data) set({ tenants: r.data.queryable }); }); }, []);
 

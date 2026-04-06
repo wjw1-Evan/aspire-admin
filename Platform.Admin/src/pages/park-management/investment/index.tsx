@@ -43,7 +43,7 @@ const InvestmentManagement: React.FC = () => {
         leadDetailVisible: false, projectDetailVisible: false, currentLead: null as InvestmentLead | null,
         currentProject: null as InvestmentProject | null, editingLead: null as InvestmentLead | null, editingProject: null as InvestmentProject | null,
     });
-    const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
+    const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
     useEffect(() => { api.getStatistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }, []);
     useEffect(() => { if (state.activeTab === 'leads') leadsActionRef.current?.reload(); else projectsActionRef.current?.reload(); }, [state.activeTab]);

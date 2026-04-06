@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { PageContainer, StatCard } from '@/components';
+import { PageContainer } from '@ant-design/pro-components';
+import { StatCard } from '@/components';
 import { Space, Tag, Button, Card, Row, Col, Drawer, message } from 'antd';
 import { FileTextOutlined, PlusOutlined, EyeOutlined, EditOutlined, SendOutlined, DeleteOutlined, ReloadOutlined, FileProtectOutlined, ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';

@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { PageContainer, StatCard } from '@/components';
+import { PageContainer } from '@ant-design/pro-components';
+import { StatCard } from '@/components';
 import { useIntl, request } from '@umijs/max';
 import { Tag, Space, Row, Col, Button, Input, Popconfirm, Drawer, Descriptions, Typography, Upload, DatePicker } from 'antd';
 import type { UploadFile } from 'antd';

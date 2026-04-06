@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { PageContainer } from '@/components';
+import { PageContainer } from '@ant-design/pro-components';
 import { Card, Spin, Row, Col, Tag, Descriptions, Space } from 'antd';
 import {
   UserOutlined,

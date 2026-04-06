@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { PageContainer } from '@/components';
+import { PageContainer } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import { request } from '@umijs/max';
 import { Card, Row, Col, Button, Space, Spin } from 'antd';

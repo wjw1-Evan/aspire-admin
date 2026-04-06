@@ -1,5 +1,6 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { PageContainer, StatCard } from '@/components';
+import { PageContainer } from '@ant-design/pro-components';
+import { StatCard } from '@/components';
 import { useIntl } from '@umijs/max';
 import { type ProColumns, ActionType, ProTable } from '@ant-design/pro-table';
 import { ModalForm, ProFormTextArea } from '@ant-design/pro-form';

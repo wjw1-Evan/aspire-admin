@@ -15,7 +15,7 @@ import {
     RobotOutlined,
     ReloadOutlined
 } from '@ant-design/icons';
-import PageContainer from '@/components/PageContainer';
+import { PageContainer } from '@ant-design/pro-components';
 import StatisticsPeriodSelector from '@/components/StatisticsPeriodSelector';
 import * as projectStatisticsService from '@/services/project/statistics';
 import { ProjectStatisticsPeriod, ProjectDashboardStatistics } from '@/services/project/statistics';

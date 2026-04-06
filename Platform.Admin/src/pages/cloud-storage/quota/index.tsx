@@ -1,5 +1,6 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { PageContainer, StatCard } from '@/components';
+import { PageContainer } from '@ant-design/pro-components';
+import { StatCard } from '@/components';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import { useIntl } from '@umijs/max';
 import { PieChartOutlined, EditOutlined, ReloadOutlined, UserOutlined, CloudOutlined, WarningOutlined, CheckCircleOutlined, BarChartOutlined, TableOutlined, DatabaseOutlined, CloudServerOutlined, LineChartOutlined, PlusOutlined, DeleteOutlined, FileOutlined, CalendarOutlined } from '@ant-design/icons';

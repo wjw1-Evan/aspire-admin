@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button, Space, Modal, Form, Input, InputNumber, App, Card, Breadcrumb } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ArrowLeftOutlined, FileTextOutlined } from '@ant-design/icons';
 import { useIntl, useParams, history } from '@umijs/max';
-import PageContainer from '@/components/PageContainer';
+import { PageContainer } from '@ant-design/pro-components';
 import { ProTable, ProColumns } from '@ant-design/pro-table';
 import * as kbService from '@/services/workflow/knowledge-base';
 import type { KnowledgeDocument } from '@/services/workflow/knowledge-base';

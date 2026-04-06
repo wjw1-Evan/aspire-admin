@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button, Modal, Form, Input, Switch, Space, Select, Card } from 'antd';
 import { PartitionOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useMessage } from '@/hooks/useMessage';
-import { PageContainer } from '@/components';
+import { PageContainer } from '@ant-design/pro-components';
 import { ProTable, ProColumns } from '@ant-design/pro-table';
 import type { PageParams } from '@/types';
 import {

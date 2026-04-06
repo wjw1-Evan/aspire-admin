@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PageContainer } from '@/components';
+import { PageContainer } from '@ant-design/pro-components';
 import { Card, Tag, Space, Button, Modal, Form } from 'antd';
 import { EyeOutlined, MonitorOutlined, ReloadOutlined, HistoryOutlined, FormOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns } from '@ant-design/pro-table';

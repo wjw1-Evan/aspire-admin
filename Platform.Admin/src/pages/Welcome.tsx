@@ -1,4 +1,4 @@
-import { PageContainer } from '@/components';
+import { PageContainer } from '@ant-design/pro-components';
 import { useModel, useAccess } from '@umijs/max';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { theme, Row, Col, message as antMessage } from 'antd';

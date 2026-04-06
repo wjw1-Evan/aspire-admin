@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { PageContainer } from '@/components';
+import { PageContainer } from '@ant-design/pro-components';
 import { Card, Form, Input, Button, Select, DatePicker, InputNumber, Radio, Checkbox, Switch, Upload, Space } from 'antd';
 import { useMessage } from '@/hooks/useMessage';
 import { PlayCircleOutlined, UploadOutlined } from '@ant-design/icons';

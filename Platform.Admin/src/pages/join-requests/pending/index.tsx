@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { PageContainer } from '@/components';
+import { PageContainer } from '@ant-design/pro-components';
 import { useIntl, useModel } from '@umijs/max';
 import { request } from '@umijs/max';
 import { Button, Space, App, Modal, Input } from 'antd';

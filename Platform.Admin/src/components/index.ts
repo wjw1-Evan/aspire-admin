@@ -14,7 +14,6 @@ import { CompanySwitcher } from './CompanySwitcher';
 import { JoinCompanyModal } from './JoinCompanyModal';
 import AiAssistant from './AiAssistant';
 import StatCard from './StatCard';
-import PageContainer from './PageContainer';
 import { ThemeSettings } from './ThemeSettings';
 
 
@@ -29,7 +28,5 @@ export {
   CompanySwitcher, // v3.1: 企业切换器
   AiAssistant, // AI 助手组件
   StatCard, // 统一统计卡片组件
-  PageContainer, // 页面容器组件（替代 @ant-design/pro-components 的 PageContainer）
   ThemeSettings, // 主题设置组件（替代已移除的 SettingDrawer）
-
 };

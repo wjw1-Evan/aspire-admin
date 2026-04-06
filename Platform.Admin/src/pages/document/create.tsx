@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PageContainer } from '@/components';
+import { PageContainer } from '@ant-design/pro-components';
 import { Card, Form, Input, Button, Upload, Select } from 'antd';
 import { useMessage } from '@/hooks/useMessage';
 import { SaveOutlined, UploadOutlined } from '@ant-design/icons';

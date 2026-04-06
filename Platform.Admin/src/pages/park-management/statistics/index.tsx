@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import { marked } from 'marked';
 import { BankOutlined, TeamOutlined, FileTextOutlined, CustomerServiceOutlined, ArrowUpOutlined, ArrowDownOutlined, ReloadOutlined, FundProjectionScreenOutlined, UserSwitchOutlined, StarOutlined, CheckCircleOutlined, ClockCircleOutlined, SyncOutlined, WarningOutlined, RobotOutlined } from '@ant-design/icons';
-import PageContainer from '@/components/PageContainer';
+import { PageContainer } from '@ant-design/pro-components';
 import StatisticsPeriodSelector from '@/components/StatisticsPeriodSelector';
 import { ApiResponse } from '@/types';
 

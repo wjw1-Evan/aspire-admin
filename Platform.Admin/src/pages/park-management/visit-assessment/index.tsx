@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { PageContainer } from '@/components';
+import { PageContainer } from '@ant-design/pro-components';
 import { useIntl, request } from '@umijs/max';
 import { Card, Space, Button, Tag, Rate, App, Drawer, Descriptions, Divider, Form, Modal, Input, Typography } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';

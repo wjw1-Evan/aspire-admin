@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { PageContainer } from '@/components';
+import { PageContainer } from '@ant-design/pro-components';
 import { Button, Space } from 'antd';
 import { PlusOutlined, ReloadOutlined, ApiOutlined } from '@ant-design/icons';
 import GatewayManagement, { GatewayManagementRef } from './components/GatewayManagement';

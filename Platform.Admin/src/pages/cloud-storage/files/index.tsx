@@ -3,7 +3,8 @@
  */
 
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { PageContainer, StatCard } from '@/components';
+import { PageContainer } from '@ant-design/pro-components';
+import { StatCard } from '@/components';
 import { useIntl } from '@umijs/max';
 import { request } from '@umijs/max';
 import { Grid, App, Drawer, Descriptions, Button, Tag, Space, Row, Col, Card, Breadcrumb, Dropdown, Image, Select, Input, Modal, Popconfirm, Progress } from 'antd';

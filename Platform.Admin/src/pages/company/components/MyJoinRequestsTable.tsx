@@ -22,7 +22,7 @@ const MyJoinRequestsTable: React.FC = () => {
     const { token } = theme.useToken();
     const [data, setData] = useState<JoinRequestDetail[]>([]);
     const [loading, setLoading] = useState(false);
-    const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
+    const [pagination, setPagination] = useState({ page: 1, total: 0 });
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -54,7 +54,6 @@ const MyJoinRequestsTable: React.FC = () => {
         setPagination(prev => ({
             ...prev,
             page: pag.current,
-            pageSize: pag.pageSize,
         }));
         fetchData();
     }, [fetchData]);
@@ -171,7 +170,6 @@ const MyJoinRequestsTable: React.FC = () => {
             onChange={handleTableChange}
             pagination={{
                 current: pagination.page,
-                pageSize: pagination.pageSize,
                 total: pagination.total,
             }}
         />

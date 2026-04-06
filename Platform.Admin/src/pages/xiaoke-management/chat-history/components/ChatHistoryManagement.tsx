@@ -33,7 +33,7 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
   const [searchForm] = Form.useForm();
   const [data, setData] = useState<ChatHistoryListItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
+  const [pagination, setPagination] = useState({ page: 1, total: 0 });
 
   const searchParamsRef = useRef<PageParams>({});
 
@@ -55,7 +55,6 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
         setPagination(prev => ({
           ...prev,
           page: currentParams.page ?? prev.page,
-          pageSize: currentParams.pageSize ?? prev.pageSize,
           total: resp.data!.rowCount ?? 0,
         }));
       } else {
@@ -79,7 +78,6 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
     const values = searchForm.getFieldsValue();
     const searchParamsData: any = {
       page: 1,
-      pageSize: searchParamsRef.current.pageSize,
       sessionId: values.sessionId,
       userId: values.userId,
       content: values.content,
@@ -98,12 +96,10 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
 
   const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
     const newPage = pag.current;
-    const newPageSize = pag.pageSize;
 
     searchParamsRef.current = {
       ...searchParamsRef.current,
       page: newPage,
-      pageSize: newPageSize,
     };
     fetchData();
   }, [fetchData]);
@@ -284,7 +280,6 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
         onChange={handleTableChange}
         pagination={{
           current: pagination.page,
-          pageSize: pagination.pageSize,
           total: pagination.total,
         }}
       />

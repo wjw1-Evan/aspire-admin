@@ -38,7 +38,7 @@ const CloudStorageQuotaPage: React.FC = () => {
     const [state, setState] = useState({
         activeTab: 'quota-list' as 'quota-list' | 'usage-stats' | 'warnings',
         data: [] as StorageQuota[], loading: false,
-        pagination: { page: 1, pageSize: 10, total: 0 },
+        pagination: { page: 1, total: 0 },
         usageStats: null as QuotaUsageStats | null,
         warnings: [] as QuotaWarning[],
         detailVisible: false, viewingQuota: null as StorageQuota | null,
@@ -65,11 +65,11 @@ const CloudStorageQuotaPage: React.FC = () => {
     }, [state.activeTab, state.currentCompanyId]);
 
     const fetchData = useCallback(async () => {
-        const { page = 1, pageSize = 10, search, sortBy, sortOrder } = searchParamsRef.current;
+        const { page = 1, search, sortBy, sortOrder } = searchParamsRef.current;
         set({ loading: true });
         try {
-            const res = await api.list({ page, pageSize, sortBy, sortOrder, companyId: state.currentCompanyId, search });
-            if (res.success && res.data) { set({ data: res.data.queryable || [], pagination: { ...state.pagination, page, pageSize, total: res.data.rowCount ?? 0 } }); }
+            const res = await api.list({ page, sortBy, sortOrder, companyId: state.currentCompanyId, search });
+            if (res.success && res.data) { set({ data: res.data.queryable || [], pagination: { ...state.pagination, page, total: res.data.rowCount ?? 0 } }); }
             else { set({ data: [], pagination: { ...state.pagination, total: 0 } }); }
         } finally { set({ loading: false }); }
     }, [state.currentCompanyId, state.pagination]);
@@ -77,7 +77,7 @@ const CloudStorageQuotaPage: React.FC = () => {
     useEffect(() => { refreshAll(); }, [refreshAll]);
 
     const handleSearch = useCallback((params: PageParams) => { searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 }; fetchData(); }, [fetchData]);
-    const handleTableChange = useCallback((pag: any, _f: any, s: any) => { searchParamsRef.current = { ...searchParamsRef.current, page: pag.current, pageSize: pag.pageSize, sortBy: s?.field, sortOrder: s?.order === 'ascend' ? 'asc' : s?.order === 'descend' ? 'desc' : undefined }; fetchData(); }, [fetchData]);
+    const handleTableChange = useCallback((pag: any, _f: any, s: any) => { searchParamsRef.current = { ...searchParamsRef.current, page: pag.current, sortBy: s?.field, sortOrder: s?.order === 'ascend' ? 'asc' : s?.order === 'descend' ? 'desc' : undefined }; fetchData(); }, [fetchData]);
     const handleTabChange = useCallback((key: string) => set({ activeTab: key as any }), []);
 
     const bytesToGB = (bytes?: number) => bytes === undefined || bytes === null ? 0 : Number((bytes / (1024 ** 3)).toFixed(2));
@@ -156,7 +156,7 @@ const CloudStorageQuotaPage: React.FC = () => {
             </Space>}>
             <Card className={styles.card}>
                 <Tabs activeKey={state.activeTab} onChange={handleTabChange} items={[
-                    { key: 'quota-list', label: <Space><TableOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.quota.tabs.quotaList' })}</Space>, children: (<div><SearchBar initialParams={searchParamsRef.current} onSearch={handleSearch} style={{ marginBottom: 16 }} /><Table<StorageQuota> dataSource={state.data} rowKey="userId" columns={columns} loading={state.loading} onChange={handleTableChange} pagination={{ current: state.pagination.page, pageSize: state.pagination.pageSize, total: state.pagination.total }} /></div>) },
+                    { key: 'quota-list', label: <Space><TableOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.quota.tabs.quotaList' })}</Space>, children: (<div><SearchBar initialParams={searchParamsRef.current} onSearch={handleSearch} style={{ marginBottom: 16 }} /><Table<StorageQuota> dataSource={state.data} rowKey="userId" columns={columns} loading={state.loading} onChange={handleTableChange} pagination={{ current: state.pagination.page, total: state.pagination.total }} /></div>) },
                     { key: 'usage-stats', label: <Space><PieChartOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.quota.tabs.usageStats' })}</Space>, children: state.usageStats ? (<Space direction="vertical" style={{ width: '100%' }} size="large">
                         <Row gutter={[16, 16]}>
                             <Col xs={24} sm={12} md={6}><StatCard title={intl.formatMessage({ id: 'pages.cloud-storage.quota.statistics.totalUsers' })} value={state.usageStats.totalUsers} icon={<UserOutlined />} color="#1890ff" /></Col>

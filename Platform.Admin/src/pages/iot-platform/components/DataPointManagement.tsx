@@ -160,7 +160,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
         </Row>
       </Card>
       <SearchBar initialParams={searchParamsRef.current} onSearch={handleSearch} style={{ marginBottom: 16 }} />
-      <Table<IoTDataPoint> columns={columns} dataSource={data} rowKey="id" loading={loading} scroll={{ x: 'max-content' }} onChange={handleTableChange} pagination={{ current: pagination.page, pageSize: pagination.pageSize, total: pagination.total }} />
+      <Table<IoTDataPoint> columns={columns} dataSource={data} rowKey="id" loading={loading} scroll={{ x: 'max-content' }} onChange={handleTableChange} pagination={{ current: pagination.page, total: pagination.total }} />
 
       <Modal title={selectedDataPoint ? '编辑数据点' : '新建数据点'} open={isModalVisible} onOk={() => form.submit()} onCancel={() => { setIsModalVisible(false); setSelectedDataPoint(null); form.resetFields(); }} width={isMobile ? '100%' : 700}>
         <Form form={form} layout="vertical" onFinish={handleSubmit}>

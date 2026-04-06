@@ -58,7 +58,7 @@ const UserManagement: React.FC = () => {
     searchParams: { sortBy: 'createdAt', sortOrder: 'desc' } as PageParams,
   });
   const [form, setForm] = useState({ roles: [] as Role[], searchingUsers: false, userOptions: [] as AppUser[], selectedUser: null as AppUser | null });
-  const [join, setJoin] = useState({ data: [] as JoinReq[], loading: false, page: 1, pageSize: 10, total: 0, rejectModal: false, rejectId: '', rejectReason: '' });
+  const [join, setJoin] = useState({ data: [] as JoinReq[], loading: false, page: 1, total: 0, rejectModal: false, rejectId: '', rejectReason: '' });
   const set = (p: Partial<typeof state>) => setState(prev => ({ ...prev, ...p }));
   const setF = (p: Partial<typeof form>) => setForm(prev => ({ ...prev, ...p }));
   const setJ = (p: Partial<typeof join>) => setJoin(prev => ({ ...prev, ...p }));
@@ -147,7 +147,7 @@ const UserManagement: React.FC = () => {
       let data = res.success && res.data ? res.data : [];
       const kw = p.search?.toLowerCase();
       if (kw) data = data.filter((i: JoinReq) => i.username.toLowerCase().includes(kw) || (i.userEmail && i.userEmail.toLowerCase().includes(kw)));
-      setJ({ data, page: p.page ?? 1, pageSize: p.pageSize ?? 10, total: data.length });
+      setJ({ data, page: p.page ?? 1, total: data.length });
     } finally { setJ({ loading: false }); }
   }, [state.currentCompany]);
 

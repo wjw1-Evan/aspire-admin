@@ -28,7 +28,7 @@ const WorkflowMonitor: React.FC = () => {
   const [currentFormInstanceId, setCurrentFormInstanceId] = useState<string | null>(null);
   const [data, setData] = useState<WorkflowInstance[]>([]);
   const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
+  const [pagination, setPagination] = useState({ page: 1, total: 0 });
   const searchParamsRef = useRef<PageParams>({});
 
   const fetchData = useCallback(async () => {
@@ -41,7 +41,7 @@ const WorkflowMonitor: React.FC = () => {
       });
       if (response.success && response.data) {
         setData(response.data.queryable || []);
-        setPagination(prev => ({ ...prev, page: currentParams.page ?? prev.page, pageSize: currentParams.pageSize ?? prev.pageSize, total: response.data!.rowCount ?? 0 }));
+        setPagination(prev => ({ ...prev, page: currentParams.page ?? prev.page, total: response.data!.rowCount ?? 0 }));
       } else { setData([]); setPagination(prev => ({ ...prev, total: 0 })); }
     } catch (error) { console.error('获取工作流实例列表失败:', error); setData([]); setPagination(prev => ({ ...prev, total: 0 })); }
     finally { setLoading(false); }
@@ -53,7 +53,7 @@ const WorkflowMonitor: React.FC = () => {
   }, [fetchData]);
 
   const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
-    searchParamsRef.current = { ...searchParamsRef.current, page: pag.current, pageSize: pag.pageSize, sortBy: sorter?.field, sortOrder: sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined };
+    searchParamsRef.current = { ...searchParamsRef.current, page: pag.current, sortBy: sorter?.field, sortOrder: sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined };
     fetchData();
   }, [fetchData]);
 
@@ -175,7 +175,7 @@ const WorkflowMonitor: React.FC = () => {
       <Form form={Form.useForm()[0]} layout="inline" onFinish={(values) => handleSearch(values)} style={{ marginBottom: 16 }}>
         <Form.Item name="search" label="搜索"><input placeholder="搜索实例" style={{ padding: '4px 8px', border: '1px solid #d9d9d9', borderRadius: 6 }} /></Form.Item>
       </Form>
-      <Table<WorkflowInstance> dataSource={data} columns={columns} rowKey="id" loading={loading} scroll={{ x: 'max-content' }} onChange={handleTableChange} pagination={{ current: pagination.page, pageSize: pagination.pageSize, total: pagination.total }} />
+      <Table<WorkflowInstance> dataSource={data} columns={columns} rowKey="id" loading={loading} scroll={{ x: 'max-content' }} onChange={handleTableChange} pagination={{ current: pagination.page, total: pagination.total }} />
       <Modal title={intl.formatMessage({ id: 'pages.workflow.monitor.modal.progressTitle' })} open={previewVisible} onCancel={() => { setPreviewVisible(false); setPreviewInstance(null); }} footer={null} width="90%" style={{ top: 20 }} styles={{ body: { height: 'calc(100vh - 120px)' } }}>
         {previewInstance && (
           <div>

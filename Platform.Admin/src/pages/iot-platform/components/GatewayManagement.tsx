@@ -118,7 +118,7 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
         </Row>
       </Card>
       <SearchBar initialParams={searchParamsRef.current} onSearch={handleSearch} style={{ marginBottom: 16 }} />
-      <Table<IoTGateway> columns={columns} dataSource={data} rowKey="id" loading={loading} scroll={{ x: 'max-content' }} onChange={handleTableChange} pagination={{ current: pagination.page, pageSize: pagination.pageSize, total: pagination.total }} />
+      <Table<IoTGateway> columns={columns} dataSource={data} rowKey="id" loading={loading} scroll={{ x: 'max-content' }} onChange={handleTableChange} pagination={{ current: pagination.page, total: pagination.total }} />
 
       <Modal title={selectedGateway ? '编辑网关' : '新建网关'} open={isModalVisible} onOk={() => form.submit()} onCancel={handleCloseModal} width={isMobile ? '100%' : 600}>
         <Form form={form} layout="vertical" onFinish={handleSubmit}>

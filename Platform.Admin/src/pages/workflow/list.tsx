@@ -47,7 +47,7 @@ const WorkflowManagement: React.FC = () => {
   }, [fetchData]);
 
   const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
-    searchParamsRef.current = { ...searchParamsRef.current, page: pag.current, pageSize: pag.pageSize, sortBy: sorter?.field, sortOrder: sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined };
+    searchParamsRef.current = { ...searchParamsRef.current, page: pag.current, sortBy: sorter?.field, sortOrder: sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined };
     fetchData();
   }, [fetchData]);
 
@@ -108,7 +108,7 @@ const WorkflowManagement: React.FC = () => {
       <Form form={Form.useForm()[0]} layout="inline" onFinish={(values) => handleSearch(values)} style={{ marginBottom: 16 }}>
         <Form.Item name="search" label="搜索"><input placeholder="搜索工作流" style={{ padding: '4px 8px', border: '1px solid #d9d9d9', borderRadius: 6 }} /></Form.Item>
       </Form>
-      <Table<WorkflowDefinition> dataSource={data} columns={columns} rowKey="id" loading={loading} scroll={{ x: 'max-content' }} onChange={handleTableChange} pagination={{ current: pagination.page, pageSize: pagination.pageSize, total: pagination.total }} />
+      <Table<WorkflowDefinition> dataSource={data} columns={columns} rowKey="id" loading={loading} scroll={{ x: 'max-content' }} onChange={handleTableChange} pagination={{ current: pagination.page, total: pagination.total }} />
       <Modal title={intl.formatMessage({ id: 'pages.workflow.create.title' })} open={createModalVisible} onCancel={() => setCreateModalVisible(false)} footer={null} width="95%" style={{ top: 20 }} styles={{ body: { height: 'calc(100vh - 100px)', padding: '12px 24px' } }} destroyOnHidden>
         <WorkflowCreateForm onSuccess={() => { setCreateModalVisible(false); fetchData(); }} onCancel={() => setCreateModalVisible(false)} />
       </Modal>

@@ -38,7 +38,7 @@ const KnowledgeBaseManagement: React.FC = () => {
   const [form] = Form.useForm();
   const [data, setData] = useState<KnowledgeBase[]>([]);
   const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
+  const [pagination, setPagination] = useState({ page: 1, total: 0 });
 
   const searchParamsRef = useRef<PageParams>({
     search: '',
@@ -51,7 +51,6 @@ const KnowledgeBaseManagement: React.FC = () => {
     try {
       const res = await kbService.getKnowledgeBases({
         current: currentParams.page,
-        pageSize: currentParams.pageSize,
         ...currentParams,
       });
       if (res.success && res.data) {
@@ -60,7 +59,6 @@ const KnowledgeBaseManagement: React.FC = () => {
         setPagination(prev => ({
           ...prev,
           page: currentParams.page ?? prev.page,
-          pageSize: currentParams.pageSize ?? prev.pageSize,
           total: paged.rowCount ?? 0,
         }));
       } else {
@@ -82,14 +80,12 @@ const KnowledgeBaseManagement: React.FC = () => {
 
   const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
     const newPage = pag.current;
-    const newPageSize = pag.pageSize;
     const sortBy = sorter?.field;
     const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
     
     searchParamsRef.current = {
       ...searchParamsRef.current,
       page: newPage,
-      pageSize: newPageSize,
       sortBy,
       sortOrder,
     };
@@ -260,7 +256,6 @@ const KnowledgeBaseManagement: React.FC = () => {
           onChange={handleTableChange}
           pagination={{
             current: pagination.page,
-            pageSize: pagination.pageSize,
             total: pagination.total,
           }}
         />

@@ -130,7 +130,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
         loading={loading}
         scroll={{ x: 'max-content' }}
         onChange={handleTableChange}
-        pagination={{ current: pagination.page, pageSize: pagination.pageSize, total: pagination.total }}
+        pagination={{ current: pagination.page, total: pagination.total }}
       />
       <Drawer
         title="数据记录详情"

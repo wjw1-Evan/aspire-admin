@@ -4,7 +4,7 @@ import type { PageParams } from '@/types';
 export function useIotTable<T>(fetchFn: (params: PageParams) => Promise<{ success: boolean; data?: { queryable?: T[]; rowCount?: number } }>) {
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
+  const [pagination, setPagination] = useState({ page: 1, total: 0 });
   const searchParamsRef = useRef<PageParams>({});
 
   const fetchData = useCallback(async () => {

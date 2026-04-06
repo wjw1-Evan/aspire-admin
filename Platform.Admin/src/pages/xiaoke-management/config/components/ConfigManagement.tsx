@@ -37,7 +37,7 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
   const [editingConfig, setEditingConfig] = useState<XiaokeConfig | null>(null);
   const [data, setData] = useState<XiaokeConfig[]>([]);
   const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
+  const [pagination, setPagination] = useState({ page: 1, total: 0 });
 
   const searchParamsRef = useRef<PageParams>({
     search: '',
@@ -58,7 +58,6 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
         setPagination(prev => ({
           ...prev,
           page: currentParams.page ?? prev.page,
-          pageSize: currentParams.pageSize ?? prev.pageSize,
           total: response.data!.rowCount ?? 0,
         }));
       } else {
@@ -96,12 +95,10 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
 
   const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
     const newPage = pag.current;
-    const newPageSize = pag.pageSize;
 
     searchParamsRef.current = {
       ...searchParamsRef.current,
       page: newPage,
-      pageSize: newPageSize,
     };
     fetchData();
   }, [fetchData]);
@@ -321,7 +318,6 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
         onChange={handleTableChange}
         pagination={{
           current: pagination.page,
-          pageSize: pagination.pageSize,
           total: pagination.total,
         }}
       />

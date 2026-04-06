@@ -59,12 +59,12 @@ const RoleManagement: React.FC = () => {
   useEffect(() => { loadStatistics(); }, [loadStatistics]);
 
   const columns: ProColumns<RoleWithStats>[] = [
-    { title: intl.formatMessage({ id: 'pages.table.roleName' }), dataIndex: 'name', sorter: true, render: (dom, r) => <a onClick={() => set({ viewingRole: r, detailVisible: true })}>{dom}</a> },
-    { title: intl.formatMessage({ id: 'pages.table.description' }), dataIndex: 'description', sorter: true, ellipsis: true, render: (dom) => dom || '-' },
-    { title: intl.formatMessage({ id: 'pages.table.status' }), dataIndex: 'isActive', sorter: true, render: (_, r) => <Tag color={r.isActive ? 'success' : 'default'}>{r.isActive ? intl.formatMessage({ id: 'pages.table.activated' }) : intl.formatMessage({ id: 'pages.table.deactivated' })}</Tag> },
+    { title: intl.formatMessage({ id: 'pages.table.roleName' }), dataIndex: 'name', key: 'name', sorter: true, render: (dom, r) => <a onClick={() => set({ viewingRole: r, detailVisible: true })}>{dom}</a>, search: true },
+    { title: intl.formatMessage({ id: 'pages.table.description' }), dataIndex: 'description', key: 'description', sorter: true, ellipsis: true, render: (dom) => dom || '-', search: true },
+    { title: intl.formatMessage({ id: 'pages.table.status' }), dataIndex: 'isActive', key: 'isActive', sorter: true, valueType: 'select', fieldProps: { options: [{ label: intl.formatMessage({ id: 'pages.table.activated' }), value: 'true' }, { label: intl.formatMessage({ id: 'pages.table.deactivated' }), value: 'false' }] }, render: (_, r) => <Tag color={r.isActive ? 'success' : 'default'}>{r.isActive ? intl.formatMessage({ id: 'pages.table.activated' }) : intl.formatMessage({ id: 'pages.table.deactivated' })}</Tag> },
     { title: intl.formatMessage({ id: 'pages.table.stats' }), valueType: 'option', render: (_, r) => <Space separator="|"><span>{intl.formatMessage({ id: 'pages.table.user' })}: {r.userCount || 0}</span><span>{intl.formatMessage({ id: 'pages.table.menu' })}: {r.menuCount || 0}</span></Space> },
-    { title: intl.formatMessage({ id: 'pages.table.createdAt' }), dataIndex: 'createdAt', sorter: true, render: (dom) => dom ? dayjs(dom as string).format('YYYY-MM-DD HH:mm:ss') : '-' },
-    { title: intl.formatMessage({ id: 'pages.table.actions' }), valueType: 'option', fixed: 'right', width: 150, render: (_, r) => [
+    { title: intl.formatMessage({ id: 'pages.table.createdAt' }), dataIndex: 'createdAt', key: 'createdAt', sorter: true, valueType: 'dateTime' },
+    { title: intl.formatMessage({ id: 'pages.table.actions' }), key: 'action', valueType: 'option', fixed: 'right', width: 150, render: (_, r) => [
       <Button key="edit" type="link" size="small" icon={<EditOutlined />} onClick={() => { set({ editingRole: r, formVisible: true }); setFormState(p => ({ ...p, checkedKeys: r.menuIds || [] })); }}>{intl.formatMessage({ id: 'pages.table.edit' })}</Button>,
       <Popconfirm key="delete" title={intl.formatMessage({ id: 'pages.modal.confirmDeleteRole' }, { roleName: r.name })} onConfirm={async () => { await api.delete(r.id!); actionRef.current?.reload(); loadStatistics(); }}><Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.table.delete' })}</Button></Popconfirm>,
     ]},
@@ -96,13 +96,13 @@ const RoleManagement: React.FC = () => {
       </ProCard>
 
       <ProTable actionRef={actionRef} request={async (params) => {
-        const { current, pageSize } = params;
+        const { current, pageSize, name, description, isActive } = params;
         const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-        const res = await api.list({ page: current, pageSize, search: state.searchText, ...sortParams });
+        const filterParams = { name: name || undefined, description: description || undefined, isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined };
+        const res = await api.list({ page: current, pageSize, ...filterParams, ...sortParams });
         return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
-      }} columns={columns} rowKey="id" search={false}
+      }} columns={columns} rowKey="id"
         onChange={(_, __, s: any) => set({ sorter: s?.order ? { sortBy: s.field as string, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
-        toolBarRender={() => [<Input.Search key="search" placeholder={intl.formatMessage({ id: 'pages.table.search' })} allowClear value={state.searchText} onChange={(e) => set({ searchText: e.target.value })} onSearch={(v) => { set({ searchText: v }); actionRef.current?.reload(); }} />]}
       />
 
       <ModalForm key={state.editingRole?.id || 'create'}

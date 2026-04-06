@@ -63,14 +63,14 @@ const PasswordBook: React.FC = () => {
   useEffect(() => { loadStatistics(); }, [loadStatistics]);
 
   const columns: ProColumns<Entry>[] = [
-    { title: '平台', dataIndex: 'platform', sorter: true, render: (dom, r) => <a onClick={() => set({ viewingId: r.id, detailVisible: true })}>{dom}</a> },
-    { title: '账号', dataIndex: 'account', sorter: true },
-    { title: '网址', dataIndex: 'url', sorter: true, render: (dom) => dom ? <a href={dom as string} target="_blank">{dom}</a> : '-' },
-    { title: '分类', dataIndex: 'category', sorter: true, render: (dom) => dom ? <Tag color="blue">{dom as string}</Tag> : '-' },
+    { title: '平台', dataIndex: 'platform', key: 'platform', sorter: true, search: true, render: (dom, r) => <a onClick={() => set({ viewingId: r.id, detailVisible: true })}>{dom}</a> },
+    { title: '账号', dataIndex: 'account', key: 'account', sorter: true, search: true },
+    { title: '网址', dataIndex: 'url', key: 'url', sorter: true, render: (dom) => dom ? <a href={dom as string} target="_blank">{dom}</a> : '-' },
+    { title: '分类', dataIndex: 'category', key: 'category', sorter: true, render: (dom) => dom ? <Tag color="blue">{dom as string}</Tag> : '-' },
     { title: '标签', dataIndex: 'tags', render: (dom) => dom && typeof dom === 'object' && 'length' in dom ? <Space size={[0, 4]} wrap>{(dom as string[]).map((t) => <Tag key={t}>{t}</Tag>)}</Space> : '-' },
-    { title: '最后使用', dataIndex: 'lastUsedAt', sorter: true, render: (dom) => dom ? dayjs(dom as string).format('YYYY-MM-DD HH:mm:ss') : '-' },
+    { title: '最后使用', dataIndex: 'lastUsedAt', key: 'lastUsedAt', sorter: true, valueType: 'dateTime' },
     {
-      title: '操作', valueType: 'option', fixed: 'right', width: 120, render: (_, r) => [
+      title: '操作', key: 'action', valueType: 'option', fixed: 'right', width: 120, render: (_, r) => [
         <Button key="edit" type="link" icon={<EditOutlined />} onClick={async () => {
           const res = await api.get(r.id);
           if (res.success && res.data) {
@@ -137,20 +137,18 @@ const PasswordBook: React.FC = () => {
       <ProTable
         actionRef={actionRef}
         request={async (params) => {
-          const { current, pageSize } = params;
+          const { current, pageSize, platform, account } = params;
           const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-          const res = await api.list({ page: current, pageSize, search: state.searchText, ...sortParams });
+          const res = await api.list({ page: current, pageSize, platform: platform || undefined, account: account || undefined, ...sortParams });
           return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
         }}
         columns={columns}
         rowKey="id"
-        search={false}
         onChange={(_, __, s) => {
           const sorter = Array.isArray(s) ? s[0] : s;
           set({ sorter: sorter?.order ? { sortBy: sorter.field as string, sortOrder: sorter.order === 'ascend' ? 'asc' : 'desc' } : undefined });
         }}
         toolBarRender={() => [
-          <Input.Search key="search" placeholder="搜索..." allowClear value={state.searchText} onChange={(e) => set({ searchText: e.target.value })} onSearch={(v) => { set({ searchText: v }); actionRef.current?.reload(); }} prefix={<SearchOutlined />} />,
           <Button key="export" icon={<ExportOutlined />} onClick={() => set({ exportVisible: true })}>导出</Button>,
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingEntry: null, formVisible: true })}>新建</Button>,
         ]}

@@ -5,8 +5,8 @@ import { useIntl, request } from '@umijs/max';
 import { App, Button, Tag, Space, Modal, Row, Col, Badge, Spin, Input, Typography, Form, Select } from 'antd';
 import { Drawer } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormSelect, ProFormSwitch } from '@ant-design/pro-form';
-import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, TeamOutlined, CheckCircleOutlined, ReloadOutlined, CrownOutlined, SearchOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
+import { ModalForm, ProFormText, ProFormSelect, ProFormSwitch, ProFormDatePicker, ProFormDateRangePicker } from '@ant-design/pro-form';
+import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, TeamOutlined, CheckCircleOutlined, ReloadOutlined, CrownOutlined, SearchOutlined, CheckOutlined, CloseOutlined, FilterOutlined } from '@ant-design/icons';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 import dayjs from 'dayjs';
 import type { Role } from '@/services/role/api';
@@ -106,22 +106,22 @@ const UserManagement: React.FC = () => {
   const roleOptions = useMemo(() => form.roles.filter((r): r is Role & { id: string } => Boolean(r.id)).map(r => ({ label: r.name, value: r.id })), [form.roles]);
 
   const columns: ProColumns<AppUser>[] = useMemo(() => [
-    { title: intl.formatMessage({ id: 'pages.table.username' }), dataIndex: 'username', render: (dom, r) => (<Space><UserOutlined /><a onClick={() => set({ viewingUser: r, detailVisible: true })}>{dom}</a>{state.currentCompany?.createdBy === r.id && <Tag icon={<CrownOutlined />} color="gold">{intl.formatMessage({ id: 'pages.userManagement.role.creator' })}</Tag>}</Space>) },
-    { title: '姓名', dataIndex: 'name', ellipsis: true, render: (dom: React.ReactNode) => dom || '-' },
-    { title: intl.formatMessage({ id: 'pages.table.email' }), dataIndex: 'email', ellipsis: true, responsive: ['md'] },
-    { title: '手机号', dataIndex: 'phoneNumber', ellipsis: true, responsive: ['lg'], render: (dom: React.ReactNode) => dom || '-' },
+    { title: intl.formatMessage({ id: 'pages.table.username' }), dataIndex: 'username', key: 'username', render: (dom, r) => (<Space><UserOutlined /><a onClick={() => set({ viewingUser: r, detailVisible: true })}>{dom}</a>{state.currentCompany?.createdBy === r.id && <Tag icon={<CrownOutlined />} color="gold">{intl.formatMessage({ id: 'pages.userManagement.role.creator' })}</Tag>}</Space>), search: true },
+    { title: '姓名', dataIndex: 'name', key: 'name', ellipsis: true, render: (dom: React.ReactNode) => dom || '-', search: true },
+    { title: intl.formatMessage({ id: 'pages.table.email' }), dataIndex: 'email', key: 'email', ellipsis: true, responsive: ['md'], search: true },
+    { title: '手机号', dataIndex: 'phoneNumber', key: 'phoneNumber', ellipsis: true, responsive: ['lg'], search: true },
     { title: '年龄', dataIndex: 'age', width: 80, responsive: ['lg'], render: (dom: React.ReactNode) => dom || '-' },
-    { title: '备注', dataIndex: 'remark', ellipsis: true, responsive: ['xl'], render: (dom: React.ReactNode) => dom || '-' },
+    { title: '备注', dataIndex: 'remark', key: 'remark', ellipsis: true, responsive: ['xl'], search: true },
     { title: intl.formatMessage({ id: 'pages.table.role' }), dataIndex: 'roleIds', responsive: ['md'], render: (_, r) => (!r.roleIds?.length ? <Tag color="default">{intl.formatMessage({ id: 'pages.table.unassigned' })}</Tag> : <Space wrap>{r.roleIds.map(id => <Tag key={id} color="blue">{state.roleMap[id] || id}</Tag>)}</Space>) },
     { title: intl.formatMessage({ id: 'pages.table.organization' }), dataIndex: 'organizations', responsive: ['lg'], render: (_, r) => {
       const orgs = r.organizations || [];
       if (!orgs.length) return <Typography.Text type="secondary">{intl.formatMessage({ id: 'pages.userManagement.organization.empty' })}</Typography.Text>;
       return <Space direction="vertical" size={4} wrap>{orgs.map(o => <Space key={o.id || o.fullPath || o.name} size={4}><span>{o.fullPath || o.name || '-'}</span>{o.isPrimary && <Tag color="gold" variant="filled">{intl.formatMessage({ id: 'pages.userManagement.organization.primary' })}</Tag>}</Space>)}</Space>;
     }},
-    { title: intl.formatMessage({ id: 'pages.table.status' }), dataIndex: 'isActive', render: (_, r) => <Badge status={r.isActive ? 'success' : 'error'} text={r.isActive ? intl.formatMessage({ id: 'pages.table.activated' }) : intl.formatMessage({ id: 'pages.table.deactivated' })} /> },
-    { title: intl.formatMessage({ id: 'pages.table.createdAt' }), dataIndex: 'createdAt', sorter: true, render: (_, r) => r.createdAt ? dayjs(r.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-' },
-    { title: intl.formatMessage({ id: 'pages.table.lastLogin' }), dataIndex: 'lastLoginAt', render: (_, r) => r.lastLoginAt ? dayjs(r.lastLoginAt).format('YYYY-MM-DD HH:mm:ss') : '-' },
-    { title: intl.formatMessage({ id: 'pages.table.actions' }), key: 'action', fixed: 'right', width: 150, render: (_, r) => (<Space><Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingUser: r, formVisible: true })}>{intl.formatMessage({ id: 'pages.table.edit' })}</Button><Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => promptDelete(r.id)}>{intl.formatMessage({ id: 'pages.table.delete' })}</Button></Space>) },
+    { title: intl.formatMessage({ id: 'pages.table.status' }), dataIndex: 'isActive', key: 'isActive', render: (_, r) => <Badge status={r.isActive ? 'success' : 'error'} text={r.isActive ? intl.formatMessage({ id: 'pages.table.activated' }) : intl.formatMessage({ id: 'pages.table.deactivated' })} />, valueType: 'select', fieldProps: { options: [{ label: '启用', value: 'true' }, { label: '禁用', value: 'false' }] } },
+    { title: intl.formatMessage({ id: 'pages.table.createdAt' }), dataIndex: 'createdAt', key: 'createdAt', sorter: true, valueType: 'dateTimeRange', search: true },
+    { title: intl.formatMessage({ id: 'pages.table.lastLogin' }), dataIndex: 'lastLoginAt', key: 'lastLoginAt', valueType: 'dateTime' },
+    { title: intl.formatMessage({ id: 'pages.table.actions' }), key: 'action', fixed: 'right', width: 150, valueType: 'option', render: (_, r) => (<Space><Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingUser: r, formVisible: true })}>{intl.formatMessage({ id: 'pages.table.edit' })}</Button><Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => promptDelete(r.id)}>{intl.formatMessage({ id: 'pages.table.delete' })}</Button></Space>) },
   ], [intl, state.roleMap, state.currentCompany, promptDelete]);
 
   // ==================== Join Requests ====================
@@ -151,14 +151,14 @@ const UserManagement: React.FC = () => {
   };
 
   const joinCols = useMemo((): ProColumns<JoinReq>[] => [
-    { title: '申请人', dataIndex: 'username', render: (_: React.ReactNode, r: JoinReq) => <Space direction="vertical" size={0}><b>{r.username}</b><span style={{ color: '#999', fontSize: 12 }}>{r.userEmail}</span></Space> },
-    { title: '申请理由', dataIndex: 'reason', ellipsis: true, render: (t: React.ReactNode) => t || '-' },
-    { title: '状态', dataIndex: 'status', render: (s: React.ReactNode) => { const m: Record<string, { text: string; color: string }> = { pending: { text: '待审核', color: 'processing' }, approved: { text: '已通过', color: 'success' }, rejected: { text: '已拒绝', color: 'error' }, cancelled: { text: '已取消', color: 'default' } }; const c = m[String(s)] || { text: String(s), color: 'default' }; return <Tag color={c.color}>{c.text}</Tag>; } },
-    { title: '申请时间', dataIndex: 'createdAt', render: (t: React.ReactNode) => t ? dayjs(String(t)).format('YYYY-MM-DD HH:mm:ss') : '-' },
-    { title: '审核人', dataIndex: 'reviewedByName', render: (t: React.ReactNode) => t || '-' },
-    { title: '备注', dataIndex: 'rejectReason', ellipsis: true, render: (_: React.ReactNode, r: JoinReq) => r.status === 'approved' ? <span style={{ color: '#52c41a' }}>已通过</span> : _ || '-' },
-    { title: '审核时间', dataIndex: 'reviewedAt', render: (t: React.ReactNode) => t ? dayjs(String(t)).format('YYYY-MM-DD HH:mm:ss') : '-' },
-    { title: '操作', key: 'action', fixed: 'right', width: 150, render: (_: React.ReactNode, r: JoinReq) => r.status === 'cancelled' ? null : (<Space>{r.status !== 'approved' && <Button type="link" size="small" icon={<CheckOutlined />} onClick={() => handleApprove(r.id)}>批准</Button>}{r.status !== 'rejected' && <Button type="link" size="small" danger icon={<CloseOutlined />} onClick={() => setJ({ rejectModal: true, rejectId: r.id })}>拒绝</Button>}</Space>) },
+    { title: '申请人', dataIndex: 'username', key: 'username', render: (_: React.ReactNode, r: JoinReq) => <Space direction="vertical" size={0}><b>{r.username}</b><span style={{ color: '#999', fontSize: 12 }}>{r.userEmail}</span></Space> },
+    { title: '申请理由', dataIndex: 'reason', key: 'reason', ellipsis: true, render: (t: React.ReactNode) => t || '-' },
+    { title: '状态', dataIndex: 'status', key: 'status', valueType: 'select', fieldProps: { options: [{ label: '待审核', value: 'pending' }, { label: '已通过', value: 'approved' }, { label: '已拒绝', value: 'rejected' }, { label: '已取消', value: 'cancelled' }] }, render: (s: React.ReactNode) => { const m: Record<string, { text: string; color: string }> = { pending: { text: '待审核', color: 'processing' }, approved: { text: '已通过', color: 'success' }, rejected: { text: '已拒绝', color: 'error' }, cancelled: { text: '已取消', color: 'default' } }; const c = m[String(s)] || { text: String(s), color: 'default' }; return <Tag color={c.color}>{c.text}</Tag>; } },
+    { title: '申请时间', dataIndex: 'createdAt', key: 'createdAt', valueType: 'dateTime' },
+    { title: '审核人', dataIndex: 'reviewedByName', key: 'reviewedByName', render: (t: React.ReactNode) => t || '-' },
+    { title: '备注', dataIndex: 'rejectReason', key: 'rejectReason', ellipsis: true, render: (_: React.ReactNode, r: JoinReq) => r.status === 'approved' ? <span style={{ color: '#52c41a' }}>已通过</span> : _ || '-' },
+    { title: '审核时间', dataIndex: 'reviewedAt', key: 'reviewedAt', valueType: 'dateTime' },
+    { title: '操作', key: 'action', fixed: 'right', width: 150, valueType: 'option', render: (_: React.ReactNode, r: JoinReq) => r.status === 'cancelled' ? null : (<Space>{r.status !== 'approved' && <Button type="link" size="small" icon={<CheckOutlined />} onClick={() => handleApprove(r.id)}>批准</Button>}{r.status !== 'rejected' && <Button type="link" size="small" danger icon={<CloseOutlined />} onClick={() => setJ({ rejectModal: true, rejectId: r.id })}>拒绝</Button>}</Space>) },
   ], []);
 
   const stats = [
@@ -178,15 +178,18 @@ const UserManagement: React.FC = () => {
       {activeTab === 'members' && <>
         {state.statistics && <Row gutter={[12, 12]}>{stats.map((s, i) => <Col xs={24} sm={12} md={6} key={i}><StatCard title={s.title} value={s.value} icon={s.icon} color={s.color} /></Col>)}</Row>}
         <ProTable actionRef={actionRef} request={async (params) => {
-          const { current, pageSize } = params;
+          const { current, pageSize, search, createdAtRange } = params;
           const sp = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-          const res = await api.list({ page: current, pageSize, ...state.searchParams, ...sp });
+          const rangeParams = createdAtRange ? { startDate: createdAtRange[0], endDate: createdAtRange[1] } : {};
+          const res = await api.list({ page: current, pageSize, ...state.searchParams, ...sp, ...rangeParams, search: search || state.searchParams.search });
           api.stats().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
           return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
-        }} columns={columns} rowKey="id" search={false}
+        }} columns={columns} rowKey="id"
           rowSelection={{ selectedRowKeys: state.selectedRows.map(r => r.id), onChange: (_: React.Key[], selectedRows: AppUser[]) => set({ selectedRows }) }}
           onChange={(_p, _f, s) => set({ sorter: (s as Record<string, unknown>)?.order ? { sortBy: (s as Record<string, string>).field, sortOrder: (s as Record<string, string>).order === 'ascend' ? 'asc' : 'desc' } : undefined })}
-          toolBarRender={() => [<Input.Search key="search" placeholder="搜索用户名/姓名/邮箱..." style={{ width: 260 }} allowClear value={state.searchParams.search} onChange={(e) => { set({ searchParams: { ...state.searchParams, search: e.target.value } }); }} onSearch={(v) => { set({ searchParams: { ...state.searchParams, search: v, page: 1 } }); actionRef.current?.reload(); }} />, <Button key="activate" disabled={!state.selectedRows.length} onClick={() => handleBulk('activate')}>批量激活</Button>, <Button key="deactivate" disabled={!state.selectedRows.length} onClick={() => handleBulk('deactivate')}>批量禁用</Button>, <Button key="delete" danger disabled={!state.selectedRows.length} onClick={() => handleBulk('delete')}>批量删除</Button>]}
+          search={{ labelWidth: 'auto', filterType: 'light' }}
+          form={{ initialValues: state.searchParams }}
+          toolBarRender={() => [<Button key="activate" disabled={!state.selectedRows.length} onClick={() => handleBulk('activate')}>批量激活</Button>, <Button key="deactivate" disabled={!state.selectedRows.length} onClick={() => handleBulk('deactivate')}>批量禁用</Button>, <Button key="delete" danger disabled={!state.selectedRows.length} onClick={() => handleBulk('delete')}>批量删除</Button>]}
         />
         <ModalForm key={state.editingUser?.id || 'create'} title={state.editingUser ? intl.formatMessage({ id: 'pages.userManagement.editUser' }) : '添加成员'}
           open={state.formVisible} onOpenChange={(open) => { if (!open) set({ formVisible: false, editingUser: null }); setF({ selectedUser: null }); }}

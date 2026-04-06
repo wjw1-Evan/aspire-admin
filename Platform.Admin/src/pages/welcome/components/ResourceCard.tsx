@@ -5,8 +5,6 @@ import { ProCard } from '@ant-design/pro-components';
 const { Text } = Typography;
 const { useToken } = theme;
 
-const { Text } = Typography;
-
 interface ResourceCardProps {
     readonly title: string;
     readonly value: string;

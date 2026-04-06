@@ -225,7 +225,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                             <Col xs={24} sm={12}><Space><CheckCircleOutlined />{intl.formatMessage({ id: 'pages.table.isEnabled' })}: </Space>{state.viewingQuota.isEnabled !== false ? intl.formatMessage({ id: 'pages.table.enable' }) : intl.formatMessage({ id: 'pages.table.disable' })}</Col>
                             <Col xs={24} sm={12}><Space><CalendarOutlined />{intl.formatMessage({ id: 'pages.table.updatedAt' })}: </Space>{state.viewingQuota.updatedAt ? dayjs(state.viewingQuota.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</Col>
                         </Row>
-                    </Card>)}
+                    </ProCard>)}
                 </Spin>
             </Drawer>
 

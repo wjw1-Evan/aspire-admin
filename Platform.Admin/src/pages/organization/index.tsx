@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { request } from '@umijs/max';
-import { Button, Col, Empty, Form, Input, InputNumber, Modal, Popconfirm, Row, Select, Space, Spin, Tag, Tree, TreeSelect, Typography, theme } from 'antd';
+import { Card, Button, Col, Empty, Form, Input, Modal, Popconfirm, Row, Select, Space, Spin, Tag, Tree, TreeSelect, Typography, theme } from 'antd';
 import { ProCard, ProDescriptions } from '@ant-design/pro-components';
-import { ProFormText, ModalForm } from '@ant-design/pro-form';
+import { ProFormText, ProFormDigit, ModalForm } from '@ant-design/pro-form';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import { ApartmentOutlined, DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined, UserOutlined, SearchOutlined } from '@ant-design/icons';
 import type { DataNode } from 'antd/es/tree';
@@ -284,12 +284,13 @@ const OrganizationPage: React.FC = () => {
             await refreshTree();
             return true;
           } finally { set({ submitLoading: false }); }
-        }} autoFocusFirstInput>
+        }} autoFocusFirstInput width={600}
+      >
         <ProFormText name="name" label="名称" placeholder="请输入组织名称" rules={[{ required: true }]} />
         <ProFormText name="code" label="编码" placeholder="请输入组织编码" />
         <Form.Item name="parentId" label="上级组织"><TreeSelect allowClear treeData={treeSelectData} placeholder="选择上级组织" treeDefaultExpandAll showSearch /></Form.Item>
         <ProFormText name="managerUserId" label="负责人" placeholder="请输入负责人ID" />
-        <Form.Item name="sortOrder" label="排序"><InputNumber min={1} style={{ width: '100%' }} /></Form.Item>
+        <ProFormDigit name="sortOrder" label="排序" min={1} placeholder="请输入排序" fieldProps={{ style: { width: '100%' } }} />
         <ProFormText name="description" label="描述" placeholder="请输入描述" />
       </ModalForm>
 

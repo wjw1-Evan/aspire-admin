@@ -38,7 +38,7 @@ const TaskForm: React.FC<TaskFormProps> = ({
   const loadUsers = async () => {
     setUsersLoading(true);
     try {
-      const response = await getUserList({ page: 1, pageSize: 100, isActive: true });
+      const response = await getUserList({ page: 1, pageSize: 100 });
       setUsers(response.success && response.data ? response.data.queryable || [] : []);
     } catch (error) { console.error('加载用户列表失败:', error); setUsers([]); }
     finally { setUsersLoading(false); }

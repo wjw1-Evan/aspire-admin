@@ -81,5 +81,5 @@ export interface PageParams {
   sortBy?: string;
   sortOrder?: string;
   search?: string;
-  [key: string]: number | string | boolean | undefined | unknown[];
+  [key: string]: number | string | boolean | undefined;
 }

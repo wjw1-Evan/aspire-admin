@@ -135,9 +135,9 @@ const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({
     const loadData = async () => {
       try {
         const [usersResponse, rolesResponse, formsResponse] = await Promise.all([
-          getUserList({ page: 1, pageSize: 100, isActive: true }),
+          getUserList({ page: 1, pageSize: 100 }),
           getAllRoles(),
-          getFormList({ pageSize: 200, page: 1, isActive: true }),
+          getFormList({ pageSize: 200, page: 1 }),
         ]);
         if (usersResponse.success && usersResponse.data) setUsers(usersResponse.data.queryable);
         if (rolesResponse.success && rolesResponse.data) setRoles((rolesResponse.data.queryable || []).filter((r: Role) => r.isActive));

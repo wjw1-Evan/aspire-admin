@@ -22,8 +22,8 @@ const api = {
     update: (id: string, data: TenantFormData) => request<ApiResponse<ParkTenant>>(`/api/park/tenant/${id}`, { method: 'PUT', data }),
     delete: (id: string) => request<ApiResponse<void>>(`/api/park/tenant/${id}`, { method: 'DELETE' }),
     statistics: (startDate?: string, endDate?: string) => request<ApiResponse<TenantStatistics>>('/api/park/tenant/statistics', { params: { startDate, endDate } }),
-    getContracts: (params: PageParams & { tenantId?: string }) => request<ApiResponse<PagedResult<LeaseContract>>>('/api/park/contract/list', { params }),
-    getServiceRequests: (params: PageParams & { tenantId?: string }) => request<ApiResponse<PagedResult<ServiceRequest>>>('/api/park/services/list', { params }),
+    getContracts: (params: { page?: number; pageSize?: number; tenantId?: string }) => request<ApiResponse<PagedResult<LeaseContract>>>('/api/park/contract/list', { params }),
+    getServiceRequests: (params: { page?: number; pageSize?: number; tenantId?: string }) => request<ApiResponse<PagedResult<ServiceRequest>>>('/api/park/services/list', { params }),
     getPaymentRecords: (contractId: string) => request<ApiResponse<LeasePaymentRecord[]>>(`/api/park/contract/${contractId}/payments`),
 };
 

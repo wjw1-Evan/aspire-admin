@@ -380,7 +380,6 @@ const FormsPage: React.FC = () => {
 
     const searchParamsRef = useRef<PageParams>({
         search: '',
-        isActive: undefined,
     });
 
     const fetchData = useCallback(async () => {
@@ -391,8 +390,7 @@ const FormsPage: React.FC = () => {
             const response = await getFormList({
                 page: currentParams.page,
                 pageSize: currentParams.pageSize,
-                keyword: currentParams.search,
-                isActive: currentParams.isActive as boolean | undefined,
+                search: currentParams.search,
             });
             if (response.success && response.data) {
                 setData(response.data.queryable || []);
@@ -429,7 +427,6 @@ const FormsPage: React.FC = () => {
         searchParamsRef.current = {
             page: 1,
             search: '',
-            isActive: undefined,
         };
         fetchData();
     }, [searchForm, fetchData]);

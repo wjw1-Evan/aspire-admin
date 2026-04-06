@@ -38,8 +38,6 @@ const WorkflowMonitor: React.FC = () => {
       const response = await getWorkflowInstances({ 
         page: currentParams.page, 
         pageSize: currentParams.pageSize, 
-        workflowDefinitionId: currentParams.workflowDefinitionId as string | undefined, 
-        status: currentParams.status as WorkflowStatus | undefined, 
         search: currentParams.search 
       });
       if (response.success && response.data) {

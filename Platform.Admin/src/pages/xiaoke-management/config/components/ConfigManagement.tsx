@@ -40,8 +40,7 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
   const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
 
   const searchParamsRef = useRef<PageParams>({
-    name: undefined,
-    isEnabled: undefined,
+    search: '',
   });
 
   const fetchData = useCallback(async () => {
@@ -52,8 +51,7 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
       const response = await getXiaokeConfigs({
         page: currentParams.page,
         pageSize: currentParams.pageSize,
-        name: currentParams.name as string | undefined,
-        isEnabled: currentParams.isEnabled as boolean | undefined,
+        search: currentParams.search,
       });
 
       if (response.success && response.data) {
@@ -93,7 +91,7 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
 
   const handleReset = useCallback(() => {
     searchForm.resetFields();
-    searchParamsRef.current = { page: 1, name: undefined, isEnabled: undefined };
+    searchParamsRef.current = { page: 1, search: '' };
     fetchData();
   }, [searchForm, fetchData]);
 

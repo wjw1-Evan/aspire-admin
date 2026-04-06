@@ -35,7 +35,7 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
 
-  const searchParamsRef = useRef<PageParams>({ page: 1, pageSize: 10 });
+  const searchParamsRef = useRef<PageParams>({ page: 1, pageSize: 10, search: '' });
 
   const [detailVisible, setDetailVisible] = useState(false);
   const [detailData, setDetailData] = useState<ChatHistoryDetailResponse | null>(null);
@@ -48,11 +48,7 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
       const resp = await getChatHistory({
         page: currentParams.page,
         pageSize: currentParams.pageSize,
-        sessionId: currentParams.sessionId as string | undefined,
-        userId: currentParams.userId as string | undefined,
-        content: currentParams.content as string | undefined,
-        startTime: currentParams.startTime as string | undefined,
-        endTime: currentParams.endTime as string | undefined,
+        search: currentParams.search,
       });
 
       if (resp.success && resp.data) {

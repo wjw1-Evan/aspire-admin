@@ -1,104 +1,23 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
-import {
-  Button,
-  Space,
-  Modal,
-  Form,
-  Input,
-  App,
-  Card,
-  Typography,
-  Tag,
-  Switch,
-  Table,
-} from 'antd';
-import {
-  PlusOutlined,
-  ReloadOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  BookOutlined,
-  FolderOpenOutlined,
-} from '@ant-design/icons';
+import React, { useState } from 'react';
+import { Button, Space, Modal, Form, Input, Switch, Tag, App } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, BookOutlined, FolderOpenOutlined } from '@ant-design/icons';
 import { useIntl, history } from '@umijs/max';
 import PageContainer from '@/components/PageContainer';
-import SearchBar from '@/components/SearchBar';
+import { ProTable, ProColumns } from '@ant-design/pro-table';
 import * as kbService from '@/services/workflow/knowledge-base';
 import type { KnowledgeBase } from '@/services/workflow/knowledge-base';
 import type { PageParams } from '@/types';
 import dayjs from 'dayjs';
 
-const { Text } = Typography;
-
 const KnowledgeBaseManagement: React.FC = () => {
   const intl = useIntl();
-  const { message, modal } = App.useApp();
+  const { message } = App.useApp();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingKb, setEditingKb] = useState<KnowledgeBase | null>(null);
   const [form] = Form.useForm();
-  const [data, setData] = useState<KnowledgeBase[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, total: 0 });
-
-  const searchParamsRef = useRef<PageParams>({
-    search: '',
-  });
-
-  const fetchData = useCallback(async () => {
-    const currentParams = searchParamsRef.current;
-
-    setLoading(true);
-    try {
-      const res = await kbService.getKnowledgeBases({
-        current: currentParams.page,
-        ...currentParams,
-      });
-      if (res.success && res.data) {
-        const paged = res.data as any;
-        setData(paged.queryable ?? []);
-        setPagination(prev => ({
-          ...prev,
-          page: currentParams.page ?? prev.page,
-          total: paged.rowCount ?? 0,
-        }));
-      } else {
-        setData([]);
-        setPagination(prev => ({ ...prev, total: 0 }));
-      }
-    } catch {
-      setData([]);
-      setPagination(prev => ({ ...prev, total: 0 }));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const handleSearch = useCallback((params: PageParams) => {
-    searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
-    fetchData();
-  }, [fetchData]);
-
-  const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
-    const newPage = pag.current;
-    const sortBy = sorter?.field;
-    const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
-    
-    searchParamsRef.current = {
-      ...searchParamsRef.current,
-      page: newPage,
-      sortBy,
-      sortOrder,
-    };
-    fetchData();
-  }, [fetchData]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
 
   const handleDelete = (record: KnowledgeBase) => {
-    modal.confirm({
+    Modal.confirm({
       title: '确定要删除这个知识库吗？',
       content: '删除后将无法在工作流中使用该知识库进行内容检索。',
       okText: '确定',
@@ -109,7 +28,6 @@ const KnowledgeBaseManagement: React.FC = () => {
           const res = await kbService.deleteKnowledgeBase(record.id);
           if (res.success) {
             message.success('删除成功');
-            fetchData();
           }
         } catch (error) {
           message.error('删除失败');
@@ -118,16 +36,16 @@ const KnowledgeBaseManagement: React.FC = () => {
     });
   };
 
-  const columns = [
+  const columns: ProColumns<KnowledgeBase>[] = [
     {
       title: intl.formatMessage({ id: 'pages.workflow.knowledgeBase.name' }),
       dataIndex: 'name',
       key: 'name',
       sorter: true,
-      render: (text: string) => (
+      render: (dom: any) => (
         <Space>
           <BookOutlined style={{ color: '#1890ff' }} />
-          <Text strong>{text}</Text>
+          <span style={{ fontWeight: 500 }}>{dom}</span>
         </Space>
       ),
     },
@@ -144,7 +62,7 @@ const KnowledgeBaseManagement: React.FC = () => {
       key: 'category',
       width: 120,
       sorter: true,
-      render: (text: string) => <Tag color="blue">{text || '通用'}</Tag>,
+      render: (dom: any) => <Tag color="blue">{dom || '通用'}</Tag>,
     },
     {
       title: intl.formatMessage({ id: 'pages.workflow.knowledgeBase.itemCount' }),
@@ -152,7 +70,7 @@ const KnowledgeBaseManagement: React.FC = () => {
       key: 'itemCount',
       width: 100,
       sorter: true,
-      render: (count: number) => <Tag color="cyan">{count || 0}</Tag>,
+      render: (dom: any) => <Tag color="cyan">{dom || 0}</Tag>,
     },
     {
       title: intl.formatMessage({ id: 'pages.workflow.knowledgeBase.status' }),
@@ -160,8 +78,9 @@ const KnowledgeBaseManagement: React.FC = () => {
       key: 'isActive',
       width: 100,
       sorter: true,
-      render: (active: boolean) => (
-        <Tag color={active ? 'success' : 'default'}>{active ? '启用' : '禁用'}</Tag>
+      valueType: 'switch',
+      render: (dom: any, record: KnowledgeBase) => (
+        <Tag color={record.isActive ? 'success' : 'default'}>{record.isActive ? '启用' : '禁用'}</Tag>
       ),
     },
     {
@@ -170,149 +89,78 @@ const KnowledgeBaseManagement: React.FC = () => {
       key: 'createdAt',
       width: 180,
       sorter: true,
-      render: (text: string) => dayjs(text).format('YYYY-MM-DD HH:mm'),
+      valueType: 'dateTime',
     },
     {
       title: '操作',
       key: 'action',
       width: 240,
       fixed: 'right',
+      valueType: 'option',
       render: (_: any, record: KnowledgeBase) => (
         <Space>
-          <Button
-            type="link"
-            size="small"
-            icon={<FolderOpenOutlined />}
-            onClick={() => history.push(`/workflow/knowledge-base/documents/${record.id}`)}
-          >
-            管理内容
-          </Button>
-          <Button
-            type="link"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => {
-              setEditingKb(record);
-              form.setFieldsValue(record);
-              setIsModalVisible(true);
-            }}
-          >
-            编辑
-          </Button>
-          <Button
-            type="link"
-            size="small"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record)}
-          >
-            删除
-          </Button>
+          <Button type="link" size="small" icon={<FolderOpenOutlined />} onClick={() => history.push(`/workflow/knowledge-base/documents/${record.id}`)}>管理内容</Button>
+          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { setEditingKb(record); form.setFieldsValue(record); setIsModalVisible(true); }}>编辑</Button>
+          <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)}>删除</Button>
         </Space>
       ),
     },
   ];
 
   return (
-    <PageContainer
-      title={intl.formatMessage({ id: 'pages.workflow.knowledgeBase.title' })}
+    <PageContainer title={intl.formatMessage({ id: 'pages.workflow.knowledgeBase.title' })}
       extra={
-        <Space>
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={() => {
-              fetchData();
-            }}
-          >
-            {intl.formatMessage({ id: 'pages.park.common.refresh' })}
-          </Button>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              setEditingKb(null);
-              form.resetFields();
-              setIsModalVisible(true);
-            }}
-          >
-            {intl.formatMessage({ id: 'pages.workflow.knowledgeBase.add' })}
-          </Button>
-        </Space>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingKb(null); form.resetFields(); setIsModalVisible(true); }}>
+          {intl.formatMessage({ id: 'pages.workflow.knowledgeBase.add' })}
+        </Button>
       }
     >
-      <SearchBar
-        initialParams={searchParamsRef.current}
-        onSearch={handleSearch}
-        style={{ marginBottom: 16 }}
+      <ProTable
+        headerTitle="知识库列表"
+        rowKey="id"
+        search={{ labelWidth: 'auto' }}
+        request={async (params: any) => {
+          const { current, pageSize, ...rest } = params;
+          const res = await kbService.getKnowledgeBases({ page: current, pageSize, ...rest } as PageParams);
+          if (res.success && res.data) {
+            return { data: res.data.queryable || [], total: res.data.rowCount || 0, success: true };
+          }
+          return { data: [], total: 0, success: false };
+        }}
+        columns={columns}
+        scroll={{ x: 'max-content' }}
       />
 
-      <Card>
-        <Table<KnowledgeBase>
-          dataSource={data}
-          columns={columns as any}
-          rowKey="id"
-          loading={loading}
-          scroll={{ x: 'max-content' }}
-          onChange={handleTableChange}
-          pagination={{
-            current: pagination.page,
-            total: pagination.total,
-          }}
-        />
-      </Card>
-
       <Modal
-        title={
-          editingKb
-            ? intl.formatMessage({ id: 'pages.workflow.knowledgeBase.edit' })
-            : intl.formatMessage({ id: 'pages.workflow.knowledgeBase.add' })
-        }
+        title={editingKb ? intl.formatMessage({ id: 'pages.workflow.knowledgeBase.edit' }) : intl.formatMessage({ id: 'pages.workflow.knowledgeBase.add' })}
         open={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
         onOk={async () => {
           const values = await form.validateFields();
-          setLoading(true);
           try {
-            const res = editingKb
-              ? await kbService.updateKnowledgeBase(editingKb.id, values)
-              : await kbService.createKnowledgeBase(values);
-            if (res.success) {
-              message.success('保存成功');
-              setIsModalVisible(false);
-              fetchData();
+            if (editingKb) {
+              await kbService.updateKnowledgeBase(editingKb.id, values);
+            } else {
+              await kbService.createKnowledgeBase(values);
             }
-          } finally {
-            setLoading(false);
+            message.success(editingKb ? '更新成功' : '创建成功');
+            setIsModalVisible(false);
+          } catch {
+            message.error('操作失败');
           }
         }}
-        confirmLoading={loading}
-        width={600}
       >
-        <Form form={form} layout="vertical" initialValues={{ isActive: true }}>
-          <Form.Item
-            name="name"
-            label={intl.formatMessage({ id: 'pages.workflow.knowledgeBase.name' })}
-            rules={[{ required: true, message: '请输入知识库名称' }]}
-          >
-            <Input placeholder="请输入知识库名称，如：财务制度库" />
+        <Form form={form} layout="vertical" initialValues={editingKb || undefined}>
+          <Form.Item name="name" label="名称" rules={[{ required: true, message: '请输入知识库名称' }]}>
+            <Input placeholder="请输入知识库名称" />
           </Form.Item>
-          <Form.Item
-            name="category"
-            label={intl.formatMessage({ id: 'pages.workflow.knowledgeBase.category' })}
-          >
-            <Input placeholder="请输入分类，如：规章制度" />
+          <Form.Item name="description" label="描述">
+            <Input.TextArea placeholder="请输入描述" rows={3} />
           </Form.Item>
-          <Form.Item
-            name="description"
-            label={intl.formatMessage({ id: 'pages.workflow.knowledgeBase.description' })}
-          >
-            <Input.TextArea rows={4} placeholder="请输入知识库描述" />
+          <Form.Item name="category" label="分类">
+            <Input placeholder="请输入分类" />
           </Form.Item>
-          <Form.Item
-            name="isActive"
-            label={intl.formatMessage({ id: 'pages.workflow.knowledgeBase.status' })}
-            valuePropName="checked"
-          >
+          <Form.Item name="isActive" label="启用" valuePropName="checked" initialValue={true}>
             <Switch />
           </Form.Item>
         </Form>

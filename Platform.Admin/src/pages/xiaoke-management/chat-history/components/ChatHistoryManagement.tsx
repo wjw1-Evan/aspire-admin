@@ -1,7 +1,6 @@
-import React, { useRef, useState, useCallback, useImperativeHandle, forwardRef, useEffect } from 'react';
-import type { ColumnsType } from 'antd/es/table';
+import React, { useRef, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { useIntl } from '@umijs/max';
-import { Button, Tag, Space, Modal, Form, Input, Card, DatePicker, Table } from 'antd';
+import { Button, Tag, Space, Modal, Form, Input, Card, DatePicker } from 'antd';
 import {
   EyeOutlined,
   DeleteOutlined,
@@ -17,6 +16,7 @@ import {
 } from '@/services/xiaoke/api';
 import ChatHistoryDetail from './ChatHistoryDetail';
 import dayjs from 'dayjs';
+import { ProTable, ProColumns } from '@ant-design/pro-table';
 import type { PageParams } from '@/types';
 
 const { RangePicker } = DatePicker;
@@ -31,78 +31,8 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
   const { confirm } = useModal();
   const tableRef = useRef<HTMLDivElement>(null);
   const [searchForm] = Form.useForm();
-  const [data, setData] = useState<ChatHistoryListItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, total: 0 });
-
-  const searchParamsRef = useRef<PageParams>({});
-
   const [detailVisible, setDetailVisible] = useState(false);
   const [detailData, setDetailData] = useState<ChatHistoryDetailResponse | null>(null);
-
-  const fetchData = useCallback(async () => {
-    const currentParams = searchParamsRef.current;
-
-    setLoading(true);
-    try {
-      const resp = await getChatHistory({
-        page: currentParams.page,
-        search: currentParams.search,
-      });
-
-      if (resp.success && resp.data) {
-        setData(resp.data.queryable || []);
-        setPagination(prev => ({
-          ...prev,
-          page: currentParams.page ?? prev.page,
-          total: resp.data!.rowCount ?? 0,
-        }));
-      } else {
-        setData([]);
-        setPagination(prev => ({ ...prev, total: 0 }));
-      }
-    } catch (error) {
-      console.error('获取聊天记录列表失败:', error);
-      setData([]);
-      setPagination(prev => ({ ...prev, total: 0 }));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  const handleSearch = useCallback(() => {
-    const values = searchForm.getFieldsValue();
-    const searchParamsData: any = {
-      page: 1,
-      sessionId: values.sessionId,
-      userId: values.userId,
-      content: values.content,
-      startTime: values.dateRange?.[0] ? dayjs(values.dateRange[0]).toISOString() : undefined,
-      endTime: values.dateRange?.[1] ? dayjs(values.dateRange[1]).toISOString() : undefined,
-    };
-    searchParamsRef.current = searchParamsData;
-    fetchData();
-  }, [searchForm, fetchData]);
-
-  const handleReset = useCallback(() => {
-    searchForm.resetFields();
-    searchParamsRef.current = { page: 1 };
-    fetchData();
-  }, [searchForm, fetchData]);
-
-  const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
-    const newPage = pag.current;
-
-    searchParamsRef.current = {
-      ...searchParamsRef.current,
-      page: newPage,
-    };
-    fetchData();
-  }, [fetchData]);
 
   const handleViewDetail = useCallback(async (record: ChatHistoryListItem) => {
     try {
@@ -116,7 +46,7 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
     } catch (error: any) {
       message.error(error.message || intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.message.getDetailFailed' }));
     }
-  }, [intl]);
+  }, [intl, message]);
 
   const handleDelete = useCallback((record: ChatHistoryListItem) => {
     confirm({
@@ -130,7 +60,6 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
           const response = await deleteChatHistory(record.sessionId);
           if (response.success) {
             message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.message.deleteSuccess' }));
-            fetchData();
           } else {
             message.error(response.message || intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.message.deleteFailed' }));
           }
@@ -139,7 +68,7 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
         }
       },
     });
-  }, [intl, fetchData]);
+  }, [intl, message, confirm]);
 
   const handleCloseDetail = useCallback(() => {
     setDetailVisible(false);
@@ -148,11 +77,11 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
 
   useImperativeHandle(ref, () => ({
     reload: () => {
-      fetchData();
+      tableRef.current?.querySelector('button[data-action="reload"]')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     },
-  }), [fetchData]);
+  }), []);
 
-  const columns: ColumnsType<ChatHistoryListItem> = [
+  const columns: ProColumns<ChatHistoryListItem>[] = [
     {
       title: intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.table.sessionId' }),
       dataIndex: 'sessionId',
@@ -166,11 +95,11 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
       dataIndex: 'participants',
       key: 'participants',
       width: 200,
-      render: (participants: string[], record: ChatHistoryListItem) => (
+      render: (dom: any, record: ChatHistoryListItem) => (
         <Space wrap>
-          {participants.map((participantId) => (
+          {(record.participants || []).map((participantId) => (
             <Tag key={participantId}>
-              {record.participantNames[participantId] || participantId}
+              {record.participantNames?.[participantId] || participantId}
             </Tag>
           ))}
         </Space>
@@ -183,7 +112,7 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
       width: 300,
       ellipsis: true,
       sorter: true,
-      render: (text: string) => text || '-',
+      render: (dom: any) => dom || '-',
     },
     {
       title: intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.table.messageCount' }),
@@ -198,8 +127,8 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
       key: 'lastMessageAt',
       width: 180,
       sorter: true,
-      render: (value: string) =>
-        value ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : '-',
+      render: (dom: any) =>
+        dom ? dayjs(dom).format('YYYY-MM-DD HH:mm:ss') : '-',
     },
     {
       title: intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.table.createdAt' }),
@@ -207,7 +136,7 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
       key: 'createdAt',
       width: 180,
       sorter: true,
-      render: (value: string) => dayjs(value).format('YYYY-MM-DD HH:mm:ss'),
+      render: (dom: any) => dayjs(dom).format('YYYY-MM-DD HH:mm:ss'),
     },
     {
       title: intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.table.action' }),
@@ -240,48 +169,32 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
 
   return (
     <>
-      <Card style={{ marginBottom: 16 }}>
-        <Form form={searchForm} layout="inline" onFinish={handleSearch}>
-          <Form.Item name="sessionId" label={intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.table.sessionId' })}>
-            <Input placeholder={intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.table.sessionId' })} style={{ width: 200 }} allowClear />
-          </Form.Item>
-          <Form.Item name="userId" label={intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.table.userId' })}>
-            <Input placeholder={intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.table.userId' })} style={{ width: 200 }} allowClear />
-          </Form.Item>
-          <Form.Item name="content" label={intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.table.content' })}>
-            <Input placeholder={intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.table.content' })} style={{ width: 200 }} allowClear />
-          </Form.Item>
-          <Form.Item name="dateRange" label={intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.table.dateRange' })}>
-            <RangePicker
-              showTime={{ format: 'HH:mm:ss' }}
-              format="YYYY-MM-DD HH:mm:ss"
-              style={{ width: 400 }}
-            />
-          </Form.Item>
-          <Form.Item>
-            <Space>
-              <Button type="primary" htmlType="submit">
-                {intl.formatMessage({ id: 'pages.button.search' })}
-              </Button>
-              <Button onClick={handleReset}>
-                {intl.formatMessage({ id: 'pages.button.reset' })}
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </Card>
-
-      <Table<ChatHistoryListItem>
-        dataSource={data}
-        columns={columns}
+      <ProTable<ChatHistoryListItem>
+        headerTitle={intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.title', defaultMessage: '聊天记录管理' })}
+        actionRef={tableRef as any}
         rowKey="sessionId"
-        loading={loading}
-        scroll={{ x: 'max-content' }}
-        onChange={handleTableChange}
-        pagination={{
-          current: pagination.page,
-          total: pagination.total,
+        search={{
+          labelWidth: 'auto',
         }}
+        request={async (params: any) => {
+          const { current, pageSize, sessionId, userId, content, dateRange, ...rest } = params;
+          const resp = await getChatHistory({
+            page: current,
+            pageSize,
+            sessionId,
+            userId,
+            content,
+            startTime: dateRange?.[0] ? dayjs(dateRange[0]).toISOString() : undefined,
+            endTime: dateRange?.[1] ? dayjs(dateRange[1]).toISOString() : undefined,
+            ...rest,
+          } as PageParams);
+          if (resp.success && resp.data) {
+            return { data: resp.data.queryable || [], total: resp.data.rowCount || 0, success: true };
+          }
+          return { data: [], total: 0, success: false };
+        }}
+        columns={columns}
+        scroll={{ x: 'max-content' }}
       />
 
       <ChatHistoryDetail

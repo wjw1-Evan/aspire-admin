@@ -1,99 +1,24 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
-import {
-  Button,
-  Space,
-  Modal,
-  Form,
-  Input,
-  InputNumber,
-  App,
-  Card,
-  Typography,
-  Breadcrumb,
-  Table,
-} from 'antd';
-import {
-  PlusOutlined,
-  ReloadOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  ArrowLeftOutlined,
-  FileTextOutlined,
-} from '@ant-design/icons';
+import React, { useState, useEffect } from 'react';
+import { Button, Space, Modal, Form, Input, InputNumber, App, Card, Breadcrumb } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, ArrowLeftOutlined, FileTextOutlined } from '@ant-design/icons';
 import { useIntl, useParams, history } from '@umijs/max';
 import PageContainer from '@/components/PageContainer';
-import SearchBar from '@/components/SearchBar';
+import { ProTable, ProColumns } from '@ant-design/pro-table';
 import * as kbService from '@/services/workflow/knowledge-base';
 import type { KnowledgeDocument } from '@/services/workflow/knowledge-base';
 import type { PageParams } from '@/types';
 import dayjs from 'dayjs';
 
-const { Text } = Typography;
 const { TextArea } = Input;
 
 const KnowledgeBaseDocuments: React.FC = () => {
   const intl = useIntl();
   const { knowledgeBaseId } = useParams<{ knowledgeBaseId: string }>();
-  const { message, modal } = App.useApp();
+  const { message } = App.useApp();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingDoc, setEditingDoc] = useState<KnowledgeDocument | null>(null);
   const [form] = Form.useForm();
-  const [data, setData] = useState<KnowledgeDocument[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, total: 0 });
   const [kbInfo, setKbInfo] = useState<{ name: string } | null>(null);
-
-  const searchParamsRef = useRef<PageParams>({
-    search: '',
-  });
-
-  const fetchData = useCallback(async () => {
-    const currentParams = searchParamsRef.current;
-
-    setLoading(true);
-    try {
-      const res = await kbService.getKnowledgeDocuments(knowledgeBaseId!, {
-        page: currentParams.page,
-        search: currentParams.search,
-      });
-      if (res.success && res.data) {
-        const d = res.data as any;
-        setData(d.queryable ?? []);
-        setPagination(prev => ({
-          ...prev,
-          page: currentParams.page ?? prev.page,
-          total: d.rowCount ?? 0,
-        }));
-      } else {
-        setData([]);
-        setPagination(prev => ({ ...prev, total: 0 }));
-      }
-    } catch {
-      setData([]);
-      setPagination(prev => ({ ...prev, total: 0 }));
-    } finally {
-      setLoading(false);
-    }
-  }, [knowledgeBaseId]);
-
-  const handleSearch = useCallback((params: PageParams) => {
-    searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
-    fetchData();
-  }, [fetchData]);
-
-  const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
-    const newPage = pag.current;
-    const sortBy = sorter?.field;
-    const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
-    
-    searchParamsRef.current = {
-      ...searchParamsRef.current,
-      page: newPage,
-      sortBy,
-      sortOrder,
-    };
-    fetchData();
-  }, [fetchData]);
 
   useEffect(() => {
     if (knowledgeBaseId) {
@@ -105,15 +30,8 @@ const KnowledgeBaseDocuments: React.FC = () => {
     }
   }, [knowledgeBaseId]);
 
-  useEffect(() => {
-    if (knowledgeBaseId) {
-      fetchData();
-    }
-  }, [knowledgeBaseId, fetchData]);
-
-
   const handleDelete = (record: KnowledgeDocument) => {
-    modal.confirm({
+    Modal.confirm({
       title: '确定要删除这篇文档吗？',
       content: '删除后该内容将无法在知识检索中使用。',
       okText: '确定',
@@ -125,7 +43,6 @@ const KnowledgeBaseDocuments: React.FC = () => {
           const res = await kbService.deleteKnowledgeDocument(knowledgeBaseId, record.id);
           if (res.success) {
             message.success('删除成功');
-            fetchData();
           }
         } catch {
           message.error('删除失败');
@@ -134,16 +51,16 @@ const KnowledgeBaseDocuments: React.FC = () => {
     });
   };
 
-  const columns = [
+  const columns: ProColumns<KnowledgeDocument>[] = [
     {
       title: '标题',
       dataIndex: 'title',
       key: 'title',
       sorter: true,
-      render: (text: string) => (
+      render: (dom: any) => (
         <Space>
           <FileTextOutlined style={{ color: '#1890ff' }} />
-          <Text strong>{text}</Text>
+          <span style={{ fontWeight: 500 }}>{dom}</span>
         </Space>
       ),
     },
@@ -153,7 +70,6 @@ const KnowledgeBaseDocuments: React.FC = () => {
       key: 'summary',
       ellipsis: true,
       sorter: true,
-      render: (t: string) => t || '-',
     },
     {
       title: '内容预览',
@@ -162,13 +78,13 @@ const KnowledgeBaseDocuments: React.FC = () => {
       ellipsis: true,
       width: 280,
       sorter: true,
-      render: (text: string) => (text ? (text.length > 80 ? `${text.slice(0, 80)}...` : text) : '-'),
     },
     {
       title: '排序',
       dataIndex: 'sortOrder',
       key: 'sortOrder',
       width: 80,
+      valueType: 'digit',
       sorter: true,
     },
     {
@@ -176,42 +92,28 @@ const KnowledgeBaseDocuments: React.FC = () => {
       dataIndex: 'updatedAt',
       key: 'updatedAt',
       width: 180,
+      valueType: 'dateTime',
       sorter: true,
-      render: (text: string) => dayjs(text).format('YYYY-MM-DD HH:mm'),
     },
     {
       title: '操作',
       key: 'action',
       width: 160,
-      fixed: 'right' as const,
+      fixed: 'right',
+      valueType: 'option',
       render: (_: unknown, record: KnowledgeDocument) => (
         <Space>
-          <Button
-            type="link"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => {
-              setEditingDoc(record);
-              form.setFieldsValue({
-                title: record.title,
-                content: record.content,
-                summary: record.summary,
-                sortOrder: record.sortOrder,
-              });
-              setIsModalVisible(true);
-            }}
-          >
-            编辑
-          </Button>
-          <Button
-            type="link"
-            size="small"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record)}
-          >
-            删除
-          </Button>
+          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => {
+            setEditingDoc(record);
+            form.setFieldsValue({
+              title: record.title,
+              content: record.content,
+              summary: record.summary,
+              sortOrder: record.sortOrder,
+            });
+            setIsModalVisible(true);
+          }}>编辑</Button>
+          <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)}>删除</Button>
         </Space>
       ),
     },
@@ -228,111 +130,66 @@ const KnowledgeBaseDocuments: React.FC = () => {
   return (
     <PageContainer
       title={
-        <Breadcrumb
-          items={[
-            { title: <a onClick={() => history.push('/workflow/knowledge-base')}>知识库</a> },
-            { title: `${kbInfo?.name ?? '知识库'} - 内容管理` },
-          ]}
-        />
+        <Breadcrumb items={[
+          { title: <a onClick={() => history.push('/workflow/knowledge-base')}>知识库</a> },
+          { title: `${kbInfo?.name ?? '知识库'} - 内容管理` },
+        ]} />
       }
       extra={
         <Space>
-          <Button
-            icon={<ArrowLeftOutlined />}
-            onClick={() => history.push('/workflow/knowledge-base')}
-          >
-            返回知识库
-          </Button>
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={() => fetchData()}
-          >
-            刷新
-          </Button>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              setEditingDoc(null);
-              form.resetFields();
-              setIsModalVisible(true);
-            }}
-          >
-            录入内容
-          </Button>
+          <Button icon={<ArrowLeftOutlined />} onClick={() => history.push('/workflow/knowledge-base')}>返回知识库</Button>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingDoc(null); form.resetFields(); setIsModalVisible(true); }}>录入内容</Button>
         </Space>
       }
     >
-      <SearchBar
-        initialParams={searchParamsRef.current}
-        onSearch={handleSearch}
-        style={{ marginBottom: 16 }}
+      <ProTable
+        headerTitle="文档列表"
+        rowKey="id"
+        search={{ labelWidth: 'auto' }}
+        request={async (params: any) => {
+          const { current, pageSize, ...rest } = params;
+          const res = await kbService.getKnowledgeDocuments(knowledgeBaseId!, { page: current, pageSize, ...rest } as PageParams);
+          if (res.success && res.data) {
+            return { data: res.data.queryable || [], total: res.data.rowCount || 0, success: true };
+          }
+          return { data: [], total: 0, success: false };
+        }}
+        columns={columns}
+        scroll={{ x: 'max-content' }}
       />
-
-      <Card>
-        <Table<KnowledgeDocument>
-          dataSource={data}
-          columns={columns}
-          rowKey="id"
-          loading={loading}
-          scroll={{ x: 'max-content' }}
-          onChange={handleTableChange}
-          pagination={{
-            current: pagination.page,
-            total: pagination.total,
-          }}
-        />
-      </Card>
 
       <Modal
         title={editingDoc ? '编辑文档' : '录入内容'}
         open={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
+        width={720}
         onOk={async () => {
           const values = await form.validateFields();
-          setLoading(true);
           try {
-            const res = editingDoc
-              ? await kbService.updateKnowledgeDocument(knowledgeBaseId!, editingDoc.id, values)
-              : await kbService.createKnowledgeDocument(knowledgeBaseId!, values);
-            if (res.success) {
-              message.success('保存成功');
-              setIsModalVisible(false);
-              fetchData();
+            if (editingDoc) {
+              await kbService.updateKnowledgeDocument(knowledgeBaseId!, editingDoc.id, values);
+            } else {
+              await kbService.createKnowledgeDocument(knowledgeBaseId!, values);
             }
-          } finally {
-            setLoading(false);
+            message.success(editingDoc ? '更新成功' : '创建成功');
+            setIsModalVisible(false);
+          } catch {
+            message.error('操作失败');
           }
         }}
-        confirmLoading={loading}
-        width={720}
       >
-        <Form form={form} layout="vertical" initialValues={{ sortOrder: 0 }}>
-          <Form.Item
-            name="title"
-            label="标题"
-            rules={[{ required: true, message: '请输入标题' }]}
-          >
+        <Form form={form} layout="vertical" initialValues={editingDoc ? { title: editingDoc.title, content: editingDoc.content, summary: editingDoc.summary, sortOrder: editingDoc.sortOrder } : undefined}>
+          <Form.Item name="title" label="标题" rules={[{ required: true, message: '请输入标题' }]}>
             <Input placeholder="请输入文档标题" />
           </Form.Item>
-          <Form.Item
-            name="summary"
-            label="摘要（可选）"
-          >
-            <Input placeholder="简短摘要，便于检索" />
+          <Form.Item name="content" label="内容" rules={[{ required: true, message: '请输入内容' }]}>
+            <TextArea placeholder="请输入文档内容" rows={6} />
           </Form.Item>
-          <Form.Item
-            name="content"
-            label="内容"
-            rules={[{ required: true, message: '请输入具体内容' }]}
-          >
-            <TextArea
-              rows={12}
-              placeholder="请输入知识库的具体内容，支持多行文本。工作流中的知识检索节点将基于这些内容进行匹配。"
-            />
+          <Form.Item name="summary" label="摘要">
+            <Input.TextArea placeholder="请输入摘要（可选）" rows={2} />
           </Form.Item>
           <Form.Item name="sortOrder" label="排序">
-            <InputNumber style={{ width: '100%' }} min={0} placeholder="数字越小越靠前" />
+            <InputNumber placeholder="数值越小越靠前" min={0} style={{ width: '100%' }} />
           </Form.Item>
         </Form>
       </Modal>

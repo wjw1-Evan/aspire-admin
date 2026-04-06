@@ -1,6 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
-import { type ColumnsType } from 'antd/es/table';
-import { Table, Card, Row, Col, Badge, Tag, Space, App, Grid, Button, Modal, Progress } from 'antd';
+import { Card, Row, Col, Badge, Tag, Space, App, Grid, Button, Modal, Progress } from 'antd';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import {
@@ -24,8 +23,8 @@ import { StatCard } from '@/components';
 import ProjectForm from './ProjectForm';
 import ProjectDetail from './ProjectDetail';
 import useCommonStyles from '@/hooks/useCommonStyles';
-import SearchBar from '@/components/SearchBar';
 import { useModal } from '@/hooks/useModal';
+import { ProTable, ProColumns } from '@ant-design/pro-table';
 
 export interface ProjectViewRef {
   reload: () => void;
@@ -39,23 +38,13 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   const { confirm } = useModal();
   const { message } = App.useApp();
   const screens = Grid.useBreakpoint();
+  const tableRef = useRef<HTMLDivElement>(null);
   const [formVisible, setFormVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
   const [editingProject, setEditingProject] = useState<ProjectDto | null>(null);
   const [viewingProject, setViewingProject] = useState<ProjectDto | null>(null);
   const [statistics, setStatistics] = useState<ProjectStatistics | null>(null);
-  const [selectedRows, setSelectedRows] = useState<ProjectDto[]>([]);
-  const [data, setData] = useState<ProjectDto[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, total: 0 });
 
-  const searchParamsRef = useRef<PageParams>({
-    search: '',
-    sortBy: 'CreatedAt',
-    sortOrder: 'desc',
-  });
-
-  // 获取统计信息
   const fetchStatistics = useCallback(async () => {
     try {
       const response = await getProjectStatistics();
@@ -71,53 +60,9 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
     fetchStatistics();
   }, [fetchStatistics]);
 
-  const fetchData = useCallback(async () => {
-    const currentParams = searchParamsRef.current;
-
-    setLoading(true);
-    try {
-      const response = await getProjectList(currentParams);
-      if (response.success && response.data) {
-        setData(response.data.queryable || []);
-        setPagination(prev => ({
-          ...prev,
-          page: currentParams.page ?? prev.page,
-          total: response.data!.rowCount ?? 0,
-        }));
-      } else {
-        setData([]);
-        setPagination(prev => ({ ...prev, total: 0 }));
-      }
-    } catch (error) {
-      console.error('获取项目列表失败:', error);
-      setData([]);
-      setPagination(prev => ({ ...prev, total: 0 }));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
-    const newPage = pag.current;
-    const sortBy = sorter?.field;
-    const sortOrder = sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined;
-
-    searchParamsRef.current = {
-      ...searchParamsRef.current,
-      page: newPage,
-      sortBy,
-      sortOrder,
-    };
-    fetchData();
-  }, [fetchData]);
-
   useImperativeHandle(ref, () => ({
     reload: () => {
-      fetchData();
+      tableRef.current?.querySelector('button[data-action="reload"]')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     },
     refreshStatistics: () => {
       fetchStatistics();
@@ -126,10 +71,8 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       setEditingProject(null);
       setFormVisible(true);
     },
-  }), [fetchData, fetchStatistics]);
+  }), [fetchStatistics]);
 
-
-  // 删除项目
   const handleDelete = useCallback(async (projectId: string) => {
     confirm({
       title: intl.formatMessage({ id: 'pages.projectManagement.modal.deleteProject' }),
@@ -141,22 +84,19 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
         try {
           await deleteProject(projectId);
           message.success(intl.formatMessage({ id: 'pages.projectManagement.message.deleteSuccess' }));
-          fetchData();
           fetchStatistics();
         } catch (error) {
           message.error(intl.formatMessage({ id: 'pages.projectManagement.message.deleteFailed' }));
         }
       },
     });
-  }, [intl, fetchData, fetchStatistics]);
+  }, [intl, message, confirm, fetchStatistics]);
 
-  // 格式化日期（仅日期部分）
   const formatDate = useCallback((date: string | null | undefined): string => {
     if (!date) return '-';
     try {
       const dateObj = dayjs(date);
       if (!dateObj.isValid()) return date;
-      // 如果包含时间部分且时间为 00:00:00，则只显示日期
       const hasTime = dateObj.hour() !== 0 || dateObj.minute() !== 0 || dateObj.second() !== 0;
       return hasTime ? dateObj.format('YYYY-MM-DD HH:mm:ss') : dateObj.format('YYYY-MM-DD');
     } catch (error) {
@@ -165,37 +105,43 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
     }
   }, []);
 
-  // 处理查看项目详情
   const handleViewProject = useCallback((record: ProjectDto) => {
     setViewingProject(record);
     setDetailVisible(true);
   }, []);
 
-  // 处理编辑项目
   const handleEditProject = useCallback((record: ProjectDto) => {
     setEditingProject(record);
     setFormVisible(true);
   }, []);
 
-  // 行选择变化处理
-  const handleRowSelectionChange = useCallback((_: React.Key[], selectedRows: ProjectDto[]) => {
-    setSelectedRows(selectedRows);
+  const handleCloseForm = useCallback(() => {
+    setFormVisible(false);
   }, []);
 
-  // 表格列定义（使用 useMemo 避免每次渲染都重新创建）
-  const columns: ColumnsType<ProjectDto> = useMemo(() => [
+  const handleFormSuccess = useCallback(() => {
+    setFormVisible(false);
+    fetchStatistics();
+  }, [fetchStatistics]);
+
+  const handleCloseDetail = useCallback(() => {
+    setDetailVisible(false);
+    setViewingProject(null);
+  }, []);
+
+  const columns: ProColumns<ProjectDto>[] = useMemo(() => [
     {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.name' }),
       dataIndex: 'name',
       key: 'name',
-      render: (text: string, record: ProjectDto) => (
+      render: (dom: any, record: ProjectDto) => (
         <Space>
           <ProjectOutlined />
           <a
             onClick={() => handleViewProject(record)}
             style={{ cursor: 'pointer' }}
           >
-            {text}
+            {dom}
           </a>
         </Space>
       ),
@@ -220,7 +166,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.progress' }),
       dataIndex: 'progress',
       key: 'progress',
-      render: (progress: number) => <Progress percent={progress} size="small" />,
+      render: (dom: any) => <Progress percent={dom} size="small" />,
     },
     {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.priority' }),
@@ -240,13 +186,13 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.manager' }),
       dataIndex: 'managerName',
       key: 'managerName',
-      render: (text: string) => text || '-',
+      render: (dom: any) => dom || '-',
     },
     {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.createdBy' }),
       dataIndex: 'createdByName',
       key: 'createdByName',
-      render: (text: string) => text || '-',
+      render: (dom: any) => dom || '-',
     },
     {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.startDate' }),
@@ -296,33 +242,8 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
     },
   ], [intl, handleViewProject, handleEditProject, handleDelete, formatDateTime, formatDate]);
 
-  // 关闭表单处理
-  const handleCloseForm = useCallback(() => {
-    setFormVisible(false);
-  }, []);
-
-  // 表单成功处理
-  const handleFormSuccess = useCallback(() => {
-    setFormVisible(false);
-    fetchData();
-    fetchStatistics();
-  }, [fetchData, fetchStatistics]);
-
-  // 关闭详情处理
-  const handleCloseDetail = useCallback(() => {
-    setDetailVisible(false);
-    setViewingProject(null);
-  }, []);
-
-  // 搜索处理
-  const handleSearch = useCallback((params: any) => {
-    searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
-    fetchData();
-  }, [fetchData]);
-
   return (
     <div>
-      {/* 统计卡片 */}
       {statistics && (
         <Card className={styles.card} style={{ marginBottom: 16 }}>
           <Row gutter={[12, 12]}>
@@ -362,31 +283,35 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
         </Card>
       )}
 
-      {/* 搜索表单 */}
-      <SearchBar
-        initialParams={searchParamsRef.current}
-        onSearch={handleSearch}
-        style={{ marginBottom: 16 }}
-      />
-
-      {/* 项目列表表格 */}
-      <Table<ProjectDto>
-        dataSource={data}
-        columns={columns}
+      <ProTable<ProjectDto>
+        headerTitle={intl.formatMessage({ id: 'pages.projectManagement.title', defaultMessage: '项目管理' })}
+        actionRef={tableRef as any}
         rowKey="id"
-        loading={loading}
+        search={{ labelWidth: 'auto' }}
+        request={async (params: any) => {
+          const { current, pageSize, search, sortBy, sortOrder, ...rest } = params;
+          const response = await getProjectList({
+            page: current,
+            pageSize,
+            search,
+            sortBy,
+            sortOrder,
+            ...rest,
+          } as PageParams);
+          if (response.success && response.data) {
+            return { data: response.data.queryable || [], total: response.data.rowCount || 0, success: true };
+          }
+          return { data: [], total: 0, success: false };
+        }}
+        columns={columns}
         scroll={{ x: 'max-content' }}
-        onChange={handleTableChange}
-        rowSelection={{
-          onChange: handleRowSelectionChange,
-        }}
-        pagination={{
-          current: pagination.page,
-          total: pagination.total,
-        }}
+        toolBarRender={() => [
+          <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { setEditingProject(null); setFormVisible(true); }}>
+            {intl.formatMessage({ id: 'pages.projectManagement.createProject' })}
+          </Button>,
+        ]}
       />
 
-      {/* 项目表单弹窗 */}
       {formVisible && (
         <Modal
           title={editingProject ? intl.formatMessage({ id: 'pages.projectManagement.editProject' }) : intl.formatMessage({ id: 'pages.projectManagement.createProject' })}
@@ -403,7 +328,6 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
         </Modal>
       )}
 
-      {/* 项目详情抽屉 */}
       {detailVisible && viewingProject && (
         <ProjectDetail
           project={viewingProject}

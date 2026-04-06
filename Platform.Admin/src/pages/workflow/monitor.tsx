@@ -1,8 +1,8 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import React, { useState } from 'react';
 import { PageContainer } from '@/components';
-import { Card, Tag, Space, Button, Modal, Table, Form } from 'antd';
+import { Card, Tag, Space, Button, Modal, Form } from 'antd';
 import { EyeOutlined, MonitorOutlined, ReloadOutlined, HistoryOutlined, FormOutlined } from '@ant-design/icons';
-import type { ColumnsType } from 'antd/es/table';
+import { ProTable, ProColumns } from '@ant-design/pro-table';
 import {
   getWorkflowInstances, getWorkflowInstance, getApprovalHistory, getWorkflowDetail,
   type WorkflowInstance, WorkflowStatus, type WorkflowGraph, ApprovalAction,
@@ -26,38 +26,6 @@ const WorkflowMonitor: React.FC = () => {
   const [nodeFormInitial, setNodeFormInitial] = useState<Record<string, any> | null>(null);
   const [nodeFormLoading, setNodeFormLoading] = useState(false);
   const [currentFormInstanceId, setCurrentFormInstanceId] = useState<string | null>(null);
-  const [data, setData] = useState<WorkflowInstance[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, total: 0 });
-  const searchParamsRef = useRef<PageParams>({});
-
-  const fetchData = useCallback(async () => {
-    const currentParams = searchParamsRef.current;
-    setLoading(true);
-    try {
-      const response = await getWorkflowInstances({ 
-        page: currentParams.page, 
-        search: currentParams.search 
-      });
-      if (response.success && response.data) {
-        setData(response.data.queryable || []);
-        setPagination(prev => ({ ...prev, page: currentParams.page ?? prev.page, total: response.data!.rowCount ?? 0 }));
-      } else { setData([]); setPagination(prev => ({ ...prev, total: 0 })); }
-    } catch (error) { console.error('获取工作流实例列表失败:', error); setData([]); setPagination(prev => ({ ...prev, total: 0 })); }
-    finally { setLoading(false); }
-  }, []);
-
-  const handleSearch = useCallback((params: PageParams) => {
-    searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
-    fetchData();
-  }, [fetchData]);
-
-  const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
-    searchParamsRef.current = { ...searchParamsRef.current, page: pag.current, sortBy: sorter?.field, sortOrder: sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined };
-    fetchData();
-  }, [fetchData]);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
 
   const getFlowStatus = (status?: WorkflowStatus | null) => getStatusMeta(intl, status, workflowStatusMap);
 
@@ -95,21 +63,21 @@ const WorkflowMonitor: React.FC = () => {
       try {
         const res = await submitNodeForm(currentFormInstanceId!, previewInstance?.currentNodeId || '', values);
         if (res.success) {
-          setNodeFormVisible(false); setNodeFormDef(null); setNodeFormInitial(null); setCurrentFormInstanceId(null); fetchData();
+          setNodeFormVisible(false); setNodeFormDef(null); setNodeFormInitial(null); setCurrentFormInstanceId(null);
         }
       } catch (error) { console.error('提交表单失败:', error); }
     }
   };
 
-  const columns: ColumnsType<WorkflowInstance> = [
+  const columns: ProColumns<WorkflowInstance>[] = [
     { title: intl.formatMessage({ id: 'pages.workflow.monitor.table.instanceId' }), dataIndex: 'id', ellipsis: true, sorter: true },
     {
       title: intl.formatMessage({ id: 'pages.workflow.monitor.table.status' }), dataIndex: 'status', sorter: true,
       render: (_, record) => { const status = getFlowStatus(record.status); return <Tag color={status.color}>{status.text}</Tag>; },
     },
     { title: intl.formatMessage({ id: 'pages.workflow.monitor.table.startedBy' }), dataIndex: 'startedBy', ellipsis: true, sorter: true },
-    { title: intl.formatMessage({ id: 'pages.workflow.monitor.table.startedAt' }), dataIndex: 'startedAt', sorter: true, render: (text) => (text ? dayjs(text as string).format('YYYY-MM-DD HH:mm:ss') : '-') },
-    { title: intl.formatMessage({ id: 'pages.workflow.monitor.table.completedAt' }), dataIndex: 'completedAt', sorter: true, render: (text) => (text ? dayjs(text).format('YYYY-MM-DD HH:mm:ss') : '-') },
+    { title: intl.formatMessage({ id: 'pages.workflow.monitor.table.startedAt' }), dataIndex: 'startedAt', sorter: true, render: (dom) => (dom ? dayjs(dom as string).format('YYYY-MM-DD HH:mm:ss') : '-') },
+    { title: intl.formatMessage({ id: 'pages.workflow.monitor.table.completedAt' }), dataIndex: 'completedAt', sorter: true, render: (dom) => (dom ? dayjs(dom as string).format('YYYY-MM-DD HH:mm:ss') : '-') },
     {
       title: intl.formatMessage({ id: 'pages.workflow.monitor.table.action' }), key: 'action', fixed: 'right', width: 260,
       render: (_, record) => (
@@ -170,12 +138,24 @@ const WorkflowMonitor: React.FC = () => {
   return (
     <PageContainer
       title={<Space><MonitorOutlined />{intl.formatMessage({ id: 'pages.workflow.monitor.title' })}</Space>}
-      extra={<Button key="refresh" icon={<ReloadOutlined />} onClick={fetchData}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button>}
+      extra={<Button key="refresh" icon={<ReloadOutlined />} onClick={() => window.location.reload()}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button>}
     >
-      <Form form={Form.useForm()[0]} layout="inline" onFinish={(values) => handleSearch(values)} style={{ marginBottom: 16 }}>
-        <Form.Item name="search" label="搜索"><input placeholder="搜索实例" style={{ padding: '4px 8px', border: '1px solid #d9d9d9', borderRadius: 6 }} /></Form.Item>
-      </Form>
-      <Table<WorkflowInstance> dataSource={data} columns={columns} rowKey="id" loading={loading} scroll={{ x: 'max-content' }} onChange={handleTableChange} pagination={{ current: pagination.page, total: pagination.total }} />
+      <ProTable
+        headerTitle={intl.formatMessage({ id: 'pages.workflow.monitor.title' })}
+        actionRef={undefined}
+        rowKey="id"
+        search={{ labelWidth: 'auto' }}
+        request={async (params: any) => {
+          const { current, pageSize, ...rest } = params;
+          const response = await getWorkflowInstances({ page: current, pageSize, ...rest } as PageParams);
+          if (response.success && response.data) {
+            return { data: response.data.queryable || [], total: response.data.rowCount || 0, success: true };
+          }
+          return { data: [], total: 0, success: false };
+        }}
+        columns={columns}
+        scroll={{ x: 'max-content' }}
+      />
       <Modal title={intl.formatMessage({ id: 'pages.workflow.monitor.modal.progressTitle' })} open={previewVisible} onCancel={() => { setPreviewVisible(false); setPreviewInstance(null); }} footer={null} width="90%" style={{ top: 20 }} styles={{ body: { height: 'calc(100vh - 120px)' } }}>
         {previewInstance && (
           <div>

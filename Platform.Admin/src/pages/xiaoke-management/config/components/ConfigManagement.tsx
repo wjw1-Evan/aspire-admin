@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
-import type { ColumnsType } from 'antd/es/table';
 import { useIntl } from '@umijs/max';
-import { Button, Tag, Space, Modal, Card, Form, Input, Select, Grid, Table } from 'antd';
+import { Button, Tag, Space, Modal, Card, Form, Input, Select, Grid } from 'antd';
 import {
   EditOutlined,
   DeleteOutlined,
@@ -17,6 +16,7 @@ import {
 } from '@/services/xiaoke/api';
 import ConfigForm from './ConfigForm';
 import dayjs from 'dayjs';
+import { ProTable, ProColumns } from '@ant-design/pro-table';
 import type { PageParams } from '@/types';
 
 export interface ConfigManagementRef {
@@ -35,73 +35,6 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
   const [searchForm] = Form.useForm();
   const [formVisible, setFormVisible] = useState(false);
   const [editingConfig, setEditingConfig] = useState<XiaokeConfig | null>(null);
-  const [data, setData] = useState<XiaokeConfig[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, total: 0 });
-
-  const searchParamsRef = useRef<PageParams>({
-    search: '',
-  });
-
-  const fetchData = useCallback(async () => {
-    const currentParams = searchParamsRef.current;
-
-    setLoading(true);
-    try {
-      const response = await getXiaokeConfigs({
-        page: currentParams.page,
-        search: currentParams.search,
-      });
-
-      if (response.success && response.data) {
-        setData(response.data.queryable || []);
-        setPagination(prev => ({
-          ...prev,
-          page: currentParams.page ?? prev.page,
-          total: response.data!.rowCount ?? 0,
-        }));
-      } else {
-        setData([]);
-        setPagination(prev => ({ ...prev, total: 0 }));
-      }
-    } catch (error) {
-      console.error('获取配置列表失败:', error);
-      setData([]);
-      setPagination(prev => ({ ...prev, total: 0 }));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  const handleSearch = useCallback((values: any) => {
-    const newParams = {
-      ...searchParamsRef.current,
-      ...values,
-      page: 1,
-    };
-    searchParamsRef.current = newParams;
-    fetchData();
-  }, [fetchData]);
-
-  const handleReset = useCallback(() => {
-    searchForm.resetFields();
-    searchParamsRef.current = { page: 1, search: '' };
-    fetchData();
-  }, [searchForm, fetchData]);
-
-  const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
-    const newPage = pag.current;
-
-    searchParamsRef.current = {
-      ...searchParamsRef.current,
-      page: newPage,
-    };
-    fetchData();
-  }, [fetchData]);
 
   const handleCreate = useCallback(() => {
     setEditingConfig(null);
@@ -125,7 +58,6 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
           const response = await deleteXiaokeConfig(record.id);
           if (response.success) {
             message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.deleteSuccess' }));
-            fetchData();
           } else {
             message.error(response.message || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.deleteFailed' }));
           }
@@ -134,27 +66,25 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
         }
       },
     });
-  }, [intl, fetchData]);
+  }, [intl, message, confirm]);
 
   const handleSetDefault = useCallback(async (record: XiaokeConfig) => {
     try {
       const response = await setDefaultXiaokeConfig(record.id);
       if (response.success) {
         message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.setDefaultSuccess' }));
-        fetchData();
       } else {
         message.error(response.message || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.setDefaultFailed' }));
       }
     } catch (error: any) {
       message.error(error.message || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.setDefaultFailed' }));
     }
-  }, [intl, fetchData]);
+  }, [intl, message]);
 
   const handleFormSuccess = useCallback(() => {
     setFormVisible(false);
     setEditingConfig(null);
-    fetchData();
-  }, [fetchData]);
+  }, []);
 
   const handleCloseForm = useCallback(() => {
     setFormVisible(false);
@@ -163,12 +93,12 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
 
   useImperativeHandle(ref, () => ({
     reload: () => {
-      fetchData();
+      tableRef.current?.querySelector('button[data-action="reload"]')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     },
     handleCreate,
-  }), [handleCreate, fetchData]);
+  }), [handleCreate]);
 
-  const columns: ColumnsType<XiaokeConfig> = [
+  const columns: ProColumns<XiaokeConfig>[] = [
     {
       title: intl.formatMessage({ id: 'pages.xiaokeManagement.config.table.name' }),
       dataIndex: 'name',
@@ -190,7 +120,7 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
       key: 'temperature',
       width: 100,
       sorter: true,
-      render: (value: number) => value.toFixed(1),
+      render: (dom: any) => dom?.toFixed(1),
     },
     {
       title: intl.formatMessage({ id: 'pages.xiaokeManagement.config.table.maxTokens' }),
@@ -205,9 +135,9 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
       key: 'isEnabled',
       width: 100,
       sorter: true,
-      render: (value: boolean) => (
-        <Tag color={value ? 'success' : 'default'}>
-          {value
+      render: (dom: any, record: XiaokeConfig) => (
+        <Tag color={record.isEnabled ? 'success' : 'default'}>
+          {record.isEnabled
             ? intl.formatMessage({ id: 'pages.xiaokeManagement.config.status.enabled' })
             : intl.formatMessage({ id: 'pages.xiaokeManagement.config.status.disabled' })}
         </Tag>
@@ -219,9 +149,9 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
       key: 'isDefault',
       width: 100,
       sorter: true,
-      render: (value: boolean) => (
-        <Tag color={value ? 'blue' : 'default'}>
-          {value
+      render: (dom: any, record: XiaokeConfig) => (
+        <Tag color={record.isDefault ? 'blue' : 'default'}>
+          {record.isDefault
             ? intl.formatMessage({ id: 'pages.xiaokeManagement.config.isDefault.yes' })
             : intl.formatMessage({ id: 'pages.xiaokeManagement.config.isDefault.no' })}
         </Tag>
@@ -233,7 +163,7 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
       key: 'createdAt',
       width: 180,
       sorter: true,
-      render: (value: string) => dayjs(value).format('YYYY-MM-DD HH:mm:ss'),
+      render: (dom: any) => dayjs(dom).format('YYYY-MM-DD HH:mm:ss'),
     },
     {
       title: intl.formatMessage({ id: 'pages.xiaokeManagement.config.table.action' }),
@@ -276,50 +206,34 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
 
   return (
     <>
-      <Card style={{ marginBottom: 16 }}>
-        <Form
-          form={searchForm}
-          layout={isMobile ? 'vertical' : 'inline'}
-          onFinish={handleSearch}
-        >
-          <Form.Item name="name" label={intl.formatMessage({ id: 'pages.xiaokeManagement.config.table.name' })}>
-            <Input placeholder={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.namePlaceholder' })} allowClear style={{ width: isMobile ? '100%' : 240 }} />
-          </Form.Item>
-          <Form.Item name="isEnabled" label={intl.formatMessage({ id: 'pages.xiaokeManagement.config.table.status' })}>
-            <Select
-              placeholder={intl.formatMessage({ id: 'pages.xiaokeManagement.config.table.status' })}
-              allowClear
-              style={{ width: isMobile ? '100%' : 160 }}
-              options={[
-                { label: intl.formatMessage({ id: 'pages.xiaokeManagement.config.status.enabled' }), value: true },
-                { label: intl.formatMessage({ id: 'pages.xiaokeManagement.config.status.disabled' }), value: false },
-              ]}
-            />
-          </Form.Item>
-          <Form.Item>
-            <Space wrap>
-              <Button type="primary" htmlType="submit" style={isMobile ? { width: '100%' } : {}}>
-                搜索
-              </Button>
-              <Button onClick={handleReset} style={isMobile ? { width: '100%' } : {}}>
-                重置
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </Card>
-
-      <Table<XiaokeConfig>
-        dataSource={data}
-        columns={columns}
+      <ProTable<XiaokeConfig>
+        headerTitle={intl.formatMessage({ id: 'pages.xiaokeManagement.config.title', defaultMessage: '小科配置管理' })}
+        actionRef={tableRef as any}
         rowKey="id"
-        loading={loading}
-        scroll={{ x: 'max-content' }}
-        onChange={handleTableChange}
-        pagination={{
-          current: pagination.page,
-          total: pagination.total,
+        search={{
+          labelWidth: 'auto',
         }}
+        request={async (params: any) => {
+          const { current, pageSize, name, isEnabled, ...rest } = params;
+          const response = await getXiaokeConfigs({
+            page: current,
+            pageSize,
+            search: name,
+            isEnabled,
+            ...rest,
+          } as PageParams);
+          if (response.success && response.data) {
+            return { data: response.data.queryable || [], total: response.data.rowCount || 0, success: true };
+          }
+          return { data: [], total: 0, success: false };
+        }}
+        columns={columns}
+        scroll={{ x: 'max-content' }}
+        toolBarRender={() => [
+          <Button key="create" type="primary" icon={<EditOutlined />} onClick={handleCreate}>
+            {intl.formatMessage({ id: 'pages.xiaokeManagement.config.createConfig', defaultMessage: '新建配置' })}
+          </Button>,
+        ]}
       />
 
       {formVisible && (

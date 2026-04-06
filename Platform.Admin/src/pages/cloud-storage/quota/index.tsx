@@ -1,25 +1,22 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PageContainer, StatCard } from '@/components';
-import SearchBar from '@/components/SearchBar';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import { useIntl } from '@umijs/max';
 import { PieChartOutlined, EditOutlined, ReloadOutlined, UserOutlined, CloudOutlined, WarningOutlined, CheckCircleOutlined, BarChartOutlined, TableOutlined, DatabaseOutlined, CloudServerOutlined, LineChartOutlined, PlusOutlined, DeleteOutlined, FileOutlined, CalendarOutlined } from '@ant-design/icons';
-import { Grid, Button, Tag, Space, Modal, Drawer, Row, Col, Card, Form, Input, Select, Descriptions, Spin, Progress, InputNumber, Switch, Alert, Statistic, Tabs, Popconfirm, Typography, Badge, List, Avatar, Empty, Table, App } from 'antd';
+import { Grid, Button, Tag, Space, Modal, Drawer, Row, Col, Card, Form, InputNumber, Spin, Progress, Switch, Alert, Statistic, Tabs, Popconfirm, Typography, Badge, List, Avatar, Empty, App } from 'antd';
 import { getUserList, type AppUser } from '@/services/user/api';
 import { formatDateTime } from '@/utils/format';
 import { getCurrentCompany } from '@/services/company';
-import type { PageParams } from '@/types';
 import { request } from '@umijs/max';
 import { ApiResponse, PagedResult } from '@/types';
+import { ProTable, ProColumns } from '@ant-design/pro-table';
+import type { PageParams } from '@/types';
 
-// ==================== Types ====================
 interface StorageQuota { userId: string; totalQuota: number; usedQuota: number; fileCount: number; warningThreshold?: number; isEnabled: boolean; userDisplayName?: string; username?: string; createdAt: string; updatedAt: string; }
 interface QuotaUsageStats { totalUsers: number; totalQuota: number; totalUsed: number; averageUsage: number; usageDistribution: { range: string; count: number; percentage: number }[]; topUsers: { userId: string; userDisplayName?: string; username?: string; usedQuota: number; usagePercentage: number }[]; }
 interface QuotaWarning { userId: string; userDisplayName?: string; username?: string; warningType: string; usedQuota: number; totalQuota: number; usagePercentage: number; createdAt: string; }
 
-// ==================== API ====================
 const api = {
-    list: (params: { page: number; pageSize: number; sortBy?: string; sortOrder?: string; companyId?: string; search?: string }) => request<ApiResponse<PagedResult<StorageQuota>>>('/api/cloud-storage/quota/list', { method: 'GET', params }),
     getUserQuota: (userId: string) => request<ApiResponse<any>>(`/api/cloud-storage/quota/users/${userId}`),
     updateUserQuota: (userId: string, data: any) => request<ApiResponse<void>>(`/api/cloud-storage/quota/users/${userId}`, { method: 'PUT', data }),
     getUsageStats: () => request<ApiResponse<QuotaUsageStats>>('/api/cloud-storage/quota/usage-stats'),
@@ -34,11 +31,10 @@ const CloudStorageQuotaPage: React.FC = () => {
     const screens = Grid.useBreakpoint();
     const isMobile = !screens.md;
     const { styles } = useCommonStyles();
+    const tableRef = useRef<HTMLDivElement>(null);
 
     const [state, setState] = useState({
         activeTab: 'quota-list' as 'quota-list' | 'usage-stats' | 'warnings',
-        data: [] as StorageQuota[], loading: false,
-        pagination: { page: 1, total: 0 },
         usageStats: null as QuotaUsageStats | null,
         warnings: [] as QuotaWarning[],
         detailVisible: false, viewingQuota: null as StorageQuota | null,
@@ -50,7 +46,6 @@ const CloudStorageQuotaPage: React.FC = () => {
 
     const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
 
-    const searchParamsRef = useRef<PageParams>({});
     const [editQuotaForm] = Form.useForm();
     const [addQuotaForm] = Form.useForm();
 
@@ -59,25 +54,15 @@ const CloudStorageQuotaPage: React.FC = () => {
     }, []);
 
     const refreshAll = useCallback(() => {
-        if (state.activeTab === 'quota-list') fetchData();
+        if (state.activeTab === 'quota-list') {
+            tableRef.current?.querySelector('button[data-action="reload"]')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        }
         api.getUsageStats().then(res => { if (res.success && res.data) set({ usageStats: res.data }); else set({ usageStats: { totalUsers: 0, totalQuota: 0, totalUsed: 0, averageUsage: 0, usageDistribution: [], topUsers: [] } }); });
         api.getWarnings(state.currentCompanyId).then(res => { if (res.success && res.data) set({ warnings: res.data.queryable || [] }); });
     }, [state.activeTab, state.currentCompanyId]);
 
-    const fetchData = useCallback(async () => {
-        const { page = 1, search, sortBy, sortOrder } = searchParamsRef.current;
-        set({ loading: true });
-        try {
-            const res = await api.list({ page, sortBy, sortOrder, companyId: state.currentCompanyId, search });
-            if (res.success && res.data) { set({ data: res.data.queryable || [], pagination: { ...state.pagination, page, total: res.data.rowCount ?? 0 } }); }
-            else { set({ data: [], pagination: { ...state.pagination, total: 0 } }); }
-        } finally { set({ loading: false }); }
-    }, [state.currentCompanyId, state.pagination]);
-
     useEffect(() => { refreshAll(); }, [refreshAll]);
 
-    const handleSearch = useCallback((params: PageParams) => { searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 }; fetchData(); }, [fetchData]);
-    const handleTableChange = useCallback((pag: any, _f: any, s: any) => { searchParamsRef.current = { ...searchParamsRef.current, page: pag.current, sortBy: s?.field, sortOrder: s?.order === 'ascend' ? 'asc' : s?.order === 'descend' ? 'desc' : undefined }; fetchData(); }, [fetchData]);
     const handleTabChange = useCallback((key: string) => set({ activeTab: key as any }), []);
 
     const bytesToGB = (bytes?: number) => bytes === undefined || bytes === null ? 0 : Number((bytes / (1024 ** 3)).toFixed(2));
@@ -133,15 +118,15 @@ const CloudStorageQuotaPage: React.FC = () => {
         finally { set({ deletingId: null }); }
     }, [message, refreshAll, intl]);
 
-    const columns = [
-        { title: intl.formatMessage({ id: 'pages.cloud-storage.quota.field.user' }), dataIndex: 'userDisplayName', key: 'userDisplayName', sorter: true, render: (text: string, record: StorageQuota) => (<Space><UserOutlined /><a onClick={() => handleView(record)} style={{ cursor: 'pointer' }} title={text || record.username || record.userId}>{text || record.username || record.userId || intl.formatMessage({ id: 'pages.table.unknown' })}</a></Space>) },
-        { title: intl.formatMessage({ id: 'pages.table.username' }), dataIndex: 'username', key: 'username', sorter: true, render: (text: string, record: StorageQuota) => <span title={text || record.userId}>{text || record.userId || '-'}</span> },
-        { title: intl.formatMessage({ id: 'pages.cloud-storage.quota.field.totalQuota' }), dataIndex: 'totalQuota', key: 'totalQuota', sorter: true, render: (q: number) => formatFileSize(q) },
-        { title: intl.formatMessage({ id: 'pages.cloud-storage.quota.field.usedQuota' }), dataIndex: 'usedQuota', key: 'usedQuota', sorter: true, render: (u: number) => formatFileSize(u) },
+    const columns: ProColumns<StorageQuota>[] = [
+        { title: intl.formatMessage({ id: 'pages.cloud-storage.quota.field.user' }), dataIndex: 'userDisplayName', key: 'userDisplayName', sorter: true, render: (dom: any, record: StorageQuota) => (<Space><UserOutlined /><a onClick={() => handleView(record)} style={{ cursor: 'pointer' }} title={dom || record.username || record.userId}>{dom || record.username || record.userId || intl.formatMessage({ id: 'pages.table.unknown' })}</a></Space>) },
+        { title: intl.formatMessage({ id: 'pages.table.username' }), dataIndex: 'username', key: 'username', sorter: true, render: (dom: any, record: StorageQuota) => <span title={dom || record.userId}>{dom || record.userId || '-'}</span> },
+        { title: intl.formatMessage({ id: 'pages.cloud-storage.quota.field.totalQuota' }), dataIndex: 'totalQuota', key: 'totalQuota', sorter: true, render: (dom: any) => formatFileSize(dom) },
+        { title: intl.formatMessage({ id: 'pages.cloud-storage.quota.field.usedQuota' }), dataIndex: 'usedQuota', key: 'usedQuota', sorter: true, render: (dom: any) => formatFileSize(dom) },
         { title: intl.formatMessage({ id: 'pages.cloud-storage.quota.field.usagePercentage' }), key: 'usagePercentage', render: (_: any, r: StorageQuota) => { const pct = r.totalQuota > 0 ? parseFloat(((r.usedQuota / r.totalQuota) * 100).toFixed(2)) : 0; return <Progress percent={pct} size="small" strokeColor={getUsageColor(pct)} format={(p) => `${p}%`} />; } },
         { title: intl.formatMessage({ id: 'pages.cloud-storage.quota.field.fileCount' }), dataIndex: 'fileCount', key: 'fileCount', sorter: true },
         { title: intl.formatMessage({ id: 'pages.table.status' }), key: 'status', render: (_: any, r: StorageQuota) => getStatusTag(r) },
-        { title: intl.formatMessage({ id: 'pages.table.updatedAt', defaultMessage: '更新时间' }), dataIndex: 'updatedAt', key: 'updatedAt', sorter: true, render: (t: string) => formatDateTime(t) },
+        { title: intl.formatMessage({ id: 'pages.table.updatedAt', defaultMessage: '更新时间' }), dataIndex: 'updatedAt', key: 'updatedAt', sorter: true, render: (dom: any) => formatDateTime(dom) },
         { title: intl.formatMessage({ id: 'pages.table.actions' }), key: 'action', fixed: 'right' as const, render: (_: any, r: StorageQuota) => (<Space>
             <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(r)}>{intl.formatMessage({ id: 'pages.table.edit' })}</Button>
             <Button type="link" size="small" danger icon={<DeleteOutlined />} loading={state.deletingId === r.userId} onClick={() => modal.confirm({ title: intl.formatMessage({ id: 'pages.cloud-storage.quota.confirmDelete.title' }), content: intl.formatMessage({ id: 'pages.cloud-storage.quota.confirmDelete.desc' }), onOk: () => handleDelete(r), okButtonProps: { danger: true } })}>{intl.formatMessage({ id: 'pages.table.delete' })}</Button>
@@ -156,7 +141,26 @@ const CloudStorageQuotaPage: React.FC = () => {
             </Space>}>
             <Card className={styles.card}>
                 <Tabs activeKey={state.activeTab} onChange={handleTabChange} items={[
-                    { key: 'quota-list', label: <Space><TableOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.quota.tabs.quotaList' })}</Space>, children: (<div><SearchBar initialParams={searchParamsRef.current} onSearch={handleSearch} style={{ marginBottom: 16 }} /><Table<StorageQuota> dataSource={state.data} rowKey="userId" columns={columns} loading={state.loading} onChange={handleTableChange} pagination={{ current: state.pagination.page, total: state.pagination.total }} /></div>) },
+                    { key: 'quota-list', label: <Space><TableOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.quota.tabs.quotaList' })}</Space>, children: (
+                        <ProTable<StorageQuota>
+                            actionRef={tableRef as any}
+                            rowKey="userId"
+                            search={{ labelWidth: 'auto' }}
+                            request={async (params: any) => {
+                                const { current, pageSize, search, sortBy, sortOrder, ...rest } = params;
+                                const res = await request<ApiResponse<PagedResult<StorageQuota>>>('/api/cloud-storage/quota/list', {
+                                    method: 'GET',
+                                    params: { page: current, pageSize, sortBy, sortOrder, companyId: state.currentCompanyId, search, ...rest } as PageParams,
+                                });
+                                if (res.success && res.data) {
+                                    return { data: res.data.queryable || [], total: res.data.rowCount || 0, success: true };
+                                }
+                                return { data: [], total: 0, success: false };
+                            }}
+                            columns={columns}
+                            scroll={{ x: 'max-content' }}
+                        />
+                    )},
                     { key: 'usage-stats', label: <Space><PieChartOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.quota.tabs.usageStats' })}</Space>, children: state.usageStats ? (<Space direction="vertical" style={{ width: '100%' }} size="large">
                         <Row gutter={[16, 16]}>
                             <Col xs={24} sm={12} md={6}><StatCard title={intl.formatMessage({ id: 'pages.cloud-storage.quota.statistics.totalUsers' })} value={state.usageStats.totalUsers} icon={<UserOutlined />} color="#1890ff" /></Col>
@@ -183,25 +187,23 @@ const CloudStorageQuotaPage: React.FC = () => {
                 ]} />
             </Card>
 
-            {/* 详情 */}
             <Drawer title={intl.formatMessage({ id: 'pages.cloud-storage.quota.drawer.title' })} placement="right" onClose={() => set({ detailVisible: false })} open={state.detailVisible} size={isMobile ? 'default' : 'large'}>
                 <Spin spinning={!state.viewingQuota}>
                     {state.viewingQuota && (<Card title={intl.formatMessage({ id: 'pages.cloud-storage.quota.drawer.basicInfo' })} className={styles.card} style={{ marginBottom: 16 }}>
-                        <Descriptions column={isMobile ? 1 : 2} size="small">
-                            <Descriptions.Item label={<Space><UserOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.quota.field.user' })}</Space>} span={2}>{state.viewingQuota.userDisplayName && state.viewingQuota.userDisplayName !== state.viewingQuota.username ? `${state.viewingQuota.userDisplayName} (${state.viewingQuota.username})` : state.viewingQuota.userDisplayName || state.viewingQuota.username || '-'}</Descriptions.Item>
-                            <Descriptions.Item label={<Space><CloudOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.quota.field.totalQuota' })}</Space>}>{formatFileSize(state.viewingQuota.totalQuota)}</Descriptions.Item>
-                            <Descriptions.Item label={<Space><BarChartOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.quota.field.usedQuota' })}</Space>}>{formatFileSize(state.viewingQuota.usedQuota)}</Descriptions.Item>
-                            <Descriptions.Item label={<Space><PieChartOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.quota.field.usagePercentage' })}</Space>}><Progress percent={state.viewingQuota.totalQuota > 0 ? Math.round((state.viewingQuota.usedQuota / state.viewingQuota.totalQuota) * 100) : 0} size="small" strokeColor={getUsageColor(state.viewingQuota.totalQuota > 0 ? (state.viewingQuota.usedQuota / state.viewingQuota.totalQuota) * 100 : 0)} /></Descriptions.Item>
-                            <Descriptions.Item label={<Space><FileOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.quota.field.fileCount' })}</Space>}>{state.viewingQuota.fileCount || 0}</Descriptions.Item>
-                            <Descriptions.Item label={<Space><WarningOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.quota.field.warningThreshold' })}</Space>}>{state.viewingQuota.warningThreshold || 80}%</Descriptions.Item>
-                            <Descriptions.Item label={<Space><CheckCircleOutlined />{intl.formatMessage({ id: 'pages.table.isEnabled' })}</Space>}>{state.viewingQuota.isEnabled !== false ? intl.formatMessage({ id: 'pages.table.enable' }) : intl.formatMessage({ id: 'pages.table.disable' })}</Descriptions.Item>
-                            <Descriptions.Item label={<Space><CalendarOutlined />{intl.formatMessage({ id: 'pages.table.updatedAt' })}</Space>}>{formatDateTime(state.viewingQuota.updatedAt)}</Descriptions.Item>
-                        </Descriptions>
+                        <Row gutter={[16, 16]}>
+                            <Col span={24}><Space><UserOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.quota.field.user' })}: </Space>{state.viewingQuota.userDisplayName && state.viewingQuota.userDisplayName !== state.viewingQuota.username ? `${state.viewingQuota.userDisplayName} (${state.viewingQuota.username})` : state.viewingQuota.userDisplayName || state.viewingQuota.username || '-'}</Col>
+                            <Col xs={24} sm={12}><Space><CloudOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.quota.field.totalQuota' })}: </Space>{formatFileSize(state.viewingQuota.totalQuota)}</Col>
+                            <Col xs={24} sm={12}><Space><BarChartOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.quota.field.usedQuota' })}: </Space>{formatFileSize(state.viewingQuota.usedQuota)}</Col>
+                            <Col xs={24} sm={12}><Space><PieChartOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.quota.field.usagePercentage' })}: </Space><Progress percent={state.viewingQuota.totalQuota > 0 ? Math.round((state.viewingQuota.usedQuota / state.viewingQuota.totalQuota) * 100) : 0} size="small" strokeColor={getUsageColor(state.viewingQuota.totalQuota > 0 ? (state.viewingQuota.usedQuota / state.viewingQuota.totalQuota) * 100 : 0)} /></Col>
+                            <Col xs={24} sm={12}><Space><FileOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.quota.field.fileCount' })}: </Space>{state.viewingQuota.fileCount || 0}</Col>
+                            <Col xs={24} sm={12}><Space><WarningOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.quota.field.warningThreshold' })}: </Space>{state.viewingQuota.warningThreshold || 80}%</Col>
+                            <Col xs={24} sm={12}><Space><CheckCircleOutlined />{intl.formatMessage({ id: 'pages.table.isEnabled' })}: </Space>{state.viewingQuota.isEnabled !== false ? intl.formatMessage({ id: 'pages.table.enable' }) : intl.formatMessage({ id: 'pages.table.disable' })}</Col>
+                            <Col xs={24} sm={12}><Space><CalendarOutlined />{intl.formatMessage({ id: 'pages.table.updatedAt' })}: </Space>{formatDateTime(state.viewingQuota.updatedAt)}</Col>
+                        </Row>
                     </Card>)}
                 </Spin>
             </Drawer>
 
-            {/* 编辑配额 */}
             <Modal title={intl.formatMessage({ id: 'pages.cloud-storage.quota.action.edit' })} open={state.editQuotaVisible} onCancel={() => { set({ editQuotaVisible: false, editingQuota: null }); editQuotaForm.resetFields(); }} footer={null} width={600}>
                 <Form form={editQuotaForm} layout="vertical" onFinish={handleEditSubmit}>
                     <Form.Item name="totalQuota" label={intl.formatMessage({ id: 'pages.cloud-storage.quota.field.totalQuotaGB' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.cloud-storage.quota.placeholder.totalQuota' }) }]}><InputNumber placeholder={intl.formatMessage({ id: 'pages.cloud-storage.quota.placeholder.totalQuota' })} style={{ width: '100%' }} min={0} formatter={(v) => `${v}`} /></Form.Item>
@@ -211,10 +213,9 @@ const CloudStorageQuotaPage: React.FC = () => {
                 </Form>
             </Modal>
 
-            {/* 新增配额 */}
             <Modal title={intl.formatMessage({ id: 'pages.cloud-storage.quota.action.add' })} open={state.addQuotaVisible} onCancel={() => { set({ addQuotaVisible: false }); addQuotaForm.resetFields(); }} footer={null} width={600}>
                 <Form form={addQuotaForm} layout="vertical" onFinish={handleAddSubmit}>
-                    <Form.Item name="userId" label={intl.formatMessage({ id: 'pages.cloud-storage.quota.field.user' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.cloud-storage.quota.message.selectUser' }) }]}><Select showSearch placeholder={intl.formatMessage({ id: 'pages.cloud-storage.quota.message.selectUser' })} loading={state.userLoading} optionFilterProp="label" onSearch={(v) => loadUserOptions(v)} filterOption={false} options={state.userOptions.map(u => ({ label: u.name || u.username, value: u.id }))} /></Form.Item>
+                    <Form.Item name="userId" label={intl.formatMessage({ id: 'pages.cloud-storage.quota.field.user' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.cloud-storage.quota.message.selectUser' }) }]}><Space.Compact style={{ width: '100%' }}><InputNumber placeholder={intl.formatMessage({ id: 'pages.cloud-storage.quota.message.selectUser' })} style={{ width: '100%' }} /></Space.Compact></Form.Item>
                     <Form.Item name="totalQuota" label={intl.formatMessage({ id: 'pages.cloud-storage.quota.field.totalQuotaGB' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.cloud-storage.quota.placeholder.totalQuota' }) }]}><InputNumber placeholder={intl.formatMessage({ id: 'pages.cloud-storage.quota.placeholder.totalQuota' })} style={{ width: '100%' }} min={0} formatter={(v) => `${v}`} /></Form.Item>
                     <Form.Item name="warningThreshold" label={intl.formatMessage({ id: 'pages.cloud-storage.quota.field.warningThresholdPercent' })}><InputNumber placeholder={intl.formatMessage({ id: 'pages.cloud-storage.quota.placeholder.warningThreshold' })} style={{ width: '100%' }} min={0} max={100} /></Form.Item>
                     <Form.Item name="isEnabled" label={intl.formatMessage({ id: 'pages.table.isEnabled' })} valuePropName="checked" initialValue={true}><Switch defaultChecked /></Form.Item>

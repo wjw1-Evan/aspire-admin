@@ -1,10 +1,9 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import React, { useState } from 'react';
 import { PageContainer } from '@/components';
-import { Button, Space, Modal, Tag, Table, App, Form } from 'antd';
+import { Button, Space, Modal, Tag, App, Form } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, PartitionOutlined, ReloadOutlined } from '@ant-design/icons';
-import type { ColumnsType } from 'antd/es/table';
+import { ProTable, ProColumns } from '@ant-design/pro-table';
 import { getWorkflowList, deleteWorkflow, type WorkflowDefinition } from '@/services/workflow/api';
-import type { PagedResult } from '@/types';
 import WorkflowCreateForm from './components/WorkflowCreateForm';
 import WorkflowEditForm from './components/WorkflowEditForm';
 import { useIntl } from '@umijs/max';
@@ -18,46 +17,12 @@ const WorkflowManagement: React.FC = () => {
   const [editingWorkflow, setEditingWorkflow] = useState<WorkflowDefinition | null>(null);
   const [previewVisible, setPreviewVisible] = useState(false);
   const [createModalVisible, setCreateModalVisible] = useState(false);
-  const [data, setData] = useState<WorkflowDefinition[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, total: 0 });
-  const searchParamsRef = useRef<PageParams>({});
 
-  const fetchData = useCallback(async () => {
-    const currentParams = searchParamsRef.current;
-    setLoading(true);
-    try {
-      const response = await getWorkflowList(currentParams);
-      if (response.success && response.data) {
-        const paged = response.data as PagedResult<WorkflowDefinition>;
-        setData(paged.queryable || []);
-        setPagination(prev => ({ ...prev, page: currentParams.page ?? prev.page, total: paged.rowCount ?? 0 }));
-      } else {
-        setData([]); setPagination(prev => ({ ...prev, total: 0 }));
-      }
-    } catch (error) {
-      console.error('获取工作流列表失败:', error);
-      setData([]); setPagination(prev => ({ ...prev, total: 0 }));
-    } finally { setLoading(false); }
-  }, []);
-
-  const handleSearch = useCallback((params: PageParams) => {
-    searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
-    fetchData();
-  }, [fetchData]);
-
-  const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
-    searchParamsRef.current = { ...searchParamsRef.current, page: pag.current, sortBy: sorter?.field, sortOrder: sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined };
-    fetchData();
-  }, [fetchData]);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
-
-  const columns: ColumnsType<WorkflowDefinition> = [
+  const columns: ProColumns<WorkflowDefinition>[] = [
     {
       title: intl.formatMessage({ id: 'pages.workflow.table.name' }), dataIndex: 'name', ellipsis: true, sorter: true,
-      render: (name, record) => (
-        <Button type="link" style={{ padding: 0 }} onClick={() => { setEditingWorkflow(record); setPreviewVisible(true); }}>{name}</Button>
+      render: (dom, record) => (
+        <Button type="link" style={{ padding: 0 }} onClick={() => { setEditingWorkflow(record); setPreviewVisible(true); }}>{dom}</Button>
       ),
     },
     { title: intl.formatMessage({ id: 'pages.workflow.table.category' }), dataIndex: 'category', ellipsis: true, sorter: true },
@@ -70,7 +35,7 @@ const WorkflowManagement: React.FC = () => {
         </Tag>
       ),
     },
-    { title: intl.formatMessage({ id: 'pages.workflow.table.createdAt' }), dataIndex: 'createdAt', sorter: true, render: (text) => text ? dayjs(text).format('YYYY-MM-DD HH:mm:ss') : '' },
+    { title: intl.formatMessage({ id: 'pages.workflow.table.createdAt' }), dataIndex: 'createdAt', sorter: true, render: (dom) => dom ? dayjs(dom as string).format('YYYY-MM-DD HH:mm:ss') : '' },
     {
       title: intl.formatMessage({ id: 'pages.workflow.table.action' }), width: 150,
       render: (_, record) => (
@@ -85,7 +50,7 @@ const WorkflowManagement: React.FC = () => {
               onOk: async () => {
                 try {
                   const response = await deleteWorkflow(record.id!);
-                  if (response.success) { message.success(intl.formatMessage({ id: 'pages.workflow.message.deleteSuccess' })); fetchData(); }
+                  if (response.success) { message.success(intl.formatMessage({ id: 'pages.workflow.message.deleteSuccess' })); }
                 } catch (error) { console.error('删除失败:', error); }
               },
             });
@@ -101,20 +66,34 @@ const WorkflowManagement: React.FC = () => {
     <PageContainer
       title={<Space><PartitionOutlined />{intl.formatMessage({ id: 'pages.workflow.title' })}</Space>}
       extra={<Space wrap>
-        <Button key="refresh" icon={<ReloadOutlined />} onClick={fetchData}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button>
         <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => setCreateModalVisible(true)}>{intl.formatMessage({ id: 'pages.workflow.create' })}</Button>
       </Space>}
     >
-      <Form form={Form.useForm()[0]} layout="inline" onFinish={(values) => handleSearch(values)} style={{ marginBottom: 16 }}>
-        <Form.Item name="search" label="搜索"><input placeholder="搜索工作流" style={{ padding: '4px 8px', border: '1px solid #d9d9d9', borderRadius: 6 }} /></Form.Item>
-      </Form>
-      <Table<WorkflowDefinition> dataSource={data} columns={columns} rowKey="id" loading={loading} scroll={{ x: 'max-content' }} onChange={handleTableChange} pagination={{ current: pagination.page, total: pagination.total }} />
+      <ProTable
+        headerTitle={intl.formatMessage({ id: 'pages.workflow.table.name' })}
+        actionRef={undefined}
+        rowKey="id"
+        search={{ labelWidth: 'auto' }}
+        request={async (params: any) => {
+          const { current, pageSize, ...rest } = params;
+          const response = await getWorkflowList({ page: current, pageSize, ...rest } as PageParams);
+          if (response.success && response.data) {
+            return { data: response.data.queryable || [], total: response.data.rowCount || 0, success: true };
+          }
+          return { data: [], total: 0, success: false };
+        }}
+        columns={columns}
+        scroll={{ x: 'max-content' }}
+        toolBarRender={() => [
+          <Button key="refresh" icon={<ReloadOutlined />} onClick={() => window.location.reload()}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button>,
+        ]}
+      />
       <Modal title={intl.formatMessage({ id: 'pages.workflow.create.title' })} open={createModalVisible} onCancel={() => setCreateModalVisible(false)} footer={null} width="95%" style={{ top: 20 }} styles={{ body: { height: 'calc(100vh - 100px)', padding: '12px 24px' } }} destroyOnHidden>
-        <WorkflowCreateForm onSuccess={() => { setCreateModalVisible(false); fetchData(); }} onCancel={() => setCreateModalVisible(false)} />
+        <WorkflowCreateForm onSuccess={() => { setCreateModalVisible(false); window.location.reload(); }} onCancel={() => setCreateModalVisible(false)} />
       </Modal>
       <Modal title={editingWorkflow && designerVisible ? intl.formatMessage({ id: 'pages.workflow.action.edit' }) : intl.formatMessage({ id: 'pages.workflow.action.preview' })} open={designerVisible || previewVisible} onCancel={() => { setDesignerVisible(false); setPreviewVisible(false); setEditingWorkflow(null); }} footer={null} width="95%" style={{ top: 20 }} styles={{ body: { height: 'calc(100vh - 100px)', padding: '12px 24px' } }} destroyOnHidden>
         {editingWorkflow && (
-          <WorkflowEditForm workflow={editingWorkflow} readOnly={previewVisible} onSuccess={() => { setDesignerVisible(false); setEditingWorkflow(null); fetchData(); }} onCancel={() => { setDesignerVisible(false); setPreviewVisible(false); setEditingWorkflow(null); }} />
+          <WorkflowEditForm workflow={editingWorkflow} readOnly={previewVisible} onSuccess={() => { setDesignerVisible(false); setEditingWorkflow(null); window.location.reload(); }} onCancel={() => { setDesignerVisible(false); setPreviewVisible(false); setEditingWorkflow(null); }} />
         )}
       </Modal>
     </PageContainer>

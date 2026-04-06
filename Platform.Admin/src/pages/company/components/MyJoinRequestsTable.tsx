@@ -1,10 +1,11 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { Tag, Space, App, Popconfirm, theme, Button, Table } from 'antd';
+import React, { useCallback } from 'react';
+import { Tag, App, Popconfirm, theme, Button } from 'antd';
 import { request, useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import { cancelJoinRequest } from '@/services/company';
 import { UndoOutlined } from '@ant-design/icons';
-import type { ColumnsType } from 'antd/es/table';
+import { ProTable, ProColumns } from '@ant-design/pro-table';
+import type { PageParams } from '@/types';
 
 interface JoinRequestDetail {
     id: string;
@@ -20,59 +21,21 @@ const MyJoinRequestsTable: React.FC = () => {
     const intl = useIntl();
     const { message } = App.useApp();
     const { token } = theme.useToken();
-    const [data, setData] = useState<JoinRequestDetail[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [pagination, setPagination] = useState({ page: 1, total: 0 });
 
-    const fetchData = useCallback(async () => {
-        setLoading(true);
-        try {
-            const result = await request('/api/company/my-join-requests', {
-                params: {},
-            });
-            if (result.data) {
-                setData(result.data || []);
-                setPagination(prev => ({ ...prev, total: result.data?.length || 0 }));
-            } else {
-                setData([]);
-                setPagination(prev => ({ ...prev, total: 0 }));
-            }
-        } catch (error) {
-            console.error('加载数据失败:', error);
-            setData([]);
-            setPagination(prev => ({ ...prev, total: 0 }));
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
-
-    const handleTableChange = useCallback((pag: any, _filters: any, sorter: any) => {
-        setPagination(prev => ({
-            ...prev,
-            page: pag.current,
-        }));
-        fetchData();
-    }, [fetchData]);
-
-    const handleCancel = async (id: string) => {
+    const handleCancel = useCallback(async (id: string) => {
         try {
             const response = await cancelJoinRequest(id);
             if (response.success) {
                 message.success('申请已撤销');
-                fetchData();
             } else {
                 message.error(response.message || '撤销失败');
             }
         } catch (error) {
             console.error('撤销失败:', error);
         }
-    };
+    }, [message]);
 
-    const columns: ColumnsType<JoinRequestDetail> = [
+    const columns: ProColumns<JoinRequestDetail>[] = [
         {
             title: '企业名称',
             dataIndex: 'companyName',
@@ -93,14 +56,14 @@ const MyJoinRequestsTable: React.FC = () => {
             dataIndex: 'status',
             key: 'status',
             sorter: true,
-            render: (status: string) => {
+            render: (_: any, record: JoinRequestDetail) => {
                 const statusMap: Record<string, { text: string; color: string }> = {
                     pending: { text: intl.formatMessage({ id: 'pages.status.pending', defaultMessage: '待审核' }), color: 'processing' },
                     approved: { text: intl.formatMessage({ id: 'pages.status.approved', defaultMessage: '已通过' }), color: 'success' },
                     rejected: { text: intl.formatMessage({ id: 'pages.status.rejected', defaultMessage: '已拒绝' }), color: 'error' },
                     cancelled: { text: intl.formatMessage({ id: 'pages.status.cancelled', defaultMessage: '已取消' }), color: 'default' },
                 };
-                const config = statusMap[status] || { text: status, color: 'default' };
+                const config = statusMap[record.status] || { text: record.status, color: 'default' };
                 return <Tag color={config.color}>{config.text}</Tag>;
             },
         },
@@ -109,7 +72,7 @@ const MyJoinRequestsTable: React.FC = () => {
             dataIndex: 'createdAt',
             key: 'createdAt',
             sorter: true,
-            render: (text: string) => text ? dayjs(text).format('YYYY-MM-DD HH:mm:ss') : '-',
+            render: (dom: any) => dom ? dayjs(dom).format('YYYY-MM-DD HH:mm:ss') : '-',
         },
         {
             title: '审核人',
@@ -123,9 +86,9 @@ const MyJoinRequestsTable: React.FC = () => {
             dataIndex: 'rejectReason',
             key: 'rejectReason',
             sorter: true,
-            render: (text, record) => {
+            render: (dom: any, record: JoinRequestDetail) => {
                 if (record.status === 'rejected') {
-                    return <span style={{ color: token.colorError }}>拒绝原因: {text}</span>;
+                    return <span style={{ color: token.colorError }}>拒绝原因: {dom}</span>;
                 }
                 return '-';
             }
@@ -161,17 +124,23 @@ const MyJoinRequestsTable: React.FC = () => {
     ];
 
     return (
-        <Table<JoinRequestDetail>
-            dataSource={data}
-            columns={columns}
+        <ProTable<JoinRequestDetail>
+            headerTitle={intl.formatMessage({ id: 'pages.company.myJoinRequests.title', defaultMessage: '我的加入申请' })}
             rowKey="id"
-            loading={loading}
-            scroll={{ x: 'max-content' }}
-            onChange={handleTableChange}
-            pagination={{
-                current: pagination.page,
-                total: pagination.total,
+            search={false}
+            request={async (params: any) => {
+                const { current, pageSize, ...rest } = params;
+                const result = await request('/api/company/my-join-requests', {
+                    params: { page: current, pageSize, ...rest } as PageParams,
+                });
+                if (result.data) {
+                    const data = result.data || [];
+                    return { data, total: data.length || 0, success: true };
+                }
+                return { data: [], total: 0, success: false };
             }}
+            columns={columns}
+            scroll={{ x: 'max-content' }}
         />
     );
 };

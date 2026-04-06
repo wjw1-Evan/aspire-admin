@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { request } from '@umijs/max';
-import { Tag, Space, Button, Popconfirm, Modal, Drawer, Form } from 'antd';
+import { Tag, Space, Button, Popconfirm, Modal, Drawer, Form, Input } from 'antd';
 
 import { PageContainer, ModalForm, ProDescriptions, ProCard, ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
 import { ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-form';
@@ -49,6 +49,7 @@ const PasswordBook: React.FC = () => {
     detailVisible: false,
     viewingId: '',
     sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
+    search: '' as string,
   });
   const [formState, setFormState] = useState({ tags: [] as string[] });
   const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
@@ -133,26 +134,36 @@ const PasswordBook: React.FC = () => {
         ))}
       </ProCard>
 
-      <ProTable
-        actionRef={actionRef}
-        request={async (params) => {
-          const { current, pageSize } = params;
-          const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-          const res = await api.list({ page: current, pageSize, sortBy: sortParams?.sortBy, sortOrder: sortParams?.sortOrder });
-          return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
-        }}
-        columns={columns}
-        rowKey="id"
-        onChange={(_, __, s) => {
-          const sorter = Array.isArray(s) ? s[0] : s;
-          set({ sorter: sorter?.order ? { sortBy: sorter.field as string, sortOrder: sorter.order === 'ascend' ? 'asc' : 'desc' } : undefined });
-        }}
-        search={false}
+        <ProTable
+          actionRef={actionRef}
+          request={async (params) => {
+            const { current, pageSize } = params;
+            const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
+          const res = await api.list({ page: current, pageSize, sortBy: sortParams?.sortBy, sortOrder: sortParams?.sortOrder, search: state.search });
+            return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+          }}
+          columns={columns}
+          rowKey="id"
+          onChange={(_, __, s) => {
+            const sorter = Array.isArray(s) ? s[0] : s;
+            set({ sorter: sorter?.order ? { sortBy: sorter.field as string, sortOrder: sorter.order === 'ascend' ? 'asc' : 'desc' } : undefined });
+          }}
+          search={false}
         toolBarRender={() => [
+          <Input.Search
+            key="search"
+            placeholder="搜索..."
+            value={state.search}
+            onChange={(e) => set({ search: e.target.value })}
+            onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+            style={{ width: 260, marginRight: 8 }}
+          />,
           <Button key="export" icon={<ExportOutlined />} onClick={() => set({ exportVisible: true })}>导出</Button>,
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingEntry: null, formVisible: true })}>新建</Button>,
         ]}
-      />
+        />
+
+        
 
       <ModalForm
         key={state.editingEntry?.id || 'create'}

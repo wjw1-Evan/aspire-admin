@@ -24,7 +24,8 @@ public class PasswordBookService : IPasswordBookService
     public PasswordBookService(DbContext context,
         IEncryptionService encryptionService,
         ILogger<PasswordBookService> logger
-    ) {
+    )
+    {
         _context = context;
         _encryptionService = encryptionService ?? throw new ArgumentNullException(nameof(encryptionService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -73,7 +74,7 @@ public class PasswordBookService : IPasswordBookService
     {
         if (string.IsNullOrEmpty(userId))
             throw new ArgumentException("用户ID不能为空", nameof(userId));
-        
+
         var entry = await _context.Set<PasswordBookEntry>().FirstOrDefaultAsync(x => x.Id == id);
         if (entry == null)
             return null;
@@ -104,7 +105,7 @@ public class PasswordBookService : IPasswordBookService
             entry.Notes = request.Notes;
         if (request.IsPublic.HasValue)
             entry.IsPublic = request.IsPublic.Value;
-            
+
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("Password book entry updated: {EntryId}", id);
@@ -118,7 +119,7 @@ public class PasswordBookService : IPasswordBookService
     {
         if (string.IsNullOrEmpty(userId))
             throw new ArgumentException("用户ID不能为空", nameof(userId));
-        
+
         var entry = await _context.Set<PasswordBookEntry>().FirstOrDefaultAsync(x => x.Id == id);
         if (entry == null)
             return null;
@@ -161,8 +162,8 @@ public class PasswordBookService : IPasswordBookService
     {
         if (string.IsNullOrEmpty(userId))
             throw new ArgumentException("用户ID不能为空", nameof(userId));
-        
-        pageParams.SortBy = string.IsNullOrEmpty(pageParams.SortBy) ? "LastUsedAt" : pageParams.SortBy;
+
+
 
         var query = _context.Set<PasswordBookEntry>()
             .Where(e => e.UserId == userId || e.IsPublic)
@@ -181,17 +182,8 @@ public class PasswordBookService : IPasswordBookService
                 IsPublic = e.IsPublic
             });
 
-        var pagedResult = query.ToPagedList(pageParams);
-        var items = await pagedResult.Queryable.ToListAsync();
+        return query.ToPagedList(pageParams);
 
-        return new System.Linq.Dynamic.Core.PagedResult<PasswordBookEntryDto>
-        {
-            Queryable = items.AsQueryable(),
-            CurrentPage = pagedResult.CurrentPage,
-            PageSize = pagedResult.PageSize,
-            RowCount = pagedResult.RowCount,
-            PageCount = pagedResult.PageCount
-        };
     }
 
     /// <summary>
@@ -201,7 +193,7 @@ public class PasswordBookService : IPasswordBookService
     {
         if (string.IsNullOrEmpty(userId))
             throw new ArgumentException("用户ID不能为空", nameof(userId));
-        
+
         var entry = await _context.Set<PasswordBookEntry>().FirstOrDefaultAsync(x => x.Id == id);
         if (entry == null)
             return false;
@@ -211,7 +203,7 @@ public class PasswordBookService : IPasswordBookService
 
         _context.Set<PasswordBookEntry>().Remove(entry);
         await _context.SaveChangesAsync();
-        
+
         _logger.LogInformation("Password book entry deleted: {EntryId} by user {UserId}", id, userId);
         return true;
     }
@@ -257,7 +249,7 @@ public class PasswordBookService : IPasswordBookService
     {
         if (string.IsNullOrEmpty(userId))
             throw new ArgumentException("用户ID不能为空", nameof(userId));
-        
+
         var category = request.Category?.Trim();
         var tags = request.Tags;
 

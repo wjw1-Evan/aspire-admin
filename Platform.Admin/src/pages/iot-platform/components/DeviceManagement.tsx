@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PageContainer, StatCard } from '@/components';
 import { useIntl } from '@umijs/max';
 import { type ProColumns, ActionType, ProTable } from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormSelect, ProFormDigit, ProFormInput } from '@ant-design/pro-form';
+import { ModalForm, ProFormText, ProFormSelect, ProFormDigit, ProFormTextArea } from '@ant-design/pro-form';
 import { Button, Card, Col, Descriptions, Drawer, Form, Grid, Input, Row, Select, Space, Tag, Tabs, message, Alert, Modal } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, DesktopOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, KeyOutlined, BranchesOutlined, SendOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -181,9 +181,7 @@ const DeviceManagement = (props: any, ref: React.Ref<DeviceManagementRef>) => {
           <Col span={12}><ProFormSelect name="gatewayId" label="所属网关" tooltip="设备可以独立存在，也可以关联到网关" placeholder="请选择所属网关（可选）" allowClear options={state.gateways.map(g => ({ label: g.title, value: g.gatewayId }))} /></Col>
           <Col span={12}><ProFormText name="location" label="物理位置" placeholder="如: 1号楼/3层/机房A" /></Col>
         </Row>
-        <ProFormInput.Group>
-          <ProFormInput.Text name="description" label="设备描述" placeholder="设备描述（可选）" />
-        </ProFormInput.Group>
+        <ProFormTextArea name="description" label="设备描述" placeholder="设备描述（可选）" />
         <ProFormSelect mode="tags" name="tagsList" label="标签 (Tags)" tooltip='格式: "key:value" 或 "key"，支持多个' placeholder='输入标签，格式: "env:prod" 或 "building:A"' tokenSeparators={[',']} />
         <ProFormDigit name="retentionDays" label="遥测数据保留天数" initialValue={0} tooltip="0 表示永久保留，最大 3650 天" min={0} max={3650} fieldProps={{ addonAfter: '天（0=永久）' }} />
       </ModalForm>

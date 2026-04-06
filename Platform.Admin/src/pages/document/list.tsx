@@ -92,8 +92,8 @@ const DocumentManagement: React.FC = () => {
 
       <ProTable actionRef={actionRef}
         request={async (params: any) => {
-          const { current } = params;
-          const res = await api.list({ page: current });
+          const { current, pageSize } = params;
+          const res = await api.list({ page: current, pageSize });
           api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
           return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
         }}

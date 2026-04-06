@@ -11,6 +11,7 @@ import { useIntl, history } from '@umijs/max';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import StatCard from './StatCard';
 import type { Document, DocumentStatistics } from '@/services/document/api';
+import dayjs from 'dayjs';
 
 const { Text } = Typography;
 
@@ -119,7 +120,7 @@ const ApprovalOverviewCard: React.FC<ApprovalOverviewCardProps> = ({
                     <Tag color="blue">{doc.documentType}</Tag>
                   </Space>
                   <Text type="secondary" style={{ fontSize: 12 }}>
-                    {doc.createdBy} · {doc.createdAt ? new Date(doc.createdAt).toLocaleString() : ''}
+                    {doc.createdBy} · {doc.createdAt ? dayjs(doc.createdAt).format('YYYY-MM-DD HH:mm:ss') : ''}
                   </Text>
                 </Space>
                 <Button type="link" icon={<EyeOutlined />}>

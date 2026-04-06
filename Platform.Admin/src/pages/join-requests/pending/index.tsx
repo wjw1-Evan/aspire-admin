@@ -5,7 +5,7 @@ import { request } from '@umijs/max';
 import { Button, Space, App, Modal, Input } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, ClockCircleOutlined } from '@ant-design/icons';
-import { formatDateTime } from '@/utils/format';
+import dayjs from 'dayjs';
 import { ApiResponse, PageParams } from '@/types';
 
 const { TextArea } = Input;
@@ -63,7 +63,7 @@ const PendingJoinRequests: React.FC = () => {
       dataIndex: 'createdAt',
       key: 'createdAt',
       sorter: true,
-      render: (_, record: JoinRequestDetail) => formatDateTime(record.createdAt),
+      render: (_, record: JoinRequestDetail) => record.createdAt ? dayjs(record.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-',
     },
     {
       title: intl.formatMessage({ id: 'pages.table.status' }),
@@ -170,7 +170,7 @@ const PendingJoinRequests: React.FC = () => {
         request={async (params: any) => {
           const companyId = initialState?.currentUser?.currentCompanyId || '';
           if (!companyId) return { data: [], total: 0, success: true };
-          const { current, search } = params;
+          const { current, pageSize, search } = params;
           const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
           let keyword = state.searchText || search;
           const res = await api.list(companyId, { page: current, search: keyword, ...sortParams });

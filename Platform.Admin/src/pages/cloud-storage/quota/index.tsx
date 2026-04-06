@@ -5,7 +5,7 @@ import { useIntl } from '@umijs/max';
 import { PieChartOutlined, EditOutlined, ReloadOutlined, UserOutlined, CloudOutlined, WarningOutlined, CheckCircleOutlined, BarChartOutlined, TableOutlined, DatabaseOutlined, CloudServerOutlined, LineChartOutlined, PlusOutlined, DeleteOutlined, FileOutlined, CalendarOutlined } from '@ant-design/icons';
 import { Grid, Button, Tag, Space, Modal, Drawer, Row, Col, Card, Form, InputNumber, Spin, Progress, Switch, Alert, Statistic, Tabs, Popconfirm, Typography, Badge, List, Avatar, Empty, App } from 'antd';
 import { getUserList, type AppUser } from '@/services/user/api';
-import { formatDateTime } from '@/utils/format';
+import dayjs from 'dayjs';
 import { getCurrentCompany } from '@/services/company';
 import { request } from '@umijs/max';
 import { ApiResponse, PagedResult } from '@/types';
@@ -126,7 +126,7 @@ const CloudStorageQuotaPage: React.FC = () => {
         { title: intl.formatMessage({ id: 'pages.cloud-storage.quota.field.usagePercentage' }), key: 'usagePercentage', render: (_: any, r: StorageQuota) => { const pct = r.totalQuota > 0 ? parseFloat(((r.usedQuota / r.totalQuota) * 100).toFixed(2)) : 0; return <Progress percent={pct} size="small" strokeColor={getUsageColor(pct)} format={(p) => `${p}%`} />; } },
         { title: intl.formatMessage({ id: 'pages.cloud-storage.quota.field.fileCount' }), dataIndex: 'fileCount', key: 'fileCount', sorter: true },
         { title: intl.formatMessage({ id: 'pages.table.status' }), key: 'status', render: (_: any, r: StorageQuota) => getStatusTag(r) },
-        { title: intl.formatMessage({ id: 'pages.table.updatedAt', defaultMessage: '更新时间' }), dataIndex: 'updatedAt', key: 'updatedAt', sorter: true, render: (dom: any) => formatDateTime(dom) },
+        { title: intl.formatMessage({ id: 'pages.table.updatedAt', defaultMessage: '更新时间' }), dataIndex: 'updatedAt', key: 'updatedAt', sorter: true, render: (dom: any) => dom ? dayjs(dom).format('YYYY-MM-DD HH:mm:ss') : '-' },
         { title: intl.formatMessage({ id: 'pages.table.actions' }), key: 'action', fixed: 'right' as const, render: (_: any, r: StorageQuota) => (<Space>
             <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(r)}>{intl.formatMessage({ id: 'pages.table.edit' })}</Button>
             <Button type="link" size="small" danger icon={<DeleteOutlined />} loading={state.deletingId === r.userId} onClick={() => modal.confirm({ title: intl.formatMessage({ id: 'pages.cloud-storage.quota.confirmDelete.title' }), content: intl.formatMessage({ id: 'pages.cloud-storage.quota.confirmDelete.desc' }), onOk: () => handleDelete(r), okButtonProps: { danger: true } })}>{intl.formatMessage({ id: 'pages.table.delete' })}</Button>
@@ -179,7 +179,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                         {state.warnings.length > 0 ? (<div style={{ display: 'flex', flexDirection: 'column' }}>{state.warnings.map((item) => (<div key={item.userId} style={{ display: 'flex', padding: '12px 24px', borderBottom: '1px solid #f0f0f0', alignItems: 'flex-start' }}>
                             <div style={{ marginRight: 16 }}><Avatar icon={<WarningOutlined />} style={{ backgroundColor: item.warningType === 'exceeded' ? '#ff4d4f' : '#faad14' }} /></div>
                             <div style={{ flex: 1 }}><div style={{ marginBottom: 4 }}><Space><Typography.Text strong>{intl.formatMessage({ id: 'pages.cloud-storage.quota.warning.title' }, { userDisplayName: item.userDisplayName || item.username })}</Typography.Text><Tag color={item.warningType === 'exceeded' ? 'error' : 'warning'}>{item.warningType === 'exceeded' ? intl.formatMessage({ id: 'pages.cloud-storage.quota.warning.exceeded' }) : intl.formatMessage({ id: 'pages.cloud-storage.quota.warning.approaching' })}</Tag></Space></div>
-                                <div style={{ color: 'rgba(0, 0, 0, 0.45)', fontSize: 14 }}><p>{intl.formatMessage({ id: 'pages.cloud-storage.quota.warning.info' }, { used: formatFileSize(item.usedQuota), total: formatFileSize(item.totalQuota), percent: item.usagePercentage.toFixed(1) })}</p><Typography.Text type="secondary" style={{ fontSize: 12 }}>{intl.formatMessage({ id: 'pages.cloud-storage.quota.warning.timeLabel' })}: {formatDateTime(item.createdAt)}</Typography.Text></div>
+                                <div style={{ color: 'rgba(0, 0, 0, 0.45)', fontSize: 14 }}><p>{intl.formatMessage({ id: 'pages.cloud-storage.quota.warning.info' }, { used: formatFileSize(item.usedQuota), total: formatFileSize(item.totalQuota), percent: item.usagePercentage.toFixed(1) })}</p><Typography.Text type="secondary" style={{ fontSize: 12 }}>{intl.formatMessage({ id: 'pages.cloud-storage.quota.warning.timeLabel' })}: {item.createdAt ? dayjs(item.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</Typography.Text></div>
                             </div>
                             <div style={{ marginLeft: 16 }}><Button type="link" onClick={() => handleEdit(item as any)}>{intl.formatMessage({ id: 'pages.table.edit' })}</Button></div>
                         </div>))}</div>) : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={intl.formatMessage({ id: 'pages.cloud-storage.quota.warnings.empty' })} style={{ marginTop: 60 }} />}
@@ -198,7 +198,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                             <Col xs={24} sm={12}><Space><FileOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.quota.field.fileCount' })}: </Space>{state.viewingQuota.fileCount || 0}</Col>
                             <Col xs={24} sm={12}><Space><WarningOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.quota.field.warningThreshold' })}: </Space>{state.viewingQuota.warningThreshold || 80}%</Col>
                             <Col xs={24} sm={12}><Space><CheckCircleOutlined />{intl.formatMessage({ id: 'pages.table.isEnabled' })}: </Space>{state.viewingQuota.isEnabled !== false ? intl.formatMessage({ id: 'pages.table.enable' }) : intl.formatMessage({ id: 'pages.table.disable' })}</Col>
-                            <Col xs={24} sm={12}><Space><CalendarOutlined />{intl.formatMessage({ id: 'pages.table.updatedAt' })}: </Space>{formatDateTime(state.viewingQuota.updatedAt)}</Col>
+                            <Col xs={24} sm={12}><Space><CalendarOutlined />{intl.formatMessage({ id: 'pages.table.updatedAt' })}: </Space>{state.viewingQuota.updatedAt ? dayjs(state.viewingQuota.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</Col>
                         </Row>
                     </Card>)}
                 </Spin>

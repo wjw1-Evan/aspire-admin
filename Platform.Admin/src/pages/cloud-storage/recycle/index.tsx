@@ -4,7 +4,6 @@ import { Button, Space, Modal, Form, Input, Select, App } from 'antd';
 import { DeleteOutlined, ClearOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns } from '@ant-design/pro-table';
 import { useIntl } from '@umijs/max';
-import { formatDateTime } from '@/utils/format';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { request } from '@umijs/max';

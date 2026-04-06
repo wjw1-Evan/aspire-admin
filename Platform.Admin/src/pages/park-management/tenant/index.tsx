@@ -86,8 +86,8 @@ const TenantManagement: React.FC = () => {
             </Row>}
 
             <ProTable actionRef={actionRef} request={async (params: any) => {
-                const { current } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-                const res = await api.list({ page: current, search: state.searchText, ...sortParams });
+                const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
+                const res = await api.list({ page: current, pageSize, search: state.searchText, ...sortParams });
                 return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
             }} columns={columns} rowKey="id" search={false}
                 onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}

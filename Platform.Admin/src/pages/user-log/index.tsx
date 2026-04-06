@@ -6,7 +6,7 @@ import { Tag, Space, Card, Row, Col, Button, Input } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ReloadOutlined, FileTextOutlined, CheckCircleOutlined, CloseCircleOutlined, ThunderboltOutlined, DashboardOutlined, SearchOutlined } from '@ant-design/icons';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
-import { formatDateTime } from '@/utils/format';
+import dayjs from 'dayjs';
 import { getActionTagColor, getActionText, getMethodColor, getStatusBadge } from '@/utils/activityLog';
 import LogDetailDrawer from './components/LogDetailDrawer';
 
@@ -101,7 +101,7 @@ const UserLog: React.FC = () => {
       return <span style={{ color }}>{r.duration}ms</span>;
     }},
     { title: intl.formatMessage({ id: 'pages.table.ipAddress' }), dataIndex: 'ipAddress', key: 'ipAddress', ellipsis: true, sorter: true },
-    { title: intl.formatMessage({ id: 'pages.table.actionTime' }), dataIndex: 'createdAt', key: 'createdAt', sorter: true, defaultSortOrder: 'descend', render: (_: any, r: UserActivityLog) => formatDateTime(r.createdAt) },
+    { title: intl.formatMessage({ id: 'pages.table.actionTime' }), dataIndex: 'createdAt', key: 'createdAt', sorter: true, defaultSortOrder: 'descend', render: (_: any, r: UserActivityLog) => r.createdAt ? dayjs(r.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-' },
   ];
 
   const handleRefresh = useCallback(() => {
@@ -122,9 +122,9 @@ const UserLog: React.FC = () => {
       </Row></Card>}
 
       <ProTable actionRef={actionRef} request={async (params: any) => {
-        const { current } = params;
+        const { current, pageSize } = params;
         const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-        const res = await api.list({ page: current, search: state.searchText, ...sortParams });
+        const res = await api.list({ page: current, pageSize, search: state.searchText, ...sortParams });
         api.statistics().then(r => {
           if (r.success && r.data) {
             set({

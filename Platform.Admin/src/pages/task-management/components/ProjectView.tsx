@@ -8,7 +8,6 @@ import {
   DeleteOutlined,
   ProjectOutlined,
 } from '@ant-design/icons';
-import { formatDateTime } from '@/utils/format';
 import {
   deleteProject,
   getProjectList,
@@ -211,7 +210,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       dataIndex: 'createdAt',
       key: 'createdAt',
       sorter: true,
-      render: (_: any, record: ProjectDto) => formatDateTime(record.createdAt),
+      render: (_: any, record: ProjectDto) => record.createdAt ? dayjs(record.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-',
     },
     {
       title: intl.formatMessage({ id: 'pages.table.action' }),
@@ -240,7 +239,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
         </Space>
       ),
     },
-  ], [intl, handleViewProject, handleEditProject, handleDelete, formatDateTime, formatDate]);
+  ], [intl, handleViewProject, handleEditProject, handleDelete, formatDate]);
 
   return (
     <div>

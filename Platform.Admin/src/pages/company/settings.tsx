@@ -14,7 +14,7 @@ import { getCurrentCompany, getCompanyStatistics } from '@/services/company';
 import EditCompanyModal from './components/EditCompanyModal';
 import type { Company, CompanyStatistics } from '@/types';
 import { StatCard } from '@/components';
-import { formatDateTime } from '@/utils/format';
+import dayjs from 'dayjs';
 
 export default function CompanySettings() {
   const intl = useIntl();
@@ -265,12 +265,12 @@ export default function CompanySettings() {
               {
                 key: 'createdAt',
                 label: intl.formatMessage({ id: 'pages.companySettings.details.createdAt' }),
-                children: formatDateTime(company.createdAt),
+                children: company.createdAt ? dayjs(company.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-',
               },
               {
                 key: 'updatedAt',
                 label: intl.formatMessage({ id: 'pages.companySettings.details.updatedAt' }),
-                children: formatDateTime(company.updatedAt),
+                children: company.updatedAt ? dayjs(company.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-',
               },
             ]}
           />

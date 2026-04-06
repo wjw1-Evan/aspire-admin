@@ -5,7 +5,7 @@ import useCommonStyles from '@/hooks/useCommonStyles';
 import { createStyles } from 'antd-style';
 import React, { useEffect, useState } from 'react';
 import { getUserAvatar } from '@/utils/avatar';
-import { formatDateTime } from '@/utils/format';
+import dayjs from 'dayjs';
 import { getCurrentUserProfile, updateUserProfile } from '@/services/ant-design-pro/api';
 import Settings from '../../../../config/defaultSettings';
 
@@ -219,9 +219,9 @@ const UserCenter: React.FC = () => {
               <Descriptions.Item label={<FormattedMessage id="pages.account.center.age" defaultMessage="年龄" />}>{userProfile.age || <FormattedMessage id="pages.account.center.notSet" defaultMessage="未设置" />}</Descriptions.Item>
               <Descriptions.Item label={<FormattedMessage id="pages.account.center.role" defaultMessage="角色" />}><Tag color={getRoleTagColor(userProfile.role)}>{userProfile.role === 'admin' ? <FormattedMessage id="pages.account.center.admin" defaultMessage="管理员" /> : <FormattedMessage id="pages.account.center.user" defaultMessage="普通用户" />}</Tag></Descriptions.Item>
               <Descriptions.Item label={<FormattedMessage id="pages.account.center.status" defaultMessage="状态" />}><Tag color={userProfile.isActive ? 'green' : 'red'}>{userProfile.isActive ? <FormattedMessage id="pages.account.center.active" defaultMessage="正常" /> : <FormattedMessage id="pages.account.center.inactive" defaultMessage="禁用" />}</Tag></Descriptions.Item>
-              <Descriptions.Item label={<FormattedMessage id="pages.account.center.registerTime" defaultMessage="注册时间" />}><CalendarOutlined style={{ marginRight: '4px' }} />{formatDateTime(userProfile.createdAt)}</Descriptions.Item>
-              <Descriptions.Item label={<FormattedMessage id="pages.account.center.lastUpdate" defaultMessage="最后更新" />}><CalendarOutlined style={{ marginRight: '4px' }} />{formatDateTime(userProfile.updatedAt)}</Descriptions.Item>
-              {userProfile.lastLoginAt && <Descriptions.Item label={<FormattedMessage id="pages.account.center.lastLogin" defaultMessage="最后登录" />}><CalendarOutlined style={{ marginRight: '4px' }} />{formatDateTime(userProfile.lastLoginAt)}</Descriptions.Item>}
+              <Descriptions.Item label={<FormattedMessage id="pages.account.center.registerTime" defaultMessage="注册时间" />}><CalendarOutlined style={{ marginRight: '4px' }} />{userProfile.createdAt ? dayjs(userProfile.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
+              <Descriptions.Item label={<FormattedMessage id="pages.account.center.lastUpdate" defaultMessage="最后更新" />}><CalendarOutlined style={{ marginRight: '4px' }} />{userProfile.updatedAt ? dayjs(userProfile.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
+              {userProfile.lastLoginAt && <Descriptions.Item label={<FormattedMessage id="pages.account.center.lastLogin" defaultMessage="最后登录" />}><CalendarOutlined style={{ marginRight: '4px' }} />{dayjs(userProfile.lastLoginAt).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>}
             </Descriptions>
           )}
         </Card>

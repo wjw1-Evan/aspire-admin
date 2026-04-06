@@ -90,12 +90,12 @@ const ApprovalPage: React.FC = () => {
   ];
 
   const fetchData = async (params: any) => {
-    const { current } = params;
+    const { current, pageSize } = params;
     let res;
     if (state.activeTab === 'pending') {
-      res = await api.pending({ page: current });
+      res = await api.pending({ page: current, pageSize });
     } else {
-      res = await api.list({ page: current, filterType: state.activeTab });
+      res = await api.list({ page: current, pageSize, filterType: state.activeTab });
     }
     api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
     return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };

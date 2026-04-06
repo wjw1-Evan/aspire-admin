@@ -47,7 +47,7 @@ const VisitAssessmentList: React.FC = () => {
     return (
         <PageContainer title={intl.formatMessage({ id: 'pages.park.visit.assessment', defaultMessage: '走访评价管理' })}>
             <Card styles={{ body: { padding: '16px 24px' } }}>
-                <ProTable actionRef={actionRef} request={async (params: any) => { const { current } = params; const res = await api.list({ page: current, search: state.searchText }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={columns} rowKey="id" search={false} toolBarRender={() => [<Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>{intl.formatMessage({ id: 'pages.park.common.refresh', defaultMessage: '刷新' })}</Button>]} />
+                <ProTable actionRef={actionRef} request={async (params: any) => { const { current, pageSize } = params; const res = await api.list({ page: current, pageSize, search: state.searchText }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={columns} rowKey="id" search={false} toolBarRender={() => [<Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>{intl.formatMessage({ id: 'pages.park.common.refresh', defaultMessage: '刷新' })}</Button>]} />
             </Card>
 
             <Drawer title={intl.formatMessage({ id: 'pages.park.visit.assessmentDetail', defaultMessage: '走访评价详情' })} placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, selectedAssessment: null })} size={500}>

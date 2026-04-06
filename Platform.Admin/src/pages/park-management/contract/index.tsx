@@ -110,9 +110,9 @@ const ContractManagement: React.FC = () => {
             {state.statistics && <Row gutter={[16, 16]} style={{ marginBottom: 16 }}><Col xs={24} sm={12} md={6}><StatCard title="生效合同" value={state.statistics.activeContracts} icon={<CheckCircleOutlined />} color="#52c41a" /></Col><Col xs={24} sm={12} md={6}><StatCard title="合同总额" value={`¥${state.statistics.totalContractAmount?.toLocaleString()}`} icon={<FileTextOutlined />} color="#1890ff" /></Col><Col xs={24} sm={12} md={6}><StatCard title="即将到期" value={state.statistics.expiringContracts} icon={<WarningOutlined />} color={state.statistics.expiringContracts > 0 ? '#f5222d' : '#d9d9d9'} /></Col><Col xs={24} sm={12} md={6}><StatCard title="本月应收" value={`¥${state.statistics.totalExpected?.toLocaleString()}`} icon={<CalendarOutlined />} color="#722ed1" /></Col></Row>}
 
             <ProTable actionRef={actionRef} request={async (params: any) => {
-                const { current } = params;
+                const { current, pageSize } = params;
                 const sortParams = sorter?.sortBy && sorter?.sortOrder ? sorter : undefined;
-                const res = await api.list({ page: current, search: searchParams.search, ...sortParams });
+                const res = await api.list({ page: current, pageSize, search: searchParams.search, ...sortParams });
                 return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
             }} columns={columns} rowKey="id" search={false}
                 onChange={(_p, _f, s: any) => setSorter(s?.order ? { sortBy: s.field as string, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined)}

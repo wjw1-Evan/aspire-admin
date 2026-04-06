@@ -7,7 +7,7 @@ import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-form';
 import { DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined, SafetyOutlined, TeamOutlined, UserOutlined, MenuOutlined } from '@ant-design/icons';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
-import { formatDateTime } from '@/utils/format';
+import dayjs from 'dayjs';
 
 
 // ==================== Types ====================
@@ -60,7 +60,7 @@ const RoleManagement: React.FC = () => {
     { title: intl.formatMessage({ id: 'pages.table.description' }), dataIndex: 'description', sorter: true, ellipsis: true, render: (dom: any) => dom || '-' },
     { title: intl.formatMessage({ id: 'pages.table.status' }), dataIndex: 'isActive', sorter: true, render: (_, r) => <Tag color={r.isActive ? 'success' : 'default'}>{r.isActive ? intl.formatMessage({ id: 'pages.table.activated' }) : intl.formatMessage({ id: 'pages.table.deactivated' })}</Tag> },
     { title: intl.formatMessage({ id: 'pages.table.stats' }), valueType: 'option', render: (_, r) => <Space separator="|"><span>{intl.formatMessage({ id: 'pages.table.user' })}: {r.userCount || 0}</span><span>{intl.formatMessage({ id: 'pages.table.menu' })}: {r.menuCount || 0}</span></Space> },
-    { title: intl.formatMessage({ id: 'pages.table.createdAt' }), dataIndex: 'createdAt', sorter: true, render: (dom: any) => formatDateTime(dom) },
+    { title: intl.formatMessage({ id: 'pages.table.createdAt' }), dataIndex: 'createdAt', sorter: true, render: (dom: any) => dom ? dayjs(dom).format('YYYY-MM-DD HH:mm:ss') : '-' },
     { title: intl.formatMessage({ id: 'pages.table.actions' }), valueType: 'option', fixed: 'right', width: 150, render: (_, r) => [
       <Button key="edit" type="link" size="small" icon={<EditOutlined />} onClick={() => { set({ editingRole: r, formVisible: true }); setFormState(p => ({ ...p, checkedKeys: r.menuIds || [] })); }}>{intl.formatMessage({ id: 'pages.table.edit' })}</Button>,
       <Popconfirm key="delete" title={intl.formatMessage({ id: 'pages.modal.confirmDeleteRole' }, { roleName: r.name })} onConfirm={async () => { await api.delete(r.id!); actionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }}><Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.table.delete' })}</Button></Popconfirm>,
@@ -81,9 +81,9 @@ const RoleManagement: React.FC = () => {
       </Row></Card>}
 
       <ProTable actionRef={actionRef} request={async (params: any) => {
-        const { current } = params;
+        const { current, pageSize } = params;
         const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-        const res = await api.list({ page: current, search: state.searchText, ...sortParams });
+        const res = await api.list({ page: current, pageSize, search: state.searchText, ...sortParams });
         api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
         return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
       }} columns={columns} rowKey="id" search={false}
@@ -123,8 +123,8 @@ const RoleManagement: React.FC = () => {
             <Descriptions.Item label={intl.formatMessage({ id: 'pages.table.description' })}>{state.viewingRole.description || '-'}</Descriptions.Item>
             <Descriptions.Item label={intl.formatMessage({ id: 'pages.table.status' })}><Tag color={state.viewingRole.isActive ? 'success' : 'default'}>{state.viewingRole.isActive ? intl.formatMessage({ id: 'pages.table.activated' }) : intl.formatMessage({ id: 'pages.table.deactivated' })}</Tag></Descriptions.Item>
             <Descriptions.Item label={intl.formatMessage({ id: 'pages.table.stats' })}><Space><span>{intl.formatMessage({ id: 'pages.table.user' })}: {state.viewingRole.userCount || 0}</span><span>{intl.formatMessage({ id: 'pages.table.menu' })}: {state.viewingRole.menuCount || 0}</span></Space></Descriptions.Item>
-            <Descriptions.Item label={intl.formatMessage({ id: 'pages.table.createdAt' })}>{formatDateTime(state.viewingRole.createdAt)}</Descriptions.Item>
-            {state.viewingRole.updatedAt && <Descriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.updatedAt' })}>{formatDateTime(state.viewingRole.updatedAt)}</Descriptions.Item>}
+            <Descriptions.Item label={intl.formatMessage({ id: 'pages.table.createdAt' })}>{state.viewingRole.createdAt ? dayjs(state.viewingRole.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
+            {state.viewingRole.updatedAt && <Descriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.updatedAt' })}>{dayjs(state.viewingRole.updatedAt).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>}
           </Descriptions>
         </Card>}
       </Drawer>

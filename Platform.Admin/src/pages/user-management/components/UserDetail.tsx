@@ -21,7 +21,7 @@ import { request, useIntl } from '@umijs/max';
 import { getAllRoles } from '@/services/role/api';
 import type { Role } from '@/services/role/api';
 import type { AppUser, UserActivityLog } from '@/types';
-import { formatDateTime } from '@/utils/format';
+import dayjs from 'dayjs';
 import { getActionTagColor, getActionText } from '@/utils/activityLog';
 
 const { Text } = Typography;
@@ -171,11 +171,11 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
           </Descriptions.Item>
 
           <Descriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.createdAt' })}>
-            {formatDateTime(user.createdAt)}
+            {user.createdAt ? dayjs(user.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
           </Descriptions.Item>
 
           <Descriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.updatedAt' })}>
-            {formatDateTime(user.updatedAt)}
+            {user.updatedAt ? dayjs(user.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
           </Descriptions.Item>
 
           {user.lastLoginAt && (
@@ -187,7 +187,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
                 </Space>
               }
             >
-              {formatDateTime(user.lastLoginAt)}
+              {dayjs(user.lastLoginAt).format('YYYY-MM-DD HH:mm:ss')}
             </Descriptions.Item>
           )}
         </Descriptions>
@@ -241,7 +241,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
                           {log.description}
                         </Text>
                         <Text type="secondary" style={{ fontSize: '12px' }}>
-                          {formatDateTime(log.createdAt)}
+                          {log.createdAt ? dayjs(log.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
                         </Text>
                       </Space>
 

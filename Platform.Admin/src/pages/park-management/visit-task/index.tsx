@@ -71,8 +71,8 @@ const VisitTaskPage: React.FC = () => {
             </Row></Card>}
 
             <ProTable actionRef={actionRef} request={async (params: any) => {
-                const { current } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-                const res = await api.list({ page: current, search: state.searchText, ...sortParams });
+                const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
+                const res = await api.list({ page: current, pageSize, search: state.searchText, ...sortParams });
                 api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
                 return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
             }} columns={columns} rowKey="id" search={false}

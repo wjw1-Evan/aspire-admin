@@ -4,7 +4,6 @@ import { Button, Space, Tag, Card, Modal, Form, Input, DatePicker, Switch, App, 
 import { ShareAltOutlined, EditOutlined, DeleteOutlined, CopyOutlined, LockOutlined, UnlockOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns } from '@ant-design/pro-table';
 import { useIntl } from '@umijs/max';
-import { formatDateTime } from '@/utils/format';
 import dayjs from 'dayjs';
 import { request } from '@umijs/max';
 import { ApiResponse, PagedResult, PageParams } from '@/types';

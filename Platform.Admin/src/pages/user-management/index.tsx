@@ -6,7 +6,7 @@ import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormSwitch } from '@ant-design/pro-form';
 import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, TeamOutlined, CheckCircleOutlined, ReloadOutlined, CrownOutlined, SearchOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
-import { formatDateTime } from '@/utils/format';
+import dayjs from 'dayjs';
 import type { Role } from '@/services/role/api';
 import { getCurrentCompany } from '@/services/company';
 
@@ -131,8 +131,8 @@ const UserManagement: React.FC = () => {
       return <Space direction="vertical" size={4} wrap>{orgs.map(o => <Space key={o.id || o.fullPath || o.name} size={4}><span>{o.fullPath || o.name || '-'}</span>{o.isPrimary && <Tag color="gold" variant="filled">{intl.formatMessage({ id: 'pages.userManagement.organization.primary' })}</Tag>}</Space>)}</Space>;
     }},
     { title: intl.formatMessage({ id: 'pages.table.status' }), dataIndex: 'isActive', render: (_, r) => <Badge status={r.isActive ? 'success' : 'error'} text={r.isActive ? intl.formatMessage({ id: 'pages.table.activated' }) : intl.formatMessage({ id: 'pages.table.deactivated' })} /> },
-    { title: intl.formatMessage({ id: 'pages.table.createdAt' }), dataIndex: 'createdAt', sorter: true, render: (_, r) => formatDateTime(r.createdAt) },
-    { title: intl.formatMessage({ id: 'pages.table.lastLogin' }), dataIndex: 'lastLoginAt', render: (_, r) => formatDateTime(r.lastLoginAt) },
+    { title: intl.formatMessage({ id: 'pages.table.createdAt' }), dataIndex: 'createdAt', sorter: true, render: (_, r) => r.createdAt ? dayjs(r.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-' },
+    { title: intl.formatMessage({ id: 'pages.table.lastLogin' }), dataIndex: 'lastLoginAt', render: (_, r) => r.lastLoginAt ? dayjs(r.lastLoginAt).format('YYYY-MM-DD HH:mm:ss') : '-' },
     { title: intl.formatMessage({ id: 'pages.table.actions' }), key: 'action', fixed: 'right', width: 150, render: (_, r) => (<Space><Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingUser: r, formVisible: true })}>{intl.formatMessage({ id: 'pages.table.edit' })}</Button><Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => promptDelete(r.id)}>{intl.formatMessage({ id: 'pages.table.delete' })}</Button></Space>) },
   ], [intl, state.roleMap, state.currentCompany, promptDelete]);
 
@@ -166,10 +166,10 @@ const UserManagement: React.FC = () => {
     { title: '申请人', dataIndex: 'username', render: (_: React.ReactNode, r: JoinReq) => <Space direction="vertical" size={0}><b>{r.username}</b><span style={{ color: '#999', fontSize: 12 }}>{r.userEmail}</span></Space> },
     { title: '申请理由', dataIndex: 'reason', ellipsis: true, render: (t: React.ReactNode) => t || '-' },
     { title: '状态', dataIndex: 'status', render: (s: React.ReactNode) => { const m: Record<string, { text: string; color: string }> = { pending: { text: '待审核', color: 'processing' }, approved: { text: '已通过', color: 'success' }, rejected: { text: '已拒绝', color: 'error' }, cancelled: { text: '已取消', color: 'default' } }; const c = m[String(s)] || { text: String(s), color: 'default' }; return <Tag color={c.color}>{c.text}</Tag>; } },
-    { title: '申请时间', dataIndex: 'createdAt', render: (t: React.ReactNode) => formatDateTime(String(t)) },
+    { title: '申请时间', dataIndex: 'createdAt', render: (t: React.ReactNode) => t ? dayjs(String(t)).format('YYYY-MM-DD HH:mm:ss') : '-' },
     { title: '审核人', dataIndex: 'reviewedByName', render: (t: React.ReactNode) => t || '-' },
     { title: '备注', dataIndex: 'rejectReason', ellipsis: true, render: (_: React.ReactNode, r: JoinReq) => r.status === 'approved' ? <span style={{ color: '#52c41a' }}>已通过</span> : _ || '-' },
-    { title: '审核时间', dataIndex: 'reviewedAt', render: (t: React.ReactNode) => formatDateTime(String(t)) },
+    { title: '审核时间', dataIndex: 'reviewedAt', render: (t: React.ReactNode) => t ? dayjs(String(t)).format('YYYY-MM-DD HH:mm:ss') : '-' },
     { title: '操作', key: 'action', fixed: 'right', width: 150, render: (_: React.ReactNode, r: JoinReq) => r.status === 'cancelled' ? null : (<Space>{r.status !== 'approved' && <Button type="link" size="small" icon={<CheckOutlined />} onClick={() => handleApprove(r.id)}>批准</Button>}{r.status !== 'rejected' && <Button type="link" size="small" danger icon={<CloseOutlined />} onClick={() => setJ({ rejectModal: true, rejectId: r.id })}>拒绝</Button>}</Space>) },
   ], []);
 
@@ -190,9 +190,9 @@ const UserManagement: React.FC = () => {
       {activeTab === 'members' && <>
         {state.statistics && <Card style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>{stats.map((s, i) => <Col xs={24} sm={12} md={6} key={i}><StatCard title={s.title} value={s.value} icon={s.icon} color={s.color} /></Col>)}</Row></Card>}
         <ProTable actionRef={actionRef} request={async (params) => {
-          const { current } = params;
+          const { current, pageSize } = params;
           const sp = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-          const res = await api.list({ page: current, ...state.searchParams, ...sp });
+          const res = await api.list({ page: current, pageSize, ...state.searchParams, ...sp });
           api.stats().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
           return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
         }} columns={columns} rowKey="id" search={false}

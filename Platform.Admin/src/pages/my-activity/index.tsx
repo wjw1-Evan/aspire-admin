@@ -6,7 +6,7 @@ import { Tag, Row, Col, Card, Space, Button, Drawer, Descriptions } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { HistoryOutlined, CheckCircleOutlined, CloseCircleOutlined, ThunderboltOutlined, ReloadOutlined, DashboardOutlined } from '@ant-design/icons';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
-import { formatDateTime } from '@/utils/format';
+import dayjs from 'dayjs';
 import { getActionTagColor, getActionText, getMethodColor, getStatusBadge } from '@/utils/activityLog';
 
 
@@ -74,7 +74,7 @@ const MyActivity: React.FC = () => {
     { title: intl.formatMessage({ id: 'pages.table.fullUrl' }), dataIndex: 'fullUrl', key: 'fullUrl', ellipsis: true, sorter: true, render: (dom: any, r) => r.fullUrl ? <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{r.fullUrl}</span> : '-' },
     { title: intl.formatMessage({ id: 'pages.table.duration' }), dataIndex: 'duration', key: 'duration', sorter: true, render: (dom: any, r) => { if (r.duration === undefined || r.duration === null) return '-'; let color = 'green'; if (r.duration > 1000) color = 'orange'; if (r.duration > 3000) color = 'red'; return <span style={{ color }}>{r.duration}ms</span>; } },
     { title: intl.formatMessage({ id: 'pages.table.ipAddress' }), dataIndex: 'ipAddress', key: 'ipAddress', ellipsis: true, sorter: true },
-    { title: intl.formatMessage({ id: 'pages.table.actionTime' }), dataIndex: 'createdAt', key: 'createdAt', sorter: true, defaultSortOrder: 'descend', render: (dom: any, r) => formatDateTime(r.createdAt) },
+    { title: intl.formatMessage({ id: 'pages.table.actionTime' }), dataIndex: 'createdAt', key: 'createdAt', sorter: true, defaultSortOrder: 'descend', render: (dom: any, r) => r.createdAt ? dayjs(r.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-' },
   ], [intl, handleViewDetail]);
 
   return (
@@ -91,9 +91,9 @@ const MyActivity: React.FC = () => {
       </Row></Card>}
 
       <ProTable actionRef={actionRef} request={async (params: any) => {
-        const { current } = params;
+        const { current, pageSize } = params;
         const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-        const res = await api.list({ page: current, search: state.searchText, ...sortParams });
+        const res = await api.list({ page: current, pageSize, search: state.searchText, ...sortParams });
         api.statistics(state.searchText).then(r => { if (r.success && r.data) set({ statistics: r.data }); });
         return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
       }} columns={columns} rowKey="id" search={false}
@@ -135,7 +135,7 @@ const LogDetailDrawer: React.FC<{ open: boolean; logId?: string; fetchFromApi?: 
           <Descriptions.Item label="请求URL">{log.fullUrl || '-'}</Descriptions.Item>
           <Descriptions.Item label="耗时">{log.duration !== undefined ? `${log.duration}ms` : '-'}</Descriptions.Item>
           <Descriptions.Item label="IP地址">{log.ipAddress || '-'}</Descriptions.Item>
-          <Descriptions.Item label="操作时间">{formatDateTime(log.createdAt)}</Descriptions.Item>
+          <Descriptions.Item label="操作时间">{log.createdAt ? dayjs(log.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
         </Descriptions>
       ) : <div>未找到日志</div>}
     </Drawer>

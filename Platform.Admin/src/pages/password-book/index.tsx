@@ -44,7 +44,7 @@ const PasswordBook: React.FC = () => {
     { title: '网址', dataIndex: 'url', sorter: true, render: (dom: any) => dom ? <a href={dom} target="_blank">{dom}</a> : '-' },
     { title: '分类', dataIndex: 'category', sorter: true, render: (dom: any) => dom ? <Tag color="blue">{dom}</Tag> : '-' },
     { title: '标签', dataIndex: 'tags', render: (dom: any) => dom?.length ? <Space size={[0, 4]} wrap>{dom.map((t: string) => <Tag key={t}>{t}</Tag>)}</Space> : '-' },
-    { title: '最后使用', dataIndex: 'lastUsedAt', sorter: true, render: (dom: any) => dom ? new Date(dom).toLocaleString() : '-' },
+    { title: '最后使用', dataIndex: 'lastUsedAt', sorter: true, render: (dom: any) => dom ? dayjs(dom).format('YYYY-MM-DD HH:mm:ss') : '-' },
     { title: '操作', valueType: 'option', fixed: 'right', width: 120, render: (_: any, r: Entry) => [
       <Button key="edit" type="link" icon={<EditOutlined />} onClick={() => { set({ editingEntry: r, formVisible: true }); setFormState(p => ({ ...p, passwordValue: r.password || '', tags: r.tags || [] })); }}>编辑</Button>,
       <Popconfirm key="delete" title={`确定删除「${r.platform}」？`} onConfirm={async () => { await api.delete(r.id); actionRef.current?.reload(); }}><Button type="link" danger icon={<DeleteOutlined />}>删除</Button></Popconfirm>,
@@ -60,9 +60,9 @@ const PasswordBook: React.FC = () => {
       </Row></Card>}
 
       <ProTable actionRef={actionRef} request={async (params: any) => {
-        const { current } = params;
+        const { current, pageSize } = params;
         const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-        const res = await api.list({ page: current, search: state.searchText, ...sortParams });
+        const res = await api.list({ page: current, pageSize, search: state.searchText, ...sortParams });
         api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
         return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
       }} columns={columns} rowKey="id" search={false}

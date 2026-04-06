@@ -8,7 +8,7 @@ import { ApartmentOutlined, DeleteOutlined, EditOutlined, PlusOutlined, ReloadOu
 import type { DataNode } from 'antd/es/tree';
 import type { TreeSelectProps } from 'antd/es/tree-select';
 import { useMessage } from '@/hooks/useMessage';
-import { formatDateTime } from '@/utils/format';
+import dayjs from 'dayjs';
 import { ApiResponse } from '@/types';
 
 const { Text } = Typography;
@@ -250,9 +250,9 @@ const OrganizationPage: React.FC = () => {
                   <Descriptions.Item label="上级">{selectedNode.parentId ? nodeMap[selectedNode.parentId]?.name || '-' : '-'}</Descriptions.Item>
                   <Descriptions.Item label="排序"><Tag color="purple">{selectedNode.sortOrder ?? 1}</Tag></Descriptions.Item>
                   <Descriptions.Item label="负责人">{selectedNode.managerUserId ? <Space><UserOutlined /><Text>{selectedNode.managerUserId}</Text></Space> : '-'}</Descriptions.Item>
-                  <Descriptions.Item label="更新时间">{formatDateTime(selectedNode.updatedAt)}</Descriptions.Item>
+                  <Descriptions.Item label="更新时间">{selectedNode.updatedAt ? dayjs(selectedNode.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
                   <Descriptions.Item span={2} label="描述">{selectedNode.description || '-'}</Descriptions.Item>
-                  <Descriptions.Item label="创建时间">{formatDateTime(selectedNode.createdAt)}</Descriptions.Item>
+                  <Descriptions.Item label="创建时间">{selectedNode.createdAt ? dayjs(selectedNode.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
                 </Descriptions>
                 <Card className={styles.card} style={{ marginTop: 16 }} title="成员列表" extra={<Button type="primary" onClick={() => set({ assignOpen: true })}>分配用户</Button>}>
                   {state.members.length ? (

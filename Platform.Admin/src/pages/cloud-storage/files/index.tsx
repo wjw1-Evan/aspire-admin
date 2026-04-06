@@ -45,8 +45,6 @@ const formatFileSize = (bytes: number): string => {
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 };
 
-const formatDateTime = (time: string): string => time ? new Date(time).toLocaleString() : '-';
-
 const getFileIcon = (record: FileItem): React.ReactNode => {
     if (record.isFolder) return <FolderOutlined style={{ color: '#faad14' }} />;
     const ext = record.name?.split('.').pop()?.toLowerCase() || '';
@@ -97,11 +95,11 @@ const CloudStorageFilesPage: React.FC = () => {
     useEffect(() => { api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }, []);
 
     const fetchData = useCallback(async (params: any) => {
-        const { current } = params;
+        const { current, pageSize } = params;
         const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
         const res = state.isSearchMode && state.searchText
-            ? await api.search({ page: current, keyword: state.searchText, ...sortParams })
-            : await api.list({ page: current, parentId: currentParentIdRef.current, ...sortParams });
+            ? await api.search({ page: current, pageSize, keyword: state.searchText, ...sortParams })
+            : await api.list({ page: current, pageSize, parentId: currentParentIdRef.current, ...sortParams });
         if (res.success && res.data) {
             set({ data: res.data.queryable || [] });
             api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
@@ -214,7 +212,7 @@ const CloudStorageFilesPage: React.FC = () => {
     const columns: ProColumns<FileItem>[] = [
         { title: intl.formatMessage({ id: 'pages.cloud-storage.files.field.name' }), dataIndex: 'name', key: 'name', sorter: true, render: (dom: any, record) => (<Space>{getFileIcon(record)}<a onClick={() => record.isFolder ? handleFolderClick(record) : handleView(record)} style={{ cursor: 'pointer' }}>{dom}</a></Space>) },
         { title: intl.formatMessage({ id: 'pages.cloud-storage.files.field.size' }), dataIndex: 'size', key: 'size', sorter: true, render: (_: any, r) => r.isFolder ? '-' : formatFileSize(r.size || 0) },
-        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.field.updatedAt' }), dataIndex: 'updatedAt', key: 'updatedAt', sorter: true, render: (dom: any) => formatDateTime(dom) },
+        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.field.updatedAt' }), dataIndex: 'updatedAt', key: 'updatedAt', sorter: true, render: (dom: any) => dom ? dayjs(dom).format('YYYY-MM-DD HH:mm:ss') : '-' },
         { title: intl.formatMessage({ id: 'pages.cloud-storage.files.field.creator' }), dataIndex: 'createdByName', key: 'createdByName' },
         { title: intl.formatMessage({ id: 'pages.cloud-storage.files.field.action' }), key: 'action', fixed: 'right', render: (_: any, record) => (<Space>
             <Button type="link" size="small" icon={<ShareAltOutlined />} onClick={() => set({ sharingFile: record, shareVisible: true })}>{intl.formatMessage({ id: 'pages.cloud-storage.files.action.share' })}</Button>
@@ -283,8 +281,8 @@ const CloudStorageFilesPage: React.FC = () => {
                         <Descriptions.Item label="类型">{state.viewingFile.isFolder ? '文件夹' : state.viewingFile.mimeType}</Descriptions.Item>
                         <Descriptions.Item label="大小">{state.viewingFile.isFolder ? '-' : formatFileSize(state.viewingFile.size || 0)}</Descriptions.Item>
                         <Descriptions.Item label="创建者">{state.viewingFile.createdByName}</Descriptions.Item>
-                        <Descriptions.Item label="创建时间">{formatDateTime(state.viewingFile.createdAt)}</Descriptions.Item>
-                        <Descriptions.Item label="更新时间">{formatDateTime(state.viewingFile.updatedAt)}</Descriptions.Item>
+                        <Descriptions.Item label="创建时间">{state.viewingFile.createdAt ? dayjs(state.viewingFile.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
+                        <Descriptions.Item label="更新时间">{state.viewingFile.updatedAt ? dayjs(state.viewingFile.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
                     </Descriptions>
                     {!state.viewingFile.isFolder && (
                         <>
@@ -300,7 +298,7 @@ const CloudStorageFilesPage: React.FC = () => {
                                             <div key={v.id} style={{ border: '1px solid #f0f0f0', borderRadius: 8, padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                                                 <div style={{ minWidth: 0, flex: 1 }}>
                                                     <div style={{ fontWeight: 600 }}>版本 {v.versionNumber ?? v.version}</div>
-                                                    <div style={{ color: '#666', fontSize: 12 }}>{formatFileSize(v.size)} · {formatDateTime(v.createdAt)} · {v.createdByName || '-'}</div>
+                                                    <div style={{ color: '#666', fontSize: 12 }}>{formatFileSize(v.size)} · {v.createdAt ? dayjs(v.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'} · {v.createdByName || '-'}</div>
                                                 </div>
                                                 <Space size="small" wrap>
                                                     <Button size="small" onClick={() => handleDownload({ ...state.viewingFile!, id: v.id } as FileItem)}>下载</Button>

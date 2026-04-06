@@ -166,21 +166,6 @@ export interface CompleteTaskRequest {
 }
 
 /**
- * 任务查询请求
- */
-export interface TaskQueryRequest extends PageParams {
-  status?: number;
-  priority?: number;
-  assignedTo?: string;
-  createdBy?: string;
-  taskType?: string;
-  startDate?: string;
-  endDate?: string;
-  tags?: string[];
-  projectId?: string;
-}
-
-/**
  * 任务列表响应 (PagedResult 格式)
  */
 export type TaskListResponse = PagedResult<TaskDto>;
@@ -239,7 +224,7 @@ export async function getTaskById(taskId: string) {
 /**
  * 查询任务列表
  */
-export async function queryTasks(data: TaskQueryRequest) {
+export async function queryTasks(data: PageParams) {
   return request<ApiResponse<TaskListResponse>>('/api/task/query', {
     method: 'POST',
     data,

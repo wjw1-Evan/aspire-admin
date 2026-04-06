@@ -53,16 +53,7 @@ export interface ProjectDto {
   updatedAt: string;
 }
 
-/**
- * 项目查询请求
- */
-export interface ProjectQueryRequest extends PageParams {
-  status?: number;
-  priority?: number;
-  managerId?: string;
-  startDate?: string;
-  endDate?: string;
-}
+
 
 /**
  * 创建项目请求
@@ -133,7 +124,7 @@ export interface AddProjectMemberRequest {
 /**
  * 获取项目列表
  */
-export async function getProjectList(data: ProjectQueryRequest) {
+export async function getProjectList(data: PageParams) {
   return request<ApiResponse<PagedResult<ProjectDto>>>('/api/project/list', {
     method: 'POST',
     data,

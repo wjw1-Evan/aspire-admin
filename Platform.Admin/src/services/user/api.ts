@@ -22,16 +22,6 @@ export interface UserStatisticsResponse {
   newUsersThisMonth: number;
 }
 
-export interface UserListRequest {
-  page: number;
-  pageSize: number;
-  search?: string;
-  role?: string;
-  isActive?: boolean;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-}
-
 export interface UserActivityLog {
   id?: string;
   userId: string;

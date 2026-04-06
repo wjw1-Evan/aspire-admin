@@ -20,18 +20,9 @@ export interface IoTDeviceEvent {
     createdAt: string;
 }
 
-export interface IoTEventQueryRequest extends PageParams {
-    isHandled?: boolean;
-    deviceId?: string;
-    eventType?: string;
-    level?: string;
-    startTime?: string;
-    endTime?: string;
-}
-
 export type IoTEventQueryResponse = PagedResult<IoTDeviceEvent>;
 
-export const queryIoTEvents = (params: IoTEventQueryRequest) =>
+export const queryIoTEvents = (params: PageParams) =>
     request<ApiResponse<IoTEventQueryResponse>>(`${API_PREFIX}/events/query`, {
         method: 'GET',
         params: params,

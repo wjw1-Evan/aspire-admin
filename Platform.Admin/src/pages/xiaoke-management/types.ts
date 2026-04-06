@@ -6,7 +6,6 @@ export type {
   CreateXiaokeConfigRequest,
   UpdateXiaokeConfigRequest,
   ChatHistoryListItem,
-  ChatHistoryQueryRequest,
   ChatMessage,
   ChatSession,
   ChatHistoryDetailResponse,

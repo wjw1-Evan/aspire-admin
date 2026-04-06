@@ -57,14 +57,6 @@ export interface ChatHistoryListItem {
   createdAt: string;
 }
 
-export interface ChatHistoryQueryRequest extends PageParams {
-  sessionId?: string;
-  userId?: string;
-  content?: string;
-  startTime?: string;
-  endTime?: string;
-}
-
 export interface ChatMessage {
   id: string;
   sessionId: string;
@@ -105,13 +97,7 @@ export interface ChatHistoryDetailResponse {
 /**
  * 获取配置列表
  */
-export async function getXiaokeConfigs(params?: {
-  page?: number;
-  pageSize?: number;
-  name?: string;
-  isEnabled?: boolean;
-  sorter?: string;
-}) {
+export async function getXiaokeConfigs(params?: PageParams) {
   return request<ApiResponse<PagedResult<XiaokeConfig>>>('/api/xiaoke/config', {
     method: 'GET',
     params,
@@ -177,7 +163,7 @@ export async function setDefaultXiaokeConfig(id: string) {
 /**
  * 获取聊天记录列表
  */
-export async function getChatHistory(data: ChatHistoryQueryRequest) {
+export async function getChatHistory(data: PageParams) {
   return request<ApiResponse<PagedResult<ChatHistoryListItem>>>('/api/xiaoke/chat-history/list', {
     method: 'POST',
     data,

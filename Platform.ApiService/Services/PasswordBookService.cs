@@ -163,36 +163,34 @@ public class PasswordBookService : IPasswordBookService
             throw new ArgumentException("用户ID不能为空", nameof(userId));
         
         var searchTrim = pageParams.Search?.Trim();
+        pageParams.SortBy = string.IsNullOrEmpty(pageParams.SortBy) ? "LastUsedAt" : pageParams.SortBy;
 
         // 搜索关键词同时搜索 platform 和 account
-        var query = _context.Set<PasswordBookEntry>().Where(
-            e =>
+        var query = _context.Set<PasswordBookEntry>()
+            .Where(e =>
                 (e.UserId == userId || e.IsPublic) &&
-                (string.IsNullOrEmpty(searchTrim) || e.Platform.Contains(searchTrim) || e.Account.Contains(searchTrim)));
-
-        pageParams.SortBy = string.IsNullOrEmpty(pageParams.SortBy) ? "LastUsedAt" : pageParams.SortBy;
+                (string.IsNullOrEmpty(searchTrim) || e.Platform.Contains(searchTrim) || e.Account.Contains(searchTrim)))
+            .Select(e => new PasswordBookEntryDto
+            {
+                Id = e.Id,
+                Platform = e.Platform,
+                Account = e.Account,
+                Url = e.Url,
+                Category = e.Category,
+                Tags = e.Tags,
+                Notes = e.Notes,
+                LastUsedAt = e.LastUsedAt,
+                CreatedAt = e.CreatedAt,
+                UpdatedAt = e.UpdatedAt,
+                IsPublic = e.IsPublic
+            });
 
         var pagedResult = query.ToPagedList(pageParams);
         var items = await pagedResult.Queryable.ToListAsync();
 
-        var dtos = items.Select(e => new PasswordBookEntryDto
-        {
-            Id = e.Id,
-            Platform = e.Platform,
-            Account = e.Account,
-            Url = e.Url,
-            Category = e.Category,
-            Tags = e.Tags,
-            Notes = e.Notes,
-            LastUsedAt = e.LastUsedAt,
-            CreatedAt = e.CreatedAt,
-            UpdatedAt = e.UpdatedAt,
-            IsPublic = e.IsPublic
-        }).ToList();
-
         return new System.Linq.Dynamic.Core.PagedResult<PasswordBookEntryDto>
         {
-            Queryable = dtos.AsQueryable(),
+            Queryable = items.AsQueryable(),
             CurrentPage = pagedResult.CurrentPage,
             PageSize = pagedResult.PageSize,
             RowCount = pagedResult.RowCount,

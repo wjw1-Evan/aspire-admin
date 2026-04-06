@@ -15,12 +15,11 @@ import {
   getProjectList,
   getProjectStatistics,
   type ProjectDto,
-  type ProjectQueryRequest,
   type ProjectStatistics,
   ProjectStatus,
   ProjectPriority,
 } from '@/services/task/project';
-import type { ApiResponse } from '@/types';
+import type { ApiResponse, PageParams } from '@/types';
 import { StatCard } from '@/components';
 import ProjectForm from './ProjectForm';
 import ProjectDetail from './ProjectDetail';
@@ -50,7 +49,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
 
-  const searchParamsRef = useRef<ProjectQueryRequest>({
+  const searchParamsRef = useRef<PageParams>({
     search: '',
     sortBy: 'CreatedAt',
     sortOrder: 'desc',

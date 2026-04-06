@@ -4,6 +4,7 @@ import { PartitionOutlined, PlusOutlined, ReloadOutlined, EditOutlined, DeleteOu
 import { useMessage } from '@/hooks/useMessage';
 import { PageContainer } from '@/components';
 import type { ColumnsType } from 'antd/es/table';
+import type { PageParams } from '@/types';
 import {
     getFormList,
     createForm,
@@ -14,15 +15,6 @@ import {
     FormFieldType,
     FormFieldOption,
 } from '@/services/form/api';
-
-interface FormSearchParams {
-    page?: number;
-    pageSize?: number;
-    search?: string;
-    isActive?: boolean;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
-}
 
 const FIELD_TEMPLATES: { label: string; type: FormFieldType; desc?: string; supportOptions?: boolean }[] = [
     { label: '单行文本', type: FormFieldType.Text, desc: '输入单行文本' },
@@ -386,7 +378,7 @@ const FormsPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
 
-    const searchParamsRef = useRef<FormSearchParams>({
+    const searchParamsRef = useRef<PageParams>({
         search: '',
         isActive: undefined,
     });
@@ -400,7 +392,7 @@ const FormsPage: React.FC = () => {
                 page: currentParams.page,
                 pageSize: currentParams.pageSize,
                 keyword: currentParams.search,
-                isActive: currentParams.isActive,
+                isActive: currentParams.isActive as boolean | undefined,
             });
             if (response.success && response.data) {
                 setData(response.data.queryable || []);

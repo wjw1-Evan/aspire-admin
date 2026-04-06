@@ -12,16 +12,7 @@ import WorkflowDesigner from './components/WorkflowDesigner';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import { getStatusMeta, workflowStatusMap, approvalActionMap } from '@/utils/statusMaps';
-
-interface WorkflowInstanceSearchParams {
-  page?: number;
-  pageSize?: number;
-  search?: string;
-  workflowDefinitionId?: string;
-  status?: WorkflowStatus;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-}
+import type { PageParams } from '@/types';
 
 const WorkflowMonitor: React.FC = () => {
   const intl = useIntl();
@@ -38,13 +29,19 @@ const WorkflowMonitor: React.FC = () => {
   const [data, setData] = useState<WorkflowInstance[]>([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
-  const searchParamsRef = useRef<WorkflowInstanceSearchParams>({ search: '' });
+  const searchParamsRef = useRef<PageParams>({ search: '' });
 
   const fetchData = useCallback(async () => {
     const currentParams = searchParamsRef.current;
     setLoading(true);
     try {
-      const response = await getWorkflowInstances({ page: currentParams.page, pageSize: currentParams.pageSize, workflowDefinitionId: currentParams.workflowDefinitionId, status: currentParams.status, search: currentParams.search });
+      const response = await getWorkflowInstances({ 
+        page: currentParams.page, 
+        pageSize: currentParams.pageSize, 
+        workflowDefinitionId: currentParams.workflowDefinitionId as string | undefined, 
+        status: currentParams.status as WorkflowStatus | undefined, 
+        search: currentParams.search 
+      });
       if (response.success && response.data) {
         setData(response.data.queryable || []);
         setPagination(prev => ({ ...prev, page: currentParams.page ?? prev.page, pageSize: currentParams.pageSize ?? prev.pageSize, total: response.data!.rowCount ?? 0 }));
@@ -53,7 +50,7 @@ const WorkflowMonitor: React.FC = () => {
     finally { setLoading(false); }
   }, []);
 
-  const handleSearch = useCallback((params: WorkflowInstanceSearchParams) => {
+  const handleSearch = useCallback((params: PageParams) => {
     searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
     fetchData();
   }, [fetchData]);

@@ -1,5 +1,5 @@
 import { request } from '@umijs/max';
-import type { ApiResponse, PagedResult } from '@/types';
+import type { ApiResponse, PagedResult, PageParams } from '@/types';
 
 /**
  * 项目状态枚举
@@ -56,17 +56,12 @@ export interface ProjectDto {
 /**
  * 项目查询请求
  */
-export interface ProjectQueryRequest {
-  page?: number;
-  pageSize?: number;
-  search?: string;
+export interface ProjectQueryRequest extends PageParams {
   status?: number;
   priority?: number;
   managerId?: string;
   startDate?: string;
   endDate?: string;
-  sortBy?: string;
-  sortOrder?: string;
 }
 
 /**

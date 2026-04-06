@@ -17,13 +17,7 @@ import {
 } from '@/services/xiaoke/api';
 import ConfigForm from './ConfigForm';
 import dayjs from 'dayjs';
-
-interface XiaokeConfigSearchParams {
-  page?: number;
-  pageSize?: number;
-  name?: string;
-  isEnabled?: boolean;
-}
+import type { PageParams } from '@/types';
 
 export interface ConfigManagementRef {
   reload: () => void;
@@ -45,7 +39,7 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
 
-  const searchParamsRef = useRef<XiaokeConfigSearchParams>({
+  const searchParamsRef = useRef<PageParams>({
     name: undefined,
     isEnabled: undefined,
   });
@@ -58,8 +52,8 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
       const response = await getXiaokeConfigs({
         page: currentParams.page,
         pageSize: currentParams.pageSize,
-        name: currentParams.name,
-        isEnabled: currentParams.isEnabled,
+        name: currentParams.name as string | undefined,
+        isEnabled: currentParams.isEnabled as boolean | undefined,
       });
 
       if (response.success && response.data) {

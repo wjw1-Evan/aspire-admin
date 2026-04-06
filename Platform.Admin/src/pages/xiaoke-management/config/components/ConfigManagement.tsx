@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { useIntl } from '@umijs/max';
-import { Button, Tag, Space, Modal, Card, Form, Input, Select, Grid } from 'antd';
+import { Button, Tag, Space, Card, Grid, Form } from 'antd';
 import {
   EditOutlined,
   DeleteOutlined,
@@ -236,20 +236,12 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
         ]}
       />
 
-      {formVisible && (
-        <Modal
-          title={editingConfig
-            ? intl.formatMessage({ id: 'pages.xiaokeManagement.config.editConfig' })
-            : intl.formatMessage({ id: 'pages.xiaokeManagement.config.createConfig' })}
-          open={formVisible}
-          onCancel={handleCloseForm}
-          footer={null}
-          width={800}
-          destroyOnHidden
-        >
-          <ConfigForm config={editingConfig} onSuccess={handleFormSuccess} onCancel={handleCloseForm} />
-        </Modal>
-      )}
+      <ConfigForm
+        config={editingConfig}
+        open={formVisible}
+        onOpenChange={(open) => { if (!open) handleCloseForm(); }}
+        onSuccess={handleFormSuccess}
+      />
     </>
   );
 });

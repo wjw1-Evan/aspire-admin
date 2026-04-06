@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Form, Input, Select, DatePicker, InputNumber, Button, Space } from 'antd';
+import { ModalForm, ProFormText, ProFormTextArea, ProFormSelect, ProFormDatePicker, ProFormDigit } from '@ant-design/pro-form';
 import type { Dayjs } from 'dayjs';
 import {
   createProject,
@@ -13,42 +13,16 @@ import {
 import dayjs from 'dayjs';
 
 interface ProjectFormProps {
+  open?: boolean;
   project?: ProjectDto | null;
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-interface ProjectFormValues {
-  name: string;
-  description?: string;
-  status?: number;
-  startDate?: Dayjs;
-  endDate?: Dayjs;
-  managerId?: string;
-  budget?: number;
-  priority?: number;
-}
-
-const ProjectForm: React.FC<ProjectFormProps> = ({ project, onSuccess, onCancel }) => {
-  const [form] = Form.useForm();
+const ProjectForm: React.FC<ProjectFormProps> = ({ open, project, onSuccess, onCancel }) => {
   const isEditing = !!project;
 
-  useEffect(() => {
-    if (project) {
-      form.setFieldsValue({
-        name: project.name,
-        description: project.description,
-        status: project.status,
-        startDate: project.startDate ? dayjs(project.startDate) : undefined,
-        endDate: project.endDate ? dayjs(project.endDate) : undefined,
-        managerId: project.managerId,
-        budget: project.budget,
-        priority: project.priority,
-      });
-    }
-  }, [project, form]);
-
-  const handleSubmit = async (values: ProjectFormValues) => {
+  const handleSubmit = async (values: Record<string, any>) => {
     try {
       const requestData: CreateProjectRequest | UpdateProjectRequest = {
         ...(isEditing ? { projectId: project!.id! } : {}),
@@ -66,88 +40,105 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ project, onSuccess, onCancel 
         const response = await updateProject(project!.id!, requestData as UpdateProjectRequest);
         if (response.success) {
           onSuccess();
-        } else {
-          console.error('更新项目失败:', response.message);
+          return true;
         }
+        return false;
       } else {
         const response = await createProject(requestData as CreateProjectRequest);
         if (response.success) {
           onSuccess();
-        } else {
-          console.error('创建项目失败:', response.message);
+          return true;
         }
+        return false;
       }
     } catch (error) {
       console.error('保存项目失败:', error);
+      return false;
     }
   };
 
+  const initialValues = project ? {
+    name: project.name,
+    description: project.description,
+    status: project.status,
+    startDate: project.startDate ? dayjs(project.startDate) : undefined,
+    endDate: project.endDate ? dayjs(project.endDate) : undefined,
+    managerId: project.managerId,
+    budget: project.budget,
+    priority: project.priority,
+  } : {
+    status: ProjectStatus.Planning,
+    priority: ProjectPriority.Medium,
+  };
+
   return (
-    <Form
-      form={form}
-      layout="vertical"
+    <ModalForm
+      title={isEditing ? '编辑项目' : '创建项目'}
+      open={open}
+      onOpenChange={(isOpen) => { if (!isOpen) onCancel(); }}
       onFinish={handleSubmit}
-      initialValues={{
-        status: ProjectStatus.Planning,
-        priority: ProjectPriority.Medium,
-      }}
+      initialValues={initialValues}
+      autoFocusFirstInput
+      width={600}
     >
-      <Form.Item
+      <ProFormText
         name="name"
         label="项目名称"
+        placeholder="请输入项目名称"
         rules={[{ required: true, message: '请输入项目名称' }]}
-      >
-        <Input placeholder="请输入项目名称" />
-      </Form.Item>
+      />
 
-      <Form.Item name="description" label="项目描述">
-        <Input.TextArea rows={4} placeholder="请输入项目描述" />
-      </Form.Item>
+      <ProFormTextArea
+        name="description"
+        label="项目描述"
+        placeholder="请输入项目描述"
+        fieldProps={{ rows: 4 }}
+      />
 
-      <Form.Item name="status" label="项目状态">
-        <Select>
-          <Select.Option value={ProjectStatus.Planning}>规划中</Select.Option>
-          <Select.Option value={ProjectStatus.InProgress}>进行中</Select.Option>
-          <Select.Option value={ProjectStatus.OnHold}>暂停</Select.Option>
-          <Select.Option value={ProjectStatus.Completed}>已完成</Select.Option>
-          <Select.Option value={ProjectStatus.Cancelled}>已取消</Select.Option>
-        </Select>
-      </Form.Item>
+      <ProFormSelect
+        name="status"
+        label="项目状态"
+        initialValue={ProjectStatus.Planning}
+        options={[
+          { label: '规划中', value: ProjectStatus.Planning },
+          { label: '进行中', value: ProjectStatus.InProgress },
+          { label: '暂停', value: ProjectStatus.OnHold },
+          { label: '已完成', value: ProjectStatus.Completed },
+          { label: '已取消', value: ProjectStatus.Cancelled },
+        ]}
+      />
 
-      <Form.Item name="priority" label="优先级">
-        <Select>
-          <Select.Option value={ProjectPriority.Low}>低</Select.Option>
-          <Select.Option value={ProjectPriority.Medium}>中</Select.Option>
-          <Select.Option value={ProjectPriority.High}>高</Select.Option>
-        </Select>
-      </Form.Item>
+      <ProFormSelect
+        name="priority"
+        label="优先级"
+        initialValue={ProjectPriority.Medium}
+        options={[
+          { label: '低', value: ProjectPriority.Low },
+          { label: '中', value: ProjectPriority.Medium },
+          { label: '高', value: ProjectPriority.High },
+        ]}
+      />
 
-      <Form.Item name="startDate" label="开始日期">
-        <DatePicker style={{ width: '100%' }} />
-      </Form.Item>
+      <ProFormDatePicker
+        name="startDate"
+        label="开始日期"
+        fieldProps={{ style: { width: '100%' } }}
+      />
 
-      <Form.Item name="endDate" label="结束日期">
-        <DatePicker style={{ width: '100%' }} />
-      </Form.Item>
+      <ProFormDatePicker
+        name="endDate"
+        label="结束日期"
+        fieldProps={{ style: { width: '100%' } }}
+      />
 
-      <Form.Item name="budget" label="预算">
-        <InputNumber
-          style={{ width: '100%' }}
-          placeholder="请输入预算"
-          min={0}
-          precision={2}
-        />
-      </Form.Item>
-
-      <Form.Item>
-        <Space>
-          <Button type="primary" htmlType="submit">
-            {isEditing ? '更新' : '创建'}
-          </Button>
-          <Button onClick={onCancel}>取消</Button>
-        </Space>
-      </Form.Item>
-    </Form>
+      <ProFormDigit
+        name="budget"
+        label="预算"
+        placeholder="请输入预算"
+        min={0}
+        fieldProps={{ precision: 2, style: { width: '100%' } }}
+      />
+    </ModalForm>
   );
 };
 

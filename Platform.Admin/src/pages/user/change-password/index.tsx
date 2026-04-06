@@ -1,7 +1,8 @@
 import * as API from '@/types';
 import { LockOutlined } from '@ant-design/icons';
 import { FormattedMessage, useIntl } from '@umijs/max';
-import { Alert, App, Card, Form, Input, Button } from 'antd';
+import { Alert, App, Form, Input, Button } from 'antd';
+import { ProCard } from '@ant-design/pro-components';
 import { createStyles } from 'antd-style';
 import React, { useState } from 'react';
 import { changePassword } from '@/services/ant-design-pro/api';
@@ -97,7 +98,7 @@ const ChangePassword: React.FC = () => {
     <>
       <title>{pageTitle}</title>
       <div className={styles.container}>
-        <Card
+        <ProCard
           title={intl.formatMessage({
             id: 'menu.account.changePassword',
             defaultMessage: '修改密码',
@@ -218,7 +219,7 @@ const ChangePassword: React.FC = () => {
               </Button>
             </Form.Item>
           </Form>
-        </Card>
+        </ProCard>
       </div>
     </>
   );

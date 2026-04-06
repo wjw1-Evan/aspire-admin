@@ -1,15 +1,17 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import type { ProColumns } from '@ant-design/pro-table';
-import { PageContainer, ProCard } from '@ant-design/pro-components';
+import { PageContainer, ProCard, ProDescriptions } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import { request } from '@umijs/max';
-import { Button, Tag, Space, Grid, App, Modal, Drawer, Descriptions, Spin, Timeline, Empty, Avatar } from 'antd';
+import { Button, Tag, Space, Grid, App, Modal, Spin, Timeline, Empty, Progress } from 'antd';
+import { Drawer } from 'antd';
 import { ProTable, ActionType } from '@ant-design/pro-table';
-import { PlusOutlined, EditOutlined, DeleteOutlined, CheckCircleOutlined, ReloadOutlined, PlayCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CheckCircleOutlined, ReloadOutlined, PlayCircleOutlined, StopOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 import { getTaskStatusColor, getTaskPriorityColor } from '@/utils/task';
 import { getTaskById, getTaskExecutionLogs, TaskStatus as TaskStatusEnum, type TaskDto, type TaskExecutionLogDto } from '@/services/task/api';
+
 import TaskForm from './components/TaskForm';
 import TaskExecutionPanel from './components/TaskExecutionPanel';
 import UnifiedNotificationCenter from '@/components/UnifiedNotificationCenter';
@@ -66,58 +68,58 @@ const TaskDetail: React.FC<{ id: string; onClose: () => void; open: boolean; isM
   };
 
   return (
-    <Drawer title={intl.formatMessage({ id: 'pages.taskManagement.detail.title' })} placement="right" open={open} onClose={onClose} size={isMobile ? 'large' : 800}>
+    <Drawer title={intl.formatMessage({ id: 'pages.taskManagement.detail.title' })} placement="right" open={open} onClose={(isOpen) => { if (!isOpen) onClose(); }} width={isMobile ? 'large' : 800}>
       <Spin spinning={loading}>
         {taskDetail ? (
           <>
-            <Card title={intl.formatMessage({ id: 'pages.taskManagement.detail.basicInfo' })} style={{ marginBottom: 16 }}>
-              <Descriptions column={isMobile ? 1 : 2} size="small">
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.name' })} span={2}>{taskDetail.taskName}</Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.type' })}><Tag>{taskDetail.taskType}</Tag></Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.status' })}><Tag color={getTaskStatusColor(taskDetail.status)}>{taskDetail.statusName}</Tag></Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.priority' })}><Tag color={getTaskPriorityColor(taskDetail.priority)}>{taskDetail.priorityName}</Tag></Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.progress' })}>{taskDetail.completionPercentage}%</Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.description' })} span={2}>{taskDetail.description || '-'}</Descriptions.Item>
-              </Descriptions>
-            </Card>
+            <ProCard title={intl.formatMessage({ id: 'pages.taskManagement.detail.basicInfo' })} style={{ marginBottom: 16 }}>
+              <ProDescriptions column={isMobile ? 1 : 2} size="small">
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.name' })} span={2}>{taskDetail.taskName}</ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.type' })}><Tag>{taskDetail.taskType}</Tag></ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.status' })}><Tag color={getTaskStatusColor(taskDetail.status)}>{taskDetail.statusName}</Tag></ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.priority' })}><Tag color={getTaskPriorityColor(taskDetail.priority)}>{taskDetail.priorityName}</Tag></ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.progress' })}>{taskDetail.completionPercentage}%</ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.description' })} span={2}>{taskDetail.description || '-'}</ProDescriptions.Item>
+              </ProDescriptions>
+            </ProCard>
 
-            <Card title={intl.formatMessage({ id: 'pages.taskManagement.detail.assignment' })} style={{ marginBottom: 16 }}>
-              <Descriptions column={isMobile ? 1 : 2} size="small">
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.createdBy' })}>{taskDetail.createdByName || '-'}</Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.createdAt' })}>{dayjs(taskDetail.createdAt).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.assignedTo' })}>{taskDetail.assignedToName || '-'}</Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.assignedAt' })}>{taskDetail.assignedAt ? dayjs(taskDetail.assignedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
-              </Descriptions>
-            </Card>
+            <ProCard title={intl.formatMessage({ id: 'pages.taskManagement.detail.assignment' })} style={{ marginBottom: 16 }}>
+              <ProDescriptions column={isMobile ? 1 : 2} size="small">
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.createdBy' })}>{taskDetail.createdByName || '-'}</ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.createdAt' })}>{dayjs(taskDetail.createdAt).format('YYYY-MM-DD HH:mm:ss')}</ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.assignedTo' })}>{taskDetail.assignedToName || '-'}</ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.assignedAt' })}>{taskDetail.assignedAt ? dayjs(taskDetail.assignedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
+              </ProDescriptions>
+            </ProCard>
 
-            <Card title={intl.formatMessage({ id: 'pages.taskManagement.detail.timeInfo' })} style={{ marginBottom: 16 }}>
-              <Descriptions column={isMobile ? 1 : 2} size="small">
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.plannedStart' })}>{taskDetail.plannedStartTime ? dayjs(taskDetail.plannedStartTime).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.plannedEnd' })}>{taskDetail.plannedEndTime ? dayjs(taskDetail.plannedEndTime).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.actualStart' })}>{taskDetail.actualStartTime ? dayjs(taskDetail.actualStartTime).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.actualEnd' })}>{taskDetail.actualEndTime ? dayjs(taskDetail.actualEndTime).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.estimatedDuration' })}>{taskDetail.estimatedDuration ? `${taskDetail.estimatedDuration} 分钟` : '-'}</Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.actualDuration' })}>{taskDetail.actualDuration ? `${taskDetail.actualDuration} 分钟` : '-'}</Descriptions.Item>
-              </Descriptions>
-            </Card>
+            <ProCard title={intl.formatMessage({ id: 'pages.taskManagement.detail.timeInfo' })} style={{ marginBottom: 16 }}>
+              <ProDescriptions column={isMobile ? 1 : 2} size="small">
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.plannedStart' })}>{taskDetail.plannedStartTime ? dayjs(taskDetail.plannedStartTime).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.plannedEnd' })}>{taskDetail.plannedEndTime ? dayjs(taskDetail.plannedEndTime).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.actualStart' })}>{taskDetail.actualStartTime ? dayjs(taskDetail.actualStartTime).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.actualEnd' })}>{taskDetail.actualEndTime ? dayjs(taskDetail.actualEndTime).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.estimatedDuration' })}>{taskDetail.estimatedDuration ? `${taskDetail.estimatedDuration} 分钟` : '-'}</ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.taskManagement.table.actualDuration' })}>{taskDetail.actualDuration ? `${taskDetail.actualDuration} 分钟` : '-'}</ProDescriptions.Item>
+              </ProDescriptions>
+            </ProCard>
 
             {taskDetail.participants && taskDetail.participants.length > 0 && (
-              <Card title={intl.formatMessage({ id: 'pages.taskManagement.detail.participants' })} style={{ marginBottom: 16 }}>
+              <ProCard title={intl.formatMessage({ id: 'pages.taskManagement.detail.participants' })} style={{ marginBottom: 16 }}>
                 <Space wrap>{taskDetail.participants.map(p => <Tag key={p.userId}>{p.username}</Tag>)}</Space>
-              </Card>
+              </ProCard>
             )}
 
             {taskDetail.tags && taskDetail.tags.length > 0 && (
-              <Card title={intl.formatMessage({ id: 'pages.taskManagement.table.tags' })} style={{ marginBottom: 16 }}>
+              <ProCard title={intl.formatMessage({ id: 'pages.taskManagement.table.tags' })} style={{ marginBottom: 16 }}>
                 <Space wrap>{taskDetail.tags.map(t => <Tag key={t} color="blue">{t}</Tag>)}</Space>
-              </Card>
+              </ProCard>
             )}
 
             {taskDetail.remarks && (
-              <Card title={intl.formatMessage({ id: 'pages.taskManagement.table.remarks' })} style={{ marginBottom: 16 }}><p>{taskDetail.remarks}</p></Card>
+              <ProCard title={intl.formatMessage({ id: 'pages.taskManagement.table.remarks' })} style={{ marginBottom: 16 }}><p>{taskDetail.remarks}</p></ProCard>
             )}
 
-            <Card title={intl.formatMessage({ id: 'pages.taskManagement.detail.executionLogs' })} loading={logsLoading}>
+            <ProCard title={intl.formatMessage({ id: 'pages.taskManagement.detail.executionLogs' })} loading={logsLoading}>
               {executionLogs.length > 0 ? (
                 <Timeline items={executionLogs.map(log => ({
                   icon: <Tag color={getExecutionResultColor(log.status)}>{log.statusName}</Tag>,
@@ -131,7 +133,7 @@ const TaskDetail: React.FC<{ id: string; onClose: () => void; open: boolean; isM
                   ),
                 }))} />
               ) : <Empty description={intl.formatMessage({ id: 'pages.taskManagement.detail.noLogs' })} />}
-            </Card>
+            </ProCard>
           </>
         ) : <Empty description={intl.formatMessage({ id: 'pages.taskManagement.detail.notFound' })} />}
       </Spin>
@@ -206,6 +208,7 @@ const TaskManagement: React.FC = () => {
 
   return (
     <PageContainer title={<Space><PlusOutlined />{intl.formatMessage({ id: 'pages.taskManagement.title' })}</Space>}
+      breadcrumb={{ routes: [{ path: '/', breadcrumbName: '首页' }, { path: '/task', breadcrumbName: '任务管理' }] }}
       extra={<Space wrap>
         <Button key="refresh" icon={<ReloadOutlined />} onClick={() => { loadStatistics(); actionRef.current?.reload(); }}>{intl.formatMessage({ id: 'pages.taskManagement.refresh' })}</Button>
         <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingTask: null, formVisible: true })}>{intl.formatMessage({ id: 'pages.taskManagement.createTask' })}</Button>

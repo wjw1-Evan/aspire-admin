@@ -1,6 +1,7 @@
 import * as API from '@/types';
 import React from 'react';
-import { Card, Row, Col, Avatar, Typography, Space, Tag, theme } from 'antd';
+import { Row, Col, Avatar, Typography, Space, Tag, theme } from 'antd';
+import { ProCard } from '@ant-design/pro-components';
 import { UserOutlined, GlobalOutlined, CrownOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 
@@ -43,7 +44,7 @@ const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({ currentUser, companyInfo 
     };
 
     return (
-        <Card
+        <ProCard
             className={styles.card}
             style={{
                 background: token.colorBgContainer === '#ffffff'
@@ -55,7 +56,7 @@ const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({ currentUser, companyInfo 
                 overflow: 'hidden',
                 position: 'relative'
             }}
-            styles={{ body: { padding: '32px', position: 'relative', zIndex: 1 } }}
+            bodyStyle={{ padding: '32px', position: 'relative', zIndex: 1 }}
         >
             {/* Decorative elements */}
             <div style={{
@@ -130,7 +131,7 @@ const WelcomeHeader: React.FC<WelcomeHeaderProps> = ({ currentUser, companyInfo 
           </div>
         </Col>
       </Row>
-        </Card>
+        </ProCard>
     );
 };
 

@@ -3,8 +3,9 @@ import { PageContainer } from '@ant-design/pro-components';
 import { StatCard } from '@/components';
 import { useIntl } from '@umijs/max';
 import { type ProColumns, ActionType, ProTable } from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormSelect, ProFormDigit, ProFormTextArea } from '@ant-design/pro-form';
-import { Button, Card, Col, Descriptions, Drawer, Form, Grid, Input, Row, Select, Space, Tag, Tabs, message, Alert, Modal } from 'antd';
+import { ModalForm, ProFormText, ProFormSelect, ProFormDigit, ProFormTextArea } from '@ant-design/pro-components';
+import { Button, Col, Drawer, Form, Grid, Input, Row, Select, Space, Tag, Tabs, message, Alert, Modal } from 'antd';
+import { ProDescriptions, ProCard } from '@ant-design/pro-components';
 import { PlusOutlined, EditOutlined, DeleteOutlined, DesktopOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, KeyOutlined, BranchesOutlined, SendOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { iotService, IoTDevice, IoTGateway, DeviceStatistics, GenerateApiKeyResult } from '@/services/iotService';
@@ -25,9 +26,9 @@ const DEVICE_TYPE_OPTIONS = [
 
 const deviceTypeColor: Record<string, string> = { Sensor: 'blue', Actuator: 'orange', Gateway: 'purple', Other: 'default' };
 const deviceTypeLabel: Record<string, string> = { Sensor: '传感器', Actuator: '执行器', Gateway: '网关', Other: '其他' };
-const statusConfig = { Online: { color: 'green', label: '在线' }, Offline: { color: 'default', label: '离线' }, Fault: { color: 'red', label: '故障' }, Maintenance: { color: 'orange', label: '维护中' } };
+const statusConfig: Record<string, { color: string; label: string }> = { Online: { color: 'green', label: '在线' }, Offline: { color: 'default', label: '离线' }, Fault: { color: 'red', label: '故障' }, Maintenance: { color: 'orange', label: '维护中' } };
 
-const DeviceManagement = (props: any, ref: React.Ref<DeviceManagementRef>) => {
+const DeviceManagement = React.forwardRef<DeviceManagementRef, any>((props, ref) => {
   const intl = useIntl();
   const { confirm } = useModal();
   const screens = useBreakpoint();
@@ -72,11 +73,11 @@ const DeviceManagement = (props: any, ref: React.Ref<DeviceManagementRef>) => {
   useEffect(() => { loadGateways(); fetchStatistics(); }, [loadGateways, fetchStatistics]);
 
   const columns: ProColumns<IoTDevice>[] = [
-    { title: '设备名称', dataIndex: 'title', sorter: true, render: (dom, record) => <a onClick={() => set({ viewingDevice: record, detailVisible: true })}>{dom}</a> },
-    { title: '类型', dataIndex: 'deviceType', sorter: true, render: (dom) => <Tag color={deviceTypeColor[dom ?? 'Sensor'] ?? 'default'}>{deviceTypeLabel[dom ?? 'Sensor'] ?? dom}</Tag> },
-    { title: '所属网关', dataIndex: 'gatewayId', sorter: true, render: (dom, record) => state.gateways.find(g => g.gatewayId === dom)?.title || (dom ? <Tag>{dom}</Tag> : <Tag color="default">独立设备</Tag>) },
+    { title: '设备名称', dataIndex: 'title', sorter: true, render: (dom, record) => <a onClick={() => set({ viewingDevice: record, detailVisible: true })}>{dom as string}</a> },
+    { title: '类型', dataIndex: 'deviceType', sorter: true, render: (dom) => <Tag color={deviceTypeColor[dom as string] ?? 'default'}>{deviceTypeLabel[dom as string] ?? dom}</Tag> },
+    { title: '所属网关', dataIndex: 'gatewayId', sorter: true, render: (dom) => state.gateways.find(g => g.gatewayId === (dom as string))?.title || (dom ? <Tag>{dom}</Tag> : <Tag color="default">独立设备</Tag>) },
     { title: '位置', dataIndex: 'location', sorter: true },
-    { title: '状态', dataIndex: 'status', sorter: true, render: (dom) => { const cfg = statusConfig[dom ?? 'Offline'] ?? statusConfig.Offline; return <Tag color={cfg.color}>{cfg.label}</Tag>; } },
+    { title: '状态', dataIndex: 'status', sorter: true, render: (dom) => { const cfg = statusConfig[dom as string] ?? statusConfig.Offline; return <Tag color={cfg.color}>{cfg.label}</Tag>; } },
     { title: '启用', dataIndex: 'isEnabled', sorter: true, render: (dom) => <Tag color={dom ? 'green' : 'red'}>{dom ? '是' : '否'}</Tag> },
     { title: '操作', valueType: 'option', fixed: 'right', width: 180, render: (_, record) => [
       <Button key="edit" type="link" icon={<EditOutlined />} onClick={() => { set({ editingDevice: record, formVisible: true }); form.setFieldsValue({ ...record, tagsList: record.tags ? Object.entries(record.tags).map(([k, v]) => `${k}:${v}`) : [] }); }}>编辑</Button>,
@@ -136,13 +137,13 @@ const DeviceManagement = (props: any, ref: React.Ref<DeviceManagementRef>) => {
 
   return (
     <PageContainer title={<Space><DesktopOutlined />设备管理</Space>}>
-      {state.statistics && <Card style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>
+      {state.statistics && <ProCard style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>
         {[{ key: 'total', title: '设备总数', icon: <DesktopOutlined />, color: '#1890ff' },
           { key: 'online', title: '在线设备', icon: <CheckCircleOutlined />, color: '#52c41a' },
           { key: 'offline', title: '离线设备', icon: <CloseCircleOutlined />, color: '#8c8c8c' },
           { key: 'fault', title: '故障设备', icon: <ExclamationCircleOutlined />, color: '#ff4d4f' }
         ].map(i => <Col xs={24} sm={12} md={6} key={i.key}><StatCard title={i.title} value={state.statistics![i.key as keyof typeof state.statistics]} icon={i.icon} color={i.color} /></Col>)}
-      </Row></Card>}
+      </Row></ProCard>}
 
       {state.selectedRowKeys.length > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', marginBottom: 8, background: '#e6f4ff', border: '1px solid #91caff', borderRadius: 8 }}>
@@ -183,7 +184,7 @@ const DeviceManagement = (props: any, ref: React.Ref<DeviceManagementRef>) => {
           <Col span={12}><ProFormText name="location" label="物理位置" placeholder="如: 1号楼/3层/机房A" /></Col>
         </Row>
         <ProFormTextArea name="description" label="设备描述" placeholder="设备描述（可选）" />
-        <ProFormSelect mode="tags" name="tagsList" label="标签 (Tags)" tooltip='格式: "key:value" 或 "key"，支持多个' placeholder='输入标签，格式: "env:prod" 或 "building:A"' tokenSeparators={[',']} />
+        <ProFormSelect mode="tags" name="tagsList" label="标签 (Tags)" tooltip='格式: "key:value" 或 "key"，支持多个' placeholder='输入标签，格式: "env:prod" 或 "building:A"' />
         <ProFormDigit name="retentionDays" label="遥测数据保留天数" initialValue={0} tooltip="0 表示永久保留，最大 3650 天" min={0} max={3650} fieldProps={{ addonAfter: '天（0=永久）' }} />
       </ModalForm>
 
@@ -191,10 +192,10 @@ const DeviceManagement = (props: any, ref: React.Ref<DeviceManagementRef>) => {
         <Alert type="warning" showIcon message="重要提示" description="此密钥仅显示一次，关闭后将无法再次查看。请立即复制并安全保存。" style={{ marginBottom: 16 }} />
         {state.apiKeyResult && (
           <>
-            <Descriptions size="small" column={1} bordered>
-              <Descriptions.Item label="设备 ID">{state.apiKeyResult.deviceId}</Descriptions.Item>
-              <Descriptions.Item label="生成时间">{dayjs(state.apiKeyResult.generatedAt).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>
-            </Descriptions>
+            <ProDescriptions size="small" column={1} bordered>
+              <ProDescriptions.Item label="设备 ID">{state.apiKeyResult.deviceId}</ProDescriptions.Item>
+              <ProDescriptions.Item label="生成时间">{dayjs(state.apiKeyResult.generatedAt).format('YYYY-MM-DD HH:mm:ss')}</ProDescriptions.Item>
+            </ProDescriptions>
             <div style={{ marginTop: 12 }}>
               <span style={{ display: 'block', marginBottom: 6, color: '#666' }}>Primary Key（明文）</span>
               <div style={{ fontFamily: 'monospace', fontSize: 13, padding: '10px 14px', background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 6, wordBreak: 'break-all', userSelect: 'all' }}>{state.apiKeyResult.apiKey}</div>
@@ -208,33 +209,33 @@ const DeviceManagement = (props: any, ref: React.Ref<DeviceManagementRef>) => {
           <Tabs defaultActiveKey="info" items={[
             { key: 'info', label: <><DesktopOutlined /> 基本信息</>, children: (
               <>
-                <Card title="设备信息" size="small" style={{ marginBottom: 12 }}>
-                  <Descriptions column={isMobile ? 1 : 2} size="small">
-                    <Descriptions.Item label="设备名称" span={2}>{state.viewingDevice.title}</Descriptions.Item>
-                    <Descriptions.Item label="设备 ID">{state.viewingDevice.deviceId}</Descriptions.Item>
-                    <Descriptions.Item label="设备类型"><Tag color={deviceTypeColor[state.viewingDevice.deviceType ?? 'Sensor']}>{deviceTypeLabel[state.viewingDevice.deviceType ?? 'Sensor'] ?? state.viewingDevice.deviceType}</Tag></Descriptions.Item>
-                    <Descriptions.Item label="状态">{(() => { const cfg = statusConfig[state.viewingDevice.status ?? 'Offline'] ?? statusConfig.Offline; return <Tag color={cfg.color}>{cfg.label}</Tag>; })()}</Descriptions.Item>
-                    <Descriptions.Item label="启用"><Tag color={state.viewingDevice.isEnabled ? 'green' : 'red'}>{state.viewingDevice.isEnabled ? '是' : '否'}</Tag></Descriptions.Item>
-                    <Descriptions.Item label="所属网关">{state.gateways.find(g => g.gatewayId === state.viewingDevice.gatewayId)?.title || state.viewingDevice.gatewayId || '-'}</Descriptions.Item>
-                    <Descriptions.Item label="物理位置">{state.viewingDevice.location || '-'}</Descriptions.Item>
-                    <Descriptions.Item label="描述" span={2}>{state.viewingDevice.description || '-'}</Descriptions.Item>
-                    <Descriptions.Item label="标签" span={2}>{state.viewingDevice.tags && Object.keys(state.viewingDevice.tags).length > 0 ? <Space size={4} wrap>{Object.entries(state.viewingDevice.tags).map(([k, v]) => <Tag key={k} color="blue">{k}{v ? `:${v}` : ''}</Tag>)}</Space> : '-'}</Descriptions.Item>
-                    <Descriptions.Item label="数据保留">{(!state.viewingDevice.retentionDays || state.viewingDevice.retentionDays === 0) ? '永久保留' : `${state.viewingDevice.retentionDays} 天`}</Descriptions.Item>
-                    <Descriptions.Item label="最后上报">{state.viewingDevice.lastReportedAt ? dayjs(state.viewingDevice.lastReportedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
-                  </Descriptions>
-                </Card>
-                <Card title={<><KeyOutlined style={{ marginRight: 6 }} />认证密钥</>} size="small" style={{ marginBottom: 12 }} extra={<Button size="small" icon={<KeyOutlined />} loading={state.generatingKey} onClick={() => handleGenerateApiKey(state.viewingDevice!)}>{state.viewingDevice!.hasApiKey ? '重置密钥' : '生成密钥'}</Button>}>
+                <ProCard title="设备信息" size="small" style={{ marginBottom: 12 }}>
+                  <ProDescriptions column={isMobile ? 1 : 2} size="small">
+                    <ProDescriptions.Item label="设备名称" span={2}>{state.viewingDevice.title}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="设备 ID">{state.viewingDevice.deviceId}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="设备类型"><Tag color={deviceTypeColor[state.viewingDevice.deviceType ?? 'Sensor']}>{deviceTypeLabel[state.viewingDevice.deviceType ?? 'Sensor'] ?? state.viewingDevice.deviceType}</Tag></ProDescriptions.Item>
+                    <ProDescriptions.Item label="状态">{(() => { const cfg = statusConfig[state.viewingDevice.status ?? 'Offline'] ?? statusConfig.Offline; return <Tag color={cfg.color}>{cfg.label}</Tag>; })()}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="启用"><Tag color={state.viewingDevice.isEnabled ? 'green' : 'red'}>{state.viewingDevice.isEnabled ? '是' : '否'}</Tag></ProDescriptions.Item>
+                    <ProDescriptions.Item label="所属网关">{state.gateways.find(g => g.gatewayId === state.viewingDevice!.gatewayId)?.title || state.viewingDevice!.gatewayId || '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="物理位置">{state.viewingDevice.location || '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="描述" span={2}>{state.viewingDevice.description || '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="标签" span={2}>{state.viewingDevice.tags && Object.keys(state.viewingDevice.tags).length > 0 ? <Space size={4} wrap>{Object.entries(state.viewingDevice.tags).map(([k, v]) => <Tag key={k} color="blue">{k}{v ? `:${v}` : ''}</Tag>)}</Space> : '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="数据保留">{(!state.viewingDevice.retentionDays || state.viewingDevice.retentionDays === 0) ? '永久保留' : `${state.viewingDevice.retentionDays} 天`}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="最后上报">{state.viewingDevice.lastReportedAt ? dayjs(state.viewingDevice.lastReportedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
+                  </ProDescriptions>
+                </ProCard>
+                <ProCard title={<><KeyOutlined style={{ marginRight: 6 }} />认证密钥</>} size="small" style={{ marginBottom: 12 }} extra={<Button size="small" icon={<KeyOutlined />} loading={state.generatingKey} onClick={() => handleGenerateApiKey(state.viewingDevice!)}>{state.viewingDevice!.hasApiKey ? '重置密钥' : '生成密钥'}</Button>}>
                   <Alert type={state.viewingDevice.hasApiKey ? 'success' : 'warning'} showIcon message={state.viewingDevice.hasApiKey ? '设备 ApiKey 已配置，设备可使用密钥进行认证。' : '设备尚未配置 ApiKey，点击"生成密钥"创建认证凭据。'} />
-                </Card>
+                </ProCard>
                 {state.deviceStatistics && (
-                  <Card title="数据统计" size="small">
-                    <Descriptions column={isMobile ? 1 : 2} size="small">
-                      <Descriptions.Item label="数据点总数">{state.deviceStatistics.totalDataPoints}</Descriptions.Item>
-                      <Descriptions.Item label="已启用">{state.deviceStatistics.enabledDataPoints}</Descriptions.Item>
-                      <Descriptions.Item label="数据记录">{state.deviceStatistics.totalDataRecords}</Descriptions.Item>
-                      <Descriptions.Item label="未处理告警"><Tag color={state.deviceStatistics.unhandledAlarms > 0 ? 'red' : 'green'}>{state.deviceStatistics.unhandledAlarms}</Tag></Descriptions.Item>
-                    </Descriptions>
-                  </Card>
+                  <ProCard title="数据统计" size="small">
+                    <ProDescriptions column={isMobile ? 1 : 2} size="small">
+                      <ProDescriptions.Item label="数据点总数">{state.deviceStatistics.totalDataPoints}</ProDescriptions.Item>
+                      <ProDescriptions.Item label="已启用">{state.deviceStatistics.enabledDataPoints}</ProDescriptions.Item>
+                      <ProDescriptions.Item label="数据记录">{state.deviceStatistics.totalDataRecords}</ProDescriptions.Item>
+                      <ProDescriptions.Item label="未处理告警"><Tag color={state.deviceStatistics.unhandledAlarms > 0 ? 'red' : 'green'}>{state.deviceStatistics.unhandledAlarms}</Tag></ProDescriptions.Item>
+                    </ProDescriptions>
+                  </ProCard>
                 )}
               </>
             )},
@@ -245,7 +246,7 @@ const DeviceManagement = (props: any, ref: React.Ref<DeviceManagementRef>) => {
       </Drawer>
     </PageContainer>
   );
-};
+});
 
 DeviceManagement.displayName = 'DeviceManagement';
 export default DeviceManagement;

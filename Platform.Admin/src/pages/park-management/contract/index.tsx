@@ -1,8 +1,10 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
+import { PageContainer, ProCard } from '@ant-design/pro-components';
 import { StatCard } from '@/components';
 import { useIntl, request } from '@umijs/max';
-import { Card, Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typography, Descriptions, InputNumber, Popconfirm, DatePicker, Drawer, List, Flex, Upload } from 'antd';
+import { Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typography, InputNumber, Popconfirm, DatePicker, List, Flex, Upload } from 'antd';
+import { Drawer } from 'antd';
+import { ProDescriptions } from '@ant-design/pro-components';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormDateRangePicker } from '@ant-design/pro-form';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, FileTextOutlined, WarningOutlined, ReloadOutlined, CalendarOutlined, SyncOutlined, UploadOutlined, DownloadOutlined, PaperClipOutlined, CheckCircleOutlined } from '@ant-design/icons';
@@ -107,7 +109,9 @@ const ContractManagement: React.FC = () => {
     };
 
     return (
-        <PageContainer title="合同管理" extra={<Space><Button icon={<ReloadOutlined />} onClick={() => { actionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }}>刷新</Button><Button type="primary" icon={<PlusOutlined />} onClick={() => set({ isEdit: false, currentContract: null, contractModalVisible: true, fileList: [] })}>新增合同</Button></Space>}>
+        <PageContainer title="合同管理"
+            breadcrumb={{ routes: [{ path: '/', breadcrumbName: '首页' }, { path: '/park', breadcrumbName: '园区管理' }, { path: '/park/contract', breadcrumbName: '合同管理' }] }}
+            extra={<Space><Button icon={<ReloadOutlined />} onClick={() => { actionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }}>刷新</Button><Button type="primary" icon={<PlusOutlined />} onClick={() => set({ isEdit: false, currentContract: null, contractModalVisible: true, fileList: [] })}>新增合同</Button></Space>}>
             {state.statistics && <Row gutter={[16, 16]} style={{ marginBottom: 16 }}><Col xs={24} sm={12} md={6}><StatCard title="生效合同" value={state.statistics.activeContracts} icon={<CheckCircleOutlined />} color="#52c41a" /></Col><Col xs={24} sm={12} md={6}><StatCard title="合同总额" value={`¥${state.statistics.totalContractAmount?.toLocaleString()}`} icon={<FileTextOutlined />} color="#1890ff" /></Col><Col xs={24} sm={12} md={6}><StatCard title="即将到期" value={state.statistics.expiringContracts} icon={<WarningOutlined />} color={state.statistics.expiringContracts > 0 ? '#f5222d' : '#d9d9d9'} /></Col><Col xs={24} sm={12} md={6}><StatCard title="本月应收" value={`¥${state.statistics.totalExpected?.toLocaleString()}`} icon={<CalendarOutlined />} color="#722ed1" /></Col></Row>}
 
             <ProTable actionRef={actionRef} request={async (params: any) => {
@@ -139,16 +143,16 @@ const ContractManagement: React.FC = () => {
                 <ProFormText name="terms" label="条款备注" placeholder="备注信息" />
             </ModalForm>
 
-            <Drawer title={state.currentContract?.contractNumber || '合同详情'} open={state.detailDrawerVisible} onClose={() => set({ detailDrawerVisible: false, currentContract: null })} size={640}>
+            <Drawer title={state.currentContract?.contractNumber || '合同详情'} open={state.detailDrawerVisible} onClose={(open) => { if (!open) set({ detailDrawerVisible: false, currentContract: null }); }} width={640}>
                 {state.currentContract && (<div style={{ padding: '0 8px' }}>
-                    <Descriptions bordered column={2} size="small">
-                        <Descriptions.Item label="合同编号" span={2}>{state.currentContract.contractNumber}</Descriptions.Item>
-                        <Descriptions.Item label="租户名称" span={2}>{state.currentContract.tenantName}</Descriptions.Item>
-                        <Descriptions.Item label="租期">{dayjs(state.currentContract.startDate).format('YYYY-MM-DD')} ~ {dayjs(state.currentContract.endDate).format('YYYY-MM-DD')}</Descriptions.Item>
-                        <Descriptions.Item label="月租金">¥{state.currentContract.monthlyRent?.toLocaleString()}</Descriptions.Item>
-                        <Descriptions.Item label="状态"><Tag color={contractStatusOptions.find(o => o.value === state.currentContract?.status)?.color}>{contractStatusOptions.find(o => o.value === state.currentContract?.status)?.label || state.currentContract?.status}</Tag></Descriptions.Item>
-                        <Descriptions.Item label="付款周期">{state.currentContract.paymentCycle}</Descriptions.Item>
-                    </Descriptions>
+                    <ProDescriptions bordered column={2} size="small">
+                        <ProDescriptions.Item label="合同编号" span={2}>{state.currentContract.contractNumber}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="租户名称" span={2}>{state.currentContract.tenantName}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="租期">{dayjs(state.currentContract.startDate).format('YYYY-MM-DD')} ~ {dayjs(state.currentContract.endDate).format('YYYY-MM-DD')}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="月租金">¥{state.currentContract.monthlyRent?.toLocaleString()}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="状态"><Tag color={contractStatusOptions.find(o => o.value === state.currentContract?.status)?.color}>{contractStatusOptions.find(o => o.value === state.currentContract?.status)?.label || state.currentContract?.status}</Tag></ProDescriptions.Item>
+                        <ProDescriptions.Item label="付款周期">{state.currentContract.paymentCycle}</ProDescriptions.Item>
+                    </ProDescriptions>
                     <div style={{ marginTop: 24 }}>
                         <Flex justify="space-between" align="center" style={{ marginBottom: 16 }}><Text strong>付款记录</Text><Button type="primary" ghost size="small" icon={<PlusOutlined />} onClick={() => set({ paymentModalVisible: true })}>添加记录</Button></Flex>
                         <List size="small" dataSource={state.currentContract.paymentRecords || []} renderItem={(item: LeasePaymentRecord) => (<List.Item actions={[<Button type="link" danger size="small" icon={<DeleteOutlined />} onClick={async () => { await api.deletePayment(item.id); const updated = await api.get(state.currentContract!.id); if (updated.success && updated.data) set({ currentContract: updated.data }); }} />]}>

@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { Card, Space, Table, Button, Tag, Empty, theme, Typography, Progress, Tooltip } from 'antd';
+import React, { useEffect, useState, useRef } from 'react';
+import type { ReactNode } from 'react';
+import { Card, Space, Button, Tag, Empty, theme, Typography, Progress, Tooltip } from 'antd';
 import { FolderOutlined } from '@ant-design/icons';
 import { useAccess, useNavigate, useIntl } from '@umijs/max';
+import { ProTable, ProColumns } from '@ant-design/pro-table';
 import { getProjectList, ProjectStatus, ProjectPriority } from '@/services/task/project';
 import type { ProjectDto } from '@/services/task/project';
 
@@ -16,13 +18,12 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
     const access = useAccess();
     const navigate = useNavigate();
     const intl = useIntl();
+    const actionRef = useRef<any>(null);
     const [projects, setProjects] = useState<ProjectDto[]>([]);
     const [loading, setLoading] = useState(false);
 
-    // 检查用户是否有权限访问项目管理
     const canAccessProject = access.canAccessPath('/project-management');
 
-    // 获取项目列表
     const fetchProjects = async () => {
         try {
             setLoading(true);
@@ -40,19 +41,16 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
         }
     };
 
-    // 初始化加载
     useEffect(() => {
         if (!canAccessProject) return;
         fetchProjects();
 
-        // 定时刷新（每 60 秒）
         const intervalId = setInterval(() => {
             if (document.visibilityState === 'visible') {
                 fetchProjects();
             }
         }, 60000);
 
-        // 监听可见性变化
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'visible') {
                 fetchProjects();
@@ -66,7 +64,6 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
         };
     }, [canAccessProject]);
 
-    // 获取状态颜色
     const getStatusColor = (status: number) => {
         switch (status) {
             case ProjectStatus.Planning:
@@ -84,7 +81,6 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
         }
     };
 
-    // 获取优先级颜色
     const getPriorityColor = (priority: number) => {
         switch (priority) {
             case ProjectPriority.Low:
@@ -98,7 +94,6 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
         }
     };
 
-    // 获取优先级文本
     const getPriorityText = (priority: number) => {
         switch (priority) {
             case ProjectPriority.Low:
@@ -116,15 +111,15 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
         return null;
     }
 
-    const columns = [
+    const columns: ProColumns<ProjectDto>[] = [
         {
             title: intl.formatMessage({ id: 'pages.welcome.projectList.projectName' }),
             dataIndex: 'name',
             key: 'name',
             width: '35%',
-            render: (text: string, record: ProjectDto) => (
+            render: (_: ReactNode, record: ProjectDto) => (
                 <Tooltip title={record.description}>
-                    <Text ellipsis strong>{text}</Text>
+                    <Text ellipsis strong>{record.name}</Text>
                 </Tooltip>
             ),
         },
@@ -133,8 +128,8 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
             dataIndex: 'statusName',
             key: 'status',
             width: '15%',
-            render: (text: string, record: ProjectDto) => (
-                <Tag color={getStatusColor(record.status)}>{text}</Tag>
+            render: (_: ReactNode, record: ProjectDto) => (
+                <Tag color={getStatusColor(record.status)}>{record.statusName}</Tag>
             ),
         },
         {
@@ -142,8 +137,8 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
             dataIndex: 'priority',
             key: 'priority',
             width: '12%',
-            render: (priority: number) => (
-                <Tag color={getPriorityColor(priority)}>{getPriorityText(priority)}</Tag>
+            render: (_: ReactNode, record: ProjectDto) => (
+                <Tag color={getPriorityColor(record.priority)}>{getPriorityText(record.priority)}</Tag>
             ),
         },
         {
@@ -151,15 +146,15 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
             dataIndex: 'progress',
             key: 'progress',
             width: '20%',
-            render: (progress: number) => (
+            render: (_: ReactNode, record: ProjectDto) => (
                 <Space style={{ width: '100%' }} size={4}>
                     <Progress
                         type="circle"
-                        percent={progress}
+                        percent={record.progress}
                         size={32}
-                        strokeColor={progress === 100 ? token.colorSuccess : token.colorPrimary}
+                        strokeColor={record.progress === 100 ? token.colorSuccess : token.colorPrimary}
                     />
-                    <Text type="secondary" style={{ fontSize: '12px' }}>{progress}%</Text>
+                    <Text type="secondary" style={{ fontSize: '12px' }}>{record.progress}%</Text>
                 </Space>
             ),
         },
@@ -182,11 +177,15 @@ const ProjectListCard: React.FC<ProjectListCardProps> = ({ loading: externalLoad
                     style={{ marginTop: '20px' }}
                 />
             ) : (
-                <Table
+                <ProTable
+                    actionRef={actionRef}
                     columns={columns}
                     dataSource={projects}
                     rowKey="id"
+                    search={false}
                     pagination={false}
+                    options={false}
+                    toolBarRender={false}
                     size="small"
                     style={{ marginTop: '12px' }}
                 />

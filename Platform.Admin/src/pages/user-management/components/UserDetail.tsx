@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Descriptions,
   Tag,
   Badge,
-  Card,
   Typography,
   Space,
   Button,
@@ -18,6 +16,7 @@ import {
   HistoryOutlined,
 } from '@ant-design/icons';
 import { request, useIntl } from '@umijs/max';
+import { ProDescriptions } from '@ant-design/pro-components';
 import { getAllRoles } from '@/services/role/api';
 import type { Role } from '@/services/role/api';
 import type { AppUser, UserActivityLog } from '@/types';
@@ -58,10 +57,8 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
         });
         setRoleMap(map);
       }
-      // 错误由全局错误处理统一处理，这里不需要 catch
     } catch (error) {
       console.error('加载角色列表失败:', error);
-      // 重新抛出错误，确保全局错误处理能够处理
       throw error;
     }
   };
@@ -83,11 +80,9 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
       } else {
         setActivityLogs([]);
       }
-      // 错误由全局错误处理统一处理，这里不需要 catch
     } catch (error) {
       console.error('获取活动日志失败:', error);
       setActivityLogs([]);
-      // 重新抛出错误，确保全局错误处理能够处理
       throw error;
     } finally {
       setLoading(false);
@@ -96,30 +91,28 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
 
   return (
     <div>
-      {/* 基本信息 */}
-      <Card title={intl.formatMessage({ id: 'pages.userDetail.basicInfo' })} style={{ marginBottom: 16 }}>
-        <Descriptions column={1} size="small">
-          <Descriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.username' })}>
+      <ProDescriptions column={1} size="small" title={intl.formatMessage({ id: 'pages.userDetail.basicInfo' })}>
+        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.username' })}>
             {user.username}
-          </Descriptions.Item>
+          </ProDescriptions.Item>
 
-          <Descriptions.Item label={intl.formatMessage({ id: 'pages.account.center.name', defaultMessage: 'Name' })}>
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.account.center.name', defaultMessage: 'Name' })}>
             {user.name || '-'}
-          </Descriptions.Item>
+          </ProDescriptions.Item>
 
-          <Descriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.email' })}>
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.email' })}>
             {user.email || '-'}
-          </Descriptions.Item>
+          </ProDescriptions.Item>
 
-          <Descriptions.Item label="手机号">
+          <ProDescriptions.Item label="手机号">
             {user.phoneNumber || '-'}
-          </Descriptions.Item>
+          </ProDescriptions.Item>
 
-          <Descriptions.Item label={intl.formatMessage({ id: 'pages.account.center.age', defaultMessage: 'Age' })}>
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.account.center.age', defaultMessage: 'Age' })}>
             {user.age || '-'}
-          </Descriptions.Item>
+          </ProDescriptions.Item>
 
-          <Descriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.role' })}>
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.role' })}>
             {!user.roleIds || user.roleIds.length === 0 ? (
               <Tag color="default">{intl.formatMessage({ id: 'pages.table.unassigned' })}</Tag>
             ) : (
@@ -131,9 +124,9 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
                 ))}
               </Space>
             )}
-          </Descriptions.Item>
+          </ProDescriptions.Item>
 
-          <Descriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.organization' })}>
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.organization' })}>
             {!user.organizations || user.organizations.length === 0 ? (
               <Text type="secondary">
                 {intl.formatMessage({ id: 'pages.userManagement.organization.empty' })}
@@ -152,9 +145,9 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
                 ))}
               </Space>
             )}
-          </Descriptions.Item>
+          </ProDescriptions.Item>
 
-          <Descriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.status' })}>
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.status' })}>
             <Badge
               status={user.isActive ? 'success' : 'error'}
               text={
@@ -168,18 +161,18 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
                 </Space>
               }
             />
-          </Descriptions.Item>
+          </ProDescriptions.Item>
 
-          <Descriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.createdAt' })}>
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.createdAt' })}>
             {user.createdAt ? dayjs(user.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
-          </Descriptions.Item>
+          </ProDescriptions.Item>
 
-          <Descriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.updatedAt' })}>
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.userDetail.updatedAt' })}>
             {user.updatedAt ? dayjs(user.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}
-          </Descriptions.Item>
+          </ProDescriptions.Item>
 
           {user.lastLoginAt && (
-            <Descriptions.Item
+            <ProDescriptions.Item
               label={
                 <Space>
                   <ClockCircleOutlined />
@@ -188,29 +181,14 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
               }
             >
               {dayjs(user.lastLoginAt).format('YYYY-MM-DD HH:mm:ss')}
-            </Descriptions.Item>
+            </ProDescriptions.Item>
           )}
-        </Descriptions>
-      </Card>
+        </ProDescriptions>
 
-      {/* 活动日志 */}
-      <Card
-        title={
-          <Space>
-            <HistoryOutlined />
-            {intl.formatMessage({ id: 'pages.userDetail.recentActivity' })}
-          </Space>
-        }
-        extra={
-          <Button size="small" onClick={fetchActivityLogs}>
-            {intl.formatMessage({ id: 'pages.userDetail.refresh' })}
-          </Button>
-        }
-      >
-        <Spin spinning={loading}>
-          {activityLogs.length > 0 ? (
-            <div style={{ padding: '16px 8px 0' }}>
-              <Timeline
+      <Spin spinning={loading}>
+        {activityLogs.length > 0 ? (
+          <div style={{ padding: '16px 8px 0' }}>
+            <Timeline
                 items={activityLogs.map((log) => ({
                   color:
                     log.statusCode && log.statusCode >= 400
@@ -302,7 +280,6 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
             </div>
           )}
         </Spin>
-      </Card>
 
       <div style={{ marginTop: 16, textAlign: 'right' }}>
         <Button onClick={onClose}>{intl.formatMessage({ id: 'pages.userDetail.close' })}</Button>

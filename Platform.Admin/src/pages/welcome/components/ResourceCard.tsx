@@ -1,6 +1,9 @@
 import React from 'react';
-import { Card, Typography } from 'antd';
-import { createStyles } from 'antd-style';
+import { Typography, theme } from 'antd';
+import { ProCard } from '@ant-design/pro-components';
+
+const { Text } = Typography;
+const { useToken } = theme;
 
 const { Text } = Typography;
 
@@ -15,19 +18,21 @@ interface ResourceCardProps {
     readonly children?: React.ReactNode;
 }
 
-const ResourceCard: React.FC<ResourceCardProps> = React.memo(({ title, value, icon, color = '#1890ff', loading = false, token, chart, children }) => (
-    <Card
-        size="small"
-        styles={{ body: { padding: '16px', display: 'flex', flexDirection: 'column', height: '100%' } }}
-        style={{
-            borderRadius: '16px',
-            border: `1px solid ${token?.colorBorderSecondary || '#f0f0f0'}`,
-            backgroundColor: token?.colorBgContainer || '#ffffff',
-            height: '100%',
-            overflow: 'hidden'
-        }}
-        loading={loading}
-    >
+const ResourceCard: React.FC<ResourceCardProps> = React.memo(({ title, value, icon, color = '#1890ff', loading = false, token, chart, children }) => {
+    const { token: themeToken } = useToken();
+    return (
+        <ProCard
+            size="small"
+            bodyStyle={{ padding: '16px', display: 'flex', flexDirection: 'column', height: '100%' }}
+            style={{
+                borderRadius: '16px',
+                border: `1px solid ${token?.colorBorderSecondary || themeToken.colorBorderSecondary}`,
+                backgroundColor: token?.colorBgContainer || themeToken.colorBgContainer,
+                height: '100%',
+                overflow: 'hidden'
+            }}
+            loading={loading}
+        >
         <div
             style={{
                 display: 'flex',
@@ -74,7 +79,7 @@ const ResourceCard: React.FC<ResourceCardProps> = React.memo(({ title, value, ic
                 {children}
             </div>
         )}
-    </Card>
+        </ProCard>
 ));
 
 export default ResourceCard;

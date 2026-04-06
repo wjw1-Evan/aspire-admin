@@ -1,6 +1,7 @@
 import * as API from '@/types';
 import React from 'react';
-import { Card, Space, Timeline, Typography, Button, Tag, Badge } from 'antd';
+import { Space, Timeline, Typography, Button, Tag, Badge, theme } from 'antd';
+import { ProCard } from '@ant-design/pro-components';
 import { ClockCircleOutlined, LinkOutlined, RightOutlined } from '@ant-design/icons';
 import { useIntl, history } from '@umijs/max';
 import useCommonStyles from '@/hooks/useCommonStyles';
@@ -61,7 +62,7 @@ const RecentActivitiesCard: React.FC<RecentActivitiesCardProps> = ({ currentUser
     const activities = data?.list || [];
 
     return (
-        <Card
+        <ProCard
             title={
                 <Space>
                     <ClockCircleOutlined />
@@ -83,7 +84,7 @@ const RecentActivitiesCard: React.FC<RecentActivitiesCardProps> = ({ currentUser
             }
             className={styles.card}
             style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
-            styles={{ body: { flex: 1, overflow: 'hidden', padding: '12px 24px' } }}
+            bodyStyle={{ flex: 1, overflow: 'hidden', padding: '12px 24px' }}
         >
             <div
                 ref={scrollRef}
@@ -204,7 +205,7 @@ const RecentActivitiesCard: React.FC<RecentActivitiesCardProps> = ({ currentUser
                     </div>
                 )}
             </div>
-        </Card>
+        </ProCard>
     );
 };
 

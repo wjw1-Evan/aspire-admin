@@ -2,7 +2,8 @@ import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import { PageContainer } from '@ant-design/pro-components';
 import { StatCard } from '@/components';
 import { useIntl, request } from '@umijs/max';
-import { App, Button, Tag, Space, Modal, Drawer, Row, Col, Badge, Card, Spin, Input, Typography } from 'antd';
+import { App, Button, Tag, Space, Modal, Row, Col, Badge, Spin, Input, Typography, Form, Select } from 'antd';
+import { Drawer } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormSwitch } from '@ant-design/pro-form';
 import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, TeamOutlined, CheckCircleOutlined, ReloadOutlined, CrownOutlined, SearchOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
@@ -175,7 +176,7 @@ const UserManagement: React.FC = () => {
       extra={<Space wrap><Button icon={<ReloadOutlined />} onClick={() => { loadStatistics(); actionRef.current?.reload(); }}>{intl.formatMessage({ id: 'pages.userManagement.refresh' })}</Button><Button type="primary" icon={<PlusOutlined />} onClick={() => set({ editingUser: null, formVisible: true })}>{intl.formatMessage({ id: 'pages.userManagement.addUser' })}</Button></Space>}
     >
       {activeTab === 'members' && <>
-        {state.statistics && <Card style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>{stats.map((s, i) => <Col xs={24} sm={12} md={6} key={i}><StatCard title={s.title} value={s.value} icon={s.icon} color={s.color} /></Col>)}</Row></Card>}
+        {state.statistics && <Row gutter={[12, 12]}>{stats.map((s, i) => <Col xs={24} sm={12} md={6} key={i}><StatCard title={s.title} value={s.value} icon={s.icon} color={s.color} /></Col>)}</Row>}
         <ProTable actionRef={actionRef} request={async (params) => {
           const { current, pageSize } = params;
           const sp = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
@@ -202,35 +203,47 @@ const UserManagement: React.FC = () => {
             return res.success;
           }} autoFocusFirstInput width={600}
         >
-          {!state.editingUser && <ProFormSelect 
-            name="username" 
-            label="选择用户" 
-            placeholder="搜索系统已有用户" 
-            showSearch 
-            fieldProps={{ 
-              onSearch: async (v: string) => { 
-                if (!v || v.length < 2) { setF({ userOptions: [] }); return; } 
-                setF({ searchingUsers: true }); 
-                try { const res = await api.searchUsers(v); if (res.success && res.data) setF({ userOptions: res.data.users || [] }); } 
-                finally { setF({ searchingUsers: false }); } 
-              }, 
-              filterOption: false,
-              onSelect: (_: string, option?: { user?: AppUser }) => { if (option?.user) setF({ selectedUser: option.user }); }, 
-              onChange: (v) => { if (!v) setF({ selectedUser: null }); } 
-            }} 
-            allowClear 
-            options={form.userOptions.map(u => ({ label: `${u.username}${u.email ? `(${u.email})` : ''}`, value: u.username, user: u }))} 
-            rules={[{ required: true, message: '请搜索并选择用户' }]} 
-          />}
+          {!state.editingUser && (
+            <Form.Item name="username" label="选择用户" rules={[{ required: true, message: '请搜索并选择用户' }]}>
+              <Select
+                showSearch
+                placeholder="搜索并选择用户"
+                filterOption={false}
+                onSearch={async (v: string) => {
+                  if (!v || v.length < 2) {
+                    setF({ userOptions: [] });
+                    return;
+                  }
+                  setF({ searchingUsers: true });
+                  try {
+                    const res = await api.searchUsers(v);
+                    if (res.success && res.data) setF({ userOptions: res.data.users || [] });
+                  } finally {
+                    setF({ searchingUsers: false });
+                  }
+                }}
+                onChange={(v, option) => {
+                  const opt = option as { user?: AppUser };
+                  if (opt?.user) setF({ selectedUser: opt.user });
+                  if (!v) setF({ selectedUser: null });
+                }}
+                options={form.userOptions.map(u => ({ label: `${u.username}${u.email ? `(${u.email})` : ''}`, value: u.username, user: u }))}
+              />
+            </Form.Item>
+          )}
           {state.editingUser && <ProFormText name="username" label="用户名" disabled />}
           <ProFormText name="email" label="邮箱" placeholder="请输入邮箱" />
           <ProFormText name="phoneNumber" label="手机号" placeholder="请输入手机号" />
-          {!state.editingUser && <ProFormText name="password" label="密码" placeholder="请输入密码" rules={[{ required: true, message: '请输入密码' }]} />}
+          {!state.editingUser && (
+            <Form.Item name="password" label="密码" rules={[{ required: true, message: '请输入密码' }]}>
+              <Input.Password placeholder="请输入密码" />
+            </Form.Item>
+          )}
           <ProFormSelect name="roleIds" label="角色" mode="multiple" placeholder="请选择角色" showSearch allowClear options={roleOptions} rules={[{ required: true, message: '请选择至少一个角色' }]} />
           <ProFormSwitch name="isActive" label="状态" checkedChildren="启用" unCheckedChildren="禁用" />
-          <ProFormText name="remark" label="备注" placeholder="备注信息" />
+          <ProFormText name="remark" label="备注" placeholder="请输入备注" />
         </ModalForm>
-        <Drawer title={intl.formatMessage({ id: 'pages.userDetail.title' })} placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingUser: null })} styles={{ wrapper: { width: 600 } }} destroyOnClose>
+        <Drawer title={intl.formatMessage({ id: 'pages.userDetail.title' })} placement="right" open={state.detailVisible} onClose={(open) => { if (!open) set({ detailVisible: false, viewingUser: null }); }} width={600} destroyOnClose>
           <React.Suspense fallback={<div style={{ textAlign: 'center', padding: '20px' }}><Spin /></div>}>{state.viewingUser && <UserDetail user={state.viewingUser} onClose={() => set({ detailVisible: false, viewingUser: null })} />}</React.Suspense>
         </Drawer>
       </>}

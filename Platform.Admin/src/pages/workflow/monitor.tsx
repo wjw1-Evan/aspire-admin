@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { Card, Tag, Space, Button, Modal, Form } from 'antd';
+import { Tag, Space, Button, Modal } from 'antd';
+import { ProCard } from '@ant-design/pro-components';
 import { EyeOutlined, MonitorOutlined, ReloadOutlined, HistoryOutlined, FormOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns } from '@ant-design/pro-table';
 import {
@@ -159,7 +160,7 @@ const WorkflowMonitor: React.FC = () => {
       <Modal title={intl.formatMessage({ id: 'pages.workflow.monitor.modal.progressTitle' })} open={previewVisible} onCancel={() => { setPreviewVisible(false); setPreviewInstance(null); }} footer={null} width="90%" style={{ top: 20 }} styles={{ body: { height: 'calc(100vh - 120px)' } }}>
         {previewInstance && (
           <div>
-            <Card style={{ marginBottom: 16 }}>
+            <ProCard style={{ marginBottom: 16 }}>
               <Space>
                 {(() => { const status = getFlowStatus(previewInstance?.status as WorkflowStatus | null); return <Tag color={status.color}>{status.text}</Tag>; })()}
                 <span>{intl.formatMessage({ id: 'pages.workflow.monitor.progress.currentNode' })}: {previewInstance.currentNodeId}</span>
@@ -168,7 +169,7 @@ const WorkflowMonitor: React.FC = () => {
                   {intl.formatMessage({ id: 'pages.workflow.monitor.action.viewNodeForm', defaultMessage: '节点表单' })}
                 </Button>
               </Space>
-            </Card>
+            </ProCard>
             <div style={{ height: '500px', border: '1px solid #d9d9d9' }}>
               <WorkflowDesigner open={true} graph={previewGraph || undefined} />
             </div>
@@ -181,14 +182,14 @@ const WorkflowMonitor: React.FC = () => {
       <Modal title={intl.formatMessage({ id: 'pages.workflow.monitor.modal.historyTitle' })} open={historyVisible} onCancel={() => { setHistoryVisible(false); setHistory([]); }} footer={null} width={800}>
         <div>
           {history.map((record, index) => (
-            <Card key={index} style={{ marginBottom: 8 }}>
+            <ProCard key={index} style={{ marginBottom: 8 }}>
               <Space direction="vertical" style={{ width: '100%' }}>
                 <div><strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.approver' })}:</strong> {record.approverName || record.approverId}</div>
                 <div><strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.action' })}:</strong> {(() => { const actionMeta = getStatusMeta(intl, record.action as ApprovalAction, approvalActionMap); return <Tag color={actionMeta.color}>{actionMeta.text}</Tag>; })()}</div>
                 {record.comment && <div><strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.comment' })}:</strong> {record.comment}</div>}
                 <div><strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.time' })}:</strong> {record.approvedAt ? dayjs(record.approvedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</div>
               </Space>
-            </Card>
+            </ProCard>
           ))}
         </div>
       </Modal>

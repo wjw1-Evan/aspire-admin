@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Button, Card, Drawer, Form, Input, Select, Switch, Space, Divider, Tabs, FormInstance, Tree, TreeSelect } from 'antd';
+import { Button, Drawer, Form, Input, Select, Switch, Space, Divider, Tabs, FormInstance, Tree, TreeSelect } from 'antd';
+import { ProCard } from '@ant-design/pro-components';
 import { DeleteOutlined, SaveOutlined, PlusOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import { NODE_CONFIGS } from './WorkflowDesignerConstants';
@@ -231,7 +232,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                         {(fields, { add, remove }) => (
                           <>
                             {fields.map(({ key, name, ...restField }) => (
-                              <Card size="small" styles={{ body: { marginBottom: 12, background: '#f8fafc' } }} key={key} extra={<DeleteOutlined onClick={() => remove(name)} style={{ color: '#ff4d4f' }} />}>
+                              <ProCard size="small" style={{ marginBottom: 12, background: '#f8fafc' }} key={key} extra={<DeleteOutlined onClick={() => remove(name)} style={{ color: '#ff4d4f' }} />}>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                   <Form.Item {...restField} name={[name, 'type']} rules={[{ required: true }]} style={{ marginBottom: 8 }}>
                                     <Select
@@ -285,7 +286,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                                     }}
                                   </Form.Item>
                                 </div>
-                              </Card>
+                              </ProCard>
                             ))}
                             <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>添加审批人</Button>
                           </>
@@ -301,7 +302,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                         {(fields, { add, remove }) => (
                           <>
                             {fields.map(({ key, name, ...restField }) => (
-                              <Card
+                              <ProCard
                                 size="small"
                                 style={{ marginBottom: 12, background: '#f8fafc' }}
                                 key={key}
@@ -324,7 +325,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                                     {(condFields, { add: addCond, remove: removeCond }) => (
                                       <>
                                         {condFields.map(({ key: condKey, name: condName, ...condRestField }) => (
-                                          <Card
+                                          <ProCard
                                             size="small"
                                             style={{ marginBottom: 8, background: '#ffffff', border: '1px solid #e5e7eb' }}
                                             key={condKey}
@@ -407,7 +408,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                                                 <Input placeholder="输入值" />
                                               </Form.Item>
                                             </Space>
-                                          </Card>
+                                          </ProCard>
                                         ))}
                                         <Button type="dashed" onClick={() => addCond()} block size="small" icon={<PlusOutlined />}>
                                           添加条件
@@ -461,7 +462,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                                     />
                                   </Form.Item>
                                 </Space>
-                              </Card>
+                              </ProCard>
                             ))}
                             <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
                               添加分支
@@ -521,7 +522,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                         {(fields, { add, remove }) => (
                           <>
                             {fields.map(({ key, name, ...restField }) => (
-                              <Card size="small" styles={{ body: { marginBottom: 8, background: '#f8fafc' } }} key={key} extra={<DeleteOutlined onClick={() => remove(name)} style={{ color: '#ff4d4f' }} />}>
+                              <ProCard size="small" style={{ marginBottom: 8, background: '#f8fafc' }} key={key} extra={<DeleteOutlined onClick={() => remove(name)} style={{ color: '#ff4d4f' }} />}>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                   <Form.Item {...restField} name={[name, 'type']} rules={[{ required: true }]}>
                                     <Select
@@ -543,7 +544,7 @@ const NodeConfigDrawer: React.FC<NodeConfigDrawerProps> = ({
                                     }}
                                   </Form.Item>
                                 </div>
-                              </Card>
+                              </ProCard>
                             ))}
                             <Button type="dashed" onClick={() => add()} block size="small" icon={<PlusOutlined />}>添加抄送规则</Button>
                           </>

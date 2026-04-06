@@ -2,9 +2,10 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PageContainer, ProCard } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import { request } from '@umijs/max';
-import { Tag, Space, Button, Input, Drawer, Descriptions, Popconfirm, Switch, Tree, Spin, Divider } from 'antd';
+import { Tag, Space, Button, Input, Drawer, Popconfirm, Switch, Tree, Spin, Divider } from 'antd';
+import { ProDescriptions } from '@ant-design/pro-components';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-form';
+import { ModalForm, ProFormText, ProFormTextArea, ProFormSwitch, ProForm } from '@ant-design/pro-form';
 import { DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined, SafetyOutlined } from '@ant-design/icons';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 import dayjs from 'dayjs';
@@ -62,7 +63,7 @@ const RoleManagement: React.FC = () => {
     { title: intl.formatMessage({ id: 'pages.table.description' }), dataIndex: 'description', sorter: true, ellipsis: true, render: (dom) => dom || '-' },
     { title: intl.formatMessage({ id: 'pages.table.status' }), dataIndex: 'isActive', sorter: true, render: (_, r) => <Tag color={r.isActive ? 'success' : 'default'}>{r.isActive ? intl.formatMessage({ id: 'pages.table.activated' }) : intl.formatMessage({ id: 'pages.table.deactivated' })}</Tag> },
     { title: intl.formatMessage({ id: 'pages.table.stats' }), valueType: 'option', render: (_, r) => <Space separator="|"><span>{intl.formatMessage({ id: 'pages.table.user' })}: {r.userCount || 0}</span><span>{intl.formatMessage({ id: 'pages.table.menu' })}: {r.menuCount || 0}</span></Space> },
-    { title: intl.formatMessage({ id: 'pages.table.createdAt' }), dataIndex: 'createdAt', sorter: true, render: (dom) => dom ? dayjs(dom).format('YYYY-MM-DD HH:mm:ss') : '-' },
+    { title: intl.formatMessage({ id: 'pages.table.createdAt' }), dataIndex: 'createdAt', sorter: true, render: (dom) => dom ? dayjs(dom as string).format('YYYY-MM-DD HH:mm:ss') : '-' },
     { title: intl.formatMessage({ id: 'pages.table.actions' }), valueType: 'option', fixed: 'right', width: 150, render: (_, r) => [
       <Button key="edit" type="link" size="small" icon={<EditOutlined />} onClick={() => { set({ editingRole: r, formVisible: true }); setFormState(p => ({ ...p, checkedKeys: r.menuIds || [] })); }}>{intl.formatMessage({ id: 'pages.table.edit' })}</Button>,
       <Popconfirm key="delete" title={intl.formatMessage({ id: 'pages.modal.confirmDeleteRole' }, { roleName: r.name })} onConfirm={async () => { await api.delete(r.id!); actionRef.current?.reload(); loadStatistics(); }}><Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.table.delete' })}</Button></Popconfirm>,
@@ -80,7 +81,11 @@ const RoleManagement: React.FC = () => {
   const getAllKeys = (menus: any[]): string[] => { let keys: string[] = []; menus.forEach(m => { if (m.key) keys.push(m.key); if (m.children?.length) keys = keys.concat(getAllKeys(m.children)); }); return keys; };
 
   return (
-    <PageContainer title={<Space><SafetyOutlined />{intl.formatMessage({ id: 'pages.roleManagement.title' })}</Space>} extra={<Space wrap><Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button><Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { set({ editingRole: null, formVisible: true }); setFormState(p => ({ ...p, checkedKeys: [], expandedKeys: [] })); }}>{intl.formatMessage({ id: 'pages.button.addRole' })}</Button></Space>}>
+    <PageContainer
+      title={<Space><SafetyOutlined />{intl.formatMessage({ id: 'pages.roleManagement.title' })}</Space>}
+      breadcrumb={{ routes: [{ path: '/', breadcrumbName: '首页' }, { path: '/system', breadcrumbName: '系统管理' }, { path: '/system/role', breadcrumbName: '角色管理' }] }}
+      extra={<Space wrap><Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button><Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { set({ editingRole: null, formVisible: true }); setFormState(p => ({ ...p, checkedKeys: [], expandedKeys: [] })); }}>{intl.formatMessage({ id: 'pages.button.addRole' })}</Button></Space>}
+    >
       <ProCard gutter={16} style={{ marginBottom: 16 }}>
         {statItems.map(item => (
           <ProCard key={item.label} colSpan={{ xs: 24, sm: 12, md: 6 }}>
@@ -96,7 +101,7 @@ const RoleManagement: React.FC = () => {
         const res = await api.list({ page: current, pageSize, search: state.searchText, ...sortParams });
         return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
       }} columns={columns} rowKey="id" search={false}
-        onChange={(_, __, s) => set({ sorter: s?.order ? { sortBy: s.field as string, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
+        onChange={(_, __, s: any) => set({ sorter: s?.order ? { sortBy: s.field as string, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
         toolBarRender={() => [<Input.Search key="search" placeholder={intl.formatMessage({ id: 'pages.table.search' })} allowClear value={state.searchText} onChange={(e) => set({ searchText: e.target.value })} onSearch={(v) => { set({ searchText: v }); actionRef.current?.reload(); }} />]}
       />
 
@@ -112,8 +117,9 @@ const RoleManagement: React.FC = () => {
           return res.success;
         }} autoFocusFirstInput width={700}
       >
-        <ProFormText name="name" label={intl.formatMessage({ id: 'pages.roleForm.nameLabel' })} placeholder={intl.formatMessage({ id: 'pages.roleForm.namePlaceholder' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.roleForm.nameRequired' }) }]} />
-        <ProFormTextArea name="description" label={intl.formatMessage({ id: 'pages.roleForm.descriptionLabel' })} placeholder={intl.formatMessage({ id: 'pages.roleForm.descriptionPlaceholder' })} />
+        <ProFormText name="name" label={intl.formatMessage({ id: 'pages.roleForm.nameLabel' })} rules={[{ required: true, message: intl.formatMessage({ id: 'pages.roleForm.nameRequired' }) }]} placeholder={intl.formatMessage({ id: 'pages.roleForm.namePlaceholder' })} />
+        <ProFormTextArea name="description" label={intl.formatMessage({ id: 'pages.roleForm.descriptionLabel' })} placeholder={intl.formatMessage({ id: 'pages.roleForm.descriptionPlaceholder' })} rows={3} />
+        <ProFormSwitch name="isActive" label={intl.formatMessage({ id: 'pages.roleForm.isActiveLabel' })} />
         <Divider>{intl.formatMessage({ id: 'pages.roleForm.menuPermission' })}</Divider>
         <div style={{ marginBottom: 16 }}>
           <Button type="link" onClick={() => { const all = getAllKeys(formState.menuTree); setFormState(p => ({ ...p, checkedKeys: p.checkedKeys.length === all.length ? [] : all })); }} style={{ padding: 0 }}>
@@ -122,18 +128,17 @@ const RoleManagement: React.FC = () => {
         </div>
         {formState.menuLoading ? <div style={{ textAlign: 'center', padding: '40px 0' }}><Spin /></div> : <Tree checkable checkStrictly defaultExpandAll treeData={formState.menuTree} checkedKeys={formState.checkedKeys} expandedKeys={formState.expandedKeys} onExpand={(keys: any) => setFormState(p => ({ ...p, expandedKeys: keys.map(String) }))} onCheck={(checked: any) => setFormState(p => ({ ...p, checkedKeys: Array.isArray(checked) ? checked : checked.checked }))} />}
         <div style={{ marginTop: 16 }}><Switch checked={formState.checkedKeys.length > 0} disabled /> <span style={{ marginLeft: 8 }}>{intl.formatMessage({ id: 'pages.roleForm.menuCount' }, { count: formState.checkedKeys.length })}</span></div>
-        <div style={{ marginTop: 16 }}><ProFormText name="isActive" label={intl.formatMessage({ id: 'pages.roleForm.isActiveLabel' })} /></div>
       </ModalForm>
 
       <Drawer title={state.viewingRole ? `${intl.formatMessage({ id: 'pages.roleManagement.title' })} - ${state.viewingRole.name}` : intl.formatMessage({ id: 'pages.roleManagement.title' })} open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingRole: null })} styles={{ wrapper: { width: 600 } }}>
-        {state.viewingRole && <Descriptions column={1} bordered size="small">
-          <Descriptions.Item label={intl.formatMessage({ id: 'pages.table.roleName' })}>{state.viewingRole.name}</Descriptions.Item>
-          <Descriptions.Item label={intl.formatMessage({ id: 'pages.table.description' })}>{state.viewingRole.description || '-'}</Descriptions.Item>
-          <Descriptions.Item label={intl.formatMessage({ id: 'pages.table.status' })}><Tag color={state.viewingRole.isActive ? 'success' : 'default'}>{state.viewingRole.isActive ? intl.formatMessage({ id: 'pages.table.activated' }) : intl.formatMessage({ id: 'pages.table.deactivated' })}</Tag></Descriptions.Item>
-          <Descriptions.Item label={intl.formatMessage({ id: 'pages.table.stats' })}><Space><span>{intl.formatMessage({ id: 'pages.table.user' })}: {state.viewingRole.userCount || 0}</span><span>{intl.formatMessage({ id: 'pages.table.menu' })}: {state.viewingRole.menuCount || 0}</span></Space></Descriptions.Item>
-          <Descriptions.Item label={intl.formatMessage({ id: 'pages.table.createdAt' })}>{state.viewingRole.createdAt ? dayjs(state.viewingRole.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
-          {state.viewingRole.updatedAt && <Descriptions.Item label="更新时间">{dayjs(state.viewingRole.updatedAt).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>}
-        </Descriptions>}
+        {state.viewingRole && <ProDescriptions column={1} bordered size="small">
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.table.roleName' })}>{state.viewingRole.name}</ProDescriptions.Item>
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.table.description' })}>{state.viewingRole.description || '-'}</ProDescriptions.Item>
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.table.status' })}><Tag color={state.viewingRole.isActive ? 'success' : 'default'}>{state.viewingRole.isActive ? intl.formatMessage({ id: 'pages.table.activated' }) : intl.formatMessage({ id: 'pages.table.deactivated' })}</Tag></ProDescriptions.Item>
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.table.stats' })}><Space><span>{intl.formatMessage({ id: 'pages.table.user' })}: {state.viewingRole.userCount || 0}</span><span>{intl.formatMessage({ id: 'pages.table.menu' })}: {state.viewingRole.menuCount || 0}</span></Space></ProDescriptions.Item>
+          <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.table.createdAt' })}>{state.viewingRole.createdAt ? dayjs(state.viewingRole.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
+          {state.viewingRole.updatedAt && <ProDescriptions.Item label="更新时间">{dayjs(state.viewingRole.updatedAt).format('YYYY-MM-DD HH:mm:ss')}</ProDescriptions.Item>}
+        </ProDescriptions>}
       </Drawer>
     </PageContainer>
   );

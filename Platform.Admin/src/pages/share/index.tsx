@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useParams } from '@umijs/max';
-import { Card, Space, Typography, Spin, Result, Input, Button, Tag, message } from 'antd';
+import { Space, Typography, Spin, Result, Input, Button, Tag, message } from 'antd';
+import { ProCard } from '@ant-design/pro-components';
 import { request } from '@umijs/max';
 import { ApiResponse } from '@/types';
 
@@ -176,7 +177,7 @@ const SharePage: React.FC = () => {
         }
 
         return (
-            <Card bordered={false} style={{ maxWidth: 520, margin: '0 auto' }}>
+            <ProCard bordered={false} style={{ maxWidth: 520, margin: '0 auto' }}>
                 <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                     <div>
                         <Title level={3} style={{ marginBottom: 4 }}>{state.shareInfo.fileName}</Title>
@@ -218,7 +219,7 @@ const SharePage: React.FC = () => {
                         <Button onClick={() => loadShare(state.password)}>重新验证</Button>
                     </Space>
                 </Space>
-            </Card>
+            </ProCard>
         );
     };
 

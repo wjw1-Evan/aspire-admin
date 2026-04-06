@@ -7,7 +7,9 @@ import { PageContainer } from '@ant-design/pro-components';
 import { StatCard } from '@/components';
 import { useIntl } from '@umijs/max';
 import { request } from '@umijs/max';
-import { Grid, App, Drawer, Descriptions, Button, Tag, Space, Row, Col, Card, Breadcrumb, Dropdown, Image, Select, Input, Modal, Popconfirm, Progress } from 'antd';
+import { Grid, App, Button, Tag, Space, Row, Col, Breadcrumb, Dropdown, Image, Select, Input, Modal, Popconfirm, Progress, Card } from 'antd';
+import { Drawer as AntDrawer } from 'antd';
+import { ProDescriptions, ProCard } from '@ant-design/pro-components';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormDatePicker, ProFormSelect, ProFormDigit } from '@ant-design/pro-form';
 import { tokenUtils } from '@/utils/token';
@@ -234,6 +236,7 @@ const CloudStorageFilesPage: React.FC = () => {
 
     return (
         <PageContainer title={<Space><CloudOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.files.title' })}</Space>}
+            breadcrumb={{ routes: [{ path: '/', breadcrumbName: '首页' }, { path: '/cloud-storage', breadcrumbName: '云存储管理' }, { path: '/cloud-storage/files', breadcrumbName: '文件管理' }] }}
             extra={<Space wrap>
                 {state.selectedRowKeys.length > 0 && <Button key="batch-delete" danger icon={<DeleteOutlined />} onClick={handleBatchDelete}>{intl.formatMessage({ id: 'pages.cloud-storage.files.action.batchDelete' })} ({state.selectedRowKeys.length})</Button>}
                 <Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button>
@@ -245,8 +248,8 @@ const CloudStorageFilesPage: React.FC = () => {
                     <Button key="upload" type="primary" icon={<UploadOutlined />}>{intl.formatMessage({ id: 'pages.cloud-storage.files.action.upload' })} <MoreOutlined style={{ fontSize: 12 }} /></Button>
                 </Dropdown>
             </Space>}>
-            {state.statistics && <Card style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>{statsConfig.map((stat, idx) => (<Col xs={24} sm={12} md={6} key={idx}><StatCard title={stat.title} value={stat.value ?? 0} icon={stat.icon} color={stat.color} suffix={stat.suffix} /></Col>))}</Row></Card>}
-            <Card style={{ marginBottom: 16 }}><Breadcrumb items={state.pathHistory.map((item, index) => ({ key: index, title: index === 0 ? <a onClick={() => handleBreadcrumbClick(index)}>{intl.formatMessage({ id: 'pages.cloud-storage.files.breadcrumb.myFiles' })}</a> : <a onClick={() => handleBreadcrumbClick(index)}>{item.name}</a> }))} /></Card>
+            {state.statistics && <ProCard style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>{statsConfig.map((stat, idx) => (<Col xs={24} sm={12} md={6} key={idx}><StatCard title={stat.title} value={stat.value ?? 0} icon={stat.icon} color={stat.color} suffix={stat.suffix} /></Col>))}</Row></ProCard>}
+            <ProCard style={{ marginBottom: 16 }}><Breadcrumb items={state.pathHistory.map((item, index) => ({ key: index, title: index === 0 ? <a onClick={() => handleBreadcrumbClick(index)}>{intl.formatMessage({ id: 'pages.cloud-storage.files.breadcrumb.myFiles' })}</a> : <a onClick={() => handleBreadcrumbClick(index)}>{item.name}</a> }))} /></ProCard>
             <ProTable actionRef={actionRef} request={fetchData} columns={columns} rowKey="id" search={false}
                 onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
                 toolBarRender={() => [<Input.Search key="search" placeholder="搜索..." style={{ width: 200 }} allowClear value={state.searchText} onChange={(e) => set({ searchText: e.target.value })} onSearch={(v) => { set({ searchText: v, isSearchMode: !!v }); actionRef.current?.reload(); }} />]}
@@ -276,15 +279,15 @@ const CloudStorageFilesPage: React.FC = () => {
 
             {/* 文件详情 */}
             {state.detailVisible && state.viewingFile && (
-                <Drawer title={state.viewingFile.name} placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingFile: null, previewUrl: '', officeContent: null, markdownContent: null })} size={isMobile ? 'default' : 'large'}>
-                    <Descriptions column={1} size="small" bordered>
-                        <Descriptions.Item label="名称">{state.viewingFile.name}</Descriptions.Item>
-                        <Descriptions.Item label="类型">{state.viewingFile.isFolder ? '文件夹' : state.viewingFile.mimeType}</Descriptions.Item>
-                        <Descriptions.Item label="大小">{state.viewingFile.isFolder ? '-' : formatFileSize(state.viewingFile.size || 0)}</Descriptions.Item>
-                        <Descriptions.Item label="创建者">{state.viewingFile.createdByName}</Descriptions.Item>
-                        <Descriptions.Item label="创建时间">{state.viewingFile.createdAt ? dayjs(state.viewingFile.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
-                        <Descriptions.Item label="更新时间">{state.viewingFile.updatedAt ? dayjs(state.viewingFile.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
-                    </Descriptions>
+                <AntDrawer title={state.viewingFile.name} placement="right" open={state.detailVisible} onClose={(open) => { if (!open) set({ detailVisible: false, viewingFile: null, previewUrl: '', officeContent: null, markdownContent: null }); }} width={isMobile ? 'default' : 'large'}>
+                    <ProDescriptions column={1} size="small" bordered>
+                        <ProDescriptions.Item label="名称">{state.viewingFile.name}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="类型">{state.viewingFile.isFolder ? '文件夹' : state.viewingFile.mimeType}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="大小">{state.viewingFile.isFolder ? '-' : formatFileSize(state.viewingFile.size || 0)}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="创建者">{state.viewingFile.createdByName}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="创建时间">{state.viewingFile.createdAt ? dayjs(state.viewingFile.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="更新时间">{state.viewingFile.updatedAt ? dayjs(state.viewingFile.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
+                    </ProDescriptions>
                     {!state.viewingFile.isFolder && (
                         <>
                             <Space style={{ marginTop: 16 }}>
@@ -312,7 +315,7 @@ const CloudStorageFilesPage: React.FC = () => {
                             )}
                         </>
                     )}
-                </Drawer>
+                </AntDrawer>
             )}
 
             {/* 图片预览 */}

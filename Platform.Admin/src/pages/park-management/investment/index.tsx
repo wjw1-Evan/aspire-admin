@@ -1,11 +1,13 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { PageContainer, ProCard } from '@ant-design/pro-components';
 import { StatCard } from '@/components';
 import { useIntl, request } from '@umijs/max';
-import { Card, Form, Input, Select, Button, App, Space, Row, Col, Tag, Typography, Descriptions, InputNumber, Tabs, Popconfirm, DatePicker, Flex, Drawer, Progress } from 'antd';
+import { Form, Input, Select, Button, App, Space, Row, Col, Tag, Typography, InputNumber, Tabs, Popconfirm, DatePicker, Flex, Progress } from 'antd';
+import { Drawer } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormDatePicker, ProFormDigit, ProFormTextArea } from '@ant-design/pro-form';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, SwapOutlined, TeamOutlined, ProjectOutlined, PhoneOutlined } from '@ant-design/icons';
+import { ProDescriptions } from '@ant-design/pro-components';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 
@@ -85,7 +87,9 @@ const InvestmentManagement: React.FC = () => {
     ];
 
     return (
-        <PageContainer title={intl.formatMessage({ id: 'pages.park.investment.title', defaultMessage: '招商管理' })} extra={
+        <PageContainer title={intl.formatMessage({ id: 'pages.park.investment.title', defaultMessage: '招商管理' })}
+            breadcrumb={{ routes: [{ path: '/', breadcrumbName: '首页' }, { path: '/park', breadcrumbName: '园区管理' }, { path: '/park/investment', breadcrumbName: '招商管理' }] }}
+            extra={
             <Space>
                 <Button icon={<ReloadOutlined />} onClick={handleRefresh}>{intl.formatMessage({ id: 'common.refresh', defaultMessage: '刷新' })}</Button>
                 <Button type="primary" icon={<PlusOutlined />} onClick={() => { if (state.activeTab === 'leads') set({ editingLead: null, leadModalVisible: true }); else set({ editingProject: null, projectModalVisible: true }); }}>{state.activeTab === 'leads' ? intl.formatMessage({ id: 'pages.park.investment.addLead', defaultMessage: '新增线索' }) : intl.formatMessage({ id: 'pages.park.investment.addProject', defaultMessage: '新增项目' })}</Button>
@@ -98,12 +102,12 @@ const InvestmentManagement: React.FC = () => {
                 <Col xs={24} sm={12} md={6}><StatCard title={intl.formatMessage({ id: 'pages.park.investment.stats.conversion', defaultMessage: '转化率' })} value={`${state.statistics.conversionRate}%`} icon={<TeamOutlined />} color={state.statistics.conversionRate >= 30 ? '#52c41a' : state.statistics.conversionRate >= 15 ? '#faad14' : '#f5222d'} /></Col>
             </Row>)}
 
-            <Card>
+            <ProCard>
                 <Tabs activeKey={state.activeTab} onChange={(key) => set({ activeTab: key })} items={[
                     { key: 'leads', label: <Space><TeamOutlined />{intl.formatMessage({ id: 'pages.park.investment.leads', defaultMessage: '招商线索' })}</Space>, children: <ProTable<InvestmentLead> actionRef={leadsActionRef} request={async (params: any) => { const { current, pageSize } = params; const res = await api.getLeads({ page: current, pageSize, ...params }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={leadColumns} rowKey="id" search={false} scroll={{ x: 1400 }} /> },
                     { key: 'projects', label: <Space><ProjectOutlined />{intl.formatMessage({ id: 'pages.park.investment.projects', defaultMessage: '招商项目' })}</Space>, children: <ProTable<InvestmentProject> actionRef={projectsActionRef} request={async (params: any) => { const { current, pageSize } = params; const res = await api.getProjects({ page: current, pageSize, ...params }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={projectColumns} rowKey="id" search={false} scroll={{ x: 1300 }} /> },
                 ]} />
-            </Card>
+            </ProCard>
 
             <ModalForm key={state.editingLead?.id || 'create-lead'} title={state.editingLead ? intl.formatMessage({ id: 'pages.park.investment.editLead', defaultMessage: '编辑线索' }) : intl.formatMessage({ id: 'pages.park.investment.addLead', defaultMessage: '新增线索' })}
                 open={state.leadModalVisible} onOpenChange={(open) => { if (!open) set({ leadModalVisible: false, editingLead: null }); }}
@@ -137,35 +141,35 @@ const InvestmentManagement: React.FC = () => {
                 <ProFormTextArea name="notes" label="备注" placeholder="请输入备注" />
             </ModalForm>
 
-            <Drawer title="线索详情" size={600} open={state.leadDetailVisible} onClose={() => set({ leadDetailVisible: false, currentLead: null })}>
-                {state.currentLead && (<Descriptions column={1} bordered size="small">
-                    <Descriptions.Item label="企业名称">{state.currentLead.companyName}</Descriptions.Item>
-                    <Descriptions.Item label="行业">{state.currentLead.industry || '-'}</Descriptions.Item>
-                    <Descriptions.Item label="联系人">{state.currentLead.contactPerson || '-'}</Descriptions.Item>
-                    <Descriptions.Item label="电话">{state.currentLead.phone || '-'}</Descriptions.Item>
-                    <Descriptions.Item label="邮箱">{state.currentLead.email || '-'}</Descriptions.Item>
-                    <Descriptions.Item label="来源">{sourceMap[state.currentLead.source] || state.currentLead.source}</Descriptions.Item>
-                    <Descriptions.Item label="意向面积">{state.currentLead.intendedArea ? `${state.currentLead.intendedArea} m²` : '-'}</Descriptions.Item>
-                    <Descriptions.Item label="优先级">{(() => { const opt = priorityOptions.find(o => o.value === state.currentLead?.priority); return <Tag color={opt?.color}>{opt?.label || state.currentLead?.priority}</Tag>; })()}</Descriptions.Item>
-                    <Descriptions.Item label="当前状态">{(() => { const opt = leadStatusOptions.find(o => o.value === state.currentLead?.status); return <Tag color={opt?.color}>{opt?.label || state.currentLead?.status}</Tag>; })()}</Descriptions.Item>
-                    <Descriptions.Item label="下次跟进日期">{state.currentLead.nextFollowUpDate ? dayjs(state.currentLead.nextFollowUpDate).format('YYYY-MM-DD') : '-'}</Descriptions.Item>
-                    <Descriptions.Item label="创建时间">{dayjs(state.currentLead.createdAt).format('YYYY-MM-DD HH:mm')}</Descriptions.Item>
-                </Descriptions>)}
+            <Drawer title="线索详情" width={600} open={state.leadDetailVisible} onClose={(open) => { if (!open) set({ leadDetailVisible: false, currentLead: null }); }}>
+                {state.currentLead && (<ProDescriptions column={1} bordered size="small">
+                    <ProDescriptions.Item label="企业名称">{state.currentLead.companyName}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="行业">{state.currentLead.industry || '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="联系人">{state.currentLead.contactPerson || '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="电话">{state.currentLead.phone || '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="邮箱">{state.currentLead.email || '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="来源">{sourceMap[state.currentLead.source] || state.currentLead.source}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="意向面积">{state.currentLead.intendedArea ? `${state.currentLead.intendedArea} m²` : '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="优先级">{(() => { const opt = priorityOptions.find(o => o.value === state.currentLead?.priority); return <Tag color={opt?.color}>{opt?.label || state.currentLead?.priority}</Tag>; })()}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="当前状态">{(() => { const opt = leadStatusOptions.find(o => o.value === state.currentLead?.status); return <Tag color={opt?.color}>{opt?.label || state.currentLead?.status}</Tag>; })()}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="下次跟进日期">{state.currentLead.nextFollowUpDate ? dayjs(state.currentLead.nextFollowUpDate).format('YYYY-MM-DD') : '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="创建时间">{dayjs(state.currentLead.createdAt).format('YYYY-MM-DD HH:mm')}</ProDescriptions.Item>
+                </ProDescriptions>)}
             </Drawer>
 
-            <Drawer title="项目详情" size={600} open={state.projectDetailVisible} onClose={() => set({ projectDetailVisible: false, currentProject: null })}>
-                {state.currentProject && (<Descriptions column={1} bordered size="small">
-                    <Descriptions.Item label="项目名称">{state.currentProject.projectName}</Descriptions.Item>
-                    <Descriptions.Item label="企业名称">{state.currentProject.companyName}</Descriptions.Item>
-                    <Descriptions.Item label="联系人">{state.currentProject.contactPerson || '-'}</Descriptions.Item>
-                    <Descriptions.Item label="电话">{state.currentProject.phone || '-'}</Descriptions.Item>
-                    <Descriptions.Item label="意向面积">{state.currentProject.intendedArea ? `${state.currentProject.intendedArea} m²` : '-'}</Descriptions.Item>
-                    <Descriptions.Item label="报价租金">{state.currentProject.proposedRent ? `¥${state.currentProject.proposedRent?.toLocaleString()}/月` : '-'}</Descriptions.Item>
-                    <Descriptions.Item label="当前阶段">{(() => { const opt = projectStageOptions.find(o => o.value === state.currentProject?.stage); return <Tag color={opt?.color}>{opt?.label || state.currentProject?.stage}</Tag>; })()}</Descriptions.Item>
-                    <Descriptions.Item label="成功率"><Progress percent={state.currentProject.probability as number} size="small" /></Descriptions.Item>
-                    <Descriptions.Item label="预计签约日期">{state.currentProject.expectedSignDate ? dayjs(state.currentProject.expectedSignDate).format('YYYY-MM-DD') : '-'}</Descriptions.Item>
-                    <Descriptions.Item label="创建时间">{dayjs(state.currentProject.createdAt).format('YYYY-MM-DD HH:mm')}</Descriptions.Item>
-                </Descriptions>)}
+            <Drawer title="项目详情" width={600} open={state.projectDetailVisible} onClose={(open) => { if (!open) set({ projectDetailVisible: false, currentProject: null }); }}>
+                {state.currentProject && (<ProDescriptions column={1} bordered size="small">
+                    <ProDescriptions.Item label="项目名称">{state.currentProject.projectName}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="企业名称">{state.currentProject.companyName}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="联系人">{state.currentProject.contactPerson || '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="电话">{state.currentProject.phone || '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="意向面积">{state.currentProject.intendedArea ? `${state.currentProject.intendedArea} m²` : '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="报价租金">{state.currentProject.proposedRent ? `¥${state.currentProject.proposedRent?.toLocaleString()}/月` : '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="当前阶段">{(() => { const opt = projectStageOptions.find(o => o.value === state.currentProject?.stage); return <Tag color={opt?.color}>{opt?.label || state.currentProject?.stage}</Tag>; })()}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="成功率"><Progress percent={state.currentProject.probability as number} size="small" /></ProDescriptions.Item>
+                    <ProDescriptions.Item label="预计签约日期">{state.currentProject.expectedSignDate ? dayjs(state.currentProject.expectedSignDate).format('YYYY-MM-DD') : '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="创建时间">{dayjs(state.currentProject.createdAt).format('YYYY-MM-DD HH:mm')}</ProDescriptions.Item>
+                </ProDescriptions>)}
             </Drawer>
         </PageContainer>
     );

@@ -1,5 +1,6 @@
 import React, { useCallback, useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Spin, Typography, Progress, Tag, Empty, Button, Space, DatePicker, message, Modal, Radio } from 'antd';
+import { Row, Col, Statistic, Spin, Typography, Progress, Tag, Empty, Button, Space, DatePicker, message, Modal, Radio } from 'antd';
+import { ProCard } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
@@ -107,12 +108,12 @@ const StatisticsPage: React.FC = () => {
         { label: '自定义', value: 'custom' },
     ];
 
-    const renderProjectCard = () => {
-        if (!statistics?.project) return <Card loading className={styles.statCard} />;
+    const renderProjectProCard = () => {
+        if (!statistics?.project) return <ProCard loading className={styles.statProCard} />;
         const { totalProjects, inProgressProjects, completedProjects, delayedProjects } = statistics.project;
 
         return (
-            <Card className={styles.statCard}>
+            <ProCard className={styles.statProCard}>
                 <div className={styles.cardHeader}>
                     <Statistic
                         title="项目总数"
@@ -161,16 +162,16 @@ const StatisticsPage: React.FC = () => {
                         </Col>
                     </Row>
                 </div>
-            </Card>
+            </ProCard>
         );
     };
 
-    const renderTaskCard = () => {
-        if (!statistics?.task) return <Card loading className={styles.statCard} />;
+    const renderTaskProCard = () => {
+        if (!statistics?.task) return <ProCard loading className={styles.statProCard} />;
         const { totalTasks, completedTasks, overdueTasks, completionRate } = statistics.task;
 
         return (
-            <Card className={styles.statCard}>
+            <ProCard className={styles.statProCard}>
                 <div className={styles.cardHeader}>
                     <div>
                         <Statistic
@@ -207,16 +208,16 @@ const StatisticsPage: React.FC = () => {
                         </Col>
                     </Row>
                 </div>
-            </Card>
+            </ProCard>
         );
     };
 
-    const renderMilestoneCard = () => {
-        if (!statistics?.milestone) return <Card loading className={styles.statCard} />;
+    const renderMilestoneProCard = () => {
+        if (!statistics?.milestone) return <ProCard loading className={styles.statProCard} />;
         const { totalMilestones, pendingMilestones, achievedMilestones, delayedMilestones } = statistics.milestone;
 
         return (
-            <Card className={styles.statCard}>
+            <ProCard className={styles.statProCard}>
                 <div className={styles.cardHeader}>
                     <Statistic
                         title="里程碑总数"
@@ -255,16 +256,16 @@ const StatisticsPage: React.FC = () => {
                         </Tag>
                     </div>
                 )}
-            </Card>
+            </ProCard>
         );
     };
 
-    const renderMemberCard = () => {
-        if (!statistics?.member) return <Card loading className={styles.statCard} />;
+    const renderMemberProCard = () => {
+        if (!statistics?.member) return <ProCard loading className={styles.statProCard} />;
         const { totalMembers, membersByRole } = statistics.member;
 
         return (
-            <Card className={styles.statCard}>
+            <ProCard className={styles.statProCard}>
                 <div className={styles.cardHeader}>
                     <Statistic
                         title="团队规模"
@@ -290,7 +291,7 @@ const StatisticsPage: React.FC = () => {
                         )}
                     </div>
                 </div>
-            </Card>
+            </ProCard>
         );
     };
 
@@ -328,16 +329,16 @@ const StatisticsPage: React.FC = () => {
                 <Spin spinning={loading}>
                     <Row gutter={[24, 24]}>
                         <Col xs={24} sm={12} lg={6}>
-                            {renderProjectCard()}
+                            {renderProjectProCard()}
                         </Col>
                         <Col xs={24} sm={12} lg={6}>
-                            {renderTaskCard()}
+                            {renderTaskProCard()}
                         </Col>
                         <Col xs={24} sm={12} lg={6}>
-                            {renderMilestoneCard()}
+                            {renderMilestoneProCard()}
                         </Col>
                         <Col xs={24} sm={12} lg={6}>
-                            {renderMemberCard()}
+                            {renderMemberProCard()}
                         </Col>
                     </Row>
                 </Spin>

@@ -1,7 +1,9 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
+import React, { useRef, useState, useCallback } from 'react';
+import { PageContainer, ProCard, ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-components';
 import { useIntl, request } from '@umijs/max';
-import { Card, Space, Button, Tag, Rate, App, Drawer, Descriptions, Divider, Form, Modal, Input, Typography } from 'antd';
+import { Space, Button, Tag, Rate, App, Divider, Typography } from 'antd';
+import { Drawer } from 'antd';
+import { ProDescriptions } from '@ant-design/pro-components';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ReloadOutlined, StarFilled, FileSearchOutlined, StarOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -22,7 +24,6 @@ const VisitAssessmentList: React.FC = () => {
     const intl = useIntl();
     const { message } = App.useApp();
     const actionRef = useRef<ActionType | undefined>(undefined);
-    const [form] = Form.useForm();
     const [state, setState] = useState({ detailVisible: false, assessmentVisible: false, selectedAssessment: null as VisitAssessment | null, selectedTask: null as VisitTask | null, searchText: '' });
     const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
@@ -33,32 +34,25 @@ const VisitAssessmentList: React.FC = () => {
         { title: intl.formatMessage({ id: 'pages.park.visit.score', defaultMessage: '满意度' }), dataIndex: 'assessmentScore', width: 150, render: (dom: React.ReactNode) => dom !== undefined && dom !== null ? <Rate disabled value={dom as number} character={<StarFilled />} style={{ fontSize: 14 }} /> : <Tag color="warning">待评价</Tag> },
         { title: intl.formatMessage({ id: 'pages.park.common.actions', defaultMessage: '操作' }), valueType: 'option', fixed: 'right', width: 120, render: (_: any, r: VisitTask) => [
             r.assessmentId ? <Button key="view" type="link" size="small" onClick={() => { const d: VisitAssessment = { id: r.assessmentId!, taskId: r.id, visitorName: r.intervieweeName || r.tenantName || '', phone: r.phone, location: r.visitLocation || '', taskDescription: r.title, score: r.assessmentScore || 0, comments: r.feedback || '', createdAt: r.createdAt }; set({ selectedAssessment: d, detailVisible: true }); }} icon={<FileSearchOutlined />}>{intl.formatMessage({ id: 'pages.park.common.view', defaultMessage: '详情' })}</Button>
-            : <Button key="assess" type="link" size="small" onClick={() => { set({ selectedTask: r, assessmentVisible: true }); form.setFieldsValue({ visitorName: r.intervieweeName || r.tenantName, phone: r.phone, location: r.visitLocation, score: 5, comments: '' }); }} icon={<StarOutlined />} style={{ color: '#52c41a' }}>{intl.formatMessage({ id: 'pages.park.visit.assess', defaultMessage: '评价' })}</Button>,
+            : <Button key="assess" type="link" size="small" onClick={() => set({ selectedTask: r, assessmentVisible: true })} icon={<StarOutlined />} style={{ color: '#52c41a' }}>{intl.formatMessage({ id: 'pages.park.visit.assess', defaultMessage: '评价' })}</Button>,
         ]},
     ];
 
-    const handleAssessmentSubmit = async (values: any) => {
-        if (!state.selectedTask) return;
-        const res = await api.createAssessment({ taskId: state.selectedTask.id, ...values });
-        if (res.success) { message.success(intl.formatMessage({ id: 'pages.park.common.success', defaultMessage: '评价提交成功' })); set({ assessmentVisible: false, selectedTask: null }); form.resetFields(); actionRef.current?.reload(); }
-        else message.error(intl.formatMessage({ id: 'pages.park.common.failed', defaultMessage: '评价提交失败' }));
-    };
-
     return (
         <PageContainer title={intl.formatMessage({ id: 'pages.park.visit.assessment', defaultMessage: '走访评价管理' })}>
-            <Card styles={{ body: { padding: '16px 24px' } }}>
+            <ProCard style={{ padding: '16px 24px' }}>
                 <ProTable actionRef={actionRef} request={async (params: any) => { const { current, pageSize } = params; const res = await api.list({ page: current, pageSize, search: state.searchText }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={columns} rowKey="id" search={false} toolBarRender={() => [<Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>{intl.formatMessage({ id: 'pages.park.common.refresh', defaultMessage: '刷新' })}</Button>]} />
-            </Card>
+            </ProCard>
 
-            <Drawer title={intl.formatMessage({ id: 'pages.park.visit.assessmentDetail', defaultMessage: '走访评价详情' })} placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, selectedAssessment: null })} size={500}>
+            <Drawer title={intl.formatMessage({ id: 'pages.park.visit.assessmentDetail', defaultMessage: '走访评价详情' })} placement="right" open={state.detailVisible} onClose={(open) => { if (!open) set({ detailVisible: false, selectedAssessment: null }); }} width={500}>
                 {state.selectedAssessment && <div style={{ padding: '0 4px' }}>
                     <div style={{ textAlign: 'center', marginBottom: 24 }}><Text type="secondary">{intl.formatMessage({ id: 'pages.park.visit.score', defaultMessage: '总体满意程度' })}</Text><div style={{ marginTop: 8 }}><Rate disabled value={state.selectedAssessment.score} style={{ fontSize: 24 }} /></div></div>
                     <Divider />
-                    <Descriptions column={1} bordered size="small">
-                        <Descriptions.Item label={intl.formatMessage({ id: 'pages.park.visit.visitor', defaultMessage: '受访对象' })}>{state.selectedAssessment.visitorName}</Descriptions.Item>
-                        <Descriptions.Item label={intl.formatMessage({ id: 'pages.park.visit.phone', defaultMessage: '联系电话' })}>{state.selectedAssessment.phone || '-'}</Descriptions.Item>
-                        <Descriptions.Item label={intl.formatMessage({ id: 'pages.park.visit.location', defaultMessage: '走访地点' })}>{state.selectedAssessment.location || '-'}</Descriptions.Item>
-                    </Descriptions>
+                    <ProDescriptions column={1} bordered size="small">
+                        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.visit.visitor', defaultMessage: '受访对象' })}>{state.selectedAssessment.visitorName}</ProDescriptions.Item>
+                        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.visit.phone', defaultMessage: '联系电话' })}>{state.selectedAssessment.phone || '-'}</ProDescriptions.Item>
+                        <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.park.visit.location', defaultMessage: '走访地点' })}>{state.selectedAssessment.location || '-'}</ProDescriptions.Item>
+                    </ProDescriptions>
                     <Divider titlePlacement="left" plain><Text type="secondary" style={{ fontSize: 12 }}>{intl.formatMessage({ id: 'pages.park.visit.taskInfo', defaultMessage: '走访任务信息' })}</Text></Divider>
                     <div><Text strong>{intl.formatMessage({ id: 'pages.park.visit.taskDescription', defaultMessage: '任务内容描述' })}：</Text><div style={{ marginTop: 8, padding: 12, background: '#f5f5f5', borderRadius: 8 }}>{state.selectedAssessment.taskDescription || '-'}</div></div>
                     <Divider titlePlacement="left" plain><Text type="secondary" style={{ fontSize: 12 }}>{intl.formatMessage({ id: 'pages.park.visit.assessmentComments', defaultMessage: '评价与建议' })}</Text></Divider>
@@ -68,16 +62,27 @@ const VisitAssessmentList: React.FC = () => {
                 </div>}
             </Drawer>
 
-            <Modal title={intl.formatMessage({ id: 'pages.park.visit.assessment', defaultMessage: '添加走访评价' })} open={state.assessmentVisible} onCancel={() => set({ assessmentVisible: false, selectedTask: null })} footer={null} width={600} destroyOnClose>
-                {state.selectedTask && <Form form={form} layout="vertical" onFinish={handleAssessmentSubmit}>
-                    <Form.Item label={intl.formatMessage({ id: 'pages.park.visit.visitor', defaultMessage: '受访人/企业' })} name="visitorName" rules={[{ required: true, message: '请输入受访人/企业名称' }]}><Input placeholder="请输入受访人/企业名称" /></Form.Item>
-                    <Form.Item label={intl.formatMessage({ id: 'pages.park.visit.phone', defaultMessage: '联系电话' })} name="phone"><Input placeholder="请输入联系电话" /></Form.Item>
-                    <Form.Item label={intl.formatMessage({ id: 'pages.park.visit.location', defaultMessage: '走访地点' })} name="location"><Input placeholder="请输入走访地点" /></Form.Item>
-                    <Form.Item label={intl.formatMessage({ id: 'pages.park.visit.score', defaultMessage: '满意度评分' })} name="score" rules={[{ required: true, message: '请选择满意度评分' }]}><Rate /></Form.Item>
-                    <Form.Item label={intl.formatMessage({ id: 'pages.park.visit.comments', defaultMessage: '评价意见' })} name="comments"><Input.TextArea rows={4} placeholder="请输入评价意见（选填）" /></Form.Item>
-                    <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}><Space><Button onClick={() => set({ assessmentVisible: false, selectedTask: null })}>{intl.formatMessage({ id: 'pages.park.common.cancel', defaultMessage: '取消' })}</Button><Button type="primary" htmlType="submit">{intl.formatMessage({ id: 'pages.park.common.submit', defaultMessage: '提交评价' })}</Button></Space></Form.Item>
-                </Form>}
-            </Modal>
+            <ModalForm<AssessmentFormData>
+                title={intl.formatMessage({ id: 'pages.park.visit.assessment', defaultMessage: '添加走访评价' })}
+                open={state.assessmentVisible}
+                onOpenChange={(open) => { if (!open) set({ assessmentVisible: false, selectedTask: null }); }}
+                initialValues={state.selectedTask ? { taskId: state.selectedTask.id, visitorName: state.selectedTask.intervieweeName || state.selectedTask.tenantName, phone: state.selectedTask.phone, location: state.selectedTask.visitLocation, score: 5, comments: '' } : undefined}
+                onFinish={async (values) => {
+                    if (!state.selectedTask) return false;
+                    const res = await api.createAssessment({ ...values });
+                    if (res.success) { message.success(intl.formatMessage({ id: 'pages.park.common.success', defaultMessage: '评价提交成功' })); actionRef.current?.reload(); }
+                    else message.error(intl.formatMessage({ id: 'pages.park.common.failed', defaultMessage: '评价提交失败' }));
+                    return res.success;
+                }}
+                autoFocusFirstInput
+                width={600}
+            >
+                <ProFormText name="taskId" hidden />
+                <ProFormText name="visitorName" label={intl.formatMessage({ id: 'pages.park.visit.visitor', defaultMessage: '受访人/企业' })} placeholder="请输入受访人/企业名称" rules={[{ required: true, message: '请输入受访人/企业名称' }]} />
+                <ProFormText name="phone" label={intl.formatMessage({ id: 'pages.park.visit.phone', defaultMessage: '联系电话' })} placeholder="请输入联系电话" />
+                <ProFormText name="location" label={intl.formatMessage({ id: 'pages.park.visit.location', defaultMessage: '走访地点' })} placeholder="请输入走访地点" />
+                <ProFormTextArea name="comments" label={intl.formatMessage({ id: 'pages.park.visit.comments', defaultMessage: '评价意见' })} placeholder="请输入评价意见（选填）" />
+            </ModalForm>
         </PageContainer>
     );
 };

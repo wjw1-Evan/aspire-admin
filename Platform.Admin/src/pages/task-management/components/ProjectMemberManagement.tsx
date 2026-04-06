@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Table, Button, Space, Modal, Tag } from 'antd';
-import type { ColumnsType, ColumnType } from 'antd/es/table';
+import { ProTable, ProColumns } from '@ant-design/pro-components';
+import { Button, Space, Modal, Tag } from 'antd';
+import type { ColumnType } from 'antd/es/table';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useMessage } from '@/hooks/useMessage';
 import { useModal } from '@/hooks/useModal';
@@ -64,7 +65,7 @@ const ProjectMemberManagement: React.FC<ProjectMemberManagementProps> = ({
     });
   };
 
-  const columns: ColumnsType<ProjectMemberDto> = [
+  const columns: ProColumns<ProjectMemberDto>[] = [
     {
       title: '用户名',
       dataIndex: 'userName',
@@ -79,13 +80,13 @@ const ProjectMemberManagement: React.FC<ProjectMemberManagementProps> = ({
       title: '角色',
       dataIndex: 'roleName',
       key: 'roleName',
-      render: (text: string) => <Tag>{text}</Tag>,
+      render: (_: React.ReactNode, record: ProjectMemberDto) => <Tag>{record.roleName}</Tag>,
     },
     {
       title: '资源分配',
       dataIndex: 'allocation',
       key: 'allocation',
-      render: (allocation: number) => `${allocation}%`,
+      render: (_: React.ReactNode, record: ProjectMemberDto) => `${record.allocation}%`,
     },
     {
       title: '操作',
@@ -118,11 +119,14 @@ const ProjectMemberManagement: React.FC<ProjectMemberManagementProps> = ({
         </Button>
       </Space>
 
-      <Table
+      <ProTable
         columns={columns}
         dataSource={members}
         rowKey="id"
+        search={false}
         pagination={false}
+        options={false}
+        toolBarRender={false}
       />
 
       {formVisible && (

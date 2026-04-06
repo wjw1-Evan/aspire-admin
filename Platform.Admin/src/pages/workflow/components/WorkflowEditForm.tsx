@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Form, Input, Select, Button, Space, Divider, Row, Col, Card, Switch, Spin, Result } from 'antd';
-import { SaveOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { Button, Spin, Result } from 'antd';
+import { ProCard, ProFormText, ProFormTextArea, ProFormSwitch } from '@ant-design/pro-components';
+import { InfoCircleOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import { useMessage } from '@/hooks/useMessage';
 import { updateWorkflow, getWorkflowDetail, type WorkflowDefinition, type WorkflowGraph } from '@/services/workflow/api';
@@ -16,7 +17,6 @@ interface WorkflowEditFormProps {
 const WorkflowEditForm: React.FC<WorkflowEditFormProps> = ({ workflow, onSuccess, onCancel, readOnly }) => {
     const intl = useIntl();
     const message = useMessage();
-    const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
     const [detailLoading, setDetailLoading] = useState(true);
     const [fullWorkflow, setFullWorkflow] = useState<WorkflowDefinition | null>(null);
@@ -49,36 +49,16 @@ const WorkflowEditForm: React.FC<WorkflowEditFormProps> = ({ workflow, onSuccess
         loadDetail();
     }, [workflow.id]);
 
-    // 在数据加载完成且渲染完成后同步表单值，避免 "not connected" 警告
-    useEffect(() => {
-        if (fullWorkflow && !detailLoading) {
-            form.setFieldsValue({
-                name: fullWorkflow.name,
-                description: fullWorkflow.description,
-                category: fullWorkflow.category,
-                isActive: fullWorkflow.isActive,
-            });
-        }
-    }, [fullWorkflow, detailLoading, form]);
-
     const handleSave = async (graph: WorkflowGraph) => {
         if (readOnly || !fullWorkflow?.id) return;
         try {
-            const values = await form.validateFields();
             setLoading(true);
 
-            // 自动增加 minor 版本号
-            const newVersion = {
-                major: fullWorkflow.version?.major || 1,
-                minor: (fullWorkflow.version?.minor || 0) + 1,
-                createdAt: fullWorkflow.version?.createdAt || new Date().toISOString(),
-            };
-
             const response = await updateWorkflow(fullWorkflow.id, {
-                name: values.name,
-                description: values.description,
-                category: values.category || 'default',
-                isActive: values.isActive,
+                name: fullWorkflow.name,
+                description: fullWorkflow.description || '',
+                category: fullWorkflow.category || 'default',
+                isActive: fullWorkflow.isActive,
                 graph: graph,
             });
 
@@ -115,62 +95,47 @@ const WorkflowEditForm: React.FC<WorkflowEditFormProps> = ({ workflow, onSuccess
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '16px' }}>
-            <Card
+            <ProCard
                 size="small"
                 title={
-                    <Space>
-                        <InfoCircleOutlined style={{ color: '#1890ff' }} />
-                        <span>{intl.formatMessage({ id: 'pages.workflow.bulk.operationConfig' })}</span>
-                    </Space>
+                    <span>
+                        <InfoCircleOutlined style={{ color: '#1890ff', marginRight: 8 }} />
+                        {intl.formatMessage({ id: 'pages.workflow.bulk.operationConfig' })}
+                    </span>
                 }
-                styles={{ body: { padding: '16px 24px 0 24px' } }}
+                style={{ padding: '16px 24px 0 24px' }}
             >
-                <Form form={form} layout="vertical" disabled={readOnly}>
-                    <Row gutter={16}>
-                        <Col xs={24} md={8}>
-                            <Form.Item
-                                name="name"
-                                label={intl.formatMessage({ id: 'pages.workflow.table.name' })}
-                                rules={[{ required: true, message: intl.formatMessage({ id: 'pages.workflow.create.form.nameRequired' }) }]}
-                            >
-                                <Input placeholder={intl.formatMessage({ id: 'pages.workflow.create.form.namePlaceholder' })} />
-                            </Form.Item>
-                        </Col>
-                        <Col xs={24} md={8}>
-                            <Form.Item
-                                name="category"
-                                label={intl.formatMessage({ id: 'pages.workflow.table.category' })}
-                            >
-                                <Input placeholder={intl.formatMessage({ id: 'pages.workflow.create.form.categoryPlaceholder' })} />
-                            </Form.Item>
-                        </Col>
-                        <Col xs={24} md={8}>
-                            <Form.Item
-                                name="isActive"
-                                label={intl.formatMessage({ id: 'pages.workflow.table.status' })}
-                                valuePropName="checked"
-                            >
-                                <Switch
-                                    checkedChildren={intl.formatMessage({ id: 'pages.workflow.status.enabled' })}
-                                    unCheckedChildren={intl.formatMessage({ id: 'pages.workflow.status.disabled' })}
-                                />
-                            </Form.Item>
-                        </Col>
-                        <Col span={24}>
-                            <Form.Item
-                                name="description"
-                                label={intl.formatMessage({ id: 'pages.workflow.create.form.description' })}
-                                style={{ marginBottom: 16 }}
-                            >
-                                <Input.TextArea
-                                    placeholder={intl.formatMessage({ id: 'pages.workflow.create.form.descriptionPlaceholder' })}
-                                    autoSize={{ minRows: 1, maxRows: 3 }}
-                                />
-                            </Form.Item>
-                        </Col>
-                    </Row>
-                </Form>
-            </Card>
+                <ProFormText
+                    name="name"
+                    label={intl.formatMessage({ id: 'pages.workflow.table.name' })}
+                    rules={[{ required: true, message: intl.formatMessage({ id: 'pages.workflow.create.form.nameRequired' }) }]}
+                    placeholder={intl.formatMessage({ id: 'pages.workflow.create.form.namePlaceholder' })}
+                    disabled={readOnly}
+                    initialValue={fullWorkflow.name}
+                />
+                <ProFormText
+                    name="category"
+                    label={intl.formatMessage({ id: 'pages.workflow.table.category' })}
+                    placeholder={intl.formatMessage({ id: 'pages.workflow.create.form.categoryPlaceholder' })}
+                    disabled={readOnly}
+                    initialValue={fullWorkflow.category}
+                />
+                <ProFormSwitch
+                    name="isActive"
+                    label={intl.formatMessage({ id: 'pages.workflow.table.status' })}
+                    checkedChildren={intl.formatMessage({ id: 'pages.workflow.status.enabled' })}
+                    unCheckedChildren={intl.formatMessage({ id: 'pages.workflow.status.disabled' })}
+                    disabled={readOnly}
+                    initialValue={fullWorkflow.isActive}
+                />
+                <ProFormTextArea
+                    name="description"
+                    label={intl.formatMessage({ id: 'pages.workflow.create.form.description' })}
+                    placeholder={intl.formatMessage({ id: 'pages.workflow.create.form.descriptionPlaceholder' })}
+                    disabled={readOnly}
+                    initialValue={fullWorkflow.description}
+                />
+            </ProCard>
 
             <div style={{ flex: 1, minHeight: 0 }}>
                 <WorkflowDesigner

@@ -11,7 +11,8 @@ import {
   history,
 } from '@umijs/max';
 import { SelectLang } from '@/components';
-import { Alert, App, Button, Tabs, Form, Input, Checkbox, Card, Space } from 'antd';
+import { Alert, App, Button, Tabs, Form, Input, Checkbox, Space } from 'antd';
+import { ProCard } from '@ant-design/pro-components';
 import { createStyles } from 'antd-style';
 import React, { useState, useRef } from 'react';
 import { flushSync } from 'react-dom';
@@ -350,7 +351,7 @@ const Login: React.FC = () => {
         <Lang />
         <div className={styles.contentWrapper}>
           <div className={styles.formWrapper}>
-            <Card
+            <ProCard
               style={{
                 backgroundColor: 'rgba(255, 255, 255, 0.95)',
                 backdropFilter: 'blur(20px)',
@@ -517,7 +518,7 @@ const Login: React.FC = () => {
                   </Link>
                 </div>
               </Form>
-            </Card>
+            </ProCard>
           </div>
         </div>
         <Footer />

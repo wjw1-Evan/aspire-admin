@@ -1,5 +1,6 @@
 import React from 'react';
-import { Card, Row, Col, Space, Alert, Typography, Tag, theme, Button } from 'antd';
+import { Row, Col, Space, Alert, Typography, Tag, theme, Button } from 'antd';
+import { ProCard } from '@ant-design/pro-components';
 import {
   CheckCircleOutlined,
   ClockCircleOutlined,
@@ -31,7 +32,7 @@ const ApprovalOverviewCard: React.FC<ApprovalOverviewCardProps> = ({
   const { styles } = useCommonStyles();
 
   return (
-    <Card
+    <ProCard
       title={
         <Space>
           <CheckCircleOutlined />
@@ -131,7 +132,7 @@ const ApprovalOverviewCard: React.FC<ApprovalOverviewCardProps> = ({
           </ul>
         )}
       </div>
-    </Card>
+    </ProCard>
   );
 };
 

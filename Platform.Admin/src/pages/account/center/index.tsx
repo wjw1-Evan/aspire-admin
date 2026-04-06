@@ -1,6 +1,7 @@
 import { EditOutlined, UserOutlined, MailOutlined, MobileOutlined, CalendarOutlined, CameraOutlined, DeleteOutlined } from '@ant-design/icons';
 import { FormattedMessage, useIntl, request, useModel } from '@umijs/max';
-import { App, Avatar, Button, Card, Descriptions, Divider, Space, Tag, Typography, Form, Input, InputNumber, Tooltip } from 'antd';
+import { App, Avatar, Button, Card, Divider, Space, Tag, Typography, Form, Input, InputNumber, Tooltip } from 'antd';
+import { ProDescriptions } from '@ant-design/pro-components';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import { createStyles } from 'antd-style';
 import React, { useEffect, useState } from 'react';
@@ -211,18 +212,18 @@ const UserCenter: React.FC = () => {
               </Form.Item>
             </Form>
           ) : (
-            <Descriptions column={2} bordered>
-              <Descriptions.Item label={<FormattedMessage id="pages.account.center.username" defaultMessage="用户名" />}><Text strong>{userProfile.username}</Text></Descriptions.Item>
-              <Descriptions.Item label={<FormattedMessage id="pages.account.center.name" defaultMessage="姓名" />}>{userProfile.name || <FormattedMessage id="pages.account.center.notSet" defaultMessage="未设置" />}</Descriptions.Item>
-              <Descriptions.Item label={<FormattedMessage id="pages.account.center.email" defaultMessage="邮箱" />}><MailOutlined style={{ marginRight: '4px' }} />{userProfile.email || <FormattedMessage id="pages.account.center.notSet" defaultMessage="未设置" />}</Descriptions.Item>
-              <Descriptions.Item label={<Space><MobileOutlined />手机号</Space>}>{userProfile.phoneNumber || <FormattedMessage id="pages.account.center.notSet" defaultMessage="未设置" />}</Descriptions.Item>
-              <Descriptions.Item label={<FormattedMessage id="pages.account.center.age" defaultMessage="年龄" />}>{userProfile.age || <FormattedMessage id="pages.account.center.notSet" defaultMessage="未设置" />}</Descriptions.Item>
-              <Descriptions.Item label={<FormattedMessage id="pages.account.center.role" defaultMessage="角色" />}><Tag color={getRoleTagColor(userProfile.role)}>{userProfile.role === 'admin' ? <FormattedMessage id="pages.account.center.admin" defaultMessage="管理员" /> : <FormattedMessage id="pages.account.center.user" defaultMessage="普通用户" />}</Tag></Descriptions.Item>
-              <Descriptions.Item label={<FormattedMessage id="pages.account.center.status" defaultMessage="状态" />}><Tag color={userProfile.isActive ? 'green' : 'red'}>{userProfile.isActive ? <FormattedMessage id="pages.account.center.active" defaultMessage="正常" /> : <FormattedMessage id="pages.account.center.inactive" defaultMessage="禁用" />}</Tag></Descriptions.Item>
-              <Descriptions.Item label={<FormattedMessage id="pages.account.center.registerTime" defaultMessage="注册时间" />}><CalendarOutlined style={{ marginRight: '4px' }} />{userProfile.createdAt ? dayjs(userProfile.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
-              <Descriptions.Item label={<FormattedMessage id="pages.account.center.lastUpdate" defaultMessage="最后更新" />}><CalendarOutlined style={{ marginRight: '4px' }} />{userProfile.updatedAt ? dayjs(userProfile.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
-              {userProfile.lastLoginAt && <Descriptions.Item label={<FormattedMessage id="pages.account.center.lastLogin" defaultMessage="最后登录" />}><CalendarOutlined style={{ marginRight: '4px' }} />{dayjs(userProfile.lastLoginAt).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>}
-            </Descriptions>
+            <ProDescriptions column={2} bordered>
+              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.username" defaultMessage="用户名" />}><Text strong>{userProfile.username}</Text></ProDescriptions.Item>
+              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.name" defaultMessage="姓名" />}>{userProfile.name || <FormattedMessage id="pages.account.center.notSet" defaultMessage="未设置" />}</ProDescriptions.Item>
+              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.email" defaultMessage="邮箱" />}><MailOutlined style={{ marginRight: '4px' }} />{userProfile.email || <FormattedMessage id="pages.account.center.notSet" defaultMessage="未设置" />}</ProDescriptions.Item>
+              <ProDescriptions.Item label={<Space><MobileOutlined />手机号</Space>}>{userProfile.phoneNumber || <FormattedMessage id="pages.account.center.notSet" defaultMessage="未设置" />}</ProDescriptions.Item>
+              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.age" defaultMessage="年龄" />}>{userProfile.age || <FormattedMessage id="pages.account.center.notSet" defaultMessage="未设置" />}</ProDescriptions.Item>
+              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.role" defaultMessage="角色" />}><Tag color={getRoleTagColor(userProfile.role)}>{userProfile.role === 'admin' ? <FormattedMessage id="pages.account.center.admin" defaultMessage="管理员" /> : <FormattedMessage id="pages.account.center.user" defaultMessage="普通用户" />}</Tag></ProDescriptions.Item>
+              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.status" defaultMessage="状态" />}><Tag color={userProfile.isActive ? 'green' : 'red'}>{userProfile.isActive ? <FormattedMessage id="pages.account.center.active" defaultMessage="正常" /> : <FormattedMessage id="pages.account.center.inactive" defaultMessage="禁用" />}</Tag></ProDescriptions.Item>
+              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.registerTime" defaultMessage="注册时间" />}><CalendarOutlined style={{ marginRight: '4px' }} />{userProfile.createdAt ? dayjs(userProfile.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
+              <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.lastUpdate" defaultMessage="最后更新" />}><CalendarOutlined style={{ marginRight: '4px' }} />{userProfile.updatedAt ? dayjs(userProfile.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
+              {userProfile.lastLoginAt && <ProDescriptions.Item label={<FormattedMessage id="pages.account.center.lastLogin" defaultMessage="最后登录" />}><CalendarOutlined style={{ marginRight: '4px' }} />{dayjs(userProfile.lastLoginAt).format('YYYY-MM-DD HH:mm:ss')}</ProDescriptions.Item>}
+            </ProDescriptions>
           )}
         </Card>
       </div>

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Card, Row, Col, Space, theme } from 'antd';
+import { Row, Col, Space, theme } from 'antd';
+import { ProCard } from '@ant-design/pro-components';
 import { BarChartOutlined, TeamOutlined, ThunderboltOutlined, CrownOutlined, RocketOutlined, BlockOutlined, ClusterOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import StatCard from './StatCard';
@@ -14,7 +15,7 @@ const StatisticsOverview: React.FC<StatisticsOverviewProps> = ({ statistics, loa
     const { token } = theme.useToken();
 
     return (
-        <Card
+        <ProCard
             title={
                 <Space>
                     <BarChartOutlined />
@@ -85,7 +86,7 @@ const StatisticsOverview: React.FC<StatisticsOverviewProps> = ({ statistics, loa
                     />
                 </Col>
             </Row>
-        </Card>
+        </ProCard>
     );
 };
 

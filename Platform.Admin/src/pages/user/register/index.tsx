@@ -13,7 +13,8 @@ import {
   useIntl,
 } from '@umijs/max';
 import { SelectLang } from '@/components';
-import { App, Button, Card, Form, Input, Space } from 'antd';
+import { App, Button, Form, Input, Space } from 'antd';
+import { ProCard } from '@ant-design/pro-components';
 import { createStyles } from 'antd-style';
 import React, { useRef, useState } from 'react';
 import { Footer } from '@/components';
@@ -341,7 +342,7 @@ export default function Register() {
         <Lang />
         <div className={styles.contentWrapper}>
           <div className={styles.formWrapper}>
-            <Card className={styles.card}>
+            <ProCard className={styles.card}>
               <div className={styles.header}>
                 <img alt="logo" src="/logo.svg" />
                 <div className="title">
@@ -539,7 +540,7 @@ export default function Register() {
                   </Link>
                 </div>
               </Form>
-            </Card>
+            </ProCard>
           </div>
         </div>
         <Footer />

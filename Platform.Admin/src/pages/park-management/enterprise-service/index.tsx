@@ -1,11 +1,13 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
+import { PageContainer, ProCard } from '@ant-design/pro-components';
 import { StatCard } from '@/components';
 import { useIntl, useSearchParams, history, request } from '@umijs/max';
-import { Card, Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typography, Descriptions, Tabs, Popconfirm, Rate, Switch, Drawer, List, Avatar, Empty, Flex } from 'antd';
+import { Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typography, Tabs, Popconfirm, Rate, Switch, List, Avatar, Empty, Flex, Card } from 'antd';
+import { Drawer } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-form';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, AppstoreOutlined, FormOutlined, CheckCircleOutlined, ClockCircleOutlined, StarOutlined, ReloadOutlined, SettingOutlined } from '@ant-design/icons';
+import { ProDescriptions } from '@ant-design/pro-components';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 
@@ -84,7 +86,9 @@ const EnterpriseService: React.FC = () => {
     const handleAdd = () => { if (state.activeTab === 'requests') { setEditing({ currentRequest: null }); setModal({ requestVisible: true }); } else { setEditing({ currentCategory: null }); setModal({ categoryVisible: true }); } };
 
     return (
-        <PageContainer title={intl.formatMessage({ id: 'pages.park.service.title', defaultMessage: '企业服务' })} extra={
+        <PageContainer title={intl.formatMessage({ id: 'pages.park.service.title', defaultMessage: '企业服务' })}
+            breadcrumb={{ routes: [{ path: '/', breadcrumbName: '首页' }, { path: '/park', breadcrumbName: '园区管理' }, { path: '/park/enterprise-service', breadcrumbName: '企业服务' }] }}
+            extra={
             <Space>
                 <Button icon={<ReloadOutlined />} onClick={handleRefresh}>{intl.formatMessage({ id: 'common.refresh', defaultMessage: '刷新' })}</Button>
                 <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>{state.activeTab === 'requests' ? intl.formatMessage({ id: 'pages.park.service.addRequest', defaultMessage: '新增申请' }) : intl.formatMessage({ id: 'pages.park.service.addCategory', defaultMessage: '新增类别' })}</Button>
@@ -97,14 +101,14 @@ const EnterpriseService: React.FC = () => {
                 <Col xs={24} sm={12} md={6}><StatCard title="满意度" value={state.statistics.averageRating ? `${state.statistics.averageRating} ⭐` : '-'} icon={<StarOutlined />} color="#722ed1" /></Col>
             </Row>)}
 
-            <Card>
+            <ProCard>
                 <Tabs activeKey={state.activeTab} onChange={(key) => set({ activeTab: key })} items={[
                     { key: 'requests', label: <Space><FormOutlined />服务申请</Space>, children: <ProTable actionRef={actionRef} request={async (params: any) => { const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined; const res = await api.requests({ page: current, pageSize, search: state.searchText, ...sortParams }); loadData(); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={columns} rowKey="id" search={false} onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })} toolBarRender={() => [<Input key="search" placeholder="搜索..." style={{ width: 200 }} allowClear />]} scroll={{ x: 1200 }} /> },
                     { key: 'categories', label: <Space><AppstoreOutlined />服务类别</Space>, children: state.categories.length > 0 ? (<List grid={{ gutter: 16, xs: 1, sm: 2, md: 3, lg: 4 }} dataSource={state.categories} renderItem={(item) => (<List.Item><Card hoverable actions={[<EditOutlined key="edit" onClick={() => { setEditing({ currentCategory: item }); setModal({ categoryVisible: true }); }} />, <Switch key="toggle" checked={item.isActive} size="small" onChange={async () => { const res = await api.toggleCategory(item.id); if (res.success) { message.success('状态切换成功'); loadCategories(); } }} />, <Popconfirm key="delete" title="确认删除？" onConfirm={async () => { const res = await api.deleteCategory(item.id); if (res.success) { message.success('删除成功'); loadCategories(); loadData(); } }}><DeleteOutlined style={{ color: '#ff4d4f' }} /></Popconfirm>]}>
                         <Card.Meta avatar={<Avatar style={{ backgroundColor: item.isActive ? '#1890ff' : '#d9d9d9' }} icon={<AppstoreOutlined />} />} title={<Space>{item.name}{!item.isActive && <Tag color="default">已禁用</Tag>}</Space>} description={<><Text type="secondary">{item.description || '暂无描述'}</Text><div style={{ marginTop: 8 }}><Tag color="blue">申请数: {item.requestCount}</Tag></div></>} />
                     </Card></List.Item>)} />) : <Empty description="暂无服务类别" />, },
                 ]} />
-            </Card>
+            </ProCard>
 
             <ModalForm key={editingState.currentCategory?.id || 'create-category'} title={editingState.currentCategory ? '编辑类别' : '新增类别'} open={modalState.categoryVisible} onOpenChange={(open) => { if (!open) setModal({ categoryVisible: false }); }}
                 initialValues={editingState.currentCategory ? { name: editingState.currentCategory.name, description: editingState.currentCategory.description, icon: editingState.currentCategory.icon, sortOrder: editingState.currentCategory.sortOrder } : undefined}
@@ -137,20 +141,20 @@ const EnterpriseService: React.FC = () => {
                 <ProFormTextArea name="feedback" label="反馈意见" placeholder="请输入您的反馈意见" />
             </ModalForm>
 
-            <Drawer title={editingState.currentRequest?.title || '申请详情'} open={modalState.detailVisible} onClose={() => setModal({ detailVisible: false })} size={640}>
-                {editingState.currentRequest && (<Descriptions bordered column={2} size="small">
-                    <Descriptions.Item label="服务标题" span={2}>{editingState.currentRequest.title}</Descriptions.Item>
-                    <Descriptions.Item label="所属租户">{editingState.currentRequest.tenantName || '-'}</Descriptions.Item>
-                    <Descriptions.Item label="类别">{editingState.currentRequest.categoryName || '-'}</Descriptions.Item>
-                    <Descriptions.Item label="优先级"><Tag color={priorityOptions.find(o => o.value === editingState.currentRequest?.priority)?.color}>{priorityOptions.find(o => o.value === editingState.currentRequest?.priority)?.label || editingState.currentRequest?.priority}</Tag></Descriptions.Item>
-                    <Descriptions.Item label="状态"><Tag color={statusOptions.find(o => o.value === editingState.currentRequest?.status)?.color}>{statusOptions.find(o => o.value === editingState.currentRequest?.status)?.label || editingState.currentRequest?.status}</Tag></Descriptions.Item>
-                    <Descriptions.Item label="评分">{editingState.currentRequest.rating ? <Rate disabled value={editingState.currentRequest.rating} /> : '-'}</Descriptions.Item>
-                    <Descriptions.Item label="联系人">{editingState.currentRequest.contactPerson || '-'}</Descriptions.Item>
-                    <Descriptions.Item label="联系电话">{editingState.currentRequest.contactPhone || '-'}</Descriptions.Item>
-                    <Descriptions.Item label="创建时间">{dayjs(editingState.currentRequest.createdAt).format('YYYY-MM-DD HH:mm')}</Descriptions.Item>
-                    <Descriptions.Item label="完成时间">{editingState.currentRequest.completedAt ? dayjs(editingState.currentRequest.completedAt).format('YYYY-MM-DD HH:mm') : '-'}</Descriptions.Item>
-                    <Descriptions.Item label="描述" span={2}>{editingState.currentRequest.description || '-'}</Descriptions.Item>
-                </Descriptions>)}
+            <Drawer title={editingState.currentRequest?.title || '申请详情'} open={modalState.detailVisible} onClose={(open) => { if (!open) setModal({ detailVisible: false }); }} width={640}>
+                {editingState.currentRequest && (<ProDescriptions bordered column={2} size="small">
+                    <ProDescriptions.Item label="服务标题" span={2}>{editingState.currentRequest.title}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="所属租户">{editingState.currentRequest.tenantName || '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="类别">{editingState.currentRequest.categoryName || '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="优先级"><Tag color={priorityOptions.find(o => o.value === editingState.currentRequest?.priority)?.color}>{priorityOptions.find(o => o.value === editingState.currentRequest?.priority)?.label || editingState.currentRequest?.priority}</Tag></ProDescriptions.Item>
+                    <ProDescriptions.Item label="状态"><Tag color={statusOptions.find(o => o.value === editingState.currentRequest?.status)?.color}>{statusOptions.find(o => o.value === editingState.currentRequest?.status)?.label || editingState.currentRequest?.status}</Tag></ProDescriptions.Item>
+                    <ProDescriptions.Item label="评分">{editingState.currentRequest.rating ? <Rate disabled value={editingState.currentRequest.rating} /> : '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="联系人">{editingState.currentRequest.contactPerson || '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="联系电话">{editingState.currentRequest.contactPhone || '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="创建时间">{dayjs(editingState.currentRequest.createdAt).format('YYYY-MM-DD HH:mm')}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="完成时间">{editingState.currentRequest.completedAt ? dayjs(editingState.currentRequest.completedAt).format('YYYY-MM-DD HH:mm') : '-'}</ProDescriptions.Item>
+                    <ProDescriptions.Item label="描述" span={2}>{editingState.currentRequest.description || '-'}</ProDescriptions.Item>
+                </ProDescriptions>)}
             </Drawer>
         </PageContainer>
     );

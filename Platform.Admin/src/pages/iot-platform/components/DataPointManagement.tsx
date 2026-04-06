@@ -3,8 +3,9 @@ import { PageContainer } from '@ant-design/pro-components';
 import { StatCard } from '@/components';
 import { useIntl } from '@umijs/max';
 import { type ProColumns, ActionType, ProTable } from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormSelect, ProFormDigit, ProFormSwitch, ProFormTextArea } from '@ant-design/pro-form';
-import { Button, Card, Col, Descriptions, Drawer, Form, Grid, Input, Row, Select, Space, Tag, message } from 'antd';
+import { ModalForm, ProFormText, ProFormSelect, ProFormDigit, ProFormSwitch, ProFormTextArea } from '@ant-design/pro-components';
+import { Button, Col, Drawer, Form, Grid, Input, Row, Space, Tag, message } from 'antd';
+import { ProCard, ProDescriptions } from '@ant-design/pro-components';
 import { PlusOutlined, EditOutlined, DeleteOutlined, DatabaseOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { iotService, IoTDataPoint, IoTDevice } from '@/services/iotService';
@@ -24,7 +25,7 @@ const DATA_TYPE_OPTIONS = [
 
 const DATA_TYPE_LABELS: Record<string, string> = { Numeric: '数值', Boolean: '布尔', String: '字符串', Enum: '枚举', Json: 'JSON' };
 
-const DataPointManagement = (props: any, ref: React.Ref<DataPointManagementRef>) => {
+const DataPointManagement = React.forwardRef<DataPointManagementRef, any>((props, ref) => {
   const intl = useIntl();
   const { confirm } = useModal();
   const screens = useBreakpoint();
@@ -63,29 +64,31 @@ const DataPointManagement = (props: any, ref: React.Ref<DataPointManagementRef>)
   useEffect(() => { loadDevices(); fetchStatistics(); }, [loadDevices, fetchStatistics]);
 
   const columns: ProColumns<IoTDataPoint>[] = [
-    { title: '数据点名称', dataIndex: 'title', sorter: true, ellipsis: true, render: (dom, record) => <a onClick={() => set({ viewingDataPoint: record, detailVisible: true })}>{dom}</a> },
-    { title: '所属设备', dataIndex: 'deviceId', sorter: true, render: (dom) => state.devices.find(d => d.deviceId === dom)?.title || dom },
-    { title: '数据类型', dataIndex: 'dataType', sorter: true, render: (dom) => DATA_TYPE_LABELS[dom] || dom },
+    { title: '数据点名称', dataIndex: 'title', sorter: true, ellipsis: true, render: (dom, record) => <a onClick={() => set({ viewingDataPoint: record, detailVisible: true })}>{dom as string}</a> },
+    { title: '所属设备', dataIndex: 'deviceId', sorter: true, render: (dom) => state.devices.find(d => d.deviceId === (dom as string))?.title || (dom as string) },
+    { title: '数据类型', dataIndex: 'dataType', sorter: true, render: (dom) => DATA_TYPE_LABELS[dom as string] || (dom as string) },
     { title: '单位', dataIndex: 'unit', sorter: true },
     { title: '采样间隔(秒)', dataIndex: 'samplingInterval', sorter: true },
     { title: '最后采集值', dataIndex: 'lastValue', width: 150, render: (dom, record) => {
-      if (!dom) return <span style={{ color: '#999' }}>暂无数据</span>;
+      const val = dom as string | null | undefined;
+      if (!val) return <span style={{ color: '#999' }}>暂无数据</span>;
       if (record.dataType?.toLowerCase() === 'json') {
-        try { const parsed = JSON.parse(dom); return <span title={dom} style={{ fontFamily: 'monospace', fontSize: '12px' }}>{JSON.stringify(parsed).substring(0, 50)}{dom.length > 50 ? '...' : ''}</span>; }
-        catch { return <span title={dom}>{dom.substring(0, 30)}{dom.length > 30 ? '...' : ''}</span>; }
+        try { const parsed = JSON.parse(val); return <span title={val} style={{ fontFamily: 'monospace', fontSize: '12px' }}>{JSON.stringify(parsed).substring(0, 50)}{val.length > 50 ? '...' : ''}</span>; }
+        catch { return <span title={val}>{val.substring(0, 30)}{val.length > 30 ? '...' : ''}</span>; }
       }
-      return <span title={dom}>{dom}{record.unit && <span style={{ color: '#999', marginLeft: 4 }}>{record.unit}</span>}</span>;
+      return <span title={val}>{val}{record.unit && <span style={{ color: '#999', marginLeft: 4 }}>{record.unit}</span>}</span>;
     }},
     { title: '最后采集时间', dataIndex: 'lastUpdatedAt', sorter: true, render: (dom) => {
-      if (!dom) return <span style={{ color: '#999' }}>暂无</span>;
-      const date = new Date(dom);
+      const dt = dom as string | null | undefined;
+      if (!dt) return <span style={{ color: '#999' }}>暂无</span>;
+      const date = new Date(dt);
       const diffMins = Math.floor((Date.now() - date.getTime()) / 60000);
       const diffHours = Math.floor(diffMins / 60);
       const diffDays = Math.floor(diffHours / 24);
       const timeAgo = diffMins < 1 ? '刚刚' : diffMins < 60 ? `${diffMins}分钟前` : diffHours < 24 ? `${diffHours}小时前` : diffDays < 7 ? `${diffDays}天前` : '';
-      return <div><div>{dayjs(dom).format('YYYY-MM-DD HH:mm:ss')}</div>{timeAgo && <div style={{ fontSize: '12px', color: '#999', marginTop: 2 }}>{timeAgo}</div>}</div>;
+      return <div><div>{dayjs(dt).format('YYYY-MM-DD HH:mm:ss')}</div>{timeAgo && <div style={{ fontSize: '12px', color: '#999', marginTop: 2 }}>{timeAgo}</div>}</div>;
     }},
-    { title: '告警配置', dataIndex: 'alarmConfig', sorter: true, render: (dom) => dom?.isEnabled ? <Tag color="orange">已配置</Tag> : <Tag color="default">未配置</Tag> },
+    { title: '告警配置', dataIndex: 'alarmConfig', sorter: true, render: (dom) => (dom as any)?.isEnabled ? <Tag color="orange">已配置</Tag> : <Tag color="default">未配置</Tag> },
     { title: '启用', dataIndex: 'isEnabled', sorter: true, render: (dom) => <Tag color={dom ? 'success' : 'default'}>{dom ? '启用' : '禁用'}</Tag> },
     { title: '操作', valueType: 'option', fixed: 'right', width: 120, render: (_, record) => [
       <Button key="edit" type="link" icon={<EditOutlined />} onClick={() => { set({ editingDataPoint: record, formVisible: true }); form.setFieldsValue(record); }}>编辑</Button>,
@@ -103,13 +106,13 @@ const DataPointManagement = (props: any, ref: React.Ref<DataPointManagementRef>)
 
   return (
     <PageContainer title={<Space><DatabaseOutlined />数据点管理</Space>}>
-      {state.statistics && <Card style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>
+      {state.statistics && <ProCard style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>
         {[{ key: 'total', title: '数据点总数', icon: <DatabaseOutlined />, color: '#1890ff' },
           { key: 'enabled', title: '已启用', icon: <CheckCircleOutlined />, color: '#52c41a' },
           { key: 'disabled', title: '已禁用', icon: <CloseCircleOutlined />, color: '#8c8c8c' },
           { key: 'withAlarm', title: '已配置告警', icon: <ExclamationCircleOutlined />, color: '#faad14' }
         ].map(i => <Col xs={24} sm={12} md={6} key={i.key}><StatCard title={i.title} value={state.statistics![i.key as keyof typeof state.statistics]} icon={i.icon} color={i.color} /></Col>)}
-      </Row></Card>}
+      </Row></ProCard>}
 
       <ProTable actionRef={actionRef} request={async (params: any) => {
         const { current, pageSize } = params;
@@ -154,55 +157,55 @@ const DataPointManagement = (props: any, ref: React.Ref<DataPointManagementRef>)
       <Drawer title="数据点详情" placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingDataPoint: null })} size={isMobile ? 'large' : 800}>
         {state.viewingDataPoint && (
           <>
-            <Card title="基本信息" style={{ marginBottom: 16 }}>
-              <Descriptions column={isMobile ? 1 : 2} size="small">
-                <Descriptions.Item label="数据点名称" span={2}>{state.viewingDataPoint.title}</Descriptions.Item>
-                <Descriptions.Item label="数据点ID">{state.viewingDataPoint.dataPointId}</Descriptions.Item>
-                <Descriptions.Item label="所属设备">{state.devices.find(d => d.deviceId === state.viewingDataPoint.deviceId)?.title || state.viewingDataPoint.deviceId || '-'}</Descriptions.Item>
-                <Descriptions.Item label="数据类型"><Tag>{DATA_TYPE_LABELS[state.viewingDataPoint.dataType] || state.viewingDataPoint.dataType}</Tag></Descriptions.Item>
-                <Descriptions.Item label="单位">{state.viewingDataPoint.unit || '-'}</Descriptions.Item>
-                <Descriptions.Item label="采样间隔">{state.viewingDataPoint.samplingInterval} 秒</Descriptions.Item>
-                <Descriptions.Item label="只读"><Tag color={state.viewingDataPoint.isReadOnly ? 'orange' : 'green'}>{state.viewingDataPoint.isReadOnly ? '是' : '否'}</Tag></Descriptions.Item>
-                <Descriptions.Item label="启用状态"><Tag color={state.viewingDataPoint.isEnabled ? 'green' : 'red'}>{state.viewingDataPoint.isEnabled ? '启用' : '禁用'}</Tag></Descriptions.Item>
-              </Descriptions>
-            </Card>
+            <ProCard title="基本信息" style={{ marginBottom: 16 }}>
+              <ProDescriptions column={isMobile ? 1 : 2} size="small">
+                <ProDescriptions.Item label="数据点名称" span={2}>{state.viewingDataPoint.title}</ProDescriptions.Item>
+                <ProDescriptions.Item label="数据点ID">{state.viewingDataPoint.dataPointId}</ProDescriptions.Item>
+                <ProDescriptions.Item label="所属设备">{state.devices.find(d => d.deviceId === state.viewingDataPoint!.deviceId)?.title || state.viewingDataPoint!.deviceId || '-'}</ProDescriptions.Item>
+                <ProDescriptions.Item label="数据类型"><Tag>{DATA_TYPE_LABELS[state.viewingDataPoint.dataType] || state.viewingDataPoint.dataType}</Tag></ProDescriptions.Item>
+                <ProDescriptions.Item label="单位">{state.viewingDataPoint.unit || '-'}</ProDescriptions.Item>
+                <ProDescriptions.Item label="采样间隔">{state.viewingDataPoint.samplingInterval} 秒</ProDescriptions.Item>
+                <ProDescriptions.Item label="只读"><Tag color={state.viewingDataPoint.isReadOnly ? 'orange' : 'green'}>{state.viewingDataPoint.isReadOnly ? '是' : '否'}</Tag></ProDescriptions.Item>
+                <ProDescriptions.Item label="启用状态"><Tag color={state.viewingDataPoint.isEnabled ? 'green' : 'red'}>{state.viewingDataPoint.isEnabled ? '启用' : '禁用'}</Tag></ProDescriptions.Item>
+              </ProDescriptions>
+            </ProCard>
             {(state.viewingDataPoint.minValue !== undefined || state.viewingDataPoint.maxValue !== undefined) && (
-              <Card title="数值范围" style={{ marginBottom: 16 }}>
-                <Descriptions column={isMobile ? 1 : 2} size="small">
-                  <Descriptions.Item label="最小值">{state.viewingDataPoint.minValue !== undefined ? state.viewingDataPoint.minValue : '-'}</Descriptions.Item>
-                  <Descriptions.Item label="最大值">{state.viewingDataPoint.maxValue !== undefined ? state.viewingDataPoint.maxValue : '-'}</Descriptions.Item>
-                </Descriptions>
-              </Card>
+            <ProCard title="数值范围" style={{ marginBottom: 16 }}>
+              <ProDescriptions column={isMobile ? 1 : 2} size="small">
+                <ProDescriptions.Item label="最小值">{state.viewingDataPoint.minValue !== undefined ? state.viewingDataPoint.minValue : '-'}</ProDescriptions.Item>
+                <ProDescriptions.Item label="最大值">{state.viewingDataPoint.maxValue !== undefined ? state.viewingDataPoint.maxValue : '-'}</ProDescriptions.Item>
+              </ProDescriptions>
+            </ProCard>
             )}
             {state.viewingDataPoint.alarmConfig?.isEnabled && (
-              <Card title="告警配置" style={{ marginBottom: 16 }}>
-                <Descriptions column={isMobile ? 1 : 2} size="small">
-                  <Descriptions.Item label="告警状态"><Tag color="orange">已启用</Tag></Descriptions.Item>
-                  <Descriptions.Item label="告警类型">{state.viewingDataPoint.alarmConfig.alarmType || '-'}</Descriptions.Item>
-                  <Descriptions.Item label="阈值">{state.viewingDataPoint.alarmConfig.threshold || '-'}</Descriptions.Item>
-                  <Descriptions.Item label="级别">{state.viewingDataPoint.alarmConfig.level || '-'}</Descriptions.Item>
-                </Descriptions>
-              </Card>
+            <ProCard title="告警配置" style={{ marginBottom: 16 }}>
+              <ProDescriptions column={isMobile ? 1 : 2} size="small">
+                <ProDescriptions.Item label="告警状态"><Tag color="orange">已启用</Tag></ProDescriptions.Item>
+                <ProDescriptions.Item label="告警类型">{state.viewingDataPoint.alarmConfig.alarmType || '-'}</ProDescriptions.Item>
+                <ProDescriptions.Item label="阈值">{state.viewingDataPoint.alarmConfig.threshold || '-'}</ProDescriptions.Item>
+                <ProDescriptions.Item label="级别">{state.viewingDataPoint.alarmConfig.level || '-'}</ProDescriptions.Item>
+              </ProDescriptions>
+            </ProCard>
             )}
-            <Card title="最后采集数据" style={{ marginBottom: 16 }}>
+            <ProCard title="最后采集数据" style={{ marginBottom: 16 }}>
               {state.viewingDataPoint.lastValue ? (
-                <Descriptions column={1} size="small">
-                  <Descriptions.Item label="数据值">{state.viewingDataPoint.lastValue}{state.viewingDataPoint.unit && <span style={{ color: '#999', marginLeft: 4 }}>{state.viewingDataPoint.unit}</span>}</Descriptions.Item>
-                  {state.viewingDataPoint.lastUpdatedAt && <Descriptions.Item label="采集时间">{dayjs(state.viewingDataPoint.lastUpdatedAt).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>}
-                </Descriptions>
+                <ProDescriptions column={1} size="small">
+                  <ProDescriptions.Item label="数据值">{state.viewingDataPoint.lastValue}{state.viewingDataPoint.unit && <span style={{ color: '#999', marginLeft: 4 }}>{state.viewingDataPoint.unit}</span>}</ProDescriptions.Item>
+                  {state.viewingDataPoint.lastUpdatedAt && <ProDescriptions.Item label="采集时间">{dayjs(state.viewingDataPoint.lastUpdatedAt).format('YYYY-MM-DD HH:mm:ss')}</ProDescriptions.Item>}
+                </ProDescriptions>
               ) : <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>暂无采集数据</div>}
-            </Card>
-            <Card title="时间信息">
-              <Descriptions column={isMobile ? 1 : 2} size="small">
-                <Descriptions.Item label="创建时间">{state.viewingDataPoint.createdAt ? dayjs(state.viewingDataPoint.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
-              </Descriptions>
-            </Card>
+            </ProCard>
+            <ProCard title="时间信息">
+              <ProDescriptions column={isMobile ? 1 : 2} size="small">
+                <ProDescriptions.Item label="创建时间">{state.viewingDataPoint.createdAt ? dayjs(state.viewingDataPoint.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
+              </ProDescriptions>
+            </ProCard>
           </>
         )}
       </Drawer>
     </PageContainer>
   );
-};
+});
 
 DataPointManagement.displayName = 'DataPointManagement';
 export default DataPointManagement;

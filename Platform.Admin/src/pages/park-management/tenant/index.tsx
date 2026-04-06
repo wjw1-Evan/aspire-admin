@@ -2,8 +2,10 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { StatCard } from '@/components';
 import { request } from '@umijs/max';
-import { App, Card, Row, Col, Tag, Typography, Descriptions, Drawer, Table, Empty, Rate, Button, Space } from 'antd';
+import { App, Row, Col, Tag, Typography, Empty, Rate, Button, Space } from 'antd';
+import { Drawer } from 'antd';
 import { ProTable, ProColumns } from '@ant-design/pro-table';
+import { ProDescriptions } from '@ant-design/pro-components';
 import { ModalForm, ProFormText, ProFormDatePicker } from '@ant-design/pro-form';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, UserOutlined, WarningOutlined, ReloadOutlined, CalendarOutlined, CustomerServiceOutlined, FileTextOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -49,7 +51,7 @@ const TenantManagement: React.FC = () => {
         { title: '入驻日期', dataIndex: 'entryDate', sorter: true, width: 110, render: (date) => date ? dayjs(date as string).format('YYYY-MM-DD') : '-' },
         { title: '租用单元', dataIndex: 'unitCount', sorter: true, width: 80, align: 'center' },
         { title: '有效合同', dataIndex: 'activeContracts', sorter: true, width: 80, align: 'center', render: (count) => { const c = (count as number) || 0; return <Tag color={c > 0 ? '#52c41a' : '#d9d9d9'}>{c}</Tag>; } },
-        { title: '状态', dataIndex: 'status', sorter: true, width: 100, render: (status) => { const opt = tenantStatusOptions.find(o => o.value === status); return <Tag color={opt?.color || 'default'}>{opt?.label || status}</Tag>; } },
+        { title: '状态', dataIndex: 'status', sorter: true, width: 100, render: (_: any, record) => { const opt = tenantStatusOptions.find(o => o.value === record.status); return <Tag color={opt?.color || 'default'}>{opt?.label || record.status}</Tag>; } },
         { title: '操作', valueType: 'option', width: 220, fixed: 'right', render: (_, record) => [
             <Button key="view" type="link" icon={<EyeOutlined />} onClick={() => handleViewTenant(record)}>详情</Button>,
             <Button key="service" type="link" icon={<CustomerServiceOutlined />} onClick={() => window.location.href = `/park-management/enterprise-service?tenantId=${record.id}&tenantName=${encodeURIComponent(record.tenantName)}`}>服务</Button>,
@@ -76,9 +78,10 @@ const TenantManagement: React.FC = () => {
     const handleDeleteTenant = async (id: string) => { const res = await api.delete(id); if (res.success) { message.success('删除成功'); actionRef.current?.reload(); loadStatistics(); } else message.error('删除失败'); };
 
     return (
-        <PageContainer title={<Space><UserOutlined />租户管理</Space>} extra={
-            <Space><Button icon={<ReloadOutlined />} onClick={() => { actionRef.current?.reload(); loadStatistics(); }}>刷新</Button><Button type="primary" icon={<PlusOutlined />} onClick={() => set({ editingTenant: null, formVisible: true })}>新增租户</Button></Space>
-        }>
+        <PageContainer title={<Space><UserOutlined />租户管理</Space>}
+            breadcrumb={{ routes: [{ path: '/', breadcrumbName: '首页' }, { path: '/park', breadcrumbName: '园区管理' }, { path: '/park/tenant', breadcrumbName: '租户管理' }] }}
+            extra={<Space><Button icon={<ReloadOutlined />} onClick={() => { actionRef.current?.reload(); loadStatistics(); }}>刷新</Button><Button type="primary" icon={<PlusOutlined />} onClick={() => set({ editingTenant: null, formVisible: true })}>新增租户</Button></Space>}
+        >
             {state.statistics && <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
                 <Col xs={24} sm={12} md={6}><StatCard title="租户总数" value={state.statistics.totalTenants} icon={<UserOutlined />} color="#1890ff" suffix={<Typography.Text type="secondary" style={{ fontSize: 12 }}>活跃: {state.statistics.activeTenants}</Typography.Text>} /></Col>
                 <Col xs={24} sm={12} md={6}><StatCard title="合同总数" value={state.statistics.totalContracts} icon={<FileTextOutlined />} color="#52c41a" suffix={<Typography.Text type="secondary" style={{ fontSize: 12 }}>有效: {state.statistics.activeContracts}</Typography.Text>} /></Col>
@@ -106,29 +109,29 @@ const TenantManagement: React.FC = () => {
                 <ProFormText name="notes" label="备注" placeholder="备注信息" />
             </ModalForm>
 
-            <Drawer title={state.viewingTenant?.tenantName || '租户详情'} open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingTenant: null })} size={720} loading={detailData.loading}>
+            <Drawer title={state.viewingTenant?.tenantName || '租户详情'} open={state.detailVisible} onClose={(open) => { if (!open) set({ detailVisible: false, viewingTenant: null }); }} width={720} loading={detailData.loading}>
                 {state.viewingTenant && <div>
                     <Typography.Text strong style={{ fontSize: 16, marginBottom: 12, display: 'block' }}>基本信息</Typography.Text>
-                    <Descriptions bordered column={2} size="small" style={{ marginBottom: 24 }}>
-                        <Descriptions.Item label="租户名称">{state.viewingTenant.tenantName}</Descriptions.Item>
-                        <Descriptions.Item label="行业">{state.viewingTenant.industry || '-'}</Descriptions.Item>
-                        <Descriptions.Item label="联系人">{state.viewingTenant.contactPerson || '-'}</Descriptions.Item>
-                        <Descriptions.Item label="电话">{state.viewingTenant.phone || '-'}</Descriptions.Item>
-                        <Descriptions.Item label="邮箱" span={2}>{state.viewingTenant.email || '-'}</Descriptions.Item>
-                        <Descriptions.Item label="入驻日期">{state.viewingTenant.entryDate ? dayjs(state.viewingTenant.entryDate).format('YYYY-MM-DD') : '-'}</Descriptions.Item>
-                        <Descriptions.Item label="状态"><Tag color={tenantStatusOptions.find(o => o.value === state.viewingTenant?.status)?.color}>{tenantStatusOptions.find(o => o.value === state.viewingTenant?.status)?.label || state.viewingTenant?.status}</Tag></Descriptions.Item>
-                        <Descriptions.Item label="租用单元">{state.viewingTenant.unitCount}个</Descriptions.Item>
-                        <Descriptions.Item label="有效合同">{state.viewingTenant.activeContracts}份</Descriptions.Item>
-                    </Descriptions>
+                    <ProDescriptions column={2} bordered size="small" style={{ marginBottom: 24 }}>
+                        <ProDescriptions.Item label="租户名称">{state.viewingTenant.tenantName}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="行业">{state.viewingTenant.industry || '-'}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="联系人">{state.viewingTenant.contactPerson || '-'}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="电话">{state.viewingTenant.phone || '-'}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="邮箱" span={2}>{state.viewingTenant.email || '-'}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="入驻日期">{state.viewingTenant.entryDate ? dayjs(state.viewingTenant.entryDate).format('YYYY-MM-DD') : '-'}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="状态"><Tag color={tenantStatusOptions.find(o => o.value === state.viewingTenant?.status)?.color}>{tenantStatusOptions.find(o => o.value === state.viewingTenant?.status)?.label || state.viewingTenant?.status}</Tag></ProDescriptions.Item>
+                        <ProDescriptions.Item label="租用单元">{state.viewingTenant.unitCount}个</ProDescriptions.Item>
+                        <ProDescriptions.Item label="有效合同">{state.viewingTenant.activeContracts}份</ProDescriptions.Item>
+                    </ProDescriptions>
 
                     <Typography.Text strong style={{ fontSize: 16, marginBottom: 12, display: 'block' }}>合同记录 ({detailData.contracts.length})</Typography.Text>
-                    {detailData.contracts.length > 0 ? <Table size="small" dataSource={detailData.contracts} rowKey="id" pagination={false} style={{ marginBottom: 24 }} columns={[{ title: '合同编号', dataIndex: 'contractNumber', width: 120 }, { title: '月租金', dataIndex: 'monthlyRent', width: 100, render: (v: number) => `¥${v?.toLocaleString()}` }, { title: '预估总额', dataIndex: 'totalAmount', width: 100, render: (v: number) => v ? `¥${v?.toLocaleString()}` : '-' }, { title: '起止日期', key: 'dates', width: 180, render: (_, r: LeaseContract) => `${dayjs(r.startDate).format('YYYY-MM-DD')} ~ ${dayjs(r.endDate).format('YYYY-MM-DD')}` }, { title: '状态', dataIndex: 'status', width: 80, render: (s: string) => <Tag color={contractStatusOptions.find(o => o.value === s)?.color}>{contractStatusOptions.find(o => o.value === s)?.label || s}</Tag> }]} /> : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无数据" />}
+                    {detailData.contracts.length > 0 ? <ProTable size="small" dataSource={detailData.contracts} rowKey="id" search={false} pagination={false} options={false} toolBarRender={false} style={{ marginBottom: 24 }} columns={[{ title: '合同编号', dataIndex: 'contractNumber', width: 120 }, { title: '月租金', dataIndex: 'monthlyRent', width: 100, render: (_: any, r: LeaseContract) => `¥${(r.monthlyRent as number)?.toLocaleString()}` }, { title: '预估总额', dataIndex: 'totalAmount', width: 100, render: (_: any, r: LeaseContract) => r.totalAmount ? `¥${(r.totalAmount as number)?.toLocaleString()}` : '-' }, { title: '起止日期', key: 'dates', width: 180, render: (_: any, r: LeaseContract) => `${dayjs(r.startDate).format('YYYY-MM-DD')} ~ ${dayjs(r.endDate).format('YYYY-MM-DD')}` }, { title: '状态', dataIndex: 'status', width: 80, render: (_: any, r: LeaseContract) => { const s = r.status as string; return <Tag color={contractStatusOptions.find(o => o.value === s)?.color}>{contractStatusOptions.find(o => o.value === s)?.label || s}</Tag>; } }]} /> : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无数据" />}
 
                     <Typography.Text strong style={{ fontSize: 16, marginBottom: 12, display: 'block' }}>服务申请 ({detailData.serviceRequests.length})</Typography.Text>
-                    {detailData.serviceRequests.length > 0 ? <Table size="small" dataSource={detailData.serviceRequests} rowKey="id" pagination={false} style={{ marginBottom: 24 }} columns={[{ title: '标题', dataIndex: 'title', ellipsis: true }, { title: '类别', dataIndex: 'categoryName', width: 80 }, { title: '状态', dataIndex: 'status', width: 80, render: (s: string) => { const statusMap: Record<string, { label: string; color: string }> = { Pending: { label: '待处理', color: 'orange' }, Processing: { label: '处理中', color: 'processing' }, Completed: { label: '已完成', color: 'green' }, Cancelled: { label: '已取消', color: 'default' } }; return <Tag color={statusMap[s]?.color}>{statusMap[s]?.label || s}</Tag>; } }, { title: '评分', dataIndex: 'rating', width: 100, render: (r: number) => r ? <Rate disabled value={r} style={{ fontSize: 12 }} /> : '-' }, { title: '创建时间', dataIndex: 'createdAt', width: 100, render: (d: string) => dayjs(d).format('MM-DD HH:mm') }]} /> : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无服务申请" />}
+                    {detailData.serviceRequests.length > 0 ? <ProTable size="small" dataSource={detailData.serviceRequests} rowKey="id" search={false} pagination={false} options={false} toolBarRender={false} style={{ marginBottom: 24 }} columns={[{ title: '标题', dataIndex: 'title', ellipsis: true }, { title: '类别', dataIndex: 'categoryName', width: 80 }, { title: '状态', dataIndex: 'status', width: 80, render: (_: any, r: ServiceRequest) => { const s = r.status as string; const statusMap: Record<string, { label: string; color: string }> = { Pending: { label: '待处理', color: 'orange' }, Processing: { label: '处理中', color: 'processing' }, Completed: { label: '已完成', color: 'green' }, Cancelled: { label: '已取消', color: 'default' } }; return <Tag color={statusMap[s]?.color}>{statusMap[s]?.label || s}</Tag>; } }, { title: '评分', dataIndex: 'rating', width: 100, render: (_: any, r: ServiceRequest) => r.rating ? <Rate disabled value={r.rating} style={{ fontSize: 12 }} /> : '-' }, { title: '创建时间', dataIndex: 'createdAt', width: 100, render: (_: any, r: ServiceRequest) => dayjs(r.createdAt).format('MM-DD HH:mm') }]} /> : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无服务申请" />}
 
                     <Typography.Text strong style={{ fontSize: 16, marginBottom: 12, display: 'block' }}>缴费记录 ({detailData.payments.length})</Typography.Text>
-                    {detailData.payments.length > 0 ? <Table size="small" dataSource={detailData.payments} rowKey="id" pagination={false} columns={[{ title: '合同', dataIndex: 'contractNumber', width: 100 }, { title: '类型', dataIndex: 'paymentType', width: 80, render: (t: string) => { const typeMap: Record<string, { label: string; color: string }> = { Rent: { label: '房租', color: 'blue' }, PropertyFee: { label: '物业费', color: 'orange' }, Deposit: { label: '押金', color: 'purple' }, Other: { label: '其他', color: 'default' } }; return <Tag color={typeMap[t]?.color || 'default'}>{typeMap[t]?.label || t || '房租'}</Tag>; } }, { title: '金额', dataIndex: 'amount', width: 100, render: (v: number) => <Typography.Text type="success">¥{v?.toLocaleString()}</Typography.Text> }, { title: '缴费日期', dataIndex: 'paymentDate', width: 100, render: (d: string) => dayjs(d).format('YYYY-MM-DD') }, { title: '方式', dataIndex: 'paymentMethod', width: 80 }, { title: '备注', dataIndex: 'notes', ellipsis: true }]} /> : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无缴费记录" />}
+                    {detailData.payments.length > 0 ? <ProTable size="small" dataSource={detailData.payments} rowKey="id" search={false} pagination={false} options={false} toolBarRender={false} columns={[{ title: '合同', dataIndex: 'contractNumber', width: 100 }, { title: '类型', dataIndex: 'paymentType', width: 80, render: (_: any, r: LeasePaymentRecord & { contractNumber?: string }) => { const t = r.paymentType as string; const typeMap: Record<string, { label: string; color: string }> = { Rent: { label: '房租', color: 'blue' }, PropertyFee: { label: '物业费', color: 'orange' }, Deposit: { label: '押金', color: 'purple' }, Other: { label: '其他', color: 'default' } }; return <Tag color={typeMap[t]?.color || 'default'}>{typeMap[t]?.label || t || '房租'}</Tag>; } }, { title: '金额', dataIndex: 'amount', width: 100, render: (_: any, r: LeasePaymentRecord & { contractNumber?: string }) => <Typography.Text type="success">¥{(r.amount as number)?.toLocaleString()}</Typography.Text> }, { title: '缴费日期', dataIndex: 'paymentDate', width: 100, render: (_: any, r: LeasePaymentRecord & { contractNumber?: string }) => dayjs(r.paymentDate).format('YYYY-MM-DD') }, { title: '方式', dataIndex: 'paymentMethod', width: 80 }, { title: '备注', dataIndex: 'notes', ellipsis: true }]} /> : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无缴费记录" />}
                 </div>}
             </Drawer>
         </PageContainer>

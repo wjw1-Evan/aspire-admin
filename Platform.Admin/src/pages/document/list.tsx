@@ -1,7 +1,8 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { StatCard } from '@/components';
-import { Space, Tag, Button, Card, Row, Col, Drawer, message } from 'antd';
+import { Space, Tag, Button, Row, Col, Drawer, message } from 'antd';
+import { ProCard } from '@ant-design/pro-components';
 import { FileTextOutlined, PlusOutlined, EyeOutlined, EditOutlined, SendOutlined, DeleteOutlined, ReloadOutlined, FileProtectOutlined, ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import dayjs from 'dayjs';
@@ -72,9 +73,11 @@ const DocumentManagement: React.FC = () => {
   ];
 
   return (
-    <PageContainer title={<Space><FileTextOutlined />公文管理</Space>}>
+    <PageContainer title={<Space><FileTextOutlined />公文管理</Space>}
+      breadcrumb={{ routes: [{ path: '/', breadcrumbName: '首页' }, { path: '/document', breadcrumbName: '公文管理' }] }}
+    >
       {state.statistics && (
-        <Card style={{ marginBottom: 16 }}>
+        <ProCard style={{ marginBottom: 16 }}>
           <Row gutter={[12, 12]}>
             {[
               { key: 'totalDocuments', title: '总数', icon: <FileTextOutlined />, color: '#1890ff' },
@@ -88,7 +91,7 @@ const DocumentManagement: React.FC = () => {
               </Col>
             ))}
           </Row>
-        </Card>
+        </ProCard>
       )}
 
       <ProTable actionRef={actionRef}
@@ -131,9 +134,9 @@ const DocumentDetail: React.FC<{ id: string }> = ({ id }) => {
         <Col span={12}>更新时间：{dayjs(doc.updatedAt).format('YYYY-MM-DD HH:mm')}</Col>
       </Row>
       {doc.content && (
-        <Card title="内容" style={{ marginTop: 16 }}>
+        <ProCard title="内容" style={{ marginTop: 16 }}>
           <div dangerouslySetInnerHTML={{ __html: doc.content }} />
-        </Card>
+        </ProCard>
       )}
     </div>
   );

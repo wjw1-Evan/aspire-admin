@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Button, Space, Modal, Form, Input, Switch, Tag, App } from 'antd';
+import { Button, Space, Modal, Tag, App } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, BookOutlined, FolderOpenOutlined } from '@ant-design/icons';
 import { useIntl, history } from '@umijs/max';
 import { PageContainer } from '@ant-design/pro-components';
 import { ProTable, ProColumns } from '@ant-design/pro-table';
+import { ModalForm, ProFormText, ProFormTextArea, ProFormSwitch } from '@ant-design/pro-components';
 import * as kbService from '@/services/workflow/knowledge-base';
 import type { KnowledgeBase } from '@/services/workflow/knowledge-base';
 import type { PageParams } from '@/types';
@@ -14,7 +15,11 @@ const KnowledgeBaseManagement: React.FC = () => {
   const { message } = App.useApp();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingKb, setEditingKb] = useState<KnowledgeBase | null>(null);
-  const [form] = Form.useForm();
+
+  const handleOpenModal = (kb: KnowledgeBase | null) => {
+    setEditingKb(kb);
+    setIsModalVisible(true);
+  };
 
   const handleDelete = (record: KnowledgeBase) => {
     Modal.confirm({
@@ -100,7 +105,7 @@ const KnowledgeBaseManagement: React.FC = () => {
       render: (_: any, record: KnowledgeBase) => (
         <Space>
           <Button type="link" size="small" icon={<FolderOpenOutlined />} onClick={() => history.push(`/workflow/knowledge-base/documents/${record.id}`)}>管理内容</Button>
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { setEditingKb(record); form.setFieldsValue(record); setIsModalVisible(true); }}>编辑</Button>
+          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleOpenModal(record)}>编辑</Button>
           <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)}>删除</Button>
         </Space>
       ),
@@ -110,7 +115,7 @@ const KnowledgeBaseManagement: React.FC = () => {
   return (
     <PageContainer title={intl.formatMessage({ id: 'pages.workflow.knowledgeBase.title' })}
       extra={
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingKb(null); form.resetFields(); setIsModalVisible(true); }}>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => handleOpenModal(null)}>
           {intl.formatMessage({ id: 'pages.workflow.knowledgeBase.add' })}
         </Button>
       }
@@ -131,12 +136,11 @@ const KnowledgeBaseManagement: React.FC = () => {
         scroll={{ x: 'max-content' }}
       />
 
-      <Modal
+      <ModalForm
         title={editingKb ? intl.formatMessage({ id: 'pages.workflow.knowledgeBase.edit' }) : intl.formatMessage({ id: 'pages.workflow.knowledgeBase.add' })}
         open={isModalVisible}
-        onCancel={() => setIsModalVisible(false)}
-        onOk={async () => {
-          const values = await form.validateFields();
+        onOpenChange={(open) => { if (!open) setIsModalVisible(false); }}
+        onFinish={async (values) => {
           try {
             if (editingKb) {
               await kbService.updateKnowledgeBase(editingKb.id, values);
@@ -148,23 +152,16 @@ const KnowledgeBaseManagement: React.FC = () => {
           } catch {
             message.error('操作失败');
           }
+          return true;
         }}
+        initialValues={editingKb || { isActive: true }}
+        width={500}
       >
-        <Form form={form} layout="vertical" initialValues={editingKb || undefined}>
-          <Form.Item name="name" label="名称" rules={[{ required: true, message: '请输入知识库名称' }]}>
-            <Input placeholder="请输入知识库名称" />
-          </Form.Item>
-          <Form.Item name="description" label="描述">
-            <Input.TextArea placeholder="请输入描述" rows={3} />
-          </Form.Item>
-          <Form.Item name="category" label="分类">
-            <Input placeholder="请输入分类" />
-          </Form.Item>
-          <Form.Item name="isActive" label="启用" valuePropName="checked" initialValue={true}>
-            <Switch />
-          </Form.Item>
-        </Form>
-      </Modal>
+        <ProFormText name="name" label="名称" rules={[{ required: true, message: '请输入知识库名称' }]} placeholder="请输入知识库名称" />
+        <ProFormTextArea name="description" label="描述" placeholder="请输入描述" />
+        <ProFormText name="category" label="分类" placeholder="请输入分类" />
+        <ProFormSwitch name="isActive" label="启用" />
+      </ModalForm>
     </PageContainer>
   );
 };

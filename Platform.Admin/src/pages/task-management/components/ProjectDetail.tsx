@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Drawer, Descriptions, Tag, Progress, Tabs, Space, Button, Grid } from 'antd';
+import { Tag, Progress, Tabs, Space, Button, Grid } from 'antd';
+import { Drawer as AntDrawer } from 'antd';
+import { ProDescriptions } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 
 const { useBreakpoint } = Grid;
@@ -72,7 +74,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
   const priorityInfo = priorityMap[project.priority] || { color: 'default', text: intl.formatMessage({ id: 'pages.table.unknown' }) };
 
   return (
-    <Drawer
+    <AntDrawer
       title={
         <Space>
           <ProjectOutlined />
@@ -80,8 +82,8 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
         </Space>
       }
       open={true}
-      onClose={onClose}
-      size={isMobile ? 'large' : 900}
+      onClose={() => onClose()}
+      width={isMobile ? 'large' : 900}
     >
       <Tabs
         items={[
@@ -90,39 +92,39 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
             label: intl.formatMessage({ id: 'pages.projectManagement.detail.basicInfo' }),
             icon: <ProjectOutlined />,
             children: (
-              <Descriptions column={isMobile ? 1 : 2} bordered>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.table.name' })}>{project.name}</Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.table.status' })}>
+              <ProDescriptions column={isMobile ? 1 : 2} bordered>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.table.name' })}>{project.name}</ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.table.status' })}>
                   <Tag color={statusInfo.color}>{statusInfo.text}</Tag>
-                </Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.table.priority' })}>
+                </ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.table.priority' })}>
                   <Tag color={priorityInfo.color}>{priorityInfo.text}</Tag>
-                </Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.table.progress' })}>
+                </ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.table.progress' })}>
                   <Progress percent={project.progress} size="small" />
-                </Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.table.manager' })}>
+                </ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.table.manager' })}>
                   {project.managerName || '-'}
-                </Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.detail.budget' })}>
+                </ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.detail.budget' })}>
                   {project.budget ? `¥${project.budget.toLocaleString()}` : '-'}
-                </Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.table.startDate' })} span={1}>
+                </ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.table.startDate' })} span={1}>
                   {project.startDate || '-'}
-                </Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.table.endDate' })} span={1}>
+                </ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.table.endDate' })} span={1}>
                   {project.endDate || '-'}
-                </Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.detail.description' })} span={2}>
+                </ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.detail.description' })} span={2}>
                   {project.description || '-'}
-                </Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.table.createdAt' })}>
+                </ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.table.createdAt' })}>
                   {project.createdAt}
-                </Descriptions.Item>
-                <Descriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.detail.createdBy' })}>
+                </ProDescriptions.Item>
+                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.detail.createdBy' })}>
                   {project.createdByName || '-'}
-                </Descriptions.Item>
-              </Descriptions>
+                </ProDescriptions.Item>
+              </ProDescriptions>
             ),
           },
           {
@@ -151,7 +153,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
           },
         ]}
       />
-    </Drawer>
+    </AntDrawer>
   );
 };
 

@@ -1,7 +1,8 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { StatCard } from '@/components';
-import { Space, Tag, Button, Card, Row, Col, Tabs, Drawer, message } from 'antd';
+import { Space, Tag, Button, Row, Col, Tabs, Drawer, message } from 'antd';
+import { ProCard } from '@ant-design/pro-components';
 import { CheckCircleOutlined, FileTextOutlined, CloseOutlined, ReloadOutlined, EyeOutlined, CheckOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import dayjs from 'dayjs';
@@ -111,7 +112,7 @@ const ApprovalPage: React.FC = () => {
   return (
     <PageContainer title={<Space><CheckCircleOutlined />公文审批</Space>}>
       {state.statistics && (
-        <Card style={{ marginBottom: 16 }}>
+        <ProCard style={{ marginBottom: 16 }}>
           <Row gutter={[12, 12]}>
             <Col xs={12} sm={8} md={6}>
               <StatCard title="待审批" value={state.statistics.pendingCount} icon={<CheckCircleOutlined />} color="#faad14" />
@@ -126,7 +127,7 @@ const ApprovalPage: React.FC = () => {
               <StatCard title="已拒绝" value={state.statistics.rejectedCount} icon={<CloseOutlined />} color="#ff4d4f" />
             </Col>
           </Row>
-        </Card>
+        </ProCard>
       )}
 
       <Tabs
@@ -174,9 +175,9 @@ const DocumentDetail: React.FC<{ id: string }> = ({ id }) => {
         <Col span={12}>更新时间：{dayjs(doc.updatedAt).format('YYYY-MM-DD HH:mm')}</Col>
       </Row>
       {doc.content && (
-        <Card title="内容" style={{ marginTop: 16 }}>
+        <ProCard title="内容" style={{ marginTop: 16 }}>
           <div dangerouslySetInnerHTML={{ __html: doc.content }} />
-        </Card>
+        </ProCard>
       )}
     </div>
   );

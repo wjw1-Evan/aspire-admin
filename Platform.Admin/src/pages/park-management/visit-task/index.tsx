@@ -1,8 +1,11 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { StatCard } from '@/components';
 import { useIntl, request } from '@umijs/max';
-import { Tag, Space, Card, Row, Col, Button, Popconfirm, Drawer, Descriptions, Typography, AutoComplete, Input, Divider, Form, App } from 'antd';
+import { ProCard } from '@ant-design/pro-components';
+import { Tag, Space, Row, Col, Button, Popconfirm, Typography, AutoComplete, Input, Divider, Form, App } from 'antd';
+import { Drawer } from 'antd';
+import { ProDescriptions } from '@ant-design/pro-components';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormDateTimePicker } from '@ant-design/pro-form';
 import { PlusOutlined, ReloadOutlined, UserOutlined, CheckCircleOutlined, SyncOutlined, CloseCircleOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
@@ -64,12 +67,12 @@ const VisitTaskPage: React.FC = () => {
         <PageContainer title="走访任务管理" extra={
             <Space><Button icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>刷新</Button><Button type="primary" icon={<PlusOutlined />} onClick={() => set({ editingTask: null, formVisible: true })}>新增任务</Button></Space>
         }>
-            {state.statistics && <Card style={{ marginBottom: 16 }}><Row gutter={[16, 16]}>
+            {state.statistics && <ProCard style={{ marginBottom: 16 }}><Row gutter={[16, 16]}>
                 <Col xs={24} sm={12} md={6}><StatCard title="待处理任务" value={state.statistics.pendingTasks} icon={<SyncOutlined />} color="#faad14" /></Col>
                 <Col xs={24} sm={12} md={6}><StatCard title="本月走访数" value={state.statistics.completedTasksThisMonth} icon={<CheckCircleOutlined />} color="#52c41a" /></Col>
                 <Col xs={24} sm={12} md={6}><StatCard title="活跃企管员" value={state.statistics.activeManagers} icon={<UserOutlined />} color="#1890ff" /></Col>
                 <Col xs={24} sm={12} md={6}><StatCard title="完成率" value={`${state.statistics.completionRate}%`} icon={<SyncOutlined />} color={state.statistics.completionRate >= 90 ? '#52c41a' : '#faad14'} /></Col>
-            </Row></Card>}
+            </Row></ProCard>}
 
             <ProTable actionRef={actionRef} request={async (params: any) => {
                 const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
@@ -103,31 +106,31 @@ const VisitTaskPage: React.FC = () => {
                 {state.editingTask && (<><Row gutter={16}><Col span={12}><ProFormSelect name="status" label="任务状态" options={[{ value: 'Pending', label: '待派发' }, { value: 'InProgress', label: '进行中' }, { value: 'Completed', label: '已完成' }, { value: 'Cancelled', label: '已取消' }]} /></Col></Row><ProFormText name="content" label="走访纪要" placeholder="详细记录走访沟通内容" /><ProFormText name="feedback" label="企业诉求/反馈" placeholder="企业提出的问题或建议" /></>)}
             </ModalForm>
 
-            <Drawer title="走访任务详情" placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, selectedTask: null })} size={640}
+            <Drawer title="走访任务详情" placement="right" open={state.detailVisible} onClose={(open) => { if (!open) set({ detailVisible: false, selectedTask: null }); }} width={640}
                 extra={<Space><Button onClick={() => set({ detailVisible: false })}>关闭</Button><Button type="primary" icon={<EditOutlined />} onClick={() => { set({ detailVisible: false, editingTask: state.selectedTask, formVisible: true }); }}>编辑</Button></Space>}>
                 {state.selectedTask ? (<Space direction="vertical" size="large" style={{ width: '100%' }}>
-                    <Descriptions title="基本信息" bordered column={2}>
-                        <Descriptions.Item label="任务标题" span={2}>{state.selectedTask.title}</Descriptions.Item>
-                        <Descriptions.Item label="走访类型">{state.selectedTask.visitType}</Descriptions.Item>
-                        <Descriptions.Item label="走访方式">{state.selectedTask.visitMethod}</Descriptions.Item>
-                        <Descriptions.Item label="企管员">{state.selectedTask.managerName}</Descriptions.Item>
-                        <Descriptions.Item label="联系电话">{state.selectedTask.phone}</Descriptions.Item>
-                        <Descriptions.Item label="任务状态"><Tag color={statusMap[state.selectedTask.status]?.color} icon={statusMap[state.selectedTask.status]?.icon}>{statusMap[state.selectedTask.status]?.text}</Tag></Descriptions.Item>
-                        <Descriptions.Item label="创建时间">{dayjs(state.selectedTask.createdAt).format('YYYY-MM-DD')}</Descriptions.Item>
-                        <Descriptions.Item label="计划说明" span={2}>{state.selectedTask.details || '-'}</Descriptions.Item>
-                    </Descriptions>
-                    <Descriptions title="受访信息" bordered column={2}>
-                        <Descriptions.Item label="受访企业" span={2}>{state.selectedTask.tenantName || '-'}</Descriptions.Item>
-                        <Descriptions.Item label="受访人">{state.selectedTask.intervieweeName || '-'}</Descriptions.Item>
-                        <Descriptions.Item label="职务">{state.selectedTask.intervieweePosition || '-'}</Descriptions.Item>
-                        <Descriptions.Item label="走访地点" span={2}>{state.selectedTask.visitLocation || '-'}</Descriptions.Item>
-                        <Descriptions.Item label="走访时间">{state.selectedTask.visitDate ? dayjs(state.selectedTask.visitDate).format('YYYY-MM-DD HH:mm') : '-'}</Descriptions.Item>
-                        <Descriptions.Item label="执行人">{state.selectedTask.visitor || '-'}</Descriptions.Item>
-                    </Descriptions>
-                    <Descriptions title="走访结果" bordered column={1}>
-                        <Descriptions.Item label="走访纪要"><Typography.Text style={{ whiteSpace: 'pre-wrap' }}>{state.selectedTask.content || '暂无记录'}</Typography.Text></Descriptions.Item>
-                        <Descriptions.Item label="企业诉求/反馈"><Typography.Text style={{ whiteSpace: 'pre-wrap' }}>{state.selectedTask.feedback || '暂无反馈'}</Typography.Text></Descriptions.Item>
-                    </Descriptions>
+                    <ProDescriptions title="基本信息" bordered column={2}>
+                        <ProDescriptions.Item label="任务标题" span={2}>{state.selectedTask.title}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="走访类型">{state.selectedTask.visitType}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="走访方式">{state.selectedTask.visitMethod}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="企管员">{state.selectedTask.managerName}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="联系电话">{state.selectedTask.phone}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="任务状态"><Tag color={statusMap[state.selectedTask.status]?.color} icon={statusMap[state.selectedTask.status]?.icon}>{statusMap[state.selectedTask.status]?.text}</Tag></ProDescriptions.Item>
+                        <ProDescriptions.Item label="创建时间">{dayjs(state.selectedTask.createdAt).format('YYYY-MM-DD')}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="计划说明" span={2}>{state.selectedTask.details || '-'}</ProDescriptions.Item>
+                    </ProDescriptions>
+                    <ProDescriptions title="受访信息" bordered column={2}>
+                        <ProDescriptions.Item label="受访企业" span={2}>{state.selectedTask.tenantName || '-'}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="受访人">{state.selectedTask.intervieweeName || '-'}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="职务">{state.selectedTask.intervieweePosition || '-'}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="走访地点" span={2}>{state.selectedTask.visitLocation || '-'}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="走访时间">{state.selectedTask.visitDate ? dayjs(state.selectedTask.visitDate).format('YYYY-MM-DD HH:mm') : '-'}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="执行人">{state.selectedTask.visitor || '-'}</ProDescriptions.Item>
+                    </ProDescriptions>
+                    <ProDescriptions title="走访结果" bordered column={1}>
+                        <ProDescriptions.Item label="走访纪要"><Typography.Text style={{ whiteSpace: 'pre-wrap' }}>{state.selectedTask.content || '暂无记录'}</Typography.Text></ProDescriptions.Item>
+                        <ProDescriptions.Item label="企业诉求/反馈"><Typography.Text style={{ whiteSpace: 'pre-wrap' }}>{state.selectedTask.feedback || '暂无反馈'}</Typography.Text></ProDescriptions.Item>
+                    </ProDescriptions>
                 </Space>) : null}
             </Drawer>
         </PageContainer>

@@ -1,5 +1,14 @@
-import React, { useEffect } from 'react';
-import { Form, Input, Select, Switch, Button, Space, Slider, InputNumber } from 'antd';
+import React from 'react';
+import { Button, Space } from 'antd';
+import {
+  ModalForm,
+  ProFormText,
+  ProFormTextArea,
+  ProFormSelect,
+  ProFormSwitch,
+  ProFormSlider,
+  ProFormDigit,
+} from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import { useMessage } from '@/hooks/useMessage';
 import {
@@ -10,55 +19,23 @@ import {
   type XiaokeConfig,
 } from '@/services/xiaoke/api';
 
-const { TextArea } = Input;
-
 interface ConfigFormProps {
   config?: XiaokeConfig | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
-  onCancel: () => void;
 }
 
-const ConfigForm: React.FC<ConfigFormProps> = ({ config, onSuccess, onCancel }) => {
+const ConfigForm: React.FC<ConfigFormProps> = ({ config, open, onOpenChange, onSuccess }) => {
   const intl = useIntl();
   const message = useMessage();
-  const [form] = Form.useForm();
   const [loading, setLoading] = React.useState(false);
 
   const isEdit = !!config;
 
-  // AI模型选项
   const modelOptions = [
     { label: 'gpt-4o-mini', value: 'gpt-4o-mini' },
-
   ];
-
-  useEffect(() => {
-    if (config) {
-      form.setFieldsValue({
-        name: config.name,
-        model: config.model,
-        systemPrompt: config.systemPrompt,
-        temperature: config.temperature,
-        maxTokens: config.maxTokens,
-        topP: config.topP,
-        frequencyPenalty: config.frequencyPenalty,
-        presencePenalty: config.presencePenalty,
-        isEnabled: config.isEnabled,
-        isDefault: config.isDefault,
-      });
-    } else {
-      form.resetFields();
-      form.setFieldsValue({
-        temperature: 0.7,
-        maxTokens: 2000,
-        topP: 1.0,
-        frequencyPenalty: 0.0,
-        presencePenalty: 0.0,
-        isEnabled: true,
-        isDefault: false,
-      });
-    }
-  }, [config, form]);
 
   const handleSubmit = async (values: any) => {
     setLoading(true);
@@ -74,7 +51,6 @@ const ConfigForm: React.FC<ConfigFormProps> = ({ config, onSuccess, onCancel }) 
           frequencyPenalty: values.frequencyPenalty,
           presencePenalty: values.presencePenalty,
           isEnabled: values.isEnabled,
-          // 编辑模式下不允许修改 isDefault，需要通过专门的接口设置
         };
 
         const response = await updateXiaokeConfig(config!.id, updateData);
@@ -108,124 +84,127 @@ const ConfigForm: React.FC<ConfigFormProps> = ({ config, onSuccess, onCancel }) 
       }
 
       onSuccess();
+      return true;
     } catch (error: any) {
       message.error(error.message || intl.formatMessage({ id: 'pages.message.error' }));
+      return false;
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Form
-      form={form}
-      layout="vertical"
+    <ModalForm
+      title={isEdit
+        ? intl.formatMessage({ id: 'pages.xiaokeManagement.config.editConfig' })
+        : intl.formatMessage({ id: 'pages.xiaokeManagement.config.createConfig' })}
+      open={open}
+      onOpenChange={onOpenChange}
       onFinish={handleSubmit}
+      loading={loading}
+      width={800}
       initialValues={{
-        temperature: 0.7,
-        maxTokens: 2000,
-        topP: 1.0,
-        frequencyPenalty: 0.0,
-        presencePenalty: 0.0,
-        isEnabled: true,
-        isDefault: false,
+        name: config?.name,
+        model: config?.model,
+        systemPrompt: config?.systemPrompt,
+        temperature: config?.temperature ?? 0.7,
+        maxTokens: config?.maxTokens ?? 2000,
+        topP: config?.topP ?? 1.0,
+        frequencyPenalty: config?.frequencyPenalty ?? 0.0,
+        presencePenalty: config?.presencePenalty ?? 0.0,
+        isEnabled: config?.isEnabled ?? true,
+        isDefault: config?.isDefault ?? false,
       }}
     >
-      <Form.Item
+      <ProFormText
         name="name"
         label={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.name' })}
+        placeholder={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.namePlaceholder' })}
         rules={[{ required: true, message: intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.nameRequired' }) }]}
-      >
-        <Input placeholder={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.namePlaceholder' })} />
-      </Form.Item>
+      />
 
-      <Form.Item
+      <ProFormSelect
         name="model"
         label={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.model' })}
+        placeholder={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.modelPlaceholder' })}
+        options={modelOptions}
         rules={[{ required: true, message: intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.modelRequired' }) }]}
-      >
-        <Select placeholder={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.modelPlaceholder' })} options={modelOptions} />
-      </Form.Item>
+      />
 
-      <Form.Item name="systemPrompt" label={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.systemPrompt' })}>
-        <TextArea
-          rows={4}
-          placeholder={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.systemPromptPlaceholder' })}
-          showCount
-          maxLength={2000}
-        />
-      </Form.Item>
+      <ProFormTextArea
+        name="systemPrompt"
+        label={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.systemPrompt' })}
+        placeholder={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.systemPromptPlaceholder' })}
+        fieldProps={{
+          showCount: true,
+          maxLength: 2000,
+          rows: 4,
+        }}
+      />
 
-      <Form.Item
+      <ProFormSlider
         name="temperature"
         label={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.temperature' })}
         tooltip={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.temperatureTooltip' })}
-      >
-        <Slider min={0} max={2} step={0.1} marks={{ 0: '0', 1: '1', 2: '2' }} />
-      </Form.Item>
+        min={0}
+        max={2}
+        step={0.1}
+        marks={{ 0: '0', 1: '1', 2: '2' }}
+      />
 
-      <Form.Item
+      <ProFormDigit
         name="maxTokens"
         label={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.maxTokens' })}
+        min={1}
+        max={100000}
+        fieldProps={{ style: { width: '100%' } }}
         rules={[{ required: true, message: intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.maxTokensRequired' }) }]}
-      >
-        <InputNumber min={1} max={100000} style={{ width: '100%' }} />
-      </Form.Item>
+      />
 
-      <Form.Item
+      <ProFormSlider
         name="topP"
         label={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.topP' })}
         tooltip={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.topPTooltip' })}
-      >
-        <Slider min={0} max={1} step={0.1} marks={{ 0: '0', 0.5: '0.5', 1: '1' }} />
-      </Form.Item>
+        min={0}
+        max={1}
+        step={0.1}
+        marks={{ 0: '0', 0.5: '0.5', 1: '1' }}
+      />
 
-      <Form.Item
+      <ProFormSlider
         name="frequencyPenalty"
         label={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.frequencyPenalty' })}
         tooltip={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.frequencyPenaltyTooltip' })}
-      >
-        <Slider
-          min={-2}
-          max={2}
-          step={0.1}
-          marks={{ '-2': '-2', 0: '0', 2: '2' }}
-        />
-      </Form.Item>
+        min={-2}
+        max={2}
+        step={0.1}
+        marks={{ '-2': '-2', 0: '0', 2: '2' }}
+      />
 
-      <Form.Item
+      <ProFormSlider
         name="presencePenalty"
         label={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.presencePenalty' })}
         tooltip={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.presencePenaltyTooltip' })}
-      >
-        <Slider
-          min={-2}
-          max={2}
-          step={0.1}
-          marks={{ '-2': '-2', 0: '0', 2: '2' }}
-        />
-      </Form.Item>
+        min={-2}
+        max={2}
+        step={0.1}
+        marks={{ '-2': '-2', 0: '0', 2: '2' }}
+      />
 
-      <Form.Item name="isEnabled" valuePropName="checked" label={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.isEnabled' })}>
-        <Switch />
-      </Form.Item>
+      <ProFormSwitch
+        name="isEnabled"
+        label={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.isEnabled' })}
+        valuePropName="checked"
+      />
 
       {!isEdit && (
-        <Form.Item name="isDefault" valuePropName="checked" label={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.isDefault' })}>
-          <Switch />
-        </Form.Item>
+        <ProFormSwitch
+          name="isDefault"
+          label={intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.isDefault' })}
+          valuePropName="checked"
+        />
       )}
-
-      <Form.Item>
-        <Space>
-          <Button type="primary" htmlType="submit" loading={loading}>
-            {isEdit
-              ? intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.submit.update' })
-              : intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.submit.create' })}
-          </Button>
-          <Button onClick={onCancel}>{intl.formatMessage({ id: 'pages.xiaokeManagement.config.form.cancel' })}</Button>
-        </Space>
-      </Form.Item>
-    </Form>
+    </ModalForm>
   );
 };
 

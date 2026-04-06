@@ -1,5 +1,6 @@
 import React from 'react';
-import { Card, Typography, theme } from 'antd';
+import { Typography, theme } from 'antd';
+import { ProCard } from '@ant-design/pro-components';
 import { RightOutlined } from '@ant-design/icons';
 
 const { Text, Paragraph } = Typography;
@@ -16,8 +17,9 @@ interface QuickActionProps {
 }
 
 const QuickAction: React.FC<QuickActionProps> = ({ title, description, icon, onClick, color = '#1890ff', disabled = false, token }) => {
+    const { token: themeToken } = useToken();
     return (
-        <Card
+        <ProCard
             hoverable
             className="quick-action-card"
             onClick={disabled ? undefined : onClick}
@@ -25,12 +27,12 @@ const QuickAction: React.FC<QuickActionProps> = ({ title, description, icon, onC
                 width: '100%',
                 cursor: disabled ? 'not-allowed' : 'pointer',
                 borderRadius: '12px',
-                border: `1px solid ${token?.colorBorderSecondary || '#f0f0f0'}`,
+                border: `1px solid ${token?.colorBorderSecondary || themeToken.colorBorderSecondary}`,
                 transition: 'all 0.3s',
                 opacity: disabled ? 0.6 : 1,
-                backgroundColor: token?.colorBgContainer || '#ffffff',
+                backgroundColor: token?.colorBgContainer || themeToken.colorBgContainer,
             }}
-            styles={{ body: { padding: '16px', display: 'flex', flexDirection: 'column' } }}
+            bodyStyle={{ padding: '16px', display: 'flex', flexDirection: 'column' }}
         >
             <div style={{ display: 'flex', alignItems: 'flex-start' }}>
                 <div
@@ -64,7 +66,7 @@ const QuickAction: React.FC<QuickActionProps> = ({ title, description, icon, onC
                 </div>
             </div>
 
-        </Card>
+        </ProCard>
     );
 };
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Form, Select, InputNumber, Button, Space } from 'antd';
+import { ModalForm, ProFormSelect, ProFormDigit } from '@ant-design/pro-form';
 import {
   addProjectMember,
   type AddProjectMemberRequest,
@@ -9,6 +9,7 @@ import type { AppUser } from '@/services/user/api';
 import type { ProjectMemberDto } from '@/services/task/project';
 
 interface ProjectMemberFormProps {
+  open?: boolean;
   projectId: string;
   existingMembers: ProjectMemberDto[];
   availableUsers: AppUser[];
@@ -16,22 +17,15 @@ interface ProjectMemberFormProps {
   onCancel: () => void;
 }
 
-interface ProjectMemberFormValues {
-  userId: string;
-  role?: number;
-  allocation?: number;
-}
-
 const ProjectMemberForm: React.FC<ProjectMemberFormProps> = ({
+  open,
   projectId,
   existingMembers,
   availableUsers,
   onSuccess,
   onCancel,
 }) => {
-  const [form] = Form.useForm();
-
-  const handleSubmit = async (values: ProjectMemberFormValues) => {
+  const handleSubmit = async (values: Record<string, any>) => {
     try {
       const request: AddProjectMemberRequest = {
         projectId,
@@ -42,12 +36,13 @@ const ProjectMemberForm: React.FC<ProjectMemberFormProps> = ({
 
       await addProjectMember(projectId, request);
       onSuccess();
+      return true;
     } catch (error) {
       console.error('添加成员失败:', error);
+      return false;
     }
   };
 
-  // 过滤掉已经是成员的用户
   const existingUserIds = new Set(existingMembers.map((m) => m.userId));
   const availableUserOptions = availableUsers
     .filter((user) => !existingUserIds.has(user.id))
@@ -57,60 +52,52 @@ const ProjectMemberForm: React.FC<ProjectMemberFormProps> = ({
     }));
 
   return (
-    <Form form={form} layout="vertical" onFinish={handleSubmit}>
-      <Form.Item
+    <ModalForm
+      title="添加项目成员"
+      open={open}
+      onOpenChange={(isOpen) => { if (!isOpen) onCancel(); }}
+      onFinish={handleSubmit}
+      autoFocusFirstInput
+      width={500}
+    >
+      <ProFormSelect
         name="userId"
         label="用户"
+        placeholder="请选择用户"
+        showSearch
+        options={availableUserOptions}
+        fieldProps={{
+          filterOption: (input, option) =>
+            (option?.label as string)?.toLowerCase().includes(input.toLowerCase()),
+        }}
         rules={[{ required: true, message: '请选择用户' }]}
-      >
-        <Select
-          placeholder="请选择用户"
-          options={availableUserOptions}
-          showSearch
-          filterOption={(input, option) =>
-            (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-          }
-        />
-      </Form.Item>
+      />
 
-      <Form.Item
+      <ProFormSelect
         name="role"
         label="角色"
         initialValue={ProjectMemberRole.Member}
-      >
-        <Select>
-          <Select.Option value={ProjectMemberRole.Manager}>项目经理</Select.Option>
-          <Select.Option value={ProjectMemberRole.Member}>成员</Select.Option>
-          <Select.Option value={ProjectMemberRole.Viewer}>查看者</Select.Option>
-        </Select>
-      </Form.Item>
+        options={[
+          { label: '项目经理', value: ProjectMemberRole.Manager },
+          { label: '成员', value: ProjectMemberRole.Member },
+          { label: '查看者', value: ProjectMemberRole.Viewer },
+        ]}
+      />
 
-      <Form.Item
+      <ProFormDigit
         name="allocation"
         label="资源分配 (%)"
         initialValue={100}
+        min={0}
+        max={100}
+        placeholder="请输入资源分配百分比"
         rules={[
           { required: true, message: '请输入资源分配' },
           { type: 'number', min: 0, max: 100, message: '资源分配必须在 0-100 之间' },
         ]}
-      >
-        <InputNumber
-          style={{ width: '100%' }}
-          min={0}
-          max={100}
-          placeholder="请输入资源分配百分比"
-        />
-      </Form.Item>
-
-      <Form.Item>
-        <Space>
-          <Button type="primary" htmlType="submit">
-            添加
-          </Button>
-          <Button onClick={onCancel}>取消</Button>
-        </Space>
-      </Form.Item>
-    </Form>
+        fieldProps={{ style: { width: '100%' } }}
+      />
+    </ModalForm>
   );
 };
 

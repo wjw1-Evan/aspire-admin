@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { Card, Spin, Row, Col, Tag, Descriptions, Space } from 'antd';
+import { Card, Spin, Row, Col, Tag, Space } from 'antd';
+import { ProDescriptions } from '@ant-design/pro-components';
 import {
   UserOutlined,
   TeamOutlined,
@@ -208,7 +209,7 @@ export default function CompanySettings() {
         style={{ marginBottom: 16 }}
       >
         {company && (
-          <Descriptions
+          <ProDescriptions
             column={2}
             bordered
             items={[

@@ -3,7 +3,8 @@ import { PageContainer } from '@ant-design/pro-components';
 import { StatCard } from '@/components';
 import { useIntl } from '@umijs/max';
 import { request } from '@umijs/max';
-import { Tag, Row, Col, Card, Space, Button, Drawer, Descriptions } from 'antd';
+import { Tag, Row, Col, Card, Space, Button, Drawer } from 'antd';
+import { ProDescriptions } from '@ant-design/pro-components';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { HistoryOutlined, CheckCircleOutlined, CloseCircleOutlined, ThunderboltOutlined, ReloadOutlined, DashboardOutlined } from '@ant-design/icons';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
@@ -129,15 +130,15 @@ const LogDetailDrawer: React.FC<{ open: boolean; logId?: string; fetchFromApi?: 
   return (
     <Drawer title="日志详情" placement="right" open={open} onClose={onClose} styles={{ wrapper: { width: 600 } }}>
       {loading ? <div>加载中...</div> : log ? (
-        <Descriptions column={1} size="small" bordered>
-          <Descriptions.Item label="操作">{getActionText(log.action)}</Descriptions.Item>
-          <Descriptions.Item label="HTTP 方法">{log.httpMethod ? <Tag color={getMethodColor(log.httpMethod)}>{log.httpMethod}</Tag> : '-'}</Descriptions.Item>
-          <Descriptions.Item label="状态码">{getStatusBadge(log.statusCode)}</Descriptions.Item>
-          <Descriptions.Item label="请求URL">{log.fullUrl || '-'}</Descriptions.Item>
-          <Descriptions.Item label="耗时">{log.duration !== undefined ? `${log.duration}ms` : '-'}</Descriptions.Item>
-          <Descriptions.Item label="IP地址">{log.ipAddress || '-'}</Descriptions.Item>
-          <Descriptions.Item label="操作时间">{log.createdAt ? dayjs(log.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
-        </Descriptions>
+        <ProDescriptions column={1} size="small" bordered>
+          <ProDescriptions.Item label="操作">{getActionText(log.action)}</ProDescriptions.Item>
+          <ProDescriptions.Item label="HTTP 方法">{log.httpMethod ? <Tag color={getMethodColor(log.httpMethod)}>{log.httpMethod}</Tag> : '-'}</ProDescriptions.Item>
+          <ProDescriptions.Item label="状态码">{getStatusBadge(log.statusCode)}</ProDescriptions.Item>
+          <ProDescriptions.Item label="请求URL">{log.fullUrl || '-'}</ProDescriptions.Item>
+          <ProDescriptions.Item label="耗时">{log.duration !== undefined ? `${log.duration}ms` : '-'}</ProDescriptions.Item>
+          <ProDescriptions.Item label="IP地址">{log.ipAddress || '-'}</ProDescriptions.Item>
+          <ProDescriptions.Item label="操作时间">{log.createdAt ? dayjs(log.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
+        </ProDescriptions>
       ) : <div>未找到日志</div>}
     </Drawer>
   );

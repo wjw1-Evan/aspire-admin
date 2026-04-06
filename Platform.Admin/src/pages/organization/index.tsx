@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { request } from '@umijs/max';
-import { Button, Card, Col, Descriptions, Empty, Form, Input, InputNumber, Modal, Popconfirm, Row, Select, Space, Spin, Tag, Tree, TreeSelect, Typography, theme } from 'antd';
+import { Button, Col, Empty, Form, Input, InputNumber, Modal, Popconfirm, Row, Select, Space, Spin, Tag, Tree, TreeSelect, Typography, theme } from 'antd';
+import { ProCard, ProDescriptions } from '@ant-design/pro-components';
 import { ProFormText, ModalForm } from '@ant-design/pro-form';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import { ApartmentOutlined, DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined, UserOutlined, SearchOutlined } from '@ant-design/icons';
@@ -244,16 +245,16 @@ const OrganizationPage: React.FC = () => {
           ) : null} styles={{ body: { padding: 16, minHeight: 360 } }}>
             {selectedNode ? (
               <>
-                <Descriptions column={2} bordered>
-                  <Descriptions.Item label="名称"><Space><ApartmentOutlined /><Text strong>{selectedNode.name}</Text></Space></Descriptions.Item>
-                  <Descriptions.Item label="编码">{selectedNode.code ? <Tag color="blue">{selectedNode.code}</Tag> : '-'}</Descriptions.Item>
-                  <Descriptions.Item label="上级">{selectedNode.parentId ? nodeMap[selectedNode.parentId]?.name || '-' : '-'}</Descriptions.Item>
-                  <Descriptions.Item label="排序"><Tag color="purple">{selectedNode.sortOrder ?? 1}</Tag></Descriptions.Item>
-                  <Descriptions.Item label="负责人">{selectedNode.managerUserId ? <Space><UserOutlined /><Text>{selectedNode.managerUserId}</Text></Space> : '-'}</Descriptions.Item>
-                  <Descriptions.Item label="更新时间">{selectedNode.updatedAt ? dayjs(selectedNode.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
-                  <Descriptions.Item span={2} label="描述">{selectedNode.description || '-'}</Descriptions.Item>
-                  <Descriptions.Item label="创建时间">{selectedNode.createdAt ? dayjs(selectedNode.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
-                </Descriptions>
+                <ProDescriptions column={2} bordered>
+                  <ProDescriptions.Item label="名称"><Space><ApartmentOutlined /><Text strong>{selectedNode.name}</Text></Space></ProDescriptions.Item>
+                  <ProDescriptions.Item label="编码">{selectedNode.code ? <Tag color="blue">{selectedNode.code}</Tag> : '-'}</ProDescriptions.Item>
+                  <ProDescriptions.Item label="上级">{selectedNode.parentId ? nodeMap[selectedNode.parentId]?.name || '-' : '-'}</ProDescriptions.Item>
+                  <ProDescriptions.Item label="排序"><Tag color="purple">{selectedNode.sortOrder ?? 1}</Tag></ProDescriptions.Item>
+                  <ProDescriptions.Item label="负责人">{selectedNode.managerUserId ? <Space><UserOutlined /><Text>{selectedNode.managerUserId}</Text></Space> : '-'}</ProDescriptions.Item>
+                  <ProDescriptions.Item label="更新时间">{selectedNode.updatedAt ? dayjs(selectedNode.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
+                  <ProDescriptions.Item span={2} label="描述">{selectedNode.description || '-'}</ProDescriptions.Item>
+                  <ProDescriptions.Item label="创建时间">{selectedNode.createdAt ? dayjs(selectedNode.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
+                </ProDescriptions>
                 <Card className={styles.card} style={{ marginTop: 16 }} title="成员列表" extra={<Button type="primary" onClick={() => set({ assignOpen: true })}>分配用户</Button>}>
                   {state.members.length ? (
                     <div style={{ display: 'flex', flexDirection: 'column' }}>

@@ -3,8 +3,9 @@ import { PageContainer } from '@ant-design/pro-components';
 import { StatCard } from '@/components';
 import { useIntl } from '@umijs/max';
 import { type ProColumns, ActionType, ProTable } from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormSelect } from '@ant-design/pro-form';
-import { Button, Card, Col, Descriptions, Drawer, Form, Grid, Input, Row, Space, Tag, message } from 'antd';
+import { ModalForm, ProFormText, ProFormSelect } from '@ant-design/pro-components';
+import { Button, Col, Drawer, Form, Grid, Input, Row, Space, Tag, message } from 'antd';
+import { ProCard, ProDescriptions } from '@ant-design/pro-components';
 import { PlusOutlined, EditOutlined, DeleteOutlined, CloudServerOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { iotService, IoTGateway, GatewayStatistics, IoTDeviceStatus } from '@/services/iotService';
@@ -18,7 +19,7 @@ const normalizeStatus = (status?: string) => (status ? (status.charAt(0).toUpper
 const statusMap: Record<IoTDeviceStatus, { color: string; label: string }> = { Online: { color: 'green', label: '在线' }, Offline: { color: 'default', label: '离线' }, Fault: { color: 'red', label: '故障' }, Maintenance: { color: 'orange', label: '维护中' } };
 const httpMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'PULL'];
 
-const GatewayManagement = (props: any, ref: React.Ref<GatewayManagementRef>) => {
+const GatewayManagement = React.forwardRef<GatewayManagementRef, any>((props, ref) => {
   const intl = useIntl();
   const { confirm } = useModal();
   const screens = useBreakpoint();
@@ -54,7 +55,7 @@ const GatewayManagement = (props: any, ref: React.Ref<GatewayManagementRef>) => 
     { title: '协议类型', dataIndex: 'protocolType', sorter: true },
     { title: '请求方式', dataIndex: ['config', 'httpMethod'], render: (_, record) => <Tag color="blue">{record?.config?.httpMethod || '-'}</Tag> },
     { title: '地址', dataIndex: 'address', sorter: true },
-    { title: '状态', dataIndex: 'status', sorter: true, render: (dom) => { const normalized = normalizeStatus(dom); const config = statusMap[normalized] || { color: 'default', label: dom || '未知' }; return <Tag color={config.color}>{config.label}</Tag>; } },
+    { title: '状态', dataIndex: 'status', sorter: true, render: (dom) => { const normalized = normalizeStatus(dom as string); const config = statusMap[normalized] || { color: 'default', label: (dom as string) || '未知' }; return <Tag color={config.color}>{config.label}</Tag>; } },
     { title: '设备数', dataIndex: 'deviceCount', sorter: true, align: 'center' },
     { title: '启用', dataIndex: 'isEnabled', sorter: true, render: (dom) => <Tag color={dom ? 'green' : 'red'}>{dom ? '是' : '否'}</Tag> },
     { title: '操作', valueType: 'option', fixed: 'right', width: 120, render: (_, record) => [
@@ -87,13 +88,13 @@ const GatewayManagement = (props: any, ref: React.Ref<GatewayManagementRef>) => 
 
   return (
     <PageContainer title={<Space><CloudServerOutlined />网关管理</Space>}>
-      {state.statistics && <Card style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>
+      {state.statistics && <ProCard style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>
         {[{ key: 'total', title: '网关总数', icon: <CloudServerOutlined />, color: '#1890ff' },
           { key: 'online', title: '在线', icon: <CheckCircleOutlined />, color: '#52c41a' },
           { key: 'offline', title: '离线', icon: <CloseCircleOutlined />, color: '#8c8c8c' },
           { key: 'fault', title: '故障', icon: <ExclamationCircleOutlined />, color: '#ff4d4f' }
         ].map(i => <Col xs={24} sm={12} md={6} key={i.key}><StatCard title={i.title} value={state.statistics![i.key as keyof typeof state.statistics]} icon={i.icon} color={i.color} /></Col>)}
-      </Row></Card>}
+      </Row>      </ProCard>}
 
       <ProTable actionRef={actionRef} request={async (params: any) => {
         const { current, pageSize } = params;
@@ -129,37 +130,37 @@ const GatewayManagement = (props: any, ref: React.Ref<GatewayManagementRef>) => 
       <Drawer title="网关详情" placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingGateway: null, gatewayStats: null })} size={isMobile ? 'large' : 800}>
         {state.viewingGateway && (
           <>
-            <Card title="基本信息" style={{ marginBottom: 16 }}>
-              <Descriptions column={isMobile ? 1 : 2} size="small">
-                <Descriptions.Item label="网关名称" span={2}>{state.viewingGateway.title}</Descriptions.Item>
-                <Descriptions.Item label="网关ID">{state.viewingGateway.gatewayId}</Descriptions.Item>
-                <Descriptions.Item label="状态">{(() => { const normalized = normalizeStatus(state.viewingGateway.status); const config = statusMap[normalized] || { color: 'default', label: state.viewingGateway.status || '未知' }; return <Tag color={config.color}>{config.label}</Tag>; })()}</Descriptions.Item>
-                <Descriptions.Item label="协议类型">{state.viewingGateway.protocolType || '-'}</Descriptions.Item>
-                <Descriptions.Item label="地址">{state.viewingGateway.address || '-'}</Descriptions.Item>
-                <Descriptions.Item label="启用状态"><Tag color={state.viewingGateway.isEnabled ? 'green' : 'red'}>{state.viewingGateway.isEnabled ? '是' : '否'}</Tag></Descriptions.Item>
-              </Descriptions>
-            </Card>
+            <ProCard title="基本信息" style={{ marginBottom: 16 }}>
+              <ProDescriptions column={isMobile ? 1 : 2} size="small">
+                <ProDescriptions.Item label="网关名称" span={2}>{state.viewingGateway.title}</ProDescriptions.Item>
+                <ProDescriptions.Item label="网关ID">{state.viewingGateway.gatewayId}</ProDescriptions.Item>
+                <ProDescriptions.Item label="状态">{(() => { const normalized = normalizeStatus(state.viewingGateway.status); const config = statusMap[normalized] || { color: 'default', label: state.viewingGateway.status || '未知' }; return <Tag color={config.color}>{config.label}</Tag>; })()}</ProDescriptions.Item>
+                <ProDescriptions.Item label="协议类型">{state.viewingGateway.protocolType || '-'}</ProDescriptions.Item>
+                <ProDescriptions.Item label="地址">{state.viewingGateway.address || '-'}</ProDescriptions.Item>
+                <ProDescriptions.Item label="启用状态"><Tag color={state.viewingGateway.isEnabled ? 'green' : 'red'}>{state.viewingGateway.isEnabled ? '是' : '否'}</Tag></ProDescriptions.Item>
+              </ProDescriptions>
+            </ProCard>
             {state.gatewayStats && (
-              <Card title="设备统计" style={{ marginBottom: 16 }}>
-                <Descriptions column={isMobile ? 1 : 2} size="small">
-                  <Descriptions.Item label="总数">{state.gatewayStats.totalDevices}</Descriptions.Item>
-                  <Descriptions.Item label="在线"><Tag color="green">{state.gatewayStats.onlineDevices}</Tag></Descriptions.Item>
-                  <Descriptions.Item label="离线"><Tag color="default">{state.gatewayStats.offlineDevices}</Tag></Descriptions.Item>
-                  <Descriptions.Item label="故障"><Tag color="red">{state.gatewayStats.faultDevices}</Tag></Descriptions.Item>
-                </Descriptions>
-              </Card>
+              <ProCard title="设备统计" style={{ marginBottom: 16 }}>
+                <ProDescriptions column={isMobile ? 1 : 2} size="small">
+                  <ProDescriptions.Item label="总数">{state.gatewayStats.totalDevices}</ProDescriptions.Item>
+                  <ProDescriptions.Item label="在线"><Tag color="green">{state.gatewayStats.onlineDevices}</Tag></ProDescriptions.Item>
+                  <ProDescriptions.Item label="离线"><Tag color="default">{state.gatewayStats.offlineDevices}</Tag></ProDescriptions.Item>
+                  <ProDescriptions.Item label="故障"><Tag color="red">{state.gatewayStats.faultDevices}</Tag></ProDescriptions.Item>
+                </ProDescriptions>
+              </ProCard>
             )}
-            <Card title="时间信息">
-              <Descriptions column={isMobile ? 1 : 2} size="small">
-                <Descriptions.Item label="创建时间">{state.viewingGateway.createdAt ? dayjs(state.viewingGateway.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
-              </Descriptions>
-            </Card>
+            <ProCard title="时间信息">
+              <ProDescriptions column={isMobile ? 1 : 2} size="small">
+                <ProDescriptions.Item label="创建时间">{state.viewingGateway.createdAt ? dayjs(state.viewingGateway.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
+              </ProDescriptions>
+            </ProCard>
           </>
         )}
       </Drawer>
     </PageContainer>
   );
-};
+});
 
 GatewayManagement.displayName = 'GatewayManagement';
 

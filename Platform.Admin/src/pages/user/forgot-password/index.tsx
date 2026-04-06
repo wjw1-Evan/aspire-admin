@@ -1,7 +1,8 @@
 import * as API from '@/types';
 import { LockOutlined, MailOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import { FormattedMessage, Link, useIntl, history } from '@umijs/max';
-import { App, Button, Form, Input, Card, Space, Steps } from 'antd';
+import { App, Button, Form, Input, Space, Steps } from 'antd';
+import { ProCard } from '@ant-design/pro-components';
 import { createStyles } from 'antd-style';
 import React, { useState, useEffect } from 'react';
 import { Footer, SelectLang } from '@/components';
@@ -181,7 +182,7 @@ const ForgotPasswordContainer: React.FC = () => {
       </div>
       <div className={styles.contentWrapper}>
         <div className={styles.formWrapper}>
-          <Card
+          <ProCard
             style={{
               backgroundColor: 'rgba(255, 255, 255, 0.95)',
               backdropFilter: 'blur(20px)',
@@ -322,7 +323,7 @@ const ForgotPasswordContainer: React.FC = () => {
                 <FormattedMessage id="pages.forgotPassword.loginLink" defaultMessage="想起密码了？返回登录" />
               </Link>
             </div>
-          </Card>
+          </ProCard>
         </div>
       </div>
       <Footer />

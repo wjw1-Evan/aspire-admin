@@ -1,12 +1,13 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { StatCard } from '@/components';
 import { useIntl, request } from '@umijs/max';
-import { Tag, Space, Row, Col, Button, Input, Popconfirm, Drawer, Descriptions, Typography, Upload, DatePicker } from 'antd';
+import { Tag, Space, Row, Col, Button, Input, Popconfirm, Drawer, Typography, Upload, DatePicker } from 'antd';
 import type { UploadFile } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormDatePicker } from '@ant-design/pro-form';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, HomeOutlined, BankOutlined, AreaChartOutlined, SyncOutlined, ReloadOutlined, UploadOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
+import { ProDescriptions } from '@ant-design/pro-components';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 import dayjs from 'dayjs';
 
@@ -216,42 +217,42 @@ const AssetManagement: React.FC = () => {
                 </div>
             </ModalForm>
 
-            <Drawer title={buildingState.currentBuilding?.name || intl.formatMessage({ id: 'pages.park.asset.buildingDetail', defaultMessage: '楼宇详情' })} open={buildingState.detailVisible} onClose={() => setBuilding({ detailVisible: false, currentBuilding: null })} size={640}>
+            <Drawer title={buildingState.currentBuilding?.name || intl.formatMessage({ id: 'pages.park.asset.buildingDetail', defaultMessage: '楼宇详情' })} open={buildingState.detailVisible} onClose={(open) => { if (!open) setBuilding({ detailVisible: false, currentBuilding: null }); }} width={640}>
                 {buildingState.currentBuilding && (<div>
-                    <Descriptions bordered column={2} size="small" style={{ marginBottom: 24 }}>
-                        <Descriptions.Item label="楼宇名称">{buildingState.currentBuilding.name}</Descriptions.Item>
-                        <Descriptions.Item label="楼宇类型"><Tag color="blue">{buildingState.currentBuilding.buildingType || '综合'}</Tag></Descriptions.Item>
-                        <Descriptions.Item label="地址" span={2}>{buildingState.currentBuilding.address || '-'}</Descriptions.Item>
-                        <Descriptions.Item label="总楼层">{buildingState.currentBuilding.totalFloors}层</Descriptions.Item>
-                        <Descriptions.Item label="建成年份">{buildingState.currentBuilding.yearBuilt || '-'}</Descriptions.Item>
-                        <Descriptions.Item label="交付/取得日期">{buildingState.currentBuilding.deliveryDate ? dayjs(buildingState.currentBuilding.deliveryDate).format('YYYY-MM-DD') : '-'}</Descriptions.Item>
-                        <Descriptions.Item label="总面积">{buildingState.currentBuilding.totalArea?.toLocaleString()} m²</Descriptions.Item>
-                        <Descriptions.Item label="已租面积">{buildingState.currentBuilding.rentedArea?.toLocaleString()} m²</Descriptions.Item>
-                        <Descriptions.Item label="出租率"><Tag color={(buildingState.currentBuilding.occupancyRate || 0) >= 80 ? 'green' : (buildingState.currentBuilding.occupancyRate || 0) >= 50 ? 'orange' : 'red'}>{buildingState.currentBuilding.occupancyRate || 0}%</Tag></Descriptions.Item>
-                        <Descriptions.Item label="房源总数">{buildingState.currentBuilding.totalUnits}</Descriptions.Item>
-                        <Descriptions.Item label="可用房源">{buildingState.currentBuilding.availableUnits}</Descriptions.Item>
-                        <Descriptions.Item label="状态"><Tag color={buildingState.currentBuilding.status === 'Active' ? 'green' : 'orange'}>{buildingState.currentBuilding.status === 'Active' ? '正常' : '维护中'}</Tag></Descriptions.Item>
-                    </Descriptions>
+                    <ProDescriptions bordered column={2} size="small" style={{ marginBottom: 24 }}>
+                        <ProDescriptions.Item label="楼宇名称">{buildingState.currentBuilding.name}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="楼宇类型"><Tag color="blue">{buildingState.currentBuilding.buildingType || '综合'}</Tag></ProDescriptions.Item>
+                        <ProDescriptions.Item label="地址" span={2}>{buildingState.currentBuilding.address || '-'}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="总楼层">{buildingState.currentBuilding.totalFloors}层</ProDescriptions.Item>
+                        <ProDescriptions.Item label="建成年份">{buildingState.currentBuilding.yearBuilt || '-'}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="交付/取得日期">{buildingState.currentBuilding.deliveryDate ? dayjs(buildingState.currentBuilding.deliveryDate).format('YYYY-MM-DD') : '-'}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="总面积">{buildingState.currentBuilding.totalArea?.toLocaleString()} m²</ProDescriptions.Item>
+                        <ProDescriptions.Item label="已租面积">{buildingState.currentBuilding.rentedArea?.toLocaleString()} m²</ProDescriptions.Item>
+                        <ProDescriptions.Item label="出租率"><Tag color={(buildingState.currentBuilding.occupancyRate || 0) >= 80 ? 'green' : (buildingState.currentBuilding.occupancyRate || 0) >= 50 ? 'orange' : 'red'}>{buildingState.currentBuilding.occupancyRate || 0}%</Tag></ProDescriptions.Item>
+                        <ProDescriptions.Item label="房源总数">{buildingState.currentBuilding.totalUnits}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="可用房源">{buildingState.currentBuilding.availableUnits}</ProDescriptions.Item>
+                        <ProDescriptions.Item label="状态"><Tag color={buildingState.currentBuilding.status === 'Active' ? 'green' : 'orange'}>{buildingState.currentBuilding.status === 'Active' ? '正常' : '维护中'}</Tag></ProDescriptions.Item>
+                    </ProDescriptions>
                     {buildingState.currentBuilding.description && (<div><Title level={5}>描述</Title><Text>{buildingState.currentBuilding.description}</Text></div>)}
                 </div>)}
             </Drawer>
 
-            <Drawer title={unitState.currentUnit?.unitNumber || intl.formatMessage({ id: 'pages.park.asset.unitDetail', defaultMessage: '房源详情' })} open={unitState.detailVisible} onClose={() => setUnit({ detailVisible: false, currentUnit: null })} size={720}>
+            <Drawer title={unitState.currentUnit?.unitNumber || intl.formatMessage({ id: 'pages.park.asset.unitDetail', defaultMessage: '房源详情' })} open={unitState.detailVisible} onClose={(open) => { if (!open) setUnit({ detailVisible: false, currentUnit: null }); }} width={720}>
                 {unitState.currentUnit && (<Space direction="vertical" style={{ width: '100%' }} size={24}>
                     <div>
                         <Title level={5} style={{ marginBottom: 16 }}>基本信息</Title>
-                        <Descriptions bordered column={2} size="small">
-                            <Descriptions.Item label="房源编号">{unitState.currentUnit.unitNumber}</Descriptions.Item>
-                            <Descriptions.Item label="所属楼宇">{unitState.currentUnit.buildingName}</Descriptions.Item>
-                            <Descriptions.Item label="所在楼层">{unitState.currentUnit.floor}F</Descriptions.Item>
-                            <Descriptions.Item label="房源面积">{unitState.currentUnit.area} m²</Descriptions.Item>
-                            <Descriptions.Item label="房源类型"><Tag color={unitState.currentUnit.unitType === 'Office' ? 'blue' : unitState.currentUnit.unitType === 'Commercial' ? 'green' : 'purple'}>{unitState.currentUnit.unitType === 'Office' ? '办公' : unitState.currentUnit.unitType === 'Commercial' ? '商铺' : unitState.currentUnit.unitType || '其他'}</Tag></Descriptions.Item>
-                            <Descriptions.Item label="月租金">¥{unitState.currentUnit.monthlyRent?.toLocaleString()}</Descriptions.Item>
-                            <Descriptions.Item label="日租金">{unitState.currentUnit.dailyRent ? `¥${unitState.currentUnit.dailyRent?.toLocaleString()}/m²` : '-'}</Descriptions.Item>
-                            <Descriptions.Item label="状态"><Tag color={unitState.currentUnit.status === 'Available' ? 'green' : 'blue'}>{unitState.currentUnit.status === 'Available' ? '空置' : '已出租'}</Tag></Descriptions.Item>
-                            <Descriptions.Item label="当前租客">{unitState.currentUnit.currentTenantName || '-'}</Descriptions.Item>
-                            <Descriptions.Item label="租期到期" span={2}>{unitState.currentUnit.leaseEndDate ? dayjs(unitState.currentUnit.leaseEndDate).format('YYYY-MM-DD') : '-'}</Descriptions.Item>
-                        </Descriptions>
+                        <ProDescriptions bordered column={2} size="small">
+                            <ProDescriptions.Item label="房源编号">{unitState.currentUnit.unitNumber}</ProDescriptions.Item>
+                            <ProDescriptions.Item label="所属楼宇">{unitState.currentUnit.buildingName}</ProDescriptions.Item>
+                            <ProDescriptions.Item label="所在楼层">{unitState.currentUnit.floor}F</ProDescriptions.Item>
+                            <ProDescriptions.Item label="房源面积">{unitState.currentUnit.area} m²</ProDescriptions.Item>
+                            <ProDescriptions.Item label="房源类型"><Tag color={unitState.currentUnit.unitType === 'Office' ? 'blue' : unitState.currentUnit.unitType === 'Commercial' ? 'green' : 'purple'}>{unitState.currentUnit.unitType === 'Office' ? '办公' : unitState.currentUnit.unitType === 'Commercial' ? '商铺' : unitState.currentUnit.unitType || '其他'}</Tag></ProDescriptions.Item>
+                            <ProDescriptions.Item label="月租金">¥{unitState.currentUnit.monthlyRent?.toLocaleString()}</ProDescriptions.Item>
+                            <ProDescriptions.Item label="日租金">{unitState.currentUnit.dailyRent ? `¥${unitState.currentUnit.dailyRent?.toLocaleString()}/m²` : '-'}</ProDescriptions.Item>
+                            <ProDescriptions.Item label="状态"><Tag color={unitState.currentUnit.status === 'Available' ? 'green' : 'blue'}>{unitState.currentUnit.status === 'Available' ? '空置' : '已出租'}</Tag></ProDescriptions.Item>
+                            <ProDescriptions.Item label="当前租客">{unitState.currentUnit.currentTenantName || '-'}</ProDescriptions.Item>
+                            <ProDescriptions.Item label="租期到期" span={2}>{unitState.currentUnit.leaseEndDate ? dayjs(unitState.currentUnit.leaseEndDate).format('YYYY-MM-DD') : '-'}</ProDescriptions.Item>
+                        </ProDescriptions>
                         {unitState.currentUnit.description && (<div style={{ marginTop: 16 }}><Text type="secondary">描述信息：</Text><Text>{unitState.currentUnit.description}</Text></div>)}
                     </div>
                     <div>

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
-import { Card, Row, Col, Badge, Tag, Space, App, Grid, Button, Modal, Progress } from 'antd';
+import { Row, Col, Badge, Tag, Space, App, Grid, Button, Progress } from 'antd';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import {
@@ -23,7 +23,7 @@ import ProjectForm from './ProjectForm';
 import ProjectDetail from './ProjectDetail';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import { useModal } from '@/hooks/useModal';
-import { ProTable, ProColumns } from '@ant-design/pro-table';
+import { ProTable, ProColumns, ProCard } from '@ant-design/pro-components';
 
 export interface ProjectViewRef {
   reload: () => void;
@@ -244,7 +244,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   return (
     <div>
       {statistics && (
-        <Card className={styles.card} style={{ marginBottom: 16 }}>
+        <ProCard className={styles.card} style={{ marginBottom: 16 }}>
           <Row gutter={[12, 12]}>
             <Col xs={24} sm={12} md={6}>
               <StatCard
@@ -279,7 +279,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
               />
             </Col>
           </Row>
-        </Card>
+        </ProCard>
       )}
 
       <ProTable<ProjectDto>
@@ -312,19 +312,12 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       />
 
       {formVisible && (
-        <Modal
-          title={editingProject ? intl.formatMessage({ id: 'pages.projectManagement.editProject' }) : intl.formatMessage({ id: 'pages.projectManagement.createProject' })}
+        <ProjectForm
           open={formVisible}
+          project={editingProject}
+          onSuccess={handleFormSuccess}
           onCancel={handleCloseForm}
-          footer={null}
-          destroyOnHidden
-        >
-          <ProjectForm
-            project={editingProject}
-            onSuccess={handleFormSuccess}
-            onCancel={handleCloseForm}
-          />
-        </Modal>
+        />
       )}
 
       {detailVisible && viewingProject && (

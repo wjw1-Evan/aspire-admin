@@ -3,8 +3,9 @@ import { PageContainer } from '@ant-design/pro-components';
 import { StatCard } from '@/components';
 import { useIntl } from '@umijs/max';
 import { type ProColumns, ActionType, ProTable } from '@ant-design/pro-table';
-import { ModalForm, ProFormTextArea } from '@ant-design/pro-form';
-import { Button, Card, Col, Descriptions, Form, Grid, Input, Row, Space, Tag, message } from 'antd';
+import { ModalForm, ProFormTextArea } from '@ant-design/pro-components';
+import { Button, Col, Form, Grid, Input, Row, Space, Tag, message } from 'antd';
+import { ProCard } from '@ant-design/pro-components';
 import { CheckOutlined, AlertOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { iotService, IoTDeviceEvent, IoTDevice } from '@/services/iotService';
@@ -15,7 +16,7 @@ export interface EventManagementRef { reload: () => void; refreshStats: () => vo
 
 const LEVEL_MAP: Record<string, { color: string; label: string }> = { Info: { color: 'blue', label: '信息' }, Warning: { color: 'orange', label: '警告' }, Error: { color: 'red', label: '错误' }, Critical: { color: 'red', label: '严重' } };
 
-const EventManagement = (props: any, ref: React.Ref<EventManagementRef>) => {
+const EventManagement = React.forwardRef<EventManagementRef, any>((props, ref) => {
   const intl = useIntl();
   const screens = useBreakpoint();
   const isMobile = !screens.md;
@@ -51,9 +52,9 @@ const EventManagement = (props: any, ref: React.Ref<EventManagementRef>) => {
   const columns: ProColumns<IoTDeviceEvent>[] = [
     { title: '所属设备', dataIndex: 'deviceId', sorter: true, render: (dom) => state.devices.find(d => d.deviceId === dom)?.title || dom },
     { title: '事件类型', dataIndex: 'eventType', sorter: true },
-    { title: '级别', dataIndex: 'level', sorter: true, render: (dom) => { const config = LEVEL_MAP[dom] || { color: 'default', label: dom }; return <Tag color={config.color}>{config.label}</Tag>; } },
+    { title: '级别', dataIndex: 'level', sorter: true, render: (dom) => { const config = LEVEL_MAP[dom as string] || { color: 'default', label: dom as string }; return <Tag color={config.color}>{config.label}</Tag>; } },
     { title: '描述', dataIndex: 'description', sorter: true, ellipsis: true },
-    { title: '发生时间', dataIndex: 'occurredAt', sorter: true, render: (dom) => dom ? dayjs(dom).format('YYYY-MM-DD HH:mm:ss') : '-' },
+    { title: '发生时间', dataIndex: 'occurredAt', sorter: true, render: (dom) => dom ? dayjs(dom as string).format('YYYY-MM-DD HH:mm:ss') : '-' },
     { title: '状态', dataIndex: 'isHandled', sorter: true, render: (dom) => <Tag color={dom ? 'green' : 'red'}>{dom ? '已处理' : '未处理'}</Tag> },
     { title: '操作', valueType: 'option', fixed: 'right', width: 100, render: (_, record) => !record.isHandled ? <Button type="link" size="small" icon={<CheckOutlined />} onClick={() => set({ editingEvent: record, formVisible: true })}>处理</Button> : null },
   ];
@@ -69,13 +70,13 @@ const EventManagement = (props: any, ref: React.Ref<EventManagementRef>) => {
 
   return (
     <PageContainer title={<Space><AlertOutlined />事件告警</Space>}>
-      {state.statistics && <Card style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>
+      {state.statistics && <ProCard style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>
         {[{ key: 'total', title: '事件总数', icon: <AlertOutlined />, color: '#1890ff' },
           { key: 'unhandled', title: '未处理', icon: <CloseCircleOutlined />, color: '#ff4d4f' },
           { key: 'handled', title: '已处理', icon: <CheckCircleOutlined />, color: '#52c41a' },
           { key: 'critical', title: '严重事件', icon: <ExclamationCircleOutlined />, color: '#ff4d4f' }
         ].map(i => <Col xs={24} sm={12} md={6} key={i.key}><StatCard title={i.title} value={state.statistics![i.key as keyof typeof state.statistics]} icon={i.icon} color={i.color} /></Col>)}
-      </Row></Card>}
+      </Row>      </ProCard>}
 
       <ProTable actionRef={actionRef} request={async (params: any) => {
         const { current, pageSize } = params;
@@ -104,7 +105,7 @@ const EventManagement = (props: any, ref: React.Ref<EventManagementRef>) => {
       </ModalForm>
     </PageContainer>
   );
-};
+});
 
 EventManagement.displayName = 'EventManagement';
 export default EventManagement;

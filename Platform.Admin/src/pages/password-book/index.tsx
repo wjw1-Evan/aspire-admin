@@ -1,8 +1,9 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { request } from '@umijs/max';
-import { Tag, Space, Button, Input, Popconfirm, Modal, Drawer } from 'antd';
+import { Tag, Space, Button, Input, Popconfirm, Modal, Drawer, Form } from 'antd';
 
-import { PageContainer, ModalForm, ProFormText, ProFormSelect, ProDescriptions, ProCard, ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
+import { PageContainer, ModalForm, ProDescriptions, ProCard, ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
+import { ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-form';
 import { PlusOutlined, ExportOutlined, LockOutlined, EditOutlined, DeleteOutlined, SearchOutlined, CopyOutlined, DownloadOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
@@ -165,13 +166,15 @@ const PasswordBook: React.FC = () => {
         autoFocusFirstInput
         width={600}
       >
-        <ProFormText name="platform" label="平台名称" placeholder="例如：GitHub" rules={[{ required: true, message: '请输入平台名称' }]} />
+        <ProFormText name="platform" label="平台名称" placeholder="请输入平台名称" rules={[{ required: true, message: '请输入平台名称' }]} />
         <ProFormText name="account" label="账号" placeholder="请输入账号" rules={[{ required: true, message: '请输入账号' }]} />
-        <ProFormText name="password" label="密码" placeholder="请输入密码" rules={[{ required: true, message: '请输入密码' }]} />
-        <ProFormText name="url" label="网址" placeholder="https://example.com" />
-        <ProFormSelect name="category" label="分类" mode="tags" placeholder="选择或输入分类" showSearch allowClear />
-        <ProFormSelect name="tags" label="标签" mode="tags" placeholder="输入标签后按回车" fieldProps={{ value: formState.tags, onChange: (v: any) => setFormState(p => ({ ...p, tags: v as string[] })) }} />
-        <ProFormText name="notes" label="备注" placeholder="备注信息" />
+        <Form.Item name="password" label="密码" rules={[{ required: true, message: '请输入密码' }]}>
+          <Input.Password placeholder="请输入密码" />
+        </Form.Item>
+        <ProFormText name="url" label="网址" placeholder="请输入网址" />
+        <ProFormSelect name="category" label="分类" placeholder="选择或输入分类" showSearch allowClear mode="tags" />
+        <ProFormSelect name="tags" label="标签" placeholder="输入标签后按回车" mode="tags" />
+        <ProFormTextArea name="notes" label="备注" placeholder="请输入备注" />
       </ModalForm>
 
       <Drawer title="密码本详情" placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingId: '' })} size="large">

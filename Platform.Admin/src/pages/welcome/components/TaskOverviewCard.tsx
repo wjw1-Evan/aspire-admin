@@ -1,6 +1,7 @@
 import * as API from '@/types';
 import React from 'react';
-import { Card, Row, Col, Space, Alert, Typography, Tag, theme } from 'antd';
+import { Row, Col, Space, Alert, Typography, Tag, theme } from 'antd';
+import { ProCard } from '@ant-design/pro-components';
 import { BarChartOutlined, ClockCircleOutlined, RocketOutlined, CheckCircleOutlined, CloseCircleOutlined, SafetyOutlined, MenuOutlined } from '@ant-design/icons';
 import { useIntl, history } from '@umijs/max';
 import useCommonStyles from '@/hooks/useCommonStyles';
@@ -23,7 +24,7 @@ const TaskOverviewCard: React.FC<TaskOverviewCardProps> = ({ taskStatistics, tod
     const { styles } = useCommonStyles();
 
     return (
-        <Card
+        <ProCard
             title={
                 <Space>
                     <BarChartOutlined />
@@ -148,7 +149,7 @@ const TaskOverviewCard: React.FC<TaskOverviewCardProps> = ({ taskStatistics, tod
                     </ul>
                 )}
             </div>
-        </Card>
+        </ProCard>
     );
 };
 

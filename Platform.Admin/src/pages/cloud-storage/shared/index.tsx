@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { Button, Space, Tag, Card, Modal, Form, Input, DatePicker, Switch, App, Select } from 'antd';
+import { Button, Space, Tag, App, Modal } from 'antd';
 import { ShareAltOutlined, EditOutlined, DeleteOutlined, CopyOutlined, LockOutlined, UnlockOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns } from '@ant-design/pro-table';
+import { ModalForm, ProFormText, ProFormSelect, ProFormDatePicker, ProFormDigit, ProFormSwitch } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import { request } from '@umijs/max';
@@ -21,9 +22,20 @@ const api = {
 const CloudStorageSharedPage: React.FC = () => {
     const intl = useIntl();
     const { message } = App.useApp();
-    const [form] = Form.useForm();
     const [activeTab, setActiveTab] = useState<'my-shares' | 'shared-with-me'>('my-shares');
     const [editingShare, setEditingShare] = useState<FileShare | null>(null);
+
+    const handleOpenModal = (share: FileShare) => {
+        setEditingShare(share);
+    };
+
+    const handleEditSave = async (values: any) => {
+        try {
+            await api.update(editingShare!.id, { ...values, expiresAt: values.expiresAt ? dayjs(values.expiresAt).toISOString() : undefined });
+            message.success('更新成功');
+            return true;
+        } catch { message.error('更新失败'); return false; }
+    };
 
     const mapShareType = (type: any): 'internal' | 'external' => {
         if (typeof type === 'string') return type.toLowerCase() === 'internal' ? 'internal' : 'external';
@@ -71,10 +83,7 @@ const CloudStorageSharedPage: React.FC = () => {
                         navigator.clipboard.writeText(url);
                         message.success('分享链接已复制');
                     }}>复制链接</Button>
-                    <Button type="link" size="small" icon={<EditOutlined />} onClick={() => {
-                        setEditingShare(r);
-                        form.setFieldsValue({ accessType: r.accessType, password: r.password, expiresAt: r.expiresAt ? dayjs(r.expiresAt) : undefined, maxDownloads: r.maxDownloads, isEnabled: r.isEnabled });
-                    }}>编辑</Button>
+                    <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleOpenModal(r)}>编辑</Button>
                     <Button type="link" size="small" icon={r.isEnabled ? <LockOutlined /> : <UnlockOutlined />} onClick={async () => {
                         try {
                             await api.toggle(r.id, !r.isEnabled);
@@ -110,24 +119,20 @@ const CloudStorageSharedPage: React.FC = () => {
                 scroll={{ x: 'max-content' }}
                 toolbar={{ menu: { type: 'tab', activeKey: activeTab, onChange: (key) => setActiveTab(key as any) } }}
             />
-            <Modal title="编辑分享" open={!!editingShare} onCancel={() => setEditingShare(null)} onOk={async () => {
-                try {
-                    const values = form.getFieldsValue();
-                    await api.update(editingShare!.id, { ...values, expiresAt: values.expiresAt ? dayjs(values.expiresAt).toISOString() : undefined });
-                    message.success('更新成功');
-                    setEditingShare(null);
-                } catch { message.error('更新失败'); }
-            }} width={600}>
-                <Form form={form} layout="vertical">
-                    <Form.Item name="accessType" label="访问权限" rules={[{ required: true }]}>
-                        <Select><Select.Option value="view">仅查看</Select.Option><Select.Option value="download">查看和下载</Select.Option><Select.Option value="edit">查看、下载和编辑</Select.Option></Select>
-                    </Form.Item>
-                    <Form.Item name="password" label="访问密码"><Input.Password placeholder="设置访问密码（可选）" /></Form.Item>
-                    <Form.Item name="expiresAt" label="过期时间"><DatePicker showTime placeholder="设置过期时间（可选）" style={{ width: '100%' }} /></Form.Item>
-                    <Form.Item name="maxDownloads" label="下载次数限制"><Input type="number" placeholder="设置最大下载次数（可选）" min={1} /></Form.Item>
-                    <Form.Item name="isEnabled" label="启用状态" valuePropName="checked"><Switch /></Form.Item>
-                </Form>
-            </Modal>
+            <ModalForm
+                title="编辑分享"
+                open={!!editingShare}
+                onOpenChange={(visible) => { if (!visible) setEditingShare(null); }}
+                onFinish={handleEditSave}
+                width={600}
+                initialValues={editingShare ? { accessType: editingShare.accessType, password: editingShare.password, expiresAt: editingShare.expiresAt ? dayjs(editingShare.expiresAt) : undefined, maxDownloads: editingShare.maxDownloads, isEnabled: editingShare.isEnabled } : undefined}
+            >
+                <ProFormSelect name="accessType" label="访问权限" rules={[{ required: true }]} options={[{ label: '仅查看', value: 'view' }, { label: '查看和下载', value: 'download' }, { label: '查看、下载和编辑', value: 'edit' }]} />
+                <ProFormText name="password" label="访问密码" placeholder="设置访问密码（可选）" />
+                <ProFormDatePicker name="expiresAt" label="过期时间" placeholder="设置过期时间（可选）" />
+                <ProFormDigit name="maxDownloads" label="下载次数限制" min={1} placeholder="设置最大下载次数（可选）" />
+                <ProFormSwitch name="isEnabled" label="启用状态" />
+            </ModalForm>
         </PageContainer>
     );
 };

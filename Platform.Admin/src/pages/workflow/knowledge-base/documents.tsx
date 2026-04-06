@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Space, Modal, Form, Input, InputNumber, App, Card, Breadcrumb } from 'antd';
+import { Button, Space, Modal, App, Breadcrumb } from 'antd';
+import { ProCard } from '@ant-design/pro-components';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ArrowLeftOutlined, FileTextOutlined } from '@ant-design/icons';
 import { useIntl, useParams, history } from '@umijs/max';
 import { PageContainer } from '@ant-design/pro-components';
 import { ProTable, ProColumns } from '@ant-design/pro-table';
+import { ModalForm, ProFormText, ProFormTextArea, ProFormDigit } from '@ant-design/pro-components';
 import * as kbService from '@/services/workflow/knowledge-base';
 import type { KnowledgeDocument } from '@/services/workflow/knowledge-base';
 import type { PageParams } from '@/types';
 import dayjs from 'dayjs';
-
-const { TextArea } = Input;
 
 const KnowledgeBaseDocuments: React.FC = () => {
   const intl = useIntl();
@@ -17,8 +17,12 @@ const KnowledgeBaseDocuments: React.FC = () => {
   const { message } = App.useApp();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingDoc, setEditingDoc] = useState<KnowledgeDocument | null>(null);
-  const [form] = Form.useForm();
   const [kbInfo, setKbInfo] = useState<{ name: string } | null>(null);
+
+  const handleOpenModal = (doc: KnowledgeDocument | null) => {
+    setEditingDoc(doc);
+    setIsModalVisible(true);
+  };
 
   useEffect(() => {
     if (knowledgeBaseId) {
@@ -103,16 +107,7 @@ const KnowledgeBaseDocuments: React.FC = () => {
       valueType: 'option',
       render: (_: unknown, record: KnowledgeDocument) => (
         <Space>
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => {
-            setEditingDoc(record);
-            form.setFieldsValue({
-              title: record.title,
-              content: record.content,
-              summary: record.summary,
-              sortOrder: record.sortOrder,
-            });
-            setIsModalVisible(true);
-          }}>编辑</Button>
+          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleOpenModal(record)}>编辑</Button>
           <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)}>删除</Button>
         </Space>
       ),
@@ -122,7 +117,7 @@ const KnowledgeBaseDocuments: React.FC = () => {
   if (!knowledgeBaseId) {
     return (
       <PageContainer>
-        <Card>缺少知识库 ID，请从知识库列表进入。</Card>
+        <ProCard>缺少知识库 ID，请从知识库列表进入。</ProCard>
       </PageContainer>
     );
   }
@@ -138,7 +133,7 @@ const KnowledgeBaseDocuments: React.FC = () => {
       extra={
         <Space>
           <Button icon={<ArrowLeftOutlined />} onClick={() => history.push('/workflow/knowledge-base')}>返回知识库</Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditingDoc(null); form.resetFields(); setIsModalVisible(true); }}>录入内容</Button>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => handleOpenModal(null)}>录入内容</Button>
         </Space>
       }
     >
@@ -158,41 +153,33 @@ const KnowledgeBaseDocuments: React.FC = () => {
         scroll={{ x: 'max-content' }}
       />
 
-      <Modal
+      <ModalForm
         title={editingDoc ? '编辑文档' : '录入内容'}
         open={isModalVisible}
-        onCancel={() => setIsModalVisible(false)}
-        width={720}
-        onOk={async () => {
-          const values = await form.validateFields();
+        onOpenChange={(open) => { if (!open) setIsModalVisible(false); }}
+        onFinish={async (values) => {
           try {
+            const docData = values as { title: string; content: string; summary?: string; sortOrder?: number };
             if (editingDoc) {
-              await kbService.updateKnowledgeDocument(knowledgeBaseId!, editingDoc.id, values);
+              await kbService.updateKnowledgeDocument(knowledgeBaseId!, editingDoc.id, docData);
             } else {
-              await kbService.createKnowledgeDocument(knowledgeBaseId!, values);
+              await kbService.createKnowledgeDocument(knowledgeBaseId!, docData);
             }
             message.success(editingDoc ? '更新成功' : '创建成功');
             setIsModalVisible(false);
           } catch {
             message.error('操作失败');
           }
+          return true;
         }}
+        initialValues={editingDoc || undefined}
+        width={720}
       >
-        <Form form={form} layout="vertical" initialValues={editingDoc ? { title: editingDoc.title, content: editingDoc.content, summary: editingDoc.summary, sortOrder: editingDoc.sortOrder } : undefined}>
-          <Form.Item name="title" label="标题" rules={[{ required: true, message: '请输入标题' }]}>
-            <Input placeholder="请输入文档标题" />
-          </Form.Item>
-          <Form.Item name="content" label="内容" rules={[{ required: true, message: '请输入内容' }]}>
-            <TextArea placeholder="请输入文档内容" rows={6} />
-          </Form.Item>
-          <Form.Item name="summary" label="摘要">
-            <Input.TextArea placeholder="请输入摘要（可选）" rows={2} />
-          </Form.Item>
-          <Form.Item name="sortOrder" label="排序">
-            <InputNumber placeholder="数值越小越靠前" min={0} style={{ width: '100%' }} />
-          </Form.Item>
-        </Form>
-      </Modal>
+        <ProFormText name="title" label="标题" rules={[{ required: true, message: '请输入标题' }]} placeholder="请输入文档标题" />
+        <ProFormTextArea name="content" label="内容" rules={[{ required: true, message: '请输入内容' }]} placeholder="请输入文档内容" />
+        <ProFormTextArea name="summary" label="摘要" placeholder="请输入摘要（可选）" />
+        <ProFormDigit name="sortOrder" label="排序" fieldProps={{ min: 0, style: { width: '100%' } }} placeholder="数值越小越靠前" />
+      </ModalForm>
     </PageContainer>
   );
 };

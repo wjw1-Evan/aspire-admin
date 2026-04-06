@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { Card, Space, Tag, Empty, Table, Button, Badge, theme, Typography, Alert } from 'antd';
+import React, { useEffect, useState, useRef } from 'react';
+import type { ReactNode } from 'react';
+import { Card, Space, Tag, Empty, Button, Badge, theme, Typography, Alert } from 'antd';
 import { BellOutlined, AlertOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { useAccess, useNavigate, useIntl } from '@umijs/max';
+import { ProTable, ProColumns } from '@ant-design/pro-table';
 import { queryIoTEvents, getUnhandledEventCount } from '@/services/iot/api';
 import type { IoTDeviceEvent } from '@/services/iot/api';
 
@@ -16,14 +18,13 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
     const access = useAccess();
     const navigate = useNavigate();
     const intl = useIntl();
+    const actionRef = useRef<any>(null);
     const [events, setEvents] = useState<IoTDeviceEvent[]>([]);
     const [unhandledCount, setUnhandledCount] = useState(0);
     const [loading, setLoading] = useState(false);
 
-    // 检查用户是否有权限访问 IoT 平台
     const canAccessIoT = access.canAccessPath('/iot-platform');
 
-    // 获取未处理事件数量
     const fetchUnhandledCount = async () => {
         try {
             const res = await getUnhandledEventCount();
@@ -35,7 +36,6 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
         }
     };
 
-    // 获取最近的事件
     const fetchEvents = async () => {
         try {
             setLoading(true);
@@ -53,13 +53,11 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
         }
     };
 
-    // 初始化加载
     useEffect(() => {
         if (!canAccessIoT) return;
         fetchUnhandledCount();
         fetchEvents();
 
-        // 定时刷新（每 30 秒）
         const intervalId = setInterval(() => {
             if (document.visibilityState === 'visible') {
                 fetchUnhandledCount();
@@ -67,7 +65,6 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
             }
         }, 30000);
 
-        // 监听可见性变化
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'visible') {
                 fetchUnhandledCount();
@@ -82,7 +79,6 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
         };
     }, [canAccessIoT]);
 
-    // 获取事件级别的颜色
     const getLevelColor = (level: string) => {
         switch (level?.toLowerCase()) {
             case 'critical':
@@ -97,7 +93,6 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
         }
     };
 
-    // 获取事件类型的显示文本
     const getEventTypeLabel = (eventType: string) => {
         const typeMap: Record<string, string> = {
             'Connected': intl.formatMessage({ id: 'pages.welcome.iotEvents.type.Connected' }),
@@ -109,7 +104,6 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
         return typeMap[eventType] || eventType;
     };
 
-    // 格式化时间
     const formatTime = (date: string | Date) => {
         const d = new Date(date);
         const now = new Date();
@@ -129,14 +123,14 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
         return null;
     }
 
-    const columns = [
+    const columns: ProColumns<IoTDeviceEvent>[] = [
         {
             title: intl.formatMessage({ id: 'pages.welcome.iotEvents.level' }),
             dataIndex: 'level',
             key: 'level',
             width: '12%',
-            render: (level: string) => (
-                <Tag color={getLevelColor(level)}>{level}</Tag>
+            render: (_: ReactNode, record: IoTDeviceEvent) => (
+                <Tag color={getLevelColor(record.level)}>{record.level}</Tag>
             ),
         },
         {
@@ -144,8 +138,8 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
             dataIndex: 'eventType',
             key: 'eventType',
             width: '18%',
-            render: (eventType: string) => (
-                <Text strong>{getEventTypeLabel(eventType)}</Text>
+            render: (_: ReactNode, record: IoTDeviceEvent) => (
+                <Text strong>{getEventTypeLabel(record.eventType)}</Text>
             ),
         },
         {
@@ -153,9 +147,9 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
             dataIndex: 'description',
             key: 'description',
             width: '35%',
-            render: (description: string) => (
+            render: (_: ReactNode, record: IoTDeviceEvent) => (
                 <Text type="secondary" style={{ fontSize: '12px' }}>
-                    {description || intl.formatMessage({ id: 'pages.welcome.iotEvents.noDescription' })}
+                    {record.description || intl.formatMessage({ id: 'pages.welcome.iotEvents.noDescription' })}
                 </Text>
             ),
         },
@@ -164,9 +158,9 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
             dataIndex: 'deviceId',
             key: 'deviceId',
             width: '15%',
-            render: (deviceId: string) => (
+            render: (_: ReactNode, record: IoTDeviceEvent) => (
                 <Text type="secondary" style={{ fontSize: '12px' }}>
-                    {deviceId || '-'}
+                    {record.deviceId || '-'}
                 </Text>
             ),
         },
@@ -175,10 +169,10 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
             dataIndex: 'occurredAt',
             key: 'occurredAt',
             width: '20%',
-            render: (occurredAt: string) => (
+            render: (_: ReactNode, record: IoTDeviceEvent) => (
                 <Space size={4} style={{ fontSize: '12px', color: token.colorTextSecondary }}>
                     <ClockCircleOutlined />
-                    <span>{formatTime(occurredAt)}</span>
+                    <span>{formatTime(record.occurredAt)}</span>
                 </Space>
             ),
         },
@@ -216,11 +210,15 @@ const IoTEventAlertsCard: React.FC<IoTEventAlertsCardProps> = ({ loading: extern
                             style={{ borderRadius: '8px' }}
                         />
                     )}
-                    <Table
+                    <ProTable
+                        actionRef={actionRef}
                         columns={columns}
                         dataSource={events}
                         rowKey="id"
+                        search={false}
                         pagination={false}
+                        options={false}
+                        toolBarRender={false}
                         size="small"
                         style={{ marginTop: '12px' }}
                     />

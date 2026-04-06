@@ -1,5 +1,6 @@
 import React from 'react';
-import { Card, Row, Col, Space, Tag, Alert, Typography, theme } from 'antd';
+import { Row, Col, Space, Tag, Alert, Typography, theme } from 'antd';
+import { ProCard } from '@ant-design/pro-components';
 import { DatabaseOutlined, ThunderboltOutlined, CiOutlined, HddOutlined, MonitorOutlined, CloudServerOutlined } from '@ant-design/icons';
 import { useIntl } from '@umijs/max';
 import ResourceCard from './ResourceCard';
@@ -29,7 +30,7 @@ const SystemResourcesCard: React.FC<SystemResourcesCardProps> = ({
 
     if (!systemResources) {
         return (
-            <Card
+        <ProCard
                 title={
                     <Space>
                         <DatabaseOutlined />
@@ -45,12 +46,12 @@ const SystemResourcesCard: React.FC<SystemResourcesCardProps> = ({
                     showIcon
                     style={{ borderRadius: '8px' }}
                 />
-            </Card>
+        </ProCard>
         );
     }
 
     return (
-        <Card
+        <ProCard
             title={
                 <Space>
                     <DatabaseOutlined />
@@ -230,7 +231,7 @@ color={getResourceColor(String(systemResources.disk?.usagePercent || 0))}
                     </Row>
                 </div>
             )}
-        </Card>
+        </ProCard>
     );
 };
 

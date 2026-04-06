@@ -1,11 +1,13 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { StatCard } from '@/components';
 import { request } from '@umijs/max';
-import { Tag, Space, Card, Row, Col, Button, Input, InputNumber, Select, Switch, App, List, Typography, Drawer, Descriptions, Transfer, Empty, Tabs } from 'antd';
+import { Tag, Space, Row, Col, Button, Input, InputNumber, Select, Switch, App, List, Typography, Drawer, Transfer, Empty, Tabs } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
+import { ProCard } from '@ant-design/pro-components';
 import { ModalForm, ProFormText, ProFormSelect } from '@ant-design/pro-form';
 import { PlusOutlined, ReloadOutlined, QuestionCircleOutlined, FileTextOutlined, StarOutlined, StarFilled, EditOutlined, DeleteOutlined, EyeOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
+import { ProDescriptions } from '@ant-design/pro-components';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 
@@ -83,8 +85,8 @@ const VisitKnowledgeBase: React.FC = () => {
             </Space>
         }>
             <Tabs activeKey={state.activeTab} onChange={(k) => set({ activeTab: k })} items={[
-                { key: 'questions', label: '高频问题库', children: (<Card><ProTable actionRef={actionRef} rowKey="id" request={async (params: any) => { const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined; const res = await api.questions({ page: current, pageSize, search: state.searchText, ...sortParams }); loadStatistics(); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={questionColumns} search={false} toolBarRender={() => [<Input.Search key="search" placeholder="搜索..." style={{ width: 200 }} allowClear value={state.searchText} onChange={(e) => set({ searchText: e.target.value })} onSearch={(v) => { set({ searchText: v }); actionRef.current?.reload(); }} />]} onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })} /></Card>) },
-                { key: 'templates', label: '问卷模板', children: (<Card><ProTable actionRef={actionRef} rowKey="id" request={async (params: any) => { const { current, pageSize } = params; const res = await api.questionnaires({ page: current, pageSize }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={questionnaireColumns} search={false} toolBarRender={() => [<Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>刷新</Button>]} /></Card>) }
+                { key: 'questions', label: '高频问题库', children: (<ProCard><ProTable actionRef={actionRef} rowKey="id" request={async (params: any) => { const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined; const res = await api.questions({ page: current, pageSize, search: state.searchText, ...sortParams }); loadStatistics(); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={questionColumns} search={false} toolBarRender={() => [<Input.Search key="search" placeholder="搜索..." style={{ width: 200 }} allowClear value={state.searchText} onChange={(e) => set({ searchText: e.target.value })} onSearch={(v) => { set({ searchText: v }); actionRef.current?.reload(); }} />]} onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })} /></ProCard>) },
+                { key: 'templates', label: '问卷模板', children: (<ProCard><ProTable actionRef={actionRef} rowKey="id" request={async (params: any) => { const { current, pageSize } = params; const res = await api.questionnaires({ page: current, pageSize }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={questionnaireColumns} search={false} toolBarRender={() => [<Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>刷新</Button>]} /></ProCard>) }
             ]} />
 
             <ModalForm key={state.editingQuestion?.id || 'create-question'} title={state.editingQuestion ? '编辑问题' : '新增问题'} open={state.questionModalVisible} onOpenChange={(open) => { if (!open) set({ questionModalVisible: false, editingQuestion: null }); }}
@@ -122,16 +124,16 @@ const VisitKnowledgeBase: React.FC = () => {
             </ModalForm>
 
             <Drawer title="问题详情" open={state.questionDetailVisible} onClose={() => set({ questionDetailVisible: false, selectedQuestion: null })} size={640} extra={<Button onClick={() => set({ questionDetailVisible: false })}>关闭</Button>}>
-                {state.selectedQuestion ? (<Space direction="vertical" size="large" style={{ width: '100%' }}>
-                    <Descriptions title="基本信息" bordered column={1}><Descriptions.Item label="分类"><Tag color="blue">{state.selectedQuestion.category || '通用'}</Tag></Descriptions.Item><Descriptions.Item label="常用标记">{state.selectedQuestion.isFrequentlyUsed ? <StarFilled style={{ color: '#fadb14' }} /> : <StarOutlined style={{ color: '#d9d9d9' }} />}</Descriptions.Item></Descriptions>
-                    <Descriptions title="问题与回答" bordered column={1}><Descriptions.Item label="问题内容">{state.selectedQuestion.content}</Descriptions.Item><Descriptions.Item label="标准回答/解析"><Text style={{ whiteSpace: 'pre-wrap' }}>{state.selectedQuestion.answer || '暂无解析'}</Text></Descriptions.Item></Descriptions>
+                {state.selectedQuestion ? (                <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                    <ProDescriptions title="基本信息" bordered column={1}><ProDescriptions.Item label="分类"><Tag color="blue">{state.selectedQuestion.category || '通用'}</Tag></ProDescriptions.Item><ProDescriptions.Item label="常用标记">{state.selectedQuestion.isFrequentlyUsed ? <StarFilled style={{ color: '#fadb14' }} /> : <StarOutlined style={{ color: '#d9d9d9' }} />}</ProDescriptions.Item></ProDescriptions>
+                    <ProDescriptions title="问题与回答" bordered column={1}><ProDescriptions.Item label="问题内容">{state.selectedQuestion.content}</ProDescriptions.Item><ProDescriptions.Item label="标准回答/解析"><Text style={{ whiteSpace: 'pre-wrap' }}>{state.selectedQuestion.answer || '暂无解析'}</Text></ProDescriptions.Item></ProDescriptions>
                 </Space>) : <Empty />}
             </Drawer>
 
             <Drawer title="问卷详情" open={state.questionnaireDetailVisible} onClose={() => set({ questionnaireDetailVisible: false, selectedQuestionnaire: null })} size={640} extra={<Button onClick={() => set({ questionnaireDetailVisible: false })}>关闭</Button>}>
-                {state.selectedQuestionnaire ? (<Space direction="vertical" size="large" style={{ width: '100%' }}>
-                    <Descriptions title="基本信息" bordered column={1}><Descriptions.Item label="问卷名称">{state.selectedQuestionnaire.title}</Descriptions.Item><Descriptions.Item label="走访目的">{state.selectedQuestionnaire.purpose || '-'}</Descriptions.Item><Descriptions.Item label="题目数量">{state.selectedQuestionnaire.questionCount} 题</Descriptions.Item><Descriptions.Item label="创建时间">{dayjs(state.selectedQuestionnaire.createdAt).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item></Descriptions>
-                    <Card title="包含题目" size="small"><List size="small" dataSource={state.allQuestions.filter(q => state.selectedQuestionnaire?.questionIds?.includes(q.id))} renderItem={(item, index) => <List.Item><Space direction="vertical" style={{ width: '100%' }}><Space><Tag color="#108ee9">{index + 1}</Tag><Text strong>{item.content}</Text></Space>{item.answer && <div style={{ paddingLeft: 30, color: '#666', fontSize: 13 }}><Text type="secondary">解析：</Text><Text style={{ whiteSpace: 'pre-wrap' }}>{item.answer}</Text></div>}</Space></List.Item>} locale={{ emptyText: '该问卷暂无题目' }} /></Card>
+                {state.selectedQuestionnaire ? (                <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                    <ProDescriptions title="基本信息" bordered column={1}><ProDescriptions.Item label="问卷名称">{state.selectedQuestionnaire.title}</ProDescriptions.Item><ProDescriptions.Item label="走访目的">{state.selectedQuestionnaire.purpose || '-'}</ProDescriptions.Item><ProDescriptions.Item label="题目数量">{state.selectedQuestionnaire.questionCount} 题</ProDescriptions.Item><ProDescriptions.Item label="创建时间">{dayjs(state.selectedQuestionnaire.createdAt).format('YYYY-MM-DD HH:mm:ss')}</ProDescriptions.Item></ProDescriptions>
+                    <ProCard title="包含题目" size="small"><List size="small" dataSource={state.allQuestions.filter(q => state.selectedQuestionnaire?.questionIds?.includes(q.id))} renderItem={(item, index) => <List.Item><Space direction="vertical" style={{ width: '100%' }}><Space><Tag color="#108ee9">{index + 1}</Tag><Text strong>{item.content}</Text></Space>{item.answer && <div style={{ paddingLeft: 30, color: '#666', fontSize: 13 }}><Text type="secondary">解析：</Text><Text style={{ whiteSpace: 'pre-wrap' }}>{item.answer}</Text></div>}</Space></List.Item>} locale={{ emptyText: '该问卷暂无题目' }} /></Card>
                 </Space>) : <Empty />}
             </Drawer>
         </PageContainer>

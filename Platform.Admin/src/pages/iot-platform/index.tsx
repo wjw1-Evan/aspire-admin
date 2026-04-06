@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import { request } from '@umijs/max';
-import { Card, Row, Col, Button, Space, Spin } from 'antd';
+import { Row, Col, Button, Space, Spin } from 'antd';
+import { ProCard } from '@ant-design/pro-components';
 import { CloudServerOutlined, DatabaseOutlined, AlertOutlined, DesktopOutlined, ReloadOutlined, CloudOutlined } from '@ant-design/icons';
 import { StatCard } from '@/components';
 import { ApiResponse } from '@/types';
@@ -61,6 +62,7 @@ const IoTPlatform: React.FC = () => {
           {intl.formatMessage({ id: 'pages.iotPlatform.title' })}
         </Space>
       }
+      breadcrumb={{ routes: [{ path: '/', breadcrumbName: '首页' }, { path: '/iot', breadcrumbName: 'IoT平台' }] }}
       extra={
         <Space>
           <Button
@@ -74,7 +76,7 @@ const IoTPlatform: React.FC = () => {
         </Space>
       }
     >
-      <Card style={{ marginBottom: 16 }}>
+      <ProCard style={{ marginBottom: 16 }}>
         <Spin spinning={state.loading}>
           <div style={{ padding: '20px 0' }}>
             <Row gutter={[12, 12]}>
@@ -148,7 +150,7 @@ const IoTPlatform: React.FC = () => {
             </Row>
           </div>
         </Spin>
-      </Card>
+      </ProCard>
     </PageContainer>
   );
 };

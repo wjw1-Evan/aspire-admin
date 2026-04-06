@@ -430,7 +430,6 @@ const Welcome: React.FC = () => {
 
   return (
     <PageContainer
-      showBreadcrumb={false}
       style={{ background: 'transparent', paddingBlock: 8 }}
     >
       {contextHolder}

@@ -1,7 +1,9 @@
 import React from 'react';
-import { Card, Typography } from 'antd';
+import { Typography, theme } from 'antd';
+import { ProCard } from '@ant-design/pro-components';
 
 const { Text } = Typography;
+const { useToken } = theme;
 
 interface StatCardProps {
     readonly title: string;
@@ -14,22 +16,25 @@ interface StatCardProps {
     readonly onClick?: () => void;
 }
 
-const StatCard: React.FC<StatCardProps> = React.memo(({ title, value, suffix, icon, color, loading, token, onClick }) => (
-    <Card
-        className="quick-action-card"
-        styles={{ body: { padding: '16px', position: 'relative', overflow: 'hidden' } }}
-        style={{
-            borderRadius: '16px',
-            border: `1px solid ${token?.colorBorderSecondary || '#f0f0f0'}`,
-            backgroundColor: token?.colorBgContainer || '#ffffff',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
-            cursor: onClick ? 'pointer' : 'default',
-            transition: 'all 0.3s',
-            height: '100%'
-        }}
-        onClick={onClick}
-        hoverable={!!onClick}
-    >
+const StatCard: React.FC<StatCardProps> = React.memo(({ title, value, suffix, icon, color, loading, token, onClick }) => {
+    const { token: themeToken } = useToken();
+    return (
+        <ProCard
+            className="quick-action-card"
+            bodyStyle={{ padding: '16px', position: 'relative', overflow: 'hidden' }}
+            style={{
+                borderRadius: '16px',
+                border: `1px solid ${token?.colorBorderSecondary || themeToken.colorBorderSecondary}`,
+                backgroundColor: token?.colorBgContainer || themeToken.colorBgContainer,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                cursor: onClick ? 'pointer' : 'default',
+                transition: 'all 0.3s',
+                height: '100%'
+            }}
+            onClick={onClick}
+            hoverable={!!onClick}
+            loading={loading}
+        >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ marginBottom: 4 }}>
@@ -60,7 +65,7 @@ const StatCard: React.FC<StatCardProps> = React.memo(({ title, value, suffix, ic
                 </span>
             </div>
         </div>
-    </Card>
+        </ProCard>
 ));
 
 export default StatCard;

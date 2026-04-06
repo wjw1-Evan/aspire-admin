@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Select, Space } from 'antd';
+import { Select, Space } from 'antd';
+import { ProCard } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import { getTasksByProjectId, getTaskTree, getCriticalPath, type TaskDto } from '@/services/task/api';
 import { getProjectList, type ProjectDto } from '@/services/task/project';
@@ -148,16 +149,16 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId: initialProjectId }) 
   return (
     <div>
       {!initialProjectId && (
-        <Card style={{ marginBottom: 16 }}>
+        <ProCard style={{ marginBottom: 16 }}>
           <Space>
             <span>{intl.formatMessage({ id: 'pages.projectManagement.gantt.selectProject' })}：</span>
             <Select placeholder={intl.formatMessage({ id: 'pages.projectManagement.gantt.allProjects' })} style={{ width: 200 }} value={selectedProjectId} onChange={setSelectedProjectId} allowClear>
               {projects.map(project => <Select.Option key={project.id} value={project.id}>{project.name}</Select.Option>)}
             </Select>
           </Space>
-        </Card>
+        </ProCard>
       )}
-      <Card title={intl.formatMessage({ id: 'pages.projectManagement.gantt.title' })} loading={loading}>
+      <ProCard title={intl.formatMessage({ id: 'pages.projectManagement.gantt.title' })} loading={loading}>
         {renderGanttTable()}
         {criticalPath.length > 0 && (
           <div style={{ marginTop: 16, padding: 8, backgroundColor: '#fff7e6', borderRadius: 4 }}>
@@ -172,7 +173,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ projectId: initialProjectId }) 
             })()}
           </div>
         )}
-      </Card>
+      </ProCard>
     </div>
   );
 };

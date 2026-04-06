@@ -157,30 +157,18 @@ public class PasswordBookService : IPasswordBookService
     /// </summary>
     public async Task<System.Linq.Dynamic.Core.PagedResult<PasswordBookEntryDto>> GetEntriesAsync(
         Platform.ServiceDefaults.Models.PageParams pageParams,
-        string userId,
-        string? search = null,
-        string? platform = null,
-        string? account = null,
-        string? category = null,
-        List<string>? tags = null)
+        string userId)
     {
         if (string.IsNullOrEmpty(userId))
             throw new ArgumentException("用户ID不能为空", nameof(userId));
         
-        var searchTrim = search?.Trim();
-        var platformTrim = platform?.Trim();
-        var accountTrim = account?.Trim();
-        var categoryTrim = category?.Trim();
+        var searchTrim = pageParams.Search?.Trim();
 
-        // 如果提供了 search 参数，它会同时搜索 platform 和 account
+        // 搜索关键词同时搜索 platform 和 account
         var query = _context.Set<PasswordBookEntry>().Where(
             e =>
                 (e.UserId == userId || e.IsPublic) &&
-                (string.IsNullOrEmpty(searchTrim) || e.Platform.Contains(searchTrim) || e.Account.Contains(searchTrim)) &&
-                (string.IsNullOrEmpty(platformTrim) || e.Platform.Contains(platformTrim)) &&
-                (string.IsNullOrEmpty(accountTrim) || e.Account.Contains(accountTrim)) &&
-                (string.IsNullOrEmpty(categoryTrim) || e.Category == categoryTrim) &&
-                (tags == null || tags.Count == 0 || (e.Tags != null && e.Tags.Any(t => tags.Contains(t)))));
+                (string.IsNullOrEmpty(searchTrim) || e.Platform.Contains(searchTrim) || e.Account.Contains(searchTrim)));
 
         pageParams.SortBy = string.IsNullOrEmpty(pageParams.SortBy) ? "LastUsedAt" : pageParams.SortBy;
 

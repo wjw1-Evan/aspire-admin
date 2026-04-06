@@ -140,7 +140,7 @@ const PasswordBook: React.FC = () => {
         request={async (params) => {
           const { current, pageSize } = params;
           const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-          const res = await api.list({ page: current, pageSize, search: state.searchText || undefined, ...sortParams });
+          const res = await api.list({ page: current, pageSize, search: state.searchText || undefined, sortBy: sortParams?.sortBy, sortOrder: sortParams?.sortOrder });
           return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
         }}
         columns={columns}

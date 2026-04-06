@@ -57,7 +57,7 @@ const VisitKnowledgeBase: React.FC = () => {
         { title: '问卷名称', dataIndex: 'title', key: 'title', sorter: true, render: (dom) => <Space><FileTextOutlined style={{ color: '#52c41a' }} /><Text strong>{dom}</Text></Space> },
         { title: '走访目的', dataIndex: 'purpose', key: 'purpose', sorter: true, ellipsis: true },
         { title: '题目数量', dataIndex: 'questionCount', key: 'questionCount', sorter: true, width: 100, render: (dom) => <Tag color="cyan">{dom} 题</Tag> },
-        { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', sorter: true, width: 120, render: (dom) => dayjs(dom).format('YYYY-MM-DD') },
+        { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', sorter: true, width: 120, render: (dom: any) => dayjs(dom as string).format('YYYY-MM-DD') },
         { title: '操作', key: 'action', width: 150, render: (_, r) => [
             <Button key="view" type="link" icon={<EyeOutlined />} onClick={() => { set({ selectedQuestionnaire: r, questionnaireDetailVisible: true }); if (state.allQuestions.length === 0) loadAllQuestions(); }}>查看</Button>,
             <Button key="edit" type="link" icon={<EditOutlined />} onClick={async () => { set({ editingQuestionnaire: r, targetKeys: r.questionIds || [] }); await loadAllQuestions(); set({ questionnaireModalVisible: true }); }}>编辑</Button>,
@@ -103,9 +103,17 @@ const VisitKnowledgeBase: React.FC = () => {
                 <ProFormText name="purpose" label="走访目的" placeholder="例如：收集企业诉求，改进物业服务" />
                 <ProFormText name="sortOrder" label="排序值" placeholder="数值越小越靠前" fieldProps={{ type: 'number' }} />
                 <div style={{ marginBottom: 24 }}><Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>选择题目</Typography.Text>
-                    <Transfer dataSource={state.allQuestions} showSearch listStyle={{ width: 350, height: 400 }} titles={['待选题目', '已选题目']} targetKeys={state.targetKeys} onChange={(keys) => set({ targetKeys: keys as string[] })} renderItem={item => item.content} rowKey={item => item.id}
-                        render={({ direction, filteredItems, onItemSelect }) => {
-                            if (direction === 'left') return <List size="small" dataSource={filteredItems} style={{ height: '100%', overflow: 'auto' }} renderItem={(item) => <List.Item onClick={() => onItemSelect(item.id as string, !state.targetKeys.includes(item.id))} style={{ cursor: 'pointer', padding: '8px 12px' }}><Space>{state.targetKeys.includes(item.id) ? <Tag color="blue">已选</Tag> : <div style={{ width: 34 }} />}<Text ellipsis style={{ width: 240 }}>{item.content}</Text></Space></List.Item>} />;
+                    <Transfer {...{
+                        dataSource: state.allQuestions,
+                        showSearch: true,
+                        listStyle: { width: 350, height: 400 },
+                        titles: ['待选题目', '已选题目'],
+                        targetKeys: state.targetKeys,
+                        onChange: (keys: any) => set({ targetKeys: keys as string[] }),
+                        rowKey: (item: any) => item.id,
+                    } as any}
+                        render={({ direction, filteredItems, onItemSelect }: any) => {
+                            if (direction === 'left') return <List size="small" dataSource={filteredItems} style={{ height: '100%', overflow: 'auto' }} renderItem={(item: any) => <List.Item onClick={() => onItemSelect(item.id as string, !state.targetKeys.includes(item.id))} style={{ cursor: 'pointer', padding: '8px 12px' }}><Space>{state.targetKeys.includes(item.id) ? <Tag color="blue">已选</Tag> : <div style={{ width: 34 }} />}<Text ellipsis style={{ width: 240 }}>{item.content}</Text></Space></List.Item>} />;
                             const sortedItems = state.targetKeys.map(key => state.allQuestions.find(q => q.id === key)).filter((item): item is VisitQuestion => !!item);
                             return <List size="small" dataSource={sortedItems} style={{ height: '100%', overflow: 'auto' }} renderItem={(item, index) => <List.Item actions={[<Button key="up" type="text" size="small" icon={<ArrowUpOutlined />} disabled={index === 0} onClick={(e) => { e.stopPropagation(); handleMoveQuestion(index, 'up'); }} />, <Button key="down" type="text" size="small" icon={<ArrowDownOutlined />} disabled={index === sortedItems.length - 1} onClick={(e) => { e.stopPropagation(); handleMoveQuestion(index, 'down'); }} />, <Button key="del" type="text" size="small" danger icon={<DeleteOutlined />} onClick={(e) => { e.stopPropagation(); onItemSelect(item.id, false); }} />]} style={{ padding: '8px 12px' }}><Space><Tag color="#108ee9">{index + 1}</Tag><Text ellipsis={{ tooltip: item.content }} style={{ width: 180 }}>{item.content}</Text></Space></List.Item>} />;
                         }} />

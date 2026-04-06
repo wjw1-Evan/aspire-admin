@@ -70,7 +70,9 @@ const CloudStorageSharedPage: React.FC = () => {
     });
 
     const resolveFileName = useCallback(async (fileId?: string) => {
-        if (!fileId || state.fileNameMap[fileId]) return state.fileNameMap[fileId];
+        if (!fileId) return undefined;
+        const cachedName = state.fileNameMap[fileId];
+        if (cachedName) return cachedName;
         try { const res = await api.getFileDetail(fileId); if (res.success && res.data) { const name = res.data.name || fileId; set({ fileNameMap: { ...state.fileNameMap, [fileId]: name } }); return name; } } catch {}
         return fileId;
     }, [state.fileNameMap]);
@@ -157,7 +159,7 @@ const CloudStorageSharedPage: React.FC = () => {
         { title: '访问次数', dataIndex: 'accessCount', key: 'accessCount', sorter: true },
         { title: '下载次数', dataIndex: 'downloadCount', key: 'downloadCount', sorter: true },
         { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', sorter: true, render: (t: string) => formatDateTime(t) },
-        { title: '操作', key: 'action', fixed: 'right', render: (_: any, r: FileShare) => (<Space>
+        { title: '操作', key: 'action', fixed: 'right' as const, render: (_: any, r: FileShare) => (<Space>
             <Button type="link" size="small" icon={<CopyOutlined />} onClick={() => handleCopyLink(r)}>复制链接</Button>
             {state.activeTab === 'my-shares' && (<>
                 <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(r)}>编辑</Button>

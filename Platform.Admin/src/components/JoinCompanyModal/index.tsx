@@ -109,7 +109,7 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
     setLoading(true);
     try {
       const response = await applyToJoinCompany({
-        companyId: selectedCompany.company.id || '',
+        companyId: selectedCompany.company?.id || '',
         reason: reason.trim(),
       });
 
@@ -259,7 +259,7 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
                 <div>
                   {joinedCompanies.map((item) => (
                     <div
-                      key={item.company.id}
+                      key={item.company?.id}
                       style={{
                         padding: '12px 16px',
                         background: '#fafafa',
@@ -272,7 +272,7 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
                       <Flex vertical gap={4} style={{ flex: 1, minWidth: 0 }}>
                         <Space wrap>
                           <span style={{ fontWeight: 500, color: '#595959' }}>
-                            {item.company.name}
+                            {item.company?.name}
                           </span>
                           {item.isMember && (
                             <Tag color="success" icon={<CheckCircleOutlined />} style={{ margin: 0 }}>
@@ -288,14 +288,14 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
                         </Space>
                         <Space direction="vertical" size={0}>
                           <span style={{ fontSize: 12, color: '#8c8c8c' }}>
-                            企业代码: {item.company.code}
+                            企业代码: {item.company?.code}
                           </span>
-                          {item.company.description && (
+                          {item.company?.description && (
                             <span style={{ fontSize: 12, color: '#8c8c8c' }}>
-                              {item.company.description}
+                              {item.company?.description}
                             </span>
                           )}
-                          {item.memberCount > 0 && (
+                          {(item.memberCount ?? 0) > 0 && (
                             <span style={{ fontSize: 12, color: '#8c8c8c' }}>
                               成员数: {item.memberCount}
                             </span>
@@ -316,7 +316,7 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
                             title={item.isCreator ? "您是该企业的创建者，不能退出" : ""}
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleLeaveCompany(item.company.id!, item.company.name);
+                              handleLeaveCompany(item.company?.id!, item.company?.name || '');
                             }}
                           >
                             退出企业
@@ -326,10 +326,6 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
                             size="small"
                             onClick={(e) => {
                               e.stopPropagation();
-                              // 注意：我们需要 requestId。CompanySearchResult 应该包含 requestId。
-                              // 如果没有，我们需要修改后端 SearchCompaniesAsync 以返回它，或者前端通过 my-join-requests 匹配。
-                              // 查看 searchCompanies 返回类型... API.CompanySearchResult。
-                              // 我去查一下 CompanySearchResult 模型。
                               handleCancelRequest(item.requestId!);
                             }}
                           >
@@ -368,11 +364,11 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
                 <div>
                   {availableCompanies.map((item) => {
                     const isDisabled = item.isMember || item.hasPendingRequest;
-                    const isSelected = selectedCompany?.company.id === item.company.id;
+                    const isSelected = selectedCompany?.company?.id === item.company?.id;
 
                     return (
                       <div
-                        key={item.company.id}
+                        key={item.company?.id}
                         onClick={() => !isDisabled && handleSelectCompany(item)}
                         style={{
                           cursor: isDisabled ? 'not-allowed' : 'pointer',
@@ -396,17 +392,17 @@ export const JoinCompanyModal: React.FC<JoinCompanyModalProps> = ({
                         }}
                       >
                         <Flex vertical gap={4} style={{ flex: 1, minWidth: 0 }}>
-                          <span style={{ fontWeight: 500 }}>{item.company.name}</span>
+                          <span style={{ fontWeight: 500 }}>{item.company?.name}</span>
                           <Space direction="vertical" size={0}>
                             <span style={{ fontSize: 12, color: '#8c8c8c' }}>
-                              企业代码: {item.company.code}
+                              企业代码: {item.company?.code}
                             </span>
-                            {item.company.description && (
+                            {item.company?.description && (
                               <span style={{ fontSize: 12, color: '#8c8c8c' }}>
-                                {item.company.description}
+                                {item.company?.description}
                               </span>
                             )}
-                            {item.memberCount > 0 && (
+                            {(item.memberCount ?? 0) > 0 && (
                               <span style={{ fontSize: 12, color: '#8c8c8c' }}>
                                 成员数: {item.memberCount}
                               </span>

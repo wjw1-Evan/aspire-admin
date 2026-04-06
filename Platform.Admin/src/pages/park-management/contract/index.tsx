@@ -145,7 +145,7 @@ const ContractManagement: React.FC = () => {
                         <Descriptions.Item label="租户名称" span={2}>{state.currentContract.tenantName}</Descriptions.Item>
                         <Descriptions.Item label="租期">{dayjs(state.currentContract.startDate).format('YYYY-MM-DD')} ~ {dayjs(state.currentContract.endDate).format('YYYY-MM-DD')}</Descriptions.Item>
                         <Descriptions.Item label="月租金">¥{state.currentContract.monthlyRent?.toLocaleString()}</Descriptions.Item>
-                        <Descriptions.Item label="状态"><Tag color={contractStatusOptions.find(o => o.value === state.currentContract.status)?.color}>{contractStatusOptions.find(o => o.value === state.currentContract.status)?.label || state.currentContract.status}</Tag></Descriptions.Item>
+                        <Descriptions.Item label="状态"><Tag color={contractStatusOptions.find(o => o.value === state.currentContract?.status)?.color}>{contractStatusOptions.find(o => o.value === state.currentContract?.status)?.label || state.currentContract?.status}</Tag></Descriptions.Item>
                         <Descriptions.Item label="付款周期">{state.currentContract.paymentCycle}</Descriptions.Item>
                     </Descriptions>
                     <div style={{ marginTop: 24 }}>

@@ -42,9 +42,9 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(({
       const response = await getImageCaptcha(type);
 
       if (response.success && response.data) {
-        setCaptchaId(response.data.captchaId);
-        setImageData(response.data.imageData);
-        onCaptchaIdChange?.(response.data.captchaId);
+        setCaptchaId(response.data.captchaId || '');
+        setImageData(response.data.imageData || '');
+        onCaptchaIdChange?.(response.data.captchaId || '');
 
         // 清空输入框
         if (inputRef.current) {
@@ -85,11 +85,7 @@ const ImageCaptcha = forwardRef<ImageCaptchaRef, ImageCaptchaProps>(({
 
     try {
       setVerifying(true);
-      const response = await verifyImageCaptcha({
-        captchaId,
-        answer,
-        type,
-      });
+      const response = await verifyImageCaptcha(captchaId, answer, type);
 
       if (response.success && (response.data as any)?.valid) {
         message.success(intl.formatMessage({ id: 'pages.captcha.verifySuccess' }));

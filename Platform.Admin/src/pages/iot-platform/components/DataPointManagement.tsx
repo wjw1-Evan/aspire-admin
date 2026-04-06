@@ -49,7 +49,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
     try {
       const response = await iotService.getDataPoints({ page: 1, pageSize: 1 });
       if (response.success && response.data) {
-        setOverviewStats(prev => ({ ...prev, total: response.data.rowCount || 0 }));
+        setOverviewStats(prev => ({ ...prev, total: response.data?.rowCount || 0 }));
       }
     } catch (error) { console.error('获取统计信息失败:', error); }
   }, []);

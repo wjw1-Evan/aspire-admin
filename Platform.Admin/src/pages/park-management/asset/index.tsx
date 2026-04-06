@@ -147,17 +147,16 @@ const AssetManagement: React.FC = () => {
             )}
 
             <ProTable actionRef={actionRef} params={{ activeTab: state.activeTab }}
-                request={async (params: any) => {
+                request={((async (params: any) => {
                     const { pageSize, current, activeTab: tab } = params;
                     const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
                     if (tab === 'buildings' || !tab) { const res = await api.buildings({ page: current, pageSize, search: state.searchText, ...sortParams }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }
                     else { const res = await api.units({ page: current, pageSize, search: state.searchText, ...sortParams }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }
-                }}
-                columns={state.activeTab === 'buildings' ? buildingColumns : unitColumns} rowKey="id" search={false}
+                }) as any)}
+                columns={state.activeTab === 'buildings' ? buildingColumns as any : unitColumns as any} rowKey="id" search={false}
                 pagination={{ pageSizeOptions: ['10', '20', '50', '100'], defaultPageSize: 10 }}
                 onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
                 toolBarRender={() => [<Input.Search key="search" placeholder="搜索..." style={{ width: 200 }} allowClear value={state.searchText} onChange={(e) => set({ searchText: e.target.value })} onSearch={(v) => { set({ searchText: v }); actionRef.current?.reload(); }} />]}
-                tabs={{ activeKey: state.activeTab, onChange: (key) => set({ activeTab: key }), items: [{ key: 'buildings', label: <Space><BankOutlined />{intl.formatMessage({ id: 'pages.park.asset.buildings', defaultMessage: '楼宇管理' })}</Space> }, { key: 'units', label: <Space><HomeOutlined />{intl.formatMessage({ id: 'pages.park.asset.units', defaultMessage: '房源管理' })}</Space> }] }}
             />
 
             <ModalForm key={buildingState.editingBuilding?.id || 'create-building'}
@@ -258,7 +257,7 @@ const AssetManagement: React.FC = () => {
                     <div>
                         <Title level={5} style={{ marginBottom: 16 }}>出租历史 ({unitState.currentUnit.leaseHistory?.length || 0})</Title>
                         <ProTable request={async () => ({ data: unitState.currentUnit?.leaseHistory || [], total: unitState.currentUnit?.leaseHistory?.length || 0, success: true })}
-                            columns={[{ title: '租户名称', dataIndex: 'tenantName', key: 'tenantName' }, { title: '合同编号', dataIndex: 'contractNumber', key: 'contractNumber' }, { title: '租期', key: 'period', render: (_, record) => (<span style={{ fontSize: 12 }}>{dayjs(record.startDate).format('YYYY-MM-DD')} ~ {dayjs(record.endDate).format('YYYY-MM-DD')}</span>) }, { title: '月租金', dataIndex: 'monthlyRent', key: 'monthlyRent', render: (val) => `¥${val?.toLocaleString()}` }, { title: '状态', dataIndex: 'status', key: 'status', render: (status) => { const statusColors: Record<string, string> = { Active: 'green', Expired: 'default', Renewed: 'cyan', Terminated: 'red' }; return <Tag color={statusColors[status] || 'blue'}>{status}</Tag>; } }]}
+                            columns={[{ title: '租户名称', dataIndex: 'tenantName', key: 'tenantName' }, { title: '合同编号', dataIndex: 'contractNumber', key: 'contractNumber' }, { title: '租期', key: 'period', render: (_, record: any) => (<span style={{ fontSize: 12 }}>{dayjs(record.startDate).format('YYYY-MM-DD')} ~ {dayjs(record.endDate).format('YYYY-MM-DD')}</span>) }, { title: '月租金', dataIndex: 'monthlyRent', key: 'monthlyRent', render: (val: any) => `¥${val?.toLocaleString()}` }, { title: '状态', dataIndex: 'status', key: 'status', render: (status: any) => { const statusColors: Record<string, string> = { Active: 'green', Expired: 'default', Renewed: 'cyan', Terminated: 'red' }; return <Tag color={statusColors[status] || 'blue'}>{status}</Tag>; } }]}
                             rowKey="id" pagination={false} search={false} toolBarRender={false} />
                     </div>
                 </Space>)}

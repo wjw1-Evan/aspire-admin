@@ -81,7 +81,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
 
   const handleView = useCallback(async (device: IoTDevice) => {
     setSelectedDevice(device);
-    try { const response = await iotService.getDeviceStatistics(device.deviceId); if (response.success) setStatistics(response.data); } catch { console.error('Failed to load statistics'); }
+    try { const response = await iotService.getDeviceStatistics(device.deviceId); if (response.success && response.data) setStatistics(response.data); } catch { console.error('Failed to load statistics'); }
     setIsDetailDrawerVisible(true);
   }, []);
 
@@ -103,7 +103,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
 
   const handleGenerateApiKey = useCallback(async (device: IoTDevice) => {
     setGeneratingKey(true);
-    try { const res = await iotService.generateApiKey(device.deviceId); if (res.success) { setApiKeyResult(res.data); setIsApiKeyModalVisible(true); } }
+    try { const res = await iotService.generateApiKey(device.deviceId); if (res.success && res.data) { setApiKeyResult(res.data); setIsApiKeyModalVisible(true); } }
     catch { message.error('生成 ApiKey 失败'); }
     finally { setGeneratingKey(false); }
   }, []);
@@ -147,7 +147,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
       title: `批量删除设备`, content: `确定要删除已选的 ${selectedRowKeys.length} 个设备吗？该操作不可恢复。`, okButtonProps: { danger: true },
       onOk: async () => {
         setBatchDeleting(true);
-        try { const res = await iotService.batchDeleteDevices(selectedRowKeys as string[]); if (res.success) { message.success(`成功删除 ${res.data.deletedCount} 个设备`); setSelectedRowKeys([]); fetchData(); fetchOverviewStats(); } }
+        try { const res = await iotService.batchDeleteDevices(selectedRowKeys as string[]); if (res.success && res.data) { message.success(`成功删除 ${res.data.deletedCount} 个设备`); setSelectedRowKeys([]); fetchData(); fetchOverviewStats(); } }
         catch { message.error('批量删除失败'); }
         finally { setBatchDeleting(false); }
       },

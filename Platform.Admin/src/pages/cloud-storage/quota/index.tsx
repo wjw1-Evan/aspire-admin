@@ -3,7 +3,7 @@ import { PageContainer, StatCard } from '@/components';
 import SearchBar from '@/components/SearchBar';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import { useIntl } from '@umijs/max';
-import { PieChartOutlined, EditOutlined, ReloadOutlined, UserOutlined, CloudOutlined, WarningOutlined, CheckCircleOutlined, BarChartOutlined, TableOutlined, DatabaseOutlined, CloudServerOutlined, LineChartOutlined, PlusOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PieChartOutlined, EditOutlined, ReloadOutlined, UserOutlined, CloudOutlined, WarningOutlined, CheckCircleOutlined, BarChartOutlined, TableOutlined, DatabaseOutlined, CloudServerOutlined, LineChartOutlined, PlusOutlined, DeleteOutlined, FileOutlined, CalendarOutlined } from '@ant-design/icons';
 import { Grid, Button, Tag, Space, Modal, Drawer, Row, Col, Card, Form, Input, Select, Descriptions, Spin, Progress, InputNumber, Switch, Alert, Statistic, Tabs, Popconfirm, Typography, Badge, List, Avatar, Empty, Table, App } from 'antd';
 import { getUserList, type AppUser } from '@/services/user/api';
 import { formatDateTime } from '@/utils/format';
@@ -112,7 +112,7 @@ const CloudStorageQuotaPage: React.FC = () => {
     const loadUserOptions = useCallback(async (keyword?: string) => {
         set({ userLoading: true });
         try { const res = await getUserList({ page: 1, pageSize: 50, search: keyword }); if (res.success && res.data) set({ userOptions: res.data.queryable || [] }); }
-        catch { console.error('Failed to load users:', err); }
+        catch (err) { console.error('Failed to load users:', err); }
         finally { set({ userLoading: false }); }
     }, []);
 
@@ -142,7 +142,7 @@ const CloudStorageQuotaPage: React.FC = () => {
         { title: intl.formatMessage({ id: 'pages.cloud-storage.quota.field.fileCount' }), dataIndex: 'fileCount', key: 'fileCount', sorter: true },
         { title: intl.formatMessage({ id: 'pages.table.status' }), key: 'status', render: (_: any, r: StorageQuota) => getStatusTag(r) },
         { title: intl.formatMessage({ id: 'pages.table.updatedAt', defaultMessage: '更新时间' }), dataIndex: 'updatedAt', key: 'updatedAt', sorter: true, render: (t: string) => formatDateTime(t) },
-        { title: intl.formatMessage({ id: 'pages.table.actions' }), key: 'action', fixed: 'right', render: (_: any, r: StorageQuota) => (<Space>
+        { title: intl.formatMessage({ id: 'pages.table.actions' }), key: 'action', fixed: 'right' as const, render: (_: any, r: StorageQuota) => (<Space>
             <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(r)}>{intl.formatMessage({ id: 'pages.table.edit' })}</Button>
             <Button type="link" size="small" danger icon={<DeleteOutlined />} loading={state.deletingId === r.userId} onClick={() => modal.confirm({ title: intl.formatMessage({ id: 'pages.cloud-storage.quota.confirmDelete.title' }), content: intl.formatMessage({ id: 'pages.cloud-storage.quota.confirmDelete.desc' }), onOk: () => handleDelete(r), okButtonProps: { danger: true } })}>{intl.formatMessage({ id: 'pages.table.delete' })}</Button>
         </Space>) },

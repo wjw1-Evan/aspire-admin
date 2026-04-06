@@ -90,8 +90,8 @@ const DeviceTwinPanel: React.FC<DeviceTwinPanelProps> = ({ deviceId }) => {
         try {
             const res = await iotService.getDeviceTwin(deviceId);
             if (res.success) {
-                setTwin(res.data);
-                setDesiredDraft(res.data.desiredProperties);
+                setTwin(res.data ?? null);
+                setDesiredDraft(res.data?.desiredProperties ?? {});
             }
         } catch {
             message.error('加载设备孪生失败');
@@ -108,7 +108,7 @@ const DeviceTwinPanel: React.FC<DeviceTwinPanelProps> = ({ deviceId }) => {
         setSaving(true);
         try {
             const res = await iotService.updateDesiredProperties(deviceId, desiredDraft);
-            if (res.success) {
+            if (res.success && res.data) {
                 message.success(`期望属性已更新 (版本 ${res.data.desiredVersion})`);
                 setTwin(res.data);
             }
@@ -151,7 +151,7 @@ const DeviceTwinPanel: React.FC<DeviceTwinPanelProps> = ({ deviceId }) => {
             >
                 <InfoCircleOutlined style={{ color: '#1677ff' }} />
                 <Text style={{ fontFamily: 'monospace', fontSize: 12, color: '#666' }}>
-                    ETag: <strong>{twin?.etag?.slice(0, 12) || '-'}...</strong>
+                    ETag: <strong>{twin?.etag?.slice(0, 12) ?? '-'}...</strong>
                 </Text>
                 <Tag color="blue" style={metaTagStyle}>
                     Desired v{twin?.desiredVersion ?? '-'}

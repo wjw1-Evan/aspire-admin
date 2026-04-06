@@ -125,7 +125,7 @@ export const CompanySwitcher: React.FC = () => {
               )}
             </div>
             <div className={styles.companyRoles}>
-              {company.roleNames.join(intl.formatMessage({ id: 'pages.company.roleSeparator' })) || intl.formatMessage({ id: 'pages.company.noRole' })}
+              {(company.roleNames || []).join(intl.formatMessage({ id: 'pages.company.roleSeparator' })) || intl.formatMessage({ id: 'pages.company.noRole' })}
             </div>
           </div>
           {company.isCurrent && <CheckOutlined className={styles.checkIcon} />}

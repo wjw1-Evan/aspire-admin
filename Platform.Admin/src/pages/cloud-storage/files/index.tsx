@@ -66,8 +66,8 @@ const isOfficeFile = (mimeType: string, fileName?: string): boolean => {
 const CloudStorageFilesPage: React.FC = () => {
     const intl = useIntl();
     const { message } = App.useApp();
-    const actionRef = useRef<ActionType>();
-    const currentParentIdRef = useRef<string>();
+    const actionRef = useRef<ActionType>(null!);
+    const currentParentIdRef = useRef<string | undefined>(undefined);
     const screens = Grid.useBreakpoint();
     const isMobile = !screens.md;
 
@@ -119,7 +119,7 @@ const CloudStorageFilesPage: React.FC = () => {
 
     const handleBreadcrumbClick = useCallback((index: number) => {
         const targetItem = state.pathHistory[index];
-        currentParentIdRef.current = targetItem.id;
+        currentParentIdRef.current = targetItem.id ?? undefined;
         set({ currentPath: targetItem.path, currentParentId: targetItem.id, pathHistory: state.pathHistory.slice(0, index + 1), isSearchMode: false, searchText: '' });
         actionRef.current?.reload();
     }, [state.pathHistory]);

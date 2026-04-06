@@ -158,7 +158,7 @@ const CloudStorageRecyclePage: React.FC = () => {
         { title: '删除时间', dataIndex: 'deletedAt', key: 'deletedAt', sorter: true, render: (t: string) => formatDateTime(t) },
         { title: '删除者', dataIndex: 'deletedByName', key: 'deletedByName', sorter: true },
         { title: '过期状态', key: 'expiry', render: (_: any, r: RecycleItem) => getExpiryTag(r) },
-        { title: '操作', key: 'action', fixed: 'right', render: (_: any, r: RecycleItem) => (<Space>
+        { title: '操作', key: 'action', fixed: 'right' as const, render: (_: any, r: RecycleItem) => (<Space>
             <Button type="link" size="small" icon={<UndoOutlined />} onClick={() => handleRestore(r)}>恢复</Button>
             {!r.isFolder && <Button type="link" size="small" icon={<DownloadOutlined />} onClick={() => handleDownload(r)}>下载</Button>}
             <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => modal.confirm({ title: '确认永久删除', content: <div><p>确定要永久删除 "{r.name}" 吗？</p><div className="ant-alert ant-alert-warning ant-alert-with-description"><div className="ant-alert-content"><div className="ant-alert-message">警告：永久删除后无法恢复！</div></div></div></div>, onOk: () => handlePermanentDelete(r), okButtonProps: { danger: true } })}>永久删除</Button>

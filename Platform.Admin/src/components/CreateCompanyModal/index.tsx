@@ -29,7 +29,7 @@ export const CreateCompanyModal: React.FC<CreateCompanyModalProps> = ({
       // 企业代码由后端自动生成，不需要传递
       const { code: _code, ...requestData } = values;
 
-      const response = await createCompany(requestData);
+      const response = await createCompany(requestData as any);
       if (response.success && response.data) {
         message.success(intl.formatMessage({ id: 'pages.company.createSuccess' }));
         onSuccess();

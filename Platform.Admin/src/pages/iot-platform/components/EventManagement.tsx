@@ -31,7 +31,7 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
   const fetchOverviewStats = useCallback(async () => {
     try {
       const response = await iotService.getUnhandledEventCount();
-      if (response.success && response.data) setOverviewStats(prev => ({ ...prev, unhandled: response.data.Count || 0 }));
+      if (response.success && response.data) setOverviewStats(prev => ({ ...prev, unhandled: response.data?.count || 0 }));
     } catch (error) { console.error('获取统计信息失败:', error); }
   }, []);
 

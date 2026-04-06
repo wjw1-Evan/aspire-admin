@@ -101,10 +101,9 @@ const CommandCenterPanel: React.FC<CommandCenterPanelProps> = ({ deviceId }) => 
 
             setSending(true);
             const res = await iotService.sendCommand(deviceId, values.commandName, payload, values.ttlHours ?? 24);
-            if (res.success) {
+            if (res.success && res.data) {
                 message.success(`命令 "${values.commandName}" 已发送，ID: ${res.data.id.slice(-8)}`);
-                // 追加到历史列表
-                setHistory((prev) => [res.data, ...prev]);
+                setHistory((prev) => [res.data, ...prev].filter(Boolean) as IoTDeviceCommand[]);
                 form.setFieldValue('commandName', undefined);
                 setPayloadText('{}');
             }

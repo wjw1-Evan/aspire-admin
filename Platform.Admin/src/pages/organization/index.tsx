@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PageContainer } from '@/components';
 import { request } from '@umijs/max';
-import { Button, Card, Col, Descriptions, Empty, Form, Input, InputNumber, Modal, Popconfirm, Row, Space, Spin, Tag, Tree, TreeSelect, Typography, theme } from 'antd';
+import { Button, Card, Col, Descriptions, Empty, Form, Input, InputNumber, Modal, Popconfirm, Row, Select, Space, Spin, Tag, Tree, TreeSelect, Typography, theme } from 'antd';
 import { ProFormText, ModalForm } from '@ant-design/pro-form';
 import useCommonStyles from '@/hooks/useCommonStyles';
 import { ApartmentOutlined, DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined, UserOutlined, SearchOutlined } from '@ant-design/icons';
@@ -120,6 +120,10 @@ const OrganizationPage: React.FC = () => {
   const treeData = useMemo(() => buildTreeData(filteredTree, state.searchValue), [filteredTree, state.searchValue]);
 
   useEffect(() => { selectedIdRef.current = state.selectedId; }, [state.selectedId]);
+
+  const openCreateModal = useCallback((parentId?: string) => {
+    set({ formOpen: true, editingNode: null, createParentId: parentId });
+  }, []);
 
   const refreshTree = useCallback(async () => {
     set({ loading: true });
@@ -279,7 +283,7 @@ const OrganizationPage: React.FC = () => {
             await refreshTree();
             return true;
           } finally { set({ submitLoading: false }); }
-        }} autoFocusFirstInput submitLoading={state.submitLoading}>
+        }} autoFocusFirstInput>
         <ProFormText name="name" label="名称" placeholder="请输入组织名称" rules={[{ required: true }]} />
         <ProFormText name="code" label="编码" placeholder="请输入组织编码" />
         <Form.Item name="parentId" label="上级组织"><TreeSelect allowClear treeData={treeSelectData} placeholder="选择上级组织" treeDefaultExpandAll showSearch /></Form.Item>

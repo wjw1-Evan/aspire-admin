@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { PageContainer, StatCard } from '@/components';
-import { App, request } from '@umijs/max';
-import { Card, Row, Col, Tag, Typography, Descriptions, Drawer, Table, Empty, Rate, Button, Space } from 'antd';
+import { request } from '@umijs/max';
+import { App, Card, Row, Col, Tag, Typography, Descriptions, Drawer, Table, Empty, Rate, Button, Space } from 'antd';
 import { ProTable, ProColumns } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormDatePicker } from '@ant-design/pro-form';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, UserOutlined, WarningOutlined, ReloadOutlined, CalendarOutlined, CustomerServiceOutlined, FileTextOutlined } from '@ant-design/icons';
@@ -32,7 +32,7 @@ const contractStatusOptions = [{ label: '有效', value: 'Active', color: 'green
 
 const TenantManagement: React.FC = () => {
     const { message } = App.useApp();
-    const actionRef = useRef<any>();
+    const actionRef = useRef<any>(null);
     const [state, setState] = useState({ statistics: null as TenantStatistics | null, formVisible: false, editingTenant: null as ParkTenant | null, detailVisible: false, viewingTenant: null as ParkTenant | null, sorter: undefined as { sortBy: string; sortOrder: string } | undefined, searchText: '' });
     const [detailData, setDetailData] = useState({ contracts: [] as LeaseContract[], serviceRequests: [] as ServiceRequest[], payments: [] as (LeasePaymentRecord & { contractNumber?: string })[], loading: false });
     const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
@@ -97,7 +97,7 @@ const TenantManagement: React.FC = () => {
             <ModalForm key={state.editingTenant?.id || 'create'} title={state.editingTenant ? '编辑租户' : '新增租户'} open={state.formVisible}
                 onOpenChange={(open) => { if (!open) set({ formVisible: false, editingTenant: null }); }}
                 initialValues={state.editingTenant ? { tenantName: state.editingTenant.tenantName, contactPerson: state.editingTenant.contactPerson, phone: state.editingTenant.phone, email: state.editingTenant.email, industry: state.editingTenant.industry, businessLicense: state.editingTenant.businessLicense, address: state.editingTenant.address, notes: state.editingTenant.notes, entryDate: state.editingTenant.entryDate ? dayjs(state.editingTenant.entryDate) : undefined } : undefined}
-                onFinish={async (values) => { const data = { ...values, entryDate: values.entryDate?.toISOString() }; const res = state.editingTenant ? await api.update(state.editingTenant.id, data) : await api.create(data); if (res.success) { message.success(state.editingTenant ? '更新成功' : '创建成功'); set({ formVisible: false, editingTenant: null }); actionRef.current?.reload(); loadStatistics(); } return res.success; }} autoFocusFirstInput width={640}>
+                onFinish={async (values) => { const data = { ...values, entryDate: values.entryDate?.toISOString() } as any; const res = state.editingTenant ? await api.update(state.editingTenant.id, data) : await api.create(data); if (res.success) { message.success(state.editingTenant ? '更新成功' : '创建成功'); set({ formVisible: false, editingTenant: null }); actionRef.current?.reload(); loadStatistics(); } return res.success; }} autoFocusFirstInput width={640}>
                 <Row gutter={16}><Col span={12}><ProFormText name="tenantName" label="租户名称" placeholder="请输入租户名称" rules={[{ required: true, message: '请输入租户名称' }]} /></Col><Col span={12}><ProFormText name="industry" label="行业" placeholder="请输入行业" /></Col></Row>
                 <Row gutter={16}><Col span={8}><ProFormText name="contactPerson" label="联系人" placeholder="联系人" /></Col><Col span={8}><ProFormText name="phone" label="电话" placeholder="电话" /></Col><Col span={8}><ProFormText name="email" label="邮箱" placeholder="邮箱" /></Col></Row>
                 <Row gutter={16}><Col span={12}><ProFormText name="businessLicense" label="营业执照号" placeholder="营业执照号" /></Col><Col span={12}><ProFormDatePicker name="entryDate" label="入驻日期" style={{ width: '100%' }} /></Col></Row>
@@ -115,7 +115,7 @@ const TenantManagement: React.FC = () => {
                         <Descriptions.Item label="电话">{state.viewingTenant.phone || '-'}</Descriptions.Item>
                         <Descriptions.Item label="邮箱" span={2}>{state.viewingTenant.email || '-'}</Descriptions.Item>
                         <Descriptions.Item label="入驻日期">{state.viewingTenant.entryDate ? dayjs(state.viewingTenant.entryDate).format('YYYY-MM-DD') : '-'}</Descriptions.Item>
-                        <Descriptions.Item label="状态"><Tag color={tenantStatusOptions.find(o => o.value === state.viewingTenant.status)?.color}>{tenantStatusOptions.find(o => o.value === state.viewingTenant.status)?.label || state.viewingTenant.status}</Tag></Descriptions.Item>
+                        <Descriptions.Item label="状态"><Tag color={tenantStatusOptions.find(o => o.value === state.viewingTenant?.status)?.color}>{tenantStatusOptions.find(o => o.value === state.viewingTenant?.status)?.label || state.viewingTenant?.status}</Tag></Descriptions.Item>
                         <Descriptions.Item label="租用单元">{state.viewingTenant.unitCount}个</Descriptions.Item>
                         <Descriptions.Item label="有效合同">{state.viewingTenant.activeContracts}份</Descriptions.Item>
                     </Descriptions>

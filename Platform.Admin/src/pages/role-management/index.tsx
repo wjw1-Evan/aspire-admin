@@ -113,7 +113,7 @@ const RoleManagement: React.FC = () => {
         </div>
         {formState.menuLoading ? <div style={{ textAlign: 'center', padding: '40px 0' }}><Spin /></div> : <Tree checkable checkStrictly defaultExpandAll treeData={formState.menuTree} checkedKeys={formState.checkedKeys} expandedKeys={formState.expandedKeys} onExpand={(keys: any) => setFormState(p => ({ ...p, expandedKeys: keys.map(String) }))} onCheck={(checked: any) => setFormState(p => ({ ...p, checkedKeys: Array.isArray(checked) ? checked : checked.checked }))} />}
         <div style={{ marginTop: 16 }}><Switch checked={formState.checkedKeys.length > 0} disabled /> <span style={{ marginLeft: 8 }}>{intl.formatMessage({ id: 'pages.roleForm.menuCount' }, { count: formState.checkedKeys.length })}</span></div>
-        <div style={{ marginTop: 16 }}><ProFormText name="isActive" label={intl.formatMessage({ id: 'pages.roleForm.isActiveLabel' })} valueType="switch" /></div>
+        <div style={{ marginTop: 16 }}><ProFormText name="isActive" label={intl.formatMessage({ id: 'pages.roleForm.isActiveLabel' })} /></div>
       </ModalForm>
 
       <Drawer title={state.viewingRole ? `${intl.formatMessage({ id: 'pages.roleManagement.title' })} - ${state.viewingRole.name}` : intl.formatMessage({ id: 'pages.roleManagement.title' })} open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingRole: null })} width={600}>

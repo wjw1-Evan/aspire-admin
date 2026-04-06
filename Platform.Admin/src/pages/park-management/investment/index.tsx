@@ -145,8 +145,8 @@ const InvestmentManagement: React.FC = () => {
                     <Descriptions.Item label="邮箱">{state.currentLead.email || '-'}</Descriptions.Item>
                     <Descriptions.Item label="来源">{sourceMap[state.currentLead.source] || state.currentLead.source}</Descriptions.Item>
                     <Descriptions.Item label="意向面积">{state.currentLead.intendedArea ? `${state.currentLead.intendedArea} m²` : '-'}</Descriptions.Item>
-                    <Descriptions.Item label="优先级">{(() => { const opt = priorityOptions.find(o => o.value === state.currentLead.priority); return <Tag color={opt?.color}>{opt?.label || state.currentLead.priority}</Tag>; })()}</Descriptions.Item>
-                    <Descriptions.Item label="当前状态">{(() => { const opt = leadStatusOptions.find(o => o.value === state.currentLead.status); return <Tag color={opt?.color}>{opt?.label || state.currentLead.status}</Tag>; })()}</Descriptions.Item>
+                    <Descriptions.Item label="优先级">{(() => { const opt = priorityOptions.find(o => o.value === state.currentLead?.priority); return <Tag color={opt?.color}>{opt?.label || state.currentLead?.priority}</Tag>; })()}</Descriptions.Item>
+                    <Descriptions.Item label="当前状态">{(() => { const opt = leadStatusOptions.find(o => o.value === state.currentLead?.status); return <Tag color={opt?.color}>{opt?.label || state.currentLead?.status}</Tag>; })()}</Descriptions.Item>
                     <Descriptions.Item label="下次跟进日期">{state.currentLead.nextFollowUpDate ? dayjs(state.currentLead.nextFollowUpDate).format('YYYY-MM-DD') : '-'}</Descriptions.Item>
                     <Descriptions.Item label="创建时间">{dayjs(state.currentLead.createdAt).format('YYYY-MM-DD HH:mm')}</Descriptions.Item>
                 </Descriptions>)}
@@ -160,7 +160,7 @@ const InvestmentManagement: React.FC = () => {
                     <Descriptions.Item label="电话">{state.currentProject.phone || '-'}</Descriptions.Item>
                     <Descriptions.Item label="意向面积">{state.currentProject.intendedArea ? `${state.currentProject.intendedArea} m²` : '-'}</Descriptions.Item>
                     <Descriptions.Item label="报价租金">{state.currentProject.proposedRent ? `¥${state.currentProject.proposedRent?.toLocaleString()}/月` : '-'}</Descriptions.Item>
-                    <Descriptions.Item label="当前阶段">{(() => { const opt = projectStageOptions.find(o => o.value === state.currentProject.stage); return <Tag color={opt?.color}>{opt?.label || state.currentProject.stage}</Tag>; })()}</Descriptions.Item>
+                    <Descriptions.Item label="当前阶段">{(() => { const opt = projectStageOptions.find(o => o.value === state.currentProject?.stage); return <Tag color={opt?.color}>{opt?.label || state.currentProject?.stage}</Tag>; })()}</Descriptions.Item>
                     <Descriptions.Item label="成功率"><Progress percent={state.currentProject.probability as number} size="small" /></Descriptions.Item>
                     <Descriptions.Item label="预计签约日期">{state.currentProject.expectedSignDate ? dayjs(state.currentProject.expectedSignDate).format('YYYY-MM-DD') : '-'}</Descriptions.Item>
                     <Descriptions.Item label="创建时间">{dayjs(state.currentProject.createdAt).format('YYYY-MM-DD HH:mm')}</Descriptions.Item>

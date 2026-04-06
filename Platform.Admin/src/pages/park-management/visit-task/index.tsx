@@ -86,7 +86,7 @@ const VisitTaskPage: React.FC = () => {
                     const targetTenant = state.tenants.find(t => t.tenantName === values.tenantName);
                     let finalTenantId = targetTenant?.id;
                     if (state.editingTask && values.tenantName === state.editingTask.tenantName) finalTenantId = state.editingTask.tenantId;
-                    const submitData = { ...values, visitDate: values.visitDate.toISOString(), tenantId: finalTenantId };
+                    const submitData = { ...values, visitDate: values.visitDate.toISOString(), tenantId: finalTenantId } as any;
                     const res = state.editingTask ? await api.update(state.editingTask.id, submitData) : await api.create(submitData);
                     if (res.success) { set({ formVisible: false, editingTask: null }); actionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }
                     return res.success;

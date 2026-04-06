@@ -3,7 +3,7 @@ import type { ProColumns } from '@ant-design/pro-table';
 import { PageContainer, StatCard } from '@/components';
 import { useIntl } from '@umijs/max';
 import { request } from '@umijs/max';
-import { Button, Tag, Space, Card, Row, Col, Grid, App, Progress, Drawer, Descriptions, Spin, Timeline, Empty, Avatar } from 'antd';
+import { Button, Tag, Space, Card, Row, Col, Grid, App, Modal, Progress, Drawer, Descriptions, Spin, Timeline, Empty, Avatar } from 'antd';
 import { ProTable, ActionType } from '@ant-design/pro-table';
 import { PlusOutlined, EditOutlined, DeleteOutlined, CheckCircleOutlined, ReloadOutlined, PlayCircleOutlined, StopOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -159,13 +159,13 @@ const TaskManagement: React.FC = () => {
 
   useEffect(() => {
     refreshStats();
-    api.list({ page: 1, pageSize: 1000 }).then(r => { if (r.success && r.data) setProjects(r.data.queryable || []); });
+    api.list({ page: 1, pageSize: 1000 }).then(r => { if (r.success && r.data) setProjects(r.data.queryable?.map(t => ({ id: t.id!, name: t.taskName || '' })) || []); });
   }, []);
 
   const columns: ProColumns<TaskDto>[] = useMemo(() => [
     { title: intl.formatMessage({ id: 'pages.taskManagement.table.name' }), dataIndex: 'taskName', key: 'taskName', width: 200, render: (_: any, r: TaskDto) => <a onClick={() => set({ viewingTask: r, detailVisible: true })}>{r.taskName}</a> },
-    { title: intl.formatMessage({ id: 'pages.taskManagement.table.type' }), dataIndex: 'taskType', key: 'taskType', width: 100, render: (t: string) => t ? <Tag>{t}</Tag> : '-' },
-    { title: intl.formatMessage({ id: 'pages.taskManagement.table.projectName' }), dataIndex: 'projectName', key: 'projectName', width: 150, render: (t: string) => t || '-' },
+    { title: intl.formatMessage({ id: 'pages.taskManagement.table.type' }), dataIndex: 'taskType', key: 'taskType', width: 100, render: (_: any, r: TaskDto) => r.taskType ? <Tag>{r.taskType}</Tag> : '-' },
+    { title: intl.formatMessage({ id: 'pages.taskManagement.table.projectName' }), dataIndex: 'projectName', key: 'projectName', width: 150, render: (_: any, r: TaskDto) => r.projectName || '-' },
     { title: intl.formatMessage({ id: 'pages.taskManagement.table.status' }), dataIndex: 'statusName', key: 'status', width: 100, filters: [
       { text: intl.formatMessage({ id: 'pages.taskManagement.status.pending' }), value: TaskStatusEnum.Pending }, { text: intl.formatMessage({ id: 'pages.taskManagement.status.assigned' }), value: TaskStatusEnum.Assigned },
       { text: intl.formatMessage({ id: 'pages.taskManagement.status.inProgress' }), value: TaskStatusEnum.InProgress }, { text: intl.formatMessage({ id: 'pages.taskManagement.status.completed' }), value: TaskStatusEnum.Completed },
@@ -186,12 +186,12 @@ const TaskManagement: React.FC = () => {
         <Space key="exec" size={4}>
           <Button type="link" size="small" icon={<PlayCircleOutlined />} onClick={() => set({ viewingTask: r, executionVisible: true })}>{intl.formatMessage({ id: 'pages.taskManagement.action.execute' })}</Button>
           <Button type="link" size="small" icon={<StopOutlined />} onClick={() => {
-            App.confirm({ title: intl.formatMessage({ id: 'pages.taskManagement.action.cancel' }), content: intl.formatMessage({ id: 'pages.taskManagement.message.confirmCancel' }), onOk: () => api.cancel(r.id || '').then(res => { if (res.success) { message.success(intl.formatMessage({ id: 'pages.taskManagement.message.cancelSuccess' })); actionRef.current?.reload(); refreshStats(); } }) });
+            Modal.confirm({ title: intl.formatMessage({ id: 'pages.taskManagement.action.cancel' }), content: intl.formatMessage({ id: 'pages.taskManagement.message.confirmCancel' }), onOk: () => api.cancel(r.id || '').then(res => { if (res.success) { message.success(intl.formatMessage({ id: 'pages.taskManagement.message.cancelSuccess' })); actionRef.current?.reload(); refreshStats(); } }) });
           }}>{intl.formatMessage({ id: 'pages.taskManagement.action.cancel' })}</Button>
         </Space>
       ),
       <Button key="delete" type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => {
-        App.confirm({ title: intl.formatMessage({ id: 'pages.taskManagement.action.delete' }), content: intl.formatMessage({ id: 'pages.taskManagement.message.confirmDelete' }), onOk: () => api.delete(r.id || '').then(res => { if (res.success) { message.success(intl.formatMessage({ id: 'pages.taskManagement.message.deleteSuccess' })); actionRef.current?.reload(); refreshStats(); } }) });
+        Modal.confirm({ title: intl.formatMessage({ id: 'pages.taskManagement.action.delete' }), content: intl.formatMessage({ id: 'pages.taskManagement.message.confirmDelete' }), onOk: () => api.delete(r.id || '').then(res => { if (res.success) { message.success(intl.formatMessage({ id: 'pages.taskManagement.message.deleteSuccess' })); actionRef.current?.reload(); refreshStats(); } }) });
       }}>{intl.formatMessage({ id: 'pages.taskManagement.action.delete' })}</Button>,
     ]},
   ], [intl, message, refreshStats]);

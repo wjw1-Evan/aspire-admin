@@ -124,14 +124,14 @@ const EnterpriseService: React.FC = () => {
             </ModalForm>
 
             <ModalForm key={editingState.currentRequest?.id || 'update-status'} title="更新状态" open={modalState.statusVisible} onOpenChange={(open) => { if (!open) setModal({ statusVisible: false }); }}
-                onFinish={async (values) => { if (editingState.currentRequest) { const res = await api.updateStatus(editingState.currentRequest.id, values); if (res.success) { message.success('状态更新成功'); setModal({ statusVisible: false }); actionRef.current?.reload(); loadData(); } return res.success; } return false; }} autoFocusFirstInput width={480}>
+                onFinish={async (values) => { if (editingState.currentRequest) { const res = await api.updateStatus(editingState.currentRequest.id, { status: values.status, assignedTo: values.assignedTo, resolution: values.resolution }); if (res.success) { message.success('状态更新成功'); setModal({ statusVisible: false }); actionRef.current?.reload(); loadData(); } return res.success; } return false; }} autoFocusFirstInput width={480}>
                 <ProFormSelect name="status" label="状态" rules={[{ required: true }]} options={statusOptions} />
                 <ProFormText name="assignedTo" label="处理人" placeholder="处理人ID" />
                 <ProFormTextArea name="resolution" label="处理说明" placeholder="请输入处理说明" />
             </ModalForm>
 
             <ModalForm key={`rate-${editingState.currentRequest?.id}`} title="评价服务" open={modalState.ratingVisible} onOpenChange={(open) => { if (!open) setModal({ ratingVisible: false }); }}
-                onFinish={async (values) => { if (editingState.currentRequest) { const res = await api.rateRequest(editingState.currentRequest.id, values); if (res.success) { message.success('评价成功'); setModal({ ratingVisible: false }); actionRef.current?.reload(); loadData(); } return res.success; } return false; }} autoFocusFirstInput width={480}>
+                onFinish={async (values) => { if (editingState.currentRequest) { const res = await api.rateRequest(editingState.currentRequest.id, { rating: values.rating, feedback: values.feedback }); if (res.success) { message.success('评价成功'); setModal({ ratingVisible: false }); actionRef.current?.reload(); loadData(); } return res.success; } return false; }} autoFocusFirstInput width={480}>
                 <Form.Item name="rating" label="满意度评分" rules={[{ required: true, message: '请选择评分' }]}><Rate /></Form.Item>
                 <ProFormTextArea name="feedback" label="反馈意见" placeholder="请输入您的反馈意见" />
             </ModalForm>

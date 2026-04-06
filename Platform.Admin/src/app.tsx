@@ -53,14 +53,12 @@ export async function getInitialState(): Promise<{
 
     try {
       // 1. 先尝试获取基础用户信息
-      const msg = await queryCurrentUser({
-        skipErrorHandler: true,
-      });
+      const msg = await queryCurrentUser();
 
       const userInfo = msg.data;
 
       // 检查用户是否有效
-      if (!userInfo || userInfo.isLogin === false) {
+      if (!userInfo || (userInfo as any).isLogin === false) {
         tokenUtils.clearAllTokens();
         return undefined;
       }
@@ -294,7 +292,7 @@ export const layout: RunTimeLayoutConfig = ({
     waterMarkProps: {
       content: '',
     },
-    footerRender: () => <Footer />,
+    footerRender: () => <Footer /> as any,
     onPageChange: () => {
       const { location } = history;
       const whiteList = [loginPath, '/user/register', '/user/register-result'];
@@ -380,7 +378,7 @@ export const layout: RunTimeLayoutConfig = ({
       },
     ],
     links: [],
-    headerTitleRender: (logo, _, props) => {
+    headerTitleRender: (logo: React.ReactNode, _: any, props: any) => {
       const systemName =
         initialState?.currentUser?.currentCompanyDisplayName ||
         initialState?.currentUser?.currentCompanyName ||
@@ -483,7 +481,7 @@ export const layout: RunTimeLayoutConfig = ({
 
 
 
-    childrenRender: (children) => {
+    childrenRender: (children: React.ReactNode) => {
 
 
       return (
@@ -535,7 +533,7 @@ export const layout: RunTimeLayoutConfig = ({
     ) : (
       <img src={defaultSettings.logo} alt="logo" />
     ),
-  };
+  } as any;
 };
 
 function handleCurrentUserResponse(response: any): any {

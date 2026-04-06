@@ -12,6 +12,7 @@ import {
 import { formatDateTime } from '@/utils/format';
 import {
   deleteProject,
+  getProjectList,
   getProjectStatistics,
   type ProjectDto,
   type ProjectQueryRequest,

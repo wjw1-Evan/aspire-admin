@@ -58,7 +58,7 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
 
   const handleView = useCallback(async (gateway: IoTGateway) => {
     setSelectedGateway(gateway);
-    try { const response = await iotService.getGatewayStatistics(gateway.gatewayId); if (response.success) setStatistics(response.data); } catch { console.error('Failed to load statistics'); }
+    try { const response = await iotService.getGatewayStatistics(gateway.gatewayId); if (response.success && response.data) setStatistics(response.data); } catch { console.error('Failed to load statistics'); }
     setIsDetailDrawerVisible(true);
   }, []);
 

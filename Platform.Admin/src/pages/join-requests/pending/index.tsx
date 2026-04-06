@@ -3,11 +3,10 @@ import { PageContainer } from '@/components';
 import { useIntl, useModel } from '@umijs/max';
 import { request } from '@umijs/max';
 import { Button, Space, App, Modal, Input } from 'antd';
-import { ProTable, ProColumns } from '@ant-design/pro-table';
+import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { formatDateTime } from '@/utils/format';
 import { ApiResponse, PageParams } from '@/types/api-response';
-import type { ActionType } from '@/types/pro-components';
 
 const { TextArea } = Input;
 
@@ -31,7 +30,7 @@ const PendingJoinRequests: React.FC = () => {
   const intl = useIntl();
   const { message, modal } = App.useApp();
   const { initialState } = useModel('@@initialState');
-  const actionRef = useRef<ActionType | undefined>(undefined);
+  const actionRef = useRef<ActionType>(null!);
   const [state, setState] = useState({
     sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
     searchText: '',
@@ -57,7 +56,7 @@ const PendingJoinRequests: React.FC = () => {
       key: 'reason',
       sorter: true,
       ellipsis: true,
-      render: (text: string) => text || <span style={{ color: '#999' }}>{intl.formatMessage({ id: 'pages.table.noReason' })}</span>,
+      render: (text) => (text as React.ReactNode) || <span style={{ color: '#999' }}>{intl.formatMessage({ id: 'pages.table.noReason' })}</span>,
     },
     {
       title: intl.formatMessage({ id: 'pages.table.applyTime' }),
@@ -109,7 +108,7 @@ const PendingJoinRequests: React.FC = () => {
         const res = await api.approve(record.id);
         if (res.success) {
           message.success(intl.formatMessage({ id: 'pages.message.applicationApproved' }));
-          actionRef.current?.reload();
+          actionRef.current!.reload();
         } else {
           throw new Error(res.message || intl.formatMessage({ id: 'pages.message.operationFailed' }));
         }
@@ -142,7 +141,7 @@ const PendingJoinRequests: React.FC = () => {
         const res = await api.reject(record.id, { rejectReason: rejectReason.trim() });
         if (res.success) {
           message.success(intl.formatMessage({ id: 'pages.message.applicationRejected' }));
-          actionRef.current?.reload();
+          actionRef.current!.reload();
         } else {
           throw new Error(res.message || intl.formatMessage({ id: 'pages.message.operationFailed' }));
         }
@@ -160,7 +159,7 @@ const PendingJoinRequests: React.FC = () => {
       }
       extra={
         <Space wrap>
-          <Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>
+          <Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current!.reload()}>
             {intl.formatMessage({ id: 'pages.button.refresh' })}
           </Button>
         </Space>
@@ -196,7 +195,7 @@ const PendingJoinRequests: React.FC = () => {
         toolBarRender={() => [
           <Input.Search key="search" placeholder={intl.formatMessage({ id: 'pages.search.placeholder' })} style={{ width: 200 }} allowClear
             value={state.searchText} onChange={(e) => set({ searchText: e.target.value })}
-            onSearch={(v) => { set({ searchText: v }); actionRef.current?.reload(); }} />,
+            onSearch={(v) => { set({ searchText: v }); actionRef.current!.reload(); }} />,
         ]}
       />
     </PageContainer>

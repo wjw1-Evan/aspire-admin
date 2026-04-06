@@ -136,7 +136,7 @@ export default function CompanySettings() {
             <Col xs={24} sm={12} md={6}>
               <StatCard
                 title={intl.formatMessage({ id: 'pages.companySettings.statistics.totalRoles' })}
-                value={statistics.totalRoles}
+                value={statistics.totalRoles ?? 0}
                 icon={<TeamOutlined />}
                 color="#1890ff"
               />
@@ -144,7 +144,7 @@ export default function CompanySettings() {
             <Col xs={24} sm={12} md={6}>
               <StatCard
                 title={intl.formatMessage({ id: 'pages.companySettings.statistics.totalMenus' })}
-                value={statistics.totalMenus}
+                value={statistics.totalMenus ?? 0}
                 icon={<MenuOutlined />}
                 color="#1890ff"
               />
@@ -154,7 +154,7 @@ export default function CompanySettings() {
             <Col xs={24} sm={12} md={6}>
               <StatCard
                 title={intl.formatMessage({ id: 'pages.companySettings.statistics.totalPermissions' })}
-                value={statistics.totalMenus}
+                value={statistics.totalMenus ?? 0}
                 icon={<SafetyOutlined />}
                 color="#faad14"
               />

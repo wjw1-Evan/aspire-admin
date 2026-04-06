@@ -86,7 +86,7 @@ const MyActivity: React.FC = () => {
           { key: 'actionTypes', title: intl.formatMessage({ id: 'pages.myActivity.statistics.actionTypes' }), icon: <ThunderboltOutlined />, color: '#faad14' },
           { key: 'avgDuration', title: intl.formatMessage({ id: 'pages.myActivity.statistics.avgDuration' }), suffix: 'ms', icon: <DashboardOutlined />, color: '#722ed1' }
         ].map(i => (
-          <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4} key={i.key}><StatCard title={i.title} value={i.key === 'avgDuration' ? Math.round(state.statistics![i.key as keyof ActivityStats] || 0) : state.statistics![i.key as keyof ActivityStats]} suffix={i.suffix} icon={i.icon} color={i.color} /></Col>
+          <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4} key={i.key}><StatCard title={i.title} value={i.key === 'actionTypes' ? (Array.isArray(state.statistics![i.key as keyof ActivityStats]) ? (state.statistics![i.key as keyof ActivityStats] as string[]).length : state.statistics![i.key as keyof ActivityStats] as number) : i.key === 'avgDuration' ? Math.round((state.statistics![i.key as keyof ActivityStats] as number) || 0) : (state.statistics![i.key as keyof ActivityStats] as string | number)} suffix={i.suffix} icon={i.icon} color={i.color} /></Col>
         ))}
       </Row></Card>}
 

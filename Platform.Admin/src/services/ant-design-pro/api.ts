@@ -78,12 +78,13 @@ export async function getUserStatistics(): Promise<ApiResponse<UserStatistics>> 
 export interface CaptchaResult {
   captchaId: string;
   captchaImage: string;
+  imageData?: string;
 }
 
-export async function getImageCaptcha(): Promise<ApiResponse<CaptchaResult>> {
-  return request('/api/auth/captcha/image', { method: 'GET' });
+export async function getImageCaptcha(type?: 'login' | 'register'): Promise<ApiResponse<CaptchaResult>> {
+  return request('/api/auth/captcha/image', { method: 'GET', params: { type } });
 }
 
-export async function verifyImageCaptcha(captchaId: string, captchaCode: string): Promise<ApiResponse<{ valid: boolean }>> {
-  return request('/api/auth/captcha/verify-image', { method: 'POST', data: { captchaId, captchaCode } });
+export async function verifyImageCaptcha(captchaId: string, captchaCode: string, type?: 'login' | 'register'): Promise<ApiResponse<{ valid: boolean }>> {
+  return request('/api/auth/captcha/verify-image', { method: 'POST', data: { captchaId, captchaCode, type } });
 }

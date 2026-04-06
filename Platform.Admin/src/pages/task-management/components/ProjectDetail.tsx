@@ -129,7 +129,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
             key: 'tasks',
             label: intl.formatMessage({ id: 'pages.projectManagement.taskTree.title' }),
             icon: <BarChartOutlined />,
-            children: project.id ? <TaskTree projectId={project.id} /> : null,
+            children: project.id ? null : null,
           },
           {
             key: 'gantt',

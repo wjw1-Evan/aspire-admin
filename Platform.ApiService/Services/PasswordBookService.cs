@@ -162,14 +162,10 @@ public class PasswordBookService : IPasswordBookService
         if (string.IsNullOrEmpty(userId))
             throw new ArgumentException("用户ID不能为空", nameof(userId));
         
-        var searchTrim = pageParams.Search?.Trim();
         pageParams.SortBy = string.IsNullOrEmpty(pageParams.SortBy) ? "LastUsedAt" : pageParams.SortBy;
 
-        // 搜索关键词同时搜索 platform 和 account
         var query = _context.Set<PasswordBookEntry>()
-            .Where(e =>
-                (e.UserId == userId || e.IsPublic) &&
-                (string.IsNullOrEmpty(searchTrim) || e.Platform.Contains(searchTrim) || e.Account.Contains(searchTrim)))
+            .Where(e => e.UserId == userId || e.IsPublic)
             .Select(e => new PasswordBookEntryDto
             {
                 Id = e.Id,

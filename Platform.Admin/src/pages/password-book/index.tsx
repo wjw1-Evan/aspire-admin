@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { request, useSearchParams } from '@umijs/max';
-import { Tag, Space, Button, Input, Popconfirm, Modal, Drawer, Form } from 'antd';
+import { request } from '@umijs/max';
+import { Tag, Space, Button, Popconfirm, Modal, Drawer, Form } from 'antd';
 
 import { PageContainer, ModalForm, ProDescriptions, ProCard, ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
 import { ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-form';
@@ -41,7 +41,6 @@ const api = {
 
 const PasswordBook: React.FC = () => {
   const actionRef = useRef<ActionType | undefined>(undefined);
-  const [searchParams, setSearchParams] = useSearchParams();
   const [state, setState] = useState({
     statistics: null as Stats | null,
     exportVisible: false,
@@ -50,7 +49,6 @@ const PasswordBook: React.FC = () => {
     detailVisible: false,
     viewingId: '',
     sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
-    searchText: searchParams.get('search') || '',
   });
   const [formState, setFormState] = useState({ tags: [] as string[] });
   const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
@@ -140,7 +138,7 @@ const PasswordBook: React.FC = () => {
         request={async (params) => {
           const { current, pageSize } = params;
           const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-          const res = await api.list({ page: current, pageSize, search: state.searchText || undefined, sortBy: sortParams?.sortBy, sortOrder: sortParams?.sortOrder });
+          const res = await api.list({ page: current, pageSize, sortBy: sortParams?.sortBy, sortOrder: sortParams?.sortOrder });
           return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
         }}
         columns={columns}
@@ -151,23 +149,6 @@ const PasswordBook: React.FC = () => {
         }}
         search={false}
         toolBarRender={() => [
-          <Input.Search
-            key="search"
-            placeholder="搜索平台或账号..."
-            value={state.searchText}
-            onChange={(e) => set({ searchText: e.target.value })}
-            onSearch={(value) => {
-              setSearchParams({ search: value || '' });
-              actionRef.current?.reload();
-            }}
-            onPressEnter={(e) => {
-              const value = (e.target as HTMLInputElement).value;
-              setSearchParams({ search: value || '' });
-              actionRef.current?.reload();
-            }}
-            style={{ width: 200 }}
-            allowClear
-          />,
           <Button key="export" icon={<ExportOutlined />} onClick={() => set({ exportVisible: true })}>导出</Button>,
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingEntry: null, formVisible: true })}>新建</Button>,
         ]}

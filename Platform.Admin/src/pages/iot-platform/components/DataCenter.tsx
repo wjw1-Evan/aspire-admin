@@ -1,191 +1,108 @@
-import React, { useRef, useState, forwardRef, useImperativeHandle, useCallback, useMemo, useEffect } from 'react';
-import type { ColumnsType } from 'antd/es/table';
-import { Table, Tag, Drawer, Descriptions, Space, DatePicker, Card, Typography, Grid } from 'antd';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
+import { PageContainer } from '@/components';
+import { useIntl } from '@umijs/max';
+import { type ProColumns, ActionType, ProTable } from '@ant-design/pro-table';
+import { Button, Card, Descriptions, Drawer, Grid, Input, Space, Tag, Typography, message } from 'antd';
+import { ReloadOutlined, SearchOutlined, DatabaseOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { useMessage } from '@/hooks/useMessage';
-import useCommonStyles from '@/hooks/useCommonStyles';
-import SearchBar from '@/components/SearchBar';
-import type { PageParams } from '@/types';
-import { ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import { iotService, IoTDataRecord } from '@/services/iotService';
-import { useIotTable } from '../hooks/useIotTable';
 
 const { useBreakpoint } = Grid;
 const { Paragraph } = Typography;
-const { RangePicker } = DatePicker;
 
-export interface DataCenterRef {
-  reload: () => void;
-}
+export interface DataCenterRef { reload: () => void; }
 
-const dataTypeLabels: Record<string, string> = {
-  Numeric: '数值',
-  Boolean: '布尔',
-  String: '字符串',
-  Enum: '枚举',
-  Json: 'JSON',
-};
+const dataTypeLabels: Record<string, string> = { Numeric: '数值', Boolean: '布尔', String: '字符串', Enum: '枚举', Json: 'JSON' };
 
-const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
-  const message = useMessage();
+const DataCenter = (props: any, ref: React.Ref<DataCenterRef>) => {
+  const intl = useIntl();
   const screens = useBreakpoint();
   const isMobile = !screens.md;
-  const { styles } = useCommonStyles();
-  const [isDetailDrawerVisible, setIsDetailDrawerVisible] = useState(false);
-  const [selectedRecord, setSelectedRecord] = useState<IoTDataRecord | null>(null);
+  const actionRef = useRef<ActionType | undefined>(undefined);
 
-  const { data, loading, pagination, searchParamsRef, fetchData, handleSearch, handleTableChange } =
-    useIotTable<IoTDataRecord>(iotService.queryDataRecords);
+  const [state, setState] = useState({
+    detailVisible: false,
+    viewingRecord: null as IoTDataRecord | null,
+    sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
+    searchText: '',
+  });
+  const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  useImperativeHandle(ref, () => ({ reload: () => fetchData() }), [fetchData]);
-
-  const handleViewDetail = useCallback((record: IoTDataRecord) => {
-    setSelectedRecord(record);
-    setIsDetailDrawerVisible(true);
-  }, []);
-
-  const columns: ColumnsType<IoTDataRecord> = useMemo(() => [
-    {
-      title: '设备ID',
-      dataIndex: 'deviceId',
-      key: 'deviceId',
-      width: 200,
-      ellipsis: true,
-      sorter: true,
-      render: (text: string, record: IoTDataRecord) => (
-        <a onClick={() => handleViewDetail(record)} style={{ cursor: 'pointer' }}>{text}</a>
-      ),
-    },
-    {
-      title: '数据点ID',
-      dataIndex: 'dataPointId',
-      key: 'dataPointId',
-      width: 200,
-      ellipsis: true,
-      sorter: true,
-      render: (text: string) => (
-        <span style={{ cursor: 'pointer' }} onClick={() => { navigator.clipboard.writeText(text); message.success('已复制到剪贴板'); }}>
-          {text}
-        </span>
-      ),
-    },
-    {
-      title: '数据类型',
-      dataIndex: 'dataType',
-      key: 'dataType',
-      width: 100,
-      sorter: true,
-      render: (_: any, record: IoTDataRecord) => <Tag>{dataTypeLabels[record.dataType] || record.dataType}</Tag>,
-    },
-    {
-      title: '数据值',
-      dataIndex: 'value',
-      key: 'value',
-      width: 250,
-      ellipsis: { showTitle: false },
-      sorter: true,
-      render: (value: string, record: IoTDataRecord) => {
-        if (record.dataType?.toLowerCase() === 'json') {
-          try {
-            const parsed = JSON.parse(value);
-            const formatted = JSON.stringify(parsed, null, 2);
-            return <span title={value} style={{ fontFamily: 'monospace', fontSize: '12px' }}>{formatted.substring(0, 100)}{value.length > 100 ? '...' : ''}</span>;
-          } catch { return <span title={value}>{value}</span>; }
-        }
-        return <span title={value}>{value}</span>;
-      },
-    },
-    {
-      title: '上报时间',
-      dataIndex: 'reportedAt',
-      key: 'reportedAt',
-      width: 180,
-      sorter: true,
-      render: (_: any, record: IoTDataRecord) => {
-        if (!record.reportedAt) return '-';
-        try {
-          const date = dayjs(record.reportedAt);
-          return date.isValid() ? date.format('YYYY-MM-DD HH:mm:ss') : record.reportedAt;
-        } catch { return record.reportedAt; }
-      },
-    },
-    {
-      title: '告警',
-      dataIndex: 'isAlarm',
-      key: 'isAlarm',
-      width: 100,
-      render: (_: any, record: IoTDataRecord) => record.isAlarm ? <Tag color="red">告警</Tag> : <Tag color="green">正常</Tag>,
-    },
-  ], [handleViewDetail]);
+  const columns: ProColumns<IoTDataRecord>[] = [
+    { title: '设备ID', dataIndex: 'deviceId', sorter: true, ellipsis: true, render: (dom, record) => <a onClick={() => set({ viewingRecord: record, detailVisible: true })}>{dom}</a> },
+    { title: '数据点ID', dataIndex: 'dataPointId', sorter: true, ellipsis: true, render: (dom) => <a onClick={() => { navigator.clipboard.writeText(dom); message.success('已复制到剪贴板'); }}>{dom}</a> },
+    { title: '数据类型', dataIndex: 'dataType', sorter: true, render: (_, record) => <Tag>{dataTypeLabels[record.dataType] || record.dataType}</Tag> },
+    { title: '数据值', dataIndex: 'value', sorter: true, ellipsis: { showTitle: false }, width: 250, render: (dom, record) => {
+      if (record.dataType?.toLowerCase() === 'json') {
+        try { const parsed = JSON.parse(dom); return <span title={dom} style={{ fontFamily: 'monospace', fontSize: '12px' }}>{JSON.stringify(parsed).substring(0, 100)}{dom.length > 100 ? '...' : ''}</span>; }
+        catch { return <span title={dom}>{dom}</span>; }
+      }
+      return <span title={dom}>{dom}</span>;
+    }},
+    { title: '上报时间', dataIndex: 'reportedAt', sorter: true, render: (dom) => dom ? dayjs(dom).format('YYYY-MM-DD HH:mm:ss') : '-' },
+    { title: '告警', dataIndex: 'isAlarm', render: (dom) => dom ? <Tag color="red">告警</Tag> : <Tag color="green">正常</Tag> },
+  ];
 
   return (
-    <>
-      <SearchBar initialParams={searchParamsRef.current} onSearch={handleSearch} style={{ marginBottom: 16 }} />
-      <Table<IoTDataRecord>
-        dataSource={data}
-        columns={columns}
-        rowKey={(record) => record.id || `${record.deviceId}-${record.dataPointId}-${record.reportedAt}`}
-        loading={loading}
-        scroll={{ x: 'max-content' }}
-        onChange={handleTableChange}
-        pagination={{ current: pagination.page, pageSize: pagination.pageSize, total: pagination.total }}
+    <PageContainer title={<Space><DatabaseOutlined />数据中心</Space>}>
+      <ProTable actionRef={actionRef} request={async (params: any) => {
+        const { current, pageSize } = params;
+        const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
+        const res = await iotService.queryDataRecords({ page: current, pageSize, search: state.searchText, ...sortParams });
+        return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+      }} columns={columns} rowKey={(record) => record.id || `${record.deviceId}-${record.dataPointId}-${record.reportedAt}`} search={false}
+        onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
+        toolBarRender={() => [
+          <Input.Search key="search" placeholder="搜索..." style={{ width: 200 }} allowClear value={state.searchText} onChange={(e) => set({ searchText: e.target.value })} onSearch={(v) => { set({ searchText: v }); actionRef.current?.reload(); }} prefix={<SearchOutlined />} />,
+          <Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>刷新</Button>,
+        ]}
       />
-      <Drawer
-        title="数据记录详情"
-        placement="right"
-        onClose={() => { setIsDetailDrawerVisible(false); setSelectedRecord(null); }}
-        open={isDetailDrawerVisible}
-        size={isMobile ? 'large' : 800}
-      >
-        {selectedRecord ? (
+
+      <Drawer title="数据记录详情" placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingRecord: null })} size={isMobile ? 'large' : 800}>
+        {state.viewingRecord && (
           <>
-            <Card title="基本信息" className={styles.card} style={{ marginBottom: 16 }}>
+            <Card title="基本信息" style={{ marginBottom: 16 }}>
               <Descriptions column={isMobile ? 1 : 2} size="small">
-                <Descriptions.Item label="记录ID" span={2}>{selectedRecord.id}</Descriptions.Item>
-                <Descriptions.Item label="设备ID">{selectedRecord.deviceId}</Descriptions.Item>
-                <Descriptions.Item label="数据点ID">{selectedRecord.dataPointId}</Descriptions.Item>
-                <Descriptions.Item label="数据类型"><Tag>{dataTypeLabels[selectedRecord.dataType] || selectedRecord.dataType}</Tag></Descriptions.Item>
-                <Descriptions.Item label="采样间隔">{selectedRecord.samplingInterval} 秒</Descriptions.Item>
+                <Descriptions.Item label="记录ID" span={2}>{state.viewingRecord.id}</Descriptions.Item>
+                <Descriptions.Item label="设备ID">{state.viewingRecord.deviceId}</Descriptions.Item>
+                <Descriptions.Item label="数据点ID">{state.viewingRecord.dataPointId}</Descriptions.Item>
+                <Descriptions.Item label="数据类型"><Tag>{dataTypeLabels[state.viewingRecord.dataType] || state.viewingRecord.dataType}</Tag></Descriptions.Item>
+                <Descriptions.Item label="采样间隔">{state.viewingRecord.samplingInterval} 秒</Descriptions.Item>
               </Descriptions>
             </Card>
-            <Card title="数据值" className={styles.card} style={{ marginBottom: 16 }}>
+            <Card title="数据值" style={{ marginBottom: 16 }}>
               <Descriptions column={1} size="small">
                 <Descriptions.Item label="值">
-                  {selectedRecord.dataType?.toLowerCase() === 'json' ? (() => {
+                  {state.viewingRecord.dataType?.toLowerCase() === 'json' ? (() => {
                     try {
-                      const parsed = JSON.parse(selectedRecord.value);
-                      return <Paragraph copyable={{ text: selectedRecord.value }} style={{ width: '100%', maxHeight: 400, overflow: 'auto', fontFamily: 'monospace', whiteSpace: 'pre-wrap', marginBottom: 0 }}>{JSON.stringify(parsed, null, 2)}</Paragraph>;
-                    } catch { return <div style={{ wordBreak: 'break-all', color: '#ff4d4f' }}>{selectedRecord.value}<div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>(JSON 解析失败，显示原始值)</div></div>; }
-                  })() : <div style={{ wordBreak: 'break-all' }}>{selectedRecord.value}</div>}
+                      const parsed = JSON.parse(state.viewingRecord.value);
+                      return <Paragraph copyable={{ text: state.viewingRecord.value }} style={{ width: '100%', maxHeight: 400, overflow: 'auto', fontFamily: 'monospace', whiteSpace: 'pre-wrap', marginBottom: 0 }}>{JSON.stringify(parsed, null, 2)}</Paragraph>;
+                    } catch { return <div style={{ wordBreak: 'break-all', color: '#ff4d4f' }}>{state.viewingRecord.value}<div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>(JSON 解析失败，显示原始值)</div></div>; }
+                  })() : <div style={{ wordBreak: 'break-all' }}>{state.viewingRecord.value}</div>}
                 </Descriptions.Item>
               </Descriptions>
             </Card>
-            {(selectedRecord.isAlarm || selectedRecord.alarmLevel) && (
-              <Card title="告警信息" className={styles.card} style={{ marginBottom: 16 }}>
+            {(state.viewingRecord.isAlarm || state.viewingRecord.alarmLevel) && (
+              <Card title="告警信息" style={{ marginBottom: 16 }}>
                 <Descriptions column={isMobile ? 1 : 2} size="small">
-                  <Descriptions.Item label="告警状态">{selectedRecord.isAlarm ? <Tag color="red">告警</Tag> : <Tag color="green">正常</Tag>}</Descriptions.Item>
-                  {selectedRecord.alarmLevel && <Descriptions.Item label="告警级别">{selectedRecord.alarmLevel}</Descriptions.Item>}
+                  <Descriptions.Item label="告警状态">{state.viewingRecord.isAlarm ? <Tag color="red">告警</Tag> : <Tag color="green">正常</Tag>}</Descriptions.Item>
+                  {state.viewingRecord.alarmLevel && <Descriptions.Item label="告警级别">{state.viewingRecord.alarmLevel}</Descriptions.Item>}
                 </Descriptions>
               </Card>
             )}
-            <Card title="时间信息" className={styles.card} style={{ marginBottom: 16 }}>
+            <Card title="时间信息" style={{ marginBottom: 16 }}>
               <Descriptions column={isMobile ? 1 : 2} size="small">
-                <Descriptions.Item label="上报时间">{selectedRecord.reportedAt ? dayjs(selectedRecord.reportedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
-                <Descriptions.Item label="创建时间">{selectedRecord.createdAt ? dayjs(selectedRecord.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
+                <Descriptions.Item label="上报时间">{state.viewingRecord.reportedAt ? dayjs(state.viewingRecord.reportedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
+                <Descriptions.Item label="创建时间">{state.viewingRecord.createdAt ? dayjs(state.viewingRecord.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
               </Descriptions>
             </Card>
-            {selectedRecord.remarks && <Card title="备注" className={styles.card} style={{ marginBottom: 16 }}><p>{selectedRecord.remarks}</p></Card>}
+            {state.viewingRecord.remarks && <Card title="备注" style={{ marginBottom: 16 }}><p>{state.viewingRecord.remarks}</p></Card>}
           </>
-        ) : <div>未加载数据记录信息</div>}
+        )}
       </Drawer>
-    </>
+    </PageContainer>
   );
-});
+};
 
 DataCenter.displayName = 'DataCenter';
-
 export default DataCenter;

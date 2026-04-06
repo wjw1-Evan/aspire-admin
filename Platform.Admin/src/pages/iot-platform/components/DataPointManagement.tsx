@@ -1,23 +1,17 @@
-import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle, useCallback, useMemo } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
+import { PageContainer, StatCard } from '@/components';
 import { useIntl } from '@umijs/max';
-import { Table, Typography, Grid, type TableColumnsType, Button, Modal, Form, Input, InputNumber, Select, Space, App, Drawer, Tag, Card, Row, Col, Descriptions, Switch } from 'antd';
+import { type ProColumns, ActionType, ProTable } from '@ant-design/pro-table';
+import { ModalForm, ProFormText, ProFormSelect, ProFormDigit, ProFormSwitch, ProFormTextArea } from '@ant-design/pro-form';
+import { Button, Card, Col, Descriptions, Drawer, Form, Grid, Input, Row, Select, Space, Tag, message } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, DatabaseOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { PlusOutlined, EditOutlined, DeleteOutlined, DatabaseOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { iotService, IoTDataPoint, IoTDevice } from '@/services/iotService';
-import { StatCard } from '@/components';
-import useCommonStyles from '@/hooks/useCommonStyles';
-import SearchBar from '@/components/SearchBar';
-import type { PageParams } from '@/types';
-import { useIotTable } from '../hooks/useIotTable';
+import { useModal } from '@/hooks/useModal';
 
-const { Paragraph } = Typography;
 const { useBreakpoint } = Grid;
 
-export interface DataPointManagementRef {
-  reload: () => void;
-  refreshStats: () => void;
-  handleAdd: () => void;
-}
+export interface DataPointManagementRef { reload: () => void; refreshStats: () => void; handleAdd: () => void; }
 
 const DATA_TYPE_OPTIONS = [
   { label: '数值', value: 'Numeric' },
@@ -29,214 +23,185 @@ const DATA_TYPE_OPTIONS = [
 
 const DATA_TYPE_LABELS: Record<string, string> = { Numeric: '数值', Boolean: '布尔', String: '字符串', Enum: '枚举', Json: 'JSON' };
 
-const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
+const DataPointManagement = (props: any, ref: React.Ref<DataPointManagementRef>) => {
   const intl = useIntl();
-  const { message, modal } = App.useApp();
+  const { confirm } = useModal();
   const screens = useBreakpoint();
   const isMobile = !screens.md;
-  const { styles } = useCommonStyles();
-  const [devices, setDevices] = useState<IoTDevice[]>([]);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [isDetailDrawerVisible, setIsDetailDrawerVisible] = useState(false);
-  const [selectedDataPoint, setSelectedDataPoint] = useState<IoTDataPoint | null>(null);
+  const actionRef = useRef<ActionType | undefined>(undefined);
   const [form] = Form.useForm();
-  const [overviewStats, setOverviewStats] = useState({ total: 0, enabled: 0, disabled: 0, withAlarm: 0 });
 
-  const { data, loading, pagination, searchParamsRef, fetchData, handleSearch, handleTableChange } =
-    useIotTable<IoTDataPoint>(iotService.getDataPoints);
+  const [state, setState] = useState({
+    devices: [] as IoTDevice[],
+    statistics: null as { total: number; enabled: number; disabled: number; withAlarm: number } | null,
+    editingDataPoint: null as IoTDataPoint | null,
+    formVisible: false,
+    detailVisible: false,
+    viewingDataPoint: null as IoTDataPoint | null,
+    sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
+    searchText: '',
+  });
+  const set = (partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial }));
 
-  const fetchOverviewStats = useCallback(async () => {
+  const fetchStatistics = useCallback(async () => {
     try {
       const response = await iotService.getDataPoints({});
       if (response.success && response.data) {
-        setOverviewStats(prev => ({ ...prev, total: response.data?.rowCount || 0 }));
+        set({ statistics: { total: response.data.rowCount || 0, enabled: 0, disabled: 0, withAlarm: 0 } });
       }
-    } catch (error) { console.error('获取统计信息失败:', error); }
+    } catch {}
   }, []);
 
   const loadDevices = useCallback(async () => {
     try {
       const response = await iotService.getDevices({});
-      setDevices(response.success && response.data ? response.data.queryable || [] : []);
-    } catch { setDevices([]); }
+      if (response.success && response.data) set({ devices: response.data.queryable || [] });
+    } catch {}
   }, []);
 
-  useEffect(() => { loadDevices(); fetchOverviewStats(); }, [loadDevices, fetchOverviewStats]);
+  useEffect(() => { loadDevices(); fetchStatistics(); }, [loadDevices, fetchStatistics]);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  useImperativeHandle(ref, () => ({ reload: () => fetchData(), refreshStats: () => fetchOverviewStats(), handleAdd: () => handleAdd() }), [fetchData, fetchOverviewStats]);
-
-  const handleAdd = useCallback(() => { form.resetFields(); setSelectedDataPoint(null); setIsModalVisible(true); }, [form]);
-
-  const handleEdit = useCallback((dataPoint: IoTDataPoint) => { setSelectedDataPoint(dataPoint); form.setFieldsValue(dataPoint); setIsModalVisible(true); }, [form]);
-
-  const handleDelete = useCallback(async (id: string) => {
-    try {
-      const response = await iotService.deleteDataPoint(id);
-      if (response.success) { message.success('删除成功'); fetchData(); fetchOverviewStats(); }
-      else { message.error((response as any).message || '删除失败'); }
-    } catch (error: any) { message.error(error?.message || '删除失败'); }
-  }, [fetchData, fetchOverviewStats]);
+  const columns: ProColumns<IoTDataPoint>[] = [
+    { title: '数据点名称', dataIndex: 'title', sorter: true, ellipsis: true, render: (dom, record) => <a onClick={() => set({ viewingDataPoint: record, detailVisible: true })}>{dom}</a> },
+    { title: '所属设备', dataIndex: 'deviceId', sorter: true, render: (dom) => state.devices.find(d => d.deviceId === dom)?.title || dom },
+    { title: '数据类型', dataIndex: 'dataType', sorter: true, render: (dom) => DATA_TYPE_LABELS[dom] || dom },
+    { title: '单位', dataIndex: 'unit', sorter: true },
+    { title: '采样间隔(秒)', dataIndex: 'samplingInterval', sorter: true },
+    { title: '最后采集值', dataIndex: 'lastValue', width: 150, render: (dom, record) => {
+      if (!dom) return <span style={{ color: '#999' }}>暂无数据</span>;
+      if (record.dataType?.toLowerCase() === 'json') {
+        try { const parsed = JSON.parse(dom); return <span title={dom} style={{ fontFamily: 'monospace', fontSize: '12px' }}>{JSON.stringify(parsed).substring(0, 50)}{dom.length > 50 ? '...' : ''}</span>; }
+        catch { return <span title={dom}>{dom.substring(0, 30)}{dom.length > 30 ? '...' : ''}</span>; }
+      }
+      return <span title={dom}>{dom}{record.unit && <span style={{ color: '#999', marginLeft: 4 }}>{record.unit}</span>}</span>;
+    }},
+    { title: '最后采集时间', dataIndex: 'lastUpdatedAt', sorter: true, render: (dom) => {
+      if (!dom) return <span style={{ color: '#999' }}>暂无</span>;
+      const date = new Date(dom);
+      const diffMins = Math.floor((Date.now() - date.getTime()) / 60000);
+      const diffHours = Math.floor(diffMins / 60);
+      const diffDays = Math.floor(diffHours / 24);
+      const timeAgo = diffMins < 1 ? '刚刚' : diffMins < 60 ? `${diffMins}分钟前` : diffHours < 24 ? `${diffHours}小时前` : diffDays < 7 ? `${diffDays}天前` : '';
+      return <div><div>{dayjs(dom).format('YYYY-MM-DD HH:mm:ss')}</div>{timeAgo && <div style={{ fontSize: '12px', color: '#999', marginTop: 2 }}>{timeAgo}</div>}</div>;
+    }},
+    { title: '告警配置', dataIndex: 'alarmConfig', sorter: true, render: (dom) => dom?.isEnabled ? <Tag color="orange">已配置</Tag> : <Tag color="default">未配置</Tag> },
+    { title: '启用', dataIndex: 'isEnabled', sorter: true, render: (dom) => <Tag color={dom ? 'success' : 'default'}>{dom ? '启用' : '禁用'}</Tag> },
+    { title: '操作', valueType: 'option', fixed: 'right', width: 120, render: (_, record) => [
+      <Button key="edit" type="link" icon={<EditOutlined />} onClick={() => { set({ editingDataPoint: record, formVisible: true }); form.setFieldsValue(record); }}>编辑</Button>,
+      <Button key="delete" type="link" danger icon={<DeleteOutlined />} onClick={() => { confirm({ title: '删除数据点', content: '确定要删除此数据点吗？', onOk: async () => { const res = await iotService.deleteDataPoint(record.id); if (res.success) { message.success('删除成功'); actionRef.current?.reload(); fetchStatistics(); } }, okButtonProps: { danger: true } }); }}>删除</Button>,
+    ]},
+  ];
 
   const handleSubmit = useCallback(async (values: any) => {
-    try {
-      const response = selectedDataPoint
-        ? await iotService.updateDataPoint(selectedDataPoint.id, values)
-        : await iotService.createDataPoint(values);
-      if (response.success) { message.success(selectedDataPoint ? '更新成功' : '创建成功'); setIsModalVisible(false); fetchData(); fetchOverviewStats(); }
-      else { message.error((response as any).message || '操作失败'); }
-    } catch (error: any) { message.error(error?.message || '操作失败'); }
-  }, [selectedDataPoint, fetchData, fetchOverviewStats]);
-
-  const columns: TableColumnsType<IoTDataPoint> = useMemo(() => [
-    {
-      title: '数据点名称', dataIndex: 'title', key: 'title', width: 150, ellipsis: true, sorter: true,
-      render: (text, record) => <a onClick={() => { setSelectedDataPoint(record); setIsDetailDrawerVisible(true); }}>{text}</a>,
-    },
-    {
-      title: '所属设备', dataIndex: 'deviceId', key: 'deviceId', width: 150, sorter: true,
-      render: (deviceId: string) => devices.find(d => d.deviceId === deviceId)?.title || deviceId,
-    },
-    { title: '数据类型', dataIndex: 'dataType', key: 'dataType', width: 100, sorter: true, render: (type: string) => DATA_TYPE_LABELS[type] || type },
-    { title: '单位', dataIndex: 'unit', key: 'unit', width: 80, sorter: true },
-    { title: '采样间隔(秒)', dataIndex: 'samplingInterval', key: 'samplingInterval', width: 120, sorter: true },
-    {
-      title: '最后采集值', dataIndex: 'lastValue', key: 'lastValue', width: 150, sorter: true,
-      render: (value: string, record: IoTDataPoint) => {
-        if (!value) return <span style={{ color: '#999' }}>暂无数据</span>;
-        if (record.dataType?.toLowerCase() === 'json') {
-          try { const parsed = JSON.parse(value); return <span title={value} style={{ fontFamily: 'monospace', fontSize: '12px' }}>{JSON.stringify(parsed).substring(0, 50)}{value.length > 50 ? '...' : ''}</span>; }
-          catch { return <span title={value}>{value.substring(0, 30)}{value.length > 30 ? '...' : ''}</span>; }
-        }
-        return <span title={value}>{value}{record.unit && <span style={{ color: '#999', marginLeft: 4 }}>{record.unit}</span>}</span>;
-      },
-    },
-    {
-      title: '最后采集时间', dataIndex: 'lastUpdatedAt', key: 'lastUpdatedAt', width: 180, sorter: true,
-      render: (time: string) => {
-        if (!time) return <span style={{ color: '#999' }}>暂无</span>;
-        const date = new Date(time);
-        const diffMins = Math.floor((Date.now() - date.getTime()) / 60000);
-        const diffHours = Math.floor(diffMins / 60);
-        const diffDays = Math.floor(diffHours / 24);
-        const timeAgo = diffMins < 1 ? '刚刚' : diffMins < 60 ? `${diffMins}分钟前` : diffHours < 24 ? `${diffHours}小时前` : diffDays < 7 ? `${diffDays}天前` : '';
-        return <div><div>{dayjs(date).format('YYYY-MM-DD HH:mm:ss')}</div>{timeAgo && <div style={{ fontSize: '12px', color: '#999', marginTop: 2 }}>{timeAgo}</div>}</div>;
-      },
-    },
-    {
-      title: '告警配置', dataIndex: 'alarmConfig', key: 'alarmConfig', width: 100, sorter: true,
-      render: (alarmConfig: any) => alarmConfig?.isEnabled ? <Tag color="orange">已配置</Tag> : <Tag color="default">未配置</Tag>,
-    },
-    {
-      title: '启用状态', dataIndex: 'isEnabled', key: 'isEnabled', width: 100, sorter: true,
-      render: (value: boolean) => <Tag color={value ? 'success' : 'default'}>{value ? '启用' : '禁用'}</Tag>,
-    },
-    {
-      title: '操作', key: 'action', width: 150, fixed: 'right',
-      render: (_: any, record: IoTDataPoint) => (
-        <Space>
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>编辑</Button>
-          <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => { modal.confirm({ title: '删除数据点', content: '确定要删除此数据点吗？', onOk: () => handleDelete(record.id), okButtonProps: { danger: true } }); }}>删除</Button>
-        </Space>
-      ),
-    },
-  ], [devices, handleEdit, handleDelete]);
-
-  const renderJsonField = useCallback((value: string, unit?: string) => {
-    if (value?.toLowerCase() === 'json') {
-      try { const parsed = JSON.parse(value); return <Paragraph copyable={{ text: value }} style={{ width: '100%', maxHeight: 400, overflow: 'auto', fontFamily: 'monospace', whiteSpace: 'pre-wrap', marginBottom: 0 }}>{JSON.stringify(parsed, null, 2)}</Paragraph>; }
-      catch { return <div style={{ wordBreak: 'break-all', color: '#ff4d4f' }}>{value}<div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>(JSON 解析失败)</div></div>; }
-    }
-    return <div>{value}{unit && <span style={{ color: '#999', marginLeft: 4 }}>{unit}</span>}</div>;
-  }, []);
+    const res = state.editingDataPoint ? await iotService.updateDataPoint(state.editingDataPoint.id, values) : await iotService.createDataPoint(values);
+    if (res.success) message.success(state.editingDataPoint ? '更新成功' : '创建成功');
+    set({ formVisible: false, editingDataPoint: null });
+    actionRef.current?.reload();
+    fetchStatistics();
+  }, [state.editingDataPoint, fetchStatistics]);
 
   return (
-    <>
-      <Card className={styles.card} style={{ marginBottom: 16 }}>
-        <Row gutter={[12, 12]}>
-          <Col xs={24} sm={12} md={6}><StatCard title={intl.formatMessage({ id: 'pages.iotPlatform.status.totalDatapoints' })} value={overviewStats.total} icon={<DatabaseOutlined />} color="#1890ff" /></Col>
-          <Col xs={24} sm={12} md={6}><StatCard title={intl.formatMessage({ id: 'pages.table.activated' })} value={overviewStats.enabled} icon={<CheckCircleOutlined />} color="#52c41a" /></Col>
-          <Col xs={24} sm={12} md={6}><StatCard title={intl.formatMessage({ id: 'pages.table.deactivated' })} value={overviewStats.disabled} icon={<CloseCircleOutlined />} color="#8c8c8c" /></Col>
-          <Col xs={24} sm={12} md={6}><StatCard title={intl.formatMessage({ id: 'pages.iotPlatform.status.withAlarm' })} value={overviewStats.withAlarm} icon={<ExclamationCircleOutlined />} color="#faad14" /></Col>
+    <PageContainer title={<Space><DatabaseOutlined />数据点管理</Space>}>
+      {state.statistics && <Card style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>
+        {[{ key: 'total', title: '数据点总数', icon: <DatabaseOutlined />, color: '#1890ff' },
+          { key: 'enabled', title: '已启用', icon: <CheckCircleOutlined />, color: '#52c41a' },
+          { key: 'disabled', title: '已禁用', icon: <CloseCircleOutlined />, color: '#8c8c8c' },
+          { key: 'withAlarm', title: '已配置告警', icon: <ExclamationCircleOutlined />, color: '#faad14' }
+        ].map(i => <Col xs={24} sm={12} md={6} key={i.key}><StatCard title={i.title} value={state.statistics![i.key as keyof typeof state.statistics]} icon={i.icon} color={i.color} /></Col>)}
+      </Row></Card>}
+
+      <ProTable actionRef={actionRef} request={async (params: any) => {
+        const { current, pageSize } = params;
+        const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
+        const res = await iotService.getDataPoints({ page: current, pageSize, search: state.searchText, ...sortParams });
+        return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+      }} columns={columns} rowKey="id" search={false}
+        onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
+        toolBarRender={() => [
+          <Input.Search key="search" placeholder="搜索..." style={{ width: 200 }} allowClear value={state.searchText} onChange={(e) => set({ searchText: e.target.value })} onSearch={(v) => { set({ searchText: v }); actionRef.current?.reload(); }} prefix={<SearchOutlined />} />,
+          <Button key="refresh" icon={<ReloadOutlined />} onClick={() => { actionRef.current?.reload(); fetchStatistics(); }}>刷新</Button>,
+          <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { set({ editingDataPoint: null, formVisible: true }); form.resetFields(); }}>新建</Button>,
+        ]}
+      />
+
+      <ModalForm title={state.editingDataPoint ? '编辑数据点' : '新建数据点'} open={state.formVisible} onOpenChange={(open) => { if (!open) set({ formVisible: false, editingDataPoint: null }); }}
+        form={form} onFinish={handleSubmit} width={isMobile ? '100%' : 700}
+      >
+        <Row gutter={12}>
+          <Col span={12}><ProFormText name="name" label="数据点名称" rules={[{ required: true, message: '请输入数据点名称' }]} placeholder="请输入数据点名称" /></Col>
+          <Col span={12}><ProFormText name="title" label="数据点标题" rules={[{ required: true, message: '请输入数据点标题' }]} placeholder="请输入数据点标题" /></Col>
         </Row>
-      </Card>
-      <SearchBar initialParams={searchParamsRef.current} onSearch={handleSearch} style={{ marginBottom: 16 }} />
-      <Table<IoTDataPoint> columns={columns} dataSource={data} rowKey="id" loading={loading} scroll={{ x: 'max-content' }} onChange={handleTableChange} pagination={{ current: pagination.page, pageSize: pagination.pageSize, total: pagination.total }} />
+        <Row gutter={12}>
+          <Col span={12}><ProFormSelect name="deviceId" label="所属设备" rules={[{ required: true, message: '请选择所属设备' }]} options={state.devices.map(d => ({ label: d.title, value: d.deviceId }))} placeholder="请选择所属设备" /></Col>
+          <Col span={12}><ProFormSelect name="dataType" label="数据类型" rules={[{ required: true, message: '请选择数据类型' }]} options={DATA_TYPE_OPTIONS} placeholder="请选择数据类型" /></Col>
+        </Row>
+        <Row gutter={12}>
+          <Col span={8}><ProFormText name="unit" label="单位" placeholder="请输入单位" /></Col>
+          <Col span={8}><ProFormDigit name="minValue" label="最小值" placeholder="请输入最小值" /></Col>
+          <Col span={8}><ProFormDigit name="maxValue" label="最大值" placeholder="请输入最大值" /></Col>
+        </Row>
+        <Row gutter={12}>
+          <Col span={8}><ProFormDigit name="precision" label="精度" initialValue={2} min={0} max={10} placeholder="请输入精度" /></Col>
+          <Col span={8}><ProFormDigit name="samplingInterval" label="采样间隔(秒)" initialValue={60} min={1} placeholder="请输入采样间隔" /></Col>
+          <Col span={4}><ProFormSwitch name="isReadOnly" label="只读" initialValue={true} /></Col>
+          <Col span={4}><ProFormSwitch name="isEnabled" label="启用" initialValue={true} /></Col>
+        </Row>
+        <ProFormTextArea name="description" label="描述" placeholder="请输入描述" />
+        <ProFormTextArea name="remarks" label="备注" placeholder="请输入备注" />
+      </ModalForm>
 
-      <Modal title={selectedDataPoint ? '编辑数据点' : '新建数据点'} open={isModalVisible} onOk={() => form.submit()} onCancel={() => { setIsModalVisible(false); setSelectedDataPoint(null); form.resetFields(); }} width={isMobile ? '100%' : 700}>
-        <Form form={form} layout="vertical" onFinish={handleSubmit}>
-          <Form.Item label="数据点名称" name="name" rules={[{ required: true, message: '请输入数据点名称' }]}><Input placeholder="请输入数据点名称" /></Form.Item>
-          <Form.Item label="数据点标题" name="title" rules={[{ required: true, message: '请输入数据点标题' }]}><Input placeholder="请输入数据点标题" /></Form.Item>
-          <Form.Item label="所属设备" name="deviceId" rules={[{ required: true, message: '请选择所属设备' }]}><Select placeholder="请选择所属设备">{devices.map(d => <Select.Option key={d.deviceId} value={d.deviceId}>{d.title}</Select.Option>)}</Select></Form.Item>
-          <Form.Item label="数据类型" name="dataType" rules={[{ required: true, message: '请选择数据类型' }]}><Select placeholder="请选择数据类型" options={DATA_TYPE_OPTIONS} /></Form.Item>
-          <Form.Item label="单位" name="unit"><Input placeholder="请输入单位" /></Form.Item>
-          <Form.Item label="最小值" name="minValue"><InputNumber placeholder="请输入最小值" /></Form.Item>
-          <Form.Item label="最大值" name="maxValue"><InputNumber placeholder="请输入最大值" /></Form.Item>
-          <Form.Item label="精度" name="precision" initialValue={2}><InputNumber placeholder="请输入精度" min={0} max={10} /></Form.Item>
-          <Form.Item label="采样间隔(秒)" name="samplingInterval" initialValue={60}><InputNumber placeholder="请输入采样间隔" min={1} /></Form.Item>
-          <Form.Item label="只读" name="isReadOnly" valuePropName="checked" initialValue={true}><Switch /></Form.Item>
-          <Form.Item label="启用" name="isEnabled" valuePropName="checked" initialValue={true}><Switch /></Form.Item>
-          <Form.Item label="描述" name="description"><Input.TextArea placeholder="请输入描述" rows={2} /></Form.Item>
-          <Form.Item label="备注" name="remarks"><Input.TextArea placeholder="请输入备注" rows={2} /></Form.Item>
-        </Form>
-      </Modal>
-
-      <Drawer title="数据点详情" placement="right" onClose={() => { setIsDetailDrawerVisible(false); setSelectedDataPoint(null); }} open={isDetailDrawerVisible} size={isMobile ? 'large' : 800}>
-        {selectedDataPoint ? (
+      <Drawer title="数据点详情" placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingDataPoint: null })} size={isMobile ? 'large' : 800}>
+        {state.viewingDataPoint && (
           <>
-            <Card title="基本信息" className={styles.card} style={{ marginBottom: 16 }}>
+            <Card title="基本信息" style={{ marginBottom: 16 }}>
               <Descriptions column={isMobile ? 1 : 2} size="small">
-                <Descriptions.Item label="数据点名称" span={2}>{selectedDataPoint.title}</Descriptions.Item>
-                <Descriptions.Item label="数据点ID">{selectedDataPoint.dataPointId}</Descriptions.Item>
-                <Descriptions.Item label="所属设备">{devices.find(d => d.deviceId === selectedDataPoint.deviceId)?.title || selectedDataPoint.deviceId || '-'}</Descriptions.Item>
-                <Descriptions.Item label="数据类型"><Tag>{DATA_TYPE_LABELS[selectedDataPoint.dataType] || selectedDataPoint.dataType}</Tag></Descriptions.Item>
-                <Descriptions.Item label="单位">{selectedDataPoint.unit || '-'}</Descriptions.Item>
-                <Descriptions.Item label="采样间隔">{selectedDataPoint.samplingInterval} 秒</Descriptions.Item>
-                <Descriptions.Item label="只读"><Tag color={selectedDataPoint.isReadOnly ? 'orange' : 'green'}>{selectedDataPoint.isReadOnly ? '是' : '否'}</Tag></Descriptions.Item>
-                <Descriptions.Item label="启用状态"><Tag color={selectedDataPoint.isEnabled ? 'green' : 'red'}>{selectedDataPoint.isEnabled ? '启用' : '禁用'}</Tag></Descriptions.Item>
+                <Descriptions.Item label="数据点名称" span={2}>{state.viewingDataPoint.title}</Descriptions.Item>
+                <Descriptions.Item label="数据点ID">{state.viewingDataPoint.dataPointId}</Descriptions.Item>
+                <Descriptions.Item label="所属设备">{state.devices.find(d => d.deviceId === state.viewingDataPoint.deviceId)?.title || state.viewingDataPoint.deviceId || '-'}</Descriptions.Item>
+                <Descriptions.Item label="数据类型"><Tag>{DATA_TYPE_LABELS[state.viewingDataPoint.dataType] || state.viewingDataPoint.dataType}</Tag></Descriptions.Item>
+                <Descriptions.Item label="单位">{state.viewingDataPoint.unit || '-'}</Descriptions.Item>
+                <Descriptions.Item label="采样间隔">{state.viewingDataPoint.samplingInterval} 秒</Descriptions.Item>
+                <Descriptions.Item label="只读"><Tag color={state.viewingDataPoint.isReadOnly ? 'orange' : 'green'}>{state.viewingDataPoint.isReadOnly ? '是' : '否'}</Tag></Descriptions.Item>
+                <Descriptions.Item label="启用状态"><Tag color={state.viewingDataPoint.isEnabled ? 'green' : 'red'}>{state.viewingDataPoint.isEnabled ? '启用' : '禁用'}</Tag></Descriptions.Item>
               </Descriptions>
             </Card>
-            {(selectedDataPoint.minValue !== undefined || selectedDataPoint.maxValue !== undefined) && (
-              <Card title="数值范围" className={styles.card} style={{ marginBottom: 16 }}>
+            {(state.viewingDataPoint.minValue !== undefined || state.viewingDataPoint.maxValue !== undefined) && (
+              <Card title="数值范围" style={{ marginBottom: 16 }}>
                 <Descriptions column={isMobile ? 1 : 2} size="small">
-                  <Descriptions.Item label="最小值">{selectedDataPoint.minValue !== undefined ? selectedDataPoint.minValue : '-'}</Descriptions.Item>
-                  <Descriptions.Item label="最大值">{selectedDataPoint.maxValue !== undefined ? selectedDataPoint.maxValue : '-'}</Descriptions.Item>
+                  <Descriptions.Item label="最小值">{state.viewingDataPoint.minValue !== undefined ? state.viewingDataPoint.minValue : '-'}</Descriptions.Item>
+                  <Descriptions.Item label="最大值">{state.viewingDataPoint.maxValue !== undefined ? state.viewingDataPoint.maxValue : '-'}</Descriptions.Item>
                 </Descriptions>
               </Card>
             )}
-            {selectedDataPoint.alarmConfig?.isEnabled && (
-              <Card title="告警配置" className={styles.card} style={{ marginBottom: 16 }}>
+            {state.viewingDataPoint.alarmConfig?.isEnabled && (
+              <Card title="告警配置" style={{ marginBottom: 16 }}>
                 <Descriptions column={isMobile ? 1 : 2} size="small">
                   <Descriptions.Item label="告警状态"><Tag color="orange">已启用</Tag></Descriptions.Item>
-                  <Descriptions.Item label="告警类型">{selectedDataPoint.alarmConfig.alarmType || '-'}</Descriptions.Item>
-                  <Descriptions.Item label="阈值">{selectedDataPoint.alarmConfig.threshold || '-'}</Descriptions.Item>
-                  <Descriptions.Item label="级别">{selectedDataPoint.alarmConfig.level || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="告警类型">{state.viewingDataPoint.alarmConfig.alarmType || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="阈值">{state.viewingDataPoint.alarmConfig.threshold || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="级别">{state.viewingDataPoint.alarmConfig.level || '-'}</Descriptions.Item>
                 </Descriptions>
               </Card>
             )}
-            <Card title="最后采集数据" className={styles.card} style={{ marginBottom: 16 }}>
-              {selectedDataPoint.lastValue ? (
+            <Card title="最后采集数据" style={{ marginBottom: 16 }}>
+              {state.viewingDataPoint.lastValue ? (
                 <Descriptions column={1} size="small">
-                  <Descriptions.Item label="数据值">{renderJsonField(selectedDataPoint.lastValue, selectedDataPoint.unit)}</Descriptions.Item>
-                  {selectedDataPoint.lastUpdatedAt && <Descriptions.Item label="采集时间">{dayjs(selectedDataPoint.lastUpdatedAt).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>}
+                  <Descriptions.Item label="数据值">{state.viewingDataPoint.lastValue}{state.viewingDataPoint.unit && <span style={{ color: '#999', marginLeft: 4 }}>{state.viewingDataPoint.unit}</span>}</Descriptions.Item>
+                  {state.viewingDataPoint.lastUpdatedAt && <Descriptions.Item label="采集时间">{dayjs(state.viewingDataPoint.lastUpdatedAt).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>}
                 </Descriptions>
               ) : <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>暂无采集数据</div>}
             </Card>
-            <Card title="时间信息" className={styles.card} style={{ marginBottom: 16 }}>
+            <Card title="时间信息">
               <Descriptions column={isMobile ? 1 : 2} size="small">
-                <Descriptions.Item label="创建时间">{dayjs(selectedDataPoint.createdAt).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>
+                <Descriptions.Item label="创建时间">{state.viewingDataPoint.createdAt ? dayjs(state.viewingDataPoint.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</Descriptions.Item>
               </Descriptions>
             </Card>
           </>
-        ) : <div>未加载数据点信息</div>}
+        )}
       </Drawer>
-    </>
+    </PageContainer>
   );
-});
+};
 
 DataPointManagement.displayName = 'DataPointManagement';
-
 export default DataPointManagement;

@@ -10,6 +10,66 @@
 
 ## 1. 统一类型来源
 
+### **[强制]** 所有 API 服务必须使用 ApiResponse、PagedResult、PageParams
+
+所有 HTTP 请求必须使用以下三种统一类型，**禁止使用其他响应包装类型**：
+
+```typescript
+import type { ApiResponse, PagedResult, PageParams } from '@/types';
+```
+
+| 类型 | 用途 | 使用场景 |
+|------|------|----------|
+| `ApiResponse<T>` | 所有 HTTP 响应的统一包装 | **所有 API 请求** |
+| `PagedResult<T>` | 分页数据响应 | **所有分页列表接口** |
+| `PageParams` | 分页查询参数 | **所有分页请求参数** |
+
+### 标准模板
+
+```typescript
+import { request } from '@umijs/max';
+import type { ApiResponse, PagedResult, PageParams } from '@/types';
+import type { User } from './types';
+
+// ✅ 正确：分页接口
+export async function getUsers(params: PageParams) {
+  return request<ApiResponse<PagedResult<User>>>('/api/users/list', {
+    method: 'POST',
+    data: params,
+  });
+}
+
+// ✅ 正确：普通接口
+export async function getUser(id: string) {
+  return request<ApiResponse<User>>(`/api/users/${id}`);
+}
+
+// ✅ 正确：创建/更新接口
+export async function createUser(data: CreateUserRequest) {
+  return request<ApiResponse<User>>('/api/users', {
+    method: 'POST',
+    data,
+  });
+}
+
+// ✅ 正确：无返回数据的操作
+export async function deleteUser(id: string) {
+  return request<ApiResponse<void>>(`/api/users/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+// ❌ 禁止：未使用 ApiResponse
+export async function getUser(id: string) {
+  return request<User>(`/api/users/${id}`);  // 错误！
+}
+
+// ❌ 禁止：自定义响应类型
+export async function getUsers(params: PageParams) {
+  return request<{ data: User[]; total: number }>('/api/users');  // 错误！
+}
+```
+
 ### 类型定义位置
 
 所有 API 相关类型统一定义在 `@/types/api-response.ts`：

@@ -2,6 +2,8 @@
 
 > 本目录包含 React/Ant Design Pro/UmiJS 管理后台的详细规范。
 
+> **[强制]** 所有 API 服务必须统一使用 `ApiResponse`、`PagedResult`、`PageParams` 类型。**禁止使用其他响应包装类型。**
+
 ## 文件索引
 
 | 文件 | 内容 |

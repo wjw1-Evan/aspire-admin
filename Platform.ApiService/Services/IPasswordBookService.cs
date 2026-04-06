@@ -35,6 +35,7 @@ public interface IPasswordBookService
     /// </summary>
     /// <param name="pageParams">分页参数</param>
     /// <param name="userId">当前用户ID</param>
+    /// <param name="search">搜索关键词（同时搜索平台和账号）</param>
     /// <param name="platform">平台名称筛选</param>
     /// <param name="account">账号筛选</param>
     /// <param name="category">分类筛选</param>
@@ -42,6 +43,7 @@ public interface IPasswordBookService
     Task<System.Linq.Dynamic.Core.PagedResult<PasswordBookEntryDto>> GetEntriesAsync(
         Platform.ServiceDefaults.Models.PageParams pageParams,
         string userId,
+        string? search = null,
         string? platform = null,
         string? account = null,
         string? category = null,

@@ -155,13 +155,10 @@ public class PasswordBookService : IPasswordBookService
     /// 分页查询条目列表（不返回密码）
     /// 可见范围：自己的私有条目 + 企业内所有公有条目
     /// </summary>
-    /// <summary>
-    /// 分页查询条目列表（不返回密码）
-    /// 可见范围：自己的私有条目 + 企业内所有公有条目
-    /// </summary>
     public async Task<System.Linq.Dynamic.Core.PagedResult<PasswordBookEntryDto>> GetEntriesAsync(
         Platform.ServiceDefaults.Models.PageParams pageParams,
         string userId,
+        string? search = null,
         string? platform = null,
         string? account = null,
         string? category = null,
@@ -170,13 +167,16 @@ public class PasswordBookService : IPasswordBookService
         if (string.IsNullOrEmpty(userId))
             throw new ArgumentException("用户ID不能为空", nameof(userId));
         
+        var searchTrim = search?.Trim();
         var platformTrim = platform?.Trim();
         var accountTrim = account?.Trim();
         var categoryTrim = category?.Trim();
 
+        // 如果提供了 search 参数，它会同时搜索 platform 和 account
         var query = _context.Set<PasswordBookEntry>().Where(
             e =>
                 (e.UserId == userId || e.IsPublic) &&
+                (string.IsNullOrEmpty(searchTrim) || e.Platform.Contains(searchTrim) || e.Account.Contains(searchTrim)) &&
                 (string.IsNullOrEmpty(platformTrim) || e.Platform.Contains(platformTrim)) &&
                 (string.IsNullOrEmpty(accountTrim) || e.Account.Contains(accountTrim)) &&
                 (string.IsNullOrEmpty(categoryTrim) || e.Category == categoryTrim) &&

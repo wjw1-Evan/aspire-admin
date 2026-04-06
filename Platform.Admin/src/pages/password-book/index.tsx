@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { request } from '@umijs/max';
+import { request, useSearchParams } from '@umijs/max';
 import { Tag, Space, Button, Input, Popconfirm, Modal, Drawer, Form } from 'antd';
 
 import { PageContainer, ModalForm, ProDescriptions, ProCard, ProTable, ProColumns, ActionType } from '@ant-design/pro-components';
@@ -41,6 +41,7 @@ const api = {
 
 const PasswordBook: React.FC = () => {
   const actionRef = useRef<ActionType | undefined>(undefined);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [state, setState] = useState({
     statistics: null as Stats | null,
     exportVisible: false,
@@ -49,7 +50,7 @@ const PasswordBook: React.FC = () => {
     detailVisible: false,
     viewingId: '',
     sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
-    searchText: '',
+    searchText: searchParams.get('search') || '',
   });
   const [formState, setFormState] = useState({ tags: [] as string[] });
   const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
@@ -63,8 +64,8 @@ const PasswordBook: React.FC = () => {
   useEffect(() => { loadStatistics(); }, [loadStatistics]);
 
   const columns: ProColumns<Entry>[] = [
-    { title: '平台', dataIndex: 'platform', key: 'platform', sorter: true, search: true, render: (dom, r) => <a onClick={() => set({ viewingId: r.id, detailVisible: true })}>{dom}</a> },
-    { title: '账号', dataIndex: 'account', key: 'account', sorter: true, search: true },
+    { title: '平台', dataIndex: 'platform', key: 'platform', sorter: true, render: (dom, r) => <a onClick={() => set({ viewingId: r.id, detailVisible: true })}>{dom}</a> },
+    { title: '账号', dataIndex: 'account', key: 'account', sorter: true },
     { title: '网址', dataIndex: 'url', key: 'url', sorter: true, render: (dom) => dom ? <a href={dom as string} target="_blank">{dom}</a> : '-' },
     { title: '分类', dataIndex: 'category', key: 'category', sorter: true, render: (dom) => dom ? <Tag color="blue">{dom as string}</Tag> : '-' },
     { title: '标签', dataIndex: 'tags', render: (dom) => dom && typeof dom === 'object' && 'length' in dom ? <Space size={[0, 4]} wrap>{(dom as string[]).map((t) => <Tag key={t}>{t}</Tag>)}</Space> : '-' },
@@ -137,9 +138,9 @@ const PasswordBook: React.FC = () => {
       <ProTable
         actionRef={actionRef}
         request={async (params) => {
-          const { current, pageSize, platform, account } = params;
+          const { current, pageSize } = params;
           const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-          const res = await api.list({ page: current, pageSize, platform: platform || undefined, account: account || undefined, ...sortParams });
+          const res = await api.list({ page: current, pageSize, search: state.searchText || undefined, ...sortParams });
           return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
         }}
         columns={columns}
@@ -148,7 +149,25 @@ const PasswordBook: React.FC = () => {
           const sorter = Array.isArray(s) ? s[0] : s;
           set({ sorter: sorter?.order ? { sortBy: sorter.field as string, sortOrder: sorter.order === 'ascend' ? 'asc' : 'desc' } : undefined });
         }}
+        search={false}
         toolBarRender={() => [
+          <Input.Search
+            key="search"
+            placeholder="搜索平台或账号..."
+            value={state.searchText}
+            onChange={(e) => set({ searchText: e.target.value })}
+            onSearch={(value) => {
+              setSearchParams({ search: value || '' });
+              actionRef.current?.reload();
+            }}
+            onPressEnter={(e) => {
+              const value = (e.target as HTMLInputElement).value;
+              setSearchParams({ search: value || '' });
+              actionRef.current?.reload();
+            }}
+            style={{ width: 200 }}
+            allowClear
+          />,
           <Button key="export" icon={<ExportOutlined />} onClick={() => set({ exportVisible: true })}>导出</Button>,
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingEntry: null, formVisible: true })}>新建</Button>,
         ]}

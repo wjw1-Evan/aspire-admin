@@ -12,7 +12,16 @@ import WorkflowDesigner from './components/WorkflowDesigner';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import { getStatusMeta, workflowStatusMap, approvalActionMap } from '@/utils/statusMaps';
-import type { PageParams } from '@/types';
+
+interface WorkflowInstanceSearchParams {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  workflowDefinitionId?: string;
+  status?: WorkflowStatus;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
 
 const WorkflowMonitor: React.FC = () => {
   const intl = useIntl();
@@ -29,7 +38,7 @@ const WorkflowMonitor: React.FC = () => {
   const [data, setData] = useState<WorkflowInstance[]>([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
-  const searchParamsRef = useRef<PageParams>({ search: '' });
+  const searchParamsRef = useRef<WorkflowInstanceSearchParams>({ search: '' });
 
   const fetchData = useCallback(async () => {
     const currentParams = searchParamsRef.current;
@@ -44,7 +53,7 @@ const WorkflowMonitor: React.FC = () => {
     finally { setLoading(false); }
   }, []);
 
-  const handleSearch = useCallback((params: PageParams) => {
+  const handleSearch = useCallback((params: WorkflowInstanceSearchParams) => {
     searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 };
     fetchData();
   }, [fetchData]);

@@ -43,7 +43,7 @@ export interface FormDefinition {
     updatedAt?: string;
 }
 
-export async function getFormList(params: { current?: number; pageSize?: number; keyword?: string; isActive?: boolean }): Promise<ApiResponse<PagedResult<FormDefinition>>> {
+export async function getFormList(params: { page?: number; pageSize?: number; keyword?: string; isActive?: boolean }): Promise<ApiResponse<PagedResult<FormDefinition>>> {
     return request('/api/forms', {
         method: 'GET',
         params,

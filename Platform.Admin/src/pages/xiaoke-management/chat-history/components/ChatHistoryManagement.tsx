@@ -18,7 +18,6 @@ import {
 } from '@/services/xiaoke/api';
 import ChatHistoryDetail from './ChatHistoryDetail';
 import dayjs from 'dayjs';
-import type { PageParams } from '@/types';
 
 const { RangePicker } = DatePicker;
 
@@ -36,7 +35,7 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
 
-  const searchParamsRef = useRef<PageParams>({ page: 1, pageSize: 10, search: '' });
+  const searchParamsRef = useRef<ChatHistoryQueryRequest>({ page: 1, pageSize: 10 });
 
   const [detailVisible, setDetailVisible] = useState(false);
   const [detailData, setDetailData] = useState<ChatHistoryDetailResponse | null>(null);
@@ -47,13 +46,13 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
     setLoading(true);
     try {
       const requestData: ChatHistoryQueryRequest = {
-        current: currentParams.page,
+        page: currentParams.page,
         pageSize: currentParams.pageSize,
-        sessionId: currentParams.sessionId as string | undefined,
-        userId: currentParams.userId as string | undefined,
-        content: currentParams.content as string | undefined,
-        startTime: currentParams.startTime as string | undefined,
-        endTime: currentParams.endTime as string | undefined,
+        sessionId: currentParams.sessionId,
+        userId: currentParams.userId,
+        content: currentParams.content,
+        startTime: currentParams.startTime,
+        endTime: currentParams.endTime,
       };
 
       const response = await getChatHistory(requestData);

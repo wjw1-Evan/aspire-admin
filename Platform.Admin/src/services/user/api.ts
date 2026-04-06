@@ -76,7 +76,7 @@ export async function getUserById(id: string, options?: Record<string, any>) {
 }
 
 export async function getUserList(
-  params: PageParams,
+  params: UserListRequest,
   options?: Record<string, any>,
 ) {
   return request<ApiResponse<PagedResult<AppUser>>>('/api/users/list', {

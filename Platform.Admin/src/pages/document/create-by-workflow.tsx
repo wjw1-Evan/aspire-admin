@@ -33,7 +33,7 @@ const CreateAndStartByWorkflow: React.FC = () => {
         (async () => {
             try {
 
-                const resp = await getWorkflowList({ current: 1, pageSize: 100 });
+                const resp = await getWorkflowList({ page: 1, pageSize: 100 });
                 if (resp.success && resp.data) {
                     const options = (resp.data.queryable || []).map((wf) => ({ label: wf.name, value: wf.id! }));
                     setWorkflows(options);

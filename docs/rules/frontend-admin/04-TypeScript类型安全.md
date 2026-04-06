@@ -149,8 +149,8 @@ export async function getUser(id: string) {
 import type { PagedResult } from '@/types/api-response';
 import type { WorkflowDefinition } from '@/services/workflow/api';
 
-const fetchWorkflows = async (params: { page: number; pageSize: number; keyword?: string }) => {
-  const response = await getWorkflowList(params);
+const fetchWorkflows = async () => {
+  const response = await getWorkflowList({});
 
   if (response.success && response.data) {
     const paged = response.data as PagedResult<WorkflowDefinition>;
@@ -167,7 +167,59 @@ const fetchWorkflows = async (params: { page: number; pageSize: number; keyword?
 
 ---
 
-## 3. DTO 类型复用
+## 3. PageParams 使用规范
+
+### **[强制]** 前端不传 pageSize，由后端统一默认值
+
+| 参数 | 后端默认值 | 前端行为 |
+|------|-----------|----------|
+| `page` | `1` | **必须显式传值**（如需指定页码） |
+| `pageSize` | `10` | **禁止前端传值**，使用后端默认值 |
+| `search` | `''` | 可选，不传则为空字符串 |
+| `sortBy` | 无 | 可选 |
+| `sortOrder` | `'desc'` | 可选 |
+
+### PageParams 定义
+
+```typescript
+interface PageParams {
+  page?: number;       // 当前页码（从 1 开始），需显式传值
+  pageSize?: number;   // 每页数量，**禁止前端传值**，后端默认 10
+  sortBy?: string;     // 排序字段
+  sortOrder?: 'asc' | 'desc';  // 排序方向，默认 'desc'
+  search?: string;     // 搜索关键词
+}
+```
+
+### 正确用法
+
+```typescript
+// ✅ 正确：使用空对象
+await getUserList({})
+
+// ✅ 正确：只需指定 page
+await getUserList({ page: 2 })
+
+// ✅ 正确：只需搜索
+await getUserList({ search: 'keyword' })
+
+// ✅ 正确：searchParamsRef 使用空对象
+const searchParamsRef = useRef<PageParams>({});
+```
+
+### 错误用法
+
+```typescript
+// ❌ 禁止：显式传 pageSize
+await getUserList({ page: 1, pageSize: 10 })
+
+// ❌ 禁止：设置默认值
+const searchParamsRef = useRef<PageParams>({ page: 1, pageSize: 10, search: '' })
+```
+
+---
+
+## 4. DTO 类型复用
 
 ### 从 services 层导入已定义的 DTO 类型
 

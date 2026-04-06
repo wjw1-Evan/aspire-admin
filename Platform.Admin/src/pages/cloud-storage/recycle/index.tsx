@@ -47,7 +47,7 @@ const CloudStorageRecyclePage: React.FC = () => {
 
     const [state, setState] = useState({
         data: [] as RecycleItem[], loading: false,
-        pagination: { page: 1, pageSize: 10, total: 0 },
+        pagination: { page: 1, total: 0 },
         selectedRowKeys: [] as string[], selectedRows: [] as RecycleItem[],
         statistics: null as RecycleStatistics | null,
         detailVisible: false, viewingItem: null as RecycleItem | null,
@@ -60,13 +60,13 @@ const CloudStorageRecyclePage: React.FC = () => {
     const [restoreForm] = Form.useForm();
 
     const fetchData = useCallback(async () => {
-        const { page = 1, pageSize = 10, search, sortBy, sortOrder } = searchParamsRef.current;
+        const { page = 1, search, sortBy, sortOrder } = searchParamsRef.current;
         set({ loading: true });
         try {
-            const res = await api.list({ page, pageSize, search, sortBy, sortOrder });
+            const res = await api.list({ page, search, sortBy, sortOrder });
             if (res.success && res.data) {
                 const list = (res.data.queryable || []).map((item: RecycleItem) => ({ ...item, isFolder: item.isFolder ?? (item.type === 'folder' || item.type === 'Folder' || item.type === 1) }));
-                set({ data: list, pagination: { ...state.pagination, page, pageSize, total: res.data.rowCount ?? 0 } });
+                set({ data: list, pagination: { ...state.pagination, page, total: res.data.rowCount ?? 0 } });
             } else { set({ data: [], pagination: { ...state.pagination, total: 0 } }); }
         } catch { set({ data: [], pagination: { ...state.pagination, total: 0 } }); }
         finally { set({ loading: false }); }
@@ -80,7 +80,7 @@ const CloudStorageRecyclePage: React.FC = () => {
 
     const handleRefresh = useCallback(() => { fetchData(); loadStatistics(); }, [fetchData, loadStatistics]);
     const handleSearch = useCallback((params: PageParams) => { searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 }; fetchData(); }, [fetchData]);
-    const handleTableChange = useCallback((pag: any, _f: any, s: any) => { searchParamsRef.current = { ...searchParamsRef.current, page: pag.current, pageSize: pag.pageSize, sortBy: s?.field, sortOrder: s?.order === 'ascend' ? 'asc' : s?.order === 'descend' ? 'desc' : undefined }; fetchData(); }, [fetchData]);
+    const handleTableChange = useCallback((pag: any, _f: any, s: any) => { searchParamsRef.current = { ...searchParamsRef.current, page: pag.current, sortBy: s?.field, sortOrder: s?.order === 'ascend' ? 'asc' : s?.order === 'descend' ? 'desc' : undefined }; fetchData(); }, [fetchData]);
 
     const formatFileSize = (bytes: number) => { if (bytes === 0) return '0 B'; const k = 1024; const sizes = ['B', 'KB', 'MB', 'GB', 'TB']; const i = Math.floor(Math.log(bytes) / Math.log(k)); return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]; };
 
@@ -187,7 +187,7 @@ const CloudStorageRecyclePage: React.FC = () => {
 
             {state.cleanupProgress !== null && (<Card className={styles.card} style={{ marginBottom: 16 }}><Alert message="正在清空回收站..." description={<Progress percent={state.cleanupProgress} status="active" strokeColor="#1890ff" />} type="info" showIcon /></Card>)}
 
-            <Table<RecycleItem> dataSource={state.data} columns={columns} rowKey="id" loading={state.loading} scroll={{ x: 'max-content' }} onChange={handleTableChange} pagination={{ current: state.pagination.page, pageSize: state.pagination.pageSize, total: state.pagination.total }} rowSelection={{ selectedRowKeys: state.selectedRowKeys, onChange: (keys, rows) => set({ selectedRowKeys: keys as string[], selectedRows: rows }) }} />
+            <Table<RecycleItem> dataSource={state.data} columns={columns} rowKey="id" loading={state.loading} scroll={{ x: 'max-content' }} onChange={handleTableChange} pagination={{ current: state.pagination.page, total: state.pagination.total }} rowSelection={{ selectedRowKeys: state.selectedRowKeys, onChange: (keys, rows) => set({ selectedRowKeys: keys as string[], selectedRows: rows }) }} />
 
             {/* 详情 */}
             <Drawer title="文件详情" placement="right" onClose={() => set({ detailVisible: false })} open={state.detailVisible} size={isMobile ? 'large' : 600}>

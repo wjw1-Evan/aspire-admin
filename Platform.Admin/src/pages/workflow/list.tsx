@@ -20,7 +20,7 @@ const WorkflowManagement: React.FC = () => {
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [data, setData] = useState<WorkflowDefinition[]>([]);
   const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
+  const [pagination, setPagination] = useState({ page: 1, total: 0 });
   const searchParamsRef = useRef<PageParams>({});
 
   const fetchData = useCallback(async () => {
@@ -31,7 +31,7 @@ const WorkflowManagement: React.FC = () => {
       if (response.success && response.data) {
         const paged = response.data as PagedResult<WorkflowDefinition>;
         setData(paged.queryable || []);
-        setPagination(prev => ({ ...prev, page: currentParams.page ?? prev.page, pageSize: currentParams.pageSize ?? prev.pageSize, total: paged.rowCount ?? 0 }));
+        setPagination(prev => ({ ...prev, page: currentParams.page ?? prev.page, total: paged.rowCount ?? 0 }));
       } else {
         setData([]); setPagination(prev => ({ ...prev, total: 0 }));
       }

@@ -122,9 +122,9 @@ const UserLog: React.FC = () => {
       </Row></Card>}
 
       <ProTable actionRef={actionRef} request={async (params: any) => {
-        const { pageSize, current } = params;
+        const { current } = params;
         const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-        const res = await api.list({ page: current, pageSize, search: state.searchText, ...sortParams });
+        const res = await api.list({ page: current, search: state.searchText, ...sortParams });
         api.statistics().then(r => {
           if (r.success && r.data) {
             set({
@@ -140,7 +140,6 @@ const UserLog: React.FC = () => {
         });
         return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
       }} columns={columns} rowKey="id" search={false}
-        pagination={{ pageSizeOptions: ['10', '20', '50', '100'], defaultPageSize: 10 }}
         onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
         toolBarRender={() => [
           <Input.Search key="search" placeholder="搜索..." style={{ width: 200 }} allowClear value={state.searchText} onChange={(e) => set({ searchText: e.target.value })} onSearch={(v) => { set({ searchText: v }); actionRef.current?.reload(); }} prefix={<SearchOutlined />} />,

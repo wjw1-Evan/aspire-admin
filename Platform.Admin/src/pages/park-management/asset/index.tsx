@@ -148,13 +148,12 @@ const AssetManagement: React.FC = () => {
 
             <ProTable actionRef={actionRef} params={{ activeTab: state.activeTab }}
                 request={((async (params: any) => {
-                    const { pageSize, current, activeTab: tab } = params;
+                    const { current, activeTab: tab } = params;
                     const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-                    if (tab === 'buildings' || !tab) { const res = await api.buildings({ page: current, pageSize, search: state.searchText, ...sortParams }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }
-                    else { const res = await api.units({ page: current, pageSize, search: state.searchText, ...sortParams }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }
+                    if (tab === 'buildings' || !tab) { const res = await api.buildings({ page: current, search: state.searchText, ...sortParams }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }
+                    else { const res = await api.units({ page: current, search: state.searchText, ...sortParams }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }
                 }) as any)}
                 columns={state.activeTab === 'buildings' ? buildingColumns as any : unitColumns as any} rowKey="id" search={false}
-                pagination={{ pageSizeOptions: ['10', '20', '50', '100'], defaultPageSize: 10 }}
                 onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
                 toolBarRender={() => [<Input.Search key="search" placeholder="搜索..." style={{ width: 200 }} allowClear value={state.searchText} onChange={(e) => set({ searchText: e.target.value })} onSearch={(v) => { set({ searchText: v }); actionRef.current?.reload(); }} />]}
             />

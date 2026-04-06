@@ -91,14 +91,13 @@ const MyActivity: React.FC = () => {
       </Row></Card>}
 
       <ProTable actionRef={actionRef} request={async (params: any) => {
-        const { pageSize, current } = params;
+        const { current } = params;
         const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-        const res = await api.list({ page: current, pageSize, search: state.searchText, ...sortParams });
+        const res = await api.list({ page: current, search: state.searchText, ...sortParams });
         api.statistics(state.searchText).then(r => { if (r.success && r.data) set({ statistics: r.data }); });
         return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
       }} columns={columns} rowKey="id" search={false}
         onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
-        pagination={{ pageSizeOptions: ['10', '20', '50', '100'], defaultPageSize: 20 }}
         toolBarRender={() => [
           <Button key="refresh" icon={<ReloadOutlined />} onClick={handleRefresh}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button>,
         ]}
@@ -127,7 +126,7 @@ const LogDetailDrawer: React.FC<{ open: boolean; logId?: string; fetchFromApi?: 
   if (!open) return null;
 
   return (
-    <Drawer title="日志详情" placement="right" open={open} onClose={onClose} width={600}>
+    <Drawer title="日志详情" placement="right" open={open} onClose={onClose} styles={{ wrapper: { width: 600 } }}>
       {loading ? <div>加载中...</div> : log ? (
         <Descriptions column={1} size="small" bordered>
           <Descriptions.Item label="操作">{getActionText(log.action)}</Descriptions.Item>

@@ -37,7 +37,7 @@ const CloudStorageSharedPage: React.FC = () => {
     const [state, setState] = useState({
         activeTab: 'my-shares' as 'my-shares' | 'shared-with-me',
         data: [] as FileShare[], loading: false,
-        pagination: { page: 1, pageSize: 10, total: 0 },
+        pagination: { page: 1, total: 0 },
         selectedRowKeys: [] as string[], selectedRows: [] as FileShare[],
         detailVisible: false, viewingShare: null as FileShare | null,
         editShareVisible: false, editingShare: null as FileShare | null,
@@ -78,10 +78,10 @@ const CloudStorageSharedPage: React.FC = () => {
     }, [state.fileNameMap]);
 
     const fetchData = useCallback(async () => {
-        const { page = 1, pageSize = 20, search, sortBy, sortOrder } = searchParamsRef.current;
+        const { page = 1, search, sortBy, sortOrder } = searchParamsRef.current;
         set({ loading: true });
         try {
-            const res = state.activeTab === 'my-shares' ? await api.getMyShares({ page, pageSize, search, sortBy, sortOrder }) : await api.getSharedWithMe({ page, pageSize, search, sortBy, sortOrder });
+            const res = state.activeTab === 'my-shares' ? await api.getMyShares({ page, search, sortBy, sortOrder }) : await api.getSharedWithMe({ page, search, sortBy, sortOrder });
             if (res.success && res.data) {
                 const transformed = (res.data.queryable || []).map(transformShare);
                 const missingIds = Array.from(new Set(transformed.map((i: any) => i.fileId).filter((id: string) => id && !state.fileNameMap[id])));
@@ -90,7 +90,7 @@ const CloudStorageSharedPage: React.FC = () => {
                     const newMap = { ...state.fileNameMap }; details.forEach(d => { if (d?.id) newMap[d.id] = d.name; }); set({ fileNameMap: newMap });
                     transformed.forEach((item: any) => { if (newMap[item.fileId]) item.fileName = newMap[item.fileId]; });
                 } else { transformed.forEach((item: any) => { if (state.fileNameMap[item.fileId]) item.fileName = state.fileNameMap[item.fileId]; }); }
-                set({ data: transformed, pagination: { ...state.pagination, page, pageSize, total: res.data.rowCount ?? 0 } });
+                set({ data: transformed, pagination: { ...state.pagination, page, total: res.data.rowCount ?? 0 } });
             } else { set({ data: [], pagination: { ...state.pagination, total: 0 } }); }
         } catch { set({ data: [], pagination: { ...state.pagination, total: 0 } }); }
         finally { set({ loading: false }); }
@@ -99,7 +99,7 @@ const CloudStorageSharedPage: React.FC = () => {
     useEffect(() => { fetchData(); }, [fetchData]);
 
     const handleSearch = useCallback((params: PageParams) => { searchParamsRef.current = { ...searchParamsRef.current, ...params, page: 1 }; fetchData(); }, [fetchData]);
-    const handleTableChange = useCallback((pag: any, _f: any, s: any) => { searchParamsRef.current = { ...searchParamsRef.current, page: pag.current, pageSize: pag.pageSize, sortBy: s?.field, sortOrder: s?.order === 'ascend' ? 'asc' : s?.order === 'descend' ? 'desc' : undefined }; fetchData(); }, [fetchData]);
+    const handleTableChange = useCallback((pag: any, _f: any, s: any) => { searchParamsRef.current = { ...searchParamsRef.current, page: pag.current, sortBy: s?.field, sortOrder: s?.order === 'ascend' ? 'asc' : s?.order === 'descend' ? 'desc' : undefined }; fetchData(); }, [fetchData]);
     const handleRefresh = useCallback(() => { fetchData(); }, [fetchData]);
     const handleTabChange = useCallback((key: string) => { set({ activeTab: key as any, selectedRowKeys: [], selectedRows: [] }); }, []);
 
@@ -175,8 +175,8 @@ const CloudStorageSharedPage: React.FC = () => {
             <SearchBar initialParams={searchParamsRef.current} onSearch={handleSearch} style={{ marginBottom: 16 }} />
             <Card className={styles.card}>
                 <Tabs activeKey={state.activeTab} onChange={handleTabChange} items={[
-                    { key: 'my-shares', label: '我的分享', children: <Table<FileShare> dataSource={state.data} columns={columns} rowKey="id" loading={state.loading} scroll={{ x: 'max-content' }} onChange={handleTableChange} pagination={{ current: state.pagination.page, pageSize: state.pagination.pageSize, total: state.pagination.total }} /> },
-                    { key: 'shared-with-me', label: '分享给我的', children: <Table<FileShare> dataSource={state.data} columns={columns.filter(c => c.key !== 'action')} rowKey="id" loading={state.loading} scroll={{ x: 'max-content' }} onChange={handleTableChange} pagination={{ current: state.pagination.page, pageSize: state.pagination.pageSize, total: state.pagination.total }} /> },
+                    { key: 'my-shares', label: '我的分享', children: <Table<FileShare> dataSource={state.data} columns={columns} rowKey="id" loading={state.loading} scroll={{ x: 'max-content' }} onChange={handleTableChange} pagination={{ current: state.pagination.page, total: state.pagination.total }} /> },
+                    { key: 'shared-with-me', label: '分享给我的', children: <Table<FileShare> dataSource={state.data} columns={columns.filter(c => c.key !== 'action')} rowKey="id" loading={state.loading} scroll={{ x: 'max-content' }} onChange={handleTableChange} pagination={{ current: state.pagination.page, total: state.pagination.total }} /> },
                 ]} />
             </Card>
 

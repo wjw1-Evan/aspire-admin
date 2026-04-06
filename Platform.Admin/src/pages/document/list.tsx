@@ -92,13 +92,12 @@ const DocumentManagement: React.FC = () => {
 
       <ProTable actionRef={actionRef}
         request={async (params: any) => {
-          const { pageSize, current } = params;
-          const res = await api.list({ page: current, pageSize });
+          const { current } = params;
+          const res = await api.list({ page: current });
           api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
           return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
         }}
         columns={columns} rowKey="id" search={false}
-        pagination={{ pageSizeOptions: ['10', '20', '50', '100'], defaultPageSize: 20 }}
         toolBarRender={() => [
           <Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>刷新</Button>,
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => window.location.href = '/document/create'}>新建公文</Button>,

@@ -81,9 +81,9 @@ const RoleManagement: React.FC = () => {
       </Row></Card>}
 
       <ProTable actionRef={actionRef} request={async (params: any) => {
-        const { pageSize, current } = params;
+        const { current } = params;
         const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-        const res = await api.list({ page: current, pageSize, search: state.searchText, ...sortParams });
+        const res = await api.list({ page: current, search: state.searchText, ...sortParams });
         api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
         return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
       }} columns={columns} rowKey="id" search={false}
@@ -116,7 +116,7 @@ const RoleManagement: React.FC = () => {
         <div style={{ marginTop: 16 }}><ProFormText name="isActive" label={intl.formatMessage({ id: 'pages.roleForm.isActiveLabel' })} /></div>
       </ModalForm>
 
-      <Drawer title={state.viewingRole ? `${intl.formatMessage({ id: 'pages.roleManagement.title' })} - ${state.viewingRole.name}` : intl.formatMessage({ id: 'pages.roleManagement.title' })} open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingRole: null })} width={600}>
+      <Drawer title={state.viewingRole ? `${intl.formatMessage({ id: 'pages.roleManagement.title' })} - ${state.viewingRole.name}` : intl.formatMessage({ id: 'pages.roleManagement.title' })} open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingRole: null })} styles={{ wrapper: { width: 600 } }}>
         {state.viewingRole && <Card title={intl.formatMessage({ id: 'pages.userDetail.basicInfo' })}>
           <Descriptions column={1} size="small">
             <Descriptions.Item label={intl.formatMessage({ id: 'pages.table.roleName' })}>{state.viewingRole.name}</Descriptions.Item>

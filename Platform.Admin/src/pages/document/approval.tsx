@@ -90,12 +90,12 @@ const ApprovalPage: React.FC = () => {
   ];
 
   const fetchData = async (params: any) => {
-    const { pageSize, current } = params;
+    const { current } = params;
     let res;
     if (state.activeTab === 'pending') {
-      res = await api.pending({ page: current, pageSize });
+      res = await api.pending({ page: current });
     } else {
-      res = await api.list({ page: current, pageSize, filterType: state.activeTab });
+      res = await api.list({ page: current, filterType: state.activeTab });
     }
     api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
     return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
@@ -141,7 +141,6 @@ const ApprovalPage: React.FC = () => {
               columns={columns}
               rowKey="id"
               search={false}
-              pagination={{ pageSizeOptions: ['10', '20', '50'], defaultPageSize: 20 }}
               toolBarRender={() => [
                 <Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>刷新</Button>,
               ]}

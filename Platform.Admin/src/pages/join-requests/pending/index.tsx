@@ -170,10 +170,10 @@ const PendingJoinRequests: React.FC = () => {
         request={async (params: any) => {
           const companyId = initialState?.currentUser?.currentCompanyId || '';
           if (!companyId) return { data: [], total: 0, success: true };
-          const { pageSize, current, search } = params;
+          const { current, search } = params;
           const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
           let keyword = state.searchText || search;
-          const res = await api.list(companyId, { page: current, pageSize, search: keyword, ...sortParams });
+          const res = await api.list(companyId, { page: current, search: keyword, ...sortParams });
           if (res.success && res.data) {
             let filteredData = res.data;
             if (keyword) {
@@ -190,7 +190,6 @@ const PendingJoinRequests: React.FC = () => {
         columns={columns}
         rowKey="id"
         search={false}
-        pagination={{ pageSizeOptions: ['10', '20', '50', '100'], defaultPageSize: 10 }}
         onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
         toolBarRender={() => [
           <Input.Search key="search" placeholder={intl.formatMessage({ id: 'pages.search.placeholder' })} style={{ width: 200 }} allowClear

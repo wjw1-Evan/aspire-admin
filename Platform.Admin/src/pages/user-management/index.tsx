@@ -190,9 +190,9 @@ const UserManagement: React.FC = () => {
       {activeTab === 'members' && <>
         {state.statistics && <Card style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>{stats.map((s, i) => <Col xs={24} sm={12} md={6} key={i}><StatCard title={s.title} value={s.value} icon={s.icon} color={s.color} /></Col>)}</Row></Card>}
         <ProTable actionRef={actionRef} request={async (params) => {
-          const { pageSize, current } = params;
+          const { current } = params;
           const sp = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-          const res = await api.list({ page: current, pageSize, ...state.searchParams, ...sp });
+          const res = await api.list({ page: current, ...state.searchParams, ...sp });
           api.stats().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
           return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
         }} columns={columns} rowKey="id" search={false}
@@ -243,12 +243,12 @@ const UserManagement: React.FC = () => {
           <ProFormSwitch name="isActive" label="状态" checkedChildren="启用" unCheckedChildren="禁用" />
           <ProFormText name="remark" label="备注" placeholder="备注信息" />
         </ModalForm>
-        <Drawer title={intl.formatMessage({ id: 'pages.userDetail.title' })} placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingUser: null })} width={600} destroyOnClose>
+        <Drawer title={intl.formatMessage({ id: 'pages.userDetail.title' })} placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingUser: null })} styles={{ wrapper: { width: 600 } }} destroyOnClose>
           <React.Suspense fallback={<div style={{ textAlign: 'center', padding: '20px' }}><Spin /></div>}>{state.viewingUser && <UserDetail user={state.viewingUser} onClose={() => set({ detailVisible: false, viewingUser: null })} />}</React.Suspense>
         </Drawer>
       </>}
       {activeTab === 'requests' && <>
-        <ProTable<JoinReq> actionRef={joinActionRef} request={async () => { await fetchJoin(); return { data: join.data, total: join.total, success: true }; }} columns={joinCols} rowKey="id" search={false} scroll={{ x: 'max-content' }} pagination={{ current: join.page, pageSize: join.pageSize, total: join.total, pageSizeOptions: ['10', '20', '50', '100'] }}
+        <ProTable<JoinReq> actionRef={joinActionRef} request={async () => { await fetchJoin(); return { data: join.data, total: join.total, success: true }; }} columns={joinCols} rowKey="id" search={false} scroll={{ x: 'max-content' }}
           toolBarRender={() => [<Input.Search key="search" placeholder="搜索用户名/邮箱..." style={{ width: 240 }} allowClear value={(joinRef.current as Record<string, string>).search} onChange={(e) => { joinRef.current = { ...joinRef.current, search: e.target.value } as PageParams; }} onSearch={(v) => { joinRef.current = { ...joinRef.current, search: v, page: 1 } as PageParams; fetchJoin(); }} />]}
         />
         <Modal title="拒绝申请" open={join.rejectModal} onOk={handleReject} onCancel={() => setJ({ rejectModal: false })} okText="确定" cancelText="取消" okType="danger">

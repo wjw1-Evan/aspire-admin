@@ -97,11 +97,11 @@ const CloudStorageFilesPage: React.FC = () => {
     useEffect(() => { api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }, []);
 
     const fetchData = useCallback(async (params: any) => {
-        const { pageSize, current } = params;
+        const { current } = params;
         const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
         const res = state.isSearchMode && state.searchText
-            ? await api.search({ page: current, pageSize, keyword: state.searchText, ...sortParams })
-            : await api.list({ page: current, pageSize, parentId: currentParentIdRef.current, ...sortParams });
+            ? await api.search({ page: current, keyword: state.searchText, ...sortParams })
+            : await api.list({ page: current, parentId: currentParentIdRef.current, ...sortParams });
         if (res.success && res.data) {
             set({ data: res.data.queryable || [] });
             api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
@@ -249,7 +249,6 @@ const CloudStorageFilesPage: React.FC = () => {
             {state.statistics && <Card style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>{statsConfig.map((stat, idx) => (<Col xs={24} sm={12} md={6} key={idx}><StatCard title={stat.title} value={stat.value ?? 0} icon={stat.icon} color={stat.color} suffix={stat.suffix} /></Col>))}</Row></Card>}
             <Card style={{ marginBottom: 16 }}><Breadcrumb items={state.pathHistory.map((item, index) => ({ key: index, title: index === 0 ? <a onClick={() => handleBreadcrumbClick(index)}>{intl.formatMessage({ id: 'pages.cloud-storage.files.breadcrumb.myFiles' })}</a> : <a onClick={() => handleBreadcrumbClick(index)}>{item.name}</a> }))} /></Card>
             <ProTable actionRef={actionRef} request={fetchData} columns={columns} rowKey="id" search={false}
-                pagination={{ pageSizeOptions: ['10', '20', '50', '100'], defaultPageSize: 20 }}
                 onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
                 toolBarRender={() => [<Input.Search key="search" placeholder="搜索..." style={{ width: 200 }} allowClear value={state.searchText} onChange={(e) => set({ searchText: e.target.value })} onSearch={(v) => { set({ searchText: v, isSearchMode: !!v }); actionRef.current?.reload(); }} />]}
                 rowSelection={{ selectedRowKeys: state.selectedRowKeys, onChange: (keys, rows) => set({ selectedRowKeys: keys as string[], selectedRows: rows }) }} />

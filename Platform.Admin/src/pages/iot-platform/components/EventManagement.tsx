@@ -26,7 +26,7 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
   const [overviewStats, setOverviewStats] = useState({ total: 0, unhandled: 0, handled: 0, critical: 0 });
 
   const { data, loading, pagination, searchParamsRef, fetchData, handleSearch, handleTableChange } =
-    useIotTable<IoTDeviceEvent>(params => iotService.queryEvents(params));
+    useIotTable<IoTDeviceEvent>(iotService.queryEvents);
 
   const fetchOverviewStats = useCallback(async () => {
     try {
@@ -42,7 +42,11 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
     } catch { setDevices([]); }
   }, []);
 
-  useEffect(() => { loadDevices(); fetchData(); fetchOverviewStats(); }, [loadDevices, fetchData, fetchOverviewStats]);
+  useEffect(() => { loadDevices(); fetchOverviewStats(); }, [loadDevices, fetchOverviewStats]);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   useImperativeHandle(ref, () => ({ reload: () => { fetchData(); fetchOverviewStats(); }, refreshStats: () => fetchOverviewStats() }), [fetchData, fetchOverviewStats]);
 
@@ -88,7 +92,7 @@ const EventManagement = forwardRef<EventManagementRef>((props, ref) => {
         </Row>
       </Card>
       <SearchBar initialParams={searchParamsRef.current} onSearch={handleSearch} style={{ marginBottom: 16 }} />
-      <Table<IoTDeviceEvent> columns={columns} dataSource={data} rowKey="id" loading={loading} scroll={{ x: 'max-content' }} onChange={handleTableChange} pagination={{ current: pagination.page, total: pagination.total }} />
+      <Table<IoTDeviceEvent> columns={columns} dataSource={data} rowKey="id" loading={loading} scroll={{ x: 'max-content' }} onChange={handleTableChange} pagination={{ current: pagination.page, pageSize: pagination.pageSize, total: pagination.total }} />
       <Modal title="处理事件" open={isModalVisible} onOk={() => form.submit()} onCancel={() => { setIsModalVisible(false); setSelectedEvent(null); form.resetFields(); }} width={isMobile ? '100%' : 600}>
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           {selectedEvent && (

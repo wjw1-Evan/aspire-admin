@@ -35,9 +35,11 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
   const [selectedRecord, setSelectedRecord] = useState<IoTDataRecord | null>(null);
 
   const { data, loading, pagination, searchParamsRef, fetchData, handleSearch, handleTableChange } =
-    useIotTable<IoTDataRecord>(params => iotService.queryDataRecords(params));
+    useIotTable<IoTDataRecord>(iotService.queryDataRecords);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   useImperativeHandle(ref, () => ({ reload: () => fetchData() }), [fetchData]);
 
@@ -130,7 +132,7 @@ const DataCenter = forwardRef<DataCenterRef>((props, ref) => {
         loading={loading}
         scroll={{ x: 'max-content' }}
         onChange={handleTableChange}
-        pagination={{ current: pagination.page, total: pagination.total }}
+        pagination={{ current: pagination.page, pageSize: pagination.pageSize, total: pagination.total }}
       />
       <Drawer
         title="数据记录详情"

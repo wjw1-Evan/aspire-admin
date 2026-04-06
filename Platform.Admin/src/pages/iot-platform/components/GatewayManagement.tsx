@@ -33,7 +33,7 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
   const [overviewStats, setOverviewStats] = useState({ total: 0, online: 0, offline: 0, fault: 0 });
 
   const { data, loading, pagination, searchParamsRef, fetchData, handleSearch, handleTableChange } =
-    useIotTable<IoTGateway>(params => iotService.getGateways(params));
+    useIotTable<IoTGateway>(iotService.getGateways);
 
   const fetchOverviewStats = useCallback(async () => {
     try {
@@ -44,7 +44,11 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
     } catch (error) { console.error('获取统计信息失败:', error); }
   }, []);
 
-  useEffect(() => { fetchOverviewStats(); fetchData(); }, [fetchOverviewStats, fetchData]);
+  useEffect(() => { fetchOverviewStats(); }, [fetchOverviewStats]);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   useImperativeHandle(ref, () => ({ reload: () => fetchData(), refreshStats: () => fetchOverviewStats(), handleAdd: () => handleAdd() }), [fetchData, fetchOverviewStats]);
 
@@ -118,7 +122,7 @@ const GatewayManagement = forwardRef<GatewayManagementRef>((props, ref) => {
         </Row>
       </Card>
       <SearchBar initialParams={searchParamsRef.current} onSearch={handleSearch} style={{ marginBottom: 16 }} />
-      <Table<IoTGateway> columns={columns} dataSource={data} rowKey="id" loading={loading} scroll={{ x: 'max-content' }} onChange={handleTableChange} pagination={{ current: pagination.page, total: pagination.total }} />
+      <Table<IoTGateway> columns={columns} dataSource={data} rowKey="id" loading={loading} scroll={{ x: 'max-content' }} onChange={handleTableChange} pagination={{ current: pagination.page, pageSize: pagination.pageSize, total: pagination.total }} />
 
       <Modal title={selectedGateway ? '编辑网关' : '新建网关'} open={isModalVisible} onOk={() => form.submit()} onCancel={handleCloseModal} width={isMobile ? '100%' : 600}>
         <Form form={form} layout="vertical" onFinish={handleSubmit}>

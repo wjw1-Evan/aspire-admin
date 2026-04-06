@@ -4,8 +4,8 @@ import type { PageParams } from '@/types';
 export function useIotTable<T>(fetchFn: (params: PageParams) => Promise<{ success: boolean; data?: { queryable?: T[]; rowCount?: number } }>) {
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState({ page: 1, total: 0 });
-  const searchParamsRef = useRef<PageParams>({});
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0 });
+  const searchParamsRef = useRef<PageParams>({ page: 1, pageSize: 20 });
 
   const fetchData = useCallback(async () => {
     const params = searchParamsRef.current;
@@ -14,7 +14,7 @@ export function useIotTable<T>(fetchFn: (params: PageParams) => Promise<{ succes
       const res = await fetchFn(params);
       if (res.success && res.data) {
         setData(res.data.queryable || []);
-        setPagination(prev => ({ ...prev, page: params.page ?? prev.page, total: res.data?.rowCount ?? 0 }));
+        setPagination(prev => ({ ...prev, page: params.page ?? prev.page, pageSize: params.pageSize ?? prev.pageSize, total: res.data?.rowCount ?? 0 }));
       } else {
         setData([]);
         setPagination(prev => ({ ...prev, total: 0 }));
@@ -36,6 +36,7 @@ export function useIotTable<T>(fetchFn: (params: PageParams) => Promise<{ succes
     searchParamsRef.current = {
       ...searchParamsRef.current,
       page: pag.current,
+      pageSize: pag.pageSize,
       sortBy: sorter?.field,
       sortOrder: sorter?.order === 'ascend' ? 'asc' : sorter?.order === 'descend' ? 'desc' : undefined,
     };

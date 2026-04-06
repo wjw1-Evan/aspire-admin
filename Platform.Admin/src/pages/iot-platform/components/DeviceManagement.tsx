@@ -49,7 +49,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
   const [batchDeleting, setBatchDeleting] = useState(false);
 
   const { data, loading, pagination, searchParamsRef, fetchData, handleSearch, handleTableChange } =
-    useIotTable<IoTDevice>(params => iotService.getDevices(params));
+    useIotTable<IoTDevice>(iotService.getDevices);
 
   const fetchOverviewStats = useCallback(async () => {
     try {
@@ -67,7 +67,11 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
     } catch { setGateways([]); }
   }, []);
 
-  useEffect(() => { loadGateways(); fetchOverviewStats(); fetchData(); }, [loadGateways, fetchOverviewStats, fetchData]);
+  useEffect(() => { loadGateways(); fetchOverviewStats(); }, [loadGateways, fetchOverviewStats]);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   useImperativeHandle(ref, () => ({ reload: () => fetchData(), refreshStats: fetchOverviewStats, handleAdd: () => handleAdd() }), [fetchData, fetchOverviewStats]);
 
@@ -172,7 +176,7 @@ const DeviceManagement = forwardRef<DeviceManagementRef>((props, ref) => {
           <Button size="small" onClick={() => setSelectedRowKeys([])}>取消选择</Button>
         </div>
       )}
-      <Table<IoTDevice> columns={columns} dataSource={data} rowKey="id" loading={loading} scroll={{ x: 'max-content' }} onChange={handleTableChange} pagination={{ current: pagination.page, total: pagination.total }} rowSelection={{ selectedRowKeys, onChange: keys => setSelectedRowKeys(keys), preserveSelectedRowKeys: true }} />
+      <Table<IoTDevice> columns={columns} dataSource={data} rowKey="id" loading={loading} scroll={{ x: 'max-content' }} onChange={handleTableChange} pagination={{ current: pagination.page, pageSize: pagination.pageSize, total: pagination.total }} rowSelection={{ selectedRowKeys, onChange: keys => setSelectedRowKeys(keys), preserveSelectedRowKeys: true }} />
 
       <Modal title={selectedDevice ? '编辑设备' : '新建设备'} open={isModalVisible} onOk={() => form.submit()} onCancel={handleCloseModal} width={isMobile ? '100%' : 640} destroyOnClose>
         <Form form={form} layout="vertical" onFinish={handleSubmit}>

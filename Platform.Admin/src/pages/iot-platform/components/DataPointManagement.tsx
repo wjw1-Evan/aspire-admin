@@ -43,7 +43,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
   const [overviewStats, setOverviewStats] = useState({ total: 0, enabled: 0, disabled: 0, withAlarm: 0 });
 
   const { data, loading, pagination, searchParamsRef, fetchData, handleSearch, handleTableChange } =
-    useIotTable<IoTDataPoint>(params => iotService.getDataPoints(params));
+    useIotTable<IoTDataPoint>(iotService.getDataPoints);
 
   const fetchOverviewStats = useCallback(async () => {
     try {
@@ -61,7 +61,11 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
     } catch { setDevices([]); }
   }, []);
 
-  useEffect(() => { loadDevices(); fetchOverviewStats(); fetchData(); }, [loadDevices, fetchOverviewStats, fetchData]);
+  useEffect(() => { loadDevices(); fetchOverviewStats(); }, [loadDevices, fetchOverviewStats]);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   useImperativeHandle(ref, () => ({ reload: () => fetchData(), refreshStats: () => fetchOverviewStats(), handleAdd: () => handleAdd() }), [fetchData, fetchOverviewStats]);
 
@@ -160,7 +164,7 @@ const DataPointManagement = forwardRef<DataPointManagementRef>((props, ref) => {
         </Row>
       </Card>
       <SearchBar initialParams={searchParamsRef.current} onSearch={handleSearch} style={{ marginBottom: 16 }} />
-      <Table<IoTDataPoint> columns={columns} dataSource={data} rowKey="id" loading={loading} scroll={{ x: 'max-content' }} onChange={handleTableChange} pagination={{ current: pagination.page, total: pagination.total }} />
+      <Table<IoTDataPoint> columns={columns} dataSource={data} rowKey="id" loading={loading} scroll={{ x: 'max-content' }} onChange={handleTableChange} pagination={{ current: pagination.page, pageSize: pagination.pageSize, total: pagination.total }} />
 
       <Modal title={selectedDataPoint ? '编辑数据点' : '新建数据点'} open={isModalVisible} onOk={() => form.submit()} onCancel={() => { setIsModalVisible(false); setSelectedDataPoint(null); form.resetFields(); }} width={isMobile ? '100%' : 700}>
         <Form form={form} layout="vertical" onFinish={handleSubmit}>

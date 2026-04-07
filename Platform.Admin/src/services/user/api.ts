@@ -70,8 +70,7 @@ export async function getUserList(
   options?: Record<string, any>,
 ) {
   return request<ApiResponse<PagedResult<AppUser>>>('/api/users/list', {
-    method: 'POST',
-    data: params,
+    params,
     ...(options || {}),
   });
 }

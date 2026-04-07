@@ -64,10 +64,14 @@ const RoleManagement: React.FC = () => {
     { title: intl.formatMessage({ id: 'pages.table.status' }), dataIndex: 'isActive', key: 'isActive', sorter: true, valueType: 'select', fieldProps: { options: [{ label: intl.formatMessage({ id: 'pages.table.activated' }), value: 'true' }, { label: intl.formatMessage({ id: 'pages.table.deactivated' }), value: 'false' }] }, render: (_, r) => <Tag color={r.isActive ? 'success' : 'default'}>{r.isActive ? intl.formatMessage({ id: 'pages.table.activated' }) : intl.formatMessage({ id: 'pages.table.deactivated' })}</Tag> },
     { title: intl.formatMessage({ id: 'pages.table.stats' }), valueType: 'option', render: (_, r) => <Space separator="|"><span>{intl.formatMessage({ id: 'pages.table.user' })}: {r.userCount || 0}</span><span>{intl.formatMessage({ id: 'pages.table.menu' })}: {r.menuCount || 0}</span></Space> },
     { title: intl.formatMessage({ id: 'pages.table.createdAt' }), dataIndex: 'createdAt', key: 'createdAt', sorter: true, valueType: 'dateTime' },
-    { title: intl.formatMessage({ id: 'pages.table.actions' }), key: 'action', valueType: 'option', fixed: 'right', width: 150, render: (_, r) => [
-      <Button key="edit" type="link" size="small" icon={<EditOutlined />} onClick={() => { set({ editingRole: r, formVisible: true }); setFormState(p => ({ ...p, checkedKeys: r.menuIds || [] })); }}>{intl.formatMessage({ id: 'pages.table.edit' })}</Button>,
-      <Popconfirm key="delete" title={intl.formatMessage({ id: 'pages.modal.confirmDeleteRole' }, { roleName: r.name })} onConfirm={async () => { await api.delete(r.id!); actionRef.current?.reload(); loadStatistics(); }}><Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.table.delete' })}</Button></Popconfirm>,
-    ]},
+    { title: intl.formatMessage({ id: 'pages.table.actions' }), key: 'action', valueType: 'option', fixed: 'right', width: 180, render: (_, r) => (
+      <Space size={4}>
+        <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { set({ editingRole: r, formVisible: true }); setFormState(p => ({ ...p, checkedKeys: r.menuIds || [] })); }}>{intl.formatMessage({ id: 'pages.table.edit' })}</Button>
+        <Popconfirm title={intl.formatMessage({ id: 'pages.modal.confirmDeleteRole' }, { roleName: r.name })} onConfirm={async () => { await api.delete(r.id!); actionRef.current?.reload(); loadStatistics(); }}>
+          <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.table.delete' })}</Button>
+        </Popconfirm>
+      </Space>
+    ) },
   ];
 
   const convertToTreeData = (menus: MenuTreeNode[]): any[] => menus.filter((m): m is MenuTreeNode & { id: string } => Boolean(m.id)).map(m => ({ key: m.id, title: m.title || m.name, children: m.children ? convertToTreeData(m.children) : [] }));

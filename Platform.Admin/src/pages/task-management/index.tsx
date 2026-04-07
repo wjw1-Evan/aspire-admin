@@ -3,7 +3,7 @@ import type { ProColumns } from '@ant-design/pro-table';
 import { PageContainer, ProDescriptions, ProCard } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import { request } from '@umijs/max';
-import { Button, Tag, Space, Grid, App, Modal, Spin, Timeline, Empty, Progress, Input } from 'antd';
+import { Button, Tag, Space, Grid, App, Modal, Spin, Timeline, Empty, Progress, Input, Popconfirm } from 'antd';
 import { Drawer } from 'antd';
 import { ProTable, ActionType } from '@ant-design/pro-table';
 import { PlusOutlined, EditOutlined, DeleteOutlined, CheckCircleOutlined, ReloadOutlined, PlayCircleOutlined, StopOutlined, SearchOutlined, ProjectOutlined } from '@ant-design/icons';
@@ -183,20 +183,22 @@ const TaskManagement: React.FC = () => {
     { title: intl.formatMessage({ id: 'pages.taskManagement.table.createdBy' }), dataIndex: 'createdByName', key: 'createdBy', width: 100, render: (_: any, r: TaskDto) => r.createdByName || '-' },
     { title: intl.formatMessage({ id: 'pages.taskManagement.table.plannedEnd' }), dataIndex: 'plannedEndTime', key: 'plannedEndTime', width: 150, render: (_: any, r: TaskDto) => r.plannedEndTime ? dayjs(r.plannedEndTime).format('YYYY-MM-DD HH:mm') : '-' },
     { title: intl.formatMessage({ id: 'pages.taskManagement.table.createdAt' }), dataIndex: 'createdAt', key: 'createdAt', width: 150, sorter: true, render: (_: any, r: TaskDto) => r.createdAt ? dayjs(r.createdAt).format('YYYY-MM-DD HH:mm') : '-' },
-    { title: intl.formatMessage({ id: 'pages.table.action' }), key: 'action', width: 200, fixed: 'right', valueType: 'option', render: (_: any, r: TaskDto) => [
-      <Button key="edit" type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingTask: r, formVisible: true })}>{intl.formatMessage({ id: 'pages.taskManagement.action.edit' })}</Button>,
-      r.status !== TaskStatusEnum.Completed && r.status !== TaskStatusEnum.Cancelled && (
-        <Space key="exec" size={4}>
-          <Button type="link" size="small" icon={<PlayCircleOutlined />} onClick={() => set({ viewingTask: r, executionVisible: true })}>{intl.formatMessage({ id: 'pages.taskManagement.action.execute' })}</Button>
-          <Button type="link" size="small" icon={<StopOutlined />} onClick={() => {
-            Modal.confirm({ title: intl.formatMessage({ id: 'pages.taskManagement.action.cancel' }), content: intl.formatMessage({ id: 'pages.taskManagement.message.confirmCancel' }), onOk: () => api.cancel(r.id || '').then(res => { if (res.success) { message.success(intl.formatMessage({ id: 'pages.taskManagement.message.cancelSuccess' })); actionRef.current?.reload(); loadStatistics(); } }) });
-          }}>{intl.formatMessage({ id: 'pages.taskManagement.action.cancel' })}</Button>
-        </Space>
-      ),
-      <Button key="delete" type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => {
-        Modal.confirm({ title: intl.formatMessage({ id: 'pages.taskManagement.action.delete' }), content: intl.formatMessage({ id: 'pages.taskManagement.message.confirmDelete' }), onOk: () => api.delete(r.id || '').then(res => { if (res.success) { message.success(intl.formatMessage({ id: 'pages.taskManagement.message.deleteSuccess' })); actionRef.current?.reload(); loadStatistics(); } }) });
-      }}>{intl.formatMessage({ id: 'pages.taskManagement.action.delete' })}</Button>,
-    ]},
+    { title: intl.formatMessage({ id: 'pages.table.action' }), key: 'action', valueType: 'option', fixed: 'right', width: 180, render: (_: any, r: TaskDto) => (
+      <Space size={4}>
+        <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingTask: r, formVisible: true })}>{intl.formatMessage({ id: 'pages.taskManagement.action.edit' })}</Button>
+        {r.status !== TaskStatusEnum.Completed && r.status !== TaskStatusEnum.Cancelled && (
+          <>
+            <Button type="link" size="small" icon={<PlayCircleOutlined />} onClick={() => set({ viewingTask: r, executionVisible: true })}>{intl.formatMessage({ id: 'pages.taskManagement.action.execute' })}</Button>
+            <Button type="link" size="small" icon={<StopOutlined />} onClick={() => {
+              Modal.confirm({ title: intl.formatMessage({ id: 'pages.taskManagement.action.cancel' }), content: intl.formatMessage({ id: 'pages.taskManagement.message.confirmCancel' }), onOk: () => api.cancel(r.id || '').then(res => { if (res.success) { message.success(intl.formatMessage({ id: 'pages.taskManagement.message.cancelSuccess' })); actionRef.current?.reload(); loadStatistics(); } }) });
+            }}>{intl.formatMessage({ id: 'pages.taskManagement.action.cancel' })}</Button>
+          </>
+        )}
+        <Popconfirm title={`确定删除任务「${r.taskName}」？`} onConfirm={() => api.delete(r.id || '').then(res => { if (res.success) { message.success(intl.formatMessage({ id: 'pages.taskManagement.message.deleteSuccess' })); actionRef.current?.reload(); loadStatistics(); } })}>
+          <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.taskManagement.action.delete' })}</Button>
+        </Popconfirm>
+      </Space>
+    )},
   ], [intl, message, loadStatistics]);
 
   return (

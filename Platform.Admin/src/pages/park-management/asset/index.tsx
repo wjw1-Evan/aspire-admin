@@ -136,11 +136,15 @@ const AssetManagement: React.FC = () => {
         { title: intl.formatMessage({ id: 'pages.park.asset.building.occupancy', defaultMessage: '出租率' }), dataIndex: 'occupancyRate', sorter: true, width: 120, render: (_, record) => (<Tag color={(record.occupancyRate || 0) >= 80 ? 'success' : (record.occupancyRate || 0) >= 50 ? 'processing' : 'exception'}>{record.occupancyRate || 0}%</Tag>) },
         { title: intl.formatMessage({ id: 'pages.park.asset.building.units', defaultMessage: '房源数量' }), dataIndex: 'totalUnits', sorter: true, width: 140, align: 'center', render: (totalUnits, record) => (<Space vertical align="center"><Button type="link" size="small" style={{ fontWeight: 'bold', fontSize: 16, padding: 0 }} onClick={() => { set({ activeTab: 'units' }); unitActionRef.current?.reload(); }}>{totalUnits}</Button><Text type="secondary" style={{ fontSize: 12 }}>可用: {record.availableUnits}</Text></Space>) },
         { title: intl.formatMessage({ id: 'pages.park.asset.building.status', defaultMessage: '状态' }), dataIndex: 'status', sorter: true, width: 100, render: (_, record) => (<Tag color={record.status === 'Active' ? 'green' : record.status === 'Maintenance' ? 'orange' : 'default'}>{record.status === 'Active' ? '正常' : record.status === 'Maintenance' ? '维护中' : record.status}</Tag>) },
-        { title: intl.formatMessage({ id: 'common.action', defaultMessage: '操作' }), valueType: 'option', width: 150, fixed: 'right', render: (_, record) => (<Space>
-            <Button type="link" icon={<EyeOutlined />} onClick={() => handleViewBuilding(record.id)}>{intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}</Button>
-            <Button type="link" icon={<EditOutlined />} onClick={() => { setBuilding({ editingBuilding: record, modalVisible: true }); setForm({ attachments: (record.attachments || []).map((url, index) => { const fileName = url.split('/').pop() || 'file'; return { uid: `-${index}`, name: decodeURIComponent(fileName), status: 'done', url }; }) }); }}>{intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}</Button>
-            <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={async () => { await api.deleteBuilding(record.id); buildingActionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }}><Button type="link" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}</Button></Popconfirm>
-        </Space>) },
+        { title: intl.formatMessage({ id: 'common.action', defaultMessage: '操作' }), valueType: 'option', fixed: 'right', width: 180, render: (_, record) => (
+            <Space size={4}>
+                <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => handleViewBuilding(record.id)}>{intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}</Button>
+                <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { setBuilding({ editingBuilding: record, modalVisible: true }); setForm({ attachments: (record.attachments || []).map((url, index) => { const fileName = url.split('/').pop() || 'file'; return { uid: `-${index}`, name: decodeURIComponent(fileName), status: 'done', url }; }) }); }}>{intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}</Button>
+                <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={async () => { await api.deleteBuilding(record.id); buildingActionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }}>
+                    <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}</Button>
+                </Popconfirm>
+            </Space>
+        ) },
     ];
 
     const unitColumns: ProColumns<PropertyUnit>[] = [
@@ -151,11 +155,15 @@ const AssetManagement: React.FC = () => {
         { title: intl.formatMessage({ id: 'pages.park.asset.unit.rent', defaultMessage: '月租金' }), dataIndex: 'monthlyRent', sorter: true, width: 120, align: 'right', render: (_, record) => `¥${record.monthlyRent?.toLocaleString()}` },
         { title: intl.formatMessage({ id: 'pages.park.asset.unit.type', defaultMessage: '类型' }), dataIndex: 'unitType', sorter: true, width: 100, render: (_, record) => (<Tag color={record.unitType === 'Office' ? 'blue' : record.unitType === 'Commercial' ? 'green' : 'purple'}>{record.unitType === 'Office' ? '办公' : record.unitType === 'Commercial' ? '商铺' : record.unitType || '其他'}</Tag>) },
         { title: intl.formatMessage({ id: 'pages.park.asset.unit.status', defaultMessage: '状态' }), dataIndex: 'status', sorter: true, width: 100, render: (_, record) => { const statusMap: Record<string, { color: string; text: string }> = { Available: { color: 'green', text: '空置' }, Rented: { color: 'blue', text: '已出租' }, Reserved: { color: 'orange', text: '预留' }, Maintenance: { color: 'red', text: '维护' } }; const config = statusMap[record.status] || { color: 'default', text: record.status }; return <Tag color={config.color}>{config.text}</Tag>; } },
-        { title: intl.formatMessage({ id: 'common.action', defaultMessage: '操作' }), valueType: 'option', width: 150, fixed: 'right', render: (_, record) => (<Space>
-            <Button type="link" icon={<EyeOutlined />} onClick={() => handleViewUnit(record.id)}>{intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}</Button>
-            <Button type="link" icon={<EditOutlined />} onClick={() => { setUnit({ editingUnit: record, modalVisible: true }); setForm({ attachments: (record.attachments || []).map((url, index) => { const fileName = url.split('/').pop() || 'file'; return { uid: `-${index}`, name: decodeURIComponent(fileName), status: 'done', url }; }) }); }}>{intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}</Button>
-            <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={async () => { await api.deleteUnit(record.id); unitActionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }}><Button type="link" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}</Button></Popconfirm>
-        </Space>) },
+        { title: intl.formatMessage({ id: 'common.action', defaultMessage: '操作' }), valueType: 'option', fixed: 'right', width: 180, render: (_, record) => (
+            <Space size={4}>
+                <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => handleViewUnit(record.id)}>{intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}</Button>
+                <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { setUnit({ editingUnit: record, modalVisible: true }); setForm({ attachments: (record.attachments || []).map((url, index) => { const fileName = url.split('/').pop() || 'file'; return { uid: `-${index}`, name: decodeURIComponent(fileName), status: 'done', url }; }) }); }}>{intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}</Button>
+                <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={async () => { await api.deleteUnit(record.id); unitActionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }}>
+                    <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}</Button>
+                </Popconfirm>
+            </Space>
+        ) },
     ];
 
     const parseAttachments = (urls: string[] = []) => urls.map((url, index) => { const fileName = url.split('/').pop() || 'file'; return { uid: `-${index}`, name: decodeURIComponent(fileName), status: 'done', url }; });

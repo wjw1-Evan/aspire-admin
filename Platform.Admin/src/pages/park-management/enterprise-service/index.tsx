@@ -73,12 +73,16 @@ const EnterpriseService: React.FC = () => {
         { title: intl.formatMessage({ id: 'pages.park.service.request.status', defaultMessage: '状态' }), dataIndex: 'status', sorter: true, width: 100, render: (status) => { const opt = statusOptions.find(o => o.value === status); return <Tag color={opt?.color || 'default'}>{opt?.label || status}</Tag>; } },
         { title: intl.formatMessage({ id: 'pages.park.service.request.rating', defaultMessage: '评分' }), dataIndex: 'rating', sorter: true, width: 120, render: (rating) => rating ? <Rate disabled defaultValue={rating as number} style={{ fontSize: 12 }} /> : '-' },
         { title: intl.formatMessage({ id: 'pages.park.service.request.createdAt', defaultMessage: '创建时间' }), dataIndex: 'createdAt', sorter: true, width: 120, render: (date) => dayjs(date as string).format('YYYY-MM-DD HH:mm') },
-        { title: intl.formatMessage({ id: 'common.action', defaultMessage: '操作' }), valueType: 'option', width: 200, fixed: 'right', render: (_, record) => (<Space>
-            <Button type="link" icon={<EyeOutlined />} onClick={() => { setEditing({ currentRequest: record }); setModal({ detailVisible: true }); }}>{intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}</Button>
-            {record.status !== 'Completed' && record.status !== 'Cancelled' && (<Button type="link" icon={<SettingOutlined />} onClick={() => { setEditing({ currentRequest: record }); setModal({ statusVisible: true }); }}>{intl.formatMessage({ id: 'pages.park.service.request.updateStatus', defaultMessage: '更新状态' })}</Button>)}
-            {record.status === 'Completed' && !record.rating && (<Button type="link" icon={<StarOutlined />} onClick={() => { setEditing({ currentRequest: record }); setModal({ ratingVisible: true }); }}>{intl.formatMessage({ id: 'pages.park.service.request.rate', defaultMessage: '评价' })}</Button>)}
-            <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={async () => { const res = await api.deleteRequest(record.id); if (res.success) { message.success('删除成功'); actionRef.current?.reload(); loadData(); } }}><Button type="link" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}</Button></Popconfirm>
-        </Space>) },
+        { title: intl.formatMessage({ id: 'common.action', defaultMessage: '操作' }), valueType: 'option', fixed: 'right', width: 180, render: (_, record) => (
+            <Space size={4}>
+                <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => { setEditing({ currentRequest: record }); setModal({ detailVisible: true }); }}>{intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}</Button>
+                {record.status !== 'Completed' && record.status !== 'Cancelled' && (<Button type="link" size="small" icon={<SettingOutlined />} onClick={() => { setEditing({ currentRequest: record }); setModal({ statusVisible: true }); }}>{intl.formatMessage({ id: 'pages.park.service.request.updateStatus', defaultMessage: '更新状态' })}</Button>)}
+                {record.status === 'Completed' && !record.rating && (<Button type="link" size="small" icon={<StarOutlined />} onClick={() => { setEditing({ currentRequest: record }); setModal({ ratingVisible: true }); }}>{intl.formatMessage({ id: 'pages.park.service.request.rate', defaultMessage: '评价' })}</Button>)}
+                <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={async () => { const res = await api.deleteRequest(record.id); if (res.success) { message.success('删除成功'); actionRef.current?.reload(); loadData(); } }}>
+                    <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}</Button>
+                </Popconfirm>
+            </Space>
+        ) },
     ];
 
     const handleRefresh = () => { if (state.activeTab === 'requests') actionRef.current?.reload(); else loadCategories(); loadData(); };

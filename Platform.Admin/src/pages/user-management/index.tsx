@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { useIntl, request } from '@umijs/max';
-import { App, Button, Tag, Space, Modal, Badge, Spin, Input, Typography, Form, Select } from 'antd';
+import { App, Button, Tag, Space, Modal, Badge, Spin, Input, Typography, Form, Select, Popconfirm } from 'antd';
 import { Drawer } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormSwitch, ProFormDatePicker, ProFormDateRangePicker } from '@ant-design/pro-form';
@@ -121,7 +121,14 @@ const UserManagement: React.FC = () => {
     { title: intl.formatMessage({ id: 'pages.table.status' }), dataIndex: 'isActive', key: 'isActive', render: (_, r) => <Badge status={r.isActive ? 'success' : 'error'} text={r.isActive ? intl.formatMessage({ id: 'pages.table.activated' }) : intl.formatMessage({ id: 'pages.table.deactivated' })} /> },
     { title: intl.formatMessage({ id: 'pages.table.createdAt' }), dataIndex: 'createdAt', key: 'createdAt', sorter: true, valueType: 'dateTime' },
     { title: intl.formatMessage({ id: 'pages.table.lastLogin' }), dataIndex: 'lastLoginAt', key: 'lastLoginAt', valueType: 'dateTime' },
-    { title: intl.formatMessage({ id: 'pages.table.actions' }), key: 'action', fixed: 'right', width: 150, valueType: 'option', render: (_, r) => (<Space><Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingUser: r, formVisible: true })}>{intl.formatMessage({ id: 'pages.table.edit' })}</Button><Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => promptDelete(r.id)}>{intl.formatMessage({ id: 'pages.table.delete' })}</Button></Space>) },
+    { title: intl.formatMessage({ id: 'pages.table.actions' }), key: 'action', valueType: 'option', fixed: 'right', width: 180, render: (_, r) => (
+      <Space size={4}>
+        <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingUser: r, formVisible: true })}>{intl.formatMessage({ id: 'pages.table.edit' })}</Button>
+        <Popconfirm title={`确定删除用户「${r.name}」？`} onConfirm={() => promptDelete(r.id)}>
+          <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'pages.table.delete' })}</Button>
+        </Popconfirm>
+      </Space>
+    ) },
   ], [intl, state.roleMap, state.currentCompany, promptDelete]);
 
   // ==================== Join Requests ====================

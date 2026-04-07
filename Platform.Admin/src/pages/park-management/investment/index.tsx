@@ -65,11 +65,15 @@ const InvestmentManagement: React.FC = () => {
         { title: intl.formatMessage({ id: 'pages.park.investment.lead.priority', defaultMessage: '优先级' }), dataIndex: 'priority', sorter: true, width: 80, render: (priority) => { const opt = priorityOptions.find(o => o.value === priority); return <Tag color={opt?.color || 'default'}>{opt?.label || priority}</Tag>; } },
         { title: intl.formatMessage({ id: 'pages.park.investment.lead.status', defaultMessage: '状态' }), dataIndex: 'status', sorter: true, width: 100, render: (status) => { const opt = leadStatusOptions.find(o => o.value === status); return <Tag color={opt?.color || 'default'}>{opt?.label || status}</Tag>; } },
         { title: intl.formatMessage({ id: 'pages.park.investment.lead.nextFollowUp', defaultMessage: '下次跟进' }), dataIndex: 'nextFollowUpDate', sorter: true, width: 110, render: (date) => date ? dayjs(date as string).format('YYYY-MM-DD') : '-' },
-        { title: intl.formatMessage({ id: 'common.action', defaultMessage: '操作' }), valueType: 'option', width: 180, fixed: 'right', render: (_, record) => (<Space>
-            <Button type="link" icon={<EditOutlined />} onClick={() => set({ editingLead: record, leadModalVisible: true })}>{intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}</Button>
-            <Button type="link" size="small" icon={<SwapOutlined />} onClick={() => handleConvertToProject(record.id)} disabled={record.status === 'Lost' || record.status === 'Qualified'}>{intl.formatMessage({ id: 'pages.park.investment.convertToProject', defaultMessage: '转为项目' })}</Button>
-            <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={() => handleDeleteLead(record.id)}><Button type="link" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}</Button></Popconfirm>
-        </Space>) },
+        { title: intl.formatMessage({ id: 'common.action', defaultMessage: '操作' }), valueType: 'option', fixed: 'right', width: 180, render: (_, record) => (
+            <Space size={4}>
+                <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingLead: record, leadModalVisible: true })}>{intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}</Button>
+                <Button type="link" size="small" icon={<SwapOutlined />} onClick={() => handleConvertToProject(record.id)} disabled={record.status === 'Lost' || record.status === 'Qualified'}>{intl.formatMessage({ id: 'pages.park.investment.convertToProject', defaultMessage: '转为项目' })}</Button>
+                <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={() => handleDeleteLead(record.id)}>
+                    <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}</Button>
+                </Popconfirm>
+            </Space>
+        ) },
     ];
 
     const projectColumns: ProColumns<InvestmentProject>[] = [
@@ -81,10 +85,14 @@ const InvestmentManagement: React.FC = () => {
         { title: intl.formatMessage({ id: 'pages.park.investment.project.stage', defaultMessage: '阶段' }), dataIndex: 'stage', sorter: true, width: 100, render: (stage) => { const opt = projectStageOptions.find(o => o.value === stage); return <Tag color={opt?.color || 'default'}>{opt?.label || stage}</Tag>; } },
         { title: intl.formatMessage({ id: 'pages.park.investment.project.probability', defaultMessage: '成功率' }), dataIndex: 'probability', sorter: true, width: 100, render: (prob) => prob ? <Progress percent={prob as number} size="small" style={{ width: 80 }} /> : '-' },
         { title: intl.formatMessage({ id: 'pages.park.investment.project.expectedDate', defaultMessage: '预计签约' }), dataIndex: 'expectedSignDate', sorter: true, width: 110, render: (date) => date ? dayjs(date as string).format('YYYY-MM-DD') : '-' },
-        { title: intl.formatMessage({ id: 'common.action', defaultMessage: '操作' }), valueType: 'option', width: 150, fixed: 'right', render: (_, record) => (<Space>
-            <Button type="link" icon={<EditOutlined />} onClick={() => set({ editingProject: record, projectModalVisible: true })}>{intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}</Button>
-            <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={() => handleDeleteProject(record.id)}><Button type="link" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}</Button></Popconfirm>
-        </Space>) },
+        { title: intl.formatMessage({ id: 'common.action', defaultMessage: '操作' }), valueType: 'option', fixed: 'right', width: 180, render: (_, record) => (
+            <Space size={4}>
+                <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingProject: record, projectModalVisible: true })}>{intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}</Button>
+                <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={() => handleDeleteProject(record.id)}>
+                    <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}</Button>
+                </Popconfirm>
+            </Space>
+        ) },
     ];
 
     return (

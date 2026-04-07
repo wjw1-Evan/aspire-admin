@@ -97,11 +97,15 @@ const ContractManagement: React.FC = () => {
         { title: intl.formatMessage({ id: 'pages.park.contract.rent', defaultMessage: '月租金' }), dataIndex: 'monthlyRent', sorter: true, width: 100, align: 'right', render: (rent) => `¥${rent?.toLocaleString()}` },
         { title: intl.formatMessage({ id: 'pages.park.contract.totalAmount', defaultMessage: '合同总额' }), dataIndex: 'totalAmount', sorter: true, width: 120, align: 'right', render: (total) => total ? `¥${total?.toLocaleString()}` : '-' },
         { title: intl.formatMessage({ id: 'pages.park.contract.status', defaultMessage: '状态' }), dataIndex: 'status', sorter: true, width: 100, render: (status) => { const opt = contractStatusOptions.find(o => o.value === status); return <Tag color={opt?.color || 'default'}>{opt?.label || status}</Tag>; } },
-        { title: intl.formatMessage({ id: 'common.action', defaultMessage: '操作' }), valueType: 'option', width: 150, fixed: 'right', render: (_, record) => [
-            <Button key="view" type="link" icon={<EyeOutlined />} onClick={() => handleViewContract(record.id)}>{intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}</Button>,
-            <Button key="edit" type="link" icon={<EditOutlined />} onClick={() => { set({ isEdit: true, currentContract: record, contractModalVisible: true, fileList: (record.attachments || []).map(id => ({ uid: id, name: `附件-${id.substring(0, 8)}`, status: 'done', url: `/api/cloud-storage/files/${id}/download` })) }); }}>{intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}</Button>,
-            <Popconfirm key="delete" title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={async () => { await api.delete(record.id); actionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }}><Button type="link" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}</Button></Popconfirm>,
-        ]},
+        { title: intl.formatMessage({ id: 'common.action', defaultMessage: '操作' }), valueType: 'option', fixed: 'right', width: 180, render: (_, record) => (
+            <Space size={4}>
+                <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => handleViewContract(record.id)}>{intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}</Button>
+                <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { set({ isEdit: true, currentContract: record, contractModalVisible: true, fileList: (record.attachments || []).map(id => ({ uid: id, name: `附件-${id.substring(0, 8)}`, status: 'done', url: `/api/cloud-storage/files/${id}/download` })) }); }}>{intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}</Button>
+                <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={async () => { await api.delete(record.id); actionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }}>
+                    <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}</Button>
+                </Popconfirm>
+            </Space>
+        ) },
     ];
 
     const uploadProps: UploadProps = {

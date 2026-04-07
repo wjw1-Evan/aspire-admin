@@ -52,10 +52,12 @@ const VisitAssessmentList: React.FC = () => {
         { title: intl.formatMessage({ id: 'pages.park.visit.visitor', defaultMessage: '受访人/企业' }), dataIndex: 'tenantName', width: 180, ellipsis: true, render: (dom: any, r: VisitTask) => <Space direction="vertical" size={0}><Text strong>{dom || '-'}</Text><Text type="secondary" style={{ fontSize: 12 }}>{r.visitLocation || '-'}</Text></Space> },
         { title: intl.formatMessage({ id: 'pages.park.visit.task', defaultMessage: '走访任务' }), dataIndex: 'title', ellipsis: true, render: (dom: any) => dom || '-' },
         { title: intl.formatMessage({ id: 'pages.park.visit.score', defaultMessage: '满意度' }), dataIndex: 'assessmentScore', width: 150, render: (dom: React.ReactNode) => dom !== undefined && dom !== null ? <Rate disabled value={dom as number} character={<StarFilled />} style={{ fontSize: 14 }} /> : <Tag color="warning">待评价</Tag> },
-        { title: intl.formatMessage({ id: 'pages.park.common.actions', defaultMessage: '操作' }), valueType: 'option', fixed: 'right', width: 120, render: (_: any, r: VisitTask) => [
-            r.assessmentId ? <Button key="view" type="link" size="small" onClick={() => { const d: VisitAssessment = { id: r.assessmentId!, taskId: r.id, visitorName: r.intervieweeName || r.tenantName || '', phone: r.phone, location: r.visitLocation || '', taskDescription: r.title, score: r.assessmentScore || 0, comments: r.feedback || '', createdAt: r.createdAt }; set({ selectedAssessment: d, detailVisible: true }); }} icon={<FileSearchOutlined />}>{intl.formatMessage({ id: 'pages.park.common.view', defaultMessage: '详情' })}</Button>
-            : <Button key="assess" type="link" size="small" onClick={() => set({ selectedTask: r, assessmentVisible: true })} icon={<StarOutlined />} style={{ color: '#52c41a' }}>{intl.formatMessage({ id: 'pages.park.visit.assess', defaultMessage: '评价' })}</Button>,
-        ]},
+        { title: intl.formatMessage({ id: 'pages.park.common.actions', defaultMessage: '操作' }), valueType: 'option', fixed: 'right', width: 180, render: (_: any, r: VisitTask) => (
+            <Space size={4}>
+                {r.assessmentId ? <Button variant="link" color="cyan" size="small" icon={<FileSearchOutlined />} onClick={() => { const d: VisitAssessment = { id: r.assessmentId!, taskId: r.id, visitorName: r.intervieweeName || r.tenantName || '', phone: r.phone, location: r.visitLocation || '', taskDescription: r.title, score: r.assessmentScore || 0, comments: r.feedback || '', createdAt: r.createdAt }; set({ selectedAssessment: d, detailVisible: true }); }}>{intl.formatMessage({ id: 'pages.park.common.view', defaultMessage: '详情' })}</Button>
+                : <Button type="link" size="small" icon={<StarOutlined />} onClick={() => set({ selectedTask: r, assessmentVisible: true })} style={{ color: '#52c41a' }}>{intl.formatMessage({ id: 'pages.park.visit.assess', defaultMessage: '评价' })}</Button>}
+            </Space>
+        )},
     ];
 
     return (

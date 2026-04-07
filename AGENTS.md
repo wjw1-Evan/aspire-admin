@@ -24,6 +24,38 @@
 - **全面中文交互**：所有代码注释、README、给用户的回复、以及 **Git 提交信息**，必须使用**简体中文**。
 - **Commit 格式**：遵循约定式提交（如 `feat: 添加xxx`，`fix: 修复xxx`，`docs: 更新xxx`）。
 
+### 📝 代码修改成功后自动提交与推送
+修改代码成功后，**必须**自动执行以下操作：
+
+#### 1. 运行 lint 检查
+```bash
+cd /Users/fanshuyi/Projects/aspire-admin/Platform.Admin && npm run lint
+```
+
+#### 2. 检查 Git 状态
+```bash
+cd /Users/fanshuyi/Projects/aspire-admin && git status
+```
+
+#### 3. 如果有变更，提交并推送
+```bash
+cd /Users/fanshuyi/Projects/aspire-admin && git add -A
+git commit -m "<提交信息>"
+git push origin main
+```
+
+#### 提交信息规范
+- `feat: 添加xxx` - 新功能
+- `fix: 修复xxx` - 错误修复
+- `docs: 更新xxx` - 文档更新
+- `refactor: 重构xxx` - 代码重构
+- `style: 调整xxx` - 格式调整
+- `perf: 优化xxx` - 性能优化
+- `test: 测试xxx` - 测试相关
+- `chore: 维护xxx` - 构建或辅助工具的变动
+
+> **注意**：如果没有任何变更，不需要执行提交操作。
+
 ### 🚀 Aspire 资源调拨
 - 修改 `Platform.AppHost/AppHost.cs` 或 `appsettings.json` 后，必须指导用户重启 `aspire run`。
 - 请勿向用户推荐使用过时的 Aspire workload。

@@ -448,16 +448,8 @@ export const layout: RunTimeLayoutConfig = ({
       );
     },
     menuHeaderRender: false,
-    // 🔧 面包屑始终完整显示
-    breadcrumbRender: (routers: any[] = []) => {
-      if (routers.length === 0) {
-        return [{ path: '/', breadcrumbName: '首页' }];
-      }
-      if (routers[0]?.path !== '/') {
-        return [{ path: '/', breadcrumbName: '首页' }, ...routers];
-      }
-      return routers;
-    },
+    breadcrumbRender: (routers: any[]) =>
+      routers?.[0]?.path === '/' ? routers : [{ path: '/', breadcrumbName: '首页' }, ...(routers || [])],
     // 🔧 自定义子文件夹渲染
     subMenuItemRender: (item: any, dom: React.ReactNode) => {
       // 如果没有 icon 属性但有 rawIcon，说明是需要手动显示的二级文件夹

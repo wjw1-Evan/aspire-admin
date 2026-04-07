@@ -1,14 +1,12 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { StatCard } from '@/components';
 import { useIntl, request } from '@umijs/max';
-import { ProCard } from '@ant-design/pro-components';
 import { Tag, Space, Row, Col, Button, Popconfirm, Typography, AutoComplete, Input, Divider, Form, App } from 'antd';
 import { Drawer } from 'antd';
 import { ProDescriptions } from '@ant-design/pro-components';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormDateTimePicker } from '@ant-design/pro-form';
-import { PlusOutlined, UserOutlined, CheckCircleOutlined, SyncOutlined, CloseCircleOutlined, EditOutlined, DeleteOutlined, EyeOutlined, SearchOutlined } from '@ant-design/icons';
+import { PlusOutlined, UserOutlined, CheckCircleOutlined, SyncOutlined, CloseCircleOutlined, EditOutlined, DeleteOutlined, EyeOutlined, SearchOutlined, TeamOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 
@@ -65,19 +63,23 @@ const VisitTaskPage: React.FC = () => {
 
     return (
         <PageContainer>
-            {state.statistics && <ProCard style={{ marginBottom: 16 }}><Row gutter={[16, 16]}>
-                <Col xs={24} sm={12} md={6}><StatCard title="待处理任务" value={state.statistics.pendingTasks} icon={<SyncOutlined />} color="#faad14" /></Col>
-                <Col xs={24} sm={12} md={6}><StatCard title="本月走访数" value={state.statistics.completedTasksThisMonth} icon={<CheckCircleOutlined />} color="#52c41a" /></Col>
-                <Col xs={24} sm={12} md={6}><StatCard title="活跃企管员" value={state.statistics.activeManagers} icon={<UserOutlined />} color="#1890ff" /></Col>
-                <Col xs={24} sm={12} md={6}><StatCard title="完成率" value={`${state.statistics.completionRate}%`} icon={<SyncOutlined />} color={state.statistics.completionRate >= 90 ? '#52c41a' : '#faad14'} /></Col>
-            </Row></ProCard>}
-
             <ProTable actionRef={actionRef} request={async (params: any) => {
                 const { current, pageSize, sortBy, sortOrder } = params;
                 const res = await api.list({ page: current, pageSize, search: state.search, sortBy, sortOrder });
                 api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
                 return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
             }} columns={columns} rowKey="id" search={false}
+                headerTitle={
+                    <Space size={24}>
+                        <Space><TeamOutlined />走访任务</Space>
+                        <Space size={12}>
+                            <Tag color="orange">待处理 {state.statistics?.pendingTasks || 0}</Tag>
+                            <Tag color="green">本月完成 {state.statistics?.completedTasksThisMonth || 0}</Tag>
+                            <Tag color="blue">活跃企管员 {state.statistics?.activeManagers || 0}</Tag>
+                            <Tag color="purple">完成率 {state.statistics?.completionRate || 0}%</Tag>
+                        </Space>
+                    </Space>
+                }
                 onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
                 scroll={{ x: 'max-content' }}
                 toolBarRender={() => [

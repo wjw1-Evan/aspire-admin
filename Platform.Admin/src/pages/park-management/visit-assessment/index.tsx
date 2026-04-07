@@ -1,12 +1,11 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { PageContainer, ProCard, ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-components';
-import { StatCard } from '@/components';
+import { PageContainer, ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-components';
 import { useIntl, request } from '@umijs/max';
-import { Space, Button, Tag, Rate, App, Divider, Typography, Input, Row, Col } from 'antd';
+import { Space, Button, Tag, Rate, App, Divider, Typography, Input } from 'antd';
 import { Drawer } from 'antd';
 import { ProDescriptions } from '@ant-design/pro-components';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
-import { StarFilled, FileSearchOutlined, StarOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons';
+import { StarFilled, FileSearchOutlined, StarOutlined, SearchOutlined, ReloadOutlined, TeamOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 
@@ -61,26 +60,18 @@ const VisitAssessmentList: React.FC = () => {
 
     return (
         <PageContainer>
-            <ProCard gutter={16} style={{ marginBottom: 16 }}>
-                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-                    <div style={{ fontSize: 24, fontWeight: 'bold' }}>{state.statistics?.totalTasks || 0}</div>
-                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>总走访数</div>
-                </ProCard>
-                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#faad14' }}>{state.statistics?.pendingAssessments || 0}</div>
-                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>待评价</div>
-                </ProCard>
-                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#52c41a' }}>{state.statistics?.completedAssessments || 0}</div>
-                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>已评价</div>
-                </ProCard>
-                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#1890ff' }}>{state.statistics?.averageScore?.toFixed(1) || '0.0'}</div>
-                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>平均评分</div>
-                </ProCard>
-            </ProCard>
-
             <ProTable actionRef={actionRef} request={async (params: any) => { const { current, pageSize } = params; const res = await api.list({ page: current, pageSize, search: state.search }); loadStatistics(); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={columns} rowKey="id" search={false}
+                headerTitle={
+                    <Space size={24}>
+                        <Space><TeamOutlined />走访评价</Space>
+                        <Space size={12}>
+                            <Tag color="blue">总数 {state.statistics?.totalTasks || 0}</Tag>
+                            <Tag color="orange">待评价 {state.statistics?.pendingAssessments || 0}</Tag>
+                            <Tag color="green">已评价 {state.statistics?.completedAssessments || 0}</Tag>
+                            <Tag color="purple">平均分 {state.statistics?.averageScore?.toFixed(1) || '0.0'}</Tag>
+                        </Space>
+                    </Space>
+                }
                 scroll={{ x: 'max-content' }}
                 toolBarRender={() => [
                     <Input.Search

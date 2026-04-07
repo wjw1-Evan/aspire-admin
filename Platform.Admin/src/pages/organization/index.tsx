@@ -216,7 +216,7 @@ const OrganizationPage: React.FC = () => {
   };
 
   return (
-    <PageContainer title={<Space><ApartmentOutlined />组织架构</Space>}>
+    <PageContainer>
       <Space style={{ marginBottom: 12 }}>
         <Button icon={<ReloadOutlined />} onClick={refreshTree}>刷新</Button>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => openCreateModal()}>创建根节点</Button>

@@ -6,14 +6,7 @@ import DeviceManagement from './components/DeviceManagement';
 
 const DeviceManagementPage: React.FC = () => {
   return (
-    <PageContainer
-      title={
-        <Space>
-          <DesktopOutlined />
-          设备管理
-        </Space>
-      }
-    >
+    <PageContainer>
       <DeviceManagement />
     </PageContainer>
   );

@@ -257,7 +257,7 @@ const CreateAndStartByWorkflow: React.FC = () => {
     const initialFormValues = useMemo(() => ({ values: initialValues }), [initialValues]);
 
     return (
-        <PageContainer title={intl.formatMessage({ id: 'pages.document.createByWorkflow.title', defaultMessage: '按流程表单创建并启动' })}>
+        <PageContainer>
             <ProCard>
                 <ProForm
                     layout="vertical"

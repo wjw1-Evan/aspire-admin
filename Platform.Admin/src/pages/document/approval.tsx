@@ -111,7 +111,7 @@ const ApprovalPage: React.FC = () => {
   ];
 
   return (
-    <PageContainer title={<Space><CheckCircleOutlined />公文审批</Space>}>
+    <PageContainer>
       {state.statistics && (
         <ProCard style={{ marginBottom: 16 }}>
           <Row gutter={[12, 12]}>

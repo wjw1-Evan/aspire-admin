@@ -123,14 +123,7 @@ const KnowledgeBaseDocuments: React.FC = () => {
   }
 
   return (
-    <PageContainer
-      title={
-        <Breadcrumb items={[
-          { title: <a onClick={() => history.push('/workflow/knowledge-base')}>知识库</a> },
-          { title: `${kbInfo?.name ?? '知识库'} - 内容管理` },
-        ]} />
-      }
-      extra={
+    <PageContainer extra={
         <Space>
           <Button icon={<ArrowLeftOutlined />} onClick={() => history.push('/workflow/knowledge-base')}>返回知识库</Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => handleOpenModal(null)}>录入内容</Button>

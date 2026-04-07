@@ -60,7 +60,7 @@ const VisitAssessmentList: React.FC = () => {
     ];
 
     return (
-        <PageContainer title={intl.formatMessage({ id: 'pages.park.visit.assessment', defaultMessage: '走访评价管理' })}>
+        <PageContainer>
             <ProCard gutter={16} style={{ marginBottom: 16 }}>
                 <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
                     <div style={{ fontSize: 24, fontWeight: 'bold' }}>{state.statistics?.totalTasks || 0}</div>

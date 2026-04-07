@@ -150,14 +150,7 @@ const PendingJoinRequests: React.FC = () => {
   };
 
   return (
-    <PageContainer
-      title={
-        <Space>
-          <ClockCircleOutlined />
-          {intl.formatMessage({ id: 'pages.joinRequests.pending.title' })}
-        </Space>
-      }
-      extra={
+    <PageContainer extra={
         <Space wrap>
           <Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current!.reload()}>
             {intl.formatMessage({ id: 'pages.button.refresh' })}

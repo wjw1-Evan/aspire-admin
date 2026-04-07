@@ -183,7 +183,7 @@ const StatisticsPage: React.FC = () => {
     ];
 
     return (
-        <PageContainer title={intl.formatMessage({ id: 'pages.park.statistics.title', defaultMessage: '统计报表' })} extra={[
+        <PageContainer extra={[
             <Space key="period-selection" wrap>
                 <StatisticsPeriodSelector value={state.period} dateRange={state.dateRange} onChange={(newDateRange, newPeriod) => { set({ dateRange: newDateRange, period: newPeriod || state.period }); }} />
                 <Button icon={<RobotOutlined />} onClick={handleGenerateAiReport} type="primary" style={{ background: 'linear-gradient(45deg, #1890ff, #722ed1)', borderColor: 'transparent' }}>{intl.formatMessage({ id: 'pages.park.statistics.aiReport', defaultMessage: 'AI 分析报告' })}</Button>

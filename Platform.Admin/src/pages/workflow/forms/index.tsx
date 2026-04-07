@@ -54,8 +54,7 @@ const FormDefinitionManagement: React.FC = () => {
     ];
 
     return (
-        <PageContainer title={<Space><PartitionOutlined />表单定义</Space>}
-            extra={
+        <PageContainer extra={
                 <Space wrap>
                     <Button type="primary" icon={<PlusOutlined />} onClick={() => handleOpenModal(null)}>新建表单</Button>
                 </Space>

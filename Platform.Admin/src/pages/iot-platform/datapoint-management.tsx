@@ -6,14 +6,7 @@ import DataPointManagement from './components/DataPointManagement';
 
 const DataPointManagementPage: React.FC = () => {
   return (
-    <PageContainer
-      title={
-        <Space>
-          <DatabaseOutlined />
-          数据点管理
-        </Space>
-      }
-    >
+    <PageContainer>
       <DataPointManagement />
     </PageContainer>
   );

@@ -170,7 +170,6 @@ const UserManagement: React.FC = () => {
 
   return (
     <PageContainer
-      title={<Space><UserOutlined />{intl.formatMessage({ id: 'pages.userManagement.title' })}</Space>}
       tabList={[{ tab: intl.formatMessage({ id: 'pages.userManagement.members.title' }), key: 'members' }, { tab: intl.formatMessage({ id: 'pages.joinRequests.pending.title' }), key: 'requests' }]}
       tabActiveKey={activeTab} onTabChange={(key: string) => { setActiveTab(key); if (key === 'members') actionRef.current?.reload(); }}
     >

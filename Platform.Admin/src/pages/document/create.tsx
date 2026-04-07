@@ -18,7 +18,7 @@ const CreateDocument: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   return (
-    <PageContainer title={intl.formatMessage({ id: 'pages.document.create.title' })}>
+    <PageContainer>
       <ProCard>
         <ProForm
           layout="vertical"

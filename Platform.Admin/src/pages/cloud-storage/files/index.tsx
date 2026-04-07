@@ -235,9 +235,7 @@ const CloudStorageFilesPage: React.FC = () => {
     ];
 
     return (
-        <PageContainer title={<Space><CloudOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.files.title' })}</Space>}
-            breadcrumb={{ routes: [{ path: '/', breadcrumbName: '首页' }, { path: '/cloud-storage', breadcrumbName: '云存储管理' }, { path: '/cloud-storage/files', breadcrumbName: '文件管理' }] }}
-        >
+        <PageContainer>
             {state.statistics && <ProCard style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>{statsConfig.map((stat, idx) => (<Col xs={24} sm={12} md={6} key={idx}><StatCard title={stat.title} value={stat.value ?? 0} icon={stat.icon} color={stat.color} suffix={stat.suffix} /></Col>))}</Row></ProCard>}
             <ProCard style={{ marginBottom: 16 }}><Breadcrumb items={state.pathHistory.map((item, index) => ({ key: index, title: index === 0 ? <a onClick={() => handleBreadcrumbClick(index)}>{intl.formatMessage({ id: 'pages.cloud-storage.files.breadcrumb.myFiles' })}</a> : <a onClick={() => handleBreadcrumbClick(index)}>{item.name}</a> }))} /></ProCard>
             <ProTable actionRef={actionRef} request={fetchData} columns={columns} rowKey="id" search={false}

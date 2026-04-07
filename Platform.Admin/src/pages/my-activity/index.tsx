@@ -80,7 +80,7 @@ const MyActivity: React.FC = () => {
   ], [intl, handleViewDetail]);
 
   return (
-    <PageContainer title={<Space><HistoryOutlined />{intl.formatMessage({ id: 'pages.myActivity.title' })}</Space>} extra={<Space wrap><Button key="refresh" icon={<ReloadOutlined />} onClick={handleRefresh}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button></Space>}>
+    <PageContainer extra={<Space wrap><Button key="refresh" icon={<ReloadOutlined />} onClick={handleRefresh}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button></Space>}>
       {state.statistics && <Card style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>
         {[{ key: 'total', title: intl.formatMessage({ id: 'pages.myActivity.statistics.totalLogs' }), icon: <HistoryOutlined />, color: '#1890ff' },
           { key: 'successCount', title: intl.formatMessage({ id: 'pages.myActivity.statistics.successCount' }), icon: <CheckCircleOutlined />, color: '#52c41a' },

@@ -137,10 +137,7 @@ const WorkflowMonitor: React.FC = () => {
   };
 
   return (
-    <PageContainer
-      title={<Space><MonitorOutlined />{intl.formatMessage({ id: 'pages.workflow.monitor.title' })}</Space>}
-      extra={<Button key="refresh" icon={<ReloadOutlined />} onClick={() => window.location.reload()}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button>}
-    >
+    <PageContainer extra={<Button key="refresh" icon={<ReloadOutlined />} onClick={() => window.location.reload()}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button>}>
       <ProTable
         headerTitle={intl.formatMessage({ id: 'pages.workflow.monitor.title' })}
         actionRef={undefined}

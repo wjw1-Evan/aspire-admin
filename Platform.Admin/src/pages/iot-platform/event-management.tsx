@@ -6,14 +6,7 @@ import EventManagement from './components/EventManagement';
 
 const EventManagementPage: React.FC = () => {
   return (
-    <PageContainer
-      title={
-        <Space>
-          <BellOutlined />
-          事件管理
-        </Space>
-      }
-    >
+    <PageContainer>
       <EventManagement />
     </PageContainer>
   );

@@ -85,9 +85,7 @@ const EnterpriseService: React.FC = () => {
     const handleAdd = () => { if (state.activeTab === 'requests') { setEditing({ currentRequest: null }); setModal({ requestVisible: true }); } else { setEditing({ currentCategory: null }); setModal({ categoryVisible: true }); } };
 
     return (
-        <PageContainer title={intl.formatMessage({ id: 'pages.park.service.title', defaultMessage: '企业服务' })}
-            breadcrumb={{ routes: [{ path: '/', breadcrumbName: '首页' }, { path: '/park', breadcrumbName: '园区管理' }, { path: '/park/enterprise-service', breadcrumbName: '企业服务' }] }}
-        >
+        <PageContainer>
             {state.statistics && <ProCard gutter={16} style={{ marginBottom: 16 }}>
                 <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
                     <div style={{ fontSize: 24, fontWeight: 'bold' }}>{state.statistics.totalCategories}</div>

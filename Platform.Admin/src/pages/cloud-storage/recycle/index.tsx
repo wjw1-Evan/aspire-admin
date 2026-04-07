@@ -88,7 +88,7 @@ const CloudStorageRecyclePage: React.FC = () => {
     ];
 
     return (
-        <PageContainer title={<Space><DeleteOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.recycle.title' })}</Space>}>
+        <PageContainer>
             <ProTable
                 headerTitle={intl.formatMessage({ id: 'pages.cloud-storage.recycle.title' })}
                 actionRef={actionRef}

@@ -108,9 +108,7 @@ const ContractManagement: React.FC = () => {
     };
 
     return (
-        <PageContainer title="合同管理"
-            breadcrumb={{ routes: [{ path: '/', breadcrumbName: '首页' }, { path: '/park', breadcrumbName: '园区管理' }, { path: '/park/contract', breadcrumbName: '合同管理' }] }}
-        >
+        <PageContainer>
             {state.statistics && <ProCard gutter={16} style={{ marginBottom: 16 }}>
                 <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
                     <div style={{ fontSize: 24, fontWeight: 'bold', color: '#52c41a' }}>{state.statistics.activeContracts}</div>

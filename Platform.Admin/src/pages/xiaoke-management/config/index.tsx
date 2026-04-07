@@ -9,14 +9,7 @@ const ConfigPage: React.FC = () => {
   const intl = useIntl();
 
   return (
-    <PageContainer
-      title={
-        <Space>
-          <RobotOutlined />
-          {intl.formatMessage({ id: 'pages.xiaokeManagement.config.title' })}
-        </Space>
-      }
-    >
+    <PageContainer>
       <ConfigManagement />
     </PageContainer>
   );

@@ -64,7 +64,7 @@ const VisitTaskPage: React.FC = () => {
     const handleDelete = async (id: string) => { const res = await api.delete(id); if (res.success) { message.success('删除成功'); actionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); } };
 
     return (
-        <PageContainer title="走访任务管理">
+        <PageContainer>
             {state.statistics && <ProCard style={{ marginBottom: 16 }}><Row gutter={[16, 16]}>
                 <Col xs={24} sm={12} md={6}><StatCard title="待处理任务" value={state.statistics.pendingTasks} icon={<SyncOutlined />} color="#faad14" /></Col>
                 <Col xs={24} sm={12} md={6}><StatCard title="本月走访数" value={state.statistics.completedTasksThisMonth} icon={<CheckCircleOutlined />} color="#52c41a" /></Col>

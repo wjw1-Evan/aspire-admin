@@ -132,7 +132,7 @@ const AssetManagement: React.FC = () => {
     const extractAttachmentUrls = (files: UploadFile[]) => files.map(item => { if (item.response?.data?.path) return item.response.data.path; return item.url; }).filter(Boolean) as string[];
 
     return (
-        <PageContainer title={intl.formatMessage({ id: 'pages.park.asset.title', defaultMessage: '资产管理' })}>
+        <PageContainer>
             {state.statistics && <ProCard gutter={16} style={{ marginBottom: 16 }}>
                 <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
                     <div style={{ fontSize: 24, fontWeight: 'bold' }}>{state.statistics.totalBuildings}</div>

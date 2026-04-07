@@ -117,7 +117,7 @@ const KnowledgeBaseManagement: React.FC = () => {
   ];
 
   return (
-    <PageContainer title={intl.formatMessage({ id: 'pages.workflow.knowledgeBase.title' })}>
+    <PageContainer>
       <ProTable
         actionRef={actionRef}
         rowKey="id"

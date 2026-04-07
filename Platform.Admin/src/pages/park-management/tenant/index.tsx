@@ -76,9 +76,7 @@ const TenantManagement: React.FC = () => {
     const handleDeleteTenant = async (id: string) => { const res = await api.delete(id); if (res.success) { message.success('删除成功'); actionRef.current?.reload(); loadStatistics(); } else message.error('删除失败'); };
 
     return (
-        <PageContainer title={<Space><UserOutlined />租户管理</Space>}
-            breadcrumb={{ routes: [{ path: '/', breadcrumbName: '首页' }, { path: '/park', breadcrumbName: '园区管理' }, { path: '/park/tenant', breadcrumbName: '租户管理' }] }}
-        >
+        <PageContainer>
             {state.statistics && <ProCard gutter={16} style={{ marginBottom: 16 }}>
                 <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
                     <div style={{ fontSize: 24, fontWeight: 'bold' }}>{state.statistics.totalTenants}</div>

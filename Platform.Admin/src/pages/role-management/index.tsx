@@ -81,10 +81,7 @@ const RoleManagement: React.FC = () => {
   const getAllKeys = (menus: any[]): string[] => { let keys: string[] = []; menus.forEach(m => { if (m.key) keys.push(m.key); if (m.children?.length) keys = keys.concat(getAllKeys(m.children)); }); return keys; };
 
   return (
-    <PageContainer
-      title={<Space><SafetyOutlined />{intl.formatMessage({ id: 'pages.roleManagement.title' })}</Space>}
-      breadcrumb={{ routes: [{ path: '/', breadcrumbName: '首页' }, { path: '/system', breadcrumbName: '系统管理' }, { path: '/system/role', breadcrumbName: '角色管理' }] }}
-    >
+    <PageContainer>
       <ProCard gutter={16} style={{ marginBottom: 16 }}>
         {statItems.map(item => (
           <ProCard key={item.label} colSpan={{ xs: 24, sm: 12, md: 6 }}>

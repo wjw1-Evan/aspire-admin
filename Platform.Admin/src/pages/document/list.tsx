@@ -74,9 +74,7 @@ const DocumentManagement: React.FC = () => {
   ];
 
   return (
-    <PageContainer title={<Space><FileTextOutlined />公文管理</Space>}
-      breadcrumb={{ routes: [{ path: '/', breadcrumbName: '首页' }, { path: '/document', breadcrumbName: '公文管理' }] }}
-    >
+    <PageContainer>
       {state.statistics && (
         <ProCard style={{ marginBottom: 16 }}>
           <Row gutter={[12, 12]}>

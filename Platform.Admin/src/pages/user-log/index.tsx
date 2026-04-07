@@ -110,9 +110,7 @@ const UserLog: React.FC = () => {
   }, []);
 
   return (
-    <PageContainer
-      title={<Space><FileTextOutlined />{intl.formatMessage({ id: 'pages.userLog.title' })}</Space>}
-    >
+    <PageContainer>
       {state.statistics && <Card style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>
         <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}><StatCard title={intl.formatMessage({ id: 'pages.userLog.stats.total', defaultMessage: '总记录数' })} value={state.statistics.total} icon={<DashboardOutlined />} color="#1890ff" /></Col>
         <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}><StatCard title={intl.formatMessage({ id: 'pages.userLog.stats.success', defaultMessage: '成功次数' })} value={state.statistics.success} icon={<CheckCircleOutlined />} color="#52c41a" /></Col>

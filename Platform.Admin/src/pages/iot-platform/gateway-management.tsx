@@ -6,14 +6,7 @@ import GatewayManagement from './components/GatewayManagement';
 
 const GatewayManagementPage: React.FC = () => {
   return (
-    <PageContainer
-      title={
-        <Space>
-          <ApiOutlined />
-          网关管理
-        </Space>
-      }
-    >
+    <PageContainer>
       <GatewayManagement />
     </PageContainer>
   );

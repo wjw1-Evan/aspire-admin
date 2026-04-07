@@ -102,7 +102,7 @@ const CloudStorageSharedPage: React.FC = () => {
     ];
 
     return (
-        <PageContainer title={<Space><ShareAltOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.shared.title' })}</Space>}>
+        <PageContainer>
             <ProTable
                 headerTitle={intl.formatMessage({ id: 'pages.cloud-storage.shared.title' })}
                 actionRef={actionRef}

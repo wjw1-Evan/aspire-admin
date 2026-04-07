@@ -71,8 +71,7 @@ export default function CompanySettings() {
 
   if (loading) {
     return (
-      <PageContainer
-      >
+      <PageContainer>
         <Spin
           size="large"
           tip={intl.formatMessage({ id: 'pages.companySettings.loading' })}
@@ -86,8 +85,7 @@ export default function CompanySettings() {
 
   if (!company) {
     return (
-      <PageContainer
-      >
+      <PageContainer>
         <Card>
           <div style={{ textAlign: 'center', padding: 50 }}>
             <p>{intl.formatMessage({ id: 'pages.companySettings.companyNotFound' })}</p>
@@ -99,14 +97,7 @@ export default function CompanySettings() {
 
 
   return (
-    <PageContainer
-      title={
-        <Space>
-          <SettingOutlined />
-          {intl.formatMessage({ id: 'pages.companySettings.title' })}
-        </Space>
-      }
-      extra={[
+    <PageContainer extra={[
         <a key="edit" onClick={() => setEditModalVisible(true)}>
           {intl.formatMessage({ id: 'pages.companySettings.editCompany' })}
         </a>,

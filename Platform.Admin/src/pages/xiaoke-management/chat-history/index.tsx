@@ -9,14 +9,7 @@ const ChatHistoryPage: React.FC = () => {
   const intl = useIntl();
 
   return (
-    <PageContainer
-      title={
-        <Space>
-          <MessageOutlined />
-          {intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.title' })}
-        </Space>
-      }
-    >
+    <PageContainer>
       <ChatHistoryManagement />
     </PageContainer>
   );

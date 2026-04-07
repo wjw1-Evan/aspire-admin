@@ -84,7 +84,7 @@ const VisitStatisticsPage: React.FC = () => {
     ];
 
     return (
-        <PageContainer title={intl.formatMessage({ id: 'pages.park.visit.statistics', defaultMessage: '走访统计报表' })} extra={[
+        <PageContainer extra={[
             <Space key="period-selection" wrap>
                 <StatisticsPeriodSelector value={state.period as any as string} dateRange={state.dateRange} onChange={(newDateRange, newPeriod) => { set({ dateRange: newDateRange, period: newPeriod as any }); }} />
                 <Button icon={<ReloadOutlined />} onClick={loadStatistics} loading={state.loading}>{intl.formatMessage({ id: 'pages.common.refresh', defaultMessage: '刷新' })}</Button>

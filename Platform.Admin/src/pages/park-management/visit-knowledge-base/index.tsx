@@ -95,7 +95,7 @@ const VisitKnowledgeBase: React.FC = () => {
     ];
 
     return (
-        <PageContainer title="走访知识库">
+        <PageContainer>
             <ProCard gutter={16} style={{ marginBottom: 16 }}>
                 <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
                     <div style={{ fontSize: 24, fontWeight: 'bold' }}>{state.allQuestions.length}</div>

@@ -10,14 +10,7 @@ const ProjectManagement: React.FC = () => {
   const projectViewRef = useRef<ProjectViewRef>(null);
 
   return (
-    <PageContainer
-      title={
-        <Space>
-          <ProjectOutlined />
-          {intl.formatMessage({ id: 'pages.projectManagement.title' })}
-        </Space>
-      }
-      extra={
+    <PageContainer extra={
         <Space>
           <Button
             key="refresh"

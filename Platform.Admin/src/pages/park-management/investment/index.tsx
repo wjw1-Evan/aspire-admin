@@ -88,9 +88,7 @@ const InvestmentManagement: React.FC = () => {
     ];
 
     return (
-        <PageContainer title={intl.formatMessage({ id: 'pages.park.investment.title', defaultMessage: '招商管理' })}
-            breadcrumb={{ routes: [{ path: '/', breadcrumbName: '首页' }, { path: '/park', breadcrumbName: '园区管理' }, { path: '/park/investment', breadcrumbName: '招商管理' }] }}
-        >
+        <PageContainer>
             {state.statistics && <ProCard gutter={16} style={{ marginBottom: 16 }}>
                 <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
                     <div style={{ fontSize: 24, fontWeight: 'bold' }}>{state.statistics.totalLeads}</div>

@@ -296,10 +296,7 @@ const StatisticsPage: React.FC = () => {
     };
 
     return (
-        <PageContainer
-            title="项目统计报表"
-            ghost
-            extra={[
+        <PageContainer ghost extra={[
                 <Space key="statistics-extra">
                     <StatisticsPeriodSelector
                         value={period as string}

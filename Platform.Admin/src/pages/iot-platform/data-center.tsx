@@ -6,14 +6,7 @@ import DataCenter from './components/DataCenter';
 
 const DataCenterPage: React.FC = () => {
   return (
-    <PageContainer
-      title={
-        <Space>
-          <HddOutlined />
-          数据中心
-        </Space>
-      }
-    >
+    <PageContainer>
       <DataCenter />
     </PageContainer>
   );

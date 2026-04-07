@@ -65,9 +65,7 @@ const WorkflowManagement: React.FC = () => {
   ];
 
   return (
-    <PageContainer
-      title={<Space><PartitionOutlined />{intl.formatMessage({ id: 'pages.workflow.title' })}</Space>}
-    >
+    <PageContainer>
       <ProTable
         headerTitle={intl.formatMessage({ id: 'pages.workflow.table.name' })}
         actionRef={actionRef}

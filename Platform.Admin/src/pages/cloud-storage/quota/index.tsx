@@ -160,9 +160,7 @@ const CloudStorageQuotaPage: React.FC = () => {
     }));
 
     return (
-        <PageContainer title={<Space><PieChartOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.quota.title' })}</Space>}
-            breadcrumb={{ routes: [{ path: '/', breadcrumbName: '首页' }, { path: '/cloud-storage', breadcrumbName: '云存储管理' }, { path: '/cloud-storage/quota', breadcrumbName: '配额管理' }] }}
-        >
+        <PageContainer>
             <ProCard className={styles.card}>
                 <Tabs activeKey={state.activeTab} onChange={handleTabChange} items={[
                     { key: 'quota-list', label: <Space><TableOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.quota.tabs.quotaList' })}</Space>, children: (

@@ -55,15 +55,7 @@ const IoTPlatform: React.FC = () => {
   };
 
   return (
-    <PageContainer
-      title={
-        <Space>
-          <CloudOutlined />
-          {intl.formatMessage({ id: 'pages.iotPlatform.title' })}
-        </Space>
-      }
-      breadcrumb={{ routes: [{ path: '/', breadcrumbName: '首页' }, { path: '/iot', breadcrumbName: 'IoT平台' }] }}
-      extra={
+    <PageContainer extra={
         <Space>
           <Button
             key="refresh"

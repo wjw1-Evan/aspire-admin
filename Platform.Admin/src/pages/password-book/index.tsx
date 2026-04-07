@@ -122,7 +122,7 @@ const PasswordBook: React.FC = () => {
   };
 
   return (
-    <PageContainer header={{ title: '' }}>
+    <PageContainer>
       <ProCard gutter={16} style={{ marginBottom: 16 }}>
         {statItems.map(item => (
           <ProCard key={item.label} colSpan={{ xs: 24, sm: 12, md: 6 }}>

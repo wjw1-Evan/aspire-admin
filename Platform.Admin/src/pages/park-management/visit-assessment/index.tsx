@@ -81,6 +81,7 @@ const VisitAssessmentList: React.FC = () => {
             </ProCard>
 
             <ProTable actionRef={actionRef} request={async (params: any) => { const { current, pageSize } = params; const res = await api.list({ page: current, pageSize, search: state.search }); loadStatistics(); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={columns} rowKey="id" search={false}
+                scroll={{ x: 'max-content' }}
                 toolBarRender={() => [
                     <Input.Search
                         key="search"

@@ -144,6 +144,7 @@ const ApprovalPage: React.FC = () => {
               columns={columns}
               rowKey="id"
               search={false}
+              scroll={{ x: 'max-content' }}
               toolBarRender={() => [
                 <Input.Search
                   key="search"

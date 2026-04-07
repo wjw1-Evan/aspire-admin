@@ -167,6 +167,7 @@ const PendingJoinRequests: React.FC = () => {
     >
       <ProTable
         actionRef={actionRef}
+        scroll={{ x: 'max-content' }}
         request={async (params: any) => {
           const companyId = initialState?.currentUser?.currentCompanyId || '';
           if (!companyId) return { data: [], total: 0, success: true };

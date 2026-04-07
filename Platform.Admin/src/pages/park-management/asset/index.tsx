@@ -167,6 +167,7 @@ const AssetManagement: React.FC = () => {
                 }) as any)}
                 columns={state.activeTab === 'buildings' ? buildingColumns as any : unitColumns as any} rowKey="id" search={false}
                 onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
+                scroll={{ x: 'max-content' }}
                 toolBarRender={() => [
                     <Input.Search
                         key="search"

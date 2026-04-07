@@ -126,6 +126,7 @@ const VisitKnowledgeBase: React.FC = () => {
                                 return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
                             }}
                             columns={questionColumns} search={false}
+                            scroll={{ x: 'max-content' }}
                             toolBarRender={questionToolBar}
                             onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
                         />
@@ -140,6 +141,7 @@ const VisitKnowledgeBase: React.FC = () => {
                                 return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
                             }}
                             columns={questionnaireColumns} search={false}
+                            scroll={{ x: 'max-content' }}
                             toolBarRender={templateToolBar}
                         />
                     )

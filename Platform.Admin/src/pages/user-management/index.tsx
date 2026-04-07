@@ -192,6 +192,7 @@ const UserManagement: React.FC = () => {
           rowSelection={{ selectedRowKeys: state.selectedRows.map(r => r.id), onChange: (_: React.Key[], selectedRows: AppUser[]) => set({ selectedRows }) }}
           onChange={(_p, _f, s) => set({ sorter: (s as Record<string, unknown>)?.order ? { sortBy: (s as Record<string, string>).field, sortOrder: (s as Record<string, string>).order === 'ascend' ? 'asc' : 'desc' } : undefined })}
           search={false}
+          scroll={{ x: 'max-content' }}
           toolBarRender={() => [
             <Input.Search
               key="search"

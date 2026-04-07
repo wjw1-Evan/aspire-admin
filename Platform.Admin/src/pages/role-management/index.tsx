@@ -102,6 +102,7 @@ const RoleManagement: React.FC = () => {
         return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
       }} columns={columns} rowKey="id" search={false}
         onChange={(_, __, s: any) => set({ sorter: s?.order ? { sortBy: s.field as string, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
+        scroll={{ x: 'max-content' }}
         toolBarRender={() => [
           <Input.Search
             key="search"

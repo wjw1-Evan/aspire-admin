@@ -65,6 +65,7 @@ const FormDefinitionManagement: React.FC = () => {
                 headerTitle="表单列表"
                 rowKey="id"
                 search={{ labelWidth: 'auto' }}
+                scroll={{ x: 'max-content' }}
                 request={async (params: any) => {
                     const { current, pageSize, ...rest } = params;
                     const response = await getFormList({ page: current, pageSize, ...rest } as PageParams);
@@ -74,7 +75,6 @@ const FormDefinitionManagement: React.FC = () => {
                     return { data: [], total: 0, success: false };
                 }}
                 columns={columns}
-                scroll={{ x: 'max-content' }}
             />
 
             <ModalForm

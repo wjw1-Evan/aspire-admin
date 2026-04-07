@@ -160,6 +160,7 @@ const DeviceManagement = React.forwardRef<DeviceManagementRef, any>((props, ref)
       }} columns={columns} rowKey="id" search={false}
         rowSelection={{ selectedRowKeys: state.selectedRowKeys, onChange: keys => set({ selectedRowKeys: keys }), preserveSelectedRowKeys: true }}
         onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
+        scroll={{ x: 'max-content' }}
         toolBarRender={() => [
           <Input.Search
             key="search"

@@ -111,7 +111,7 @@ const EnterpriseService: React.FC = () => {
 
             <ProCard>
                 <Tabs activeKey={state.activeTab} onChange={(key) => set({ activeTab: key })} items={[
-                    { key: 'requests', label: <Space><FormOutlined />服务申请</Space>, children: <ProTable actionRef={actionRef} request={async (params: any) => { const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined; const res = await api.requests({ page: current, pageSize, search: state.search, ...sortParams }); loadData(); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={columns} rowKey="id" search={false} onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })} toolBarRender={() => [
+                    { key: 'requests', label: <Space><FormOutlined />服务申请</Space>, children: <ProTable actionRef={actionRef} request={async (params: any) => { const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined; const res = await api.requests({ page: current, pageSize, search: state.search, ...sortParams }); loadData(); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={columns} rowKey="id" search={false} onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })} scroll={{ x: 'max-content' }} toolBarRender={() => [
                         <Input.Search
                             key="search"
                             placeholder="搜索..."
@@ -124,7 +124,7 @@ const EnterpriseService: React.FC = () => {
                         />,
                         <Button key="refresh" icon={<ReloadOutlined />} onClick={handleRefresh}>刷新</Button>,
                         <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => { setEditing({ currentRequest: null }); setModal({ requestVisible: true }); }}>新增申请</Button>,
-                    ]} scroll={{ x: 1200 }} /> },
+                    ]} /> },
                     { key: 'categories', label: <Space><AppstoreOutlined />服务类别</Space>, children: state.categories.length > 0 ? (<List grid={{ gutter: 16, xs: 1, sm: 2, md: 3, lg: 4 }} dataSource={state.categories} renderItem={(item) => (<List.Item><Card hoverable actions={[<EditOutlined key="edit" onClick={() => { setEditing({ currentCategory: item }); setModal({ categoryVisible: true }); }} />, <Switch key="toggle" checked={item.isActive} size="small" onChange={async () => { const res = await api.toggleCategory(item.id); if (res.success) { message.success('状态切换成功'); loadCategories(); } }} />, <Popconfirm key="delete" title="确认删除？" onConfirm={async () => { const res = await api.deleteCategory(item.id); if (res.success) { message.success('删除成功'); loadCategories(); loadData(); } }}><DeleteOutlined style={{ color: '#ff4d4f' }} /></Popconfirm>]}>
                         <Card.Meta avatar={<Avatar style={{ backgroundColor: item.isActive ? '#1890ff' : '#d9d9d9' }} icon={<AppstoreOutlined />} />} title={<Space>{item.name}{!item.isActive && <Tag color="default">已禁用</Tag>}</Space>} description={<><Text type="secondary">{item.description || '暂无描述'}</Text><div style={{ marginTop: 8 }}><Tag color="blue">申请数: {item.requestCount}</Tag></div></>} />
                     </Card></List.Item>)} />) : <Empty description="暂无服务类别" />, },

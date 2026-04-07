@@ -103,6 +103,7 @@ const DocumentManagement: React.FC = () => {
           return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
         }}
         columns={columns} rowKey="id" search={false}
+        scroll={{ x: 'max-content' }}
         toolBarRender={() => [
           <Input.Search
             key="search"

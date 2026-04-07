@@ -147,6 +147,7 @@ const PasswordBook: React.FC = () => {
           set({ sorter: sorter?.order ? { sortBy: sorter.field as string, sortOrder: sorter.order === 'ascend' ? 'asc' : 'desc' } : undefined });
         }}
         search={false}
+        scroll={{ x: 'max-content' }}
         toolBarRender={() => [
           <Input.Search
             key="search"

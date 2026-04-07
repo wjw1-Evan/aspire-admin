@@ -137,6 +137,7 @@ const ContractManagement: React.FC = () => {
                 return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
             }} columns={columns} rowKey="id" search={false}
                 onChange={(_p, _f, s: any) => setSorter(s?.order ? { sortBy: s.field as string, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined)}
+                scroll={{ x: 'max-content' }}
                 toolBarRender={() => [
                     <Input.Search
                         key="search"

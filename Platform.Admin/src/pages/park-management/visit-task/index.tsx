@@ -43,7 +43,7 @@ const VisitTaskPage: React.FC = () => {
     });
     const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
-    useEffect(() => { api.tenants({}).then(r => { if (r.success && r.data) set({ tenants: r.data.queryable }); }); }, []);
+    useEffect(() => { api.tenants({}).then(r => { if (r.success && r.data) set({ tenants: r.data.queryable }); }).catch(() => { /* API 未实现，忽略错误 */ }); }, []);
 
     const columns: ProColumns<VisitTask>[] = [
         { title: '任务标题', dataIndex: 'title', key: 'title', sorter: true, width: 200, ellipsis: true, render: (dom: any, r: VisitTask) => <a onClick={() => set({ selectedTask: r, detailVisible: true })}>{dom}</a> },

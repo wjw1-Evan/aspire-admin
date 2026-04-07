@@ -228,8 +228,7 @@ const CloudStorageFilesPage: React.FC = () => {
 
     return (
         <PageContainer>
-            <ProCard style={{ marginBottom: 16 }}><Breadcrumb items={state.pathHistory.map((item, index) => ({ key: index, title: index === 0 ? <a onClick={() => handleBreadcrumbClick(index)}>{intl.formatMessage({ id: 'pages.cloud-storage.files.breadcrumb.myFiles' })}</a> : <a onClick={() => handleBreadcrumbClick(index)}>{item.name}</a> }))} /></ProCard>
-            <ProTable actionRef={actionRef} headerTitle={
+          <ProTable actionRef={actionRef} headerTitle={
               <Space size={24}>
                 <Space><CloudOutlined />网盘管理</Space>
                 <Space size={12}>

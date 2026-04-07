@@ -2,11 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import { request } from '@umijs/max';
-import { Row, Col, Button, Space, Spin } from 'antd';
+import { Row, Col, Button, Space, Spin, Typography } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
-import { CloudServerOutlined, DatabaseOutlined, AlertOutlined, DesktopOutlined, ReloadOutlined, CloudOutlined } from '@ant-design/icons';
+import { CloudServerOutlined, DatabaseOutlined, AlertOutlined, DesktopOutlined, ReloadOutlined, CloudOutlined, WifiOutlined } from '@ant-design/icons';
 import { StatCard } from '@/components';
 import { ApiResponse } from '@/types';
+
+const { Title } = Typography;
 
 interface PlatformStatistics {
   totalGateways: number;
@@ -54,7 +56,7 @@ const IoTPlatform: React.FC = () => {
     loadStatistics();
   };
 
-  return (
+    return (
     <PageContainer extra={
         <Space>
           <Button
@@ -68,6 +70,7 @@ const IoTPlatform: React.FC = () => {
         </Space>
       }
     >
+      <Title level={4} style={{ marginBottom: 16 }}><WifiOutlined /> 物联网平台</Title>
       <ProCard style={{ marginBottom: 16 }}>
         <Spin spinning={state.loading}>
           <div style={{ padding: '20px 0' }}>

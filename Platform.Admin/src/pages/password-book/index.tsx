@@ -148,7 +148,6 @@ const PasswordBook: React.FC = () => {
         }}
         search={false}
         scroll={{ x: 'max-content' }}
-        headerTitle={<Space><LockOutlined />密码本</Space>}
         toolBarRender={() => [
           <Input.Search
             key="search"

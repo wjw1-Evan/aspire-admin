@@ -216,12 +216,11 @@ const OrganizationPage: React.FC = () => {
   };
 
   return (
-    <PageContainer title={<Space><ApartmentOutlined />组织架构</Space>} extra={
-      <Space wrap>
+    <PageContainer title={<Space><ApartmentOutlined />组织架构</Space>}>
+      <Space style={{ marginBottom: 12 }}>
         <Button icon={<ReloadOutlined />} onClick={refreshTree}>刷新</Button>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => openCreateModal()}>创建根节点</Button>
       </Space>
-    }>
       <Row gutter={[12, 12]}>
         <Col xs={24} md={8} lg={7}>
           <Card title="组织架构" className={styles.card} styles={{ body: { padding: 12 } }} style={{ height: '100%' }}>

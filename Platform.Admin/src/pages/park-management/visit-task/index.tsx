@@ -8,7 +8,7 @@ import { Drawer } from 'antd';
 import { ProDescriptions } from '@ant-design/pro-components';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormDateTimePicker } from '@ant-design/pro-form';
-import { PlusOutlined, ReloadOutlined, UserOutlined, CheckCircleOutlined, SyncOutlined, CloseCircleOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
+import { PlusOutlined, UserOutlined, CheckCircleOutlined, SyncOutlined, CloseCircleOutlined, EditOutlined, DeleteOutlined, EyeOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 
@@ -18,13 +18,13 @@ interface ParkTenant { id: string; tenantName: string; }
 interface VisitTaskFormData { title: string; managerName: string; phone?: string; visitType: string; visitMethod: string; details?: string; tenantName: string; visitLocation?: string; intervieweeName?: string; intervieweePosition?: string; intervieweePhone?: string; visitDate: string; visitor?: string; status?: string; content?: string; feedback?: string; }
 
 const api = {
-    list: (params: PageParams) => request<ApiResponse<PagedResult<VisitTask>>>('/api/visit/tasks', { params }),
-    get: (id: string) => request<ApiResponse<VisitTask>>(`/api/visit/tasks/${id}`),
-    delete: (id: string) => request<ApiResponse<void>>(`/api/visit/tasks/${id}`, { method: 'DELETE' }),
-    create: (data: VisitTaskFormData) => request<ApiResponse<VisitTask>>('/api/visit/tasks', { method: 'POST', data }),
-    update: (id: string, data: VisitTaskFormData) => request<ApiResponse<VisitTask>>(`/api/visit/tasks/${id}`, { method: 'PUT', data }),
-    statistics: () => request<ApiResponse<VisitStatistics>>('/api/visit/statistics'),
-    tenants: (params: PageParams) => request<ApiResponse<PagedResult<ParkTenant>>>('/api/park/tenants', { params }),
+    list: (params: PageParams) => request<ApiResponse<PagedResult<VisitTask>>>('/api/park-management/visit/tasks', { params }),
+    get: (id: string) => request<ApiResponse<VisitTask>>(`/api/park-management/visit/task/${id}`),
+    delete: (id: string) => request<ApiResponse<void>>(`/api/park-management/visit/task/${id}`, { method: 'DELETE' }),
+    create: (data: VisitTaskFormData) => request<ApiResponse<VisitTask>>('/api/park-management/visit/task', { method: 'POST', data }),
+    update: (id: string, data: VisitTaskFormData) => request<ApiResponse<VisitTask>>(`/api/park-management/visit/task/${id}`, { method: 'PUT', data }),
+    statistics: () => request<ApiResponse<VisitStatistics>>('/api/park-management/visit/statistics'),
+    tenants: (params: PageParams) => request<ApiResponse<PagedResult<ParkTenant>>>('/api/park/tenants/list', { method: 'POST', data: params }),
 };
 
 const statusMap: Record<string, { text: string; color: string; icon: React.ReactNode }> = {
@@ -64,9 +64,7 @@ const VisitTaskPage: React.FC = () => {
     const handleDelete = async (id: string) => { const res = await api.delete(id); if (res.success) { message.success('删除成功'); actionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); } };
 
     return (
-        <PageContainer title="走访任务管理" extra={
-            <Space><Button icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>刷新</Button><Button type="primary" icon={<PlusOutlined />} onClick={() => set({ editingTask: null, formVisible: true })}>新增任务</Button></Space>
-        }>
+        <PageContainer title="走访任务管理">
             {state.statistics && <ProCard style={{ marginBottom: 16 }}><Row gutter={[16, 16]}>
                 <Col xs={24} sm={12} md={6}><StatCard title="待处理任务" value={state.statistics.pendingTasks} icon={<SyncOutlined />} color="#faad14" /></Col>
                 <Col xs={24} sm={12} md={6}><StatCard title="本月走访数" value={state.statistics.completedTasksThisMonth} icon={<CheckCircleOutlined />} color="#52c41a" /></Col>
@@ -75,8 +73,8 @@ const VisitTaskPage: React.FC = () => {
             </Row></ProCard>}
 
             <ProTable actionRef={actionRef} request={async (params: any) => {
-                const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-                const res = await api.list({ page: current, pageSize, search: state.search, ...sortParams });
+                const { current, pageSize, sortBy, sortOrder } = params;
+                const res = await api.list({ page: current, pageSize, search: state.search, sortBy, sortOrder });
                 api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
                 return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
             }} columns={columns} rowKey="id" search={false}
@@ -90,7 +88,9 @@ const VisitTaskPage: React.FC = () => {
                     onChange={(e) => set({ search: e.target.value })}
                     onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
                     style={{ width: 260, marginRight: 8 }}
+                    prefix={<SearchOutlined />}
                   />,
+                  <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingTask: null, formVisible: true })}>新增任务</Button>,
                 ]}
             />
 

@@ -1,12 +1,11 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PageContainer, ProCard } from '@ant-design/pro-components';
-import { StatCard } from '@/components';
 import { useIntl, useSearchParams, history, request } from '@umijs/max';
 import { Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typography, Tabs, Popconfirm, Rate, Switch, List, Avatar, Empty, Flex, Card } from 'antd';
 import { Drawer } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-form';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, AppstoreOutlined, FormOutlined, CheckCircleOutlined, ClockCircleOutlined, StarOutlined, ReloadOutlined, SettingOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, AppstoreOutlined, FormOutlined, CheckCircleOutlined, ClockCircleOutlined, StarOutlined, ReloadOutlined, SettingOutlined, SearchOutlined } from '@ant-design/icons';
 import { ProDescriptions } from '@ant-design/pro-components';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
@@ -88,31 +87,43 @@ const EnterpriseService: React.FC = () => {
     return (
         <PageContainer title={intl.formatMessage({ id: 'pages.park.service.title', defaultMessage: '企业服务' })}
             breadcrumb={{ routes: [{ path: '/', breadcrumbName: '首页' }, { path: '/park', breadcrumbName: '园区管理' }, { path: '/park/enterprise-service', breadcrumbName: '企业服务' }] }}
-            extra={
-            <Space>
-                <Button icon={<ReloadOutlined />} onClick={handleRefresh}>{intl.formatMessage({ id: 'common.refresh', defaultMessage: '刷新' })}</Button>
-                <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>{state.activeTab === 'requests' ? intl.formatMessage({ id: 'pages.park.service.addRequest', defaultMessage: '新增申请' }) : intl.formatMessage({ id: 'pages.park.service.addCategory', defaultMessage: '新增类别' })}</Button>
-            </Space>
-        }>
-            {state.statistics && (<Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-                <Col xs={24} sm={12} md={6}><StatCard title="服务类别" value={state.statistics.totalCategories} icon={<AppstoreOutlined />} color="#1890ff" suffix={<Text type="secondary" style={{ fontSize: 12 }}>启用: {state.statistics.activeCategories}</Text>} /></Col>
-                <Col xs={24} sm={12} md={6}><StatCard title="服务申请" value={state.statistics.totalRequests} icon={<FormOutlined />} color="#52c41a" suffix={<Text type="secondary" style={{ fontSize: 12 }}>待处理: {state.statistics.pendingRequests}</Text>} /></Col>
-                <Col xs={24} sm={12} md={6}><StatCard title="处理中" value={state.statistics.processingRequests} icon={<ClockCircleOutlined />} color="#faad14" /></Col>
-                <Col xs={24} sm={12} md={6}><StatCard title="满意度" value={state.statistics.averageRating ? `${state.statistics.averageRating} ⭐` : '-'} icon={<StarOutlined />} color="#722ed1" /></Col>
-            </Row>)}
+        >
+            {state.statistics && <ProCard gutter={16} style={{ marginBottom: 16 }}>
+                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 'bold' }}>{state.statistics.totalCategories}</div>
+                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>服务类别</div>
+                    <Typography.Text type="secondary" style={{ fontSize: 11 }}>启用: {state.statistics.activeCategories}</Typography.Text>
+                </ProCard>
+                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#52c41a' }}>{state.statistics.totalRequests}</div>
+                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>服务申请</div>
+                    <Typography.Text type="secondary" style={{ fontSize: 11 }}>待处理: {state.statistics.pendingRequests}</Typography.Text>
+                </ProCard>
+                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#faad14' }}>{state.statistics.processingRequests}</div>
+                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>处理中</div>
+                </ProCard>
+                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#722ed1' }}>{state.statistics.averageRating ? `${state.statistics.averageRating} ⭐` : '-'}</div>
+                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>满意度</div>
+                </ProCard>
+            </ProCard>}
 
             <ProCard>
                 <Tabs activeKey={state.activeTab} onChange={(key) => set({ activeTab: key })} items={[
-                    { key: 'requests', label: <Space><FormOutlined />服务申请</Space>, children: <ProTable actionRef={actionRef} request={async (params: any) => { const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;                 const res = await api.requests({ page: current, pageSize, search: state.search, ...sortParams }); loadData(); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={columns} rowKey="id" search={false} onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}                     toolBarRender={() => [
-                      <Input.Search
-                        key="search"
-                        placeholder="搜索..."
-                        allowClear
-                        value={state.search}
-                        onChange={(e) => set({ search: e.target.value })}
-                        onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
-                        style={{ width: 260, marginRight: 8 }}
-                      />,
+                    { key: 'requests', label: <Space><FormOutlined />服务申请</Space>, children: <ProTable actionRef={actionRef} request={async (params: any) => { const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined; const res = await api.requests({ page: current, pageSize, search: state.search, ...sortParams }); loadData(); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={columns} rowKey="id" search={false} onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })} toolBarRender={() => [
+                        <Input.Search
+                            key="search"
+                            placeholder="搜索..."
+                            allowClear
+                            value={state.search}
+                            onChange={(e) => set({ search: e.target.value })}
+                            onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+                            style={{ width: 260, marginRight: 8 }}
+                            prefix={<SearchOutlined />}
+                        />,
+                        <Button key="refresh" icon={<ReloadOutlined />} onClick={handleRefresh}>刷新</Button>,
+                        <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => { setEditing({ currentRequest: null }); setModal({ requestVisible: true }); }}>新增申请</Button>,
                     ]} scroll={{ x: 1200 }} /> },
                     { key: 'categories', label: <Space><AppstoreOutlined />服务类别</Space>, children: state.categories.length > 0 ? (<List grid={{ gutter: 16, xs: 1, sm: 2, md: 3, lg: 4 }} dataSource={state.categories} renderItem={(item) => (<List.Item><Card hoverable actions={[<EditOutlined key="edit" onClick={() => { setEditing({ currentCategory: item }); setModal({ categoryVisible: true }); }} />, <Switch key="toggle" checked={item.isActive} size="small" onChange={async () => { const res = await api.toggleCategory(item.id); if (res.success) { message.success('状态切换成功'); loadCategories(); } }} />, <Popconfirm key="delete" title="确认删除？" onConfirm={async () => { const res = await api.deleteCategory(item.id); if (res.success) { message.success('删除成功'); loadCategories(); loadData(); } }}><DeleteOutlined style={{ color: '#ff4d4f' }} /></Popconfirm>]}>
                         <Card.Meta avatar={<Avatar style={{ backgroundColor: item.isActive ? '#1890ff' : '#d9d9d9' }} icon={<AppstoreOutlined />} />} title={<Space>{item.name}{!item.isActive && <Tag color="default">已禁用</Tag>}</Space>} description={<><Text type="secondary">{item.description || '暂无描述'}</Text><div style={{ marginTop: 8 }}><Tag color="blue">申请数: {item.requestCount}</Tag></div></>} />

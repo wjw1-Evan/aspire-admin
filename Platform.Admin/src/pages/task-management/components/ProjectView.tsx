@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
-import { Row, Col, Badge, Tag, Space, App, Grid, Button, Progress } from 'antd';
+import { Row, Col, Badge, Tag, Space, App, Button, Progress, Input } from 'antd';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import {
@@ -7,6 +7,7 @@ import {
   EditOutlined,
   DeleteOutlined,
   ProjectOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import {
   deleteProject,
@@ -36,13 +37,13 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   const { styles } = useCommonStyles();
   const { confirm } = useModal();
   const { message } = App.useApp();
-  const screens = Grid.useBreakpoint();
-  const tableRef = useRef<HTMLDivElement>(null);
   const [formVisible, setFormVisible] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
   const [editingProject, setEditingProject] = useState<ProjectDto | null>(null);
   const [viewingProject, setViewingProject] = useState<ProjectDto | null>(null);
   const [statistics, setStatistics] = useState<ProjectStatistics | null>(null);
+  const [searchText, setSearchText] = useState('');
+  const tableActionRef = useRef<any>(null);
 
   const fetchStatistics = useCallback(async () => {
     try {
@@ -61,7 +62,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
 
   useImperativeHandle(ref, () => ({
     reload: () => {
-      tableRef.current?.querySelector('button[data-action="reload"]')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      tableActionRef.current?.reload();
     },
     refreshStatistics: () => {
       fetchStatistics();
@@ -284,18 +285,17 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
 
       <ProTable<ProjectDto>
         headerTitle={intl.formatMessage({ id: 'pages.projectManagement.title', defaultMessage: '项目管理' })}
-        actionRef={tableRef as any}
+        actionRef={tableActionRef}
         rowKey="id"
-        search={{ labelWidth: 'auto' }}
+        search={false}
         request={async (params: any) => {
-          const { current, pageSize, search, sortBy, sortOrder, ...rest } = params;
+          const { current, pageSize, sortBy, sortOrder } = params;
           const response = await getProjectList({
             page: current,
             pageSize,
-            search,
+            search: searchText,
             sortBy,
             sortOrder,
-            ...rest,
           } as PageParams);
           if (response.success && response.data) {
             return { data: response.data.queryable || [], total: response.data.rowCount || 0, success: true };
@@ -305,6 +305,16 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
         columns={columns}
         scroll={{ x: 'max-content' }}
         toolBarRender={() => [
+          <Input.Search
+            key="search"
+            placeholder="搜索..."
+            allowClear
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            onSearch={(value) => { setSearchText(value); tableActionRef.current?.reload(); }}
+            style={{ width: 260, marginRight: 8 }}
+            prefix={<SearchOutlined />}
+          />,
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { setEditingProject(null); setFormVisible(true); }}>
             {intl.formatMessage({ id: 'pages.projectManagement.createProject' })}
           </Button>,

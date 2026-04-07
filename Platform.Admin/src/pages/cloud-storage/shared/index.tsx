@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { Button, Space, Tag, App, Modal } from 'antd';
-import { ShareAltOutlined, EditOutlined, DeleteOutlined, CopyOutlined, LockOutlined, UnlockOutlined } from '@ant-design/icons';
-import { ProTable, ProColumns } from '@ant-design/pro-table';
+import { Button, Space, Tag, App, Modal, Input } from 'antd';
+import { ShareAltOutlined, EditOutlined, DeleteOutlined, CopyOutlined, LockOutlined, UnlockOutlined, SearchOutlined } from '@ant-design/icons';
+import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormDatePicker, ProFormDigit, ProFormSwitch } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
@@ -12,18 +12,19 @@ import { ApiResponse, PagedResult, PageParams } from '@/types';
 interface FileShare { id: string; fileId: string; fileName: string; shareToken: string; shareType: 'internal' | 'external'; accessType: 'view' | 'download' | 'edit'; password: string; expiresAt?: string; maxDownloads?: number; downloadCount: number; accessCount: number; isEnabled: boolean; createdAt: string; createdBy?: string; createdByName?: string; }
 
 const api = {
-    getMyShares: (params: PageParams) => request<ApiResponse<PagedResult<any>>>('/api/cloud-storage/share/my-shares', { params }),
-    getSharedWithMe: (params: PageParams) => request<ApiResponse<PagedResult<any>>>('/api/cloud-storage/share/shared-with-me', { params }),
-    update: (id: string, data: any) => request<ApiResponse<void>>(`/api/cloud-storage/share/${id}`, { method: 'PUT', data }),
-    delete: (id: string) => request<ApiResponse<void>>(`/api/cloud-storage/share/${id}`, { method: 'DELETE' }),
-    toggle: (id: string, enabled: boolean) => request<ApiResponse<void>>(`/api/cloud-storage/share/${id}/toggle`, { method: 'POST', data: { enabled } }),
+    getMyShares: (params: PageParams) => request<ApiResponse<PagedResult<any>>>('/api/file-share/my-shares', { params }),
+    getSharedWithMe: (params: PageParams) => request<ApiResponse<PagedResult<any>>>('/api/file-share/shared-with-me', { params }),
+    update: (id: string, data: any) => request<ApiResponse<void>>(`/api/file-share/${id}`, { method: 'PUT', data }),
+    delete: (id: string) => request<ApiResponse<void>>(`/api/file-share/${id}`, { method: 'DELETE' }),
 };
 
 const CloudStorageSharedPage: React.FC = () => {
     const intl = useIntl();
     const { message } = App.useApp();
+    const actionRef = useRef<ActionType | undefined>(undefined);
     const [activeTab, setActiveTab] = useState<'my-shares' | 'shared-with-me'>('my-shares');
     const [editingShare, setEditingShare] = useState<FileShare | null>(null);
+    const [searchText, setSearchText] = useState('');
 
     const handleOpenModal = (share: FileShare) => {
         setEditingShare(share);
@@ -86,7 +87,7 @@ const CloudStorageSharedPage: React.FC = () => {
                     <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleOpenModal(r)}>编辑</Button>
                     <Button type="link" size="small" icon={r.isEnabled ? <LockOutlined /> : <UnlockOutlined />} onClick={async () => {
                         try {
-                            await api.toggle(r.id, !r.isEnabled);
+                            await api.update(r.id, { isEnabled: !r.isEnabled });
                             message.success(`${r.isEnabled ? '禁用' : '启用'}成功`);
                         } catch { message.error('操作失败'); }
                     }}>{r.isEnabled ? '禁用' : '启用'}</Button>
@@ -104,11 +105,12 @@ const CloudStorageSharedPage: React.FC = () => {
         <PageContainer title={<Space><ShareAltOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.shared.title' })}</Space>}>
             <ProTable
                 headerTitle={intl.formatMessage({ id: 'pages.cloud-storage.shared.title' })}
+                actionRef={actionRef}
                 rowKey="id"
-                search={{ labelWidth: 'auto' }}
+                search={false}
                 request={async (params: any) => {
-                    const { current, pageSize, ...rest } = params;
-                    const res = activeTab === 'my-shares' ? await api.getMyShares({ page: current, pageSize, ...rest } as PageParams) : await api.getSharedWithMe({ page: current, pageSize, ...rest } as PageParams);
+                    const { current, pageSize, sortBy, sortOrder } = params;
+                    const res = activeTab === 'my-shares' ? await api.getMyShares({ page: current, pageSize, search: searchText, sortBy, sortOrder } as PageParams) : await api.getSharedWithMe({ page: current, pageSize, search: searchText, sortBy, sortOrder } as PageParams);
                     if (res.success && res.data) {
                         const transformed = (res.data.queryable || []).map(transformShare);
                         return { data: transformed, total: res.data.rowCount || 0, success: true };
@@ -117,7 +119,21 @@ const CloudStorageSharedPage: React.FC = () => {
                 }}
                 columns={columns}
                 scroll={{ x: 'max-content' }}
-                toolbar={{ menu: { type: 'tab', activeKey: activeTab, onChange: (key) => setActiveTab(key as any) } }}
+                toolbar={{
+                    menu: { type: 'tab', activeKey: activeTab, onChange: (key) => setActiveTab(key as any) },
+                }}
+                toolBarRender={() => [
+                  <Input.Search
+                    key="search"
+                    placeholder="搜索..."
+                    allowClear
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    onSearch={(value) => { setSearchText(value); actionRef.current?.reload(); }}
+                    style={{ width: 260 }}
+                    prefix={<SearchOutlined />}
+                  />,
+                ]}
             />
             <ModalForm
                 title="编辑分享"

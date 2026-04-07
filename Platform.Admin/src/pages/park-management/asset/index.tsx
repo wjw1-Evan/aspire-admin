@@ -1,12 +1,11 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
-import { StatCard } from '@/components';
+import { PageContainer, ProCard } from '@ant-design/pro-components';
 import { useIntl, request } from '@umijs/max';
 import { Tag, Space, Row, Col, Button, Input, Popconfirm, Drawer, Typography, Upload, DatePicker } from 'antd';
 import type { UploadFile } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormDatePicker } from '@ant-design/pro-form';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, HomeOutlined, BankOutlined, AreaChartOutlined, SyncOutlined, ReloadOutlined, UploadOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, HomeOutlined, BankOutlined, AreaChartOutlined, SyncOutlined, ReloadOutlined, UploadOutlined, ArrowUpOutlined, ArrowDownOutlined, SearchOutlined } from '@ant-design/icons';
 import { ProDescriptions } from '@ant-design/pro-components';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 import dayjs from 'dayjs';
@@ -133,20 +132,31 @@ const AssetManagement: React.FC = () => {
     const extractAttachmentUrls = (files: UploadFile[]) => files.map(item => { if (item.response?.data?.path) return item.response.data.path; return item.url; }).filter(Boolean) as string[];
 
     return (
-        <PageContainer title={intl.formatMessage({ id: 'pages.park.asset.title', defaultMessage: '资产管理' })} extra={
-            <Space>
-                <Button icon={<ReloadOutlined />} onClick={() => { if (state.activeTab === 'buildings') buildingActionRef.current?.reload(); else unitActionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }}>{intl.formatMessage({ id: 'common.refresh', defaultMessage: '刷新' })}</Button>
-                <Button type="primary" icon={<PlusOutlined />} onClick={() => { if (state.activeTab === 'buildings') { setBuilding({ editingBuilding: null, modalVisible: true }); setForm({ attachments: [] }); } else { setUnit({ editingUnit: null, modalVisible: true }); setForm({ attachments: [] }); } }}>{state.activeTab === 'buildings' ? intl.formatMessage({ id: 'pages.park.asset.addBuilding', defaultMessage: '新增楼宇' }) : intl.formatMessage({ id: 'pages.park.asset.addUnit', defaultMessage: '新增房源' })}</Button>
-            </Space>
-        }>
-            {state.statistics && (
-                <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-                    <Col xs={24} sm={12} md={6}><StatCard title={intl.formatMessage({ id: 'pages.park.asset.stats.properties', defaultMessage: '物业总数' })} value={state.statistics.totalBuildings} icon={<BankOutlined />} color="#1890ff" suffix={state.statistics.totalBuildingsMoM !== undefined && (<div style={{ fontSize: 12, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4, color: state.statistics.totalBuildingsMoM >= 0 ? '#52c41a' : '#ff4d4f' }}>{state.statistics.totalBuildingsMoM >= 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}<span>{Math.abs(state.statistics.totalBuildingsMoM).toFixed(1)}%</span></div>)} /></Col>
-                    <Col xs={24} sm={12} md={6}><StatCard title={intl.formatMessage({ id: 'pages.park.asset.stats.units', defaultMessage: '房源总数' })} value={state.statistics.totalUnits} icon={<HomeOutlined />} color="#52c41a" suffix={<Text type="secondary" style={{ fontSize: 12 }}>可用: {state.statistics.availableUnits}</Text>} /></Col>
-                    <Col xs={24} sm={12} md={6}><StatCard title={intl.formatMessage({ id: 'pages.park.asset.stats.area', defaultMessage: '总面积 (m²)' })} value={state.statistics.totalArea?.toLocaleString()} icon={<AreaChartOutlined />} color="#722ed1" /></Col>
-                    <Col xs={24} sm={12} md={6}><StatCard title={intl.formatMessage({ id: 'pages.park.asset.stats.occupancy', defaultMessage: '出租率' })} value={`${state.statistics.occupancyRate}%`} icon={<SyncOutlined />} color={state.statistics.occupancyRate >= 80 ? '#52c41a' : state.statistics.occupancyRate >= 50 ? '#faad14' : '#f5222d'} /></Col>
-                </Row>
-            )}
+        <PageContainer title={intl.formatMessage({ id: 'pages.park.asset.title', defaultMessage: '资产管理' })}>
+            {state.statistics && <ProCard gutter={16} style={{ marginBottom: 16 }}>
+                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 'bold' }}>{state.statistics.totalBuildings}</div>
+                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>物业总数</div>
+                    {state.statistics.totalBuildingsMoM !== undefined && (
+                        <Typography.Text style={{ fontSize: 11, color: state.statistics.totalBuildingsMoM >= 0 ? '#52c41a' : '#ff4d4f' }}>
+                            {state.statistics.totalBuildingsMoM >= 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />} {Math.abs(state.statistics.totalBuildingsMoM).toFixed(1)}%
+                        </Typography.Text>
+                    )}
+                </ProCard>
+                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#52c41a' }}>{state.statistics.totalUnits}</div>
+                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>房源总数</div>
+                    <Typography.Text type="secondary" style={{ fontSize: 11 }}>可用: {state.statistics.availableUnits}</Typography.Text>
+                </ProCard>
+                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#722ed1' }}>{state.statistics.totalArea?.toLocaleString()} m²</div>
+                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>总面积</div>
+                </ProCard>
+                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 'bold', color: state.statistics.occupancyRate >= 80 ? '#52c41a' : state.statistics.occupancyRate >= 50 ? '#faad14' : '#f5222d' }}>{state.statistics.occupancyRate}%</div>
+                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>出租率</div>
+                </ProCard>
+            </ProCard>}
 
             <ProTable actionRef={actionRef} params={{ activeTab: state.activeTab }}
                 request={((async (params: any) => {
@@ -158,15 +168,18 @@ const AssetManagement: React.FC = () => {
                 columns={state.activeTab === 'buildings' ? buildingColumns as any : unitColumns as any} rowKey="id" search={false}
                 onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
                 toolBarRender={() => [
-                  <Input.Search
-                    key="search"
-                    placeholder="搜索..."
-                    allowClear
-                    value={state.search}
-                    onChange={(e) => set({ search: e.target.value })}
-                    onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
-                    style={{ width: 260, marginRight: 8 }}
-                  />,
+                    <Input.Search
+                        key="search"
+                        placeholder="搜索..."
+                        allowClear
+                        value={state.search}
+                        onChange={(e) => set({ search: e.target.value })}
+                        onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+                        style={{ width: 260, marginRight: 8 }}
+                        prefix={<SearchOutlined />}
+                    />,
+                    <Button key="refresh" icon={<ReloadOutlined />} onClick={() => { if (state.activeTab === 'buildings') buildingActionRef.current?.reload(); else unitActionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }}>刷新</Button>,
+                    <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => { if (state.activeTab === 'buildings') { setBuilding({ editingBuilding: null, modalVisible: true }); setForm({ attachments: [] }); } else { setUnit({ editingUnit: null, modalVisible: true }); setForm({ attachments: [] }); } }}>{state.activeTab === 'buildings' ? '新增楼宇' : '新增房源'}</Button>,
                 ]}
             />
 

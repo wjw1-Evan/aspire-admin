@@ -1,13 +1,12 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
-import { StatCard } from '@/components';
+import { PageContainer, ProCard } from '@ant-design/pro-components';
 import { request } from '@umijs/max';
-import { App, Row, Col, Tag, Typography, Empty, Rate, Button, Space, Input } from 'antd';
+import { App, Tag, Typography, Empty, Rate, Button, Space, Input, Row, Col } from 'antd';
 import { Drawer } from 'antd';
 import { ProTable, ProColumns } from '@ant-design/pro-table';
 import { ProDescriptions } from '@ant-design/pro-components';
 import { ModalForm, ProFormText, ProFormDatePicker } from '@ant-design/pro-form';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, UserOutlined, WarningOutlined, ReloadOutlined, CalendarOutlined, CustomerServiceOutlined, FileTextOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, UserOutlined, WarningOutlined, ReloadOutlined, CalendarOutlined, CustomerServiceOutlined, FileTextOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 
@@ -19,15 +18,15 @@ interface LeasePaymentRecord { id: string; contractId: string; paymentType: stri
 interface TenantFormData { tenantName: string; contactPerson?: string; phone?: string; email?: string; industry?: string; businessLicense?: string; address?: string; notes?: string; entryDate?: string; }
 
 const api = {
-    list: (params: PageParams & { tenantId?: string }) => request<ApiResponse<PagedResult<ParkTenant>>>('/api/park/tenant/list', { params }),
-    get: (id: string) => request<ApiResponse<ParkTenant>>(`/api/park/tenant/${id}`),
-    create: (data: TenantFormData) => request<ApiResponse<ParkTenant>>('/api/park/tenant', { method: 'POST', data }),
-    update: (id: string, data: TenantFormData) => request<ApiResponse<ParkTenant>>(`/api/park/tenant/${id}`, { method: 'PUT', data }),
-    delete: (id: string) => request<ApiResponse<void>>(`/api/park/tenant/${id}`, { method: 'DELETE' }),
+    list: (params: PageParams & { tenantId?: string }) => request<ApiResponse<PagedResult<ParkTenant>>>('/api/park/tenants/list', { method: 'POST', data: params }),
+    get: (id: string) => request<ApiResponse<ParkTenant>>(`/api/park/tenants/${id}`),
+    create: (data: TenantFormData) => request<ApiResponse<ParkTenant>>('/api/park/tenants', { method: 'POST', data }),
+    update: (id: string, data: TenantFormData) => request<ApiResponse<ParkTenant>>(`/api/park/tenants/${id}`, { method: 'PUT', data }),
+    delete: (id: string) => request<ApiResponse<void>>(`/api/park/tenants/${id}`, { method: 'DELETE' }),
     statistics: (startDate?: string, endDate?: string) => request<ApiResponse<TenantStatistics>>('/api/park/tenant/statistics', { params: { startDate, endDate } }),
-    getContracts: (params: { page?: number; pageSize?: number; tenantId?: string }) => request<ApiResponse<PagedResult<LeaseContract>>>('/api/park/contract/list', { params }),
-    getServiceRequests: (params: { page?: number; pageSize?: number; tenantId?: string }) => request<ApiResponse<PagedResult<ServiceRequest>>>('/api/park/services/list', { params }),
-    getPaymentRecords: (contractId: string) => request<ApiResponse<LeasePaymentRecord[]>>(`/api/park/contract/${contractId}/payments`),
+    getContracts: (params: { page?: number; pageSize?: number; tenantId?: string }) => request<ApiResponse<PagedResult<LeaseContract>>>('/api/park/contracts/list', { method: 'POST', data: params }),
+    getServiceRequests: (params: { page?: number; pageSize?: number; tenantId?: string }) => request<ApiResponse<PagedResult<ServiceRequest>>>('/api/park/services/requests/list', { method: 'POST', data: params }),
+    getPaymentRecords: (contractId: string) => request<ApiResponse<LeasePaymentRecord[]>>(`/api/park/contracts/${contractId}/payments`),
 };
 
 const tenantStatusOptions = [{ label: '活跃', value: 'Active', color: 'green' }, { label: '即将到期', value: 'Expiring', color: 'orange' }, { label: '已退租', value: 'Moved', color: 'default' }];
@@ -80,14 +79,27 @@ const TenantManagement: React.FC = () => {
     return (
         <PageContainer title={<Space><UserOutlined />租户管理</Space>}
             breadcrumb={{ routes: [{ path: '/', breadcrumbName: '首页' }, { path: '/park', breadcrumbName: '园区管理' }, { path: '/park/tenant', breadcrumbName: '租户管理' }] }}
-            extra={<Space><Button icon={<ReloadOutlined />} onClick={() => { actionRef.current?.reload(); loadStatistics(); }}>刷新</Button><Button type="primary" icon={<PlusOutlined />} onClick={() => set({ editingTenant: null, formVisible: true })}>新增租户</Button></Space>}
         >
-            {state.statistics && <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-                <Col xs={24} sm={12} md={6}><StatCard title="租户总数" value={state.statistics.totalTenants} icon={<UserOutlined />} color="#1890ff" suffix={<Typography.Text type="secondary" style={{ fontSize: 12 }}>活跃: {state.statistics.activeTenants}</Typography.Text>} /></Col>
-                <Col xs={24} sm={12} md={6}><StatCard title="合同总数" value={state.statistics.totalContracts} icon={<FileTextOutlined />} color="#52c41a" suffix={<Typography.Text type="secondary" style={{ fontSize: 12 }}>有效: {state.statistics.activeContracts}</Typography.Text>} /></Col>
-                <Col xs={24} sm={12} md={6}><StatCard title="即将到期" value={state.statistics.expiringContracts} icon={<WarningOutlined />} color={state.statistics.expiringContracts > 0 ? '#f5222d' : '#52c41a'} /></Col>
-                <Col xs={24} sm={12} md={6}><StatCard title="月租金收入" value={`¥${state.statistics.totalMonthlyRent?.toLocaleString()}`} icon={<CalendarOutlined />} color="#722ed1" /></Col>
-            </Row>}
+            {state.statistics && <ProCard gutter={16} style={{ marginBottom: 16 }}>
+                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 'bold' }}>{state.statistics.totalTenants}</div>
+                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>租户总数</div>
+                    <Typography.Text type="secondary" style={{ fontSize: 11 }}>活跃: {state.statistics.activeTenants}</Typography.Text>
+                </ProCard>
+                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#52c41a' }}>{state.statistics.totalContracts}</div>
+                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>合同总数</div>
+                    <Typography.Text type="secondary" style={{ fontSize: 11 }}>有效: {state.statistics.activeContracts}</Typography.Text>
+                </ProCard>
+                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 'bold', color: state.statistics.expiringContracts > 0 ? '#f5222d' : '#52c41a' }}>{state.statistics.expiringContracts}</div>
+                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>即将到期</div>
+                </ProCard>
+                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#722ed1' }}>¥{state.statistics.totalMonthlyRent?.toLocaleString()}</div>
+                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>月租金收入</div>
+                </ProCard>
+            </ProCard>}
 
             <ProTable actionRef={actionRef} request={async (params: any) => {
                 const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
@@ -96,16 +108,18 @@ const TenantManagement: React.FC = () => {
             }} columns={columns} rowKey="id" search={false}
                 onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
                 toolBarRender={() => [
-                  <Input.Search
-                    key="search"
-                    placeholder="搜索..."
-                    allowClear
-                    value={state.search}
-                    onChange={(e) => set({ search: e.target.value })}
-                    onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
-                    style={{ width: 260, marginRight: 8 }}
-                  />,
-                  <Button key="export" icon={<ReloadOutlined />} onClick={() => { actionRef.current?.reload(); loadStatistics(); }}>刷新</Button>
+                    <Input.Search
+                        key="search"
+                        placeholder="搜索..."
+                        allowClear
+                        value={state.search}
+                        onChange={(e) => set({ search: e.target.value })}
+                        onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+                        style={{ width: 260, marginRight: 8 }}
+                        prefix={<SearchOutlined />}
+                    />,
+                    <Button key="refresh" icon={<ReloadOutlined />} onClick={() => { actionRef.current?.reload(); loadStatistics(); }}>刷新</Button>,
+                    <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingTenant: null, formVisible: true })}>新增租户</Button>
                 ]}
             />
 

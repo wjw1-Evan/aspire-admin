@@ -13,7 +13,7 @@ import { ProDescriptions, ProCard } from '@ant-design/pro-components';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormDatePicker, ProFormSelect, ProFormDigit } from '@ant-design/pro-form';
 import { tokenUtils } from '@/utils/token';
-import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, CloudOutlined, FolderOutlined, FileOutlined, DownloadOutlined, ShareAltOutlined, UploadOutlined, FolderAddOutlined, MoreOutlined, EyeOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CloudOutlined, FolderOutlined, FileOutlined, DownloadOutlined, ShareAltOutlined, UploadOutlined, FolderAddOutlined, MoreOutlined, EyeOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 
@@ -26,17 +26,17 @@ interface PathHistoryItem { id?: string; name: string; path: string; }
 
 // ==================== API ====================
 const api = {
-    list: (params: PageParams & { parentId?: string }) => request<ApiResponse<PagedResult<FileItem>>>('/api/cloud-storage/files/list', { params }),
-    search: (params: PageParams & { keyword: string }) => request<ApiResponse<PagedResult<FileItem>>>('/api/cloud-storage/files/search', { params }),
+    list: (params: PageParams & { parentId?: string }) => request<ApiResponse<PagedResult<FileItem>>>('/api/cloud-storage/list', { params }),
+    search: (params: PageParams & { keyword: string }) => request<ApiResponse<PagedResult<FileItem>>>('/api/cloud-storage/search', { params }),
     get: (id: string) => request<ApiResponse<FileItem>>(`/api/cloud-storage/files/${id}`),
-    delete: (id: string) => request<ApiResponse<void>>(`/api/cloud-storage/files/${id}`, { method: 'DELETE' }),
-    batchDelete: (ids: string[]) => request<ApiResponse<void>>('/api/cloud-storage/files/batch-delete', { method: 'POST', data: { ids } }),
+    delete: (id: string) => request<ApiResponse<void>>(`/api/cloud-storage/items/${id}`, { method: 'DELETE' }),
+    batchDelete: (ids: string[]) => request<ApiResponse<void>>('/api/cloud-storage/items/batch-delete', { method: 'POST', data: { ids } }),
     createFolder: (data: { name: string; parentId?: string }) => request<ApiResponse<FileItem>>('/api/cloud-storage/folders', { method: 'POST', data }),
-    rename: (id: string, data: { name: string }) => request<ApiResponse<FileItem>>(`/api/cloud-storage/files/${id}/rename`, { method: 'PUT', data }),
+    rename: (id: string, data: { name: string }) => request<ApiResponse<FileItem>>(`/api/cloud-storage/items/${id}/rename`, { method: 'PUT', data }),
     statistics: () => request<ApiResponse<StorageStatistics>>('/api/cloud-storage/statistics'),
-    versions: (fileId: string, page: number, pageSize: number) => request<ApiResponse<PagedResult<FileVersion>>>('/api/cloud-storage/files/versions', { params: { fileId, page, pageSize } }),
-    restoreVersion: (versionId: string) => request<ApiResponse<void>>('/api/cloud-storage/files/versions/restore', { method: 'POST', data: { versionId } }),
-    share: (data: { fileId: string; shareType: string; expiresAt?: string; maxDownloads?: number; allowedUserIds?: string[] }) => request<ApiResponse<any>>('/api/cloud-storage/share', { method: 'POST', data }),
+    versions: (fileId: string, page: number, pageSize: number) => request<ApiResponse<PagedResult<FileVersion>>>('/api/file-version/list', { params: { fileId, page, pageSize } }),
+    restoreVersion: (fileId: string, versionNumber: number) => request<ApiResponse<void>>(`/api/file-version/${fileId}/versions/${versionNumber}/restore`, { method: 'POST' }),
+    share: (data: { fileId: string; shareType: string; expiresAt?: string; maxDownloads?: number; allowedUserIds?: string[] }) => request<ApiResponse<any>>(`/api/file-share/${data.fileId}`, { method: 'POST', data }),
     users: () => request<ApiResponse<AppUser[]>>('/api/users/all'),
 };
 
@@ -143,7 +143,7 @@ const CloudStorageFilesPage: React.FC = () => {
                     set({ previewLoading: true });
                     try {
                         const token = tokenUtils.getToken();
-                        const dl = await fetch(`/api/cloud-storage/files/${file.id}/download`, { headers: { 'Authorization': `Bearer ${token}` } });
+                        const dl = await fetch(`/api/cloud-storage/items/${file.id}/download`, { headers: { 'Authorization': `Bearer ${token}` } });
                         if (!dl.ok) throw new Error('Failed');
                         const blob = await dl.blob();
                         set({ previewUrl: URL.createObjectURL(blob) });
@@ -166,7 +166,7 @@ const CloudStorageFilesPage: React.FC = () => {
     const handleDownload = useCallback(async (file: FileItem) => {
         try {
             const token = tokenUtils.getToken();
-            const response = await fetch(`/api/cloud-storage/files/${file.id}/download`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const response = await fetch(`/api/cloud-storage/items/${file.id}/download`, { headers: { 'Authorization': `Bearer ${token}` } });
             if (!response.ok) throw new Error('Download failed');
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
@@ -237,17 +237,7 @@ const CloudStorageFilesPage: React.FC = () => {
     return (
         <PageContainer title={<Space><CloudOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.files.title' })}</Space>}
             breadcrumb={{ routes: [{ path: '/', breadcrumbName: '首页' }, { path: '/cloud-storage', breadcrumbName: '云存储管理' }, { path: '/cloud-storage/files', breadcrumbName: '文件管理' }] }}
-            extra={<Space wrap>
-                {state.selectedRowKeys.length > 0 && <Button key="batch-delete" danger icon={<DeleteOutlined />} onClick={handleBatchDelete}>{intl.formatMessage({ id: 'pages.cloud-storage.files.action.batchDelete' })} ({state.selectedRowKeys.length})</Button>}
-                <Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button>
-                <Button key="create-folder" icon={<FolderAddOutlined />} onClick={() => set({ createFolderVisible: true })}>{intl.formatMessage({ id: 'pages.cloud-storage.files.action.newFolder' })}</Button>
-                <Dropdown menu={{ items: [
-                    { key: 'file', label: intl.formatMessage({ id: 'pages.cloud-storage.files.action.uploadFile' }), icon: <FileOutlined />, onClick: () => set({ uploadType: 'file', uploadVisible: true }) },
-                    { key: 'folder', label: intl.formatMessage({ id: 'pages.cloud-storage.files.action.uploadFolder' }), icon: <FolderOutlined />, onClick: () => set({ uploadType: 'folder', uploadVisible: true }) },
-                ]}}>
-                    <Button key="upload" type="primary" icon={<UploadOutlined />}>{intl.formatMessage({ id: 'pages.cloud-storage.files.action.upload' })} <MoreOutlined style={{ fontSize: 12 }} /></Button>
-                </Dropdown>
-            </Space>}>
+        >
             {state.statistics && <ProCard style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>{statsConfig.map((stat, idx) => (<Col xs={24} sm={12} md={6} key={idx}><StatCard title={stat.title} value={stat.value ?? 0} icon={stat.icon} color={stat.color} suffix={stat.suffix} /></Col>))}</Row></ProCard>}
             <ProCard style={{ marginBottom: 16 }}><Breadcrumb items={state.pathHistory.map((item, index) => ({ key: index, title: index === 0 ? <a onClick={() => handleBreadcrumbClick(index)}>{intl.formatMessage({ id: 'pages.cloud-storage.files.breadcrumb.myFiles' })}</a> : <a onClick={() => handleBreadcrumbClick(index)}>{item.name}</a> }))} /></ProCard>
             <ProTable actionRef={actionRef} request={fetchData} columns={columns} rowKey="id" search={false}
@@ -261,7 +251,15 @@ const CloudStorageFilesPage: React.FC = () => {
                     onChange={(e) => set({ search: e.target.value })}
                     onSearch={(value) => { set({ search: value, isSearchMode: !!value }); actionRef.current?.reload(); }}
                     style={{ width: 260, marginRight: 8 }}
+                    prefix={<SearchOutlined />}
                   />,
+                  <Button key="create-folder" icon={<FolderAddOutlined />} onClick={() => set({ createFolderVisible: true })}>{intl.formatMessage({ id: 'pages.cloud-storage.files.action.newFolder' })}</Button>,
+                  <Dropdown key="upload" menu={{ items: [
+                    { key: 'file', label: intl.formatMessage({ id: 'pages.cloud-storage.files.action.uploadFile' }), icon: <FileOutlined />, onClick: () => set({ uploadType: 'file', uploadVisible: true }) },
+                    { key: 'folder', label: intl.formatMessage({ id: 'pages.cloud-storage.files.action.uploadFolder' }), icon: <FolderOutlined />, onClick: () => set({ uploadType: 'folder', uploadVisible: true }) },
+                  ]}}>
+                    <Button type="primary" icon={<UploadOutlined />}>{intl.formatMessage({ id: 'pages.cloud-storage.files.action.upload' })} <MoreOutlined style={{ fontSize: 12 }} /></Button>
+                  </Dropdown>,
                 ]}
                 rowSelection={{ selectedRowKeys: state.selectedRowKeys, onChange: (keys, rows) => set({ selectedRowKeys: keys as string[], selectedRows: rows }) }} />
 
@@ -316,7 +314,7 @@ const CloudStorageFilesPage: React.FC = () => {
                                                 </div>
                                                 <Space size="small" wrap>
                                                     <Button size="small" onClick={() => handleDownload({ ...state.viewingFile!, id: v.id } as FileItem)}>下载</Button>
-                                                    <Button size="small" type="primary" onClick={async () => { try { await api.restoreVersion(v.id); message.success('恢复成功'); actionRef.current?.reload(); } catch { message.error('恢复失败'); } }}>恢复</Button>
+                                                    <Button size="small" type="primary" onClick={async () => { try { await api.restoreVersion(v.fileId, v.versionNumber ?? v.version); message.success('恢复成功'); actionRef.current?.reload(); } catch { message.error('恢复失败'); } }}>恢复</Button>
                                                 </Space>
                                             </div>
                                         ))}

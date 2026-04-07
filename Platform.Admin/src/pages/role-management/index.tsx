@@ -84,7 +84,6 @@ const RoleManagement: React.FC = () => {
     <PageContainer
       title={<Space><SafetyOutlined />{intl.formatMessage({ id: 'pages.roleManagement.title' })}</Space>}
       breadcrumb={{ routes: [{ path: '/', breadcrumbName: '首页' }, { path: '/system', breadcrumbName: '系统管理' }, { path: '/system/role', breadcrumbName: '角色管理' }] }}
-      extra={<Space wrap><Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button><Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { set({ editingRole: null, formVisible: true }); setFormState(p => ({ ...p, checkedKeys: [], expandedKeys: [] })); }}>{intl.formatMessage({ id: 'pages.button.addRole' })}</Button></Space>}
     >
       <ProCard gutter={16} style={{ marginBottom: 16 }}>
         {statItems.map(item => (
@@ -101,8 +100,21 @@ const RoleManagement: React.FC = () => {
         const filterParams = { name: name || undefined, description: description || undefined, isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined };
         const res = await api.list({ page: current, pageSize, ...filterParams, ...sortParams });
         return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
-      }} columns={columns} rowKey="id"
+      }} columns={columns} rowKey="id" search={false}
         onChange={(_, __, s: any) => set({ sorter: s?.order ? { sortBy: s.field as string, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
+        toolBarRender={() => [
+          <Input.Search
+            key="search"
+            placeholder="搜索..."
+            allowClear
+            value={state.search}
+            onChange={(e) => set({ search: e.target.value })}
+            onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+            style={{ width: 260, marginRight: 8 }}
+          />,
+          <Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button>,
+          <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { set({ editingRole: null, formVisible: true }); setFormState(p => ({ ...p, checkedKeys: [], expandedKeys: [] })); }}>{intl.formatMessage({ id: 'pages.button.addRole' })}</Button>,
+        ]}
       />
 
       <ModalForm key={state.editingRole?.id || 'create'}

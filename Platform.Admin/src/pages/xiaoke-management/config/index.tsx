@@ -1,13 +1,12 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
-import { RobotOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
-import { Space, Button } from 'antd';
-import ConfigManagement, { type ConfigManagementRef } from './components/ConfigManagement';
+import { RobotOutlined } from '@ant-design/icons';
+import { Space } from 'antd';
+import ConfigManagement from './components/ConfigManagement';
 
 const ConfigPage: React.FC = () => {
   const intl = useIntl();
-  const configManagementRef = useRef<ConfigManagementRef>(null);
 
   return (
     <PageContainer
@@ -17,27 +16,8 @@ const ConfigPage: React.FC = () => {
           {intl.formatMessage({ id: 'pages.xiaokeManagement.config.title' })}
         </Space>
       }
-      extra={
-        <Space wrap>
-          <Button
-            key="refresh"
-            icon={<ReloadOutlined />}
-            onClick={() => configManagementRef.current?.reload()}
-          >
-            {intl.formatMessage({ id: 'pages.xiaokeManagement.config.refresh' })}
-          </Button>
-          <Button
-            key="create"
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => configManagementRef.current?.handleCreate()}
-          >
-            {intl.formatMessage({ id: 'pages.xiaokeManagement.config.createConfig' })}
-          </Button>
-        </Space>
-      }
     >
-      <ConfigManagement ref={configManagementRef} />
+      <ConfigManagement />
     </PageContainer>
   );
 };

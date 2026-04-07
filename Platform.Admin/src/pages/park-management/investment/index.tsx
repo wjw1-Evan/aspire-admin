@@ -1,12 +1,11 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { PageContainer, ProCard } from '@ant-design/pro-components';
-import { StatCard } from '@/components';
 import { useIntl, request } from '@umijs/max';
 import { Form, Input, Select, Button, App, Space, Row, Col, Tag, Typography, InputNumber, Tabs, Popconfirm, DatePicker, Flex, Progress } from 'antd';
 import { Drawer } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormDatePicker, ProFormDigit, ProFormTextArea } from '@ant-design/pro-form';
-import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, SwapOutlined, TeamOutlined, ProjectOutlined, PhoneOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, SwapOutlined, TeamOutlined, ProjectOutlined, PhoneOutlined, SearchOutlined } from '@ant-design/icons';
 import { ProDescriptions } from '@ant-design/pro-components';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
@@ -91,23 +90,31 @@ const InvestmentManagement: React.FC = () => {
     return (
         <PageContainer title={intl.formatMessage({ id: 'pages.park.investment.title', defaultMessage: '招商管理' })}
             breadcrumb={{ routes: [{ path: '/', breadcrumbName: '首页' }, { path: '/park', breadcrumbName: '园区管理' }, { path: '/park/investment', breadcrumbName: '招商管理' }] }}
-            extra={
-            <Space>
-                <Button icon={<ReloadOutlined />} onClick={handleRefresh}>{intl.formatMessage({ id: 'common.refresh', defaultMessage: '刷新' })}</Button>
-                <Button type="primary" icon={<PlusOutlined />} onClick={() => { if (state.activeTab === 'leads') set({ editingLead: null, leadModalVisible: true }); else set({ editingProject: null, projectModalVisible: true }); }}>{state.activeTab === 'leads' ? intl.formatMessage({ id: 'pages.park.investment.addLead', defaultMessage: '新增线索' }) : intl.formatMessage({ id: 'pages.park.investment.addProject', defaultMessage: '新增项目' })}</Button>
-            </Space>
-        }>
-            {state.statistics && (<Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-                <Col xs={24} sm={12} md={6}><StatCard title={intl.formatMessage({ id: 'pages.park.investment.stats.leads', defaultMessage: '总线索数' })} value={state.statistics.totalLeads} icon={<TeamOutlined />} color="#1890ff" suffix={<Text type="secondary" style={{ fontSize: 12 }}>本月新增: {state.statistics.newLeadsThisMonth}</Text>} /></Col>
-                <Col xs={24} sm={12} md={6}><StatCard title={intl.formatMessage({ id: 'pages.park.investment.stats.projects', defaultMessage: '项目总数' })} value={state.statistics.totalProjects} icon={<ProjectOutlined />} color="#52c41a" /></Col>
-                <Col xs={24} sm={12} md={6}><StatCard title={intl.formatMessage({ id: 'pages.park.investment.stats.negotiation', defaultMessage: '谈判中' })} value={state.statistics.projectsInNegotiation} icon={<SwapOutlined />} color="#faad14" /></Col>
-                <Col xs={24} sm={12} md={6}><StatCard title={intl.formatMessage({ id: 'pages.park.investment.stats.conversion', defaultMessage: '转化率' })} value={`${state.statistics.conversionRate}%`} icon={<TeamOutlined />} color={state.statistics.conversionRate >= 30 ? '#52c41a' : state.statistics.conversionRate >= 15 ? '#faad14' : '#f5222d'} /></Col>
-            </Row>)}
+        >
+            {state.statistics && <ProCard gutter={16} style={{ marginBottom: 16 }}>
+                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 'bold' }}>{state.statistics.totalLeads}</div>
+                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>总线索数</div>
+                    <Typography.Text type="secondary" style={{ fontSize: 11 }}>本月新增: {state.statistics.newLeadsThisMonth}</Typography.Text>
+                </ProCard>
+                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#52c41a' }}>{state.statistics.totalProjects}</div>
+                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>项目总数</div>
+                </ProCard>
+                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#faad14' }}>{state.statistics.projectsInNegotiation}</div>
+                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>谈判中</div>
+                </ProCard>
+                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 'bold', color: state.statistics.conversionRate >= 30 ? '#52c41a' : state.statistics.conversionRate >= 15 ? '#faad14' : '#f5222d' }}>{state.statistics.conversionRate}%</div>
+                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>转化率</div>
+                </ProCard>
+            </ProCard>}
 
             <ProCard>
                 <Tabs activeKey={state.activeTab} onChange={(key) => set({ activeTab: key })} items={[
-                    { key: 'leads', label: <Space><TeamOutlined />{intl.formatMessage({ id: 'pages.park.investment.leads', defaultMessage: '招商线索' })}</Space>, children: <ProTable<InvestmentLead> actionRef={leadsActionRef} request={async (params: any) => { const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined; const res = await api.getLeads({ page: current, pageSize, search: state.search, ...sortParams }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={leadColumns} rowKey="id" search={false} onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })} toolBarRender={() => [<Input.Search key="search" placeholder="搜索..." allowClear value={state.search} onChange={(e) => set({ search: e.target.value })} onSearch={(v) => { set({ search: v }); leadsActionRef.current?.reload(); }} style={{ width: 260, marginRight: 8 }} />]} scroll={{ x: 1400 }} /> },
-                    { key: 'projects', label: <Space><ProjectOutlined />{intl.formatMessage({ id: 'pages.park.investment.projects', defaultMessage: '招商项目' })}</Space>, children: <ProTable<InvestmentProject> actionRef={projectsActionRef} request={async (params: any) => { const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined; const res = await api.getProjects({ page: current, pageSize, search: state.search, ...sortParams }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={projectColumns} rowKey="id" search={false} onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })} toolBarRender={() => [<Input.Search key="search" placeholder="搜索..." allowClear value={state.search} onChange={(e) => set({ search: e.target.value })} onSearch={(v) => { set({ search: v }); projectsActionRef.current?.reload(); }} style={{ width: 260, marginRight: 8 }} />]} scroll={{ x: 1300 }} /> },
+                    { key: 'leads', label: <Space><TeamOutlined />{intl.formatMessage({ id: 'pages.park.investment.leads', defaultMessage: '招商线索' })}</Space>, children: <ProTable<InvestmentLead> actionRef={leadsActionRef} request={async (params: any) => { const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined; const res = await api.getLeads({ page: current, pageSize, search: state.search, ...sortParams }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={leadColumns} rowKey="id" search={false} onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })} toolBarRender={() => [<Input.Search key="search" placeholder="搜索..." allowClear value={state.search} onChange={(e) => set({ search: e.target.value })} onSearch={(v) => { set({ search: v }); leadsActionRef.current?.reload(); }} style={{ width: 260, marginRight: 8 }} prefix={<SearchOutlined />} />, <Button key="refresh" icon={<ReloadOutlined />} onClick={handleRefresh}>刷新</Button>, <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingLead: null, leadModalVisible: true })}>新增线索</Button>]} scroll={{ x: 1400 }} /> },
+                    { key: 'projects', label: <Space><ProjectOutlined />{intl.formatMessage({ id: 'pages.park.investment.projects', defaultMessage: '招商项目' })}</Space>, children: <ProTable<InvestmentProject> actionRef={projectsActionRef} request={async (params: any) => { const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined; const res = await api.getProjects({ page: current, pageSize, search: state.search, ...sortParams }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={projectColumns} rowKey="id" search={false} onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })} toolBarRender={() => [<Input.Search key="search" placeholder="搜索..." allowClear value={state.search} onChange={(e) => set({ search: e.target.value })} onSearch={(v) => { set({ search: v }); projectsActionRef.current?.reload(); }} style={{ width: 260, marginRight: 8 }} prefix={<SearchOutlined />} />, <Button key="refresh" icon={<ReloadOutlined />} onClick={handleRefresh}>刷新</Button>, <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingProject: null, projectModalVisible: true })}>新增项目</Button>]} scroll={{ x: 1300 }} /> },
                 ]} />
             </ProCard>
 

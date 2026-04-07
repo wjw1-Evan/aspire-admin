@@ -1,12 +1,10 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { Button, Space } from 'antd';
-import { ReloadOutlined, HddOutlined } from '@ant-design/icons';
-import DataCenter, { DataCenterRef } from './components/DataCenter';
+import { Space } from 'antd';
+import { HddOutlined } from '@ant-design/icons';
+import DataCenter from './components/DataCenter';
 
 const DataCenterPage: React.FC = () => {
-  const centerRef = useRef<DataCenterRef>(null);
-
   return (
     <PageContainer
       title={
@@ -15,24 +13,10 @@ const DataCenterPage: React.FC = () => {
           数据中心
         </Space>
       }
-      extra={
-        <Space>
-          <Button
-            key="refresh"
-            icon={<ReloadOutlined />}
-            onClick={() => {
-              centerRef.current?.reload();
-            }}
-          >
-            刷新
-          </Button>
-        </Space>
-      }
     >
-      <DataCenter ref={centerRef} />
+      <DataCenter />
     </PageContainer>
   );
 };
 
 export default DataCenterPage;
-

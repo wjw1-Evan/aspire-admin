@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { Button, Space, Modal, Tag, App } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, BookOutlined, FolderOpenOutlined } from '@ant-design/icons';
+import React, { useRef, useState, useCallback } from 'react';
+import { Button, Space, Modal, Tag, App, Input } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, BookOutlined, FolderOpenOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import { useIntl, history } from '@umijs/max';
-import { PageContainer } from '@ant-design/pro-components';
-import { ProTable, ProColumns } from '@ant-design/pro-table';
+import { PageContainer, ProCard } from '@ant-design/pro-components';
+import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormTextArea, ProFormSwitch } from '@ant-design/pro-components';
 import * as kbService from '@/services/workflow/knowledge-base';
 import type { KnowledgeBase } from '@/services/workflow/knowledge-base';
@@ -13,8 +13,11 @@ import dayjs from 'dayjs';
 const KnowledgeBaseManagement: React.FC = () => {
   const intl = useIntl();
   const { message } = App.useApp();
+  const actionRef = useRef<ActionType | undefined>(undefined);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingKb, setEditingKb] = useState<KnowledgeBase | null>(null);
+  const [sorter, setSorter] = useState<{ sortBy: string; sortOrder: string } | undefined>(undefined);
+  const [search, setSearch] = useState('');
 
   const handleOpenModal = (kb: KnowledgeBase | null) => {
     setEditingKb(kb);
@@ -33,6 +36,7 @@ const KnowledgeBaseManagement: React.FC = () => {
           const res = await kbService.deleteKnowledgeBase(record.id);
           if (res.success) {
             message.success('删除成功');
+            actionRef.current?.reload();
           }
         } catch (error) {
           message.error('删除失败');
@@ -113,27 +117,38 @@ const KnowledgeBaseManagement: React.FC = () => {
   ];
 
   return (
-    <PageContainer title={intl.formatMessage({ id: 'pages.workflow.knowledgeBase.title' })}
-      extra={
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => handleOpenModal(null)}>
-          {intl.formatMessage({ id: 'pages.workflow.knowledgeBase.add' })}
-        </Button>
-      }
-    >
+    <PageContainer title={intl.formatMessage({ id: 'pages.workflow.knowledgeBase.title' })}>
       <ProTable
-        headerTitle="知识库列表"
+        actionRef={actionRef}
         rowKey="id"
-        search={{ labelWidth: 'auto' }}
+        search={false}
         request={async (params: any) => {
-          const { current, pageSize, ...rest } = params;
-          const res = await kbService.getKnowledgeBases({ page: current, pageSize, ...rest } as PageParams);
+          const { current, pageSize } = params;
+          const res = await kbService.getKnowledgeBases({ page: current, pageSize, search, ...sorter } as PageParams);
           if (res.success && res.data) {
             return { data: res.data.queryable || [], total: res.data.rowCount || 0, success: true };
           }
           return { data: [], total: 0, success: false };
         }}
         columns={columns}
+        onChange={(_, __, s: any) => setSorter(s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined)}
         scroll={{ x: 'max-content' }}
+        toolBarRender={() => [
+          <Input.Search
+            key="search"
+            placeholder="搜索..."
+            allowClear
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onSearch={(value) => { setSearch(value); actionRef.current?.reload(); }}
+            style={{ width: 260, marginRight: 8 }}
+            prefix={<SearchOutlined />}
+          />,
+          <Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>刷新</Button>,
+          <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => handleOpenModal(null)}>
+            {intl.formatMessage({ id: 'pages.workflow.knowledgeBase.add' })}
+          </Button>,
+        ]}
       />
 
       <ModalForm
@@ -149,6 +164,7 @@ const KnowledgeBaseManagement: React.FC = () => {
             }
             message.success(editingKb ? '更新成功' : '创建成功');
             setIsModalVisible(false);
+            actionRef.current?.reload();
           } catch {
             message.error('操作失败');
           }

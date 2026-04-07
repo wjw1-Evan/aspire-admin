@@ -1,9 +1,10 @@
-import React, { useRef, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
+import React, { useRef, useState, useCallback, forwardRef } from 'react';
 import { useIntl } from '@umijs/max';
-import { Button, Tag, Space, Modal, Form, Input, Card, DatePicker } from 'antd';
+import { Button, Tag, Space, Modal, Input } from 'antd';
 import {
   EyeOutlined,
   DeleteOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import { useMessage } from '@/hooks/useMessage';
 import { useModal } from '@/hooks/useModal';
@@ -16,23 +17,17 @@ import {
 } from '@/services/xiaoke/api';
 import ChatHistoryDetail from './ChatHistoryDetail';
 import dayjs from 'dayjs';
-import { ProTable, ProColumns } from '@ant-design/pro-table';
+import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import type { PageParams } from '@/types';
 
-const { RangePicker } = DatePicker;
-
-export interface ChatHistoryManagementRef {
-  reload: () => void;
-}
-
-const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) => {
+const ChatHistoryManagement: React.FC = () => {
   const intl = useIntl();
   const message = useMessage();
   const { confirm } = useModal();
-  const tableRef = useRef<HTMLDivElement>(null);
-  const [searchForm] = Form.useForm();
+  const actionRef = useRef<ActionType | undefined>(undefined);
   const [detailVisible, setDetailVisible] = useState(false);
   const [detailData, setDetailData] = useState<ChatHistoryDetailResponse | null>(null);
+  const [searchText, setSearchText] = useState('');
 
   const handleViewDetail = useCallback(async (record: ChatHistoryListItem) => {
     try {
@@ -60,6 +55,7 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
           const response = await deleteChatHistory(record.sessionId);
           if (response.success) {
             message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.message.deleteSuccess' }));
+            actionRef.current?.reload();
           } else {
             message.error(response.message || intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.message.deleteFailed' }));
           }
@@ -74,12 +70,6 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
     setDetailVisible(false);
     setDetailData(null);
   }, []);
-
-  useImperativeHandle(ref, () => ({
-    reload: () => {
-      tableRef.current?.querySelector('button[data-action="reload"]')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    },
-  }), []);
 
   const columns: ProColumns<ChatHistoryListItem>[] = [
     {
@@ -171,22 +161,17 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
     <>
       <ProTable<ChatHistoryListItem>
         headerTitle={intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.title', defaultMessage: '聊天记录管理' })}
-        actionRef={tableRef as any}
+        actionRef={actionRef}
         rowKey="sessionId"
-        search={{
-          labelWidth: 'auto',
-        }}
+        search={false}
         request={async (params: any) => {
-          const { current, pageSize, sessionId, userId, content, dateRange, ...rest } = params;
+          const { current, pageSize, sortBy, sortOrder } = params;
           const resp = await getChatHistory({
             page: current,
             pageSize,
-            sessionId,
-            userId,
-            content,
-            startTime: dateRange?.[0] ? dayjs(dateRange[0]).toISOString() : undefined,
-            endTime: dateRange?.[1] ? dayjs(dateRange[1]).toISOString() : undefined,
-            ...rest,
+            search: searchText,
+            sortBy,
+            sortOrder,
           } as PageParams);
           if (resp.success && resp.data) {
             return { data: resp.data.queryable || [], total: resp.data.rowCount || 0, success: true };
@@ -195,6 +180,18 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
         }}
         columns={columns}
         scroll={{ x: 'max-content' }}
+        toolBarRender={() => [
+          <Input.Search
+            key="search"
+            placeholder="搜索..."
+            allowClear
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            onSearch={(value) => { setSearchText(value); actionRef.current?.reload(); }}
+            style={{ width: 260 }}
+            prefix={<SearchOutlined />}
+          />,
+        ]}
       />
 
       <ChatHistoryDetail
@@ -204,8 +201,6 @@ const ChatHistoryManagement = forwardRef<ChatHistoryManagementRef>((props, ref) 
       />
     </>
   );
-});
-
-ChatHistoryManagement.displayName = 'ChatHistoryManagement';
+};
 
 export default ChatHistoryManagement;

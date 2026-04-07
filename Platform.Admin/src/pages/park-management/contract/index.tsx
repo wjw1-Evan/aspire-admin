@@ -1,13 +1,12 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PageContainer, ProCard } from '@ant-design/pro-components';
-import { StatCard } from '@/components';
 import { useIntl, request } from '@umijs/max';
 import { Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typography, InputNumber, Popconfirm, DatePicker, List, Flex, Upload } from 'antd';
 import { Drawer } from 'antd';
 import { ProDescriptions } from '@ant-design/pro-components';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormDateRangePicker } from '@ant-design/pro-form';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, FileTextOutlined, WarningOutlined, ReloadOutlined, CalendarOutlined, SyncOutlined, UploadOutlined, DownloadOutlined, PaperClipOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, FileTextOutlined, WarningOutlined, ReloadOutlined, CalendarOutlined, SyncOutlined, UploadOutlined, DownloadOutlined, PaperClipOutlined, CheckCircleOutlined, SearchOutlined } from '@ant-design/icons';
 import type { UploadFile, UploadProps } from 'antd';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
@@ -38,16 +37,16 @@ interface ContractFormData {
 }
 
 const api = {
-    list: (params: PageParams) => request<ApiResponse<PagedResult<LeaseContract>>>('/api/park/contracts/list', { params }),
+    list: (params: PageParams) => request<ApiResponse<PagedResult<LeaseContract>>>('/api/park/contracts/list', { method: 'POST', data: params }),
     get: (id: string) => request<ApiResponse<LeaseContract>>(`/api/park/contracts/${id}`),
     create: (data: ContractFormData) => request<ApiResponse<LeaseContract>>('/api/park/contracts', { method: 'POST', data }),
     update: (id: string, data: ContractFormData) => request<ApiResponse<LeaseContract>>(`/api/park/contracts/${id}`, { method: 'PUT', data }),
     delete: (id: string) => request<ApiResponse<void>>(`/api/park/contracts/${id}`, { method: 'DELETE' }),
-    statistics: () => request<ApiResponse<TenantStatistics>>('/api/park/tenants/statistics'),
-    tenants: (params: PageParams) => request<ApiResponse<PagedResult<ParkTenant>>>('/api/park/tenants/list', { params }),
-    units: (params: PageParams) => request<ApiResponse<PagedResult<PropertyUnit>>>('/api/park/units/list', { params }),
-    createPayment: (data: Partial<LeasePaymentRecord>) => request<ApiResponse<LeasePaymentRecord>>('/api/park/payments', { method: 'POST', data }),
-    deletePayment: (id: string) => request<ApiResponse<void>>(`/api/park/payments/${id}`, { method: 'DELETE' }),
+    statistics: () => request<ApiResponse<TenantStatistics>>('/api/park/tenant/statistics'),
+    tenants: (params: PageParams) => request<ApiResponse<PagedResult<ParkTenant>>>('/api/park/tenants/list', { method: 'POST', data: params }),
+    units: (params: PageParams) => request<ApiResponse<PagedResult<PropertyUnit>>>('/api/park/properties/list', { method: 'POST', data: params }),
+    createPayment: (data: Partial<LeasePaymentRecord>) => request<ApiResponse<LeasePaymentRecord>>('/api/park/contracts/payments', { method: 'POST', data }),
+    deletePayment: (id: string) => request<ApiResponse<void>>(`/api/park/contracts/payments/${id}`, { method: 'DELETE' }),
     uploadFile: (data: FormData) => request<ApiResponse<{ id: string; name: string }>>('/api/cloud-storage/upload', { method: 'POST', data }),
 };
 
@@ -111,8 +110,25 @@ const ContractManagement: React.FC = () => {
     return (
         <PageContainer title="合同管理"
             breadcrumb={{ routes: [{ path: '/', breadcrumbName: '首页' }, { path: '/park', breadcrumbName: '园区管理' }, { path: '/park/contract', breadcrumbName: '合同管理' }] }}
-            extra={<Space><Button icon={<ReloadOutlined />} onClick={() => { actionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }}>刷新</Button><Button type="primary" icon={<PlusOutlined />} onClick={() => set({ isEdit: false, currentContract: null, contractModalVisible: true, fileList: [] })}>新增合同</Button></Space>}>
-            {state.statistics && <Row gutter={[16, 16]} style={{ marginBottom: 16 }}><Col xs={24} sm={12} md={6}><StatCard title="生效合同" value={state.statistics.activeContracts} icon={<CheckCircleOutlined />} color="#52c41a" /></Col><Col xs={24} sm={12} md={6}><StatCard title="合同总额" value={`¥${state.statistics.totalContractAmount?.toLocaleString()}`} icon={<FileTextOutlined />} color="#1890ff" /></Col><Col xs={24} sm={12} md={6}><StatCard title="即将到期" value={state.statistics.expiringContracts} icon={<WarningOutlined />} color={state.statistics.expiringContracts > 0 ? '#f5222d' : '#d9d9d9'} /></Col><Col xs={24} sm={12} md={6}><StatCard title="本月应收" value={`¥${state.statistics.totalExpected?.toLocaleString()}`} icon={<CalendarOutlined />} color="#722ed1" /></Col></Row>}
+        >
+            {state.statistics && <ProCard gutter={16} style={{ marginBottom: 16 }}>
+                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#52c41a' }}>{state.statistics.activeContracts}</div>
+                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>生效合同</div>
+                </ProCard>
+                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#1890ff' }}>¥{state.statistics.totalContractAmount?.toLocaleString()}</div>
+                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>合同总额</div>
+                </ProCard>
+                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 'bold', color: state.statistics.expiringContracts > 0 ? '#f5222d' : '#d9d9d9' }}>{state.statistics.expiringContracts}</div>
+                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>即将到期</div>
+                </ProCard>
+                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#722ed1' }}>¥{state.statistics.totalExpected?.toLocaleString()}</div>
+                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>本月应收</div>
+                </ProCard>
+            </ProCard>}
 
             <ProTable actionRef={actionRef} request={async (params: any) => {
                 const { current, pageSize } = params;
@@ -122,16 +138,18 @@ const ContractManagement: React.FC = () => {
             }} columns={columns} rowKey="id" search={false}
                 onChange={(_p, _f, s: any) => setSorter(s?.order ? { sortBy: s.field as string, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined)}
                 toolBarRender={() => [
-                  <Input.Search
-                    key="search"
-                    placeholder="搜索..."
-                    allowClear
-                    style={{ width: 260, marginRight: 8 }}
-                    allowClear
-                    value={searchParams.search}
-                    onChange={(e) => setSearchParams({ search: e.target.value })}
-                    onSearch={(v) => { setSearchParams({ search: v }); actionRef.current?.reload(); }}
-                  />,
+                    <Input.Search
+                        key="search"
+                        placeholder="搜索..."
+                        allowClear
+                        style={{ width: 260, marginRight: 8 }}
+                        value={searchParams.search}
+                        onChange={(e) => setSearchParams({ search: e.target.value })}
+                        onSearch={(v) => { setSearchParams({ search: v }); actionRef.current?.reload(); }}
+                        prefix={<SearchOutlined />}
+                    />,
+                    <Button key="refresh" icon={<ReloadOutlined />} onClick={() => { actionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }}>{intl.formatMessage({ id: 'common.refresh', defaultMessage: '刷新' })}</Button>,
+                    <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => set({ isEdit: false, currentContract: null, contractModalVisible: true, fileList: [] })}>新增合同</Button>,
                 ]}
             />
 

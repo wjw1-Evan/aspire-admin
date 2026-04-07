@@ -1,11 +1,12 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PageContainer, ProCard, ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-components';
+import { StatCard } from '@/components';
 import { useIntl, request } from '@umijs/max';
-import { Space, Button, Tag, Rate, App, Divider, Typography, Input } from 'antd';
+import { Space, Button, Tag, Rate, App, Divider, Typography, Input, Row, Col } from 'antd';
 import { Drawer } from 'antd';
 import { ProDescriptions } from '@ant-design/pro-components';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
-import { ReloadOutlined, StarFilled, FileSearchOutlined, StarOutlined } from '@ant-design/icons';
+import { StarFilled, FileSearchOutlined, StarOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 
@@ -20,12 +21,32 @@ const api = {
     createAssessment: (data: AssessmentFormData) => request<ApiResponse<VisitAssessment>>('/api/park-management/visit/assessment', { method: 'POST', data }),
 };
 
+interface Statistics { totalTasks: number; pendingAssessments: number; completedAssessments: number; averageScore: number; }
+
 const VisitAssessmentList: React.FC = () => {
     const intl = useIntl();
     const { message } = App.useApp();
     const actionRef = useRef<ActionType | undefined>(undefined);
-    const [state, setState] = useState({ detailVisible: false, assessmentVisible: false, selectedAssessment: null as VisitAssessment | null, selectedTask: null as VisitTask | null, search: '' });
+    const [state, setState] = useState({
+        detailVisible: false, assessmentVisible: false,
+        selectedAssessment: null as VisitAssessment | null, selectedTask: null as VisitTask | null,
+        search: '', statistics: null as Statistics | null,
+    });
     const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
+
+    const loadStatistics = useCallback(() => {
+        api.list({ page: 1, pageSize: 1000 }).then(res => {
+            if (res.success && res.data) {
+                const tasks = res.data.queryable || [];
+                const completed = tasks.filter((t: VisitTask) => t.assessmentId);
+                const scores = completed.map((t: VisitTask) => t.assessmentScore).filter((s) => s !== undefined) as number[];
+                const avg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+                set({ statistics: { totalTasks: tasks.length, pendingAssessments: tasks.length - completed.length, completedAssessments: completed.length, averageScore: avg } });
+            }
+        });
+    }, []);
+
+    useEffect(() => { loadStatistics(); }, [loadStatistics]);
 
     const columns: ProColumns<VisitTask>[] = [
         { title: intl.formatMessage({ id: 'pages.park.visit.visitDate', defaultMessage: '走访时间' }), dataIndex: 'visitDate', width: 170, render: (dom: any) => dom ? dayjs(dom).format('YYYY-MM-DD HH:mm') : '-' },
@@ -40,20 +61,40 @@ const VisitAssessmentList: React.FC = () => {
 
     return (
         <PageContainer title={intl.formatMessage({ id: 'pages.park.visit.assessment', defaultMessage: '走访评价管理' })}>
-            <ProCard style={{ padding: '16px 24px' }}>
-                <ProTable actionRef={actionRef} request={async (params: any) => { const { current, pageSize } = params; const res = await api.list({ page: current, pageSize, search: state.search }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={columns} rowKey="id" search={false} toolBarRender={() => [
-          <Input.Search
-            key="search"
-            placeholder="搜索..."
-            allowClear
-            value={state.search}
-            onChange={(e) => set({ search: e.target.value })}
-            onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
-            style={{ width: 260, marginRight: 8 }}
-          />,
-          <Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>{intl.formatMessage({ id: 'pages.park.common.refresh', defaultMessage: '刷新' })}</Button>
-        ]} />
+            <ProCard gutter={16} style={{ marginBottom: 16 }}>
+                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 'bold' }}>{state.statistics?.totalTasks || 0}</div>
+                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>总走访数</div>
+                </ProCard>
+                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#faad14' }}>{state.statistics?.pendingAssessments || 0}</div>
+                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>待评价</div>
+                </ProCard>
+                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#52c41a' }}>{state.statistics?.completedAssessments || 0}</div>
+                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>已评价</div>
+                </ProCard>
+                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#1890ff' }}>{state.statistics?.averageScore?.toFixed(1) || '0.0'}</div>
+                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>平均评分</div>
+                </ProCard>
             </ProCard>
+
+            <ProTable actionRef={actionRef} request={async (params: any) => { const { current, pageSize } = params; const res = await api.list({ page: current, pageSize, search: state.search }); loadStatistics(); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={columns} rowKey="id" search={false}
+                toolBarRender={() => [
+                    <Input.Search
+                        key="search"
+                        placeholder="搜索..."
+                        allowClear
+                        value={state.search}
+                        onChange={(e) => set({ search: e.target.value })}
+                        onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+                        style={{ width: 260, marginRight: 8 }}
+                        prefix={<SearchOutlined />}
+                    />,
+                    <Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>刷新</Button>,
+                ]}
+            />
 
             <Drawer title={intl.formatMessage({ id: 'pages.park.visit.assessmentDetail', defaultMessage: '走访评价详情' })} placement="right" open={state.detailVisible} onClose={(open) => { if (!open) set({ detailVisible: false, selectedAssessment: null }); }} width={500}>
                 {state.selectedAssessment && <div style={{ padding: '0 4px' }}>

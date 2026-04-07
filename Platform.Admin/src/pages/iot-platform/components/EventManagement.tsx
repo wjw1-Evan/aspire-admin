@@ -1,5 +1,4 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
 import { StatCard } from '@/components';
 import { useIntl } from '@umijs/max';
 import { type ProColumns, ActionType, ProTable } from '@ant-design/pro-table';
@@ -69,7 +68,7 @@ const EventManagement = React.forwardRef<EventManagementRef, any>((props, ref) =
   }, [state.editingEvent, fetchStatistics]);
 
   return (
-    <PageContainer title={<Space><AlertOutlined />事件告警</Space>}>
+    <>
       {state.statistics && <ProCard style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>
         {[{ key: 'total', title: '事件总数', icon: <AlertOutlined />, color: '#1890ff' },
           { key: 'unhandled', title: '未处理', icon: <CloseCircleOutlined />, color: '#ff4d4f' },
@@ -93,9 +92,8 @@ const EventManagement = React.forwardRef<EventManagementRef, any>((props, ref) =
             value={state.search}
             onChange={(e) => set({ search: e.target.value })}
             onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
-            style={{ width: 260, marginRight: 8 }}
+            style={{ width: 260 }}
           />,
-          <Button key="refresh" icon={<ReloadOutlined />} onClick={() => { actionRef.current?.reload(); fetchStatistics(); }}>刷新</Button>,
         ]}
       />
 
@@ -111,7 +109,7 @@ const EventManagement = React.forwardRef<EventManagementRef, any>((props, ref) =
         )}
         <ProFormTextArea name="remarks" label="处理备注" rules={[{ required: true, message: '请输入处理备注' }]} placeholder="请输入处理备注" />
       </ModalForm>
-    </PageContainer>
+    </>
   );
 });
 

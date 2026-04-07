@@ -112,7 +112,6 @@ const UserLog: React.FC = () => {
   return (
     <PageContainer
       title={<Space><FileTextOutlined />{intl.formatMessage({ id: 'pages.userLog.title' })}</Space>}
-      extra={<Space wrap><Button key="refresh" icon={<ReloadOutlined />} onClick={handleRefresh}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button></Space>}
     >
       {state.statistics && <Card style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>
         <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}><StatCard title={intl.formatMessage({ id: 'pages.userLog.stats.total', defaultMessage: '总记录数' })} value={state.statistics.total} icon={<DashboardOutlined />} color="#1890ff" /></Col>
@@ -152,6 +151,7 @@ const UserLog: React.FC = () => {
             onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
             style={{ width: 260, marginRight: 8 }}
           />,
+          <Button key="refresh" icon={<ReloadOutlined />} onClick={handleRefresh}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button>,
         ]}
       />
 

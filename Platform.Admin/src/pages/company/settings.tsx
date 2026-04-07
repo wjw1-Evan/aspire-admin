@@ -209,72 +209,19 @@ export default function CompanySettings() {
         style={{ marginBottom: 16 }}
       >
         {company && (
-          <ProDescriptions
-            column={2}
-            bordered
-            items={[
-              {
-                key: 'name',
-                label: intl.formatMessage({ id: 'pages.companySettings.details.name' }),
-                children: company.name,
-              },
-              {
-                key: 'code',
-                label: intl.formatMessage({ id: 'pages.companySettings.details.code' }),
-                children: <Tag color="blue">{company.code}</Tag>,
-              },
-              {
-                key: 'displayName',
-                label: intl.formatMessage({ id: 'pages.companySettings.details.displayName' }),
-                children: company.displayName || '-',
-              },
-              {
-                key: 'industry',
-                label: intl.formatMessage({ id: 'pages.companySettings.details.industry' }),
-                children: company.industry || '-',
-              },
-              {
-                key: 'contactName',
-                label: intl.formatMessage({ id: 'pages.companySettings.details.contactName' }),
-                children: company.contactName || '-',
-              },
-              {
-                key: 'contactEmail',
-                label: intl.formatMessage({ id: 'pages.companySettings.details.contactEmail' }),
-                children: company.contactEmail || '-',
-              },
-              {
-                key: 'contactPhone',
-                label: intl.formatMessage({ id: 'pages.companySettings.details.contactPhone' }),
-                children: company.contactPhone || '-',
-              },
-              {
-                key: 'logo',
-                label: intl.formatMessage({ id: 'pages.companySettings.edit.logoLabel' }),
-                children: company.logo ? (
-                  <img src={company.logo} alt="logo" style={{ maxHeight: 32 }} />
-                ) : (
-                  '-'
-                ),
-              },
-              {
-                key: 'description',
-                label: intl.formatMessage({ id: 'pages.companySettings.details.description' }),
-                span: 2,
-                children: company.description || '-',
-              },
-              {
-                key: 'createdAt',
-                label: intl.formatMessage({ id: 'pages.companySettings.details.createdAt' }),
-                children: company.createdAt ? dayjs(company.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-',
-              },
-              {
-                key: 'updatedAt',
-                label: intl.formatMessage({ id: 'pages.companySettings.details.updatedAt' }),
-                children: company.updatedAt ? dayjs(company.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-',
-              },
-            ]}
-          />
+          <ProDescriptions column={2} bordered size="small">
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.name' })}>{company.name}</ProDescriptions.Item>
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.code' })}><Tag color="blue">{company.code}</Tag></ProDescriptions.Item>
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.displayName' })}>{company.displayName || '-'}</ProDescriptions.Item>
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.industry' })}>{company.industry || '-'}</ProDescriptions.Item>
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.contactName' })}>{company.contactName || '-'}</ProDescriptions.Item>
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.contactEmail' })}>{company.contactEmail || '-'}</ProDescriptions.Item>
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.contactPhone' })}>{company.contactPhone || '-'}</ProDescriptions.Item>
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.edit.logoLabel' })}>{company.logo ? <img src={company.logo} alt="logo" style={{ maxHeight: 32 }} /> : '-'}</ProDescriptions.Item>
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.description' })} span={2}>{company.description || '-'}</ProDescriptions.Item>
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.createdAt' })}>{company.createdAt ? dayjs(company.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.updatedAt' })}>{company.updatedAt ? dayjs(company.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
+          </ProDescriptions>
         )}
       </Card>
 

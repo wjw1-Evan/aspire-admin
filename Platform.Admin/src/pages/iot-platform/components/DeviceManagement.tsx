@@ -1,5 +1,4 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
 import { StatCard } from '@/components';
 import { useIntl } from '@umijs/max';
 import { type ProColumns, ActionType, ProTable } from '@ant-design/pro-table';
@@ -136,7 +135,7 @@ const DeviceManagement = React.forwardRef<DeviceManagementRef, any>((props, ref)
   }, [state.selectedRowKeys, confirm, fetchStatistics]);
 
   return (
-    <PageContainer title={<Space><DesktopOutlined />设备管理</Space>}>
+    <>
       {state.statistics && <ProCard style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>
         {[{ key: 'total', title: '设备总数', icon: <DesktopOutlined />, color: '#1890ff' },
           { key: 'online', title: '在线设备', icon: <CheckCircleOutlined />, color: '#52c41a' },
@@ -171,7 +170,6 @@ const DeviceManagement = React.forwardRef<DeviceManagementRef, any>((props, ref)
             onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
             style={{ width: 260, marginRight: 8 }}
           />,
-          <Button key="refresh" icon={<ReloadOutlined />} onClick={() => { actionRef.current?.reload(); fetchStatistics(); }}>刷新</Button>,
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { set({ editingDevice: null, formVisible: true }); form.resetFields(); }}>新建</Button>,
         ]}
       />
@@ -252,7 +250,7 @@ const DeviceManagement = React.forwardRef<DeviceManagementRef, any>((props, ref)
           ]} />
         )}
       </Drawer>
-    </PageContainer>
+    </>
   );
 });
 

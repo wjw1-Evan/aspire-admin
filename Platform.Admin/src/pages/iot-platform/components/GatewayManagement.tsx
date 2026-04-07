@@ -1,5 +1,4 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
 import { StatCard } from '@/components';
 import { useIntl } from '@umijs/max';
 import { type ProColumns, ActionType, ProTable } from '@ant-design/pro-table';
@@ -87,7 +86,7 @@ const GatewayManagement = React.forwardRef<GatewayManagementRef, any>((props, re
   useEffect(() => { if (state.detailVisible && state.viewingGateway) handleViewDetail(state.viewingGateway); }, [state.detailVisible, state.viewingGateway, handleViewDetail]);
 
   return (
-    <PageContainer title={<Space><CloudServerOutlined />网关管理</Space>}>
+    <>
       {state.statistics && <ProCard style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>
         {[{ key: 'total', title: '网关总数', icon: <CloudServerOutlined />, color: '#1890ff' },
           { key: 'online', title: '在线', icon: <CheckCircleOutlined />, color: '#52c41a' },
@@ -113,7 +112,6 @@ const GatewayManagement = React.forwardRef<GatewayManagementRef, any>((props, re
             onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
             style={{ width: 260, marginRight: 8 }}
           />,
-          <Button key="refresh" icon={<ReloadOutlined />} onClick={() => { actionRef.current?.reload(); fetchStatistics(); }}>刷新</Button>,
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { set({ editingGateway: null, formVisible: true }); form.resetFields(); }}>新建</Button>,
         ]}
       />
@@ -166,7 +164,7 @@ const GatewayManagement = React.forwardRef<GatewayManagementRef, any>((props, re
           </>
         )}
       </Drawer>
-    </PageContainer>
+    </>
   );
 });
 

@@ -1,10 +1,12 @@
-import React, { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
+import React, { useEffect, useRef, useState, useCallback, forwardRef } from 'react';
 import { useIntl } from '@umijs/max';
-import { Button, Tag, Space, Card, Grid, Form } from 'antd';
+import { Button, Tag, Space, Form, Input } from 'antd';
 import {
   EditOutlined,
   DeleteOutlined,
   SettingOutlined,
+  PlusOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import { useMessage } from '@/hooks/useMessage';
 import { useModal } from '@/hooks/useModal';
@@ -16,25 +18,17 @@ import {
 } from '@/services/xiaoke/api';
 import ConfigForm from './ConfigForm';
 import dayjs from 'dayjs';
-import { ProTable, ProColumns } from '@ant-design/pro-table';
+import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import type { PageParams } from '@/types';
 
-export interface ConfigManagementRef {
-  reload: () => void;
-  handleCreate: () => void;
-}
-
-const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
+const ConfigManagement: React.FC = () => {
   const intl = useIntl();
   const message = useMessage();
   const { confirm } = useModal();
-  const tableRef = useRef<HTMLDivElement>(null);
-  const { useBreakpoint } = Grid;
-  const screens = useBreakpoint();
-  const isMobile = !screens.md;
-  const [searchForm] = Form.useForm();
+  const actionRef = useRef<ActionType | undefined>(undefined);
   const [formVisible, setFormVisible] = useState(false);
   const [editingConfig, setEditingConfig] = useState<XiaokeConfig | null>(null);
+  const [searchText, setSearchText] = useState('');
 
   const handleCreate = useCallback(() => {
     setEditingConfig(null);
@@ -58,6 +52,7 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
           const response = await deleteXiaokeConfig(record.id);
           if (response.success) {
             message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.deleteSuccess' }));
+            actionRef.current?.reload();
           } else {
             message.error(response.message || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.deleteFailed' }));
           }
@@ -73,6 +68,7 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
       const response = await setDefaultXiaokeConfig(record.id);
       if (response.success) {
         message.success(intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.setDefaultSuccess' }));
+        actionRef.current?.reload();
       } else {
         message.error(response.message || intl.formatMessage({ id: 'pages.xiaokeManagement.config.message.setDefaultFailed' }));
       }
@@ -84,19 +80,13 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
   const handleFormSuccess = useCallback(() => {
     setFormVisible(false);
     setEditingConfig(null);
+    actionRef.current?.reload();
   }, []);
 
   const handleCloseForm = useCallback(() => {
     setFormVisible(false);
     setEditingConfig(null);
   }, []);
-
-  useImperativeHandle(ref, () => ({
-    reload: () => {
-      tableRef.current?.querySelector('button[data-action="reload"]')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    },
-    handleCreate,
-  }), [handleCreate]);
 
   const columns: ProColumns<XiaokeConfig>[] = [
     {
@@ -208,19 +198,17 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
     <>
       <ProTable<XiaokeConfig>
         headerTitle={intl.formatMessage({ id: 'pages.xiaokeManagement.config.title', defaultMessage: '小科配置管理' })}
-        actionRef={tableRef as any}
+        actionRef={actionRef}
         rowKey="id"
-        search={{
-          labelWidth: 'auto',
-        }}
+        search={false}
         request={async (params: any) => {
-          const { current, pageSize, name, isEnabled, ...rest } = params;
+          const { current, pageSize, sortBy, sortOrder } = params;
           const response = await getXiaokeConfigs({
             page: current,
             pageSize,
-            search: name,
-            isEnabled,
-            ...rest,
+            search: searchText,
+            sortBy,
+            sortOrder,
           } as PageParams);
           if (response.success && response.data) {
             return { data: response.data.queryable || [], total: response.data.rowCount || 0, success: true };
@@ -230,7 +218,17 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
         columns={columns}
         scroll={{ x: 'max-content' }}
         toolBarRender={() => [
-          <Button key="create" type="primary" icon={<EditOutlined />} onClick={handleCreate}>
+          <Input.Search
+            key="search"
+            placeholder="搜索..."
+            allowClear
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            onSearch={(value) => { setSearchText(value); actionRef.current?.reload(); }}
+            style={{ width: 260, marginRight: 8 }}
+            prefix={<SearchOutlined />}
+          />,
+          <Button key="create" type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
             {intl.formatMessage({ id: 'pages.xiaokeManagement.config.createConfig', defaultMessage: '新建配置' })}
           </Button>,
         ]}
@@ -244,8 +242,6 @@ const ConfigManagement = forwardRef<ConfigManagementRef>((props, ref) => {
       />
     </>
   );
-});
-
-ConfigManagement.displayName = 'ConfigManagement';
+};
 
 export default ConfigManagement;

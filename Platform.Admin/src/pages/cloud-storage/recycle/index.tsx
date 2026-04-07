@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { Button, Space, Modal, Form, Input, Select, App } from 'antd';
-import { DeleteOutlined, ClearOutlined } from '@ant-design/icons';
-import { ProTable, ProColumns } from '@ant-design/pro-table';
+import { DeleteOutlined, ClearOutlined, SearchOutlined } from '@ant-design/icons';
+import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -15,10 +15,10 @@ interface RecycleItem { id: string; name: string; originalPath?: string; size: n
 interface RecycleStatistics { totalItems: number; totalSize: number; oldestItem?: string; newestItem?: string; }
 
 const api = {
-    list: (params: PageParams) => request<ApiResponse<PagedResult<RecycleItem>>>('/api/cloud-storage/recycle/list', { params }),
-    restore: (data: { itemId: string; targetParentId?: string; newName?: string }) => request<ApiResponse<void>>('/api/cloud-storage/recycle/restore', { method: 'POST', data }),
-    permanentDelete: (id: string) => request<ApiResponse<void>>(`/api/cloud-storage/recycle/${id}/permanent`, { method: 'DELETE' }),
-    empty: () => request<ApiResponse<{ deletedCount: number; freedSpace: number }>>('/api/cloud-storage/recycle/empty', { method: 'POST' }),
+    list: (params: PageParams) => request<ApiResponse<PagedResult<RecycleItem>>>('/api/cloud-storage/recycle', { params }),
+    restore: (id: string, data: { itemId: string; newParentId?: string }) => request<ApiResponse<void>>(`/api/cloud-storage/recycle-bin/${id}/restore`, { method: 'POST', data }),
+    permanentDelete: (id: string) => request<ApiResponse<void>>(`/api/cloud-storage/recycle-bin/${id}`, { method: 'DELETE' }),
+    empty: () => request<ApiResponse<{ deletedCount: number; freedSpace: number }>>('/api/cloud-storage/recycle-bin/empty', { method: 'DELETE' }),
     statistics: () => request<ApiResponse<RecycleStatistics>>('/api/cloud-storage/recycle/statistics'),
 };
 
@@ -26,6 +26,8 @@ const CloudStorageRecyclePage: React.FC = () => {
     const intl = useIntl();
     const { message } = App.useApp();
     const [form] = Form.useForm();
+    const actionRef = useRef<ActionType | undefined>(undefined);
+    const [searchText, setSearchText] = useState('');
 
     const formatFileSize = (bytes: number) => { if (bytes === 0) return '0 B'; const k = 1024; const sizes = ['B', 'KB', 'MB', 'GB', 'TB']; const i = Math.floor(Math.log(bytes) / Math.log(k)); return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]; };
 
@@ -59,8 +61,9 @@ const CloudStorageRecyclePage: React.FC = () => {
                             ),
                             onOk: async () => {
                                 try {
-                                    await api.restore({ itemId: r.id, newName: form.getFieldValue('newName') !== r.name ? form.getFieldValue('newName') : undefined });
+                                    await api.restore(r.id, { itemId: r.id });
                                     message.success('恢复成功');
+                                    actionRef.current?.reload();
                                 } catch { message.error('恢复失败'); }
                             }
                         });
@@ -85,9 +88,35 @@ const CloudStorageRecyclePage: React.FC = () => {
     ];
 
     return (
-        <PageContainer title={<Space><DeleteOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.recycle.title' })}</Space>}
-            extra={<Space wrap>
-                <Button key="empty" danger type="primary" icon={<ClearOutlined />} onClick={() => {
+        <PageContainer title={<Space><DeleteOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.recycle.title' })}</Space>}>
+            <ProTable
+                headerTitle={intl.formatMessage({ id: 'pages.cloud-storage.recycle.title' })}
+                actionRef={actionRef}
+                rowKey="id"
+                search={false}
+                request={async (params: any) => {
+                    const { current, pageSize, sortBy, sortOrder } = params;
+                    const res = await api.list({ page: current, pageSize, search: searchText, sortBy, sortOrder } as PageParams);
+                    if (res.success && res.data) {
+                        const list = (res.data.queryable || []).map((item: RecycleItem) => ({ ...item, isFolder: item.isFolder ?? (item.type === 'folder' || item.type === 'Folder' || item.type === 1) }));
+                        return { data: list, total: res.data.rowCount || 0, success: true };
+                    }
+                    return { data: [], total: 0, success: false };
+                }}
+                columns={columns}
+                scroll={{ x: 'max-content' }}
+                toolBarRender={() => [
+                  <Input.Search
+                    key="search"
+                    placeholder="搜索..."
+                    allowClear
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    onSearch={(value) => { setSearchText(value); actionRef.current?.reload(); }}
+                    style={{ width: 260, marginRight: 8 }}
+                    prefix={<SearchOutlined />}
+                  />,
+                  <Button key="empty" danger type="primary" icon={<ClearOutlined />} onClick={() => {
                     Modal.confirm({
                         title: '确认清空回收站',
                         content: '确定要清空整个回收站吗？此操作将永久删除所有文件，无法恢复！',
@@ -97,26 +126,12 @@ const CloudStorageRecyclePage: React.FC = () => {
                             try {
                                 const res = await api.empty();
                                 if (res.success && res.data) message.success(`清空成功，删除了 ${res.data.deletedCount} 个文件`);
+                                actionRef.current?.reload();
                             } catch { message.error('清空失败'); }
                         }
                     });
-                }}>清空回收站</Button>
-            </Space>}>
-            <ProTable
-                headerTitle={intl.formatMessage({ id: 'pages.cloud-storage.recycle.title' })}
-                rowKey="id"
-                search={{ labelWidth: 'auto' }}
-                request={async (params: any) => {
-                    const { current, pageSize, ...rest } = params;
-                    const res = await api.list({ page: current, pageSize, ...rest } as PageParams);
-                    if (res.success && res.data) {
-                        const list = (res.data.queryable || []).map((item: RecycleItem) => ({ ...item, isFolder: item.isFolder ?? (item.type === 'folder' || item.type === 'Folder' || item.type === 1) }));
-                        return { data: list, total: res.data.rowCount || 0, success: true };
-                    }
-                    return { data: [], total: 0, success: false };
-                }}
-                columns={columns}
-                scroll={{ x: 'max-content' }}
+                  }}>清空回收站</Button>,
+                ]}
             />
         </PageContainer>
     );

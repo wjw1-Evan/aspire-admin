@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { PageContainer, ModalForm, ProFormText, ProFormSelect, ProFormSwitch } from '@ant-design/pro-components';
-import { Button, Space, Tag, App, Modal } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, PartitionOutlined, ReloadOutlined } from '@ant-design/icons';
-import { ProTable, ProColumns } from '@ant-design/pro-table';
+import { Button, Space, Tag, App, Modal, Input } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, PartitionOutlined, SearchOutlined } from '@ant-design/icons';
+import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { getWorkflowList, deleteWorkflow, type WorkflowDefinition } from '@/services/workflow/api';
 import WorkflowCreateForm from './components/WorkflowCreateForm';
 import WorkflowEditForm from './components/WorkflowEditForm';
@@ -13,10 +13,12 @@ import type { PageParams } from '@/types';
 const WorkflowManagement: React.FC = () => {
   const intl = useIntl();
   const { message, modal } = App.useApp();
+  const actionRef = useRef<ActionType | undefined>(undefined);
   const [designerVisible, setDesignerVisible] = useState(false);
   const [editingWorkflow, setEditingWorkflow] = useState<WorkflowDefinition | null>(null);
   const [previewVisible, setPreviewVisible] = useState(false);
   const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [searchText, setSearchText] = useState('');
 
   const columns: ProColumns<WorkflowDefinition>[] = [
     {
@@ -50,7 +52,7 @@ const WorkflowManagement: React.FC = () => {
               onOk: async () => {
                 try {
                   const response = await deleteWorkflow(record.id!);
-                  if (response.success) { message.success(intl.formatMessage({ id: 'pages.workflow.message.deleteSuccess' })); }
+                  if (response.success) { message.success(intl.formatMessage({ id: 'pages.workflow.message.deleteSuccess' })); actionRef.current?.reload(); }
                 } catch (error) { console.error('删除失败:', error); }
               },
             });
@@ -65,18 +67,15 @@ const WorkflowManagement: React.FC = () => {
   return (
     <PageContainer
       title={<Space><PartitionOutlined />{intl.formatMessage({ id: 'pages.workflow.title' })}</Space>}
-      extra={<Space wrap>
-        <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => setCreateModalVisible(true)}>{intl.formatMessage({ id: 'pages.workflow.create' })}</Button>
-      </Space>}
     >
       <ProTable
         headerTitle={intl.formatMessage({ id: 'pages.workflow.table.name' })}
-        actionRef={undefined}
+        actionRef={actionRef}
         rowKey="id"
-        search={{ labelWidth: 'auto' }}
+        search={false}
         request={async (params: any) => {
-          const { current, pageSize, ...rest } = params;
-          const response = await getWorkflowList({ page: current, pageSize, ...rest } as PageParams);
+          const { current, pageSize, sortBy, sortOrder } = params;
+          const response = await getWorkflowList({ page: current, pageSize, search: searchText, sortBy, sortOrder } as PageParams);
           if (response.success && response.data) {
             return { data: response.data.queryable || [], total: response.data.rowCount || 0, success: true };
           }
@@ -85,15 +84,25 @@ const WorkflowManagement: React.FC = () => {
         columns={columns}
         scroll={{ x: 'max-content' }}
         toolBarRender={() => [
-          <Button key="refresh" icon={<ReloadOutlined />} onClick={() => window.location.reload()}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button>,
+          <Input.Search
+            key="search"
+            placeholder="搜索..."
+            allowClear
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            onSearch={(value) => { setSearchText(value); actionRef.current?.reload(); }}
+            style={{ width: 260, marginRight: 8 }}
+            prefix={<SearchOutlined />}
+          />,
+          <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => setCreateModalVisible(true)}>{intl.formatMessage({ id: 'pages.workflow.create' })}</Button>,
         ]}
       />
       <Modal title={intl.formatMessage({ id: 'pages.workflow.create.title' })} open={createModalVisible} onCancel={() => setCreateModalVisible(false)} footer={null} width="95%" style={{ top: 20 }} styles={{ body: { height: 'calc(100vh - 100px)', padding: '12px 24px' } }} destroyOnHidden>
-        <WorkflowCreateForm onSuccess={() => { setCreateModalVisible(false); window.location.reload(); }} onCancel={() => setCreateModalVisible(false)} />
+        <WorkflowCreateForm onSuccess={() => { setCreateModalVisible(false); actionRef.current?.reload(); }} onCancel={() => setCreateModalVisible(false)} />
       </Modal>
       <Modal title={editingWorkflow && designerVisible ? intl.formatMessage({ id: 'pages.workflow.action.edit' }) : intl.formatMessage({ id: 'pages.workflow.action.preview' })} open={designerVisible || previewVisible} onCancel={() => { setDesignerVisible(false); setPreviewVisible(false); setEditingWorkflow(null); }} footer={null} width="95%" style={{ top: 20 }} styles={{ body: { height: 'calc(100vh - 100px)', padding: '12px 24px' } }} destroyOnHidden>
         {editingWorkflow && (
-          <WorkflowEditForm workflow={editingWorkflow} readOnly={previewVisible} onSuccess={() => { setDesignerVisible(false); setEditingWorkflow(null); window.location.reload(); }} onCancel={() => { setDesignerVisible(false); setPreviewVisible(false); setEditingWorkflow(null); }} />
+          <WorkflowEditForm workflow={editingWorkflow} readOnly={previewVisible} onSuccess={() => { setDesignerVisible(false); setEditingWorkflow(null); actionRef.current?.reload(); }} onCancel={() => { setDesignerVisible(false); setPreviewVisible(false); setEditingWorkflow(null); }} />
         )}
       </Modal>
     </PageContainer>

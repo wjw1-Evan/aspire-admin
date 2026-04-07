@@ -1,13 +1,12 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
-import { MessageOutlined, ReloadOutlined } from '@ant-design/icons';
-import { Space, Button } from 'antd';
-import ChatHistoryManagement, { type ChatHistoryManagementRef } from './components/ChatHistoryManagement';
+import { MessageOutlined } from '@ant-design/icons';
+import { Space } from 'antd';
+import ChatHistoryManagement from './components/ChatHistoryManagement';
 
 const ChatHistoryPage: React.FC = () => {
   const intl = useIntl();
-  const chatHistoryManagementRef = useRef<ChatHistoryManagementRef>(null);
 
   return (
     <PageContainer
@@ -17,19 +16,8 @@ const ChatHistoryPage: React.FC = () => {
           {intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.title' })}
         </Space>
       }
-      extra={
-        <Space wrap>
-          <Button
-            key="refresh"
-            icon={<ReloadOutlined />}
-            onClick={() => chatHistoryManagementRef.current?.reload()}
-          >
-            {intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.refresh' })}
-          </Button>
-        </Space>
-      }
     >
-      <ChatHistoryManagement ref={chatHistoryManagementRef} />
+      <ChatHistoryManagement />
     </PageContainer>
   );
 };

@@ -1,12 +1,10 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
-import { StatCard } from '@/components';
+import { PageContainer, ProCard } from '@ant-design/pro-components';
 import { request } from '@umijs/max';
-import { Tag, Space, Row, Col, Button, Input, InputNumber, Select, Switch, App, List, Typography, Drawer, Transfer, Empty, Tabs } from 'antd';
+import { Tag, Space, Button, Input, App, List, Typography, Drawer, Transfer, Empty, Tabs } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
-import { ProCard } from '@ant-design/pro-components';
 import { ModalForm, ProFormText, ProFormSelect } from '@ant-design/pro-form';
-import { PlusOutlined, ReloadOutlined, QuestionCircleOutlined, FileTextOutlined, StarOutlined, StarFilled, EditOutlined, DeleteOutlined, EyeOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
+import { PlusOutlined, ReloadOutlined, QuestionCircleOutlined, FileTextOutlined, StarOutlined, StarFilled, EditOutlined, DeleteOutlined, EyeOutlined, ArrowUpOutlined, ArrowDownOutlined, SearchOutlined } from '@ant-design/icons';
 import { ProDescriptions } from '@ant-design/pro-components';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
@@ -45,6 +43,14 @@ const VisitKnowledgeBase: React.FC = () => {
     });
     const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
+    const loadAllQuestions = async () => { const res = await api.questions({ page: 1, pageSize: 1000 }); if (res.success && res.data) set({ allQuestions: res.data.queryable }); };
+    const handleDeleteQuestion = (id: string) => { modal.confirm({ title: '确定要删除这个走访问题吗？', icon: <QuestionCircleOutlined />, content: '删除后将无法在问卷组题中使用', okText: '确定', okType: 'danger', cancelText: '取消', onOk: async () => { const res = await api.deleteQuestion(id); if (res.success) { message.success('删除成功'); actionRef.current?.reload(); loadStatistics(); } } }); };
+    const handleDeleteQuestionnaire = (id: string) => { modal.confirm({ title: '确定要删除这个问卷模板吗？', icon: <QuestionCircleOutlined />, content: '删除后将无法使用该模版创建走访任务', okText: '确定', okType: 'danger', cancelText: '取消', onOk: async () => { const res = await api.deleteQuestionnaire(id); if (res.success) { message.success('删除成功'); actionRef.current?.reload(); loadStatistics(); } } }); };
+    const handleMoveQuestion = (index: number, direction: 'up' | 'down') => { const newTargetKeys = [...state.targetKeys]; const swapIndex = direction === 'up' ? index - 1 : index + 1; if (swapIndex >= 0 && swapIndex < newTargetKeys.length) { [newTargetKeys[index], newTargetKeys[swapIndex]] = [newTargetKeys[swapIndex], newTargetKeys[index]]; set({ targetKeys: newTargetKeys as string[] }); } };
+    const loadStatistics = () => { api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); };
+
+    useEffect(() => { loadStatistics(); loadAllQuestions(); }, []);
+
     const questionColumns: ProColumns<VisitQuestion>[] = [
         { title: '问题内容', dataIndex: 'content', key: 'content', sorter: true, ellipsis: true, render: (dom, r) => <Space><QuestionCircleOutlined style={{ color: '#1890ff' }} /><Text strong>{dom}</Text></Space> },
         { title: '分类', dataIndex: 'category', key: 'category', sorter: true, width: 120, render: (dom) => <Tag color="blue">{dom || '通用'}</Tag> },
@@ -68,25 +74,76 @@ const VisitKnowledgeBase: React.FC = () => {
         ]},
     ];
 
-    const loadAllQuestions = async () => { const res = await api.questions({ page: 1 }); if (res.success && res.data) set({ allQuestions: res.data.queryable }); };
-    const handleDeleteQuestion = (id: string) => { modal.confirm({ title: '确定要删除这个走访问题吗？', icon: <QuestionCircleOutlined />, content: '删除后将无法在问卷组题中使用', okText: '确定', okType: 'danger', cancelText: '取消', onOk: async () => { const res = await api.deleteQuestion(id); if (res.success) { message.success('删除成功'); actionRef.current?.reload(); loadStatistics(); } } }); };
-    const handleDeleteQuestionnaire = (id: string) => { modal.confirm({ title: '确定要删除这个问卷模板吗？', icon: <QuestionCircleOutlined />, content: '删除后将无法使用该模版创建走访任务', okText: '确定', okType: 'danger', cancelText: '取消', onOk: async () => { const res = await api.deleteQuestionnaire(id); if (res.success) { message.success('删除成功'); actionRef.current?.reload(); loadStatistics(); } } }); };
-    const handleMoveQuestion = (index: number, direction: 'up' | 'down') => { const newTargetKeys = [...state.targetKeys]; const swapIndex = direction === 'up' ? index - 1 : index + 1; if (swapIndex >= 0 && swapIndex < newTargetKeys.length) { [newTargetKeys[index], newTargetKeys[swapIndex]] = [newTargetKeys[swapIndex], newTargetKeys[index]]; set({ targetKeys: newTargetKeys as string[] }); } };
-    const loadStatistics = () => { api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); };
+    const questionToolBar = () => [
+        <Input.Search
+            key="search"
+            placeholder="搜索..."
+            allowClear
+            value={state.search}
+            onChange={(e) => set({ search: e.target.value })}
+            onSearch={(v) => { set({ search: v }); actionRef.current?.reload(); }}
+            style={{ width: 260, marginRight: 8 }}
+            prefix={<SearchOutlined />}
+        />,
+        <Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>刷新</Button>,
+        <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingQuestion: null, questionModalVisible: true })}>新增问题</Button>,
+    ];
 
-    useEffect(() => { loadStatistics(); loadAllQuestions(); }, []);
+    const templateToolBar = () => [
+        <Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>刷新</Button>,
+        <Button key="create" type="primary" icon={<PlusOutlined />} onClick={async () => { set({ editingQuestionnaire: null, targetKeys: [] }); await loadAllQuestions(); set({ questionnaireModalVisible: true }); }}>新增问卷</Button>,
+    ];
 
     return (
-        <PageContainer title="走访知识库" extra={
-            <Space>
-                <Button icon={<ReloadOutlined />} onClick={() => { actionRef.current?.reload(); loadStatistics(); }}>刷新</Button>
-                {state.activeTab === 'questions' ? (<Button type="primary" icon={<PlusOutlined />} onClick={() => set({ editingQuestion: null, questionModalVisible: true })}>新增问题</Button>)
-                    : (<Button type="primary" icon={<PlusOutlined />} onClick={async () => { set({ editingQuestionnaire: null, targetKeys: [] }); await loadAllQuestions(); set({ questionnaireModalVisible: true }); }}>新增问卷</Button>)}
-            </Space>
-        }>
+        <PageContainer title="走访知识库">
+            <ProCard gutter={16} style={{ marginBottom: 16 }}>
+                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 'bold' }}>{state.allQuestions.length}</div>
+                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>问题总数</div>
+                </ProCard>
+                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#52c41a' }}>{state.allQuestions.filter((q) => q.isFrequentlyUsed).length}</div>
+                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>常用问题</div>
+                </ProCard>
+                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#1890ff' }}>{state.statistics?.totalAssessments || 0}</div>
+                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>评价总数</div>
+                </ProCard>
+                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#722ed1' }}>{state.statistics?.averageScore?.toFixed(1) || '0.0'}</div>
+                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>平均评分</div>
+                </ProCard>
+            </ProCard>
+
             <Tabs activeKey={state.activeTab} onChange={(k) => set({ activeTab: k })} items={[
-                { key: 'questions', label: '高频问题库', children: (<ProCard><ProTable actionRef={actionRef} rowKey="id" request={async (params: any) => { const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined; const res = await api.questions({ page: current, pageSize, search: state.search, ...sortParams }); loadStatistics(); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={questionColumns} search={false}                   toolBarRender={() => [<Input.Search key="search" placeholder="搜索..." allowClear value={state.search} onChange={(e) => set({ search: e.target.value })} onSearch={(v) => { set({ search: v }); actionRef.current?.reload(); }} style={{ width: 260, marginRight: 8 }} />]} onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })} /></ProCard>) },
-                { key: 'templates', label: '问卷模板', children: (<ProCard><ProTable actionRef={actionRef} rowKey="id" request={async (params: any) => { const { current, pageSize } = params; const res = await api.questionnaires({ page: current, pageSize }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={questionnaireColumns} search={false} toolBarRender={() => [<Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>刷新</Button>]} /></ProCard>) }
+                {
+                    key: 'questions', label: '高频问题库', children: (
+                        <ProTable actionRef={actionRef} rowKey="id"
+                            request={async (params: any) => {
+                                const { current, pageSize } = params;
+                                const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
+                                const res = await api.questions({ page: current, pageSize, search: state.search, ...sortParams });
+                                return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+                            }}
+                            columns={questionColumns} search={false}
+                            toolBarRender={questionToolBar}
+                            onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
+                        />
+                    )
+                },
+                {
+                    key: 'templates', label: '问卷模板', children: (
+                        <ProTable actionRef={actionRef} rowKey="id"
+                            request={async (params: any) => {
+                                const { current, pageSize } = params;
+                                const res = await api.questionnaires({ page: current, pageSize });
+                                return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+                            }}
+                            columns={questionnaireColumns} search={false}
+                            toolBarRender={templateToolBar}
+                        />
+                    )
+                }
             ]} />
 
             <ModalForm key={state.editingQuestion?.id || 'create-question'} title={state.editingQuestion ? '编辑问题' : '新增问题'} open={state.questionModalVisible} onOpenChange={(open) => { if (!open) set({ questionModalVisible: false, editingQuestion: null }); }}

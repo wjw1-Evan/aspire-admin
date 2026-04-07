@@ -1,12 +1,10 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { Button, Space } from 'antd';
-import { PlusOutlined, ReloadOutlined, ApiOutlined } from '@ant-design/icons';
-import GatewayManagement, { GatewayManagementRef } from './components/GatewayManagement';
+import { Space } from 'antd';
+import { ApiOutlined } from '@ant-design/icons';
+import GatewayManagement from './components/GatewayManagement';
 
 const GatewayManagementPage: React.FC = () => {
-  const managementRef = useRef<GatewayManagementRef>(null);
-
   return (
     <PageContainer
       title={
@@ -15,35 +13,10 @@ const GatewayManagementPage: React.FC = () => {
           网关管理
         </Space>
       }
-      extra={
-        <Space>
-          <Button
-            key="refresh"
-            icon={<ReloadOutlined />}
-            onClick={() => {
-              managementRef.current?.reload();
-              managementRef.current?.refreshStats();
-            }}
-          >
-            刷新
-          </Button>
-          <Button
-            key="create"
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              managementRef.current?.handleAdd();
-            }}
-          >
-            新建网关
-          </Button>
-        </Space>
-      }
     >
-      <GatewayManagement ref={managementRef} />
+      <GatewayManagement />
     </PageContainer>
   );
 };
 
 export default GatewayManagementPage;
-

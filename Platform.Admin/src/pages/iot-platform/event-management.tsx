@@ -1,12 +1,10 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { Button, Space } from 'antd';
-import { ReloadOutlined, BellOutlined } from '@ant-design/icons';
-import EventManagement, { EventManagementRef } from './components/EventManagement';
+import { Space } from 'antd';
+import { BellOutlined } from '@ant-design/icons';
+import EventManagement from './components/EventManagement';
 
 const EventManagementPage: React.FC = () => {
-  const managementRef = useRef<EventManagementRef>(null);
-
   return (
     <PageContainer
       title={
@@ -15,25 +13,10 @@ const EventManagementPage: React.FC = () => {
           事件管理
         </Space>
       }
-      extra={
-        <Space>
-          <Button
-            key="refresh"
-            icon={<ReloadOutlined />}
-            onClick={() => {
-              managementRef.current?.reload();
-              managementRef.current?.refreshStats();
-            }}
-          >
-            刷新
-          </Button>
-        </Space>
-      }
     >
-      <EventManagement ref={managementRef} />
+      <EventManagement />
     </PageContainer>
   );
 };
 
 export default EventManagementPage;
-

@@ -1,5 +1,4 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
 import { StatCard } from '@/components';
 import { useIntl } from '@umijs/max';
 import { type ProColumns, ActionType, ProTable } from '@ant-design/pro-table';
@@ -105,7 +104,7 @@ const DataPointManagement = React.forwardRef<DataPointManagementRef, any>((props
   }, [state.editingDataPoint, fetchStatistics]);
 
   return (
-    <PageContainer title={<Space><DatabaseOutlined />数据点管理</Space>}>
+    <>
       {state.statistics && <ProCard style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>
         {[{ key: 'total', title: '数据点总数', icon: <DatabaseOutlined />, color: '#1890ff' },
           { key: 'enabled', title: '已启用', icon: <CheckCircleOutlined />, color: '#52c41a' },
@@ -131,7 +130,6 @@ const DataPointManagement = React.forwardRef<DataPointManagementRef, any>((props
             onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
             style={{ width: 260, marginRight: 8 }}
           />,
-          <Button key="refresh" icon={<ReloadOutlined />} onClick={() => { actionRef.current?.reload(); fetchStatistics(); }}>刷新</Button>,
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { set({ editingDataPoint: null, formVisible: true }); form.resetFields(); }}>新建</Button>,
         ]}
       />
@@ -211,7 +209,7 @@ const DataPointManagement = React.forwardRef<DataPointManagementRef, any>((props
           </>
         )}
       </Drawer>
-    </PageContainer>
+    </>
   );
 });
 

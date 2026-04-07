@@ -1,5 +1,4 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import { type ProColumns, ActionType, ProTable } from '@ant-design/pro-table';
 import { Button, Drawer, Grid, Input, Space, Tag, Typography, message } from 'antd';
@@ -46,7 +45,7 @@ const DataCenter = React.forwardRef<DataCenterRef, any>((props, ref) => {
   ];
 
   return (
-    <PageContainer title={<Space><DatabaseOutlined />数据中心</Space>}>
+    <>
       <ProTable actionRef={actionRef} request={async (params: any) => {
         const { current, pageSize } = params;
         const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
@@ -62,9 +61,8 @@ const DataCenter = React.forwardRef<DataCenterRef, any>((props, ref) => {
             value={state.search}
             onChange={(e) => set({ search: e.target.value })}
             onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
-            style={{ width: 260, marginRight: 8 }}
+            style={{ width: 260 }}
           />,
-          <Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>刷新</Button>,
         ]}
       />
 
@@ -110,7 +108,7 @@ const DataCenter = React.forwardRef<DataCenterRef, any>((props, ref) => {
           </>
         )}
       </Drawer>
-    </PageContainer>
+    </>
   );
 });
 

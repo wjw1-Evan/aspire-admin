@@ -23,7 +23,7 @@ import type { ApiResponse, PageParams } from '@/types';
 import ProjectForm from './ProjectForm';
 import ProjectDetail from './ProjectDetail';
 import { useModal } from '@/hooks/useModal';
-import { ProTable, ProColumns, ProCard } from '@ant-design/pro-components';
+import { ProTable, ProColumns } from '@ant-design/pro-components';
 
 export interface ProjectViewRef {
   reload: () => void;
@@ -242,29 +242,18 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
 
   return (
     <div>
-      {statistics && (
-        <ProCard gutter={16} style={{ marginBottom: 16 }}>
-          <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-            <div style={{ fontSize: 24, fontWeight: 'bold', color: '#1890ff' }}>{statistics.totalProjects}</div>
-            <div style={{ color: '#8c8c8c', fontSize: 12 }}>{intl.formatMessage({ id: 'pages.projectManagement.statistics.totalProjects' })}</div>
-          </ProCard>
-          <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-            <div style={{ fontSize: 24, fontWeight: 'bold', color: '#52c41a' }}>{statistics.inProgressProjects}</div>
-            <div style={{ color: '#8c8c8c', fontSize: 12 }}>{intl.formatMessage({ id: 'pages.projectManagement.statistics.inProgressProjects' })}</div>
-          </ProCard>
-          <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-            <div style={{ fontSize: 24, fontWeight: 'bold', color: '#1890ff' }}>{statistics.completedProjects}</div>
-            <div style={{ color: '#8c8c8c', fontSize: 12 }}>{intl.formatMessage({ id: 'pages.projectManagement.statistics.completedProjects' })}</div>
-          </ProCard>
-          <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-            <div style={{ fontSize: 24, fontWeight: 'bold', color: '#ff4d4f' }}>{statistics.delayedProjects}</div>
-            <div style={{ color: '#8c8c8c', fontSize: 12 }}>{intl.formatMessage({ id: 'pages.projectManagement.statistics.delayedProjects' })}</div>
-          </ProCard>
-        </ProCard>
-      )}
-
       <ProTable<ProjectDto>
-        headerTitle={intl.formatMessage({ id: 'pages.projectManagement.title', defaultMessage: '项目管理' })}
+        headerTitle={
+          <Space size={24}>
+            <Space><ProjectOutlined />项目管理</Space>
+            <Space size={12}>
+              <Tag color="blue">总数 {statistics?.totalProjects || 0}</Tag>
+              <Tag color="green">进行中 {statistics?.inProgressProjects || 0}</Tag>
+              <Tag color="cyan">已完成 {statistics?.completedProjects || 0}</Tag>
+              <Tag color="red">延期 {statistics?.delayedProjects || 0}</Tag>
+            </Space>
+          </Space>
+        }
         actionRef={tableActionRef}
         rowKey="id"
         search={false}

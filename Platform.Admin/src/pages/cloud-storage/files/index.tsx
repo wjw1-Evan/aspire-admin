@@ -4,16 +4,15 @@
 
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { StatCard } from '@/components';
 import { useIntl } from '@umijs/max';
 import { request } from '@umijs/max';
-import { Grid, App, Button, Tag, Space, Row, Col, Breadcrumb, Dropdown, Image, Select, Input, Modal, Popconfirm, Progress, Card } from 'antd';
+import { Grid, App, Button, Tag, Space, Breadcrumb, Dropdown, Image, Input, Modal, Popconfirm, Card } from 'antd';
 import { Drawer as AntDrawer } from 'antd';
 import { ProDescriptions, ProCard } from '@ant-design/pro-components';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormDatePicker, ProFormSelect, ProFormDigit } from '@ant-design/pro-form';
 import { tokenUtils } from '@/utils/token';
-import { PlusOutlined, EditOutlined, DeleteOutlined, CloudOutlined, FolderOutlined, FileOutlined, DownloadOutlined, ShareAltOutlined, UploadOutlined, FolderAddOutlined, MoreOutlined, EyeOutlined, SearchOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, CloudOutlined, FolderOutlined, FileOutlined, DownloadOutlined, ShareAltOutlined, UploadOutlined, FolderAddOutlined, MoreOutlined, EyeOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 
@@ -227,18 +226,20 @@ const CloudStorageFilesPage: React.FC = () => {
         </Space>) },
     ];
 
-    const statsConfig = [
-        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.statistics.fileCount' }), value: state.statistics?.totalFiles ?? 0, icon: <FileOutlined />, color: '#1890ff' },
-        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.statistics.folderCount' }), value: state.statistics?.totalFolders ?? 0, icon: <FolderOutlined />, color: '#52c41a' },
-        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.statistics.totalQuota' }), value: formatFileSize(state.statistics?.totalQuota ?? 0), icon: <CloudOutlined />, color: '#722ed1' },
-        { title: intl.formatMessage({ id: 'pages.cloud-storage.files.statistics.usedSpace' }), value: state.statistics && state.statistics.totalQuota > 0 ? `${Math.round((state.statistics.usedQuota / state.statistics.totalQuota) * 100)}%` : '0%', icon: null, color: '#fa8c16', suffix: <span style={{ fontSize: 12, color: '#999', marginLeft: 4 }}>/ {formatFileSize(state.statistics?.totalQuota ?? 0)}</span> },
-    ];
-
     return (
         <PageContainer>
-            {state.statistics && <ProCard style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>{statsConfig.map((stat, idx) => (<Col xs={24} sm={12} md={6} key={idx}><StatCard title={stat.title} value={stat.value ?? 0} icon={stat.icon} color={stat.color} suffix={stat.suffix} /></Col>))}</Row></ProCard>}
             <ProCard style={{ marginBottom: 16 }}><Breadcrumb items={state.pathHistory.map((item, index) => ({ key: index, title: index === 0 ? <a onClick={() => handleBreadcrumbClick(index)}>{intl.formatMessage({ id: 'pages.cloud-storage.files.breadcrumb.myFiles' })}</a> : <a onClick={() => handleBreadcrumbClick(index)}>{item.name}</a> }))} /></ProCard>
-            <ProTable actionRef={actionRef} request={fetchData} columns={columns} rowKey="id" search={false}
+            <ProTable actionRef={actionRef} headerTitle={
+              <Space size={24}>
+                <Space><CloudOutlined />网盘管理</Space>
+                <Space size={12}>
+                  <Tag color="blue">文件 {state.statistics?.totalFiles || 0}</Tag>
+                  <Tag color="green">文件夹 {state.statistics?.totalFolders || 0}</Tag>
+                  <Tag color="purple">容量 {formatFileSize(state.statistics?.totalQuota || 0)}</Tag>
+                  <Tag color="orange">已用 {formatFileSize(state.statistics?.usedQuota || 0)}</Tag>
+                </Space>
+              </Space>
+            } request={fetchData} columns={columns} rowKey="id" search={false}
                 onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
                 scroll={{ x: 'max-content' }}
                 toolBarRender={() => [

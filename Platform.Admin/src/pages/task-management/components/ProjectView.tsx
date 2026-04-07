@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
-import { Row, Col, Badge, Tag, Space, App, Button, Progress, Input } from 'antd';
+import { Badge, Tag, Space, App, Button, Progress, Input } from 'antd';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import {
@@ -8,6 +8,7 @@ import {
   DeleteOutlined,
   ProjectOutlined,
   SearchOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons';
 import {
   deleteProject,
@@ -19,10 +20,8 @@ import {
   ProjectPriority,
 } from '@/services/task/project';
 import type { ApiResponse, PageParams } from '@/types';
-import { StatCard } from '@/components';
 import ProjectForm from './ProjectForm';
 import ProjectDetail from './ProjectDetail';
-import useCommonStyles from '@/hooks/useCommonStyles';
 import { useModal } from '@/hooks/useModal';
 import { ProTable, ProColumns, ProCard } from '@ant-design/pro-components';
 
@@ -34,7 +33,6 @@ export interface ProjectViewRef {
 
 const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   const intl = useIntl();
-  const { styles } = useCommonStyles();
   const { confirm } = useModal();
   const { message } = App.useApp();
   const [formVisible, setFormVisible] = useState(false);
@@ -245,41 +243,23 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   return (
     <div>
       {statistics && (
-        <ProCard className={styles.card} style={{ marginBottom: 16 }}>
-          <Row gutter={[12, 12]}>
-            <Col xs={24} sm={12} md={6}>
-              <StatCard
-                title={intl.formatMessage({ id: 'pages.projectManagement.statistics.totalProjects' })}
-                value={statistics.totalProjects}
-                icon={<ProjectOutlined />}
-                color="#1890ff"
-              />
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <StatCard
-                title={intl.formatMessage({ id: 'pages.projectManagement.statistics.inProgressProjects' })}
-                value={statistics.inProgressProjects}
-                icon={<ProjectOutlined />}
-                color="#52c41a"
-              />
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <StatCard
-                title={intl.formatMessage({ id: 'pages.projectManagement.statistics.completedProjects' })}
-                value={statistics.completedProjects}
-                icon={<ProjectOutlined />}
-                color="#1890ff"
-              />
-            </Col>
-            <Col xs={24} sm={12} md={6}>
-              <StatCard
-                title={intl.formatMessage({ id: 'pages.projectManagement.statistics.delayedProjects' })}
-                value={statistics.delayedProjects}
-                icon={<ProjectOutlined />}
-                color="#ff4d4f"
-              />
-            </Col>
-          </Row>
+        <ProCard gutter={16} style={{ marginBottom: 16 }}>
+          <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+            <div style={{ fontSize: 24, fontWeight: 'bold', color: '#1890ff' }}>{statistics.totalProjects}</div>
+            <div style={{ color: '#8c8c8c', fontSize: 12 }}>{intl.formatMessage({ id: 'pages.projectManagement.statistics.totalProjects' })}</div>
+          </ProCard>
+          <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+            <div style={{ fontSize: 24, fontWeight: 'bold', color: '#52c41a' }}>{statistics.inProgressProjects}</div>
+            <div style={{ color: '#8c8c8c', fontSize: 12 }}>{intl.formatMessage({ id: 'pages.projectManagement.statistics.inProgressProjects' })}</div>
+          </ProCard>
+          <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+            <div style={{ fontSize: 24, fontWeight: 'bold', color: '#1890ff' }}>{statistics.completedProjects}</div>
+            <div style={{ color: '#8c8c8c', fontSize: 12 }}>{intl.formatMessage({ id: 'pages.projectManagement.statistics.completedProjects' })}</div>
+          </ProCard>
+          <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
+            <div style={{ fontSize: 24, fontWeight: 'bold', color: '#ff4d4f' }}>{statistics.delayedProjects}</div>
+            <div style={{ color: '#8c8c8c', fontSize: 12 }}>{intl.formatMessage({ id: 'pages.projectManagement.statistics.delayedProjects' })}</div>
+          </ProCard>
         </ProCard>
       )}
 
@@ -315,8 +295,9 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
             style={{ width: 260, marginRight: 8 }}
             prefix={<SearchOutlined />}
           />,
+          <Button key="refresh" icon={<ReloadOutlined />} onClick={() => { fetchStatistics(); tableActionRef.current?.reload(); }}>刷新</Button>,
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { setEditingProject(null); setFormVisible(true); }}>
-            {intl.formatMessage({ id: 'pages.projectManagement.createProject' })}
+            新建项目
           </Button>,
         ]}
       />

@@ -6,7 +6,7 @@ import { request } from '@umijs/max';
 import { Button, Tag, Space, Grid, App, Modal, Spin, Timeline, Empty, Progress, Input } from 'antd';
 import { Drawer } from 'antd';
 import { ProTable, ActionType } from '@ant-design/pro-table';
-import { PlusOutlined, EditOutlined, DeleteOutlined, CheckCircleOutlined, ReloadOutlined, PlayCircleOutlined, StopOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CheckCircleOutlined, ReloadOutlined, PlayCircleOutlined, StopOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 import { getTaskStatusColor, getTaskPriorityColor } from '@/utils/task';
@@ -209,10 +209,6 @@ const TaskManagement: React.FC = () => {
   return (
     <PageContainer title={<Space><PlusOutlined />{intl.formatMessage({ id: 'pages.taskManagement.title' })}</Space>}
       breadcrumb={{ routes: [{ path: '/', breadcrumbName: '首页' }, { path: '/task', breadcrumbName: '任务管理' }] }}
-      extra={<Space wrap>
-        <Button key="refresh" icon={<ReloadOutlined />} onClick={() => { loadStatistics(); actionRef.current?.reload(); }}>{intl.formatMessage({ id: 'pages.taskManagement.refresh' })}</Button>
-        <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingTask: null, formVisible: true })}>{intl.formatMessage({ id: 'pages.taskManagement.createTask' })}</Button>
-      </Space>}
     >
       <ProCard gutter={16} style={{ marginBottom: 16 }}>
         {statItems.map(item => (
@@ -241,8 +237,10 @@ const TaskManagement: React.FC = () => {
             onChange={(e) => set({ search: e.target.value })}
             onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
             style={{ width: 260, marginRight: 8 }}
+            prefix={<SearchOutlined />}
           />,
-          <Button key="refresh" icon={<ReloadOutlined />} onClick={() => { loadStatistics(); actionRef.current?.reload(); }}>{intl.formatMessage({ id: 'pages.taskManagement.refresh' })}</Button>
+          <Button key="refresh" icon={<ReloadOutlined />} onClick={() => { loadStatistics(); actionRef.current?.reload(); }}>刷新</Button>,
+          <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingTask: null, formVisible: true })}>新建任务</Button>,
         ]}
       />
 

@@ -19,6 +19,7 @@ interface TenantFormData { tenantName: string; contactPerson?: string; phone?: s
 
 const api = {
     list: (params: PageParams & { tenantId?: string }) => request<ApiResponse<PagedResult<ParkTenant>>>('/api/park/tenants/list', { params }),
+    get: (id: string) => request<ApiResponse<ParkTenant>>(`/api/park/tenants/${id}`),
     create: (data: TenantFormData) => request<ApiResponse<ParkTenant>>('/api/park/tenants', { method: 'POST', data }),
     update: (id: string, data: TenantFormData) => request<ApiResponse<ParkTenant>>(`/api/park/tenants/${id}`, { method: 'PUT', data }),
     delete: (id: string) => request<ApiResponse<void>>(`/api/park/tenants/${id}`, { method: 'DELETE' }),
@@ -34,7 +35,7 @@ const contractStatusOptions = [{ label: '有效', value: 'Active', color: 'green
 const TenantManagement: React.FC = () => {
     const { message } = App.useApp();
     const actionRef = useRef<any>(null);
-    const [state, setState] = useState({ statistics: null as TenantStatistics | null, formVisible: false, editingTenant: null as ParkTenant | null, detailVisible: false, viewingTenant: null as ParkTenant | null, sorter: undefined as { sortBy: string; sortOrder: string } | undefined, search: '' });
+    const [state, setState] = useState({ statistics: null as TenantStatistics | null, formVisible: false, editingTenant: null as ParkTenant | null, detailVisible: false, viewingTenant: null as ParkTenant | null, detailLoading: false, sorter: undefined as { sortBy: string; sortOrder: string } | undefined, search: '' });
     const [detailData, setDetailData] = useState({ contracts: [] as LeaseContract[], serviceRequests: [] as ServiceRequest[], payments: [] as (LeasePaymentRecord & { contractNumber?: string })[], loading: false });
     const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
     const setDetail = (partial: Partial<typeof detailData>) => setDetailData(prev => ({ ...prev, ...partial }));
@@ -43,34 +44,37 @@ const TenantManagement: React.FC = () => {
     useEffect(() => { loadStatistics(); }, [loadStatistics]);
 
     const columns: ProColumns<ParkTenant>[] = [
-        { title: '租户名称', dataIndex: 'tenantName', sorter: true, width: 180, render: (_, record) => <Space><UserOutlined style={{ color: '#1890ff' }} /><a onClick={() => handleViewTenant(record)}>{record.tenantName}</a></Space> },
+        { title: '租户名称', dataIndex: 'tenantName', sorter: true, width: 180, render: (_, record) => <Space><UserOutlined style={{ color: '#1890ff' }} /><a onClick={() => handleViewTenant(record.id)}>{record.tenantName}</a></Space> },
         { title: '联系人', dataIndex: 'contactPerson', sorter: true, width: 120, render: (text, record) => <div><Typography.Text>{text || '-'}</Typography.Text>{record.phone && <Typography.Text type="secondary" style={{ fontSize: 12 }}>{record.phone}</Typography.Text>}</div> },
         { title: '行业', dataIndex: 'industry', sorter: true, width: 100, render: (text) => text || '-' },
         { title: '入驻日期', dataIndex: 'entryDate', sorter: true, width: 110, render: (date) => date ? dayjs(date as string).format('YYYY-MM-DD') : '-' },
         { title: '租用单元', dataIndex: 'unitCount', sorter: true, width: 80, align: 'center' },
         { title: '有效合同', dataIndex: 'activeContracts', sorter: true, width: 80, align: 'center', render: (count) => { const c = (count as number) || 0; return <Tag color={c > 0 ? '#52c41a' : '#d9d9d9'}>{c}</Tag>; } },
         { title: '状态', dataIndex: 'status', sorter: true, width: 100, render: (_: any, record) => { const opt = tenantStatusOptions.find(o => o.value === record.status); return <Tag color={opt?.color || 'default'}>{opt?.label || record.status}</Tag>; } },
-        { title: '操作', valueType: 'option', width: 220, fixed: 'right', render: (_, record) => [
-            <Button key="view" type="link" icon={<EyeOutlined />} onClick={() => handleViewTenant(record)}>详情</Button>,
-            <Button key="service" type="link" icon={<CustomerServiceOutlined />} onClick={() => window.location.href = `/park-management/enterprise-service?tenantId=${record.id}&tenantName=${encodeURIComponent(record.tenantName)}`}>服务</Button>,
+        { title: '操作', valueType: 'option', width: 150, fixed: 'right', render: (_, record) => [
+            <Button key="view" type="link" icon={<EyeOutlined />} onClick={() => handleViewTenant(record.id)}>查看</Button>,
             <Button key="edit" type="link" icon={<EditOutlined />} onClick={() => set({ editingTenant: record, formVisible: true })}>编辑</Button>,
             <Button key="delete" type="link" danger icon={<DeleteOutlined />} onClick={() => handleDeleteTenant(record.id)}>删除</Button>,
         ]},
     ];
 
-    const handleViewTenant = async (tenant: ParkTenant) => {
-        set({ viewingTenant: tenant, detailVisible: true }); setDetail({ loading: true, contracts: [], serviceRequests: [], payments: [] });
+    const handleViewTenant = async (id: string) => {
+        set({ viewingTenant: null, detailVisible: true, detailLoading: true }); setDetail({ loading: true, contracts: [], serviceRequests: [], payments: [] });
         try {
-            const [serviceRes, contractRes] = await Promise.all([api.getServiceRequests({ page: 1, tenantId: tenant.id }), api.getContracts({ page: 1, tenantId: tenant.id })]);
-            if (serviceRes.success && serviceRes.data) setDetail({ serviceRequests: serviceRes.data.queryable });
-            if (contractRes.success && contractRes.data) {
-                setDetail({ contracts: contractRes.data.queryable });
-                const allPayments: (LeasePaymentRecord & { contractNumber?: string })[] = [];
-                for (const contract of contractRes.data.queryable) { const paymentRes = await api.getPaymentRecords(contract.id); if (paymentRes.success && paymentRes.data) allPayments.push(...paymentRes.data.map(p => ({ ...p, contractNumber: contract.contractNumber }))); }
-                setDetail({ payments: allPayments });
+            const tenantRes = await api.get(id);
+            if (tenantRes.success && tenantRes.data) {
+                set({ viewingTenant: tenantRes.data });
+                const [serviceRes, contractRes] = await Promise.all([api.getServiceRequests({ page: 1, tenantId: id }), api.getContracts({ page: 1, tenantId: id })]);
+                if (serviceRes.success && serviceRes.data) setDetail({ serviceRequests: serviceRes.data.queryable });
+                if (contractRes.success && contractRes.data) {
+                    setDetail({ contracts: contractRes.data.queryable });
+                    const allPayments: (LeasePaymentRecord & { contractNumber?: string })[] = [];
+                    for (const contract of contractRes.data.queryable) { const paymentRes = await api.getPaymentRecords(contract.id); if (paymentRes.success && paymentRes.data) allPayments.push(...paymentRes.data.map(p => ({ ...p, contractNumber: contract.contractNumber }))); }
+                    setDetail({ payments: allPayments });
+                }
             }
         } catch (error) { console.error('Failed to load tenant details:', error); }
-        finally { setDetail({ loading: false }); }
+        finally { set({ detailLoading: false }); setDetail({ loading: false }); }
     };
 
     const handleDeleteTenant = async (id: string) => { const res = await api.delete(id); if (res.success) { message.success('删除成功'); actionRef.current?.reload(); loadStatistics(); } else message.error('删除失败'); };
@@ -122,7 +126,7 @@ const TenantManagement: React.FC = () => {
                 <ProFormText name="notes" label="备注" placeholder="备注信息" />
             </ModalForm>
 
-            <Drawer title={state.viewingTenant?.tenantName || '租户详情'} open={state.detailVisible} onClose={(open) => { if (!open) set({ detailVisible: false, viewingTenant: null }); }} width={720} loading={detailData.loading}>
+            <Drawer title={state.viewingTenant?.tenantName || '租户详情'} open={state.detailVisible} onClose={() => { set({ detailVisible: false, viewingTenant: null }); }} width={720} loading={state.detailLoading}>
                 {state.viewingTenant && <div>
                     <Typography.Text strong style={{ fontSize: 16, marginBottom: 12, display: 'block' }}>基本信息</Typography.Text>
                     <ProDescriptions column={2} bordered size="small" style={{ marginBottom: 24 }}>

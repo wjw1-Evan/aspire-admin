@@ -269,7 +269,6 @@ export const layout: RunTimeLayoutConfig = ({
   setInitialState,
 }) => {
   return {
-    title: false,
     actionsRender: () => {
       const actions = [
         <SelectLang key="SelectLang" />,
@@ -539,6 +538,7 @@ export const layout: RunTimeLayoutConfig = ({
         }
       }
     },
+    title: initialState?.currentUser?.currentCompanyDisplayName || initialState?.currentUser?.currentCompanyName || defaultSettings.title,
     logo: initialState?.currentUser?.currentCompanyLogo ? (
       <img src={initialState.currentUser.currentCompanyLogo} alt="logo" />
     ) : (

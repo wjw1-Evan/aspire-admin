@@ -33,7 +33,7 @@ const PendingJoinRequests: React.FC = () => {
   const actionRef = useRef<ActionType>(null!);
   const [state, setState] = useState({
     sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
-    searchText: '',
+    search: '',
   });
   const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
@@ -172,7 +172,7 @@ const PendingJoinRequests: React.FC = () => {
           if (!companyId) return { data: [], total: 0, success: true };
           const { current, pageSize, search } = params;
           const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-          let keyword = state.searchText || search;
+          let keyword = state.search || search;
           const res = await api.list(companyId, { page: current, search: keyword, ...sortParams });
           if (res.success && res.data) {
             let filteredData = res.data;
@@ -192,9 +192,15 @@ const PendingJoinRequests: React.FC = () => {
         search={false}
         onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
         toolBarRender={() => [
-          <Input.Search key="search" placeholder={intl.formatMessage({ id: 'pages.search.placeholder' })} style={{ width: 200 }} allowClear
-            value={state.searchText} onChange={(e) => set({ searchText: e.target.value })}
-            onSearch={(v) => { set({ searchText: v }); actionRef.current!.reload(); }} />,
+          <Input.Search
+            key="search"
+            placeholder={intl.formatMessage({ id: 'pages.search.placeholder' })}
+            style={{ width: 260, marginRight: 8 }}
+            allowClear
+            value={state.search}
+            onChange={(e) => set({ search: e.target.value })}
+            onSearch={(v) => { set({ search: v }); actionRef.current!.reload(); }}
+          />,
         ]}
       />
     </PageContainer>

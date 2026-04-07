@@ -151,6 +151,7 @@ const PasswordBook: React.FC = () => {
           <Input.Search
             key="search"
             placeholder="搜索..."
+            allowClear
             value={state.search}
             onChange={(e) => set({ search: e.target.value })}
             onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}

@@ -3,7 +3,7 @@ import { PageContainer } from '@ant-design/pro-components';
 import { StatCard } from '@/components';
 import { useIntl } from '@umijs/max';
 import { request } from '@umijs/max';
-import { Tag, Row, Col, Card, Space, Button, Drawer } from 'antd';
+import { Tag, Row, Col, Card, Space, Button, Drawer, Input } from 'antd';
 import { ProDescriptions } from '@ant-design/pro-components';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { HistoryOutlined, CheckCircleOutlined, CloseCircleOutlined, ThunderboltOutlined, ReloadOutlined, DashboardOutlined } from '@ant-design/icons';
@@ -53,7 +53,7 @@ const MyActivity: React.FC = () => {
     detailDrawerOpen: false,
     selectedLogId: null as string | null,
     sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
-    searchText: '',
+    search: '',
   });
   const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
@@ -95,12 +95,21 @@ const MyActivity: React.FC = () => {
       <ProTable actionRef={actionRef} request={async (params: any) => {
         const { current, pageSize } = params;
         const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-        const res = await api.list({ page: current, pageSize, search: state.searchText, ...sortParams });
-        api.statistics(state.searchText).then(r => { if (r.success && r.data) set({ statistics: r.data }); });
+        const res = await api.list({ page: current, pageSize, search: state.search, ...sortParams });
+        api.statistics(state.search).then(r => { if (r.success && r.data) set({ statistics: r.data }); });
         return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
       }} columns={columns} rowKey="id" search={false}
         onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
         toolBarRender={() => [
+          <Input.Search
+            key="search"
+            placeholder="搜索..."
+            allowClear
+            value={state.search}
+            onChange={(e) => set({ search: e.target.value })}
+            onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+            style={{ width: 260, marginRight: 8 }}
+          />,
           <Button key="refresh" icon={<ReloadOutlined />} onClick={handleRefresh}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button>,
         ]}
       />

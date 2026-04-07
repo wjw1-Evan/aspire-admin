@@ -41,7 +41,7 @@ const VisitTaskPage: React.FC = () => {
     const [state, setState] = useState({
         statistics: null as VisitStatistics | null, formVisible: false, editingTask: null as VisitTask | null,
         detailVisible: false, selectedTask: null as VisitTask | null, tenants: [] as ParkTenant[],
-        sorter: undefined as { sortBy: string; sortOrder: string } | undefined, searchText: '',
+        sorter: undefined as { sortBy: string; sortOrder: string } | undefined, search: '',
     });
     const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
@@ -76,11 +76,22 @@ const VisitTaskPage: React.FC = () => {
 
             <ProTable actionRef={actionRef} request={async (params: any) => {
                 const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-                const res = await api.list({ page: current, pageSize, search: state.searchText, ...sortParams });
+                const res = await api.list({ page: current, pageSize, search: state.search, ...sortParams });
                 api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
                 return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
             }} columns={columns} rowKey="id" search={false}
                 onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
+                toolBarRender={() => [
+                  <Input.Search
+                    key="search"
+                    placeholder="搜索..."
+                    allowClear
+                    value={state.search}
+                    onChange={(e) => set({ search: e.target.value })}
+                    onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+                    style={{ width: 260, marginRight: 8 }}
+                  />,
+                ]}
             />
 
             <ModalForm key={state.editingTask?.id || 'create'} title={state.editingTask ? '编辑走访任务' : '新增走访任务'} open={state.formVisible}

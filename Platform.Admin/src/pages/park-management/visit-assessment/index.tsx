@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { PageContainer, ProCard, ModalForm, ProFormText, ProFormTextArea } from '@ant-design/pro-components';
 import { useIntl, request } from '@umijs/max';
-import { Space, Button, Tag, Rate, App, Divider, Typography } from 'antd';
+import { Space, Button, Tag, Rate, App, Divider, Typography, Input } from 'antd';
 import { Drawer } from 'antd';
 import { ProDescriptions } from '@ant-design/pro-components';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
@@ -24,7 +24,7 @@ const VisitAssessmentList: React.FC = () => {
     const intl = useIntl();
     const { message } = App.useApp();
     const actionRef = useRef<ActionType | undefined>(undefined);
-    const [state, setState] = useState({ detailVisible: false, assessmentVisible: false, selectedAssessment: null as VisitAssessment | null, selectedTask: null as VisitTask | null, searchText: '' });
+    const [state, setState] = useState({ detailVisible: false, assessmentVisible: false, selectedAssessment: null as VisitAssessment | null, selectedTask: null as VisitTask | null, search: '' });
     const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
     const columns: ProColumns<VisitTask>[] = [
@@ -41,7 +41,18 @@ const VisitAssessmentList: React.FC = () => {
     return (
         <PageContainer title={intl.formatMessage({ id: 'pages.park.visit.assessment', defaultMessage: '走访评价管理' })}>
             <ProCard style={{ padding: '16px 24px' }}>
-                <ProTable actionRef={actionRef} request={async (params: any) => { const { current, pageSize } = params; const res = await api.list({ page: current, pageSize, search: state.searchText }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={columns} rowKey="id" search={false} toolBarRender={() => [<Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>{intl.formatMessage({ id: 'pages.park.common.refresh', defaultMessage: '刷新' })}</Button>]} />
+                <ProTable actionRef={actionRef} request={async (params: any) => { const { current, pageSize } = params; const res = await api.list({ page: current, pageSize, search: state.search }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={columns} rowKey="id" search={false} toolBarRender={() => [
+          <Input.Search
+            key="search"
+            placeholder="搜索..."
+            allowClear
+            value={state.search}
+            onChange={(e) => set({ search: e.target.value })}
+            onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+            style={{ width: 260, marginRight: 8 }}
+          />,
+          <Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>{intl.formatMessage({ id: 'pages.park.common.refresh', defaultMessage: '刷新' })}</Button>
+        ]} />
             </ProCard>
 
             <Drawer title={intl.formatMessage({ id: 'pages.park.visit.assessmentDetail', defaultMessage: '走访评价详情' })} placement="right" open={state.detailVisible} onClose={(open) => { if (!open) set({ detailVisible: false, selectedAssessment: null }); }} width={500}>

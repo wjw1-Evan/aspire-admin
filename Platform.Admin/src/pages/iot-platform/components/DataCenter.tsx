@@ -25,7 +25,7 @@ const DataCenter = React.forwardRef<DataCenterRef, any>((props, ref) => {
     detailVisible: false,
     viewingRecord: null as IoTDataRecord | null,
     sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
-    searchText: '',
+    search: '',
   });
   const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
@@ -50,12 +50,20 @@ const DataCenter = React.forwardRef<DataCenterRef, any>((props, ref) => {
       <ProTable actionRef={actionRef} request={async (params: any) => {
         const { current, pageSize } = params;
         const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-        const res = await iotService.queryDataRecords({ page: current, pageSize, search: state.searchText, ...sortParams });
+        const res = await iotService.queryDataRecords({ page: current, pageSize, search: state.search, ...sortParams });
         return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
       }} columns={columns} rowKey={(record) => record.id || `${record.deviceId}-${record.dataPointId}-${record.reportedAt}`} search={false}
         onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
         toolBarRender={() => [
-          <Input.Search key="search" placeholder="搜索..." style={{ width: 200 }} allowClear value={state.searchText} onChange={(e) => set({ searchText: e.target.value })} onSearch={(v) => { set({ searchText: v }); actionRef.current?.reload(); }} prefix={<SearchOutlined />} />,
+          <Input.Search
+            key="search"
+            placeholder="搜索..."
+            allowClear
+            value={state.search}
+            onChange={(e) => set({ search: e.target.value })}
+            onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+            style={{ width: 260, marginRight: 8 }}
+          />,
           <Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>刷新</Button>,
         ]}
       />

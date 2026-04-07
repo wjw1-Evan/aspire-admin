@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { StatCard } from '@/components';
-import { Space, Tag, Button, Row, Col, Drawer, message } from 'antd';
+import { Space, Tag, Button, Row, Col, Drawer, message, Input } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { FileTextOutlined, PlusOutlined, EyeOutlined, EditOutlined, SendOutlined, DeleteOutlined, ReloadOutlined, FileProtectOutlined, ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
@@ -35,6 +35,7 @@ const DocumentManagement: React.FC = () => {
     statistics: null as DocumentStatistics | null,
     detailVisible: false,
     viewingId: '',
+    search: '',
   });
   const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
@@ -97,12 +98,21 @@ const DocumentManagement: React.FC = () => {
       <ProTable actionRef={actionRef}
         request={async (params: any) => {
           const { current, pageSize } = params;
-          const res = await api.list({ page: current, pageSize });
+          const res = await api.list({ page: current, pageSize, search: state.search });
           api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
           return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
         }}
         columns={columns} rowKey="id" search={false}
         toolBarRender={() => [
+          <Input.Search
+            key="search"
+            placeholder="搜索..."
+            allowClear
+            value={state.search}
+            onChange={(e) => set({ search: e.target.value })}
+            onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+            style={{ width: 260, marginRight: 8 }}
+          />,
           <Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>刷新</Button>,
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => window.location.href = '/document/create'}>新建公文</Button>,
         ]}

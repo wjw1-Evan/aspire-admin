@@ -121,7 +121,18 @@ const ContractManagement: React.FC = () => {
                 return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
             }} columns={columns} rowKey="id" search={false}
                 onChange={(_p, _f, s: any) => setSorter(s?.order ? { sortBy: s.field as string, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined)}
-                toolBarRender={() => [<Input.Search key="search" placeholder="搜索..." style={{ width: 200 }} allowClear value={searchParams.search} onChange={(e) => setSearchParams({ search: e.target.value })} onSearch={(v) => { setSearchParams({ search: v }); actionRef.current?.reload(); }} />]}
+                toolBarRender={() => [
+                  <Input.Search
+                    key="search"
+                    placeholder="搜索..."
+                    allowClear
+                    style={{ width: 260, marginRight: 8 }}
+                    allowClear
+                    value={searchParams.search}
+                    onChange={(e) => setSearchParams({ search: e.target.value })}
+                    onSearch={(v) => { setSearchParams({ search: v }); actionRef.current?.reload(); }}
+                  />,
+                ]}
             />
 
             <ModalForm key={state.isEdit && state.currentContract?.id ? state.currentContract.id : 'create'}

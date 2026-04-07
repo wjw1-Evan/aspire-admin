@@ -78,7 +78,7 @@ const CloudStorageFilesPage: React.FC = () => {
         currentPath: '', currentParentId: undefined as string | undefined,
         pathHistory: [{ name: '我的文件', path: '' }] as PathHistoryItem[],
         selectedRowKeys: [] as string[], selectedRows: [] as FileItem[],
-        isSearchMode: false, searchText: '',
+        isSearchMode: false, search: '',
         sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
         detailVisible: false, viewingFile: null as FileItem | null,
         previewVisible: false, imagePreviewVisible: false,
@@ -100,8 +100,8 @@ const CloudStorageFilesPage: React.FC = () => {
     const fetchData = useCallback(async (params: any) => {
         const { current, pageSize } = params;
         const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-        const res = state.isSearchMode && state.searchText
-            ? await api.search({ page: current, pageSize, keyword: state.searchText, ...sortParams })
+        const res = state.isSearchMode && state.search
+            ? await api.search({ page: current, pageSize, keyword: state.search, ...sortParams })
             : await api.list({ page: current, pageSize, parentId: currentParentIdRef.current, ...sortParams });
         if (res.success && res.data) {
             set({ data: res.data.queryable || [] });
@@ -109,19 +109,19 @@ const CloudStorageFilesPage: React.FC = () => {
             return { data: res.data.queryable || [], total: res.data.rowCount || 0, success: res.success };
         }
         return { data: [], total: 0, success: false };
-    }, [state.isSearchMode, state.searchText, state.sorter]);
+    }, [state.isSearchMode, state.search, state.sorter]);
 
     const handleFolderClick = useCallback((folder: FileItem) => {
         const newPath = state.currentPath ? `${state.currentPath}/${folder.name}` : folder.name;
         currentParentIdRef.current = folder.id;
-        set({ currentPath: newPath, currentParentId: folder.id, pathHistory: [...state.pathHistory, { id: folder.id, name: folder.name, path: newPath }], isSearchMode: false, searchText: '' });
+        set({ currentPath: newPath, currentParentId: folder.id, pathHistory: [...state.pathHistory, { id: folder.id, name: folder.name, path: newPath }], isSearchMode: false, search: '' });
         actionRef.current?.reload();
     }, [state.currentPath, state.pathHistory]);
 
     const handleBreadcrumbClick = useCallback((index: number) => {
         const targetItem = state.pathHistory[index];
         currentParentIdRef.current = targetItem.id ?? undefined;
-        set({ currentPath: targetItem.path, currentParentId: targetItem.id, pathHistory: state.pathHistory.slice(0, index + 1), isSearchMode: false, searchText: '' });
+        set({ currentPath: targetItem.path, currentParentId: targetItem.id, pathHistory: state.pathHistory.slice(0, index + 1), isSearchMode: false, search: '' });
         actionRef.current?.reload();
     }, [state.pathHistory]);
 
@@ -252,7 +252,17 @@ const CloudStorageFilesPage: React.FC = () => {
             <ProCard style={{ marginBottom: 16 }}><Breadcrumb items={state.pathHistory.map((item, index) => ({ key: index, title: index === 0 ? <a onClick={() => handleBreadcrumbClick(index)}>{intl.formatMessage({ id: 'pages.cloud-storage.files.breadcrumb.myFiles' })}</a> : <a onClick={() => handleBreadcrumbClick(index)}>{item.name}</a> }))} /></ProCard>
             <ProTable actionRef={actionRef} request={fetchData} columns={columns} rowKey="id" search={false}
                 onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
-                toolBarRender={() => [<Input.Search key="search" placeholder="搜索..." style={{ width: 200 }} allowClear value={state.searchText} onChange={(e) => set({ searchText: e.target.value })} onSearch={(v) => { set({ searchText: v, isSearchMode: !!v }); actionRef.current?.reload(); }} />]}
+                toolBarRender={() => [
+                  <Input.Search
+                    key="search"
+                    placeholder="搜索..."
+                    allowClear
+                    value={state.search}
+                    onChange={(e) => set({ search: e.target.value })}
+                    onSearch={(value) => { set({ search: value, isSearchMode: !!value }); actionRef.current?.reload(); }}
+                    style={{ width: 260, marginRight: 8 }}
+                  />,
+                ]}
                 rowSelection={{ selectedRowKeys: state.selectedRowKeys, onChange: (keys, rows) => set({ selectedRowKeys: keys as string[], selectedRows: rows }) }} />
 
             {/* 创建文件夹 */}

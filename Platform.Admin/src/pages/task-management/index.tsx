@@ -3,7 +3,7 @@ import type { ProColumns } from '@ant-design/pro-table';
 import { PageContainer, ProCard, ProDescriptions } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import { request } from '@umijs/max';
-import { Button, Tag, Space, Grid, App, Modal, Spin, Timeline, Empty, Progress } from 'antd';
+import { Button, Tag, Space, Grid, App, Modal, Spin, Timeline, Empty, Progress, Input } from 'antd';
 import { Drawer } from 'antd';
 import { ProTable, ActionType } from '@ant-design/pro-table';
 import { PlusOutlined, EditOutlined, DeleteOutlined, CheckCircleOutlined, ReloadOutlined, PlayCircleOutlined, StopOutlined } from '@ant-design/icons';
@@ -153,7 +153,7 @@ const TaskManagement: React.FC = () => {
     formVisible: false, detailVisible: false, executionVisible: false,
     editingTask: null as TaskDto | null, viewingTask: null as TaskDto | null,
     sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
-    searchText: '',
+    search: '',
   });
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
   const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
@@ -226,12 +226,23 @@ const TaskManagement: React.FC = () => {
       <ProTable actionRef={actionRef} request={async (params: any) => {
         const { current, pageSize } = params;
         const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-        const res = await api.list({ page: current, pageSize, search: state.searchText, ...sortParams });
+        const res = await api.list({ page: current, pageSize, search: state.search, ...sortParams });
         loadStatistics();
         return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
       }} columns={columns} rowKey="id" search={false}
         onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
-        toolBarRender={() => [<Button key="refresh" icon={<ReloadOutlined />} onClick={() => { loadStatistics(); actionRef.current?.reload(); }}>{intl.formatMessage({ id: 'pages.taskManagement.refresh' })}</Button>]}
+        toolBarRender={() => [
+          <Input.Search
+            key="search"
+            placeholder="搜索..."
+            allowClear
+            value={state.search}
+            onChange={(e) => set({ search: e.target.value })}
+            onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+            style={{ width: 260, marginRight: 8 }}
+          />,
+          <Button key="refresh" icon={<ReloadOutlined />} onClick={() => { loadStatistics(); actionRef.current?.reload(); }}>{intl.formatMessage({ id: 'pages.taskManagement.refresh' })}</Button>
+        ]}
       />
 
       <TaskForm open={state.formVisible} task={state.editingTask} projects={projects}

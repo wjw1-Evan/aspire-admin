@@ -156,31 +156,16 @@ public class PasswordBookService : IPasswordBookService
     /// 分页查询条目列表（不返回密码）
     /// 可见范围：自己的私有条目 + 企业内所有公有条目
     /// </summary>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<PasswordBookEntryDto>> GetEntriesAsync(
+    public async Task<System.Linq.Dynamic.Core.PagedResult<PasswordBookEntry>> GetEntriesAsync(
         Platform.ServiceDefaults.Models.PageParams pageParams,
         string userId)
     {
         if (string.IsNullOrEmpty(userId))
             throw new ArgumentException("用户ID不能为空", nameof(userId));
 
-
-
         var query = _context.Set<PasswordBookEntry>()
             .Where(e => e.UserId == userId || e.IsPublic)
-            .Select(e => new PasswordBookEntryDto
-            {
-                Id = e.Id,
-                Platform = e.Platform,
-                Account = e.Account,
-                Url = e.Url,
-                Category = e.Category,
-                Tags = e.Tags,
-                Notes = e.Notes,
-                LastUsedAt = e.LastUsedAt,
-                CreatedAt = e.CreatedAt,
-                UpdatedAt = e.UpdatedAt,
-                IsPublic = e.IsPublic
-            });
+          ;
 
         return query.ToPagedList(pageParams);
 

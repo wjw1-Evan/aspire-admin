@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { StatCard } from '@/components';
 import { request } from '@umijs/max';
-import { App, Row, Col, Tag, Typography, Empty, Rate, Button, Space } from 'antd';
+import { App, Row, Col, Tag, Typography, Empty, Rate, Button, Space, Input } from 'antd';
 import { Drawer } from 'antd';
 import { ProTable, ProColumns } from '@ant-design/pro-table';
 import { ProDescriptions } from '@ant-design/pro-components';
@@ -36,7 +36,7 @@ const contractStatusOptions = [{ label: '有效', value: 'Active', color: 'green
 const TenantManagement: React.FC = () => {
     const { message } = App.useApp();
     const actionRef = useRef<any>(null);
-    const [state, setState] = useState({ statistics: null as TenantStatistics | null, formVisible: false, editingTenant: null as ParkTenant | null, detailVisible: false, viewingTenant: null as ParkTenant | null, sorter: undefined as { sortBy: string; sortOrder: string } | undefined, searchText: '' });
+    const [state, setState] = useState({ statistics: null as TenantStatistics | null, formVisible: false, editingTenant: null as ParkTenant | null, detailVisible: false, viewingTenant: null as ParkTenant | null, sorter: undefined as { sortBy: string; sortOrder: string } | undefined, search: '' });
     const [detailData, setDetailData] = useState({ contracts: [] as LeaseContract[], serviceRequests: [] as ServiceRequest[], payments: [] as (LeasePaymentRecord & { contractNumber?: string })[], loading: false });
     const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
     const setDetail = (partial: Partial<typeof detailData>) => setDetailData(prev => ({ ...prev, ...partial }));
@@ -91,11 +91,22 @@ const TenantManagement: React.FC = () => {
 
             <ProTable actionRef={actionRef} request={async (params: any) => {
                 const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-                const res = await api.list({ page: current, pageSize, search: state.searchText, ...sortParams });
+                const res = await api.list({ page: current, pageSize, search: state.search, ...sortParams });
                 return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
             }} columns={columns} rowKey="id" search={false}
                 onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
-                toolBarRender={() => [<Button key="export" icon={<ReloadOutlined />} onClick={() => { actionRef.current?.reload(); loadStatistics(); }}>刷新</Button>]}
+                toolBarRender={() => [
+                  <Input.Search
+                    key="search"
+                    placeholder="搜索..."
+                    allowClear
+                    value={state.search}
+                    onChange={(e) => set({ search: e.target.value })}
+                    onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+                    style={{ width: 260, marginRight: 8 }}
+                  />,
+                  <Button key="export" icon={<ReloadOutlined />} onClick={() => { actionRef.current?.reload(); loadStatistics(); }}>刷新</Button>
+                ]}
             />
 
             <ModalForm key={state.editingTenant?.id || 'create'} title={state.editingTenant ? '编辑租户' : '新增租户'} open={state.formVisible}

@@ -40,7 +40,7 @@ const VisitKnowledgeBase: React.FC = () => {
         questionDetailVisible: false, selectedQuestion: null as VisitQuestion | null,
         questionnaireDetailVisible: false, selectedQuestionnaire: null as VisitQuestionnaire | null,
         allQuestions: [] as VisitQuestion[], targetKeys: [] as string[],
-        statistics: null as VisitStatistics | null, searchText: '',
+        statistics: null as VisitStatistics | null, search: '',
         sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
     });
     const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
@@ -85,7 +85,7 @@ const VisitKnowledgeBase: React.FC = () => {
             </Space>
         }>
             <Tabs activeKey={state.activeTab} onChange={(k) => set({ activeTab: k })} items={[
-                { key: 'questions', label: '高频问题库', children: (<ProCard><ProTable actionRef={actionRef} rowKey="id" request={async (params: any) => { const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined; const res = await api.questions({ page: current, pageSize, search: state.searchText, ...sortParams }); loadStatistics(); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={questionColumns} search={false} toolBarRender={() => [<Input.Search key="search" placeholder="搜索..." style={{ width: 200 }} allowClear value={state.searchText} onChange={(e) => set({ searchText: e.target.value })} onSearch={(v) => { set({ searchText: v }); actionRef.current?.reload(); }} />]} onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })} /></ProCard>) },
+                { key: 'questions', label: '高频问题库', children: (<ProCard><ProTable actionRef={actionRef} rowKey="id" request={async (params: any) => { const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined; const res = await api.questions({ page: current, pageSize, search: state.search, ...sortParams }); loadStatistics(); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={questionColumns} search={false}                   toolBarRender={() => [<Input.Search key="search" placeholder="搜索..." allowClear value={state.search} onChange={(e) => set({ search: e.target.value })} onSearch={(v) => { set({ search: v }); actionRef.current?.reload(); }} style={{ width: 260, marginRight: 8 }} />]} onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })} /></ProCard>) },
                 { key: 'templates', label: '问卷模板', children: (<ProCard><ProTable actionRef={actionRef} rowKey="id" request={async (params: any) => { const { current, pageSize } = params; const res = await api.questionnaires({ page: current, pageSize }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={questionnaireColumns} search={false} toolBarRender={() => [<Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>刷新</Button>]} /></ProCard>) }
             ]} />
 

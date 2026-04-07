@@ -72,7 +72,7 @@ const AssetManagement: React.FC = () => {
         statistics: null as AssetStatistics | null,
         activeTab: 'buildings',
         sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
-        searchText: '',
+        search: '',
     });
     const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
@@ -152,12 +152,22 @@ const AssetManagement: React.FC = () => {
                 request={((async (params: any) => {
                     const { current, pageSize, activeTab: tab } = params;
                     const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-                    if (tab === 'buildings' || !tab) { const res = await api.buildings({ page: current, pageSize, search: state.searchText, ...sortParams }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }
-                    else { const res = await api.units({ page: current, pageSize, search: state.searchText, ...sortParams }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }
+                    if (tab === 'buildings' || !tab) { const res = await api.buildings({ page: current, pageSize, search: state.search, ...sortParams }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }
+                    else { const res = await api.units({ page: current, pageSize, search: state.search, ...sortParams }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }
                 }) as any)}
                 columns={state.activeTab === 'buildings' ? buildingColumns as any : unitColumns as any} rowKey="id" search={false}
                 onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
-                toolBarRender={() => [<Input.Search key="search" placeholder="搜索..." style={{ width: 200 }} allowClear value={state.searchText} onChange={(e) => set({ searchText: e.target.value })} onSearch={(v) => { set({ searchText: v }); actionRef.current?.reload(); }} />]}
+                toolBarRender={() => [
+                  <Input.Search
+                    key="search"
+                    placeholder="搜索..."
+                    allowClear
+                    value={state.search}
+                    onChange={(e) => set({ search: e.target.value })}
+                    onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+                    style={{ width: 260, marginRight: 8 }}
+                  />,
+                ]}
             />
 
             <ModalForm key={buildingState.editingBuilding?.id || 'create-building'}

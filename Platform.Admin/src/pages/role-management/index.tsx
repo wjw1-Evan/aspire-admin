@@ -41,7 +41,7 @@ const RoleManagement: React.FC = () => {
     detailVisible: false,
     viewingRole: null as RoleWithStats | null,
     sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
-    searchText: '',
+    search: '',
   });
   const [formState, setFormState] = useState({
     menuTree: [] as any[],

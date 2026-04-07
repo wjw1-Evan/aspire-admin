@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { StatCard } from '@/components';
-import { Space, Tag, Button, Row, Col, Tabs, Drawer, message } from 'antd';
+import { Space, Tag, Button, Row, Col, Tabs, Drawer, message, Input } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { CheckCircleOutlined, FileTextOutlined, CloseOutlined, ReloadOutlined, EyeOutlined, CheckOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
@@ -45,6 +45,7 @@ const ApprovalPage: React.FC = () => {
     activeTab: 'pending',
     detailVisible: false,
     viewingId: '',
+    search: '',
   });
   const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
@@ -95,9 +96,9 @@ const ApprovalPage: React.FC = () => {
     const { current, pageSize } = params;
     let res;
     if (state.activeTab === 'pending') {
-      res = await api.pending({ page: current, pageSize });
+      res = await api.pending({ page: current, pageSize, search: state.search });
     } else {
-      res = await api.list({ page: current, pageSize, filterType: state.activeTab });
+      res = await api.list({ page: current, pageSize, filterType: state.activeTab, search: state.search });
     }
     api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
     return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
@@ -144,6 +145,15 @@ const ApprovalPage: React.FC = () => {
               rowKey="id"
               search={false}
               toolBarRender={() => [
+                <Input.Search
+                  key="search"
+                  placeholder="搜索..."
+                  allowClear
+                  value={state.search}
+                  onChange={(e) => set({ search: e.target.value })}
+                  onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+                  style={{ width: 260, marginRight: 8 }}
+                />,
                 <Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>刷新</Button>,
               ]}
             />

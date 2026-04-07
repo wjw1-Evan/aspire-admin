@@ -252,7 +252,17 @@ const UserManagement: React.FC = () => {
       </>}
       {activeTab === 'requests' && <>
         <ProTable<JoinReq> actionRef={joinActionRef} request={async () => { await fetchJoin(); return { data: join.data, total: join.total, success: true }; }} columns={joinCols} rowKey="id" search={false} scroll={{ x: 'max-content' }}
-          toolBarRender={() => [<Input.Search key="search" placeholder="搜索用户名/邮箱..." style={{ width: 240 }} allowClear value={(joinRef.current as Record<string, string>).search} onChange={(e) => { joinRef.current = { ...joinRef.current, search: e.target.value } as PageParams; }} onSearch={(v) => { joinRef.current = { ...joinRef.current, search: v, page: 1 } as PageParams; fetchJoin(); }} />]}
+          toolBarRender={() => [
+            <Input.Search
+              key="search"
+              placeholder="搜索..."
+              style={{ width: 260, marginRight: 8 }}
+              allowClear
+              value={(joinRef.current as Record<string, string>).search}
+              onChange={(e) => { joinRef.current = { ...joinRef.current, search: e.target.value } as PageParams; }}
+              onSearch={(v) => { joinRef.current = { ...joinRef.current, search: v, page: 1 } as PageParams; fetchJoin(); }}
+            />,
+          ]}
         />
         <Modal title="拒绝申请" open={join.rejectModal} onOk={handleReject} onCancel={() => setJ({ rejectModal: false })} okText="确定" cancelText="取消" okType="danger">
           <Input.TextArea rows={4} placeholder="请输入拒绝原因" value={join.rejectReason} onChange={(e) => setJ({ rejectReason: e.target.value })} />

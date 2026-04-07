@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { request } from '@umijs/max';
 import { Tag, Space, Button, Popconfirm, Modal, Drawer, Form, Input } from 'antd';
-import { PageContainer, ModalForm, ProDescriptions, ProCard, ProTable, ProColumns, ActionType, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-components';
+import { PageContainer, ModalForm, ProDescriptions, ProTable, ProColumns, ActionType, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-components';
 import { PlusOutlined, ExportOutlined, LockOutlined, EditOutlined, DeleteOutlined, SearchOutlined, CopyOutlined, DownloadOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
@@ -81,13 +81,6 @@ const PasswordBook: React.FC = () => {
     },
   ];
 
-  const statItems = [
-    { value: state.statistics?.totalEntries, label: '总条目数' },
-    { value: state.statistics?.categoryCount, label: '分类数量' },
-    { value: state.statistics?.tagCount, label: '标签数量' },
-    { value: state.statistics?.recentUsedCount, label: '最近使用' },
-  ];
-
   const handleFinish = async (values: Record<string, any>) => {
     const data = {
       platform: values.platform,
@@ -125,7 +118,18 @@ const PasswordBook: React.FC = () => {
     <PageContainer>
       <ProTable
         actionRef={actionRef}
-        headerTitle={<Space><LockOutlined />密码本</Space>}
+        headerTitle={
+          <Space size={24}>
+            <Space><LockOutlined />密码本</Space>
+            <Space size={8}>
+              <span style={{ color: '#8c8c8c' }}>|</span>
+              <span>总条目数：<strong>{state.statistics?.totalEntries || 0}</strong></span>
+              <span>分类数量：<strong>{state.statistics?.categoryCount || 0}</strong></span>
+              <span>标签数量：<strong>{state.statistics?.tagCount || 0}</strong></span>
+              <span>最近使用：<strong>{state.statistics?.recentUsedCount || 0}</strong></span>
+            </Space>
+          </Space>
+        }
         request={async (params) => {
           const { current, pageSize } = params;
           const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;

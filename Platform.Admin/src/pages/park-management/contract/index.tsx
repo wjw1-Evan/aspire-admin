@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { PageContainer, ProCard } from '@ant-design/pro-components';
+import { PageContainer } from '@ant-design/pro-components';
 import { useIntl, request } from '@umijs/max';
 import { Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typography, InputNumber, Popconfirm, DatePicker, List, Flex, Upload } from 'antd';
 import { Drawer } from 'antd';
@@ -109,26 +109,17 @@ const ContractManagement: React.FC = () => {
 
     return (
         <PageContainer>
-            {state.statistics && <ProCard gutter={16} style={{ marginBottom: 16 }}>
-                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#52c41a' }}>{state.statistics.activeContracts}</div>
-                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>生效合同</div>
-                </ProCard>
-                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#1890ff' }}>¥{state.statistics.totalContractAmount?.toLocaleString()}</div>
-                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>合同总额</div>
-                </ProCard>
-                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-                    <div style={{ fontSize: 24, fontWeight: 'bold', color: state.statistics.expiringContracts > 0 ? '#f5222d' : '#d9d9d9' }}>{state.statistics.expiringContracts}</div>
-                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>即将到期</div>
-                </ProCard>
-                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#722ed1' }}>¥{state.statistics.totalExpected?.toLocaleString()}</div>
-                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>本月应收</div>
-                </ProCard>
-            </ProCard>}
-
-            <ProTable actionRef={actionRef} request={async (params: any) => {
+            <ProTable actionRef={actionRef} headerTitle={
+              <Space size={24}>
+                <Space><FileTextOutlined />合同管理</Space>
+                <Space size={12}>
+                  <Tag color="green">生效 {state.statistics?.activeContracts || 0}</Tag>
+                  <Tag color="blue">总额 ¥{state.statistics?.totalContractAmount?.toLocaleString() || 0}</Tag>
+                  <Tag color={state.statistics?.expiringContracts ? 'red' : 'default'}>即将到期 {state.statistics?.expiringContracts || 0}</Tag>
+                  <Tag color="purple">本月应收 ¥{state.statistics?.totalExpected?.toLocaleString() || 0}</Tag>
+                </Space>
+              </Space>
+            } request={async (params: any) => {
                 const { current, pageSize } = params;
                 const sortParams = sorter?.sortBy && sorter?.sortOrder ? sorter : undefined;
                 const res = await api.list({ page: current, pageSize, search: searchParams.search, ...sortParams });

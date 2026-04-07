@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { PageContainer, ProCard } from '@ant-design/pro-components';
+import { PageContainer } from '@ant-design/pro-components';
 import { request } from '@umijs/max';
 import { App, Tag, Typography, Empty, Rate, Button, Space, Input, Row, Col } from 'antd';
 import { Drawer } from 'antd';
@@ -77,28 +77,18 @@ const TenantManagement: React.FC = () => {
 
     return (
         <PageContainer>
-            {state.statistics && <ProCard gutter={16} style={{ marginBottom: 16 }}>
-                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-                    <div style={{ fontSize: 24, fontWeight: 'bold' }}>{state.statistics.totalTenants}</div>
-                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>租户总数</div>
-                    <Typography.Text type="secondary" style={{ fontSize: 11 }}>活跃: {state.statistics.activeTenants}</Typography.Text>
-                </ProCard>
-                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#52c41a' }}>{state.statistics.totalContracts}</div>
-                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>合同总数</div>
-                    <Typography.Text type="secondary" style={{ fontSize: 11 }}>有效: {state.statistics.activeContracts}</Typography.Text>
-                </ProCard>
-                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-                    <div style={{ fontSize: 24, fontWeight: 'bold', color: state.statistics.expiringContracts > 0 ? '#f5222d' : '#52c41a' }}>{state.statistics.expiringContracts}</div>
-                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>即将到期</div>
-                </ProCard>
-                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#722ed1' }}>¥{state.statistics.totalMonthlyRent?.toLocaleString()}</div>
-                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>月租金收入</div>
-                </ProCard>
-            </ProCard>}
-
-            <ProTable actionRef={actionRef} request={async (params: any) => {
+            <ProTable actionRef={actionRef} headerTitle={
+              <Space size={24}>
+                <Space><UserOutlined />租户管理</Space>
+                <Space size={12}>
+                  <Tag color="blue">租户 {state.statistics?.totalTenants || 0}</Tag>
+                  <Tag color="green">活跃 {state.statistics?.activeTenants || 0}</Tag>
+                  <Tag color="cyan">合同 {state.statistics?.totalContracts || 0}</Tag>
+                  <Tag color="orange">即将到期 {state.statistics?.expiringContracts || 0}</Tag>
+                  <Tag color="purple">月租金 ¥{state.statistics?.totalMonthlyRent?.toLocaleString() || 0}</Tag>
+                </Space>
+              </Space>
+            } request={async (params: any) => {
                 const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
                 const res = await api.list({ page: current, pageSize, search: state.search, ...sortParams });
                 return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };

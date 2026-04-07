@@ -86,30 +86,9 @@ const EnterpriseService: React.FC = () => {
 
     return (
         <PageContainer>
-            {state.statistics && <ProCard gutter={16} style={{ marginBottom: 16 }}>
-                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-                    <div style={{ fontSize: 24, fontWeight: 'bold' }}>{state.statistics.totalCategories}</div>
-                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>服务类别</div>
-                    <Typography.Text type="secondary" style={{ fontSize: 11 }}>启用: {state.statistics.activeCategories}</Typography.Text>
-                </ProCard>
-                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#52c41a' }}>{state.statistics.totalRequests}</div>
-                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>服务申请</div>
-                    <Typography.Text type="secondary" style={{ fontSize: 11 }}>待处理: {state.statistics.pendingRequests}</Typography.Text>
-                </ProCard>
-                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#faad14' }}>{state.statistics.processingRequests}</div>
-                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>处理中</div>
-                </ProCard>
-                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#722ed1' }}>{state.statistics.averageRating ? `${state.statistics.averageRating} ⭐` : '-'}</div>
-                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>满意度</div>
-                </ProCard>
-            </ProCard>}
-
             <ProCard>
                 <Tabs activeKey={state.activeTab} onChange={(key) => set({ activeTab: key })} items={[
-                    { key: 'requests', label: <Space><FormOutlined />服务申请</Space>, children: <ProTable actionRef={actionRef} request={async (params: any) => { const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined; const res = await api.requests({ page: current, pageSize, search: state.search, ...sortParams }); loadData(); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={columns} rowKey="id" search={false} onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })} scroll={{ x: 'max-content' }} toolBarRender={() => [
+                    { key: 'requests', label: <Space><FormOutlined />服务申请</Space>, children: <ProTable actionRef={actionRef} headerTitle={<Space size={24}><Space><AppstoreOutlined />企业服务</Space><Space size={12}><Tag color="blue">类别 {state.statistics?.totalCategories || 0}</Tag><Tag color="green">申请 {state.statistics?.totalRequests || 0}</Tag><Tag color="orange">待处理 {state.statistics?.pendingRequests || 0}</Tag><Tag color="cyan">处理中 {state.statistics?.processingRequests || 0}</Tag><Tag color="purple">满意度 {state.statistics?.averageRating || 0} ⭐</Tag></Space></Space>} request={async (params: any) => { const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined; const res = await api.requests({ page: current, pageSize, search: state.search, ...sortParams }); loadData(); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={columns} rowKey="id" search={false} onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })} scroll={{ x: 'max-content' }} toolBarRender={() => [
                         <Input.Search
                             key="search"
                             placeholder="搜索..."

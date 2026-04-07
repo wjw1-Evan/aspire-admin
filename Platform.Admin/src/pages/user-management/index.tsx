@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import { PageContainer, ProCard } from '@ant-design/pro-components';
+import { PageContainer } from '@ant-design/pro-components';
 import { useIntl, request } from '@umijs/max';
 import { App, Button, Tag, Space, Modal, Badge, Spin, Input, Typography, Form, Select } from 'antd';
 import { Drawer } from 'antd';
@@ -174,13 +174,17 @@ const UserManagement: React.FC = () => {
       tabActiveKey={activeTab} onTabChange={(key: string) => { setActiveTab(key); if (key === 'members') actionRef.current?.reload(); }}
     >
       {activeTab === 'members' && <>
-        {state.statistics && <ProCard gutter={16} style={{ marginBottom: 16 }}>
-          {stats.map((s) => <ProCard key={s.label} colSpan={{ xs: 24, sm: 12, md: 6 }}>
-            <div style={{ fontSize: 24, fontWeight: 'bold', color: s.color }}>{s.value}</div>
-            <div style={{ color: '#8c8c8c', fontSize: 12 }}>{s.label}</div>
-          </ProCard>)}
-        </ProCard>}
-        <ProTable actionRef={actionRef} request={async (params) => {
+        <ProTable actionRef={actionRef} headerTitle={
+          <Space size={24}>
+            <Space><UserOutlined />成员管理</Space>
+            <Space size={12}>
+              <Tag color="blue">总成员 {state.statistics?.totalUsers || 0}</Tag>
+              <Tag color="green">已激活 {state.statistics?.activeUsers || 0}</Tag>
+              <Tag color="orange">管理员 {state.statistics?.adminUsers || 0}</Tag>
+              <Tag color="purple">本月新增 {state.statistics?.newUsersThisMonth || 0}</Tag>
+            </Space>
+          </Space>
+        } request={async (params) => {
           const { current, pageSize, search, createdAtRange } = params;
           const sp = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
           const rangeParams = createdAtRange ? { startDate: createdAtRange[0], endDate: createdAtRange[1] } : {};

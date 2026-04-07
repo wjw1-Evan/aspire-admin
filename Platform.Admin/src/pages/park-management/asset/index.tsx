@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { PageContainer, ProCard } from '@ant-design/pro-components';
+import { PageContainer } from '@ant-design/pro-components';
 import { useIntl, request } from '@umijs/max';
 import { Tag, Space, Row, Col, Button, Input, Popconfirm, Drawer, Typography, Upload, DatePicker } from 'antd';
 import type { UploadFile } from 'antd';
@@ -133,32 +133,17 @@ const AssetManagement: React.FC = () => {
 
     return (
         <PageContainer>
-            {state.statistics && <ProCard gutter={16} style={{ marginBottom: 16 }}>
-                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-                    <div style={{ fontSize: 24, fontWeight: 'bold' }}>{state.statistics.totalBuildings}</div>
-                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>物业总数</div>
-                    {state.statistics.totalBuildingsMoM !== undefined && (
-                        <Typography.Text style={{ fontSize: 11, color: state.statistics.totalBuildingsMoM >= 0 ? '#52c41a' : '#ff4d4f' }}>
-                            {state.statistics.totalBuildingsMoM >= 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />} {Math.abs(state.statistics.totalBuildingsMoM).toFixed(1)}%
-                        </Typography.Text>
-                    )}
-                </ProCard>
-                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#52c41a' }}>{state.statistics.totalUnits}</div>
-                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>房源总数</div>
-                    <Typography.Text type="secondary" style={{ fontSize: 11 }}>可用: {state.statistics.availableUnits}</Typography.Text>
-                </ProCard>
-                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#722ed1' }}>{state.statistics.totalArea?.toLocaleString()} m²</div>
-                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>总面积</div>
-                </ProCard>
-                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-                    <div style={{ fontSize: 24, fontWeight: 'bold', color: state.statistics.occupancyRate >= 80 ? '#52c41a' : state.statistics.occupancyRate >= 50 ? '#faad14' : '#f5222d' }}>{state.statistics.occupancyRate}%</div>
-                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>出租率</div>
-                </ProCard>
-            </ProCard>}
-
-            <ProTable actionRef={actionRef} params={{ activeTab: state.activeTab }}
+            <ProTable actionRef={actionRef} params={{ activeTab: state.activeTab }} headerTitle={
+              <Space size={24}>
+                <Space><BankOutlined />资产管理</Space>
+                <Space size={12}>
+                  <Tag color="blue">楼宇 {state.statistics?.totalBuildings || 0}</Tag>
+                  <Tag color="green">房源 {state.statistics?.totalUnits || 0} (可用 {state.statistics?.availableUnits || 0})</Tag>
+                  <Tag color="purple">总面积 {state.statistics?.totalArea?.toLocaleString() || 0} m²</Tag>
+                  <Tag color={(state.statistics?.occupancyRate ?? 0) >= 80 ? 'success' : (state.statistics?.occupancyRate ?? 0) >= 50 ? 'warning' : 'error'}>出租率 {state.statistics?.occupancyRate || 0}%</Tag>
+                </Space>
+              </Space>
+            }
                 request={((async (params: any) => {
                     const { current, pageSize, activeTab: tab } = params;
                     const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;

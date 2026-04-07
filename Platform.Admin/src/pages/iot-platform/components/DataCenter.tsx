@@ -46,7 +46,11 @@ const DataCenter = React.forwardRef<DataCenterRef, any>((props, ref) => {
 
   return (
     <>
-      <ProTable actionRef={actionRef} request={async (params: any) => {
+      <ProTable actionRef={actionRef} headerTitle={
+        <Space size={24}>
+          <Space><DatabaseOutlined />数据中心</Space>
+        </Space>
+      } request={async (params: any) => {
         const { current, pageSize } = params;
         const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
         const res = await iotService.queryDataRecords({ page: current, pageSize, search: state.search, ...sortParams });

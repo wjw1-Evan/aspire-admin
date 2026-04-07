@@ -1,11 +1,10 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { StatCard } from '@/components';
 import { useIntl } from '@umijs/max';
 import { type ProColumns, ActionType, ProTable } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormDigit, ProFormSwitch, ProFormTextArea } from '@ant-design/pro-components';
 import { Button, Col, Drawer, Form, Grid, Input, Row, Space, Tag, message } from 'antd';
 import { ProCard, ProDescriptions } from '@ant-design/pro-components';
-import { PlusOutlined, EditOutlined, DeleteOutlined, DatabaseOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, DatabaseOutlined, CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { iotService, IoTDataPoint, IoTDevice } from '@/services/iotService';
 import { useModal } from '@/hooks/useModal';
@@ -105,15 +104,17 @@ const DataPointManagement = React.forwardRef<DataPointManagementRef, any>((props
 
   return (
     <>
-      {state.statistics && <ProCard style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>
-        {[{ key: 'total', title: '数据点总数', icon: <DatabaseOutlined />, color: '#1890ff' },
-          { key: 'enabled', title: '已启用', icon: <CheckCircleOutlined />, color: '#52c41a' },
-          { key: 'disabled', title: '已禁用', icon: <CloseCircleOutlined />, color: '#8c8c8c' },
-          { key: 'withAlarm', title: '已配置告警', icon: <ExclamationCircleOutlined />, color: '#faad14' }
-        ].map(i => <Col xs={24} sm={12} md={6} key={i.key}><StatCard title={i.title} value={state.statistics![i.key as keyof typeof state.statistics]} icon={i.icon} color={i.color} /></Col>)}
-      </Row></ProCard>}
-
-      <ProTable actionRef={actionRef} request={async (params: any) => {
+      <ProTable actionRef={actionRef} headerTitle={
+        <Space size={24}>
+          <Space><DatabaseOutlined />数据点管理</Space>
+          <Space size={12}>
+            <Tag color="blue">总数 {state.statistics?.total || 0}</Tag>
+            <Tag color="green">已启用 {state.statistics?.enabled || 0}</Tag>
+            <Tag color="default">已禁用 {state.statistics?.disabled || 0}</Tag>
+            <Tag color="orange">已配置告警 {state.statistics?.withAlarm || 0}</Tag>
+          </Space>
+        </Space>
+      } request={async (params: any) => {
         const { current, pageSize } = params;
         const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
         const res = await iotService.getDataPoints({ page: current, pageSize, search: state.search, ...sortParams });

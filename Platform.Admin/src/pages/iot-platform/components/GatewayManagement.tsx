@@ -1,11 +1,10 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { StatCard } from '@/components';
 import { useIntl } from '@umijs/max';
 import { type ProColumns, ActionType, ProTable } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect } from '@ant-design/pro-components';
 import { Button, Col, Drawer, Form, Grid, Input, Row, Space, Tag, message } from 'antd';
 import { ProCard, ProDescriptions } from '@ant-design/pro-components';
-import { PlusOutlined, EditOutlined, DeleteOutlined, CloudServerOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CloudServerOutlined, CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { iotService, IoTGateway, GatewayStatistics, IoTDeviceStatus } from '@/services/iotService';
 import { useModal } from '@/hooks/useModal';
@@ -87,15 +86,16 @@ const GatewayManagement = React.forwardRef<GatewayManagementRef, any>((props, re
 
   return (
     <>
-      {state.statistics && <ProCard style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>
-        {[{ key: 'total', title: '网关总数', icon: <CloudServerOutlined />, color: '#1890ff' },
-          { key: 'online', title: '在线', icon: <CheckCircleOutlined />, color: '#52c41a' },
-          { key: 'offline', title: '离线', icon: <CloseCircleOutlined />, color: '#8c8c8c' },
-          { key: 'fault', title: '故障', icon: <ExclamationCircleOutlined />, color: '#ff4d4f' }
-        ].map(i => <Col xs={24} sm={12} md={6} key={i.key}><StatCard title={i.title} value={state.statistics![i.key as keyof typeof state.statistics]} icon={i.icon} color={i.color} /></Col>)}
-      </Row>      </ProCard>}
-
-      <ProTable actionRef={actionRef} request={async (params: any) => {
+      <ProTable actionRef={actionRef} headerTitle={
+        <Space size={24}>
+          <Space><CloudServerOutlined />网关管理</Space>
+          <Space size={12}>
+            <Tag color="blue">总数 {state.statistics?.total || 0}</Tag>
+            <Tag color="green">在线 {state.statistics?.online || 0}</Tag>
+            <Tag color="default">离线 {state.statistics?.offline || 0}</Tag>
+          </Space>
+        </Space>
+      } request={async (params: any) => {
         const { current, pageSize } = params;
         const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
         const res = await iotService.getGateways({ page: current, pageSize, search: state.search, ...sortParams });

@@ -1,11 +1,9 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { StatCard } from '@/components';
 import { useIntl } from '@umijs/max';
 import { type ProColumns, ActionType, ProTable } from '@ant-design/pro-table';
 import { ModalForm, ProFormTextArea } from '@ant-design/pro-components';
-import { Button, Col, Form, Grid, Input, Row, Space, Tag, message } from 'antd';
-import { ProCard } from '@ant-design/pro-components';
-import { CheckOutlined, AlertOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
+import { Button, Form, Grid, Input, Space, Tag, message } from 'antd';
+import { CheckOutlined, AlertOutlined, CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { iotService, IoTDeviceEvent, IoTDevice } from '@/services/iotService';
 
@@ -69,15 +67,17 @@ const EventManagement = React.forwardRef<EventManagementRef, any>((props, ref) =
 
   return (
     <>
-      {state.statistics && <ProCard style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>
-        {[{ key: 'total', title: '事件总数', icon: <AlertOutlined />, color: '#1890ff' },
-          { key: 'unhandled', title: '未处理', icon: <CloseCircleOutlined />, color: '#ff4d4f' },
-          { key: 'handled', title: '已处理', icon: <CheckCircleOutlined />, color: '#52c41a' },
-          { key: 'critical', title: '严重事件', icon: <ExclamationCircleOutlined />, color: '#ff4d4f' }
-        ].map(i => <Col xs={24} sm={12} md={6} key={i.key}><StatCard title={i.title} value={state.statistics![i.key as keyof typeof state.statistics]} icon={i.icon} color={i.color} /></Col>)}
-      </Row>      </ProCard>}
-
-      <ProTable actionRef={actionRef} request={async (params: any) => {
+      <ProTable actionRef={actionRef} headerTitle={
+        <Space size={24}>
+          <Space><AlertOutlined />事件管理</Space>
+          <Space size={12}>
+            <Tag color="blue">总数 {state.statistics?.total || 0}</Tag>
+            <Tag color="red">未处理 {state.statistics?.unhandled || 0}</Tag>
+            <Tag color="green">已处理 {state.statistics?.handled || 0}</Tag>
+            <Tag color="orange">严重 {state.statistics?.critical || 0}</Tag>
+          </Space>
+        </Space>
+      } request={async (params: any) => {
         const { current, pageSize } = params;
         const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
         const res = await iotService.queryEvents({ page: current, pageSize, search: state.search, ...sortParams });

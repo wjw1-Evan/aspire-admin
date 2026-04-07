@@ -1,10 +1,9 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { StatCard } from '@/components';
 import { useIntl } from '@umijs/max';
 import { type ProColumns, ActionType, ProTable } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormDigit, ProFormTextArea } from '@ant-design/pro-components';
-import { Button, Col, Drawer, Form, Grid, Input, Row, Select, Space, Tag, Tabs, message, Alert, Modal } from 'antd';
-import { ProDescriptions, ProCard } from '@ant-design/pro-components';
+import { Button, Col, Drawer, Form, Grid, Input, Row, Space, Tag, Tabs, message, Alert, Modal } from 'antd';
+import { ProCard, ProDescriptions } from '@ant-design/pro-components';
 import { PlusOutlined, EditOutlined, DeleteOutlined, DesktopOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, KeyOutlined, BranchesOutlined, SendOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { iotService, IoTDevice, IoTGateway, DeviceStatistics, GenerateApiKeyResult } from '@/services/iotService';
@@ -136,14 +135,6 @@ const DeviceManagement = React.forwardRef<DeviceManagementRef, any>((props, ref)
 
   return (
     <>
-      {state.statistics && <ProCard style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>
-        {[{ key: 'total', title: '设备总数', icon: <DesktopOutlined />, color: '#1890ff' },
-          { key: 'online', title: '在线设备', icon: <CheckCircleOutlined />, color: '#52c41a' },
-          { key: 'offline', title: '离线设备', icon: <CloseCircleOutlined />, color: '#8c8c8c' },
-          { key: 'fault', title: '故障设备', icon: <ExclamationCircleOutlined />, color: '#ff4d4f' }
-        ].map(i => <Col xs={24} sm={12} md={6} key={i.key}><StatCard title={i.title} value={state.statistics![i.key as keyof typeof state.statistics]} icon={i.icon} color={i.color} /></Col>)}
-      </Row></ProCard>}
-
       {state.selectedRowKeys.length > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', marginBottom: 8, background: '#e6f4ff', border: '1px solid #91caff', borderRadius: 8 }}>
           <span style={{ color: '#1677ff', fontWeight: 500 }}>已选择 <strong>{state.selectedRowKeys.length}</strong> 个设备</span>
@@ -152,7 +143,17 @@ const DeviceManagement = React.forwardRef<DeviceManagementRef, any>((props, ref)
         </div>
       )}
 
-      <ProTable actionRef={actionRef} request={async (params: any) => {
+      <ProTable actionRef={actionRef} headerTitle={
+        <Space size={24}>
+          <Space><DesktopOutlined />设备管理</Space>
+          <Space size={12}>
+            <Tag color="blue">总数 {state.statistics?.total || 0}</Tag>
+            <Tag color="green">在线 {state.statistics?.online || 0}</Tag>
+            <Tag color="default">离线 {state.statistics?.offline || 0}</Tag>
+            <Tag color="red">故障 {state.statistics?.fault || 0}</Tag>
+          </Space>
+        </Space>
+      } request={async (params: any) => {
         const { current, pageSize } = params;
         const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
         const res = await iotService.getDevices({ page: current, pageSize, search: state.search, ...sortParams });

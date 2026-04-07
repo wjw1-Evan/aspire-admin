@@ -121,12 +121,11 @@ const PasswordBook: React.FC = () => {
         headerTitle={
           <Space size={24}>
             <Space><LockOutlined />密码本</Space>
-            <Space size={8}>
-              <span style={{ color: '#8c8c8c' }}>|</span>
-              <span>总条目数：<strong>{state.statistics?.totalEntries || 0}</strong></span>
-              <span>分类数量：<strong>{state.statistics?.categoryCount || 0}</strong></span>
-              <span>标签数量：<strong>{state.statistics?.tagCount || 0}</strong></span>
-              <span>最近使用：<strong>{state.statistics?.recentUsedCount || 0}</strong></span>
+            <Space size={12}>
+              <Tag color="blue">总条目 {state.statistics?.totalEntries || 0}</Tag>
+              <Tag color="green">分类 {state.statistics?.categoryCount || 0}</Tag>
+              <Tag color="orange">标签 {state.statistics?.tagCount || 0}</Tag>
+              <Tag color="purple">最近使用 {state.statistics?.recentUsedCount || 0}</Tag>
             </Space>
           </Space>
         }

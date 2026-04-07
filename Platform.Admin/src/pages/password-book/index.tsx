@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { request } from '@umijs/max';
 import { Tag, Space, Button, Popconfirm, Modal, Drawer, Form, Input } from 'antd';
 import { PageContainer, ModalForm, ProDescriptions, ProTable, ProColumns, ActionType, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-components';
-import { PlusOutlined, ExportOutlined, LockOutlined, EditOutlined, DeleteOutlined, SearchOutlined, CopyOutlined, DownloadOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, ExportOutlined, LockOutlined, EditOutlined, DeleteOutlined, SearchOutlined, CopyOutlined, DownloadOutlined, CheckCircleOutlined, EyeOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 
@@ -46,6 +46,7 @@ const PasswordBook: React.FC = () => {
     formVisible: false,
     detailVisible: false,
     viewingId: '',
+    detailLoading: false,
     sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
     search: '' as string,
   });
@@ -60,15 +61,20 @@ const PasswordBook: React.FC = () => {
 
   useEffect(() => { loadStatistics(); }, [loadStatistics]);
 
+  const handleView = (id: string) => {
+    set({ viewingId: id, detailVisible: true });
+  };
+
   const columns: ProColumns<Entry>[] = [
-    { title: '平台', dataIndex: 'platform', key: 'platform', sorter: true, render: (dom, r) => <a onClick={() => set({ viewingId: r.id, detailVisible: true })}>{dom}</a> },
+    { title: '平台', dataIndex: 'platform', key: 'platform', sorter: true, render: (dom, r) => <a onClick={() => handleView(r.id)}>{dom}</a> },
     { title: '账号', dataIndex: 'account', key: 'account', sorter: true },
     { title: '网址', dataIndex: 'url', key: 'url', sorter: true, render: (dom) => dom ? <a href={dom as string} target="_blank">{dom}</a> : '-' },
     { title: '分类', dataIndex: 'category', key: 'category', sorter: true, render: (dom) => dom ? <Tag color="blue">{dom as string}</Tag> : '-' },
     { title: '标签', dataIndex: 'tags', render: (dom) => dom && typeof dom === 'object' && 'length' in dom ? <Space size={[0, 4]} wrap>{(dom as string[]).map((t) => <Tag key={t}>{t}</Tag>)}</Space> : '-' },
     { title: '最后使用', dataIndex: 'lastUsedAt', key: 'lastUsedAt', sorter: true, valueType: 'dateTime' },
     {
-      title: '操作', key: 'action', valueType: 'option', fixed: 'right', width: 120, render: (_, r) => [
+      title: '操作', key: 'action', valueType: 'option', fixed: 'right', width: 150, render: (_, r) => [
+        <Button key="view" type="link" icon={<EyeOutlined />} onClick={() => handleView(r.id)}>查看</Button>,
         <Button key="edit" type="link" icon={<EditOutlined />} onClick={async () => {
           const res = await api.get(r.id);
           if (res.success && res.data) {

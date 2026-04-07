@@ -131,10 +131,8 @@ public class PasswordBookService : IPasswordBookService
 
         if (entry.UserId == userId)
         {
-            _context.Entry(entry).Property("LastUsedAt").IsModified = false;
-            await _context.Set<PasswordBookEntry>()
-                .Where(x => x.Id == id)
-                .ExecuteUpdateAsync(s => s.SetProperty(x => x.LastUsedAt, DateTime.UtcNow));
+            entry.LastUsedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
         }
 
         return new PasswordBookEntryDetailDto

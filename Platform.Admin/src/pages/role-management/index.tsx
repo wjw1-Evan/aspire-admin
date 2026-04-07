@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { PageContainer, ProCard } from '@ant-design/pro-components';
+import { PageContainer } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import { request } from '@umijs/max';
 import { Tag, Space, Button, Input, Drawer, Popconfirm, Switch, Tree, Spin, Divider } from 'antd';
@@ -70,27 +70,11 @@ const RoleManagement: React.FC = () => {
     ]},
   ];
 
-  const statItems = [
-    { value: state.statistics?.totalRoles, label: intl.formatMessage({ id: 'pages.roleManagement.statistics.totalRoles' }) },
-    { value: state.statistics?.activeRoles, label: intl.formatMessage({ id: 'pages.roleManagement.statistics.activeRoles' }) },
-    { value: state.statistics?.totalUsers, label: intl.formatMessage({ id: 'pages.roleManagement.statistics.totalUsers' }) },
-    { value: state.statistics?.totalMenus, label: intl.formatMessage({ id: 'pages.roleManagement.statistics.totalMenus' }) },
-  ];
-
   const convertToTreeData = (menus: MenuTreeNode[]): any[] => menus.filter((m): m is MenuTreeNode & { id: string } => Boolean(m.id)).map(m => ({ key: m.id, title: m.title || m.name, children: m.children ? convertToTreeData(m.children) : [] }));
   const getAllKeys = (menus: any[]): string[] => { let keys: string[] = []; menus.forEach(m => { if (m.key) keys.push(m.key); if (m.children?.length) keys = keys.concat(getAllKeys(m.children)); }); return keys; };
 
   return (
     <PageContainer>
-      <ProCard gutter={16} style={{ marginBottom: 16 }}>
-        {statItems.map(item => (
-          <ProCard key={item.label} colSpan={{ xs: 24, sm: 12, md: 6 }}>
-            <div style={{ fontSize: 24, fontWeight: 'bold' }}>{item.value || 0}</div>
-            <div style={{ color: '#8c8c8c', fontSize: 12 }}>{item.label}</div>
-          </ProCard>
-        ))}
-      </ProCard>
-
       <ProTable actionRef={actionRef} request={async (params) => {
         const { current, pageSize, name, description, isActive } = params;
         const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
@@ -98,6 +82,17 @@ const RoleManagement: React.FC = () => {
         const res = await api.list({ page: current, pageSize, ...filterParams, ...sortParams });
         return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
       }} columns={columns} rowKey="id" search={false}
+        headerTitle={
+          <Space size={24}>
+            <Space><SafetyOutlined />角色管理</Space>
+            <Space size={12}>
+              <Tag color="blue">角色总数 {state.statistics?.totalRoles || 0}</Tag>
+              <Tag color="green">启用 {state.statistics?.activeRoles || 0}</Tag>
+              <Tag color="orange">用户数 {state.statistics?.totalUsers || 0}</Tag>
+              <Tag color="purple">菜单数 {state.statistics?.totalMenus || 0}</Tag>
+            </Space>
+          </Space>
+        }
         onChange={(_, __, s: any) => set({ sorter: s?.order ? { sortBy: s.field as string, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
         scroll={{ x: 'max-content' }}
         toolBarRender={() => [

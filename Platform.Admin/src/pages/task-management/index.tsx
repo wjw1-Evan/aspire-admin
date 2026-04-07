@@ -1,12 +1,12 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import type { ProColumns } from '@ant-design/pro-table';
-import { PageContainer, ProCard, ProDescriptions } from '@ant-design/pro-components';
+import { PageContainer, ProDescriptions, ProCard } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import { request } from '@umijs/max';
 import { Button, Tag, Space, Grid, App, Modal, Spin, Timeline, Empty, Progress, Input } from 'antd';
 import { Drawer } from 'antd';
 import { ProTable, ActionType } from '@ant-design/pro-table';
-import { PlusOutlined, EditOutlined, DeleteOutlined, CheckCircleOutlined, ReloadOutlined, PlayCircleOutlined, StopOutlined, SearchOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CheckCircleOutlined, ReloadOutlined, PlayCircleOutlined, StopOutlined, SearchOutlined, ProjectOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 import { getTaskStatusColor, getTaskPriorityColor } from '@/utils/task';
@@ -199,24 +199,8 @@ const TaskManagement: React.FC = () => {
     ]},
   ], [intl, message, loadStatistics]);
 
-  const statItems = [
-    { value: state.statistics?.totalTasks, label: intl.formatMessage({ id: 'pages.taskManagement.statistics.totalTasks' }) },
-    { value: state.statistics?.inProgressTasks, label: intl.formatMessage({ id: 'pages.taskManagement.statistics.inProgressTasks' }) },
-    { value: state.statistics?.completedTasks, label: intl.formatMessage({ id: 'pages.taskManagement.statistics.completedTasks' }) },
-    { value: state.statistics?.completionRate ? `${state.statistics.completionRate.toFixed(1)}%` : '0%', label: intl.formatMessage({ id: 'pages.taskManagement.statistics.completionRate' }) },
-  ];
-
   return (
     <PageContainer>
-      <ProCard gutter={16} style={{ marginBottom: 16 }}>
-        {statItems.map(item => (
-          <ProCard key={item.label} colSpan={{ xs: 24, sm: 12, md: 6 }}>
-            <div style={{ fontSize: 24, fontWeight: 'bold' }}>{item.value || 0}</div>
-            <div style={{ color: '#8c8c8c', fontSize: 12 }}>{item.label}</div>
-          </ProCard>
-        ))}
-      </ProCard>
-
       <ProTable actionRef={actionRef} request={async (params: any) => {
         const { current, pageSize } = params;
         const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
@@ -224,6 +208,17 @@ const TaskManagement: React.FC = () => {
         loadStatistics();
         return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
       }} columns={columns} rowKey="id" search={false}
+        headerTitle={
+          <Space size={24}>
+            <Space><ProjectOutlined />任务管理</Space>
+            <Space size={12}>
+              <Tag color="blue">总数 {state.statistics?.totalTasks || 0}</Tag>
+              <Tag color="orange">进行中 {state.statistics?.inProgressTasks || 0}</Tag>
+              <Tag color="green">已完成 {state.statistics?.completedTasks || 0}</Tag>
+              <Tag color="purple">完成率 {state.statistics?.completionRate ? `${state.statistics.completionRate.toFixed(1)}%` : '0%'}</Tag>
+            </Space>
+          </Space>
+        }
         onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
         scroll={{ x: 'max-content' }}
         toolBarRender={() => [

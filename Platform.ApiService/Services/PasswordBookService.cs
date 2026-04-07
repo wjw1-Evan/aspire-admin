@@ -131,8 +131,10 @@ public class PasswordBookService : IPasswordBookService
 
         if (entry.UserId == userId)
         {
-            entry.LastUsedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
+            _context.Entry(entry).Property("LastUsedAt").IsModified = false;
+            await _context.Set<PasswordBookEntry>()
+                .Where(x => x.Id == id)
+                .ExecuteUpdateAsync(s => s.SetProperty(x => x.LastUsedAt, DateTime.UtcNow));
         }
 
         return new PasswordBookEntryDetailDto
@@ -198,14 +200,12 @@ public class PasswordBookService : IPasswordBookService
     /// </summary>
     public async Task<List<string>> GetCategoriesAsync()
     {
-        var entries = await _context.Set<PasswordBookEntry>().ToListAsync();
-
-        var categories = entries
-            .Where(e => !string.IsNullOrEmpty(e.Category))
+        var categories = await _context.Set<PasswordBookEntry>()
+            .Where(e => e.Category != null && e.Category != "")
             .Select(e => e.Category!)
             .Distinct()
             .OrderBy(c => c)
-            .ToList();
+            .ToListAsync();
 
         return categories;
     }
@@ -215,11 +215,13 @@ public class PasswordBookService : IPasswordBookService
     /// </summary>
     public async Task<List<string>> GetTagsAsync()
     {
-        var entries = await _context.Set<PasswordBookEntry>().ToListAsync();
+        var allEntries = await _context.Set<PasswordBookEntry>()
+            .Where(e => e.Tags != null && e.Tags.Count > 0)
+            .Select(e => e.Tags)
+            .ToListAsync();
 
-        var tags = entries
-            .Where(e => e.Tags != null && e.Tags.Any())
-            .SelectMany(e => e.Tags)
+        var tags = allEntries
+            .SelectMany(tags => tags)
             .Distinct()
             .OrderBy(t => t)
             .ToList();
@@ -279,24 +281,26 @@ public class PasswordBookService : IPasswordBookService
     /// </summary>
     public async Task<PasswordBookStatistics> GetStatisticsAsync()
     {
-        var entries = await _context.Set<PasswordBookEntry>().ToListAsync();
+        var totalEntries = await _context.Set<PasswordBookEntry>().CountAsync();
 
-        var totalEntries = entries.Count;
-        var categories = entries
-            .Where(e => !string.IsNullOrEmpty(e.Category))
+        var categories = await _context.Set<PasswordBookEntry>()
+            .Where(e => e.Category != null && e.Category != "")
             .Select(e => e.Category!)
             .Distinct()
-            .Count();
+            .CountAsync();
 
-        var tags = entries
-            .Where(e => e.Tags != null && e.Tags.Any())
-            .SelectMany(e => e.Tags)
+        var allEntriesForTags = await _context.Set<PasswordBookEntry>()
+            .Where(e => e.Tags != null && e.Tags.Count > 0)
+            .Select(e => e.Tags)
+            .ToListAsync();
+        var tags = allEntriesForTags
+            .SelectMany(tags => tags)
             .Distinct()
             .Count();
 
         var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
-        var recentUsedCount = entries
-            .Count(e => e.LastUsedAt.HasValue && e.LastUsedAt.Value >= sevenDaysAgo);
+        var recentUsedCount = await _context.Set<PasswordBookEntry>()
+            .CountAsync(e => e.LastUsedAt.HasValue && e.LastUsedAt.Value >= sevenDaysAgo);
 
         return new PasswordBookStatistics
         {

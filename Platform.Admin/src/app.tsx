@@ -32,6 +32,8 @@ const AiAssistant = React.lazy(() => import('@/components/AiAssistant'));
 const isDev = process.env.NODE_ENV === 'development';
 const loginPath = '/user/login';
 
+const PARENT_MENU_PATHS = ['/workflow', '/document', '/park-management', '/visit-management', '/cloud-storage', '/xiaoke-management', '/project-management', '/iot-platform'];
+
 
 /**
  * @see https://umijs.org/docs/api/runtime-config#getinitialstate
@@ -448,8 +450,13 @@ export const layout: RunTimeLayoutConfig = ({
       );
     },
     menuHeaderRender: false,
-    breadcrumbRender: (routers: any[]) =>
-      routers?.[0]?.path === '/' ? routers : [{ path: '/', breadcrumbName: '首页' }, ...(routers || [])],
+    breadcrumbRender: (routers: any[]) => {
+      const filtered = (routers || []).filter((r, i) => {
+        if (i === routers.length - 1) return true;
+        return !PARENT_MENU_PATHS.includes(r.path);
+      });
+      return filtered[0]?.path === '/' ? filtered : [{ path: '/', breadcrumbName: '首页' }, ...filtered];
+    },
     // 🔧 自定义子文件夹渲染
     subMenuItemRender: (item: any, dom: React.ReactNode) => {
       // 如果没有 icon 属性但有 rawIcon，说明是需要手动显示的二级文件夹

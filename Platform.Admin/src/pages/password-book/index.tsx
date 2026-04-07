@@ -123,15 +123,6 @@ const PasswordBook: React.FC = () => {
 
   return (
     <PageContainer>
-      <ProCard gutter={16} style={{ marginBottom: 16 }}>
-        {statItems.map(item => (
-          <ProCard key={item.label} colSpan={{ xs: 24, sm: 12, md: 6 }}>
-            <div style={{ fontSize: 24, fontWeight: 'bold' }}>{item.value || 0}</div>
-            <div style={{ color: '#8c8c8c', fontSize: 12 }}>{item.label}</div>
-          </ProCard>
-        ))}
-      </ProCard>
-
       <ProTable
         actionRef={actionRef}
         headerTitle={<Space><LockOutlined />密码本</Space>}

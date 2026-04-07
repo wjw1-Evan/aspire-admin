@@ -151,18 +151,14 @@ export default [
   },
   {
     path: '/xiaoke-management',
-    component: './xiaoke-management/config',
-    hideInMenu: true,
     routes: [
       {
         path: '/xiaoke-management/config',
         component: './xiaoke-management/config',
-        hideInMenu: true, // 使用数据库菜单
       },
       {
         path: '/xiaoke-management/chat-history',
         component: './xiaoke-management/chat-history',
-        hideInMenu: true, // 使用数据库菜单
       },
     ],
   },
@@ -173,153 +169,118 @@ export default [
   },
   {
     path: '/workflow',
-    component: './workflow/list',
-    hideInMenu: true,
     routes: [
       {
         path: '/workflow/list',
         component: './workflow/list',
-        hideInMenu: true,
       },
-
       {
         path: '/workflow/forms',
         component: './workflow/forms',
-        hideInMenu: true,
       },
-
       {
         path: '/workflow/monitor',
         component: './workflow/monitor',
-        hideInMenu: true,
       },
       {
         path: '/workflow/knowledge-base',
         component: './workflow/knowledge-base',
-        hideInMenu: true,
       },
       {
         path: '/workflow/knowledge-base/documents/:knowledgeBaseId',
         component: './workflow/knowledge-base/documents',
-        hideInMenu: true,
       },
     ],
   },
   {
     path: '/document',
-    component: './document/list',
-    hideInMenu: true,
     routes: [
       {
         path: '/document/list',
         component: './document/list',
-        hideInMenu: true,
       },
       {
         path: '/document/create',
         component: './document/create',
-        hideInMenu: true,
       },
       {
         path: '/document/create-by-workflow',
         component: './document/create-by-workflow',
-        hideInMenu: true,
       },
       {
         path: '/document/approval',
         component: './document/approval',
-        hideInMenu: true,
       },
     ],
   },
   {
     path: '/visit-management',
-    component: './park-management/visit-task',
-    hideInMenu: true,
     routes: [
       {
         path: '/visit-management/task',
         component: './park-management/visit-task',
-        hideInMenu: true,
       },
       {
         path: '/visit-management/assessment',
         component: './park-management/visit-assessment',
-        hideInMenu: true,
       },
       {
         path: '/visit-management/knowledge-base',
         component: './park-management/visit-knowledge-base',
-        hideInMenu: true,
       },
       {
         path: '/visit-management/statistics',
         component: './park-management/visit-statistics',
-        hideInMenu: true,
       },
     ],
   },
   {
     path: '/park-management',
-    component: './park-management/tenant',
-    hideInMenu: true,
     routes: [
       {
         path: '/park-management/asset',
         component: './park-management/asset',
-        hideInMenu: true,
       },
       {
         path: '/park-management/investment',
         component: './park-management/investment',
-        hideInMenu: true,
       },
       {
         path: '/park-management/tenant',
         component: './park-management/tenant',
-        hideInMenu: true,
       },
       {
         path: '/park-management/contract',
         component: './park-management/contract',
-        hideInMenu: true,
       },
       {
         path: '/park-management/enterprise-service',
         component: './park-management/enterprise-service',
-        hideInMenu: true,
       },
       {
         path: '/park-management/statistics',
         component: './park-management/statistics',
-        hideInMenu: true,
       },
     ],
   },
   {
     path: '/cloud-storage',
-    component: './cloud-storage/files',
-    hideInMenu: true,
     routes: [
       {
         path: '/cloud-storage/files',
         component: './cloud-storage/files',
-        hideInMenu: true,
       },
       {
         path: '/cloud-storage/shared',
         component: './cloud-storage/shared',
-        hideInMenu: true,
       },
       {
         path: '/cloud-storage/recycle',
         component: './cloud-storage/recycle',
-        hideInMenu: true,
       },
       {
         path: '/cloud-storage/quota',
         component: './cloud-storage/quota',
-        hideInMenu: true,
       },
     ],
   },

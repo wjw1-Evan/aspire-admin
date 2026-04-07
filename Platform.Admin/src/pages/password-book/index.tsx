@@ -122,7 +122,7 @@ const PasswordBook: React.FC = () => {
   };
 
   return (
-    <PageContainer title={<Space><LockOutlined />密码本</Space>}>
+    <PageContainer>
       <ProCard gutter={16} style={{ marginBottom: 16 }}>
         {statItems.map(item => (
           <ProCard key={item.label} colSpan={{ xs: 24, sm: 12, md: 6 }}>
@@ -148,6 +148,7 @@ const PasswordBook: React.FC = () => {
         }}
         search={false}
         scroll={{ x: 'max-content' }}
+        headerTitle={<Space><LockOutlined />密码本</Space>}
         toolBarRender={() => [
           <Input.Search
             key="search"

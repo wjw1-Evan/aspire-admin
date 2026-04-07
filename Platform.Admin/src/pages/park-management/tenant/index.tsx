@@ -18,14 +18,13 @@ interface LeasePaymentRecord { id: string; contractId: string; paymentType: stri
 interface TenantFormData { tenantName: string; contactPerson?: string; phone?: string; email?: string; industry?: string; businessLicense?: string; address?: string; notes?: string; entryDate?: string; }
 
 const api = {
-    list: (params: PageParams & { tenantId?: string }) => request<ApiResponse<PagedResult<ParkTenant>>>('/api/park/tenants/list', { method: 'POST', data: params }),
-    get: (id: string) => request<ApiResponse<ParkTenant>>(`/api/park/tenants/${id}`),
+    list: (params: PageParams & { tenantId?: string }) => request<ApiResponse<PagedResult<ParkTenant>>>('/api/park/tenants/list', { params }),
     create: (data: TenantFormData) => request<ApiResponse<ParkTenant>>('/api/park/tenants', { method: 'POST', data }),
     update: (id: string, data: TenantFormData) => request<ApiResponse<ParkTenant>>(`/api/park/tenants/${id}`, { method: 'PUT', data }),
     delete: (id: string) => request<ApiResponse<void>>(`/api/park/tenants/${id}`, { method: 'DELETE' }),
-    statistics: (startDate?: string, endDate?: string) => request<ApiResponse<TenantStatistics>>('/api/park/tenant/statistics', { params: { startDate, endDate } }),
-    getContracts: (params: { page?: number; pageSize?: number; tenantId?: string }) => request<ApiResponse<PagedResult<LeaseContract>>>('/api/park/contracts/list', { method: 'POST', data: params }),
-    getServiceRequests: (params: { page?: number; pageSize?: number; tenantId?: string }) => request<ApiResponse<PagedResult<ServiceRequest>>>('/api/park/services/requests/list', { method: 'POST', data: params }),
+    statistics: () => request<ApiResponse<TenantStatistics>>('/api/park/tenants/statistics'),
+    getContracts: (params: { page?: number; pageSize?: number; tenantId?: string }) => request<ApiResponse<PagedResult<LeaseContract>>>('/api/park/contracts/list', { params }),
+    getServiceRequests: (params: { page?: number; pageSize?: number; tenantId?: string }) => request<ApiResponse<PagedResult<ServiceRequest>>>('/api/park/services/requests/list', { params }),
     getPaymentRecords: (contractId: string) => request<ApiResponse<LeasePaymentRecord[]>>(`/api/park/contracts/${contractId}/payments`),
 };
 

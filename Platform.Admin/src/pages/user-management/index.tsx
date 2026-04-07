@@ -28,7 +28,7 @@ interface JoinReq {
 
 // ==================== API ====================
 const api = {
-  list: (p: PageParams) => request<ApiResponse<PagedResult<AppUser>>>('/api/users/list', { method: 'POST', data: p }),
+  list: (p: PageParams) => request<ApiResponse<PagedResult<AppUser>>>('/api/users/list', { params: p }),
   stats: () => request<ApiResponse<UserStats>>('/api/users/statistics', { method: 'GET' }),
   del: (id: string, reason?: string) => request<ApiResponse<unknown>>(`/api/users/${id}`, { method: 'DELETE', params: reason ? { reason } : undefined }),
   bulk: (ids: string[], action: string, reason?: string) => request<ApiResponse<unknown>>('/api/users/bulk', { method: 'POST', data: { userIds: ids, action, reason } }),

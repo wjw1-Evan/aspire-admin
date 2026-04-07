@@ -32,8 +32,8 @@ public class ParkInvestmentController : BaseApiController
     /// <summary>
     /// 获取线索列表
     /// </summary>
-    [HttpPost("leads/list")]
-    public async Task<IActionResult> GetLeads([FromBody] Platform.ServiceDefaults.Models.PageParams request)
+    [HttpGet("leads/list")]
+    public async Task<IActionResult> GetLeads([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
     {
         try
         {
@@ -152,8 +152,8 @@ public class ParkInvestmentController : BaseApiController
     /// <summary>
     /// 获取项目列表
     /// </summary>
-    [HttpPost("projects/list")]
-    public async Task<IActionResult> GetProjects([FromBody] Platform.ServiceDefaults.Models.PageParams request)
+    [HttpGet("projects/list")]
+    public async Task<IActionResult> GetProjects([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
     {
         try
         {

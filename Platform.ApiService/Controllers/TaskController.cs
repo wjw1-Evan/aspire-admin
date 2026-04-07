@@ -109,9 +109,9 @@ public class TaskController : BaseApiController
     /// <response code="200">成功获取任务列表</response>
     /// <response code="400">请求参数错误</response>
     /// <response code="401">未授权，需要登录</response>
-    [HttpPost("query")]
+    [HttpGet("query")]
     [RequireMenu("project-management-task")]
-    public async Task<IActionResult> QueryTasks([FromBody] Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<IActionResult> QueryTasks([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
     {
         try
         {

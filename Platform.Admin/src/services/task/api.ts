@@ -224,10 +224,9 @@ export async function getTaskById(taskId: string) {
 /**
  * 查询任务列表
  */
-export async function queryTasks(data: PageParams) {
+export async function queryTasks(params: PageParams) {
   return request<ApiResponse<TaskListResponse>>('/api/task/query', {
-    method: 'POST',
-    data,
+    params,
   });
 }
 

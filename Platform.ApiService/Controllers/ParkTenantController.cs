@@ -32,8 +32,8 @@ public class ParkTenantController : BaseApiController
     /// <summary>
     /// 获取租户列表
     /// </summary>
-    [HttpPost("tenants/list")]
-    public async Task<IActionResult> GetTenants([FromBody] Platform.ServiceDefaults.Models.PageParams request)
+    [HttpGet("tenants/list")]
+    public async Task<IActionResult> GetTenants([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
     {
         try
         {
@@ -132,8 +132,8 @@ public class ParkTenantController : BaseApiController
     /// <summary>
     /// 获取合同列表
     /// </summary>
-    [HttpPost("contracts/list")]
-    public async Task<IActionResult> GetContracts([FromBody] Platform.ServiceDefaults.Models.PageParams request)
+    [HttpGet("contracts/list")]
+    public async Task<IActionResult> GetContracts([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
     {
         try
         {

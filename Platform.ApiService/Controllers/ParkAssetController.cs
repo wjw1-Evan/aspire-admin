@@ -33,8 +33,8 @@ public class ParkAssetController : BaseApiController
     /// <summary>
     /// 获取楼宇列表
     /// </summary>
-    [HttpPost("buildings/list")]
-    public async Task<IActionResult> GetBuildings([FromBody] Platform.ServiceDefaults.Models.PageParams request)
+    [HttpGet("buildings/list")]
+    public async Task<IActionResult> GetBuildings([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
     {
         try
         {
@@ -133,8 +133,8 @@ public class ParkAssetController : BaseApiController
     /// <summary>
     /// 获取房源列表
     /// </summary>
-    [HttpPost("properties/list")]
-    public async Task<IActionResult> GetProperties([FromBody] Platform.ServiceDefaults.Models.PageParams request)
+    [HttpGet("properties/list")]
+    public async Task<IActionResult> GetProperties([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
     {
         try
         {

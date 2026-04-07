@@ -163,10 +163,9 @@ export async function setDefaultXiaokeConfig(id: string) {
 /**
  * 获取聊天记录列表
  */
-export async function getChatHistory(data: PageParams) {
+export async function getChatHistory(params: PageParams) {
   return request<ApiResponse<PagedResult<ChatHistoryListItem>>>('/api/xiaoke/chat-history/list', {
-    method: 'POST',
-    data,
+    params,
   });
 }
 

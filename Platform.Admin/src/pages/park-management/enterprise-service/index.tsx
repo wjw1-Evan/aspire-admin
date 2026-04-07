@@ -24,12 +24,12 @@ const api = {
     updateCategory: (id: string, data: Partial<ServiceCategory>) => request<ApiResponse<ServiceCategory>>(`/api/park/services/categories/${id}`, { method: 'PUT', data }),
     deleteCategory: (id: string) => request<ApiResponse<boolean>>(`/api/park/services/categories/${id}`, { method: 'DELETE' }),
     toggleCategory: (id: string) => request<ApiResponse<boolean>>(`/api/park/services/categories/${id}/toggle`, { method: 'PUT' }),
-    requests: (params: PageParams) => request<ApiResponse<PagedResult<ServiceRequest>>>('/api/park/services/requests/list', { method: 'POST', data: params }),
+    requests: (params: PageParams) => request<ApiResponse<PagedResult<ServiceRequest>>>('/api/park/services/requests/list', { params }),
     createRequest: (data: Partial<ServiceRequest>) => request<ApiResponse<ServiceRequest>>('/api/park/services/requests', { method: 'POST', data }),
     updateStatus: (id: string, data: { status: string; assignedTo?: string; resolution?: string }) => request<ApiResponse<ServiceRequest>>(`/api/park/services/requests/${id}/status`, { method: 'PUT', data }),
     deleteRequest: (id: string) => request<ApiResponse<boolean>>(`/api/park/services/requests/${id}`, { method: 'DELETE' }),
     rateRequest: (id: string, data: { rating: number; feedback?: string }) => request<ApiResponse<boolean>>(`/api/park/services/requests/${id}/rate`, { method: 'POST', data }),
-    tenants: (params: PageParams) => request<ApiResponse<PagedResult<ParkTenant>>>('/api/park/tenants/list', { method: 'POST', data: params }),
+    tenants: (params: PageParams) => request<ApiResponse<PagedResult<ParkTenant>>>('/api/park/tenants/list', { params }),
 };
 
 const priorityOptions = [

@@ -41,7 +41,7 @@ const api = {
     statistics: (startDate?: string, endDate?: string) =>
         request<ApiResponse<AssetStatistics>>('/api/park/asset/statistics', { method: 'GET', params: { startDate, endDate } }),
     buildings: (params: PageParams) =>
-        request<ApiResponse<PagedResult<Building>>>('/api/park/buildings/list', { method: 'POST', data: params }),
+        request<ApiResponse<PagedResult<Building>>>('/api/park/buildings/list', { params }),
     createBuilding: (data: Partial<Building>) =>
         request<ApiResponse<Building>>('/api/park/buildings', { method: 'POST', data }),
     updateBuilding: (id: string, data: Partial<Building>) =>
@@ -49,9 +49,9 @@ const api = {
     deleteBuilding: (id: string) =>
         request<ApiResponse<boolean>>(`/api/park/buildings/${id}`, { method: 'DELETE' }),
     allBuildings: () =>
-        request<ApiResponse<PagedResult<Building>>>('/api/park/buildings/list', { method: 'POST', data: { page: 1 } }),
+        request<ApiResponse<PagedResult<Building>>>('/api/park/buildings/list', { params: { page: 1, pageSize: 1000 } }),
     units: (params: PageParams & { buildingId?: string }) =>
-        request<ApiResponse<PagedResult<PropertyUnit>>>('/api/park/properties/list', { method: 'POST', data: params }),
+        request<ApiResponse<PagedResult<PropertyUnit>>>('/api/park/properties/list', { params }),
     unit: (id: string) =>
         request<ApiResponse<PropertyUnit>>(`/api/park/properties/${id}`, { method: 'GET' }),
     createUnit: (data: Partial<PropertyUnit>) =>

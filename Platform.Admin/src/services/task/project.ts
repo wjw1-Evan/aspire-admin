@@ -124,10 +124,9 @@ export interface AddProjectMemberRequest {
 /**
  * 获取项目列表
  */
-export async function getProjectList(data: PageParams) {
+export async function getProjectList(params: PageParams) {
   return request<ApiResponse<PagedResult<ProjectDto>>>('/api/project/list', {
-    method: 'POST',
-    data,
+    params,
   });
 }
 

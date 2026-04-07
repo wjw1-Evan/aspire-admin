@@ -135,9 +135,9 @@ public class ProjectController : BaseApiController
     /// <summary>
     /// 分页获取项目列表
     /// </summary>
-    [HttpPost("list")]
+    [HttpGet("list")]
     [RequireMenu("project-management-project")]
-    public async Task<IActionResult> GetProjectsList([FromBody] Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<IActionResult> GetProjectsList([FromQuery] Platform.ServiceDefaults.Models.PageParams request)
     {
         try
         {

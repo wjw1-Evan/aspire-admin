@@ -37,14 +37,14 @@ interface ContractFormData {
 }
 
 const api = {
-    list: (params: PageParams) => request<ApiResponse<PagedResult<LeaseContract>>>('/api/park/contracts/list', { method: 'POST', data: params }),
-    get: (id: string) => request<ApiResponse<LeaseContract>>(`/api/park/contracts/${id}`),
+    list: (params: PageParams) => request<ApiResponse<PagedResult<LeaseContract>>>('/api/park/contracts/list', { params }),
     create: (data: ContractFormData) => request<ApiResponse<LeaseContract>>('/api/park/contracts', { method: 'POST', data }),
     update: (id: string, data: ContractFormData) => request<ApiResponse<LeaseContract>>(`/api/park/contracts/${id}`, { method: 'PUT', data }),
     delete: (id: string) => request<ApiResponse<void>>(`/api/park/contracts/${id}`, { method: 'DELETE' }),
-    statistics: () => request<ApiResponse<TenantStatistics>>('/api/park/tenant/statistics'),
-    tenants: (params: PageParams) => request<ApiResponse<PagedResult<ParkTenant>>>('/api/park/tenants/list', { method: 'POST', data: params }),
-    units: (params: PageParams) => request<ApiResponse<PagedResult<PropertyUnit>>>('/api/park/properties/list', { method: 'POST', data: params }),
+    getDetail: (id: string) => request<ApiResponse<LeaseContract>>(`/api/park/contracts/${id}`),
+    statistics: () => request<ApiResponse<TenantStatistics>>('/api/park/contracts/statistics'),
+    tenants: (params: PageParams) => request<ApiResponse<PagedResult<ParkTenant>>>('/api/park/tenants/list', { params }),
+    units: (params: PageParams) => request<ApiResponse<PagedResult<PropertyUnit>>>('/api/park/properties/list', { params }),
     createPayment: (data: Partial<LeasePaymentRecord>) => request<ApiResponse<LeasePaymentRecord>>('/api/park/contracts/payments', { method: 'POST', data }),
     deletePayment: (id: string) => request<ApiResponse<void>>(`/api/park/contracts/payments/${id}`, { method: 'DELETE' }),
     uploadFile: (data: FormData) => request<ApiResponse<{ id: string; name: string }>>('/api/cloud-storage/upload', { method: 'POST', data }),
@@ -185,7 +185,7 @@ const ContractManagement: React.FC = () => {
                     </ProDescriptions>
                     <div style={{ marginTop: 24 }}>
                         <Flex justify="space-between" align="center" style={{ marginBottom: 16 }}><Text strong>付款记录</Text><Button type="primary" ghost size="small" icon={<PlusOutlined />} onClick={() => set({ paymentModalVisible: true })}>添加记录</Button></Flex>
-                        <List size="small" dataSource={state.currentContract.paymentRecords || []} renderItem={(item: LeasePaymentRecord) => (<List.Item actions={[<Button type="link" danger size="small" icon={<DeleteOutlined />} onClick={async () => { await api.deletePayment(item.id); const updated = await api.get(state.currentContract!.id); if (updated.success && updated.data) set({ currentContract: updated.data }); }} />]}>
+                        <List size="small" dataSource={state.currentContract.paymentRecords || []} renderItem={(item: LeasePaymentRecord) => (<List.Item actions={[<Button type="link" danger size="small" icon={<DeleteOutlined />} onClick={async () => { await api.deletePayment(item.id); const updated = await api.getDetail(state.currentContract!.id); if (updated.success && updated.data) set({ currentContract: updated.data }); }} />]}>
                             <List.Item.Meta title={<Space><Text strong>¥{item.amount.toLocaleString()}</Text><Tag color="blue">{item.paymentType || '房租'}</Tag></Space>} description={<Text type="secondary">日期: {dayjs(item.paymentDate).format('YYYY-MM-DD')} | 方式: {item.paymentMethod}</Text>} />
                         </List.Item>)} />
                     </div>
@@ -200,7 +200,7 @@ const ContractManagement: React.FC = () => {
                 onFinish={async (values) => {
                     if (!state.currentContract) return false;
                     const res = await api.createPayment({ contractId: state.currentContract.id, amount: values.amount, paymentType: values.paymentType, paymentDate: values.paymentDate?.toISOString(), paymentMethod: values.paymentMethod, periodStart: values.periodRange?.[0]?.toISOString(), periodEnd: values.periodRange?.[1]?.toISOString(), notes: values.notes });
-                    if (res.success) { message.success('添加成功'); set({ paymentModalVisible: false }); const updated = await api.get(state.currentContract.id); if (updated.success && updated.data) set({ currentContract: updated.data }); }
+                    if (res.success) { message.success('添加成功'); set({ paymentModalVisible: false }); const updated = await api.getDetail(state.currentContract.id); if (updated.success && updated.data) set({ currentContract: updated.data }); }
                     return res.success;
                 }} autoFocusFirstInput width={480}>
                 <Row gutter={16}><Col span={12}><ProFormText name="amount" label="付款金额" rules={[{ required: true }]} fieldProps={{ prefix: '¥' }} /></Col><Col span={12}><ProFormSelect name="paymentType" label="款项类型" rules={[{ required: true }]} options={[{ label: '房租', value: 'Rent' }, { label: '物业费', value: 'PropertyFee' }, { label: '押金', value: 'Deposit' }, { label: '其他', value: 'Other' }]} /></Col></Row>

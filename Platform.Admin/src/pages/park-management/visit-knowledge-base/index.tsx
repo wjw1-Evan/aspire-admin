@@ -1,11 +1,11 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { PageContainer, ProCard } from '@ant-design/pro-components';
+import { PageContainer } from '@ant-design/pro-components';
 import { request } from '@umijs/max';
 import { Tag, Space, Button, Input, App, List, Typography, Drawer, Transfer, Empty, Tabs } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect } from '@ant-design/pro-form';
-import { PlusOutlined, ReloadOutlined, QuestionCircleOutlined, FileTextOutlined, StarOutlined, StarFilled, EditOutlined, DeleteOutlined, EyeOutlined, ArrowUpOutlined, ArrowDownOutlined, SearchOutlined } from '@ant-design/icons';
-import { ProDescriptions } from '@ant-design/pro-components';
+import { PlusOutlined, ReloadOutlined, QuestionCircleOutlined, FileTextOutlined, StarOutlined, StarFilled, EditOutlined, DeleteOutlined, EyeOutlined, ArrowUpOutlined, ArrowDownOutlined, SearchOutlined, BookOutlined } from '@ant-design/icons';
+import { ProDescriptions, ProCard } from '@ant-design/pro-components';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 
@@ -96,29 +96,20 @@ const VisitKnowledgeBase: React.FC = () => {
 
     return (
         <PageContainer>
-            <ProCard gutter={16} style={{ marginBottom: 16 }}>
-                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-                    <div style={{ fontSize: 24, fontWeight: 'bold' }}>{state.allQuestions.length}</div>
-                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>问题总数</div>
-                </ProCard>
-                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#52c41a' }}>{state.allQuestions.filter((q) => q.isFrequentlyUsed).length}</div>
-                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>常用问题</div>
-                </ProCard>
-                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#1890ff' }}>{state.statistics?.totalAssessments || 0}</div>
-                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>评价总数</div>
-                </ProCard>
-                <ProCard colSpan={{ xs: 24, sm: 12, md: 6 }}>
-                    <div style={{ fontSize: 24, fontWeight: 'bold', color: '#722ed1' }}>{state.statistics?.averageScore?.toFixed(1) || '0.0'}</div>
-                    <div style={{ color: '#8c8c8c', fontSize: 12 }}>平均评分</div>
-                </ProCard>
-            </ProCard>
-
             <Tabs activeKey={state.activeTab} onChange={(k) => set({ activeTab: k })} items={[
                 {
-                    key: 'questions', label: '高频问题库', children: (
-                        <ProTable actionRef={actionRef} rowKey="id"
+                    key: 'questions', label: <Space><QuestionCircleOutlined />高频问题库</Space>, children: (
+                        <ProTable actionRef={actionRef} rowKey="id" headerTitle={
+                          <Space size={24}>
+                            <Space><BookOutlined />走访知识库</Space>
+                            <Space size={12}>
+                              <Tag color="blue">问题 {state.allQuestions.length}</Tag>
+                              <Tag color="green">常用 {state.allQuestions.filter((q) => q.isFrequentlyUsed).length}</Tag>
+                              <Tag color="cyan">评价 {state.statistics?.totalAssessments || 0}</Tag>
+                              <Tag color="purple">均分 {state.statistics?.averageScore?.toFixed(1) || '0.0'}</Tag>
+                            </Space>
+                          </Space>
+                        }
                             request={async (params: any) => {
                                 const { current, pageSize } = params;
                                 const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
@@ -133,7 +124,7 @@ const VisitKnowledgeBase: React.FC = () => {
                     )
                 },
                 {
-                    key: 'templates', label: '问卷模板', children: (
+                    key: 'templates', label: <Space><FileTextOutlined />问卷模板</Space>, children: (
                         <ProTable actionRef={actionRef} rowKey="id"
                             request={async (params: any) => {
                                 const { current, pageSize } = params;

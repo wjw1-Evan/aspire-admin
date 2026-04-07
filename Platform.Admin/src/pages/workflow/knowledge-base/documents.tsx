@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Space, Modal, App, Breadcrumb } from 'antd';
+import { Button, Space, Modal, App, Breadcrumb, Popconfirm } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ArrowLeftOutlined, FileTextOutlined } from '@ant-design/icons';
 import { useIntl, useParams, history } from '@umijs/max';
@@ -102,13 +102,15 @@ const KnowledgeBaseDocuments: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      width: 160,
-      fixed: 'right',
       valueType: 'option',
+      fixed: 'right',
+      width: 180,
       render: (_: unknown, record: KnowledgeDocument) => (
-        <Space>
+        <Space size={4}>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleOpenModal(record)}>编辑</Button>
-          <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)}>删除</Button>
+          <Popconfirm title={`确定删除「${record.title}」？`} onConfirm={() => handleDelete(record)}>
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
+          </Popconfirm>
         </Space>
       ),
     },

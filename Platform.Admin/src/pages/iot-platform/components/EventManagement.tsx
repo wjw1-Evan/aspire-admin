@@ -53,7 +53,9 @@ const EventManagement = React.forwardRef<EventManagementRef, any>((props, ref) =
     { title: '描述', dataIndex: 'description', sorter: true, ellipsis: true },
     { title: '发生时间', dataIndex: 'occurredAt', sorter: true, render: (dom) => dom ? dayjs(dom as string).format('YYYY-MM-DD HH:mm:ss') : '-' },
     { title: '状态', dataIndex: 'isHandled', sorter: true, render: (dom) => <Tag color={dom ? 'green' : 'red'}>{dom ? '已处理' : '未处理'}</Tag> },
-    { title: '操作', valueType: 'option', fixed: 'right', width: 100, render: (_, record) => !record.isHandled ? <Button type="link" size="small" icon={<CheckOutlined />} onClick={() => set({ editingEvent: record, formVisible: true })}>处理</Button> : null },
+    { title: '操作', valueType: 'option', fixed: 'right', width: 180, render: (_, record) => !record.isHandled ? (
+      <Button type="link" size="small" icon={<CheckOutlined />} onClick={() => set({ editingEvent: record, formVisible: true })}>处理</Button>
+    ) : null },
   ];
 
   const handleSubmit = useCallback(async (values: any) => {

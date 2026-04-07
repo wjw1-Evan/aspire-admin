@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { StatCard } from '@/components';
-import { Space, Tag, Button, Row, Col, Drawer, message, Input } from 'antd';
+import { Space, Tag, Button, Row, Col, Drawer, message, Input, Popconfirm } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { FileTextOutlined, PlusOutlined, EyeOutlined, EditOutlined, SendOutlined, DeleteOutlined, ReloadOutlined, FileProtectOutlined, ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
@@ -55,19 +55,17 @@ const DocumentManagement: React.FC = () => {
     {
       title: '操作', valueType: 'option', fixed: 'right', width: 180,
       render: (_: any, r: Document) => (
-        <Space>
-          <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => set({ viewingId: r.id, detailVisible: true })}>查看</Button>
+        <Space size={4}>
+          <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => set({ viewingId: r.id, detailVisible: true })}>查看</Button>
           {r.status === DocumentStatus.Draft && (
             <>
               <Button type="link" size="small" icon={<EditOutlined />} onClick={() => window.location.href = `/document/edit/${r.id}`}>编辑</Button>
               <Button type="link" size="small" icon={<SendOutlined />} onClick={() => message.info('请在编辑页面提交审批')}>提交</Button>
             </>
           )}
-          <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={async () => {
-            await api.delete(r.id!);
-            actionRef.current?.reload();
-            api.statistics().then(res => { if (res.success && res.data) set({ statistics: res.data }); });
-          }}>删除</Button>
+          <Popconfirm title={`确定删除「${r.title}」？`} onConfirm={async () => { await api.delete(r.id!); actionRef.current?.reload(); api.statistics().then(res => { if (res.success && res.data) set({ statistics: res.data }); }); }}>
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
+          </Popconfirm>
         </Space>
       ),
     },

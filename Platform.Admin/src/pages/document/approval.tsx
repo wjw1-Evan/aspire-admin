@@ -67,24 +67,14 @@ const ApprovalPage: React.FC = () => {
     { title: '创建人', dataIndex: 'createdBy', ellipsis: true, sorter: true },
     { title: '创建时间', dataIndex: 'createdAt', sorter: true, render: (dom: any) => dayjs(dom).format('YYYY-MM-DD HH:mm') },
     {
-      title: '操作', valueType: 'option', fixed: 'right', width: 200,
+      title: '操作', valueType: 'option', fixed: 'right', width: 180,
       render: (_: any, r: Document) => (
-        <Space>
-          <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => set({ viewingId: r.id, detailVisible: true })}>查看</Button>
+        <Space size={4}>
+          <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => set({ viewingId: r.id, detailVisible: true })}>查看</Button>
           {state.activeTab === 'pending' && (
             <>
-              <Button type="link" size="small" icon={<CheckOutlined />} onClick={async () => {
-                await api.approve(r.id!);
-                message.success('审批通过');
-                actionRef.current?.reload();
-                api.statistics().then(res => { if (res.success && res.data) set({ statistics: res.data }); });
-              }}>通过</Button>
-              <Button type="link" size="small" danger icon={<CloseOutlined />} onClick={async () => {
-                await api.reject(r.id!, '不符合要求');
-                message.success('已拒绝');
-                actionRef.current?.reload();
-                api.statistics().then(res => { if (res.success && res.data) set({ statistics: res.data }); });
-              }}>拒绝</Button>
+              <Button type="link" size="small" icon={<CheckOutlined />} onClick={async () => { await api.approve(r.id!); message.success('审批通过'); actionRef.current?.reload(); api.statistics().then(res => { if (res.success && res.data) set({ statistics: res.data }); }); }}>通过</Button>
+              <Button type="link" size="small" danger icon={<CloseOutlined />} onClick={async () => { await api.reject(r.id!, '不符合要求'); message.success('已拒绝'); actionRef.current?.reload(); api.statistics().then(res => { if (res.success && res.data) set({ statistics: res.data }); }); }}>拒绝</Button>
             </>
           )}
         </Space>

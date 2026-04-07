@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ProTable, ProColumns } from '@ant-design/pro-components';
-import { Button, Space, Modal, Tag } from 'antd';
+import { Button, Space, Modal, Tag, Popconfirm } from 'antd';
 import type { ColumnType } from 'antd/es/table';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useMessage } from '@/hooks/useMessage';
@@ -91,18 +91,13 @@ const ProjectMemberManagement: React.FC<ProjectMemberManagementProps> = ({
     {
       title: '操作',
       key: 'action',
+      valueType: 'option',
       fixed: 'right' as ColumnType<ProjectMemberDto>['fixed'],
-      width: 150,
+      width: 180,
       render: (_: any, record: ProjectMemberDto) => (
-        <Button
-          type="link"
-          size="small"
-          danger
-          icon={<DeleteOutlined />}
-          onClick={() => handleDelete(record.userId)}
-        >
-          移除
-        </Button>
+        <Popconfirm title={`确定移除成员「${record.userName}」？`} onConfirm={() => handleDelete(record.userId)}>
+          <Button type="link" size="small" danger icon={<DeleteOutlined />}>移除</Button>
+        </Popconfirm>
       ),
     },
   ];

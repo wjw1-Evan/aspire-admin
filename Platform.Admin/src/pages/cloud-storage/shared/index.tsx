@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { Button, Space, Tag, App, Modal, Input } from 'antd';
+import { Button, Space, Tag, App, Modal, Input, Popconfirm } from 'antd';
 import { ShareAltOutlined, EditOutlined, DeleteOutlined, CopyOutlined, LockOutlined, UnlockOutlined, SearchOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormDatePicker, ProFormDigit, ProFormSwitch } from '@ant-design/pro-components';
@@ -76,26 +76,19 @@ const CloudStorageSharedPage: React.FC = () => {
         { title: '下载次数', dataIndex: 'downloadCount', key: 'downloadCount', valueType: 'digit', sorter: true },
         { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', valueType: 'dateTime', sorter: true },
         {
-            title: '操作', key: 'action', fixed: 'right', valueType: 'option',
+            title: '操作', key: 'action', valueType: 'option', fixed: 'right', width: 180,
             render: (_, r: FileShare) => (
-                <Space>
+                <Space size={4}>
                     <Button type="link" size="small" icon={<CopyOutlined />} onClick={() => {
                         const url = `${window.location.origin}/share/${r.shareToken}`;
                         navigator.clipboard.writeText(url);
                         message.success('分享链接已复制');
                     }}>复制链接</Button>
                     <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleOpenModal(r)}>编辑</Button>
-                    <Button type="link" size="small" icon={r.isEnabled ? <LockOutlined /> : <UnlockOutlined />} onClick={async () => {
-                        try {
-                            await api.update(r.id, { isEnabled: !r.isEnabled });
-                            message.success(`${r.isEnabled ? '禁用' : '启用'}成功`);
-                        } catch { message.error('操作失败'); }
-                    }}>{r.isEnabled ? '禁用' : '启用'}</Button>
-                    <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => {
-                        Modal.confirm({ title: '确认删除', content: `确定要删除分享 "${r.fileName}" 吗？`, okText: '删除', okType: 'danger', onOk: async () => {
-                            try { await api.delete(r.id); message.success('删除成功'); } catch { message.error('删除失败'); }
-                        }});
-                    }}>删除</Button>
+                    <Button type="link" size="small" icon={r.isEnabled ? <LockOutlined /> : <UnlockOutlined />} onClick={async () => { try { await api.update(r.id, { isEnabled: !r.isEnabled }); message.success(`${r.isEnabled ? '禁用' : '启用'}成功`); } catch { message.error('操作失败'); } }}>{r.isEnabled ? '禁用' : '启用'}</Button>
+                    <Popconfirm title={`确定删除分享「${r.fileName}」？`} onConfirm={async () => { try { await api.delete(r.id); message.success('删除成功'); } catch { message.error('删除失败'); } }}>
+                        <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
+                    </Popconfirm>
                 </Space>
             )
         },

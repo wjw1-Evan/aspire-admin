@@ -96,25 +96,14 @@ const MyJoinRequestsTable: React.FC = () => {
         {
             title: '操作',
             key: 'action',
+            valueType: 'option',
             fixed: 'right',
-            width: 120,
+            width: 180,
             render: (_, record) => {
                 if (record.status === 'pending') {
                     return (
-                        <Popconfirm
-                            title="确定要撤销申请吗？"
-                            onConfirm={() => handleCancel(record.id)}
-                            okText="确定"
-                            cancelText="取消"
-                        >
-                            <Button
-                                type="link"
-                                size="small"
-                                danger
-                                icon={<UndoOutlined />}
-                            >
-                                撤销
-                            </Button>
+                        <Popconfirm title="确定要撤销申请吗？" onConfirm={() => handleCancel(record.id)} okText="确定" cancelText="取消">
+                            <Button type="link" size="small" danger icon={<UndoOutlined />}>撤销</Button>
                         </Popconfirm>
                     );
                 }

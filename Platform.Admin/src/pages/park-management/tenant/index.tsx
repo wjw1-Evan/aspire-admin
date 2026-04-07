@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { request } from '@umijs/max';
-import { App, Tag, Typography, Empty, Rate, Button, Space, Input, Row, Col } from 'antd';
+import { App, Tag, Typography, Empty, Rate, Button, Space, Input, Row, Col, Popconfirm } from 'antd';
 import { Drawer } from 'antd';
 import { ProTable, ProColumns } from '@ant-design/pro-table';
 import { ProDescriptions } from '@ant-design/pro-components';
@@ -51,11 +51,15 @@ const TenantManagement: React.FC = () => {
         { title: '租用单元', dataIndex: 'unitCount', sorter: true, width: 80, align: 'center' },
         { title: '有效合同', dataIndex: 'activeContracts', sorter: true, width: 80, align: 'center', render: (count) => { const c = (count as number) || 0; return <Tag color={c > 0 ? '#52c41a' : '#d9d9d9'}>{c}</Tag>; } },
         { title: '状态', dataIndex: 'status', sorter: true, width: 100, render: (_: any, record) => { const opt = tenantStatusOptions.find(o => o.value === record.status); return <Tag color={opt?.color || 'default'}>{opt?.label || record.status}</Tag>; } },
-        { title: '操作', valueType: 'option', width: 150, fixed: 'right', render: (_, record) => [
-            <Button key="view" type="link" icon={<EyeOutlined />} onClick={() => handleViewTenant(record.id)}>查看</Button>,
-            <Button key="edit" type="link" icon={<EditOutlined />} onClick={() => set({ editingTenant: record, formVisible: true })}>编辑</Button>,
-            <Button key="delete" type="link" danger icon={<DeleteOutlined />} onClick={() => handleDeleteTenant(record.id)}>删除</Button>,
-        ]},
+        { title: '操作', valueType: 'option', fixed: 'right', width: 180, render: (_, record) => (
+            <Space size={4}>
+                <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => handleViewTenant(record.id)}>查看</Button>
+                <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingTenant: record, formVisible: true })}>编辑</Button>
+                <Popconfirm title={`确定删除「${record.tenantName}」？`} onConfirm={() => handleDeleteTenant(record.id)}>
+                    <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
+                </Popconfirm>
+            </Space>
+        )},
     ];
 
     const handleViewTenant = async (id: string) => {

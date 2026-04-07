@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { Button, Space, Modal, Form, Input, Select, App } from 'antd';
-import { DeleteOutlined, ClearOutlined, SearchOutlined } from '@ant-design/icons';
+import { Button, Space, Modal, Form, Input, Select, App, Popconfirm } from 'antd';
+import { DeleteOutlined, ClearOutlined, SearchOutlined, UndoOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
@@ -45,10 +45,10 @@ const CloudStorageRecyclePage: React.FC = () => {
             }
         },
         {
-            title: '操作', key: 'action', fixed: 'right', valueType: 'option',
+            title: '操作', key: 'action', valueType: 'option', fixed: 'right', width: 180,
             render: (_, r: RecycleItem) => (
-                <Space>
-                    <Button type="link" size="small" onClick={() => {
+                <Space size={4}>
+                    <Button type="link" size="small" icon={<UndoOutlined />} onClick={() => {
                         form.setFieldsValue({ newName: r.name });
                         Modal.confirm({
                             title: '恢复文件',
@@ -68,20 +68,11 @@ const CloudStorageRecyclePage: React.FC = () => {
                             }
                         });
                     }}>恢复</Button>
-                    <Button type="link" size="small" danger onClick={() => {
-                        Modal.confirm({
-                            title: '确认永久删除',
-                            content: '确定要永久删除该文件吗？此操作无法恢复！',
-                            okText: '删除',
-                            okType: 'danger',
-                            onOk: async () => {
-                                try {
-                                    await api.permanentDelete(r.id);
-                                    message.success('永久删除成功');
-                                } catch { message.error('永久删除失败'); }
-                            }
-                        });
-                    }}>永久删除</Button>
+                    <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => {
+                        Modal.confirm({ title: '确认永久删除', content: `确定要永久删除文件 "..." 吗？此操作不可恢复。`, okText: '删除', okType: 'danger', onOk: async () => {
+                            try { await api.permanentDelete(r.id); message.success('删除成功'); actionRef.current?.reload(); } catch { message.error('删除失败'); }
+                        }});
+                    }}>删除</Button>
                 </Space>
             )
         },

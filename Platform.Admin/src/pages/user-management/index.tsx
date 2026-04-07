@@ -158,7 +158,7 @@ const UserManagement: React.FC = () => {
     { title: '审核人', dataIndex: 'reviewedByName', key: 'reviewedByName', render: (t: React.ReactNode) => t || '-' },
     { title: '备注', dataIndex: 'rejectReason', key: 'rejectReason', ellipsis: true, render: (_: React.ReactNode, r: JoinReq) => r.status === 'approved' ? <span style={{ color: '#52c41a' }}>已通过</span> : _ || '-' },
     { title: '审核时间', dataIndex: 'reviewedAt', key: 'reviewedAt', valueType: 'dateTime' },
-    { title: '操作', key: 'action', fixed: 'right', width: 150, valueType: 'option', render: (_: React.ReactNode, r: JoinReq) => r.status === 'cancelled' ? null : (<Space>{r.status !== 'approved' && <Button type="link" size="small" icon={<CheckOutlined />} onClick={() => handleApprove(r.id)}>批准</Button>}{r.status !== 'rejected' && <Button type="link" size="small" danger icon={<CloseOutlined />} onClick={() => setJ({ rejectModal: true, rejectId: r.id })}>拒绝</Button>}</Space>) },
+    { title: '操作', key: 'action', valueType: 'option', fixed: 'right', width: 180, render: (_: React.ReactNode, r: JoinReq) => r.status === 'cancelled' ? null : (<Space size={4}>{r.status !== 'approved' && <Button type="link" size="small" icon={<CheckOutlined />} onClick={() => handleApprove(r.id)}>批准</Button>}{r.status !== 'rejected' && <Button type="link" size="small" danger icon={<CloseOutlined />} onClick={() => setJ({ rejectModal: true, rejectId: r.id })}>拒绝</Button>}</Space>) },
   ], []);
 
   const stats = [

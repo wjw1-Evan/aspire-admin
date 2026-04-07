@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useIntl } from '@umijs/max';
 import { type ProColumns, ActionType, ProTable } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect } from '@ant-design/pro-components';
-import { Button, Col, Drawer, Form, Grid, Input, Row, Space, Tag, message } from 'antd';
+import { Button, Col, Drawer, Form, Grid, Input, Row, Space, Tag, message, Popconfirm } from 'antd';
 import { ProCard, ProDescriptions } from '@ant-design/pro-components';
 import { PlusOutlined, EditOutlined, DeleteOutlined, CloudServerOutlined, CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -56,10 +56,14 @@ const GatewayManagement = React.forwardRef<GatewayManagementRef, any>((props, re
     { title: '状态', dataIndex: 'status', sorter: true, render: (dom) => { const normalized = normalizeStatus(dom as string); const config = statusMap[normalized] || { color: 'default', label: (dom as string) || '未知' }; return <Tag color={config.color}>{config.label}</Tag>; } },
     { title: '设备数', dataIndex: 'deviceCount', sorter: true, align: 'center' },
     { title: '启用', dataIndex: 'isEnabled', sorter: true, render: (dom) => <Tag color={dom ? 'green' : 'red'}>{dom ? '是' : '否'}</Tag> },
-    { title: '操作', valueType: 'option', fixed: 'right', width: 120, render: (_, record) => [
-      <Button key="edit" type="link" icon={<EditOutlined />} onClick={() => { set({ editingGateway: record, formVisible: true }); form.setFieldsValue({ ...record, config: record.config || undefined }); }}>编辑</Button>,
-      <Button key="delete" type="link" danger icon={<DeleteOutlined />} onClick={() => { confirm({ title: '删除网关', content: '确定要删除此网关吗？', onOk: async () => { const res = await iotService.deleteGateway(record.id); if (res.success) { message.success('删除成功'); actionRef.current?.reload(); fetchStatistics(); } }, okButtonProps: { danger: true } }); }}>删除</Button>,
-    ]},
+    { title: '操作', valueType: 'option', fixed: 'right', width: 180, render: (_, record) => (
+      <Space size={4}>
+        <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { set({ editingGateway: record, formVisible: true }); form.setFieldsValue({ ...record, config: record.config || undefined }); }}>编辑</Button>
+        <Popconfirm title={`确定删除「${record.title}」？`} onConfirm={async () => { const res = await iotService.deleteGateway(record.id); if (res.success) { message.success('删除成功'); actionRef.current?.reload(); fetchStatistics(); } }}>
+          <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
+        </Popconfirm>
+      </Space>
+    )},
   ];
 
   const handleSubmit = useCallback(async (values: any) => {

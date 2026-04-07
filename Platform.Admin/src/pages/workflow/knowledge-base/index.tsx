@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback } from 'react';
-import { Button, Space, Modal, Tag, App, Input } from 'antd';
+import { Button, Space, Modal, Tag, App, Input, Popconfirm } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, BookOutlined, FolderOpenOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import { useIntl, history } from '@umijs/max';
 import { PageContainer, ProCard } from '@ant-design/pro-components';
@@ -103,14 +103,16 @@ const KnowledgeBaseManagement: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      width: 240,
-      fixed: 'right',
       valueType: 'option',
+      fixed: 'right',
+      width: 180,
       render: (_: any, record: KnowledgeBase) => (
-        <Space>
-          <Button type="link" size="small" icon={<FolderOpenOutlined />} onClick={() => history.push(`/workflow/knowledge-base/documents/${record.id}`)}>管理内容</Button>
+        <Space size={4}>
+          <Button variant="link" color="cyan" size="small" icon={<FolderOpenOutlined />} onClick={() => history.push(`/workflow/knowledge-base/documents/${record.id}`)}>管理内容</Button>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleOpenModal(record)}>编辑</Button>
-          <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)}>删除</Button>
+          <Popconfirm title={`确定删除「${record.name}」？`} onConfirm={() => handleDelete(record)}>
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
+          </Popconfirm>
         </Space>
       ),
     },

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Space, Select } from 'antd';
+import { Button, Space, Select, Popconfirm } from 'antd';
 import { PartitionOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useMessage } from '@/hooks/useMessage';
 import { PageContainer } from '@ant-design/pro-components';
@@ -41,13 +41,15 @@ const FormDefinitionManagement: React.FC = () => {
         {
             title: '操作',
             key: 'action',
-            fixed: 'right',
-            width: 150,
             valueType: 'option',
+            fixed: 'right',
+            width: 180,
             render: (_, record) => (
-                <Space>
+                <Space size={4}>
                     <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleOpenModal(record)}>编辑</Button>
-                    <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)}>删除</Button>
+                    <Popconfirm title={`确定删除「${record.name}」？`} onConfirm={() => handleDelete(record)}>
+                        <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
+                    </Popconfirm>
                 </Space>
             ),
         },

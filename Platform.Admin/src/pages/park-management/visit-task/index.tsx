@@ -66,11 +66,13 @@ const VisitTaskPage: React.FC = () => {
         { title: '企管员', dataIndex: 'managerName', key: 'managerName', sorter: true, width: 120 },
         { title: '走访日期', dataIndex: 'visitDate', key: 'visitDate', sorter: true, width: 120, render: (dom: any) => dom ? dayjs(dom).format('YYYY-MM-DD') : '-' },
         { title: '状态', dataIndex: 'status', key: 'status', sorter: true, width: 100, render: (_: any, r: VisitTask) => { const config = statusMap[r.status] || { text: r.status, color: 'default', icon: null }; return <Tag color={config.color} icon={config.icon}>{config.text}</Tag>; } },
-        { title: '操作', valueType: 'option', fixed: 'right', width: 150, render: (_: any, r: VisitTask) => [
-            <Button key="view" type="link" size="small" icon={<EyeOutlined />} onClick={() => handleViewTask(r.id)}>查看</Button>,
-            r.status !== 'Completed' && <Button key="edit" type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingTask: r, formVisible: true })}>编辑</Button>,
-            r.status !== 'Completed' && <Popconfirm key="delete" title="确定要删除这条走访任务吗？" onConfirm={() => handleDelete(r.id)} okText="确定" cancelText="取消"><Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button></Popconfirm>,
-        ]},
+        { title: '操作', valueType: 'option', fixed: 'right', width: 180, render: (_: any, r: VisitTask) => (
+            <Space size={4}>
+                <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => handleViewTask(r.id)}>查看</Button>
+                {r.status !== 'Completed' && <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingTask: r, formVisible: true })}>编辑</Button>}
+                {r.status !== 'Completed' && <Popconfirm title={`确定删除「${r.title}」？`} onConfirm={() => handleDelete(r.id)} okText="确定" cancelText="取消"><Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button></Popconfirm>}
+            </Space>
+        )},
     ];
 
     const handleDelete = async (id: string) => { const res = await api.delete(id); if (res.success) { message.success('删除成功'); actionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); } };

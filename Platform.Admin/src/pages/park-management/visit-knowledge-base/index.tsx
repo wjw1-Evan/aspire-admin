@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { request } from '@umijs/max';
-import { Tag, Space, Button, Input, App, Typography, Drawer, Empty } from 'antd';
+import { Tag, Space, Button, Input, App, Typography, Drawer, Empty, Popconfirm } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect } from '@ant-design/pro-form';
 import { PlusOutlined, ReloadOutlined, QuestionCircleOutlined, StarOutlined, StarFilled, EditOutlined, DeleteOutlined, EyeOutlined, SearchOutlined, BookOutlined } from '@ant-design/icons';
@@ -48,11 +48,15 @@ const VisitKnowledgeBase: React.FC = () => {
         { title: '问题内容', dataIndex: 'content', key: 'content', sorter: true, ellipsis: true, render: (dom, r) => <Space><QuestionCircleOutlined style={{ color: '#1890ff' }} /><Text strong>{dom}</Text></Space> },
         { title: '分类', dataIndex: 'category', key: 'category', sorter: true, width: 120, render: (dom) => <Tag color="blue">{dom || '通用'}</Tag> },
         { title: '常用', dataIndex: 'isFrequentlyUsed', key: 'isFrequentlyUsed', sorter: true, width: 100, render: (dom) => dom ? <StarFilled style={{ color: '#fadb14' }} /> : <StarOutlined style={{ color: '#d9d9d9' }} /> },
-        { title: '操作', key: 'action', width: 150, render: (_, r) => [
-            <Button key="view" type="link" icon={<EyeOutlined />} onClick={() => set({ selectedQuestion: r, detailVisible: true })}>查看</Button>,
-            <Button key="edit" type="link" icon={<EditOutlined />} onClick={() => set({ editingQuestion: r, formVisible: true })}>编辑</Button>,
-            <Button key="delete" type="link" danger icon={<DeleteOutlined />} onClick={() => handleDeleteQuestion(r.id)}>删除</Button>,
-        ]},
+        { title: '操作', key: 'action', valueType: 'option', fixed: 'right', width: 180, render: (_, r) => (
+            <Space size={4}>
+                <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => set({ selectedQuestion: r, detailVisible: true })}>查看</Button>
+                <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingQuestion: r, formVisible: true })}>编辑</Button>
+                <Popconfirm title={`确定删除该问题？`} onConfirm={() => handleDeleteQuestion(r.id)}>
+                    <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
+                </Popconfirm>
+            </Space>
+        )},
     ];
 
     return (

@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { useIntl } from '@umijs/max';
 import { type ProColumns, ActionType, ProTable } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormDigit, ProFormTextArea } from '@ant-design/pro-components';
-import { Button, Col, Drawer, Form, Grid, Input, Row, Space, Tag, Tabs, message, Alert, Modal } from 'antd';
+import { Button, Col, Drawer, Form, Grid, Input, Row, Space, Tag, Tabs, message, Alert, Modal, Popconfirm } from 'antd';
 import { ProCard, ProDescriptions } from '@ant-design/pro-components';
 import { PlusOutlined, EditOutlined, DeleteOutlined, DesktopOutlined, CheckCircleOutlined, CloseCircleOutlined, ExclamationCircleOutlined, KeyOutlined, BranchesOutlined, SendOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -77,11 +77,15 @@ const DeviceManagement = React.forwardRef<DeviceManagementRef, any>((props, ref)
     { title: '位置', dataIndex: 'location', sorter: true },
     { title: '状态', dataIndex: 'status', sorter: true, render: (dom) => { const cfg = statusConfig[dom as string] ?? statusConfig.Offline; return <Tag color={cfg.color}>{cfg.label}</Tag>; } },
     { title: '启用', dataIndex: 'isEnabled', sorter: true, render: (dom) => <Tag color={dom ? 'green' : 'red'}>{dom ? '是' : '否'}</Tag> },
-    { title: '操作', valueType: 'option', fixed: 'right', width: 180, render: (_, record) => [
-      <Button key="edit" type="link" icon={<EditOutlined />} onClick={() => { set({ editingDevice: record, formVisible: true }); form.setFieldsValue({ ...record, tagsList: record.tags ? Object.entries(record.tags).map(([k, v]) => `${k}:${v}`) : [] }); }}>编辑</Button>,
-      <Button key="key" type="link" size="small" loading={state.generatingKey} onClick={() => handleGenerateApiKey(record)}>密钥</Button>,
-      <Button key="delete" type="link" danger size="small" icon={<DeleteOutlined />} onClick={() => { confirm({ title: '删除设备', content: '确定要删除此设备吗？', onOk: async () => { const res = await iotService.deleteDevice(record.id); if (res.success) { message.success('删除成功'); actionRef.current?.reload(); fetchStatistics(); } }, okButtonProps: { danger: true } }); }}>删除</Button>,
-    ]},
+    { title: '操作', valueType: 'option', fixed: 'right', width: 180, render: (_, record) => (
+      <Space size={4}>
+        <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { set({ editingDevice: record, formVisible: true }); form.setFieldsValue({ ...record, tagsList: record.tags ? Object.entries(record.tags).map(([k, v]) => `${k}:${v}`) : [] }); }}>编辑</Button>
+        <Button type="link" size="small" loading={state.generatingKey} onClick={() => handleGenerateApiKey(record)}>密钥</Button>
+        <Popconfirm title={`确定删除「${record.name}」？`} onConfirm={async () => { const res = await iotService.deleteDevice(record.id); if (res.success) { message.success('删除成功'); actionRef.current?.reload(); fetchStatistics(); } }}>
+          <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
+        </Popconfirm>
+      </Space>
+    )},
   ];
 
   const handleSubmit = useCallback(async (values: any) => {

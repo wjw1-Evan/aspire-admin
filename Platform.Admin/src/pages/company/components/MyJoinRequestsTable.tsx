@@ -1,9 +1,9 @@
 import React, { useCallback } from 'react';
-import { Tag, App, Popconfirm, theme, Button } from 'antd';
+import { Tag, App, Popconfirm, theme, Button, Space } from 'antd';
 import { request, useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import { cancelJoinRequest } from '@/services/company';
-import { UndoOutlined } from '@ant-design/icons';
+import { UndoOutlined, TeamOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns } from '@ant-design/pro-table';
 import type { PageParams } from '@/types';
 
@@ -114,7 +114,11 @@ const MyJoinRequestsTable: React.FC = () => {
 
     return (
         <ProTable<JoinRequestDetail>
-            headerTitle={intl.formatMessage({ id: 'pages.company.myJoinRequests.title', defaultMessage: '我的加入申请' })}
+            headerTitle={
+              <Space size={24}>
+                <Space><TeamOutlined />我的加入申请</Space>
+              </Space>
+            }
             rowKey="id"
             search={false}
             request={async (params: any) => {

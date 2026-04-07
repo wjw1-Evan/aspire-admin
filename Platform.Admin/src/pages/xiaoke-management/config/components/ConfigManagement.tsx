@@ -197,7 +197,11 @@ const ConfigManagement: React.FC = () => {
   return (
     <>
       <ProTable<XiaokeConfig>
-        headerTitle={intl.formatMessage({ id: 'pages.xiaokeManagement.config.title', defaultMessage: '小科配置管理' })}
+        headerTitle={
+          <Space size={24}>
+            <Space><SettingOutlined />{intl.formatMessage({ id: 'pages.xiaokeManagement.config.title', defaultMessage: '小科配置管理' })}</Space>
+          </Space>
+        }
         actionRef={actionRef}
         rowKey="id"
         search={false}

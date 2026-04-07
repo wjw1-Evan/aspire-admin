@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { Button, Space, Modal, Form, Input, Select, App, Popconfirm } from 'antd';
+import { Button, Space, Modal, Form, Input, Select, App, Popconfirm, Tag } from 'antd';
 import { DeleteOutlined, ClearOutlined, SearchOutlined, UndoOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { useIntl } from '@umijs/max';
@@ -81,7 +81,16 @@ const CloudStorageRecyclePage: React.FC = () => {
     return (
         <PageContainer>
             <ProTable
-                headerTitle={intl.formatMessage({ id: 'pages.cloud-storage.recycle.title' })}
+                headerTitle={
+            <Space size={24}>
+              <Space><DeleteOutlined />回收站</Space>
+              <Space size={12}>
+                <Tag color="blue">总数 0</Tag>
+                <Tag color="orange">即将过期 0</Tag>
+                <Tag color="green">可恢复 0</Tag>
+              </Space>
+            </Space>
+          }
                 actionRef={actionRef}
                 rowKey="id"
                 search={false}

@@ -5,6 +5,7 @@ import {
   EyeOutlined,
   DeleteOutlined,
   SearchOutlined,
+  MessageOutlined,
 } from '@ant-design/icons';
 import { useMessage } from '@/hooks/useMessage';
 import { useModal } from '@/hooks/useModal';
@@ -160,7 +161,11 @@ const ChatHistoryManagement: React.FC = () => {
   return (
     <>
       <ProTable<ChatHistoryListItem>
-        headerTitle={intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.title', defaultMessage: '聊天记录管理' })}
+        headerTitle={
+          <Space size={24}>
+            <Space><MessageOutlined />{intl.formatMessage({ id: 'pages.xiaokeManagement.chatHistory.title', defaultMessage: '聊天记录管理' })}</Space>
+          </Space>
+        }
         actionRef={actionRef}
         rowKey="sessionId"
         search={false}

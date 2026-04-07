@@ -97,7 +97,16 @@ const CloudStorageSharedPage: React.FC = () => {
     return (
         <PageContainer>
             <ProTable
-                headerTitle={intl.formatMessage({ id: 'pages.cloud-storage.shared.title' })}
+                headerTitle={
+            <Space size={24}>
+              <Space><ShareAltOutlined />我的分享</Space>
+              <Space size={12}>
+                <Tag color="blue">总计 0</Tag>
+                <Tag color="green">启用 0</Tag>
+                <Tag color="orange">已禁用 0</Tag>
+              </Space>
+            </Space>
+          }
                 actionRef={actionRef}
                 rowKey="id"
                 search={false}

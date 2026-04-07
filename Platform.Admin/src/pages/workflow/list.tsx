@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { PageContainer, ModalForm, ProFormText, ProFormSelect, ProFormSwitch } from '@ant-design/pro-components';
 import { Button, Space, Tag, App, Modal, Input } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, PartitionOutlined, SearchOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, PartitionOutlined, SearchOutlined, ApiOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { getWorkflowList, deleteWorkflow, type WorkflowDefinition } from '@/services/workflow/api';
 import WorkflowCreateForm from './components/WorkflowCreateForm';
@@ -67,7 +67,11 @@ const WorkflowManagement: React.FC = () => {
   return (
     <PageContainer>
       <ProTable
-        headerTitle={intl.formatMessage({ id: 'pages.workflow.table.name' })}
+        headerTitle={
+          <Space size={24}>
+            <Space><ApiOutlined />{intl.formatMessage({ id: 'pages.workflow.table.name' })}</Space>
+          </Space>
+        }
         actionRef={actionRef}
         rowKey="id"
         search={false}

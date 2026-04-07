@@ -138,6 +138,7 @@ public class UpdatePasswordBookEntryRequest
 public class PasswordBookEntryDto
 {
     /// <summary>条目ID</summary>
+    [BsonRepresentation(BsonType.ObjectId)]
     public string Id { get; set; } = string.Empty;
 
     /// <summary>平台名称</summary>

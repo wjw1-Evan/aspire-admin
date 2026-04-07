@@ -134,6 +134,7 @@ const PasswordBook: React.FC = () => {
 
       <ProTable
         actionRef={actionRef}
+        headerTitle={<Space><LockOutlined />密码本</Space>}
         request={async (params) => {
           const { current, pageSize } = params;
           const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;

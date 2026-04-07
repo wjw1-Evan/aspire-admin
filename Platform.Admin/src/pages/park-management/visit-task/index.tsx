@@ -38,22 +38,36 @@ const VisitTaskPage: React.FC = () => {
     const actionRef = useRef<ActionType | undefined>(undefined);
     const [state, setState] = useState({
         statistics: null as VisitStatistics | null, formVisible: false, editingTask: null as VisitTask | null,
-        detailVisible: false, selectedTask: null as VisitTask | null, tenants: [] as ParkTenant[],
+        detailVisible: false, selectedTask: null as VisitTask | null, detailLoading: false, tenants: [] as ParkTenant[],
         sorter: undefined as { sortBy: string; sortOrder: string } | undefined, search: '',
     });
     const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
     useEffect(() => { api.tenants({}).then(r => { if (r.success && r.data) set({ tenants: r.data.queryable }); }).catch(() => { /* API 未实现，忽略错误 */ }); }, []);
 
+    const handleViewTask = async (id: string) => {
+        set({ selectedTask: null, detailVisible: true, detailLoading: true });
+        try {
+            const res = await api.get(id);
+            if (res.success && res.data) {
+                set({ selectedTask: res.data });
+            }
+        } catch (error) {
+            console.error('Failed to load task details:', error);
+        } finally {
+            set({ detailLoading: false });
+        }
+    };
+
     const columns: ProColumns<VisitTask>[] = [
-        { title: '任务标题', dataIndex: 'title', key: 'title', sorter: true, width: 200, ellipsis: true, render: (dom: any, r: VisitTask) => <a onClick={() => set({ selectedTask: r, detailVisible: true })}>{dom}</a> },
+        { title: '任务标题', dataIndex: 'title', key: 'title', sorter: true, width: 200, ellipsis: true, render: (dom: any, r: VisitTask) => <a onClick={() => handleViewTask(r.id)}>{dom}</a> },
         { title: '走访类型', dataIndex: 'visitType', key: 'visitType', sorter: true, width: 120 },
         { title: '受访企业', dataIndex: 'tenantName', key: 'tenantName', sorter: true, width: 150, ellipsis: true, render: (dom: any) => dom || '-' },
         { title: '企管员', dataIndex: 'managerName', key: 'managerName', sorter: true, width: 120 },
         { title: '走访日期', dataIndex: 'visitDate', key: 'visitDate', sorter: true, width: 120, render: (dom: any) => dom ? dayjs(dom).format('YYYY-MM-DD') : '-' },
         { title: '状态', dataIndex: 'status', key: 'status', sorter: true, width: 100, render: (_: any, r: VisitTask) => { const config = statusMap[r.status] || { text: r.status, color: 'default', icon: null }; return <Tag color={config.color} icon={config.icon}>{config.text}</Tag>; } },
-        { title: '操作', valueType: 'option', fixed: 'right', width: 160, render: (_: any, r: VisitTask) => [
-            <Button key="view" type="link" size="small" icon={<EyeOutlined />} onClick={() => set({ selectedTask: r, detailVisible: true })}>查看</Button>,
+        { title: '操作', valueType: 'option', fixed: 'right', width: 150, render: (_: any, r: VisitTask) => [
+            <Button key="view" type="link" size="small" icon={<EyeOutlined />} onClick={() => handleViewTask(r.id)}>查看</Button>,
             r.status !== 'Completed' && <Button key="edit" type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingTask: r, formVisible: true })}>编辑</Button>,
             r.status !== 'Completed' && <Popconfirm key="delete" title="确定要删除这条走访任务吗？" onConfirm={() => handleDelete(r.id)} okText="确定" cancelText="取消"><Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button></Popconfirm>,
         ]},
@@ -120,7 +134,7 @@ const VisitTaskPage: React.FC = () => {
                 {state.editingTask && (<><Row gutter={16}><Col span={12}><ProFormSelect name="status" label="任务状态" options={[{ value: 'Pending', label: '待派发' }, { value: 'InProgress', label: '进行中' }, { value: 'Completed', label: '已完成' }, { value: 'Cancelled', label: '已取消' }]} /></Col></Row><ProFormText name="content" label="走访纪要" placeholder="详细记录走访沟通内容" /><ProFormText name="feedback" label="企业诉求/反馈" placeholder="企业提出的问题或建议" /></>)}
             </ModalForm>
 
-            <Drawer title="走访任务详情" placement="right" open={state.detailVisible} onClose={(open) => { if (!open) set({ detailVisible: false, selectedTask: null }); }} width={640}
+            <Drawer title="走访任务详情" placement="right" open={state.detailVisible} onClose={() => { set({ detailVisible: false, selectedTask: null }); }} width={640} loading={state.detailLoading}
                 extra={<Space><Button onClick={() => set({ detailVisible: false })}>关闭</Button><Button type="primary" icon={<EditOutlined />} onClick={() => { set({ detailVisible: false, editingTask: state.selectedTask, formVisible: true }); }}>编辑</Button></Space>}>
                 {state.selectedTask ? (<Space direction="vertical" size="large" style={{ width: '100%' }}>
                     <ProDescriptions title="基本信息" bordered column={2}>

@@ -42,6 +42,8 @@ const api = {
         request<ApiResponse<AssetStatistics>>('/api/park/asset/statistics', { method: 'GET', params: { startDate, endDate } }),
     buildings: (params: PageParams) =>
         request<ApiResponse<PagedResult<Building>>>('/api/park/buildings/list', { params }),
+    getBuilding: (id: string) =>
+        request<ApiResponse<Building>>(`/api/park/buildings/${id}`),
     createBuilding: (data: Partial<Building>) =>
         request<ApiResponse<Building>>('/api/park/buildings', { method: 'POST', data }),
     updateBuilding: (id: string, data: Partial<Building>) =>
@@ -76,13 +78,13 @@ const AssetManagement: React.FC = () => {
     const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
     const [buildingState, setBuildingState] = useState({
-        modalVisible: false, detailVisible: false,
+        modalVisible: false, detailVisible: false, detailLoading: false,
         editingBuilding: null as Building | null, currentBuilding: null as Building | null,
     });
     const setBuilding = (partial: Partial<typeof buildingState>) => setBuildingState(prev => ({ ...prev, ...partial }));
 
     const [unitState, setUnitState] = useState({
-        modalVisible: false, detailVisible: false,
+        modalVisible: false, detailVisible: false, detailLoading: false,
         editingUnit: null as PropertyUnit | null, currentUnit: null as PropertyUnit | null,
     });
     const setUnit = (partial: Partial<typeof unitState>) => setUnitState(prev => ({ ...prev, ...partial }));
@@ -97,8 +99,36 @@ const AssetManagement: React.FC = () => {
         api.allBuildings().then(r => { if (r.success && r.data) setForm({ buildings: r.data.queryable || [] }); });
     }, []);
 
+    const handleViewBuilding = async (id: string) => {
+        setBuilding({ currentBuilding: null, detailVisible: true, detailLoading: true });
+        try {
+            const res = await api.getBuilding(id);
+            if (res.success && res.data) {
+                setBuilding({ currentBuilding: res.data });
+            }
+        } catch (error) {
+            console.error('Failed to load building details:', error);
+        } finally {
+            setBuilding({ detailLoading: false });
+        }
+    };
+
+    const handleViewUnit = async (id: string) => {
+        setUnit({ currentUnit: null, detailVisible: true, detailLoading: true });
+        try {
+            const res = await api.unit(id);
+            if (res.success && res.data) {
+                setUnit({ currentUnit: res.data });
+            }
+        } catch (error) {
+            console.error('Failed to load unit details:', error);
+        } finally {
+            setUnit({ detailLoading: false });
+        }
+    };
+
     const buildingColumns: ProColumns<Building>[] = [
-        { title: intl.formatMessage({ id: 'pages.park.asset.building.name', defaultMessage: '楼宇名称' }), dataIndex: 'name', sorter: true, width: 160, render: (_, record) => (<Space><BankOutlined style={{ color: '#1890ff' }} /><a onClick={() => { setBuilding({ currentBuilding: record, detailVisible: true }); }}>{record.name}</a></Space>) },
+        { title: intl.formatMessage({ id: 'pages.park.asset.building.name', defaultMessage: '楼宇名称' }), dataIndex: 'name', sorter: true, width: 160, render: (_, record) => (<Space><BankOutlined style={{ color: '#1890ff' }} /><a onClick={() => handleViewBuilding(record.id)}>{record.name}</a></Space>) },
         { title: intl.formatMessage({ id: 'pages.park.asset.building.address', defaultMessage: '地址' }), dataIndex: 'address', sorter: true, width: 200, ellipsis: true, render: (_, record) => record.address || '-' },
         { title: intl.formatMessage({ id: 'pages.park.asset.building.type', defaultMessage: '类型' }), dataIndex: 'buildingType', sorter: true, width: 100, render: (_, record) => (<Tag color={record.buildingType === 'Office' ? 'blue' : record.buildingType === 'Commercial' ? 'green' : 'orange'}>{record.buildingType === 'Office' ? '办公楼' : record.buildingType === 'Commercial' ? '商业楼' : record.buildingType || '综合'}</Tag>) },
         { title: intl.formatMessage({ id: 'pages.park.asset.building.floors', defaultMessage: '楼层' }), dataIndex: 'totalFloors', sorter: true, width: 80, align: 'center', render: (_, record) => `${record.totalFloors}层` },
@@ -106,15 +136,15 @@ const AssetManagement: React.FC = () => {
         { title: intl.formatMessage({ id: 'pages.park.asset.building.occupancy', defaultMessage: '出租率' }), dataIndex: 'occupancyRate', sorter: true, width: 120, render: (_, record) => (<Tag color={(record.occupancyRate || 0) >= 80 ? 'success' : (record.occupancyRate || 0) >= 50 ? 'processing' : 'exception'}>{record.occupancyRate || 0}%</Tag>) },
         { title: intl.formatMessage({ id: 'pages.park.asset.building.units', defaultMessage: '房源数量' }), dataIndex: 'totalUnits', sorter: true, width: 140, align: 'center', render: (totalUnits, record) => (<Space vertical align="center"><Button type="link" size="small" style={{ fontWeight: 'bold', fontSize: 16, padding: 0 }} onClick={() => { set({ activeTab: 'units' }); unitActionRef.current?.reload(); }}>{totalUnits}</Button><Text type="secondary" style={{ fontSize: 12 }}>可用: {record.availableUnits}</Text></Space>) },
         { title: intl.formatMessage({ id: 'pages.park.asset.building.status', defaultMessage: '状态' }), dataIndex: 'status', sorter: true, width: 100, render: (_, record) => (<Tag color={record.status === 'Active' ? 'green' : record.status === 'Maintenance' ? 'orange' : 'default'}>{record.status === 'Active' ? '正常' : record.status === 'Maintenance' ? '维护中' : record.status}</Tag>) },
-        { title: intl.formatMessage({ id: 'common.action', defaultMessage: '操作' }), valueType: 'option', width: 180, fixed: 'right', render: (_, record) => (<Space>
-            <Button type="link" icon={<EyeOutlined />} onClick={() => setBuilding({ currentBuilding: record, detailVisible: true })}>{intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}</Button>
+        { title: intl.formatMessage({ id: 'common.action', defaultMessage: '操作' }), valueType: 'option', width: 150, fixed: 'right', render: (_, record) => (<Space>
+            <Button type="link" icon={<EyeOutlined />} onClick={() => handleViewBuilding(record.id)}>{intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}</Button>
             <Button type="link" icon={<EditOutlined />} onClick={() => { setBuilding({ editingBuilding: record, modalVisible: true }); setForm({ attachments: (record.attachments || []).map((url, index) => { const fileName = url.split('/').pop() || 'file'; return { uid: `-${index}`, name: decodeURIComponent(fileName), status: 'done', url }; }) }); }}>{intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}</Button>
             <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={async () => { await api.deleteBuilding(record.id); buildingActionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }}><Button type="link" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}</Button></Popconfirm>
         </Space>) },
     ];
 
     const unitColumns: ProColumns<PropertyUnit>[] = [
-        { title: intl.formatMessage({ id: 'pages.park.asset.unit.number', defaultMessage: '房源编号' }), dataIndex: 'unitNumber', sorter: true, width: 120, render: (_, record) => (<Space><HomeOutlined style={{ color: '#52c41a' }} /><a onClick={() => api.unit(record.id).then(r => { if (r.success && r.data) setUnit({ currentUnit: r.data, detailVisible: true }); })}>{record.unitNumber}</a></Space>) },
+        { title: intl.formatMessage({ id: 'pages.park.asset.unit.number', defaultMessage: '房源编号' }), dataIndex: 'unitNumber', sorter: true, width: 120, render: (_, record) => (<Space><HomeOutlined style={{ color: '#52c41a' }} /><a onClick={() => handleViewUnit(record.id)}>{record.unitNumber}</a></Space>) },
         { title: intl.formatMessage({ id: 'pages.park.asset.unit.building', defaultMessage: '所属楼宇' }), dataIndex: 'buildingName', sorter: true, width: 150 },
         { title: intl.formatMessage({ id: 'pages.park.asset.unit.floor', defaultMessage: '楼层' }), dataIndex: 'floor', sorter: true, width: 80, align: 'center', render: (_, record) => `${record.floor}F` },
         { title: intl.formatMessage({ id: 'pages.park.asset.unit.area', defaultMessage: '面积' }), dataIndex: 'area', sorter: true, width: 100, align: 'right', render: (_, record) => `${record.area} m²` },
@@ -122,7 +152,7 @@ const AssetManagement: React.FC = () => {
         { title: intl.formatMessage({ id: 'pages.park.asset.unit.type', defaultMessage: '类型' }), dataIndex: 'unitType', sorter: true, width: 100, render: (_, record) => (<Tag color={record.unitType === 'Office' ? 'blue' : record.unitType === 'Commercial' ? 'green' : 'purple'}>{record.unitType === 'Office' ? '办公' : record.unitType === 'Commercial' ? '商铺' : record.unitType || '其他'}</Tag>) },
         { title: intl.formatMessage({ id: 'pages.park.asset.unit.status', defaultMessage: '状态' }), dataIndex: 'status', sorter: true, width: 100, render: (_, record) => { const statusMap: Record<string, { color: string; text: string }> = { Available: { color: 'green', text: '空置' }, Rented: { color: 'blue', text: '已出租' }, Reserved: { color: 'orange', text: '预留' }, Maintenance: { color: 'red', text: '维护' } }; const config = statusMap[record.status] || { color: 'default', text: record.status }; return <Tag color={config.color}>{config.text}</Tag>; } },
         { title: intl.formatMessage({ id: 'common.action', defaultMessage: '操作' }), valueType: 'option', width: 150, fixed: 'right', render: (_, record) => (<Space>
-            <Button type="link" icon={<EyeOutlined />} onClick={() => api.unit(record.id).then(r => { if (r.success && r.data) setUnit({ currentUnit: r.data, detailVisible: true }); })}>{intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}</Button>
+            <Button type="link" icon={<EyeOutlined />} onClick={() => handleViewUnit(record.id)}>{intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}</Button>
             <Button type="link" icon={<EditOutlined />} onClick={() => { setUnit({ editingUnit: record, modalVisible: true }); setForm({ attachments: (record.attachments || []).map((url, index) => { const fileName = url.split('/').pop() || 'file'; return { uid: `-${index}`, name: decodeURIComponent(fileName), status: 'done', url }; }) }); }}>{intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}</Button>
             <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={async () => { await api.deleteUnit(record.id); unitActionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }}><Button type="link" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}</Button></Popconfirm>
         </Space>) },
@@ -226,7 +256,7 @@ const AssetManagement: React.FC = () => {
                 </div>
             </ModalForm>
 
-            <Drawer title={buildingState.currentBuilding?.name || intl.formatMessage({ id: 'pages.park.asset.buildingDetail', defaultMessage: '楼宇详情' })} open={buildingState.detailVisible} onClose={(open) => { if (!open) setBuilding({ detailVisible: false, currentBuilding: null }); }} width={640}>
+            <Drawer title={buildingState.currentBuilding?.name || intl.formatMessage({ id: 'pages.park.asset.buildingDetail', defaultMessage: '楼宇详情' })} open={buildingState.detailVisible} onClose={() => { setBuilding({ detailVisible: false, currentBuilding: null }); }} width={640} loading={buildingState.detailLoading}>
                 {buildingState.currentBuilding && (<div>
                     <ProDescriptions bordered column={2} size="small" style={{ marginBottom: 24 }}>
                         <ProDescriptions.Item label="楼宇名称">{buildingState.currentBuilding.name}</ProDescriptions.Item>
@@ -246,7 +276,7 @@ const AssetManagement: React.FC = () => {
                 </div>)}
             </Drawer>
 
-            <Drawer title={unitState.currentUnit?.unitNumber || intl.formatMessage({ id: 'pages.park.asset.unitDetail', defaultMessage: '房源详情' })} open={unitState.detailVisible} onClose={(open) => { if (!open) setUnit({ detailVisible: false, currentUnit: null }); }} width={720}>
+            <Drawer title={unitState.currentUnit?.unitNumber || intl.formatMessage({ id: 'pages.park.asset.unitDetail', defaultMessage: '房源详情' })} open={unitState.detailVisible} onClose={() => { setUnit({ detailVisible: false, currentUnit: null }); }} width={720} loading={unitState.detailLoading}>
                 {unitState.currentUnit && (<Space direction="vertical" style={{ width: '100%' }} size={24}>
                     <div>
                         <Title level={5} style={{ marginBottom: 16 }}>基本信息</Title>

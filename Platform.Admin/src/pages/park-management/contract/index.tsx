@@ -64,7 +64,7 @@ const ContractManagement: React.FC = () => {
     const [sorter, setSorter] = useState<{ sortBy: string; sortOrder: string } | undefined>(undefined);
     const [state, setState] = useState({
         statistics: null as TenantStatistics | null, contractModalVisible: false, paymentModalVisible: false,
-        detailDrawerVisible: false, currentContract: null as LeaseContract | null,
+        detailDrawerVisible: false, currentContract: null as LeaseContract | null, detailLoading: false,
         tenants: [] as ParkTenant[], allUnits: [] as PropertyUnit[], isEdit: false, fileList: [] as UploadFile[],
     });
     const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
@@ -75,18 +75,31 @@ const ContractManagement: React.FC = () => {
         api.units({ page: 1 }).then(r => { if (r.success && r.data) set({ allUnits: r.data.queryable }); });
     }, []);
 
+    const handleViewContract = async (id: string) => {
+        set({ currentContract: null, detailDrawerVisible: true, detailLoading: true });
+        try {
+            const res = await api.getDetail(id);
+            if (res.success && res.data) {
+                set({ currentContract: res.data });
+            }
+        } catch (error) {
+            console.error('Failed to load contract details:', error);
+        } finally {
+            set({ detailLoading: false });
+        }
+    };
+
     const columns: ProColumns<LeaseContract>[] = [
-        { title: intl.formatMessage({ id: 'pages.park.contract.number', defaultMessage: '合同编号' }), dataIndex: 'contractNumber', sorter: true, width: 140, render: (_, record) => <Space><FileTextOutlined style={{ color: '#1890ff' }} /><a onClick={() => set({ currentContract: record, detailDrawerVisible: true })}>{record.contractNumber}</a></Space> },
+        { title: intl.formatMessage({ id: 'pages.park.contract.number', defaultMessage: '合同编号' }), dataIndex: 'contractNumber', sorter: true, width: 140, render: (_, record) => <Space><FileTextOutlined style={{ color: '#1890ff' }} /><a onClick={() => handleViewContract(record.id)}>{record.contractNumber}</a></Space> },
         { title: intl.formatMessage({ id: 'pages.park.contract.tenant', defaultMessage: '租户' }), dataIndex: 'tenantName', sorter: true, width: 150 },
         { title: '租用单元', dataIndex: 'unitNumbers', width: 200, render: (_, record) => <Space size={[0, 4]} wrap>{record.unitNumbers?.map(num => <Tag key={num} color="blue">{num}</Tag>)}{(!record.unitNumbers || record.unitNumbers.length === 0) && '-'}</Space> },
         { title: intl.formatMessage({ id: 'pages.park.contract.period', defaultMessage: '租期' }), dataIndex: 'startDate', sorter: true, width: 180, render: (_, record) => <Text style={{ fontSize: 12 }}>{dayjs(record.startDate).format('YYYY-MM-DD')} ~ {dayjs(record.endDate).format('YYYY-MM-DD')}</Text> },
         { title: intl.formatMessage({ id: 'pages.park.contract.rent', defaultMessage: '月租金' }), dataIndex: 'monthlyRent', sorter: true, width: 100, align: 'right', render: (rent) => `¥${rent?.toLocaleString()}` },
         { title: intl.formatMessage({ id: 'pages.park.contract.totalAmount', defaultMessage: '合同总额' }), dataIndex: 'totalAmount', sorter: true, width: 120, align: 'right', render: (total) => total ? `¥${total?.toLocaleString()}` : '-' },
         { title: intl.formatMessage({ id: 'pages.park.contract.status', defaultMessage: '状态' }), dataIndex: 'status', sorter: true, width: 100, render: (status) => { const opt = contractStatusOptions.find(o => o.value === status); return <Tag color={opt?.color || 'default'}>{opt?.label || status}</Tag>; } },
-        { title: intl.formatMessage({ id: 'common.action', defaultMessage: '操作' }), valueType: 'option', width: 200, fixed: 'right', render: (_, record) => [
-            <Button key="view" type="link" icon={<EyeOutlined />} onClick={() => set({ currentContract: record, detailDrawerVisible: true })}>{intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}</Button>,
+        { title: intl.formatMessage({ id: 'common.action', defaultMessage: '操作' }), valueType: 'option', width: 150, fixed: 'right', render: (_, record) => [
+            <Button key="view" type="link" icon={<EyeOutlined />} onClick={() => handleViewContract(record.id)}>{intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}</Button>,
             <Button key="edit" type="link" icon={<EditOutlined />} onClick={() => { set({ isEdit: true, currentContract: record, contractModalVisible: true, fileList: (record.attachments || []).map(id => ({ uid: id, name: `附件-${id.substring(0, 8)}`, status: 'done', url: `/api/cloud-storage/files/${id}/download` })) }); }}>{intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}</Button>,
-            record.status === 'Active' && <Button key="renew" type="link" icon={<SyncOutlined />} onClick={() => { set({ isEdit: false, currentContract: record, contractModalVisible: true, fileList: [] }); }}>{intl.formatMessage({ id: 'pages.park.contract.renew', defaultMessage: '续签' })}</Button>,
             <Popconfirm key="delete" title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={async () => { await api.delete(record.id); actionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }}><Button type="link" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}</Button></Popconfirm>,
         ]},
     ];
@@ -162,7 +175,7 @@ const ContractManagement: React.FC = () => {
                 <ProFormText name="terms" label="条款备注" placeholder="备注信息" />
             </ModalForm>
 
-            <Drawer title={state.currentContract?.contractNumber || '合同详情'} open={state.detailDrawerVisible} onClose={(open) => { if (!open) set({ detailDrawerVisible: false, currentContract: null }); }} width={640}>
+            <Drawer title={state.currentContract?.contractNumber || '合同详情'} open={state.detailDrawerVisible} onClose={() => { set({ detailDrawerVisible: false, currentContract: null }); }} width={640} loading={state.detailLoading}>
                 {state.currentContract && (<div style={{ padding: '0 8px' }}>
                     <ProDescriptions bordered column={2} size="small">
                         <ProDescriptions.Item label="合同编号" span={2}>{state.currentContract.contractNumber}</ProDescriptions.Item>

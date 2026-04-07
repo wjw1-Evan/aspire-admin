@@ -73,7 +73,7 @@ const PasswordBook: React.FC = () => {
     { title: '标签', dataIndex: 'tags', render: (dom) => dom && typeof dom === 'object' && 'length' in dom ? <Space size={[0, 4]} wrap>{(dom as string[]).map((t) => <Tag key={t}>{t}</Tag>)}</Space> : '-' },
     { title: '最后使用', dataIndex: 'lastUsedAt', key: 'lastUsedAt', sorter: true, valueType: 'dateTime' },
     {
-      title: '操作', key: 'action', valueType: 'option', fixed: 'right', width: 150, render: (_, r) => [
+      title: '操作', key: 'action', valueType: 'option', fixed: 'right', width: 150, responsive: ['md'], render: (_, r) => [
         <Button key="view" type="link" icon={<EyeOutlined />} onClick={() => handleView(r.id)}>查看</Button>,
         <Button key="edit" type="link" icon={<EditOutlined />} onClick={async () => {
           const res = await api.get(r.id);
@@ -83,6 +83,21 @@ const PasswordBook: React.FC = () => {
           }
         }}>编辑</Button>,
         <Popconfirm key="delete" title={`确定删除「${r.platform}」？`} onConfirm={async () => { await api.delete(r.id); actionRef.current?.reload(); loadStatistics(); }}><Button type="link" danger icon={<DeleteOutlined />}>删除</Button></Popconfirm>,
+      ]
+    },
+    {
+      title: '操作', key: 'action-mobile', valueType: 'option', fixed: 'right', width: 80, responsive: ['xs', 'sm'], render: (_, r) => [
+        <Space key="actions" size={0}>
+          <Button key="view" type="text" size="small" icon={<EyeOutlined />} onClick={() => handleView(r.id)} />
+          <Button key="edit" type="text" size="small" icon={<EditOutlined />} onClick={async () => {
+            const res = await api.get(r.id);
+            if (res.success && res.data) {
+              set({ editingEntry: res.data, formVisible: true });
+              setFormState(p => ({ ...p, tags: res.data?.tags || [] }));
+            }
+          }} />
+          <Popconfirm key="delete" title={`删除「${r.platform}」？`} onConfirm={async () => { await api.delete(r.id); actionRef.current?.reload(); loadStatistics(); }}><Button type="text" size="small" danger icon={<DeleteOutlined />} /></Popconfirm>
+        </Space>
       ]
     },
   ];

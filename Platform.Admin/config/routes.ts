@@ -151,7 +151,8 @@ export default [
   },
   {
     path: '/xiaoke-management',
-    hideInMenu: true, // 使用数据库菜单
+    component: './xiaoke-management/config',
+    hideInMenu: true,
     routes: [
       {
         path: '/xiaoke-management/config',
@@ -172,7 +173,8 @@ export default [
   },
   {
     path: '/workflow',
-    hideInMenu: true, // 使用数据库菜单
+    component: './workflow/list',
+    hideInMenu: true,
     routes: [
       {
         path: '/workflow/list',
@@ -205,7 +207,8 @@ export default [
   },
   {
     path: '/document',
-    hideInMenu: true, // 使用数据库菜单
+    component: './document/list',
+    hideInMenu: true,
     routes: [
       {
         path: '/document/list',
@@ -231,6 +234,7 @@ export default [
   },
   {
     path: '/visit-management',
+    component: './park-management/visit-task',
     hideInMenu: true,
     routes: [
       {
@@ -257,7 +261,8 @@ export default [
   },
   {
     path: '/park-management',
-    hideInMenu: true, // 使用数据库菜单
+    component: './park-management/tenant',
+    hideInMenu: true,
     routes: [
       {
         path: '/park-management/asset',
@@ -293,7 +298,8 @@ export default [
   },
   {
     path: '/cloud-storage',
-    hideInMenu: true, // 使用数据库菜单
+    component: './cloud-storage/files',
+    hideInMenu: true,
     routes: [
       {
         path: '/cloud-storage/files',

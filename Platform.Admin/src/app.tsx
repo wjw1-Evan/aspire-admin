@@ -448,6 +448,8 @@ export const layout: RunTimeLayoutConfig = ({
       );
     },
     menuHeaderRender: false,
+    breadcrumbRender: (routers: any[]) =>
+      (routers || []).map((r) => ({ ...r, path: '' })),
     // 🔧 自定义子文件夹渲染
     subMenuItemRender: (item: any, dom: React.ReactNode) => {
       // 如果没有 icon 属性但有 rawIcon，说明是需要手动显示的二级文件夹

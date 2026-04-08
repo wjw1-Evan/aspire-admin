@@ -22,7 +22,7 @@ const api = {
     create: (data: VisitTaskFormData) => request<ApiResponse<VisitTask>>('/api/park-management/visit/task', { method: 'POST', data }),
     update: (id: string, data: VisitTaskFormData) => request<ApiResponse<VisitTask>>(`/api/park-management/visit/task/${id}`, { method: 'PUT', data }),
     statistics: () => request<ApiResponse<VisitStatistics>>('/api/park-management/visit/statistics'),
-    tenants: (params: PageParams) => request<ApiResponse<PagedResult<ParkTenant>>>('/api/park/tenants/list', { method: 'POST', data: params }),
+    tenants: (params: PageParams) => request<ApiResponse<PagedResult<ParkTenant>>>('/api/park/tenants/list', { params }),
 };
 
 const statusMap: Record<string, { text: string; color: string; icon: React.ReactNode }> = {

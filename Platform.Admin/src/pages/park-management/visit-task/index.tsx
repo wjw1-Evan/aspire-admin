@@ -121,13 +121,18 @@ const VisitTaskPage: React.FC = () => {
                         const targetTenant = state.tenants.find(t => t.tenantName === values.tenantName);
                         let finalTenantId = targetTenant?.id;
                         if (state.editingTask && values.tenantName === state.editingTask.tenantName) finalTenantId = state.editingTask.tenantId;
-                        let visitDateValue: string | undefined;
+                        let visitDateValue = '';
                         if (values.visitDate) {
-                            if (typeof values.visitDate === 'string') visitDateValue = values.visitDate;
-                            else if (values.visitDate.valueOf) visitDateValue = values.visitDate.toISOString();
+                            if (dayjs.isDayjs(values.visitDate)) {
+                                visitDateValue = values.visitDate.toISOString();
+                            } else if (values.visitDate instanceof Date) {
+                                visitDateValue = values.visitDate.toISOString();
+                            } else if (typeof values.visitDate === 'string') {
+                                visitDateValue = dayjs(values.visitDate).toISOString();
+                            }
                         }
                         const submitData = { ...values, visitDate: visitDateValue, tenantId: finalTenantId } as unknown as VisitTaskFormData;
-                        console.log('Submit data:', submitData);
+                        console.log('Submit data:', JSON.stringify(submitData));
                         const res = state.editingTask ? await api.update(state.editingTask.id, submitData) : await api.create(submitData);
                         if (res.success) { message.success(state.editingTask ? '更新成功' : '创建成功'); set({ formVisible: false, editingTask: null }); actionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); return true; }
                         else { message.error(res.message || (state.editingTask ? '更新失败' : '创建失败')); return false; }

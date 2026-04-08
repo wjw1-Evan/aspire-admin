@@ -55,6 +55,17 @@ const UserManagement: React.FC = () => {
     if (res.success && res.data) set({ statistics: res.data });
   }, []);
 
+  useEffect(() => {
+    api.roles().then(r => {
+      if (r.success && r.data) {
+        const map: Record<string, string> = {};
+        r.data.queryable?.forEach(role => { if (role.id) map[role.id] = role.name; });
+        set({ roleMap: map });
+        setF({ roles: r.data.queryable || [] });
+      }
+    });
+  }, []);
+
   const handleSearch = useCallback((params: PageParams) => {
     set({ searchParams: { ...state.searchParams, ...params, page: 1 } });
     actionRef.current?.reload();

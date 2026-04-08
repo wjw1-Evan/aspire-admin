@@ -108,7 +108,7 @@ const VisitKnowledgeBase: React.FC = () => {
                         style={{ width: 260, marginRight: 8 }}
                         prefix={<SearchOutlined />}
                     />,
-                    <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { form.resetFields(); set({ editingQuestion: null, formVisible: true }); }}>新增问题</Button>,
+                    <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { set({ editingQuestion: null }); setTimeout(() => form.resetFields(), 0); set({ formVisible: true }); }}>新增问题</Button>,
                 ]}
                 onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
             />

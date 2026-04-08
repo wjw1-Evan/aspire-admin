@@ -103,7 +103,7 @@ public class ChatAiService : IChatAiService
             .Where(m => m.SessionId == sessionId && m.SenderId == AiAssistantConstants.AssistantUserId)
             .Take(100)
             .ToListAsync();
-        
+
         return existing.FirstOrDefault(m => m.Metadata != null && m.Metadata.TryGetValue("triggerMessageId", out var id) && id?.ToString() == triggerMessageId);
     }
 
@@ -186,7 +186,7 @@ public class ChatAiService : IChatAiService
             {
                 await UpdateStreamingMessageAsync(assistantMessage.Id, finalContent, cancellationToken);
                 await CompleteStreamingMessageAsync(assistantMessage.Id, finalContent, cancellationToken);
-                
+
                 var completed = await _context.Set<ChatMessage>().FirstOrDefaultAsync(m => m.Id == assistantMessage.Id);
                 if (completed != null)
                 {
@@ -268,10 +268,7 @@ public class ChatAiService : IChatAiService
             if (config.FrequencyPenalty >= -2) options.FrequencyPenalty = (float)config.FrequencyPenalty;
             if (config.PresencePenalty >= -2) options.PresencePenalty = (float)config.PresencePenalty;
         }
-        else if (_aiOptions.MaxTokens > 0)
-        {
-            options.MaxOutputTokenCount = _aiOptions.MaxTokens;
-        }
+       
         return options;
     }
 
@@ -285,7 +282,7 @@ public class ChatAiService : IChatAiService
                 .OrderByDescending(m => m.CreatedAt)
                 .Take(AssistantContextMessageLimit)
                 .ToListAsync();
-            
+
             history.Reverse();
             foreach (var message in history)
             {
@@ -351,7 +348,7 @@ public class ChatAiService : IChatAiService
         };
         await _context.Set<ChatMessage>().AddAsync(message);
         await _context.SaveChangesAsync();
-        
+
         await _sessionService.UpdateSessionAfterMessageAsync(session, message, AiAssistantConstants.AssistantUserId);
 
         var payload = new ChatMessageRealtimePayload { SessionId = session.Id, Message = message };
@@ -380,7 +377,7 @@ public class ChatAiService : IChatAiService
 
         await _context.Set<ChatMessage>().AddAsync(message);
         await _context.SaveChangesAsync();
-        
+
         await _sessionService.UpdateSessionAfterMessageAsync(session, message, AiAssistantConstants.AssistantUserId);
 
         var payload = new ChatMessageRealtimePayload { SessionId = session.Id, Message = message, BroadcastAtUtc = DateTime.UtcNow };
@@ -402,10 +399,10 @@ public class ChatAiService : IChatAiService
     {
         var msg = await _context.Set<ChatMessage>().FirstOrDefaultAsync(x => x.Id == messageId);
         if (msg == null) return;
-        
+
         var meta = msg.Metadata != null ? new Dictionary<string, object>(msg.Metadata) : new Dictionary<string, object>();
         meta.Remove("streaming");
-        
+
         msg.Content = finalContent;
         msg.Metadata = meta;
         await _context.SaveChangesAsync();

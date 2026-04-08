@@ -59,7 +59,7 @@ public class AiSuggestionService : IAiSuggestionService
         var userContent = context.ContextLines.Count == 0 ? "（上下文为空）" : string.Join("\n", context.ContextLines);
         var messages = BuildChatMessages(instruction, context.ConversationMessages, userContent);
         var completionOptions = new ChatCompletionOptions { EndUserId = currentUserId };
-        if (_aiOptions.MaxTokens > 0) completionOptions.MaxOutputTokenCount = _aiOptions.MaxTokens;
+      
 
         var stopwatch = Stopwatch.StartNew();
         try

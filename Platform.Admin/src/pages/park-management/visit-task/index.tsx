@@ -117,13 +117,15 @@ const VisitTaskPage: React.FC = () => {
                 onOpenChange={(open) => { if (!open) set({ formVisible: false, editingTask: null }); }}
                 initialValues={state.editingTask ? { title: state.editingTask.title, managerName: state.editingTask.managerName, phone: state.editingTask.phone, visitType: state.editingTask.visitType, visitMethod: state.editingTask.visitMethod || '实地走访', details: state.editingTask.details, tenantName: state.editingTask.tenantName || '', visitLocation: state.editingTask.visitLocation, intervieweeName: state.editingTask.intervieweeName, intervieweePosition: state.editingTask.intervieweePosition, intervieweePhone: state.editingTask.intervieweePhone, visitDate: state.editingTask.visitDate ? dayjs(state.editingTask.visitDate) : undefined, visitor: state.editingTask.visitor, status: state.editingTask.status, content: state.editingTask.content, feedback: state.editingTask.feedback } : { visitType: '日常走访', visitMethod: '实地走访', visitDate: dayjs() }}
                 onFinish={async (values) => {
-                    const targetTenant = state.tenants.find(t => t.tenantName === values.tenantName);
-                    let finalTenantId = targetTenant?.id;
-                    if (state.editingTask && values.tenantName === state.editingTask.tenantName) finalTenantId = state.editingTask.tenantId;
-                    const submitData = { ...values, visitDate: values.visitDate.toISOString(), tenantId: finalTenantId } as any;
-                    const res = state.editingTask ? await api.update(state.editingTask.id, submitData) : await api.create(submitData);
-                    if (res.success) { set({ formVisible: false, editingTask: null }); actionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }
-                    return res.success;
+                    try {
+                        const targetTenant = state.tenants.find(t => t.tenantName === values.tenantName);
+                        let finalTenantId = targetTenant?.id;
+                        if (state.editingTask && values.tenantName === state.editingTask.tenantName) finalTenantId = state.editingTask.tenantId;
+                        const submitData = { ...values, visitDate: values.visitDate.toISOString(), tenantId: finalTenantId } as any;
+                        const res = state.editingTask ? await api.update(state.editingTask.id, submitData) : await api.create(submitData);
+                        if (res.success) { message.success(state.editingTask ? '更新成功' : '创建成功'); set({ formVisible: false, editingTask: null }); actionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); return true; }
+                        else { message.error(res.message || (state.editingTask ? '更新失败' : '创建失败')); return false; }
+                    } catch (e: any) { message.error(e.message || (state.editingTask ? '更新失败' : '创建失败')); return false; }
                 }} autoFocusFirstInput width={640}>
                 <div style={{ marginBottom: 16 }}><Typography.Text type="secondary">基本信息</Typography.Text></div>
                 <ProFormText name="title" label="任务标题" placeholder="如：XX企业日常走访" rules={[{ required: true, message: '请输入任务标题' }]} />

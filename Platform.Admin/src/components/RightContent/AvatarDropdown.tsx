@@ -169,7 +169,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
       label: (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0', minWidth: 250 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>
+            <div style={{}}>
               {company.companyName}
               {company.isPersonal && (
                 <Tag color="blue" style={{ marginLeft: 8 }}>
@@ -182,11 +182,11 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
                 </Tag>
               )}
             </div>
-            <div style={{ fontSize: 12, color: 'var(--ant-color-text-description)' }}>
+            <div style={{ color: 'var(--ant-color-text-description)' }}>
               {company.roleNames.join(intl.formatMessage({ id: 'pages.company.roleSeparator' })) || intl.formatMessage({ id: 'pages.company.noRole' })}
             </div>
           </div>
-          {company.isCurrent && <CheckOutlined style={{ marginLeft: 12, color: 'var(--ant-color-success)', fontSize: 16 }} />}
+          {company.isCurrent && <CheckOutlined style={{ marginLeft: 12, color: 'var(--ant-color-success)' }} />}
         </div>
       ),
     })),

@@ -183,13 +183,14 @@ const StatisticsPage: React.FC = () => {
     ];
 
     return (
-        <PageContainer extra={[
-            <Space key="period-selection" wrap>
-                <StatisticsPeriodSelector value={state.period} dateRange={state.dateRange} onChange={(newDateRange, newPeriod) => { set({ dateRange: newDateRange, period: newPeriod || state.period }); }} />
-                <Button icon={<RobotOutlined />} onClick={handleGenerateAiReport} type="primary" style={{ background: 'linear-gradient(45deg, #1890ff, #722ed1)', borderColor: 'transparent' }}>{intl.formatMessage({ id: 'pages.park.statistics.aiReport', defaultMessage: 'AI 分析报告' })}</Button>
-                <Button icon={<ReloadOutlined />} onClick={loadAllStatistics} type="primary" ghost>{intl.formatMessage({ id: 'common.refresh', defaultMessage: '刷新' })}</Button>
-            </Space>
-        ]}>
+        <PageContainer>
+            <div style={{ marginBottom: 16, textAlign: 'right' }}>
+                <Space wrap>
+                    <StatisticsPeriodSelector value={state.period} dateRange={state.dateRange} onChange={(newDateRange, newPeriod) => { set({ dateRange: newDateRange, period: newPeriod || state.period }); }} />
+                    <Button icon={<RobotOutlined />} onClick={handleGenerateAiReport} type="primary" style={{ background: 'linear-gradient(45deg, #1890ff, #722ed1)', borderColor: 'transparent' }}>{intl.formatMessage({ id: 'pages.park.statistics.aiReport', defaultMessage: 'AI 分析报告' })}</Button>
+                    <Button icon={<ReloadOutlined />} onClick={loadAllStatistics} type="primary" ghost>{intl.formatMessage({ id: 'common.refresh', defaultMessage: '刷新' })}</Button>
+                </Space>
+            </div>
             <Spin spinning={state.loading}>
                 <Tabs activeKey={state.activeTab} onChange={(key) => set({ activeTab: key })} items={tabItems} type="card" />
             </Spin>

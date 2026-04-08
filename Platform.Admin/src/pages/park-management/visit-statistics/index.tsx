@@ -84,13 +84,14 @@ const VisitStatisticsPage: React.FC = () => {
     ];
 
     return (
-        <PageContainer extra={[
-            <Space key="period-selection" wrap>
-                <StatisticsPeriodSelector value={state.period as any as string} dateRange={state.dateRange} onChange={(newDateRange, newPeriod) => { set({ dateRange: newDateRange, period: newPeriod as any }); }} />
-                <Button icon={<ReloadOutlined />} onClick={loadStatistics} loading={state.loading}>{intl.formatMessage({ id: 'pages.common.refresh', defaultMessage: '刷新' })}</Button>
-                <Button type="primary" icon={<RobotOutlined />} onClick={handleGenerateAiReport} disabled={!state.statistics} style={{ background: 'linear-gradient(45deg, #1890ff, #722ed1)', borderColor: 'transparent' }}>{intl.formatMessage({ id: 'pages.park.visit.statistics.aiReport', defaultMessage: '走访 AI 分析报告' })}</Button>
-            </Space>
-        ]}>
+        <PageContainer>
+            <div style={{ marginBottom: 16, textAlign: 'right' }}>
+                <Space wrap>
+                    <StatisticsPeriodSelector value={state.period as any as string} dateRange={state.dateRange} onChange={(newDateRange, newPeriod) => { set({ dateRange: newDateRange, period: newPeriod as any }); }} />
+                    <Button icon={<ReloadOutlined />} onClick={loadStatistics} loading={state.loading}>{intl.formatMessage({ id: 'pages.common.refresh', defaultMessage: '刷新' })}</Button>
+                    <Button type="primary" icon={<RobotOutlined />} onClick={handleGenerateAiReport} disabled={!state.statistics} style={{ background: 'linear-gradient(45deg, #1890ff, #722ed1)', borderColor: 'transparent' }}>{intl.formatMessage({ id: 'pages.park.visit.statistics.aiReport', defaultMessage: '走访 AI 分析报告' })}</Button>
+                </Space>
+            </div>
             <Spin spinning={state.loading}>
                 {state.statistics && (<Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
                     <Col xs={24} sm={12} lg={6}><ProCard style={{ height: '100%', borderRadius: 8, transition: 'all 0.3s' }}><Statistic title={intl.formatMessage({ id: 'pages.park.visit.statistics.pendingTasks', defaultMessage: '待处理任务' })} value={state.statistics.pendingTasks} prefix={<ClockCircleOutlined />} styles={{ content: { color: '#faad14' } }} /><div style={{ color: 'rgba(0, 0, 0, 0.45)', fontSize: 12, marginTop: 4 }}>{intl.formatMessage({ id: 'pages.park.visit.statistics.overview', defaultMessage: '当前待执行的走访任务' })}</div></ProCard></Col>

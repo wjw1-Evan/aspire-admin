@@ -22,11 +22,11 @@ const documentStatusMap = {
 };
 
 const api = {
-  list: (params: PageParams) => request<ApiResponse<PagedResult<Document>>>('/api/documents', { params }),
+  list: (params: PageParams) => request<ApiResponse<PagedResult<Document>>>('/apiservice/api/documents', { params }),
   get: (id: string) => request<ApiResponse<Document>>(`/api/documents/${id}`),
   delete: (id: string) => request<ApiResponse<void>>(`/api/documents/${id}`, { method: 'DELETE' }),
-  create: (data: Partial<Document>) => request<ApiResponse<Document>>('/api/documents', { method: 'POST', data }),
-  statistics: () => request<ApiResponse<DocumentStatistics>>('/api/documents/statistics'),
+  create: (data: Partial<Document>) => request<ApiResponse<Document>>('/apiservice/api/documents', { method: 'POST', data }),
+  statistics: () => request<ApiResponse<DocumentStatistics>>('/apiservice/api/documents/statistics'),
 };
 
 const DocumentManagement: React.FC = () => {

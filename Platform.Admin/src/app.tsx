@@ -539,8 +539,8 @@ export const layout: RunTimeLayoutConfig = ({
 
 function handleCurrentUserResponse(response: any): any {
   const isCurrentUserRequest =
-    response.config.url?.includes('/api/auth/current-user') ||
-    response.config.url?.includes('/api/currentUser');
+    response.config.url?.includes('/apiservice/api/auth/current-user') ||
+    response.config.url?.includes('/apiservice/api/currentUser');
   if (!isCurrentUserRequest) {
     return response;
   }

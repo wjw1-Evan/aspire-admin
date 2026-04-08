@@ -52,14 +52,14 @@ export interface UpdateProfileRequest {
 }
 
 export async function getAllUsers(options?: Record<string, any>) {
-  return request<ApiResponse<AppUser[]>>('/api/users/all', {
+  return request<ApiResponse<AppUser[]>>('/apiservice/api/users/all', {
     method: 'GET',
     ...(options || {}),
   });
 }
 
 export async function getUserById(id: string, options?: Record<string, any>) {
-  return request<ApiResponse<AppUser>>(`/api/users/${id}`, {
+  return request<ApiResponse<AppUser>>(`/apiservice/api/users/${id}`, {
     method: 'GET',
     ...(options || {}),
   });
@@ -69,27 +69,27 @@ export async function getUserList(
   params: PageParams,
   options?: Record<string, any>,
 ) {
-  return request<ApiResponse<PagedResult<AppUser>>>('/api/users/list', {
+  return request<ApiResponse<PagedResult<AppUser>>>('/apiservice/api/users/list', {
     params,
     ...(options || {}),
   });
 }
 
 export async function getUserStatistics() {
-  return request<ApiResponse<UserStatisticsResponse>>('/api/users/statistics', {
+  return request<ApiResponse<UserStatisticsResponse>>('/apiservice/api/users/statistics', {
     method: 'GET',
   });
 }
 
 export async function deleteUser(userId: string, reason?: string) {
-  return request<ApiResponse<{ message: string }>>(`/api/users/${userId}`, {
+  return request<ApiResponse<{ message: string }>>(`/apiservice/api/users/${userId}`, {
     method: 'DELETE',
     params: reason ? { reason } : undefined,
   });
 }
 
 export async function bulkAction(userIds: string[], action: string, reason?: string) {
-  return request<ApiResponse<{ message: string }>>('/api/users/bulk-action', {
+  return request<ApiResponse<{ message: string }>>('/apiservice/api/users/bulk-action', {
     method: 'POST',
     data: {
       userIds,
@@ -100,26 +100,26 @@ export async function bulkAction(userIds: string[], action: string, reason?: str
 }
 
 export async function activateUser(userId: string) {
-  return request<ApiResponse<AppUser>>(`/api/users/${userId}/activate`, {
+  return request<ApiResponse<AppUser>>(`/apiservice/api/users/${userId}/activate`, {
     method: 'PUT',
   });
 }
 
 export async function deactivateUser(userId: string) {
-  return request<ApiResponse<AppUser>>(`/api/users/${userId}/deactivate`, {
+  return request<ApiResponse<AppUser>>(`/apiservice/api/users/${userId}/deactivate`, {
     method: 'PUT',
   });
 }
 
 export async function createUser(data: Partial<AppUser>) {
-  return request<ApiResponse<AppUser>>('/api/users', {
+  return request<ApiResponse<AppUser>>('/apiservice/api/users', {
     method: 'POST',
     data,
   });
 }
 
 export async function updateUser(userId: string, data: Partial<AppUser>) {
-  return request<ApiResponse<AppUser>>(`/api/users/${userId}`, {
+  return request<ApiResponse<AppUser>>(`/apiservice/api/users/${userId}`, {
     method: 'PUT',
     data,
   });

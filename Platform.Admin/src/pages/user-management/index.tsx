@@ -23,15 +23,15 @@ interface JoinReq { id: string; username: string; userEmail?: string; reason?: s
 
 // ==================== API ====================
 const api = {
-  list: (p: PageParams) => request<ApiResponse<PagedResult<AppUser>>>('/api/users/list', { params: p }),
-  stats: () => request<ApiResponse<UserStats>>('/api/users/statistics', { method: 'GET' }),
+  list: (p: PageParams) => request<ApiResponse<PagedResult<AppUser>>>('/apiservice/api/users/list', { params: p }),
+  stats: () => request<ApiResponse<UserStats>>('/apiservice/api/users/statistics', { method: 'GET' }),
   del: (id: string, reason?: string) => request<ApiResponse<unknown>>(`/api/users/${id}`, { method: 'DELETE', params: reason ? { reason } : undefined }),
   activate: (id: string) => request<ApiResponse<unknown>>(`/api/users/${id}/activate`, { method: 'PUT' }),
   deactivate: (id: string) => request<ApiResponse<unknown>>(`/api/users/${id}/deactivate`, { method: 'PUT' }),
-  create: (d: unknown) => request<ApiResponse<AppUser>>('/api/users', { method: 'POST', data: d }),
+  create: (d: unknown) => request<ApiResponse<AppUser>>('/apiservice/api/users', { method: 'POST', data: d }),
   update: (id: string, d: unknown) => request<ApiResponse<AppUser>>(`/api/users/${id}`, { method: 'PUT', data: d }),
-  searchUsers: (s: string) => request<ApiResponse<{ users: AppUser[]; total: number }>>('/api/users/all', { method: 'GET', params: { search: s } }),
-  roles: () => request<ApiResponse<PagedResult<Role>>>('/api/role', { method: 'GET' }),
+  searchUsers: (s: string) => request<ApiResponse<{ users: AppUser[]; total: number }>>('/apiservice/api/users/all', { method: 'GET', params: { search: s } }),
+  roles: () => request<ApiResponse<PagedResult<Role>>>('/apiservice/api/role', { method: 'GET' }),
   joinReqs: (cid: string, status?: string) => request<ApiResponse<JoinReq[]>>(`/api/company/${cid}/join-requests`, { params: { status } }),
   approveJoin: (id: string) => request<ApiResponse<unknown>>(`/api/company/join-requests/${id}/approve`, { method: 'POST', data: {} }),
   rejectJoin: (id: string, d: { rejectReason: string }) => request<ApiResponse<unknown>>(`/api/company/join-requests/${id}/reject`, { method: 'POST', data: d }),

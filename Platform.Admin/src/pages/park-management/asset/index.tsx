@@ -39,25 +39,25 @@ interface AssetStatistics {
 
 const api = {
     statistics: (startDate?: string, endDate?: string) =>
-        request<ApiResponse<AssetStatistics>>('/api/park/asset/statistics', { method: 'GET', params: { startDate, endDate } }),
+        request<ApiResponse<AssetStatistics>>('/apiservice/api/park/asset/statistics', { method: 'GET', params: { startDate, endDate } }),
     buildings: (params: PageParams) =>
-        request<ApiResponse<PagedResult<Building>>>('/api/park/buildings/list', { params }),
+        request<ApiResponse<PagedResult<Building>>>('/apiservice/api/park/buildings/list', { params }),
     getBuilding: (id: string) =>
         request<ApiResponse<Building>>(`/api/park/buildings/${id}`),
     createBuilding: (data: Partial<Building>) =>
-        request<ApiResponse<Building>>('/api/park/buildings', { method: 'POST', data }),
+        request<ApiResponse<Building>>('/apiservice/api/park/buildings', { method: 'POST', data }),
     updateBuilding: (id: string, data: Partial<Building>) =>
         request<ApiResponse<Building>>(`/api/park/buildings/${id}`, { method: 'PUT', data }),
     deleteBuilding: (id: string) =>
         request<ApiResponse<boolean>>(`/api/park/buildings/${id}`, { method: 'DELETE' }),
     allBuildings: () =>
-        request<ApiResponse<PagedResult<Building>>>('/api/park/buildings/list', { params: { page: 1, pageSize: 1000 } }),
+        request<ApiResponse<PagedResult<Building>>>('/apiservice/api/park/buildings/list', { params: { page: 1, pageSize: 1000 } }),
     units: (params: PageParams & { buildingId?: string }) =>
-        request<ApiResponse<PagedResult<PropertyUnit>>>('/api/park/properties/list', { params }),
+        request<ApiResponse<PagedResult<PropertyUnit>>>('/apiservice/api/park/properties/list', { params }),
     unit: (id: string) =>
         request<ApiResponse<PropertyUnit>>(`/api/park/properties/${id}`, { method: 'GET' }),
     createUnit: (data: Partial<PropertyUnit>) =>
-        request<ApiResponse<PropertyUnit>>('/api/park/properties', { method: 'POST', data }),
+        request<ApiResponse<PropertyUnit>>('/apiservice/api/park/properties', { method: 'POST', data }),
     updateUnit: (id: string, data: Partial<PropertyUnit>) =>
         request<ApiResponse<PropertyUnit>>(`/api/park/properties/${id}`, { method: 'PUT', data }),
     deleteUnit: (id: string) =>
@@ -232,7 +232,7 @@ const AssetManagement: React.FC = () => {
                 <ProFormText name="description" label="描述" placeholder="请输入描述信息" />
                 <div style={{ marginBottom: 24 }}>
                     <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>楼宇附件</Typography.Text>
-                    <Upload action="/api/cloud-storage/upload" listType="picture" fileList={formState.attachments} onChange={({ fileList }) => setForm({ attachments: fileList })} headers={{ Authorization: `Bearer ${localStorage.getItem('token')}` }} data={(file) => ({ file, isPublic: false, description: 'Building Attachment' })}><Button icon={<UploadOutlined />}>上传附件</Button></Upload>
+                    <Upload action="/apiservice/api/cloud-storage/upload" listType="picture" fileList={formState.attachments} onChange={({ fileList }) => setForm({ attachments: fileList })} headers={{ Authorization: `Bearer ${localStorage.getItem('token')}` }} data={(file) => ({ file, isPublic: false, description: 'Building Attachment' })}><Button icon={<UploadOutlined />}>上传附件</Button></Upload>
                 </div>
             </ModalForm>
 
@@ -260,7 +260,7 @@ const AssetManagement: React.FC = () => {
                 <ProFormText name="description" label="描述" placeholder="请输入描述信息" />
                 <div style={{ marginBottom: 24 }}>
                     <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>房源附件</Typography.Text>
-                    <Upload action="/api/cloud-storage/upload" listType="picture" fileList={formState.attachments} onChange={({ fileList }) => setForm({ attachments: fileList })} headers={{ Authorization: `Bearer ${localStorage.getItem('token')}` }} data={(file) => ({ file, isPublic: false, description: 'Property Unit Attachment' })}><Button icon={<UploadOutlined />}>上传附件</Button></Upload>
+                    <Upload action="/apiservice/api/cloud-storage/upload" listType="picture" fileList={formState.attachments} onChange={({ fileList }) => setForm({ attachments: fileList })} headers={{ Authorization: `Bearer ${localStorage.getItem('token')}` }} data={(file) => ({ file, isPublic: false, description: 'Property Unit Attachment' })}><Button icon={<UploadOutlined />}>上传附件</Button></Upload>
                 </div>
             </ModalForm>
 

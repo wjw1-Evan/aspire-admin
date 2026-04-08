@@ -183,7 +183,7 @@ const CreateAndStartByWorkflow: React.FC = () => {
                             name="files"
                             multiple
                             maxCount={10}
-                            action="/api/upload"
+                            action="/apiservice/api/upload"
                             listType="text"
                         >
                             <Button icon={<UploadOutlined />}>
@@ -303,7 +303,7 @@ const CreateAndStartByWorkflow: React.FC = () => {
                             name="files"
                             multiple
                             maxCount={10}
-                            action="/api/upload"
+                            action="/apiservice/api/upload"
                             listType="text"
                         >
                             <Button icon={<UploadOutlined />}>

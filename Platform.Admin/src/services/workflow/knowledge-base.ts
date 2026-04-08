@@ -23,7 +23,7 @@ export async function getKnowledgeBases(params: {
   pageSize?: number;
   search?: string;
 }): Promise<ApiResponse<PagedResult<KnowledgeBase>>> {
-  return request('/api/workflow/knowledge-bases', {
+  return request('/apiservice/api/workflow/knowledge-bases', {
     method: 'GET',
     params,
   });
@@ -42,7 +42,7 @@ export async function getKnowledgeBase(id: string): Promise<ApiResponse<Knowledg
  * 创建知识库
  */
 export async function createKnowledgeBase(data: Partial<KnowledgeBase>): Promise<ApiResponse<KnowledgeBase>> {
-  return request('/api/workflow/knowledge-bases', {
+  return request('/apiservice/api/workflow/knowledge-bases', {
     method: 'POST',
     data,
   });

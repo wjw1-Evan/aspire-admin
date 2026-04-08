@@ -25,18 +25,18 @@ interface PathHistoryItem { id?: string; name: string; path: string; }
 
 // ==================== API ====================
 const api = {
-    list: (params: PageParams & { parentId?: string }) => request<ApiResponse<PagedResult<FileItem>>>('/api/cloud-storage/list', { params }),
-    search: (params: PageParams & { keyword: string }) => request<ApiResponse<PagedResult<FileItem>>>('/api/cloud-storage/search', { params }),
+    list: (params: PageParams & { parentId?: string }) => request<ApiResponse<PagedResult<FileItem>>>('/apiservice/api/cloud-storage/list', { params }),
+    search: (params: PageParams & { keyword: string }) => request<ApiResponse<PagedResult<FileItem>>>('/apiservice/api/cloud-storage/search', { params }),
     get: (id: string) => request<ApiResponse<FileItem>>(`/api/cloud-storage/files/${id}`),
     delete: (id: string) => request<ApiResponse<void>>(`/api/cloud-storage/items/${id}`, { method: 'DELETE' }),
-    batchDelete: (ids: string[]) => request<ApiResponse<void>>('/api/cloud-storage/items/batch-delete', { method: 'POST', data: { ids } }),
-    createFolder: (data: { name: string; parentId?: string }) => request<ApiResponse<FileItem>>('/api/cloud-storage/folders', { method: 'POST', data }),
+    batchDelete: (ids: string[]) => request<ApiResponse<void>>('/apiservice/api/cloud-storage/items/batch-delete', { method: 'POST', data: { ids } }),
+    createFolder: (data: { name: string; parentId?: string }) => request<ApiResponse<FileItem>>('/apiservice/api/cloud-storage/folders', { method: 'POST', data }),
     rename: (id: string, data: { name: string }) => request<ApiResponse<FileItem>>(`/api/cloud-storage/items/${id}/rename`, { method: 'PUT', data }),
-    statistics: () => request<ApiResponse<StorageStatistics>>('/api/cloud-storage/statistics'),
-    versions: (fileId: string, page: number, pageSize: number) => request<ApiResponse<PagedResult<FileVersion>>>('/api/file-version/list', { params: { fileId, page, pageSize } }),
+    statistics: () => request<ApiResponse<StorageStatistics>>('/apiservice/api/cloud-storage/statistics'),
+    versions: (fileId: string, page: number, pageSize: number) => request<ApiResponse<PagedResult<FileVersion>>>('/apiservice/api/file-version/list', { params: { fileId, page, pageSize } }),
     restoreVersion: (fileId: string, versionNumber: number) => request<ApiResponse<void>>(`/api/file-version/${fileId}/versions/${versionNumber}/restore`, { method: 'POST' }),
     share: (data: { fileId: string; shareType: string; expiresAt?: string; maxDownloads?: number; allowedUserIds?: string[] }) => request<ApiResponse<any>>(`/api/file-share/${data.fileId}`, { method: 'POST', data }),
-    users: () => request<ApiResponse<AppUser[]>>('/api/users/all'),
+    users: () => request<ApiResponse<AppUser[]>>('/apiservice/api/users/all'),
 };
 
 // ==================== Utils ====================

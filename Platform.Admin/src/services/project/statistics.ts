@@ -57,7 +57,7 @@ export async function getDashboardStatistics(
     startDate?: string,
     endDate?: string
 ) {
-    return request<ApiResponse<ProjectDashboardStatistics>>('/api/project/statistics/dashboard', {
+    return request<ApiResponse<ProjectDashboardStatistics>>('/apiservice/api/project/statistics/dashboard', {
         method: 'GET',
         params: { startDate, endDate },
     });
@@ -71,7 +71,7 @@ export async function generateAiReport(
     endDate?: string,
     data?: any
 ) {
-    return request<ApiResponse<string>>('/api/project/statistics/ai-report', {
+    return request<ApiResponse<string>>('/apiservice/api/project/statistics/ai-report', {
         method: 'POST',
         params: { startDate, endDate },
         data,

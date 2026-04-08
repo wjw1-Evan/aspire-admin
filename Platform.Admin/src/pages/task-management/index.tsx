@@ -26,10 +26,10 @@ interface TaskStatistics {
 // ==================== API ====================
 const api = {
   list: (params: PageParams & { status?: number; priority?: number; assignedTo?: string; taskType?: string; projectId?: string }) =>
-    request<ApiResponse<PagedResult<TaskDto>>>('/api/task/query', { params }),
+    request<ApiResponse<PagedResult<TaskDto>>>('/apiservice/api/task/query', { params }),
   delete: (id: string) => request<ApiResponse<void>>(`/api/task/${id}`, { method: 'DELETE' }),
   cancel: (id: string) => request<ApiResponse<void>>(`/api/task/${id}/cancel`, { method: 'POST' }),
-  statistics: () => request<ApiResponse<TaskStatistics>>('/api/task/statistics'),
+  statistics: () => request<ApiResponse<TaskStatistics>>('/apiservice/api/task/statistics'),
 };
 
 // ==================== Task Detail Component ====================

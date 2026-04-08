@@ -18,7 +18,7 @@ interface PlatformStatistics {
   lastUpdatedAt?: string;
 }
 
-const API_PREFIX = '/api/iot';
+const API_PREFIX = '/apiservice/api/iot';
 
 const api = {
   statistics: () => request<ApiResponse<PlatformStatistics>>(`${API_PREFIX}/statistics/platform`, { method: 'GET' }),

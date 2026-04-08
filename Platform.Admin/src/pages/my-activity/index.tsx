@@ -37,9 +37,9 @@ interface ActivityStats {
 // ==================== API ====================
 const api = {
   list: (params: PageParams) =>
-    request<ApiResponse<PagedResult<UserActivityLog>>>('/api/users/me/activity-logs-paged', { params }),
+    request<ApiResponse<PagedResult<UserActivityLog>>>('/apiservice/api/users/me/activity-logs-paged', { params }),
   statistics: (search?: string) =>
-    request<ApiResponse<ActivityStats>>('/api/users/me/activity-logs/statistics', { params: { search } }),
+    request<ApiResponse<ActivityStats>>('/apiservice/api/users/me/activity-logs/statistics', { params: { search } }),
 };
 
 

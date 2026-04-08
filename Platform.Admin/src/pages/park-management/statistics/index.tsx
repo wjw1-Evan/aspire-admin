@@ -18,11 +18,11 @@ interface TenantStatistics { totalTenants: number; activeTenants: number; totalC
 interface ServiceStatistics { totalCategories: number; activeCategories: number; totalRequests: number; pendingRequests: number; processingRequests: number; completedRequests: number; averageRating: number; requestsByCategory: Record<string, number>; requestsByStatus: Record<string, number>; totalRequestsYoY?: number; totalRequestsMoM?: number; averageRatingYoY?: number; }
 
 const api = {
-    assetStatistics: (startDate?: string, endDate?: string) => request<ApiResponse<AssetStatistics>>('/api/park/asset/statistics', { method: 'GET', params: { startDate, endDate } }),
-    investmentStatistics: (startDate?: string, endDate?: string) => request<ApiResponse<InvestmentStatistics>>('/api/park/investment/statistics', { method: 'GET', params: { startDate, endDate } }),
-    tenantStatistics: (startDate?: string, endDate?: string) => request<ApiResponse<TenantStatistics>>('/api/park/tenant/statistics', { method: 'GET', params: { startDate, endDate } }),
-    serviceStatistics: (startDate?: string, endDate?: string) => request<ApiResponse<ServiceStatistics>>('/api/park/services/statistics', { method: 'GET', params: { startDate, endDate } }),
-    generateAiReport: (startDate?: string, endDate?: string, data?: any) => request<ApiResponse<string>>('/api/park/statistics/ai-report', { method: 'POST', params: { startDate, endDate }, data }),
+    assetStatistics: (startDate?: string, endDate?: string) => request<ApiResponse<AssetStatistics>>('/apiservice/api/park/asset/statistics', { method: 'GET', params: { startDate, endDate } }),
+    investmentStatistics: (startDate?: string, endDate?: string) => request<ApiResponse<InvestmentStatistics>>('/apiservice/api/park/investment/statistics', { method: 'GET', params: { startDate, endDate } }),
+    tenantStatistics: (startDate?: string, endDate?: string) => request<ApiResponse<TenantStatistics>>('/apiservice/api/park/tenant/statistics', { method: 'GET', params: { startDate, endDate } }),
+    serviceStatistics: (startDate?: string, endDate?: string) => request<ApiResponse<ServiceStatistics>>('/apiservice/api/park/services/statistics', { method: 'GET', params: { startDate, endDate } }),
+    generateAiReport: (startDate?: string, endDate?: string, data?: any) => request<ApiResponse<string>>('/apiservice/api/park/statistics/ai-report', { method: 'POST', params: { startDate, endDate }, data }),
 };
 
 const StatisticsPage: React.FC = () => {

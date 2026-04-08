@@ -12,8 +12,8 @@ import { ApiResponse, PagedResult, PageParams } from '@/types';
 interface FileShare { id: string; fileId: string; fileName: string; shareToken: string; shareType: 'internal' | 'external'; accessType: 'view' | 'download' | 'edit'; password: string; expiresAt?: string; maxDownloads?: number; downloadCount: number; accessCount: number; isEnabled: boolean; createdAt: string; createdBy?: string; createdByName?: string; }
 
 const api = {
-    getMyShares: (params: PageParams) => request<ApiResponse<PagedResult<any>>>('/api/file-share/my-shares', { params }),
-    getSharedWithMe: (params: PageParams) => request<ApiResponse<PagedResult<any>>>('/api/file-share/shared-with-me', { params }),
+    getMyShares: (params: PageParams) => request<ApiResponse<PagedResult<any>>>('/apiservice/api/file-share/my-shares', { params }),
+    getSharedWithMe: (params: PageParams) => request<ApiResponse<PagedResult<any>>>('/apiservice/api/file-share/shared-with-me', { params }),
     update: (id: string, data: any) => request<ApiResponse<void>>(`/api/file-share/${id}`, { method: 'PUT', data }),
     delete: (id: string) => request<ApiResponse<void>>(`/api/file-share/${id}`, { method: 'DELETE' }),
 };

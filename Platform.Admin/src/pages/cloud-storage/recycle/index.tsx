@@ -15,11 +15,11 @@ interface RecycleItem { id: string; name: string; originalPath?: string; size: n
 interface RecycleStatistics { totalItems: number; totalSize: number; oldestItem?: string; newestItem?: string; }
 
 const api = {
-    list: (params: PageParams) => request<ApiResponse<PagedResult<RecycleItem>>>('/api/cloud-storage/recycle', { params }),
+    list: (params: PageParams) => request<ApiResponse<PagedResult<RecycleItem>>>('/apiservice/api/cloud-storage/recycle', { params }),
     restore: (id: string, data: { itemId: string; newParentId?: string }) => request<ApiResponse<void>>(`/api/cloud-storage/recycle-bin/${id}/restore`, { method: 'POST', data }),
     permanentDelete: (id: string) => request<ApiResponse<void>>(`/api/cloud-storage/recycle-bin/${id}`, { method: 'DELETE' }),
-    empty: () => request<ApiResponse<{ deletedCount: number; freedSpace: number }>>('/api/cloud-storage/recycle-bin/empty', { method: 'DELETE' }),
-    statistics: () => request<ApiResponse<RecycleStatistics>>('/api/cloud-storage/recycle/statistics'),
+    empty: () => request<ApiResponse<{ deletedCount: number; freedSpace: number }>>('/apiservice/api/cloud-storage/recycle-bin/empty', { method: 'DELETE' }),
+    statistics: () => request<ApiResponse<RecycleStatistics>>('/apiservice/api/cloud-storage/recycle/statistics'),
 };
 
 const CloudStorageRecyclePage: React.FC = () => {

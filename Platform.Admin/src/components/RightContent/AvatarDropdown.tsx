@@ -70,7 +70,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
     if (!currentUser) return;
     setCompaniesLoading(true);
     try {
-      const res = await request('/api/company/my-companies');
+      const res = await request('/apiservice/api/company/my-companies');
       if (res.success) {
         setCompanies(res.data || []);
       }
@@ -92,7 +92,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
     }
 
     try {
-      const response = await request('/api/company/switch', {
+      const response = await request('/apiservice/api/company/switch', {
         method: 'POST',
         data: { targetCompanyId },
       });

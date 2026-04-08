@@ -4,7 +4,7 @@ import * as API from '@/types';
 
 /** 企业注册 POST /api/company/register */
 export async function registerCompany(body: API.RegisterCompanyRequest) {
-  return request<ApiResponse<API.RegisterCompanyResult>>('/api/company/register', {
+  return request<ApiResponse<API.RegisterCompanyResult>>('/apiservice/api/company/register', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -15,7 +15,7 @@ export async function registerCompany(body: API.RegisterCompanyRequest) {
 
 /** v3.1: 创建企业（已登录用户）POST /api/company/create */
 export async function createCompany(body: API.CreateCompanyRequest) {
-  return request<ApiResponse<API.Company>>('/api/company/create', {
+  return request<ApiResponse<API.Company>>('/apiservice/api/company/create', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -26,7 +26,7 @@ export async function createCompany(body: API.CreateCompanyRequest) {
 
 /** 获取当前企业信息 GET /api/company/current */
 export async function getCurrentCompany(options?: { [key: string]: any }) {
-  return request<ApiResponse<API.Company>>('/api/company/current', {
+  return request<ApiResponse<API.Company>>('/apiservice/api/company/current', {
     method: 'GET',
     ...(options || {}),
   });
@@ -37,7 +37,7 @@ export async function updateCurrentCompany(
   body: API.UpdateCompanyRequest,
   options?: { [key: string]: any }
 ) {
-  return request<ApiResponse<boolean>>('/api/company/current', {
+  return request<ApiResponse<boolean>>('/apiservice/api/company/current', {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -49,7 +49,7 @@ export async function updateCurrentCompany(
 
 /** 获取企业统计信息 GET /api/company/statistics */
 export async function getCompanyStatistics(options?: { [key: string]: any }) {
-  return request<ApiResponse<API.CompanyStatistics>>('/api/company/statistics', {
+  return request<ApiResponse<API.CompanyStatistics>>('/apiservice/api/company/statistics', {
     method: 'GET',
     ...(options || {}),
   });
@@ -77,14 +77,14 @@ export async function searchCompanies(keyword: string) {
 
 /** v3.1: 获取我的企业列表 GET /api/company/my-companies */
 export async function getMyCompanies() {
-  return request<ApiResponse<API.UserCompanyItem[]>>('/api/company/my-companies', {
+  return request<ApiResponse<API.UserCompanyItem[]>>('/apiservice/api/company/my-companies', {
     method: 'GET',
   });
 }
 
 /** v3.1: 切换当前企业 POST /api/company/switch */
 export async function switchCompany(targetCompanyId: string) {
-  return request<ApiResponse<API.SwitchCompanyResult>>('/api/company/switch', {
+  return request<ApiResponse<API.SwitchCompanyResult>>('/apiservice/api/company/switch', {
     method: 'POST',
     data: {
       targetCompanyId,
@@ -157,7 +157,7 @@ export async function leaveCompany(companyId: string) {
 
 /** 申请加入企业 POST /api/company/join */
 export async function applyToJoinCompany(data: API.ApplyToJoinCompanyRequest) {
-  return request<ApiResponse<string>>('/api/company/join', {
+  return request<ApiResponse<string>>('/apiservice/api/company/join', {
     method: 'POST',
     data,
   });
@@ -165,7 +165,7 @@ export async function applyToJoinCompany(data: API.ApplyToJoinCompanyRequest) {
 
 /** 获取我的申请列表 GET /api/company/my-join-requests */
 export async function getMyJoinRequests() {
-  return request<ApiResponse<API.JoinRequestDetail[]>>('/api/company/my-join-requests', {
+  return request<ApiResponse<API.JoinRequestDetail[]>>('/apiservice/api/company/my-join-requests', {
     method: 'GET',
   });
 }

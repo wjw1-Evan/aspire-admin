@@ -68,7 +68,7 @@ export interface SystemResources {
  * 获取系统状态
  */
 export async function getSystemStatus(): Promise<ApiResponse<SystemStatus>> {
-  return request<ApiResponse<SystemStatus>>('/api/maintenance/health', {
+  return request<ApiResponse<SystemStatus>>('/apiservice/api/maintenance/health', {
     method: 'GET',
   });
 }
@@ -77,7 +77,7 @@ export async function getSystemStatus(): Promise<ApiResponse<SystemStatus>> {
  * 获取系统资源使用情况
  */
 export async function getSystemResources(): Promise<ApiResponse<SystemResources>> {
-  return request<ApiResponse<SystemResources>>('/api/system-monitor/resources', {
+  return request<ApiResponse<SystemResources>>('/systemmonitor/api/system-monitor/resources', {
     method: 'GET',
   });
 }

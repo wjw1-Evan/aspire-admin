@@ -123,7 +123,7 @@ const MyJoinRequestsTable: React.FC = () => {
             search={false}
             request={async (params: any) => {
                 const { current, pageSize, ...rest } = params;
-                const result = await request('/api/company/my-join-requests', {
+                const result = await request('/apiservice/api/company/my-join-requests', {
                     params: { page: current, pageSize, ...rest } as PageParams,
                 });
                 if (result.data) {

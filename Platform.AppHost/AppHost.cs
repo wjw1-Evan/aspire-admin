@@ -39,6 +39,7 @@ var mongoBuilder = builder.AddMongoDB(mongoOptionName, userName: mongoUserParam,
 var mongo = mongoBuilder;
 
 var mongodb = mongo.AddDatabase("mongodb");
+var systemMonitorDb = mongo.AddDatabase("systemmonitor-db");
 
 // 数据初始化服务（一次性任务，完成后自动停止）
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
@@ -47,6 +48,11 @@ var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("dat
  {
      service.Name = "datainitializer";
  });
+
+var systemMonitor = builder.AddProject<Projects.Platform_SystemMonitor>("systemmonitor")
+    .WithReference(systemMonitorDb)
+    .WithHttpEndpoint(port: 15020)
+    .WithHttpHealthCheck("/health");
 
 var smtpConfig = builder.Configuration.GetSection("Smtp");
 var smtpHost = smtpConfig["Host"];
@@ -59,10 +65,7 @@ var apiService = builder.AddProject<Projects.Platform_ApiService>("apiservice")
     .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health")
     .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
-    .WithReference(chat)
-    // 🔧 添加日志配置，确保在 AppHost 控制台中能看到清晰的日志
-    .WithEnvironment("DOTNET_LOGGING__CONSOLE__INCLUDESCOPES", "true")
-    .WithEnvironment("DOTNET_LOGGING__CONSOLE__TIMESTAMPFORMAT", "[yyyy-MM-dd HH:mm:ss] ");
+    .WithReference(chat);
 if (!string.IsNullOrEmpty(smtpHost))
 {
     // 如果 AppHost 配置了 SMTP，则使用配置的值
@@ -78,8 +81,8 @@ if (!string.IsNullOrEmpty(smtpHost))
 
 var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDiscovery>>
 {
-    // 核心业务服务（端口不暴露，仅供内部访问）
-    ["apiservice"] = apiService
+    ["apiservice"] = apiService,
+    ["systemmonitor"] = systemMonitor
 };
 
 var yarp = builder.AddYarp("apigateway")

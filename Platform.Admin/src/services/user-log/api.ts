@@ -8,7 +8,7 @@ export async function getUserActivityLogs(
   params?: GetUserActivityLogsParams,
   options?: Record<string, any>,
 ) {
-  return request<ApiResponse<PagedResult<UserActivityLog>>>('/api/users/activity-logs', {
+  return request<ApiResponse<PagedResult<UserActivityLog>>>('/apiservice/api/users/activity-logs', {
     method: 'GET',
     params,
     ...(options || {}),
@@ -30,7 +30,7 @@ export async function getActivityLogStatistics(
   params?: GetUserActivityLogsParams,
   options?: Record<string, any>,
 ) {
-  return request<ApiResponse<ActivityLogStatistics>>('/api/users/activity-logs/statistics', {
+  return request<ApiResponse<ActivityLogStatistics>>('/apiservice/api/users/activity-logs/statistics', {
     method: 'GET',
     params,
     ...(options || {}),
@@ -57,7 +57,7 @@ export async function getActivityLogById(
   logId: string,
   options?: Record<string, any>,
 ) {
-  return request<ApiResponse<UserActivityLog>>(`/api/users/activity-logs/${logId}`, {
+  return request<ApiResponse<UserActivityLog>>(`/apiservice/api/users/activity-logs/${logId}`, {
     method: 'GET',
     ...(options || {}),
   });
@@ -82,7 +82,7 @@ export async function getCurrentUserActivityLogs(
   },
   options?: Record<string, any>,
 ) {
-  return request<ApiResponse<ActivityLogWithSummary>>('/api/users/me/activity-logs-paged', {
+  return request<ApiResponse<ActivityLogWithSummary>>('/apiservice/api/users/me/activity-logs-paged', {
     method: 'GET',
     params,
     ...(options || {}),
@@ -118,7 +118,7 @@ export async function getCurrentUserActivityLogStatistics(
   },
   options?: Record<string, any>,
 ) {
-  return request<ApiResponse<ActivityLogStatistics>>('/api/users/me/activity-logs/statistics', {
+  return request<ApiResponse<ActivityLogStatistics>>('/apiservice/api/users/me/activity-logs/statistics', {
     method: 'GET',
     params,
     ...(options || {}),

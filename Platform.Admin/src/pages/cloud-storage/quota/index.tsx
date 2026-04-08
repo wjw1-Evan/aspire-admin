@@ -23,9 +23,9 @@ interface QuotaWarning { userId: string; userDisplayName?: string; username?: st
 const api = {
     getUserQuota: (userId: string) => request<ApiResponse<any>>(`/api/storage-quota/user/${userId}`),
     updateUserQuota: (userId: string, data: any) => request<ApiResponse<void>>(`/api/storage-quota/user/${userId}`, { method: 'PUT', data }),
-    getUsageStats: () => request<ApiResponse<QuotaUsageStats>>('/api/storage-quota/usage-stats'),
-    getWarnings: (companyId?: string) => request<ApiResponse<PagedResult<QuotaWarning>>>('/api/storage-quota/warnings', { params: { companyId } }),
-    setUserQuota: (data: { userId: string; totalQuota: number; warningThreshold?: number; isEnabled?: boolean }) => request<ApiResponse<void>>('/api/storage-quota/user', { method: 'POST', data }),
+    getUsageStats: () => request<ApiResponse<QuotaUsageStats>>('/apiservice/api/storage-quota/usage-stats'),
+    getWarnings: (companyId?: string) => request<ApiResponse<PagedResult<QuotaWarning>>>('/apiservice/api/storage-quota/warnings', { params: { companyId } }),
+    setUserQuota: (data: { userId: string; totalQuota: number; warningThreshold?: number; isEnabled?: boolean }) => request<ApiResponse<void>>('/apiservice/api/storage-quota/user', { method: 'POST', data }),
     deleteUserQuota: (userId: string) => request<ApiResponse<void>>(`/api/storage-quota/user/${userId}`, { method: 'DELETE' }),
 };
 
@@ -170,7 +170,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                             search={false}
                             request={async (params: any) => {
                                 const { current, pageSize, sortBy, sortOrder } = params;
-                                const res = await request<ApiResponse<PagedResult<StorageQuota>>>('/api/storage-quota/list', {
+                                const res = await request<ApiResponse<PagedResult<StorageQuota>>>('/apiservice/api/storage-quota/list', {
                                     method: 'GET',
                                     params: { page: current, pageSize, sortBy, sortOrder, companyId: state.currentCompanyId, search: searchText } as PageParams,
                                 });

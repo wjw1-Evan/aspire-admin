@@ -17,12 +17,12 @@ interface VisitStatistics { pendingTasks: number; completedTasksThisMonth: numbe
 interface QuestionFormData { content: string; category?: string; answer?: string; isFrequentlyUsed?: boolean; }
 
 const api = {
-    questions: (params: PageParams & { sortBy?: string; sortOrder?: string }) => request<ApiResponse<PagedResult<VisitQuestion>>>('/api/park-management/visit/questions', { params }),
-    createQuestion: (data: QuestionFormData) => request<ApiResponse<VisitQuestion>>('/api/park-management/visit/question', { method: 'POST', data }),
+    questions: (params: PageParams & { sortBy?: string; sortOrder?: string }) => request<ApiResponse<PagedResult<VisitQuestion>>>('/apiservice/api/park-management/visit/questions', { params }),
+    createQuestion: (data: QuestionFormData) => request<ApiResponse<VisitQuestion>>('/apiservice/api/park-management/visit/question', { method: 'POST', data }),
     updateQuestion: (id: string, data: QuestionFormData) => request<ApiResponse<VisitQuestion>>(`/api/park-management/visit/question/${id}`, { method: 'PUT', data }),
     deleteQuestion: (id: string) => request<ApiResponse<boolean>>(`/api/park-management/visit/question/${id}`, { method: 'DELETE' }),
-    statistics: () => request<ApiResponse<VisitStatistics>>('/api/park-management/visit/statistics'),
-    generateAnswer: (content: string, category?: string) => request<ApiResponse<string>>('/api/park-management/visit/question/generate-answer', { method: 'POST', data: { content, category } }),
+    statistics: () => request<ApiResponse<VisitStatistics>>('/apiservice/api/park-management/visit/statistics'),
+    generateAnswer: (content: string, category?: string) => request<ApiResponse<string>>('/apiservice/api/park-management/visit/question/generate-answer', { method: 'POST', data: { content, category } }),
 };
 
 const VisitKnowledgeBase: React.FC = () => {

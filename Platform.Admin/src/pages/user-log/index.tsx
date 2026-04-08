@@ -50,9 +50,9 @@ interface LogStats {
 // ==================== API ====================
 const api = {
   list: (params: PageParams) =>
-    request<ApiResponse<PagedResult<UserActivityLog>>>('/api/users/activity-logs', { params }),
+    request<ApiResponse<PagedResult<UserActivityLog>>>('/apiservice/api/users/activity-logs', { params }),
   statistics: () =>
-    request<ApiResponse<ActivityLogStatistics>>('/api/users/activity-logs/statistics'),
+    request<ApiResponse<ActivityLogStatistics>>('/apiservice/api/users/activity-logs/statistics'),
   getById: (id: string) =>
     request<ApiResponse<UserActivityLog>>(`/api/users/activity-logs/${id}`),
 };

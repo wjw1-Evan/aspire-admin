@@ -13,7 +13,7 @@ interface UserPermissions {
  * 获取当前用户的权限信息
  */
 export async function getMyPermissions(options?: Record<string, any>) {
-  return request<ApiResponse<UserPermissions>>('/api/users/me/permissions', {
+  return request<ApiResponse<UserPermissions>>('/apiservice/api/users/me/permissions', {
     method: 'GET',
     ...(options || {}),
   });

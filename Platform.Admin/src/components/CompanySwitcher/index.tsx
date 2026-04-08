@@ -30,7 +30,7 @@ export const CompanySwitcher: React.FC = () => {
     setLoading(true);
     try {
       const response = await request<ApiResponse<UserCompanyItem[]>>(
-        '/api/company/my-companies',
+        '/apiservice/api/company/my-companies',
         {
           method: 'GET',
           headers: {
@@ -62,7 +62,7 @@ export const CompanySwitcher: React.FC = () => {
     setSwitching(true);
     try {
       const response = await request<ApiResponse<SwitchCompanyResult>>(
-        '/api/company/switch',
+        '/apiservice/api/company/switch',
         {
           method: 'POST',
           headers: {

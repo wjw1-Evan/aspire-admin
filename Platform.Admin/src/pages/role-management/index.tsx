@@ -20,13 +20,13 @@ interface MenuTreeNode { id?: string; name?: string; title?: string; children?: 
 
 // ==================== API ====================
 const api = {
-  list: (params: PageParams) => request<ApiResponse<PagedResult<RoleWithStats>>>('/api/role/with-stats', { params }),
-  statistics: () => request<ApiResponse<RoleStatistics>>('/api/role/statistics'),
+  list: (params: PageParams) => request<ApiResponse<PagedResult<RoleWithStats>>>('/apiservice/api/role/with-stats', { params }),
+  statistics: () => request<ApiResponse<RoleStatistics>>('/apiservice/api/role/statistics'),
   get: (id: string) => request<ApiResponse<Role>>(`/api/role/${id}`),
-  create: (data: CreateRoleRequest) => request<ApiResponse<Role>>('/api/role', { method: 'POST', data }),
+  create: (data: CreateRoleRequest) => request<ApiResponse<Role>>('/apiservice/api/role', { method: 'POST', data }),
   update: (id: string, data: UpdateRoleRequest) => request<ApiResponse<boolean>>(`/api/role/${id}`, { method: 'PUT', data }),
   delete: (id: string, reason?: string) => request<ApiResponse<boolean>>(`/api/role/${id}`, { method: 'DELETE', params: { reason } }),
-  menuTree: () => request<ApiResponse<MenuTreeNode[]>>('/api/menu/tree'),
+  menuTree: () => request<ApiResponse<MenuTreeNode[]>>('/apiservice/api/menu/tree'),
   roleMenus: (id: string) => request<ApiResponse<string[]>>(`/api/role/${id}/menus`),
 };
 

@@ -116,7 +116,7 @@ export const errorConfig: RequestConfig = {
         error?.message;
 
       const errorCode = error?.response?.data?.code;
-      const isLoginRequest = error.config?.url?.includes('/api/auth/login') ||
+      const isLoginRequest = error.config?.url?.includes('/apiservice/api/auth/login') ||
         error.config?.url?.includes('/login');
 
       const isAuthError = error.response?.status === 401;
@@ -145,8 +145,8 @@ export const errorConfig: RequestConfig = {
         tokenUtils.clearAllTokens();
 
         // 如果是获取当前用户的请求，不显示错误提示（因为可能是未登录状态）
-        const isCurrentUserRequest = error.config?.url?.includes('/api/auth/current-user') ||
-          error.config?.url?.includes('/api/currentUser');
+        const isCurrentUserRequest = error.config?.url?.includes('/apiservice/api/auth/current-user') ||
+          error.config?.url?.includes('/apiservice/api/currentUser');
         if (isCurrentUserRequest || isAuthError || isMissingCurrentUser) {
           // 使用 AuthenticationService 统一跳转
           AuthenticationService.redirectToLogin(

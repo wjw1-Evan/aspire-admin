@@ -57,7 +57,7 @@ export default function NoticeIcon() {
     if (!token) return;
 
     const baseUrl = getApiBaseUrl();
-    const url = `${baseUrl}/api/notification/sse?token=${encodeURIComponent(token)}`;
+    const url = `${baseUrl}/apiservice/api/notification/sse?token=${encodeURIComponent(token)}`;
 
     const eventSource = new EventSource(url);
     eventSourceRef.current = eventSource;

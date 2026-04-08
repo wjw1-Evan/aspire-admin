@@ -16,13 +16,13 @@ interface ParkTenant { id: string; tenantName: string; }
 interface VisitTaskFormData { title: string; managerName: string; phone?: string; visitType: string; visitMethod: string; details?: string; tenantName: string; visitLocation?: string; intervieweeName?: string; intervieweePosition?: string; intervieweePhone?: string; visitDate: string; visitor?: string; status?: string; content?: string; feedback?: string; }
 
 const api = {
-    list: (params: PageParams) => request<ApiResponse<PagedResult<VisitTask>>>('/api/park-management/visit/tasks', { params }),
+    list: (params: PageParams) => request<ApiResponse<PagedResult<VisitTask>>>('/apiservice/api/park-management/visit/tasks', { params }),
     get: (id: string) => request<ApiResponse<VisitTask>>(`/api/park-management/visit/task/${id}`),
     delete: (id: string) => request<ApiResponse<void>>(`/api/park-management/visit/task/${id}`, { method: 'DELETE' }),
-    create: (data: VisitTaskFormData) => request<ApiResponse<VisitTask>>('/api/park-management/visit/task', { method: 'POST', data }),
+    create: (data: VisitTaskFormData) => request<ApiResponse<VisitTask>>('/apiservice/api/park-management/visit/task', { method: 'POST', data }),
     update: (id: string, data: VisitTaskFormData) => request<ApiResponse<VisitTask>>(`/api/park-management/visit/task/${id}`, { method: 'PUT', data }),
-    statistics: () => request<ApiResponse<VisitStatistics>>('/api/park-management/visit/statistics'),
-    tenants: (params: PageParams) => request<ApiResponse<PagedResult<ParkTenant>>>('/api/park/tenants/list', { params }),
+    statistics: () => request<ApiResponse<VisitStatistics>>('/apiservice/api/park-management/visit/statistics'),
+    tenants: (params: PageParams) => request<ApiResponse<PagedResult<ParkTenant>>>('/apiservice/api/park/tenants/list', { params }),
 };
 
 const statusMap: Record<string, { text: string; color: string; icon: React.ReactNode }> = {

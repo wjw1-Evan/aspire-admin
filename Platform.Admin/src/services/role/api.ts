@@ -12,7 +12,7 @@ export interface AssignMenusToRoleRequest { menuIds: string[]; }
  * 获取所有角色
  */
 export async function getAllRoles(options?: Record<string, any>) {
-  return request<ApiResponse<PagedResult<Role>>>('/api/role', {
+  return request<ApiResponse<PagedResult<Role>>>('/apiservice/api/role', {
     method: 'GET',
     ...(options || {}),
   });
@@ -22,7 +22,7 @@ export async function getAllRoles(options?: Record<string, any>) {
  * 获取所有角色（带统计信息）
  */
 export async function getAllRolesWithStats(options?: Record<string, any>) {
-  return request<ApiResponse<PagedResult<RoleWithStats>>>('/api/role/with-stats', {
+  return request<ApiResponse<PagedResult<RoleWithStats>>>('/apiservice/api/role/with-stats', {
     method: 'GET',
     ...(options || {}),
   });
@@ -32,7 +32,7 @@ export async function getAllRolesWithStats(options?: Record<string, any>) {
  * 获取角色统计信息
  */
 export async function getRoleStatistics(options?: Record<string, any>) {
-  return request<ApiResponse<RoleStatistics>>('/api/role/statistics', {
+  return request<ApiResponse<RoleStatistics>>('/apiservice/api/role/statistics', {
     method: 'GET',
     ...(options || {}),
   });
@@ -52,7 +52,7 @@ export async function getRoleById(id: string, options?: Record<string, any>) {
  * 创建角色
  */
 export async function createRole(data: CreateRoleRequest, options?: Record<string, any>) {
-  return request<ApiResponse<Role>>('/api/role', {
+  return request<ApiResponse<Role>>('/apiservice/api/role', {
     method: 'POST',
     data,
     ...(options || {}),

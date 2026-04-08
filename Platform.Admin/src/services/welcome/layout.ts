@@ -23,7 +23,7 @@ export interface WelcomeLayoutConfig {
  * 获取用户的欢迎页面布局配置
  */
 export async function getWelcomeLayout() {
-    return request<ApiResponse<WelcomeLayoutConfig>>('/api/users/welcome-layout', {
+    return request<ApiResponse<WelcomeLayoutConfig>>('/apiservice/api/users/welcome-layout', {
         method: 'GET',
     });
 }
@@ -32,7 +32,7 @@ export async function getWelcomeLayout() {
  * 保存用户的欢迎页面布局配置
  */
 export async function saveWelcomeLayout(config: WelcomeLayoutConfig) {
-    return request<ApiResponse<WelcomeLayoutConfig>>('/api/users/welcome-layout', {
+    return request<ApiResponse<WelcomeLayoutConfig>>('/apiservice/api/users/welcome-layout', {
         method: 'POST',
         data: config,
     });

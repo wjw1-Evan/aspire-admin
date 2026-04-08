@@ -46,17 +46,26 @@ src/pages/password-book/
 ## 2. 前端开发 (Platform.Admin)
 
 ### 2.1 创建 API 服务
-> **简化原则**：功能简单的页面，API 直接内联在 `index.tsx` 中，不单独创建服务文件。
+
+> **重要**：前端 API 路径需使用网关前缀 `/apiservice/`，详见 [微服务开发指南](../guides/MICROSERVICE-GUIDE.md)。
 
 **推荐方式**（极简模式）：
 ```typescript
 // src/pages/xxx/index.tsx
 const api = {
-  list: (params: PageParams) => request<ApiResponse<PagedResult<Entry>>>('/api/xxx/list', { params }),
-  get: (id: string) => request<ApiResponse<Entry>>(`/api/xxx/${id}`),
-  create: (data: EntryFormData) => request<ApiResponse<Entry>>('/api/xxx', { method: 'POST', data }),
+  list: (params: PageParams) => request<ApiResponse<PagedResult<Entry>>>('/apiservice/api/xxx/list', { params }),
+  get: (id: string) => request<ApiResponse<Entry>>(`/apiservice/api/xxx/${id}`),
+  create: (data: EntryFormData) => request<ApiResponse<Entry>>('/apiservice/api/xxx', { method: 'POST', data }),
   // ...
 };
+```
+
+**传统方式**（复杂模块）：
+```typescript
+// src/services/xxx/api.ts
+export async function getXxxList(params: PageParams) {
+  return request<ApiResponse<PagedResult<Xxx>>>('/apiservice/api/xxx/list', { params });
+}
 ```
 
 **传统方式**（复杂模块）：
@@ -152,6 +161,7 @@ const XxxPage: React.FC = () => {
 
 ## 相关文档
 
+- [微服务开发指南](../guides/MICROSERVICE-GUIDE.md)
 - [前端页面开发标准](../rules/frontend-admin/06-页面开发标准.md)
 - [TypeScript 类型安全](../rules/frontend-admin/04-TypeScript类型安全.md)
 - [服务层封装规范](../rules/frontend-admin/02-服务层封装.md)

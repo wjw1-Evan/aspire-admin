@@ -28,55 +28,55 @@ export interface UserStatistics {
 }
 
 export async function currentUser(): Promise<ApiResponse<CurrentUser>> {
-  return request('/api/auth/current-user', { method: 'GET' });
+  return request('/apiservice/api/auth/current-user', { method: 'GET' });
 }
 
 export async function queryCurrentUser(): Promise<ApiResponse<CurrentUser>> {
-  return request('/api/auth/current-user', { method: 'GET' });
+  return request('/apiservice/api/auth/current-user', { method: 'GET' });
 }
 
 export async function outLogin(): Promise<ApiResponse<unknown>> {
-  return request('/api/auth/logout', { method: 'POST' });
+  return request('/apiservice/api/auth/logout', { method: 'POST' });
 }
 
 export async function login(body: { username: string; password?: string; type?: string; captchaId?: string; captchaAnswer?: string }): Promise<ApiResponse<LoginResult>> {
-  return request('/api/auth/login', { method: 'POST', data: body });
+  return request('/apiservice/api/auth/login', { method: 'POST', data: body });
 }
 
 export async function register(body: { username: string; password: string; email?: string; captchaId?: string; captchaAnswer?: string }): Promise<ApiResponse<unknown>> {
-  return request('/api/auth/register', { method: 'POST', data: body });
+  return request('/apiservice/api/auth/register', { method: 'POST', data: body });
 }
 
 export async function checkUsernameExists(username: string): Promise<ApiResponse<{ exists: boolean }>> {
-  return request('/api/auth/check-username', { method: 'GET', params: { username } });
+  return request('/apiservice/api/auth/check-username', { method: 'GET', params: { username } });
 }
 
 export async function sendResetCode(body: { email: string }): Promise<ApiResponse<unknown>> {
-  return request('/api/auth/send-reset-code', { method: 'POST', data: body });
+  return request('/apiservice/api/auth/send-reset-code', { method: 'POST', data: body });
 }
 
 export async function resetPassword(body: { email: string; code: string; newPassword: string; confirmPassword?: string }): Promise<ApiResponse<unknown>> {
-  return request('/api/auth/reset-password', { method: 'POST', data: body });
+  return request('/apiservice/api/auth/reset-password', { method: 'POST', data: body });
 }
 
 export async function changePassword(body: { currentPassword: string; newPassword: string }): Promise<ApiResponse<unknown>> {
-  return request('/api/auth/change-password', { method: 'POST', data: body });
+  return request('/apiservice/api/auth/change-password', { method: 'POST', data: body });
 }
 
 export async function getPublicKey(): Promise<ApiResponse<{ key: string }>> {
-  return request('/api/auth/public-key', { method: 'GET' });
+  return request('/apiservice/api/auth/public-key', { method: 'GET' });
 }
 
 export async function getCurrentUserProfile(): Promise<ApiResponse<CurrentUser>> {
-  return request('/api/users/me', { method: 'GET' });
+  return request('/apiservice/api/users/me', { method: 'GET' });
 }
 
 export async function updateUserProfile(data: Partial<CurrentUser>): Promise<ApiResponse<CurrentUser>> {
-  return request('/api/users/me', { method: 'PUT', data });
+  return request('/apiservice/api/users/me', { method: 'PUT', data });
 }
 
 export async function getUserStatistics(): Promise<ApiResponse<UserStatistics>> {
-  return request('/api/users/statistics', { method: 'GET' });
+  return request('/apiservice/api/users/statistics', { method: 'GET' });
 }
 
 export interface CaptchaResult {
@@ -86,13 +86,13 @@ export interface CaptchaResult {
 }
 
 export async function getImageCaptcha(type?: 'login' | 'register'): Promise<ApiResponse<CaptchaResult>> {
-  return request('/api/auth/captcha/image', { method: 'GET', params: { type } });
+  return request('/apiservice/api/auth/captcha/image', { method: 'GET', params: { type } });
 }
 
 export async function verifyImageCaptcha(captchaId: string, captchaCode: string, type?: 'login' | 'register'): Promise<ApiResponse<{ valid: boolean }>> {
-  return request('/api/auth/captcha/verify-image', { method: 'POST', data: { captchaId, captchaCode, type } });
+  return request('/apiservice/api/auth/captcha/verify-image', { method: 'POST', data: { captchaId, captchaCode, type } });
 }
 
 export async function refreshToken(body: { refreshToken: string }): Promise<ApiResponse<LoginResult>> {
-  return request('/api/auth/refresh-token', { method: 'POST', data: body });
+  return request('/apiservice/api/auth/refresh-token', { method: 'POST', data: body });
 }

@@ -1,7 +1,7 @@
 import { request } from '@umijs/max';
 import type { ApiResponse, PagedResult, PageParams } from '@/types';
 
-const API_PREFIX = '/api/iot';
+const API_PREFIX = '/apiservice/api/iot';
 
 // ─────────────────────────────────────────────────────────────────
 // 枚举与基础类型

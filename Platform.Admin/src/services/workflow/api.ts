@@ -483,7 +483,7 @@ export async function getWorkflowList(params: PageParams & {
   category?: string;
   isActive?: boolean;
 }): Promise<ApiResponse<PagedResult<WorkflowDefinition>>> {
-  return request('/api/workflows', {
+  return request('/apiservice/api/workflows', {
     method: 'GET',
     params,
   });
@@ -502,7 +502,7 @@ export async function getWorkflowDetail(id: string): Promise<ApiResponse<Workflo
  * 创建流程定义
  */
 export async function createWorkflow(data: CreateWorkflowRequest): Promise<ApiResponse<WorkflowDefinition>> {
-  return request('/api/workflows', {
+  return request('/apiservice/api/workflows', {
     method: 'POST',
     data,
   });
@@ -547,7 +547,7 @@ export async function getWorkflowInstances(params: {
   status?: WorkflowStatus;
   search?: string;
 }): Promise<ApiResponse<PagedResult<WorkflowInstance>>> {
-  return request('/api/workflows/instances', {
+  return request('/apiservice/api/workflows/instances', {
     method: 'GET',
     params,
   });
@@ -561,7 +561,7 @@ export async function getTodoInstances(params: {
   pageSize?: number;
   search?: string;
 }): Promise<ApiResponse<PagedResult<any>>> {
-  return request('/api/workflows/instances/todo', {
+  return request('/apiservice/api/workflows/instances/todo', {
     method: 'GET',
     params,
   });
@@ -691,7 +691,7 @@ export async function createAndStartDocumentWorkflow(definitionId: string, data:
  * 创建批量操作
  */
 export async function createBulkOperation(data: CreateBulkOperationRequest): Promise<ApiResponse<BulkOperation>> {
-  return request('/api/workflows/bulk-operations', {
+  return request('/apiservice/api/workflows/bulk-operations', {
     method: 'POST',
     data,
   });
@@ -733,7 +733,7 @@ export async function getBulkOperations(params: {
   status?: BulkOperationStatus;
   search?: string;
 }): Promise<ApiResponse<PagedResult<BulkOperation>>> {
-  return request('/api/workflows/bulk-operations', {
+  return request('/apiservice/api/workflows/bulk-operations', {
     method: 'GET',
     params,
   });
@@ -800,7 +800,7 @@ export interface ImportError {
  * 导出工作流
  */
 export async function exportWorkflows(data: WorkflowExportRequest): Promise<ApiResponse<Blob>> {
-  return request('/api/workflows/export', {
+  return request('/apiservice/api/workflows/export', {
     method: 'POST',
     data,
     responseType: 'blob',
@@ -811,7 +811,7 @@ export async function exportWorkflows(data: WorkflowExportRequest): Promise<ApiR
  * 导出过滤结果
  */
 export async function exportFilteredWorkflows(data: WorkflowFilteredExportRequest): Promise<ApiResponse<Blob>> {
-  return request('/api/workflows/export-filtered', {
+  return request('/apiservice/api/workflows/export-filtered', {
     method: 'POST',
     data,
     responseType: 'blob',
@@ -822,7 +822,7 @@ export async function exportFilteredWorkflows(data: WorkflowFilteredExportReques
  * 验证导入文件
  */
 export async function validateImportFile(formData: FormData): Promise<ApiResponse<WorkflowImportResult>> {
-  return request('/api/workflows/import/validate', {
+  return request('/apiservice/api/workflows/import/validate', {
     method: 'POST',
     data: formData,
     headers: {
@@ -835,7 +835,7 @@ export async function validateImportFile(formData: FormData): Promise<ApiRespons
  * 导入工作流
  */
 export async function importWorkflows(formData: FormData): Promise<ApiResponse<WorkflowImportResult>> {
-  return request('/api/workflows/import', {
+  return request('/apiservice/api/workflows/import', {
     method: 'POST',
     data: formData,
     headers: {
@@ -848,7 +848,7 @@ export async function importWorkflows(formData: FormData): Promise<ApiResponse<W
  * 预览导入
  */
 export async function previewImport(formData: FormData): Promise<ApiResponse<WorkflowImportResult>> {
-  return request('/api/workflows/import/preview', {
+  return request('/apiservice/api/workflows/import/preview', {
     method: 'POST',
     data: formData,
     headers: {
@@ -861,7 +861,7 @@ export async function previewImport(formData: FormData): Promise<ApiResponse<Wor
  * 解决导入冲突
  */
 export async function resolveImportConflicts(formData: FormData): Promise<ApiResponse<WorkflowImportResult>> {
-  return request('/api/workflows/import/resolve-conflicts', {
+  return request('/apiservice/api/workflows/import/resolve-conflicts', {
     method: 'POST',
     data: formData,
     headers: {
@@ -890,7 +890,7 @@ export interface OrganizationTreeNode {
  * 获取组织架构树
  */
 export async function getOrganizationTree(): Promise<ApiResponse<OrganizationTreeNode[]>> {
-  return request('/api/organizations/tree', {
+  return request('/apiservice/api/organizations/tree', {
     method: 'GET',
   });
 }

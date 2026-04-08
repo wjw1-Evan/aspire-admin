@@ -119,7 +119,7 @@ const UserCenter: React.FC = () => {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const response = await request<any>('/api/avatar/upload', { method: 'POST', data: formData, requestType: 'form' });
+      const response = await request<any>('/apiservice/api/avatar/upload', { method: 'POST', data: formData, requestType: 'form' });
       hide();
       const newUrl = response?.url || response?.data?.url;
       if (newUrl) {

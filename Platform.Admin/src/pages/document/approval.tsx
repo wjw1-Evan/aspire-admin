@@ -29,13 +29,13 @@ const documentStatusMap = {
 };
 
 const api = {
-  pending: (params: PageParams) => request<ApiResponse<PagedResult<Document>>>('/api/documents/pending', { params }),
-  list: (params: PageParams & { filterType?: string }) => request<ApiResponse<PagedResult<Document>>>('/api/documents', { params }),
+  pending: (params: PageParams) => request<ApiResponse<PagedResult<Document>>>('/apiservice/api/documents/pending', { params }),
+  list: (params: PageParams & { filterType?: string }) => request<ApiResponse<PagedResult<Document>>>('/apiservice/api/documents', { params }),
   get: (id: string) => request<ApiResponse<Document>>(`/api/documents/${id}`),
   approve: (id: string) => request<ApiResponse<boolean>>(`/api/documents/${id}/approve`, { method: 'POST' }),
   reject: (id: string, comment: string) => request<ApiResponse<boolean>>(`/api/documents/${id}/reject`, { method: 'POST', data: { comment } }),
   delete: (id: string) => request<ApiResponse<void>>(`/api/documents/${id}`, { method: 'DELETE' }),
-  statistics: () => request<ApiResponse<DocumentStatistics>>('/api/documents/statistics'),
+  statistics: () => request<ApiResponse<DocumentStatistics>>('/apiservice/api/documents/statistics'),
 };
 
 const ApprovalPage: React.FC = () => {

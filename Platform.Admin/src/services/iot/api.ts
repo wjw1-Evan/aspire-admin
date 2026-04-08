@@ -2,7 +2,7 @@ import { request } from '@umijs/max';
 import type { ApiResponse, PagedResult } from '@/types';
 import type { PageParams } from '@/types';
 
-const API_PREFIX = '/api/iot';
+const API_PREFIX = '/apiservice/api/iot';
 
 export type IoTDeviceStatus = 'Online' | 'Offline' | 'Fault' | 'Maintenance';
 export type IoTDeviceType = 'Sensor' | 'Actuator' | 'Gateway' | 'Other';

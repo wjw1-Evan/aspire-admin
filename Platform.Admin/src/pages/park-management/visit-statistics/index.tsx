@@ -23,9 +23,9 @@ interface VisitStatistics {
 
 const api = {
     getStatistics: (startDate?: string, endDate?: string) =>
-        request<ApiResponse<VisitStatistics>>('/api/park-management/visit/statistics', { method: 'GET', params: { startDate, endDate } }),
+        request<ApiResponse<VisitStatistics>>('/apiservice/api/park-management/visit/statistics', { method: 'GET', params: { startDate, endDate } }),
     generateAiReport: (data: VisitStatistics) =>
-        request<ApiResponse<string>>('/api/park-management/visit/statistics/ai-report', { method: 'POST', data, timeout: 120000 }),
+        request<ApiResponse<string>>('/apiservice/api/park-management/visit/statistics/ai-report', { method: 'POST', data, timeout: 120000 }),
 };
 
 const VisitStatisticsPage: React.FC = () => {

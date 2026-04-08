@@ -17,14 +17,14 @@ interface InvestmentProject { id: string; leadId?: string; projectName: string; 
 interface InvestmentStatistics { totalLeads: number; newLeadsThisMonth: number; totalProjects: number; projectsInNegotiation: number; signedProjects: number; conversionRate: number; leadsByStatus: Record<string, number>; projectsByStage: Record<string, number>; }
 
 const api = {
-    getStatistics: () => request<ApiResponse<InvestmentStatistics>>('/api/park/investment/statistics'),
-    getLeads: (params: PageParams) => request<ApiResponse<PagedResult<InvestmentLead>>>('/api/park/investment/leads/list', { params }),
-    createLead: (data: Partial<InvestmentLead>) => request<ApiResponse<InvestmentLead>>('/api/park/investment/leads', { method: 'POST', data }),
+    getStatistics: () => request<ApiResponse<InvestmentStatistics>>('/apiservice/api/park/investment/statistics'),
+    getLeads: (params: PageParams) => request<ApiResponse<PagedResult<InvestmentLead>>>('/apiservice/api/park/investment/leads/list', { params }),
+    createLead: (data: Partial<InvestmentLead>) => request<ApiResponse<InvestmentLead>>('/apiservice/api/park/investment/leads', { method: 'POST', data }),
     updateLead: (id: string, data: Partial<InvestmentLead>) => request<ApiResponse<InvestmentLead>>(`/api/park/investment/leads/${id}`, { method: 'PUT', data }),
     deleteLead: (id: string) => request<ApiResponse<boolean>>(`/api/park/investment/leads/${id}`, { method: 'DELETE' }),
     convertLeadToProject: (id: string) => request<ApiResponse<InvestmentProject>>(`/api/park/investment/leads/${id}/convert`, { method: 'POST' }),
-    getProjects: (params: PageParams) => request<ApiResponse<PagedResult<InvestmentProject>>>('/api/park/investment/projects/list', { params }),
-    createProject: (data: Partial<InvestmentProject>) => request<ApiResponse<InvestmentProject>>('/api/park/investment/projects', { method: 'POST', data }),
+    getProjects: (params: PageParams) => request<ApiResponse<PagedResult<InvestmentProject>>>('/apiservice/api/park/investment/projects/list', { params }),
+    createProject: (data: Partial<InvestmentProject>) => request<ApiResponse<InvestmentProject>>('/apiservice/api/park/investment/projects', { method: 'POST', data }),
     updateProject: (id: string, data: Partial<InvestmentProject>) => request<ApiResponse<InvestmentProject>>(`/api/park/investment/projects/${id}`, { method: 'PUT', data }),
     deleteProject: (id: string) => request<ApiResponse<boolean>>(`/api/park/investment/projects/${id}`, { method: 'DELETE' }),
 };

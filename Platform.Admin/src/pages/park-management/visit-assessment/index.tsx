@@ -16,8 +16,8 @@ interface VisitAssessment { id: string; taskId: string; visitorName: string; pho
 interface AssessmentFormData { taskId: string; visitorName: string; phone?: string; location?: string; taskDescription: string; score: number; comments?: string; }
 
 const api = {
-    list: (params: PageParams & { status?: string }) => request<ApiResponse<PagedResult<VisitTask>>>('/api/park-management/visit/tasks', { params }),
-    createAssessment: (data: AssessmentFormData) => request<ApiResponse<VisitAssessment>>('/api/park-management/visit/assessment', { method: 'POST', data }),
+    list: (params: PageParams & { status?: string }) => request<ApiResponse<PagedResult<VisitTask>>>('/apiservice/api/park-management/visit/tasks', { params }),
+    createAssessment: (data: AssessmentFormData) => request<ApiResponse<VisitAssessment>>('/apiservice/api/park-management/visit/assessment', { method: 'POST', data }),
 };
 
 interface Statistics { totalTasks: number; pendingAssessments: number; completedAssessments: number; averageScore: number; }

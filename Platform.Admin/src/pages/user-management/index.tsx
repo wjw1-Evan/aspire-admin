@@ -171,15 +171,15 @@ const UserManagement: React.FC = () => {
       />
         <ModalForm key={state.editingUser?.id || 'create'} title={state.editingUser ? intl.formatMessage({ id: 'pages.userManagement.editUser' }) : '添加成员'}
           open={state.formVisible} onOpenChange={(open) => { if (!open) set({ formVisible: false, editingUser: null }); setF({ selectedUser: null }); }}
-          initialValues={state.editingUser ? { username: state.editingUser.username, email: state.editingUser.email, phoneNumber: state.editingUser.phoneNumber, roleIds: state.editingUser.roleIds || [], isActive: state.editingUser.isActive, remark: state.editingUser.remark } : undefined}
+          initialValues={state.editingUser ? { roleIds: state.editingUser.roleIds || [], isActive: state.editingUser.isActive, remark: state.editingUser.remark } : { isActive: true }}
           onFinish={async (values) => {
             if (!state.editingUser && !form.selectedUser) { message.error('请选择用户'); return false; }
             if (state.editingUser) {
-              const res = await api.update(state.editingUser.id, { username: values.username, email: values.email, phoneNumber: values.phoneNumber, roleIds: values.roleIds || [], isActive: values.isActive, remark: values.remark });
+              const res = await api.update(state.editingUser.id, { roleIds: values.roleIds || [], isActive: values.isActive, remark: values.remark });
               if (res.success) { message.success(intl.formatMessage({ id: 'pages.message.updateSuccess' })); set({ formVisible: false, editingUser: null }); loadStatistics(); actionRef.current?.reload(); }
               return res.success;
             }
-            const res = await api.create({ username: form.selectedUser?.username, email: form.selectedUser?.email, phoneNumber: form.selectedUser?.phoneNumber, password: values.password, roleIds: values.roleIds || [], isActive: values.isActive, remark: values.remark });
+            const res = await api.create({ userId: form.selectedUser?.id, password: values.password, roleIds: values.roleIds || [], isActive: values.isActive, remark: values.remark });
             if (res.success) { message.success(intl.formatMessage({ id: 'pages.message.createSuccess' })); set({ formVisible: false, editingUser: null }); loadStatistics(); actionRef.current?.reload(); }
             return res.success;
           }} autoFocusFirstInput width={600}
@@ -210,14 +210,6 @@ const UserManagement: React.FC = () => {
                 }}
                 options={form.userOptions.map(u => ({ label: `${u.username}${u.email ? `(${u.email})` : ''}`, value: u.username, user: u }))}
               />
-            </Form.Item>
-          )}
-          {state.editingUser && <ProFormText name="username" label="用户名" disabled />}
-          {state.editingUser && <ProFormText name="email" label="邮箱" disabled />}
-          {state.editingUser && <ProFormText name="phoneNumber" label="手机号" disabled />}
-          {!state.editingUser && (
-            <Form.Item name="password" label="密码" rules={[{ required: true, message: '请输入密码' }]}>
-              <Input.Password placeholder="请输入密码" />
             </Form.Item>
           )}
           <ProFormSelect name="roleIds" label="角色" mode="multiple" placeholder="请选择角色" showSearch allowClear options={roleOptions} rules={[{ required: true, message: '请选择至少一个角色' }]} />

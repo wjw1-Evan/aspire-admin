@@ -14,8 +14,8 @@ interface FileShare { id: string; fileId: string; fileName: string; shareToken: 
 const api = {
     getMyShares: (params: PageParams) => request<ApiResponse<PagedResult<any>>>('/apiservice/api/file-share/my-shares', { params }),
     getSharedWithMe: (params: PageParams) => request<ApiResponse<PagedResult<any>>>('/apiservice/api/file-share/shared-with-me', { params }),
-    update: (id: string, data: any) => request<ApiResponse<void>>(`/api/file-share/${id}`, { method: 'PUT', data }),
-    delete: (id: string) => request<ApiResponse<void>>(`/api/file-share/${id}`, { method: 'DELETE' }),
+    update: (id: string, data: any) => request<ApiResponse<void>>(`/apiservice/api/file-share/${id}`, { method: 'PUT', data }),
+    delete: (id: string) => request<ApiResponse<void>>(`/apiservice/api/file-share/${id}`, { method: 'DELETE' }),
 };
 
 const CloudStorageSharedPage: React.FC = () => {

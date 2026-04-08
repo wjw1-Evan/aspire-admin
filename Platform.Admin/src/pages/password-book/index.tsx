@@ -29,10 +29,10 @@ interface Stats {
 
 const api = {
   list: (params: PageParams) => request<ApiResponse<PagedResult<Entry>>>('/apiservice/api/password-book/list', { params }),
-  get: (id: string) => request<ApiResponse<Entry>>(`/api/password-book/${id}`),
-  delete: (id: string) => request<ApiResponse<void>>(`/api/password-book/${id}`, { method: 'DELETE' }),
+  get: (id: string) => request<ApiResponse<Entry>>(`/apiservice/api/password-book/${id}`),
+  delete: (id: string) => request<ApiResponse<void>>(`/apiservice/api/password-book/${id}`, { method: 'DELETE' }),
   create: (data: Partial<Entry>) => request<ApiResponse<Entry>>('/apiservice/api/password-book', { method: 'POST', data }),
-  update: (id: string, data: Partial<Entry>) => request<ApiResponse<Entry>>(`/api/password-book/${id}`, { method: 'PUT', data }),
+  update: (id: string, data: Partial<Entry>) => request<ApiResponse<Entry>>(`/apiservice/api/password-book/${id}`, { method: 'PUT', data }),
   statistics: () => request<ApiResponse<Stats>>('/apiservice/api/password-book/statistics'),
   export: (format: string) => request<any>('/apiservice/api/password-book/export', { method: 'POST', data: { format }, responseType: 'blob', getResponse: true }),
 };

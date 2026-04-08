@@ -21,12 +21,12 @@ interface QuotaUsageStats { totalUsers: number; totalQuota: number; totalUsed: n
 interface QuotaWarning { userId: string; userDisplayName?: string; username?: string; warningType: string; usedQuota: number; totalQuota: number; usagePercentage: number; createdAt: string; }
 
 const api = {
-    getUserQuota: (userId: string) => request<ApiResponse<any>>(`/api/storage-quota/user/${userId}`),
-    updateUserQuota: (userId: string, data: any) => request<ApiResponse<void>>(`/api/storage-quota/user/${userId}`, { method: 'PUT', data }),
+    getUserQuota: (userId: string) => request<ApiResponse<any>>(`/apiservice/api/storage-quota/user/${userId}`),
+    updateUserQuota: (userId: string, data: any) => request<ApiResponse<void>>(`/apiservice/api/storage-quota/user/${userId}`, { method: 'PUT', data }),
     getUsageStats: () => request<ApiResponse<QuotaUsageStats>>('/apiservice/api/storage-quota/usage-stats'),
     getWarnings: (companyId?: string) => request<ApiResponse<PagedResult<QuotaWarning>>>('/apiservice/api/storage-quota/warnings', { params: { companyId } }),
     setUserQuota: (data: { userId: string; totalQuota: number; warningThreshold?: number; isEnabled?: boolean }) => request<ApiResponse<void>>('/apiservice/api/storage-quota/user', { method: 'POST', data }),
-    deleteUserQuota: (userId: string) => request<ApiResponse<void>>(`/api/storage-quota/user/${userId}`, { method: 'DELETE' }),
+    deleteUserQuota: (userId: string) => request<ApiResponse<void>>(`/apiservice/api/storage-quota/user/${userId}`, { method: 'DELETE' }),
 };
 
 const CloudStorageQuotaPage: React.FC = () => {

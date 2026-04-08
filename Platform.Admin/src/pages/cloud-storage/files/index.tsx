@@ -27,15 +27,15 @@ interface PathHistoryItem { id?: string; name: string; path: string; }
 const api = {
     list: (params: PageParams & { parentId?: string }) => request<ApiResponse<PagedResult<FileItem>>>('/apiservice/api/cloud-storage/list', { params }),
     search: (params: PageParams & { keyword: string }) => request<ApiResponse<PagedResult<FileItem>>>('/apiservice/api/cloud-storage/search', { params }),
-    get: (id: string) => request<ApiResponse<FileItem>>(`/api/cloud-storage/files/${id}`),
-    delete: (id: string) => request<ApiResponse<void>>(`/api/cloud-storage/items/${id}`, { method: 'DELETE' }),
+    get: (id: string) => request<ApiResponse<FileItem>>(`/apiservice/api/cloud-storage/files/${id}`),
+    delete: (id: string) => request<ApiResponse<void>>(`/apiservice/api/cloud-storage/items/${id}`, { method: 'DELETE' }),
     batchDelete: (ids: string[]) => request<ApiResponse<void>>('/apiservice/api/cloud-storage/items/batch-delete', { method: 'POST', data: { ids } }),
     createFolder: (data: { name: string; parentId?: string }) => request<ApiResponse<FileItem>>('/apiservice/api/cloud-storage/folders', { method: 'POST', data }),
-    rename: (id: string, data: { name: string }) => request<ApiResponse<FileItem>>(`/api/cloud-storage/items/${id}/rename`, { method: 'PUT', data }),
+    rename: (id: string, data: { name: string }) => request<ApiResponse<FileItem>>(`/apiservice/api/cloud-storage/items/${id}/rename`, { method: 'PUT', data }),
     statistics: () => request<ApiResponse<StorageStatistics>>('/apiservice/api/cloud-storage/statistics'),
     versions: (fileId: string, page: number, pageSize: number) => request<ApiResponse<PagedResult<FileVersion>>>('/apiservice/api/file-version/list', { params: { fileId, page, pageSize } }),
-    restoreVersion: (fileId: string, versionNumber: number) => request<ApiResponse<void>>(`/api/file-version/${fileId}/versions/${versionNumber}/restore`, { method: 'POST' }),
-    share: (data: { fileId: string; shareType: string; expiresAt?: string; maxDownloads?: number; allowedUserIds?: string[] }) => request<ApiResponse<any>>(`/api/file-share/${data.fileId}`, { method: 'POST', data }),
+    restoreVersion: (fileId: string, versionNumber: number) => request<ApiResponse<void>>(`/apiservice/api/file-version/${fileId}/versions/${versionNumber}/restore`, { method: 'POST' }),
+    share: (data: { fileId: string; shareType: string; expiresAt?: string; maxDownloads?: number; allowedUserIds?: string[] }) => request<ApiResponse<any>>(`/apiservice/api/file-share/${data.fileId}`, { method: 'POST', data }),
     users: () => request<ApiResponse<AppUser[]>>('/apiservice/api/users/all'),
 };
 
@@ -142,7 +142,7 @@ const CloudStorageFilesPage: React.FC = () => {
                     set({ previewLoading: true });
                     try {
                         const token = tokenUtils.getToken();
-                        const dl = await fetch(`/api/cloud-storage/items/${file.id}/download`, { headers: { 'Authorization': `Bearer ${token}` } });
+                        const dl = await fetch(`/apiservice/api/cloud-storage/items/${file.id}/download`, { headers: { 'Authorization': `Bearer ${token}` } });
                         if (!dl.ok) throw new Error('Failed');
                         const blob = await dl.blob();
                         set({ previewUrl: URL.createObjectURL(blob) });
@@ -165,7 +165,7 @@ const CloudStorageFilesPage: React.FC = () => {
     const handleDownload = useCallback(async (file: FileItem) => {
         try {
             const token = tokenUtils.getToken();
-            const response = await fetch(`/api/cloud-storage/items/${file.id}/download`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const response = await fetch(`/apiservice/api/cloud-storage/items/${file.id}/download`, { headers: { 'Authorization': `Bearer ${token}` } });
             if (!response.ok) throw new Error('Download failed');
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);

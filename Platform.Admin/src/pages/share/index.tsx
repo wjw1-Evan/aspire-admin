@@ -26,13 +26,13 @@ interface ShareAccessRequest {
 
 const api = {
     access: (data: ShareAccessRequest) =>
-        request<ApiResponse<ShareAccessResponse>>(`/api/file-share/public/${encodeURIComponent(data.shareToken)}`, {
+        request<ApiResponse<ShareAccessResponse>>(`/apiservice/api/file-share/public/${encodeURIComponent(data.shareToken)}`, {
             method: 'GET',
             params: data.password ? { password: data.password } : {},
         }),
     download: (shareToken: string, password?: string, fallbackName?: string) => {
         const qs = password ? `?password=${encodeURIComponent(password)}` : '';
-        return request<any>(`/api/file-share/public/${encodeURIComponent(shareToken)}/download${qs}`, {
+        return request<any>(`/apiservice/api/file-share/public/${encodeURIComponent(shareToken)}/download${qs}`, {
             method: 'GET',
             responseType: 'blob',
             getResponse: true,

@@ -18,11 +18,11 @@ interface JoinRequestDetail {
 // ==================== API ====================
 const api = {
   list: (companyId: string, params: PageParams) =>
-    request<ApiResponse<JoinRequestDetail[]>>(`/api/company/${companyId}/join-requests`, { params: { status: 'pending', ...params } }),
+    request<ApiResponse<JoinRequestDetail[]>>(`/apiservice/api/company/${companyId}/join-requests`, { params: { status: 'pending', ...params } }),
   approve: (id: string) =>
-    request<ApiResponse<string>>(`/api/company/join-requests/${id}/approve`, { method: 'POST', data: {} }),
+    request<ApiResponse<string>>(`/apiservice/api/company/join-requests/${id}/approve`, { method: 'POST', data: {} }),
   reject: (id: string, data: { rejectReason: string }) =>
-    request<ApiResponse<string>>(`/api/company/join-requests/${id}/reject`, { method: 'POST', data }),
+    request<ApiResponse<string>>(`/apiservice/api/company/join-requests/${id}/reject`, { method: 'POST', data }),
 };
 
 // ==================== Main ====================

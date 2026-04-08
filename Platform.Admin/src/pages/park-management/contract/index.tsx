@@ -39,14 +39,14 @@ interface ContractFormData {
 const api = {
     list: (params: PageParams) => request<ApiResponse<PagedResult<LeaseContract>>>('/apiservice/api/park/contracts/list', { params }),
     create: (data: ContractFormData) => request<ApiResponse<LeaseContract>>('/apiservice/api/park/contracts', { method: 'POST', data }),
-    update: (id: string, data: ContractFormData) => request<ApiResponse<LeaseContract>>(`/api/park/contracts/${id}`, { method: 'PUT', data }),
-    delete: (id: string) => request<ApiResponse<void>>(`/api/park/contracts/${id}`, { method: 'DELETE' }),
-    getDetail: (id: string) => request<ApiResponse<LeaseContract>>(`/api/park/contracts/${id}`),
+    update: (id: string, data: ContractFormData) => request<ApiResponse<LeaseContract>>(`/apiservice/api/park/contracts/${id}`, { method: 'PUT', data }),
+    delete: (id: string) => request<ApiResponse<void>>(`/apiservice/api/park/contracts/${id}`, { method: 'DELETE' }),
+    getDetail: (id: string) => request<ApiResponse<LeaseContract>>(`/apiservice/api/park/contracts/${id}`),
     statistics: () => request<ApiResponse<TenantStatistics>>('/apiservice/api/park/contract/statistics'),
     tenants: (params: PageParams) => request<ApiResponse<PagedResult<ParkTenant>>>('/apiservice/api/park/tenants/list', { params }),
     units: (params: PageParams) => request<ApiResponse<PagedResult<PropertyUnit>>>('/apiservice/api/park/properties/list', { params }),
     createPayment: (data: Partial<LeasePaymentRecord>) => request<ApiResponse<LeasePaymentRecord>>('/apiservice/api/park/contracts/payments', { method: 'POST', data }),
-    deletePayment: (id: string) => request<ApiResponse<void>>(`/api/park/contracts/payments/${id}`, { method: 'DELETE' }),
+    deletePayment: (id: string) => request<ApiResponse<void>>(`/apiservice/api/park/contracts/payments/${id}`, { method: 'DELETE' }),
     uploadFile: (data: FormData) => request<ApiResponse<{ id: string; name: string }>>('/apiservice/apiservice/api/cloud-storage/upload', { method: 'POST', data }),
 };
 

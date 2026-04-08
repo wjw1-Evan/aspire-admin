@@ -24,10 +24,10 @@ interface AvailableUser { value: string; label: string; }
 const api = {
   tree: () => request<ApiResponse<OrgNode[]>>('/apiservice/api/organization/tree'),
   create: (data: any) => request<ApiResponse<OrgNode>>('/apiservice/api/organization', { method: 'POST', data }),
-  update: (id: string, data: any) => request<ApiResponse<boolean>>(`/api/organization/${id}`, { method: 'PUT', data }),
-  delete: (id: string) => request<ApiResponse<boolean>>(`/api/organization/${id}`, { method: 'DELETE' }),
+  update: (id: string, data: any) => request<ApiResponse<boolean>>(`/apiservice/api/organization/${id}`, { method: 'PUT', data }),
+  delete: (id: string) => request<ApiResponse<boolean>>(`/apiservice/api/organization/${id}`, { method: 'DELETE' }),
   reorder: (items: any[]) => request<ApiResponse<boolean>>('/apiservice/api/organization/reorder', { method: 'POST', data: items }),
-  members: (orgId: string) => request<ApiResponse<OrgMember[]>>(`/api/organization/${orgId}/members`),
+  members: (orgId: string) => request<ApiResponse<OrgMember[]>>(`/apiservice/api/organization/${orgId}/members`),
   assignUser: (data: any) => request<ApiResponse<boolean>>('/apiservice/api/organization/assign-user', { method: 'POST', data }),
   removeUser: (data: { userId: string; organizationUnitId: string }) => request<ApiResponse<boolean>>('/apiservice/api/organization/remove-user', { method: 'POST', data }),
   availableUsers: (orgId: string, query?: string) => request<ApiResponse<AvailableUser[]>>('/apiservice/api/organization/available-users', { params: { organizationUnitId: orgId, ...(query ? { query } : {}) } }),

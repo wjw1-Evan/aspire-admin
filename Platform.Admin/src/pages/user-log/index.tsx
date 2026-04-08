@@ -54,7 +54,7 @@ const api = {
   statistics: () =>
     request<ApiResponse<ActivityLogStatistics>>('/apiservice/api/users/activity-logs/statistics'),
   getById: (id: string) =>
-    request<ApiResponse<UserActivityLog>>(`/api/users/activity-logs/${id}`),
+    request<ApiResponse<UserActivityLog>>(`/apiservice/api/users/activity-logs/${id}`),
 };
 
 

@@ -43,25 +43,25 @@ const api = {
     buildings: (params: PageParams) =>
         request<ApiResponse<PagedResult<Building>>>('/apiservice/api/park/buildings/list', { params }),
     getBuilding: (id: string) =>
-        request<ApiResponse<Building>>(`/api/park/buildings/${id}`),
+        request<ApiResponse<Building>>(`/apiservice/api/park/buildings/${id}`),
     createBuilding: (data: Partial<Building>) =>
         request<ApiResponse<Building>>('/apiservice/api/park/buildings', { method: 'POST', data }),
     updateBuilding: (id: string, data: Partial<Building>) =>
-        request<ApiResponse<Building>>(`/api/park/buildings/${id}`, { method: 'PUT', data }),
+        request<ApiResponse<Building>>(`/apiservice/api/park/buildings/${id}`, { method: 'PUT', data }),
     deleteBuilding: (id: string) =>
-        request<ApiResponse<boolean>>(`/api/park/buildings/${id}`, { method: 'DELETE' }),
+        request<ApiResponse<boolean>>(`/apiservice/api/park/buildings/${id}`, { method: 'DELETE' }),
     allBuildings: () =>
         request<ApiResponse<PagedResult<Building>>>('/apiservice/api/park/buildings/list', { params: { page: 1, pageSize: 1000 } }),
     units: (params: PageParams & { buildingId?: string }) =>
         request<ApiResponse<PagedResult<PropertyUnit>>>('/apiservice/api/park/properties/list', { params }),
     unit: (id: string) =>
-        request<ApiResponse<PropertyUnit>>(`/api/park/properties/${id}`, { method: 'GET' }),
+        request<ApiResponse<PropertyUnit>>(`/apiservice/api/park/properties/${id}`, { method: 'GET' }),
     createUnit: (data: Partial<PropertyUnit>) =>
         request<ApiResponse<PropertyUnit>>('/apiservice/api/park/properties', { method: 'POST', data }),
     updateUnit: (id: string, data: Partial<PropertyUnit>) =>
-        request<ApiResponse<PropertyUnit>>(`/api/park/properties/${id}`, { method: 'PUT', data }),
+        request<ApiResponse<PropertyUnit>>(`/apiservice/api/park/properties/${id}`, { method: 'PUT', data }),
     deleteUnit: (id: string) =>
-        request<ApiResponse<boolean>>(`/api/park/properties/${id}`, { method: 'DELETE' }),
+        request<ApiResponse<boolean>>(`/apiservice/api/park/properties/${id}`, { method: 'DELETE' }),
 };
 
 const AssetManagement: React.FC = () => {

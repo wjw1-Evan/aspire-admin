@@ -71,7 +71,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
       const response = await request<{
         success: boolean;
         data: UserActivityLog[];
-      }>(`/api/users/${user.id}/activity-logs`, {
+      }>(`/apiservice/api/users/${user.id}/activity-logs`, {
         method: 'GET',
         params: { limit: 20 },
       });

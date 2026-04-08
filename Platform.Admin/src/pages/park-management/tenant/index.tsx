@@ -19,14 +19,14 @@ interface TenantFormData { tenantName: string; contactPerson?: string; phone?: s
 
 const api = {
     list: (params: PageParams & { tenantId?: string }) => request<ApiResponse<PagedResult<ParkTenant>>>('/apiservice/api/park/tenants/list', { params }),
-    get: (id: string) => request<ApiResponse<ParkTenant>>(`/api/park/tenants/${id}`),
+    get: (id: string) => request<ApiResponse<ParkTenant>>(`/apiservice/api/park/tenants/${id}`),
     create: (data: TenantFormData) => request<ApiResponse<ParkTenant>>('/apiservice/api/park/tenants', { method: 'POST', data }),
-    update: (id: string, data: TenantFormData) => request<ApiResponse<ParkTenant>>(`/api/park/tenants/${id}`, { method: 'PUT', data }),
-    delete: (id: string) => request<ApiResponse<void>>(`/api/park/tenants/${id}`, { method: 'DELETE' }),
+    update: (id: string, data: TenantFormData) => request<ApiResponse<ParkTenant>>(`/apiservice/api/park/tenants/${id}`, { method: 'PUT', data }),
+    delete: (id: string) => request<ApiResponse<void>>(`/apiservice/api/park/tenants/${id}`, { method: 'DELETE' }),
     statistics: () => request<ApiResponse<TenantStatistics>>('/apiservice/api/park/tenant/statistics'),
     getContracts: (params: { page?: number; pageSize?: number; tenantId?: string }) => request<ApiResponse<PagedResult<LeaseContract>>>('/apiservice/api/park/contracts/list', { params }),
     getServiceRequests: (params: { page?: number; pageSize?: number; tenantId?: string }) => request<ApiResponse<PagedResult<ServiceRequest>>>('/apiservice/api/park/services/requests/list', { params }),
-    getPaymentRecords: (contractId: string) => request<ApiResponse<LeasePaymentRecord[]>>(`/api/park/contracts/${contractId}/payments`),
+    getPaymentRecords: (contractId: string) => request<ApiResponse<LeasePaymentRecord[]>>(`/apiservice/api/park/contracts/${contractId}/payments`),
 };
 
 const tenantStatusOptions = [{ label: '活跃', value: 'Active', color: 'green' }, { label: '即将到期', value: 'Expiring', color: 'orange' }, { label: '已退租', value: 'Moved', color: 'default' }];

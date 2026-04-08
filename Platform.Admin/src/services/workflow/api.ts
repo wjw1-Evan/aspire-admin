@@ -483,7 +483,7 @@ export async function getWorkflowList(params: PageParams & {
   category?: string;
   isActive?: boolean;
 }): Promise<ApiResponse<PagedResult<WorkflowDefinition>>> {
-  return request('/apiservice/apiservice/apiservice/api/workflows', {
+  return request('/apiservice/api/workflows', {
     method: 'GET',
     params,
   });
@@ -493,7 +493,7 @@ export async function getWorkflowList(params: PageParams & {
  * 获取流程定义详情
  */
 export async function getWorkflowDetail(id: string): Promise<ApiResponse<WorkflowDefinition>> {
-  return request(`/apiservice/apiservice/api/workflows/${id}`, {
+  return request(`/apiservice/api/workflows/${id}`, {
     method: 'GET',
   });
 }
@@ -502,7 +502,7 @@ export async function getWorkflowDetail(id: string): Promise<ApiResponse<Workflo
  * 创建流程定义
  */
 export async function createWorkflow(data: CreateWorkflowRequest): Promise<ApiResponse<WorkflowDefinition>> {
-  return request('/apiservice/apiservice/apiservice/api/workflows', {
+  return request('/apiservice/api/workflows', {
     method: 'POST',
     data,
   });
@@ -512,7 +512,7 @@ export async function createWorkflow(data: CreateWorkflowRequest): Promise<ApiRe
  * 更新流程定义
  */
 export async function updateWorkflow(id: string, data: UpdateWorkflowRequest): Promise<ApiResponse<WorkflowDefinition>> {
-  return request(`/apiservice/apiservice/api/workflows/${id}`, {
+  return request(`/apiservice/api/workflows/${id}`, {
     method: 'PUT',
     data,
   });
@@ -522,7 +522,7 @@ export async function updateWorkflow(id: string, data: UpdateWorkflowRequest): P
  * 删除流程定义
  */
 export async function deleteWorkflow(id: string): Promise<ApiResponse<void>> {
-  return request(`/apiservice/apiservice/api/workflows/${id}`, {
+  return request(`/apiservice/api/workflows/${id}`, {
     method: 'DELETE',
   });
 }
@@ -531,7 +531,7 @@ export async function deleteWorkflow(id: string): Promise<ApiResponse<void>> {
  * 启动流程实例
  */
 export async function startWorkflow(id: string, data: StartWorkflowRequest): Promise<ApiResponse<WorkflowInstance>> {
-  return request(`/apiservice/apiservice/api/workflows/${id}/start`, {
+  return request(`/apiservice/api/workflows/${id}/start`, {
     method: 'POST',
     data,
   });
@@ -547,7 +547,7 @@ export async function getWorkflowInstances(params: {
   status?: WorkflowStatus;
   search?: string;
 }): Promise<ApiResponse<PagedResult<WorkflowInstance>>> {
-  return request('/apiservice/apiservice/apiservice/api/workflows/instances', {
+  return request('/apiservice/api/workflows/instances', {
     method: 'GET',
     params,
   });
@@ -561,7 +561,7 @@ export async function getTodoInstances(params: {
   pageSize?: number;
   search?: string;
 }): Promise<ApiResponse<PagedResult<any>>> {
-  return request('/apiservice/apiservice/apiservice/api/workflows/instances/todo', {
+  return request('/apiservice/api/workflows/instances/todo', {
     method: 'GET',
     params,
   });
@@ -571,7 +571,7 @@ export async function getTodoInstances(params: {
  * 获取流程实例详情
  */
 export async function getWorkflowInstance(id: string): Promise<ApiResponse<WorkflowInstance>> {
-  return request(`/apiservice/apiservice/api/workflows/instances/${id}`, {
+  return request(`/apiservice/api/workflows/instances/${id}`, {
     method: 'GET',
   });
 }
@@ -580,7 +580,7 @@ export async function getWorkflowInstance(id: string): Promise<ApiResponse<Workf
  * 获取审批历史
  */
 export async function getApprovalHistory(id: string): Promise<ApiResponse<ApprovalRecord[]>> {
-  return request(`/apiservice/apiservice/api/workflows/instances/${id}/history`, {
+  return request(`/apiservice/api/workflows/instances/${id}/history`, {
     method: 'GET',
   });
 }
@@ -589,7 +589,7 @@ export async function getApprovalHistory(id: string): Promise<ApiResponse<Approv
  * 获取实例当前节点的表单定义与初始值
  */
 export async function getNodeForm(instanceId: string, nodeId: string): Promise<ApiResponse<{ form: FormDefinition | null; initialValues: Record<string, any> | null }>> {
-  return request(`/apiservice/apiservice/api/workflows/instances/${instanceId}/nodes/${nodeId}/form`, {
+  return request(`/apiservice/api/workflows/instances/${instanceId}/nodes/${nodeId}/form`, {
     method: 'GET',
   });
 }
@@ -598,7 +598,7 @@ export async function getNodeForm(instanceId: string, nodeId: string): Promise<A
  * 提交节点表单数据
  */
 export async function submitNodeForm(instanceId: string, nodeId: string, values: Record<string, any>): Promise<ApiResponse<Record<string, any>>> {
-  return request(`/apiservice/apiservice/api/workflows/instances/${instanceId}/nodes/${nodeId}/form`, {
+  return request(`/apiservice/api/workflows/instances/${instanceId}/nodes/${nodeId}/form`, {
     method: 'POST',
     data: values,
   });
@@ -613,7 +613,7 @@ export async function executeNodeAction(instanceId: string, nodeId: string, data
   targetNodeId?: string;
   delegateToUserId?: string;
 }): Promise<ApiResponse<string>> {
-  return request(`/apiservice/apiservice/api/workflows/instances/${instanceId}/nodes/${nodeId}/action`, {
+  return request(`/apiservice/api/workflows/instances/${instanceId}/nodes/${nodeId}/action`, {
     method: 'POST',
     data,
   });
@@ -623,7 +623,7 @@ export async function executeNodeAction(instanceId: string, nodeId: string, data
  * 撤回流程（发起人）
  */
 export async function withdrawInstance(instanceId: string, reason?: string): Promise<ApiResponse<string>> {
-  return request(`/apiservice/apiservice/api/workflows/instances/${instanceId}/withdraw`, {
+  return request(`/apiservice/api/workflows/instances/${instanceId}/withdraw`, {
     method: 'POST',
     data: { reason },
   });
@@ -633,7 +633,7 @@ export async function withdrawInstance(instanceId: string, reason?: string): Pro
  * 获取用于创建公文的流程表单
  */
 export async function getDocumentCreateForm(definitionId: string): Promise<ApiResponse<{ form: FormDefinition | null; dataScopeKey?: string; initialValues?: Record<string, any> }>> {
-  return request(`/apiservice/apiservice/api/workflows/${definitionId}/document-form`, {
+  return request(`/apiservice/api/workflows/${definitionId}/document-form`, {
     method: 'GET',
   });
 }
@@ -655,7 +655,7 @@ export async function getWorkflowFormsAndFields(definitionId: string): Promise<A
     }>;
   }>;
 }>> {
-  return request(`/apiservice/apiservice/api/workflows/${definitionId}/forms-and-fields`, {
+  return request(`/apiservice/api/workflows/${definitionId}/forms-and-fields`, {
     method: 'GET',
   });
 }
@@ -667,7 +667,7 @@ export async function createDocumentByWorkflow(definitionId: string, data: {
   values: Record<string, any>;
   attachmentIds?: string[];
 }): Promise<ApiResponse<any>> {
-  return request(`/apiservice/apiservice/api/workflows/${definitionId}/documents`, {
+  return request(`/apiservice/api/workflows/${definitionId}/documents`, {
     method: 'POST',
     data,
   });
@@ -681,7 +681,7 @@ export async function createAndStartDocumentWorkflow(definitionId: string, data:
   attachmentIds?: string[];
   variables?: Record<string, any>;
 }): Promise<ApiResponse<{ document: any; workflowInstance: WorkflowInstance }>> {
-  return request(`/apiservice/apiservice/api/workflows/${definitionId}/documents/start`, {
+  return request(`/apiservice/api/workflows/${definitionId}/documents/start`, {
     method: 'POST',
     data,
   });
@@ -691,7 +691,7 @@ export async function createAndStartDocumentWorkflow(definitionId: string, data:
  * 创建批量操作
  */
 export async function createBulkOperation(data: CreateBulkOperationRequest): Promise<ApiResponse<BulkOperation>> {
-  return request('/apiservice/apiservice/apiservice/api/workflows/bulk-operations', {
+  return request('/apiservice/api/workflows/bulk-operations', {
     method: 'POST',
     data,
   });
@@ -701,7 +701,7 @@ export async function createBulkOperation(data: CreateBulkOperationRequest): Pro
  * 执行批量操作
  */
 export async function executeBulkOperation(operationId: string): Promise<ApiResponse<void>> {
-  return request(`/apiservice/apiservice/api/workflows/bulk-operations/${operationId}/execute`, {
+  return request(`/apiservice/api/workflows/bulk-operations/${operationId}/execute`, {
     method: 'POST',
   });
 }
@@ -710,7 +710,7 @@ export async function executeBulkOperation(operationId: string): Promise<ApiResp
  * 取消批量操作
  */
 export async function cancelBulkOperation(operationId: string): Promise<ApiResponse<void>> {
-  return request(`/apiservice/apiservice/api/workflows/bulk-operations/${operationId}/cancel`, {
+  return request(`/apiservice/api/workflows/bulk-operations/${operationId}/cancel`, {
     method: 'POST',
   });
 }
@@ -719,7 +719,7 @@ export async function cancelBulkOperation(operationId: string): Promise<ApiRespo
  * 获取批量操作状态
  */
 export async function getBulkOperation(operationId: string): Promise<ApiResponse<BulkOperation>> {
-  return request(`/apiservice/apiservice/api/workflows/bulk-operations/${operationId}`, {
+  return request(`/apiservice/api/workflows/bulk-operations/${operationId}`, {
     method: 'GET',
   });
 }
@@ -733,7 +733,7 @@ export async function getBulkOperations(params: {
   status?: BulkOperationStatus;
   search?: string;
 }): Promise<ApiResponse<PagedResult<BulkOperation>>> {
-  return request('/apiservice/apiservice/apiservice/api/workflows/bulk-operations', {
+  return request('/apiservice/api/workflows/bulk-operations', {
     method: 'GET',
     params,
   });
@@ -800,7 +800,7 @@ export interface ImportError {
  * 导出工作流
  */
 export async function exportWorkflows(data: WorkflowExportRequest): Promise<ApiResponse<Blob>> {
-  return request('/apiservice/apiservice/apiservice/api/workflows/export', {
+  return request('/apiservice/api/workflows/export', {
     method: 'POST',
     data,
     responseType: 'blob',
@@ -811,7 +811,7 @@ export async function exportWorkflows(data: WorkflowExportRequest): Promise<ApiR
  * 导出过滤结果
  */
 export async function exportFilteredWorkflows(data: WorkflowFilteredExportRequest): Promise<ApiResponse<Blob>> {
-  return request('/apiservice/apiservice/apiservice/api/workflows/export-filtered', {
+  return request('/apiservice/api/workflows/export-filtered', {
     method: 'POST',
     data,
     responseType: 'blob',
@@ -822,7 +822,7 @@ export async function exportFilteredWorkflows(data: WorkflowFilteredExportReques
  * 验证导入文件
  */
 export async function validateImportFile(formData: FormData): Promise<ApiResponse<WorkflowImportResult>> {
-  return request('/apiservice/apiservice/apiservice/api/workflows/import/validate', {
+  return request('/apiservice/api/workflows/import/validate', {
     method: 'POST',
     data: formData,
     headers: {
@@ -835,7 +835,7 @@ export async function validateImportFile(formData: FormData): Promise<ApiRespons
  * 导入工作流
  */
 export async function importWorkflows(formData: FormData): Promise<ApiResponse<WorkflowImportResult>> {
-  return request('/apiservice/apiservice/apiservice/api/workflows/import', {
+  return request('/apiservice/api/workflows/import', {
     method: 'POST',
     data: formData,
     headers: {
@@ -848,7 +848,7 @@ export async function importWorkflows(formData: FormData): Promise<ApiResponse<W
  * 预览导入
  */
 export async function previewImport(formData: FormData): Promise<ApiResponse<WorkflowImportResult>> {
-  return request('/apiservice/apiservice/apiservice/api/workflows/import/preview', {
+  return request('/apiservice/api/workflows/import/preview', {
     method: 'POST',
     data: formData,
     headers: {
@@ -861,7 +861,7 @@ export async function previewImport(formData: FormData): Promise<ApiResponse<Wor
  * 解决导入冲突
  */
 export async function resolveImportConflicts(formData: FormData): Promise<ApiResponse<WorkflowImportResult>> {
-  return request('/apiservice/apiservice/apiservice/api/workflows/import/resolve-conflicts', {
+  return request('/apiservice/api/workflows/import/resolve-conflicts', {
     method: 'POST',
     data: formData,
     headers: {
@@ -890,7 +890,7 @@ export interface OrganizationTreeNode {
  * 获取组织架构树
  */
 export async function getOrganizationTree(): Promise<ApiResponse<OrganizationTreeNode[]>> {
-  return request('/apiservice/apiservice/api/organizations/tree', {
+  return request('/apiservice/api/organizations/tree', {
     method: 'GET',
   });
 }

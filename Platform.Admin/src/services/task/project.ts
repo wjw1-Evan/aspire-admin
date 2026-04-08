@@ -125,7 +125,7 @@ export interface AddProjectMemberRequest {
  * 获取项目列表
  */
 export async function getProjectList(params: PageParams) {
-  return request<ApiResponse<PagedResult<ProjectDto>>>('/apiservice/apiservice/api/project/list', {
+  return request<ApiResponse<PagedResult<ProjectDto>>>('/apiservice/api/project/list', {
     params,
   });
 }
@@ -143,7 +143,7 @@ export async function getProjectById(projectId: string) {
  * 创建项目
  */
 export async function createProject(data: CreateProjectRequest) {
-  return request<ApiResponse<ProjectDto>>('/apiservice/apiservice/api/project', {
+  return request<ApiResponse<ProjectDto>>('/apiservice/api/project', {
     method: 'POST',
     data,
   });
@@ -173,7 +173,7 @@ export async function deleteProject(projectId: string, reason?: string) {
  * 获取项目统计信息
  */
 export async function getProjectStatistics() {
-  return request<ApiResponse<ProjectStatistics>>('/apiservice/apiservice/api/project/statistics', {
+  return request<ApiResponse<ProjectStatistics>>('/apiservice/api/project/statistics', {
     method: 'GET',
   });
 }

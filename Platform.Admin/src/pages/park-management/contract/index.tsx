@@ -97,15 +97,17 @@ const ContractManagement: React.FC = () => {
         { title: intl.formatMessage({ id: 'pages.park.contract.rent', defaultMessage: '月租金' }), dataIndex: 'monthlyRent', sorter: true, width: 100, align: 'right', render: (rent) => `¥${rent?.toLocaleString()}` },
         { title: intl.formatMessage({ id: 'pages.park.contract.totalAmount', defaultMessage: '合同总额' }), dataIndex: 'totalAmount', sorter: true, width: 120, align: 'right', render: (total) => total ? `¥${total?.toLocaleString()}` : '-' },
         { title: intl.formatMessage({ id: 'pages.park.contract.status', defaultMessage: '状态' }), dataIndex: 'status', sorter: true, width: 100, render: (status) => { const opt = contractStatusOptions.find(o => o.value === status); return <Tag color={opt?.color || 'default'}>{opt?.label || status}</Tag>; } },
-        { title: intl.formatMessage({ id: 'common.action', defaultMessage: '操作' }), valueType: 'option', fixed: 'right', width: 180, render: (_, record) => (
-            <Space size={4}>
-                <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => handleViewContract(record.id)}>{intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}</Button>
-                <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { set({ isEdit: true, currentContract: record, contractModalVisible: true, fileList: (record.attachments || []).map(id => ({ uid: id, name: `附件-${id.substring(0, 8)}`, status: 'done', url: `/api/cloud-storage/files/${id}/download` })) }); }}>{intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}</Button>
-                <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={async () => { await api.delete(record.id); actionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }}>
-                    <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}</Button>
-                </Popconfirm>
-            </Space>
-        ) },
+        {
+            title: intl.formatMessage({ id: 'common.action', defaultMessage: '操作' }), valueType: 'option', fixed: 'right', width: 180, render: (_, record) => (
+                <Space size={4}>
+                    <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => handleViewContract(record.id)}>{intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}</Button>
+                    <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { set({ isEdit: true, currentContract: record, contractModalVisible: true, fileList: (record.attachments || []).map(id => ({ uid: id, name: `附件-${id.substring(0, 8)}`, status: 'done', url: `/apiservice/api/cloud-storage/files/${id}/download` })) }); }}>{intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}</Button>
+                    <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={async () => { await api.delete(record.id); actionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }}>
+                        <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}</Button>
+                    </Popconfirm>
+                </Space>
+            )
+        },
     ];
 
     const uploadProps: UploadProps = {
@@ -116,7 +118,7 @@ const ContractManagement: React.FC = () => {
                 const formData = new FormData(); formData.append('file', file as File);
                 const res = await api.uploadFile(formData);
                 if (res.success && res.data) {
-                    const newFile: UploadFile = { uid: res.data.id, name: res.data.name, status: 'done', url: `/api/cloud-storage/files/${res.data.id}/download` };
+                    const newFile: UploadFile = { uid: res.data.id, name: res.data.name, status: 'done', url: `/apiservice/api/cloud-storage/files/${res.data.id}/download` };
                     setState(prev => ({ ...prev, fileList: [...prev.fileList, newFile] })); onSuccess?.(res.data);
                 } else { onError?.(new Error(res.message || '上传失败')); }
             } catch (err) { onError?.(err as Error); }
@@ -127,15 +129,15 @@ const ContractManagement: React.FC = () => {
     return (
         <PageContainer>
             <ProTable actionRef={actionRef} headerTitle={
-              <Space size={24}>
-                <Space><FileTextOutlined />合同管理</Space>
-                <Space size={12}>
-                  <Tag color="green">生效 {state.statistics?.activeContracts || 0}</Tag>
-                  <Tag color="blue">总额 ¥{state.statistics?.totalContractAmount?.toLocaleString() || 0}</Tag>
-                  <Tag color={state.statistics?.expiringContracts ? 'red' : 'default'}>即将到期 {state.statistics?.expiringContracts || 0}</Tag>
-                  <Tag color="purple">本月应收 ¥{state.statistics?.totalExpected?.toLocaleString() || 0}</Tag>
+                <Space size={24}>
+                    <Space><FileTextOutlined />合同管理</Space>
+                    <Space size={12}>
+                        <Tag color="green">生效 {state.statistics?.activeContracts || 0}</Tag>
+                        <Tag color="blue">总额 ¥{state.statistics?.totalContractAmount?.toLocaleString() || 0}</Tag>
+                        <Tag color={state.statistics?.expiringContracts ? 'red' : 'default'}>即将到期 {state.statistics?.expiringContracts || 0}</Tag>
+                        <Tag color="purple">本月应收 ¥{state.statistics?.totalExpected?.toLocaleString() || 0}</Tag>
+                    </Space>
                 </Space>
-              </Space>
             } request={async (params: any) => {
                 const { current, pageSize } = params;
                 const sortParams = sorter?.sortBy && sorter?.sortOrder ? sorter : undefined;
@@ -198,7 +200,7 @@ const ContractManagement: React.FC = () => {
                     </div>
                     {state.currentContract.attachments && state.currentContract.attachments.length > 0 && (<div style={{ marginTop: 24 }}>
                         <Text strong>合同附件</Text>
-                        <List size="small" dataSource={state.currentContract.attachments} renderItem={(id) => (<List.Item actions={[<Button type="link" icon={<EyeOutlined />} href={`/api/cloud-storage/files/${id}/preview`} target="_blank">预览</Button>, <Button type="link" icon={<DownloadOutlined />} href={`/api/cloud-storage/files/${id}/download`}>下载</Button>]}><List.Item.Meta avatar={<PaperClipOutlined />} title={`文件-${id.substring(0, 8)}`} /></List.Item>)} />
+                        <List size="small" dataSource={state.currentContract.attachments} renderItem={(id) => (<List.Item actions={[<Button type="link" icon={<EyeOutlined />} href={`/apiservice/api/cloud-storage/files/${id}/preview`} target="_blank">预览</Button>, <Button type="link" icon={<DownloadOutlined />} href={`/apiservice/api/cloud-storage/files/${id}/download`}>下载</Button>]}><List.Item.Meta avatar={<PaperClipOutlined />} title={`文件-${id.substring(0, 8)}`} /></List.Item>)} />
                     </div>)}
                 </div>)}
             </Drawer>

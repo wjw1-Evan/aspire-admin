@@ -82,7 +82,7 @@ export async function getCurrentUserActivityLogs(
   },
   options?: Record<string, any>,
 ) {
-  return request<ApiResponse<ActivityLogWithSummary>>('/apiservice/apiservice/api/users/me/activity-logs-paged', {
+  return request<ApiResponse<ActivityLogWithSummary>>('/apiservice/api/users/me/activity-logs-paged', {
     method: 'GET',
     params,
     ...(options || {}),
@@ -118,7 +118,7 @@ export async function getCurrentUserActivityLogStatistics(
   },
   options?: Record<string, any>,
 ) {
-  return request<ApiResponse<ActivityLogStatistics>>('/apiservice/apiservice/api/users/me/activity-logs/statistics', {
+  return request<ApiResponse<ActivityLogStatistics>>('/apiservice/api/users/me/activity-logs/statistics', {
     method: 'GET',
     params,
     ...(options || {}),

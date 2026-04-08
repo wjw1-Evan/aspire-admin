@@ -124,7 +124,7 @@ export interface DelegateDocumentRequest {
  * 获取公文列表
  */
 export async function getDocumentList(params: DocumentQueryParams): Promise<ApiResponse<PagedResult<Document>>> {
-  return request('/apiservice/apiservice/api/documents', {
+  return request('/apiservice/api/documents', {
     method: 'GET',
     params,
   });
@@ -152,7 +152,7 @@ export async function getDocumentInstanceForm(id: string): Promise<ApiResponse<{
  * 创建公文
  */
 export async function createDocument(data: CreateDocumentRequest): Promise<ApiResponse<Document>> {
-  return request('/apiservice/apiservice/api/documents', {
+  return request('/apiservice/api/documents', {
     method: 'POST',
     data,
   });
@@ -165,7 +165,7 @@ export async function uploadDocumentAttachment(file: File): Promise<ApiResponse<
   const formData = new FormData();
   formData.append('file', file);
 
-  return request('/apiservice/apiservice/api/documents/attachments', {
+  return request('/apiservice/api/documents/attachments', {
     method: 'POST',
     data: formData,
     requestType: 'form',
@@ -245,7 +245,7 @@ export async function delegateDocument(id: string, data: DelegateDocumentRequest
  * 获取待审批列表
  */
 export async function getPendingDocuments(params: DocumentQueryParams): Promise<ApiResponse<PagedResult<Document>>> {
-  return request('/apiservice/apiservice/api/documents/pending', {
+  return request('/apiservice/api/documents/pending', {
     method: 'GET',
     params,
   });
@@ -253,7 +253,7 @@ export async function getPendingDocuments(params: DocumentQueryParams): Promise<
 
 /** 获取公文统计信息 */
 export async function getDocumentStatistics(): Promise<ApiResponse<DocumentStatistics>> {
-  return request('/apiservice/apiservice/api/documents/statistics', {
+  return request('/apiservice/api/documents/statistics', {
     method: 'GET',
   });
 }

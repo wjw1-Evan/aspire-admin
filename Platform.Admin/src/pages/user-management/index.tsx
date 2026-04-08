@@ -31,7 +31,6 @@ const api = {
   list: (p: PageParams) => request<ApiResponse<PagedResult<AppUser>>>('/api/users/list', { params: p }),
   stats: () => request<ApiResponse<UserStats>>('/api/users/statistics', { method: 'GET' }),
   del: (id: string, reason?: string) => request<ApiResponse<unknown>>(`/api/users/${id}`, { method: 'DELETE', params: reason ? { reason } : undefined }),
-  bulk: (ids: string[], action: string, reason?: string) => request<ApiResponse<unknown>>('/api/users/bulk', { method: 'POST', data: { userIds: ids, action, reason } }),
   activate: (id: string) => request<ApiResponse<unknown>>(`/api/users/${id}/activate`, { method: 'PUT' }),
   deactivate: (id: string) => request<ApiResponse<unknown>>(`/api/users/${id}/deactivate`, { method: 'PUT' }),
   create: (d: unknown) => request<ApiResponse<AppUser>>('/api/users', { method: 'POST', data: d }),
@@ -52,7 +51,7 @@ const UserManagement: React.FC = () => {
   const joinRef = useRef<PageParams>({});
   const [activeTab, setActiveTab] = useState('members');
   const [state, setState] = useState({
-    selectedRows: [] as AppUser[], editingUser: null as AppUser | null, formVisible: false,
+    editingUser: null as AppUser | null, formVisible: false,
     detailVisible: false, viewingUser: null as AppUser | null, statistics: null as UserStats | null,
     roleMap: {} as Record<string, string>, currentCompany: null as { id?: string; createdBy?: string } | null,
     sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
@@ -83,25 +82,18 @@ const UserManagement: React.FC = () => {
     }
   }, [intl, message]);
 
-  const promptDelete = useCallback((userId: string, isBulk = false, count = 1) => {
+  const promptDelete = useCallback((userId: string) => {
     let reason = '';
     modal.confirm({
-      title: isBulk ? intl.formatMessage({ id: 'pages.modal.confirmBatchDelete' }, { count }) : intl.formatMessage({ id: 'pages.modal.confirmDeleteUser' }),
+      title: intl.formatMessage({ id: 'pages.modal.confirmDeleteUser' }),
       content: <Input.TextArea rows={3} placeholder={intl.formatMessage({ id: 'pages.modal.pleaseEnterReasonOptional' })} onChange={(e) => { reason = e.target.value; }} maxLength={200} />,
       okText: intl.formatMessage({ id: 'pages.modal.okDelete' }), cancelText: intl.formatMessage({ id: 'pages.modal.cancel' }), okType: 'danger',
       onOk: async () => {
-        const res = isBulk ? await api.bulk([userId], 'delete', reason) : await api.del(userId, reason);
-        if (res.success) { message.success(isBulk ? '批量删除成功' : intl.formatMessage({ id: 'pages.message.deleteSuccess' })); set({ selectedRows: [] }); loadStatistics(); actionRef.current?.reload(); }
+        const res = await api.del(userId, reason);
+        if (res.success) { message.success(intl.formatMessage({ id: 'pages.message.deleteSuccess' })); loadStatistics(); actionRef.current?.reload(); }
       },
     });
   }, [intl, modal, message, loadStatistics]);
-
-  const handleBulk = useCallback(async (action: string) => {
-    if (!state.selectedRows.length) { message.warning(intl.formatMessage({ id: 'pages.message.pleaseSelect' })); return; }
-    if (action === 'delete') { promptDelete(state.selectedRows.map(u => u.id).join(','), true, state.selectedRows.length); return; }
-    const res = await api.bulk(state.selectedRows.map(u => u.id), action);
-    if (res.success) { message.success(intl.formatMessage({ id: 'pages.message.success' })); set({ selectedRows: [] }); loadStatistics(); actionRef.current?.reload(); }
-  }, [state.selectedRows, intl, message, loadStatistics, promptDelete]);
 
   const roleOptions = useMemo(() => form.roles.filter((r): r is Role & { id: string } => Boolean(r.id)).map(r => ({ label: r.name, value: r.id })), [form.roles]);
 
@@ -199,7 +191,6 @@ const UserManagement: React.FC = () => {
           api.stats().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
           return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
         }} columns={columns} rowKey="id"
-          rowSelection={{ selectedRowKeys: state.selectedRows.map(r => r.id), onChange: (_: React.Key[], selectedRows: AppUser[]) => set({ selectedRows }) }}
           onChange={(_p, _f, s) => set({ sorter: (s as Record<string, unknown>)?.order ? { sortBy: (s as Record<string, string>).field, sortOrder: (s as Record<string, string>).order === 'ascend' ? 'asc' : 'desc' } : undefined })}
           search={false}
           scroll={{ x: 'max-content' }}
@@ -216,9 +207,6 @@ const UserManagement: React.FC = () => {
             />,
             <Button key="refresh" icon={<ReloadOutlined />} onClick={() => { loadStatistics(); actionRef.current?.reload(); }}>{intl.formatMessage({ id: 'pages.userManagement.refresh' })}</Button>,
             <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingUser: null, formVisible: true })}>{intl.formatMessage({ id: 'pages.userManagement.addUser' })}</Button>,
-            <Button key="activate" disabled={!state.selectedRows.length} onClick={() => handleBulk('activate')}>批量激活</Button>,
-            <Button key="deactivate" disabled={!state.selectedRows.length} onClick={() => handleBulk('deactivate')}>批量禁用</Button>,
-            <Button key="delete" danger disabled={!state.selectedRows.length} onClick={() => handleBulk('delete')}>批量删除</Button>,
           ]}
         />
         <ModalForm key={state.editingUser?.id || 'create'} title={state.editingUser ? intl.formatMessage({ id: 'pages.userManagement.editUser' }) : '添加成员'}

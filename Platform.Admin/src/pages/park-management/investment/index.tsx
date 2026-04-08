@@ -108,7 +108,8 @@ const InvestmentManagement: React.FC = () => {
                 open={state.leadModalVisible} onOpenChange={(open) => { if (!open) set({ leadModalVisible: false, editingLead: null }); }}
                 initialValues={state.editingLead ? { companyName: state.editingLead.companyName, industry: state.editingLead.industry, contactPerson: state.editingLead.contactPerson, phone: state.editingLead.phone, email: state.editingLead.email, source: state.editingLead.source ? [state.editingLead.source] : [], priority: state.editingLead.priority, intendedArea: state.editingLead.intendedArea, budget: state.editingLead.budget, nextFollowUpDate: state.editingLead.nextFollowUpDate ? dayjs(state.editingLead.nextFollowUpDate) : undefined, requirements: state.editingLead.requirements } : undefined}
                 onFinish={async (values) => {
-                    const data: Partial<InvestmentLead> = { ...values, source: Array.isArray(values.source) ? values.source[0] : values.source, nextFollowUpDate: values.nextFollowUpDate?.toISOString() };
+                    const nextFollowUpVal = values.nextFollowUpDate?.toISOString ? values.nextFollowUpDate.toISOString() : values.nextFollowUpDate;
+                    const data: Partial<InvestmentLead> = { ...values, source: Array.isArray(values.source) ? values.source[0] : values.source, nextFollowUpDate: nextFollowUpVal };
                     const res = state.editingLead ? await api.updateLead(state.editingLead.id, data) : await api.createLead(data);
                     if (res.success) { message.success(state.editingLead ? '更新成功' : '创建成功'); set({ leadModalVisible: false, editingLead: null }); leadsActionRef.current?.reload(); handleRefresh(); }
                     return res.success;
@@ -124,7 +125,8 @@ const InvestmentManagement: React.FC = () => {
                 open={state.projectModalVisible} onOpenChange={(open) => { if (!open) set({ projectModalVisible: false, editingProject: null }); }}
                 initialValues={state.editingProject ? { projectName: state.editingProject.projectName, companyName: state.editingProject.companyName, contactPerson: state.editingProject.contactPerson, phone: state.editingProject.phone, intendedArea: state.editingProject.intendedArea, proposedRent: state.editingProject.proposedRent, probability: state.editingProject.probability, stage: state.editingProject.stage ? [state.editingProject.stage] : [], expectedSignDate: state.editingProject.expectedSignDate ? dayjs(state.editingProject.expectedSignDate) : undefined, notes: state.editingProject.notes } : undefined}
                 onFinish={async (values) => {
-                    const data: Partial<InvestmentProject> = { ...values, stage: Array.isArray(values.stage) ? values.stage[0] : values.stage, expectedSignDate: values.expectedSignDate?.toISOString() };
+                    const expectedSignVal = values.expectedSignDate?.toISOString ? values.expectedSignDate.toISOString() : values.expectedSignDate;
+                    const data: Partial<InvestmentProject> = { ...values, stage: Array.isArray(values.stage) ? values.stage[0] : values.stage, expectedSignDate: expectedSignVal };
                     const res = state.editingProject ? await api.updateProject(state.editingProject.id, data) : await api.createProject(data);
                     if (res.success) { message.success(state.editingProject ? '更新成功' : '创建成功'); set({ projectModalVisible: false, editingProject: null }); projectsActionRef.current?.reload(); handleRefresh(); }
                     return res.success;

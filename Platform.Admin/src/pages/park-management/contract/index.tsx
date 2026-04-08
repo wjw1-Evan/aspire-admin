@@ -164,7 +164,9 @@ const ContractManagement: React.FC = () => {
                 open={state.contractModalVisible} onOpenChange={(open) => { if (!open) set({ contractModalVisible: false }); }}
                 initialValues={state.currentContract ? { tenantId: state.currentContract.tenantId, contractNumber: state.currentContract.contractNumber, unitIds: state.currentContract.unitIds || [], startDate: state.currentContract.startDate ? [dayjs(state.currentContract.startDate), dayjs(state.currentContract.endDate)] : undefined, unitPrice: state.currentContract.unitPrice, monthlyRent: state.currentContract.monthlyRent, propertyFee: state.currentContract.propertyFee, deposit: state.currentContract.deposit, paymentCycle: state.currentContract.paymentCycle, totalAmount: state.currentContract.totalAmount, terms: state.currentContract.terms } : undefined}
                 onFinish={async (values) => {
-                    const data: ContractFormData = { tenantId: values.tenantId, contractNumber: values.contractNumber, unitIds: values.unitIds, startDate: values.startDate?.[0]?.toISOString(), endDate: values.startDate?.[1]?.toISOString(), unitPrice: values.unitPrice, monthlyRent: values.monthlyRent, propertyFee: values.propertyFee, deposit: values.deposit, paymentCycle: values.paymentCycle, totalAmount: values.totalAmount, terms: values.terms, attachments: state.fileList.filter(f => f.status === 'done').map(f => f.uid) };
+                    const startDateVal = values.startDate?.[0]?.toISOString ? values.startDate[0].toISOString() : values.startDate?.[0];
+                    const endDateVal = values.startDate?.[1]?.toISOString ? values.startDate[1].toISOString() : values.startDate?.[1];
+                    const data: ContractFormData = { tenantId: values.tenantId, contractNumber: values.contractNumber, unitIds: values.unitIds, startDate: startDateVal, endDate: endDateVal, unitPrice: values.unitPrice, monthlyRent: values.monthlyRent, propertyFee: values.propertyFee, deposit: values.deposit, paymentCycle: values.paymentCycle, totalAmount: values.totalAmount, terms: values.terms, attachments: state.fileList.filter(f => f.status === 'done').map(f => f.uid) };
                     const res = state.isEdit && state.currentContract ? await api.update(state.currentContract.id, data) : await api.create(data);
                     if (res.success) { message.success(state.isEdit ? '更新成功' : '创建成功'); set({ contractModalVisible: false, fileList: [] }); actionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }
                     return res.success;
@@ -204,7 +206,10 @@ const ContractManagement: React.FC = () => {
             <ModalForm title="添加付款记录" open={state.paymentModalVisible} onOpenChange={(open) => { if (!open) set({ paymentModalVisible: false }); }}
                 onFinish={async (values) => {
                     if (!state.currentContract) return false;
-                    const res = await api.createPayment({ contractId: state.currentContract.id, amount: values.amount, paymentType: values.paymentType, paymentDate: values.paymentDate?.toISOString(), paymentMethod: values.paymentMethod, periodStart: values.periodRange?.[0]?.toISOString(), periodEnd: values.periodRange?.[1]?.toISOString(), notes: values.notes });
+                    const paymentDateVal = values.paymentDate?.toISOString ? values.paymentDate.toISOString() : values.paymentDate;
+                    const periodStartVal = values.periodRange?.[0]?.toISOString ? values.periodRange[0].toISOString() : values.periodRange?.[0];
+                    const periodEndVal = values.periodRange?.[1]?.toISOString ? values.periodRange[1].toISOString() : values.periodRange?.[1];
+                    const res = await api.createPayment({ contractId: state.currentContract.id, amount: values.amount, paymentType: values.paymentType, paymentDate: paymentDateVal, paymentMethod: values.paymentMethod, periodStart: periodStartVal, periodEnd: periodEndVal, notes: values.notes });
                     if (res.success) { message.success('添加成功'); set({ paymentModalVisible: false }); const updated = await api.getDetail(state.currentContract.id); if (updated.success && updated.data) set({ currentContract: updated.data }); }
                     return res.success;
                 }} autoFocusFirstInput width={480}>

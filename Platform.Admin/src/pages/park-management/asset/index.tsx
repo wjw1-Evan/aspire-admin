@@ -211,7 +211,8 @@ const AssetManagement: React.FC = () => {
                 open={buildingState.modalVisible} onOpenChange={(open) => { if (!open) setBuilding({ modalVisible: false, editingBuilding: null }); }}
                 initialValues={buildingState.editingBuilding ? { name: buildingState.editingBuilding.name, buildingType: buildingState.editingBuilding.buildingType, address: buildingState.editingBuilding.address, totalFloors: buildingState.editingBuilding.totalFloors, totalArea: buildingState.editingBuilding.totalArea, yearBuilt: buildingState.editingBuilding.yearBuilt, deliveryDate: buildingState.editingBuilding.deliveryDate ? dayjs(buildingState.editingBuilding.deliveryDate) : undefined, status: buildingState.editingBuilding.status, description: buildingState.editingBuilding.description } : undefined}
                 onFinish={async (values) => {
-                    const data = { ...values, deliveryDate: values.deliveryDate?.toISOString(), attachments: extractAttachmentUrls(formState.attachments) };
+                    const deliveryDateVal = values.deliveryDate?.toISOString ? values.deliveryDate.toISOString() : values.deliveryDate;
+                    const data = { ...values, deliveryDate: deliveryDateVal, attachments: extractAttachmentUrls(formState.attachments) };
                     const res = buildingState.editingBuilding ? await api.updateBuilding(buildingState.editingBuilding.id, data) : await api.createBuilding(data);
                     if (res.success) { setBuilding({ modalVisible: false, editingBuilding: null }); buildingActionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); api.allBuildings().then(r => { if (r.success && r.data) setForm({ buildings: r.data.queryable || [] }); }); }
                     return res.success;

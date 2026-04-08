@@ -3,7 +3,7 @@ import { PageContainer } from '@ant-design/pro-components';
 import { request } from '@umijs/max';
 import { Tag, Space, Button, Input, App, Typography, Drawer, Empty, Popconfirm } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormSelect } from '@ant-design/pro-form';
+import { ModalForm, ProFormText, ProFormSelect, ProFormSwitch } from '@ant-design/pro-form';
 import { PlusOutlined, ReloadOutlined, QuestionCircleOutlined, StarOutlined, StarFilled, EditOutlined, DeleteOutlined, EyeOutlined, SearchOutlined, BookOutlined } from '@ant-design/icons';
 import { ProDescriptions } from '@ant-design/pro-components';
 import dayjs from 'dayjs';
@@ -102,7 +102,7 @@ const VisitKnowledgeBase: React.FC = () => {
                 <ProFormText name="content" label="问题内容" placeholder="请输入走访过程中可能遇到的问题" rules={[{ required: true, message: '请输入问题内容' }]} />
                 <ProFormSelect name="category" label="分类" placeholder="请选择分类" options={[{ label: '政策咨询', value: '政策咨询' }, { label: '物业服务', value: '物业服务' }, { label: '政务代办', value: '政务代办' }]} />
                 <ProFormText name="answer" label="标准回答/解析" placeholder="请输入针对该问题的标准回答或处理建议" />
-                <ProFormSelect name="isFrequentlyUsed" label="标记为常用" valueEnum={{ true: '是', false: '否' }} />
+                <ProFormSwitch name="isFrequentlyUsed" label="标记为常用" />
                 <ProFormText name="sortOrder" label="排序值" placeholder="数值越小越靠前" fieldProps={{ type: 'number' }} />
             </ModalForm>
 

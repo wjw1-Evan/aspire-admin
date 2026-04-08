@@ -5,7 +5,7 @@ import { useIntl, request } from '@umijs/max';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import { marked } from 'marked';
-import { TeamOutlined, ArrowUpOutlined, ArrowDownOutlined, ReloadOutlined, StarOutlined, CheckCircleOutlined, ClockCircleOutlined, SyncOutlined, RobotOutlined, BarChartOutlined, UserOutlined } from '@ant-design/icons';
+import { TeamOutlined, ArrowUpOutlined, ArrowDownOutlined, ReloadOutlined, StarOutlined, CheckCircleOutlined, ClockCircleOutlined, SyncOutlined, RobotOutlined, BarChartOutlined, UserOutlined, BookOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns } from '@ant-design/pro-table';
 import { PageContainer } from '@ant-design/pro-components';
 import StatisticsPeriodSelector from '@/components/StatisticsPeriodSelector';
@@ -18,6 +18,7 @@ interface VisitStatistics {
     completionRate: number; totalAssessments: number; averageScore: number;
     tasksByType: Record<string, number>; tasksByStatus: Record<string, number>;
     managerRanking: Record<string, number>; monthlyTrends: Record<string, number>;
+    totalQuestions: number; frequentlyUsedQuestions: number;
 }
 
 const api = {
@@ -98,6 +99,10 @@ const VisitStatisticsPage: React.FC = () => {
                     <Col xs={24} sm={12} lg={6}><ProCard style={{ height: '100%', borderRadius: 8, transition: 'all 0.3s' }}><Statistic title={intl.formatMessage({ id: 'pages.park.visit.statistics.completedTasksThisMonth', defaultMessage: '本月完成任务' })} value={state.statistics.completedTasksThisMonth} prefix={<CheckCircleOutlined />} styles={{ content: { color: '#52c41a' } }} /><div style={{ color: 'rgba(0, 0, 0, 0.45)', fontSize: 12, marginTop: 4 }}>{intl.formatMessage({ id: 'pages.park.visit.statistics.completionRate', defaultMessage: '任务完成率' })}: {state.statistics.completionRate}%<Progress percent={state.statistics.completionRate} size="small" showInfo={false} strokeColor="#52c41a" /></div></ProCard></Col>
                     <Col xs={24} sm={12} lg={6}><ProCard style={{ height: '100%', borderRadius: 8, transition: 'all 0.3s' }}><Statistic title={intl.formatMessage({ id: 'pages.park.visit.statistics.activeManagers', defaultMessage: '活跃企管员' })} value={state.statistics.activeManagers} prefix={<TeamOutlined />} styles={{ content: { color: '#1890ff' } }} /><div style={{ color: 'rgba(0, 0, 0, 0.45)', fontSize: 12, marginTop: 4 }}>{intl.formatMessage({ id: 'pages.park.visit.statistics.managerRanking', defaultMessage: '参与走访的企管员人数' })}</div></ProCard></Col>
                     <Col xs={24} sm={12} lg={6}><ProCard style={{ height: '100%', borderRadius: 8, transition: 'all 0.3s' }}><Statistic title={intl.formatMessage({ id: 'pages.park.visit.statistics.averageScore', defaultMessage: '满意度评分' })} value={state.statistics.averageScore} prefix={<StarOutlined style={{ color: '#faad14' }} />} suffix="/ 5" /><div style={{ color: 'rgba(0, 0, 0, 0.45)', fontSize: 12, marginTop: 4 }}>{intl.formatMessage({ id: 'pages.park.visit.statistics.totalAssessments', defaultMessage: '评价总数' })}: {state.statistics.totalAssessments}</div></ProCard></Col>
+                </Row>)}
+
+                {state.statistics && (<Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+                    <Col xs={24} sm={12} lg={6}><ProCard style={{ height: '100%', borderRadius: 8, transition: 'all 0.3s' }}><Statistic title="知识库问题" value={state.statistics.totalQuestions} prefix={<BookOutlined />} styles={{ content: { color: '#722ed1' } }} /><div style={{ color: 'rgba(0, 0, 0, 0.45)', fontSize: 12, marginTop: 4 }}>常用问题: {state.statistics.frequentlyUsedQuestions}</div></ProCard></Col>
                 </Row>)}
 
                 {state.statistics && (<Row gutter={[24, 24]}>

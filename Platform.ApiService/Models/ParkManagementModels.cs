@@ -2378,6 +2378,12 @@ public class VisitStatisticsDto
 
     /// <summary>统计周期描述</summary>
     public string? Period { get; set; }
+
+    /// <summary>知识库问题总数</summary>
+    public int TotalQuestions { get; set; }
+
+    /// <summary>常用问题数量</summary>
+    public int FrequentlyUsedQuestions { get; set; }
 }
 
 #endregion

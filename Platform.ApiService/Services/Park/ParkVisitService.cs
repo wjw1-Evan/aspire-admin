@@ -569,6 +569,10 @@ public class ParkVisitService : IParkVisitService
                                        g => $"{g.Key.Year:D4}-{g.Key.Month:D2}",
                                        g => g.Count());
 
+        // 6. 知识库统计
+        var totalQuestions = await _context.Set<VisitQuestion>().LongCountAsync();
+        var frequentlyUsedQuestions = await _context.Set<VisitQuestion>().LongCountAsync(q => q.IsFrequentlyUsed == true);
+
         return new VisitStatisticsDto
         {
             PendingTasks = (int)pendingTasks,
@@ -581,7 +585,9 @@ public class ParkVisitService : IParkVisitService
             TasksByStatus = tasksByStatus,
             ManagerRanking = managerRanking,
             MonthlyTrends = monthlyTrends,
-            Period = startDate.HasValue && endDate.HasValue ? $"{startDate:yyyy-MM-dd} 至 {endDate.Value.AddDays(-1):yyyy-MM-dd}" : "本月"
+            Period = startDate.HasValue && endDate.HasValue ? $"{startDate:yyyy-MM-dd} 至 {endDate.Value.AddDays(-1):yyyy-MM-dd}" : "本月",
+            TotalQuestions = (int)totalQuestions,
+            FrequentlyUsedQuestions = (int)frequentlyUsedQuestions
         };
     }
 

@@ -4,7 +4,7 @@ import { useIntl, request } from '@umijs/max';
 import { App, Button, Tag, Space, Modal, Badge, Spin, Input, Typography, Form, Select, Popconfirm, Drawer } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormSwitch, ProFormDatePicker, ProFormDateRangePicker } from '@ant-design/pro-form';
-import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, CrownOutlined, SearchOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, CrownOutlined, SearchOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 import dayjs from 'dayjs';
 import type { Role } from '@/services/role/api';
@@ -19,6 +19,7 @@ interface AppUser {
   roleIds?: string[]; organizations?: Array<{ id?: string; name?: string; fullPath?: string; isPrimary?: boolean }>; remark?: string;
 }
 interface UserStats { totalUsers: number; activeUsers: number; adminUsers: number; newUsersThisMonth: number; }
+interface JoinReq { id: string; username: string; userEmail?: string; reason?: string; status: 'pending' | 'approved' | 'rejected' | 'cancelled'; rejectReason?: string; reviewedByName?: string; reviewedAt?: string; createdAt: string; }
 
 // ==================== API ====================
 const api = {
@@ -31,6 +32,9 @@ const api = {
   update: (id: string, d: unknown) => request<ApiResponse<AppUser>>(`/api/users/${id}`, { method: 'PUT', data: d }),
   searchUsers: (s: string) => request<ApiResponse<{ users: AppUser[]; total: number }>>('/api/users/all', { method: 'GET', params: { search: s } }),
   roles: () => request<ApiResponse<PagedResult<Role>>>('/api/role', { method: 'GET' }),
+  joinReqs: (cid: string, status?: string) => request<ApiResponse<JoinReq[]>>(`/api/company/${cid}/join-requests`, { params: { status } }),
+  approveJoin: (id: string) => request<ApiResponse<unknown>>(`/api/company/join-requests/${id}/approve`, { method: 'POST', data: {} }),
+  rejectJoin: (id: string, d: { rejectReason: string }) => request<ApiResponse<unknown>>(`/api/company/join-requests/${id}/reject`, { method: 'POST', data: d }),
 };
 
 // ==================== Main ====================
@@ -47,8 +51,10 @@ const UserManagement: React.FC = () => {
     search: '',
   });
   const [form, setForm] = useState({ roles: [] as Role[], searchingUsers: false, userOptions: [] as AppUser[], selectedUser: null as AppUser | null });
+  const [join, setJoin] = useState({ data: [] as JoinReq[], loading: false, rejectModal: false, rejectId: '', rejectReason: '' });
   const set = useCallback((p: Partial<typeof state>) => setState(prev => ({ ...prev, ...p })), []);
   const setF = useCallback((p: Partial<typeof form>) => setForm(prev => ({ ...prev, ...p })), []);
+  const setJ = useCallback((p: Partial<typeof join>) => setJoin(prev => ({ ...prev, ...p })), []);
 
   const loadStatistics = useCallback(async () => {
     const res = await api.stats();
@@ -99,7 +105,6 @@ const UserManagement: React.FC = () => {
     { title: '姓名', dataIndex: 'name', key: 'name', ellipsis: true, sorter: true, render: (dom: React.ReactNode) => dom || '-' },
     { title: intl.formatMessage({ id: 'pages.table.email' }), dataIndex: 'email', key: 'email', ellipsis: true, responsive: ['md'], sorter: true },
     { title: '手机号', dataIndex: 'phoneNumber', key: 'phoneNumber', ellipsis: true, responsive: ['lg'] },
-    { title: '年龄', dataIndex: 'age', width: 80, responsive: ['lg'], render: (dom: React.ReactNode) => dom || '-' },
     { title: '备注', dataIndex: 'remark', key: 'remark', ellipsis: true, responsive: ['xl'] },
     { title: intl.formatMessage({ id: 'pages.table.role' }), dataIndex: 'roleIds', responsive: ['md'], render: (_, r) => (!r.roleIds?.length ? <Tag color="default">{intl.formatMessage({ id: 'pages.table.unassigned' })}</Tag> : <Space wrap>{r.roleIds.map(id => <Tag key={id} color="blue">{state.roleMap[id] || id}</Tag>)}</Space>) },
     { title: intl.formatMessage({ id: 'pages.table.organization' }), dataIndex: 'organizations', responsive: ['lg'], render: (_, r) => {
@@ -208,15 +213,15 @@ const UserManagement: React.FC = () => {
             </Form.Item>
           )}
           {state.editingUser && <ProFormText name="username" label="用户名" disabled />}
-          <ProFormText name="email" label="邮箱" placeholder="请输入邮箱" />
-          <ProFormText name="phoneNumber" label="手机号" placeholder="请输入手机号" />
+          {state.editingUser && <ProFormText name="email" label="邮箱" disabled />}
+          {state.editingUser && <ProFormText name="phoneNumber" label="手机号" disabled />}
           {!state.editingUser && (
             <Form.Item name="password" label="密码" rules={[{ required: true, message: '请输入密码' }]}>
               <Input.Password placeholder="请输入密码" />
             </Form.Item>
           )}
           <ProFormSelect name="roleIds" label="角色" mode="multiple" placeholder="请选择角色" showSearch allowClear options={roleOptions} rules={[{ required: true, message: '请选择至少一个角色' }]} />
-          <ProFormSwitch name="isActive" label="状态" checkedChildren="启用" unCheckedChildren="禁用" />
+          <ProFormSwitch name="isActive" label="企业内启用" checkedChildren="启用" unCheckedChildren="禁用" />
           <ProFormText name="remark" label="备注" placeholder="请输入备注" />
         </ModalForm>
         <Drawer title={intl.formatMessage({ id: 'pages.userDetail.title' })} placement="right" open={state.detailVisible} onClose={(open) => { if (!open) set({ detailVisible: false, viewingUser: null }); }} width={600} destroyOnClose>

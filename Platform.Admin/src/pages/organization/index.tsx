@@ -30,7 +30,7 @@ const api = {
   members: (orgId: string) => request<ApiResponse<OrgMember[]>>(`/api/organization/${orgId}/members`),
   assignUser: (data: any) => request<ApiResponse<boolean>>('/api/organization/assign-user', { method: 'POST', data }),
   removeUser: (data: { userId: string; organizationUnitId: string }) => request<ApiResponse<boolean>>('/api/organization/remove-user', { method: 'POST', data }),
-  availableUsers: (orgId: string, query?: string) => request<ApiResponse<AvailableUser[]>>(`/api/organization/${orgId}/available-users`, { params: query ? { query } : undefined }),
+  availableUsers: (orgId: string, query?: string) => request<ApiResponse<AvailableUser[]>>('/api/organization/available-users', { params: { organizationUnitId: orgId, ...(query ? { query } : {}) } }),
 };
 
 // ==================== Tree Helpers ====================

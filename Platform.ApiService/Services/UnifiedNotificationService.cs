@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Linq.Dynamic.Core;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Platform.ApiService.Services;
@@ -19,11 +20,13 @@ public class UnifiedNotificationService : IUnifiedNotificationService
 {
     private readonly DbContext _context;
     private readonly ITenantContext _tenantContext;
+    private readonly IChatSseConnectionManager _sseConnectionManager;
 
-    public UnifiedNotificationService(DbContext context, ITenantContext tenantContext)
+    public UnifiedNotificationService(DbContext context, ITenantContext tenantContext, IChatSseConnectionManager sseConnectionManager)
     {
         _context = context;
         _tenantContext = tenantContext;
+        _sseConnectionManager = sseConnectionManager;
     }
 
     /// <inheritdoc/>
@@ -103,6 +106,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
 
         await _context.Set<NoticeIconItem>().AddAsync(todo);
         await _context.SaveChangesAsync();
+        await BroadcastUnreadStatisticsAsync();
         return todo;
     }
 
@@ -131,6 +135,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
 
         todo.Read = true;
         await _context.SaveChangesAsync();
+        await BroadcastUnreadStatisticsAsync();
         return true;
     }
 
@@ -142,6 +147,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
 
         _context.Set<NoticeIconItem>().Remove(todo);
         await _context.SaveChangesAsync();
+        await BroadcastUnreadStatisticsAsync();
         return true;
     }
 
@@ -184,6 +190,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
 
         await _context.Set<NoticeIconItem>().AddAsync(notification);
         await _context.SaveChangesAsync();
+        await BroadcastUnreadStatisticsAsync();
         return notification;
     }
 
@@ -195,6 +202,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
 
         item.Read = true;
         await _context.SaveChangesAsync();
+        await BroadcastUnreadStatisticsAsync();
         return true;
     }
 
@@ -204,6 +212,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
         var items = await _context.Set<NoticeIconItem>().Where(x => ids.Contains(x.Id!)).ToListAsync();
         foreach (var item in items) item.Read = true;
         await _context.SaveChangesAsync();
+        await BroadcastUnreadStatisticsAsync();
         return true;
     }
 
@@ -267,6 +276,7 @@ public class UnifiedNotificationService : IUnifiedNotificationService
 
         await _context.Set<NoticeIconItem>().AddAsync(notification);
         await _context.SaveChangesAsync();
+        await BroadcastUnreadStatisticsAsync();
         return notification;
     }
 
@@ -292,15 +302,33 @@ public class UnifiedNotificationService : IUnifiedNotificationService
 
         return actionType switch
         {
-            "workflow_started" => ("公文已提交审批", $"{baseDescription} 已提交审批流程{remarkText}"),
-            "workflow_approval_required" => ("待审批公文", $"{baseDescription} 需要您审批{remarkText}"),
-            "workflow_approved" => ("公文审批通过", $"{baseDescription} 已审批通过{remarkText}"),
-            "workflow_rejected" => ("公文审批拒绝", $"{baseDescription} 审批被拒绝{remarkText}"),
-            "workflow_returned" => ("公文已退回", $"{baseDescription} 已退回{remarkText}"),
-            "workflow_delegated" => ("公文已转办", $"{baseDescription} 已转办{remarkText}"),
-            "workflow_completed" => ("公文审批完成", $"{baseDescription} 审批流程已完成{remarkText}"),
-            "workflow_cancelled" => ("公文审批取消", $"{baseDescription} 审批流程已取消{remarkText}"),
-            _ => ("工作流通知", $"{baseDescription} 有新的更新{remarkText}")
+            "workflow_started" => ("公文已提交审批", $"{baseDescription} 已提交审批流程{remarks}"),
+            "workflow_approval_required" => ("待审批公文", $"{baseDescription} 需要您审批{remarks}"),
+            "workflow_approved" => ("公文审批通过", $"{baseDescription} 已审批通过{remarks}"),
+            "workflow_rejected" => ("公文审批拒绝", $"{baseDescription} 审批被拒绝{remarks}"),
+            "workflow_returned" => ("公文已退回", $"{baseDescription} 已退回{remarks}"),
+            "workflow_delegated" => ("公文已转办", $"{baseDescription} 已转办{remarks}"),
+            "workflow_completed" => ("公文审批完成", $"{baseDescription} 审批流程已完成{remarks}"),
+            "workflow_cancelled" => ("公文审批取消", $"{baseDescription} 审批流程已取消{remarks}"),
+            _ => ("工作流通知", $"{baseDescription} 有新的更新{remarks}")
         };
+    }
+
+    private async Task BroadcastUnreadStatisticsAsync()
+    {
+        try
+        {
+            var userId = _tenantContext.GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId))
+                return;
+
+            var statistics = await GetUnreadCountStatisticsAsync();
+            var json = JsonSerializer.Serialize(statistics);
+            var message = $"event: NotificationUpdated\ndata: {json}\n\n";
+            await _sseConnectionManager.SendToUserAsync(userId, message);
+        }
+        catch
+        {
+        }
     }
 }

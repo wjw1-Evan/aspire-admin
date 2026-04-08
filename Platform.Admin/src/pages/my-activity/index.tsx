@@ -2,10 +2,10 @@ import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import { PageContainer } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import { request } from '@umijs/max';
-import { Tag, Space, Button, Drawer, Input } from 'antd';
+import { Tag, Space, Drawer, Input } from 'antd';
 import { ProDescriptions } from '@ant-design/pro-components';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
-import { HistoryOutlined, CheckCircleOutlined, CloseCircleOutlined, ThunderboltOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
+import { HistoryOutlined, CheckCircleOutlined, CloseCircleOutlined, ThunderboltOutlined, SearchOutlined } from '@ant-design/icons';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 import dayjs from 'dayjs';
 import { getActionTagColor, getActionText, getMethodColor, getStatusBadge } from '@/utils/activityLog';
@@ -64,10 +64,6 @@ const MyActivity: React.FC = () => {
     set({ detailDrawerOpen: false, selectedLogId: null });
   }, []);
 
-  const handleRefresh = useCallback(() => {
-    actionRef.current?.reload();
-  }, []);
-
   const columns: ProColumns<UserActivityLog>[] = useMemo(() => [
     { title: intl.formatMessage({ id: 'pages.table.action' }), dataIndex: 'action', key: 'action', sorter: true, render: (dom: any, r) => <a onClick={() => handleViewDetail(r)}><Tag color={getActionTagColor(r.action)}>{getActionText(r.action)}</Tag></a> },
     { title: intl.formatMessage({ id: 'pages.table.httpMethod' }), dataIndex: 'httpMethod', key: 'httpMethod', sorter: true, render: (dom: any, r) => r.httpMethod ? <Tag color={getMethodColor(r.httpMethod)}>{r.httpMethod}</Tag> : '-' },
@@ -114,7 +110,6 @@ const MyActivity: React.FC = () => {
             style={{ width: 260, marginRight: 8 }}
             prefix={<SearchOutlined />}
           />,
-          <Button key="refresh" icon={<ReloadOutlined />} onClick={handleRefresh}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button>,
         ]}
       />
 

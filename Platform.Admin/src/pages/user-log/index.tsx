@@ -2,9 +2,9 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import { request } from '@umijs/max';
-import { Tag, Space, Button, Input } from 'antd';
+import { Tag, Space, Input } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
-import { ReloadOutlined, FileTextOutlined, SearchOutlined } from '@ant-design/icons';
+import { FileTextOutlined, SearchOutlined } from '@ant-design/icons';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 import dayjs from 'dayjs';
 import { getActionTagColor, getActionText, getMethodColor, getStatusBadge } from '@/utils/activityLog';
@@ -104,10 +104,6 @@ const UserLog: React.FC = () => {
     { title: intl.formatMessage({ id: 'pages.table.actionTime' }), dataIndex: 'createdAt', key: 'createdAt', sorter: true, defaultSortOrder: 'descend', render: (_: any, r: UserActivityLog) => r.createdAt ? dayjs(r.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-' },
   ];
 
-  const handleRefresh = useCallback(() => {
-    actionRef.current?.reload();
-  }, []);
-
   return (
     <PageContainer>
       <ProTable
@@ -155,7 +151,6 @@ const UserLog: React.FC = () => {
             style={{ width: 260, marginRight: 8 }}
             prefix={<SearchOutlined />}
           />,
-          <Button key="refresh" icon={<ReloadOutlined />} onClick={handleRefresh}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button>,
         ]}
       />
 

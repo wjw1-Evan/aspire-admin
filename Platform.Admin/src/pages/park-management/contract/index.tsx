@@ -155,7 +155,6 @@ const ContractManagement: React.FC = () => {
                         onSearch={(v) => { setSearchParams({ search: v }); actionRef.current?.reload(); }}
                         prefix={<SearchOutlined />}
                     />,
-                    <Button key="refresh" icon={<ReloadOutlined />} onClick={() => { actionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }}>{intl.formatMessage({ id: 'common.refresh', defaultMessage: '刷新' })}</Button>,
                     <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => set({ isEdit: false, currentContract: null, contractModalVisible: true, fileList: [] })}>新增合同</Button>,
                 ]}
             />

@@ -3,7 +3,7 @@ import { PageContainer } from '@ant-design/pro-components';
 import { StatCard } from '@/components';
 import { Space, Tag, Button, Row, Col, Drawer, message, Input, Popconfirm } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
-import { FileTextOutlined, PlusOutlined, EyeOutlined, EditOutlined, SendOutlined, DeleteOutlined, ReloadOutlined, FileProtectOutlined, ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { FileTextOutlined, PlusOutlined, EyeOutlined, EditOutlined, SendOutlined, DeleteOutlined, FileProtectOutlined, ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import dayjs from 'dayjs';
 import { request } from '@umijs/max';
@@ -110,7 +110,6 @@ const DocumentManagement: React.FC = () => {
             onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
             style={{ width: 260, marginRight: 8 }}
           />,
-          <Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>刷新</Button>,
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => window.location.href = '/document/create'}>新建公文</Button>,
         ]}
       />

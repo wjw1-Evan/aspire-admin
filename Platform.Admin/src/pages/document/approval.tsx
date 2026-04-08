@@ -3,7 +3,7 @@ import { PageContainer } from '@ant-design/pro-components';
 import { StatCard } from '@/components';
 import { Space, Tag, Button, Row, Col, Tabs, Drawer, message, Input } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
-import { CheckCircleOutlined, FileTextOutlined, CloseOutlined, ReloadOutlined, EyeOutlined, CheckOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, FileTextOutlined, CloseOutlined, EyeOutlined, CheckOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import dayjs from 'dayjs';
 import { request } from '@umijs/max';
@@ -145,7 +145,6 @@ const ApprovalPage: React.FC = () => {
                   onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
                   style={{ width: 260, marginRight: 8 }}
                 />,
-                <Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>刷新</Button>,
               ]}
             />
           ),

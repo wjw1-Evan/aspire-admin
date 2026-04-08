@@ -114,7 +114,6 @@ const TenantManagement: React.FC = () => {
                         style={{ width: 260, marginRight: 8 }}
                         prefix={<SearchOutlined />}
                     />,
-                    <Button key="refresh" icon={<ReloadOutlined />} onClick={() => { actionRef.current?.reload(); loadStatistics(); }}>刷新</Button>,
                     <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingTenant: null, formVisible: true })}>新增租户</Button>
                 ]}
             />

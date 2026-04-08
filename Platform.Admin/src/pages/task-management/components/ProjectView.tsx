@@ -284,7 +284,6 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
             style={{ width: 260, marginRight: 8 }}
             prefix={<SearchOutlined />}
           />,
-          <Button key="refresh" icon={<ReloadOutlined />} onClick={() => { fetchStatistics(); tableActionRef.current?.reload(); }}>刷新</Button>,
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { setEditingProject(null); setFormVisible(true); }}>
             新建项目
           </Button>,

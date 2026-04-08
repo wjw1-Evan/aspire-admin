@@ -86,7 +86,6 @@ const VisitAssessmentList: React.FC = () => {
                         style={{ width: 260, marginRight: 8 }}
                         prefix={<SearchOutlined />}
                     />,
-                    <Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>刷新</Button>,
                 ]}
             />
 

@@ -202,7 +202,6 @@ const AssetManagement: React.FC = () => {
                         style={{ width: 260, marginRight: 8 }}
                         prefix={<SearchOutlined />}
                     />,
-                    <Button key="refresh" icon={<ReloadOutlined />} onClick={() => { if (state.activeTab === 'buildings') buildingActionRef.current?.reload(); else unitActionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }}>刷新</Button>,
                     <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => { if (state.activeTab === 'buildings') { setBuilding({ editingBuilding: null, modalVisible: true }); setForm({ attachments: [] }); } else { setUnit({ editingUnit: null, modalVisible: true }); setForm({ attachments: [] }); } }}>{state.activeTab === 'buildings' ? '新增楼宇' : '新增房源'}</Button>,
                 ]}
             />

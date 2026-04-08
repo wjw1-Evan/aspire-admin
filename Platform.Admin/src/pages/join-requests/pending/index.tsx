@@ -4,7 +4,7 @@ import { useIntl, useModel } from '@umijs/max';
 import { request } from '@umijs/max';
 import { Button, Space, App, Modal, Input } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
-import { CheckCircleOutlined, CloseCircleOutlined, ReloadOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { ApiResponse, PageParams } from '@/types';
 
@@ -150,14 +150,7 @@ const PendingJoinRequests: React.FC = () => {
   };
 
   return (
-    <PageContainer extra={
-        <Space wrap>
-          <Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current!.reload()}>
-            {intl.formatMessage({ id: 'pages.button.refresh' })}
-          </Button>
-        </Space>
-      }
-    >
+    <PageContainer>
       <ProTable
         actionRef={actionRef}
         scroll={{ x: 'max-content' }}

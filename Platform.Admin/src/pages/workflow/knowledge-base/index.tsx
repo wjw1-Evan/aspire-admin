@@ -146,7 +146,6 @@ const KnowledgeBaseManagement: React.FC = () => {
             style={{ width: 260, marginRight: 8 }}
             prefix={<SearchOutlined />}
           />,
-          <Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>刷新</Button>,
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => handleOpenModal(null)}>
             {intl.formatMessage({ id: 'pages.workflow.knowledgeBase.add' })}
           </Button>,

@@ -109,7 +109,6 @@ const RoleManagement: React.FC = () => {
             onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
             style={{ width: 260, marginRight: 8 }}
           />,
-          <Button key="refresh" icon={<ReloadOutlined />} onClick={() => actionRef.current?.reload()}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button>,
           <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { set({ editingRole: null, formVisible: true }); setFormState(p => ({ ...p, checkedKeys: [], expandedKeys: [] })); }}>{intl.formatMessage({ id: 'pages.button.addRole' })}</Button>,
         ]}
       />

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { Tag, Space, Button, Modal } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
-import { EyeOutlined, MonitorOutlined, ReloadOutlined, HistoryOutlined, FormOutlined } from '@ant-design/icons';
+import { EyeOutlined, MonitorOutlined, HistoryOutlined, FormOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns } from '@ant-design/pro-table';
 import {
   getWorkflowInstances, getWorkflowInstance, getApprovalHistory, getWorkflowDetail,
@@ -137,7 +137,7 @@ const WorkflowMonitor: React.FC = () => {
   };
 
   return (
-    <PageContainer extra={<Button key="refresh" icon={<ReloadOutlined />} onClick={() => window.location.reload()}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button>}>
+    <PageContainer>
       <ProTable
         headerTitle={
           <Space size={24}>

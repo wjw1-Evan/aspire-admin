@@ -178,19 +178,32 @@ public class UnifiedNotificationService : IUnifiedNotificationService
             ClickClose = true
         };
 
-        if (!string.IsNullOrEmpty(assignedTo)) notification.RelatedUserIds.Add(assignedTo);
+        var notifyUsers = new HashSet<string>();
+        if (!string.IsNullOrEmpty(assignedTo))
+        {
+            notification.RelatedUserIds.Add(assignedTo);
+            notifyUsers.Add(assignedTo);
+        }
         if (relatedUserIds != null)
         {
             foreach (var uid in relatedUserIds)
             {
                 if (!string.IsNullOrWhiteSpace(uid) && !notification.RelatedUserIds.Contains(uid))
+                {
                     notification.RelatedUserIds.Add(uid);
+                    notifyUsers.Add(uid);
+                }
             }
         }
 
         await _context.Set<NoticeIconItem>().AddAsync(notification);
         await _context.SaveChangesAsync();
-        await BroadcastUnreadStatisticsAsync();
+
+        foreach (var userId in notifyUsers)
+        {
+            await BroadcastToUserAsync(userId);
+        }
+
         return notification;
     }
 
@@ -225,7 +238,12 @@ public class UnifiedNotificationService : IUnifiedNotificationService
     /// <inheritdoc/>
     public async Task<UnreadCountStatistics> GetUnreadCountStatisticsAsync()
     {
-        var uid = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
+        return await GetUnreadCountStatisticsInternalAsync(null);
+    }
+
+    private async Task<UnreadCountStatistics> GetUnreadCountStatisticsInternalAsync(string? specificUserId)
+    {
+        var uid = specificUserId ?? _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");
 
         var systemMessagesCount = (int)await _context.Set<NoticeIconItem>().LongCountAsync(n => !n.Read && n.IsSystemMessage);
         var notificationsCount = (int)await _context.Set<NoticeIconItem>().LongCountAsync(n => !n.Read && n.Type == NoticeIconItemType.Notification);
@@ -323,6 +341,23 @@ public class UnifiedNotificationService : IUnifiedNotificationService
                 return;
 
             var statistics = await GetUnreadCountStatisticsAsync();
+            var json = JsonSerializer.Serialize(statistics);
+            var message = $"event: NotificationUpdated\ndata: {json}\n\n";
+            await _sseConnectionManager.SendToUserAsync(userId, message);
+        }
+        catch
+        {
+        }
+    }
+
+    private async Task BroadcastToUserAsync(string userId)
+    {
+        if (string.IsNullOrEmpty(userId))
+            return;
+
+        try
+        {
+            var statistics = await GetUnreadCountStatisticsInternalAsync(userId);
             var json = JsonSerializer.Serialize(statistics);
             var message = $"event: NotificationUpdated\ndata: {json}\n\n";
             await _sseConnectionManager.SendToUserAsync(userId, message);

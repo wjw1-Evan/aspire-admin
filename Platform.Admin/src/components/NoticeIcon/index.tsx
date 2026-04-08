@@ -22,6 +22,7 @@ export default function NoticeIcon() {
   const [visible, setVisible] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [popoverOpen, setPopoverOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -36,6 +37,8 @@ export default function NoticeIcon() {
       }
     } catch {
       // 静默失败
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -155,7 +158,7 @@ export default function NoticeIcon() {
         placement="bottomRight"
       >
         <span className={headerStyles.headerActionButton} onClick={() => setVisible(true)}>
-          <Badge count={unreadCount} overflowCount={99}>
+          <Badge dot={loading} count={loading ? 0 : unreadCount} overflowCount={99}>
             <BellOutlined />
           </Badge>
         </span>

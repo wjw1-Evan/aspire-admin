@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { PageContainer, ProDescriptions } from '@ant-design/pro-components';
-import { Space, Tag, Button, Drawer, message, Input, Popconfirm, Row, Col } from 'antd';
-import { FileTextOutlined, PlusOutlined, EyeOutlined, EditOutlined, SendOutlined, DeleteOutlined, CopyOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { PageContainer, ProDescriptions, ModalForm, ProFormSelect, ProForm, ProFormText } from '@ant-design/pro-components';
+import { Space, Tag, Button, Drawer, message, Input, Popconfirm, Upload, Row, Col } from 'antd';
+import { FileTextOutlined, PlusOutlined, EyeOutlined, EditOutlined, SendOutlined, DeleteOutlined, CopyOutlined, CheckCircleOutlined, UploadOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import dayjs from 'dayjs';
 import { request } from '@umijs/max';
@@ -11,6 +11,7 @@ import {
   type DocumentStatistics,
   DocumentStatus,
 } from '@/services/document/api';
+import { getWorkflowList } from '@/services/workflow/api';
 
 const documentStatusMap = {
   [DocumentStatus.Draft]: { text: '草稿', color: 'default' },
@@ -34,6 +35,7 @@ const DocumentManagement: React.FC = () => {
     detailVisible: false,
     viewingId: '',
     search: '',
+    formVisible: false,
   });
   const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
@@ -105,9 +107,63 @@ const DocumentManagement: React.FC = () => {
             onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
             style={{ width: 260, marginRight: 8 }}
           />,
-          <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => window.location.href = '/document/create'}>新建公文</Button>,
+          <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ formVisible: true })}>新建公文</Button>,
         ]}
       />
+
+      <ModalForm
+        title="新建公文"
+        open={state.formVisible}
+        onOpenChange={(open) => { if (!open) set({ formVisible: false }); }}
+        onFinish={async (values) => {
+          const definitionId = values.workflowDefinitionId;
+          if (!definitionId) {
+            message.error('请先选择流程');
+            return false;
+          }
+          window.location.href = `/document/create-by-workflow?definitionId=${definitionId}`;
+          return true;
+        }}
+        width={500}
+      >
+        <ProFormSelect
+          name="workflowDefinitionId"
+          label="选择流程"
+          placeholder="请选择流程定义"
+          rules={[{ required: true, message: '请选择流程定义' }]}
+          request={async () => {
+            try {
+              const resp = await getWorkflowList({ page: 1 });
+              if (resp.success && resp.data) {
+                return (resp.data.queryable || []).map((wf) => ({ label: wf.name, value: wf.id! }));
+              }
+            } catch (e) {
+              console.error('加载流程列表失败:', e);
+            }
+            return [];
+          }}
+          fieldProps={{
+            showSearch: true,
+            filterOption: (input, option) =>
+              (option?.label as string)?.toLowerCase().includes(input.toLowerCase()),
+          }}
+        />
+        <ProForm.Item
+          name="attachments"
+          label="附件（可在下一步继续上传）"
+          extra="可在下一步继续上传更多附件"
+        >
+          <Upload
+            name="files"
+            multiple
+            maxCount={10}
+            action="/apiservice/api/upload"
+            listType="text"
+          >
+            <Button icon={<UploadOutlined />}>上传附件</Button>
+          </Upload>
+        </ProForm.Item>
+      </ModalForm>
 
       <Drawer title="公文详情" placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingId: '' })} size="large">
         <DocumentDetail id={state.viewingId} />

@@ -11,7 +11,7 @@ export interface ReorderMenusRequest { items: { id: string; parentId?: string; s
  * 获取所有菜单
  */
 export async function getAllMenus(options?: Record<string, any>) {
-  return request<ApiResponse<MenuItem[]>>('/apiservice/api/menu', {
+  return request<ApiResponse<MenuItem[]>>('/apiservice/apiservice/api/menu', {
     method: 'GET',
     ...(options || {}),
   });
@@ -21,7 +21,7 @@ export async function getAllMenus(options?: Record<string, any>) {
  * 获取菜单树
  */
 export async function getMenuTree(options?: Record<string, any>) {
-  return request<ApiResponse<MenuTreeNode[]>>('/apiservice/api/menu/tree', {
+  return request<ApiResponse<MenuTreeNode[]>>('/apiservice/apiservice/api/menu/tree', {
     method: 'GET',
     ...(options || {}),
   });
@@ -31,7 +31,7 @@ export async function getMenuTree(options?: Record<string, any>) {
  * 获取用户菜单
  */
 export async function getUserMenus(options?: Record<string, any>) {
-  return request<ApiResponse<MenuTreeNode[]>>('/apiservice/api/menu/user', {
+  return request<ApiResponse<MenuTreeNode[]>>('/apiservice/apiservice/api/menu/user', {
     method: 'GET',
     ...(options || {}),
   });
@@ -41,7 +41,7 @@ export async function getUserMenus(options?: Record<string, any>) {
  * 根据ID获取菜单
  */
 export async function getMenuById(id: string, options?: Record<string, any>) {
-  return request<ApiResponse<MenuItem>>(`/api/menu/${id}`, {
+  return request<ApiResponse<MenuItem>>(`/apiservice/api/menu/${id}`, {
     method: 'GET',
     ...(options || {}),
   });
@@ -51,7 +51,7 @@ export async function getMenuById(id: string, options?: Record<string, any>) {
  * 创建菜单
  */
 export async function createMenu(data: CreateMenuRequest, options?: Record<string, any>) {
-  return request<ApiResponse<MenuItem>>('/apiservice/api/menu', {
+  return request<ApiResponse<MenuItem>>('/apiservice/apiservice/api/menu', {
     method: 'POST',
     data,
     ...(options || {}),
@@ -66,7 +66,7 @@ export async function updateMenu(
   data: UpdateMenuRequest,
   options?: Record<string, any>,
 ) {
-  return request<ApiResponse<boolean>>(`/api/menu/${id}`, {
+  return request<ApiResponse<boolean>>(`/apiservice/api/menu/${id}`, {
     method: 'PUT',
     data,
     ...(options || {}),
@@ -77,7 +77,7 @@ export async function updateMenu(
  * 删除菜单
  */
 export async function deleteMenu(id: string, reason?: string, options?: Record<string, any>) {
-  return request<ApiResponse<boolean>>(`/api/menu/${id}`, {
+  return request<ApiResponse<boolean>>(`/apiservice/api/menu/${id}`, {
     method: 'DELETE',
     params: { reason },
     ...(options || {}),
@@ -88,7 +88,7 @@ export async function deleteMenu(id: string, reason?: string, options?: Record<s
  * 菜单排序
  */
 export async function reorderMenus(data: ReorderMenusRequest, options?: Record<string, any>) {
-  return request<ApiResponse<boolean>>('/apiservice/api/menu/reorder', {
+  return request<ApiResponse<boolean>>('/apiservice/apiservice/api/menu/reorder', {
     method: 'POST',
     data,
     ...(options || {}),

@@ -47,7 +47,7 @@ export async function getUnifiedNotifications(
   sortBy: string = 'datetime',
 ) {
   return request<ApiResponse<PagedResult<UnifiedNotificationItem>>>(
-    '/apiservice/api/unified-notification/center',
+    '/apiservice/apiservice/api/unified-notification/center',
     {
       method: 'GET',
       params: { page, pageSize, filterType, sortBy },
@@ -57,7 +57,7 @@ export async function getUnifiedNotifications(
 
 /** 标记通知为已读 */
 export async function markAsRead(id: string) {
-  return request<ApiResponse<string>>(`/api/unified-notification/${id}/mark-as-read`, {
+  return request<ApiResponse<string>>(`/apiservice/api/unified-notification/${id}/mark-as-read`, {
     method: 'POST',
     data: {},
   });
@@ -66,7 +66,7 @@ export async function markAsRead(id: string) {
 /** 获取未读通知数量 */
 export async function getUnreadCount() {
   return request<ApiResponse<{ unreadCount: number }>>(
-    '/apiservice/api/unified-notification/unread-count',
+    '/apiservice/apiservice/api/unified-notification/unread-count',
     {
       method: 'GET',
     },
@@ -76,7 +76,7 @@ export async function getUnreadCount() {
 /** 获取未读通知数量统计 */
 export async function getUnreadStatistics() {
   return request<ApiResponse<UnreadCountStatistics>>(
-    '/apiservice/api/unified-notification/unread-statistics',
+    '/apiservice/apiservice/api/unified-notification/unread-statistics',
     {
       method: 'GET',
     },

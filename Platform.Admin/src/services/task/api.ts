@@ -206,7 +206,7 @@ export interface TaskStatistics {
  * 创建任务
  */
 export async function createTask(data: CreateTaskRequest) {
-  return request<ApiResponse<TaskDto>>('/apiservice/api/task/create', {
+  return request<ApiResponse<TaskDto>>('/apiservice/apiservice/api/task/create', {
     method: 'POST',
     data,
   });
@@ -216,7 +216,7 @@ export async function createTask(data: CreateTaskRequest) {
  * 获取任务详情
  */
 export async function getTaskById(taskId: string) {
-  return request<ApiResponse<TaskDto>>(`/api/task/${taskId}`, {
+  return request<ApiResponse<TaskDto>>(`/apiservice/api/task/${taskId}`, {
     method: 'GET',
   });
 }
@@ -225,7 +225,7 @@ export async function getTaskById(taskId: string) {
  * 查询任务列表
  */
 export async function queryTasks(params: PageParams) {
-  return request<ApiResponse<TaskListResponse>>('/apiservice/api/task/query', {
+  return request<ApiResponse<TaskListResponse>>('/apiservice/apiservice/api/task/query', {
     params,
   });
 }
@@ -234,7 +234,7 @@ export async function queryTasks(params: PageParams) {
  * 更新任务
  */
 export async function updateTask(data: UpdateTaskRequest) {
-  return request<ApiResponse<TaskDto>>('/apiservice/api/task/update', {
+  return request<ApiResponse<TaskDto>>('/apiservice/apiservice/api/task/update', {
     method: 'PUT',
     data,
   });
@@ -244,7 +244,7 @@ export async function updateTask(data: UpdateTaskRequest) {
  * 分配任务
  */
 export async function assignTask(data: AssignTaskRequest) {
-  return request<ApiResponse<TaskDto>>('/apiservice/api/task/assign', {
+  return request<ApiResponse<TaskDto>>('/apiservice/apiservice/api/task/assign', {
     method: 'POST',
     data,
   });
@@ -254,7 +254,7 @@ export async function assignTask(data: AssignTaskRequest) {
  * 执行任务
  */
 export async function executeTask(data: ExecuteTaskRequest) {
-  return request<ApiResponse<TaskDto>>('/apiservice/api/task/execute', {
+  return request<ApiResponse<TaskDto>>('/apiservice/apiservice/api/task/execute', {
     method: 'POST',
     data,
   });
@@ -264,7 +264,7 @@ export async function executeTask(data: ExecuteTaskRequest) {
  * 完成任务
  */
 export async function completeTask(data: CompleteTaskRequest) {
-  return request<ApiResponse<TaskDto>>('/apiservice/api/task/complete', {
+  return request<ApiResponse<TaskDto>>('/apiservice/apiservice/api/task/complete', {
     method: 'POST',
     data,
   });
@@ -274,7 +274,7 @@ export async function completeTask(data: CompleteTaskRequest) {
  * 取消任务
  */
 export async function cancelTask(taskId: string, remarks?: string) {
-  return request<ApiResponse<TaskDto>>(`/api/task/${taskId}/cancel`, {
+  return request<ApiResponse<TaskDto>>(`/apiservice/api/task/${taskId}/cancel`, {
     method: 'DELETE',
     params: remarks ? { remarks } : undefined,
   });
@@ -284,7 +284,7 @@ export async function cancelTask(taskId: string, remarks?: string) {
  * 删除任务
  */
 export async function deleteTask(taskId: string) {
-  return request<ApiResponse<{ message: string }>>(`/api/task/${taskId}`, {
+  return request<ApiResponse<{ message: string }>>(`/apiservice/api/task/${taskId}`, {
     method: 'DELETE',
   });
 }
@@ -293,7 +293,7 @@ export async function deleteTask(taskId: string) {
  * 获取任务统计信息
  */
 export async function getTaskStatistics(userId?: string) {
-  return request<ApiResponse<TaskStatistics>>('/apiservice/api/task/statistics', {
+  return request<ApiResponse<TaskStatistics>>('/apiservice/apiservice/api/task/statistics', {
     method: 'GET',
     params: userId ? { userId } : undefined,
   });
@@ -308,7 +308,7 @@ export async function getTaskExecutionLogs(
   pageSize: number = 10,
 ) {
   return request<ApiResponse<PagedResult<TaskExecutionLogDto>>>(
-    `/api/task/${taskId}/logs`,
+    `/apiservice/api/task/${taskId}/logs`,
     {
       method: 'GET',
       params: { page, pageSize },
@@ -320,7 +320,7 @@ export async function getTaskExecutionLogs(
  * 获取用户的待办任务
  */
 export async function getMyTodoTasks() {
-  return request<ApiResponse<TaskDto[]>>('/apiservice/api/task/my/todo', {
+  return request<ApiResponse<TaskDto[]>>('/apiservice/apiservice/api/task/my/todo', {
     method: 'GET',
   });
 }
@@ -329,7 +329,7 @@ export async function getMyTodoTasks() {
  * 获取用户创建的任务
  */
 export async function getMyCreatedTasks(page: number = 1, pageSize: number = 10) {
-  return request<ApiResponse<PagedResult<TaskDto>>>('/apiservice/api/task/my/created', {
+  return request<ApiResponse<PagedResult<TaskDto>>>('/apiservice/apiservice/api/task/my/created', {
     method: 'GET',
     params: { page, pageSize },
   });
@@ -339,7 +339,7 @@ export async function getMyCreatedTasks(page: number = 1, pageSize: number = 10)
  * 批量更新任务状态
  */
 export async function batchUpdateTaskStatus(taskIds: string[], status: number) {
-  return request<ApiResponse<{ message: string }>>('/apiservice/api/task/batch-update-status', {
+  return request<ApiResponse<{ message: string }>>('/apiservice/apiservice/api/task/batch-update-status', {
     method: 'POST',
     data: { taskIds, status },
   });
@@ -349,7 +349,7 @@ export async function batchUpdateTaskStatus(taskIds: string[], status: number) {
  * 获取项目的任务树
  */
 export async function getTasksByProjectId(projectId: string) {
-  return request<ApiResponse<TaskDto[]>>(`/api/task/project/${projectId}`, {
+  return request<ApiResponse<TaskDto[]>>(`/apiservice/api/task/project/${projectId}`, {
     method: 'GET',
   });
 }
@@ -358,7 +358,7 @@ export async function getTasksByProjectId(projectId: string) {
  * 获取任务树（支持按项目过滤）
  */
 export async function getTaskTree(projectId?: string) {
-  return request<ApiResponse<TaskDto[]>>('/apiservice/api/task/tree', {
+  return request<ApiResponse<TaskDto[]>>('/apiservice/apiservice/api/task/tree', {
     method: 'GET',
     params: projectId ? { projectId } : undefined,
   });
@@ -368,7 +368,7 @@ export async function getTaskTree(projectId?: string) {
  * 更新任务进度
  */
 export async function updateTaskProgress(taskId: string, progress: number) {
-  return request<ApiResponse<TaskDto>>(`/api/task/${taskId}/progress`, {
+  return request<ApiResponse<TaskDto>>(`/apiservice/api/task/${taskId}/progress`, {
     method: 'PUT',
     data: { progress },
   });
@@ -402,7 +402,7 @@ export interface AddTaskDependencyRequest {
  * 添加任务依赖
  */
 export async function addTaskDependency(data: AddTaskDependencyRequest) {
-  return request<ApiResponse<{ id: string }>>('/apiservice/api/task/dependency', {
+  return request<ApiResponse<{ id: string }>>('/apiservice/apiservice/api/task/dependency', {
     method: 'POST',
     data,
   });
@@ -412,7 +412,7 @@ export async function addTaskDependency(data: AddTaskDependencyRequest) {
  * 移除任务依赖
  */
 export async function removeTaskDependency(dependencyId: string) {
-  return request<ApiResponse<{ message: string }>>(`/api/task/dependency/${dependencyId}`, {
+  return request<ApiResponse<{ message: string }>>(`/apiservice/api/task/dependency/${dependencyId}`, {
     method: 'DELETE',
   });
 }
@@ -421,7 +421,7 @@ export async function removeTaskDependency(dependencyId: string) {
  * 获取任务依赖关系
  */
 export async function getTaskDependencies(taskId: string) {
-  return request<ApiResponse<TaskDependencyDto[]>>(`/api/task/${taskId}/dependencies`, {
+  return request<ApiResponse<TaskDependencyDto[]>>(`/apiservice/api/task/${taskId}/dependencies`, {
     method: 'GET',
   });
 }
@@ -430,7 +430,7 @@ export async function getTaskDependencies(taskId: string) {
  * 获取关键路径
  */
 export async function getCriticalPath(projectId: string) {
-  return request<ApiResponse<string[]>>(`/api/task/project/${projectId}/critical-path`, {
+  return request<ApiResponse<string[]>>(`/apiservice/api/task/project/${projectId}/critical-path`, {
     method: 'GET',
   });
 }

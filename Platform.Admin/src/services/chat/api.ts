@@ -111,7 +111,7 @@ export async function getSessions(
   if (params.keyword) queryParams.append('keyword', params.keyword);
 
   const query = queryParams.toString();
-  const url = `/api/chat/sessions${query ? `?${query}` : ''}`;
+  const url = `/apiservice/api/chat/sessions${query ? `?${query}` : ''}`;
 
   const response = await request<ApiResponse<SessionListResponse>>(url, {
     method: 'GET',
@@ -167,7 +167,7 @@ export async function sendMessageWithStreaming(
   }
 
   const baseUrl = getApiBaseUrl();
-  const url = `${baseUrl}/api/chat/messages?stream=true`;
+  const url = `${baseUrl}/apiservice/api/chat/messages?stream=true`;
 
   try {
     // 使用 fetch API 发送 POST 请求并读取 SSE 流
@@ -276,7 +276,7 @@ export async function getMessages(
   if (params.limit) queryParams.append('limit', params.limit.toString());
 
   const query = queryParams.toString();
-  const url = `/api/chat/messages/${encodeURIComponent(sessionId)}${query ? `?${query}` : ''
+  const url = `/apiservice/api/chat/messages/${encodeURIComponent(sessionId)}${query ? `?${query}` : ''
     }`;
 
   const response = await request<ApiResponse<MessageTimelineResponse>>(url, {

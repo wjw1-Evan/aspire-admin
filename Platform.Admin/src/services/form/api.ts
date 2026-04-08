@@ -44,34 +44,34 @@ export interface FormDefinition {
 }
 
 export async function getFormList(params: { page?: number; pageSize?: number; search?: string }): Promise<ApiResponse<PagedResult<FormDefinition>>> {
-    return request('/apiservice/api/forms', {
+    return request('/apiservice/apiservice/api/forms', {
         method: 'GET',
         params,
     });
 }
 
 export async function getFormDetail(id: string): Promise<ApiResponse<FormDefinition>> {
-    return request(`/api/forms/${id}`, {
+    return request(`/apiservice/api/forms/${id}`, {
         method: 'GET',
     });
 }
 
 export async function createForm(data: Partial<FormDefinition>): Promise<ApiResponse<FormDefinition>> {
-    return request('/apiservice/api/forms', {
+    return request('/apiservice/apiservice/api/forms', {
         method: 'POST',
         data,
     });
 }
 
 export async function updateForm(id: string, data: Partial<FormDefinition>): Promise<ApiResponse<FormDefinition>> {
-    return request(`/api/forms/${id}`, {
+    return request(`/apiservice/api/forms/${id}`, {
         method: 'PUT',
         data,
     });
 }
 
 export async function deleteForm(id: string): Promise<ApiResponse<void>> {
-    return request(`/api/forms/${id}`, {
+    return request(`/apiservice/api/forms/${id}`, {
         method: 'DELETE',
     });
 }

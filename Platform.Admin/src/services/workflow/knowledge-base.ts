@@ -23,7 +23,7 @@ export async function getKnowledgeBases(params: {
   pageSize?: number;
   search?: string;
 }): Promise<ApiResponse<PagedResult<KnowledgeBase>>> {
-  return request('/apiservice/api/workflow/knowledge-bases', {
+  return request('/apiservice/apiservice/api/workflow/knowledge-bases', {
     method: 'GET',
     params,
   });
@@ -33,7 +33,7 @@ export async function getKnowledgeBases(params: {
  * 获取知识库详情
  */
 export async function getKnowledgeBase(id: string): Promise<ApiResponse<KnowledgeBase>> {
-  return request(`/api/workflow/knowledge-bases/${id}`, {
+  return request(`/apiservice/api/workflow/knowledge-bases/${id}`, {
     method: 'GET',
   });
 }
@@ -42,7 +42,7 @@ export async function getKnowledgeBase(id: string): Promise<ApiResponse<Knowledg
  * 创建知识库
  */
 export async function createKnowledgeBase(data: Partial<KnowledgeBase>): Promise<ApiResponse<KnowledgeBase>> {
-  return request('/apiservice/api/workflow/knowledge-bases', {
+  return request('/apiservice/apiservice/api/workflow/knowledge-bases', {
     method: 'POST',
     data,
   });
@@ -52,7 +52,7 @@ export async function createKnowledgeBase(data: Partial<KnowledgeBase>): Promise
  * 更新知识库
  */
 export async function updateKnowledgeBase(id: string, data: Partial<KnowledgeBase>): Promise<ApiResponse<KnowledgeBase>> {
-  return request(`/api/workflow/knowledge-bases/${id}`, {
+  return request(`/apiservice/api/workflow/knowledge-bases/${id}`, {
     method: 'PUT',
     data,
   });
@@ -62,7 +62,7 @@ export async function updateKnowledgeBase(id: string, data: Partial<KnowledgeBas
  * 删除知识库
  */
 export async function deleteKnowledgeBase(id: string): Promise<ApiResponse<void>> {
-  return request(`/api/workflow/knowledge-bases/${id}`, {
+  return request(`/apiservice/api/workflow/knowledge-bases/${id}`, {
     method: 'DELETE',
   });
 }
@@ -89,7 +89,7 @@ export async function getKnowledgeDocuments(
   knowledgeBaseId: string,
   params: { page?: number; pageSize?: number; search?: string }
 ): Promise<ApiResponse<PagedResult<KnowledgeDocument>>> {
-  return request(`/api/workflow/knowledge-bases/${knowledgeBaseId}/documents`, {
+  return request(`/apiservice/api/workflow/knowledge-bases/${knowledgeBaseId}/documents`, {
     method: 'GET',
     params,
   });
@@ -102,7 +102,7 @@ export async function getKnowledgeDocument(
   knowledgeBaseId: string,
   id: string
 ): Promise<ApiResponse<KnowledgeDocument>> {
-  return request(`/api/workflow/knowledge-bases/${knowledgeBaseId}/documents/${id}`, {
+  return request(`/apiservice/api/workflow/knowledge-bases/${knowledgeBaseId}/documents/${id}`, {
     method: 'GET',
   });
 }
@@ -114,7 +114,7 @@ export async function createKnowledgeDocument(
   knowledgeBaseId: string,
   data: { title: string; content: string; summary?: string; sortOrder?: number }
 ): Promise<ApiResponse<KnowledgeDocument>> {
-  return request(`/api/workflow/knowledge-bases/${knowledgeBaseId}/documents`, {
+  return request(`/apiservice/api/workflow/knowledge-bases/${knowledgeBaseId}/documents`, {
     method: 'POST',
     data,
   });
@@ -128,7 +128,7 @@ export async function updateKnowledgeDocument(
   id: string,
   data: Partial<{ title: string; content: string; summary?: string; sortOrder?: number }>
 ): Promise<ApiResponse<KnowledgeDocument>> {
-  return request(`/api/workflow/knowledge-bases/${knowledgeBaseId}/documents/${id}`, {
+  return request(`/apiservice/api/workflow/knowledge-bases/${knowledgeBaseId}/documents/${id}`, {
     method: 'PUT',
     data,
   });
@@ -141,7 +141,7 @@ export async function deleteKnowledgeDocument(
   knowledgeBaseId: string,
   id: string
 ): Promise<ApiResponse<void>> {
-  return request(`/api/workflow/knowledge-bases/${knowledgeBaseId}/documents/${id}`, {
+  return request(`/apiservice/api/workflow/knowledge-bases/${knowledgeBaseId}/documents/${id}`, {
     method: 'DELETE',
   });
 }

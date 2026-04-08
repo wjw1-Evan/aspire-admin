@@ -125,7 +125,7 @@ export interface AddProjectMemberRequest {
  * 获取项目列表
  */
 export async function getProjectList(params: PageParams) {
-  return request<ApiResponse<PagedResult<ProjectDto>>>('/apiservice/api/project/list', {
+  return request<ApiResponse<PagedResult<ProjectDto>>>('/apiservice/apiservice/api/project/list', {
     params,
   });
 }
@@ -134,7 +134,7 @@ export async function getProjectList(params: PageParams) {
  * 获取项目详情
  */
 export async function getProjectById(projectId: string) {
-  return request<ApiResponse<ProjectDto>>(`/api/project/${projectId}`, {
+  return request<ApiResponse<ProjectDto>>(`/apiservice/api/project/${projectId}`, {
     method: 'GET',
   });
 }
@@ -143,7 +143,7 @@ export async function getProjectById(projectId: string) {
  * 创建项目
  */
 export async function createProject(data: CreateProjectRequest) {
-  return request<ApiResponse<ProjectDto>>('/apiservice/api/project', {
+  return request<ApiResponse<ProjectDto>>('/apiservice/apiservice/api/project', {
     method: 'POST',
     data,
   });
@@ -153,7 +153,7 @@ export async function createProject(data: CreateProjectRequest) {
  * 更新项目
  */
 export async function updateProject(projectId: string, data: UpdateProjectRequest) {
-  return request<ApiResponse<ProjectDto>>(`/api/project/${projectId}`, {
+  return request<ApiResponse<ProjectDto>>(`/apiservice/api/project/${projectId}`, {
     method: 'PUT',
     data: { ...data, projectId },
   });
@@ -163,7 +163,7 @@ export async function updateProject(projectId: string, data: UpdateProjectReques
  * 删除项目
  */
 export async function deleteProject(projectId: string, reason?: string) {
-  return request<ApiResponse<{ message: string }>>(`/api/project/${projectId}`, {
+  return request<ApiResponse<{ message: string }>>(`/apiservice/api/project/${projectId}`, {
     method: 'DELETE',
     params: reason ? { reason } : undefined,
   });
@@ -173,7 +173,7 @@ export async function deleteProject(projectId: string, reason?: string) {
  * 获取项目统计信息
  */
 export async function getProjectStatistics() {
-  return request<ApiResponse<ProjectStatistics>>('/apiservice/api/project/statistics', {
+  return request<ApiResponse<ProjectStatistics>>('/apiservice/apiservice/api/project/statistics', {
     method: 'GET',
   });
 }
@@ -182,7 +182,7 @@ export async function getProjectStatistics() {
  * 添加项目成员
  */
 export async function addProjectMember(projectId: string, data: AddProjectMemberRequest) {
-  return request<ApiResponse<ProjectMemberDto>>(`/api/project/${projectId}/members`, {
+  return request<ApiResponse<ProjectMemberDto>>(`/apiservice/api/project/${projectId}/members`, {
     method: 'POST',
     data: { ...data, projectId },
   });
@@ -192,7 +192,7 @@ export async function addProjectMember(projectId: string, data: AddProjectMember
  * 移除项目成员
  */
 export async function removeProjectMember(projectId: string, userId: string) {
-  return request<ApiResponse<{ message: string }>>(`/api/project/${projectId}/members/${userId}`, {
+  return request<ApiResponse<{ message: string }>>(`/apiservice/api/project/${projectId}/members/${userId}`, {
     method: 'DELETE',
   });
 }
@@ -201,7 +201,7 @@ export async function removeProjectMember(projectId: string, userId: string) {
  * 获取项目成员列表
  */
 export async function getProjectMembers(projectId: string) {
-  return request<ApiResponse<ProjectMemberDto[]>>(`/api/project/${projectId}/members`, {
+  return request<ApiResponse<ProjectMemberDto[]>>(`/apiservice/api/project/${projectId}/members`, {
     method: 'GET',
   });
 }

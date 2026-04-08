@@ -124,7 +124,7 @@ export interface DelegateDocumentRequest {
  * 获取公文列表
  */
 export async function getDocumentList(params: DocumentQueryParams): Promise<ApiResponse<PagedResult<Document>>> {
-  return request('/apiservice/api/documents', {
+  return request('/apiservice/apiservice/api/documents', {
     method: 'GET',
     params,
   });
@@ -134,7 +134,7 @@ export async function getDocumentList(params: DocumentQueryParams): Promise<ApiR
  * 获取公文详情
  */
 export async function getDocumentDetail(id: string): Promise<ApiResponse<Document & { workflowInstance?: any; workflowDefinition?: any; approvalHistory?: any[] }>> {
-  return request(`/api/documents/${id}`, {
+  return request(`/apiservice/api/documents/${id}`, {
     method: 'GET',
   });
 }
@@ -143,7 +143,7 @@ export async function getDocumentDetail(id: string): Promise<ApiResponse<Documen
  * 从文档实例中获取文档创建表单（使用实例快照）
  */
 export async function getDocumentInstanceForm(id: string): Promise<ApiResponse<{ form: any | null; dataScopeKey?: string; initialValues?: Record<string, any> }>> {
-  return request(`/api/documents/${id}/instance-form`, {
+  return request(`/apiservice/api/documents/${id}/instance-form`, {
     method: 'GET',
   });
 }
@@ -152,7 +152,7 @@ export async function getDocumentInstanceForm(id: string): Promise<ApiResponse<{
  * 创建公文
  */
 export async function createDocument(data: CreateDocumentRequest): Promise<ApiResponse<Document>> {
-  return request('/apiservice/api/documents', {
+  return request('/apiservice/apiservice/api/documents', {
     method: 'POST',
     data,
   });
@@ -165,7 +165,7 @@ export async function uploadDocumentAttachment(file: File): Promise<ApiResponse<
   const formData = new FormData();
   formData.append('file', file);
 
-  return request('/apiservice/api/documents/attachments', {
+  return request('/apiservice/apiservice/api/documents/attachments', {
     method: 'POST',
     data: formData,
     requestType: 'form',
@@ -176,7 +176,7 @@ export async function uploadDocumentAttachment(file: File): Promise<ApiResponse<
  * 更新公文
  */
 export async function updateDocument(id: string, data: UpdateDocumentRequest): Promise<ApiResponse<Document>> {
-  return request(`/api/documents/${id}`, {
+  return request(`/apiservice/api/documents/${id}`, {
     method: 'PUT',
     data,
   });
@@ -186,7 +186,7 @@ export async function updateDocument(id: string, data: UpdateDocumentRequest): P
  * 删除公文
  */
 export async function deleteDocument(id: string): Promise<ApiResponse<void>> {
-  return request(`/api/documents/${id}`, {
+  return request(`/apiservice/api/documents/${id}`, {
     method: 'DELETE',
   });
 }
@@ -195,7 +195,7 @@ export async function deleteDocument(id: string): Promise<ApiResponse<void>> {
  * 提交公文（启动流程）
  */
 export async function submitDocument(id: string, data: SubmitDocumentRequest): Promise<ApiResponse<any>> {
-  return request(`/api/documents/${id}/submit`, {
+  return request(`/apiservice/api/documents/${id}/submit`, {
     method: 'POST',
     data,
   });
@@ -205,7 +205,7 @@ export async function submitDocument(id: string, data: SubmitDocumentRequest): P
  * 审批通过
  */
 export async function approveDocument(id: string, data: ApprovalRequest): Promise<ApiResponse<boolean>> {
-  return request(`/api/documents/${id}/approve`, {
+  return request(`/apiservice/api/documents/${id}/approve`, {
     method: 'POST',
     data,
   });
@@ -215,7 +215,7 @@ export async function approveDocument(id: string, data: ApprovalRequest): Promis
  * 审批拒绝
  */
 export async function rejectDocument(id: string, data: ApprovalRequest): Promise<ApiResponse<boolean>> {
-  return request(`/api/documents/${id}/reject`, {
+  return request(`/apiservice/api/documents/${id}/reject`, {
     method: 'POST',
     data,
   });
@@ -225,7 +225,7 @@ export async function rejectDocument(id: string, data: ApprovalRequest): Promise
  * 退回
  */
 export async function returnDocument(id: string, data: ReturnDocumentRequest): Promise<ApiResponse<boolean>> {
-  return request(`/api/documents/${id}/return`, {
+  return request(`/apiservice/api/documents/${id}/return`, {
     method: 'POST',
     data,
   });
@@ -235,7 +235,7 @@ export async function returnDocument(id: string, data: ReturnDocumentRequest): P
  * 转办
  */
 export async function delegateDocument(id: string, data: DelegateDocumentRequest): Promise<ApiResponse<boolean>> {
-  return request(`/api/documents/${id}/delegate`, {
+  return request(`/apiservice/api/documents/${id}/delegate`, {
     method: 'POST',
     data,
   });
@@ -245,7 +245,7 @@ export async function delegateDocument(id: string, data: DelegateDocumentRequest
  * 获取待审批列表
  */
 export async function getPendingDocuments(params: DocumentQueryParams): Promise<ApiResponse<PagedResult<Document>>> {
-  return request('/apiservice/api/documents/pending', {
+  return request('/apiservice/apiservice/api/documents/pending', {
     method: 'GET',
     params,
   });
@@ -253,7 +253,7 @@ export async function getPendingDocuments(params: DocumentQueryParams): Promise<
 
 /** 获取公文统计信息 */
 export async function getDocumentStatistics(): Promise<ApiResponse<DocumentStatistics>> {
-  return request('/apiservice/api/documents/statistics', {
+  return request('/apiservice/apiservice/api/documents/statistics', {
     method: 'GET',
   });
 }

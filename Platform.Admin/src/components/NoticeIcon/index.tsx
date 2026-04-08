@@ -1,39 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Badge } from 'antd';
 import HeaderDropdown from '@/components/HeaderDropdown';
 import { BellOutlined } from '@ant-design/icons';
 import UnifiedNotificationCenter from '@/components/UnifiedNotificationCenter';
 import UnifiedNotificationList from '@/components/UnifiedNotificationCenter/UnifiedNotificationList';
-import { getUnreadStatistics } from '@/services/unified-notification/api';
 import headerStyles from '@/components/RightContent/index.less';
 
 export default function NoticeIcon() {
   const [visible, setVisible] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [popoverOpen, setPopoverOpen] = useState(false);
-
-  const fetchUnreadCount = async () => {
-    try {
-      const res = await getUnreadStatistics();
-      if (res?.success && res.data) {
-        setUnreadCount(res.data.total || 0);
-      }
-    } catch {
-      // 静默失败
-    }
-  };
-
-  useEffect(() => {
-    fetchUnreadCount();
-
-    const intervalId = setInterval(() => {
-      fetchUnreadCount();
-    }, 10000);
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, []);
 
   const popoverContent = (
     <div style={{ width: 420 }}>
@@ -77,9 +52,7 @@ export default function NoticeIcon() {
         placement="bottomRight"
       >
         <span className={headerStyles.headerActionButton} onClick={() => setVisible(true)}>
-          <Badge count={unreadCount} overflowCount={99} offset={[7, -7]}>
-            <BellOutlined />
-          </Badge>
+          <BellOutlined />
         </span>
       </HeaderDropdown>
 

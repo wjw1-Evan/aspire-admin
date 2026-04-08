@@ -1,12 +1,11 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { StatCard } from '@/components';
 import { useIntl } from '@umijs/max';
 import { request } from '@umijs/max';
-import { Tag, Row, Col, Card, Space, Button, Drawer, Input } from 'antd';
+import { Tag, Space, Button, Drawer, Input } from 'antd';
 import { ProDescriptions } from '@ant-design/pro-components';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
-import { HistoryOutlined, CheckCircleOutlined, CloseCircleOutlined, ThunderboltOutlined, ReloadOutlined, DashboardOutlined } from '@ant-design/icons';
+import { HistoryOutlined, CheckCircleOutlined, CloseCircleOutlined, ThunderboltOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 import dayjs from 'dayjs';
 import { getActionTagColor, getActionText, getMethodColor, getStatusBadge } from '@/utils/activityLog';
@@ -80,25 +79,28 @@ const MyActivity: React.FC = () => {
   ], [intl, handleViewDetail]);
 
   return (
-    <PageContainer extra={<Space wrap><Button key="refresh" icon={<ReloadOutlined />} onClick={handleRefresh}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button></Space>}>
-      {state.statistics && <Card style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>
-        {[{ key: 'total', title: intl.formatMessage({ id: 'pages.myActivity.statistics.totalLogs' }), icon: <HistoryOutlined />, color: '#1890ff' },
-          { key: 'successCount', title: intl.formatMessage({ id: 'pages.myActivity.statistics.successCount' }), icon: <CheckCircleOutlined />, color: '#52c41a' },
-          { key: 'errorCount', title: intl.formatMessage({ id: 'pages.myActivity.statistics.errorCount' }), icon: <CloseCircleOutlined />, color: '#ff4d4f' },
-          { key: 'actionTypes', title: intl.formatMessage({ id: 'pages.myActivity.statistics.actionTypes' }), icon: <ThunderboltOutlined />, color: '#faad14' },
-          { key: 'avgDuration', title: intl.formatMessage({ id: 'pages.myActivity.statistics.avgDuration' }), suffix: 'ms', icon: <DashboardOutlined />, color: '#722ed1' }
-        ].map(i => (
-          <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4} key={i.key}><StatCard title={i.title} value={i.key === 'actionTypes' ? (Array.isArray(state.statistics![i.key as keyof ActivityStats]) ? (state.statistics![i.key as keyof ActivityStats] as string[]).length : state.statistics![i.key as keyof ActivityStats] as number) : i.key === 'avgDuration' ? Math.round((state.statistics![i.key as keyof ActivityStats] as number) || 0) : (state.statistics![i.key as keyof ActivityStats] as string | number)} suffix={i.suffix} icon={i.icon} color={i.color} /></Col>
-        ))}
-      </Row></Card>}
-
-      <ProTable actionRef={actionRef} request={async (params: any) => {
-        const { current, pageSize } = params;
-        const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-        const res = await api.list({ page: current, pageSize, search: state.search, ...sortParams });
-        api.statistics(state.search).then(r => { if (r.success && r.data) set({ statistics: r.data }); });
-        return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
-      }} columns={columns} rowKey="id" search={false}
+    <PageContainer>
+      <ProTable
+        actionRef={actionRef}
+        headerTitle={
+          <Space size={24}>
+            <Space><HistoryOutlined />我的活动</Space>
+            <Space size={12}>
+              <Tag color="blue">总记录 {state.statistics?.total || 0}</Tag>
+              <Tag color="green">成功 {state.statistics?.successCount || 0}</Tag>
+              <Tag color="red">错误 {state.statistics?.errorCount || 0}</Tag>
+              <Tag color="orange">操作类型 {state.statistics?.actionTypes?.length || 0}</Tag>
+              <Tag color="purple">平均耗时 {Math.round(state.statistics?.avgDuration || 0)}ms</Tag>
+            </Space>
+          </Space>
+        }
+        request={async (params: any) => {
+          const { current, pageSize } = params;
+          const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
+          const res = await api.list({ page: current, pageSize, search: state.search, ...sortParams });
+          api.statistics(state.search).then(r => { if (r.success && r.data) set({ statistics: r.data }); });
+          return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+        }} columns={columns} rowKey="id" search={false}
         onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
         scroll={{ x: 'max-content' }}
         toolBarRender={() => [
@@ -110,6 +112,7 @@ const MyActivity: React.FC = () => {
             onChange={(e) => set({ search: e.target.value })}
             onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
             style={{ width: 260, marginRight: 8 }}
+            prefix={<SearchOutlined />}
           />,
           <Button key="refresh" icon={<ReloadOutlined />} onClick={handleRefresh}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button>,
         ]}

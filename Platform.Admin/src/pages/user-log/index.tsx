@@ -1,11 +1,10 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { StatCard } from '@/components';
 import { useIntl } from '@umijs/max';
 import { request } from '@umijs/max';
-import { Tag, Space, Card, Row, Col, Button, Input } from 'antd';
+import { Tag, Space, Button, Input } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
-import { ReloadOutlined, FileTextOutlined, CheckCircleOutlined, CloseCircleOutlined, ThunderboltOutlined, DashboardOutlined, SearchOutlined } from '@ant-design/icons';
+import { ReloadOutlined, FileTextOutlined, SearchOutlined } from '@ant-design/icons';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 import dayjs from 'dayjs';
 import { getActionTagColor, getActionText, getMethodColor, getStatusBadge } from '@/utils/activityLog';
@@ -111,33 +110,39 @@ const UserLog: React.FC = () => {
 
   return (
     <PageContainer>
-      {state.statistics && <Card style={{ marginBottom: 16 }}><Row gutter={[12, 12]}>
-        <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}><StatCard title={intl.formatMessage({ id: 'pages.userLog.stats.total', defaultMessage: '总记录数' })} value={state.statistics.total} icon={<DashboardOutlined />} color="#1890ff" /></Col>
-        <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}><StatCard title={intl.formatMessage({ id: 'pages.userLog.stats.success', defaultMessage: '成功次数' })} value={state.statistics.success} icon={<CheckCircleOutlined />} color="#52c41a" /></Col>
-        <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}><StatCard title={intl.formatMessage({ id: 'pages.userLog.stats.error', defaultMessage: '错误次数' })} value={state.statistics.error} icon={<CloseCircleOutlined />} color="#ff4d4f" /></Col>
-        <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}><StatCard title={intl.formatMessage({ id: 'pages.userLog.stats.actions', defaultMessage: '操作类型数' })} value={state.statistics.actions} icon={<ThunderboltOutlined />} color="#faad14" /></Col>
-        <Col xs={24} sm={12} md={6} lg={6} xl={4} xxl={4}><StatCard title={intl.formatMessage({ id: 'pages.userLog.stats.avgDuration', defaultMessage: '平均耗时(ms)' })} value={state.statistics.avgDuration} suffix="ms" icon={<DashboardOutlined />} color="#722ed1" /></Col>
-      </Row></Card>}
-
-      <ProTable actionRef={actionRef} request={async (params: any) => {
-        const { current, pageSize } = params;
-        const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-        const res = await api.list({ page: current, pageSize, search: state.search, ...sortParams });
-        api.statistics().then(r => {
-          if (r.success && r.data) {
-            set({
-              statistics: {
-                total: r.data.total || 0,
-                success: r.data.successCount || 0,
-                error: r.data.errorCount || 0,
-                actions: r.data.actionTypes?.length || 0,
-                avgDuration: Math.round(r.data.avgDuration || 0),
-              }
-            });
-          }
-        });
-        return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
-      }} columns={columns} rowKey="id" search={false} scroll={{ x: 'max-content' }}
+      <ProTable
+        actionRef={actionRef}
+        headerTitle={
+          <Space size={24}>
+            <Space><FileTextOutlined />操作日志</Space>
+            <Space size={12}>
+              <Tag color="blue">总记录 {state.statistics?.total || 0}</Tag>
+              <Tag color="green">成功 {state.statistics?.success || 0}</Tag>
+              <Tag color="red">错误 {state.statistics?.error || 0}</Tag>
+              <Tag color="orange">操作类型 {state.statistics?.actions || 0}</Tag>
+              <Tag color="purple">平均耗时 {state.statistics?.avgDuration || 0}ms</Tag>
+            </Space>
+          </Space>
+        }
+        request={async (params: any) => {
+          const { current, pageSize } = params;
+          const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
+          const res = await api.list({ page: current, pageSize, search: state.search, ...sortParams });
+          api.statistics().then(r => {
+            if (r.success && r.data) {
+              set({
+                statistics: {
+                  total: r.data.total || 0,
+                  success: r.data.successCount || 0,
+                  error: r.data.errorCount || 0,
+                  actions: r.data.actionTypes?.length || 0,
+                  avgDuration: Math.round(r.data.avgDuration || 0),
+                }
+              });
+            }
+          });
+          return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
+        }} columns={columns} rowKey="id" search={false} scroll={{ x: 'max-content' }}
         onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
         toolBarRender={() => [
           <Input.Search
@@ -148,6 +153,7 @@ const UserLog: React.FC = () => {
             onChange={(e) => set({ search: e.target.value })}
             onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
             style={{ width: 260, marginRight: 8 }}
+            prefix={<SearchOutlined />}
           />,
           <Button key="refresh" icon={<ReloadOutlined />} onClick={handleRefresh}>{intl.formatMessage({ id: 'pages.button.refresh' })}</Button>,
         ]}

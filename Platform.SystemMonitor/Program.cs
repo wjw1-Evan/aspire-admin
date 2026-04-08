@@ -9,6 +9,7 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
+app.MapHealthChecks("/health");
 app.MapControllers();
 app.MapDefaultEndpoints();
 

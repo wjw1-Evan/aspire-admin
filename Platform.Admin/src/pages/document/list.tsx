@@ -22,8 +22,8 @@ const documentStatusMap = {
 
 const api = {
   list: (params: PageParams) => request<ApiResponse<PagedResult<Document>>>('/apiservice/api/documents', { params }),
-  get: (id: string) => request<ApiResponse<Document>>(`/api/documents/${id}`),
-  delete: (id: string) => request<ApiResponse<void>>(`/api/documents/${id}`, { method: 'DELETE' }),
+  get: (id: string) => request<ApiResponse<Document>>(`/apiservice/api/documents/${id}`),
+  delete: (id: string) => request<ApiResponse<void>>(`/apiservice/api/documents/${id}`, { method: 'DELETE' }),
   create: (data: Partial<Document>) => request<ApiResponse<Document>>('/apiservice/api/documents', { method: 'POST', data }),
   statistics: () => request<ApiResponse<DocumentStatistics>>('/apiservice/api/documents/statistics'),
 };

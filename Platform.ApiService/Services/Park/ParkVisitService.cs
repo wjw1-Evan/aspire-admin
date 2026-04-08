@@ -388,7 +388,7 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<string> GenerateQuestionAnswerAsync(string content, string? category)
     {
-        var model = _aiOptions.Model ?? "gpt-4o-mini";
+        var model = _aiOptions.Model ;
         var chatClient = _openAiClient.GetChatClient(model);
 
         var categoryText = string.IsNullOrWhiteSpace(category) ? "通用" : category;
@@ -631,7 +631,7 @@ public class ParkVisitService : IParkVisitService
 
         try
         {
-            var model = string.IsNullOrWhiteSpace(_aiOptions.Model) ? "gpt-4o-mini" : _aiOptions.Model;
+            var model = _aiOptions.Model;
             _logger.LogInformation("开始生成走访 AI 报告，使用的模型：{Model}", model);
             var chatClient = _openAiClient.GetChatClient(model);
 
@@ -643,7 +643,7 @@ public class ParkVisitService : IParkVisitService
 
             var options = new ChatCompletionOptions
             {
-               
+
             };
 
             var completion = await chatClient.CompleteChatAsync(messages, options);

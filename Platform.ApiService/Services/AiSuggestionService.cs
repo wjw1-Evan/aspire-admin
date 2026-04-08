@@ -59,7 +59,7 @@ public class AiSuggestionService : IAiSuggestionService
         var userContent = context.ContextLines.Count == 0 ? "（上下文为空）" : string.Join("\n", context.ContextLines);
         var messages = BuildChatMessages(instruction, context.ConversationMessages, userContent);
         var completionOptions = new ChatCompletionOptions { EndUserId = currentUserId };
-      
+
 
         var stopwatch = Stopwatch.StartNew();
         try
@@ -190,7 +190,7 @@ public class AiSuggestionService : IAiSuggestionService
 
     private ChatClient? ResolveChatClient(SmartReplyContext context, AiSuggestionResponse response, out string model)
     {
-        model = string.IsNullOrWhiteSpace(_aiOptions.Model) ? "gpt-4o-mini" : _aiOptions.Model;
+        model = _aiOptions.Model;
         if (string.IsNullOrWhiteSpace(_aiOptions.Endpoint) || string.IsNullOrWhiteSpace(_aiOptions.ApiKey))
         {
             AssignSuggestions(response, BuildFallbackSuggestions(context.ContextLines));

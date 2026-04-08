@@ -113,7 +113,7 @@ public class ProjectStatisticsService : IProjectStatisticsService
         var milestones = await _context.Set<Milestone>()
             .Where(m => (!start.HasValue || m.TargetDate >= start.Value) && (!end.HasValue || m.TargetDate <= end.Value))
             .ToListAsync();
-            
+
         stats.Milestone.TotalMilestones = milestones.Count;
         stats.Milestone.PendingMilestones = milestones.Count(m => m.Status == MilestoneStatus.Pending);
         stats.Milestone.AchievedMilestones = milestones.Count(m => m.Status == MilestoneStatus.Achieved);
@@ -159,7 +159,7 @@ public class ProjectStatisticsService : IProjectStatisticsService
 
 请使用 Markdown 格式输出，并使用 Emoji 增强可读性。";
 
-            var model = string.IsNullOrWhiteSpace(_aiOptions.Model) ? "gpt-4o-mini" : _aiOptions.Model;
+            var model = _aiOptions.Model;
             var chatClient = _openAiClient.GetChatClient(model);
 
             var messages = new List<OpenAI.Chat.ChatMessage>

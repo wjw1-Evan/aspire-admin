@@ -68,7 +68,7 @@ const VisitKnowledgeBase: React.FC = () => {
         { title: '操作', key: 'action', valueType: 'option', fixed: 'right', width: 180, render: (_, r) => (
             <Space size={4}>
                 <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => set({ selectedQuestion: r, detailVisible: true })}>查看</Button>
-                <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingQuestion: r, formVisible: true })}>编辑</Button>
+                <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { form.setFieldsValue({ content: r.content, category: r.category ? [r.category] : [], answer: r.answer, isFrequentlyUsed: r.isFrequentlyUsed }); set({ editingQuestion: r, formVisible: true }); }}>编辑</Button>
                 <Popconfirm title={`确定删除该问题？`} onConfirm={() => handleDeleteQuestion(r.id)}>
                     <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
                 </Popconfirm>
@@ -108,13 +108,13 @@ const VisitKnowledgeBase: React.FC = () => {
                         style={{ width: 260, marginRight: 8 }}
                         prefix={<SearchOutlined />}
                     />,
-                    <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingQuestion: null, formVisible: true })}>新增问题</Button>,
+                    <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => { form.resetFields(); set({ editingQuestion: null, formVisible: true }); }}>新增问题</Button>,
                 ]}
                 onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
             />
 
-            <ModalForm form={form} key={state.editingQuestion?.id || 'create-question'} title={state.editingQuestion ? '编辑问题' : '新增问题'} open={state.formVisible} onOpenChange={(open) => { if (!open) set({ formVisible: false, editingQuestion: null }); }}
-                initialValues={state.editingQuestion ? { content: state.editingQuestion.content, category: state.editingQuestion.category ? [state.editingQuestion.category] : [], answer: state.editingQuestion.answer, isFrequentlyUsed: state.editingQuestion.isFrequentlyUsed } : undefined}
+            <ModalForm form={form} key={state.editingQuestion?.id || 'create-question'} title={state.editingQuestion ? '编辑问题' : '新增问题'} open={state.formVisible} onOpenChange={(open) => { if (!open) { form.resetFields(); set({ formVisible: false, editingQuestion: null }); } }}
+                initialValues={state.editingQuestion ? { content: state.editingQuestion.content, category: state.editingQuestion.category ? [state.editingQuestion.category] : [], answer: state.editingQuestion.answer, isFrequentlyUsed: state.editingQuestion.isFrequentlyUsed } : { isFrequentlyUsed: false }}
                 onFinish={async (values) => { const data = { content: values.content, category: Array.isArray(values.category) ? values.category[0] : values.category, answer: values.answer, isFrequentlyUsed: values.isFrequentlyUsed }; const res = state.editingQuestion ? await api.updateQuestion(state.editingQuestion.id, data) : await api.createQuestion(data); if (res.success) { message.success('保存成功'); set({ formVisible: false, editingQuestion: null }); actionRef.current?.reload(); loadStatistics(); } return res.success; }} autoFocusFirstInput width={600}>
                 <ProFormText name="content" label="问题内容" placeholder="请输入走访过程中可能遇到的问题" rules={[{ required: true, message: '请输入问题内容' }]} />
                 <ProFormSelect name="category" label="分类" placeholder="请选择分类" options={[{ label: '政策咨询', value: '政策咨询' }, { label: '物业服务', value: '物业服务' }, { label: '政务代办', value: '政务代办' }]} />

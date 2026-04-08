@@ -117,7 +117,7 @@ public class ParkStatisticsService : IParkStatisticsService
 
         try
         {
-            var model = string.IsNullOrWhiteSpace(_aiOptions.Model) ? "gpt-4o-mini" : _aiOptions.Model;
+            var model =_aiOptions.Model;
             var chatClient = _openAiClient.GetChatClient(model);
 
             var messages = new List<OpenAI.Chat.ChatMessage>

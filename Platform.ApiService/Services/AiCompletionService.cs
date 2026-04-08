@@ -23,7 +23,7 @@ public class AiCompletionOptions
     /// <summary>
     /// 指定模型名称。
     /// </summary>
-    public string? Model { get; set; }
+    public string Model { get; set; }
         = "gpt-4o-mini";
 
     /// <summary>

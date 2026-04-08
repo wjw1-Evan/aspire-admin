@@ -115,7 +115,7 @@ public class ChatAiService : IChatAiService
         Func<ChatMessage, Task>? onComplete = null)
     {
         var xiaokeConfig = await GetXiaokeConfig();
-        var model = xiaokeConfig?.Model ?? (!string.IsNullOrWhiteSpace(_aiOptions.Model) ? _aiOptions.Model : "gpt-4o-mini");
+        var model = xiaokeConfig?.Model ?? _aiOptions.Model;
 
         ChatClient chatClient;
         try { chatClient = _openAiClient.GetChatClient(model); }
@@ -268,7 +268,7 @@ public class ChatAiService : IChatAiService
             if (config.FrequencyPenalty >= -2) options.FrequencyPenalty = (float)config.FrequencyPenalty;
             if (config.PresencePenalty >= -2) options.PresencePenalty = (float)config.PresencePenalty;
         }
-       
+
         return options;
     }
 

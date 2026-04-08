@@ -117,7 +117,25 @@ const RoleManagement: React.FC = () => {
       <ModalForm key={state.editingRole?.id || 'create'}
         title={state.editingRole ? intl.formatMessage({ id: 'pages.roleForm.editTitle' }) : intl.formatMessage({ id: 'pages.roleForm.createTitle' })}
         open={state.formVisible}
-        onOpenChange={(open) => { if (!open) set({ formVisible: false, editingRole: null }); }}
+        onOpenChange={(open) => { 
+          if (open) {
+            setFormState(p => ({ ...p, menuLoading: true }));
+            Promise.all([
+              api.menuTree(),
+              state.editingRole ? api.roleMenus(state.editingRole.id!) : Promise.resolve({ success: true, data: [] })
+            ]).then(([menuRes, roleMenuRes]) => {
+              if (menuRes.success && menuRes.data) {
+                const treeData = convertToTreeData(menuRes.data);
+                const roleMenus = roleMenuRes.success ? roleMenuRes.data || [] : [];
+                setFormState(p => ({ ...p, menuTree: treeData, checkedKeys: roleMenus, menuLoading: false }));
+              } else {
+                setFormState(p => ({ ...p, menuLoading: false }));
+              }
+            });
+          } else {
+            set({ formVisible: false, editingRole: null });
+          }
+        }}
         initialValues={state.editingRole ? { name: state.editingRole.name, description: state.editingRole.description, isActive: state.editingRole.isActive } : { isActive: true }}
         onFinish={async (values) => {
           const data = { name: values.name, description: values.description, menuIds: formState.checkedKeys, isActive: values.isActive };

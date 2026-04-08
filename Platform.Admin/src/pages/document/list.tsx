@@ -1,9 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
-import { StatCard } from '@/components';
-import { Space, Tag, Button, Row, Col, Drawer, message, Input, Popconfirm } from 'antd';
-import { ProCard } from '@ant-design/pro-components';
-import { FileTextOutlined, PlusOutlined, EyeOutlined, EditOutlined, SendOutlined, DeleteOutlined, FileProtectOutlined, ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { PageContainer, ProDescriptions } from '@ant-design/pro-components';
+import { Space, Tag, Button, Drawer, message, Input, Popconfirm, Row, Col } from 'antd';
+import { FileTextOutlined, PlusOutlined, EyeOutlined, EditOutlined, SendOutlined, DeleteOutlined, CopyOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import dayjs from 'dayjs';
 import { request } from '@umijs/max';
@@ -51,7 +49,7 @@ const DocumentManagement: React.FC = () => {
       },
     },
     { title: '创建人', dataIndex: 'createdBy', ellipsis: true, sorter: true },
-    { title: '创建时间', dataIndex: 'createdAt', sorter: true, render: (dom: any) => dayjs(dom).format('YYYY-MM-DD HH:mm') },
+    { title: '创建时间', dataIndex: 'createdAt', sorter: true, valueType: 'dateTime' },
     {
       title: '操作', valueType: 'option', fixed: 'right', width: 180,
       render: (_: any, r: Document) => (
@@ -71,27 +69,24 @@ const DocumentManagement: React.FC = () => {
     },
   ];
 
+  useEffect(() => { api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }, []);
+
   return (
     <PageContainer>
-      {state.statistics && (
-        <ProCard style={{ marginBottom: 16 }}>
-          <Row gutter={[12, 12]}>
-            {[
-              { key: 'totalDocuments', title: '总数', icon: <FileTextOutlined />, color: '#1890ff' },
-              { key: 'draftCount', title: '草稿', icon: <FileProtectOutlined />, color: '#999' },
-              { key: 'pendingCount', title: '审批中', icon: <ClockCircleOutlined />, color: '#faad14' },
-              { key: 'approvedCount', title: '已通过', icon: <CheckCircleOutlined />, color: '#52c41a' },
-              { key: 'rejectedCount', title: '已拒绝', icon: <CloseCircleOutlined />, color: '#f5222d' },
-            ].map(item => (
-              <Col xs={12} sm={8} md={4} key={item.key}>
-                <StatCard title={item.title} value={(state.statistics as any)[item.key] || 0} icon={item.icon} color={item.color} />
-              </Col>
-            ))}
-          </Row>
-        </ProCard>
-      )}
-
-      <ProTable actionRef={actionRef}
+      <ProTable
+        actionRef={actionRef}
+        headerTitle={
+          <Space size={24}>
+            <Space><FileTextOutlined />公文管理</Space>
+            <Space size={12}>
+              <Tag color="blue">总数 {state.statistics?.totalDocuments || 0}</Tag>
+              <Tag color="default">草稿 {state.statistics?.draftCount || 0}</Tag>
+              <Tag color="processing">审批中 {state.statistics?.pendingCount || 0}</Tag>
+              <Tag color="success">已通过 {state.statistics?.approvedCount || 0}</Tag>
+              <Tag color="error">已拒绝 {state.statistics?.rejectedCount || 0}</Tag>
+            </Space>
+          </Space>
+        }
         request={async (params: any) => {
           const { current, pageSize } = params;
           const res = await api.list({ page: current, pageSize, search: state.search });
@@ -127,24 +122,19 @@ const DocumentDetail: React.FC<{ id: string }> = ({ id }) => {
     if (id) api.get(id).then(r => { if (r.success && r.data) setDoc(r.data); });
   }, [id]);
   if (!doc) return null;
-  const status = documentStatusMap[doc.status] || { text: '未知', color: 'default' };
   return (
-    <div>
-      <Row gutter={[12, 12]}>
-        <Col span={24}><strong style={{ fontSize: 18 }}>{doc.title}</strong></Col>
-        <Col span={12}>类型：{doc.documentType}</Col>
-        <Col span={12}>分类：{doc.category || '-'}</Col>
-        <Col span={12}>状态：<Tag color={status.color}>{status.text}</Tag></Col>
-        <Col span={12}>创建人：{doc.createdBy}</Col>
-        <Col span={12}>创建时间：{dayjs(doc.createdAt).format('YYYY-MM-DD HH:mm')}</Col>
-        <Col span={12}>更新时间：{dayjs(doc.updatedAt).format('YYYY-MM-DD HH:mm')}</Col>
-      </Row>
-      {doc.content && (
-        <ProCard title="内容" style={{ marginTop: 16 }}>
-          <div dangerouslySetInnerHTML={{ __html: doc.content }} />
-        </ProCard>
-      )}
-    </div>
+    <ProDescriptions column={1} bordered size="small">
+      <ProDescriptions.Item label="标题"><strong>{doc.title}</strong></ProDescriptions.Item>
+      <ProDescriptions.Item label="类型">{doc.documentType}</ProDescriptions.Item>
+      <ProDescriptions.Item label="分类">{doc.category ? <Tag color="blue">{doc.category}</Tag> : '-'}</ProDescriptions.Item>
+      <ProDescriptions.Item label="状态">
+        <Tag color={documentStatusMap[doc.status]?.color || 'default'}>{documentStatusMap[doc.status]?.text || '未知'}</Tag>
+      </ProDescriptions.Item>
+      <ProDescriptions.Item label="创建人">{doc.createdBy}</ProDescriptions.Item>
+      <ProDescriptions.Item label="创建时间">{dayjs(doc.createdAt).format('YYYY-MM-DD HH:mm')}</ProDescriptions.Item>
+      <ProDescriptions.Item label="更新时间">{dayjs(doc.updatedAt).format('YYYY-MM-DD HH:mm')}</ProDescriptions.Item>
+      {doc.content && <ProDescriptions.Item label="内容" span={1}><div dangerouslySetInnerHTML={{ __html: doc.content }} /></ProDescriptions.Item>}
+    </ProDescriptions>
   );
 };
 

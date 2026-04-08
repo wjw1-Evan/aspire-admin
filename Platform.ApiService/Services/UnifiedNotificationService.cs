@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Linq.Dynamic.Core;
-using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Platform.ApiService.Services;
@@ -20,13 +19,11 @@ public class UnifiedNotificationService : IUnifiedNotificationService
 {
     private readonly DbContext _context;
     private readonly ITenantContext _tenantContext;
-    private readonly IChatSseConnectionManager _sseConnectionManager;
 
-    public UnifiedNotificationService(DbContext context, ITenantContext tenantContext, IChatSseConnectionManager sseConnectionManager)
+    public UnifiedNotificationService(DbContext context, ITenantContext tenantContext)
     {
         _context = context;
         _tenantContext = tenantContext;
-        _sseConnectionManager = sseConnectionManager;
     }
 
     /// <inheritdoc/>
@@ -106,7 +103,6 @@ public class UnifiedNotificationService : IUnifiedNotificationService
 
         await _context.Set<NoticeIconItem>().AddAsync(todo);
         await _context.SaveChangesAsync();
-        await BroadcastUnreadStatisticsAsync();
         return todo;
     }
 
@@ -135,7 +131,6 @@ public class UnifiedNotificationService : IUnifiedNotificationService
 
         todo.Read = true;
         await _context.SaveChangesAsync();
-        await BroadcastUnreadStatisticsAsync();
         return true;
     }
 
@@ -147,7 +142,6 @@ public class UnifiedNotificationService : IUnifiedNotificationService
 
         _context.Set<NoticeIconItem>().Remove(todo);
         await _context.SaveChangesAsync();
-        await BroadcastUnreadStatisticsAsync();
         return true;
     }
 
@@ -190,7 +184,6 @@ public class UnifiedNotificationService : IUnifiedNotificationService
 
         await _context.Set<NoticeIconItem>().AddAsync(notification);
         await _context.SaveChangesAsync();
-        await BroadcastUnreadStatisticsAsync();
         return notification;
     }
 
@@ -202,7 +195,6 @@ public class UnifiedNotificationService : IUnifiedNotificationService
 
         item.Read = true;
         await _context.SaveChangesAsync();
-        await BroadcastUnreadStatisticsAsync();
         return true;
     }
 
@@ -212,7 +204,6 @@ public class UnifiedNotificationService : IUnifiedNotificationService
         var items = await _context.Set<NoticeIconItem>().Where(x => ids.Contains(x.Id!)).ToListAsync();
         foreach (var item in items) item.Read = true;
         await _context.SaveChangesAsync();
-        await BroadcastUnreadStatisticsAsync();
         return true;
     }
 
@@ -276,7 +267,6 @@ public class UnifiedNotificationService : IUnifiedNotificationService
 
         await _context.Set<NoticeIconItem>().AddAsync(notification);
         await _context.SaveChangesAsync();
-        await BroadcastUnreadStatisticsAsync();
         return notification;
     }
 
@@ -312,23 +302,5 @@ public class UnifiedNotificationService : IUnifiedNotificationService
             "workflow_cancelled" => ("公文审批取消", $"{baseDescription} 审批流程已取消{remarks}"),
             _ => ("工作流通知", $"{baseDescription} 有新的更新{remarks}")
         };
-    }
-
-    private async Task BroadcastUnreadStatisticsAsync()
-    {
-        try
-        {
-            var userId = _tenantContext.GetCurrentUserId();
-            if (string.IsNullOrEmpty(userId))
-                return;
-
-            var statistics = await GetUnreadCountStatisticsAsync();
-            var json = JsonSerializer.Serialize(statistics);
-            var message = $"event: NotificationUpdated\ndata: {json}\n\n";
-            await _sseConnectionManager.SendToUserAsync(userId, message);
-        }
-        catch
-        {
-        }
     }
 }

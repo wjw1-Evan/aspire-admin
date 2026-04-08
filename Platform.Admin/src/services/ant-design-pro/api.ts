@@ -68,11 +68,11 @@ export async function getPublicKey(): Promise<ApiResponse<{ key: string }>> {
 }
 
 export async function getCurrentUserProfile(): Promise<ApiResponse<CurrentUser>> {
-  return request('/api/users/profile', { method: 'GET' });
+  return request('/api/users/me', { method: 'GET' });
 }
 
 export async function updateUserProfile(data: Partial<CurrentUser>): Promise<ApiResponse<CurrentUser>> {
-  return request('/api/users/profile', { method: 'PUT', data });
+  return request('/api/users/me', { method: 'PUT', data });
 }
 
 export async function getUserStatistics(): Promise<ApiResponse<UserStatistics>> {

@@ -1,8 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
-import { StatCard } from '@/components';
-import { Space, Tag, Button, Row, Col, Tabs, Drawer, message, Input } from 'antd';
-import { ProCard } from '@ant-design/pro-components';
+import { PageContainer, ProDescriptions } from '@ant-design/pro-components';
+import { Space, Tag, Button, Tabs, Drawer, message, Input } from 'antd';
 import { CheckCircleOutlined, FileTextOutlined, CloseOutlined, EyeOutlined, CheckOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import dayjs from 'dayjs';
@@ -12,13 +10,6 @@ import {
   type Document,
   type DocumentStatistics,
   DocumentStatus,
-  getDocumentList,
-  getPendingDocuments,
-  getDocumentDetail,
-  deleteDocument,
-  approveDocument,
-  rejectDocument,
-  getDocumentStatistics,
 } from '@/services/document/api';
 
 const documentStatusMap = {
@@ -65,7 +56,7 @@ const ApprovalPage: React.FC = () => {
       },
     },
     { title: '创建人', dataIndex: 'createdBy', ellipsis: true, sorter: true },
-    { title: '创建时间', dataIndex: 'createdAt', sorter: true, render: (dom: any) => dayjs(dom).format('YYYY-MM-DD HH:mm') },
+    { title: '创建时间', dataIndex: 'createdAt', sorter: true, valueType: 'dateTime' },
     {
       title: '操作', valueType: 'option', fixed: 'right', width: 180,
       render: (_: any, r: Document) => (
@@ -102,53 +93,102 @@ const ApprovalPage: React.FC = () => {
 
   return (
     <PageContainer>
-      {state.statistics && (
-        <ProCard style={{ marginBottom: 16 }}>
-          <Row gutter={[12, 12]}>
-            <Col xs={12} sm={8} md={6}>
-              <StatCard title="待审批" value={state.statistics.pendingCount} icon={<CheckCircleOutlined />} color="#faad14" />
-            </Col>
-            <Col xs={12} sm={8} md={6}>
-              <StatCard title="我发起的" value={state.statistics.myCreatedCount} icon={<FileTextOutlined />} color="#1890ff" />
-            </Col>
-            <Col xs={12} sm={8} md={6}>
-              <StatCard title="已通过" value={state.statistics.approvedCount} icon={<CheckCircleOutlined />} color="#52c41a" />
-            </Col>
-            <Col xs={12} sm={8} md={6}>
-              <StatCard title="已拒绝" value={state.statistics.rejectedCount} icon={<CloseOutlined />} color="#ff4d4f" />
-            </Col>
-          </Row>
-        </ProCard>
-      )}
-
       <Tabs
         activeKey={state.activeTab}
         onChange={(key) => { set({ activeTab: key }); actionRef.current?.reload(); }}
-        items={tabItems.map(tab => ({
-          key: tab.key,
-          label: tab.label,
-          children: (
-            <ProTable
-              actionRef={actionRef}
-              request={tab.fetchData()}
-              columns={columns}
-              rowKey="id"
-              search={false}
-              scroll={{ x: 'max-content' }}
-              toolBarRender={() => [
-                <Input.Search
-                  key="search"
-                  placeholder="搜索..."
-                  allowClear
-                  value={state.search}
-                  onChange={(e) => set({ search: e.target.value })}
-                  onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
-                  style={{ width: 260, marginRight: 8 }}
-                />,
-              ]}
-            />
-          ),
-        }))}
+        items={[
+          {
+            key: 'pending',
+            label: (
+              <Space>
+                <span>待审批</span>
+                {state.statistics?.pendingCount ? <Tag color="processing">{state.statistics.pendingCount}</Tag> : null}
+              </Space>
+            ),
+            children: (
+              <ProTable
+                actionRef={actionRef}
+                headerTitle={
+                  <Space size={24}>
+                    <Space><CheckCircleOutlined />公文审批</Space>
+                    <Space size={12}>
+                      <Tag color="processing">待审批 {state.statistics?.pendingCount || 0}</Tag>
+                      <Tag color="blue">我发起 {state.statistics?.myCreatedCount || 0}</Tag>
+                      <Tag color="success">已通过 {state.statistics?.approvedCount || 0}</Tag>
+                      <Tag color="error">已拒绝 {state.statistics?.rejectedCount || 0}</Tag>
+                    </Space>
+                  </Space>
+                }
+                request={fetchData}
+                columns={columns}
+                rowKey="id"
+                search={false}
+                scroll={{ x: 'max-content' }}
+                toolBarRender={() => [
+                  <Input.Search
+                    key="search"
+                    placeholder="搜索..."
+                    allowClear
+                    value={state.search}
+                    onChange={(e) => set({ search: e.target.value })}
+                    onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+                    style={{ width: 260, marginRight: 8 }}
+                  />,
+                ]}
+              />
+            ),
+          },
+          {
+            key: 'approved',
+            label: '已通过',
+            children: (
+              <ProTable
+                actionRef={actionRef}
+                request={fetchData}
+                columns={columns}
+                rowKey="id"
+                search={false}
+                scroll={{ x: 'max-content' }}
+                toolBarRender={() => [
+                  <Input.Search
+                    key="search"
+                    placeholder="搜索..."
+                    allowClear
+                    value={state.search}
+                    onChange={(e) => set({ search: e.target.value })}
+                    onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+                    style={{ width: 260, marginRight: 8 }}
+                  />,
+                ]}
+              />
+            ),
+          },
+          {
+            key: 'rejected',
+            label: '已拒绝',
+            children: (
+              <ProTable
+                actionRef={actionRef}
+                request={fetchData}
+                columns={columns}
+                rowKey="id"
+                search={false}
+                scroll={{ x: 'max-content' }}
+                toolBarRender={() => [
+                  <Input.Search
+                    key="search"
+                    placeholder="搜索..."
+                    allowClear
+                    value={state.search}
+                    onChange={(e) => set({ search: e.target.value })}
+                    onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+                    style={{ width: 260, marginRight: 8 }}
+                  />,
+                ]}
+              />
+            ),
+          },
+        ]}
       />
 
       <Drawer title="公文详情" placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingId: '' })} size="large">
@@ -162,24 +202,19 @@ const DocumentDetail: React.FC<{ id: string }> = ({ id }) => {
   const [doc, setDoc] = useState<Document | null>(null);
   useEffect(() => { if (id) api.get(id).then(r => { if (r.success && r.data) setDoc(r.data); }); }, [id]);
   if (!doc) return null;
-  const status = documentStatusMap[doc.status] || { text: '未知', color: 'default' };
   return (
-    <div>
-      <Row gutter={[12, 12]}>
-        <Col span={24}><strong style={{ fontSize: 18 }}>{doc.title}</strong></Col>
-        <Col span={12}>类型：{doc.documentType}</Col>
-        <Col span={12}>分类：{doc.category || '-'}</Col>
-        <Col span={12}>状态：<Tag color={status.color}>{status.text}</Tag></Col>
-        <Col span={12}>创建人：{doc.createdBy}</Col>
-        <Col span={12}>创建时间：{dayjs(doc.createdAt).format('YYYY-MM-DD HH:mm')}</Col>
-        <Col span={12}>更新时间：{dayjs(doc.updatedAt).format('YYYY-MM-DD HH:mm')}</Col>
-      </Row>
-      {doc.content && (
-        <ProCard title="内容" style={{ marginTop: 16 }}>
-          <div dangerouslySetInnerHTML={{ __html: doc.content }} />
-        </ProCard>
-      )}
-    </div>
+    <ProDescriptions column={1} bordered size="small">
+      <ProDescriptions.Item label="标题"><strong>{doc.title}</strong></ProDescriptions.Item>
+      <ProDescriptions.Item label="类型">{doc.documentType}</ProDescriptions.Item>
+      <ProDescriptions.Item label="分类">{doc.category ? <Tag color="blue">{doc.category}</Tag> : '-'}</ProDescriptions.Item>
+      <ProDescriptions.Item label="状态">
+        <Tag color={documentStatusMap[doc.status]?.color || 'default'}>{documentStatusMap[doc.status]?.text || '未知'}</Tag>
+      </ProDescriptions.Item>
+      <ProDescriptions.Item label="创建人">{doc.createdBy}</ProDescriptions.Item>
+      <ProDescriptions.Item label="创建时间">{dayjs(doc.createdAt).format('YYYY-MM-DD HH:mm')}</ProDescriptions.Item>
+      <ProDescriptions.Item label="更新时间">{dayjs(doc.updatedAt).format('YYYY-MM-DD HH:mm')}</ProDescriptions.Item>
+      {doc.content && <ProDescriptions.Item label="内容" span={1}><div dangerouslySetInnerHTML={{ __html: doc.content }} /></ProDescriptions.Item>}
+    </ProDescriptions>
   );
 };
 

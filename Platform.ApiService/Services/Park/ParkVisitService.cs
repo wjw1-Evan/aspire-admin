@@ -31,7 +31,7 @@ public class ParkVisitService : IParkVisitService
         IOptions<AiCompletionOptions> aiOptions
     ) {
         _context = context;
-        
+
         _logger = logger;
         _openAiClient = openAiClient;
         _aiOptions = aiOptions.Value;
@@ -388,7 +388,7 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<string> GenerateQuestionAnswerAsync(string content, string? category)
     {
-        var model = _aiOptions.Model ?? "gpt-3.5-turbo";
+        var model = _aiOptions.Model ?? "gpt-4o-mini";
         var chatClient = _openAiClient.GetChatClient(model);
 
         var categoryText = string.IsNullOrWhiteSpace(category) ? "通用" : category;
@@ -410,7 +410,7 @@ public class ParkVisitService : IParkVisitService
 
         var completionOptions = new ChatCompletionOptions
         {
-            MaxOutputTokenCount = 500
+
         };
 
         try
@@ -643,8 +643,7 @@ public class ParkVisitService : IParkVisitService
 
             var options = new ChatCompletionOptions
             {
-                Temperature = 0.7f,
-                MaxOutputTokenCount = 2000
+               
             };
 
             var completion = await chatClient.CompleteChatAsync(messages, options);

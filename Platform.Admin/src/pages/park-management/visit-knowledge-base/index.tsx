@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { request } from '@umijs/max';
 import { Tag, Space, Button, Input, App, Typography, Drawer, Empty, Popconfirm, Spin } from 'antd';
@@ -6,10 +6,11 @@ import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormTextArea, ProFormSelect, ProFormSwitch, ProForm } from '@ant-design/pro-form';
 import { PlusOutlined, ReloadOutlined, QuestionCircleOutlined, StarOutlined, StarFilled, EditOutlined, DeleteOutlined, EyeOutlined, SearchOutlined, BookOutlined, RobotOutlined } from '@ant-design/icons';
 import { ProDescriptions } from '@ant-design/pro-components';
+import { marked } from 'marked';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 
-const { Text } = Typography;
+const { Text, Paragraph } = Typography;
 
 interface VisitQuestion { id: string; content: string; category?: string; answer?: string; isFrequentlyUsed: boolean; createdAt?: string; updatedAt?: string; }
 interface VisitStatistics { pendingTasks: number; completedTasksThisMonth: number; activeManagers: number; completionRate: number; totalAssessments: number; averageScore: number; tasksByType: Record<string, number>; tasksByStatus: Record<string, number>; }
@@ -130,7 +131,11 @@ const VisitKnowledgeBase: React.FC = () => {
                         </ProDescriptions>
                         <ProDescriptions title="问题与回答" bordered column={1}>
                             <ProDescriptions.Item label="问题内容">{state.selectedQuestion.content}</ProDescriptions.Item>
-                            <ProDescriptions.Item label="标准回答/解析"><Text style={{ whiteSpace: 'pre-wrap' }}>{state.selectedQuestion.answer || '暂无解析'}</Text></ProDescriptions.Item>
+                            <ProDescriptions.Item label="标准回答/解析">
+                                {state.selectedQuestion.answer ? (
+                                    <div className="markdown-content" dangerouslySetInnerHTML={{ __html: marked(state.selectedQuestion.answer) }} />
+                                ) : <Text type="secondary">暂无解析</Text>}
+                            </ProDescriptions.Item>
                         </ProDescriptions>
                     </Space>
                 ) : <Empty />}

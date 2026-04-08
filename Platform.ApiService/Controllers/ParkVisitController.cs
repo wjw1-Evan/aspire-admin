@@ -160,6 +160,17 @@ public class ParkVisitController : BaseApiController
     }
 
     /// <summary>
+    /// AI 生成问题答案
+    /// </summary>
+    [HttpPost("question/generate-answer")]
+    [RequireMenu("park-management-visit-knowledge-base")]
+    public async Task<IActionResult> GenerateQuestionAnswer([FromBody] GenerateAnswerRequest request)
+    {
+        var result = await _visitService.GenerateQuestionAnswerAsync(request.Content, request.Category);
+        return Success(result);
+    }
+
+    /// <summary>
     /// 获取问卷列表
     /// </summary>
     [HttpGet("questionnaires")]

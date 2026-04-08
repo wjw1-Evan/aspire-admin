@@ -384,6 +384,50 @@ public class ParkVisitService : IParkVisitService
     }
 
     /// <summary>
+    /// AI 生成问题答案
+    /// </summary>
+    public async Task<string> GenerateQuestionAnswerAsync(string content, string? category)
+    {
+        var model = _aiOptions.Model ?? "gpt-3.5-turbo";
+        var chatClient = _openAiClient.GetChatClient(model);
+
+        var categoryText = string.IsNullOrWhiteSpace(category) ? "通用" : category;
+        var systemPrompt = @"你是一位专业的园区服务顾问。请根据用户提出的问题，生成一个专业、实用、友好的标准回答。
+
+要求：
+1. 回答要简洁明了，适合走访场景使用
+2. 语气友好、专业
+3. 150-300字左右
+4. 直接给出回答，不需要额外解释";
+
+        var userMessage = $"问题分类：{categoryText}\n问题内容：{content}";
+
+        var messages = new List<OpenAI.Chat.ChatMessage>
+        {
+            new SystemChatMessage(systemPrompt),
+            new UserChatMessage(userMessage)
+        };
+
+        var completionOptions = new ChatCompletionOptions
+        {
+            MaxOutputTokenCount = 500
+        };
+
+        try
+        {
+            var result = await chatClient.CompleteChatAsync(messages, completionOptions);
+            var answer = result.Value.Content.FirstOrDefault()?.Text ?? string.Empty;
+            _logger.LogInformation("AI generated answer for question: {Content}", content);
+            return answer;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "AI generate answer failed for question: {Content}", content);
+            throw;
+        }
+    }
+
+    /// <summary>
     /// 获取走访问卷列表
     /// </summary>
     public async Task<System.Linq.Dynamic.Core.PagedResult<VisitQuestionnaireDto>> GetVisitQuestionnairesAsync()

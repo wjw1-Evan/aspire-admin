@@ -1,10 +1,10 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { request } from '@umijs/max';
-import { Tag, Space, Button, Input, App, Typography, Drawer, Empty, Popconfirm } from 'antd';
+import { Tag, Space, Button, Input, App, Typography, Drawer, Empty, Popconfirm, Spin } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormTextArea, ProFormSelect, ProFormSwitch } from '@ant-design/pro-form';
-import { PlusOutlined, ReloadOutlined, QuestionCircleOutlined, StarOutlined, StarFilled, EditOutlined, DeleteOutlined, EyeOutlined, SearchOutlined, BookOutlined } from '@ant-design/icons';
+import { ModalForm, ProFormText, ProFormTextArea, ProFormSelect, ProFormSwitch, ProForm } from '@ant-design/pro-form';
+import { PlusOutlined, ReloadOutlined, QuestionCircleOutlined, StarOutlined, StarFilled, EditOutlined, DeleteOutlined, EyeOutlined, SearchOutlined, BookOutlined, RobotOutlined } from '@ant-design/icons';
 import { ProDescriptions } from '@ant-design/pro-components';
 import dayjs from 'dayjs';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
@@ -21,11 +21,13 @@ const api = {
     updateQuestion: (id: string, data: QuestionFormData) => request<ApiResponse<VisitQuestion>>(`/api/park-management/visit/question/${id}`, { method: 'PUT', data }),
     deleteQuestion: (id: string) => request<ApiResponse<boolean>>(`/api/park-management/visit/question/${id}`, { method: 'DELETE' }),
     statistics: () => request<ApiResponse<VisitStatistics>>('/api/park-management/visit/statistics'),
+    generateAnswer: (content: string, category?: string) => request<ApiResponse<string>>('/api/park-management/visit/question/generate-answer', { method: 'POST', data: { content, category } }),
 };
 
 const VisitKnowledgeBase: React.FC = () => {
     const { message, modal } = App.useApp();
     const actionRef = useRef<ActionType | undefined>(undefined);
+    const [form] = ProForm.useForm();
     const [state, setState] = useState({
         formVisible: false,
         editingQuestion: null as VisitQuestion | null,
@@ -35,12 +37,26 @@ const VisitKnowledgeBase: React.FC = () => {
         statistics: null as VisitStatistics | null,
         search: '',
         sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
+        generatingAnswer: false,
     });
     const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
     const loadAllQuestions = async () => { const res = await api.questions({ page: 1, pageSize: 1000 }); if (res.success && res.data) set({ allQuestions: res.data.queryable }); };
     const handleDeleteQuestion = (id: string) => { modal.confirm({ title: '确定要删除这个走访问题吗？', icon: <QuestionCircleOutlined />, content: '删除后将无法在问卷组题中使用', okText: '确定', okType: 'danger', cancelText: '取消', onOk: async () => { const res = await api.deleteQuestion(id); if (res.success) { message.success('删除成功'); actionRef.current?.reload(); loadStatistics(); } } }); };
     const loadStatistics = () => { api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); };
+
+    const handleGenerateAnswer = async () => {
+        const values = form.getFieldsValue(['content', 'category']);
+        if (!values.content) { message.warning('请先填写问题内容'); return; }
+        set({ generatingAnswer: true });
+        try {
+            const categoryValue = Array.isArray(values.category) ? values.category[0] : values.category;
+            const res = await api.generateAnswer(values.content, categoryValue);
+            if (res.success && res.data) { form.setFieldValue('answer', res.data); message.success('AI 已生成答案'); }
+            else { message.error(res.message || '生成失败'); }
+        } catch { message.error('生成失败，请重试'); }
+        finally { set({ generatingAnswer: false }); }
+    };
 
     useEffect(() => { loadStatistics(); loadAllQuestions(); }, []);
 
@@ -96,12 +112,12 @@ const VisitKnowledgeBase: React.FC = () => {
                 onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
             />
 
-            <ModalForm key={state.editingQuestion?.id || 'create-question'} title={state.editingQuestion ? '编辑问题' : '新增问题'} open={state.formVisible} onOpenChange={(open) => { if (!open) set({ formVisible: false, editingQuestion: null }); }}
+            <ModalForm form={form} key={state.editingQuestion?.id || 'create-question'} title={state.editingQuestion ? '编辑问题' : '新增问题'} open={state.formVisible} onOpenChange={(open) => { if (!open) set({ formVisible: false, editingQuestion: null }); }}
                 initialValues={state.editingQuestion ? { content: state.editingQuestion.content, category: state.editingQuestion.category ? [state.editingQuestion.category] : [], answer: state.editingQuestion.answer, isFrequentlyUsed: state.editingQuestion.isFrequentlyUsed } : undefined}
                 onFinish={async (values) => { const data = { content: values.content, category: Array.isArray(values.category) ? values.category[0] : values.category, answer: values.answer, isFrequentlyUsed: values.isFrequentlyUsed }; const res = state.editingQuestion ? await api.updateQuestion(state.editingQuestion.id, data) : await api.createQuestion(data); if (res.success) { message.success('保存成功'); set({ formVisible: false, editingQuestion: null }); actionRef.current?.reload(); loadStatistics(); } return res.success; }} autoFocusFirstInput width={600}>
                 <ProFormText name="content" label="问题内容" placeholder="请输入走访过程中可能遇到的问题" rules={[{ required: true, message: '请输入问题内容' }]} />
                 <ProFormSelect name="category" label="分类" placeholder="请选择分类" options={[{ label: '政策咨询', value: '政策咨询' }, { label: '物业服务', value: '物业服务' }, { label: '政务代办', value: '政务代办' }]} />
-                <ProFormTextArea name="answer" label="标准回答/解析" placeholder="请输入针对该问题的标准回答或处理建议" rules={[{ required: true, message: '请输入标准回答/解析' }]} />
+                <ProFormTextArea name="answer" label={<><span>标准回答/解析</span><Button type="link" size="small" icon={<RobotOutlined />} loading={state.generatingAnswer} onClick={(e) => { e.stopPropagation(); handleGenerateAnswer(); }}>AI 生成</Button></>} placeholder="请输入针对该问题的标准回答或处理建议" rules={[{ required: true, message: '请输入标准回答/解析' }]} fieldProps={{ rows: 4 }} />
                 <ProFormSwitch name="isFrequentlyUsed" label="标记为常用" />
             </ModalForm>
 

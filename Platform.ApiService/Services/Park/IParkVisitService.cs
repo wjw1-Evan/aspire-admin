@@ -81,6 +81,11 @@ public interface IParkVisitService
     Task<bool> DeleteVisitQuestionAsync(string id);
 
     /// <summary>
+    /// AI 生成问题答案
+    /// </summary>
+    Task<string> GenerateQuestionAnswerAsync(string content, string? category);
+
+    /// <summary>
     /// 获取走访问卷模板
     /// </summary>
     Task<System.Linq.Dynamic.Core.PagedResult<VisitQuestionnaireDto>> GetVisitQuestionnairesAsync();

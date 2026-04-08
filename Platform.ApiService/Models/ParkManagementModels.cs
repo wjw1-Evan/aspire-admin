@@ -2331,6 +2331,17 @@ public class VisitQuestionnaireDto
 }
 
 /// <summary>
+/// AI 生成问题答案请求
+/// </summary>
+public class GenerateAnswerRequest
+{
+    /// <summary>问题内容</summary>
+    public string Content { get; set; } = string.Empty;
+    /// <summary>问题分类</summary>
+    public string? Category { get; set; }
+}
+
+/// <summary>
 /// 走访统计数据
 /// </summary>
 public class VisitStatisticsDto

@@ -297,9 +297,8 @@ public class ParkVisitService : IParkVisitService
             Id = q.Id,
             Content = q.Content,
             Category = q.Category,
-            Answer = q.Answer,
-            IsFrequentlyUsed = q.IsFrequentlyUsed ?? false,
-            SortOrder = q.SortOrder ?? 0
+            Answer = q.Answer ?? string.Empty,
+            IsFrequentlyUsed = q.IsFrequentlyUsed ?? false
         }).ToList();
 
         return new System.Linq.Dynamic.Core.PagedResult<VisitQuestionDto>
@@ -318,14 +317,13 @@ public class ParkVisitService : IParkVisitService
     public async Task<List<VisitQuestionDto>> GetVisitQuestionsByCategoryAsync(string category)
     {
         var items = await _context.Set<VisitQuestion>().Where(q => q.Category == category).ToListAsync();
-        return items.OrderByDescending(q => q.IsFrequentlyUsed ?? false).ThenBy(q => q.SortOrder).Select(q => new VisitQuestionDto
+        return items.OrderByDescending(q => q.IsFrequentlyUsed ?? false).Select(q => new VisitQuestionDto
         {
             Id = q.Id,
             Content = q.Content,
             Category = q.Category,
-            Answer = q.Answer,
-            IsFrequentlyUsed = q.IsFrequentlyUsed ?? false,
-            SortOrder = q.SortOrder ?? 0
+            Answer = q.Answer ?? string.Empty,
+            IsFrequentlyUsed = q.IsFrequentlyUsed ?? false
         }).ToList();
     }
 
@@ -339,8 +337,7 @@ public class ParkVisitService : IParkVisitService
             Content = request.Content,
             Category = request.Category,
             Answer = request.Answer,
-            IsFrequentlyUsed = request.IsFrequentlyUsed,
-            SortOrder = request.SortOrder
+            IsFrequentlyUsed = request.IsFrequentlyUsed
         };
 
         await _context.Set<VisitQuestion>().AddAsync(question);
@@ -350,9 +347,8 @@ public class ParkVisitService : IParkVisitService
             Id = question.Id,
             Content = question.Content,
             Category = question.Category,
-            Answer = question.Answer,
-            IsFrequentlyUsed = question.IsFrequentlyUsed ?? false,
-            SortOrder = question.SortOrder ?? 0
+            Answer = question.Answer ?? string.Empty,
+            IsFrequentlyUsed = question.IsFrequentlyUsed ?? false
         };
     }
 
@@ -368,7 +364,6 @@ public class ParkVisitService : IParkVisitService
         question.Category = request.Category;
         question.Answer = request.Answer;
         question.IsFrequentlyUsed = request.IsFrequentlyUsed;
-        question.SortOrder = request.SortOrder;
         await _context.SaveChangesAsync();
 
         return request;

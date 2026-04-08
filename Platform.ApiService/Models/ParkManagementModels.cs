@@ -1094,18 +1094,14 @@ public class VisitQuestion : MultiTenantEntity
     public string? Category { get; set; }
 
     /// <summary>标准回答/解析</summary>
+    [Required]
     [StringLength(2000)]
     [Column("answer")]
     [BsonElement("answer")]
-    public string? Answer { get; set; }
+    public string Answer { get; set; } = string.Empty;
 
     /// <summary>是否常用</summary>
     public bool? IsFrequentlyUsed { get; set; }
-
-    /// <summary>排序值</summary>
-    [Column("sortOrder")]
-    [BsonElement("sortOrder")]
-    public int? SortOrder { get; set; }
 }
 
 /// <summary>
@@ -2308,11 +2304,9 @@ public class VisitQuestionDto
     /// <summary>问题分类</summary>
     public string? Category { get; set; }
     /// <summary>参考答案</summary>
-    public string? Answer { get; set; }
+    public string Answer { get; set; } = string.Empty;
     /// <summary>是否常用问题</summary>
     public bool IsFrequentlyUsed { get; set; }
-    /// <summary>排序值</summary>
-    public int? SortOrder { get; set; }
 }
 
 /// <summary>

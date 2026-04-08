@@ -3,7 +3,7 @@ import { PageContainer } from '@ant-design/pro-components';
 import { request } from '@umijs/max';
 import { Tag, Space, Button, Input, App, Typography, Drawer, Empty, Popconfirm } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormSelect, ProFormSwitch } from '@ant-design/pro-form';
+import { ModalForm, ProFormText, ProFormTextArea, ProFormSelect, ProFormSwitch } from '@ant-design/pro-form';
 import { PlusOutlined, ReloadOutlined, QuestionCircleOutlined, StarOutlined, StarFilled, EditOutlined, DeleteOutlined, EyeOutlined, SearchOutlined, BookOutlined } from '@ant-design/icons';
 import { ProDescriptions } from '@ant-design/pro-components';
 import dayjs from 'dayjs';
@@ -11,9 +11,9 @@ import { ApiResponse, PagedResult, PageParams } from '@/types';
 
 const { Text } = Typography;
 
-interface VisitQuestion { id: string; content: string; category?: string; answer?: string; isFrequentlyUsed: boolean; sortOrder: number; createdAt?: string; updatedAt?: string; }
+interface VisitQuestion { id: string; content: string; category?: string; answer?: string; isFrequentlyUsed: boolean; createdAt?: string; updatedAt?: string; }
 interface VisitStatistics { pendingTasks: number; completedTasksThisMonth: number; activeManagers: number; completionRate: number; totalAssessments: number; averageScore: number; tasksByType: Record<string, number>; tasksByStatus: Record<string, number>; }
-interface QuestionFormData { content: string; category?: string; answer?: string; isFrequentlyUsed?: boolean; sortOrder?: number; }
+interface QuestionFormData { content: string; category?: string; answer?: string; isFrequentlyUsed?: boolean; }
 
 const api = {
     questions: (params: PageParams & { sortBy?: string; sortOrder?: string }) => request<ApiResponse<PagedResult<VisitQuestion>>>('/api/park-management/visit/questions', { params }),
@@ -97,13 +97,12 @@ const VisitKnowledgeBase: React.FC = () => {
             />
 
             <ModalForm key={state.editingQuestion?.id || 'create-question'} title={state.editingQuestion ? '编辑问题' : '新增问题'} open={state.formVisible} onOpenChange={(open) => { if (!open) set({ formVisible: false, editingQuestion: null }); }}
-                initialValues={state.editingQuestion ? { content: state.editingQuestion.content, category: state.editingQuestion.category ? [state.editingQuestion.category] : [], answer: state.editingQuestion.answer, isFrequentlyUsed: state.editingQuestion.isFrequentlyUsed, sortOrder: state.editingQuestion.sortOrder } : undefined}
-                onFinish={async (values) => { const data = { content: values.content, category: Array.isArray(values.category) ? values.category[0] : values.category, answer: values.answer, isFrequentlyUsed: values.isFrequentlyUsed, sortOrder: values.sortOrder }; const res = state.editingQuestion ? await api.updateQuestion(state.editingQuestion.id, data) : await api.createQuestion(data); if (res.success) { message.success('保存成功'); set({ formVisible: false, editingQuestion: null }); actionRef.current?.reload(); loadStatistics(); } return res.success; }} autoFocusFirstInput width={600}>
+                initialValues={state.editingQuestion ? { content: state.editingQuestion.content, category: state.editingQuestion.category ? [state.editingQuestion.category] : [], answer: state.editingQuestion.answer, isFrequentlyUsed: state.editingQuestion.isFrequentlyUsed } : undefined}
+                onFinish={async (values) => { const data = { content: values.content, category: Array.isArray(values.category) ? values.category[0] : values.category, answer: values.answer, isFrequentlyUsed: values.isFrequentlyUsed }; const res = state.editingQuestion ? await api.updateQuestion(state.editingQuestion.id, data) : await api.createQuestion(data); if (res.success) { message.success('保存成功'); set({ formVisible: false, editingQuestion: null }); actionRef.current?.reload(); loadStatistics(); } return res.success; }} autoFocusFirstInput width={600}>
                 <ProFormText name="content" label="问题内容" placeholder="请输入走访过程中可能遇到的问题" rules={[{ required: true, message: '请输入问题内容' }]} />
                 <ProFormSelect name="category" label="分类" placeholder="请选择分类" options={[{ label: '政策咨询', value: '政策咨询' }, { label: '物业服务', value: '物业服务' }, { label: '政务代办', value: '政务代办' }]} />
-                <ProFormText name="answer" label="标准回答/解析" placeholder="请输入针对该问题的标准回答或处理建议" />
+                <ProFormTextArea name="answer" label="标准回答/解析" placeholder="请输入针对该问题的标准回答或处理建议" rules={[{ required: true, message: '请输入标准回答/解析' }]} />
                 <ProFormSwitch name="isFrequentlyUsed" label="标记为常用" />
-                <ProFormText name="sortOrder" label="排序值" placeholder="数值越小越靠前" fieldProps={{ type: 'number' }} />
             </ModalForm>
 
             <Drawer title="问题详情" open={state.detailVisible} onClose={() => set({ detailVisible: false, selectedQuestion: null })} size={640} extra={<Button onClick={() => set({ detailVisible: false })}>关闭</Button>}>

@@ -41,10 +41,10 @@
 
 | 层次 | 核心技术 | 描述 |
 | :--- | :--- | :--- |
-| **后端** | **.NET 10 + Aspire** | 最新代 C# 开发框架，支持云原生编排与服务治理。 |
-| **数据库** | **MongoDB + EF Core** | 采用 `MongoDB.EntityFrameworkCore` 实现强类型的 NoSQL 访问。 |
-| **管理端** | **React 19 + Ant Design 6 + UmiJS 4** | 面向未来的 Web 开发架构，极致的渲染性能与 UI 细节。 |
-| **移动端** | **Expo 54 + React Native 0.83** | 跨平台原生体验，支持 Reanimated 超流畅动画方案。 |
+| **后端** | **.NET 10 + Aspire 13.2.1** | 最新代 C# 开发框架，支持云原生编排与服务治理。 |
+| **数据库** | **MongoDB + EF Core** | 采用 **MongoDB.EntityFrameworkCore** 实现强类型的 NoSQL 访问。 |
+| **管理端** | **React 19.2.4 + Ant Design 6.3.5 + UmiJS 4.6.40** | 面向未来的 Web 开发架构，极致的渲染性能与 UI 细节。 |
+| **移动端** | **Expo 54.0 + React Native 0.83.1** | 跨平台原生体验，支持 Reanimated 超流畅动画方案。 |
 | **小程序** | **Native WeChat** | 适配微信原生生态，确保低延时与高兼容性。 |
 | **观测性** | **OpenTelemetry** | 集成指标、日志与链路追踪，全链路健康监控。 |
 | **国密安全** | **BouncyCastle (C#) / sm-crypto (JS)** | 实现 SM2/SM3/SM4 算法，符合国产密码合规要求。 |
@@ -64,6 +64,7 @@ graph TD
         Gateway["YARP Gateway"]
         ApiService["Platform.ApiService (.NET 10)"]
         DataInit["Platform.DataInitializer"]
+        SysMonitor["Platform.SystemMonitor"]
     end
     
     subgraph Infrastructure
@@ -75,10 +76,12 @@ graph TD
     Admin & App & MiniApp --> Gateway
     Gateway --> ApiService
     ApiService --> DB & Cache
+    Aspire -.-> SysMonitor
 ```
 
 - **Platform.AppHost**：负责服务发现、容器编排、数据库（MongoDB/Redis）自动拉起。
 - **Platform.ApiService**：核心业务逻辑承载者，采用 Clean Architecture 风格。
+- **Platform.SystemMonitor**：系统监控服务，提供健康检查与指标采集。
 - **Platform.Admin**：基于 Ant Design 6 打造，强调原生体验与高性能操作视图。
 - **Platform.MiniApp**：涵盖园区全生命周期管理的轻量化业务端。
 - **Platform.App**：提供一致性的原生移动端访问与消息触达。
@@ -156,7 +159,7 @@ aspire-admin
 - ✅ **并行执行**：使用 `Task.WhenAll` 并行执行多个工具
 - ✅ **多租户继承**：业务实体 **必须** 继承 `MultiTenantEntity` 以实现自动隔离
 
-### 核心工具集 (15+ Handlers)
+### 核心工具集 (15 Handlers)
 
 - **工作流自动化 (Workflow)**
   - 🔍 **查询**：检索流程定义、跟踪运行中的实例

@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { PageContainer } from '@ant-design/pro-components';
+import { PageContainer, ProCard } from '@ant-design/pro-components';
 import { useIntl, request } from '@umijs/max';
-import { Tag, Space, Row, Col, Button, Input, Popconfirm, Drawer, Typography, Upload, DatePicker, Tabs } from 'antd';
+import { Tag, Space, Row, Col, Button, Input, Popconfirm, Drawer, Typography, Upload, DatePicker, Tabs, App } from 'antd';
 import type { UploadFile } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormDatePicker } from '@ant-design/pro-form';
@@ -66,7 +66,7 @@ const api = {
 
 const AssetManagement: React.FC = () => {
     const intl = useIntl();
-    const actionRef = useRef<ActionType | undefined>(undefined);
+    const { message } = App.useApp();
     const buildingActionRef = useRef<ActionType | undefined>(undefined);
     const unitActionRef = useRef<ActionType | undefined>(undefined);
     const [state, setState] = useState({
@@ -76,7 +76,6 @@ const AssetManagement: React.FC = () => {
         search: '',
     });
     const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
-    const handleTabChange = useCallback((key: string) => { set({ activeTab: key }); actionRef.current?.reload(); }, []);
 
     const [buildingState, setBuildingState] = useState({
         modalVisible: false, detailVisible: false, detailLoading: false,
@@ -141,7 +140,7 @@ const AssetManagement: React.FC = () => {
             <Space size={4}>
                 <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => handleViewBuilding(record.id)}>{intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}</Button>
                 <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { setBuilding({ editingBuilding: record, modalVisible: true }); setForm({ attachments: (record.attachments || []).map((url, index) => { const fileName = url.split('/').pop() || 'file'; return { uid: `-${index}`, name: decodeURIComponent(fileName), status: 'done', url }; }) }); }}>{intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}</Button>
-                <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={async () => { await api.deleteBuilding(record.id); buildingActionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }}>
+                <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={async () => { const res = await api.deleteBuilding(record.id); if (res.success) { message.success('删除成功'); buildingActionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); } else { message.error('删除失败'); } }}>
                     <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}</Button>
                 </Popconfirm>
             </Space>
@@ -160,7 +159,7 @@ const AssetManagement: React.FC = () => {
             <Space size={4}>
                 <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => handleViewUnit(record.id)}>{intl.formatMessage({ id: 'common.view', defaultMessage: '查看' })}</Button>
                 <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { setUnit({ editingUnit: record, modalVisible: true }); setForm({ attachments: (record.attachments || []).map((url, index) => { const fileName = url.split('/').pop() || 'file'; return { uid: `-${index}`, name: decodeURIComponent(fileName), status: 'done', url }; }) }); }}>{intl.formatMessage({ id: 'common.edit', defaultMessage: '编辑' })}</Button>
-                <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={async () => { await api.deleteUnit(record.id); unitActionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }}>
+                <Popconfirm title={intl.formatMessage({ id: 'common.confirmDelete', defaultMessage: '确认删除？' })} onConfirm={async () => { const res = await api.deleteUnit(record.id); if (res.success) { message.success('删除成功'); unitActionRef.current?.reload(); api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); } else { message.error('删除失败'); } }}>
                     <Button type="link" size="small" danger icon={<DeleteOutlined />}>{intl.formatMessage({ id: 'common.delete', defaultMessage: '删除' })}</Button>
                 </Popconfirm>
             </Space>
@@ -172,44 +171,12 @@ const AssetManagement: React.FC = () => {
 
     return (
         <PageContainer>
-            <Tabs activeKey={state.activeTab} onChange={handleTabChange} type="card" items={[
-                { key: 'buildings', label: <span><BankOutlined />{intl.formatMessage({ id: 'pages.park.asset.buildings', defaultMessage: '楼宇管理' })}</span> },
-                { key: 'units', label: <span><HomeOutlined />{intl.formatMessage({ id: 'pages.park.asset.units', defaultMessage: '房源管理' })}</span> },
-            ]} />
-            <ProTable actionRef={actionRef} params={{ activeTab: state.activeTab }} headerTitle={
-              <Space size={24}>
-                <Space><BankOutlined />资产管理</Space>
-                <Space size={12}>
-                  <Tag color="blue">楼宇 {state.statistics?.totalBuildings || 0}</Tag>
-                  <Tag color="green">房源 {state.statistics?.totalUnits || 0} (可用 {state.statistics?.availableUnits || 0})</Tag>
-                  <Tag color="purple">总面积 {state.statistics?.totalArea?.toLocaleString() || 0} m²</Tag>
-                  <Tag color={(state.statistics?.occupancyRate ?? 0) >= 80 ? 'success' : (state.statistics?.occupancyRate ?? 0) >= 50 ? 'warning' : 'error'}>出租率 {state.statistics?.occupancyRate || 0}%</Tag>
-                </Space>
-              </Space>
-            }
-                request={((async (params: any) => {
-                    const { current, pageSize, activeTab: tab } = params;
-                    const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
-                    if (tab === 'buildings' || !tab) { const res = await api.buildings({ page: current, pageSize, search: state.search, ...sortParams }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }
-                    else { const res = await api.units({ page: current, pageSize, search: state.search, ...sortParams }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }
-                }) as any)}
-                columns={state.activeTab === 'buildings' ? buildingColumns as any : unitColumns as any} rowKey="id" search={false}
-                onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
-                scroll={{ x: 'max-content' }}
-                toolBarRender={() => [
-                    <Input.Search
-                        key="search"
-                        placeholder="搜索..."
-                        allowClear
-                        value={state.search}
-                        onChange={(e) => set({ search: e.target.value })}
-                        onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
-                        style={{ width: 260, marginRight: 8 }}
-                        prefix={<SearchOutlined />}
-                    />,
-                    <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => { if (state.activeTab === 'buildings') { setBuilding({ editingBuilding: null, modalVisible: true }); setForm({ attachments: [] }); } else { setUnit({ editingUnit: null, modalVisible: true }); setForm({ attachments: [] }); } }}>{state.activeTab === 'buildings' ? '新增楼宇' : '新增房源'}</Button>,
-                ]}
-            />
+            <ProCard>
+                <Tabs activeKey={state.activeTab} onChange={(key) => set({ activeTab: key })} items={[
+                    { key: 'buildings', label: <Space><BankOutlined />{intl.formatMessage({ id: 'pages.park.asset.buildings', defaultMessage: '楼宇管理' })}</Space>, children: <ProTable<Building> actionRef={buildingActionRef} headerTitle={<Space size={24}><Space><BankOutlined />资产管理</Space><Space size={12}><Tag color="blue">楼宇 {state.statistics?.totalBuildings || 0}</Tag><Tag color="green">房源 {state.statistics?.totalUnits || 0}</Tag><Tag color="purple">总面积 {state.statistics?.totalArea?.toLocaleString() || 0} m²</Tag><Tag color={(state.statistics?.occupancyRate ?? 0) >= 80 ? 'success' : (state.statistics?.occupancyRate ?? 0) >= 50 ? 'warning' : 'error'}>出租率 {state.statistics?.occupancyRate || 0}%</Tag></Space></Space>} request={async (params: any) => { const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined; const res = await api.buildings({ page: current, pageSize, search: state.search, ...sortParams }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={buildingColumns} rowKey="id" search={false} onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })} toolBarRender={() => [<Input.Search key="search" placeholder="搜索..." allowClear value={state.search} onChange={(e) => set({ search: e.target.value })} onSearch={(v) => { set({ search: v }); buildingActionRef.current?.reload(); }} style={{ width: 260, marginRight: 8 }} prefix={<SearchOutlined />} />, <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => { setBuilding({ editingBuilding: null, modalVisible: true }); setForm({ attachments: [] }); }}>新增楼宇</Button>]} scroll={{ x: 1200 }} /> },
+                    { key: 'units', label: <Space><HomeOutlined />{intl.formatMessage({ id: 'pages.park.asset.units', defaultMessage: '房源管理' })}</Space>, children: <ProTable<PropertyUnit> actionRef={unitActionRef} headerTitle={<Space size={24}><Space><HomeOutlined />房源管理</Space><Space size={12}><Tag color="blue">房源 {state.statistics?.totalUnits || 0}</Tag><Tag color="green">可用 {state.statistics?.availableUnits || 0}</Tag><Tag color="purple">总面积 {state.statistics?.totalArea?.toLocaleString() || 0} m²</Tag><Tag color={(state.statistics?.occupancyRate ?? 0) >= 80 ? 'success' : (state.statistics?.occupancyRate ?? 0) >= 50 ? 'warning' : 'error'}>出租率 {state.statistics?.occupancyRate || 0}%</Tag></Space></Space>} request={async (params: any) => { const { current, pageSize } = params; const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined; const res = await api.units({ page: current, pageSize, search: state.search, ...sortParams }); return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success }; }} columns={unitColumns} rowKey="id" search={false} onChange={(_p, _f, s: any) => set({ sorter: s?.order ? { sortBy: s.field, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })} toolBarRender={() => [<Input.Search key="search" placeholder="搜索..." allowClear value={state.search} onChange={(e) => set({ search: e.target.value })} onSearch={(v) => { set({ search: v }); unitActionRef.current?.reload(); }} style={{ width: 260, marginRight: 8 }} prefix={<SearchOutlined />} />, <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => { setUnit({ editingUnit: null, modalVisible: true }); setForm({ attachments: [] }); }}>新增房源</Button>]} scroll={{ x: 1200 }} /> },
+                ]} />
+            </ProCard>
 
             <ModalForm key={buildingState.editingBuilding?.id || 'create-building'}
                 title={buildingState.editingBuilding ? intl.formatMessage({ id: 'pages.park.asset.editBuilding', defaultMessage: '编辑楼宇' }) : intl.formatMessage({ id: 'pages.park.asset.addBuilding', defaultMessage: '新增楼宇' })}

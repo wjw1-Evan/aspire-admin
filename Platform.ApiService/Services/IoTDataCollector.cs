@@ -40,7 +40,7 @@ public class IoTDataCollector
         var options = _optionsMonitor.CurrentValue;
         if (!options.Enabled) return;
 
-        var devices = await _context.Set<IoTDevice>().IgnoreQueryFilters().Where(x => !x.IsDeleted && x.Status == IoTDeviceStatus.Online).ToListAsync(cancellationToken);
+        var devices = await _context.Set<IoTDevice>().IgnoreQueryFilters().Where(x => x.IsDeleted != true && x.Status == IoTDeviceStatus.Online).ToListAsync(cancellationToken);
         foreach (var device in devices)
         {
             try { await ProcessDeviceAsync(device, cancellationToken); }

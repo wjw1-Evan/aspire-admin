@@ -96,7 +96,7 @@ public class RegistrationService : IRegistrationService
             .FirstOrDefaultAsync(r =>
                 r.ClientId == clientId &&
                 r.Type == type &&
-                !r.IsDeleted);
+                r.IsDeleted != true);
         if (record != null)
         {
             _context.Set<LoginFailureRecord>().Remove(record);

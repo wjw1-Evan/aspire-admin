@@ -182,7 +182,7 @@ public class JoinRequestService : IJoinRequestService
         }
 
         var existingMembership = await _context.Set<UserCompany>().IgnoreQueryFilters()
-            .FirstOrDefaultAsync(uc => uc.UserId == request.UserId && uc.CompanyId == request.CompanyId && !uc.IsDeleted);
+            .FirstOrDefaultAsync(uc => uc.UserId == request.UserId && uc.CompanyId == request.CompanyId && uc.IsDeleted != true);
 
         if (existingMembership == null)
         {

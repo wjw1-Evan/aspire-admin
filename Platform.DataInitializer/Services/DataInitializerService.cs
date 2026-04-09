@@ -66,7 +66,7 @@ public class DataInitializerService(
             var parentName = menu.ParentId;
             menu.ParentId = null;
 
-            var existing = await menusCollection.Find(m => m.Name == menu.Name && !m.IsDeleted).FirstOrDefaultAsync();
+            var existing = await menusCollection.Find(m => m.Name == menu.Name && m.IsDeleted != true).FirstOrDefaultAsync();
             if (existing == null)
             {
                 menu.CreatedAt =  now;

@@ -287,7 +287,7 @@ public class ChatAiService : IChatAiService
             foreach (var message in history)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (message.IsDeleted || message.IsRecalled) continue;
+                if (message.IsDeleted == true || message.IsRecalled) continue;
                 var normalized = NormalizeAssistantMessageContent(message);
                 if (string.IsNullOrWhiteSpace(normalized)) continue;
 

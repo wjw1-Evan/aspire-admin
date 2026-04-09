@@ -40,7 +40,7 @@ public class IoTGatewayStatusChecker
         var options = _optionsMonitor.CurrentValue;
         if (!options.GatewayStatusCheckEnabled) return;
 
-        var gateways = await _context.Set<IoTGateway>().IgnoreQueryFilters().Where(x => !x.IsDeleted).ToListAsync(cancellationToken);
+        var gateways = await _context.Set<IoTGateway>().IgnoreQueryFilters().Where(x => x.IsDeleted != true).ToListAsync(cancellationToken);
         var gatewaysByTenant = gateways.Where(g => !string.IsNullOrWhiteSpace(g.CompanyId)).GroupBy(g => g.CompanyId).ToList();
 
         int updatedCount = 0;

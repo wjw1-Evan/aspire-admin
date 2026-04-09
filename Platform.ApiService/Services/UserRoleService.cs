@@ -46,7 +46,7 @@ public class UserRoleService : IUserRoleService
             // 获取用户角色对应的菜单权限
             var roles = await _context.Set<Role>()
                 .IgnoreQueryFilters()
-                .Where(x => !x.IsDeleted)
+                .Where(x => x.IsDeleted != true)
                 .Where(r => userCompany.RoleIds.Contains(r.Id!) && r.CompanyId == companyId && r.IsActive)
                 .ToListAsync();
 

@@ -96,7 +96,7 @@ public class PlatformDbContext : DbContext
             if (!isAdded && entity is ISoftDeletable { } softDeletable &&
                 entry.Property(nameof(ISoftDeletable.IsDeleted)).IsModified)
             {
-                if (softDeletable.IsDeleted)
+                if (softDeletable.IsDeleted == true)
                 {
                     softDeletable.DeletedAt ??= now;
                     softDeletable.DeletedBy ??= userId;

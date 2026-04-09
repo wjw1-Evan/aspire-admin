@@ -141,7 +141,7 @@ public class AiSuggestionService : IAiSuggestionService
 
         foreach (var m in msgs)
         {
-            if (m.IsDeleted || m.IsRecalled) continue;
+            if (m.IsDeleted == true || m.IsRecalled) continue;
             var content = m.Content?.Trim() ?? (m.Attachment != null ? (m.Attachment.MimeType?.StartsWith("image/") == true ? "[图片]" : "[附件]") : null);
             if (string.IsNullOrWhiteSpace(content)) continue;
             var isSelf = m.SenderId == currentUserId;

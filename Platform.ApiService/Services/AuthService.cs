@@ -116,7 +116,7 @@ public class AuthService : IAuthService
             .FirstOrDefaultAsync(r =>
                 r.ClientId == clientId &&
                 r.Type == type &&
-                !r.IsDeleted);
+                r.IsDeleted != true);
         if (record != null)
         {
             _context.Set<LoginFailureRecord>().Remove(record);

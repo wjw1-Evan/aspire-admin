@@ -172,7 +172,7 @@ public class UserService : IUserService
         var existingUser = await _context.Set<User>().IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Username == request.Username);
         if (existingUser != null)
         {
-            var existingMembership = await _context.Set<UserCompany>().IgnoreQueryFilters().FirstOrDefaultAsync(uc => uc.UserId == existingUser.Id && uc.CompanyId == companyId && !uc.IsDeleted);
+            var existingMembership = await _context.Set<UserCompany>().IgnoreQueryFilters().FirstOrDefaultAsync(uc => uc.UserId == existingUser.Id && uc.CompanyId == companyId && uc.IsDeleted != true);
             if (existingMembership != null)
             {
                 throw new InvalidOperationException("该用户已经是当前企业的成员");
@@ -250,7 +250,7 @@ public class UserService : IUserService
             }
 
             var existingUc = await _context.Set<UserCompany>().IgnoreQueryFilters()
-                .FirstOrDefaultAsync(uc => uc.UserId == id && uc.CompanyId == companyId && !uc.IsDeleted);
+                .FirstOrDefaultAsync(uc => uc.UserId == id && uc.CompanyId == companyId && uc.IsDeleted != true);
 
             if (existingUc != null)
             {

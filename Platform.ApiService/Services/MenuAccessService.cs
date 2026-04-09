@@ -97,7 +97,7 @@ public class MenuAccessService : IMenuAccessService
             if (userCompany.RoleIds != null && userCompany.RoleIds.Any())
             {
                 // 获取用户的所有角色
-                var roles = await _context.Set<Role>().IgnoreQueryFilters().Where(x => !x.IsDeleted).Where(r => 
+                var roles = await _context.Set<Role>().IgnoreQueryFilters().Where(x => x.IsDeleted != true).Where(r => 
                     userCompany.RoleIds.Contains(r.Id) && 
                     r.CompanyId == companyId && 
                     r.IsActive == true).ToListAsync();

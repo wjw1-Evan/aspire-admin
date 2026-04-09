@@ -79,7 +79,7 @@ public class ImageCaptchaService : IImageCaptchaService
         var expiresAt = DateTime.UtcNow.AddMinutes(EXPIRATION_MINUTES);
 
         // Try to find existing captcha for this type and client IP
-        var existingCaptchas = await _context.Set<CaptchaImage>().IgnoreQueryFilters().Where(x => !x.IsDeleted).Where(
+        var existingCaptchas = await _context.Set<CaptchaImage>().IgnoreQueryFilters().Where(x => x.IsDeleted != true).Where(
             c => c.IsUsed == false && c.Type == type && (string.IsNullOrEmpty(clientIp) || c.ClientIp == clientIp))
             .Take(1).ToListAsync();
 
@@ -136,7 +136,7 @@ public class ImageCaptchaService : IImageCaptchaService
             return false;
         }
 
-        var captchas = await _context.Set<CaptchaImage>().IgnoreQueryFilters().Where(x => !x.IsDeleted).Where(
+        var captchas = await _context.Set<CaptchaImage>().IgnoreQueryFilters().Where(x => x.IsDeleted != true).Where(
             c => c.CaptchaId == captchaId && c.Type == type && c.IsUsed == false && c.ExpiresAt > DateTime.UtcNow)
             .Take(1).ToListAsync();
 

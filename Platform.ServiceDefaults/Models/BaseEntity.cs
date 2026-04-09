@@ -31,7 +31,7 @@ public abstract class BaseEntity : IEntity, ISoftDeletable, ITimestamped, IOpera
     /// <summary>
     /// 软删除标识
     /// </summary>
-    public bool IsDeleted { get; set; } = false;
+    public bool? IsDeleted { get; set; }
 
     /// <summary>
     /// 删除时间
@@ -102,7 +102,7 @@ public interface IEntity
 /// </summary>
 public interface ISoftDeletable
 {
-    bool IsDeleted { get; set; }
+    bool? IsDeleted { get; set; }
     DateTime? DeletedAt { get; set; }
     string? DeletedBy { get; set; }
 }

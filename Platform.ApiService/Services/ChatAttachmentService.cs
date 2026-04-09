@@ -18,19 +18,19 @@ public class ChatAttachmentService : IChatAttachmentService
 {
     private readonly DbContext _context;
 
-    private readonly IFileStorageFactory _fileStorageFactory = null!;
+    private readonly IStorageClient _storageClient = null!;
     private readonly ITenantContext _tenantContext;
     private readonly IChatSessionService _sessionService;
     private readonly ILogger<ChatAttachmentService> _logger;
 
     public ChatAttachmentService(DbContext context,
-        IFileStorageFactory fileStorageFactory,
+        IStorageClient storageClient,
         ITenantContext tenantContext,
         IChatSessionService sessionService,
         ILogger<ChatAttachmentService> logger
     ) {
         _context = context;
-        
+        _storageClient = storageClient ?? throw new ArgumentNullException(nameof(storageClient));
         _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
         _sessionService = sessionService ?? throw new ArgumentNullException(nameof(sessionService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -59,7 +59,7 @@ public class ChatAttachmentService : IChatAttachmentService
             : file.FileName;
 
         memoryStream.Position = 0;
-        var gridFsId = await _fileStorageFactory.UploadAsync(
+        var gridFsId = await _storageClient.UploadAsync(
             memoryStream,
             fileName,
             file.ContentType ?? "application/octet-stream",
@@ -111,17 +111,17 @@ public class ChatAttachmentService : IChatAttachmentService
 
         try
         {
-            var fileInfo = await _fileStorageFactory.GetFileInfoAsync(attachment.StorageObjectId, "chat_attachments");
+            var fileInfo = await _storageClient.GetFileInfoAsync(attachment.StorageObjectId, "chat_attachments");
             if (fileInfo == null) throw new KeyNotFoundException("附件内容不存在或已被删除");
 
-            var downloadStream = await _fileStorageFactory.GetDownloadStreamAsync(attachment.StorageObjectId, "chat_attachments");
+            var downloadStream = await _storageClient.GetDownloadStreamAsync(attachment.StorageObjectId, "chat_attachments");
 
             return new ChatAttachmentDownloadResult
             {
                 Content = downloadStream,
                 FileName = attachment.Name,
                 ContentType = string.IsNullOrWhiteSpace(attachment.MimeType) ? "application/octet-stream" : attachment.MimeType,
-                ContentLength = fileInfo.Length
+                ContentLength = fileInfo!.Length
             };
         }
         catch (Exception ex) when (ex is KeyNotFoundException)

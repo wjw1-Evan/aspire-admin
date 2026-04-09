@@ -47,7 +47,7 @@ const api = {
     units: (params: PageParams) => request<ApiResponse<PagedResult<PropertyUnit>>>('/apiservice/api/park/properties/list', { params }),
     createPayment: (data: Partial<LeasePaymentRecord>) => request<ApiResponse<LeasePaymentRecord>>('/apiservice/api/park/contracts/payments', { method: 'POST', data }),
     deletePayment: (id: string) => request<ApiResponse<void>>(`/apiservice/api/park/contracts/payments/${id}`, { method: 'DELETE' }),
-    uploadFile: (data: FormData) => request<ApiResponse<{ id: string; name: string }>>('/apiservice/api/cloud-storage/upload', { method: 'POST', data }),
+    uploadFile: (data: FormData) => request<ApiResponse<{ id: string; name: string }>>('/storage/api/files/upload', { method: 'POST', data }),
 };
 
 const contractStatusOptions = [

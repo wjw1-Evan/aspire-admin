@@ -1,11 +1,9 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using Platform.ServiceDefaults.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
-builder.AddPlatformDatabase("systemmonitor-db");             // IMongoClient, IMongoDatabase, PlatformDbContext, ITenantContext
-
+builder.AddPlatformDatabase("mongodb");
 
 builder.Services.AddControllers();
 

@@ -4,23 +4,19 @@ using MongoDB.Driver;
 using MongoDB.Driver.GridFS;
 using Platform.ServiceDefaults.Models;
 
-namespace Platform.ServiceDefaults.Services;
+namespace Platform.Storage.Services;
 
-/// <summary>
-/// 🚀 GridFS 文件存储实现 - 基于 MongoDB GridFS
-/// 实现 IFileStorageFactory 接口
-/// </summary>
-public class GridFSFileStorage : IFileStorageFactory
+public class GridFSStorageService
 {
     private readonly IMongoDatabase _database;
-    private readonly ILogger<GridFSFileStorage> _logger;
+    private readonly ILogger<GridFSStorageService> _logger;
     private readonly Dictionary<string, GridFSBucket> _bucketCache;
 
     public string Provider => "GridFS";
 
-    public GridFSFileStorage(
+    public GridFSStorageService(
         IMongoDatabase database,
-        ILogger<GridFSFileStorage> logger)
+        ILogger<GridFSStorageService> logger)
     {
         _database = database ?? throw new ArgumentNullException(nameof(database));
         _logger = logger;
@@ -44,7 +40,6 @@ public class GridFSFileStorage : IFileStorageFactory
         return bucket;
     }
 
-    /// <inheritdoc />
     public async Task<string> UploadAsync(
         Stream stream,
         string fileName,
@@ -82,7 +77,6 @@ public class GridFSFileStorage : IFileStorageFactory
         return objectId.ToString();
     }
 
-    /// <inheritdoc />
     public async Task<StoredFileInfo> UploadWithInfoAsync(
         Stream stream,
         string fileName,
@@ -103,7 +97,6 @@ public class GridFSFileStorage : IFileStorageFactory
         return fileInfo ?? throw new InvalidOperationException($"Failed to get file info after upload: {objectId}");
     }
 
-    /// <inheritdoc />
     public async Task DownloadAsync(
         string fileId,
         Stream destination,
@@ -127,7 +120,7 @@ public class GridFSFileStorage : IFileStorageFactory
             fileId,
             bucketName);
     }
-    /// <inheritdoc />
+
     public async Task<Stream> GetDownloadStreamAsync(
         string fileId,
         string bucketName = "default",
@@ -145,7 +138,6 @@ public class GridFSFileStorage : IFileStorageFactory
             cancellationToken: cancellationToken);
     }
 
-    /// <inheritdoc />
     public async Task<byte[]> DownloadAsBytesAsync(
         string fileId,
         string bucketName = "default",
@@ -156,7 +148,6 @@ public class GridFSFileStorage : IFileStorageFactory
         return memoryStream.ToArray();
     }
 
-    /// <inheritdoc />
     public async Task<StoredFileInfo?> GetFileInfoAsync(
         string fileId,
         string bucketName = "default",
@@ -188,7 +179,6 @@ public class GridFSFileStorage : IFileStorageFactory
         }
     }
 
-    /// <inheritdoc />
     public async Task<bool> DeleteAsync(
         string fileId,
         string bucketName = "default",
@@ -214,7 +204,6 @@ public class GridFSFileStorage : IFileStorageFactory
         }
     }
 
-    /// <inheritdoc />
     public async Task<bool> ExistsAsync(
         string fileId,
         string bucketName = "default",
@@ -230,7 +219,6 @@ public class GridFSFileStorage : IFileStorageFactory
         return await filesCollection.Find(filter).AnyAsync(cancellationToken);
     }
 
-    /// <inheritdoc />
     public async Task<bool> RenameAsync(
         string fileId,
         string newFileName,
@@ -261,7 +249,6 @@ public class GridFSFileStorage : IFileStorageFactory
         }
     }
 
-    /// <inheritdoc />
     public async Task<bool> UpdateMetadataAsync(
         string fileId,
         Dictionary<string, object> metadata,
@@ -298,7 +285,6 @@ public class GridFSFileStorage : IFileStorageFactory
         }
     }
 
-    /// <inheritdoc />
     public async Task<string?> GetFileHashAsync(
         string fileId,
         string bucketName = "default",
@@ -308,7 +294,6 @@ public class GridFSFileStorage : IFileStorageFactory
         return fileInfo?.MD5;
     }
 
-    /// <inheritdoc />
     public async Task<StoredFileInfo?> FindByHashAsync(
         string md5Hash,
         string bucketName = "default",
@@ -326,7 +311,6 @@ public class GridFSFileStorage : IFileStorageFactory
         return StoredFileInfo.FromBsonDocument(doc, bucketName);
     }
 
-    /// <inheritdoc />
     public async Task<StorageStatistics> GetStorageStatisticsAsync(
         string? bucketName = null,
         CancellationToken cancellationToken = default)
@@ -412,23 +396,6 @@ public class GridFSFileStorage : IFileStorageFactory
         return stats;
     }
 
-    /// <summary>
-    /// 安全地获取 Int64 值（处理 Int32/Int64 类型混用的情况）
-    /// </summary>
-    private static long GetInt64Safe(BsonDocument doc, string key, long defaultValue = 0)
-    {
-        var value = doc.GetValue(key, null);
-        if (value == null) return defaultValue;
-
-        return value.BsonType switch
-        {
-            BsonType.Int32 => value.AsInt32,
-            BsonType.Int64 => value.AsInt64,
-            _ => defaultValue
-        };
-    }
-
-    /// <inheritdoc />
     public async Task<StoredFileInfo?> FindByFileNameAsync(
         string fileName,
         string bucketName = "default",

@@ -17,7 +17,7 @@ public class FilePreviewService : IFilePreviewService
     private readonly DbContext _context;
 
     private readonly ICloudStorageService _cloudStorageService;
-    private readonly IFileStorageFactory _fileStorageFactory = null!;
+    private readonly IStorageClient _storageClient = null!;
     private readonly ILogger<FilePreviewService> _logger;
 
     /// <summary>
@@ -25,19 +25,12 @@ public class FilePreviewService : IFilePreviewService
     /// </summary>
     private static readonly HashSet<string> SupportedPreviewTypes = new(StringComparer.OrdinalIgnoreCase)
     {
-        // 图片
         "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp", "image/svg+xml", "image/bmp",
-        // 文本
         "text/plain", "text/html", "text/css", "text/javascript", "text/xml", "text/csv", "text/markdown",
-        // 代码
         "application/json", "application/xml", "application/javascript",
-        // PDF
         "application/pdf",
-        // 视频
         "video/mp4", "video/webm", "video/ogg", "video/avi", "video/mov",
-        // 音频
         "audio/mp3", "audio/wav", "audio/ogg", "audio/aac", "audio/flac",
-        // Office文档（基础支持）
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "application/vnd.openxmlformats-officedocument.presentationml.presentation"
@@ -59,13 +52,13 @@ public class FilePreviewService : IFilePreviewService
     public FilePreviewService(
         DbContext context,
         ICloudStorageService cloudStorageService,
-        IFileStorageFactory fileStorageFactory,
+        IStorageClient storageClient,
         ILogger<FilePreviewService> logger
     ) {
         _context = context;
         
         _cloudStorageService = cloudStorageService ?? throw new ArgumentNullException(nameof(cloudStorageService));
-
+        _storageClient = storageClient ?? throw new ArgumentNullException(nameof(storageClient));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -134,7 +127,7 @@ public class FilePreviewService : IFilePreviewService
             };
 
             using var thumbnailStream = new MemoryStream(thumbnailData);
-            var thumbnailGridFSId = await _fileStorageFactory.UploadAsync(
+            var thumbnailGridFSId = await _storageClient.UploadAsync(
                 thumbnailStream,
                 $"thumbnail_{fileItem.Name}",
                 "image/png",
@@ -176,7 +169,7 @@ public class FilePreviewService : IFilePreviewService
 
         try
         {
-            var bytes = await _fileStorageFactory.DownloadAsBytesAsync(fileItem!.ThumbnailGridFSId, "cloud_storage_thumbnails");
+            var bytes = await _storageClient.DownloadAsBytesAsync(fileItem!.ThumbnailGridFSId, "cloud_storage_thumbnails");
             return new MemoryStream(bytes);
         }
         catch

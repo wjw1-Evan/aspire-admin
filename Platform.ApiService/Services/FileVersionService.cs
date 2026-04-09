@@ -23,17 +23,17 @@ public class FileVersionService : IFileVersionService
 {
     private readonly DbContext _context;
     private readonly ICloudStorageService _cloudStorageService;
-    private readonly IFileStorageFactory _fileStorageFactory;
+    private readonly IStorageClient _storageClient;
     private readonly ILogger<FileVersionService> _logger;
 
     public FileVersionService(DbContext context,
         ICloudStorageService cloudStorageService,
-        IFileStorageFactory fileStorageFactory,
+        IStorageClient storageClient,
         ILogger<FileVersionService> logger)
     {
         _context = context;
         _cloudStorageService = cloudStorageService;
-        _fileStorageFactory = fileStorageFactory;
+        _storageClient = storageClient;
         _logger = logger;
     }
 
@@ -56,7 +56,7 @@ public class FileVersionService : IFileVersionService
         string gridFSId;
         using (var stream = file.OpenReadStream())
         {
-            gridFSId = await _fileStorageFactory.UploadAsync(stream, file.FileName, file.ContentType, new Dictionary<string, object>
+            gridFSId = await _storageClient.UploadAsync(stream, file.FileName, file.ContentType, new Dictionary<string, object>
             {
                 ["originalName"] = file.FileName,
                 ["contentType"] = file.ContentType ?? "application/octet-stream",
@@ -118,7 +118,7 @@ public class FileVersionService : IFileVersionService
     {
         var version = await GetVersionAsync(versionId);
         if (version == null || string.IsNullOrEmpty(version.GridFSId)) throw new ArgumentException("版本文件不存在");
-        var bytes = await _fileStorageFactory.DownloadAsBytesAsync(version.GridFSId, "cloud_storage_files");
+        var bytes = await _storageClient.DownloadAsBytesAsync(version.GridFSId, "cloud_storage_files");
         return new MemoryStream(bytes);
     }
 

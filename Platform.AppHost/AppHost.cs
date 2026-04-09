@@ -54,6 +54,11 @@ var systemMonitor = builder.AddProject<Projects.Platform_SystemMonitor>("systemm
     .WithHttpEndpoint(port: 15020)
     .WithHttpHealthCheck("/health");
 
+var storage = builder.AddProject<Projects.Platform_Storage>("storage")
+    .WithReference(mongodb)
+    .WithHttpEndpoint(port: 15010)
+    .WithHttpHealthCheck("/health");
+
 var smtpConfig = builder.Configuration.GetSection("Smtp");
 var smtpHost = smtpConfig["Host"];
 
@@ -82,7 +87,8 @@ if (!string.IsNullOrEmpty(smtpHost))
 var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDiscovery>>
 {
     ["apiservice"] = apiService,
-    ["systemmonitor"] = systemMonitor
+    ["systemmonitor"] = systemMonitor,
+    ["storage"] = storage
 };
 
 var yarp = builder.AddYarp("apigateway")

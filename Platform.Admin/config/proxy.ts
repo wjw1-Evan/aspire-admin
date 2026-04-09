@@ -14,6 +14,11 @@ export default {
       changeOrigin: true,
       ws: true,
     },
+    '/storage/': {
+      target: 'http://localhost:15000',
+      changeOrigin: true,
+      ws: true,
+    },
   },
   pre: {
     '/api/': {

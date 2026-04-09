@@ -170,7 +170,7 @@ public class DocumentService : IDocumentService
 {
     private readonly IWorkflowEngine _workflowEngine;
     private readonly ILogger<DocumentService> _logger;
-    private readonly IFileStorageFactory _fileStorageFactory;
+    private readonly IStorageClient _storageClient;
     private readonly ITenantContext _tenantContext;
     private readonly DbContext _context;
 
@@ -180,13 +180,13 @@ public class DocumentService : IDocumentService
     public DocumentService(DbContext context,
         IWorkflowEngine workflowEngine,
         ILogger<DocumentService> logger,
-        IFileStorageFactory fileStorageFactory,
+        IStorageClient storageClient,
         ITenantContext tenantContext)
     {
         _context = context;
         _workflowEngine = workflowEngine;
         _logger = logger;
-        _fileStorageFactory = fileStorageFactory;
+        _storageClient = storageClient;
         _tenantContext = tenantContext;
     }
 
@@ -520,7 +520,7 @@ public class DocumentService : IDocumentService
             { "checksum", checksum }
         };
 
-        var gridFsId = await _fileStorageFactory.UploadAsync(
+        var gridFsId = await _storageClient.UploadAsync(
             fileStream,
             fileName,
             file.ContentType,
@@ -549,8 +549,8 @@ public class DocumentService : IDocumentService
 
         try
         {
-            var bytes = await _fileStorageFactory.DownloadAsBytesAsync(attachmentId, "document_attachments");
-            var fileInfo = await _fileStorageFactory.GetFileInfoAsync(attachmentId, "document_attachments");
+            var bytes = await _storageClient.DownloadAsBytesAsync(attachmentId, "document_attachments");
+            var fileInfo = await _storageClient.GetFileInfoAsync(attachmentId, "document_attachments");
 
             return new DocumentAttachmentDownloadResult
             {

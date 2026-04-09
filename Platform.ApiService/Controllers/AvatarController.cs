@@ -8,14 +8,14 @@ namespace Platform.ApiService.Controllers;
 
 /// <summary>
 /// 头像管理控制器
-/// 负责处理用户头像的上传和查看，使用 IFileStorageFactory 存储
+/// 负责处理用户头像的上传和查看，使用 IStorageClient 存储
 /// </summary>
 [Route("api/avatar")]
 [ApiController]
 public class AvatarController : BaseApiController
 {
     private readonly IUserService _userService;
-    private readonly IFileStorageFactory _fileStorage;
+    private readonly IStorageClient _storageClient;
     private readonly ILogger<AvatarController> _logger;
     private const string AvatarBucketName = "user_avatars";
 
@@ -24,11 +24,11 @@ public class AvatarController : BaseApiController
     /// </summary>
     public AvatarController(
         IUserService userService,
-        IFileStorageFactory fileStorage,
+        IStorageClient storageClient,
         ILogger<AvatarController> logger)
     {
         _userService = userService;
-        _fileStorage = fileStorage;
+        _storageClient = storageClient;
         _logger = logger;
     }
 
@@ -64,7 +64,8 @@ public class AvatarController : BaseApiController
             var userId = RequiredUserId;
             var fileName = $"{userId}_{DateTime.UtcNow.Ticks}{extension}";
 
-            // 上传到 GridFS
+            // 上传到 Storage 服务
+            string fileId;
             using (var stream = file.OpenReadStream())
             {
                 var metadata = new Dictionary<string, object>
@@ -74,7 +75,7 @@ public class AvatarController : BaseApiController
                     { "uploadedAt", DateTime.UtcNow }
                 };
 
-                await _fileStorage.UploadAsync(
+                fileId = await _storageClient.UploadAsync(
                     stream,
                     fileName,
                     file.ContentType,
@@ -83,7 +84,7 @@ public class AvatarController : BaseApiController
             }
 
             // 构建公开访问 URL
-            var avatarUrl = $"/api/avatar/view/{fileName}";
+            var avatarUrl = $"/storage/api/files/{fileId}?bucketName={AvatarBucketName}";
 
             return Success(new { url = avatarUrl }, "头像上传成功");
         }
@@ -112,7 +113,7 @@ public class AvatarController : BaseApiController
         try
         {
             // 根据文件名查找文件
-            var fileInfo = await _fileStorage.FindByFileNameAsync(fileName, AvatarBucketName);
+            var fileInfo = await _storageClient.FindByFileNameAsync(fileName, AvatarBucketName);
 
             if (fileInfo == null)
             {
@@ -121,7 +122,7 @@ public class AvatarController : BaseApiController
 
             // 下载文件到流
             var stream = new MemoryStream();
-            await _fileStorage.DownloadAsync(fileInfo.Id, stream, AvatarBucketName);
+            await _storageClient.DownloadAsync(fileInfo.Id, stream, AvatarBucketName);
             stream.Position = 0;
 
             // 优先使用存储的 ContentType，否则根据文件名判断

@@ -31,7 +31,7 @@ public enum FileConflictResolution
 public class CloudStorageService : ICloudStorageService
 {
     private readonly DbContext _context;
-    private readonly IFileStorageFactory _fileStorageFactory;
+    private readonly IStorageClient _storageClient;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<CloudStorageService> _logger;
     private readonly IStorageQuotaService _storageQuotaService;
@@ -39,13 +39,13 @@ public class CloudStorageService : ICloudStorageService
     public CloudStorageService(
         DbContext context,
         IStorageQuotaService storageQuotaService,
-        IFileStorageFactory fileStorageFactory,
+        IStorageClient storageClient,
         ITenantContext tenantContext,
         ILogger<CloudStorageService> logger)
     {
         _context = context;
         _storageQuotaService = storageQuotaService;
-        _fileStorageFactory = fileStorageFactory;
+        _storageClient = storageClient;
         _tenantContext = tenantContext;
         _logger = logger;
     }
@@ -187,7 +187,7 @@ public class CloudStorageService : ICloudStorageService
             {
                 var entry = archive.CreateEntry(childPath);
                 using var entryStream = entry.Open();
-                using var fileStream = await _fileStorageFactory.GetDownloadStreamAsync(child.GridFSId, "cloud_storage_files");
+                using var fileStream = await _storageClient.GetDownloadStreamAsync(child.GridFSId, "cloud_storage_files");
                 await fileStream.CopyToAsync(entryStream);
             }
         }
@@ -328,7 +328,7 @@ public class CloudStorageService : ICloudStorageService
         else
         {
             using var uploadStream = file.OpenReadStream();
-            gridFSId = await _fileStorageFactory.UploadAsync(uploadStream, fileName, file.ContentType, new Dictionary<string, object>
+            gridFSId = await _storageClient.UploadAsync(uploadStream, fileName, file.ContentType, new Dictionary<string, object>
             {
                 ["originalName"] = fileName,
                 ["contentType"] = file.ContentType ?? "application/octet-stream",
@@ -555,7 +555,7 @@ public class CloudStorageService : ICloudStorageService
         item.LastAccessedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
-        return await _fileStorageFactory.GetDownloadStreamAsync(item.GridFSId, "cloud_storage_files");
+        return await _storageClient.GetDownloadStreamAsync(item.GridFSId, "cloud_storage_files");
     }
 
     /// <inheritdoc/>
@@ -563,7 +563,7 @@ public class CloudStorageService : ICloudStorageService
     {
         var item = await GetFileItemAsync(id);
         if (item == null || string.IsNullOrEmpty(item.ThumbnailGridFSId)) throw new ArgumentException("缩略图不存在");
-        return await _fileStorageFactory.GetDownloadStreamAsync(item.ThumbnailGridFSId, "cloud_storage_thumbnails");
+        return await _storageClient.GetDownloadStreamAsync(item.ThumbnailGridFSId, "cloud_storage_thumbnails");
     }
 
     /// <inheritdoc/>
@@ -613,7 +613,7 @@ public class CloudStorageService : ICloudStorageService
             try
             {
                 if (string.IsNullOrEmpty(file.GridFSId)) continue;
-                var bytes = await _fileStorageFactory.DownloadAsBytesAsync(file.GridFSId, "cloud_storage_files");
+                var bytes = await _storageClient.DownloadAsBytesAsync(file.GridFSId, "cloud_storage_files");
                 var content = Encoding.UTF8.GetString(bytes, 0, (int)Math.Min(bytes.Length, 1024 * 1024));
                 if (content.Contains(keyword, StringComparison.OrdinalIgnoreCase)) matched.Add(file);
             }
@@ -748,7 +748,7 @@ public class CloudStorageService : ICloudStorageService
         }
     }
 
-    private async Task DeleteGridFSFileAsync(FileItem item) { if (!string.IsNullOrEmpty(item.GridFSId)) await _fileStorageFactory.DeleteAsync(item.GridFSId, "cloud_storage_files"); }
+    private async Task DeleteGridFSFileAsync(FileItem item) { if (!string.IsNullOrEmpty(item.GridFSId)) await _storageClient.DeleteAsync(item.GridFSId, "cloud_storage_files"); }
 
     private async Task GenerateAndUploadThumbnailAsync(Stream stream, FileItem file)
     {
@@ -758,7 +758,7 @@ public class CloudStorageService : ICloudStorageService
         using var ms = new MemoryStream();
         await image.SaveAsPngAsync(ms);
         ms.Position = 0;
-        file.ThumbnailGridFSId = await _fileStorageFactory.UploadAsync(ms, $"{file.Id}.png", "image/png", null, "cloud_storage_thumbnails");
+        file.ThumbnailGridFSId = await _storageClient.UploadAsync(ms, $"{file.Id}.png", "image/png", null, "cloud_storage_thumbnails");
         await _context.SaveChangesAsync();
     }
 

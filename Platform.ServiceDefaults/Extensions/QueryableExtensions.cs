@@ -1,10 +1,14 @@
 using System.Linq.Dynamic.Core;
-using System.Linq.Expressions;
 
 namespace Platform.ServiceDefaults.Extensions;
 
 public static class QueryableExtensions
 {
+    private static readonly HashSet<string> ExcludedPropertyNames = new()
+    {
+        "Metadata", "Extra", "Properties", "Attributes", "Data", "Settings"
+    };
+
     public static PagedResult<T> ToPagedList<T>(
         this IQueryable<T> query,
         Models.PageParams? pageParams)
@@ -13,29 +17,19 @@ public static class QueryableExtensions
 
         if (!string.IsNullOrWhiteSpace(p.Search))
         {
-            var parameter = Expression.Parameter(typeof(T), "x");
-            var searchValue = Expression.Constant(p.Search);
-            var conditions = new List<Expression>();
-
             var props = typeof(T).GetProperties()
                 .Where(x => x.CanRead 
-                    && x.GetIndexParameters().Length == 0 
-                    && x.PropertyType == typeof(string));
+                    && x.GetIndexParameters().Length == 0
+                    && x.PropertyType == typeof(string)
+                    && !ExcludedPropertyNames.Contains(x.Name))
+                .Select(x => x.Name)
+                .ToList();
 
-            foreach (var prop in props)
+            if (props.Count > 0)
             {
-                var property = Expression.Property(parameter, prop);
-                var nullCheck = Expression.AndAlso(
-                    Expression.NotEqual(property, Expression.Constant(null, typeof(string))),
-                    Expression.Call(property, "Contains", null, searchValue));
-                conditions.Add(nullCheck);
-            }
-
-            if (conditions.Count > 0)
-            {
-                var combined = conditions.Aggregate(Expression.OrElse);
-                var lambda = Expression.Lambda<Func<T, bool>>(combined, parameter);
-                query = query.Where(lambda);
+                var conditions = props.Select(x => $"({x} != null && {x}.Contains(@0))");
+                var expr = string.Join(" || ", conditions);
+                query = query.Where(expr, p.Search);
             }
         }
 

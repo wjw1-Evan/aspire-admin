@@ -21,7 +21,8 @@ public static class QueryableExtensions
 
             if (props.Count > 0)
             {
-                var expr = string.Join(" || ", props.Select(x => $"iif({x} != null, {x}.Contains(@0), false)"));
+                var conditions = props.Select(x => $"(@0 != null && {x} != null && {x}.Contains(@0))");
+                var expr = string.Join(" || ", conditions);
                 query = query.Where(expr, p.Search);
             }
         }

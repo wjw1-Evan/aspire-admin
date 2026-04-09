@@ -1,9 +1,12 @@
 using Platform.ServiceDefaults.Extensions;
+using Platform.Storage.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 builder.AddPlatformDatabase();
+
+builder.Services.AddSingleton<GridFSStorageService>();
 
 builder.Services.AddControllers();
 

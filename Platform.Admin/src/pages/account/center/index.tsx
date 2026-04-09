@@ -121,12 +121,13 @@ const UserCenter: React.FC = () => {
       formData.append('file', file);
       const response = await request<any>('/storage/api/files/upload', { method: 'POST', data: formData, requestType: 'form' });
       hide();
-      const newUrl = response?.url || response?.data?.url;
-      if (newUrl) {
+      const fileId = response?.id || response?.data?.id;
+      if (fileId) {
+        const avatarUrl = `/storage/api/files/${fileId}`;
         message.success('头像上传成功');
-        form.setFieldsValue({ avatar: newUrl });
-        setLastUploadedAvatar(newUrl);
-        setAvatarPreview(newUrl);
+        form.setFieldsValue({ avatar: avatarUrl });
+        setLastUploadedAvatar(avatarUrl);
+        setAvatarPreview(avatarUrl);
       }
     } catch (error) {
       hide();

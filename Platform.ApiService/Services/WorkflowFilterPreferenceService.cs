@@ -69,7 +69,6 @@ public class WorkflowFilterPreferenceService : IWorkflowFilterPreferenceService
         existing.Name = name;
         existing.FilterConfig = filterConfig ?? new WorkflowFilterConfig();
         existing.IsDefault = isDefault;
-        existing.UpdatedAt = System.DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
         return existing;

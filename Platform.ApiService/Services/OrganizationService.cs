@@ -56,7 +56,7 @@ public class OrganizationService : IOrganizationService
                 {
                     Id = u.Id, Name = u.Name, Code = u.Code, ParentId = u.ParentId, Description = u.Description,
                     SortOrder = u.SortOrder, ManagerUserId = u.ManagerUserId, CreatedAt = u.CreatedAt,
-                    UpdatedAt = u.UpdatedAt, Children = BuildTree(u.Id)
+                    UpdatedAt = u.UpdatedAt ?? DateTime.UtcNow, Children = BuildTree(u.Id)
                 }).ToList();
         }
         return BuildTree(null);

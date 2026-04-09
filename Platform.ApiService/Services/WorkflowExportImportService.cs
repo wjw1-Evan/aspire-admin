@@ -38,7 +38,7 @@ public class WorkflowExportImportService : IWorkflowExportImportService
     /// </summary>
     public async Task<byte[]> ExportWorkflowsAsync(List<string> workflowIds, WorkflowExportConfig config)
     {
-        
+
         try
         {
             _logger.LogInformation("开始导出工作流: WorkflowCount={WorkflowCount}, Format={Format}",
@@ -72,7 +72,6 @@ public class WorkflowExportImportService : IWorkflowExportImportService
                     Graph = workflow.Graph,
                     IsActive = workflow.IsActive,
                     CreatedAt = workflow.CreatedAt,
-                    UpdatedAt = workflow.UpdatedAt,
                     CreatedBy = workflow.CreatedBy
                 };
 

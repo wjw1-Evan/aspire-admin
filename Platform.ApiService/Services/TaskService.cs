@@ -594,7 +594,6 @@ public class TaskService : ITaskService
         Remarks = t.Remarks,
         ParticipantIds = t.ParticipantIds,
         Tags = t.Tags,
-        UpdatedAt = t.UpdatedAt,
         UpdatedBy = t.UpdatedBy,
         ProjectId = t.ProjectId,
         ParentTaskId = t.ParentTaskId,

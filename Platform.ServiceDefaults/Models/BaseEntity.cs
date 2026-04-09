@@ -16,72 +16,49 @@ public abstract class BaseEntity : IEntity, ISoftDeletable, ITimestamped, IOpera
     [Key]
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
-    public string Id { get; set; } = string.Empty;
+    public string Id { get; set; }
 
     /// <summary>
     /// 创建时间 - 自动设置 UTC 时间
     /// </summary>
-    [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
     /// 更新时间 - 自动更新 UTC 时间
     /// </summary>
-    [BsonElement("updatedAt")]
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
 
     /// <summary>
     /// 软删除标识
     /// </summary>
-    [BsonElement("isDeleted")]
     public bool IsDeleted { get; set; } = false;
 
     /// <summary>
     /// 删除时间
     /// </summary>
-    [BsonElement("deletedAt")]
     public DateTime? DeletedAt { get; set; }
 
-    private string? _deletedBy;
     /// <summary>
     /// 删除者ID
     /// </summary>
-    [BsonElement("deletedBy")]
     [BsonRepresentation(BsonType.ObjectId)]
-    public string? DeletedBy
-    {
-        get => _deletedBy;
-        set => _deletedBy = value == "" ? null : value;
-    }
+    public string? DeletedBy { get; set; }
 
-    private string? _createdBy;
     /// <summary>
     /// 创建者ID
     /// </summary>
-    [BsonElement("createdBy")]
     [BsonRepresentation(BsonType.ObjectId)]
-    public string? CreatedBy
-    {
-        get => _createdBy;
-        set => _createdBy = value == "" ? null : value;
-    }
+    public string? CreatedBy { get; set; }
 
-    private string? _updatedBy;
     /// <summary>
     /// 更新者ID
     /// </summary>
-    [BsonElement("updatedBy")]
     [BsonRepresentation(BsonType.ObjectId)]
-    public string? UpdatedBy
-    {
-        get => _updatedBy;
-        set => _updatedBy = value == "" ? null : value;
-    }
+    public string? UpdatedBy { get; set; }
 
     /// <summary>
     /// 最后操作时间
     /// </summary>
-    [BsonElement("lastOperationAt")]
     public DateTime? LastOperationAt { get; set; }
 
     /// <summary>
@@ -109,7 +86,6 @@ public abstract class MultiTenantEntity : BaseEntity, IMultiTenant
     /// <summary>
     /// 企业ID - 多租户隔离标识
     /// </summary>
-    [BsonElement("companyId")]
     public string CompanyId { get; set; } = string.Empty;
 }
 
@@ -137,7 +113,7 @@ public interface ISoftDeletable
 public interface ITimestamped
 {
     DateTime CreatedAt { get; set; }
-    DateTime UpdatedAt { get; set; }
+    DateTime? UpdatedAt { get; set; }
 }
 
 /// <summary>

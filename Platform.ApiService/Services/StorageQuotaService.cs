@@ -31,7 +31,7 @@ public class StorageQuotaService : IStorageQuotaService
         ILogger<StorageQuotaService> logger
     ) {
         _context = context;
-        
+
         _tenantContext = tenantContext ?? throw new ArgumentNullException(nameof(tenantContext));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -96,7 +96,7 @@ public class StorageQuotaService : IStorageQuotaService
         var entity = await _context.Set<StorageQuota>().FirstOrDefaultAsync(x => x.Id == quota.Id!);
         if (entity != null)
         {
-    
+
             entity.TotalQuota = totalQuota;
             entity.LastCalculatedAt = DateTime.UtcNow;
 
@@ -141,7 +141,7 @@ public class StorageQuotaService : IStorageQuotaService
         var entity = await _context.Set<StorageQuota>().FirstOrDefaultAsync(x => x.Id == quota.Id!);
         if (entity != null)
         {
-    
+
             entity.UsedSpace = newUsedSpace;
             entity.LastCalculatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
@@ -278,7 +278,7 @@ public class StorageQuotaService : IStorageQuotaService
         var entity = await _context.Set<StorageQuota>().FirstOrDefaultAsync(x => x.Id == quota.Id!);
         if (entity != null)
         {
-    
+
             entity.UsedSpace = actualUsedSpace;
             entity.FileCount = fileCount;
             entity.TypeUsage = typeUsage;
@@ -415,7 +415,7 @@ public class StorageQuotaService : IStorageQuotaService
                     TotalQuota = quota.TotalQuota,
                     UsagePercentage = Math.Round(usagePercentage * 100, 2),
                     WarningType = usagePercentage >= 1.0 ? "exceeded" : "approaching",
-                    CreatedAt = quota.UpdatedAt,
+                    CreatedAt = quota.UpdatedAt ?? DateTime.UtcNow,
                     Message = usagePercentage >= 1.0 ? "存储空间已满" : $"存储空间使用率已达到 {usagePercentage:P1}"
                 };
 
@@ -636,7 +636,6 @@ public class StorageQuotaService : IStorageQuotaService
                 IsEnabled = quota.IsEnabled,
                 LastCalculatedAt = quota.LastCalculatedAt,
                 CreatedAt = quota.CreatedAt,
-                UpdatedAt = quota.UpdatedAt,
                 Status = quota.IsEnabled ? "Active" : "Disabled",
                 WarningLevel = GetWarningLevel(usedSpace, quota.TotalQuota)
             });
@@ -670,7 +669,6 @@ public class StorageQuotaService : IStorageQuotaService
                 IsEnabled = false,
                 LastCalculatedAt = DateTime.UtcNow,
                 CreatedAt = user.CreatedAt != default(DateTime) ? user.CreatedAt : DateTime.UtcNow,
-                UpdatedAt = user.UpdatedAt != default(DateTime) ? user.UpdatedAt : DateTime.UtcNow,
                 Status = "NotAssigned",
                 WarningLevel = GetWarningLevel(usedSpace, DefaultQuota)
             });

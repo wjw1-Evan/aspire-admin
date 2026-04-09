@@ -376,7 +376,7 @@ public class UserService : IUserService
                 IsActive = user.IsActive,
                 LastLoginAt = user.LastLoginAt,
                 CreatedAt = user.CreatedAt,
-                UpdatedAt = user.UpdatedAt,
+                UpdatedAt = user.UpdatedAt ?? DateTime.UtcNow,
                 Remark = user.Remark,
                 RoleIds = roleIds,
                 RoleNames = roleNames,
@@ -621,7 +621,7 @@ public class UserService : IUserService
             try
             {
                 var layouts = JsonSerializer.Deserialize<List<CardLayoutConfig>>(currentUser.WelcomeLayoutConfig);
-                if (layouts != null && layouts.Any()) return new WelcomeLayoutResponse { Layouts = layouts, UpdatedAt = currentUser.UpdatedAt };
+                if (layouts != null && layouts.Any()) return new WelcomeLayoutResponse { Layouts = layouts, UpdatedAt = currentUser.UpdatedAt ?? DateTime.UtcNow };
             }
             catch { /* 忽略配置解析错误，使用默认布局 */ }
         }
@@ -636,7 +636,7 @@ public class UserService : IUserService
             new() { CardId = "system-resources", Order = 2, Column = "right", Visible = true }
         };
 
-        return new WelcomeLayoutResponse { Layouts = defaultLayouts, UpdatedAt = currentUser.UpdatedAt };
+        return new WelcomeLayoutResponse { Layouts = defaultLayouts, UpdatedAt = currentUser.UpdatedAt ?? DateTime.UtcNow };
     }
 
     /// <inheritdoc/>

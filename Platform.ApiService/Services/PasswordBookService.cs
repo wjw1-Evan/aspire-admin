@@ -147,7 +147,7 @@ public class PasswordBookService : IPasswordBookService
             Notes = entry.Notes,
             LastUsedAt = entry.LastUsedAt,
             CreatedAt = entry.CreatedAt,
-            UpdatedAt = entry.UpdatedAt,
+            UpdatedAt = entry.UpdatedAt ?? DateTime.UtcNow,
             IsPublic = entry.IsPublic
         };
     }
@@ -261,7 +261,6 @@ public class PasswordBookService : IPasswordBookService
                     Notes = entry.Notes,
                     LastUsedAt = entry.LastUsedAt,
                     CreatedAt = entry.CreatedAt,
-                    UpdatedAt = entry.UpdatedAt,
                     IsPublic = entry.IsPublic
                 });
             }

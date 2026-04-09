@@ -47,11 +47,11 @@ public class DataInitializerService(
     {
         _logger.LogInformation("开始同步系统菜单...");
         var menusCollection = _database.GetCollection<Menu>("menus");
-        
+
         // 加载 JSON 数据
         var jsonPath = Path.Combine(AppContext.BaseDirectory, "Menus.json");
         if (!File.Exists(jsonPath)) jsonPath = "Menus.json"; // 兜底
-        
+
         var json = await File.ReadAllTextAsync(jsonPath);
         var expectedMenus = JsonSerializer.Deserialize<List<Menu>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new();
 
@@ -69,7 +69,7 @@ public class DataInitializerService(
             var existing = await menusCollection.Find(m => m.Name == menu.Name && !m.IsDeleted).FirstOrDefaultAsync();
             if (existing == null)
             {
-                menu.CreatedAt = menu.UpdatedAt = now;
+                menu.CreatedAt =  now;
                 await menusCollection.InsertOneAsync(menu);
                 menuMap[menu.Name] = menu.Id;
                 _logger.LogInformation("✅ 创建菜单: {Title}", menu.Title);

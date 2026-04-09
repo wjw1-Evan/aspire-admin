@@ -342,8 +342,6 @@ public class ChatAiService : IChatAiService
             Type = ChatMessageType.Text,
             Content = content,
             Metadata = new Dictionary<string, object> { ["isAssistant"] = true },
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
             ClientMessageId = clientMsgId
         };
         await _context.Set<ChatMessage>().AddAsync(message);
@@ -369,8 +367,6 @@ public class ChatAiService : IChatAiService
             Type = ChatMessageType.Text,
             Content = initialContent,
             Metadata = new Dictionary<string, object> { ["isAssistant"] = true, ["streaming"] = true },
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
             ClientMessageId = clientMsgId
         };
         if (!string.IsNullOrWhiteSpace(triggerMsgId)) message.Metadata["triggerMessageId"] = triggerMsgId;

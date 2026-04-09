@@ -55,7 +55,7 @@ public class XiaokeConfigService : IXiaokeConfigService
             IsEnabled = config.IsEnabled,
             IsDefault = config.IsDefault,
             CreatedAt = config.CreatedAt,
-            UpdatedAt = config.UpdatedAt
+            UpdatedAt = config.UpdatedAt ?? DateTime.UtcNow
         };
     }
 

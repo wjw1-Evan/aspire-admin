@@ -23,7 +23,7 @@ public class RoleService : IRoleService
         ILogger<RoleService> logger)
     {
         _context = context;
-        
+
         _logger = logger;
     }
 
@@ -72,7 +72,6 @@ public class RoleService : IRoleService
                 MenuIds = role.MenuIds ?? new List<string>(),
                 IsActive = role.IsActive,
                 CreatedAt = role.CreatedAt,
-                UpdatedAt = role.UpdatedAt,
                 UserCount = (int)userCount,
                 MenuCount = role.MenuIds?.Count ?? 0
             });

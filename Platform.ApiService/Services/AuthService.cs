@@ -52,7 +52,7 @@ public class AuthService : IAuthService
         IEmailService emailService)
     {
         _context = context;
-        
+
         _jwtService = jwtService;
         _httpContextAccessor = httpContextAccessor;
         _userService = userService;
@@ -214,7 +214,6 @@ public class AuthService : IAuthService
             IsLogin = true,
             CurrentCompanyId = user.CurrentCompanyId,
             CreatedAt = user.CreatedAt,
-            UpdatedAt = user.UpdatedAt,
             City = city,
             CurrentCompanyDisplayName = companyDisplayName,
             CurrentCompanyName = companyName,

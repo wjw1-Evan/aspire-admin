@@ -201,7 +201,7 @@ public class ProjectService : IProjectService
     {
         Id = p.Id, Name = p.Name, Description = p.Description, Status = (int)p.Status, StatusName = GetStatusName(p.Status),
         StartDate = p.StartDate, EndDate = p.EndDate, Progress = p.Progress, ManagerId = p.ManagerId, Budget = p.Budget,
-        Priority = (int)p.Priority, PriorityName = GetPriorityName(p.Priority), CreatedAt = p.CreatedAt, CreatedBy = p.CreatedBy, UpdatedAt = p.UpdatedAt
+        Priority = (int)p.Priority, PriorityName = GetPriorityName(p.Priority), CreatedAt = p.CreatedAt, CreatedBy = p.CreatedBy
     };
 
     private async Task<List<ProjectMemberDto>> ConvertToProjectMemberDtosAsync(IEnumerable<ProjectMember> members)

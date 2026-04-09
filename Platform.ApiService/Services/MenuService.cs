@@ -18,7 +18,7 @@ public class MenuService : IMenuService
     public MenuService(DbContext context)
     {
         _context = context;
-        
+
     }
 
     /// <summary>
@@ -128,7 +128,6 @@ public class MenuService : IMenuService
                 HideInMenu = m.HideInMenu,
                 ParentId = m.ParentId,
                 CreatedAt = m.CreatedAt,
-                UpdatedAt = m.UpdatedAt,
                 Children = BuildMenuTree(menus, m.Id)
             })
             .ToList();

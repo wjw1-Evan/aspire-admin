@@ -433,8 +433,7 @@ public class TaskService : ITaskService
                 Status = (int)log.Status,
                 Message = log.Message,
                 ErrorMessage = log.ErrorMessage,
-                ProgressPercentage = log.ProgressPercentage,
-                CreatedAt = log.CreatedAt
+                ProgressPercentage = log.ProgressPercentage
             });
 
         return query.ToPagedList(request);
@@ -456,8 +455,7 @@ public class TaskService : ITaskService
             Status = (int)log.Status,
             Message = log.Message,
             ErrorMessage = log.ErrorMessage,
-            ProgressPercentage = log.ProgressPercentage,
-            CreatedAt = log.CreatedAt
+            ProgressPercentage = log.ProgressPercentage
         };
     }
 
@@ -579,7 +577,6 @@ public class TaskService : ITaskService
         Priority = (int)t.Priority,
         PriorityName = GetPriorityName(t.Priority),
         CreatedBy = t.CreatedBy ?? "",
-        CreatedAt = t.CreatedAt,
         AssignedTo = t.AssignedTo,
         AssignedAt = t.AssignedAt,
         PlannedStartTime = t.PlannedStartTime,
@@ -604,7 +601,7 @@ public class TaskService : ITaskService
 
     private async Task<TaskExecutionLogDto> ConvertToTaskExecutionLogDtoAsync(TaskExecutionLog l)
     {
-        var dto = new TaskExecutionLogDto { Id = l.Id, TaskId = l.TaskId, ExecutedBy = l.ExecutedBy, StartTime = l.StartTime, EndTime = l.EndTime, Status = (int)l.Status, StatusName = GetExecutionResultName(l.Status), Message = l.Message, ErrorMessage = l.ErrorMessage, ProgressPercentage = l.ProgressPercentage, CreatedAt = l.CreatedAt };
+        var dto = new TaskExecutionLogDto { Id = l.Id, TaskId = l.TaskId, ExecutedBy = l.ExecutedBy, StartTime = l.StartTime, EndTime = l.EndTime, Status = (int)l.Status, StatusName = GetExecutionResultName(l.Status), Message = l.Message, ErrorMessage = l.ErrorMessage, ProgressPercentage = l.ProgressPercentage };
         if (!string.IsNullOrEmpty(l.ExecutedBy))
         {
             try { var u = await _userService.GetUserByIdAsync(l.ExecutedBy); if (u != null) dto.ExecutedByName = string.IsNullOrWhiteSpace(u.Name) ? u.Username : $"{u.Username} ({u.Name})"; } catch { }
@@ -624,8 +621,8 @@ public class TaskService : ITaskService
             if (string.IsNullOrEmpty(t.ParentTaskId) || !map.ContainsKey(t.ParentTaskId)) roots.Add(t);
             else { var p = map[t.ParentTaskId]; p.Children ??= new List<TaskDto>(); p.Children.Add(t); }
         }
-        foreach (var t in all) if (t.Children != null) t.Children = t.Children.OrderBy(c => c.SortOrder).ThenBy(c => c.CreatedAt).ToList();
-        return roots.OrderBy(t => t.SortOrder).ThenBy(t => t.CreatedAt).ToList();
+        foreach (var t in all) if (t.Children != null) t.Children = t.Children.OrderBy(c => c.SortOrder).ToList();
+        return roots.OrderBy(t => t.SortOrder).ToList();
     }
 
     public async Task<string> AddTaskDependencyAsync(string pId, string sId, int type, int lag)

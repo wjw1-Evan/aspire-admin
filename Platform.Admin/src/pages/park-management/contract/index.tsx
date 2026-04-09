@@ -5,7 +5,7 @@ import { Form, Input, Select, Button, Modal, App, Space, Row, Col, Tag, Typograp
 import { Drawer } from 'antd';
 import { ProDescriptions } from '@ant-design/pro-components';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormSelect, ProFormDateRangePicker } from '@ant-design/pro-form';
+import { ModalForm, ProFormText, ProFormSelect, ProFormDateRangePicker, ProFormDatePicker } from '@ant-design/pro-form';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, FileTextOutlined, WarningOutlined, ReloadOutlined, CalendarOutlined, SyncOutlined, UploadOutlined, DownloadOutlined, PaperClipOutlined, CheckCircleOutlined, SearchOutlined } from '@ant-design/icons';
 import type { UploadFile, UploadProps } from 'antd';
 import dayjs from 'dayjs';
@@ -216,7 +216,7 @@ const ContractManagement: React.FC = () => {
                     return res.success;
                 }} autoFocusFirstInput width={480}>
                 <Row gutter={16}><Col span={12}><ProFormText name="amount" label="付款金额" rules={[{ required: true }]} fieldProps={{ prefix: '¥' }} /></Col><Col span={12}><ProFormSelect name="paymentType" label="款项类型" rules={[{ required: true }]} options={[{ label: '房租', value: 'Rent' }, { label: '物业费', value: 'PropertyFee' }, { label: '押金', value: 'Deposit' }, { label: '其他', value: 'Other' }]} /></Col></Row>
-                <Row gutter={16}><Col span={12}><ProFormText name="paymentDate" label="付款日期" rules={[{ required: true }]} placeholder="选择日期" /></Col><Col span={12}><ProFormSelect name="paymentMethod" label="付款方式" options={[{ label: '银行转账', value: 'BankTransfer' }, { label: '微信支付', value: 'WeChat' }, { label: '支付宝', value: 'Alipay' }, { label: '现金', value: 'Cash' }]} /></Col></Row>
+                <Row gutter={16}><Col span={12}><ProFormDatePicker name="paymentDate" label="付款日期" rules={[{ required: true }]} placeholder="选择日期" /></Col><Col span={12}><ProFormSelect name="paymentMethod" label="付款方式" options={[{ label: '银行转账', value: 'BankTransfer' }, { label: '微信支付', value: 'WeChat' }, { label: '支付宝', value: 'Alipay' }, { label: '现金', value: 'Cash' }]} /></Col></Row>
                 <ProFormDateRangePicker name="periodRange" label="费用账期" />
                 <ProFormText name="notes" label="备注" placeholder="备注信息" />
             </ModalForm>

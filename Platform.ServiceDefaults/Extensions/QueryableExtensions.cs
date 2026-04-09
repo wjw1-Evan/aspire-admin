@@ -1,13 +1,13 @@
 using System.Linq.Dynamic.Core;
+using System.Reflection;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace Platform.ServiceDefaults.Extensions;
 
 public static class QueryableExtensions
 {
-    private static readonly HashSet<string> ExcludedPropertyNames = new()
-    {
-        "Metadata", "Extra", "Properties", "Attributes", "Data", "Settings"
-    };
+
 
     public static PagedResult<T> ToPagedList<T>(
         this IQueryable<T> query,
@@ -18,17 +18,19 @@ public static class QueryableExtensions
         if (!string.IsNullOrWhiteSpace(p.Search))
         {
             var props = typeof(T).GetProperties()
-                .Where(x => x.CanRead 
+                .Where(x => x.CanRead
                     && x.GetIndexParameters().Length == 0
                     && x.PropertyType == typeof(string)
-                    && !ExcludedPropertyNames.Contains(x.Name))
+                    // && !x.IsDefined(typeof(BsonIdAttribute), true)
+                    && !IsObjectIdRepresentation(x))
                 .Select(x => x.Name)
                 .ToList();
 
+
+
             if (props.Count > 0)
             {
-                var conditions = props.Select(x => $"({x} != null && {x}.Contains(@0))");
-                var expr = string.Join(" || ", conditions);
+                var expr = string.Join(" || ", props.Select(x => $"({x} != null && {x}.Contains(@0))"));
                 query = query.Where(expr, p.Search);
             }
         }
@@ -38,5 +40,14 @@ public static class QueryableExtensions
         query = query.OrderBy(isDesc ? $"{field} descending" : field);
 
         return query.PageResult(p.Page, p.PageSize);
+    }
+
+    /// <summary>
+    /// 判断属性是否标注了 BsonRepresentation(ObjectId)
+    /// </summary>
+    private static bool IsObjectIdRepresentation(PropertyInfo prop)
+    {
+        var attr = prop.GetCustomAttribute<BsonRepresentationAttribute>();
+        return attr != null && attr.Representation == BsonType.ObjectId;
     }
 }

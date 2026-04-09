@@ -16,7 +16,7 @@ public abstract class BaseEntity : IEntity, ISoftDeletable, ITimestamped, IOpera
     [Key]
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
-    public string? Id { get; set; }
+    public string Id { get; set; } = MongoDB.Bson.ObjectId.GenerateNewId().ToString();
 
     /// <summary>
     /// 创建时间 - 自动设置 UTC 时间
@@ -94,7 +94,7 @@ public abstract class MultiTenantEntity : BaseEntity, IMultiTenant
 /// </summary>
 public interface IEntity
 {
-    string? Id { get; set; }
+    string Id { get; set; }
 }
 
 /// <summary>

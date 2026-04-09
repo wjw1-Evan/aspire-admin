@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
 import { useIntl, request } from '@umijs/max';
-import { Tag, Space, Row, Col, Button, Input, Popconfirm, Drawer, Typography, Upload, DatePicker, Tabs, Card } from 'antd';
+import { Tag, Space, Row, Col, Button, Input, Popconfirm, Drawer, Typography, Upload, DatePicker, Tabs } from 'antd';
 import type { UploadFile } from 'antd';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import { ModalForm, ProFormText, ProFormSelect, ProFormDatePicker } from '@ant-design/pro-form';
@@ -172,12 +172,10 @@ const AssetManagement: React.FC = () => {
 
     return (
         <PageContainer>
-            <Card bodyStyle={{ padding: 0 }}>
-                <Tabs activeKey={state.activeTab} onChange={handleTabChange} items={[
-                    { key: 'buildings', label: <span><BankOutlined />楼宇管理</span> },
-                    { key: 'units', label: <span><HomeOutlined />房源管理</span> },
-                ]} />
-            </Card>
+            <Tabs activeKey={state.activeTab} onChange={handleTabChange} type="card" items={[
+                { key: 'buildings', label: <span><BankOutlined />{intl.formatMessage({ id: 'pages.park.asset.buildings', defaultMessage: '楼宇管理' })}</span> },
+                { key: 'units', label: <span><HomeOutlined />{intl.formatMessage({ id: 'pages.park.asset.units', defaultMessage: '房源管理' })}</span> },
+            ]} />
             <ProTable actionRef={actionRef} params={{ activeTab: state.activeTab }} headerTitle={
               <Space size={24}>
                 <Space><BankOutlined />资产管理</Space>

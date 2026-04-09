@@ -29,17 +29,17 @@
 
 #### 1. 运行 lint 检查
 ```bash
-cd /Users/fanshuyi/Projects/aspire-admin/Platform.Admin && npm run lint
+cd Platform.Admin && npm run lint
 ```
 
 #### 2. 检查 Git 状态
 ```bash
-cd /Users/fanshuyi/Projects/aspire-admin && git status
+git status
 ```
 
 #### 3. 如果有变更，提交并推送
 ```bash
-cd /Users/fanshuyi/Projects/aspire-admin && git add -A
+git add -A
 git commit -m "<提交信息>"
 git push origin main
 ```

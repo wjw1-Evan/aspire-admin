@@ -517,7 +517,7 @@ public class WorkflowExportImportService : IWorkflowExportImportService
             Name = workflowItem.Name,
             Description = workflowItem.Description,
             Category = workflowItem.Category ?? string.Empty,
-            Version = workflowItem.Version ?? new WorkflowVersion { Major = 1, Minor = 0, CreatedAt = DateTime.UtcNow },
+            Version = workflowItem.Version ?? new WorkflowVersion { Major = 1, Minor = 0 },
             Graph = workflowItem.Graph ?? new WorkflowGraph(),
             IsActive = workflowItem.IsActive
         };
@@ -674,12 +674,12 @@ public class WorkflowExportItem
     /// <summary>
     /// 创建时间
     /// </summary>
-    public DateTime CreatedAt { get; set; }
+    public DateTime? CreatedAt { get; set; }
 
     /// <summary>
     /// 更新时间
     /// </summary>
-    public DateTime UpdatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 
     /// <summary>
     /// 创建人ID

@@ -155,7 +155,7 @@ export const ThemeSettingsDrawer: React.FC<ThemeSettingsDrawerProps> = ({ open, 
       open={open}
       size={320}
     >
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+      <Space orientation="vertical" size="large" style={{ width: '100%' }}>
         {/* 整体风格设置 */}
         <div>
           <div style={{ marginBottom: 12, fontWeight: 500 }}>
@@ -166,7 +166,7 @@ export const ThemeSettingsDrawer: React.FC<ThemeSettingsDrawerProps> = ({ open, 
             onChange={(e) => handleThemeChange(e.target.value)}
             style={{ width: '100%' }}
           >
-            <Space direction="vertical" style={{ width: '100%' }}>
+            <Space orientation="vertical" style={{ width: '100%' }}>
               <Radio value="light">
                 <Space>
                   <BulbOutlined />
@@ -195,7 +195,7 @@ export const ThemeSettingsDrawer: React.FC<ThemeSettingsDrawerProps> = ({ open, 
             onChange={(e) => handleLayoutChange(e.target.value)}
             style={{ width: '100%' }}
           >
-            <Space direction="vertical" style={{ width: '100%' }}>
+            <Space orientation="vertical" style={{ width: '100%' }}>
               <Radio value="side">
                 {intl.formatMessage({ id: 'app.setting.sidemenu' })}
               </Radio>
@@ -221,7 +221,7 @@ export const ThemeSettingsDrawer: React.FC<ThemeSettingsDrawerProps> = ({ open, 
             onChange={(e) => handleContentWidthChange(e.target.value)}
             style={{ width: '100%' }}
           >
-            <Space direction="vertical" style={{ width: '100%' }}>
+            <Space orientation="vertical" style={{ width: '100%' }}>
               <Radio value="Fixed">
                 {intl.formatMessage({ id: 'app.setting.content-width.fixed' })}
               </Radio>
@@ -239,7 +239,7 @@ export const ThemeSettingsDrawer: React.FC<ThemeSettingsDrawerProps> = ({ open, 
           <div style={{ marginBottom: 12, fontWeight: 500 }}>
             {intl.formatMessage({ id: 'app.setting.othersettings' })}
           </div>
-          <Space direction="vertical" style={{ width: '100%' }} size="middle">
+          <Space orientation="vertical" style={{ width: '100%' }} size="middle">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span>{intl.formatMessage({ id: 'app.setting.fixedheader' })}</span>
               <Switch

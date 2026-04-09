@@ -161,7 +161,7 @@ const SharePage: React.FC = () => {
                     title="分享不可用或需要密码"
                     subTitle={state.error || '请输入密码后重试，或联系分享者确认链接状态'}
                     extra={
-                        <Space direction="vertical" style={{ width: '100%' }}>
+                        <Space orientation="vertical" style={{ width: '100%' }}>
                             <Input.Password
                                 placeholder="请输入分享密码（如果需要）"
                                 value={state.password}
@@ -178,7 +178,7 @@ const SharePage: React.FC = () => {
 
         return (
             <ProCard bordered={false} style={{ maxWidth: 520, margin: '0 auto' }}>
-                <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
                     <div>
                         <Title level={3} style={{ marginBottom: 4 }}>{state.shareInfo.fileName}</Title>
                         <Space>
@@ -204,12 +204,12 @@ const SharePage: React.FC = () => {
                         )}
                     </Space>
 
-                    <Space direction="vertical" size={4}>
+                    <Space orientation="vertical" size={4}>
                         <Text type="secondary">分享链接：{window.location.href}</Text>
                         <Text type="secondary">可查看：{state.shareInfo.canView ? '是' : '否'}</Text>
                     </Space>
 
-                    <Space direction="vertical" style={{ width: '100%' }}>
+                    <Space orientation="vertical" style={{ width: '100%' }}>
                         <Text type="secondary">如需密码，请在下方输入后重新访问：</Text>
                         <Input.Password
                             placeholder="分享密码（如果需要）"

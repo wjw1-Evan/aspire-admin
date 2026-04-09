@@ -115,7 +115,7 @@ const ApprovalOverviewCard: React.FC<ApprovalOverviewCardProps> = ({
                 }}
                 onClick={() => history.push('/document/approval')}
               >
-                <Space direction="vertical" size={2} style={{ flex: 1 }}>
+                <Space orientation="vertical" size={2} style={{ flex: 1 }}>
                   <Space>
                     <Text strong>{doc.title}</Text>
                     <Tag color="blue">{doc.documentType}</Tag>

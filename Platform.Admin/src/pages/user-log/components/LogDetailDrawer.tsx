@@ -142,7 +142,7 @@ export default function LogDetailDrawer({
     >
       <Spin spinning={loading}>
         {log ? (
-          <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          <Space orientation="vertical" size="large" style={{ width: '100%' }}>
             {/* 基本信息 */}
             <Descriptions title={intl.formatMessage({ id: 'pages.logDetail.basicInfo' })} bordered column={1}>
               <Descriptions.Item label={intl.formatMessage({ id: 'pages.logDetail.logId' })}>

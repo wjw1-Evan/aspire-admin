@@ -124,7 +124,7 @@ const VisitKnowledgeBase: React.FC = () => {
 
             <Drawer title="问题详情" open={state.detailVisible} onClose={() => set({ detailVisible: false, selectedQuestion: null })} size={640} extra={<Button onClick={() => set({ detailVisible: false })}>关闭</Button>}>
                 {state.selectedQuestion ? (
-                    <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                    <Space orientation="vertical" size="large" style={{ width: '100%' }}>
                         <ProDescriptions title="基本信息" bordered column={1}>
                             <ProDescriptions.Item label="分类"><Tag color="blue">{state.selectedQuestion.category || '通用'}</Tag></ProDescriptions.Item>
                             <ProDescriptions.Item label="常用标记">{state.selectedQuestion.isFrequentlyUsed ? <StarFilled style={{ color: '#fadb14' }} /> : <StarOutlined style={{ color: '#d9d9d9' }} />}</ProDescriptions.Item>

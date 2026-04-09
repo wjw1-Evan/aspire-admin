@@ -304,7 +304,7 @@ const CloudStorageFilesPage: React.FC = () => {
                             </Space>
                             {state.versionList.length > 0 && (
                                 <Card title="版本历史" style={{ marginTop: 16 }}>
-                                    <Space direction="vertical" style={{ width: '100%' }} size={12}>
+                                    <Space orientation="vertical" style={{ width: '100%' }} size={12}>
                                         {state.versionList.map((v) => (
                                             <div key={v.id} style={{ border: '1px solid #f0f0f0', borderRadius: 8, padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                                                 <div style={{ minWidth: 0, flex: 1 }}>

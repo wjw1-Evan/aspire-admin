@@ -110,7 +110,7 @@ const UserManagement: React.FC = () => {
     { title: intl.formatMessage({ id: 'pages.table.organization' }), dataIndex: 'organizations', responsive: ['lg'], render: (_, r) => {
       const orgs = r.organizations || [];
       if (!orgs.length) return <Typography.Text type="secondary">{intl.formatMessage({ id: 'pages.userManagement.organization.empty' })}</Typography.Text>;
-      return <Space direction="vertical" size={4} wrap>{orgs.map(o => <Space key={o.id || o.fullPath || o.name} size={4}><span>{o.fullPath || o.name || '-'}</span>{o.isPrimary && <Tag color="gold" variant="filled">{intl.formatMessage({ id: 'pages.userManagement.organization.primary' })}</Tag>}</Space>)}</Space>;
+      return <Space orientation="vertical" size={4} wrap>{orgs.map(o => <Space key={o.id || o.fullPath || o.name} size={4}><span>{o.fullPath || o.name || '-'}</span>{o.isPrimary && <Tag color="gold" variant="filled">{intl.formatMessage({ id: 'pages.userManagement.organization.primary' })}</Tag>}</Space>)}</Space>;
     }},
     { title: intl.formatMessage({ id: 'pages.table.status' }), dataIndex: 'isActive', key: 'isActive', render: (_, r) => <Badge status={r.isActive ? 'success' : 'error'} text={r.isActive ? intl.formatMessage({ id: 'pages.table.activated' }) : intl.formatMessage({ id: 'pages.table.deactivated' })} /> },
     { title: intl.formatMessage({ id: 'pages.table.createdAt' }), dataIndex: 'createdAt', key: 'createdAt', sorter: true, valueType: 'dateTime' },

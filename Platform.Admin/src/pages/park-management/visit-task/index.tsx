@@ -151,7 +151,7 @@ const VisitTaskPage: React.FC = () => {
 
             <Drawer title="走访任务详情" placement="right" open={state.detailVisible} onClose={() => { set({ detailVisible: false, selectedTask: null }); }} width={640} loading={state.detailLoading}
                 extra={<Space><Button onClick={() => set({ detailVisible: false })}>关闭</Button><Button type="primary" icon={<EditOutlined />} onClick={() => { set({ detailVisible: false, editingTask: state.selectedTask, formVisible: true }); }}>编辑</Button></Space>}>
-                {state.selectedTask ? (<Space direction="vertical" size="large" style={{ width: '100%' }}>
+                {state.selectedTask ? (<Space orientation="vertical" size="large" style={{ width: '100%' }}>
                     <ProDescriptions title="基本信息" bordered column={2}>
                         <ProDescriptions.Item label="任务标题" span={2}>{state.selectedTask.title}</ProDescriptions.Item>
                         <ProDescriptions.Item label="走访类型">{state.selectedTask.visitType}</ProDescriptions.Item>

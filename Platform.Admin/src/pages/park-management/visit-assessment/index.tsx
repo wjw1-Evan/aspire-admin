@@ -49,7 +49,7 @@ const VisitAssessmentList: React.FC = () => {
 
     const columns: ProColumns<VisitTask>[] = [
         { title: intl.formatMessage({ id: 'pages.park.visit.visitDate', defaultMessage: '走访时间' }), dataIndex: 'visitDate', width: 170, render: (dom: any) => dom ? dayjs(dom).format('YYYY-MM-DD HH:mm') : '-' },
-        { title: intl.formatMessage({ id: 'pages.park.visit.visitor', defaultMessage: '受访人/企业' }), dataIndex: 'tenantName', width: 180, ellipsis: true, render: (dom: any, r: VisitTask) => <Space direction="vertical" size={0}><Text strong>{dom || '-'}</Text><Text type="secondary" style={{ fontSize: 12 }}>{r.visitLocation || '-'}</Text></Space> },
+        { title: intl.formatMessage({ id: 'pages.park.visit.visitor', defaultMessage: '受访人/企业' }), dataIndex: 'tenantName', width: 180, ellipsis: true, render: (dom: any, r: VisitTask) => <Space orientation="vertical" size={0}><Text strong>{dom || '-'}</Text><Text type="secondary" style={{ fontSize: 12 }}>{r.visitLocation || '-'}</Text></Space> },
         { title: intl.formatMessage({ id: 'pages.park.visit.task', defaultMessage: '走访任务' }), dataIndex: 'title', ellipsis: true, render: (dom: any) => dom || '-' },
         { title: intl.formatMessage({ id: 'pages.park.visit.score', defaultMessage: '满意度' }), dataIndex: 'assessmentScore', width: 150, render: (dom: React.ReactNode) => dom !== undefined && dom !== null ? <Rate disabled value={dom as number} character={<StarFilled />} style={{ fontSize: 14 }} /> : <Tag color="warning">待评价</Tag> },
         { title: intl.formatMessage({ id: 'pages.park.common.actions', defaultMessage: '操作' }), valueType: 'option', fixed: 'right', width: 180, render: (_: any, r: VisitTask) => (
@@ -103,7 +103,7 @@ const VisitAssessmentList: React.FC = () => {
                     <Divider titlePlacement="left" plain><Text type="secondary" style={{ fontSize: 12 }}>{intl.formatMessage({ id: 'pages.park.visit.assessmentComments', defaultMessage: '评价与建议' })}</Text></Divider>
                     <div style={{ marginBottom: 24 }}><Text strong>{intl.formatMessage({ id: 'pages.park.visit.comments', defaultMessage: '详细评语' })}：</Text><div style={{ marginTop: 8, padding: 12, border: '1px solid #f0f0f0', borderRadius: 8, minHeight: 100 }}>{state.selectedAssessment.comments || intl.formatMessage({ id: 'pages.park.common.noData', defaultMessage: '暂无评价内容' })}</div></div>
                     <Divider />
-                    <Space direction="vertical" size={2} style={{ width: '100%', textAlign: 'right' }}><Text type="secondary" style={{ fontSize: 12 }}>{intl.formatMessage({ id: 'pages.park.common.createdAt', defaultMessage: '走访发生时间' })}: {dayjs(state.selectedAssessment.createdAt).format('YYYY-MM-DD HH:mm')}</Text></Space>
+                    <Space orientation="vertical" size={2} style={{ width: '100%', textAlign: 'right' }}><Text type="secondary" style={{ fontSize: 12 }}>{intl.formatMessage({ id: 'pages.park.common.createdAt', defaultMessage: '走访发生时间' })}: {dayjs(state.selectedAssessment.createdAt).format('YYYY-MM-DD HH:mm')}</Text></Space>
                 </div>}
             </Drawer>
 

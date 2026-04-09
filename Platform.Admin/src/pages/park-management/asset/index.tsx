@@ -285,7 +285,7 @@ const AssetManagement: React.FC = () => {
             </Drawer>
 
             <Drawer title={unitState.currentUnit?.unitNumber || intl.formatMessage({ id: 'pages.park.asset.unitDetail', defaultMessage: '房源详情' })} open={unitState.detailVisible} onClose={() => { setUnit({ detailVisible: false, currentUnit: null }); }} width={720} loading={unitState.detailLoading}>
-                {unitState.currentUnit && (<Space direction="vertical" style={{ width: '100%' }} size={24}>
+                {unitState.currentUnit && (<Space orientation="vertical" style={{ width: '100%' }} size={24}>
                     <div>
                         <Title level={5} style={{ marginBottom: 16 }}>基本信息</Title>
                         <ProDescriptions bordered column={2} size="small">

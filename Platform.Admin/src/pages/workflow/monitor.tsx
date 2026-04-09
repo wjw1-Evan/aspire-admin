@@ -184,7 +184,7 @@ const WorkflowMonitor: React.FC = () => {
         <div>
           {history.map((record, index) => (
             <ProCard key={index} style={{ marginBottom: 8 }}>
-              <Space direction="vertical" style={{ width: '100%' }}>
+              <Space orientation="vertical" style={{ width: '100%' }}>
                 <div><strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.approver' })}:</strong> {record.approverName || record.approverId}</div>
                 <div><strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.action' })}:</strong> {(() => { const actionMeta = getStatusMeta(intl, record.action as ApprovalAction, approvalActionMap); return <Tag color={actionMeta.color}>{actionMeta.text}</Tag>; })()}</div>
                 {record.comment && <div><strong>{intl.formatMessage({ id: 'pages.workflow.monitor.history.comment' })}:</strong> {record.comment}</div>}

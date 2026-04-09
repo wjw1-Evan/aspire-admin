@@ -132,7 +132,7 @@ const UserDetail: React.FC<UserDetailProps> = ({ user, onClose }) => {
                 {intl.formatMessage({ id: 'pages.userManagement.organization.empty' })}
               </Text>
             ) : (
-              <Space direction="vertical" size={4} wrap>
+              <Space orientation="vertical" size={4} wrap>
                 {user.organizations.map((org) => (
                   <Space key={org.id || org.fullPath || org.name} size={4} wrap>
                     <Text>{org.fullPath || org.name || '-'}</Text>

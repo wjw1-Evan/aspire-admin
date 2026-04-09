@@ -196,7 +196,7 @@ const CloudStorageQuotaPage: React.FC = () => {
                             ]}
                         />
                     )},
-                    { key: 'usage-stats', label: <Space><PieChartOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.quota.tabs.usageStats' })}</Space>, children: state.usageStats ? (<Space direction="vertical" style={{ width: '100%' }} size="large">
+                    { key: 'usage-stats', label: <Space><PieChartOutlined />{intl.formatMessage({ id: 'pages.cloud-storage.quota.tabs.usageStats' })}</Space>, children: state.usageStats ? (<Space orientation="vertical" style={{ width: '100%' }} size="large">
                         <Row gutter={[16, 16]}>
                             <Col xs={24} sm={12} md={6}><StatCard title={intl.formatMessage({ id: 'pages.cloud-storage.quota.statistics.totalUsers' })} value={state.usageStats.totalUsers} icon={<UserOutlined />} color="#1890ff" /></Col>
                             <Col xs={24} sm={12} md={6}><StatCard title={intl.formatMessage({ id: 'pages.cloud-storage.quota.statistics.totalQuota' })} value={formatFileSize(state.usageStats.totalQuota)} icon={<DatabaseOutlined />} color="#52c41a" /></Col>

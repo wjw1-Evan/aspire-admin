@@ -16,12 +16,12 @@ public abstract class BaseEntity : IEntity, ISoftDeletable, ITimestamped, IOpera
     [Key]
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
-    public string Id { get; set; }
+    public string Id { get; set; } = string.Empty;
 
     /// <summary>
     /// 创建时间 - 自动设置 UTC 时间
     /// </summary>
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? CreatedAt { get; set; }
 
     /// <summary>
     /// 更新时间 - 自动更新 UTC 时间
@@ -62,11 +62,20 @@ public abstract class BaseEntity : IEntity, ISoftDeletable, ITimestamped, IOpera
     public DateTime? LastOperationAt { get; set; }
 
     /// <summary>
-    /// 构造函数 - Id 由 MongoDB 自动生成
+    /// 构造函数 - 生成新的ObjectId
     /// </summary>
-    protected BaseEntity()
-    {
-    }
+    // protected BaseEntity()
+    // {
+    //     try
+    //     {
+    //         Id = ObjectId.GenerateNewId().ToString();
+    //     }
+    //     catch
+    //     {
+    //         // 如果ObjectId生成失败，使用GUID作为备选方案
+    //         Id = Guid.NewGuid().ToString("N");
+    //     }
+    // }
 }
 
 /// <summary>
@@ -103,7 +112,7 @@ public interface ISoftDeletable
 /// </summary>
 public interface ITimestamped
 {
-    DateTime CreatedAt { get; set; }
+    DateTime? CreatedAt { get; set; }
     DateTime? UpdatedAt { get; set; }
 }
 

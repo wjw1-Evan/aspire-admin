@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { PageContainer, ProDescriptions } from '@ant-design/pro-components';
-import { Space, Tag, Button, Tabs, Drawer, message, Input } from 'antd';
-import { CheckCircleOutlined, FileTextOutlined, CloseOutlined, EyeOutlined, CheckOutlined } from '@ant-design/icons';
+import { Space, Tag, Button, Drawer, message, Input } from 'antd';
+import { FileTextOutlined, EyeOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import { ProTable, ProColumns, ActionType } from '@ant-design/pro-table';
 import dayjs from 'dayjs';
 import { request } from '@umijs/max';
@@ -33,7 +33,6 @@ const ApprovalPage: React.FC = () => {
   const actionRef = useRef<ActionType | undefined>(undefined);
   const [state, setState] = useState({
     statistics: null as DocumentStatistics | null,
-    activeTab: 'pending',
     detailVisible: false,
     viewingId: '',
     search: '',
@@ -45,7 +44,7 @@ const ApprovalPage: React.FC = () => {
   }, []);
 
   const columns: ProColumns<Document>[] = [
-    { title: '标题', dataIndex: 'title', ellipsis: true, sorter: true, render: (dom: any, r) => <a onClick={() => set({ viewingId: r.id, detailVisible: true })}>{dom}</a> },
+    { title: '标题', dataIndex: 'title', ellipsis: true, sorter: true, render: (dom: any, r) => <a onClick={() => set({ viewingId: r.id, detailVisible: true })}><FileTextOutlined /> {dom}</a> },
     { title: '类型', dataIndex: 'documentType', ellipsis: true, sorter: true },
     { title: '分类', dataIndex: 'category', ellipsis: true, render: (dom: any) => dom ? <Tag color="blue">{dom}</Tag> : '-' },
     {
@@ -62,7 +61,7 @@ const ApprovalPage: React.FC = () => {
       render: (_: any, r: Document) => (
         <Space size={4}>
           <Button variant="link" color="cyan" size="small" icon={<EyeOutlined />} onClick={() => set({ viewingId: r.id, detailVisible: true })}>查看</Button>
-          {state.activeTab === 'pending' && (
+          {r.status === DocumentStatus.Approving && (
             <>
               <Button type="link" size="small" icon={<CheckOutlined />} onClick={async () => { await api.approve(r.id!); message.success('审批通过'); actionRef.current?.reload(); api.statistics().then(res => { if (res.success && res.data) set({ statistics: res.data }); }); }}>通过</Button>
               <Button type="link" size="small" danger icon={<CloseOutlined />} onClick={async () => { await api.reject(r.id!, '不符合要求'); message.success('已拒绝'); actionRef.current?.reload(); api.statistics().then(res => { if (res.success && res.data) set({ statistics: res.data }); }); }}>拒绝</Button>
@@ -75,119 +74,40 @@ const ApprovalPage: React.FC = () => {
 
   const fetchData = async (params: any) => {
     const { current, pageSize } = params;
-    let res;
-    if (state.activeTab === 'pending') {
-      res = await api.pending({ page: current, pageSize, search: state.search });
-    } else {
-      res = await api.list({ page: current, pageSize, filterType: state.activeTab, search: state.search });
-    }
+    const res = await api.pending({ page: current, pageSize, search: state.search });
     api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
     return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
   };
 
-  const tabItems = [
-    { key: 'pending', label: '待审批', fetchData: () => fetchData },
-    { key: 'approved', label: '已通过', fetchData: () => fetchData },
-    { key: 'rejected', label: '已拒绝', fetchData: () => fetchData },
-  ];
-
   return (
     <PageContainer>
-      <Tabs
-        activeKey={state.activeTab}
-        onChange={(key) => { set({ activeTab: key }); actionRef.current?.reload(); }}
-        items={[
-          {
-            key: 'pending',
-            label: (
-              <Space>
-                <span>待审批</span>
-                {state.statistics?.pendingCount ? <Tag color="processing">{state.statistics.pendingCount}</Tag> : null}
-              </Space>
-            ),
-            children: (
-              <ProTable
-                actionRef={actionRef}
-                headerTitle={
-                  <Space size={24}>
-                    <Space><CheckCircleOutlined />公文审批</Space>
-                    <Space size={12}>
-                      <Tag color="processing">待审批 {state.statistics?.pendingCount || 0}</Tag>
-                      <Tag color="blue">我发起 {state.statistics?.myCreatedCount || 0}</Tag>
-                      <Tag color="success">已通过 {state.statistics?.approvedCount || 0}</Tag>
-                      <Tag color="error">已拒绝 {state.statistics?.rejectedCount || 0}</Tag>
-                    </Space>
-                  </Space>
-                }
-                request={fetchData}
-                columns={columns}
-                rowKey="id"
-                search={false}
-                scroll={{ x: 'max-content' }}
-                toolBarRender={() => [
-                  <Input.Search
-                    key="search"
-                    placeholder="搜索..."
-                    allowClear
-                    value={state.search}
-                    onChange={(e) => set({ search: e.target.value })}
-                    onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
-                    style={{ width: 260, marginRight: 8 }}
-                  />,
-                ]}
-              />
-            ),
-          },
-          {
-            key: 'approved',
-            label: '已通过',
-            children: (
-              <ProTable
-                actionRef={actionRef}
-                request={fetchData}
-                columns={columns}
-                rowKey="id"
-                search={false}
-                scroll={{ x: 'max-content' }}
-                toolBarRender={() => [
-                  <Input.Search
-                    key="search"
-                    placeholder="搜索..."
-                    allowClear
-                    value={state.search}
-                    onChange={(e) => set({ search: e.target.value })}
-                    onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
-                    style={{ width: 260, marginRight: 8 }}
-                  />,
-                ]}
-              />
-            ),
-          },
-          {
-            key: 'rejected',
-            label: '已拒绝',
-            children: (
-              <ProTable
-                actionRef={actionRef}
-                request={fetchData}
-                columns={columns}
-                rowKey="id"
-                search={false}
-                scroll={{ x: 'max-content' }}
-                toolBarRender={() => [
-                  <Input.Search
-                    key="search"
-                    placeholder="搜索..."
-                    allowClear
-                    value={state.search}
-                    onChange={(e) => set({ search: e.target.value })}
-                    onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
-                    style={{ width: 260, marginRight: 8 }}
-                  />,
-                ]}
-              />
-            ),
-          },
+      <ProTable
+        actionRef={actionRef}
+        headerTitle={
+          <Space size={24}>
+            <Space><FileTextOutlined />公文审批</Space>
+            <Space size={12}>
+              <Tag color="processing">待审批 {state.statistics?.pendingCount || 0}</Tag>
+              <Tag color="success">已通过 {state.statistics?.approvedCount || 0}</Tag>
+              <Tag color="error">已拒绝 {state.statistics?.rejectedCount || 0}</Tag>
+            </Space>
+          </Space>
+        }
+        request={fetchData}
+        columns={columns}
+        rowKey="id"
+        search={false}
+        scroll={{ x: 'max-content' }}
+        toolBarRender={() => [
+          <Input.Search
+            key="search"
+            placeholder="搜索..."
+            allowClear
+            value={state.search}
+            onChange={(e) => set({ search: e.target.value })}
+            onSearch={(value) => { set({ search: value }); actionRef.current?.reload(); }}
+            style={{ width: 260, marginRight: 8 }}
+          />,
         ]}
       />
 

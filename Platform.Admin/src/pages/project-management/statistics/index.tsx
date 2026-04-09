@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useEffect } from 'react';
-import { Row, Col, Statistic, Spin, Typography, Progress, Tag, Empty, Button, Space, DatePicker, message, Modal, Radio } from 'antd';
+import { Row, Col, Statistic, Spin, Typography, Progress, Tag, Empty, Button, Space, Modal } from 'antd';
 import { ProCard } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
@@ -19,13 +19,12 @@ import {
 import { PageContainer } from '@ant-design/pro-components';
 import StatisticsPeriodSelector from '@/components/StatisticsPeriodSelector';
 import * as projectStatisticsService from '@/services/project/statistics';
-import { ProjectStatisticsPeriod, ProjectDashboardStatistics } from '@/services/project/statistics';
-import styles from './index.less';
+import { ProjectDashboardStatistics } from '@/services/project/statistics';
 
 const { Text } = Typography;
-const { RangePicker } = DatePicker;
 
 const StatisticsPage: React.FC = () => {
+    const intl = useIntl();
     const [loading, setLoading] = useState(false);
     const [period, setPeriod] = useState<string>('month');
     const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>([
@@ -46,7 +45,6 @@ const StatisticsPage: React.FC = () => {
 
             if (dateRange) {
                 startDate = dateRange[0].startOf('day').format('YYYY-MM-DDTHH:mm:ss');
-                // 使用左闭右开区间：结束日期 + 1天，确保包含最后一天
                 endDate = dateRange[1].add(1, 'day').startOf('day').format('YYYY-MM-DDTHH:mm:ss');
             }
 
@@ -56,7 +54,6 @@ const StatisticsPage: React.FC = () => {
             }
         } catch (error) {
             console.error('Failed to load statistics:', error);
-            message.error('加载统计数据失败');
         } finally {
             setLoading(false);
         }
@@ -77,7 +74,6 @@ const StatisticsPage: React.FC = () => {
 
             if (dateRange) {
                 startDate = dateRange[0].startOf('day').format('YYYY-MM-DDTHH:mm:ss');
-                // 使用左闭右开区间：结束日期 + 1天，确保包含最后一天
                 endDate = dateRange[1].add(1, 'day').startOf('day').format('YYYY-MM-DDTHH:mm:ss');
             }
 
@@ -100,159 +96,167 @@ const StatisticsPage: React.FC = () => {
         }
     };
 
-    const periodOptions = [
-        { label: '本周', value: ProjectStatisticsPeriod.Week },
-        { label: '本月', value: ProjectStatisticsPeriod.Month },
-        { label: '本季', value: ProjectStatisticsPeriod.Quarter },
-        { label: '本年', value: ProjectStatisticsPeriod.Year },
-        { label: '自定义', value: 'custom' },
-    ];
+    const getPeriodLabel = () => {
+        switch (period) {
+            case 'week': return '本周';
+            case 'month': return '本月';
+            case 'quarter': return '本季';
+            case 'year': return '本年';
+            case 'custom': return '自定义';
+            default: return '本月';
+        }
+    };
 
-    const renderProjectProCard = () => {
-        if (!statistics?.project) return <ProCard loading className={styles.statProCard} />;
+    const renderProjectCard = () => {
+        if (!statistics?.project) {
+            return (
+                <ProCard loading className="stat-card" style={{ height: 200 }} />
+            );
+        }
+
         const { totalProjects, inProgressProjects, completedProjects, delayedProjects } = statistics.project;
+        const completionRate = totalProjects > 0 ? Math.round((completedProjects / totalProjects) * 100) : 0;
 
         return (
-            <ProCard className={styles.statProCard}>
-                <div className={styles.cardHeader}>
-                    <Statistic
-                        title="项目总数"
-                        value={totalProjects}
-                    />
-                    <div className={`${styles.iconWrapper} ${styles.blue}`}>
-                        <ProjectOutlined />
+            <ProCard className="stat-card" style={{ height: 200, padding: '12px 16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <div>
+                        <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>项目总数</div>
+                        <div style={{ fontSize: 24, fontWeight: 500, color: '#1890ff' }}>{totalProjects}</div>
+                    </div>
+                    <div style={{ background: 'linear-gradient(135deg, #e6f7ff, #f0f5ff)', padding: 8, borderRadius: 6 }}>
+                        <ProjectOutlined style={{ fontSize: 18, color: '#1890ff' }} />
                     </div>
                 </div>
 
-                <div className={styles.progressWrapper}>
-                    <div className={styles.progressLabel}>
-                        <Text>总体完成度</Text>
-                        <Text strong>{totalProjects > 0 ? Math.round((completedProjects / totalProjects) * 100) : 0}%</Text>
+                <div style={{ marginBottom: 8 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                        <Text type="secondary" style={{ fontSize: 12 }}>总体完成度</Text>
+                        <Text strong style={{ fontSize: 12 }}>{completionRate}%</Text>
                     </div>
-                    <Progress
-                        percent={totalProjects > 0 ? Math.round((completedProjects / totalProjects) * 100) : 0}
-                        showInfo={false}
-                        strokeColor={{ '0%': '#108ee9', '100%': '#87d068' }}
-                        size="small"
-                    />
+                    <Progress percent={completionRate} showInfo={false} strokeColor={{ '0%': '#108ee9', '100%': '#87d068' }} size="small" />
                 </div>
 
-                <div className={styles.subStatRow}>
-                    <Row gutter={[16, 16]}>
-                        <Col span={8}>
-                            <Statistic
-                                title="进行中"
-                                value={inProgressProjects}
-                                styles={{ content: { color: '#1890ff' } }}
-                            />
-                        </Col>
-                        <Col span={8}>
-                            <Statistic
-                                title="已完成"
-                                value={completedProjects}
-                                styles={{ content: { color: '#52c41a' } }}
-                            />
-                        </Col>
-                        <Col span={8}>
-                            <Statistic
-                                title="延期"
-                                value={delayedProjects}
-                                styles={{ content: { color: '#ff4d4f' } }}
-                            />
-                        </Col>
-                    </Row>
-                </div>
+                <Row gutter={16} style={{ marginTop: 8 }}>
+                    <Col span={8}>
+                        <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: 16, fontWeight: 500, color: '#1890ff' }}>{inProgressProjects}</div>
+                            <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>进行中</div>
+                        </div>
+                    </Col>
+                    <Col span={8}>
+                        <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: 16, fontWeight: 500, color: '#52c41a' }}>{completedProjects}</div>
+                            <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>已完成</div>
+                        </div>
+                    </Col>
+                    <Col span={8}>
+                        <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: 16, fontWeight: 500, color: '#ff4d4f' }}>{delayedProjects}</div>
+                            <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>延期</div>
+                        </div>
+                    </Col>
+                </Row>
             </ProCard>
         );
     };
 
-    const renderTaskProCard = () => {
-        if (!statistics?.task) return <ProCard loading className={styles.statProCard} />;
+    const renderTaskCard = () => {
+        if (!statistics?.task) {
+            return (
+                <ProCard loading className="stat-card" style={{ height: 200 }} />
+            );
+        }
+
         const { totalTasks, completedTasks, overdueTasks, completionRate } = statistics.task;
 
         return (
-            <ProCard className={styles.statProCard}>
-                <div className={styles.cardHeader}>
+            <ProCard className="stat-card" style={{ height: 200, padding: '12px 16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                     <div>
-                        <Statistic
-                            title="任务总数"
-                            value={totalTasks}
-                        />
-                        <div style={{ marginTop: 4 }}>
-                            <Tag color={overdueTasks > 0 ? 'error' : 'success'}>
-                                {overdueTasks > 0 ? `${overdueTasks} 个逾期` : '无逾期任务'}
-                            </Tag>
-                        </div>
+                        <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>任务总数</div>
+                        <div style={{ fontSize: 24, fontWeight: 500, color: '#52c41a' }}>{totalTasks}</div>
                     </div>
-                    <div className={`${styles.iconWrapper} ${styles.green}`}>
-                        <RocketOutlined />
+                    <div style={{ background: 'linear-gradient(135deg, #f6ffed, #f9f6f2)', padding: 8, borderRadius: 6 }}>
+                        <RocketOutlined style={{ fontSize: 18, color: '#52c41a' }} />
                     </div>
                 </div>
 
-                <div className={styles.subStatRow}>
-                    <Row align="middle" justify="space-between">
-                        <Col>
-                            <Statistic
-                                title="已完成"
-                                value={completedTasks}
-                            />
-                        </Col>
-                        <Col>
-                            <Progress
-                                type="circle"
-                                percent={completionRate}
-                                size={50}
-                                strokeColor="#52c41a"
-                                format={(percent) => <span style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>{percent}%</span>}
-                            />
-                        </Col>
-                    </Row>
+                <div style={{ marginBottom: 8 }}>
+                    {overdueTasks > 0 ? (
+                        <Tag color="error" icon={<WarningOutlined />} style={{ width: '100%', textAlign: 'center', margin: 0 }}>
+                            {overdueTasks} 个逾期
+                        </Tag>
+                    ) : (
+                        <Tag color="success" icon={<CheckCircleOutlined />} style={{ width: '100%', textAlign: 'center', margin: 0 }}>
+                            无逾期任务
+                        </Tag>
+                    )}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                    <div>
+                        <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>已完成</div>
+                        <div style={{ fontSize: 16, fontWeight: 500, color: '#52c41a' }}>{completedTasks}</div>
+                    </div>
+                    <Progress
+                        type="circle"
+                        percent={completionRate}
+                        size={45}
+                        strokeColor="#52c41a"
+                        format={(percent) => <span style={{ fontSize: 10 }}>{percent}%</span>}
+                    />
                 </div>
             </ProCard>
         );
     };
 
-    const renderMilestoneProCard = () => {
-        if (!statistics?.milestone) return <ProCard loading className={styles.statProCard} />;
+    const renderMilestoneCard = () => {
+        if (!statistics?.milestone) {
+            return (
+                <ProCard loading className="stat-card" style={{ height: 200 }} />
+            );
+        }
+
         const { totalMilestones, pendingMilestones, achievedMilestones, delayedMilestones } = statistics.milestone;
 
         return (
-            <ProCard className={styles.statProCard}>
-                <div className={styles.cardHeader}>
-                    <Statistic
-                        title="里程碑总数"
-                        value={totalMilestones}
-                    />
-                    <div className={`${styles.iconWrapper} ${styles.orange}`}>
-                        <TrophyOutlined />
+            <ProCard className="stat-card" style={{ height: 200, padding: '12px 16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <div>
+                        <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>里程碑总数</div>
+                        <div style={{ fontSize: 24, fontWeight: 500, color: '#faad14' }}>{totalMilestones}</div>
+                    </div>
+                    <div style={{ background: 'linear-gradient(135deg, #fffbe6, #fff7e6)', padding: 8, borderRadius: 6 }}>
+                        <TrophyOutlined style={{ fontSize: 18, color: '#faad14' }} />
                     </div>
                 </div>
 
-                <div className={styles.subStatRow}>
-                    <Row gutter={[16, 16]}>
-                        <Col span={12}>
-                            <Statistic
-                                title="待达成"
-                                value={pendingMilestones}
-                                prefix={<ClockCircleOutlined />}
-                                styles={{ content: { color: '#faad14' } }}
-                            />
-                        </Col>
-                        <Col span={12}>
-                            <Statistic
-                                title="已达成"
-                                value={achievedMilestones}
-                                prefix={<CheckCircleOutlined />}
-                                styles={{ content: { color: '#52c41a' } }}
-                            />
-                        </Col>
-                    </Row>
-                </div>
+                <Row gutter={16} style={{ marginTop: 12 }}>
+                    <Col span={12}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <ClockCircleOutlined style={{ color: '#faad14', fontSize: 14 }} />
+                            <div>
+                                <div style={{ fontSize: 14, fontWeight: 500 }}>{pendingMilestones}</div>
+                                <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>待达成</div>
+                            </div>
+                        </div>
+                    </Col>
+                    <Col span={12}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 14 }} />
+                            <div>
+                                <div style={{ fontSize: 14, fontWeight: 500 }}>{achievedMilestones}</div>
+                                <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)' }}>已达成</div>
+                            </div>
+                        </div>
+                    </Col>
+                </Row>
 
                 {delayedMilestones > 0 && (
-                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px dashed #f0f0f0' }}>
-                        <Tag icon={<WarningOutlined />} color="error" style={{ width: '100%', textAlign: 'center', margin: 0 }}>
-                            {delayedMilestones} 个里程碑已延期
+                    <div style={{ marginTop: 12 }}>
+                        <Tag color="error" icon={<WarningOutlined />} style={{ width: '100%', textAlign: 'center', margin: 0 }}>
+                            {delayedMilestones} 个延期
                         </Tag>
                     </div>
                 )}
@@ -260,46 +264,49 @@ const StatisticsPage: React.FC = () => {
         );
     };
 
-    const renderMemberProCard = () => {
-        if (!statistics?.member) return <ProCard loading className={styles.statProCard} />;
+    const renderMemberCard = () => {
+        if (!statistics?.member) {
+            return (
+                <ProCard loading className="stat-card" style={{ height: 200 }} />
+            );
+        }
+
         const { totalMembers, membersByRole } = statistics.member;
 
         return (
-            <ProCard className={styles.statProCard}>
-                <div className={styles.cardHeader}>
-                    <Statistic
-                        title="团队规模"
-                        value={totalMembers}
-                    />
-                    <div className={`${styles.iconWrapper} ${styles.cyan}`}>
-                        <TeamOutlined />
+            <ProCard className="stat-card" style={{ height: 200, padding: '12px 16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <div>
+                        <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>团队规模</div>
+                        <div style={{ fontSize: 24, fontWeight: 500, color: '#722ed1' }}>{totalMembers}</div>
+                    </div>
+                    <div style={{ background: 'linear-gradient(135deg, #f9f0ff, #efdbff)', padding: 8, borderRadius: 6 }}>
+                        <TeamOutlined style={{ fontSize: 18, color: '#722ed1' }} />
                     </div>
                 </div>
 
-                <div className={styles.subStatRow}>
-                    <div style={{ height: 68, overflowY: 'auto' }}>
-                        {/* Fixed height to align with other cards visually roughly */}
-                        {Object.entries(membersByRole).length > 0 ? (
-                            Object.entries(membersByRole).map(([role, count]) => (
-                                <div key={role} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13, color: 'rgba(0,0,0,0.65)' }}>
-                                    <span>{role}</span>
-                                    <span style={{ fontWeight: 500 }}>{count}</span>
-                                </div>
-                            ))
-                        ) : (
-                            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无成员" style={{ margin: 0 }} />
-                        )}
-                    </div>
+                <div style={{ maxHeight: 100, overflowY: 'auto', marginTop: 8 }}>
+                    {Object.entries(membersByRole).length > 0 ? (
+                        Object.entries(membersByRole).map(([role, count]) => (
+                            <div key={role} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: 12, color: 'rgba(0,0,0,0.65)' }}>
+                                <span>{role}</span>
+                                <span style={{ fontWeight: 500 }}>{count}</span>
+                            </div>
+                        ))
+                    ) : (
+                        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无成员" />
+                    )}
                 </div>
             </ProCard>
         );
     };
 
     return (
-        <PageContainer ghost extra={[
-                <Space key="statistics-extra">
+        <PageContainer>
+            <div style={{ marginBottom: 16, textAlign: 'right' }}>
+                <Space wrap>
                     <StatisticsPeriodSelector
-                        value={period as string}
+                        value={period}
                         dateRange={dateRange}
                         onChange={(newDateRange, newPeriod) => {
                             setDateRange(newDateRange);
@@ -320,48 +327,46 @@ const StatisticsPage: React.FC = () => {
                         刷新
                     </Button>
                 </Space>
-            ]}
-        >
-            <div className={styles.statisticsPage}>
-                <Spin spinning={loading}>
-                    <Row gutter={[24, 24]}>
-                        <Col xs={24} sm={12} lg={6}>
-                            {renderProjectProCard()}
-                        </Col>
-                        <Col xs={24} sm={12} lg={6}>
-                            {renderTaskProCard()}
-                        </Col>
-                        <Col xs={24} sm={12} lg={6}>
-                            {renderMilestoneProCard()}
-                        </Col>
-                        <Col xs={24} sm={12} lg={6}>
-                            {renderMemberProCard()}
-                        </Col>
-                    </Row>
-                </Spin>
-
-                <Modal
-                    title={
-                        <Space>
-                            <RobotOutlined style={{ color: '#1890ff' }} />
-                            <span>项目运营 AI 深度分析报告</span>
-                        </Space>
-                    }
-                    open={aiReportVisible}
-                    onCancel={() => setAiReportVisible(false)}
-                    footer={null}
-                    width={900}
-                    styles={{ body: { maxHeight: '75vh', overflowY: 'auto', padding: '24px' } }}
-                >
-                    <Spin spinning={aiReportLoading} tip="AI 正在分析大量项目数据，生成专业报告中...">
-                        <div
-                            className={styles.markdownBody}
-                            dangerouslySetInnerHTML={{ __html: aiReportContent }}
-                            style={{ fontSize: 15, lineHeight: 1.8 }}
-                        />
-                    </Spin>
-                </Modal>
             </div>
+
+            <Spin spinning={loading}>
+                <Row gutter={[24, 24]}>
+                    <Col xs={24} sm={12} lg={6}>
+                        {renderProjectCard()}
+                    </Col>
+                    <Col xs={24} sm={12} lg={6}>
+                        {renderTaskCard()}
+                    </Col>
+                    <Col xs={24} sm={12} lg={6}>
+                        {renderMilestoneCard()}
+                    </Col>
+                    <Col xs={24} sm={12} lg={6}>
+                        {renderMemberCard()}
+                    </Col>
+                </Row>
+            </Spin>
+
+            <Modal
+                title={
+                    <Space>
+                        <RobotOutlined style={{ color: '#1890ff' }} />
+                        <span>项目运营 AI 深度分析报告</span>
+                    </Space>
+                }
+                open={aiReportVisible}
+                onCancel={() => setAiReportVisible(false)}
+                footer={null}
+                width={900}
+                styles={{ body: { maxHeight: '75vh', overflowY: 'auto', padding: '24px' } }}
+            >
+                <Spin spinning={aiReportLoading} tip="AI 正在分析大量项目数据，生成专业报告中...">
+                    <div
+                        dangerouslySetInnerHTML={{ __html: aiReportContent }}
+                        style={{ fontSize: 15, lineHeight: 1.8, marginBottom: 16 }}
+                    />
+                    <style>{`.markdown-body table { border-collapse: collapse; width: 100%; margin-bottom: 16px; } .markdown-body th, .markdown-body td { border: 1px solid #d9d9d9; padding: 8px 12px; text-align: left; } .markdown-body th { background-color: #fafafa; font-weight: 600; } .markdown-body tr:nth-child(even) { background-color: #fbfbfb; } .markdown-body blockquote { margin: 0 0 16px; padding: 0 1em; color: #6a737d; border-left: 0.25em solid #dfe2e5; }`}</style>
+                </Spin>
+            </Modal>
         </PageContainer>
     );
 };

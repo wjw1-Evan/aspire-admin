@@ -148,21 +148,6 @@ const DocumentManagement: React.FC = () => {
               (option?.label as string)?.toLowerCase().includes(input.toLowerCase()),
           }}
         />
-        <ProForm.Item
-          name="attachments"
-          label="附件（可在下一步继续上传）"
-          extra="可在下一步继续上传更多附件"
-        >
-          <Upload
-            name="files"
-            multiple
-            maxCount={10}
-            action="/apiservice/api/upload"
-            listType="text"
-          >
-            <Button icon={<UploadOutlined />}>上传附件</Button>
-          </Upload>
-        </ProForm.Item>
       </ModalForm>
 
       <Drawer title="公文详情" placement="right" open={state.detailVisible} onClose={() => set({ detailVisible: false, viewingId: '' })} size="large">

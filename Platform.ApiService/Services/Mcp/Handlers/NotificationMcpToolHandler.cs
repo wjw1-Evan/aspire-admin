@@ -284,7 +284,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
         var queryParams = new Platform.ServiceDefaults.Models.PageParams { Page = page, PageSize = pageSize, Search = name };
         var response = await _xiaokeConfigService.GetConfigsAsync(queryParams);
         var items = response.Queryable?.ToList() ?? new List<XiaokeConfigDto>();
-        var configs = items.Select(c => new { c.Id, c.Name, c.Model, c.SystemPrompt, c.Temperature, c.MaxTokens, c.TopP, c.FrequencyPenalty, c.PresencePenalty, c.IsEnabled, c.IsDefault, c.CreatedAt, c.UpdatedAt }).Cast<object>().ToList();
+        var configs = items.Select(c => new { c.Id, c.Name, c.Model, c.SystemPrompt, c.Temperature, c.MaxTokens, c.TopP, c.FrequencyPenalty, c.PresencePenalty, c.IsEnabled, c.IsDefault }).Cast<object>().ToList();
         return new { items = configs, rowCount = response.RowCount, currentPage = response.CurrentPage, pageSize = response.PageSize, pageCount = response.PageCount };
     }
 
@@ -294,7 +294,7 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
         if (!arguments.ContainsKey("configId") || arguments["configId"] is not string configId) return new { error = "缺少必需的参数: configId" };
         var config = await _xiaokeConfigService.GetConfigByIdAsync(configId);
         if (config == null) return new { error = "配置未找到" };
-        return new { config.Id, config.Name, config.Model, config.SystemPrompt, config.Temperature, config.MaxTokens, config.TopP, config.FrequencyPenalty, config.PresencePenalty, config.IsEnabled, config.IsDefault, config.CreatedAt, config.UpdatedAt };
+        return new { config.Id, config.Name, config.Model, config.SystemPrompt, config.Temperature, config.MaxTokens, config.TopP, config.FrequencyPenalty, config.PresencePenalty, config.IsEnabled, config.IsDefault };
     }
 
     private async Task<object?> HandleGetDefaultXiaokeConfigAsync(Dictionary<string, object> arguments, string currentUserId)
@@ -302,6 +302,6 @@ public class NotificationMcpToolHandler : McpToolHandlerBase
         if (_xiaokeConfigService == null) return new { error = "小科配置服务未启用" };
         var config = await _xiaokeConfigService.GetDefaultConfigAsync();
         if (config == null) return new { error = "未找到默认配置" };
-        return new { config.Id, config.Name, config.Model, config.SystemPrompt, config.Temperature, config.MaxTokens, config.TopP, config.FrequencyPenalty, config.PresencePenalty, config.IsEnabled, config.IsDefault, config.CreatedAt, config.UpdatedAt };
+        return new { config.Id, config.Name, config.Model, config.SystemPrompt, config.Temperature, config.MaxTokens, config.TopP, config.FrequencyPenalty, config.PresencePenalty, config.IsEnabled, config.IsDefault };
     }
 }

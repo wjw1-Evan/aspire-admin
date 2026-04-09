@@ -197,9 +197,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
                 t.PriorityName,
                 t.AssignedTo,
                 t.AssignedToName,
-                t.CompletionPercentage,
-                t.CreatedAt,
-                t.UpdatedAt
+                t.CompletionPercentage
             }).ToList(),
             rowCount = response.RowCount,
             currentPage = response.CurrentPage,
@@ -254,9 +252,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             task.Remarks,
             task.Tags,
             task.Participants,
-            task.Attachments,
-            task.CreatedAt,
-            task.UpdatedAt
+            task.Attachments
         };
     }
 
@@ -284,7 +280,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
         };
 
         var task = await _taskService.CreateTaskAsync(request);
-        return new { task.Id, task.TaskName, task.Status, task.StatusName, task.Priority, task.PriorityName, task.CreatedAt, message = "任务创建成功" };
+        return new { task.Id, task.TaskName, task.Status, task.StatusName, task.Priority, task.PriorityName, message = "任务创建成功" };
     }
 
     private async Task<object?> HandleUpdateTaskAsync(Dictionary<string, object> arguments, string currentUserId)
@@ -303,7 +299,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
         };
 
         var task = await _taskService.UpdateTaskAsync(request, currentUserId);
-        return new { task.Id, task.TaskName, task.Status, task.StatusName, task.CompletionPercentage, task.UpdatedAt, message = "任务更新成功" };
+        return new { task.Id, task.TaskName, task.Status, task.StatusName, task.CompletionPercentage, message = "任务更新成功" };
     }
 
     private async Task<object?> HandleAssignTaskAsync(Dictionary<string, object> arguments, string currentUserId)
@@ -420,9 +416,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
                 t.PriorityName,
                 t.CompletionPercentage,
                 t.CreatedBy,
-                t.CreatedByName,
-                t.CreatedAt,
-                t.UpdatedAt
+                t.CreatedByName
             }).ToList(),
             rowCount = response.RowCount,
             currentPage = response.CurrentPage,

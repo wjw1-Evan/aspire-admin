@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../Platform.Storage/Platform.Storage.csproj" />
     <ProjectReference Include="..\Platform.ApiService\Platform.ApiService.csproj" />
     <ProjectReference Include="..\Platform.DataInitializer\Platform.DataInitializer.csproj" />
     <ProjectReference Include="..\Platform.SystemMonitor\Platform.SystemMonitor.csproj" />

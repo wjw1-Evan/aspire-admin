@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
-builder.AddPlatformDatabase("systemmonitor-db");             // IMongoClient, IMongoDatabase, PlatformDbContext, ITenantContext
+builder.AddPlatformDatabase();             // IMongoClient, IMongoDatabase, PlatformDbContext, ITenantContext
 
 
 builder.Services.AddControllers();

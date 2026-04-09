@@ -3,9 +3,11 @@ using Platform.ServiceDefaults.Extensions;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
-builder.AddPlatformDatabase("mongodb");
+builder.AddPlatformDatabase();
 
 builder.Services.AddControllers();
+
+
 
 var app = builder.Build();
 

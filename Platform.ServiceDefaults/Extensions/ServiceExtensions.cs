@@ -19,11 +19,11 @@ public static class ServiceExtensions
     ///   <item>IMongoClient + IMongoDatabase（Aspire 自动注册）</item>
     ///   <item>PlatformDbContext（EF Core + MongoDB Provider）- 服务层直接使用</item>
     ///   <item>ITenantContext（多租户上下文 - Singleton，从 HttpContext.Items 读取 userId）</item>
+    ///   <item>IFileStorageFactory（文件存储 / GridFS）</item>
     ///   <item>MongoDB 全局约定（IgnoreExtraElements + CamelCase）</item>
     /// </list>
-    /// connectionName 与 apphost mongo.AddDatabase 相同
     /// </summary>
-    public static IHostApplicationBuilder AddPlatformDatabase(this IHostApplicationBuilder builder, string connectionName)
+    public static IHostApplicationBuilder AddPlatformDatabase(this IHostApplicationBuilder builder, string connectionName = "mongodb")
     {
         // ── Aspire 组件 ──────────────────────────────────
         // 自动从 AppHost 资源解析连接信息并注册：

@@ -39,7 +39,7 @@ builder.Services.Configure<FormOptions>(o => o.MultipartBodyLengthLimit = MaxUpl
 // ──────────────────────────────────────────────
 
 builder.AddServiceDefaults();                       // OpenTelemetry, 健康检查, 服务发现, HttpClient 弹性
-builder.AddPlatformDatabase("mongodb");             // IMongoClient, IMongoDatabase, PlatformDbContext, ITenantContext
+builder.AddPlatformDatabase();             // IMongoClient, IMongoDatabase, PlatformDbContext, ITenantContext
 builder.AddOpenAIClient(connectionName: "chat");    // OpenAI 客户端
 
 builder.Services.AddHttpClient("storage");
@@ -71,7 +71,7 @@ builder.Services.AddControllers(options =>
 
             var errorResponse = new ApiResponse(
                 success: false,
-                
+
                 message: errors.Values.FirstOrDefault()?.FirstOrDefault() ?? "请求参数验证失败",
                 traceId: context.HttpContext.TraceIdentifier,
                 errors: errors
@@ -224,7 +224,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
                 var errorResponse = new ApiResponse(
                     success: false,
-                    
+
                     message: "未提供有效的认证令牌或令牌已过期。请重新登录。",
                     traceId: context.HttpContext.TraceIdentifier
                 );
@@ -237,7 +237,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
                 var errorResponse = new ApiResponse(
                     success: false,
-                    
+
                     message: "您只是此资源的访问者，无权进行操作 (403 Forbidden)",
                     traceId: context.HttpContext.TraceIdentifier
                 );
@@ -262,33 +262,11 @@ var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
 {
-    app.UseHttpsRedirection();
     app.UseHsts();
 }
 
 app.UseResponseCompression();
-app.UseOutputCache();
 
-// 全局异常处理
-app.UseExceptionHandler(errorApp =>
-{
-    errorApp.Run(async context =>
-    {
-        var exception = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerPathFeature>()?.Error;
-        context.Response.StatusCode = 500;
-        context.Response.ContentType = "application/json";
-
-        var errorResponse = new ApiResponse(
-            success: false,
-            
-            message: "系统内部错误，请稍后重试",
-            traceId: context.TraceIdentifier,
-            details: app.Environment.IsDevelopment() ? exception?.Message : null
-        );
-
-        await context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse, jsonOptions));
-    });
-});
 
 app.UseCors();
 app.UseAuthentication();
@@ -298,25 +276,10 @@ app.UseGlobalAuthentication();
 app.UseApiLogging();
 
 // 端点映射
+app.MapHealthChecks("/health");
 app.MapControllers();
 app.MapOpenApi();
 app.MapDefaultEndpoints();
 
-// 404 兜底
-app.MapFallback(async (HttpContext context) =>
-{
-    context.Response.StatusCode = 404;
-    context.Response.ContentType = "application/json";
 
-    var errorResponse = new ApiResponse(
-        success: false,
-        
-        message: $"未找到请求的资源: {context.Request.Path}",
-        traceId: context.TraceIdentifier
-    );
-
-    await context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse, jsonOptions));
-});
-
-// 已移除 AI 智能体功能的初始化逻辑
 await app.RunAsync();

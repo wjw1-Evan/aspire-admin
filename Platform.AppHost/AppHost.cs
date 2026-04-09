@@ -39,7 +39,6 @@ var mongoBuilder = builder.AddMongoDB(mongoOptionName, userName: mongoUserParam,
 var mongo = mongoBuilder;
 
 var mongodb = mongo.AddDatabase("mongodb");
-var systemMonitorDb = mongo.AddDatabase("systemmonitor-db");
 
 // 数据初始化服务（一次性任务，完成后自动停止）
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
@@ -50,7 +49,7 @@ var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("dat
  });
 
 var systemMonitor = builder.AddProject<Projects.Platform_SystemMonitor>("systemmonitor")
-    .WithReference(systemMonitorDb)
+    .WithReference(mongodb)
     .WithHttpEndpoint(port: 15020)
     .WithHttpHealthCheck("/health");
 

@@ -4,6 +4,28 @@ namespace Platform.ServiceDefaults.Extensions;
 
 public static class QueryableExtensions
 {
+    private static readonly HashSet<string> NonSearchableTypes = new()
+    {
+        typeof(object).FullName!,
+        typeof(Dictionary<,>).FullName!,
+        typeof(IDictionary<,>).FullName!,
+        "System.Collections.Generic.Dictionary`2",
+        "System.Collections.IDictionary"
+    };
+
+    private static bool IsSearchableType(Type type)
+    {
+        if (type.IsArray || type.IsGenericType)
+        {
+            var genType = type.GetGenericTypeDefinition().FullName ?? "";
+            if (NonSearchableTypes.Contains(genType) || type.FullName?.StartsWith("System.Collections.Generic.List") == false)
+            {
+                return type == typeof(string);
+            }
+        }
+        return type == typeof(string);
+    }
+
     public static PagedResult<T> ToPagedList<T>(
         this IQueryable<T> query,
         Models.PageParams? pageParams)
@@ -15,7 +37,7 @@ public static class QueryableExtensions
             var props = typeof(T).GetProperties()
                 .Where(x => x.CanRead 
                     && x.GetIndexParameters().Length == 0 
-                    && x.PropertyType == typeof(string))
+                    && IsSearchableType(x.PropertyType))
                 .Select(x => x.Name)
                 .ToList();
 

@@ -669,9 +669,6 @@ public class LeasePaymentRecord : MultiTenantEntity
     public string? Notes { get; set; }
 
     /// <summary>经办人</summary>
-    [StringLength(100)]
-    [Column("handledBy")]
-    [BsonElement("handledBy")]
     public string? HandledBy { get; set; }
 }
 
@@ -1198,9 +1195,6 @@ public class BuildingDto
     /// <summary>可用单元数</summary>
     public int AvailableUnits { get; set; }
 
-    /// <summary>创建时间</summary>
-    public DateTime CreatedAt { get; set; }
-
     /// <summary>图片列表</summary>
     public List<string>? Images { get; set; }
 
@@ -1442,9 +1436,6 @@ public class InvestmentLeadDto
 
     /// <summary>下次跟进日期</summary>
     public DateTime? NextFollowUpDate { get; set; }
-
-    /// <summary>创建时间</summary>
-    public DateTime CreatedAt { get; set; }
 }
 
 /// <summary>
@@ -1538,9 +1529,6 @@ public class InvestmentProjectDto
 
     /// <summary>分配给（名称）</summary>
     public string? AssignedToName { get; set; }
-
-    /// <summary>创建时间</summary>
-    public DateTime CreatedAt { get; set; }
 }
 
 /// <summary>
@@ -1670,9 +1658,6 @@ public class ParkTenantDto
 
     /// <summary>活跃合同数</summary>
     public int ActiveContracts { get; set; }
-
-    /// <summary>创建时间</summary>
-    public DateTime CreatedAt { get; set; }
 }
 
 /// <summary>
@@ -1775,9 +1760,6 @@ public class LeaseContractDto
 
     /// <summary>距离到期天数</summary>
     public int DaysUntilExpiry { get; set; }
-
-    /// <summary>创建时间</summary>
-    public DateTime CreatedAt { get; set; }
 
     /// <summary>付款记录</summary>
     public List<LeasePaymentRecordDto>? PaymentRecords { get; set; }
@@ -2050,9 +2032,6 @@ public class ServiceRequestDto
 
     /// <summary>评分</summary>
     public int? Rating { get; set; }
-
-    /// <summary>创建时间</summary>
-    public DateTime CreatedAt { get; set; }
 }
 
 /// <summary>
@@ -2203,9 +2182,6 @@ public class VisitTaskDto
     /// <summary>反馈问题</summary>
     public string? Feedback { get; set; }
 
-    /// <summary>创建时间</summary>
-    public DateTime CreatedAt { get; set; }
-
     /// <summary>关联考核评分</summary>
     public int? AssessmentScore { get; set; }
     /// <summary>关联考核ID</summary>
@@ -2288,8 +2264,6 @@ public class VisitAssessmentDto
     public int Score { get; set; }
     /// <summary>评价内容</summary>
     public string? Comments { get; set; }
-    /// <summary>创建时间</summary>
-    public DateTime CreatedAt { get; set; }
 }
 
 /// <summary>
@@ -2324,8 +2298,6 @@ public class VisitQuestionnaireDto
     public List<string> QuestionIds { get; set; } = new();
     /// <summary>问题数量</summary>
     public int QuestionCount => QuestionIds.Count;
-    /// <summary>创建时间</summary>
-    public DateTime CreatedAt { get; set; }
     /// <summary>排序值</summary>
     public int? SortOrder { get; set; }
 }

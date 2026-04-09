@@ -201,7 +201,7 @@ public class ProjectService : IProjectService
     {
         Id = p.Id, Name = p.Name, Description = p.Description, Status = (int)p.Status, StatusName = GetStatusName(p.Status),
         StartDate = p.StartDate, EndDate = p.EndDate, Progress = p.Progress, ManagerId = p.ManagerId, Budget = p.Budget,
-        Priority = (int)p.Priority, PriorityName = GetPriorityName(p.Priority), CreatedAt = p.CreatedAt, CreatedBy = p.CreatedBy
+        Priority = (int)p.Priority, PriorityName = GetPriorityName(p.Priority), CreatedBy = p.CreatedBy
     };
 
     private async Task<List<ProjectMemberDto>> ConvertToProjectMemberDtosAsync(IEnumerable<ProjectMember> members)
@@ -215,14 +215,14 @@ public class ProjectService : IProjectService
 
     private ProjectMemberDto ConvertToProjectMemberDtoWithCache(ProjectMember m, Dictionary<string, AppUser> uMap)
     {
-        var dto = new ProjectMemberDto { Id = m.Id, ProjectId = m.ProjectId, UserId = m.UserId, Role = (int)m.Role, RoleName = GetRoleName(m.Role), Allocation = m.Allocation, CreatedAt = m.CreatedAt };
+        var dto = new ProjectMemberDto { Id = m.Id, ProjectId = m.ProjectId, UserId = m.UserId, Role = (int)m.Role, RoleName = GetRoleName(m.Role), Allocation = m.Allocation };
         if (uMap.TryGetValue(m.UserId, out var u)) { dto.UserName = u.Username; dto.UserEmail = u.Email; }
         return dto;
     }
 
     private async Task<ProjectMemberDto> ConvertToProjectMemberDtoAsync(ProjectMember m)
     {
-        var dto = new ProjectMemberDto { Id = m.Id, ProjectId = m.ProjectId, UserId = m.UserId, Role = (int)m.Role, RoleName = GetRoleName(m.Role), Allocation = m.Allocation, CreatedAt = m.CreatedAt };
+        var dto = new ProjectMemberDto { Id = m.Id, ProjectId = m.ProjectId, UserId = m.UserId, Role = (int)m.Role, RoleName = GetRoleName(m.Role), Allocation = m.Allocation };
         try { var u = await _userService.GetUserByIdAsync(m.UserId); if (u != null) { dto.UserName = u.Username; dto.UserEmail = u.Email; } } catch { }
         return dto;
     }

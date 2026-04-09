@@ -316,8 +316,7 @@ public class JoinRequestService : IJoinRequestService
                 ReviewedBy = request.ReviewedBy,
                 ReviewedByName = reviewer?.Username,
                 ReviewedAt = request.ReviewedAt,
-                RejectReason = request.RejectReason,
-                CreatedAt = request.CreatedAt
+                RejectReason = request.RejectReason
             });
         }
 

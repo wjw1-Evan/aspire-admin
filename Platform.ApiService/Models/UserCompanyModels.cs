@@ -335,9 +335,4 @@ public class JoinRequestDetail
     /// 拒绝原因
     /// </summary>
     public string? RejectReason { get; set; }
-
-    /// <summary>
-    /// 创建时间
-    /// </summary>
-    public DateTime CreatedAt { get; set; }
 }

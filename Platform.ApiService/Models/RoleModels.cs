@@ -153,16 +153,6 @@ public class RoleWithStats
     public bool IsActive { get; set; }
 
     /// <summary>
-    /// 创建时间
-    /// </summary>
-    public DateTime CreatedAt { get; set; }
-
-    /// <summary>
-    /// 更新时间
-    /// </summary>
-    public DateTime UpdatedAt { get; set; }
-
-    /// <summary>
     /// 使用此角色的用户数量
     /// </summary>
     public int UserCount { get; set; }

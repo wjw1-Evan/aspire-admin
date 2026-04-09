@@ -415,7 +415,7 @@ public class StorageQuotaService : IStorageQuotaService
                     TotalQuota = quota.TotalQuota,
                     UsagePercentage = Math.Round(usagePercentage * 100, 2),
                     WarningType = usagePercentage >= 1.0 ? "exceeded" : "approaching",
-                    CreatedAt = quota.UpdatedAt ?? DateTime.UtcNow,
+                    CreatedAt = quota.UpdatedAt,
                     Message = usagePercentage >= 1.0 ? "存储空间已满" : $"存储空间使用率已达到 {usagePercentage:P1}"
                 };
 
@@ -668,7 +668,7 @@ public class StorageQuotaService : IStorageQuotaService
                 WarningThreshold = 0,
                 IsEnabled = false,
                 LastCalculatedAt = DateTime.UtcNow,
-                CreatedAt = user.CreatedAt != default(DateTime) ? user.CreatedAt : DateTime.UtcNow,
+                CreatedAt = user.CreatedAt,
                 Status = "NotAssigned",
                 WarningLevel = GetWarningLevel(usedSpace, DefaultQuota)
             });

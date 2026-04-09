@@ -165,8 +165,7 @@ public class ParkInvestmentService : IParkInvestmentService
         Status = lead.Status,
         Priority = lead.Priority,
         AssignedTo = lead.AssignedTo,
-        NextFollowUpDate = lead.NextFollowUpDate,
-        CreatedAt = lead.CreatedAt
+        NextFollowUpDate = lead.NextFollowUpDate
     };
 
     #endregion
@@ -278,8 +277,7 @@ public class ParkInvestmentService : IParkInvestmentService
         Stage = project.Stage,
         ExpectedSignDate = project.ExpectedSignDate,
         Probability = project.Probability,
-        AssignedTo = project.AssignedTo,
-        CreatedAt = project.CreatedAt
+        AssignedTo = project.AssignedTo
     };
 
     #endregion

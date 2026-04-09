@@ -162,12 +162,6 @@ public class PasswordBookEntryDto
     /// <summary>最后使用时间</summary>
     public DateTime? LastUsedAt { get; set; }
 
-    /// <summary>创建时间</summary>
-    public DateTime CreatedAt { get; set; }
-
-    /// <summary>更新时间</summary>
-    public DateTime UpdatedAt { get; set; }
-
     /// <summary>是否公有（true: 企业内可见, false: 仅自己可见）</summary>
     public bool IsPublic { get; set; } = false;
 }

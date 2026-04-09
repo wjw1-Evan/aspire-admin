@@ -233,7 +233,7 @@ public class StorageQuotaWarning
     public string WarningType { get; set; } = "approaching";
 
     /// <summary>创建时间</summary>
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? CreatedAt { get; set; }
 
     /// <summary>配额项状态信息（扩展）</summary>
     public string? Message { get; set; }
@@ -299,10 +299,10 @@ public class StorageQuotaListItem
     public DateTime LastCalculatedAt { get; set; }
 
     /// <summary>创建时间</summary>
-    public DateTime CreatedAt { get; set; }
+    public DateTime? CreatedAt { get; set; }
 
     /// <summary>更新时间</summary>
-    public DateTime UpdatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 
     /// <summary>状态</summary>
     public string Status { get; set; } = "Active";

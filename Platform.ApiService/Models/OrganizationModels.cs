@@ -141,16 +141,6 @@ public class OrganizationTreeNode
     public string? ManagerUserId { get; set; }
 
     /// <summary>
-    /// 创建时间（UTC）
-    /// </summary>
-    public DateTime CreatedAt { get; set; }
-
-    /// <summary>
-    /// 更新时间（UTC）
-    /// </summary>
-    public DateTime UpdatedAt { get; set; }
-
-    /// <summary>
     /// 子节点列表
     /// </summary>
     public List<OrganizationTreeNode> Children { get; set; } = new();

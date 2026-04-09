@@ -375,8 +375,6 @@ public class UserService : IUserService
                 Age = user.Age,
                 IsActive = user.IsActive,
                 LastLoginAt = user.LastLoginAt,
-                CreatedAt = user.CreatedAt,
-                UpdatedAt = user.UpdatedAt ?? DateTime.UtcNow,
                 Remark = user.Remark,
                 RoleIds = roleIds,
                 RoleNames = roleNames,

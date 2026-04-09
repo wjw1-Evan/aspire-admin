@@ -141,16 +141,6 @@ public class XiaokeConfigDto
     /// 是否为默认配置
     /// </summary>
     public bool IsDefault { get; set; }
-
-    /// <summary>
-    /// 创建时间
-    /// </summary>
-    public DateTime CreatedAt { get; set; }
-
-    /// <summary>
-    /// 更新时间
-    /// </summary>
-    public DateTime UpdatedAt { get; set; }
 }
 
 /// <summary>
@@ -312,11 +302,6 @@ public class ChatHistoryListItemDto
     /// 消息总数
     /// </summary>
     public int MessageCount { get; set; }
-
-    /// <summary>
-    /// 创建时间
-    /// </summary>
-    public DateTime CreatedAt { get; set; }
 }
 
 /// <summary>

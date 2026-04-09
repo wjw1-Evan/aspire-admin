@@ -144,8 +144,7 @@ public class ParkTenantService : IParkTenantService
             EntryDate = tenant.EntryDate,
             UnitCount = tenant.UnitIds?.Count ?? 0,
             TotalArea = totalArea,
-            ActiveContracts = activeContracts.Count,
-            CreatedAt = tenant.CreatedAt
+            ActiveContracts = activeContracts.Count
         };
     }
 
@@ -416,7 +415,6 @@ public class ParkTenantService : IParkTenantService
             Terms = contract.Terms,
             PaymentDay = contract.PaymentDay,
             Attachments = contract.Attachments,
-            CreatedAt = contract.CreatedAt,
             PaymentRecords = (await GetPaymentRecordsByContractIdAsync(contract.Id))
         };
     }
@@ -479,8 +477,7 @@ public class ParkTenantService : IParkTenantService
             PeriodStart = record.PeriodStart,
             PeriodEnd = record.PeriodEnd,
             Notes = record.Notes,
-            HandledBy = record.HandledBy,
-            CreatedAt = record.CreatedAt
+            HandledBy = record.HandledBy
         };
     }
 

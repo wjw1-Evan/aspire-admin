@@ -213,7 +213,6 @@ public class AuthService : IAuthService
             Age = user.Age,
             IsLogin = true,
             CurrentCompanyId = user.CurrentCompanyId,
-            CreatedAt = user.CreatedAt,
             City = city,
             CurrentCompanyDisplayName = companyDisplayName,
             CurrentCompanyName = companyName,

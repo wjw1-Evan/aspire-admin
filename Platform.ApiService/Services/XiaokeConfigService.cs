@@ -53,9 +53,7 @@ public class XiaokeConfigService : IXiaokeConfigService
             FrequencyPenalty = config.FrequencyPenalty,
             PresencePenalty = config.PresencePenalty,
             IsEnabled = config.IsEnabled,
-            IsDefault = config.IsDefault,
-            CreatedAt = config.CreatedAt,
-            UpdatedAt = config.UpdatedAt ?? DateTime.UtcNow
+            IsDefault = config.IsDefault
         };
     }
 

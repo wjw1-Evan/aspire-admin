@@ -87,13 +87,6 @@ public class ChatAttachmentInfo
     [Column("thumbnailUrl")]
     [BsonElement("thumbnailUrl")]
     public string? ThumbnailUrl { get; set; }
-
-    /// <summary>
-    /// 上传时间（UTC）
-    /// </summary>
-    [Column("uploadedAt")]
-    [BsonElement("uploadedAt")]
-    public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
 }
 
 /// <summary>

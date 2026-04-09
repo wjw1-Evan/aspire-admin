@@ -202,14 +202,12 @@ public class PasswordBookController : BaseApiController
         else // CSV
         {
             var csv = new System.Text.StringBuilder();
-            csv.AppendLine("平台,账号,密码,网址,分类,标签,备注,最后使用时间,创建时间,更新时间");
+            csv.AppendLine("平台,账号,密码,网址,分类,标签,备注,最后使用时间");
             foreach (var entry in entries)
             {
                 var tags = string.Join(";", entry.Tags);
                 var lastUsedAt = entry.LastUsedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? "";
-                var createdAt = entry.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss");
-                var updatedAt = entry.UpdatedAt.ToString("yyyy-MM-dd HH:mm:ss");
-                csv.AppendLine($"{EscapeCsv(entry.Platform)},{EscapeCsv(entry.Account)},{EscapeCsv(entry.Password)},{EscapeCsv(entry.Url ?? "")},{EscapeCsv(entry.Category ?? "")},{EscapeCsv(tags)},{EscapeCsv(entry.Notes ?? "")},{lastUsedAt},{createdAt},{updatedAt}");
+                csv.AppendLine($"{EscapeCsv(entry.Platform)},{EscapeCsv(entry.Account)},{EscapeCsv(entry.Password)},{EscapeCsv(entry.Url ?? "")},{EscapeCsv(entry.Category ?? "")},{EscapeCsv(tags)},{EscapeCsv(entry.Notes ?? "")},{lastUsedAt}");
             }
             return File(
                 System.Text.Encoding.UTF8.GetBytes(csv.ToString()),

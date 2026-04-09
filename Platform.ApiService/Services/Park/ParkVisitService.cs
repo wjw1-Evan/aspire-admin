@@ -72,7 +72,6 @@ public class ParkVisitService : IParkVisitService
                 Content = item.Content,
                 Photos = item.Photos,
                 Feedback = item.Feedback,
-                CreatedAt = item.CreatedAt,
                 AssessmentId = assessment?.Id,
                 AssessmentScore = assessment?.Score
             });
@@ -111,7 +110,6 @@ public class ParkVisitService : IParkVisitService
             Content = item.Content,
             Photos = item.Photos,
             Feedback = item.Feedback,
-            CreatedAt = item.CreatedAt,
             AssessmentId = assessment?.Id,
             AssessmentScore = assessment?.Score
         };
@@ -225,8 +223,7 @@ public class ParkVisitService : IParkVisitService
             Location = a.Location,
             TaskDescription = a.TaskDescription,
             Score = a.Score,
-            Comments = a.Comments,
-            CreatedAt = a.CreatedAt
+            Comments = a.Comments
         }).ToList();
 
         return new System.Linq.Dynamic.Core.PagedResult<VisitAssessmentDto> { Queryable = dtos.AsQueryable(), CurrentPage = pagedResult.CurrentPage, PageSize = pagedResult.PageSize, RowCount = pagedResult.RowCount, PageCount = pagedResult.PageCount };
@@ -269,8 +266,7 @@ public class ParkVisitService : IParkVisitService
             Location = assessment.Location,
             TaskDescription = assessment.TaskDescription,
             Score = assessment.Score,
-            Comments = assessment.Comments,
-            CreatedAt = assessment.CreatedAt
+            Comments = assessment.Comments
         };
     }
 
@@ -439,7 +435,6 @@ public class ParkVisitService : IParkVisitService
             Title = q.Title,
             Purpose = q.Purpose,
             QuestionIds = q.QuestionIds,
-            CreatedAt = q.CreatedAt,
             SortOrder = q.SortOrder ?? 0
         }).ToList();
         return new System.Linq.Dynamic.Core.PagedResult<VisitQuestionnaireDto>
@@ -474,7 +469,6 @@ public class ParkVisitService : IParkVisitService
             Title = questionnaire.Title,
             Purpose = questionnaire.Purpose,
             QuestionIds = questionnaire.QuestionIds,
-            CreatedAt = questionnaire.CreatedAt,
             SortOrder = questionnaire.SortOrder ?? 0
         };
     }
@@ -499,7 +493,6 @@ public class ParkVisitService : IParkVisitService
             Title = questionnaire.Title,
             Purpose = questionnaire.Purpose,
             QuestionIds = questionnaire.QuestionIds,
-            CreatedAt = questionnaire.CreatedAt,
             SortOrder = questionnaire.SortOrder ?? 0
         };
     }

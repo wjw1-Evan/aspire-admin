@@ -110,17 +110,11 @@ public class ProjectDto
     /// <summary>优先级名称</summary>
     public string PriorityName { get; set; } = string.Empty;
 
-    /// <summary>创建时间</summary>
-    public DateTime CreatedAt { get; set; }
-
     /// <summary>创建者ID</summary>
     public string? CreatedBy { get; set; }
 
     /// <summary>创建者名称</summary>
     public string? CreatedByName { get; set; }
-
-    /// <summary>最后更新时间</summary>
-    public DateTime UpdatedAt { get; set; }
 }
 
 
@@ -167,9 +161,6 @@ public class ProjectMemberDto
 
     /// <summary>资源分配百分比</summary>
     public int Allocation { get; set; }
-
-    /// <summary>创建时间</summary>
-    public DateTime CreatedAt { get; set; }
 }
 
 /// <summary>
@@ -239,9 +230,6 @@ public class MilestoneDto
 
     /// <summary>描述</summary>
     public string? Description { get; set; }
-
-    /// <summary>创建时间</summary>
-    public DateTime CreatedAt { get; set; }
 }
 
 /// <summary>

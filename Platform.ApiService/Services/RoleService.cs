@@ -71,7 +71,6 @@ public class RoleService : IRoleService
                 Description = role.Description,
                 MenuIds = role.MenuIds ?? new List<string>(),
                 IsActive = role.IsActive,
-                CreatedAt = role.CreatedAt,
                 UserCount = (int)userCount,
                 MenuCount = role.MenuIds?.Count ?? 0
             });

@@ -56,9 +56,4 @@ public class ActivityLogListItemResponse
     /// 耗时（毫秒）
     /// </summary>
     public long? Duration { get; set; }
-
-    /// <summary>
-    /// 创建时间
-    /// </summary>
-    public DateTime CreatedAt { get; set; }
 }

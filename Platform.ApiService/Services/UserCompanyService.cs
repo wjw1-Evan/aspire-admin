@@ -228,12 +228,11 @@ public class UserCompanyService : IUserCompanyService
                 ReviewedBy = req.ReviewedBy,
                 ReviewedByName = reviewer?.Username ?? reviewer?.Name,
                 ReviewedAt = req.ReviewedAt,
-                RejectReason = req.RejectReason,
-                CreatedAt = req.CreatedAt
+                RejectReason = req.RejectReason
             });
         }
 
-        return result.OrderByDescending(r => r.CreatedAt).ToList();
+        return result;
     }
 
     /// <summary>
@@ -288,12 +287,11 @@ public class UserCompanyService : IUserCompanyService
                 ReviewedBy = req.ReviewedBy,
                 ReviewedByName = reviewer?.Username ?? reviewer?.Name,
                 ReviewedAt = req.ReviewedAt,
-                RejectReason = req.RejectReason,
-                CreatedAt = req.CreatedAt
+                RejectReason = req.RejectReason
             });
         }
 
-        return result.OrderByDescending(r => r.CreatedAt).ToList();
+        return result;
     }
 
     /// <summary>

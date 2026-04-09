@@ -253,8 +253,7 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
             Status = request.Status,
             AssignedTo = request.AssignedTo,
             CompletedAt = request.CompletedAt,
-            Rating = request.Rating,
-            CreatedAt = request.CreatedAt
+            Rating = request.Rating
         };
     }
 

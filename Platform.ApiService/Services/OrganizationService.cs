@@ -55,8 +55,7 @@ public class OrganizationService : IOrganizationService
                 .Select(u => new OrganizationTreeNode
                 {
                     Id = u.Id, Name = u.Name, Code = u.Code, ParentId = u.ParentId, Description = u.Description,
-                    SortOrder = u.SortOrder, ManagerUserId = u.ManagerUserId, CreatedAt = u.CreatedAt,
-                    UpdatedAt = u.UpdatedAt ?? DateTime.UtcNow, Children = BuildTree(u.Id)
+                    SortOrder = u.SortOrder, ManagerUserId = u.ManagerUserId, Children = BuildTree(u.Id)
                 }).ToList();
         }
         return BuildTree(null);

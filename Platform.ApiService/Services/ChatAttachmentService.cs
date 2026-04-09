@@ -93,8 +93,7 @@ public class ChatAttachmentService : IChatAttachmentService
             Size = attachment.Size,
             MimeType = attachment.MimeType,
             Url = attachment.DownloadUrl,
-            ThumbnailUrl = attachment.ThumbnailUrl,
-            UploadedAt = attachment.CreatedAt
+            ThumbnailUrl = attachment.ThumbnailUrl
         };
     }
 
@@ -143,8 +142,7 @@ public class ChatAttachmentService : IChatAttachmentService
             Size = attachment.Size,
             MimeType = attachment.MimeType,
             Url = attachment.DownloadUrl,
-            ThumbnailUrl = attachment.ThumbnailUrl,
-            UploadedAt = attachment.CreatedAt
+            ThumbnailUrl = attachment.ThumbnailUrl
         };
     }
 }

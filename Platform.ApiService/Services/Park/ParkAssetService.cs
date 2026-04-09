@@ -95,7 +95,7 @@ public class ParkAssetService : IParkAssetService
             RentedArea = rentedArea, OccupancyRate = totalRentableArea > 0 ? Math.Round(rentedArea / totalRentableArea * 100, 2) : 0,
             BuildingType = b.BuildingType, YearBuilt = b.YearBuilt, DeliveryDate = b.DeliveryDate, Status = b.Status,
             Description = b.Description, CoverImage = b.CoverImage, TotalUnits = units.Count,
-            AvailableUnits = units.Count(u => u.Status == "Available"), Images = b.Images, CreatedAt = b.CreatedAt, Attachments = b.Attachments
+            AvailableUnits = units.Count(u => u.Status == "Available"), Images = b.Images, Attachments = b.Attachments
         };
     }
 
@@ -180,7 +180,7 @@ public class ParkAssetService : IParkAssetService
                 {
                     Id = c.Id, TenantId = c.TenantId, TenantName = tenant?.TenantName, ContractNumber = c.ContractNumber,
                     StartDate = c.StartDate, EndDate = c.EndDate, Status = c.Status, MonthlyRent = c.MonthlyRent,
-                    Deposit = c.Deposit, PaymentCycle = c.PaymentCycle, UnitIds = c.UnitIds, CreatedAt = c.CreatedAt
+                    Deposit = c.Deposit, PaymentCycle = c.PaymentCycle, UnitIds = c.UnitIds
                 });
             }
             dto.LeaseHistory = leaseHistory;

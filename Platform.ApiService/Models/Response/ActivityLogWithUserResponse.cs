@@ -74,11 +74,6 @@ public class ActivityLogWithUserResponse
     /// 响应内容（可能被截断）
     /// </summary>
     public string? ResponseBody { get; set; }
-
-    /// <summary>
-    /// 创建时间
-    /// </summary>
-    public DateTime CreatedAt { get; set; }
 }
 
 

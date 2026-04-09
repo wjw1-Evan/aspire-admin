@@ -127,7 +127,6 @@ public class MenuService : IMenuService
                 OpenInNewTab = m.OpenInNewTab,
                 HideInMenu = m.HideInMenu,
                 ParentId = m.ParentId,
-                CreatedAt = m.CreatedAt,
                 Children = BuildMenuTree(menus, m.Id)
             })
             .ToList();

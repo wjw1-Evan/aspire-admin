@@ -197,9 +197,6 @@ public class TaskDto
     /// <summary>创建者名称</summary>
     public string? CreatedByName { get; set; }
 
-    /// <summary>创建时间</summary>
-    public DateTime CreatedAt { get; set; }
-
     /// <summary>分配给的用户ID</summary>
     public string? AssignedTo { get; set; }
 
@@ -350,7 +347,4 @@ public class TaskExecutionLogDto
 
     /// <summary>执行进度百分比</summary>
     public int ProgressPercentage { get; set; }
-
-    /// <summary>创建时间</summary>
-    public DateTime CreatedAt { get; set; }
 }

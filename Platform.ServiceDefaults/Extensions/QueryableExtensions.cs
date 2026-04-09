@@ -13,14 +13,40 @@ public static class QueryableExtensions
         if (!string.IsNullOrWhiteSpace(p.Search))
         {
             var props = typeof(T).GetProperties()
-                .Where(x => x.PropertyType == typeof(string) && x.CanRead)
-                .Select(x => x.Name)
+                .Where(x => x.CanRead && x.GetIndexParameters().Length == 0)
                 .ToList();
 
-            if (props.Count > 0)
+            var stringProps = props.Where(x => x.PropertyType == typeof(string)).Select(x => x.Name).ToList();
+            var conditions = new List<string>();
+            var values = new List<object>();
+
+            foreach (var prop in props)
             {
-                var expr = string.Join(" || ", props.Select(x => $"iif({x} != null, {x}.Contains(@0), false)"));
-                query = query.Where(expr, p.Search);
+                var type = prop.PropertyType;
+
+                if (type == typeof(string))
+                {
+                    continue;
+                }
+
+                var (converted, success) = TryConvert(p.Search, type);
+                if (success)
+                {
+                    conditions.Add($"{prop.Name} == @{values.Count}");
+                    values.Add(converted!);
+                }
+            }
+
+            if (stringProps.Count > 0)
+            {
+                var stringExpr = string.Join(" || ", stringProps.Select(x => $"iif({x} != null, {x}.Contains(@{values.Count}), false)"));
+                conditions.Add(stringExpr);
+                values.Add(p.Search);
+            }
+
+            if (conditions.Count > 0)
+            {
+                query = query.Where(string.Join(" || ", conditions), values.ToArray());
             }
         }
 
@@ -29,5 +55,46 @@ public static class QueryableExtensions
         query = query.OrderBy(isDesc ? $"{field} descending" : field);
 
         return query.PageResult(p.Page, p.PageSize);
+    }
+
+    private static (object? value, bool success) TryConvert(string input, Type targetType)
+    {
+        try
+        {
+            if (targetType == typeof(int))
+            {
+                if (int.TryParse(input, out var v)) return (v, true);
+            }
+            if (targetType == typeof(long))
+            {
+                if (long.TryParse(input, out var v)) return (v, true);
+            }
+            if (targetType == typeof(double))
+            {
+                if (double.TryParse(input, out var v)) return (v, true);
+            }
+            if (targetType == typeof(decimal))
+            {
+                if (decimal.TryParse(input, out var v)) return (v, true);
+            }
+            if (targetType == typeof(Guid))
+            {
+                if (Guid.TryParse(input, out var v)) return (v, true);
+            }
+            if (targetType == typeof(bool))
+            {
+                if (bool.TryParse(input, out var v)) return (v, true);
+                if (input.Equals("1", StringComparison.OrdinalIgnoreCase)) return (true, true);
+                if (input.Equals("0", StringComparison.OrdinalIgnoreCase)) return (false, true);
+            }
+            if (targetType.IsEnum)
+            {
+                if (Enum.TryParse(targetType, input, true, out var v)) return (v!, true);
+            }
+        }
+        catch
+        {
+        }
+        return (null, false);
     }
 }

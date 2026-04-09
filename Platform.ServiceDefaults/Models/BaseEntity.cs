@@ -62,19 +62,10 @@ public abstract class BaseEntity : IEntity, ISoftDeletable, ITimestamped, IOpera
     public DateTime? LastOperationAt { get; set; }
 
     /// <summary>
-    /// 构造函数 - 生成新的ObjectId
+    /// 构造函数 - Id 由 MongoDB 自动生成
     /// </summary>
     protected BaseEntity()
     {
-        try
-        {
-            Id = ObjectId.GenerateNewId().ToString();
-        }
-        catch
-        {
-            // 如果ObjectId生成失败，使用GUID作为备选方案
-            Id = Guid.NewGuid().ToString("N");
-        }
     }
 }
 

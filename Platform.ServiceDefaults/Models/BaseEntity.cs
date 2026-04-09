@@ -11,12 +11,12 @@ namespace Platform.ServiceDefaults.Models;
 public abstract class BaseEntity : IEntity, ISoftDeletable, ITimestamped, IOperationTrackable
 {
     /// <summary>
-    /// 主键ID - 支持 EFCore 和 MongoDB
+    /// 主键ID - MongoDB 自动生成
     /// </summary>
     [Key]
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
-    public string Id { get; set; } = string.Empty;
+    public string? Id { get; set; }
 
     /// <summary>
     /// 创建时间 - 自动设置 UTC 时间
@@ -94,7 +94,7 @@ public abstract class MultiTenantEntity : BaseEntity, IMultiTenant
 /// </summary>
 public interface IEntity
 {
-    string Id { get; set; }
+    string? Id { get; set; }
 }
 
 /// <summary>

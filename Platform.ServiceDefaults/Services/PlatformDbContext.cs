@@ -77,11 +77,6 @@ public class PlatformDbContext : DbContext
             var entity = entry.Entity;
             var isAdded = entry.State == EntityState.Added;
 
-            if (isAdded && entity is IEntity { Id: "" or null } mongoEntity)
-            {
-                mongoEntity.Id = MongoDB.Bson.ObjectId.GenerateNewId().ToString();
-            }
-
             if (entity is ITimestamped { } timestamped)
             {
                 if (isAdded) timestamped.CreatedAt = now;

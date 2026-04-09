@@ -11,12 +11,32 @@
 - **移动端应用**：`Expo 54` 跨端 App，内置原生通知
 - **微信小程序**：`Platform.MiniApp` 微信原生开发，轻量级多端扩展
 - **基础设施**：`Redis` 缓存、`OpenAI/MCP` 服务、`JWT/国密算法` 加解密认证
+- **数据库驱动**：MongoDB.Driver + MongoDB.Entities
 
 **核心项目结构**：
 - `Platform.AppHost/AppHost.cs`：所有微服务、数据库、Redis 资源的统筹编排入口。
 - `Platform.ApiService`：统一的后端核心业务网关与逻辑层。
 - `Platform.ServiceDefaults`：共享的扩展、实体基类及 `PlatformDbContext` 基础设施层。
 - `Platform.Admin` / `Platform.App` / `Platform.MiniApp`：多端前端应用。
+
+### 后端项目结构
+
+| 层级 | 项目 | 职责 |
+|------|------|------|
+| **服务编排** | `Platform.AppHost` | Aspire 资源编排，统一入口 |
+| **业务网关** | `Platform.ApiService` | API 控制器 + 业务服务层 |
+| **基础设施** | `Platform.ServiceDefaults` | DbContext、中间件、基类 |
+| **数据初始化** | `Platform.DataInitializer` | 种子数据、菜单配置 |
+| **存储服务** | `Platform.Storage` | 文件存储服务 |
+| **系统监控** | `Platform.SystemMonitor` | 监控服务 |
+
+### 前端项目结构
+
+| 应用 | 框架 | 用途 |
+|------|------|------|
+| `Platform.Admin` | React 19 + UmiJS 4 + Ant Design 6 | 管理后台 |
+| `Platform.App` | Expo 54 | 移动端 App |
+| `Platform.MiniApp` | 微信原生 | 微信小程序 |
 
 ## 2. 交互与代码流基础纪律
 
@@ -119,6 +139,11 @@ public class UserService
     }
 }
 ```
+
+### 📊 审计字段与软删除（自动处理）
+- **软删除**：调用 `DbContext.Remove()` 时，`PlatformDbContext` 自动转换为软删除（设置 `IsDeleted=true`、`DeletedAt`、`DeletedBy`）。
+- **多租户过滤**：查询时由 `PlatformDbContext` 全局查询过滤器自动过滤 `CompanyId` 和 `IsDeleted=false`。
+- **审计字段**：`CreatedAt/UpdatedAt/CreatedBy/UpdatedBy` 由 `PlatformDbContext` 在 `SaveChangesAsync()` 时自动维护。
 
 ### 🏢 多租户与上下文安全
 - 除了用户身份主键 `userId` 以外，任何企业级上下文（企业的 `companyId` / 用户拥有的菜单权限 / 角色），**严禁**直接从 JWT claim 中读取解包。

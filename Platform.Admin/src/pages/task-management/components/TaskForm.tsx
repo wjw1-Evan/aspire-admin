@@ -137,7 +137,6 @@ const TaskForm: React.FC<TaskFormProps> = ({
           <ProFormSelect
             name="priority"
             label="优先级"
-            initialValue={TaskPriority.Medium}
             options={[
               { label: '低', value: TaskPriority.Low }, { label: '中', value: TaskPriority.Medium }, { label: '高', value: TaskPriority.High }, { label: '紧急', value: TaskPriority.Urgent },
             ]}

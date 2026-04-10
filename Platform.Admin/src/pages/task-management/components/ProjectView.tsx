@@ -120,6 +120,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
   const handleFormSuccess = useCallback(() => {
     setFormVisible(false);
     fetchStatistics();
+    tableActionRef.current?.reload();
   }, [fetchStatistics]);
 
   const handleCloseDetail = useCallback(() => {

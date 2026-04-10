@@ -97,8 +97,8 @@ const CombinedTaskView: React.FC<{ tasks: TaskDto[] }> = ({ tasks }) => {
               const isWeekend = date.getDay() === 0 || date.getDay() === 6;
               const isToday = date.toDateString() === today.toDateString();
               return (
-                <div key={i} style={{ position: 'absolute', left: i * dayWidth, top: 0, bottom: 0, width: dayWidth, backgroundColor: isWeekend ? '#fafafa' : isToday ? '#e6f7ff' : 'transparent', borderRight: '1px dashed #f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {isToday && <div style={{ width: 4, height: 4, borderRadius: '50%', backgroundColor: '#1890ff' }} />}
+                <div key={i} style={{ position: 'absolute', left: i * dayWidth, top: 0, bottom: 0, width: dayWidth, backgroundColor: isWeekend ? '#f5f5f5' : isToday ? '#e6f7ff' : '#f9f9f9', borderRight: '1px solid #e8e8e8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {isToday && <div style={{ width: 4, height: 4, borderRadius: '50%', backgroundColor: '#ff4d4f' }} />}
                 </div>
               );
             })}

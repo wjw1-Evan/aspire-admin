@@ -40,6 +40,8 @@ export default {
   // 项目管理的任务菜单（路径为 /task-management，但菜单名为 project-management-task）
   'menu.project-management-task': '任务管理',
   'menu.project-management-task.desc': '查看和管理项目任务',
+  'menu.notice': '通知公告',
+  'menu.notice.desc': '查看和管理系统通知公告',
   'menu.iot-platform': '物联网平台',
   'menu.iot-platform.desc': '物联网平台功能',
   'menu.iot-platform.gateway': '网关管理',

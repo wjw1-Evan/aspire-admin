@@ -37,6 +37,8 @@ export default {
   // Project Management task menu (path is /task-management, but menu name is project-management-task)
   'menu.project-management-task': 'Task Management',
   'menu.project-management-task.desc': 'View and manage project tasks',
+  'menu.notice': 'Notice',
+  'menu.notice.desc': 'View and manage system notices',
   'menu.iot-platform': 'IoT Platform',
   'menu.iot-platform.desc': 'IoT platform functions',
   'menu.iot-platform.gateway': 'Gateway Management',

@@ -11,6 +11,7 @@ import dayjs from 'dayjs';
 import { ApiResponse, PagedResult, PageParams } from '@/types';
 import { getTaskStatusColor, getTaskPriorityColor } from '@/utils/task';
 import { getTaskById, getTaskExecutionLogs, TaskStatus as TaskStatusEnum, type TaskDto, type TaskExecutionLogDto } from '@/services/task/api';
+import { getProjectList } from '@/services/task/project';
 
 import TaskForm from './components/TaskForm';
 import TaskExecutionPanel from './components/TaskExecutionPanel';
@@ -162,7 +163,7 @@ const TaskManagement: React.FC = () => {
 
   useEffect(() => {
     loadStatistics();
-    api.list({}).then(r => { if (r.success && r.data) setProjects(r.data.queryable?.map(t => ({ id: t.id!, name: t.taskName || '' })) || []); });
+    getProjectList({}).then(r => { if (r.success && r.data) setProjects(r.data.queryable?.map(p => ({ id: p.id!, name: p.name })) || []); });
   }, [loadStatistics]);
 
   const columns: ProColumns<TaskDto>[] = useMemo(() => [

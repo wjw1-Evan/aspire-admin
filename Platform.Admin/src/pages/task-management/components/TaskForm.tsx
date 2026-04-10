@@ -59,8 +59,10 @@ const TaskForm: React.FC<TaskFormProps> = ({
       const data: CreateTaskRequest | UpdateTaskRequest = {
         taskName: values.taskName, description: values.description,
         taskType: Array.isArray(values.taskType) ? values.taskType[0] : (values.taskType || '其他'),
-        priority: values.priority, plannedStartTime: values.plannedStartTime?.toISOString(),
-        plannedEndTime: values.plannedEndTime?.toISOString(), estimatedDuration: values.estimatedDuration,
+        priority: values.priority, 
+        plannedStartTime: values.plannedStartTime ? (dayjs.isDayjs(values.plannedStartTime) ? values.plannedStartTime.format('YYYY-MM-DDTHH:mm:ss') : values.plannedStartTime) : undefined,
+        plannedEndTime: values.plannedEndTime ? (dayjs.isDayjs(values.plannedEndTime) ? values.plannedEndTime.format('YYYY-MM-DDTHH:mm:ss') : values.plannedEndTime) : undefined, 
+        estimatedDuration: values.estimatedDuration,
         participantIds, tags: values.tags, remarks: values.remarks,
       };
       if (assignedTo) (data as any).assignedTo = assignedTo;

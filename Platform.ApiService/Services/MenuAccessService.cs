@@ -37,7 +37,7 @@ public class MenuAccessService : IMenuAccessService
         }
 
         var userMenuNames = await GetUserMenuNamesAsync(userId);
-        return userMenuNames.Contains(menuName.ToLower());
+        return userMenuNames.Contains(menuName);
     }
 
     /// <summary>
@@ -46,8 +46,7 @@ public class MenuAccessService : IMenuAccessService
     public async Task<bool> HasAnyMenuAccessAsync(string userId, params string[] menuNames)
     {
         var userMenuNames = await GetUserMenuNamesAsync(userId);
-        var lowerMenuNames = menuNames.Select(m => m.ToLower()).ToArray();
-        return lowerMenuNames.Any(m => userMenuNames.Contains(m));
+        return menuNames.Any(m => userMenuNames.Contains(m));
     }
 
     /// <summary>
@@ -131,8 +130,8 @@ public class MenuAccessService : IMenuAccessService
                 uniqueMenuIds.Contains(m.Id) && 
                 m.IsEnabled == true).ToListAsync();
 
-            // 返回菜单名称列表（小写）
-            var menuNames = menus.Select(m => m.Name.ToLower()).Distinct().ToList();
+            // 返回菜单名称列表
+            var menuNames = menus.Select(m => m.Name).Distinct().ToList();
             _logger.LogDebug("用户 {UserId} 拥有 {MenuCount} 个菜单权限: {MenuNames}",
                 userId, menuNames.Count, string.Join(", ", menuNames));
             return menuNames;

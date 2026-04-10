@@ -402,5 +402,24 @@
         "Icon": "bar-chart",
         "ParentId": "visit-management",
         "SortOrder": 4
+    },
+    {
+        "Name": "menu-management",
+        "Title": "菜单管理",
+        "Path": "/system/menu-management",
+        "Component": "./menu-management",
+        "Icon": "menu",
+        "ParentId": "system",
+        "SortOrder": 7,
+        "HideInMenu": true
+    },
+    {
+        "Name": "notice",
+        "Title": "通知公告",
+        "Path": "/notice",
+        "Component": "./notice",
+        "Icon": "notification",
+        "SortOrder": 12,
+        "HideInMenu": true
     }
 ]

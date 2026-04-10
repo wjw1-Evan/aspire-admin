@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Tag, Progress, Tabs, Space, Button, Grid } from 'antd';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Tag, Progress, Tabs, Space, Button, Grid, Empty, Spin, Tree } from 'antd';
 import { Drawer as AntDrawer } from 'antd';
 import { ProDescriptions } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
@@ -11,6 +11,7 @@ import {
   FlagOutlined,
   BarChartOutlined,
   LineChartOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons';
 import {
   getProjectMembers,
@@ -19,6 +20,8 @@ import {
   ProjectStatus,
   ProjectPriority,
 } from '@/services/task/project';
+import { getTaskTree, type TaskDto } from '@/services/task/api';
+import { getTaskStatusColor, getTaskPriorityColor } from '@/utils/task';
 import ProjectMemberManagement from './ProjectMemberManagement';
 import GanttChart from './GanttChart';
 
@@ -32,11 +35,14 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
   const screens = useBreakpoint();
   const isMobile = !screens.md; // md 以下为移动端
   const [members, setMembers] = useState<ProjectMemberDto[]>([]);
+  const [tasks, setTasks] = useState<TaskDto[]>([]);
+  const [tasksLoading, setTasksLoading] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (project.id) {
       loadMembers();
+      loadTasks();
     }
   }, [project.id]);
 
@@ -46,7 +52,6 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
     try {
       const response = await getProjectMembers(project.id);
       if (response.success && response.data) {
-        // response.data 已经是数组
         setMembers(Array.isArray(response.data) ? response.data : []);
       }
     } catch (error) {
@@ -55,6 +60,40 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
       setLoading(false);
     }
   };
+
+  const loadTasks = async () => {
+    if (!project.id) return;
+    setTasksLoading(true);
+    try {
+      const response = await getTaskTree(project.id);
+      if (response.success && response.data && Array.isArray(response.data)) {
+        setTasks(response.data);
+      }
+    } catch (error) {
+      console.error('获取任务列表失败:', error);
+    } finally {
+      setTasksLoading(false);
+    }
+  };
+
+  const taskTreeData = useMemo(() => {
+    const convertToTree = (taskList: TaskDto[]): any[] => {
+      return taskList.map(task => ({
+        key: task.id,
+        title: (
+          <Space>
+            <FileTextOutlined />
+            <span>{task.taskName}</span>
+            <Tag color={getTaskStatusColor(task.status)}>{task.statusName}</Tag>
+            <Tag color={getTaskPriorityColor(task.priority)}>{task.priorityName}</Tag>
+            {task.completionPercentage > 0 && <span style={{ fontSize: 12, color: '#999' }}>{task.completionPercentage}%</span>}
+          </Space>
+        ),
+        children: task.children && task.children.length > 0 ? convertToTree(task.children) : undefined,
+      }));
+    };
+    return convertToTree(tasks);
+  }, [tasks]);
 
   const statusMap: Record<number, { color: string; text: string }> = {
     [ProjectStatus.Planning]: { color: 'default', text: intl.formatMessage({ id: 'pages.projectManagement.status.planning' }) },
@@ -131,7 +170,20 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
             key: 'tasks',
             label: intl.formatMessage({ id: 'pages.projectManagement.taskTree.title' }),
             icon: <BarChartOutlined />,
-            children: project.id ? null : null,
+            children: project.id ? (
+              <Spin spinning={tasksLoading}>
+                {taskTreeData.length > 0 ? (
+                  <Tree
+                    treeData={taskTreeData}
+                    defaultExpandAll
+                    showLine={{ showLeafIcon: false }}
+                    style={{ padding: '16px 0' }}
+                  />
+                ) : (
+                  <Empty description={intl.formatMessage({ id: 'pages.projectManagement.taskTree.noTasks' })} />
+                )}
+              </Spin>
+            ) : null,
           },
           {
             key: 'gantt',

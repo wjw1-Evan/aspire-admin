@@ -21,16 +21,25 @@ export class PasswordEncryption {
 
         try {
             const response = await getPublicKey();
-            if (response.success && response.data) {
+            if (response.success && response.data?.key) {
                 this.publicKey = response.data.key;
                 this.lastFetchTime = now;
+                console.log('SM2公钥已缓存, 长度:', this.publicKey.length);
                 return this.publicKey;
             }
-            throw new Error('获取公钥失败');
+            throw new Error('获取公钥失败: ' + JSON.stringify(response));
         } catch (error) {
             console.error('SM2公钥获取异常:', error);
             throw error;
         }
+    }
+
+    /**
+     * 清除缓存的公钥（用于强制刷新）
+     */
+    public static clearCache(): void {
+        this.publicKey = null;
+        this.lastFetchTime = 0;
     }
 
     /**
@@ -42,14 +51,15 @@ export class PasswordEncryption {
 
         try {
             const keyHex = await this.getValidPublicKey();
-            // 采用 1 作为 cipherMode (C1C3C2)
+            if (!keyHex || keyHex.length !== 130) {
+                throw new Error('无效的公钥格式: ' + (keyHex?.substring(0, 10) || 'undefined'));
+            }
             const encryptedData = sm2.doEncrypt(password, keyHex, 1);
-
-            // 为了兼顾传输规范，加上 '04' 前缀 (标准 SM2 密文前缀)
-            return '04' + encryptedData;
+            return encryptedData;
         } catch (error) {
             console.error('SM2 加密失败', error);
-            return password; // 加密失败回退明文，后端会处理兼容
+            this.clearCache();
+            return password;
         }
     }
 }

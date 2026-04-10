@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ModalForm, ProFormText, ProFormTextArea, ProFormSelect, ProFormDatePicker, ProFormDigit } from '@ant-design/pro-form';
 import type { Dayjs } from 'dayjs';
-import type { UserDto } from '@/types';
+import type { AppUser } from '@/services/user/api';
 import {
   createProject,
   updateProject,
@@ -11,7 +11,7 @@ import {
   ProjectStatus,
   ProjectPriority,
 } from '@/services/task/project';
-import { getUserList } from '@/services/task/user';
+import { getUserList } from '@/services/user/api';
 import dayjs from 'dayjs';
 
 interface ProjectFormProps {
@@ -23,16 +23,17 @@ interface ProjectFormProps {
 
 const ProjectForm: React.FC<ProjectFormProps> = ({ open, project, onSuccess, onCancel }) => {
   const isEditing = !!project;
-  const [users, setUsers] = useState<UserDto[]>([]);
+  const [users, setUsers] = useState<AppUser[]>([]);
   const [userOptions, setUserOptions] = useState<{ label: string; value: string }[]>([]);
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await getUserList();
-        if (response.success && response.data) {
-          setUsers(response.data);
-          setUserOptions(response.data.map(user => ({
+        const response = await getUserList({});
+        if (response.success && response.data && response.data.queryable) {
+          const userList = response.data.queryable;
+          setUsers(userList);
+          setUserOptions(userList.map((user: AppUser) => ({
             label: user.name || user.username || '',
             value: user.id
           })));

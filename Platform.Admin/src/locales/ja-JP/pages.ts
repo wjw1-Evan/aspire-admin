@@ -936,6 +936,7 @@ export default {
   'pages.park.statistics.aiReport': 'AIレポート',
   'pages.park.statistics.aiReportTitle': 'パークAI分析レポート',
   'pages.park.statistics.generatingReport': 'レポートを生成中...',
+  'pages.park.statistics.reportPeriod': 'レポート期間',
   'pages.park.statistics.collectionStatus': '回収状況',
   'pages.park.statistics.totalExpected': '予定総額',
   'pages.park.statistics.totalReceived': '回収済総額',

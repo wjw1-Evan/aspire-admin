@@ -1894,6 +1894,7 @@ export default {
   'pages.park.statistics.aiReport': 'AI Analysis Report',
   'pages.park.statistics.aiReportTitle': 'AI Operations Analysis Report',
   'pages.park.statistics.generatingReport': 'Generating report, this may take a few seconds...',
+  'pages.park.statistics.reportPeriod': 'Report Period',
 
   // Collection Status
   'pages.park.statistics.collectionStatus': 'Collection Status',

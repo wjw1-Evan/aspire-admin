@@ -420,23 +420,36 @@ public class TaskService : ITaskService
     /// <inheritdoc/>
     public async Task<System.Linq.Dynamic.Core.PagedResult<TaskExecutionLogDto>> GetTaskExecutionLogsAsync(string taskId, Platform.ServiceDefaults.Models.PageParams request)
     {
-        var query = _context.Set<TaskExecutionLog>()
+        var logs = await _context.Set<TaskExecutionLog>()
             .Where(log => log.TaskId == taskId)
             .OrderByDescending(log => log.CreatedAt)
-            .Select(log => new TaskExecutionLogDto
-            {
-                Id = log.Id,
-                TaskId = log.TaskId,
-                ExecutedBy = log.ExecutedBy,
-                StartTime = log.StartTime,
-                EndTime = log.EndTime,
-                Status = (int)log.Status,
-                Message = log.Message,
-                ErrorMessage = log.ErrorMessage,
-                ProgressPercentage = log.ProgressPercentage
-            });
+            .ToListAsync();
 
-        return query.ToPagedList(request);
+        var dtos = logs.Select(log => new TaskExecutionLogDto
+        {
+            Id = log.Id,
+            TaskId = log.TaskId,
+            ExecutedBy = log.ExecutedBy,
+            StartTime = log.StartTime,
+            EndTime = log.EndTime,
+            Status = (int)log.Status,
+            Message = log.Message,
+            ErrorMessage = log.ErrorMessage,
+            ProgressPercentage = log.ProgressPercentage
+        }).ToList();
+
+        var total = dtos.Count;
+        var skip = (request.Page - 1) * request.PageSize;
+        var paged = dtos.Skip(skip).Take(request.PageSize).ToList();
+
+        return new System.Linq.Dynamic.Core.PagedResult<TaskExecutionLogDto>
+        {
+            Queryable = paged.AsQueryable(),
+            PageCount = (int)Math.Ceiling(total / (double)request.PageSize),
+            CurrentPage = request.Page,
+            PageSize = request.PageSize,
+            RowCount = total
+        };
     }
 
     /// <inheritdoc/>

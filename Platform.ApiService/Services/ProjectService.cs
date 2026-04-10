@@ -65,7 +65,19 @@ public class ProjectService : IProjectService
         if (request.Status.HasValue) project.Status = (ProjectStatus)request.Status.Value;
         if (request.StartDate.HasValue) project.StartDate = request.StartDate;
         if (request.EndDate.HasValue) project.EndDate = request.EndDate;
-        if (request.MemberIds != null) project.MemberIds = request.MemberIds;
+        if (request.MemberIds != null)
+        {
+            project.MemberIds = request.MemberIds;
+            var existingMembers = await _context.Set<ProjectMember>().Where(pm => pm.ProjectId == request.ProjectId).ToListAsync();
+            _context.Set<ProjectMember>().RemoveRange(existingMembers);
+            foreach (var userId2 in request.MemberIds)
+            {
+                await _context.Set<ProjectMember>().AddAsync(new ProjectMember
+                {
+                    ProjectId = request.ProjectId, UserId = userId2, Role = ProjectMemberRole.Member, Allocation = 100
+                });
+            }
+        }
         if (request.Budget.HasValue) project.Budget = request.Budget;
         if (request.Priority.HasValue) project.Priority = (ProjectPriority)request.Priority.Value;
 

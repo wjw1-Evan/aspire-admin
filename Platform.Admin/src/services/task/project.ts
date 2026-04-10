@@ -51,6 +51,8 @@ export interface ProjectDto {
   createdBy?: string;
   createdByName?: string;
   updatedAt: string;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }
 
 

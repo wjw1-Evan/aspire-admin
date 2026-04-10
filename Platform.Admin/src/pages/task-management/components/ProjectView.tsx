@@ -232,23 +232,27 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       width: 150,
       render: (_: any, record: ProjectDto) => (
         <Space>
-          <Button
-            type="link"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => handleEditProject(record)}
-          >
-            {intl.formatMessage({ id: 'pages.table.edit' })}
-          </Button>
-          <Button
-            type="link"
-            size="small"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => record.id && handleDelete(record.id)}
-          >
-            {intl.formatMessage({ id: 'pages.button.delete' })}
-          </Button>
+          {record.canEdit && (
+            <Button
+              type="link"
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => handleEditProject(record)}
+            >
+              {intl.formatMessage({ id: 'pages.table.edit' })}
+            </Button>
+          )}
+          {record.canDelete && (
+            <Button
+              type="link"
+              size="small"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => record.id && handleDelete(record.id)}
+            >
+              {intl.formatMessage({ id: 'pages.button.delete' })}
+            </Button>
+          )}
         </Space>
       ),
     },

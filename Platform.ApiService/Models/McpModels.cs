@@ -10,7 +10,7 @@ public static class McpProtocolVersion
     /// <summary>
     /// 协议版本号
     /// </summary>
-    public const string Version = "2024-11-05";
+    public const string Version = "2025-01-17";
 }
 
 /// <summary>

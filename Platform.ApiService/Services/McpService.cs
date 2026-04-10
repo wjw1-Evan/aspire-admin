@@ -14,8 +14,8 @@ namespace Platform.ApiService.Services;
 /// </summary>
 public class McpService : IMcpService
 {
-    private const int MaxMatchedTools = 3;
-    private const double MinimumMatchScore = 3.0;
+    private const int MaxMatchedTools = 2;
+    private const double MinimumMatchScore = 5.0;
 
     private readonly IEnumerable<IMcpToolHandler> _handlers;
     private readonly ILogger<McpService> _logger;

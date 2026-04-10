@@ -115,6 +115,12 @@ public class ProjectDto
 
     /// <summary>创建者名称</summary>
     public string? CreatedByName { get; set; }
+
+    /// <summary>创建时间</summary>
+    public DateTime? CreatedAt { get; set; }
+
+    /// <summary>更新时间</summary>
+    public DateTime? UpdatedAt { get; set; }
 }
 
 

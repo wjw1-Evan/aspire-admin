@@ -147,43 +147,6 @@ export default function CompanySettings() {
                 color="#faad14"
               />
             </Col>
-            <Col xs={12} sm={6} md={3} lg={3}>
-              <Card
-                size="small"
-                styles={{ body: { padding: '10px 12px' } }}
-                style={{ borderRadius: 12 }}
-              >
-                <div style={{ marginBottom: 8 }}>
-                  <span style={{ color: '#00000073' }}>
-                    {intl.formatMessage({ id: 'pages.companySettings.statistics.companyStatus' })}
-                  </span>
-                </div>
-                <div>
-                  {statistics.isExpired ? (
-                    <Tag color="red">
-                      {intl.formatMessage({ id: 'pages.companySettings.statistics.expired' })}
-                    </Tag>
-                  ) : company.isActive ? (
-                    <Tag color="green">
-                      {intl.formatMessage({ id: 'pages.companySettings.statistics.normal' })}
-                    </Tag>
-                  ) : (
-                    <Tag color="orange">
-                      {intl.formatMessage({ id: 'pages.companySettings.statistics.disabled' })}
-                    </Tag>
-                  )}
-                  {statistics.expiresAt && (
-                    <div
-                      style={{ marginTop: 8, fontSize: 12, color: '#00000073' }}
-                    >
-                      <ClockCircleOutlined />{' '}
-                      {intl.formatMessage({ id: 'pages.companySettings.statistics.expiresAt' })}
-                      {new Date(statistics.expiresAt).toLocaleDateString()}
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </Col>
           </Row>
         </Card>
       )}

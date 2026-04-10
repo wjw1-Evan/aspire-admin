@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.Extensions.Options;
 using OpenAI;
 using OpenAI.Chat;
 using Platform.ApiService.Models;
@@ -19,7 +18,6 @@ public class ParkStatisticsService : IParkStatisticsService
     private readonly IParkTenantService _tenantService;
     private readonly IParkEnterpriseServiceService _enterpriseService;
     private readonly OpenAIClient _openAiClient;
-    private readonly AiCompletionOptions _aiOptions;
     private readonly ILogger<ParkStatisticsService> _logger;
 
     /// <summary>
@@ -31,7 +29,6 @@ public class ParkStatisticsService : IParkStatisticsService
         IParkTenantService tenantService,
         IParkEnterpriseServiceService enterpriseService,
         OpenAIClient openAiClient,
-        IOptions<AiCompletionOptions> aiOptions,
         ILogger<ParkStatisticsService> logger)
     {
         _assetService = assetService;
@@ -39,7 +36,6 @@ public class ParkStatisticsService : IParkStatisticsService
         _tenantService = tenantService;
         _enterpriseService = enterpriseService;
         _openAiClient = openAiClient;
-        _aiOptions = aiOptions.Value;
         _logger = logger;
     }
 
@@ -117,8 +113,7 @@ public class ParkStatisticsService : IParkStatisticsService
 
         try
         {
-            var model =_aiOptions.Model;
-            var chatClient = _openAiClient.GetChatClient(model);
+            var chatClient = _openAiClient.GetChatClient("gpt-4o-mini");
 
             var messages = new List<OpenAI.Chat.ChatMessage>
             {

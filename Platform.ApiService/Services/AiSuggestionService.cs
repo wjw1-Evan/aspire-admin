@@ -7,7 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using OpenAI;
 using OpenAI.Chat;
 using Platform.ApiService.Constants;
@@ -34,15 +33,15 @@ public class AiSuggestionService : IAiSuggestionService
     private const string DefaultSystemPrompt = "你是小科，担任微信风格的对话助理，请使用简体中文，提供自然、真诚且有温度的建议。";
 
     private readonly OpenAIClient _openAiClient;
-    private readonly AiCompletionOptions _aiOptions;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<AiSuggestionService> _logger;
     private readonly ITenantContext _tenantContext;
 
-    public AiSuggestionService(DbContext context, OpenAIClient openAiClient, IOptions<AiCompletionOptions> aiOptions, ILogger<AiSuggestionService> logger, ITenantContext tenantContext)
+    public AiSuggestionService(DbContext context, OpenAIClient openAiClient, IConfiguration configuration, ILogger<AiSuggestionService> logger, ITenantContext tenantContext)
     {
         _context = context;
         _openAiClient = openAiClient;
-        _aiOptions = aiOptions.Value;
+        _configuration = configuration;
         _logger = logger;
         _tenantContext = tenantContext;
     }
@@ -55,7 +54,8 @@ public class AiSuggestionService : IAiSuggestionService
         if (chatClient is null) return response;
 
         var languageTag = string.IsNullOrWhiteSpace(context.Request.Locale) ? "zh-CN" : context.Request.Locale;
-        var instruction = BuildInstruction(string.IsNullOrWhiteSpace(_aiOptions.SystemPrompt) ? DefaultSystemPrompt : _aiOptions.SystemPrompt, languageTag);
+        var systemPrompt = _configuration["Ai:SystemPrompt"];
+        var instruction = BuildInstruction(string.IsNullOrWhiteSpace(systemPrompt) ? DefaultSystemPrompt : systemPrompt, languageTag);
         var userContent = context.ContextLines.Count == 0 ? "（上下文为空）" : string.Join("\n", context.ContextLines);
         var messages = BuildChatMessages(instruction, context.ConversationMessages, userContent);
         var completionOptions = new ChatCompletionOptions { EndUserId = currentUserId };
@@ -190,12 +190,7 @@ public class AiSuggestionService : IAiSuggestionService
 
     private ChatClient? ResolveChatClient(SmartReplyContext context, AiSuggestionResponse response, out string model)
     {
-        model = _aiOptions.Model;
-        if (string.IsNullOrWhiteSpace(_aiOptions.Endpoint) || string.IsNullOrWhiteSpace(_aiOptions.ApiKey))
-        {
-            AssignSuggestions(response, BuildFallbackSuggestions(context.ContextLines));
-            return null;
-        }
+        model = "gpt-4o-mini";
         try { return _openAiClient.GetChatClient(model); }
         catch { AssignSuggestions(response, BuildFallbackSuggestions(context.ContextLines)); return null; }
     }

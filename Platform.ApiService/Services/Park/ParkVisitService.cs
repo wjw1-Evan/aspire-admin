@@ -4,7 +4,6 @@ using Platform.ServiceDefaults.Services;
 using Platform.ServiceDefaults.Extensions;
 using System.Linq.Dynamic.Core;
 using System.Text.Json;
-using Microsoft.Extensions.Options;
 using OpenAI;
 using OpenAI.Chat;
 
@@ -19,7 +18,6 @@ public class ParkVisitService : IParkVisitService
 
     private readonly ILogger<ParkVisitService> _logger;
     private readonly OpenAIClient _openAiClient;
-    private readonly AiCompletionOptions _aiOptions;
 
     /// <summary>
     /// 初始化走访管理服务
@@ -27,14 +25,12 @@ public class ParkVisitService : IParkVisitService
     public ParkVisitService(
         DbContext context,
         ILogger<ParkVisitService> logger,
-        OpenAIClient openAiClient,
-        IOptions<AiCompletionOptions> aiOptions
+        OpenAIClient openAiClient
     ) {
         _context = context;
 
         _logger = logger;
         _openAiClient = openAiClient;
-        _aiOptions = aiOptions.Value;
     }
 
     #region 走访任务
@@ -384,8 +380,7 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<string> GenerateQuestionAnswerAsync(string content, string? category)
     {
-        var model = _aiOptions.Model ;
-        var chatClient = _openAiClient.GetChatClient(model);
+        var chatClient = _openAiClient.GetChatClient("gpt-4o-mini");
 
         var categoryText = string.IsNullOrWhiteSpace(category) ? "通用" : category;
         var systemPrompt = @"你是一位专业的园区服务顾问。请根据用户提出的问题，生成一个专业、实用、友好的标准回答。
@@ -655,9 +650,8 @@ public class ParkVisitService : IParkVisitService
 
         try
         {
-            var model = _aiOptions.Model;
-            _logger.LogInformation("开始生成走访 AI 报告，使用的模型：{Model}", model);
-            var chatClient = _openAiClient.GetChatClient(model);
+            _logger.LogInformation("开始生成走访 AI 报告");
+            var chatClient = _openAiClient.GetChatClient("gpt-4o-mini");
 
             var messages = new List<OpenAI.Chat.ChatMessage>
             {

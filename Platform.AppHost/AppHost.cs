@@ -20,8 +20,7 @@ var openAiEndpoint = builder.Configuration["Parameters:openai-openai-endpoint"]
 
 var openai = builder.AddOpenAI("openai").WithEndpoint(openAiEndpoint);
 
-var openAiModel = builder.Configuration["OpenAI:Model"] ?? throw new InvalidOperationException("缺少 OpenAI 模型配置项 'OpenAI:Model'。");
-var chat = openai.AddModel("chat", openAiModel);
+var chat = openai.AddModel("chat", "gpt-4o-mini").WithHealthCheck();
 
 var redis = builder.AddRedis("redis");
 

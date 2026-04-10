@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using OpenAI;
 using OpenAI.Chat;
 using Platform.ApiService.Constants;
@@ -30,7 +29,7 @@ public class ChatAiService : IChatAiService
     private readonly DbContext _context;
     private const int AssistantContextMessageLimit = 24;
     private readonly OpenAIClient _openAiClient;
-    private readonly AiCompletionOptions _aiOptions;
+    private readonly IConfiguration _configuration;
     private readonly IUserService _userService;
     private readonly IChatBroadcaster _broadcaster;
     private readonly IChatSessionService _sessionService;
@@ -41,7 +40,7 @@ public class ChatAiService : IChatAiService
     public ChatAiService(
         DbContext context,
         OpenAIClient openAiClient,
-        IOptions<AiCompletionOptions> aiOptions,
+        IConfiguration configuration,
         IUserService userService,
         IChatBroadcaster broadcaster,
         IChatSessionService sessionService,
@@ -51,7 +50,7 @@ public class ChatAiService : IChatAiService
     {
         _context = context;
         _openAiClient = openAiClient ?? throw new ArgumentNullException(nameof(openAiClient));
-        _aiOptions = aiOptions?.Value ?? throw new ArgumentNullException(nameof(aiOptions));
+        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         _broadcaster = broadcaster ?? throw new ArgumentNullException(nameof(broadcaster));
         _sessionService = sessionService ?? throw new ArgumentNullException(nameof(sessionService));
@@ -115,10 +114,9 @@ public class ChatAiService : IChatAiService
         Func<ChatMessage, Task>? onComplete = null)
     {
         var xiaokeConfig = await GetXiaokeConfig();
-        var model = xiaokeConfig?.Model ?? _aiOptions.Model;
 
         ChatClient chatClient;
-        try { chatClient = _openAiClient.GetChatClient(model); }
+        try { chatClient = _openAiClient.GetChatClient("gpt-4o-mini"); }
         catch (Exception ex) { _logger.LogError(ex, "初始化 OpenAI ChatClient 失败"); return null; }
 
         var systemPrompt = await GetEffectiveSystemPrompt(triggerMessage.SenderId, xiaokeConfig);
@@ -234,7 +232,7 @@ public class ChatAiService : IChatAiService
             var userDef = await _userService.GetAiRoleDefinitionAsync(userId);
             if (!string.IsNullOrWhiteSpace(userDef) && userDef != fallback) basePrompt = userDef;
             else if (xiaokeConfig != null && !string.IsNullOrWhiteSpace(xiaokeConfig.SystemPrompt)) basePrompt = xiaokeConfig.SystemPrompt;
-            else if (!string.IsNullOrWhiteSpace(_aiOptions.SystemPrompt)) basePrompt = _aiOptions.SystemPrompt;
+            else if (!string.IsNullOrWhiteSpace(_configuration["Ai:SystemPrompt"])) basePrompt = _configuration["Ai:SystemPrompt"]!;
 
             var memories = await _context.Set<UserMemory>()
                 .Where(m => m.UserId == userId)

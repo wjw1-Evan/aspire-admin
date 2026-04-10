@@ -106,7 +106,7 @@ export default function CompanySettings() {
           style={{ marginBottom: 16, borderRadius: 12 }}
         >
           <Row gutter={[12, 12]}>
-            <Col xs={12} sm={6} md={4}>
+            <Col xs={12} sm={6} md={3} lg={3}>
               <StatCard
                 title={intl.formatMessage({ id: 'pages.companySettings.statistics.totalUsers' })}
                 value={`${statistics.totalUsers} / ${statistics.maxUsers}`}
@@ -114,7 +114,7 @@ export default function CompanySettings() {
                 color="#3f8600"
               />
             </Col>
-            <Col xs={12} sm={6} md={4}>
+            <Col xs={12} sm={6} md={3} lg={3}>
               <StatCard
                 title={intl.formatMessage({ id: 'pages.companySettings.statistics.activeUsers' })}
                 value={statistics.activeUsers}
@@ -122,7 +122,7 @@ export default function CompanySettings() {
                 color="#1890ff"
               />
             </Col>
-            <Col xs={12} sm={6} md={4}>
+            <Col xs={12} sm={6} md={3} lg={3}>
               <StatCard
                 title={intl.formatMessage({ id: 'pages.companySettings.statistics.totalRoles' })}
                 value={statistics.totalRoles ?? 0}
@@ -130,7 +130,7 @@ export default function CompanySettings() {
                 color="#1890ff"
               />
             </Col>
-            <Col xs={12} sm={6} md={4}>
+            <Col xs={12} sm={6} md={3} lg={3}>
               <StatCard
                 title={intl.formatMessage({ id: 'pages.companySettings.statistics.totalMenus' })}
                 value={statistics.totalMenus ?? 0}
@@ -138,9 +138,8 @@ export default function CompanySettings() {
                 color="#1890ff"
               />
             </Col>
-          </Row>
-          <Row gutter={[12, 12]} style={{ marginTop: 12 }}>
-            <Col xs={12} sm={6} md={4}>
+       
+            <Col xs={12} sm={6} md={3} lg={3}>
               <StatCard
                 title={intl.formatMessage({ id: 'pages.companySettings.statistics.totalPermissions' })}
                 value={statistics.totalMenus ?? 0}
@@ -148,7 +147,7 @@ export default function CompanySettings() {
                 color="#faad14"
               />
             </Col>
-            <Col xs={12} sm={6} md={4}>
+            <Col xs={12} sm={6} md={3} lg={3}>
               <Card
                 size="small"
                 styles={{ body: { padding: '10px 12px' } }}
@@ -193,8 +192,8 @@ export default function CompanySettings() {
       <Card
         title={intl.formatMessage({ id: 'pages.companySettings.details' })}
         extra={
-          <Button 
-            type="primary" 
+          <Button
+            type="primary"
             size="small"
             icon={<EditOutlined />}
             onClick={() => setEditModalVisible(true)}
@@ -206,9 +205,9 @@ export default function CompanySettings() {
         style={{ marginBottom: 16 }}
       >
         {company && (
-          <ProDescriptions 
-            column={{ xs: 1, sm: 2, md: 2, lg: 2 }} 
-            bordered 
+          <ProDescriptions
+            column={{ xs: 1, sm: 2, md: 2, lg: 2 }}
+            bordered
             size="small"
           >
             <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.name' })}>{company.name}</ProDescriptions.Item>

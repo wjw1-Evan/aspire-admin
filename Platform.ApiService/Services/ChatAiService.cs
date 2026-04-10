@@ -126,6 +126,7 @@ public class ChatAiService : IChatAiService
         {
             new(ChatRole.System, instructionBuilder.ToString())
         };
+        messages.AddRange(conversationMessages);
     
 
         ChatMessage? assistantMessage = null;

@@ -110,10 +110,10 @@ const CombinedTaskView: React.FC<{ tasks: TaskDto[] }> = ({ tasks }) => {
                   width: taskDuration * dayWidth - 4,
                   top: 8,
                   height: 32,
-                  backgroundColor: task.completionPercentage === 100 ? 'linear-gradient(135deg, #52c41a 0%, #95de64 100%)' : 'linear-gradient(135deg, #1890ff 0%, #40a9ff 100%)',
+                  backgroundColor: task.completionPercentage === 100 ? '#52c41a' : '#1677ff',
                   borderRadius: 4,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 500,
-                  boxShadow: '0 1px 4px rgba(0,0,0,0.1)', cursor: 'pointer', zIndex: 2,
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.2)', cursor: 'pointer', zIndex: 2, border: '1px solid rgba(255,255,255,0.3)',
                 }}>
                   {taskDuration >= 2 && <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', padding: '0 4px' }}>{task.taskName}</span>}
                 </div>

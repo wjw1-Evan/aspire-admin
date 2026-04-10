@@ -206,7 +206,11 @@ export default function CompanySettings() {
         style={{ marginBottom: 16 }}
       >
         {company && (
-          <ProDescriptions column={2} bordered size="small">
+          <ProDescriptions 
+            column={{ xs: 1, sm: 2, md: 2, lg: 2 }} 
+            bordered 
+            size="small"
+          >
             <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.name' })}>{company.name}</ProDescriptions.Item>
             <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.code' })}><Tag color="blue">{company.code}</Tag></ProDescriptions.Item>
             <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.displayName' })}>{company.displayName || '-'}</ProDescriptions.Item>
@@ -215,7 +219,7 @@ export default function CompanySettings() {
             <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.contactEmail' })}>{company.contactEmail || '-'}</ProDescriptions.Item>
             <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.contactPhone' })}>{company.contactPhone || '-'}</ProDescriptions.Item>
             <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.edit.logoLabel' })}>{company.logo ? <img src={company.logo} alt="logo" style={{ maxHeight: 32 }} /> : '-'}</ProDescriptions.Item>
-            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.description' })} span={2}>{company.description || '-'}</ProDescriptions.Item>
+            <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.description' })} span={1}>{company.description || '-'}</ProDescriptions.Item>
             <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.createdAt' })}>{company.createdAt ? dayjs(company.createdAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
             <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.updatedAt' })}>{company.updatedAt ? dayjs(company.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-'}</ProDescriptions.Item>
           </ProDescriptions>

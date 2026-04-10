@@ -21,6 +21,7 @@ public class AuthController : BaseApiController
     private readonly IAuthService _authService;
     private readonly IImageCaptchaService _imageCaptchaService;
     private readonly IPasswordEncryptionService _encryptionService;
+    private readonly IUserService _userService;
     private readonly ILogger<AuthController> _logger;
 
     /// <summary>
@@ -29,17 +30,34 @@ public class AuthController : BaseApiController
     /// <param name="authService">认证服务</param>
     /// <param name="imageCaptchaService">图形验证码服务</param>
     /// <param name="encryptionService">密码加密服务</param>
+    /// <param name="userService">用户服务</param>
     /// <param name="logger">日志记录器</param>
     public AuthController(
         IAuthService authService,
         IImageCaptchaService imageCaptchaService,
         IPasswordEncryptionService encryptionService,
+        IUserService userService,
         ILogger<AuthController> logger)
     {
         _authService = authService ?? throw new ArgumentNullException(nameof(authService));
         _imageCaptchaService = imageCaptchaService ?? throw new ArgumentNullException(nameof(imageCaptchaService));
         _encryptionService = encryptionService ?? throw new ArgumentNullException(nameof(encryptionService));
+        _userService = userService ?? throw new ArgumentNullException(nameof(userService));
         _logger = logger;
+    }
+
+    /// <summary>
+    /// 检查用户名是否存在
+    /// </summary>
+    /// <param name="username">用户名</param>
+    /// <param name="excludeUserId">排除的用户ID</param>
+    /// <returns>是否存在</returns>
+    [HttpGet("check-username")]
+    [AllowAnonymous]
+    public async Task<IActionResult> CheckUsernameExists([FromQuery] string username, [FromQuery] string? excludeUserId = null)
+    {
+        var exists = await _userService.CheckUsernameExistsAsync(username, excludeUserId);
+        return Success(new { exists });
     }
 
     /// <summary>

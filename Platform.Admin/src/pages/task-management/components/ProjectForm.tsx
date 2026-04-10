@@ -29,8 +29,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ open, project, onSuccess, onC
         name: values.name,
         description: values.description,
         status: values.status ?? ProjectStatus.Planning,
-        startDate: values.startDate?.format('YYYY-MM-DD'),
-        endDate: values.endDate?.format('YYYY-MM-DD'),
+        startDate: values.startDate?.isDayjs ? values.startDate.format('YYYY-MM-DD') : undefined,
+        endDate: values.endDate?.isDayjs ? values.endDate.format('YYYY-MM-DD') : undefined,
         managerId: values.managerId,
         budget: values.budget,
         priority: values.priority ?? ProjectPriority.Medium,
@@ -98,7 +98,6 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ open, project, onSuccess, onC
       <ProFormSelect
         name="status"
         label="项目状态"
-        initialValue={ProjectStatus.Planning}
         options={[
           { label: '规划中', value: ProjectStatus.Planning },
           { label: '进行中', value: ProjectStatus.InProgress },
@@ -111,7 +110,6 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ open, project, onSuccess, onC
       <ProFormSelect
         name="priority"
         label="优先级"
-        initialValue={ProjectPriority.Medium}
         options={[
           { label: '低', value: ProjectPriority.Low },
           { label: '中', value: ProjectPriority.Medium },

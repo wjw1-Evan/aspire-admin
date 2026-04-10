@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Tag, Progress, Tabs, Space, Button, Grid, Empty, Spin, Tree } from 'antd';
+import { Tag, Progress, Tabs, Space, Grid, Empty, Spin, Segmented, Collapse } from 'antd';
 import { Drawer as AntDrawer } from 'antd';
 import { ProDescriptions } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
@@ -8,10 +8,9 @@ const { useBreakpoint } = Grid;
 import {
   ProjectOutlined,
   TeamOutlined,
-  FlagOutlined,
   BarChartOutlined,
-  LineChartOutlined,
-  FileTextOutlined,
+  UnorderedListOutlined,
+  DownOutlined,
 } from '@ant-design/icons';
 import {
   getProjectMembers,
@@ -24,6 +23,7 @@ import { getTaskTree, type TaskDto } from '@/services/task/api';
 import { getTaskStatusColor, getTaskPriorityColor } from '@/utils/task';
 import ProjectMemberManagement from './ProjectMemberManagement';
 import GanttChart from './GanttChart';
+import dayjs from 'dayjs';
 
 interface ProjectDetailProps {
   project: ProjectDto;
@@ -38,6 +38,7 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
   const [tasks, setTasks] = useState<TaskDto[]>([]);
   const [tasksLoading, setTasksLoading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [taskViewMode, setTaskViewMode] = useState<'gantt' | 'tree'>('gantt');
 
   useEffect(() => {
     if (project.id) {
@@ -77,23 +78,40 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
   };
 
   const taskTreeData = useMemo(() => {
-    const convertToTree = (taskList: TaskDto[]): any[] => {
-      return taskList.map(task => ({
-        key: task.id,
-        title: (
-          <Space>
-            <FileTextOutlined />
-            <span>{task.taskName}</span>
-            <Tag color={getTaskStatusColor(task.status)}>{task.statusName}</Tag>
-            <Tag color={getTaskPriorityColor(task.priority)}>{task.priorityName}</Tag>
-            {task.completionPercentage > 0 && <span style={{ fontSize: 12, color: '#999' }}>{task.completionPercentage}%</span>}
-          </Space>
-        ),
-        children: task.children && task.children.length > 0 ? convertToTree(task.children) : undefined,
-      }));
-    };
-    return convertToTree(tasks);
+    return tasks;
   }, [tasks]);
+
+  const renderTreeNode = (task: TaskDto, level: number) => {
+    return (
+      <div key={task.id} style={{ marginBottom: 8 }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          padding: '8px 12px',
+          backgroundColor: level === 0 ? '#fafafa' : '#fff',
+          borderRadius: 6,
+          border: '1px solid #f0f0f0',
+          marginLeft: level * 24,
+        }}>
+          <Space style={{ flex: 1 }}>
+            <span style={{ color: '#bfbfbf', fontSize: 10 }}>{'>'}</span>
+            <span style={{ fontWeight: level === 0 ? 600 : 400, minWidth: 150 }}>{task.taskName}</span>
+            <Tag color={getTaskStatusColor(task.status)} style={{ margin: 0 }}>{task.statusName}</Tag>
+            <Tag color={getTaskPriorityColor(task.priority)} style={{ margin: 0 }}>{task.priorityName}</Tag>
+            <span style={{ color: task.completionPercentage === 100 ? '#52c41a' : '#8c8c8c', fontSize: 12 }}>{task.completionPercentage}%</span>
+            {task.plannedStartTime && (
+              <span style={{ fontSize: 12, color: '#8c8c8c' }}>
+                {dayjs(task.plannedStartTime).format('MM-DD')} ~ {task.plannedEndTime ? dayjs(task.plannedEndTime).format('MM-DD') : '-'}
+              </span>
+            )}
+          </Space>
+        </div>
+        {task.children && task.children.length > 0 && (
+          task.children.map((child: TaskDto) => renderTreeNode(child, level + 1))
+        )}
+      </div>
+    );
+  };
 
   const statusMap: Record<number, { color: string; text: string }> = {
     [ProjectStatus.Planning]: { color: 'default', text: intl.formatMessage({ id: 'pages.projectManagement.status.planning' }) },
@@ -172,24 +190,29 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
             icon: <BarChartOutlined />,
             children: project.id ? (
               <Spin spinning={tasksLoading}>
-                {taskTreeData.length > 0 ? (
-                  <Tree
-                    treeData={taskTreeData}
-                    defaultExpandAll
-                    showLine={{ showLeafIcon: false }}
-                    style={{ padding: '16px 0' }}
+                <div style={{ marginBottom: 16 }}>
+                  <Segmented
+                    value={taskViewMode}
+                    onChange={(value) => setTaskViewMode(value as 'gantt' | 'tree')}
+                    options={[
+                      { value: 'gantt', label: intl.formatMessage({ id: 'pages.projectManagement.gantt.title' }), icon: <BarChartOutlined /> },
+                      { value: 'tree', label: intl.formatMessage({ id: 'pages.projectManagement.taskTree.view' }), icon: <UnorderedListOutlined /> },
+                    ]}
                   />
+                </div>
+                {taskViewMode === 'gantt' ? (
+                  <GanttChart projectId={project.id} />
                 ) : (
-                  <Empty description={intl.formatMessage({ id: 'pages.projectManagement.taskTree.noTasks' })} />
+                  taskTreeData.length > 0 ? (
+                    <div style={{ padding: '8px 0' }}>
+                      {taskTreeData.map(item => renderTreeNode(item, 0))}
+                    </div>
+                  ) : (
+                    <Empty description={intl.formatMessage({ id: 'pages.projectManagement.taskTree.noTasks' })} />
+                  )
                 )}
               </Spin>
             ) : null,
-          },
-          {
-            key: 'gantt',
-            label: intl.formatMessage({ id: 'pages.projectManagement.gantt.title' }),
-            icon: <LineChartOutlined />,
-            children: project.id ? <GanttChart projectId={project.id} /> : null,
           },
           {
             key: 'members',

@@ -106,7 +106,7 @@ export default function CompanySettings() {
           style={{ marginBottom: 16, borderRadius: 12 }}
         >
 <Row gutter={[12, 12]}>
-            <Col xs={12} sm={24/5}>
+            <Col xs={12} md={6} lg={4}>
               <StatCard
                 title={intl.formatMessage({ id: 'pages.companySettings.statistics.totalUsers' })}
                 value={`${statistics.totalUsers} / ${statistics.maxUsers}`}
@@ -114,7 +114,7 @@ export default function CompanySettings() {
                 color="#3f8600"
               />
             </Col>
-            <Col xs={12} sm={24/5}>
+            <Col xs={12} md={6} lg={4}>
               <StatCard
                 title={intl.formatMessage({ id: 'pages.companySettings.statistics.activeUsers' })}
                 value={statistics.activeUsers}
@@ -122,7 +122,7 @@ export default function CompanySettings() {
                 color="#1890ff"
               />
             </Col>
-            <Col xs={12} sm={24/5}>
+            <Col xs={12} md={6} lg={4}>
               <StatCard
                 title={intl.formatMessage({ id: 'pages.companySettings.statistics.totalRoles' })}
                 value={statistics.totalRoles ?? 0}
@@ -130,7 +130,7 @@ export default function CompanySettings() {
                 color="#1890ff"
               />
             </Col>
-            <Col xs={12} sm={24/5}>
+            <Col xs={12} md={6} lg={4}>
               <StatCard
                 title={intl.formatMessage({ id: 'pages.companySettings.statistics.totalMenus' })}
                 value={statistics.totalMenus ?? 0}
@@ -138,7 +138,7 @@ export default function CompanySettings() {
                 color="#1890ff"
               />
             </Col>
-            <Col xs={12} sm={24/5}>
+            <Col xs={12} md={6} lg={4}>
               <StatCard
                 title={intl.formatMessage({ id: 'pages.companySettings.statistics.totalPermissions' })}
                 value={statistics.totalMenus ?? 0}

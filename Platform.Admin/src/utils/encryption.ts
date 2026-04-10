@@ -21,13 +21,14 @@ export class PasswordEncryption {
 
         try {
             const response = await getPublicKey();
-            if (response.success && response.data?.key) {
-                this.publicKey = response.data.key;
+            const key = typeof response.data === 'string' ? response.data : response.data?.key;
+            if (response.success && key) {
+                this.publicKey = key;
                 this.lastFetchTime = now;
                 console.log('SM2公钥已缓存, 长度:', this.publicKey.length);
                 return this.publicKey;
             }
-            throw new Error('获取公钥失败: ' + JSON.stringify(response));
+            throw new Error('获取公钥失败');
         } catch (error) {
             console.error('SM2公钥获取异常:', error);
             throw error;

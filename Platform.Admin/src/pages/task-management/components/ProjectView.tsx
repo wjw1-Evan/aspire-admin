@@ -133,6 +133,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.name' }),
       dataIndex: 'name',
       key: 'name',
+      sorter: true,
       render: (dom: any, record: ProjectDto) => (
         <Space>
           <ProjectOutlined />
@@ -149,6 +150,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.status' }),
       dataIndex: 'status',
       key: 'status',
+      sorter: true,
       render: (_: any, record: ProjectDto) => {
         const statusMap: Record<number, { color: string; text: string }> = {
           [ProjectStatus.Planning]: { color: 'default', text: intl.formatMessage({ id: 'pages.projectManagement.status.planning' }) },
@@ -165,12 +167,14 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.progress' }),
       dataIndex: 'progress',
       key: 'progress',
+      sorter: true,
       render: (dom: any) => <Progress percent={dom} size="small" />,
     },
     {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.priority' }),
       dataIndex: 'priority',
       key: 'priority',
+      sorter: true,
       render: (_: any, record: ProjectDto) => {
         const priorityMap: Record<number, { color: string; text: string }> = {
           [ProjectPriority.Low]: { color: 'default', text: intl.formatMessage({ id: 'pages.projectManagement.priority.low' }) },
@@ -185,24 +189,28 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.manager' }),
       dataIndex: 'managerName',
       key: 'managerName',
+      sorter: true,
       render: (dom: any) => dom || '-',
     },
     {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.createdBy' }),
       dataIndex: 'createdByName',
       key: 'createdByName',
+      sorter: true,
       render: (dom: any) => dom || '-',
     },
     {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.startDate' }),
       dataIndex: 'startDate',
       key: 'startDate',
+      sorter: true,
       render: (_: any, record: ProjectDto) => formatDate(record.startDate),
     },
     {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.endDate' }),
       dataIndex: 'endDate',
       key: 'endDate',
+      sorter: true,
       render: (_: any, record: ProjectDto) => formatDate(record.endDate),
     },
     {

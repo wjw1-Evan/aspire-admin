@@ -1,5 +1,12 @@
 export default {
   'menu.welcome': '환영합니다',
+  'menu.project-management.statistics.desc': '프로젝트 통계 및 분석',
+  'menu.user-log.desc': '사용자 작업 로그 및 활동',
+  'menu.workflow.desc': '워크플로 관리 기능',
+  'menu.notice': '알림',
+  'menu.notice.desc': '시스템 알림 보기 및 관리',
+  'menu.company-search': '기업 검색',
+  'menu.my-join-requests': '내 가입 요청',
   'menu.login': '로그인',
   'menu.register': '회원가입',
   'menu.register-result': '가입 결과',
@@ -78,6 +85,8 @@ export default {
   'menu.workflow.forms.desc': '프로세스 관련 양식 관리',
   'menu.workflow.monitor': '프로세스 모니터링',
   'menu.workflow.monitor.desc': '워크플로 인스턴스 실행 모니터링',
+  'menu.workflow.knowledge-base': '지식 베이스',
+  'menu.workflow.knowledge-base.desc': '워크플로 지식 베이스 관리',
   // 공문 관리
   'menu.document': '공문 관리',
   'menu.document.list': '공문 목록',

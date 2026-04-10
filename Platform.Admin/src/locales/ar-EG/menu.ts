@@ -1,5 +1,11 @@
 export default {
   'menu.welcome': 'أهلاً بك',
+  'menu.document.desc': 'وظائف إدارة الوثائق',
+  'menu.project-management.statistics.desc': 'إحصائيات وتحليلات المشاريع',
+  'menu.user-log.desc': 'سجلات عمليات المستخدم والنشاط',
+  'menu.workflow.desc': 'وظائف إدارة سير العمل',
+  'menu.notice': 'إشعار',
+  'menu.notice.desc': 'عرض وإدارة إشعارات النظام',
   'menu.login': 'تسجيل الدخول',
   'menu.register': 'إنشاء حساب',
   'menu.register-result': 'نتيجة التسجيل',
@@ -80,6 +86,8 @@ export default {
   'menu.workflow.forms.desc': 'Manage forms bound to workflow nodes',
   'menu.workflow.monitor': 'Workflow Monitor',
   'menu.workflow.monitor.desc': 'Monitor workflow instance execution',
+  'menu.workflow.knowledge-base': 'قاعدة المعرفة',
+  'menu.workflow.knowledge-base.desc': 'إدارة قواعد معرف سير العمل',
   // Document Management
   'menu.document': 'Document Management',
   'menu.document.list': 'Document List',

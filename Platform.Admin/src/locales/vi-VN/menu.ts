@@ -1,5 +1,9 @@
 export default {
   'menu.welcome': 'Chào mừng',
+  'menu.user-log.desc': 'Nhật ký hoạt động và thao tác của người dùng',
+  'menu.workflow.desc': 'Chức năng quản lý quy trình làm việc',
+  'menu.notice': 'Thông báo',
+  'menu.notice.desc': 'Xem và quản lý thông báo hệ thống',
   'menu.login': 'Đăng nhập',
   'menu.register': 'Đăng ký',
   'menu.register-result': 'Kết quả đăng ký',
@@ -91,9 +95,8 @@ export default {
   'menu.workflow.forms.desc': 'Quản lý các biểu mẫu gắn liền với các nút quy trình',
   'menu.workflow.monitor': 'Giám sát quy trình',
   'menu.workflow.monitor.desc': 'Giám sát việc thực hiện phiên bản quy trình',
-  'menu.workflow.workflow:list': 'Định nghĩa quy trình',
-  'menu.workflow.workflow:create': 'Tạo quy trình',
-  'menu.workflow.workflow:monitor': 'Giám sát quy trình',
+  'menu.workflow.knowledge-base': 'Cơ sở tri thức',
+  'menu.workflow.knowledge-base.desc': 'Quản lý cơ sở tri thức quy trình làm việc',
 
   // Document Management
   'menu.document': 'Quản lý văn bản',

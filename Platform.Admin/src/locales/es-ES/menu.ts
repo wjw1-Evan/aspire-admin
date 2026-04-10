@@ -1,5 +1,11 @@
 export default {
   'menu.welcome': 'Bienvenido',
+  'menu.document.desc': 'Funciones de gestión de documentos',
+  'menu.project-management.statistics.desc': 'Estadísticas y análisis de proyectos',
+  'menu.user-log.desc': 'Registros de operaciones del usuario y actividad',
+  'menu.workflow.desc': 'Funciones de gestión de flujos de trabajo',
+  'menu.notice': 'Aviso',
+  'menu.notice.desc': 'Ver y gestionar avisos del sistema',
   'menu.login': 'Iniciar sesión',
   'menu.register': 'Registrarse',
   'menu.register-result': 'Resultado del registro',
@@ -80,6 +86,8 @@ export default {
   'menu.workflow.forms.desc': 'Manage forms bound to workflow nodes',
   'menu.workflow.monitor': 'Workflow Monitor',
   'menu.workflow.monitor.desc': 'Monitor workflow instance execution',
+  'menu.workflow.knowledge-base': 'Base de Conocimiento',
+  'menu.workflow.knowledge-base.desc': 'Gestionar bases de conocimiento de flujo de trabajo',
   // Document Management
   'menu.document': 'Document Management',
   'menu.document.list': 'Document List',

@@ -1,5 +1,11 @@
 export default {
   'menu.welcome': 'Hoş Geldiniz',
+  'menu.document.desc': 'Belge yönetimi işlevleri',
+  'menu.project-management.statistics.desc': 'Proje istatistikleri ve analizleri',
+  'menu.user-log.desc': 'Kullanıcı işlem günlükleri ve etkinlikleri',
+  'menu.workflow.desc': 'İş akışı yönetimi işlevleri',
+  'menu.notice': 'Duyuru',
+  'menu.notice.desc': 'Sistem duyurularını görüntüle ve yönet',
   'menu.login': 'Giriş Yap',
   'menu.register': 'Kaydol',
   'menu.register-result': 'Kayıt Sonucu',
@@ -80,6 +86,8 @@ export default {
   'menu.workflow.forms.desc': 'Manage forms bound to workflow nodes',
   'menu.workflow.monitor': 'Workflow Monitor',
   'menu.workflow.monitor.desc': 'Monitor workflow instance execution',
+  'menu.workflow.knowledge-base': 'Bilgi Tabanı',
+  'menu.workflow.knowledge-base.desc': 'İş akışı bilgi tabanlarını yönet',
   // Document Management
   'menu.document': 'Document Management',
   'menu.document.list': 'Document List',

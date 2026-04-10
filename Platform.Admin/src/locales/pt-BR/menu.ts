@@ -1,5 +1,13 @@
 export default {
   'menu.welcome': 'Welcome',
+  'menu.document.desc': 'Funções de gerenciamento de documentos',
+  'menu.project-management.statistics.desc': 'Estatísticas e análise de projetos',
+  'menu.user-log.desc': 'Logs de operação do usuário e atividade',
+  'menu.workflow.desc': 'Funções de gerenciamento de fluxo de trabalho',
+  'menu.change-password': 'Alterar Senha',
+  'menu.user-log': 'Registro de Atividade do Usuário',
+  'menu.notice': 'Aviso',
+  'menu.notice.desc': 'Visualizar e gerenciar avisos do sistema',
   'menu.more-blocks': 'More Blocks',
   'menu.home': 'Início',
   'menu.admin': 'Admin',
@@ -82,6 +90,8 @@ export default {
   'menu.workflow.create.desc': 'Criar nova definição de fluxo de trabalho',
   'menu.workflow.monitor': 'Monitor de Fluxo',
   'menu.workflow.monitor.desc': 'Monitorar execução de instâncias de fluxo de trabalho',
+  'menu.workflow.knowledge-base': 'Base de Conhecimento',
+  'menu.workflow.knowledge-base.desc': 'Gerenciar bases de conhecimento do fluxo de trabalho',
   // Gerenciamento de Documentos
   'menu.document': 'Gerenciamento de Documentos',
   'menu.document.list': 'Lista de Documentos',

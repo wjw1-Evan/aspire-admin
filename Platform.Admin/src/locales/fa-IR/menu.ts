@@ -1,5 +1,13 @@
 export default {
   'menu.welcome': 'خوش آمدید',
+  'menu.document.desc': 'توابع مدیریت اسناد',
+  'menu.project-management.statistics.desc': 'آمار و تجزیه و تحلیل پروژه',
+  'menu.user-log.desc': 'گزارش‌ها و فعالیت‌های عملیاتی کاربر',
+  'menu.workflow.desc': 'توابع مدیریت گردش کار',
+  'menu.change-password': 'تغییر رمز عبور',
+  'menu.user-log': 'گزارش فعالیت کاربر',
+  'menu.notice': 'اطلاعیه',
+  'menu.notice.desc': 'مشاهده و مدیریت اطلاعیه‌های سیستم',
   'menu.more-blocks': 'بلوک های بیشتر',
   'menu.home': 'خانه',
   'menu.admin': 'مدیر',
@@ -80,6 +88,8 @@ export default {
   'menu.workflow.create.desc': 'ایجاد تعریف جدید گردش کار',
   'menu.workflow.monitor': 'نظارت بر گردش کار',
   'menu.workflow.monitor.desc': 'نظارت بر اجرای نمونه‌های گردش کار',
+  'menu.workflow.knowledge-base': 'پایگاه دانش',
+  'menu.workflow.knowledge-base.desc': 'مدیریت پایگاه‌های دانش گردش کار',
   // مدیریت اسناد
   'menu.document': 'مدیریت اسناد',
   'menu.document.list': 'فهرست اسناد',

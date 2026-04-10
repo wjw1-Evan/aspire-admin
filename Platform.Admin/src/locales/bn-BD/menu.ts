@@ -1,5 +1,13 @@
 export default {
   'menu.welcome': 'স্বাগতম',
+  'menu.document.desc': 'নথি ব্যবস্থাপনা কার্যক্রম',
+  'menu.project-management.statistics.desc': 'প্রকল্প পরিসংখ্যান এবং বিশ্লেষণ',
+  'menu.user-log.desc': 'ব্যবহারকারী অপারেশন লগ এবং কার্যকলাপ',
+  'menu.workflow.desc': 'ওয়ার্কফ্লো ব্যবস্থাপনা কার্যক্রম',
+  'menu.change-password': 'পাসওয়ার্ড পরিবর্তন',
+  'menu.user-log': 'ব্যবহারকারী কার্যকলাপ লগ',
+  'menu.notice': 'নোটিশ',
+  'menu.notice.desc': 'সিস্টেম নোটিশ দেখুন এবং পরিচালনা করুন',
   'menu.more-blocks': 'আরও ব্লক',
   'menu.home': 'নীড়',
   'menu.admin': 'অ্যাডমিন',
@@ -82,6 +90,8 @@ export default {
   'menu.workflow.forms.desc': 'ওয়ার্কফ্লোর সাথে সংযুক্ত ফর্মগুলি পরিচালনা করুন',
   'menu.workflow.monitor': 'ওয়ার্কফ্লো মনিটর',
   'menu.workflow.monitor.desc': 'ওয়ার্কফ্লো ইনস্ট্যান্স নির্বাহ নিরীক্ষণ করুন',
+  'menu.workflow.knowledge-base': 'জ্ঞান ভান্ডার',
+  'menu.workflow.knowledge-base.desc': 'ওয়ার্কফ্লো জ্ঞান ভান্ডার পরিচালনা করুন',
   // নথি ব্যবস্থাপনা
   'menu.document': 'নথি ব্যবস্থাপনা',
   'menu.document.list': 'নথি তালিকা',

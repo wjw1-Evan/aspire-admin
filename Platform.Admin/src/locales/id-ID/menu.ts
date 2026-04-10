@@ -1,5 +1,13 @@
 export default {
   'menu.welcome': 'Selamat Datang',
+  'menu.document.desc': 'Fungsi manajemen dokumen',
+  'menu.project-management.statistics.desc': 'Statistik dan analisis proyek',
+  'menu.user-log.desc': 'Log operasi pengguna dan aktivitas',
+  'menu.workflow.desc': 'Fungsi manajemen alur kerja',
+  'menu.change-password': 'Ubah Kata Sandi',
+  'menu.user-log': 'Log Aktivitas Pengguna',
+  'menu.notice': 'Pemberitahuan',
+  'menu.notice.desc': 'Lihat dan kelola pemberitahuan sistem',
   'menu.more-blocks': 'Blocks Lainnya',
   'menu.home': 'Halaman Awal',
   'menu.admin': 'Admin',
@@ -81,6 +89,8 @@ export default {
   'menu.workflow.create.desc': 'Buat definisi alur kerja baru',
   'menu.workflow.monitor': 'Monitor Alur Kerja',
   'menu.workflow.monitor.desc': 'Memantau eksekusi instansi alur kerja',
+  'menu.workflow.knowledge-base': 'Basis Pengetahuan',
+  'menu.workflow.knowledge-base.desc': 'Kelola basis pengetahuan alur kerja',
   // Manajemen Dokumen
   'menu.document': 'Manajemen Dokumen',
   'menu.document.list': 'Daftar Dokumen',

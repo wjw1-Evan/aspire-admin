@@ -1,5 +1,10 @@
 export default {
   'menu.welcome': 'ยินดีต้อนรับ',
+  'menu.project-management.statistics.desc': 'สถิติและการวิเคราะห์โครงการ',
+  'menu.user-log.desc': 'บันทึกการดำเนินการของผู้ใช้และกิจกรรม',
+  'menu.workflow.desc': 'ฟังก์ชันการจัดการเวิร์กโฟลว์',
+  'menu.notice': 'ประกาศ',
+  'menu.notice.desc': 'ดูและจัดการประกาศระบบ',
   'menu.login': 'เข้าสู่ระบบ',
   'menu.register': 'ลงทะเบียน',
   'menu.register-result': 'ผลการลงทะเบียน',
@@ -80,6 +85,8 @@ export default {
   'menu.workflow.forms.desc': 'Manage forms bound to workflow nodes',
   'menu.workflow.monitor': 'Workflow Monitor',
   'menu.workflow.monitor.desc': 'Monitor workflow instance execution',
+  'menu.workflow.knowledge-base': 'ฐานความรู้',
+  'menu.workflow.knowledge-base.desc': 'จัดการฐานความรู้เวิร์กโฟลว์',
   // Document Management
   'menu.document': 'Document Management',
   'menu.document.list': 'Document List',

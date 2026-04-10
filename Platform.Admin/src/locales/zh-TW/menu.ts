@@ -1,5 +1,6 @@
 export default {
   'menu.welcome': '歡迎',
+  'menu.user-log.desc': '用戶操作日誌與活動',
   'menu.login': '登錄',
   'menu.register': '註冊',
   'menu.register-result': '註冊結果',

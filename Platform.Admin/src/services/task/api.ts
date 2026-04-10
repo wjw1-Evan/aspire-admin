@@ -310,8 +310,8 @@ export async function getTaskExecutionLogs(
   return request<ApiResponse<PagedResult<TaskExecutionLogDto>>>(
     `/apiservice/api/task/${taskId}/logs`,
     {
-      method: 'GET',
-      params: { page, pageSize },
+      method: 'POST',
+      data: { page, pageSize },
     },
   );
 }

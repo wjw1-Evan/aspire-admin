@@ -255,9 +255,9 @@ public class ChatAiService : IChatAiService
         return options;
     }
 
-    private async Task<List<OpenAIChatMessage>> BuildAssistantConversationMessagesAsync(ChatSession session, ChatMessage triggerMessage, CancellationToken cancellationToken)
+    private async Task<List<Microsoft.Extensions.AI.ChatMessage>> BuildAssistantConversationMessagesAsync(ChatSession session, ChatMessage triggerMessage, CancellationToken cancellationToken)
     {
-        var conversation = new List<OpenAIChatMessage>();
+        var conversation = new List<Microsoft.Extensions.AI.ChatMessage>();
         try
         {
             var history = await _context.Set<ChatMessage>()
@@ -274,11 +274,11 @@ public class ChatAiService : IChatAiService
                 var normalized = NormalizeAssistantMessageContent(message);
                 if (string.IsNullOrWhiteSpace(normalized)) continue;
 
-                if (string.Equals(message.SenderId, AiAssistantConstants.AssistantUserId, StringComparison.Ordinal))
-                {
-                    conversation.Add(new AssistantChatMessage(normalized));
-                }
-                else
+                var role = string.Equals(message.SenderId, AiAssistantConstants.AssistantUserId, StringComparison.Ordinal)
+                    ? Microsoft.Extensions.AI.ChatRole.Assistant
+                    : Microsoft.Extensions.AI.ChatRole.User;
+
+                if (role == Microsoft.Extensions.AI.ChatRole.User)
                 {
                     var content = normalized;
                     if (!string.Equals(message.SenderId, triggerMessage.SenderId, StringComparison.Ordinal))
@@ -286,7 +286,11 @@ public class ChatAiService : IChatAiService
                         var displayName = GetParticipantDisplayName(session, message);
                         content = $"{displayName}：{normalized}";
                     }
-                    conversation.Add(new UserChatMessage(content));
+                    conversation.Add(new Microsoft.Extensions.AI.ChatMessage(role, content));
+                }
+                else
+                {
+                    conversation.Add(new Microsoft.Extensions.AI.ChatMessage(role, normalized));
                 }
             }
         }
@@ -294,7 +298,7 @@ public class ChatAiService : IChatAiService
         if (conversation.Count == 0)
         {
             var fallback = NormalizeAssistantMessageContent(triggerMessage);
-            if (!string.IsNullOrWhiteSpace(fallback)) conversation.Add(new UserChatMessage(fallback));
+            if (!string.IsNullOrWhiteSpace(fallback)) conversation.Add(new Microsoft.Extensions.AI.ChatMessage(Microsoft.Extensions.AI.ChatRole.User, fallback));
         }
         return conversation;
     }

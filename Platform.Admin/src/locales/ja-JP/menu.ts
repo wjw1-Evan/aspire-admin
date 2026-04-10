@@ -1,5 +1,10 @@
 export default {
   'menu.welcome': 'ようこそ',
+  'menu.change-password': 'パスワード変更',
+  'menu.document.desc': '文書管理機能',
+  'menu.user-log': 'アクティビティログ',
+  'menu.notice': '通知',
+  'menu.notice.desc': 'システム通知の表示と管理',
   'menu.more-blocks': 'その他のブロック',
   'menu.home': 'ホーム',
   'menu.admin': '管理者',
@@ -30,6 +35,7 @@ export default {
 
   'menu.project-management': 'プロジェクト管理',
   'menu.project-management.desc': 'プロジェクト管理機能',
+  'menu.project-management.statistics.desc': 'プロジェクト統計とデータ分析',
   'menu.project-management.task': 'タスク管理',
   'menu.project-management.project': 'プロジェクト一覧',
   'menu.project-management.statistics': '統計レポート',
@@ -78,6 +84,7 @@ export default {
 
   // ワークフロー管理
   'menu.workflow': 'ワークフロー管理',
+  'menu.workflow.desc': 'ワークフロー管理機能',
   'menu.workflow.list': 'ワークフロー定義',
   'menu.workflow.list.desc': 'ワークフロー定義の管理と設定',
   'menu.workflow.create': 'ワークフロー作成',
@@ -86,6 +93,8 @@ export default {
   'menu.workflow.forms.desc': 'ワークフローに紐づくフォームを管理',
   'menu.workflow.monitor': 'ワークフロー監視',
   'menu.workflow.monitor.desc': 'ワークフローインスタンスの実行状況を監視',
+  'menu.workflow.knowledge-base': 'ナレッジベース',
+  'menu.workflow.knowledge-base.desc': 'ワークフローナレッジベースの管理',
   'menu.workflow.workflow:list': 'ワークフロー定義',
   'menu.workflow.workflow:create': 'ワークフロー作成',
   'menu.workflow.workflow:monitor': 'ワークフロー監視',

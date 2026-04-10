@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Tag, Progress, Tabs, Space, Grid, Empty, Spin, Segmented, Collapse } from 'antd';
+import { Tag, Progress, Tabs, Space, Grid, Empty, Spin, Tooltip } from 'antd';
 import { Drawer as AntDrawer } from 'antd';
 import { ProDescriptions } from '@ant-design/pro-components';
 import { useIntl } from '@umijs/max';
@@ -9,8 +9,6 @@ import {
   ProjectOutlined,
   TeamOutlined,
   BarChartOutlined,
-  UnorderedListOutlined,
-  DownOutlined,
 } from '@ant-design/icons';
 import {
   getProjectMembers,
@@ -22,7 +20,6 @@ import {
 import { getTaskTree, type TaskDto } from '@/services/task/api';
 import { getTaskStatusColor, getTaskPriorityColor } from '@/utils/task';
 import ProjectMemberManagement from './ProjectMemberManagement';
-import GanttChart from './GanttChart';
 import dayjs from 'dayjs';
 
 interface ProjectDetailProps {
@@ -30,15 +27,135 @@ interface ProjectDetailProps {
   onClose: () => void;
 }
 
+const CombinedTaskView: React.FC<{ tasks: TaskDto[] }> = ({ tasks }) => {
+  const intl = useIntl();
+  
+  const flattenTasks = (taskList: TaskDto[]): TaskDto[] => {
+    const result: TaskDto[] = [];
+    const traverse = (ts: TaskDto[]) => { ts.forEach(t => { result.push(t); if (t.children?.length) traverse(t.children); }); };
+    traverse(taskList);
+    return result;
+  };
+
+  const allTasks = flattenTasks(tasks);
+  const allDates: Date[] = [];
+  allTasks.forEach(task => {
+    if (task.plannedStartTime) allDates.push(new Date(task.plannedStartTime));
+    if (task.plannedEndTime) allDates.push(new Date(task.plannedEndTime));
+  });
+
+  let minDate: Date, maxDate: Date, totalDays: number;
+  if (!allDates.length) {
+    const today = new Date();
+    minDate = new Date(today); minDate.setDate(today.getDate() - 7);
+    maxDate = new Date(today); maxDate.setDate(today.getDate() + 30);
+    totalDays = 37;
+  } else {
+    minDate = new Date(Math.min(...allDates.map(d => d.getTime())));
+    maxDate = new Date(Math.max(...allDates.map(d => d.getTime())));
+    minDate.setDate(minDate.getDate() - 3);
+    maxDate.setDate(maxDate.getDate() + 7);
+    totalDays = Math.max(1, Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24)));
+  }
+
+  const dayWidth = 35;
+  const today = new Date();
+  const todayOffset = Math.floor((today.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));
+
+  const renderTaskRow = (task: TaskDto, level: number) => {
+    const hasTimeInfo = task.plannedStartTime && task.plannedEndTime;
+    let taskStartOffset = 0, taskDuration = 0;
+
+    if (hasTimeInfo) {
+      const startDate = new Date(task.plannedStartTime!);
+      const endDate = new Date(task.plannedEndTime!);
+      taskStartOffset = Math.floor((startDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));
+      taskDuration = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+    }
+
+    return (
+      <React.Fragment key={task.id}>
+        <tr style={{ backgroundColor: level > 0 ? '#fafafa' : '#fff' }}>
+          <td style={{ padding: '10px 8px', borderBottom: '1px solid #f0f0f0', borderRight: '1px solid #f0f0f0', backgroundColor: '#fff', position: 'sticky', left: 0, zIndex: 1, minWidth: 200 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: level * 20 }}>
+              <span style={{ color: '#bfbfbf', fontSize: 10 }}>{level > 0 ? '└' : ''}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: level === 0 ? 600 : 400, color: '#262626', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: 13 }}>{task.taskName}</div>
+                <div style={{ display: 'flex', gap: 3, marginTop: 2 }}>
+                  <Tag color={getTaskStatusColor(task.status)} style={{ fontSize: 10, padding: '0 3px', margin: 0 }}>{task.statusName}</Tag>
+                  {task.priorityName && <Tag color={getTaskPriorityColor(task.priority)} style={{ fontSize: 10, padding: '0 3px', margin: 0 }}>{task.priorityName}</Tag>}
+                </div>
+              </div>
+            </div>
+          </td>
+          <td style={{ padding: '10px 8px', borderBottom: '1px solid #f0f0f0', borderRight: '1px solid #f0f0f0', backgroundColor: '#fff', position: 'sticky', left: 200, zIndex: 1, width: 80 }}>
+            <Progress percent={task.completionPercentage} size="small" style={{ margin: 0, width: 60 }} strokeColor={task.completionPercentage === 100 ? '#52c41a' : '#1890ff'} />
+          </td>
+          <td style={{ padding: 0, borderBottom: '1px solid #f0f0f0', position: 'relative', height: 48, minWidth: totalDays * dayWidth }}>
+            {Array.from({ length: totalDays }).map((_, i) => {
+              const date = new Date(minDate.getTime() + i * 24 * 60 * 60 * 1000);
+              const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+              const isToday = date.toDateString() === today.toDateString();
+              return (
+                <div key={i} style={{ position: 'absolute', left: i * dayWidth, top: 0, bottom: 0, width: dayWidth, backgroundColor: isWeekend ? '#fafafa' : isToday ? '#e6f7ff' : 'transparent', borderRight: '1px dashed #f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {isToday && <div style={{ width: 4, height: 4, borderRadius: '50%', backgroundColor: '#1890ff' }} />}
+                </div>
+              );
+            })}
+            {hasTimeInfo && (
+              <Tooltip title={<div><div style={{ fontWeight: 600 }}>{task.taskName}</div><div>{dayjs(task.plannedStartTime).format('YYYY-MM-DD')} ~ {dayjs(task.plannedEndTime).format('YYYY-MM-DD')}</div><div>进度: {task.completionPercentage}%</div></div>}>
+                <div style={{
+                  position: 'absolute',
+                  left: taskStartOffset * dayWidth + 2,
+                  width: taskDuration * dayWidth - 4,
+                  top: 8,
+                  height: 32,
+                  backgroundColor: task.completionPercentage === 100 ? 'linear-gradient(135deg, #52c41a 0%, #95de64 100%)' : 'linear-gradient(135deg, #1890ff 0%, #40a9ff 100%)',
+                  borderRadius: 4,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 500,
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.1)', cursor: 'pointer', zIndex: 2,
+                }}>
+                  {taskDuration >= 2 && <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', padding: '0 4px' }}>{task.taskName}</span>}
+                </div>
+              </Tooltip>
+            )}
+          </td>
+        </tr>
+        {task.children?.length && task.children.map(child => renderTaskRow(child, level + 1))}
+      </React.Fragment>
+    );
+  };
+
+  return (
+    <div style={{ overflowX: 'auto', borderRadius: 8, border: '1px solid #f0f0f0' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#fff' }}>
+        <thead>
+          <tr>
+            <th style={{ padding: '10px 8px', borderBottom: '2px solid #1890ff', borderRight: '1px solid #f0f0f0', backgroundColor: '#e6f7ff', textAlign: 'left', fontWeight: 600, color: '#1890ff', position: 'sticky', left: 0, zIndex: 10, minWidth: 200 }}>{intl.formatMessage({ id: 'pages.projectManagement.gantt.table.taskName' })}</th>
+            <th style={{ padding: '10px 8px', borderBottom: '2px solid #1890ff', borderRight: '1px solid #f0f0f0', backgroundColor: '#e6f7ff', fontWeight: 600, color: '#1890ff', position: 'sticky', left: 200, zIndex: 10, width: 80 }}>{intl.formatMessage({ id: 'pages.projectManagement.gantt.table.progress' })}</th>
+            <th style={{ padding: '10px 8px', borderBottom: '2px solid #1890ff', backgroundColor: '#e6f7ff', fontWeight: 600, color: '#1890ff', minWidth: totalDays * dayWidth }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
+                <span>{dayjs(minDate).format('YYYY-MM-DD')}</span>
+                <span style={{ fontWeight: 400 }}>{totalDays}天</span>
+                <span>{dayjs(maxDate).format('YYYY-MM-DD')}</span>
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>{tasks.map(task => renderTaskRow(task, 0))}</tbody>
+      </table>
+    </div>
+  );
+};
+
 const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
   const intl = useIntl();
   const screens = useBreakpoint();
-  const isMobile = !screens.md; // md 以下为移动端
+  const isMobile = !screens.md;
   const [members, setMembers] = useState<ProjectMemberDto[]>([]);
   const [tasks, setTasks] = useState<TaskDto[]>([]);
   const [tasksLoading, setTasksLoading] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [taskViewMode, setTaskViewMode] = useState<'gantt' | 'tree'>('gantt');
 
   useEffect(() => {
     if (project.id) {
@@ -75,42 +192,6 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
     } finally {
       setTasksLoading(false);
     }
-  };
-
-  const taskTreeData = useMemo(() => {
-    return tasks;
-  }, [tasks]);
-
-  const renderTreeNode = (task: TaskDto, level: number) => {
-    return (
-      <div key={task.id} style={{ marginBottom: 8 }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          padding: '8px 12px',
-          backgroundColor: level === 0 ? '#fafafa' : '#fff',
-          borderRadius: 6,
-          border: '1px solid #f0f0f0',
-          marginLeft: level * 24,
-        }}>
-          <Space style={{ flex: 1 }}>
-            <span style={{ color: '#bfbfbf', fontSize: 10 }}>{'>'}</span>
-            <span style={{ fontWeight: level === 0 ? 600 : 400, minWidth: 150 }}>{task.taskName}</span>
-            <Tag color={getTaskStatusColor(task.status)} style={{ margin: 0 }}>{task.statusName}</Tag>
-            <Tag color={getTaskPriorityColor(task.priority)} style={{ margin: 0 }}>{task.priorityName}</Tag>
-            <span style={{ color: task.completionPercentage === 100 ? '#52c41a' : '#8c8c8c', fontSize: 12 }}>{task.completionPercentage}%</span>
-            {task.plannedStartTime && (
-              <span style={{ fontSize: 12, color: '#8c8c8c' }}>
-                {dayjs(task.plannedStartTime).format('MM-DD')} ~ {task.plannedEndTime ? dayjs(task.plannedEndTime).format('MM-DD') : '-'}
-              </span>
-            )}
-          </Space>
-        </div>
-        {task.children && task.children.length > 0 && (
-          task.children.map((child: TaskDto) => renderTreeNode(child, level + 1))
-        )}
-      </div>
-    );
   };
 
   const statusMap: Record<number, { color: string; text: string }> = {
@@ -190,26 +271,10 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
             icon: <BarChartOutlined />,
             children: project.id ? (
               <Spin spinning={tasksLoading}>
-                <div style={{ marginBottom: 16 }}>
-                  <Segmented
-                    value={taskViewMode}
-                    onChange={(value) => setTaskViewMode(value as 'gantt' | 'tree')}
-                    options={[
-                      { value: 'gantt', label: intl.formatMessage({ id: 'pages.projectManagement.gantt.title' }), icon: <BarChartOutlined /> },
-                      { value: 'tree', label: intl.formatMessage({ id: 'pages.projectManagement.taskTree.view' }), icon: <UnorderedListOutlined /> },
-                    ]}
-                  />
-                </div>
-                {taskViewMode === 'gantt' ? (
-                  <GanttChart projectId={project.id} />
+                {tasks.length > 0 ? (
+                  <CombinedTaskView tasks={tasks} />
                 ) : (
-                  taskTreeData.length > 0 ? (
-                    <div style={{ padding: '8px 0' }}>
-                      {taskTreeData.map(item => renderTreeNode(item, 0))}
-                    </div>
-                  ) : (
-                    <Empty description={intl.formatMessage({ id: 'pages.projectManagement.taskTree.noTasks' })} />
-                  )
+                  <Empty description={intl.formatMessage({ id: 'pages.projectManagement.taskTree.noTasks' })} />
                 )}
               </Spin>
             ) : null,

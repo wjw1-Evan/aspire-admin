@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { Card, Spin, Row, Col, Tag, Space } from 'antd';
+import { Card, Spin, Row, Col, Tag, Space, Button } from 'antd';
 import { ProDescriptions } from '@ant-design/pro-components';
 import {
+  EditOutlined,
   UserOutlined,
   TeamOutlined,
   MenuOutlined,
@@ -97,12 +98,7 @@ export default function CompanySettings() {
 
 
   return (
-    <PageContainer extra={[
-        <a key="edit" onClick={() => setEditModalVisible(true)}>
-          {intl.formatMessage({ id: 'pages.companySettings.editCompany' })}
-        </a>,
-      ]}
-    >
+    <PageContainer>
       {/* 企业统计：使用 StatCard 统一风格 */}
       {statistics && (
         <Card
@@ -196,6 +192,16 @@ export default function CompanySettings() {
       {/* 企业详细信息 */}
       <Card
         title={intl.formatMessage({ id: 'pages.companySettings.details' })}
+        extra={
+          <Button 
+            type="primary" 
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => setEditModalVisible(true)}
+          >
+            {intl.formatMessage({ id: 'pages.companySettings.editCompany' })}
+          </Button>
+        }
         variant="outlined"
         style={{ marginBottom: 16 }}
       >

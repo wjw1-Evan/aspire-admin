@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ModalForm, ProFormText, ProFormTextArea, ProFormSelect, ProFormDatePicker, ProFormDigit } from '@ant-design/pro-form';
 import type { Dayjs } from 'dayjs';
+import type { UserDto } from '@/types';
 import {
   createProject,
   updateProject,
@@ -10,6 +11,7 @@ import {
   ProjectStatus,
   ProjectPriority,
 } from '@/services/task/project';
+import { getUserList } from '@/services/task/user';
 import dayjs from 'dayjs';
 
 interface ProjectFormProps {
@@ -21,6 +23,27 @@ interface ProjectFormProps {
 
 const ProjectForm: React.FC<ProjectFormProps> = ({ open, project, onSuccess, onCancel }) => {
   const isEditing = !!project;
+  const [users, setUsers] = useState<UserDto[]>([]);
+  const [userOptions, setUserOptions] = useState<{ label: string; value: string }[]>([]);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await getUserList();
+        if (response.success && response.data) {
+          setUsers(response.data);
+          setUserOptions(response.data.map(user => ({
+            label: user.name || user.username || '',
+            value: user.id
+          })));
+        }
+      } catch (error) {
+        console.error('获取用户列表失败:', error);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const handleSubmit = async (values: Record<string, any>) => {
     try {
@@ -29,8 +52,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ open, project, onSuccess, onC
         name: values.name,
         description: values.description,
         status: values.status ?? ProjectStatus.Planning,
-        startDate: values.startDate?.isDayjs ? values.startDate.format('YYYY-MM-DD') : undefined,
-        endDate: values.endDate?.isDayjs ? values.endDate.format('YYYY-MM-DD') : undefined,
+        startDate: values.startDate ? (dayjs.isDayjs(values.startDate) ? values.startDate.format('YYYY-MM-DD') : values.startDate) : undefined,
+        endDate: values.endDate ? (dayjs.isDayjs(values.endDate) ? values.endDate.format('YYYY-MM-DD') : values.endDate) : undefined,
         managerId: values.managerId,
         budget: values.budget,
         priority: values.priority ?? ProjectPriority.Medium,
@@ -107,7 +130,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ open, project, onSuccess, onC
         ]}
       />
 
-      <ProFormSelect
+       <ProFormSelect
         name="priority"
         label="优先级"
         options={[
@@ -115,6 +138,14 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ open, project, onSuccess, onC
           { label: '中', value: ProjectPriority.Medium },
           { label: '高', value: ProjectPriority.High },
         ]}
+      />
+
+      <ProFormSelect
+        name="managerId"
+        label="项目经理"
+        placeholder="请选择项目经理"
+        options={userOptions}
+        fieldProps={{ allowClear: true }}
       />
 
       <ProFormDatePicker

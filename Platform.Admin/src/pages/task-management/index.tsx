@@ -167,22 +167,22 @@ const TaskManagement: React.FC = () => {
   }, [loadStatistics]);
 
   const columns: ProColumns<TaskDto>[] = useMemo(() => [
-    { title: intl.formatMessage({ id: 'pages.taskManagement.table.name' }), dataIndex: 'taskName', key: 'taskName', width: 200, render: (_: any, r: TaskDto) => <a onClick={() => set({ viewingTask: r, detailVisible: true })}>{r.taskName}</a> },
-    { title: intl.formatMessage({ id: 'pages.taskManagement.table.type' }), dataIndex: 'taskType', key: 'taskType', width: 100, render: (_: any, r: TaskDto) => r.taskType ? <Tag>{r.taskType}</Tag> : '-' },
-    { title: intl.formatMessage({ id: 'pages.taskManagement.table.projectName' }), dataIndex: 'projectName', key: 'projectName', width: 150, render: (_: any, r: TaskDto) => r.projectName || '-' },
-    { title: intl.formatMessage({ id: 'pages.taskManagement.table.status' }), dataIndex: 'statusName', key: 'status', width: 100, filters: [
+    { title: intl.formatMessage({ id: 'pages.taskManagement.table.name' }), dataIndex: 'taskName', key: 'taskName', width: 200, sorter: true, render: (_: any, r: TaskDto) => <a onClick={() => set({ viewingTask: r, detailVisible: true })}>{r.taskName}</a> },
+    { title: intl.formatMessage({ id: 'pages.taskManagement.table.type' }), dataIndex: 'taskType', key: 'taskType', width: 100, sorter: true, render: (_: any, r: TaskDto) => r.taskType ? <Tag>{r.taskType}</Tag> : '-' },
+    { title: intl.formatMessage({ id: 'pages.taskManagement.table.projectName' }), dataIndex: 'projectName', key: 'projectName', width: 150, sorter: true, render: (_: any, r: TaskDto) => r.projectName || '-' },
+    { title: intl.formatMessage({ id: 'pages.taskManagement.table.status' }), dataIndex: 'statusName', key: 'status', width: 100, sorter: true, filters: [
       { text: intl.formatMessage({ id: 'pages.taskManagement.status.pending' }), value: TaskStatusEnum.Pending }, { text: intl.formatMessage({ id: 'pages.taskManagement.status.assigned' }), value: TaskStatusEnum.Assigned },
       { text: intl.formatMessage({ id: 'pages.taskManagement.status.inProgress' }), value: TaskStatusEnum.InProgress }, { text: intl.formatMessage({ id: 'pages.taskManagement.status.completed' }), value: TaskStatusEnum.Completed },
       { text: intl.formatMessage({ id: 'pages.taskManagement.status.cancelled' }), value: TaskStatusEnum.Cancelled }, { text: intl.formatMessage({ id: 'pages.taskManagement.status.failed' }), value: TaskStatusEnum.Failed }, { text: intl.formatMessage({ id: 'pages.taskManagement.status.paused' }), value: TaskStatusEnum.Paused },
     ], onFilter: (v, r) => r.status === v, render: (_: any, r: TaskDto) => <Tag color={getTaskStatusColor(r.status)}>{r.statusName}</Tag> },
-    { title: intl.formatMessage({ id: 'pages.taskManagement.table.priority' }), dataIndex: 'priorityName', key: 'priority', width: 80, filters: [
+    { title: intl.formatMessage({ id: 'pages.taskManagement.table.priority' }), dataIndex: 'priorityName', key: 'priority', width: 80, sorter: true, filters: [
       { text: intl.formatMessage({ id: 'pages.taskManagement.priority.low' }), value: 0 }, { text: intl.formatMessage({ id: 'pages.taskManagement.priority.medium' }), value: 1 },
       { text: intl.formatMessage({ id: 'pages.taskManagement.priority.high' }), value: 2 }, { text: intl.formatMessage({ id: 'pages.taskManagement.priority.urgent' }), value: 3 },
     ], onFilter: (v, r) => r.priority === v, render: (_: any, r: TaskDto) => <Tag color={getTaskPriorityColor(r.priority)}>{r.priorityName}</Tag> },
-    { title: intl.formatMessage({ id: 'pages.taskManagement.table.progress' }), dataIndex: 'completionPercentage', key: 'completionPercentage', width: 120, render: (_: any, r: TaskDto) => <Progress percent={r.completionPercentage} size="small" status={r.completionPercentage === 100 ? 'success' : r.status === TaskStatusEnum.Failed ? 'exception' : 'active'} /> },
-    { title: intl.formatMessage({ id: 'pages.taskManagement.table.assignedTo' }), dataIndex: 'assignedToName', key: 'assignedTo', width: 100, render: (_: any, r: TaskDto) => r.assignedToName || '-' },
-    { title: intl.formatMessage({ id: 'pages.taskManagement.table.createdBy' }), dataIndex: 'createdByName', key: 'createdBy', width: 100, render: (_: any, r: TaskDto) => r.createdByName || '-' },
-    { title: intl.formatMessage({ id: 'pages.taskManagement.table.plannedEnd' }), dataIndex: 'plannedEndTime', key: 'plannedEndTime', width: 150, render: (_: any, r: TaskDto) => r.plannedEndTime ? dayjs(r.plannedEndTime).format('YYYY-MM-DD HH:mm') : '-' },
+    { title: intl.formatMessage({ id: 'pages.taskManagement.table.progress' }), dataIndex: 'completionPercentage', key: 'completionPercentage', width: 120, sorter: true, render: (_: any, r: TaskDto) => <Progress percent={r.completionPercentage} size="small" status={r.completionPercentage === 100 ? 'success' : r.status === TaskStatusEnum.Failed ? 'exception' : 'active'} /> },
+    { title: intl.formatMessage({ id: 'pages.taskManagement.table.assignedTo' }), dataIndex: 'assignedToName', key: 'assignedTo', width: 100, sorter: true, render: (_: any, r: TaskDto) => r.assignedToName || '-' },
+    { title: intl.formatMessage({ id: 'pages.taskManagement.table.createdBy' }), dataIndex: 'createdByName', key: 'createdBy', width: 100, sorter: true, render: (_: any, r: TaskDto) => r.createdByName || '-' },
+    { title: intl.formatMessage({ id: 'pages.taskManagement.table.plannedEnd' }), dataIndex: 'plannedEndTime', key: 'plannedEndTime', width: 150, sorter: true, render: (_: any, r: TaskDto) => r.plannedEndTime ? dayjs(r.plannedEndTime).format('YYYY-MM-DD HH:mm') : '-' },
     { title: intl.formatMessage({ id: 'pages.taskManagement.table.createdAt' }), dataIndex: 'createdAt', key: 'createdAt', width: 150, sorter: true, render: (_: any, r: TaskDto) => r.createdAt ? dayjs(r.createdAt).format('YYYY-MM-DD HH:mm') : '-' },
     { title: intl.formatMessage({ id: 'pages.table.action' }), key: 'action', valueType: 'option', fixed: 'right', width: 180, render: (_: any, r: TaskDto) => (
       <Space size={4}>

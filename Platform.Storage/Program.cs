@@ -4,7 +4,7 @@ using Platform.Storage.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
-builder.AddPlatformDatabase();
+builder.AddPlatformDatabase("storagedb");
 
 builder.Services.AddSingleton<GridFSStorageService>();
 

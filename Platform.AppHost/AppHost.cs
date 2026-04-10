@@ -25,20 +25,15 @@ var chat = openai.AddModel("chat", openAiModel);
 
 var redis = builder.AddRedis("redis");
 
-var mongoOptionName = builder.Configuration["MongoDB:ServiceName"] ?? throw new InvalidOperationException("缺少 MongoDB 服务名称配置项 'MongoDB:ServiceName'。");
-var mongoUser = builder.Configuration["MongoDB:User"] ?? "admin";
-var mongoPassword = builder.Configuration["MongoDB:Password"] ?? throw new InvalidOperationException("缺少 MongoDB 密码配置项 'MongoDB:Password'。");
-var mongoUserParam = builder.AddParameter("mongo-user", mongoUser);
-var mongoPasswordParam = builder.AddParameter("mongo-password", mongoPassword, secret: true);
-
-var mongoBuilder = builder.AddMongoDB(mongoOptionName, userName: mongoUserParam, password: mongoPasswordParam)
-    .WithLifetime(ContainerLifetime.Persistent)
-    .WithMongoExpress()
-    .WithDataVolume();
-
-var mongo = mongoBuilder;
+var mongo = builder.AddMongoDB("mongo")
+        .WithLifetime(ContainerLifetime.Persistent)
+        .WithMongoExpress()
+        .WithDataVolume();
 
 var mongodb = mongo.AddDatabase("mongodb");
+
+var storagedb = mongo.AddDatabase("storagedb");
+
 
 // 数据初始化服务（一次性任务，完成后自动停止）
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
@@ -50,11 +45,13 @@ var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("dat
 
 var systemMonitor = builder.AddProject<Projects.Platform_SystemMonitor>("systemmonitor")
     .WithReference(mongodb)
+    .WaitFor(mongodb)
     .WithHttpEndpoint(port: 15020)
     .WithHttpHealthCheck("/health");
 
 var storage = builder.AddProject<Projects.Platform_Storage>("storage")
-    .WithReference(mongodb)
+    .WithReference(storagedb)
+    .WaitFor(storagedb)
     .WithHttpEndpoint(port: 15010)
     .WithHttpHealthCheck("/health");
 

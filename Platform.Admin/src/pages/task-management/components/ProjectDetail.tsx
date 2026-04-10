@@ -76,7 +76,7 @@ const CombinedTaskView: React.FC<{ tasks: TaskDto[] }> = ({ tasks }) => {
     return (
       <React.Fragment key={task.id}>
         <tr style={{ backgroundColor: level > 0 ? '#fafafa' : '#fff' }}>
-          <td style={{ padding: '10px 8px', borderBottom: '1px solid #f0f0f0', borderRight: '1px solid #f0f0f0', backgroundColor: '#fff', position: 'sticky', left: 0, zIndex: 1, minWidth: 200 }}>
+          <td style={{ padding: '10px 8px', borderBottom: '1px solid #f0f0f0', borderRight: '1px solid #f0f0f0', backgroundColor: '#fff', position: 'sticky', top: 0, left: 0, zIndex: 11, minWidth: 200 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: level * 20 }}>
               <span style={{ color: '#bfbfbf', fontSize: 10 }}>{level > 0 ? '└' : ''}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -88,7 +88,7 @@ const CombinedTaskView: React.FC<{ tasks: TaskDto[] }> = ({ tasks }) => {
               </div>
             </div>
           </td>
-          <td style={{ padding: '10px 8px', borderBottom: '1px solid #f0f0f0', borderRight: '1px solid #f0f0f0', backgroundColor: '#fff', position: 'sticky', left: 200, zIndex: 1, width: 80 }}>
+          <td style={{ padding: '10px 8px', borderBottom: '1px solid #f0f0f0', borderRight: '1px solid #f0f0f0', backgroundColor: '#fff', position: 'sticky', top: 0, left: 200, zIndex: 11, width: 80 }}>
             <Progress percent={task.completionPercentage} size="small" style={{ margin: 0, width: 60 }} strokeColor={task.completionPercentage === 100 ? '#52c41a' : '#1890ff'} />
           </td>
           <td style={{ padding: 0, borderBottom: '1px solid #f0f0f0', position: 'relative', height: 48, minWidth: totalDays * dayWidth }}>
@@ -127,23 +127,25 @@ const CombinedTaskView: React.FC<{ tasks: TaskDto[] }> = ({ tasks }) => {
   };
 
   return (
-    <div style={{ overflowX: 'auto', borderRadius: 8, border: '1px solid #f0f0f0' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#fff' }}>
-        <thead>
-          <tr>
-            <th style={{ padding: '10px 8px', borderBottom: '2px solid #1890ff', borderRight: '1px solid #f0f0f0', backgroundColor: '#e6f7ff', textAlign: 'left', fontWeight: 600, color: '#1890ff', position: 'sticky', left: 0, zIndex: 10, minWidth: 200 }}>{intl.formatMessage({ id: 'pages.projectManagement.gantt.table.taskName' })}</th>
-            <th style={{ padding: '10px 8px', borderBottom: '2px solid #1890ff', borderRight: '1px solid #f0f0f0', backgroundColor: '#e6f7ff', fontWeight: 600, color: '#1890ff', position: 'sticky', left: 200, zIndex: 10, width: 80 }}>{intl.formatMessage({ id: 'pages.projectManagement.gantt.table.progress' })}</th>
-            <th style={{ padding: '10px 8px', borderBottom: '2px solid #1890ff', backgroundColor: '#e6f7ff', fontWeight: 600, color: '#1890ff', minWidth: totalDays * dayWidth }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
-                <span>{dayjs(minDate).format('YYYY-MM-DD')}</span>
-                <span style={{ fontWeight: 400 }}>{totalDays}天</span>
-                <span>{dayjs(maxDate).format('YYYY-MM-DD')}</span>
-              </div>
-            </th>
-          </tr>
-        </thead>
-        <tbody>{tasks.map(task => renderTaskRow(task, 0))}</tbody>
-      </table>
+    <div style={{ position: 'relative', borderRadius: 8, border: '1px solid #f0f0f0', overflow: 'hidden' }}>
+      <div style={{ overflowX: 'auto', maxHeight: 500 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: '#fff' }}>
+          <thead>
+            <tr>
+              <th style={{ padding: '10px 8px', borderBottom: '2px solid #1890ff', borderRight: '1px solid #f0f0f0', backgroundColor: '#e6f7ff', textAlign: 'left', fontWeight: 600, color: '#1890ff', position: 'sticky', top: 0, left: 0, zIndex: 20, minWidth: 200 }}>{intl.formatMessage({ id: 'pages.projectManagement.gantt.table.taskName' })}</th>
+              <th style={{ padding: '10px 8px', borderBottom: '2px solid #1890ff', borderRight: '1px solid #f0f0f0', backgroundColor: '#e6f7ff', fontWeight: 600, color: '#1890ff', position: 'sticky', top: 0, left: 200, zIndex: 20, width: 80 }}>{intl.formatMessage({ id: 'pages.projectManagement.gantt.table.progress' })}</th>
+              <th style={{ padding: '10px 8px', borderBottom: '2px solid #1890ff', backgroundColor: '#e6f7ff', fontWeight: 600, color: '#1890ff', position: 'sticky', top: 0, zIndex: 10, minWidth: totalDays * dayWidth }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
+                  <span>{dayjs(minDate).format('YYYY-MM-DD')}</span>
+                  <span style={{ fontWeight: 400 }}>{totalDays}天</span>
+                  <span>{dayjs(maxDate).format('YYYY-MM-DD')}</span>
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>{tasks.map(task => renderTaskRow(task, 0))}</tbody>
+        </table>
+      </div>
     </div>
   );
 };

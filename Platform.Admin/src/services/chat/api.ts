@@ -227,11 +227,13 @@ export async function sendMessageWithStreaming(
                 break;
               case 'AssistantMessageChunk':
                 if (payload.sessionId && payload.messageId && payload.delta) {
+                  const now = Date.now();
                   console.log('[sendMessageWithStreaming] 收到 AssistantMessageChunk:', {
                     sessionId: payload.sessionId,
                     messageId: payload.messageId,
                     delta: payload.delta,
                     deltaLength: payload.delta.length,
+                    timestamp: now,
                   });
                   callbacks.onAssistantChunk?.(payload.sessionId, payload.messageId, payload.delta);
                 } else {

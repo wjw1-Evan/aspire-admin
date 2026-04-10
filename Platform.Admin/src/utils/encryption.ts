@@ -56,7 +56,8 @@ export class PasswordEncryption {
                 throw new Error('无效的公钥格式: ' + (keyHex?.substring(0, 10) || 'undefined'));
             }
             const encryptedData = sm2.doEncrypt(password, keyHex, 1);
-            return encryptedData;
+            // 添加 04 前缀以匹配后端 DecryptPassword 期望的格式
+            return '04' + encryptedData;
         } catch (error) {
             console.error('SM2 加密失败', error);
             this.clearCache();

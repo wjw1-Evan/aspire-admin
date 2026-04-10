@@ -43,7 +43,7 @@ export interface ProjectDto {
   endDate?: string;
   progress: number;
   memberIds?: string[];
-  projectMembers?: { userId: string; userName: string }[];
+  projectMembers?: ProjectMemberDto[];
   budget?: number;
   priority: number;
   priorityName: string;

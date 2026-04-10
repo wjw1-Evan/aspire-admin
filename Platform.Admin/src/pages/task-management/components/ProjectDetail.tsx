@@ -170,9 +170,13 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
     if (!project.id) return;
     setLoading(true);
     try {
-      const response = await getProjectMembers(project.id);
-      if (response.success && response.data) {
-        setMembers(Array.isArray(response.data) ? response.data : []);
+      if (project.projectMembers) {
+        setMembers(project.projectMembers);
+      } else {
+        const response = await getProjectMembers(project.id);
+        if (response.success && response.data) {
+          setMembers(Array.isArray(response.data) ? response.data : []);
+        }
       }
     } catch (error) {
       console.error('获取项目成员失败:', error);

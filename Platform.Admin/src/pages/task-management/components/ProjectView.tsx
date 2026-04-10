@@ -192,7 +192,7 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       sorter: true,
       render: (dom: any, record: ProjectDto) => {
         if (record.projectMembers && record.projectMembers.length > 0) {
-          return record.projectMembers.map((m: { userId: string; userName: string }) => m.userName).join(', ');
+          return record.projectMembers.map((m) => m.userName || m.userId).join(', ');
         }
         return '-';
       },

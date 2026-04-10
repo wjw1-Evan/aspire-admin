@@ -190,7 +190,7 @@ public class AiSuggestionService : IAiSuggestionService
 
     private ChatClient? ResolveChatClient(SmartReplyContext context, AiSuggestionResponse response, out string model)
     {
-        model = "gpt-4o-mini";
+        model = _configuration["Ai:Model"] ?? "gpt-4o-mini";
         try { return _openAiClient.GetChatClient(model); }
         catch { AssignSuggestions(response, BuildFallbackSuggestions(context.ContextLines)); return null; }
     }

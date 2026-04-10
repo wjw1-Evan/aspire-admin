@@ -163,13 +163,9 @@ public class ProjectStatisticsService : IProjectStatisticsService
                 new UserChatMessage(userPrompt)
             };
 
-            var options = new ChatCompletionOptions
-            {
-                Temperature = 0.7f,
-                MaxOutputTokenCount = 2000
-            };
 
-            var completion = await chatClient.CompleteChatAsync(messages, options);
+
+            var completion = await chatClient.CompleteChatAsync(messages);
             return completion.Value.Content[0].Text;
         }
         catch (Exception ex)

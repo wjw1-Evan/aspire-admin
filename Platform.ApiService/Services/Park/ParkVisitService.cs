@@ -26,7 +26,8 @@ public class ParkVisitService : IParkVisitService
         DbContext context,
         ILogger<ParkVisitService> logger,
         OpenAIClient openAiClient
-    ) {
+    )
+    {
         _context = context;
 
         _logger = logger;
@@ -399,23 +400,9 @@ public class ParkVisitService : IParkVisitService
             new UserChatMessage(userMessage)
         };
 
-        var completionOptions = new ChatCompletionOptions
-        {
+        var completion = await chatClient.CompleteChatAsync(messages);
+        return completion.Value.Content[0].Text;
 
-        };
-
-        try
-        {
-            var result = await chatClient.CompleteChatAsync(messages, completionOptions);
-            var answer = result.Value.Content.FirstOrDefault()?.Text ?? string.Empty;
-            _logger.LogInformation("AI generated answer for question: {Content}", content);
-            return answer;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "AI generate answer failed for question: {Content}", content);
-            throw;
-        }
     }
 
     /// <summary>
@@ -585,7 +572,7 @@ public class ParkVisitService : IParkVisitService
     public async Task<string> GenerateAiReportAsync(VisitStatisticsDto stats)
     {
         var statsJson = JsonSerializer.Serialize(stats, new JsonSerializerOptions { WriteIndented = true });
-        
+
         var systemPrompt = @"你是一位资深的园区运营数据分析师，专门为园区管理者撰写专业的数据分析报告。
 
 ## 报告风格要求

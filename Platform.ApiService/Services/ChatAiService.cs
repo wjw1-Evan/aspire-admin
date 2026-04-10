@@ -6,11 +6,9 @@ using Platform.ApiService.Constants;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using System;
-using System.ClientModel;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -115,10 +113,6 @@ public class ChatAiService : IChatAiService
     {
         var xiaokeConfig = await GetXiaokeConfig();
 
-        ChatClient chatClient;
-        try { chatClient = _openAiClient.GetChatClient("gpt-4o-mini"); }
-        catch (Exception ex) { _logger.LogError(ex, "初始化 OpenAI ChatClient 失败"); return null; }
-
         var systemPrompt = await GetEffectiveSystemPrompt(triggerMessage.SenderId, xiaokeConfig);
         var conversationMessages = await BuildAssistantConversationMessagesAsync(session, triggerMessage, cancellationToken);
         if (conversationMessages.Count == 0) return null;
@@ -154,6 +148,8 @@ public class ChatAiService : IChatAiService
                 await onChunk(session.Id, assistantMessage.Id, tip);
             }
 
+            var model = _configuration["Ai:Model"] ?? "gpt-4o-mini";
+            var chatClient = _openAiClient.GetChatClient(model);
             var streamingResult = chatClient.CompleteChatStreamingAsync(messages, completionOptions, cancellationToken);
 
             await foreach (var update in streamingResult)

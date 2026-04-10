@@ -23,8 +23,8 @@ public class CreateProjectRequest
     /// <summary>结束日期</summary>
     public DateTime? EndDate { get; set; }
 
-    /// <summary>项目经理ID</summary>
-    public string? ManagerId { get; set; }
+    /// <summary>项目成员ID列表</summary>
+    public List<string>? MemberIds { get; set; }
 
     /// <summary>预算</summary>
     public decimal? Budget { get; set; }
@@ -56,8 +56,8 @@ public class UpdateProjectRequest
     /// <summary>结束日期</summary>
     public DateTime? EndDate { get; set; }
 
-    /// <summary>项目经理ID</summary>
-    public string? ManagerId { get; set; }
+    /// <summary>项目成员ID列表</summary>
+    public List<string>? MemberIds { get; set; }
 
     /// <summary>预算</summary>
     public decimal? Budget { get; set; }
@@ -95,11 +95,11 @@ public class ProjectDto
     /// <summary>进度百分比</summary>
     public int Progress { get; set; }
 
-    /// <summary>项目经理ID</summary>
-    public string? ManagerId { get; set; }
+    /// <summary>项目成员ID列表</summary>
+    public List<string>? MemberIds { get; set; }
 
-    /// <summary>项目经理名称</summary>
-    public string? ManagerName { get; set; }
+    /// <summary>项目成员列表</summary>
+    public List<ProjectMemberDto>? ProjectMembers { get; set; }
 
     /// <summary>预算</summary>
     public decimal? Budget { get; set; }

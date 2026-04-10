@@ -84,7 +84,7 @@ public class ProjectMcpToolHandler : McpToolHandlerBase
                 Priority = int.TryParse(args.GetValueOrDefault("priority")?.ToString(), out var p) ? p : (int)ProjectPriority.Medium,
                 StartDate = DateTime.TryParse(args.GetValueOrDefault("startDate")?.ToString(), out var sd) ? sd : null,
                 EndDate = DateTime.TryParse(args.GetValueOrDefault("endDate")?.ToString(), out var ed) ? ed : null,
-                ManagerId = args.GetValueOrDefault("managerId")?.ToString(),
+                MemberIds = args.GetValueOrDefault("memberIds") is IEnumerable<object> mids ? mids.Select(m => m.ToString()!).ToList() : null,
                 Budget = decimal.TryParse(args.GetValueOrDefault("budget")?.ToString(), out var budget) ? budget : null
             }));
 

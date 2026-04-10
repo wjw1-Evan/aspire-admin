@@ -133,11 +133,10 @@ public class Project : MultiTenantEntity
     [BsonElement("progress")]
     public int Progress { get; set; } = 0;
 
-    /// <summary>项目经理ID</summary>
-    [StringLength(100)]
-    [Column("managerId")]
-    [BsonElement("managerId")]
-    public string? ManagerId { get; set; }
+    /// <summary>项目成员ID列表</summary>
+    [Column("memberIds")]
+    [BsonElement("memberIds")]
+    public List<string> MemberIds { get; set; } = [];
 
     /// <summary>预算（可选）</summary>
     [Column("budget")]

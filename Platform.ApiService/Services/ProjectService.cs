@@ -34,18 +34,21 @@ public class ProjectService : IProjectService
         var project = new Project
         {
             Name = request.Name, Description = request.Description, Status = (ProjectStatus)request.Status,
-            StartDate = request.StartDate, EndDate = request.EndDate, ManagerId = request.ManagerId,
-            Budget = request.Budget, Priority = (ProjectPriority)request.Priority, Progress = 0
+            StartDate = request.StartDate, EndDate = request.EndDate,
+            MemberIds = request.MemberIds ?? [], Budget = request.Budget, Priority = (ProjectPriority)request.Priority, Progress = 0
         };
         await _context.Set<Project>().AddAsync(project);
         await _context.SaveChangesAsync();
 
-        if (!string.IsNullOrEmpty(request.ManagerId))
+        if (request.MemberIds != null && request.MemberIds.Count > 0)
         {
-            await _context.Set<ProjectMember>().AddAsync(new ProjectMember
+            foreach (var userId in request.MemberIds)
             {
-                ProjectId = project.Id, UserId = request.ManagerId, Role = ProjectMemberRole.Manager, Allocation = 100
-            });
+                await _context.Set<ProjectMember>().AddAsync(new ProjectMember
+                {
+                    ProjectId = project.Id, UserId = userId, Role = ProjectMemberRole.Member, Allocation = 100
+                });
+            }
             await _context.SaveChangesAsync();
         }
         return await ConvertToProjectDtoAsync(project);
@@ -57,15 +60,12 @@ public class ProjectService : IProjectService
         var project = await _context.Set<Project>().FirstOrDefaultAsync(x => x.Id == request.ProjectId);
         if (project == null) throw new KeyNotFoundException($"项目 {request.ProjectId} 不存在");
 
-        if (project.CreatedBy != userId && project.ManagerId != userId)
-            throw new UnauthorizedAccessException("无权更新此项目");
-
         if (!string.IsNullOrEmpty(request.Name)) project.Name = request.Name;
         if (request.Description != null) project.Description = request.Description;
         if (request.Status.HasValue) project.Status = (ProjectStatus)request.Status.Value;
         if (request.StartDate.HasValue) project.StartDate = request.StartDate;
         if (request.EndDate.HasValue) project.EndDate = request.EndDate;
-        if (request.ManagerId != null) project.ManagerId = request.ManagerId;
+        if (request.MemberIds != null) project.MemberIds = request.MemberIds;
         if (request.Budget.HasValue) project.Budget = request.Budget;
         if (request.Priority.HasValue) project.Priority = (ProjectPriority)request.Priority.Value;
 
@@ -78,7 +78,7 @@ public class ProjectService : IProjectService
     {
         var project = await _context.Set<Project>().FirstOrDefaultAsync(x => x.Id == projectId);
         if (project == null) return false;
-        if (project.CreatedBy != userId && project.ManagerId != userId)
+        if (project.CreatedBy != userId)
             throw new UnauthorizedAccessException("无权删除此项目");
 
         _context.Set<Project>().Remove(project);
@@ -170,7 +170,7 @@ public class ProjectService : IProjectService
     {
         var list = projects.ToList();
         if (!list.Any()) return new List<ProjectDto>();
-        var userIds = list.SelectMany(p => new[] { p.ManagerId, p.CreatedBy }).Where(id => !string.IsNullOrEmpty(id)).Select(id => id!).Distinct();
+        var userIds = list.SelectMany(p => p.MemberIds ?? new List<string>()).Concat(list.Select(p => p.CreatedBy).Where(id => !string.IsNullOrEmpty(id))).Distinct();
         var userMap = await _userService.GetUsersByIdsAsync(userIds);
         return list.Select(p => ConvertToProjectDtoWithCache(p, userMap)).ToList();
     }
@@ -178,7 +178,10 @@ public class ProjectService : IProjectService
     private ProjectDto ConvertToProjectDtoWithCache(Project p, Dictionary<string, AppUser> uMap)
     {
         var dto = MapToDto(p);
-        if (!string.IsNullOrEmpty(p.ManagerId) && uMap.TryGetValue(p.ManagerId, out var m)) dto.ManagerName = string.IsNullOrWhiteSpace(m.Name) ? m.Username : $"{m.Username} ({m.Name})";
+        if (p.MemberIds != null && p.MemberIds.Count > 0)
+        {
+            dto.ProjectMembers = p.MemberIds.Select(uid => new ProjectMemberDto { UserId = uid, UserName = uMap.TryGetValue(uid, out var u) ? (string.IsNullOrWhiteSpace(u.Name) ? u.Username : u.Name) : uid }).ToList();
+        }
         if (!string.IsNullOrEmpty(p.CreatedBy) && uMap.TryGetValue(p.CreatedBy, out var c)) dto.CreatedByName = string.IsNullOrWhiteSpace(c.Name) ? c.Username : $"{c.Username} ({c.Name})";
         return dto;
     }
@@ -186,9 +189,14 @@ public class ProjectService : IProjectService
     private async Task<ProjectDto> ConvertToProjectDtoAsync(Project p)
     {
         var dto = MapToDto(p);
-        if (!string.IsNullOrEmpty(p.ManagerId))
+        if (p.MemberIds != null && p.MemberIds.Count > 0)
         {
-            try { var m = await _userService.GetUserByIdWithoutTenantFilterAsync(p.ManagerId); if (m != null) dto.ManagerName = string.IsNullOrWhiteSpace(m.Name) ? m.Username : $"{m.Username} ({m.Name})"; } catch { }
+            var members = new List<ProjectMemberDto>();
+            foreach (var uid in p.MemberIds)
+            {
+                try { var u = await _userService.GetUserByIdWithoutTenantFilterAsync(uid); if (u != null) members.Add(new ProjectMemberDto { UserId = uid, UserName = string.IsNullOrWhiteSpace(u.Name) ? u.Username : u.Name }); } catch { }
+            }
+            dto.ProjectMembers = members;
         }
         if (!string.IsNullOrEmpty(p.CreatedBy))
         {
@@ -200,7 +208,7 @@ public class ProjectService : IProjectService
     private ProjectDto MapToDto(Project p) => new ProjectDto
     {
         Id = p.Id, Name = p.Name, Description = p.Description, Status = (int)p.Status, StatusName = GetStatusName(p.Status),
-        StartDate = p.StartDate, EndDate = p.EndDate, Progress = p.Progress, ManagerId = p.ManagerId, Budget = p.Budget,
+        StartDate = p.StartDate, EndDate = p.EndDate, Progress = p.Progress, MemberIds = p.MemberIds, Budget = p.Budget,
         Priority = (int)p.Priority, PriorityName = GetPriorityName(p.Priority), CreatedBy = p.CreatedBy,
         CreatedAt = p.CreatedAt, UpdatedAt = p.UpdatedAt
     };

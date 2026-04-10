@@ -7,19 +7,15 @@ import { useIntl } from '@umijs/max';
 const { useBreakpoint } = Grid;
 import {
   ProjectOutlined,
-  TeamOutlined,
   BarChartOutlined,
 } from '@ant-design/icons';
 import {
-  getProjectMembers,
   type ProjectDto,
-  type ProjectMemberDto,
   ProjectStatus,
   ProjectPriority,
 } from '@/services/task/project';
 import { getTaskTree, type TaskDto } from '@/services/task/api';
 import { getTaskStatusColor, getTaskPriorityColor } from '@/utils/task';
-import ProjectMemberManagement from './ProjectMemberManagement';
 import dayjs from 'dayjs';
 
 interface ProjectDetailProps {
@@ -154,36 +150,14 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
   const intl = useIntl();
   const screens = useBreakpoint();
   const isMobile = !screens.md;
-  const [members, setMembers] = useState<ProjectMemberDto[]>([]);
   const [tasks, setTasks] = useState<TaskDto[]>([]);
   const [tasksLoading, setTasksLoading] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (project.id) {
-      loadMembers();
       loadTasks();
     }
   }, [project.id]);
-
-  const loadMembers = async () => {
-    if (!project.id) return;
-    setLoading(true);
-    try {
-      if (project.projectMembers) {
-        setMembers(project.projectMembers);
-      } else {
-        const response = await getProjectMembers(project.id);
-        if (response.success && response.data) {
-          setMembers(Array.isArray(response.data) ? response.data : []);
-        }
-      }
-    } catch (error) {
-      console.error('获取项目成员失败:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const loadTasks = async () => {
     if (!project.id) return;
@@ -280,18 +254,6 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
                   <Empty description={intl.formatMessage({ id: 'pages.projectManagement.taskTree.noTasks' })} />
                 )}
               </Spin>
-            ) : null,
-          },
-          {
-            key: 'members',
-            label: intl.formatMessage({ id: 'pages.projectManagement.members.title' }),
-            icon: <TeamOutlined />,
-            children: project.id ? (
-              <ProjectMemberManagement
-                projectId={project.id}
-                members={members}
-                onRefresh={loadMembers}
-              />
             ) : null,
           },
         ]}

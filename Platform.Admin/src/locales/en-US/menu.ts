@@ -1,5 +1,9 @@
 export default {
   'menu.welcome': 'Welcome',
+  'menu.document.desc': 'Document management functions',
+  'menu.project-management.statistics.desc': 'Project statistics and analytics',
+  'menu.user-log.desc': 'User operation logs and activity',
+  'menu.workflow.desc': 'Workflow management functions',
   'menu.login': 'Login',
   'menu.register': 'Register',
   'menu.register-result': 'Register Result',

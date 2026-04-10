@@ -136,8 +136,7 @@ public class Project : MultiTenantEntity
     /// <summary>项目成员ID列表</summary>
     [Column("memberIds")]
     [BsonElement("memberIds")]
-    [BsonIgnoreIfNull]
-    public List<string>? MemberIds { get; set; }
+    public List<string>? MemberIds { get; set; } = new();
 
     /// <summary>预算（可选）</summary>
     [Column("budget")]

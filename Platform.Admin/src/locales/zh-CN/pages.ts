@@ -629,6 +629,7 @@ export default {
   'pages.projectManagement.table.progress': '进度',
   'pages.projectManagement.table.priority': '优先级',
   'pages.projectManagement.table.manager': '项目经理',
+  'pages.projectManagement.table.members': '项目成员',
   'pages.projectManagement.table.createdBy': '创建人',
   'pages.projectManagement.table.startDate': '开始日期',
   'pages.projectManagement.table.endDate': '结束日期',

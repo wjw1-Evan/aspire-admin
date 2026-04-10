@@ -186,11 +186,16 @@ const ProjectView = forwardRef<ProjectViewRef>((props, ref) => {
       },
     },
     {
-      title: intl.formatMessage({ id: 'pages.projectManagement.table.manager' }),
-      dataIndex: 'managerName',
-      key: 'managerName',
+      title: intl.formatMessage({ id: 'pages.projectManagement.table.members' }),
+      dataIndex: 'projectMembers',
+      key: 'projectMembers',
       sorter: true,
-      render: (dom: any) => dom || '-',
+      render: (dom: any, record: ProjectDto) => {
+        if (record.projectMembers && record.projectMembers.length > 0) {
+          return record.projectMembers.map((m: { userId: string; userName: string }) => m.userName).join(', ');
+        }
+        return '-';
+      },
     },
     {
       title: intl.formatMessage({ id: 'pages.projectManagement.table.createdBy' }),

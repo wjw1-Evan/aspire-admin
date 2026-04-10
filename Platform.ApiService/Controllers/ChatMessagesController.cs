@@ -65,7 +65,6 @@ public class ChatMessagesController : BaseApiController
         Response.Headers["Connection"] = "keep-alive";
         Response.Headers["X-Accel-Buffering"] = "no";
         Response.ContentType = "text/event-stream";
-        Response.Headers["Transfer-Encoding"] = "chunked";
 
         if (Response.Body.CanSeek)
         {

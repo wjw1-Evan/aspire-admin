@@ -55,7 +55,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ open, project, onSuccess, onC
         status: values.status ?? ProjectStatus.Planning,
         startDate: values.startDate ? (dayjs.isDayjs(values.startDate) ? values.startDate.format('YYYY-MM-DD') : values.startDate) : undefined,
         endDate: values.endDate ? (dayjs.isDayjs(values.endDate) ? values.endDate.format('YYYY-MM-DD') : values.endDate) : undefined,
-        managerId: values.managerId,
+        memberIds: values.memberIds,
         budget: values.budget,
         priority: values.priority ?? ProjectPriority.Medium,
       };
@@ -87,7 +87,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ open, project, onSuccess, onC
     status: project.status,
     startDate: project.startDate ? dayjs(project.startDate) : undefined,
     endDate: project.endDate ? dayjs(project.endDate) : undefined,
-    managerId: project.managerId,
+    memberIds: project.memberIds,
     budget: project.budget,
     priority: project.priority,
   } : {
@@ -142,11 +142,11 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ open, project, onSuccess, onC
       />
 
       <ProFormSelect
-        name="managerId"
-        label="项目经理"
-        placeholder="请选择项目经理"
+        name="memberIds"
+        label="项目成员"
+        placeholder="请选择项目成员"
         options={userOptions}
-        fieldProps={{ allowClear: true }}
+        fieldProps={{ allowClear: true, mode: 'multiple', placeholder: '请选择项目成员' }}
       />
 
       <ProFormDatePicker

@@ -42,8 +42,7 @@ export interface ProjectDto {
   startDate?: string;
   endDate?: string;
   progress: number;
-  managerId?: string;
-  managerName?: string;
+  memberIds?: string[];
   budget?: number;
   priority: number;
   priorityName: string;
@@ -64,7 +63,7 @@ export interface CreateProjectRequest {
   status?: number;
   startDate?: string;
   endDate?: string;
-  managerId?: string;
+  memberIds?: string[];
   budget?: number;
   priority?: number;
 }
@@ -79,7 +78,7 @@ export interface UpdateProjectRequest {
   status?: number;
   startDate?: string;
   endDate?: string;
-  managerId?: string;
+  memberIds?: string[];
   budget?: number;
   priority?: number;
 }

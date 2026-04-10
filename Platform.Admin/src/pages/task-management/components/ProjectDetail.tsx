@@ -243,9 +243,6 @@ const ProjectDetail: React.FC<ProjectDetailProps> = ({ project, onClose }) => {
                 <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.table.progress' })}>
                   <Progress percent={project.progress} size="small" />
                 </ProDescriptions.Item>
-                <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.table.manager' })}>
-                  {project.managerName || '-'}
-                </ProDescriptions.Item>
                 <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.projectManagement.detail.budget' })}>
                   {project.budget ? `¥${project.budget.toLocaleString()}` : '-'}
                 </ProDescriptions.Item>

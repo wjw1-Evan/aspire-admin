@@ -327,7 +327,7 @@ public class ParkEnterpriseServiceService : IParkEnterpriseServiceService
         // Calculate Approx Handling Time (Average duration from Create to Complete)
         var completedRequests = requests.Where(r => r.Status == "Completed" && r.CompletedAt.HasValue).ToList();
         var avgHandlingTime = completedRequests.Any()
-            ? completedRequests.Average(r => (r.CompletedAt!.Value - r.CreatedAt).Value.TotalHours)
+            ? completedRequests.Average(r => (r.CompletedAt!.Value - r.CreatedAt!.Value).TotalHours)
             : 0;
         // Use Mock if 0 to show something? Or 0.
         // Let's keep 0 if no data.

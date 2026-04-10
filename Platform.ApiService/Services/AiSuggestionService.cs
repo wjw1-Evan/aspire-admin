@@ -1,20 +1,12 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using OpenAI;
-using OpenAI.Chat;
+using Microsoft.Extensions.AI;
 using Platform.ApiService.Constants;
 using Platform.ApiService.Extensions;
 using Platform.ApiService.Models;
 using Platform.ServiceDefaults.Services;
 using DomainChatMessage = Platform.ApiService.Models.ChatMessage;
-using OpenAiChatMessage = OpenAI.Chat.ChatMessage;
 
 namespace Platform.ApiService.Services;
 
@@ -32,12 +24,12 @@ public class AiSuggestionService : IAiSuggestionService
     private const string DefaultSuggestionNotice = "小科暂时没有生成推荐，请稍后再试或尝试调整话题。";
     private const string DefaultSystemPrompt = "你是小科，担任微信风格的对话助理，请使用简体中文，提供自然、真诚且有温度的建议。";
 
-    private readonly OpenAIClient _openAiClient;
+    private readonly IChatClient _openAiClient;
     private readonly IConfiguration _configuration;
     private readonly ILogger<AiSuggestionService> _logger;
     private readonly ITenantContext _tenantContext;
 
-    public AiSuggestionService(DbContext context, OpenAIClient openAiClient, IConfiguration configuration, ILogger<AiSuggestionService> logger, ITenantContext tenantContext)
+    public AiSuggestionService(DbContext context, IChatClient openAiClient, IConfiguration configuration, ILogger<AiSuggestionService> logger, ITenantContext tenantContext)
     {
         _context = context;
         _openAiClient = openAiClient;
@@ -50,24 +42,22 @@ public class AiSuggestionService : IAiSuggestionService
     {
         var context = await PrepareSmartReplyContextAsync(request, currentUserId);
         var response = new AiSuggestionResponse();
-        var chatClient = ResolveChatClient(context, response, out var model);
-        if (chatClient is null) return response;
+
 
         var languageTag = string.IsNullOrWhiteSpace(context.Request.Locale) ? "zh-CN" : context.Request.Locale;
         var systemPrompt = _configuration["Ai:SystemPrompt"];
         var instruction = BuildInstruction(string.IsNullOrWhiteSpace(systemPrompt) ? DefaultSystemPrompt : systemPrompt, languageTag);
         var userContent = context.ContextLines.Count == 0 ? "（上下文为空）" : string.Join("\n", context.ContextLines);
         var messages = BuildChatMessages(instruction, context.ConversationMessages, userContent);
-        var completionOptions = new ChatCompletionOptions { EndUserId = currentUserId };
 
 
         var stopwatch = Stopwatch.StartNew();
         try
         {
-            var result = await chatClient.CompleteChatAsync(messages, completionOptions, cancellationToken);
+            var result = await _openAiClient.GetResponseAsync(messages, null, cancellationToken);
             stopwatch.Stop();
             response.LatencyMs = (int)stopwatch.Elapsed.TotalMilliseconds;
-            HandleCompletionResponse(response, result.Value, model, context.ContextLines);
+            HandleCompletionResponse(response, result, "gpt", context.ContextLines);
         }
         catch (Exception ex)
         {
@@ -174,30 +164,30 @@ public class AiSuggestionService : IAiSuggestionService
 4. 返回 JSON: {{ ""suggestions"": [ {{ ""content"": ""..."", ""category"": ""..."", ""style"": ""..."", ""quickTip"": ""..."", ""insight"": ""..."", ""confidence"": 0.9 }} ] }}
 只返回 JSON。";
 
-    private List<OpenAiChatMessage> BuildChatMessages(string instruction, List<AiConversationMessage> history, string fallback)
+    private List<Microsoft.Extensions.AI.ChatMessage> BuildChatMessages(string instruction, List<AiConversationMessage> history, string fallback)
     {
-        var messages = new List<OpenAiChatMessage> { new SystemChatMessage(instruction) };
+        var messages = new List<Microsoft.Extensions.AI.ChatMessage> { new(ChatRole.System, instruction) };
         bool hasContent = false;
         foreach (var h in history)
         {
             if (string.IsNullOrWhiteSpace(h.Content)) continue;
-            messages.Add(h.Role switch { "assistant" => new AssistantChatMessage(h.Content), "system" => new SystemChatMessage(h.Content), _ => new UserChatMessage(h.Content) });
+            messages.Add(h.Role switch
+            {
+                "assistant" => new Microsoft.Extensions.AI.ChatMessage(ChatRole.Assistant, h.Content),
+                "system" => new Microsoft.Extensions.AI.ChatMessage(ChatRole.System, h.Content),
+                _ => new Microsoft.Extensions.AI.ChatMessage(ChatRole.User, h.Content)
+            });
             if (h.Role != "system") hasContent = true;
         }
-        if (!hasContent) messages.Add(new UserChatMessage(fallback));
+        if (!hasContent) messages.Add(new Microsoft.Extensions.AI.ChatMessage(ChatRole.User, fallback));
         return messages;
     }
 
-    private ChatClient? ResolveChatClient(SmartReplyContext context, AiSuggestionResponse response, out string model)
-    {
-        model = _configuration["Ai:Model"] ?? "gpt-4o-mini";
-        try { return _openAiClient.GetChatClient(model); }
-        catch { AssignSuggestions(response, BuildFallbackSuggestions(context.ContextLines)); return null; }
-    }
 
-    private void HandleCompletionResponse(AiSuggestionResponse response, ChatCompletion completion, string model, List<string> contextLines)
+
+    private void HandleCompletionResponse(AiSuggestionResponse response, ChatResponse result, string model, List<string> contextLines)
     {
-        var text = completion.Content?.FirstOrDefault()?.Text;
+        var text = result.Messages?.FirstOrDefault()?.Text;
         var suggestions = TryParseSuggestions(text, model) ?? BuildFallbackSuggestions(contextLines);
         AssignSuggestions(response, suggestions);
     }
@@ -211,7 +201,13 @@ public class AiSuggestionService : IAiSuggestionService
             if (payload?.Suggestions == null || !payload.Suggestions.Any()) return null;
             return payload.Suggestions.Take(DefaultSuggestionCount).Select(s => new AiSuggestionItem
             {
-                Content = s.Content.Trim(), Confidence = s.Confidence, Category = s.Category, Style = s.Style, QuickTip = s.QuickTip, Insight = s.Insight, Source = SmartReplySource,
+                Content = s.Content.Trim(),
+                Confidence = s.Confidence,
+                Category = s.Category,
+                Style = s.Style,
+                QuickTip = s.QuickTip,
+                Insight = s.Insight,
+                Source = SmartReplySource,
                 Metadata = new Dictionary<string, object> { ["model"] = model, ["category"] = s.Category ?? "", ["style"] = s.Style ?? "" }
             }).ToList();
         }

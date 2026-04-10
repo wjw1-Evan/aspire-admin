@@ -6,6 +6,7 @@ using System.Linq.Dynamic.Core;
 using System.Text.Json;
 using OpenAI;
 using OpenAI.Chat;
+using Microsoft.Extensions.AI;
 
 namespace Platform.ApiService.Services;
 
@@ -17,7 +18,7 @@ public class ParkVisitService : IParkVisitService
     private readonly DbContext _context;
 
     private readonly ILogger<ParkVisitService> _logger;
-    private readonly OpenAIClient _openAiClient;
+    private readonly IChatClient _openAiClient;
 
     /// <summary>
     /// 初始化走访管理服务
@@ -25,7 +26,7 @@ public class ParkVisitService : IParkVisitService
     public ParkVisitService(
         DbContext context,
         ILogger<ParkVisitService> logger,
-        OpenAIClient openAiClient
+        IChatClient openAiClient
     )
     {
         _context = context;
@@ -381,7 +382,7 @@ public class ParkVisitService : IParkVisitService
     /// </summary>
     public async Task<string> GenerateQuestionAnswerAsync(string content, string? category)
     {
-        var chatClient = _openAiClient.GetChatClient("gpt-4o-mini");
+
 
         var categoryText = string.IsNullOrWhiteSpace(category) ? "通用" : category;
         var systemPrompt = @"你是一位专业的园区服务顾问。请根据用户提出的问题，生成一个专业、实用、友好的标准回答。
@@ -394,14 +395,14 @@ public class ParkVisitService : IParkVisitService
 
         var userMessage = $"问题分类：{categoryText}\n问题内容：{content}";
 
-        var messages = new List<OpenAI.Chat.ChatMessage>
+        var messages = new List<Microsoft.Extensions.AI.ChatMessage>
         {
-            new SystemChatMessage(systemPrompt),
-            new UserChatMessage(userMessage)
+            new (ChatRole.System, systemPrompt),
+            new (ChatRole.User, userMessage)
         };
 
-        var completion = await chatClient.CompleteChatAsync(messages);
-        return completion.Value.Content[0].Text;
+        var response = await _openAiClient.GetResponseAsync(messages);
+        return response.Text;
 
     }
 
@@ -637,13 +638,11 @@ public class ParkVisitService : IParkVisitService
 
         try
         {
-            _logger.LogInformation("开始生成走访 AI 报告");
-            var chatClient = _openAiClient.GetChatClient("gpt-4o-mini");
 
-            var messages = new List<OpenAI.Chat.ChatMessage>
+            var messages = new List<Microsoft.Extensions.AI.ChatMessage>
             {
-                new SystemChatMessage(systemPrompt),
-                new UserChatMessage(userPrompt)
+                new (ChatRole.System, systemPrompt),
+                new (ChatRole.User, userPrompt)
             };
 
             var options = new ChatCompletionOptions
@@ -651,10 +650,10 @@ public class ParkVisitService : IParkVisitService
 
             };
 
-            var completion = await chatClient.CompleteChatAsync(messages, options);
-            var result = completion.Value.Content[0].Text;
-            _logger.LogInformation("走访 AI 报告生成成功，内容长度：{Length}", result.Length);
-            return result;
+            var response = await _openAiClient.GetResponseAsync(messages);
+            return response.Text;
+
+
         }
         catch (Exception ex)
         {

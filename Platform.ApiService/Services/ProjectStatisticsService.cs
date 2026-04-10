@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using OpenAI;
 using OpenAI.Chat;
@@ -19,12 +20,12 @@ namespace Platform.ApiService.Services;
 public class ProjectStatisticsService : IProjectStatisticsService
 {
     private readonly DbContext _context;
-    private readonly OpenAIClient _openAiClient;
+    private readonly IChatClient _openAiClient;
     private readonly ILogger<ProjectStatisticsService> _logger;
 
     public ProjectStatisticsService(
         DbContext context,
-        OpenAIClient openAiClient,
+        IChatClient openAiClient,
         ILogger<ProjectStatisticsService> logger)
     {
         _context = context;
@@ -155,18 +156,16 @@ public class ProjectStatisticsService : IProjectStatisticsService
 
 请使用 Markdown 格式输出，并使用 Emoji 增强可读性。";
 
-            var chatClient = _openAiClient.GetChatClient("gpt-4o-mini");
 
-            var messages = new List<OpenAI.Chat.ChatMessage>
+
+            var messages = new List<Microsoft.Extensions.AI.ChatMessage>
             {
-                new SystemChatMessage(systemPrompt),
-                new UserChatMessage(userPrompt)
+                new (ChatRole.System, systemPrompt),
+                new (ChatRole.User, userPrompt)
             };
 
-
-
-            var completion = await chatClient.CompleteChatAsync(messages);
-            return completion.Value.Content[0].Text;
+            var response = await _openAiClient.GetResponseAsync(messages);
+            return response.Text;
         }
         catch (Exception ex)
         {

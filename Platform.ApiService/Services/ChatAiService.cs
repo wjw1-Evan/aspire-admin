@@ -1,19 +1,11 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using OpenAI;
+using Microsoft.Extensions.AI;
 using OpenAI.Chat;
 using Platform.ApiService.Constants;
 using Platform.ApiService.Models;
-using Platform.ServiceDefaults.Services;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
 using ChatMessage = Platform.ApiService.Models.ChatMessage;
 using OpenAIChatMessage = OpenAI.Chat.ChatMessage;
 
@@ -26,7 +18,7 @@ public class ChatAiService : IChatAiService
 {
     private readonly DbContext _context;
     private const int AssistantContextMessageLimit = 24;
-    private readonly OpenAIClient _openAiClient;
+    private readonly IChatClient _openAiClient;
     private readonly IConfiguration _configuration;
     private readonly IUserService _userService;
     private readonly IChatBroadcaster _broadcaster;
@@ -37,7 +29,7 @@ public class ChatAiService : IChatAiService
 
     public ChatAiService(
         DbContext context,
-        OpenAIClient openAiClient,
+        IChatClient openAiClient,
         IConfiguration configuration,
         IUserService userService,
         IChatBroadcaster broadcaster,
@@ -130,10 +122,12 @@ public class ChatAiService : IChatAiService
             instructionBuilder.AppendLine("\n【已查询的数据】\n" + toolResultContext + "\n请基于以上查询结果，用自然、友好的语言向用户回复。");
         }
 
-        var messages = new List<OpenAIChatMessage> { new SystemChatMessage(instructionBuilder.ToString()) };
-        messages.AddRange(conversationMessages);
+        var messages = new List<Microsoft.Extensions.AI.ChatMessage>
+        {
+            new(ChatRole.System, instructionBuilder.ToString())
+        };
+    
 
-        var completionOptions = ConfigureCompletionOptions(xiaokeConfig);
         ChatMessage? assistantMessage = null;
         var accumulatedContent = new StringBuilder();
 
@@ -148,30 +142,25 @@ public class ChatAiService : IChatAiService
                 await onChunk(session.Id, assistantMessage.Id, tip);
             }
 
-            var model = _configuration["Ai:Model"] ?? "gpt-4o-mini";
-            var chatClient = _openAiClient.GetChatClient(model);
-            var streamingResult = chatClient.CompleteChatStreamingAsync(messages, completionOptions, cancellationToken);
+            var chatOptions = new ChatOptions
+            {
+                MaxOutputTokens = xiaokeConfig?.MaxTokens ?? 2048
+            };
 
-            await foreach (var update in streamingResult)
+            await foreach (var update in _openAiClient.GetStreamingResponseAsync(messages, chatOptions, cancellationToken))
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (update.ContentUpdate == null) continue;
+                if (update?.Text == null) continue;
 
-                foreach (var contentPart in update.ContentUpdate)
+                var delta = update.Text;
+                accumulatedContent.Append(delta);
+                if (onChunk != null) await onChunk(session.Id, assistantMessage.Id, delta);
+
+                if (accumulatedContent.Length % 50 == 0)
                 {
-                    if (contentPart.Kind == ChatMessageContentPartKind.Text && !string.IsNullOrWhiteSpace(contentPart.Text))
-                    {
-                        var delta = contentPart.Text;
-                        accumulatedContent.Append(delta);
-                        if (onChunk != null) await onChunk(session.Id, assistantMessage.Id, delta);
-
-                        if (accumulatedContent.Length % 50 == 0)
-                        {
-                            var content = accumulatedContent.ToString();
-                            var msgId = assistantMessage.Id;
-                            _ = Task.Run(async () => { try { await UpdateStreamingMessageAsync(msgId, content, cancellationToken); } catch { } });
-                        }
-                    }
+                    var content = accumulatedContent.ToString();
+                    var msgId = assistantMessage.Id;
+                    _ = Task.Run(async () => { try { await UpdateStreamingMessageAsync(msgId, content, cancellationToken); } catch { } });
                 }
             }
 

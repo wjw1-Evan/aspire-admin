@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using OpenAI;
 using OpenAI.Chat;
@@ -17,7 +18,7 @@ public class ParkStatisticsService : IParkStatisticsService
     private readonly IParkInvestmentService _investmentService;
     private readonly IParkTenantService _tenantService;
     private readonly IParkEnterpriseServiceService _enterpriseService;
-    private readonly OpenAIClient _openAiClient;
+    private readonly IChatClient _openAiClient;
     private readonly ILogger<ParkStatisticsService> _logger;
 
     /// <summary>
@@ -28,7 +29,7 @@ public class ParkStatisticsService : IParkStatisticsService
         IParkInvestmentService investmentService,
         IParkTenantService tenantService,
         IParkEnterpriseServiceService enterpriseService,
-        OpenAIClient openAiClient,
+        IChatClient openAiClient,
         ILogger<ParkStatisticsService> logger)
     {
         _assetService = assetService;
@@ -109,21 +110,21 @@ public class ParkStatisticsService : IParkStatisticsService
 
         // 4. 调用 LLM
         // 4. 调用 LLM
-        // 注意：Aspire 注入的 OpenAIClient 可能通过 ConnectionString 配置，因此不检查 _aiOptions 的 ApiKey 和 Endpoint
+        // 注意：Aspire 注入的 IChatClient 可能通过 ConnectionString 配置，因此不检查 _aiOptions 的 ApiKey 和 Endpoint
 
         try
         {
-            var chatClient = _openAiClient.GetChatClient("gpt-4o-mini");
 
-            var messages = new List<OpenAI.Chat.ChatMessage>
+
+            var messages = new List<Microsoft.Extensions.AI.ChatMessage>
             {
-                new SystemChatMessage(systemPrompt),
-                new UserChatMessage(userPrompt)
+                new (ChatRole.System, systemPrompt),
+                new (ChatRole.User, userPrompt)
             };
 
-            var completion = await chatClient.CompleteChatAsync(messages);
+            var completion = await _openAiClient.GetResponseAsync(messages);
 
-            return completion.Value.Content[0].Text;
+            return completion.Text;
         }
         catch (Exception ex)
         {

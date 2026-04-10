@@ -77,7 +77,7 @@ export default function CompanySettings() {
       <PageContainer>
         <Spin
           size="large"
-          tip={intl.formatMessage({ id: 'pages.companySettings.loading' })}
+          description={intl.formatMessage({ id: 'pages.companySettings.loading' })}
           style={{ display: 'block', padding: 100 }}
         >
           <div style={{ minHeight: 200 }} />
@@ -173,6 +173,7 @@ export default function CompanySettings() {
             column={{ xs: 1, sm: 2, md: 2, lg: 2 }}
             bordered
             size="small"
+            styles={{ content: {} }}
           >
             <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.name' })}>{company.name}</ProDescriptions.Item>
             <ProDescriptions.Item label={intl.formatMessage({ id: 'pages.companySettings.details.code' })}><Tag color="blue">{company.code}</Tag></ProDescriptions.Item>

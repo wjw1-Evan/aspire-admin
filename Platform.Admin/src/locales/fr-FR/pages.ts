@@ -1557,4 +1557,5 @@ export default {
   'pages.forgotPassword.newPasswordPlaceholder': 'New Password',
   'pages.forgotPassword.passwordMismatch': 'The two passwords do not match!',
   'pages.forgotPassword.confirmPasswordPlaceholder': 'Confirm New Password',
+  'pages.park.statistics.reportPeriod': 'Période du rapport',
 };

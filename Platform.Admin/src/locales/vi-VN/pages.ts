@@ -1964,6 +1964,7 @@ export default {
   'pages.park.statistics.aiReport': 'Báo cáo phân tích AI',
   'pages.park.statistics.aiReportTitle': 'Báo cáo phân tích vận hành AI',
   'pages.park.statistics.generatingReport': 'Đang tạo báo cáo, có thể mất vài chục giây...',
+  'pages.park.statistics.reportPeriod': 'Kỳ báo cáo',
 
   // Trạng thái thu tiền
   'pages.park.statistics.collectionStatus': 'Trạng thái thu tiền',

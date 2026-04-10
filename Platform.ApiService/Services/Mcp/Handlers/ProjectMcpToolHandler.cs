@@ -58,7 +58,8 @@ public class ProjectMcpToolHandler : McpToolHandlerBase
                 {
                     var result = await _projectService.GetProjectsListAsync(new Platform.ServiceDefaults.Models.PageParams { Search = name, Page = 1, PageSize = 1 });
                     var items = await result.Queryable.ToListAsync();
-                    if (items.Any()) return await _projectService.GetProjectByIdAsync(items.First().Id);
+                    var first = items.FirstOrDefault();
+                    if (first != null && !string.IsNullOrEmpty(first.Id)) return await _projectService.GetProjectByIdAsync(first.Id);
                 }
                 return new { error = "未找到指定项目" };
             });

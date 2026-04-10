@@ -1275,6 +1275,7 @@ export default {
   'pages.park.statistics.unit.property': '個',
   'pages.park.statistics.newLeadsThisYear': '本年新增線索',
   'pages.park.statistics.yearRent': '年租金收入',
+  'pages.park.statistics.reportPeriod': '報告週期',
   'pages.park.common.time': '評價時間',
   'pages.park.common.total': '共',
   'pages.park.common.items': '條',

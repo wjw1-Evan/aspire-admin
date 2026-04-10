@@ -63,8 +63,8 @@ public class PasswordBookMcpToolHandler : McpToolHandlerBase
                 return await _passwordBookService.CreateEntryAsync(new CreatePasswordBookEntryRequest
                 {
                     Platform = title,
-                    Account = args.GetValueOrDefault("username")?.ToString(),
-                    Password = args.GetValueOrDefault("password")?.ToString(),
+                    Account = args.GetValueOrDefault("username")?.ToString() ?? string.Empty,
+                    Password = args.GetValueOrDefault("password")?.ToString() ?? string.Empty,
                     Url = args.GetValueOrDefault("url")?.ToString(),
                     Category = args.GetValueOrDefault("category")?.ToString(),
                     Notes = args.GetValueOrDefault("notes")?.ToString()
@@ -131,7 +131,7 @@ public class PasswordBookMcpToolHandler : McpToolHandlerBase
                     IncludeNumbers = includeNumbers,
                     IncludeSpecialChars = includeSpecial
                 });
-                return Task.FromResult<object>(new { password });
+                return Task.FromResult<object?>(new { password });
             });
 
         RegisterTool("get_password_categories", "获取所有密码分类。关键词：密码分类",

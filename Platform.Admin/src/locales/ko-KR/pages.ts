@@ -1841,6 +1841,7 @@ export default {
   'pages.park.statistics.aiReport': 'AI 분석 보고서',
   'pages.park.statistics.aiReportTitle': 'AI 운영 분석 보고서',
   'pages.park.statistics.generatingReport': '보고서를 생성 중입니다. 잠시만 기다려 주세요...',
+  'pages.park.statistics.reportPeriod': '보고서 기간',
 
   // 수납 상태 (Collection Status)
   'pages.park.statistics.collectionStatus': '임대료 수납 상태',

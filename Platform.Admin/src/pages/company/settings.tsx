@@ -10,6 +10,8 @@ import {
   SafetyOutlined,
   ClockCircleOutlined,
   SettingOutlined,
+  BarChartOutlined,
+  InfoCircleOutlined,
 } from '@ant-design/icons';
 import { useIntl, useModel } from '@umijs/max';
 import { getCurrentCompany, getCompanyStatistics } from '@/services/company';
@@ -102,7 +104,7 @@ export default function CompanySettings() {
       {/* 企业统计：使用 StatCard 统一风格 */}
       {statistics && (
         <Card
-          title={intl.formatMessage({ id: 'pages.companySettings.statistics' })}
+          title={<><BarChartOutlined style={{ marginRight: 8 }} />{intl.formatMessage({ id: 'pages.companySettings.statistics' })}</>}
           style={{ marginBottom: 16, borderRadius: 12 }}
         >
 <Row gutter={[12, 12]}>
@@ -152,7 +154,7 @@ export default function CompanySettings() {
 
       {/* 企业详细信息 */}
       <Card
-        title={intl.formatMessage({ id: 'pages.companySettings.details' })}
+        title={<><InfoCircleOutlined style={{ marginRight: 8 }} />{intl.formatMessage({ id: 'pages.companySettings.details' })}</>}
         extra={
           <Button
             type="primary"

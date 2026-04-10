@@ -675,7 +675,7 @@ export default {
   'pages.projectManagement.members.role.manager': '项目经理',
   'pages.projectManagement.members.role.member': '成员',
   'pages.projectManagement.members.role.viewer': '观察者',
-  'pages.projectManagement.taskTree.title': '任务与甘特图',
+  'pages.projectManagement.taskTree.title': '任务',
   'pages.projectManagement.taskTree.view': '列表',
   'pages.projectManagement.taskTree.noTasks': '暂无任务',
   'pages.projectManagement.taskTree.createTask': '创建任务',

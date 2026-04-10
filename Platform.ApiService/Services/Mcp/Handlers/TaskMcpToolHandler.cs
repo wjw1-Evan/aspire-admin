@@ -439,7 +439,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
             Search = arguments.ContainsKey("search") ? arguments["search"]?.ToString() : null
         };
 
-        var result = await _projectService.GetProjectsListAsync(request);
+        var result = await _projectService.GetProjectsListAsync(request, currentUserId);
         var items = await result.Queryable.ToListAsync();
         return new
         {
@@ -460,7 +460,7 @@ public class TaskMcpToolHandler : McpToolHandlerBase
         {
             if (string.IsNullOrEmpty(name)) return new { error = "未提供项目ID或名称" };
 
-            var searchResult = await _projectService.GetProjectsListAsync(new Platform.ServiceDefaults.Models.PageParams { Search = name, Page = 1, PageSize = 1 });
+            var searchResult = await _projectService.GetProjectsListAsync(new Platform.ServiceDefaults.Models.PageParams { Search = name, Page = 1, PageSize = 1 }, currentUserId);
             var searchItems = await searchResult.Queryable.ToListAsync();
             if (searchItems.Any()) projectId = searchItems.First().Id;
             else return new { error = "未找到该项目" };

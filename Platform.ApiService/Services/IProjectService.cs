@@ -46,8 +46,9 @@ public interface IProjectService
     /// 分页获取项目列表
     /// </summary>
     /// <param name="request">查询请求</param>
+    /// <param name="currentUserId">当前用户ID，用于过滤可见项目</param>
     /// <returns>项目列表响应</returns>
-    Task<System.Linq.Dynamic.Core.PagedResult<ProjectDto>> GetProjectsListAsync(Platform.ServiceDefaults.Models.PageParams request);
+    Task<System.Linq.Dynamic.Core.PagedResult<ProjectDto>> GetProjectsListAsync(Platform.ServiceDefaults.Models.PageParams request, string currentUserId);
 
     /// <summary>
     /// 获取项目统计信息

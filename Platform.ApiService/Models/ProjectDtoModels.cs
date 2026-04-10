@@ -121,6 +121,12 @@ public class ProjectDto
 
     /// <summary>更新时间</summary>
     public DateTime? UpdatedAt { get; set; }
+
+    /// <summary>是否可编辑</summary>
+    public bool CanEdit { get; set; }
+
+    /// <summary>是否可删除</summary>
+    public bool CanDelete { get; set; }
 }
 
 

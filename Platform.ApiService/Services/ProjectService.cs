@@ -106,13 +106,14 @@ public class ProjectService : IProjectService
     }
 
     /// <inheritdoc/>
-    public async Task<System.Linq.Dynamic.Core.PagedResult<ProjectDto>> GetProjectsListAsync(Platform.ServiceDefaults.Models.PageParams request)
+    public async Task<System.Linq.Dynamic.Core.PagedResult<ProjectDto>> GetProjectsListAsync(Platform.ServiceDefaults.Models.PageParams request, string currentUserId)
     {
         var q = _context.Set<Project>().AsQueryable();
+        q = q.Where(p => p.CreatedBy == currentUserId || (p.MemberIds != null && p.MemberIds.Contains(currentUserId)));
 
         var pagedResult = q.ToPagedList(request);
         var projects = await pagedResult.Queryable.ToListAsync();
-        var projectDtos = await ConvertToProjectDtosAsync(projects);
+        var projectDtos = await ConvertToProjectDtosAsync(projects, currentUserId);
         return new System.Linq.Dynamic.Core.PagedResult<ProjectDto>
         {
             Queryable = projectDtos.AsQueryable(),
@@ -178,18 +179,20 @@ public class ProjectService : IProjectService
         return avg;
     }
 
-    private async Task<List<ProjectDto>> ConvertToProjectDtosAsync(IEnumerable<Project> projects)
+    private async Task<List<ProjectDto>> ConvertToProjectDtosAsync(IEnumerable<Project> projects, string currentUserId)
     {
         var list = projects.ToList();
         if (!list.Any()) return new List<ProjectDto>();
         var userIds = list.SelectMany(p => p.MemberIds ?? new List<string>()).Concat(list.Select(p => p.CreatedBy).Where(id => !string.IsNullOrEmpty(id))).Distinct();
         var userMap = await _userService.GetUsersByIdsAsync(userIds);
-        return list.Select(p => ConvertToProjectDtoWithCache(p, userMap)).ToList();
+        return list.Select(p => ConvertToProjectDtoWithCache(p, userMap, currentUserId)).ToList();
     }
 
-    private ProjectDto ConvertToProjectDtoWithCache(Project p, Dictionary<string, AppUser> uMap)
+    private ProjectDto ConvertToProjectDtoWithCache(Project p, Dictionary<string, AppUser> uMap, string currentUserId)
     {
         var dto = MapToDto(p);
+        dto.CanEdit = p.CreatedBy == currentUserId;
+        dto.CanDelete = p.CreatedBy == currentUserId;
         if (p.MemberIds != null && p.MemberIds.Count > 0)
         {
             dto.ProjectMembers = p.MemberIds.Select(uid => new ProjectMemberDto { UserId = uid, UserName = uMap.TryGetValue(uid, out var u) ? (string.IsNullOrWhiteSpace(u.Name) ? u.Username : u.Name) : uid }).ToList();

@@ -141,7 +141,8 @@ public class ProjectController : BaseApiController
     {
         try
         {
-            var result = await _projectService.GetProjectsListAsync(request);
+            var userId = RequiredUserId;
+            var result = await _projectService.GetProjectsListAsync(request, userId);
             return Success(result);
         }
         catch (Exception ex)

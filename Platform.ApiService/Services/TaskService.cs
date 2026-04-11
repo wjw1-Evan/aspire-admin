@@ -68,25 +68,18 @@ public class TaskService : ITaskService
         await _context.Set<WorkTask>().AddAsync(task);
         await _context.SaveChangesAsync();
 
-        try
+        if (!string.IsNullOrEmpty(task.AssignedTo))
         {
-            if (!string.IsNullOrEmpty(task.AssignedTo))
-            {
-                await _notificationService.CreateTaskNotificationAsync(
-                    task.Id!,
-                    task.TaskName,
-                    "task_assigned",
-                    (int)task.Priority,
-                    (int)task.Status,
-                    task.AssignedTo,
-                    null,
-                    string.IsNullOrWhiteSpace(request.Remarks) ? "任务已分配给您" : request.Remarks
-                );
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogDebug(ex, "通知发送失败: TaskId={TaskId}, Action=task_assigned", task.Id);
+            await _notificationService.CreateTaskNotificationAsync(
+                task.Id!,
+                task.TaskName,
+                "task_assigned",
+                (int)task.Priority,
+                (int)task.Status,
+                task.AssignedTo,
+                null,
+                string.IsNullOrWhiteSpace(request.Remarks) ? "任务已分配给您" : request.Remarks
+            );
         }
 
         return await ConvertToTaskDtoAsync(task);
@@ -186,23 +179,19 @@ public class TaskService : ITaskService
             await projectService.CalculateProjectProgressAsync(task.ProjectId);
         }
 
-        try
+        if (!string.IsNullOrEmpty(task.AssignedTo))
         {
-            if (!string.IsNullOrEmpty(task.AssignedTo))
-            {
-                await _notificationService.CreateTaskNotificationAsync(
-                    task.Id!,
-                    task.TaskName,
-                    "task_assigned",
-                    (int)task.Priority,
-                    (int)task.Status,
-                    task.AssignedTo,
-                    null,
-                    string.IsNullOrWhiteSpace(request.Remarks) ? "任务已分配给您" : request.Remarks
-                );
-            }
+            await _notificationService.CreateTaskNotificationAsync(
+                task.Id!,
+                task.TaskName,
+                "task_assigned",
+                (int)task.Priority,
+                (int)task.Status,
+                task.AssignedTo,
+                null,
+                string.IsNullOrWhiteSpace(request.Remarks) ? "任务已分配给您" : request.Remarks
+            );
         }
-        catch (Exception ex) { _logger.LogDebug(ex, "通知发送失败: TaskId={TaskId}", task.Id); }
 
         return await ConvertToTaskDtoAsync(task);
     }
@@ -220,25 +209,21 @@ public class TaskService : ITaskService
 
         await _context.SaveChangesAsync();
 
-        try
-        {
-            var related = new List<string>();
-            if (!string.IsNullOrEmpty(task.CreatedBy)) related.Add(task.CreatedBy);
-            if (!string.IsNullOrEmpty(task.AssignedTo)) related.Add(task.AssignedTo);
-            if (task.ParticipantIds != null) related.AddRange(task.ParticipantIds);
+        var related = new List<string>();
+        if (!string.IsNullOrEmpty(task.CreatedBy)) related.Add(task.CreatedBy);
+        if (!string.IsNullOrEmpty(task.AssignedTo)) related.Add(task.AssignedTo);
+        if (task.ParticipantIds != null) related.AddRange(task.ParticipantIds);
 
-            await _notificationService.CreateTaskNotificationAsync(
-                task.Id!,
-                task.TaskName,
-                "task_assigned",
-                (int)task.Priority,
-                (int)task.Status,
-                task.AssignedTo,
-                related.Distinct(),
-                request.Remarks
-            );
-        }
-        catch (Exception ex) { _logger.LogDebug(ex, "通知发送失败: TaskId={TaskId}", task.Id); }
+        await _notificationService.CreateTaskNotificationAsync(
+            task.Id!,
+            task.TaskName,
+            "task_assigned",
+            (int)task.Priority,
+            (int)task.Status,
+            task.AssignedTo,
+            related.Distinct(),
+            request.Remarks
+        );
 
         return await ConvertToTaskDtoAsync(task);
     }
@@ -265,27 +250,23 @@ public class TaskService : ITaskService
             await projectService.CalculateProjectProgressAsync(task.ProjectId);
         }
 
-        try
+        var action = (Models.TaskStatus)task.Status switch
         {
-            var action = (Models.TaskStatus)task.Status switch
-            {
-                Models.TaskStatus.InProgress => "task_started",
-                Models.TaskStatus.Completed => "task_completed",
-                Models.TaskStatus.Cancelled => "task_cancelled",
-                Models.TaskStatus.Failed => "task_failed",
-                Models.TaskStatus.Paused => "task_paused",
-                _ => "task_updated"
-            };
+            Models.TaskStatus.InProgress => "task_started",
+            Models.TaskStatus.Completed => "task_completed",
+            Models.TaskStatus.Cancelled => "task_cancelled",
+            Models.TaskStatus.Failed => "task_failed",
+            Models.TaskStatus.Paused => "task_paused",
+            _ => "task_updated"
+        };
 
-            var related = new List<string>();
-            if (!string.IsNullOrEmpty(task.CreatedBy)) related.Add(task.CreatedBy);
-            if (!string.IsNullOrEmpty(task.AssignedTo)) related.Add(task.AssignedTo);
-            if (task.ParticipantIds != null) related.AddRange(task.ParticipantIds);
+        var related = new List<string>();
+        if (!string.IsNullOrEmpty(task.CreatedBy)) related.Add(task.CreatedBy);
+        if (!string.IsNullOrEmpty(task.AssignedTo)) related.Add(task.AssignedTo);
+        if (task.ParticipantIds != null) related.AddRange(task.ParticipantIds);
 
-            await _notificationService.CreateTaskNotificationAsync(
-                task.Id!, task.TaskName, action, (int)task.Priority, (int)task.Status, task.AssignedTo, related.Distinct(), request.Message);
-        }
-        catch (Exception ex) { _logger.LogDebug(ex, "通知发送失败: TaskId={TaskId}", task.Id); }
+        await _notificationService.CreateTaskNotificationAsync(
+            task.Id!, task.TaskName, action, (int)task.Priority, (int)task.Status, task.AssignedTo, related.Distinct(), request.Message);
 
         return await ConvertToTaskDtoAsync(task);
     }
@@ -316,17 +297,13 @@ public class TaskService : ITaskService
             await projectService.CalculateProjectProgressAsync(task.ProjectId);
         }
 
-        try
-        {
-            var related = new List<string>();
-            if (!string.IsNullOrEmpty(task.CreatedBy)) related.Add(task.CreatedBy);
-            if (!string.IsNullOrEmpty(task.AssignedTo)) related.Add(task.AssignedTo);
-            if (task.ParticipantIds != null) related.AddRange(task.ParticipantIds);
+        var related = new List<string>();
+        if (!string.IsNullOrEmpty(task.CreatedBy)) related.Add(task.CreatedBy);
+        if (!string.IsNullOrEmpty(task.AssignedTo)) related.Add(task.AssignedTo);
+        if (task.ParticipantIds != null) related.AddRange(task.ParticipantIds);
 
-            await _notificationService.CreateTaskNotificationAsync(
-                task.Id!, task.TaskName, "task_completed", (int)task.Priority, (int)task.Status, task.AssignedTo, related.Distinct(), request.Remarks);
-        }
-        catch (Exception ex) { _logger.LogDebug(ex, "通知发送失败: TaskId={TaskId}", task.Id); }
+        await _notificationService.CreateTaskNotificationAsync(
+            task.Id!, task.TaskName, "task_completed", (int)task.Priority, (int)task.Status, task.AssignedTo, related.Distinct(), request.Remarks);
 
         return await ConvertToTaskDtoAsync(task);
     }
@@ -341,17 +318,13 @@ public class TaskService : ITaskService
         if (!string.IsNullOrEmpty(remarks)) task.Remarks = remarks;
         await _context.SaveChangesAsync();
 
-        try
-        {
-            var related = new List<string>();
-            if (!string.IsNullOrEmpty(task.CreatedBy)) related.Add(task.CreatedBy);
-            if (!string.IsNullOrEmpty(task.AssignedTo)) related.Add(task.AssignedTo);
-            if (task.ParticipantIds != null) related.AddRange(task.ParticipantIds);
+        var related = new List<string>();
+        if (!string.IsNullOrEmpty(task.CreatedBy)) related.Add(task.CreatedBy);
+        if (!string.IsNullOrEmpty(task.AssignedTo)) related.Add(task.AssignedTo);
+        if (task.ParticipantIds != null) related.AddRange(task.ParticipantIds);
 
-            await _notificationService.CreateTaskNotificationAsync(
-                task.Id!, task.TaskName, "task_cancelled", (int)task.Priority, (int)task.Status, task.AssignedTo, related.Distinct(), remarks);
-        }
-        catch (Exception ex) { _logger.LogDebug(ex, "通知发送失败: TaskId={TaskId}", task.Id); }
+        await _notificationService.CreateTaskNotificationAsync(
+            task.Id!, task.TaskName, "task_cancelled", (int)task.Priority, (int)task.Status, task.AssignedTo, related.Distinct(), remarks);
 
         return await ConvertToTaskDtoAsync(task);
     }

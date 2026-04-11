@@ -48,6 +48,16 @@
         "YOUR_API_KEY"
       ],
       "enabled": true
+    },
+    "filesystem": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-filesystem@latest",
+        "/"
+      ],
+      "enabled": true
     }
   }
 }

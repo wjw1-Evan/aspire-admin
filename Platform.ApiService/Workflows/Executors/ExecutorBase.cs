@@ -11,7 +11,7 @@ public class MessageHandlerAttribute : Attribute
 }
 
 /// <summary>
-/// 工作流执行器基类 - 替代 Microsoft.Agents.AI.Workflows.Executor
+/// 工作流执行器基类
 /// </summary>
 public abstract class Executor
 {

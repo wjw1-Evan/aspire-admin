@@ -1,76 +1,65 @@
 # 微服务拆分开发指南
 
-本文档记录 Platform.ApiService 拆分微服务的开发规范。
+本文档描述 **当前仓库已实现** 的 Aspire 编排与网关形态，并说明如何新增卫星服务。领域逻辑目前主要位于 `Platform.ApiService`（模块化单体网关），与「按领域拆成十多个独立仓库」的目标路线图区分开，避免按虚构结构实现功能。
 
-## 一、微服务架构
+## 一、当前架构（已实现）
 
-### 1.1 整体架构
+### 1.1 后端与数据面
 
-```
-Platform/
-├── Platform.Core/                    # 核心共享库：实体、DTO、基类
-├── Platform.ServiceDefaults/         # 基础设施：DbContext、ITenantContext
-├── Platform.Auth/                    # 认证服务
-├── Platform.Users/                   # 用户组织服务
-├── Platform.Projects/                # 项目服务
-├── Platform.Tasks/                   # 任务服务
-├── Platform.Workflows/               # 工作流引擎
-├── Platform.IoT/                     # 物联网服务
-├── Platform.AiChat/                  # AI 聊天服务
-├── Platform.Files/                   # 文件存储服务
-├── Platform.Notifications/           # 通知服务
-├── Platform.Social/                  # 社交通知
-├── Platform.System/                  # 系统管理
-├── Platform.Park/                    # 园区服务
-├── Platform.SystemMonitor/           # 系统监控服务
-└── Platform.Gateway/                 # API 网关
-```
+| 项目 | 职责 | 数据库 / 依赖 |
+|------|------|----------------|
+| `Platform.AppHost` | Aspire 编排、YARP 网关、环境变量注入 | — |
+| `Platform.ApiService` | 业务 API、MCP、SSE 等 | MongoDB `mongodb` |
+| `Platform.Storage` | GridFS 文件 HTTP API | MongoDB `storagedb` |
+| `Platform.SystemMonitor` | 主机资源监控 API | **无业务库**（不连接 `mongodb`） |
+| `Platform.DataInitializer` | 一次性种子 / 初始化任务 | MongoDB `mongodb` |
+| `Platform.ServiceDefaults` | DbContext、租户上下文、卫星服务统一认证扩展 | — |
 
-### 1.2 网关路由配置
+YARP 将下列前缀转发到对应服务（路径去掉服务前缀后原样转发到上游）：
 
-在 AppHost.cs 中使用 YARP 配置网关路由：
+| 前端 / 客户端路径前缀 | 后端服务 |
+|----------------------|----------|
+| `/apiservice/` | ApiService |
+| `/storage/` | Storage |
+| `/systemmonitor/` | SystemMonitor |
 
-```csharp
-var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDiscovery>>
-{
-    ["apiservice"] = apiService,
-    ["systemmonitor"] = systemMonitor
-};
+### 1.2 网关路由配置（AppHost）
 
-var yarp = builder.AddYarp("apigateway")
-    .WithHostPort(15000)
-    .WithConfiguration(config =>
-    {
-        foreach (var service in services)
-        {
-            // 路由规则：/{service}/{**catch-all}
-            // 自动转换：将 {**catch-all} 转换为 /api/**
-            config.AddRoute($"/{service.Key}/{{**catch-all}}", config.AddCluster(service.Value))
-                .WithMaxRequestBodySize(-1)
-                .WithTransformPathRouteValues("/{**catch-all}");
-        }
-    });
-```
+在 [Platform.AppHost/AppHost.cs](../../Platform.AppHost/AppHost.cs) 中通过字典注册集群与路由，`/{serviceKey}/{**catch-all}` → 上游 `/{**catch-all}`。
 
-### 1.3 路由映射表
+### 1.3 卫星服务认证（Storage / SystemMonitor）
 
-| 前端路径 | 网关路由 | 后端服务 |
-|---------|---------|---------|
-| `/apiservice/api/xxx` | `/apiservice/{**catch-all}` → `/api/xxx` | ApiService |
-| `/systemmonitor/api/xxx` | `/systemmonitor/{**catch-all}` → `/api/xxx` | SystemMonitor |
+Storage 与 SystemMonitor 使用 `Platform.ServiceDefaults.Authentication` 中的 **`AddSatelliteJwtAndInternalKeyAuthentication`**：
 
-## 二、新增微服务步骤
+- **浏览器 / 管理端**：在请求头携带与 ApiService 相同的 **JWT**（`Authorization: Bearer …`），须与 `Jwt:SecretKey`、`Jwt:Issuer`、`Jwt:Audience` 一致（由 AppHost 注入 `Jwt__SecretKey` 等）。
+- **服务间（如 ApiService → Storage）**：在 `HttpClient` 上增加请求头 **`X-Internal-Service-Key`**，值与配置 **`InternalService:ApiKey`** 一致（AppHost 向 ApiService、Storage、SystemMonitor 注入相同的 `InternalService__ApiKey`）。
 
-### 2.1 创建微服务项目
+健康检查 `/health` 仍匿名；业务控制器使用 `[Authorize]`。
 
-1. 在 Platform 目录下创建新项目目录
-2. 创建项目文件和 Program.cs
+头像等需在浏览器中匿名展示的文件，应通过 **ApiService** 的受控端点（例如 `/apiservice/api/avatar/view/...`）暴露，而不是直接请求 Storage 的下载 URL（`<img src>` 无法带 JWT）。
+
+### 1.4 编排要点
+
+- **ApiService** 必须 **`WithReference(storage)`** 且 **`WaitFor(storage)`**，以便服务发现解析 `storage` 主机名，并保证 Storage 就绪后再承接流量。
+- **Redis**：当前编排中未启用；若后续引入缓存，在 AppHost 添加 `AddRedis` 后应对具体项目使用 **`WithReference(redis)`**。
+- **`AddDockerComposeEnvironment("compose")`**：用于 Compose 发布与 Dashboard 等场景；各 `AddProject` 已通过 `PublishAsDockerComposeService` 等参与发布时，无需把返回值赋给局部变量再逐一手动挂载（未使用变量时 IDE 可能对 `compose` 告警，可改为 `_ = builder.AddDockerComposeEnvironment(...)` 或保留并抑制告警）。
+
+### 1.5 未来拆分路线图（未实现）
+
+以下目录 **尚未** 作为独立项目存在，仅作演进参考：`Platform.Auth`、`Platform.Users`、`Platform.Core` 多领域拆分等。新增能力默认仍在 `Platform.ApiService` 内按模块划分，直到有明确的拆分边界与数据归属再独立项目。
+
+## 二、新增卫星服务步骤
+
+### 2.1 创建项目
+
+1. 在仓库根目录新增 `Platform.NewService`（Web SDK），引用 `Platform.ServiceDefaults`。
+2. 在 `Program.cs` 中：
 
 ```csharp
-// Platform.NewService/Program.cs
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
-builder.AddPlatformDatabase();
+builder.AddSatelliteJwtAndInternalKeyAuthentication(); // 若需对浏览器 + 内部调用开放 API
+// 按需：builder.AddPlatformDatabase("your-db-name");
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -79,148 +68,97 @@ builder.Services.AddControllers()
     });
 
 var app = builder.Build();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapHealthChecks("/health");
 app.MapControllers();
 app.MapDefaultEndpoints();
 await app.RunAsync();
 ```
 
+控制器上对业务 API 使用 **`[Authorize]`**（健康检查除外）。
+
 ### 2.2 配置 AppHost
 
-在 AppHost.cs 中添加服务和数据库：
-
 ```csharp
-// 新增数据库
-var newServiceDb = mongo.AddDatabase("newservice-db");
-
-// 新增服务
 var newService = builder.AddProject<Projects.Platform_NewService>("newservice")
-    .WithReference(newServiceDb)
+    .WithReference(optionalDb)
     .WithHttpEndpoint(port: 15021)
-    .WithHttpHealthCheck("/health");
+    .WithHttpHealthCheck("/health")
+    .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
+    .WithEnvironment("InternalService__ApiKey", internalServiceApiKey);
 
-// 添加到路由字典
+// 若有其它服务通过 HttpClient 调用 newservice，应对调用方 WithReference(newService) 并 WaitFor。
+
 var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDiscovery>>
 {
     ["apiservice"] = apiService,
     ["systemmonitor"] = systemMonitor,
-    ["newservice"] = newService  // 新增服务
+    ["storage"] = storage,
+    ["newservice"] = newService,
 };
 ```
 
 ### 2.3 更新前端 Proxy
 
-在 Platform.Admin/config/proxy.ts 中添加路由：
+在 [Platform.Admin/config/proxy.ts](../../Platform.Admin/config/proxy.ts) 的 `dev` 中增加：
 
 ```typescript
-export default {
-  dev: {
-    '/apiservice/': {
-      target: 'http://localhost:15000',
-      changeOrigin: true,
-      ws: true,
-    },
-    '/systemmonitor/': {
-      target: 'http://localhost:15000',
-      changeOrigin: true,
-      ws: true,
-    },
-    '/newservice/': {  // 新增服务
-      target: 'http://localhost:15000',
-      changeOrigin: true,
-      ws: true,
-    },
-  },
-};
-```
-
-### 2.4 更新前端 API 地址
-
-在前端服务文件中，使用网关路径：
-
-```typescript
-// 错误示例
-return request('/api/users/list');
-
-// 正确示例 - 使用 apiservice 前缀
-return request('/apiservice/api/users/list');
-```
-
-## 三、MongoDB 分库规划
-
-| 服务 | 数据库名 | 集合 |
-|------|---------|------|
-| ApiService | `mongodb` | users, projects, tasks 等 |
-| SystemMonitor | `systemmonitor-db` | (无，内存/系统数据) |
-
-后续服务按需创建独立数据库。
-
-## 四、前端开发规范
-
-### 4.1 API 路径规范
-
-前端 API 路径必须与网关路由一致：
-
-- **ApiService**: `/apiservice/api/{module}/{action}`
-- **SystemMonitor**: `/systemmonitor/api/{module}/{action}`
-- **其他服务**: `/{service-name}/api/{module}/{action}`
-
-### 4.2 Proxy 配置
-
-开发环境下，Proxy 将请求转发到 API 网关（15000）：
-
-```typescript
-// Platform.Admin/config/proxy.ts
-export default {
-  dev: {
-    '/apiservice/': {
-      target: 'http://localhost:15000',
-      changeOrigin: true,
-      ws: true,
-    },
-    '/systemmonitor/': {
-      target: 'http://localhost:15000',
-      changeOrigin: true,
-      ws: true,
-    },
-  },
-};
-```
-
-### 4.3 SSE 特殊处理
-
-对于 SSE（Server-Sent Events）请求，需要确保 Proxy 支持 WebSocket：
-
-```typescript
-'/apiservice/': {
+'/newservice/': {
   target: 'http://localhost:15000',
   changeOrigin: true,
-  ws: true,  // 必须启用 WebSocket
+  ws: true,
 },
 ```
 
-## 五、已有微服务示例
+### 2.4 前端请求路径
 
-### 5.1 SystemMonitor 服务
-
-**创建时间**: 2026-04-08
-
-**功能**: 系统监控（CPU、内存、磁盘、系统信息）
-
-**端口**: 15020
-
-**数据库**: systemmonitor-db
-
-**前端 API**:
 ```typescript
-// services/system/api.ts
-export async function getSystemResources() {
-  return request('/systemmonitor/api/system-monitor/resources');
-}
+// 正确：带网关服务前缀（且需携带登录 JWT）
+return request('/newservice/api/...');
 ```
+
+## 三、MongoDB 分库（当前）
+
+| 服务 | 连接名 / 库 | 说明 |
+|------|-------------|------|
+| ApiService、DataInitializer | `mongodb` | 业务数据 |
+| Storage | `storagedb` | GridFS 与文件元数据 |
+| SystemMonitor | 无 | 仅进程/系统指标，不持有业务 DbContext |
+
+## 四、前端开发规范
+
+### 4.1 API 路径
+
+- ApiService：`/apiservice/api/...`
+- SystemMonitor：`/systemmonitor/api/...`（需登录态）
+- Storage：`/storage/api/...`（需登录态；优先通过 ApiService 封装敏感或匿名展示场景）
+
+### 4.2 Proxy
+
+开发环境统一将上述前缀代理到网关 `http://localhost:15000`（见 `proxy.ts`）。
+
+### 4.3 SSE
+
+`/apiservice/` 代理须 `ws: true`（与现有配置一致）。
+
+## 五、已有服务说明
+
+### 5.1 SystemMonitor
+
+- **端口**：15020（Aspire 分配时以仪表板为准）
+- **数据库**：无
+- **示例**：`Platform.Admin/src/services/system/api.ts` 中 `getSystemResources` 请求需携带 JWT。
+
+### 5.2 Storage
+
+- **端口**：15010（同上）
+- **数据库**：`storagedb`
+- **调用方**：`Platform.ApiService` 通过 `IStorageClient` 使用服务发现主机名 `storage` 与 **`X-Internal-Service-Key`**；管理端直连上传需携带用户 JWT。
 
 ## 六、注意事项
 
-1. **不要在 proxy 中做路径转换**，前端 API 地址应直接使用网关路径
-2. **新增微服务时**，需要同时更新 AppHost.cs、前端 proxy 和前端 API 地址
-3. **数据库分库是可选的**，初期可以使用共享数据库验证功能
-4. **确保服务独立运行**，每个微服务应该有独立的健康检查端点
+1. 不要在 proxy 中随意改写路径；保持与 YARP `/{service}/{**catch-all}` 规则一致。
+2. 新增可从前端访问的后端项目时，同步更新 AppHost 路由字典、`Jwt__SecretKey` / `InternalService__ApiKey` 注入及 Admin `proxy.ts`。
+3. 消费另一 Aspire 项目时务必 **`WithReference` + `WaitFor`**，避免服务发现缺失或启动竞态。
+4. 每个 Web 项目应提供 `/health` 供编排与探针使用。

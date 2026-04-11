@@ -24,7 +24,6 @@ public class StorageClient : IStorageClient
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<StorageClient> _logger;
-    private const string BaseUrl = "http://storage";
 
     public StorageClient(IHttpClientFactory httpClientFactory, ILogger<StorageClient> logger)
     {

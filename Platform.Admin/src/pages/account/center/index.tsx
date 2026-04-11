@@ -8,6 +8,7 @@ import React, { useEffect, useState } from 'react';
 import { getUserAvatar } from '@/utils/avatar';
 import dayjs from 'dayjs';
 import { getCurrentUserProfile, updateUserProfile } from '@/services/ant-design-pro/api';
+import type { ApiResponse } from '@/types';
 import Settings from '../../../../config/defaultSettings';
 
 const { Title, Text } = Typography;
@@ -119,11 +120,14 @@ const UserCenter: React.FC = () => {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const response = await request<any>('/storage/api/files/upload', { method: 'POST', data: formData, requestType: 'form' });
+      const response = await request<ApiResponse<{ url: string }>>('/apiservice/api/avatar/upload', {
+        method: 'POST',
+        data: formData,
+        requestType: 'form',
+      });
       hide();
-      const fileId = response?.id || response?.data?.id;
-      if (fileId) {
-        const avatarUrl = `/storage/api/files/${fileId}`;
+      const avatarUrl = response?.data?.url;
+      if (avatarUrl) {
         message.success('头像上传成功');
         form.setFieldsValue({ avatar: avatarUrl });
         setLastUploadedAvatar(avatarUrl);

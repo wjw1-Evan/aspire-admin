@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Management;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Platform.ServiceDefaults.Controllers;
 using Platform.ServiceDefaults.Models;
@@ -13,6 +14,7 @@ namespace Platform.SystemMonitor.Controllers;
 /// <summary>
 /// 系统监控控制器
 /// </summary>
+[Authorize]
 [ApiController]
 [Route("api/system-monitor")]
 public class SystemMonitorController : BaseApiController

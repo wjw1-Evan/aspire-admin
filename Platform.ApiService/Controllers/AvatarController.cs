@@ -83,8 +83,8 @@ public class AvatarController : BaseApiController
                     AvatarBucketName);
             }
 
-            // 构建公开访问 URL
-            var avatarUrl = $"/storage/api/files/{fileId}?bucketName={AvatarBucketName}";
+            // 经 ApiService 匿名查看端点暴露，避免浏览器 img 无法携带 Storage 服务 JWT
+            var avatarUrl = $"/apiservice/api/avatar/view/{Uri.EscapeDataString(fileName)}";
 
             return Success(new { url = avatarUrl }, "头像上传成功");
         }

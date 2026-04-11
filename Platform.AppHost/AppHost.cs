@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Microsoft.Extensions.Hosting;
 using Scalar.Aspire;
 using Aspire.Hosting.Yarp;
@@ -5,7 +6,8 @@ using Aspire.Hosting.Yarp.Transforms;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-var compose = builder.AddDockerComposeEnvironment("compose").WithDashboard(dashboard =>
+// Compose 发布环境与 Dashboard；各 Project 通过 PublishAsDockerComposeService 参与发布
+_ = builder.AddDockerComposeEnvironment("compose").WithDashboard(dashboard =>
 {
     dashboard.WithHostPort(18888);
 });
@@ -15,14 +17,16 @@ var compose = builder.AddDockerComposeEnvironment("compose").WithDashboard(dashb
 var jwtSecretKey = builder.Configuration["Jwt:SecretKey"]
     ?? throw new InvalidOperationException("缺少 JWT 密钥配置项 'Jwt:SecretKey'。");
 
+// 服务间调用 Storage 等卫星服务时使用（与浏览器 JWT 并行）
+var internalServiceApiKey = builder.Configuration["InternalService:ApiKey"]
+    ?? Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+
 var openAiEndpoint = builder.Configuration["Parameters:openai-openai-endpoint"]
     ?? throw new InvalidOperationException("缺少 OpenAI 终端配置项 'Parameters:openai-openai-endpoint'。");
 
 var openai = builder.AddOpenAI("openai").WithEndpoint(openAiEndpoint);
 
 var chat = openai.AddModel("chat", "gpt-4o-mini").WithHealthCheck();
-
-var redis = builder.AddRedis("redis");
 
 var mongo = builder.AddMongoDB("mongo")
         .WithLifetime(ContainerLifetime.Persistent)
@@ -43,16 +47,18 @@ var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("dat
  });
 
 var systemMonitor = builder.AddProject<Projects.Platform_SystemMonitor>("systemmonitor")
-    .WithReference(mongodb)
-    .WaitFor(mongodb)
     .WithHttpEndpoint(port: 15020)
-    .WithHttpHealthCheck("/health");
+    .WithHttpHealthCheck("/health")
+    .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
+    .WithEnvironment("InternalService__ApiKey", internalServiceApiKey);
 
 var storage = builder.AddProject<Projects.Platform_Storage>("storage")
     .WithReference(storagedb)
     .WaitFor(storagedb)
     .WithHttpEndpoint(port: 15010)
-    .WithHttpHealthCheck("/health");
+    .WithHttpHealthCheck("/health")
+    .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
+    .WithEnvironment("InternalService__ApiKey", internalServiceApiKey);
 
 var smtpConfig = builder.Configuration.GetSection("Smtp");
 var smtpHost = smtpConfig["Host"];
@@ -61,10 +67,13 @@ var apiService = builder.AddProject<Projects.Platform_ApiService>("apiservice")
     .WithReference(mongodb)
     .WaitFor(mongodb)
     .WaitForCompletion(datainitializer)
+    .WithReference(storage)
+    .WaitFor(storage)
     .WithHttpEndpoint()
     .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health")
     .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
+    .WithEnvironment("InternalService__ApiKey", internalServiceApiKey)
     .WithReference(chat);
 if (!string.IsNullOrEmpty(smtpHost))
 {

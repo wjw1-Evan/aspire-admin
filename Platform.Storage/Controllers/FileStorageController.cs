@@ -5,6 +5,7 @@ using Platform.ServiceDefaults.Models;
 
 namespace Platform.Storage.Controllers;
 
+[Authorize]
 [Route("api/files")]
 [ApiController]
 public class FileStorageController : ControllerBase

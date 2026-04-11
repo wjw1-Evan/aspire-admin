@@ -42,7 +42,12 @@ builder.AddServiceDefaults();                       // OpenTelemetry, 健康检�
 builder.AddPlatformDatabase();             // IMongoClient, IMongoDatabase, PlatformDbContext, ITenantContext
 builder.AddOpenAIClient(connectionName: "chat").AddChatClient();    // OpenAI 客户端
 
-builder.Services.AddHttpClient("storage");
+builder.Services.AddHttpClient("storage", (sp, client) =>
+{
+    var internalKey = sp.GetRequiredService<IConfiguration>()["InternalService:ApiKey"];
+    if (!string.IsNullOrEmpty(internalKey))
+        client.DefaultRequestHeaders.Add("X-Internal-Service-Key", internalKey);
+});
 
 // ──────────────────────────────────────────────
 // 3. MVC & API 行为

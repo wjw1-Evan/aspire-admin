@@ -258,16 +258,9 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
     /// </summary>
     public async Task<WorkflowAnalytics?> GetAnalyticsAsync(string workflowId)
     {
-        try
-        {
-            var workflow = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
-            return workflow?.Analytics;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取工作流分析数据失败: WorkflowId={WorkflowId}", workflowId);
-            return null;
-        }
+        var workflow = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
+        if (workflow == null) throw new KeyNotFoundException($"工作流 {workflowId} 不存在");
+        return workflow.Analytics;
     }
 
     /// <summary>
@@ -275,21 +268,15 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
     /// </summary>
     public async Task<List<TrendDataPoint>> GetTrendDataAsync(string workflowId, DateTime startDate, DateTime endDate)
     {
-        try
-        {
-            var workflow = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
-            if (workflow == null) return new List<TrendDataPoint>();
+        var workflow = await _context.Set<WorkflowDefinition>().FirstOrDefaultAsync(x => x.Id == workflowId);
+        if (workflow == null) return new List<TrendDataPoint>();
 
-            return workflow.Analytics.TrendData
-                .Where(t => t.Date >= startDate && t.Date <= endDate)
-                .OrderBy(t => t.Date)
-                .ToList();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取工作流趋势数据失败: WorkflowId={WorkflowId}", workflowId);
-            return new List<TrendDataPoint>();
-        }
+        if (workflow.Analytics?.TrendData == null) return new List<TrendDataPoint>();
+
+        return workflow.Analytics.TrendData
+            .Where(t => t.Date >= startDate && t.Date <= endDate)
+            .OrderBy(t => t.Date)
+            .ToList();
     }
 
     /// <summary>
@@ -336,25 +323,17 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
     /// </summary>
     public async Task<List<(string WorkflowId, string WorkflowName, int UsageCount)>> GetUsageRankingAsync(int topCount = 10)
     {
-        try
-        {
-            Expression<Func<WorkflowDefinition, bool>> filter = w => w.IsDeleted != true && w.Analytics.UsageCount > 0;
+        Expression<Func<WorkflowDefinition, bool>> filter = w => w.IsDeleted != true && w.Analytics.UsageCount > 0;
 
-            var workflows = await _context.Set<WorkflowDefinition>().Where(filter).ToListAsync();
+        var workflows = await _context.Set<WorkflowDefinition>().Where(filter).ToListAsync();
 
-            var sortedWorkflows = workflows
-                .Where(w => w.Analytics.UsageCount > 0)
-                .OrderByDescending(w => w.Analytics.UsageCount)
-                .Take(topCount)
-                .ToList();
+        var sortedWorkflows = workflows
+            .Where(w => w.Analytics.UsageCount > 0)
+            .OrderByDescending(w => w.Analytics.UsageCount)
+            .Take(topCount)
+            .ToList();
 
-            return sortedWorkflows.Select(w => (w.Id, w.Name, w.Analytics.UsageCount)).ToList();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取工作流使用排名失败");
-            return new List<(string, string, int)>();
-        }
+        return sortedWorkflows.Select(w => (w.Id, w.Name, w.Analytics.UsageCount)).ToList();
     }
 
     /// <summary>
@@ -362,25 +341,17 @@ public class WorkflowAnalyticsService : IWorkflowAnalyticsService
     /// </summary>
     public async Task<List<(string WorkflowId, string WorkflowName, double PerformanceScore)>> GetPerformanceRankingAsync(int topCount = 10)
     {
-        try
-        {
-            Expression<Func<WorkflowDefinition, bool>> filter = w => w.IsDeleted != true && w.Analytics.PerformanceScore > 0;
+        Expression<Func<WorkflowDefinition, bool>> filter = w => w.IsDeleted != true && w.Analytics.PerformanceScore > 0;
 
-            var workflows = await _context.Set<WorkflowDefinition>().Where(filter).ToListAsync();
+        var workflows = await _context.Set<WorkflowDefinition>().Where(filter).ToListAsync();
 
-            var sortedWorkflows = workflows
-                .Where(w => w.Analytics.PerformanceScore > 0)
-                .OrderByDescending(w => w.Analytics.PerformanceScore)
-                .Take(topCount)
-                .ToList();
+        var sortedWorkflows = workflows
+            .Where(w => w.Analytics.PerformanceScore > 0)
+            .OrderByDescending(w => w.Analytics.PerformanceScore)
+            .Take(topCount)
+            .ToList();
 
-            return sortedWorkflows.Select(w => (w.Id, w.Name, w.Analytics.PerformanceScore)).ToList();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "获取工作流性能排名失败");
-            return new List<(string, string, double)>();
-        }
+        return sortedWorkflows.Select(w => (w.Id, w.Name, w.Analytics.PerformanceScore)).ToList();
     }
 
     #region 私有方法

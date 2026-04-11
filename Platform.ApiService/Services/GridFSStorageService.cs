@@ -4,7 +4,7 @@ using MongoDB.Driver;
 using MongoDB.Driver.GridFS;
 using Platform.ServiceDefaults.Models;
 
-namespace Platform.Storage.Services;
+namespace Platform.ApiService.Services;
 
 public class GridFSStorageService
 {

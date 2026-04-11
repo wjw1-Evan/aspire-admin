@@ -22,225 +22,52 @@ public interface IStorageClient
 
 public class StorageClient : IStorageClient
 {
-    private readonly IHttpClientFactory _httpClientFactory;
-    private readonly ILogger<StorageClient> _logger;
+    private readonly GridFSStorageService _storageService;
 
-    public StorageClient(IHttpClientFactory httpClientFactory, ILogger<StorageClient> logger)
+    public StorageClient(GridFSStorageService storageService)
     {
-        _httpClientFactory = httpClientFactory;
-        _logger = logger;
+        _storageService = storageService;
     }
 
-    private HttpClient CreateClient() => _httpClientFactory.CreateClient("storage");
+    public Task<string> UploadAsync(Stream stream, string fileName, string? contentType = null, Dictionary<string, object>? metadata = null, string bucketName = "default")
+        => _storageService.UploadAsync(stream, fileName, contentType, metadata, bucketName);
 
-    public async Task<string> UploadAsync(Stream stream, string fileName, string? contentType = null, Dictionary<string, object>? metadata = null, string bucketName = "default")
-    {
-        var client = CreateClient();
-        using var content = new MultipartFormDataContent();
-        
-        using var streamContent = new StreamContent(stream);
-        streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType ?? "application/octet-stream");
-        content.Add(streamContent, "file", fileName);
-        
-        if (!string.IsNullOrEmpty(bucketName) && bucketName != "default")
-        {
-            content.Add(new StringContent(bucketName), "bucketName");
-        }
+    public Task<StoredFileInfo> UploadWithInfoAsync(Stream stream, string fileName, string? contentType = null, Dictionary<string, object>? metadata = null, string bucketName = "default")
+        => _storageService.UploadWithInfoAsync(stream, fileName, contentType, metadata, bucketName);
 
-        var response = await client.PostAsync($"/api/files/upload", content);
-        response.EnsureSuccessStatusCode();
-        
-        var result = await response.Content.ReadFromJsonAsync<UploadResponse>();
-        return result?.Id ?? throw new InvalidOperationException("Upload response missing file ID");
-    }
+    public Task DownloadAsync(string fileId, Stream destination, string bucketName = "default")
+        => _storageService.DownloadAsync(fileId, destination, bucketName);
 
-    public async Task<StoredFileInfo> UploadWithInfoAsync(Stream stream, string fileName, string? contentType = null, Dictionary<string, object>? metadata = null, string bucketName = "default")
-    {
-        var fileId = await UploadAsync(stream, fileName, contentType, metadata, bucketName);
-        var fileInfo = await GetFileInfoAsync(fileId, bucketName);
-        return fileInfo ?? throw new InvalidOperationException($"Failed to get file info after upload: {fileId}");
-    }
+    public Task<Stream> GetDownloadStreamAsync(string fileId, string bucketName = "default")
+        => _storageService.GetDownloadStreamAsync(fileId, bucketName);
 
-    public async Task DownloadAsync(string fileId, Stream destination, string bucketName = "default")
-    {
-        var client = CreateClient();
-        var url = $"/api/files/{fileId}";
-        if (!string.IsNullOrEmpty(bucketName) && bucketName != "default")
-        {
-            url += $"?bucketName={bucketName}";
-        }
-        
-        var response = await client.GetAsync(url);
-        response.EnsureSuccessStatusCode();
-        
-        await response.Content.CopyToAsync(destination);
-    }
+    public Task<byte[]> DownloadAsBytesAsync(string fileId, string bucketName = "default")
+        => _storageService.DownloadAsBytesAsync(fileId, bucketName);
 
-    public async Task<Stream> GetDownloadStreamAsync(string fileId, string bucketName = "default")
-    {
-        var client = CreateClient();
-        var url = $"/api/files/{fileId}";
-        if (!string.IsNullOrEmpty(bucketName) && bucketName != "default")
-        {
-            url += $"?bucketName={bucketName}";
-        }
-        
-        var response = await client.GetAsync(url);
-        response.EnsureSuccessStatusCode();
-        
-        return await response.Content.ReadAsStreamAsync();
-    }
+    public Task<StoredFileInfo?> GetFileInfoAsync(string fileId, string bucketName = "default")
+        => _storageService.GetFileInfoAsync(fileId, bucketName);
 
-    public async Task<byte[]> DownloadAsBytesAsync(string fileId, string bucketName = "default")
-    {
-        var client = CreateClient();
-        var url = $"/api/files/{fileId}";
-        if (!string.IsNullOrEmpty(bucketName) && bucketName != "default")
-        {
-            url += $"?bucketName={bucketName}";
-        }
-        
-        return await client.GetByteArrayAsync(url);
-    }
+    public Task<bool> DeleteAsync(string fileId, string bucketName = "default")
+        => _storageService.DeleteAsync(fileId, bucketName);
 
-    public async Task<StoredFileInfo?> GetFileInfoAsync(string fileId, string bucketName = "default")
-    {
-        var client = CreateClient();
-        var url = $"/api/files/{fileId}/info";
-        if (!string.IsNullOrEmpty(bucketName) && bucketName != "default")
-        {
-            url += $"?bucketName={bucketName}";
-        }
-        
-        try
-        {
-            var response = await client.GetAsync(url);
-            if (!response.IsSuccessStatusCode) return null;
-            return await response.Content.ReadFromJsonAsync<StoredFileInfo>();
-        }
-        catch
-        {
-            return null;
-        }
-    }
+    public Task<bool> ExistsAsync(string fileId, string bucketName = "default")
+        => _storageService.ExistsAsync(fileId, bucketName);
 
-    public async Task<bool> DeleteAsync(string fileId, string bucketName = "default")
-    {
-        var client = CreateClient();
-        var url = $"/api/files/{fileId}";
-        if (!string.IsNullOrEmpty(bucketName) && bucketName != "default")
-        {
-            url += $"?bucketName={bucketName}";
-        }
-        
-        var response = await client.DeleteAsync(url);
-        return response.IsSuccessStatusCode;
-    }
+    public Task<bool> RenameAsync(string fileId, string newFileName, string bucketName = "default")
+        => _storageService.RenameAsync(fileId, newFileName, bucketName);
 
-    public async Task<bool> ExistsAsync(string fileId, string bucketName = "default")
-    {
-        var client = CreateClient();
-        var url = $"/api/files/{fileId}";
-        if (!string.IsNullOrEmpty(bucketName) && bucketName != "default")
-        {
-            url += $"?bucketName={bucketName}";
-        }
-        
-        var response = await client.SendAsync(new HttpRequestMessage(HttpMethod.Head, url));
-        return response.IsSuccessStatusCode;
-    }
+    public Task<bool> UpdateMetadataAsync(string fileId, Dictionary<string, object> metadata, string bucketName = "default")
+        => _storageService.UpdateMetadataAsync(fileId, metadata, bucketName);
 
-    public async Task<bool> RenameAsync(string fileId, string newFileName, string bucketName = "default")
-    {
-        var client = CreateClient();
-        var url = $"/api/files/{fileId}/rename";
-        if (!string.IsNullOrEmpty(bucketName) && bucketName != "default")
-        {
-            url += $"?bucketName={bucketName}";
-        }
-        
-        var response = await client.PostAsJsonAsync(url, new { NewFileName = newFileName });
-        return response.IsSuccessStatusCode;
-    }
+    public Task<string?> GetFileHashAsync(string fileId, string bucketName = "default")
+        => _storageService.GetFileHashAsync(fileId, bucketName);
 
-    public async Task<bool> UpdateMetadataAsync(string fileId, Dictionary<string, object> metadata, string bucketName = "default")
-    {
-        var client = CreateClient();
-        var url = $"/api/files/{fileId}/metadata";
-        if (!string.IsNullOrEmpty(bucketName) && bucketName != "default")
-        {
-            url += $"?bucketName={bucketName}";
-        }
-        
-        var response = await client.PostAsJsonAsync(url, metadata);
-        return response.IsSuccessStatusCode;
-    }
+    public Task<StoredFileInfo?> FindByHashAsync(string md5Hash, string bucketName = "default")
+        => _storageService.FindByHashAsync(md5Hash, bucketName);
 
-    public async Task<string?> GetFileHashAsync(string fileId, string bucketName = "default")
-    {
-        var fileInfo = await GetFileInfoAsync(fileId, bucketName);
-        return fileInfo?.MD5;
-    }
+    public Task<StorageStatistics> GetStorageStatisticsAsync(string? bucketName = null)
+        => _storageService.GetStorageStatisticsAsync(bucketName);
 
-    public async Task<StoredFileInfo?> FindByHashAsync(string md5Hash, string bucketName = "default")
-    {
-        var client = CreateClient();
-        var url = $"/api/files/search?md5={md5Hash}";
-        if (!string.IsNullOrEmpty(bucketName) && bucketName != "default")
-        {
-            url += $"&bucketName={bucketName}";
-        }
-        
-        try
-        {
-            var response = await client.GetAsync(url);
-            if (!response.IsSuccessStatusCode) return null;
-            return await response.Content.ReadFromJsonAsync<StoredFileInfo>();
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    public async Task<StorageStatistics> GetStorageStatisticsAsync(string? bucketName = null)
-    {
-        var client = CreateClient();
-        var url = "/api/files/stats";
-        if (!string.IsNullOrEmpty(bucketName))
-        {
-            url += $"?bucketName={bucketName}";
-        }
-        
-        var response = await client.GetAsync(url);
-        response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<StorageStatistics>() ?? new StorageStatistics();
-    }
-
-    public async Task<StoredFileInfo?> FindByFileNameAsync(string fileName, string bucketName = "default")
-    {
-        var client = CreateClient();
-        var url = $"/api/files/search?fileName={Uri.EscapeDataString(fileName)}";
-        if (!string.IsNullOrEmpty(bucketName) && bucketName != "default")
-        {
-            url += $"&bucketName={bucketName}";
-        }
-        
-        try
-        {
-            var response = await client.GetAsync(url);
-            if (!response.IsSuccessStatusCode) return null;
-            return await response.Content.ReadFromJsonAsync<StoredFileInfo>();
-        }
-        catch
-        {
-            return null;
-        }
-    }
-}
-
-internal class UploadResponse
-{
-    public string? Id { get; set; }
-    public string? Name { get; set; }
+    public Task<StoredFileInfo?> FindByFileNameAsync(string fileName, string bucketName = "default")
+        => _storageService.FindByFileNameAsync(fileName, bucketName);
 }

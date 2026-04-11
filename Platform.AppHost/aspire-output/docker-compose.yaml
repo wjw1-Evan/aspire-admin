@@ -5,85 +5,131 @@ services:
       - "18888:18888"
     expose:
       - "18889"
+      - "18890"
     networks:
       - "aspire"
     restart: "always"
-  mongo:
+  mongo-production:
     image: "docker.io/library/mongo:8.2"
     environment:
       MONGO_INITDB_ROOT_USERNAME: "admin"
-      MONGO_INITDB_ROOT_PASSWORD: "${MONGO_PASSWORD}"
+      MONGO_INITDB_ROOT_PASSWORD: "${MONGO_PRODUCTION_PASSWORD}"
     expose:
       - "27017"
     volumes:
       - type: "volume"
         target: "/data/db"
-        source: "platform.apphost-04e9402f01-mongo-data"
+        source: "platform.apphost-04e9402f01-mongo-Production-data"
         read_only: false
     networks:
       - "aspire"
   datainitializer:
     image: "${DATAINITIALIZER_IMAGE}"
     environment:
-      OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "true"
-      OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
       OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
-      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
-      HTTP_PORTS: "${DATAINITIALIZER_PORT}"
-      ConnectionStrings__mongodb: "mongodb://admin:${MONGO_PASSWORD}@mongo:27017/aspire-admin-db?authSource=admin&authMechanism=SCRAM-SHA-256"
-      MONGODB_HOST: "mongo"
+      ConnectionStrings__mongodb: "mongodb://admin:${MONGO_PRODUCTION_PASSWORD}@mongo-Production:27017/mongodb?authSource=admin&authMechanism=SCRAM-SHA-256"
+      MONGODB_HOST: "mongo-Production"
       MONGODB_PORT: "27017"
       MONGODB_USERNAME: "admin"
-      MONGODB_PASSWORD: "${MONGO_PASSWORD}"
+      MONGODB_PASSWORD: "${MONGO_PRODUCTION_PASSWORD}"
       MONGODB_AUTHENTICATIONDATABASE: "admin"
       MONGODB_AUTHENTICATIONMECHANISM: "SCRAM-SHA-256"
-      MONGODB_URI: "mongodb://admin:${MONGO_PASSWORD}@mongo:27017/aspire-admin-db?authSource=admin&authMechanism=SCRAM-SHA-256"
-      MONGODB_DATABASE: "aspire-admin-db"
+      MONGODB_URI: "mongodb://admin:${MONGO_PRODUCTION_PASSWORD}@mongo-Production:27017/mongodb?authSource=admin&authMechanism=SCRAM-SHA-256"
+      MONGODB_DATABASENAME: "mongodb"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://compose-dashboard:18889"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_SERVICE_NAME: "datainitializer"
+    networks:
+      - "aspire"
+  systemmonitor:
+    image: "${SYSTEMMONITOR_IMAGE}"
+    environment:
+      OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+      HTTP_PORTS: "${SYSTEMMONITOR_PORT}"
+      Jwt__SecretKey: "w9G2xN7pR6qV3zL1s8F0bH5dT4jK2uM3"
+      InternalService__ApiKey: "fzGU+GaW0cXg1pd8pz33re4KBqPxcVtxh5HVrlyNgB4="
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://compose-dashboard:18889"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+      OTEL_SERVICE_NAME: "systemmonitor"
     expose:
-      - "${DATAINITIALIZER_PORT}"
+      - "${SYSTEMMONITOR_PORT}"
+    networks:
+      - "aspire"
+  storage:
+    image: "${STORAGE_IMAGE}"
+    environment:
+      OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+      HTTP_PORTS: "${STORAGE_PORT}"
+      ConnectionStrings__storagedb: "mongodb://admin:${MONGO_PRODUCTION_PASSWORD}@mongo-Production:27017/storagedb?authSource=admin&authMechanism=SCRAM-SHA-256"
+      STORAGEDB_HOST: "mongo-Production"
+      STORAGEDB_PORT: "27017"
+      STORAGEDB_USERNAME: "admin"
+      STORAGEDB_PASSWORD: "${MONGO_PRODUCTION_PASSWORD}"
+      STORAGEDB_AUTHENTICATIONDATABASE: "admin"
+      STORAGEDB_AUTHENTICATIONMECHANISM: "SCRAM-SHA-256"
+      STORAGEDB_URI: "mongodb://admin:${MONGO_PRODUCTION_PASSWORD}@mongo-Production:27017/storagedb?authSource=admin&authMechanism=SCRAM-SHA-256"
+      STORAGEDB_DATABASENAME: "storagedb"
+      Jwt__SecretKey: "w9G2xN7pR6qV3zL1s8F0bH5dT4jK2uM3"
+      InternalService__ApiKey: "fzGU+GaW0cXg1pd8pz33re4KBqPxcVtxh5HVrlyNgB4="
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://compose-dashboard:18889"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+      OTEL_SERVICE_NAME: "storage"
+    expose:
+      - "${STORAGE_PORT}"
     depends_on:
-      mongo:
+      mongo-production:
         condition: "service_started"
     networks:
       - "aspire"
   apiservice:
     image: "${APISERVICE_IMAGE}"
     environment:
-      OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "true"
-      OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
       OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
       ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
       HTTP_PORTS: "${APISERVICE_PORT}"
-      ConnectionStrings__mongodb: "mongodb://admin:${MONGO_PASSWORD}@mongo:27017/aspire-admin-db?authSource=admin&authMechanism=SCRAM-SHA-256"
-      MONGODB_HOST: "mongo"
+      ConnectionStrings__mongodb: "mongodb://admin:${MONGO_PRODUCTION_PASSWORD}@mongo-Production:27017/mongodb?authSource=admin&authMechanism=SCRAM-SHA-256"
+      MONGODB_HOST: "mongo-Production"
       MONGODB_PORT: "27017"
       MONGODB_USERNAME: "admin"
-      MONGODB_PASSWORD: "${MONGO_PASSWORD}"
+      MONGODB_PASSWORD: "${MONGO_PRODUCTION_PASSWORD}"
       MONGODB_AUTHENTICATIONDATABASE: "admin"
       MONGODB_AUTHENTICATIONMECHANISM: "SCRAM-SHA-256"
-      MONGODB_URI: "mongodb://admin:${MONGO_PASSWORD}@mongo:27017/aspire-admin-db?authSource=admin&authMechanism=SCRAM-SHA-256"
-      MONGODB_DATABASE: "aspire-admin-db"
+      MONGODB_URI: "mongodb://admin:${MONGO_PRODUCTION_PASSWORD}@mongo-Production:27017/mongodb?authSource=admin&authMechanism=SCRAM-SHA-256"
+      MONGODB_DATABASENAME: "mongodb"
+      STORAGE_HTTP: "http://storage:${STORAGE_PORT}"
+      services__storage__http__0: "http://storage:${STORAGE_PORT}"
       Jwt__SecretKey: "w9G2xN7pR6qV3zL1s8F0bH5dT4jK2uM3"
+      InternalService__ApiKey: "fzGU+GaW0cXg1pd8pz33re4KBqPxcVtxh5HVrlyNgB4="
       ConnectionStrings__chat: "Endpoint=https://free.v36.cm/v1;Key=${OPENAI_OPENAI_APIKEY};Model=gpt-4o-mini"
       CHAT_ENDPOINT: "https://free.v36.cm/v1"
       CHAT_URI: "https://free.v36.cm/v1"
       CHAT_KEY: "${OPENAI_OPENAI_APIKEY}"
-      CHAT_MODEL: "gpt-4o-mini"
+      CHAT_MODELNAME: "gpt-4o-mini"
+      Smtp__Host: "smtp.126.com"
+      Smtp__Port: "465"
+      Smtp__UserName: "fsy_008@126.com"
+      Smtp__Password: "CYabY3BXRpK2UbyF"
+      Smtp__EnableSsl: "True"
+      Smtp__DisplayName: "Aspire Admin"
+      Smtp__FromEmail: "fsy_008@126.com"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://compose-dashboard:18889"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_SERVICE_NAME: "apiservice"
-    expose:
+    ports:
       - "${APISERVICE_PORT}"
     depends_on:
+      mongo-production:
+        condition: "service_started"
       datainitializer:
         condition: "service_completed_successfully"
+      storage:
+        condition: "service_started"
     networks:
       - "aspire"
   apigateway:
-    image: "mcr.microsoft.com/dotnet/nightly/yarp:2.3.0-preview.4"
+    image: "mcr.microsoft.com/dotnet/nightly/yarp:2.3-preview"
     command:
       - "/app/yarp.dll"
     entrypoint:
@@ -93,9 +139,24 @@ services:
       APISERVICE_HTTP: "http://apiservice:${APISERVICE_PORT}"
       REVERSEPROXY__ROUTES__route0__MATCH__PATH: "/apiservice/{**catch-all}"
       REVERSEPROXY__ROUTES__route0__CLUSTERID: "cluster_apiservice"
+      REVERSEPROXY__ROUTES__route0__MAXREQUESTBODYSIZE: "-1"
       REVERSEPROXY__ROUTES__route0__TRANSFORMS__0__PathPattern: "/{**catch-all}"
+      REVERSEPROXY__ROUTES__route1__MATCH__PATH: "/systemmonitor/{**catch-all}"
+      REVERSEPROXY__ROUTES__route1__CLUSTERID: "cluster_systemmonitor"
+      REVERSEPROXY__ROUTES__route1__MAXREQUESTBODYSIZE: "-1"
+      REVERSEPROXY__ROUTES__route1__TRANSFORMS__0__PathPattern: "/{**catch-all}"
+      REVERSEPROXY__ROUTES__route2__MATCH__PATH: "/storage/{**catch-all}"
+      REVERSEPROXY__ROUTES__route2__CLUSTERID: "cluster_storage"
+      REVERSEPROXY__ROUTES__route2__MAXREQUESTBODYSIZE: "-1"
+      REVERSEPROXY__ROUTES__route2__TRANSFORMS__0__PathPattern: "/{**catch-all}"
       REVERSEPROXY__CLUSTERS__cluster_apiservice__DESTINATIONS__destination1__ADDRESS: "http://apiservice"
+      REVERSEPROXY__CLUSTERS__cluster_systemmonitor__DESTINATIONS__destination1__ADDRESS: "http://systemmonitor"
+      REVERSEPROXY__CLUSTERS__cluster_storage__DESTINATIONS__destination1__ADDRESS: "http://storage"
       services__apiservice__http__0: "http://apiservice:${APISERVICE_PORT}"
+      SYSTEMMONITOR_HTTP: "http://systemmonitor:${SYSTEMMONITOR_PORT}"
+      services__systemmonitor__http__0: "http://systemmonitor:${SYSTEMMONITOR_PORT}"
+      STORAGE_HTTP: "http://storage:${STORAGE_PORT}"
+      services__storage__http__0: "http://storage:${STORAGE_PORT}"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://compose-dashboard:18889"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_SERVICE_NAME: "apigateway"
@@ -108,44 +169,42 @@ services:
   admin:
     image: "${ADMIN_IMAGE}"
     environment:
-      NODE_ENV: "production"
+      NODE_ENV: "development"
       APIGATEWAY_HTTP: "http://apigateway:5000"
       services__apigateway__http__0: "http://apigateway:5000"
       BROWSER: "none"
-      PORT: "8080"
+      NPM_CONFIG_PRODUCTION: "false"
+      PORT: "8082"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://compose-dashboard:18889"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_SERVICE_NAME: "admin"
     ports:
-      - "15001:8080"
+      - "15001:8082"
     expose:
-      - "8080"
-    depends_on:
-      apigateway:
-        condition: "service_started"
+      - "8082"
     networks:
       - "aspire"
   app:
     image: "${APP_IMAGE}"
     environment:
-      NODE_ENV: "production"
+      NODE_ENV: "development"
       APIGATEWAY_HTTP: "http://apigateway:5000"
       services__apigateway__http__0: "http://apigateway:5000"
       BROWSER: "none"
+      NPM_CONFIG_PRODUCTION: "false"
       PORT: "8081"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://compose-dashboard:18889"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_SERVICE_NAME: "app"
+    ports:
+      - "15002:8081"
     expose:
       - "8081"
-    depends_on:
-      apigateway:
-        condition: "service_started"
     networks:
       - "aspire"
 networks:
   aspire:
     driver: "bridge"
 volumes:
-  platform.apphost-04e9402f01-mongo-data:
+  platform.apphost-04e9402f01-mongo-Production-data:
     driver: "local"

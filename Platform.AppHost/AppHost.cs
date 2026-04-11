@@ -28,14 +28,14 @@ var openai = builder.AddOpenAI("openai").WithEndpoint(openAiEndpoint);
 
 var chat = openai.AddModel("chat", "gpt-4o-mini").WithHealthCheck();
 
-var mongo = builder.AddMongoDB("mongo")
+var environment = builder.Environment.EnvironmentName;
+
+var mongo = builder.AddMongoDB("mongo-" + environment)
         .WithLifetime(ContainerLifetime.Persistent)
         .WithMongoExpress()
         .WithDataVolume();
 
 var mongodb = mongo.AddDatabase("mongodb");
-
-var storagedb = mongo.AddDatabase("storagedb");
 
 
 // 数据初始化服务（一次性任务，完成后自动停止）
@@ -52,14 +52,6 @@ var systemMonitor = builder.AddProject<Projects.Platform_SystemMonitor>("systemm
     .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
     .WithEnvironment("InternalService__ApiKey", internalServiceApiKey);
 
-var storage = builder.AddProject<Projects.Platform_Storage>("storage")
-    .WithReference(storagedb)
-    .WaitFor(storagedb)
-    .WithHttpEndpoint(port: 15010)
-    .WithHttpHealthCheck("/health")
-    .WithEnvironment("Jwt__SecretKey", jwtSecretKey)
-    .WithEnvironment("InternalService__ApiKey", internalServiceApiKey);
-
 var smtpConfig = builder.Configuration.GetSection("Smtp");
 var smtpHost = smtpConfig["Host"];
 
@@ -67,8 +59,6 @@ var apiService = builder.AddProject<Projects.Platform_ApiService>("apiservice")
     .WithReference(mongodb)
     .WaitFor(mongodb)
     .WaitForCompletion(datainitializer)
-    .WithReference(storage)
-    .WaitFor(storage)
     .WithHttpEndpoint()
     .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health")
@@ -91,8 +81,7 @@ if (!string.IsNullOrEmpty(smtpHost))
 var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDiscovery>>
 {
     ["apiservice"] = apiService,
-    ["systemmonitor"] = systemMonitor,
-    ["storage"] = storage
+    ["systemmonitor"] = systemMonitor
 };
 
 var yarp = builder.AddYarp("apigateway")

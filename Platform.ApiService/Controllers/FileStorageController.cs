@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Platform.Storage.Services;
+using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Models;
 
-namespace Platform.Storage.Controllers;
+namespace Platform.ApiService.Controllers;
 
 [Authorize]
 [Route("api/files")]
@@ -106,7 +106,7 @@ public class FileStorageController : ControllerBase
     {
         try
         {
-            var result = await _storageService.RenameAsync(fileId, request.NewFileName, bucketName ?? "default");
+            var result = await _storageService.RenameAsync(fileId, request.NewName, bucketName ?? "default");
             if (!result)
             {
                 return NotFound("File not found");
@@ -178,5 +178,5 @@ public class FileStorageController : ControllerBase
 
 public class RenameRequest
 {
-    public string NewFileName { get; set; } = string.Empty;
+    public string NewName { get; set; } = string.Empty;
 }

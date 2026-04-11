@@ -10,11 +10,11 @@
 - **前端后台**：`React 19` + `Ant Design 6` + `UmiJS 4`
 - **移动端应用**：`Expo 54` 跨端 App，内置原生通知
 - **微信小程序**：`Platform.MiniApp` 微信原生开发，轻量级多端扩展
-- **基础设施**：`Redis` 缓存、`OpenAI/MCP` 服务、`JWT/国密算法` 加解密认证
+- **基础设施**：`OpenAI/MCP` 服务、`JWT/国密算法` 加解密认证；**Redis** 可按需在 AppHost 中接入（当前默认编排未启用）
 - **数据库驱动**：MongoDB.Driver + MongoDB.Entities
 
 **核心项目结构**：
-- `Platform.AppHost/AppHost.cs`：所有微服务、数据库、Redis 资源的统筹编排入口。
+- `Platform.AppHost/AppHost.cs`：微服务、MongoDB、YARP 网关及 OpenAI 等资源的统筹编排入口（按需扩展 Redis 等）
 - `Platform.ApiService`：统一的后端核心业务网关与逻辑层。
 - `Platform.ServiceDefaults`：共享的扩展、实体基类及 `PlatformDbContext` 基础设施层。
 - `Platform.Admin` / `Platform.App` / `Platform.MiniApp`：多端前端应用。

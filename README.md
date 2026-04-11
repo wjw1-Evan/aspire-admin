@@ -52,6 +52,8 @@
 
 ## 🏗 架构总览
 
+业务 API 以 **Platform.ApiService** 为主（模块化单体）；**Platform.Storage** 独立提供 GridFS 文件 HTTP 接口；**Platform.SystemMonitor** 提供主机资源监控。三者经 **YARP**（`:15000`）按路径前缀转发。详细路由、分库与卫星服务认证见 [**微服务拆分开发指南**](docs/guides/MICROSERVICE-GUIDE.md)。
+
 ```mermaid
 graph TD
     subgraph Frontend
@@ -61,27 +63,38 @@ graph TD
     end
     
     subgraph Backend
-        Gateway["YARP Gateway"]
-        ApiService["Platform.ApiService (.NET 10)"]
-        DataInit["Platform.DataInitializer"]
+        Gateway["YARP Gateway :15000"]
+        ApiService["Platform.ApiService"]
+        Storage["Platform.Storage"]
         SysMonitor["Platform.SystemMonitor"]
+        DataInit["Platform.DataInitializer"]
     end
     
     subgraph Infrastructure
         Aspire["Aspire AppHost"]
-        DB[(Entity Storage)]
-        Cache[(Redis Cache)]
+        MongoMain[(MongoDB mongodb)]
+        MongoStore[(MongoDB storagedb)]
     end
     
     Admin & App & MiniApp --> Gateway
     Gateway --> ApiService
-    ApiService --> DB & Cache
+    Gateway --> Storage
+    Gateway --> SysMonitor
+    ApiService --> MongoMain
+    ApiService -.->|HTTP 服务发现| Storage
+    Storage --> MongoStore
+    Aspire -.-> Gateway
+    Aspire -.-> ApiService
+    Aspire -.-> Storage
     Aspire -.-> SysMonitor
+    Aspire -.-> DataInit
+    DataInit --> MongoMain
 ```
 
-- **Platform.AppHost**：负责服务发现、容器编排、数据库（MongoDB/Redis）自动拉起。
-- **Platform.ApiService**：核心业务逻辑承载者，采用 Clean Architecture 风格。
-- **Platform.SystemMonitor**：系统监控服务，提供健康检查与指标采集。
+- **Platform.AppHost**：Aspire 编排入口；默认拉起 **MongoDB**、**OpenAI（可选）** 及各 .NET 项目。**Redis 未在默认编排中启用**；若需缓存，在 `AppHost.cs` 增加 `AddRedis` 并对消费方使用 `WithReference(redis)`。
+- **Platform.ApiService**：核心业务 API（工作流、IoT、园区、AI、云盘业务逻辑等）。
+- **Platform.Storage**：GridFS 文件存储微服务；ApiService 通过 `IStorageClient` 以 **`X-Internal-Service-Key`** 调用，浏览器直连需携带 **JWT**（见指南）。
+- **Platform.SystemMonitor**：进程级 CPU/内存/磁盘等指标；**不连接业务库 `mongodb`**。
 - **Platform.Admin**：基于 Ant Design 6 打造，强调原生体验与高性能操作视图。
 - **Platform.MiniApp**：涵盖园区全生命周期管理的轻量化业务端。
 - **Platform.App**：提供一致性的原生移动端访问与消息触达。
@@ -91,10 +104,10 @@ graph TD
 ```text
 aspire-admin
 ├── Platform.AppHost           # .NET Aspire 编排项目，管理所有微服务与资源
-│   ├── AppHost.cs            # 主编排配置（服务发现、路由、健康检查）
-│   ├── appsettings.json      # 配置文件（JWT、OpenAI、副本数等）
+│   ├── AppHost.cs            # 主编排配置（服务发现、YARP 路由、健康检查、环境变量注入）
+│   ├── appsettings.json      # 配置文件（JWT、OpenAI、SMTP、InternalService 密钥等）
 │   └── mongo-init/           # MongoDB 初始化脚本
-├── Platform.ApiService        # 核心业务 API (Workflow, IoT, AI, Park, Storage)
+├── Platform.ApiService        # 核心业务 API（工作流、IoT、园区、AI、云盘业务逻辑等）
 │   ├── Controllers/          # API 控制器
 │   ├── Services/             # 业务服务层
 │   │   ├── McpService.cs    # MCP 服务（简化版本）
@@ -102,6 +115,8 @@ aspire-admin
 │   ├── Models/               # 数据模型
 │   ├── Options/              # 配置选项类
 │   └── docs/                 # 服务文档
+├── Platform.Storage          # GridFS 文件存储 HTTP 服务（库：storagedb）
+├── Platform.SystemMonitor    # 系统资源监控服务（无业务数据库）
 ├── Platform.ServiceDefaults   # 通用弹性配置、服务目录与公共实体定义
 │   ├── Services/             # 数据库上下文 (PlatformDbContext)
 │   └── Models/               # 基础实体、接口定义
@@ -217,7 +232,7 @@ cd Platform.Admin && npm install && cd ..
 cd Platform.App && npm install && cd ..
 cd Platform.MiniApp && npm install && cd ..
 
-# 3. 启动并编排服务（Aspire 会自动拉起 MongoDB、Redis 等基础设施）
+# 3. 启动并编排服务（Aspire 会拉起 MongoDB 与各后端项目；默认不含 Redis）
 dotnet run --project Platform.AppHost
 ```
 
@@ -237,7 +252,9 @@ dotnet run --project Platform.AppHost
 在 `Platform.AppHost/appsettings.json` 或 `appsettings.Development.json` 中配置：
 
 - **OpenAI/Azure OpenAI**：配置 `Parameters:openai-openai-endpoint` 以解锁完整 AI 能力
-- **JWT 密钥**：配置 `Jwt:SecretKey` 用于身份认证
+- **JWT 密钥**：配置 `Jwt:SecretKey` 用于身份认证（ApiService 与卫星服务需一致，通常由 AppHost 注入）
+- **服务间密钥**：可选配置 `InternalService:ApiKey`；未配置时 AppHost 会生成随机值并注入 ApiService / Storage / SystemMonitor（生产环境建议显式配置）
+- **微服务与网关路径**：见 [docs/guides/MICROSERVICE-GUIDE.md](docs/guides/MICROSERVICE-GUIDE.md)
 - **服务副本数**：配置 `ApiService:Replicas` 调整 API 服务实例数量（默认 3，dotnet watch 模式强制为 1）
 - **SSL/HTTPS**：支持自定义证书注入以满足生产安全需求
 

@@ -37,6 +37,7 @@ docs/rules/
 |------|----------|------|
 | 通用原则 | [`00-通用原则.md`](./00-通用原则.md) | 核心架构、数据操作、中间件 |
 | 分页规范 | [`00-分页规范.md`](./00-分页规范.md) | 统一分页类型、参数、统计分离 |
+| 架构与编排 | [`guides/MICROSERVICE-GUIDE.md`](../guides/MICROSERVICE-GUIDE.md) | YARP 路径、分库、Storage/SystemMonitor 认证与 AppHost 约定 |
 | 后端规则 | [`backend/00-总览.md`](./backend/00-总览.md) | .NET/ASP.NET Core 控制器、服务、数据访问 |
 | **Admin前端** | **[`frontend-admin/06-页面开发标准.md`](./frontend-admin/06-页面开发标准.md)** | ⭐ 开发标准（密码本模块） |
 | 移动端 | [`frontend-app/`](./frontend-app/) | Expo/React Native/微信小程序 |

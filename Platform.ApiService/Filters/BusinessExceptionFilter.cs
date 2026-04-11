@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Platform.ServiceDefaults.Models;
-using Platform.ServiceDefaults.Exceptions;
 using System.Net;
 
 namespace Platform.ApiService.Filters;
@@ -70,19 +69,6 @@ public class BusinessExceptionFilter : IExceptionFilter
             );
 
             context.Result = new BadRequestObjectResult(response);
-            context.ExceptionHandled = true;
-            return;
-        }
-
-        if (exception is ServiceException serviceException)
-        {
-            var response = new ApiResponse(
-                success: false,
-                message: serviceException.Message,
-                traceId: context.HttpContext.TraceIdentifier
-            );
-
-            context.Result = new ObjectResult(response) { StatusCode = serviceException.StatusCode };
             context.ExceptionHandled = true;
             return;
         }

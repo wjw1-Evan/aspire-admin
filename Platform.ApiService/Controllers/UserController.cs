@@ -8,7 +8,6 @@ using Platform.ApiService.Models.Response;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
 using Platform.ServiceDefaults.Models;
-using Platform.ServiceDefaults.Exceptions;
 using System.Linq.Dynamic.Core;
 
 
@@ -255,7 +254,7 @@ public class UserController : BaseApiController
     {
         // 检查是否删除自己（不允许）
         if (RequiredUserId == id)
-            throw new ServiceException("不能删除当前登录用户", 400);
+            throw new ArgumentException("不能删除当前登录用户");
 
         var deleted = await _userService.DeleteUserAsync(id, reason);
         if (!deleted)
@@ -310,7 +309,7 @@ public class UserController : BaseApiController
 
         var success = await _userService.BulkUpdateUsersAsync(request, request.Reason);
         if (!success)
-            throw new ServiceException(ErrorMessages.OperationFailed, 500);
+            throw new InvalidOperationException(ErrorMessages.OperationFailed);
 
         return Success(null, ErrorMessages.OperationSuccess);
     }
@@ -756,7 +755,7 @@ public class UserController : BaseApiController
         var success = await _userService.UpdateAiRoleDefinitionAsync(userId, request.RoleDefinition);
 
         if (!success)
-            throw new ServiceException("更新角色定义失败", 500);
+            throw new InvalidOperationException("更新角色定义失败");
 
         return Success(null, "角色定义更新成功");
     }
@@ -850,7 +849,7 @@ public class UserController : BaseApiController
         var success = await _userService.SaveWelcomeLayoutAsync(userId, request);
 
         if (!success)
-            throw new ServiceException("保存布局配置失败", 500);
+            throw new InvalidOperationException("保存布局配置失败");
 
         return Success(null, "布局配置保存成功");
     }

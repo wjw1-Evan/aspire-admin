@@ -1,110 +1,91 @@
-import React, { useState } from 'react';
-import { Button, Space, Select, Popconfirm } from 'antd';
-import { PartitionOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { useMessage } from '@/hooks/useMessage';
-import { PageContainer } from '@ant-design/pro-components';
-import { ProTable, ProColumns } from '@ant-design/pro-table';
-import { ModalForm, ProFormText, ProFormDigit, ProFormSwitch } from '@ant-design/pro-components';
-import type { PageParams } from '@/types';
-import {
-    getFormList,
-    createForm,
-    updateForm,
-    deleteForm,
-    FormDefinition,
-} from '@/services/form/api';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
+import { Button, Space, Tag, Popconfirm } from 'antd';
+import { PageContainer, ModalForm, ProTable, ProColumns, ActionType, ProFormText, ProFormDigit, ProFormSwitch } from '@ant-design/pro-components';
+import { PlusOutlined, EditOutlined, DeleteOutlined, PartitionOutlined } from '@ant-design/icons';
+import { request } from '@umijs/max';
+import { ApiResponse, PagedResult, PageParams } from '@/types';
+
+interface FormDefinition { id?: string; name: string; key: string; version?: number; isActive?: boolean; createdAt?: string; updatedAt?: string; }
+interface FormStatistics { totalForms: number; activeForms: number; }
+
+const api = {
+    list: (params: PageParams) => request<ApiResponse<PagedResult<FormDefinition>>>('/apiservice/api/form-definition', { params }),
+    create: (data: Partial<FormDefinition>) => request<ApiResponse<FormDefinition>>('/apiservice/api/form-definition', { method: 'POST', data }),
+    update: (id: string, data: Partial<FormDefinition>) => request<ApiResponse<boolean>>(`/apiservice/api/form-definition/${id}`, { method: 'PUT', data }),
+    delete: (id: string) => request<ApiResponse<boolean>>(`/apiservice/api/form-definition/${id}`, { method: 'DELETE' }),
+    statistics: () => request<ApiResponse<FormStatistics>>('/apiservice/api/form-definition/statistics'),
+};
 
 const FormDefinitionManagement: React.FC = () => {
-    const [open, setOpen] = useState(false);
-    const [editing, setEditing] = useState<FormDefinition | null>(null);
-    const message = useMessage();
+    const actionRef = useRef<ActionType>();
+    const [state, setState] = useState({
+        statistics: null as FormStatistics | null,
+        editingForm: null as FormDefinition | null,
+        formVisible: false,
+        sorter: undefined as { sortBy: string; sortOrder: string } | undefined,
+    });
+    const set = useCallback((partial: Partial<typeof state>) => setState(prev => ({ ...prev, ...partial })), []);
 
-    const handleOpenModal = (record: FormDefinition | null) => {
-        setEditing(record);
-        setOpen(true);
-    };
-
-    const handleDelete = async (record: FormDefinition) => {
-        const res = await deleteForm(record.id!);
-        if (res.success) {
-            message.success('已删除');
-        } else {
-            message.error('删除失败');
-        }
-    };
+    useEffect(() => { api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }, []);
 
     const columns: ProColumns<FormDefinition>[] = [
-        { title: '名称', dataIndex: 'name', ellipsis: true, sorter: true, copyable: true },
-        { title: '键', dataIndex: 'key', ellipsis: true, sorter: true, copyable: true },
-        { title: '版本', dataIndex: 'version', valueType: 'digit', width: 80, sorter: true },
-        { title: '启用', dataIndex: 'isActive', valueType: 'switch', width: 80, sorter: true },
-        {
-            title: '操作',
-            key: 'action',
-            valueType: 'option',
-            fixed: 'right',
-            width: 180,
-            render: (_, record) => (
-                <Space size={4}>
-                    <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleOpenModal(record)}>编辑</Button>
-                    <Popconfirm title={`确定删除「${record.name}」？`} onConfirm={() => handleDelete(record)}>
-                        <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
-                    </Popconfirm>
-                </Space>
-            ),
-        },
+        { title: '名称', dataIndex: 'name', key: 'name', ellipsis: true, sorter: true },
+        { title: '键', dataIndex: 'key', key: 'key', ellipsis: true, sorter: true },
+        { title: '版本', dataIndex: 'version', key: 'version', valueType: 'digit', width: 80, sorter: true },
+        { title: '启用', dataIndex: 'isActive', key: 'isActive', valueType: 'select', fieldProps: { options: [{ label: '是', value: 'true' }, { label: '否', value: 'false' }] }, render: (_, r) => <Tag color={r.isActive ? 'success' : 'default'}>{r.isActive ? '是' : '否'}</Tag> },
+        { title: '操作', key: 'action', valueType: 'option', fixed: 'right', width: 180, render: (_, r) => (
+            <Space size={4}>
+                <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingForm: r, formVisible: true })}>编辑</Button>
+                <Popconfirm title={`确定删除「${r.name}」？`} onConfirm={async () => { await api.delete(r.id!); actionRef.current?.reload(); api.statistics().then(res => { if (res.success && res.data) set({ statistics: res.data }); }); }}>
+                    <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
+                </Popconfirm>
+            </Space>
+        ) },
     ];
 
     return (
-        <PageContainer extra={
-                <Space wrap>
-                    <Button type="primary" icon={<PlusOutlined />} onClick={() => handleOpenModal(null)}>新建表单</Button>
-                </Space>
-            }
-        >
+        <PageContainer>
             <ProTable
-                headerTitle="表单列表"
+                actionRef={actionRef}
+                headerTitle={
+                    <Space size={24}>
+                        <Space><PartitionOutlined />表单管理</Space>
+                        <Space size={12}>
+                            <Tag color="blue">总计 {state.statistics?.totalForms || 0}</Tag>
+                            <Tag color="green">启用 {state.statistics?.activeForms || 0}</Tag>
+                        </Space>
+                    </Space>
+                }
                 rowKey="id"
                 search={{ labelWidth: 'auto' }}
                 scroll={{ x: 'max-content' }}
-                request={async (params: any) => {
-                    const { current, pageSize, ...rest } = params;
-                    const response = await getFormList({ page: current, pageSize, ...rest } as PageParams);
-                    if (response.success && response.data) {
-                        return { data: response.data.queryable || [], total: response.data.rowCount || 0, success: true };
-                    }
-                    return { data: [], total: 0, success: false };
+                request={async (params) => {
+                    const { current, pageSize } = params;
+                    const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
+                    const res = await api.list({ page: current, pageSize, ...sortParams });
+                    api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); });
+                    return { data: res.data?.queryable || [], total: res.data?.rowCount || 0, success: res.success };
                 }}
                 columns={columns}
+                onChange={(_, __, s) => set({ sorter: s?.order ? { sortBy: s.field as string, sortOrder: s.order === 'ascend' ? 'asc' : 'desc' } : undefined })}
+                toolBarRender={() => [
+                    <Button key="create" type="primary" icon={<PlusOutlined />} onClick={() => set({ editingForm: null, formVisible: true })}>新建表单</Button>,
+                ]}
             />
 
             <ModalForm
+                key={state.editingForm?.id || 'create'}
                 width={600}
-                open={open}
-                title={editing ? '编辑表单' : '新建表单'}
-                onOpenChange={(visible) => { if (!visible) setOpen(false); }}
+                open={state.formVisible}
+                title={state.editingForm ? '编辑表单' : '新建表单'}
+                onOpenChange={(open) => { if (!open) set({ formVisible: false, editingForm: null }); }}
+                initialValues={state.editingForm ? { name: state.editingForm.name, key: state.editingForm.key, version: state.editingForm.version, isActive: state.editingForm.isActive } : { version: 1, isActive: true }}
                 onFinish={async (values) => {
-                    const payload: Partial<FormDefinition> = {
-                        ...values,
-                        key: values.key || `form_${Date.now()}`,
-                        version: values.version || 1,
-                        isActive: values.isActive ?? true,
-                    };
-                    let res;
-                    if (editing?.id) {
-                        res = await updateForm(editing.id, payload);
-                    } else {
-                        res = await createForm(payload);
-                    }
-                    if (res.success) {
-                        message.success('已保存');
-                        setOpen(false);
-                    } else {
-                        message.error('保存失败');
-                    }
-                    return true;
+                    const data = { name: values.name, key: values.key, version: values.version, isActive: values.isActive };
+                    const res = state.editingForm ? await api.update(state.editingForm.id!, data) : await api.create(data);
+                    if (res.success) { set({ formVisible: false, editingForm: null }); actionRef.current?.reload(); }
+                    return res.success;
                 }}
-                initialValues={editing || { version: 1, isActive: true }}
             >
                 <ProFormText name="name" label="名称" rules={[{ required: true, message: '请输入名称' }]} placeholder="请输入表单名称" />
                 <ProFormText name="key" label="键" rules={[{ required: true, message: '请输入键' }]} placeholder="请输入表单键" />

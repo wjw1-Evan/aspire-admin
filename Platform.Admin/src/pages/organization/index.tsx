@@ -180,7 +180,7 @@ const OrganizationPage: React.FC = () => {
     return map;
   }, [state.tree]);
 
-  const handleDrop = async (info: any) => {
+  const handleDrop = async (info: { dragNode?: { key?: string }; node?: { key?: string }; dropToGap?: boolean }) => {
     const dragId = String(info.dragNode?.key);
     const targetId = String(info.node?.key);
     const dropToGap = !!info.dropToGap;
@@ -203,7 +203,7 @@ const OrganizationPage: React.FC = () => {
     const baseTarget = dragNode.parentId === newParentId ? [...targetSiblings].filter(id => id !== dragId) : [...targetSiblings];
     baseTarget.splice(insertIndex, 0, dragId);
 
-    const items: any[] = [];
+    const items: { id: string; parentId: string | undefined; sortOrder: number }[] = [];
     baseTarget.forEach((id, idx) => items.push({ id, parentId: newParentId, sortOrder: idx + 1 }));
     if (dragNode.parentId !== newParentId) filteredSource.forEach((id, idx) => items.push({ id, parentId: dragNode.parentId, sortOrder: idx + 1 }));
 

@@ -96,7 +96,7 @@ const CloudStorageFilesPage: React.FC = () => {
 
     useEffect(() => { api.statistics().then(r => { if (r.success && r.data) set({ statistics: r.data }); }); }, []);
 
-    const fetchData = useCallback(async (params: any) => {
+    const fetchData = useCallback(async (params: Record<string, any>) => {
         const { current, pageSize } = params;
         const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
         const res = state.isSearchMode && state.search

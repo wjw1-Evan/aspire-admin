@@ -177,7 +177,7 @@ const TaskManagement: React.FC = () => {
     { title: intl.formatMessage({ id: 'pages.taskManagement.table.createdBy' }), dataIndex: 'createdByName', key: 'createdBy', width: 100, sorter: true, render: (_: any, r: TaskDto) => r.createdByName || '-' },
     { title: intl.formatMessage({ id: 'pages.taskManagement.table.plannedEnd' }), dataIndex: 'plannedEndTime', key: 'plannedEndTime', width: 150, sorter: true, render: (_: any, r: TaskDto) => r.plannedEndTime ? dayjs(r.plannedEndTime).format('YYYY-MM-DD HH:mm') : '-' },
     { title: intl.formatMessage({ id: 'pages.taskManagement.table.createdAt' }), dataIndex: 'createdAt', key: 'createdAt', width: 150, sorter: true, render: (_: any, r: TaskDto) => r.createdAt ? dayjs(r.createdAt).format('YYYY-MM-DD HH:mm') : '-' },
-    { title: intl.formatMessage({ id: 'pages.table.action' }), key: 'action', valueType: 'option', fixed: 'right', width: 180, render: (_: any, r: TaskDto) => (
+    { title: intl.formatMessage({ id: 'pages.table.action' }), key: 'action', valueType: 'option', fixed: 'right', width: 180, render: (_: React.ReactNode, r: TaskDto) => (
       <Space size={4}>
         <Button type="link" size="small" icon={<EditOutlined />} onClick={() => set({ editingTask: r, formVisible: true })}>{intl.formatMessage({ id: 'pages.taskManagement.action.edit' })}</Button>
         {r.status !== TaskStatusEnum.Completed && r.status !== TaskStatusEnum.Cancelled && (
@@ -197,7 +197,7 @@ const TaskManagement: React.FC = () => {
 
   return (
     <PageContainer>
-      <ProTable actionRef={actionRef} request={async (params: any) => {
+      <ProTable actionRef={actionRef} request={async (params: Record<string, any>) => {
         const { current, pageSize } = params;
         const sortParams = state.sorter?.sortBy && state.sorter?.sortOrder ? state.sorter : undefined;
         const res = await api.list({ page: current, pageSize, search: state.search, ...sortParams });

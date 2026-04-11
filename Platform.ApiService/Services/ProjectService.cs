@@ -183,7 +183,7 @@ public class ProjectService : IProjectService
     {
         var list = projects.ToList();
         if (!list.Any()) return new List<ProjectDto>();
-        var userIds = list.SelectMany(p => p.MemberIds ?? new List<string>()).Concat(list.Select(p => p.CreatedBy).Where(id => !string.IsNullOrEmpty(id))).Distinct();
+        var userIds = list.SelectMany(p => p.MemberIds ?? new List<string>()).Concat(list.Select(p => p.CreatedBy).Where(id => !string.IsNullOrEmpty(id))).OfType<string>().Distinct();
         var userMap = await _userService.GetUsersByIdsAsync(userIds);
         return list.Select(p => ConvertToProjectDtoWithCache(p, userMap, currentUserId)).ToList();
     }

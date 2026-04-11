@@ -15,8 +15,8 @@
       "description": "编译后端并修复错误"
     },
     "aspire-watch": {
-      "template": "在 Platform.AppHost 目录运行 dotnet watch：\n1. 进入 Platform.AppHost 目录\n2. 运行 dotnet watch\n\n规则：\n- 使用 dotnet watch 启动热重载开发模式",
-      "description": "运行 dotnet watch 热重载"
+      "template": "在 Platform.AppHost 目录运行 dotnet watch 并自动修复错误：\n1. 进入 Platform.AppHost 目录\n2. 使用后台进程启动 dotnet watch\n3. 监控输出中的编译错误和警告\n4. 当出现错误时：\n   - 按 Ctrl+C 停止 watch\n   - 分析错误信息定位问题\n   - 修复错误或警告\n   - 重新运行 dotnet watch\n5. 重复直到无错误\n\n规则：\n- dotnet watch 可能在后台持续运行\n- 优先修复编译错误\n- 合理处理警告\n- 修复后自动重新启动 watch",
+      "description": "运行 dotnet watch 并自动修复错误"
     }
   },
   "mcp": {

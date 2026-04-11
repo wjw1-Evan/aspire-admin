@@ -15,7 +15,7 @@
       "description": "编译后端并修复错误"
     },
     "aspire-run": {
-      "template": "在 Platform.AppHost 目录运行 dotnet run 并自动修复错误：\n1. 使用后台进程启动 dotnet run\n2. 监控输出中的编译错误和警告\n3. 当出现错误时：\n   - 停止当前进程\n   - 分析错误信息定位问题\n   - 修复错误或警告\n   - 重新运行 dotnet run\n5. 重复直到无错误\n\n规则：\n- dotnet run 可能在后台持续运行\n- 优先修复编译错误\n- 合理处理警告\n- 修复后自动重新启动",
+      "template": "运行 dotnet run 并自动修复错误：\n1. 使用后台进程启动 dotnet run\n2. 监控输出中的编译错误和警告\n3. 当出现错误时：\n   - 停止当前进程\n   - 分析错误信息定位问题\n   - 修复错误或警告\n   - 重新运行 dotnet run\n4. 当运行成功且无错误无警告时，停止运行\n\n规则：\n- 优先修复编译错误\n- 合理处理警告\n- 运行成功后自动退出",
       "description": "运行 dotnet run 并自动修复错误"
     }
   },

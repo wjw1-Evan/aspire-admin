@@ -5,6 +5,14 @@
     "commit": {
       "template": "自动提交 Git：\n0. git pull 拉取最新代码\n1. 运行 git status 查看变更\n2. 运行 git diff 查看具体改动\n3. 将变更添加到暂存区\n4. 生成符合约定式提交规范的 commit message（feat/fix/docs/refactor/style/perf/test/chore）\n5. 执行 git commit\n6. git push 推送到远程\n\n规则：\n- commit message 使用简体中文\n- 简洁明了\n- 无变更则不提交",
       "description": "自动提交 Git"
+    },
+    "build-frontend": {
+      "template": "编译前端并修复错误：\n1. 进入 Platform.Admin 目录\n2. 运行 npm run tsc 检查 TypeScript 错误\n3. 分析错误输出，定位问题文件\n4. 修复类型错误和其他问题\n5. 重新运行检查直到无错误\n\n规则：\n- 使用简体中文\n- 优先修复 TypeScript 错误\n- 如需决策，询问用户",
+      "description": "编译前端并修复错误"
+    },
+    "build-fix": {
+      "template": "编译后端并修复错误：\n1. 运行 dotnet build 编译解决方案\n2. 分析编译输出中的错误和警告\n3. 逐个定位并修复错误\n4. 处理警告（必要时）\n5. 重复编译直到无错误无警告\n\n规则：\n- 优先修复错误\n- 合理处理警告\n- 如需决策，询问用户",
+      "description": "编译后端并修复错误"
     }
   },
   "mcp": {

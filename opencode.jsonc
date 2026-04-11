@@ -3,7 +3,7 @@
   "lsp": {},
   "command": {
     "commit": {
-      "template": "自动提交 Git：\n1. 运行 git status 查看变更\n2. 运行 git diff 查看具体改动\n3. 将变更添加到暂存区\n4. 生成符合约定式提交规范的 commit message（feat/fix/docs/refactor/style/perf/test/chore）\n5. 执行 git commit\n\n规则：\n- commit message 使用简体中文\n- 简洁明了\n- 无变更则不提交",
+      "template": "自动提交 Git：\n0. git pull 拉取最新代码\n1. 运行 git status 查看变更\n2. 运行 git diff 查看具体改动\n3. 将变更添加到暂存区\n4. 生成符合约定式提交规范的 commit message（feat/fix/docs/refactor/style/perf/test/chore）\n5. 执行 git commit\n6. git push 推送到远程\n\n规则：\n- commit message 使用简体中文\n- 简洁明了\n- 无变更则不提交",
       "description": "自动提交 Git"
     }
   },

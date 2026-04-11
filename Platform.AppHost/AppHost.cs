@@ -37,10 +37,10 @@ var mongo = builder.AddMongoDB("mongo-" + environment)
 
 var mongodb = mongo.AddDatabase("mongodb");
 
-
 // 数据初始化服务（一次性任务，完成后自动停止）
 var datainitializer = builder.AddProject<Projects.Platform_DataInitializer>("datainitializer")
     .WithReference(mongodb)
+    .WaitFor(mongodb)
     .PublishAsDockerComposeService((resource, service) =>
  {
      service.Name = "datainitializer";

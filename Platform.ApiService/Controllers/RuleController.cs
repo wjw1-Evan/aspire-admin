@@ -61,7 +61,7 @@ public class RuleController : BaseApiController
     public async Task<IActionResult> GetRuleById(string id)
     {
         var rule = await _ruleService.GetRuleByIdAsync(id);
-        return Success(rule.EnsureFound("规则", id));
+        return Success(rule);
     }
 
     /// <summary>
@@ -87,7 +87,7 @@ public class RuleController : BaseApiController
 
         var id = request.Key.Value.ToString();
         var rule = await _ruleService.UpdateRuleAsync(id, request);
-        return Success(rule.EnsureFound("规则", id));
+        return Success(rule);
     }
 
     /// <summary>
@@ -101,7 +101,7 @@ public class RuleController : BaseApiController
             throw new ArgumentException("Key不能为空");
 
         var deleted = await _ruleService.DeleteRulesAsync(new List<int> { request.Key.Value });
-        deleted.EnsureSuccess("规则", request.Key.Value.ToString());
+        return Success(true);
         return Success(true);
     }
 }

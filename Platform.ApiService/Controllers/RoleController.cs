@@ -69,7 +69,7 @@ public class RoleController : BaseApiController
     public async Task<IActionResult> GetRoleById(string id)
     {
         var role = await _roleService.GetRoleByIdAsync(id);
-        return Success(role.EnsureFound("角色", id));
+        return Success(role);
     }
 
     /// <summary>
@@ -91,7 +91,6 @@ public class RoleController : BaseApiController
     public async Task<IActionResult> UpdateRole(string id, [FromBody] UpdateRoleRequest request)
     {
         var success = await _roleService.UpdateRoleAsync(id, request);
-        success.EnsureSuccess("角色", id);
         return Success(null, ErrorMessages.UpdateSuccess);
     }
 
@@ -105,7 +104,6 @@ public class RoleController : BaseApiController
     public async Task<IActionResult> DeleteRole(string id, [FromQuery] string? reason = null)
     {
         var success = await _roleService.DeleteRoleAsync(id, reason);
-        success.EnsureSuccess("角色", id);
         return Success(null, ErrorMessages.DeleteSuccess);
     }
 
@@ -117,7 +115,6 @@ public class RoleController : BaseApiController
     public async Task<IActionResult> AssignMenusToRole(string id, [FromBody] AssignMenusToRoleRequest request)
     {
         var success = await _roleService.AssignMenusToRoleAsync(id, request.MenuIds);
-        success.EnsureSuccess("角色", id);
         return Success(null, "菜单权限分配成功");
     }
 

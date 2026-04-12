@@ -62,7 +62,7 @@ public class XiaokeConfigController : BaseApiController
     public async Task<IActionResult> GetConfigById(string id)
     {
         var config = await _xiaokeConfigService.GetConfigByIdAsync(id);
-        return Success(config.EnsureFound("配置", id));
+        return Success(config);
     }
 
     /// <summary>
@@ -98,7 +98,7 @@ public class XiaokeConfigController : BaseApiController
     public async Task<IActionResult> UpdateConfig(string id, [FromBody] UpdateXiaokeConfigRequest request)
     {
         var config = await _xiaokeConfigService.UpdateConfigAsync(id, request);
-        return Success(config.EnsureFound("配置", id));
+        return Success(config);
     }
 
     /// <summary>
@@ -110,7 +110,6 @@ public class XiaokeConfigController : BaseApiController
     public async Task<IActionResult> DeleteConfig(string id)
     {
         var deleted = await _xiaokeConfigService.DeleteConfigAsync(id);
-        deleted.EnsureSuccess("配置", id);
         return Success(true);
     }
 
@@ -123,7 +122,6 @@ public class XiaokeConfigController : BaseApiController
     public async Task<IActionResult> SetDefaultConfig(string id)
     {
         var success = await _xiaokeConfigService.SetDefaultConfigAsync(id);
-        success.EnsureSuccess("配置", id);
         return Success(true);
     }
 }

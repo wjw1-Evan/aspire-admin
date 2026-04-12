@@ -98,7 +98,7 @@ public class UserController : BaseApiController
         await _userService.EnsureUserAccessAsync(currentUserId!, id);
 
         var user = await _userService.GetUserByIdAsync(id);
-        return Success(user.EnsureFound("用户", id));
+        return Success(user);
     }
 
     /// <summary>
@@ -216,7 +216,7 @@ public class UserController : BaseApiController
     public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateUserManagementRequest request)
     {
         var user = await _userService.UpdateUserManagementAsync(id, request);
-        return Success(user.EnsureFound("用户", id), ErrorMessages.UpdateSuccess);
+        return Success(user, ErrorMessages.UpdateSuccess);
     }
 
     /// <summary>
@@ -406,7 +406,6 @@ public class UserController : BaseApiController
     public async Task<IActionResult> ActivateUser(string id)
     {
         var success = await _userService.ActivateUserAsync(id);
-        success.EnsureSuccess("用户", id);
         return Success(null, "用户已启用");
     }
 
@@ -419,7 +418,6 @@ public class UserController : BaseApiController
     public async Task<IActionResult> DeactivateUser(string id)
     {
         var success = await _userService.DeactivateUserAsync(id);
-        success.EnsureSuccess("用户", id);
         return Success(null, "用户已禁用");
     }
 
@@ -433,7 +431,7 @@ public class UserController : BaseApiController
     public async Task<IActionResult> GetCurrentUserProfile()
     {
         var currentUser = await _authService.GetCurrentUserAsync();
-        return Success(currentUser.EnsureFound("用户", RequiredUserId));
+        return Success(currentUser);
     }
 
     /// <summary>
@@ -459,7 +457,7 @@ public class UserController : BaseApiController
         var user = await _userService.UpdateUserProfileAsync(userId, request);
 
         var currentUser = await _authService.GetCurrentUserAsync();
-        return Success(currentUser.EnsureFound("用户信息", userId));
+        return Success(currentUser);
     }
 
     /// <summary>

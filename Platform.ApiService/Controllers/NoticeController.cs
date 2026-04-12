@@ -82,7 +82,7 @@ public class NoticeController : BaseApiController
     public async Task<IActionResult> GetNoticeById(string id)
     {
         var notice = await _noticeService.GetNoticeByIdAsync(id);
-        return Success(notice.EnsureFound("通知", id));
+        return Success(notice);
     }
 
     /// <summary>
@@ -110,7 +110,7 @@ public class NoticeController : BaseApiController
         {
             // 只修改已读状态，所有登录用户都可以执行
             var notice = await _noticeService.UpdateNoticeAsync(id, request);
-            return Success(notice.EnsureFound("通知", id), "标记成功");
+            return Success(notice, "标记成功");
         }
 
         // 修改通知内容需要管理权限，但这里不提供此功能
@@ -142,7 +142,6 @@ public class NoticeController : BaseApiController
     public async Task<IActionResult> DeleteNotice(string id)
     {
         var deleted = await _noticeService.DeleteNoticeAsync(id);
-        deleted.EnsureSuccess("通知", id);
         return Success(null, "删除成功");
     }
 }

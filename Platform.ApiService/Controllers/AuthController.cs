@@ -122,7 +122,7 @@ public class AuthController : BaseApiController
             string.Join(", ", HttpContext.User.Claims.Select(c => $"{c.Type}={c.Value}")));
 
         var user = await _authService.GetCurrentUserAsync();
-        return Success(user.EnsureFound("用户"));
+        return Success(user);
     }
 
     /// <summary>

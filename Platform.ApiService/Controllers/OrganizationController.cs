@@ -50,7 +50,7 @@ public class OrganizationController : BaseApiController
     public async Task<IActionResult> GetById(string id)
     {
         var node = await _organizationService.GetByIdAsync(id).ConfigureAwait(false);
-        return Success(node.EnsureFound("组织节点", id));
+        return Success(node);
     }
 
     /// <summary>
@@ -72,7 +72,6 @@ public class OrganizationController : BaseApiController
     public async Task<IActionResult> Update(string id, [FromBody] UpdateOrganizationUnitRequest request)
     {
         var updated = await _organizationService.UpdateAsync(id, request).ConfigureAwait(false);
-        updated.EnsureSuccess("组织节点", id);
         return Success(null, ErrorMessages.UpdateSuccess);
     }
 
@@ -84,7 +83,6 @@ public class OrganizationController : BaseApiController
     public async Task<IActionResult> Delete(string id)
     {
         var deleted = await _organizationService.DeleteAsync(id).ConfigureAwait(false);
-        deleted.EnsureSuccess("组织节点", id);
         return Success(null, ErrorMessages.DeleteSuccess);
     }
 
@@ -96,7 +94,7 @@ public class OrganizationController : BaseApiController
     public async Task<IActionResult> Reorder([FromBody] List<OrganizationReorderItem> items)
     {
         var ok = await _organizationService.ReorderAsync(items).ConfigureAwait(false);
-        ok.EnsureSuccess("组织重排");
+        return Success(true);
         return Success(null, ErrorMessages.UpdateSuccess);
     }
 
@@ -143,7 +141,6 @@ public class OrganizationController : BaseApiController
     public async Task<IActionResult> AssignUser([FromBody] AssignUserOrganizationRequest request)
     {
         var ok = await _organizationService.AssignUserAsync(request).ConfigureAwait(false);
-        ok.EnsureSuccess("设置用户组织");
         return Success(null, ErrorMessages.OperationSuccess);
     }
 
@@ -155,7 +152,6 @@ public class OrganizationController : BaseApiController
     public async Task<IActionResult> RemoveUser([FromBody] RemoveUserOrganizationRequest request)
     {
         var ok = await _organizationService.RemoveUserAsync(request).ConfigureAwait(false);
-        ok.EnsureSuccess("移除用户组织");
         return Success(null, ErrorMessages.DeleteSuccess);
     }
 }

@@ -4,29 +4,6 @@ namespace Platform.ApiService.Extensions;
 
 public static class ValidationExtensions
 {
-    public static T EnsureFound<T>(this T? resource, string resourceName, string? resourceId = null) where T : class
-    {
-        if (resource == null)
-        {
-            var message = string.IsNullOrEmpty(resourceId)
-                ? string.Format(ErrorMessages.ResourceNotFound, resourceName)
-                : $"{resourceName} {resourceId} 不存在";
-            throw new KeyNotFoundException(message);
-        }
-        return resource;
-    }
-
-    public static void EnsureSuccess(this bool success, string resourceName, string? resourceId = null)
-    {
-        if (!success)
-        {
-            var message = string.IsNullOrEmpty(resourceId)
-                ? string.Format(ErrorMessages.ResourceNotFound, resourceName)
-                : $"{resourceName} {resourceId} 不存在";
-            throw new KeyNotFoundException(message);
-        }
-    }
-
     /// <summary>
     /// 确保字符串不为空，否则抛出异常
     /// </summary>

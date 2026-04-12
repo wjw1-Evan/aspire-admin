@@ -169,7 +169,7 @@ public class CompanyController : BaseApiController
             throw new UnauthorizedAccessException("企业信息不存在");
         }
 
-        return Success(company.EnsureFound("企业"));
+        return Success(company);
     }
 
     /// <summary>
@@ -189,7 +189,6 @@ public class CompanyController : BaseApiController
         var companyId = user.CurrentCompanyId;
 
         var success = await _companyService.UpdateCompanyAsync(companyId, request);
-        success.EnsureSuccess("企业", companyId);
 
         return Success(null, "企业信息更新成功");
     }

@@ -68,7 +68,7 @@ public class IoTController : BaseApiController
     public async Task<IActionResult> GetGateway(string id)
     {
         var gateway = await _iotService.GetGatewayByIdAsync(id);
-        return Success(gateway.EnsureFound("Gateway", id));
+        return Success(gateway);
     }
 
     /// <summary>
@@ -81,7 +81,7 @@ public class IoTController : BaseApiController
     public async Task<IActionResult> UpdateGateway(string id, [FromBody] UpdateIoTGatewayRequest request)
     {
         var gateway = await _iotService.UpdateGatewayAsync(id, request);
-        return Success(gateway.EnsureFound("Gateway", id));
+        return Success(gateway);
     }
 
     /// <summary>
@@ -108,7 +108,7 @@ public class IoTController : BaseApiController
     public async Task<IActionResult> GetGatewayStatistics(string gatewayId)
     {
         var stats = await _iotService.GetGatewayStatisticsAsync(gatewayId);
-        return Success(stats.EnsureFound("Gateway", gatewayId));
+        return Success(stats);
     }
 
     #endregion
@@ -149,7 +149,7 @@ public class IoTController : BaseApiController
     public async Task<IActionResult> GetDevice(string id)
     {
         var device = await _iotService.GetDeviceByIdAsync(id);
-        return Success(device.EnsureFound("Device", id));
+        return Success(device);
     }
 
     /// <summary>
@@ -162,7 +162,7 @@ public class IoTController : BaseApiController
     public async Task<IActionResult> UpdateDevice(string id, [FromBody] UpdateIoTDeviceRequest request)
     {
         var device = await _iotService.UpdateDeviceAsync(id, request);
-        return Success(device.EnsureFound("Device", id));
+        return Success(device);
     }
 
     /// <summary>
@@ -248,7 +248,7 @@ public class IoTController : BaseApiController
     public async Task<IActionResult> GetDeviceStatistics(string deviceId)
     {
         var stats = await _iotService.GetDeviceStatisticsAsync(deviceId);
-        return Success(stats.EnsureFound("Device", deviceId));
+        return Success(stats);
     }
 
     #endregion
@@ -289,7 +289,7 @@ public class IoTController : BaseApiController
     public async Task<IActionResult> GetDataPoint(string id)
     {
         var dataPoint = await _iotService.GetDataPointByIdAsync(id);
-        return Success(dataPoint.EnsureFound("DataPoint", id));
+        return Success(dataPoint);
     }
 
     /// <summary>
@@ -302,7 +302,7 @@ public class IoTController : BaseApiController
     public async Task<IActionResult> UpdateDataPoint(string id, [FromBody] UpdateIoTDataPointRequest request)
     {
         var dataPoint = await _iotService.UpdateDataPointAsync(id, request);
-        return Success(dataPoint.EnsureFound("DataPoint", id));
+        return Success(dataPoint);
     }
 
     /// <summary>
@@ -380,7 +380,7 @@ public class IoTController : BaseApiController
     public async Task<IActionResult> GetLatestData(string dataPointId)
     {
         var record = await _iotService.GetLatestDataAsync(dataPointId);
-        return Success(record.EnsureFound("Data", dataPointId));
+        return Success(record);
     }
 
     /// <summary>

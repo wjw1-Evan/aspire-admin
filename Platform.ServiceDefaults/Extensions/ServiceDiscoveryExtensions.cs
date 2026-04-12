@@ -11,18 +11,25 @@ public static class ServiceDiscoveryExtensions
     private static readonly MethodInfo ConfigureMethod = typeof(OptionsConfigurationServiceCollectionExtensions)
         .GetMethod("Configure", [typeof(IServiceCollection), typeof(IConfigurationSection)])!;
 
-    public static IServiceCollection AddServiceDiscovery(this IServiceCollection services, IConfiguration configuration, string[]? namespaces = null)
+    public static IServiceCollection AddServiceDiscovery(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        Assembly[]? assemblies = null,
+        string[]? namespaces = null)
     {
         namespaces ??= [];
+        assemblies ??= [typeof(ServiceDiscoveryExtensions).Assembly];
 
-        var types = typeof(ServiceDiscoveryExtensions).Assembly.GetTypes()
-            .Where(t => t.IsClass && !t.IsAbstract && !t.IsNested);
-
-        foreach (var type in types)
+        foreach (var assembly in assemblies)
         {
-            if (TryConfigureOptions(type, services, configuration)) continue;
-            if (TryRegisterHostedService(type, services)) continue;
-            RegisterService(type, services, namespaces);
+            var types = assembly.GetTypes().Where(t => t.IsClass && !t.IsAbstract && !t.IsNested);
+
+            foreach (var type in types)
+            {
+                if (TryConfigureOptions(type, services, configuration)) continue;
+                if (TryRegisterHostedService(type, services)) continue;
+                RegisterService(type, services, namespaces);
+            }
         }
 
         return services;

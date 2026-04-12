@@ -5,6 +5,8 @@ namespace Platform.ApiService.Options;
 /// </summary>
 public class SmtpOptions
 {
+    public const string SectionName = "Smtp";
+
     /// <summary>
     /// SMTP 服务器地址
     /// </summary>

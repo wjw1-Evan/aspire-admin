@@ -159,15 +159,8 @@ builder.Services.AddOpenApi(options =>
 // 6. 业务服务注册 (全自动扫描)
 // ──────────────────────────────────────────────
 
-builder.Services.AddServiceDiscovery(builder.Configuration, ["Platform.ApiService.Services", "Platform.ApiService.BackgroundServices"]);
-
-builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection("Smtp"));
-builder.Services.AddSingleton<IEmailBackgroundQueue, EmailBackgroundQueue>();
-builder.Services.AddHostedService<Platform.ApiService.BackgroundServices.EmailBackgroundWorker>();
-builder.Services.AddScoped<ISmtpEmailService, SmtpEmailService>();
-builder.Services.AddScoped<IEmailService>(sp => sp.GetRequiredService<ISmtpEmailService>());
-builder.Services.AddSingleton<GridFSStorageService>();
-builder.Services.AddScoped<IStorageClient, StorageClient>();
+var apiServiceAssembly = typeof(Platform.ApiService.Services.UserService).Assembly;
+builder.Services.AddServiceDiscovery(builder.Configuration, [apiServiceAssembly], ["Platform.ApiService.Services", "Platform.ApiService.BackgroundServices"]);
 
 // ──────────────────────────────────────────────
 
@@ -181,9 +174,7 @@ if (string.IsNullOrWhiteSpace(jwtSecretKey))
     if (builder.Environment.IsDevelopment())
     {
         jwtSecretKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
-        builder.Logging.AddFilter("Microsoft", LogLevel.Warning);
-        builder.Logging.AddFilter("System", LogLevel.Warning);
-        builder.Logging.AddFilter("Platform.ApiService", LogLevel.Information);
+
         Console.WriteLine("[DEV] Jwt:SecretKey 未配置，已生成一次性密钥用于开发/测试环境。切勿在生产环境使用。");
     }
     else

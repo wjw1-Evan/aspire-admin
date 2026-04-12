@@ -6,19 +6,13 @@ using Platform.ServiceDefaults.Services;
 
 namespace Platform.ApiService.Extensions;
 
-/// <summary>
-/// 极致简化的平平台自动发现与注册扩展
-/// </summary>
 public static class ServiceRegistrationExtensions
 {
     private static readonly string[] Namespaces = ["Platform.ApiService.Services", "Platform.ApiService.BackgroundServices"];
 
-    /// <summary>
-    /// 自动发现并注册所有服务
-    /// </summary>
-    /// <param name="services"></param>
-    /// <param name="configuration"></param>
-    /// <returns></returns>
+    private static readonly MethodInfo ConfigureMethod = typeof(OptionsConfigurationServiceCollectionExtensions)
+        .GetMethod("Configure", [typeof(IServiceCollection), typeof(IConfigurationSection)])!;
+
     public static IServiceCollection AddPlatformDiscovery(this IServiceCollection services, IConfiguration configuration)
     {
         var types = typeof(ServiceRegistrationExtensions).Assembly.GetTypes()
@@ -26,53 +20,47 @@ public static class ServiceRegistrationExtensions
 
         foreach (var type in types)
         {
-            // 1. Options 绑定
-            if (type.Name.EndsWith("Options"))
-            {
-                var sectionField = type.GetField("SectionName", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
-                if (sectionField?.IsLiteral == true)
-                {
-                    var sectionName = sectionField.GetRawConstantValue()?.ToString();
-                    if (!string.IsNullOrEmpty(sectionName))
-                    {
-                        var configureMethod = typeof(OptionsConfigurationServiceCollectionExtensions)
-                            .GetMethod("Configure", [typeof(IServiceCollection), typeof(IConfigurationSection)])!
-                            .MakeGenericMethod(type);
-                        configureMethod.Invoke(null, [services, configuration.GetSection(sectionName)]);
-                    }
-                }
-            }
-
-            // 2. HostedService 注册
-            if (typeof(IHostedService).IsAssignableFrom(type) && !type.Name.Contains("Base"))
-            {
-                services.AddSingleton(typeof(IHostedService), type);
-            }
-
-            // 3. 业务逻辑接口自动注册
-            if (Namespaces.Any(ns => type.Namespace?.StartsWith(ns) == true) && !typeof(IHostedService).IsAssignableFrom(type))
-            {
-                // 识别生命周期 (Singleton > Transient > Scoped)
-                var lifetime = ServiceLifetime.Scoped;
-                if (typeof(ISingletonDependency).IsAssignableFrom(type)) lifetime = ServiceLifetime.Singleton;
-                else if (typeof(ITransientDependency).IsAssignableFrom(type)) lifetime = ServiceLifetime.Transient;
-                else if (typeof(IScopedDependency).IsAssignableFrom(type)) lifetime = ServiceLifetime.Scoped;
-
-                var interfaces = type.GetInterfaces()
-                    .Where(i => i.Namespace?.StartsWith("Platform") == true && i.Name != nameof(IScopedDependency) &&
-                                i.Name != nameof(ISingletonDependency) && i.Name != nameof(ITransientDependency))
-                    .ToList();
-
-                if (interfaces.Count > 0)
-                {
-                    foreach (var i in interfaces) services.Add(new ServiceDescriptor(i, type, lifetime));
-                }
-                else
-                {
-                    services.Add(new ServiceDescriptor(type, type, lifetime));
-                }
-            }
+            if (TryConfigureOptions(type, services, configuration)) continue;
+            if (TryRegisterHostedService(type, services)) continue;
+            RegisterService(type, services);
         }
+
         return services;
+    }
+
+    private static bool TryConfigureOptions(Type type, IServiceCollection services, IConfiguration configuration)
+    {
+        if (!type.Name.EndsWith("Options")) return false;
+
+        var sectionField = type.GetField("SectionName", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
+        var sectionName = sectionField?.IsLiteral == true ? sectionField.GetRawConstantValue()?.ToString() : null;
+        if (string.IsNullOrEmpty(sectionName)) return false;
+
+        ConfigureMethod.MakeGenericMethod(type).Invoke(null, [services, configuration.GetSection(sectionName)]);
+        return true;
+    }
+
+    private static bool TryRegisterHostedService(Type type, IServiceCollection services)
+    {
+        if (!typeof(IHostedService).IsAssignableFrom(type) || type.Name.Contains("Base")) return false;
+        services.AddSingleton(typeof(IHostedService), type);
+        return true;
+    }
+
+    private static void RegisterService(Type type, IServiceCollection services)
+    {
+        if (!Namespaces.Any(ns => type.Namespace?.StartsWith(ns) == true) || typeof(IHostedService).IsAssignableFrom(type))
+            return;
+
+        var lifetime = typeof(ISingletonDependency).IsAssignableFrom(type) ? ServiceLifetime.Singleton
+            : typeof(ITransientDependency).IsAssignableFrom(type) ? ServiceLifetime.Transient
+            : ServiceLifetime.Scoped;
+
+        var interfaces = type.GetInterfaces()
+            .Where(i => i.Namespace?.StartsWith("Platform") == true && !i.Name.Contains("Dependency"))
+            .ToList();
+
+        var descriptor = interfaces.Count > 0 ? new ServiceDescriptor(interfaces[0], type, lifetime) : new ServiceDescriptor(type, type, lifetime);
+        services.Add(descriptor);
     }
 }

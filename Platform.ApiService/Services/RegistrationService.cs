@@ -15,6 +15,7 @@ namespace Platform.ApiService.Services;
 public class RegistrationService : IRegistrationService
 {
     private readonly DbContext _context;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IUserService _userService;
     private readonly IUniquenessChecker _uniquenessChecker;
     private readonly IFieldValidationService _validationService;
@@ -25,6 +26,7 @@ public class RegistrationService : IRegistrationService
 
     public RegistrationService(
         DbContext context,
+        IHttpContextAccessor httpContextAccessor,
         IUserService userService,
         IUniquenessChecker uniquenessChecker,
         IFieldValidationService validationService,
@@ -34,6 +36,7 @@ public class RegistrationService : IRegistrationService
         ILogger<RegistrationService> logger)
     {
         _context = context;
+        _httpContextAccessor = httpContextAccessor;
         _userService = userService;
         _uniquenessChecker = uniquenessChecker;
         _validationService = validationService;
@@ -45,7 +48,12 @@ public class RegistrationService : IRegistrationService
 
     private string GetClientIdentifier(string? username = null)
     {
-        return !string.IsNullOrEmpty(username) ? username.ToLowerInvariant() : "unknown";
+        if (!string.IsNullOrEmpty(username))
+        {
+            return username.ToLowerInvariant();
+        }
+        var httpContext = _httpContextAccessor.HttpContext;
+        return httpContext?.Connection?.RemoteIpAddress?.ToString() ?? "unknown";
     }
 
     private async Task<int> GetFailureCountAsync(string clientId, string type)

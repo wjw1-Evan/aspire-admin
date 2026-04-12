@@ -161,12 +161,6 @@ builder.Services.AddOpenApi(options =>
 
 builder.Services.AddServiceDiscovery(builder.Configuration);
 
-// 显式注册 Task 子服务（确保依赖注入顺序正确）
-builder.Services.AddScoped<ITaskCrudService, TaskCrudService>();
-builder.Services.AddScoped<ITaskExecutionService, TaskExecutionService>();
-builder.Services.AddScoped<ITaskDependencyService, TaskDependencyService>();
-builder.Services.AddScoped<ITaskStatisticsService, TaskStatisticsService>();
-
 // ──────────────────────────────────────────────
 
 // ──────────────────────────────────────────────

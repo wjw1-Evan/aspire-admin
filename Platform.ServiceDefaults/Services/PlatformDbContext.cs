@@ -35,7 +35,7 @@ public class PlatformDbContext : DbContext
         get
         {
             var companyId = _httpContextAccessor?.HttpContext?.Items["CompanyId"] as string;
-            if (string.IsNullOrEmpty(companyId) && !IsSystemContext)
+            if (string.IsNullOrEmpty(companyId))
             {
                 companyId = TenantContext?.GetCurrentCompanyIdAsync().GetAwaiter().GetResult();
                 if (!string.IsNullOrEmpty(companyId))
@@ -46,7 +46,6 @@ public class PlatformDbContext : DbContext
             return companyId;
         }
     }
-    protected bool IsSystemContext => _httpContextAccessor?.HttpContext == null;
 
     public Task<string> GetCurrentCompanyIdAsync()
         => Task.FromResult(CurrentCompanyId ?? string.Empty);
@@ -147,22 +146,18 @@ public class PlatformDbContext : DbContext
 
     private void ApplyQueryFilter<TEntity>(ModelBuilder modelBuilder) where TEntity : class
     {
-        // 多租户实体 + 软删除实体：同时过滤租户和软删除
         if (typeof(IMultiTenant).IsAssignableFrom(typeof(TEntity)) 
             && typeof(ISoftDeletable).IsAssignableFrom(typeof(TEntity)))
         {
             modelBuilder.Entity<TEntity>().HasQueryFilter(
-                e => IsSystemContext 
-                    || (((IMultiTenant)e).CompanyId == CurrentCompanyId 
-                        && ((ISoftDeletable)e).IsDeleted != true));
+                e => ((IMultiTenant)e).CompanyId == CurrentCompanyId 
+                    && ((ISoftDeletable)e).IsDeleted != true);
         }
-        // 仅多租户实体：只过滤租户
         else if (typeof(IMultiTenant).IsAssignableFrom(typeof(TEntity)))
         {
             modelBuilder.Entity<TEntity>().HasQueryFilter(
-                e => IsSystemContext || ((IMultiTenant)e).CompanyId == CurrentCompanyId);
+                e => ((IMultiTenant)e).CompanyId == CurrentCompanyId);
         }
-        // 仅软删除实体：只过滤软删除
         else if (typeof(ISoftDeletable).IsAssignableFrom(typeof(TEntity)))
         {
             modelBuilder.Entity<TEntity>().HasQueryFilter(

@@ -616,10 +616,6 @@ public class UserCompanyService : IUserCompanyService
             await _context.SaveChangesAsync();
         }
 
-
-        // 🚀 清除用户缓存，确保获取最新企业信息
-        _tenantContext.ClearUserCache(userId);
-
         var updatedUser = await _context.Set<AppUser>().FirstOrDefaultAsync(x => x.Id == userId);
         if (updatedUser == null)
         {

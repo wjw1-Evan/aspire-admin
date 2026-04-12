@@ -49,7 +49,7 @@ public static class ServiceExtensions
 
         // ── 基础设施服务 ─────────────────────────────────
         builder.Services.AddHttpContextAccessor();
-        builder.Services.AddSingleton<ITenantContext, TenantContext>();
+        builder.Services.AddScoped<ITenantContext, TenantContext>();
 
         // ── 国密安全支持 ─────────────────────────────────
         builder.Services.AddSingleton<ISM4EncryptionProvider, SM4EncryptionProvider>();

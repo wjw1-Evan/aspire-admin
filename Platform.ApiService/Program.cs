@@ -161,8 +161,6 @@ builder.Services.AddOpenApi(options =>
 
 builder.Services.AddServiceDiscovery(builder.Configuration);
 
-builder.Services.AddScoped<IEmailService>(sp => sp.GetRequiredService<ISmtpEmailService>());
-
 // ──────────────────────────────────────────────
 
 // ──────────────────────────────────────────────

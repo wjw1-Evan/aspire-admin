@@ -13,7 +13,7 @@ namespace Platform.ApiService.Services;
 /// <summary>
 /// 基于 MailKit 实现的邮件发送服务 (.NET 10 官方推荐替代方案)
 /// </summary>
-public class SmtpEmailService : ISmtpEmailService
+public class SmtpEmailService : ISmtpEmailService, IEmailService
 {
     private readonly SmtpOptions _options;
     private readonly ILogger<SmtpEmailService> _logger;

@@ -5,7 +5,7 @@ using Platform.ApiService.Models;
 using Platform.ApiService.Services;
 using Platform.ServiceDefaults.Controllers;
 using Platform.ServiceDefaults.Models;
-using Platform.ServiceDefaults.Extensions;
+using Platform.ApiService.Extensions;
 
 namespace Platform.ApiService.Controllers;
 

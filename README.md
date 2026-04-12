@@ -43,7 +43,7 @@
 | :--- | :--- | :--- |
 | **后端** | **.NET 10 + Aspire 13.2.1** | 最新代 C# 开发框架，支持云原生编排与服务治理。 |
 | **数据库** | **MongoDB + EF Core** | 采用 **MongoDB.EntityFrameworkCore** 实现强类型的 NoSQL 访问。 |
-| **管理端** | **React 19.2.4 + Ant Design 6.3.5 + UmiJS 4.6.40** | 面向未来的 Web 开发架构，极致的渲染性能与 UI 细节。 |
+| **管理端** | **React 19.2.5 + Ant Design 6.3.5 + UmiJS 4.6.42** | 面向未来的 Web 开发架构，极致的渲染性能与 UI 细节。 |
 | **移动端** | **Expo 54.0 + React Native 0.83.1** | 跨平台原生体验，支持 Reanimated 超流畅动画方案。 |
 | **小程序** | **Native WeChat** | 适配微信原生生态，确保低延时与高兼容性。 |
 | **观测性** | **OpenTelemetry** | 集成指标、日志与链路追踪，全链路健康监控。 |
@@ -52,7 +52,7 @@
 
 ## 🏗 架构总览
 
-业务 API 以 **Platform.ApiService** 为主（模块化单体）；**Platform.Storage** 独立提供 GridFS 文件 HTTP 接口；**Platform.SystemMonitor** 提供主机资源监控。三者经 **YARP**（`:15000`）按路径前缀转发。详细路由、分库与卫星服务认证见 [**微服务拆分开发指南**](docs/guides/MICROSERVICE-GUIDE.md)。
+业务 API 以 **Platform.ApiService** 为主（模块化单体），集成 GridFS 文件存储接口；**Platform.SystemMonitor** 提供主机资源监控。两者经 **YARP**（`:15000`）按路径前缀转发。详细路由、分库与卫星服务认证见 [**微服务拆分开发指南**](docs/guides/MICROSERVICE-GUIDE.md)。
 
 ```mermaid
 graph TD
@@ -65,7 +65,6 @@ graph TD
     subgraph Backend
         Gateway["YARP Gateway :15000"]
         ApiService["Platform.ApiService"]
-        Storage["Platform.Storage"]
         SysMonitor["Platform.SystemMonitor"]
         DataInit["Platform.DataInitializer"]
     end
@@ -93,7 +92,6 @@ graph TD
 
 - **Platform.AppHost**：Aspire 编排入口；默认拉起 **MongoDB**、**OpenAI（可选）** 及各 .NET 项目。**Redis 未在默认编排中启用**；若需缓存，在 `AppHost.cs` 增加 `AddRedis` 并对消费方使用 `WithReference(redis)`。
 - **Platform.ApiService**：核心业务 API（工作流、IoT、园区、AI、云盘业务逻辑等）。
-- **Platform.Storage**：GridFS 文件存储微服务；ApiService 通过 `IStorageClient` 以 **`X-Internal-Service-Key`** 调用，浏览器直连需携带 **JWT**（见指南）。
 - **Platform.SystemMonitor**：进程级 CPU/内存/磁盘等指标；**不连接业务库 `mongodb`**。
 - **Platform.Admin**：基于 Ant Design 6 打造，强调原生体验与高性能操作视图。
 - **Platform.MiniApp**：涵盖园区全生命周期管理的轻量化业务端。
@@ -115,7 +113,6 @@ aspire-admin
 │   ├── Models/               # 数据模型
 │   ├── Options/              # 配置选项类
 │   └── docs/                 # 服务文档
-├── Platform.Storage          # GridFS 文件存储 HTTP 服务（库：storagedb）
 ├── Platform.SystemMonitor    # 系统资源监控服务（无业务数据库）
 ├── Platform.ServiceDefaults   # 通用弹性配置、服务目录与公共实体定义
 │   ├── Services/             # 数据库上下文 (PlatformDbContext)
@@ -174,7 +171,7 @@ aspire-admin
 - ✅ **并行执行**：使用 `Task.WhenAll` 并行执行多个工具
 - ✅ **多租户继承**：业务实体 **必须** 继承 `MultiTenantEntity` 以实现自动隔离
 
-### 核心工具集 (15 Handlers)
+### 核心工具集 (21 Handlers)
 
 - **工作流自动化 (Workflow)**
   - 🔍 **查询**：检索流程定义、跟踪运行中的实例

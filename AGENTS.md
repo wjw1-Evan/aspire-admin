@@ -7,8 +7,8 @@
 本项目是一个基于 **.NET 10 (后端) + React 19 (前端 Admin) + Expo 54 (移动 App) + 微信原生 (小程序 MiniApp)** 的企业级多租户闭环管理系统。
 
 - **后端**：`.NET 10` + `Aspire` 微服务编排 + `MongoDB`
-- **前端后台**：`React 19` + `Ant Design 6` + `UmiJS 4`
-- **移动端应用**：`Expo 54` 跨端 App，内置原生通知
+- **前端后台**：`React 19.2.5` + `Ant Design 6.3.5` + `UmiJS 4.6.42`
+- **移动端应用**：`Expo 54.0.31` + `React Native 0.83.1` 跨端 App，内置原生通知
 - **微信小程序**：`Platform.MiniApp` 微信原生开发，轻量级多端扩展
 - **基础设施**：`OpenAI/MCP` 服务、`JWT/国密算法` 加解密认证；**Redis** 可按需在 AppHost 中接入（当前默认编排未启用）
 - **数据库驱动**：MongoDB.Driver + MongoDB.Entities
@@ -24,21 +24,35 @@
 | 层级 | 项目 | 职责 |
 |------|------|------|
 | **服务编排** | `Platform.AppHost` | Aspire 资源编排，统一入口 |
-| **业务网关** | `Platform.ApiService` | API 控制器 + 业务服务层 |
+| **业务网关** | `Platform.ApiService` | API 控制器 + 业务服务层 (48 Controllers, 170+ Services) |
 | **基础设施** | `Platform.ServiceDefaults` | DbContext、中间件、基类 |
 | **数据初始化** | `Platform.DataInitializer` | 种子数据、菜单配置 |
-| **存储服务** | `Platform.Storage` | 文件存储服务 |
-| **系统监控** | `Platform.SystemMonitor` | 监控服务 |
+| **存储服务** | `Platform.ApiService` (内置) | GridFS 文件存储服务 |
+| **系统监控** | `Platform.SystemMonitor` | 进程级资源监控 |
 
 ### 前端项目结构
 
-| 应用 | 框架 | 用途 |
-|------|------|------|
-| `Platform.Admin` | React 19 + UmiJS 4 + Ant Design 6 | 管理后台 |
-| `Platform.App` | Expo 54 | 移动端 App |
-| `Platform.MiniApp` | 微信原生 | 微信小程序 |
+| 应用 | 框架 | 版本 | 用途 |
+|------|------|------|------|
+| `Platform.Admin` | React 19 + UmiJS 4 + Ant Design 6 | 19.2.5 / 4.6.42 / 6.3.5 | 管理后台 |
+| `Platform.App` | Expo + React Native | 54.0.31 / 0.83.1 | 移动端 App |
+| `Platform.MiniApp` | 微信原生 | - | 微信小程序 |
 
-## 2. 交互与代码流基础纪律
+### 核心业务模块
+
+| 模块 | 后端控制器 | 前端页面 | 说明 |
+|------|-----------|---------|------|
+| **工作流** | WorkflowController | workflow/ | 流程定义、实例、审批、监控 |
+| **IoT 物联网** | IoTController | iot-platform/ | 网关、设备、数据点、告警 |
+| **园区管理** | ParkAsset/Tenant/Visit/InvestmentController | park-management/ | 资产、租户、走访、招商 |
+| **密码本** | PasswordBookController | password-book/ | 安全密码管理 |
+| **知识库** | KnowledgeBase/DocumentController | workflow/knowledge-base/ | 知识库与文档 |
+| **文件存储** | FileStorage/CloudStorage/VersionController | cloud-storage/ | 云存储、版本管理、分享 |
+| **任务项目** | Task/ProjectController | task-management/ | 任务创建分配、项目管理 |
+| **公文管理** | DocumentController | document/ | 公文创建、审批、归档 |
+| **小科 AI** | ChatAi/XiaokeConfigController | xiaoke-management/ | AI 对话、配置管理 |
+
+## 2. 交互与 Git 提交规范
 
 ### 🤖 会话与 Git 提交
 - **全面中文交互**：所有代码注释、README、给用户的回复、以及 **Git 提交信息**，必须使用**简体中文**。
@@ -65,14 +79,16 @@ git push origin main
 ```
 
 #### 提交信息规范
-- `feat: 添加xxx` - 新功能
-- `fix: 修复xxx` - 错误修复
-- `docs: 更新xxx` - 文档更新
-- `refactor: 重构xxx` - 代码重构
-- `style: 调整xxx` - 格式调整
-- `perf: 优化xxx` - 性能优化
-- `test: 测试xxx` - 测试相关
-- `chore: 维护xxx` - 构建或辅助工具的变动
+| 类型 | 说明 | 示例 |
+|------|------|------|
+| `feat` | 新功能 | `feat: 添加用户管理功能` |
+| `fix` | Bug 修复 | `fix: 修复登录验证问题` |
+| `docs` | 文档更新 | `docs: 更新 API 文档` |
+| `refactor` | 重构 | `refactor: 优化数据访问层` |
+| `style` | 格式调整 | `style: 格式化代码` |
+| `perf` | 性能优化 | `perf: 优化查询性能` |
+| `test` | 测试相关 | `test: 添加单元测试` |
+| `chore` | 构建/工具 | `chore: 更新依赖` |
 
 > **注意**：如果没有任何变更，不需要执行提交操作。
 
@@ -157,12 +173,42 @@ public class UserService
 - 所有常规 HTTP 接口返回数据，必须被包装为 `ApiResponse<T>`，并默认开启 camelCase （首字母小写）且忽略 Null 返回。
 - 后端不再向前端使用 SignalR 发送实时数据或通知事件，必须改为使用 **SSE (Server-Sent Events)** 推送（连接管理器为 `IChatSseConnectionManager`）。对于 SSE 响应管道，需注意跳过中间件格式化。
 
+### 🚫 N+1 查询防护
+- **严禁**在循环内调用单条查询方法（如 `_userService.GetUserByIdAsync()`）。
+- **必须**使用批量查询方法（如 `_userService.GetUsersByIdsAsync()`）。
+- DTO 转换应先批量收集 ID，再批量查询，最后内存映射。
+
 ## 4. MCP 服务与 AI 能力整合
 
 本项目在 `Platform.ApiService` 中，包含了一个强大的单一类 `McpService.cs`（及 `Mcp/` 下的各 Handler），它通过 Model Context Protocol 向外层 AI（不仅限于本 Copilot）提供系统内深度业务能力投射。
 
 - **不要重复造轮子**：当面临读取【工作流进度】、【IoT设备状态】或【园区资产查询】等复杂任务时，AI 助手应优先分析项目中是否已有现成的 MCP Handlers 支持提取能力。
 - 本项目不仅是一个应用，它自身也是一个巨大的 AI 知识源提供者。
+
+### MCP Handler 完整列表 (21 个)
+
+| Handler | 功能领域 |
+|---------|---------|
+| TaskMcpToolHandler | 任务管理 |
+| ProjectMcpToolHandler | 项目管理 |
+| UserMcpToolHandler | 用户管理 |
+| WorkflowMcpToolHandler | 工作流引擎 |
+| IoTMcpToolHandler | 物联网平台 |
+| ParkMcpToolHandler | 园区管理 |
+| KnowledgeMcpToolHandler | 知识库 |
+| DocumentMcpToolHandler | 公文管理 |
+| PasswordBookMcpToolHandler | 密码本 |
+| NoticeMcpToolHandler | 公告管理 |
+| NotificationMcpToolHandler | 通知推送 |
+| FileShareMcpToolHandler | 文件分享 |
+| FileVersionMcpToolHandler | 文件版本 |
+| FormMcpToolHandler | 表单管理 |
+| MenuMcpToolHandler | 菜单管理 |
+| SocialMcpToolHandler | 社交功能 |
+| OrganizationMcpToolHandler | 组织架构 |
+| JoinRequestMcpToolHandler | 加入申请 |
+| StatisticsMcpToolHandler | 统计分析 |
+| SystemMcpToolHandler | 系统管理 |
 
 ## 5. 更多领域专项规范参阅
 
@@ -171,6 +217,7 @@ public class UserService
 | 分类 | 路径 | 说明 |
 |------|------|------|
 | 通用原则 | `docs/rules/00-通用原则.md` | 全局开发准则 |
+| 分页规范 | `docs/rules/00-分页规范.md` | 统一分页标准 |
 | 后端规范 | `docs/rules/backend/` | API 服务开发规范 |
 | Admin 前端 | `docs/rules/frontend-admin/` | React Admin 后台规范 |
 | 移动端 | `docs/rules/frontend-app/` | Expo 移动端规范 |

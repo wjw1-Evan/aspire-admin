@@ -8,12 +8,13 @@
 
 核心服务：`Platform.ApiService/Services/McpService.cs`
 
-## 🛠️ 核心处理器索引 (14+ Handlers)
+## 🛠️ 核心处理器索引 (21 Handlers)
 
 ### 1. 协作与工作流
 - **WorkflowMcpToolHandler**: AI 直接操作流程（审批、查询进度、查看历史）。映射 URI: `workflow://{id}`。
 - **DocumentMcpToolHandler**: 公文管理，支持文档检索与状态分析。
 - **TaskMcpToolHandler**: 任务与项目管理，AI 可自动创建任务、指派负责人、更新看板。
+- **ProjectMcpToolHandler**: 项目管理工具，包括成员、里程碑、依赖关系管理。
 
 ### 2. 物联网 (IoT)
 - **IoTMcpToolHandler**: 网关与设备状态查询，AI 可获取实时数据点并分析趋势。映射 URI: `iot://{id}`。
@@ -25,12 +26,19 @@
 - **UserMcpToolHandler**: 跨租户身份检索、组织架构查询。
 - **NoticeMcpToolHandler**: 系统公告与通知推送。
 - **NotificationMcpToolHandler**: 统一通知触达分析。
-- **FileShareMcpToolHandler / FileVersionMcpToolHandler**: 云硬盘文件检索与版本追溯。
+- **FileShareMcpToolHandler**: 云硬盘文件检索与分享。
+- **FileVersionMcpToolHandler**: 版本追溯与管理。
+- **PasswordBookMcpToolHandler**: 密码本管理工具。
+- **KnowledgeMcpToolHandler**: 知识库与文档管理。
 
 ### 5. 系统底层
 - **SystemMcpToolHandler**: 菜单、权限与系统健康度查询。
-- **MenuMcpToolHandler / OrganizationMcpToolHandler**: 动态配置查询。
+- **MenuMcpToolHandler**: 动态菜单配置查询。
+- **OrganizationMcpToolHandler**: 组织架构查询。
 - **JoinRequestMcpToolHandler**: 申请审核辅助。
+- **SocialMcpToolHandler**: 社交功能（好友、动态）。
+- **FormMcpToolHandler**: 表单管理工具。
+- **StatisticsMcpToolHandler**: 统计分析工具。
 
 ## 🧠 智能匹配机制
 

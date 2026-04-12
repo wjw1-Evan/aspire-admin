@@ -9,42 +9,47 @@
 | 项目 | 职责 | 数据库 / 依赖 |
 |------|------|----------------|
 | `Platform.AppHost` | Aspire 编排、YARP 网关、环境变量注入 | — |
-| `Platform.ApiService` | 业务 API、MCP、SSE 等 | MongoDB `mongodb` |
-| `Platform.Storage` | GridFS 文件 HTTP API | MongoDB `storagedb` |
+| `Platform.ApiService` | 业务 API、MCP、SSE、GridFS 文件存储 | MongoDB `mongodb` |
 | `Platform.SystemMonitor` | 主机资源监控 API | **无业务库**（不连接 `mongodb`） |
 | `Platform.DataInitializer` | 一次性种子 / 初始化任务 | MongoDB `mongodb` |
-| `Platform.ServiceDefaults` | DbContext、租户上下文、卫星服务统一认证扩展 | — |
+| `Platform.ServiceDefaults` | DbContext、租户上下文、统一认证扩展 | — |
 
 YARP 将下列前缀转发到对应服务（路径去掉服务前缀后原样转发到上游）：
 
 | 前端 / 客户端路径前缀 | 后端服务 |
 |----------------------|----------|
 | `/apiservice/` | ApiService |
-| `/storage/` | Storage |
 | `/systemmonitor/` | SystemMonitor |
 
 ### 1.2 网关路由配置（AppHost）
 
 在 [Platform.AppHost/AppHost.cs](../../Platform.AppHost/AppHost.cs) 中通过字典注册集群与路由，`/{serviceKey}/{**catch-all}` → 上游 `/{**catch-all}`。
 
-### 1.3 卫星服务认证（Storage / SystemMonitor）
+### 1.3 卫星服务认证（SystemMonitor）
 
-Storage 与 SystemMonitor 使用 `Platform.ServiceDefaults.Authentication` 中的 **`AddSatelliteJwtAndInternalKeyAuthentication`**：
+SystemMonitor 使用 `Platform.ServiceDefaults.Authentication` 中的 **`AddSatelliteJwtAndInternalKeyAuthentication`**：
 
 - **浏览器 / 管理端**：在请求头携带与 ApiService 相同的 **JWT**（`Authorization: Bearer …`），须与 `Jwt:SecretKey`、`Jwt:Issuer`、`Jwt:Audience` 一致（由 AppHost 注入 `Jwt__SecretKey` 等）。
-- **服务间（如 ApiService → Storage）**：在 `HttpClient` 上增加请求头 **`X-Internal-Service-Key`**，值与配置 **`InternalService:ApiKey`** 一致（AppHost 向 ApiService、Storage、SystemMonitor 注入相同的 `InternalService__ApiKey`）。
+- **服务间**：在 `HttpClient` 上增加请求头 **`X-Internal-Service-Key`**，值与配置 **`InternalService:ApiKey`** 一致（AppHost 向 ApiService、SystemMonitor 注入相同的 `InternalService__ApiKey`）。
 
 健康检查 `/health` 仍匿名；业务控制器使用 `[Authorize]`。
 
-头像等需在浏览器中匿名展示的文件，应通过 **ApiService** 的受控端点（例如 `/apiservice/api/avatar/view/...`）暴露，而不是直接请求 Storage 的下载 URL（`<img src>` 无法带 JWT）。
+头像等需在浏览器中匿名展示的文件，应通过 **ApiService** 的受控端点（例如 `/apiservice/api/avatar/view/...`）暴露。
 
 ### 1.4 编排要点
 
-- **ApiService** 必须 **`WithReference(storage)`** 且 **`WaitFor(storage)`**，以便服务发现解析 `storage` 主机名，并保证 Storage 就绪后再承接流量。
+- **ApiService** 必须 **`WithReference(systemMonitor)`** 且 **`WaitFor(systemMonitor)`**，以便服务发现解析 `systemmonitor` 主机名，并保证 SystemMonitor 就绪后再承接流量。
 - **Redis**：当前编排中未启用；若后续引入缓存，在 AppHost 添加 `AddRedis` 后应对具体项目使用 **`WithReference(redis)`**。
 - **`AddDockerComposeEnvironment("compose")`**：用于 Compose 发布与 Dashboard 等场景；各 `AddProject` 已通过 `PublishAsDockerComposeService` 等参与发布时，无需把返回值赋给局部变量再逐一手动挂载（未使用变量时 IDE 可能对 `compose` 告警，可改为 `_ = builder.AddDockerComposeEnvironment(...)` 或保留并抑制告警）。
 
-### 1.5 未来拆分路线图（未实现）
+### 1.5 文件存储（集成到 ApiService）
+
+GridFS 文件存储已集成到 `Platform.ApiService` 内部，通过 `IStorageClient` 接口调用：
+
+- **服务间调用**：ApiService 内部通过 `IStorageClient` 直接访问 GridFS，无需 HTTP 调用。
+- **浏览器直连**：上传/下载需携带用户 JWT 调用 ApiService 的文件接口。
+
+### 1.6 未来拆分路线图（未实现）
 
 以下目录 **尚未** 作为独立项目存在，仅作演进参考：`Platform.Auth`、`Platform.Users`、`Platform.Core` 多领域拆分等。新增能力默认仍在 `Platform.ApiService` 内按模块划分，直到有明确的拆分边界与数据归属再独立项目。
 
@@ -94,7 +99,6 @@ var services = new Dictionary<string, IResourceBuilder<IResourceWithServiceDisco
 {
     ["apiservice"] = apiService,
     ["systemmonitor"] = systemMonitor,
-    ["storage"] = storage,
     ["newservice"] = newService,
 };
 ```
@@ -122,8 +126,7 @@ return request('/newservice/api/...');
 
 | 服务 | 连接名 / 库 | 说明 |
 |------|-------------|------|
-| ApiService、DataInitializer | `mongodb` | 业务数据 |
-| Storage | `storagedb` | GridFS 与文件元数据 |
+| ApiService、DataInitializer | `mongodb` | 业务数据 + GridFS 文件元数据 |
 | SystemMonitor | 无 | 仅进程/系统指标，不持有业务 DbContext |
 
 ## 四、前端开发规范
@@ -132,7 +135,6 @@ return request('/newservice/api/...');
 
 - ApiService：`/apiservice/api/...`
 - SystemMonitor：`/systemmonitor/api/...`（需登录态）
-- Storage：`/storage/api/...`（需登录态；优先通过 ApiService 封装敏感或匿名展示场景）
 
 ### 4.2 Proxy
 
@@ -149,12 +151,6 @@ return request('/newservice/api/...');
 - **端口**：15020（Aspire 分配时以仪表板为准）
 - **数据库**：无
 - **示例**：`Platform.Admin/src/services/system/api.ts` 中 `getSystemResources` 请求需携带 JWT。
-
-### 5.2 Storage
-
-- **端口**：15010（同上）
-- **数据库**：`storagedb`
-- **调用方**：`Platform.ApiService` 通过 `IStorageClient` 使用服务发现主机名 `storage` 与 **`X-Internal-Service-Key`**；管理端直连上传需携带用户 JWT。
 
 ## 六、注意事项
 

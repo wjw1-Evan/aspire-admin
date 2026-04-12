@@ -156,7 +156,6 @@ public class UserController : BaseApiController
     [RequireMenu(SystemConstants.Permissions.UserManagement)]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserManagementRequest request)
     {
-        request.Username.EnsureNotEmpty("用户名");
         var user = await _userService.CreateUserManagementAsync(request);
         return Success(user, ErrorMessages.CreateSuccess);
     }
@@ -305,8 +304,6 @@ public class UserController : BaseApiController
     [RequireMenu(SystemConstants.Permissions.UserManagement)]
     public async Task<IActionResult> BulkUserAction([FromBody] BulkUserActionRequest request)
     {
-        request.UserIds.EnsureNotEmpty("用户ID列表");
-
         var success = await _userService.BulkUpdateUsersAsync(request, request.Reason);
         if (!success)
             throw new InvalidOperationException(ErrorMessages.OperationFailed);

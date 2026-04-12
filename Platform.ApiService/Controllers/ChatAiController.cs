@@ -44,7 +44,6 @@ public class ChatAiController : BaseApiController
     [HttpPost("smart-replies")]
     public async Task<IActionResult> GetSmartReplies([FromBody] AiSmartReplyRequest request, CancellationToken cancellationToken)
     {
-        request.EnsureNotNull(nameof(request));
         var currentUserId = RequiredUserId;
         var result = await _aiSuggestionService.GetSmartRepliesAsync(request, currentUserId, cancellationToken);
         return Success(result);
@@ -58,7 +57,6 @@ public class ChatAiController : BaseApiController
     [HttpPost("match-suggestions")]
     public async Task<IActionResult> GetMatchSuggestions([FromBody] MatchSuggestionRequest request)
     {
-        request.EnsureNotNull(nameof(request));
         var currentUserId = RequiredUserId;
         var response = await _aiSuggestionService.GetMatchSuggestionsAsync(request, currentUserId);
         return Success(response);

@@ -72,7 +72,6 @@ public class AiSuggestionService : IAiSuggestionService
 
     public async Task<MatchSuggestionResponse> GetMatchSuggestionsAsync(MatchSuggestionRequest request, string currentUserId)
     {
-        request = request.EnsureNotNull(nameof(request));
         if (string.IsNullOrWhiteSpace(request.UserId)) request.UserId = currentUserId;
         if (!string.Equals(request.UserId, currentUserId, StringComparison.Ordinal)) throw new UnauthorizedAccessException("禁止为其他用户请求匹配推荐");
 
@@ -119,7 +118,6 @@ public class AiSuggestionService : IAiSuggestionService
 
     private async Task<SmartReplyContext> PrepareSmartReplyContextAsync(AiSmartReplyRequest request, string currentUserId)
     {
-        request = request.EnsureNotNull(nameof(request));
         if (!string.Equals(request.UserId, currentUserId, StringComparison.Ordinal)) throw new UnauthorizedAccessException("禁止为其他用户请求智能回复");
 
         var session = await _context.Set<ChatSession>().FirstOrDefaultAsync(s => s.Id == request.SessionId) ?? throw new KeyNotFoundException("会话不存在");

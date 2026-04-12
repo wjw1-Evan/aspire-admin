@@ -112,7 +112,6 @@ public class CompanyService : ICompanyService
         // 如果请求中提供了代码，使用用户提供的（向后兼容）
         if (!string.IsNullOrWhiteSpace(request.Code))
         {
-            request.Code.EnsureValidUsername(nameof(request.Code));
             var existingCompany = await GetCompanyByCodeAsync(request.Code);
             if (existingCompany != null)
             {

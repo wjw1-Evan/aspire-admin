@@ -60,7 +60,6 @@ public class SocialService : ISocialService
     /// <inheritdoc />
     public async Task UpdateLocationAsync(UpdateLocationBeaconRequest request, string? userIdOverride = null, string? companyIdOverride = null)
     {
-        request.EnsureNotNull(nameof(request));
         ValidateCoordinates(request.Latitude, request.Longitude);
 
         var currentUserId = userIdOverride ?? _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("未找到当前用户信息");
@@ -113,8 +112,6 @@ public class SocialService : ISocialService
     /// <inheritdoc />
     public async Task<NearbyUsersResponse> GetNearbyUsersAsync(NearbyUsersRequest request)
     {
-        request.EnsureNotNull(nameof(request));
-        request.Center.EnsureNotNull(nameof(request.Center));
         ValidateCoordinates(request.Center.Latitude, request.Center.Longitude);
 
         var currentUserId = _tenantContext.GetCurrentUserId() ?? throw new UnauthorizedAccessException("USER_NOT_AUTHENTICATED");

@@ -63,10 +63,6 @@ public class CompanyController : BaseApiController
 
     public async Task<IActionResult> CreateCompany([FromBody] CreateCompanyRequest request)
     {
-        // 验证必需参数
-        request.Name.EnsureNotEmpty("企业名称");
-        // 注意：Code 字段不再需要，系统会自动生成
-
         var userId = RequiredUserId;
         var company = await _companyService.CreateCompanyAsync(request, userId);
 
@@ -220,8 +216,6 @@ public class CompanyController : BaseApiController
     [AllowAnonymous]
     public async Task<IActionResult> CheckCodeAvailability([FromQuery] string code)
     {
-        code.EnsureNotEmpty("企业代码");
-
         var company = await _companyService.GetCompanyByCodeAsync(code);
         var available = company == null;
 
@@ -237,8 +231,6 @@ public class CompanyController : BaseApiController
 
     public async Task<IActionResult> SearchCompanies([FromQuery] string keyword)
     {
-        keyword.EnsureNotEmpty("搜索关键词");
-
         var results = await _companyService.SearchCompaniesAsync(keyword);
         return Success(results);
     }
@@ -262,8 +254,6 @@ public class CompanyController : BaseApiController
 
     public async Task<IActionResult> SwitchCompany([FromBody] SwitchCompanyRequest request)
     {
-        request.TargetCompanyId.EnsureNotEmpty("目标企业ID");
-
         var result = await _userCompanyService.SwitchCompanyAsync(request.TargetCompanyId);
         return Success(result, "企业切换成功");
     }
@@ -373,8 +363,6 @@ public class CompanyController : BaseApiController
 
     public async Task<IActionResult> ApplyToJoin([FromBody] ApplyToJoinCompanyRequest request)
     {
-        request.CompanyId.EnsureNotEmpty("企业ID");
-
         var userId = RequiredUserId;
         await _userCompanyService.ApplyToJoinCompanyAsync(userId, request.CompanyId, request.Reason);
 

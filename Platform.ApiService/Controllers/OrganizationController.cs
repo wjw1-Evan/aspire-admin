@@ -94,7 +94,6 @@ public class OrganizationController : BaseApiController
     public async Task<IActionResult> Reorder([FromBody] List<OrganizationReorderItem> items)
     {
         var ok = await _organizationService.ReorderAsync(items).ConfigureAwait(false);
-        return Success(true);
         return Success(null, ErrorMessages.UpdateSuccess);
     }
 
